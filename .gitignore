@@ -1,4 +1,5 @@
+/coverage.txt
 /plugin.exe
-/mattermost-jira-plugin-linux.tar.gz
-/mattermost-jira-plugin-macos.tar.gz
-/mattermost-jira-plugin-windows.tar.gz
+/mattermost-jira-plugin.tar.gz
+/dist
+/vendor

@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/subtle"
 	"encoding/json"
-	"log"
 	"net/http"
 	"sync/atomic"
 
@@ -22,21 +21,22 @@ type Plugin struct {
 	configuration atomic.Value
 }
 
-func (p *Plugin) OnActivate(api plugin.API) {
+func (p *Plugin) OnActivate(api plugin.API) error {
 	p.api = api
-	p.OnConfigurationChange()
+	return p.OnConfigurationChange()
 }
 
 func (p *Plugin) config() *Configuration {
 	return p.configuration.Load().(*Configuration)
 }
 
-func (p *Plugin) OnConfigurationChange() {
+func (p *Plugin) OnConfigurationChange() error {
 	var configuration Configuration
 	if err := p.api.LoadPluginConfiguration(&configuration); err != nil {
-		log.Printf("error loading configuration: %v", err.Error())
+		return err
 	}
 	p.configuration.Store(&configuration)
+	return nil
 }
 
 func (p *Plugin) ServeHTTP(w http.ResponseWriter, r *http.Request) {

@@ -1,0 +1,11 @@
+package: github.com/mattermost/mattermost-plugin-jira
+import:
+- package: github.com/mattermost/mattermost-server
+  subpackages:
+  - model
+  - plugin
+  - plugin/rpcplugin
+- package: github.com/stretchr/testify
+  subpackages:
+  - assert
+  - require

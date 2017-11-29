@@ -1,18 +1,30 @@
 .PHONY: test
 
-all: test mattermost-jira-plugin-linux.tar.gz mattermost-jira-plugin-macos.tar.gz mattermost-jira-plugin-windows.tar.gz
+all: test dist
 
-mattermost-jira-plugin-linux.tar.gz: $(shell go list -f '{{range .GoFiles}}{{.}} {{end}}') plugin.yaml 
-	GOOS=linux GOARCH=amd64 go build -o plugin.exe
+TAR_PLUGIN_EXE_TRANSFORM = --transform 'flags=r;s|dist/intermediate/plugin_.*|plugin.exe|'
+ifneq (,$(findstring bsdtar,$(shell tar --version)))
+	TAR_PLUGIN_EXE_TRANSFORM = -s '|dist/intermediate/plugin_.*|plugin.exe|'
+endif
+
+dist: vendor $(shell go list -f '{{range .GoFiles}}{{.}} {{end}}') plugin.yaml
+	rm -rf ./dist
+	go get github.com/mitchellh/gox
+	gox -osarch='darwin/amd64 linux/amd64 windows/amd64' -output 'dist/intermediate/plugin_{{.OS}}_{{.Arch}}'
+	tar -czvf dist/mattermost-jira-plugin-darwin-amd64.tar.gz $(TAR_PLUGIN_EXE_TRANSFORM) dist/intermediate/plugin_darwin_amd64 plugin.yaml
+	tar -czvf dist/mattermost-jira-plugin-linux-amd64.tar.gz $(TAR_PLUGIN_EXE_TRANSFORM) dist/intermediate/plugin_linux_amd64 plugin.yaml
+	tar -czvf dist/mattermost-jira-plugin-windows-amd64.tar.gz $(TAR_PLUGIN_EXE_TRANSFORM) dist/intermediate/plugin_windows_amd64.exe plugin.yaml
+	rm -rf dist/intermediate
+
+mattermost-jira-plugin.tar.gz: vendor $(shell go list -f '{{range .GoFiles}}{{.}} {{end}}') plugin.yaml 
+	go build -o plugin.exe
 	tar -czvf $@ plugin.exe plugin.yaml
+	rm plugin.exe
 
-mattermost-jira-plugin-macos.tar.gz: $(shell go list -f '{{range .GoFiles}}{{.}} {{end}}') plugin.yaml 
-	GOOS=darwin GOARCH=amd64 go build -o plugin.exe
-	tar -czvf $@ plugin.exe plugin.yaml
+test: vendor
+	go test -v -coverprofile=coverage.txt ./...
 
-mattermost-jira-plugin-windows.tar.gz: $(shell go list -f '{{range .GoFiles}}{{.}} {{end}}') plugin.yaml 
-	GOOS=windows GOARCH=amd64 go build -o plugin.exe
-	tar -czvf $@ plugin.exe plugin.yaml
+vendor: glide.lock
+	go get github.com/Masterminds/glide
+	glide install
 
-test:
-	go test -v ./...
