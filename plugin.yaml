@@ -1,0 +1,6 @@
+id: jira
+backend:
+    executable: plugin.exe
+name: JIRA
+description: Receives webhook events from JIRA and makes Mattermost posts for them.
+version: '0.1'
