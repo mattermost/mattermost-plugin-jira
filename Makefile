@@ -10,7 +10,7 @@ endif
 dist: vendor $(shell go list -f '{{range .GoFiles}}{{.}} {{end}}') plugin.yaml
 	rm -rf ./dist
 	go get github.com/mitchellh/gox
-	gox -osarch='darwin/amd64 linux/amd64 windows/amd64' -output 'dist/intermediate/plugin_{{.OS}}_{{.Arch}}'
+	$(shell go env GOPATH)/bin/gox -osarch='darwin/amd64 linux/amd64 windows/amd64' -output 'dist/intermediate/plugin_{{.OS}}_{{.Arch}}'
 	tar -czvf dist/mattermost-jira-plugin-darwin-amd64.tar.gz $(TAR_PLUGIN_EXE_TRANSFORM) dist/intermediate/plugin_darwin_amd64 plugin.yaml
 	tar -czvf dist/mattermost-jira-plugin-linux-amd64.tar.gz $(TAR_PLUGIN_EXE_TRANSFORM) dist/intermediate/plugin_linux_amd64 plugin.yaml
 	tar -czvf dist/mattermost-jira-plugin-windows-amd64.tar.gz $(TAR_PLUGIN_EXE_TRANSFORM) dist/intermediate/plugin_windows_amd64.exe plugin.yaml
@@ -26,5 +26,4 @@ test: vendor
 
 vendor: glide.lock
 	go get github.com/Masterminds/glide
-	glide install
-
+	$(shell go env GOPATH)/bin/glide install
