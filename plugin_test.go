@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -35,14 +36,26 @@ func TestPlugin(t *testing.T) {
 	expectedAttachment, err := webhook.SlackAttachment()
 	require.NoError(t, err)
 
+	validConfiguration := Configuration{
+		Enabled:  true,
+		Secret:   "thesecret",
+		UserName: "theuser",
+	}
+
 	for name, tc := range map[string]struct {
 		Configuration      Configuration
+		ConfigurationError error
 		Request            *http.Request
 		CreatePostError    *model.AppError
 		ExpectedStatusCode int
 	}{
 		"NoConfiguration": {
 			Configuration:      Configuration{},
+			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
+			ExpectedStatusCode: http.StatusForbidden,
+		},
+		"ConfigurationError": {
+			ConfigurationError: fmt.Errorf("foo"),
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusForbidden,
 		},
@@ -54,39 +67,33 @@ func TestPlugin(t *testing.T) {
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusForbidden,
 		},
+		"NoChannel": {
+			Configuration:      validConfiguration,
+			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&secret=thesecret", validRequestBody()),
+			ExpectedStatusCode: http.StatusBadRequest,
+		},
 		"WrongSecret": {
-			Configuration: Configuration{
-				Enabled:  true,
-				Secret:   "differentsecret",
-				UserName: "theuser",
-			},
-			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
+			Configuration:      validConfiguration,
+			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=notthesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusForbidden,
 		},
 		"InvalidBody": {
-			Configuration: Configuration{
-				Enabled:  true,
-				Secret:   "thesecret",
-				UserName: "theuser",
-			},
+			Configuration:      validConfiguration,
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", ioutil.NopCloser(bytes.NewBufferString("foo"))),
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
+		"UnknownJSONPayload": {
+			Configuration:      validConfiguration,
+			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", ioutil.NopCloser(bytes.NewBufferString("{}"))),
+			ExpectedStatusCode: http.StatusOK,
+		},
 		"InvalidChannel": {
-			Configuration: Configuration{
-				Enabled:  true,
-				Secret:   "thesecret",
-				UserName: "theuser",
-			},
+			Configuration:      validConfiguration,
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=notthechannel&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
 		"InvalidTeam": {
-			Configuration: Configuration{
-				Enabled:  true,
-				Secret:   "thesecret",
-				UserName: "theuser",
-			},
+			Configuration:      validConfiguration,
 			Request:            httptest.NewRequest("POST", "/webhook?team=nottheteam&channel=thechannel&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
@@ -100,52 +107,37 @@ func TestPlugin(t *testing.T) {
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
 		"ValidRequest": {
-			Configuration: Configuration{
-				Enabled:  true,
-				Secret:   "thesecret",
-				UserName: "theuser",
-			},
+			Configuration:      validConfiguration,
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusOK,
 		},
 		"CreatePostError": {
-			Configuration: Configuration{
-				Enabled:  true,
-				Secret:   "thesecret",
-				UserName: "theuser",
-			},
+			Configuration:      validConfiguration,
 			CreatePostError:    model.NewAppError("foo", "bar", nil, "", http.StatusInternalServerError),
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusInternalServerError,
 		},
 		"WrongMethod": {
-			Configuration: Configuration{
-				Enabled:  true,
-				Secret:   "thesecret",
-				UserName: "theuser",
-			},
-			Request:            httptest.NewRequest("GET", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
+			Configuration:      validConfiguration,
+			Request:            httptest.NewRequest("GET", "/webhook", validRequestBody()),
 			ExpectedStatusCode: http.StatusMethodNotAllowed,
 		},
 		"WrongPath": {
-			Configuration: Configuration{
-				Enabled:  true,
-				Secret:   "thesecret",
-				UserName: "theuser",
-			},
-			Request:            httptest.NewRequest("POST", "/not-webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
+			Configuration:      validConfiguration,
+			Request:            httptest.NewRequest("POST", "/not-webhook", validRequestBody()),
 			ExpectedStatusCode: http.StatusNotFound,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
-			api.On("LoadPluginConfiguration", mock.AnythingOfType("*main.Configuration")).Run(func(args mock.Arguments) {
-				*args.Get(0).(*Configuration) = tc.Configuration
-			}).Return(nil)
+			api.On("LoadPluginConfiguration", mock.AnythingOfType("*main.Configuration")).Return(func(dest interface{}) error {
+				*dest.(*Configuration) = tc.Configuration
+				return tc.ConfigurationError
+			})
 
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
-				Id: name + "id",
+				Id: "theuserid",
 			}, (*model.AppError)(nil))
 			api.On("GetUserByUsername", "nottheuser").Return((*model.User)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
 
@@ -164,7 +156,6 @@ func TestPlugin(t *testing.T) {
 				Id:     "thechannelid",
 				TeamId: "theteamid",
 			}, (*model.AppError)(nil))
-
 			api.On("GetChannelByName", "theteamid", "notthechannel").Return((*model.Channel)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
 
 			p := Plugin{}

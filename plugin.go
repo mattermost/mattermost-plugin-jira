@@ -32,11 +32,9 @@ func (p *Plugin) config() *Configuration {
 
 func (p *Plugin) OnConfigurationChange() error {
 	var configuration Configuration
-	if err := p.api.LoadPluginConfiguration(&configuration); err != nil {
-		return err
-	}
+	err := p.api.LoadPluginConfiguration(&configuration)
 	p.configuration.Store(&configuration)
-	return nil
+	return err
 }
 
 func (p *Plugin) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -44,14 +42,14 @@ func (p *Plugin) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !config.Enabled || config.Secret == "" || config.UserName == "" {
 		http.Error(w, "This plugin is not configured.", http.StatusForbidden)
 		return
-	} else if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(config.Secret)) != 1 {
-		http.Error(w, "You must provide the configured secret.", http.StatusForbidden)
-		return
 	} else if r.URL.Path != "/webhook" {
 		http.NotFound(w, r)
 		return
 	} else if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	} else if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(config.Secret)) != 1 {
+		http.Error(w, "You must provide the configured secret.", http.StatusForbidden)
 		return
 	}
 
