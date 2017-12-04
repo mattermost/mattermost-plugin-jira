@@ -3,7 +3,7 @@ backend:
     executable: plugin.exe
 name: JIRA
 description: Receives webhook events from JIRA and makes Mattermost posts for them.
-version: '0.1'
+version: '0.1.1'
 settings_schema:
   settings:
     - key: Enabled
@@ -22,4 +22,4 @@ settings_schema:
   footer: |
     Use this webhook URL to set up the JIRA integration. See [documentation](https://about.mattermost.com/default-jira-plugin) to learn more.
 
-    `https://YOURSITE.COM/plugins/jira/webhook?secret=ABOVESECRET&team=TEAMURL&channel=CHANNELURL`
+    `https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL`

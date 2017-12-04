@@ -146,7 +146,7 @@ func TestPlugin(t *testing.T) {
 			}, (*model.AppError)(nil))
 			api.On("GetTeamByName", "nottheteam").Return((*model.Team)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
 
-			api.On("GetChannelByName", "theteamid", "thechannel").Run(func(args mock.Arguments) {
+			api.On("GetChannelByName", "thechannel", "theteamid").Run(func(args mock.Arguments) {
 				api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(func(post *model.Post) (*model.Post, *model.AppError) {
 					assert.Equal(t, post.ChannelId, "thechannelid")
 					assert.Equal(t, post.Props["attachments"], []*model.SlackAttachment{expectedAttachment})
@@ -156,7 +156,7 @@ func TestPlugin(t *testing.T) {
 				Id:     "thechannelid",
 				TeamId: "theteamid",
 			}, (*model.AppError)(nil))
-			api.On("GetChannelByName", "theteamid", "notthechannel").Return((*model.Channel)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
+			api.On("GetChannelByName", "notthechannel", "theteamid").Return((*model.Channel)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
 
 			p := Plugin{}
 			p.OnActivate(api)

@@ -67,7 +67,7 @@ func (p *Plugin) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Message, err.StatusCode)
 	} else if team, err := p.api.GetTeamByName(r.URL.Query().Get("team")); err != nil {
 		http.Error(w, err.Message, err.StatusCode)
-	} else if channel, err := p.api.GetChannelByName(team.Id, r.URL.Query().Get("channel")); err != nil {
+	} else if channel, err := p.api.GetChannelByName(r.URL.Query().Get("channel"), team.Id); err != nil {
 		http.Error(w, err.Message, err.StatusCode)
 	} else if _, err := p.api.CreatePost(&model.Post{
 		ChannelId: channel.Id,
