@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-server/model"
+	"github.com/mattermost/mattermost-server/plugin"
 	"github.com/mattermost/mattermost-server/plugin/plugintest"
 	"github.com/mattermost/mattermost-server/plugin/plugintest/mock"
 )
@@ -27,40 +27,38 @@ func validRequestBody() io.ReadCloser {
 	}
 }
 
+type TestConfiguration struct {
+	Enabled  bool
+	Secret   string
+	UserName string
+}
+
 func TestPlugin(t *testing.T) {
 	f, err := os.Open("testdata/webhook_issue_created.json")
 	require.NoError(t, err)
 	defer f.Close()
 	var webhook Webhook
 	require.NoError(t, json.NewDecoder(f).Decode(&webhook))
-	expectedAttachment, err := webhook.SlackAttachment()
-	require.NoError(t, err)
 
-	validConfiguration := Configuration{
+	validConfiguration := TestConfiguration{
 		Enabled:  true,
 		Secret:   "thesecret",
 		UserName: "theuser",
 	}
 
 	for name, tc := range map[string]struct {
-		Configuration      Configuration
-		ConfigurationError error
+		Configuration      TestConfiguration
 		Request            *http.Request
 		CreatePostError    *model.AppError
 		ExpectedStatusCode int
 	}{
 		"NoConfiguration": {
-			Configuration:      Configuration{},
-			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
-			ExpectedStatusCode: http.StatusForbidden,
-		},
-		"ConfigurationError": {
-			ConfigurationError: fmt.Errorf("foo"),
+			Configuration:      TestConfiguration{},
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusForbidden,
 		},
 		"NoUserConfiguration": {
-			Configuration: Configuration{
+			Configuration: TestConfiguration{
 				Enabled: true,
 				Secret:  "thesecret",
 			},
@@ -98,7 +96,7 @@ func TestPlugin(t *testing.T) {
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
 		"InvalidUser": {
-			Configuration: Configuration{
+			Configuration: TestConfiguration{
 				Enabled:  true,
 				Secret:   "thesecret",
 				UserName: "nottheuser",
@@ -131,11 +129,6 @@ func TestPlugin(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
-			api.On("LoadPluginConfiguration", mock.AnythingOfType("*main.Configuration")).Return(func(dest interface{}) error {
-				*dest.(*Configuration) = tc.Configuration
-				return tc.ConfigurationError
-			})
-
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
 				Id: "theuserid",
 			}, (*model.AppError)(nil))
@@ -147,11 +140,7 @@ func TestPlugin(t *testing.T) {
 			api.On("GetTeamByName", "nottheteam").Return((*model.Team)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
 
 			api.On("GetChannelByName", "thechannel", "theteamid").Run(func(args mock.Arguments) {
-				api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(func(post *model.Post) (*model.Post, *model.AppError) {
-					assert.Equal(t, post.ChannelId, "thechannelid")
-					assert.Equal(t, post.Props["attachments"], []*model.SlackAttachment{expectedAttachment})
-					return &model.Post{}, tc.CreatePostError
-				})
+				api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, tc.CreatePostError)
 			}).Return(&model.Channel{
 				Id:     "thechannelid",
 				TeamId: "theteamid",
@@ -159,10 +148,13 @@ func TestPlugin(t *testing.T) {
 			api.On("GetChannelByName", "notthechannel", "theteamid").Return((*model.Channel)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
 
 			p := Plugin{}
-			p.OnActivate(api)
+			p.Enabled = tc.Configuration.Enabled
+			p.Secret = tc.Configuration.Secret
+			p.UserName = tc.Configuration.UserName
+			p.SetAPI(api)
 
 			w := httptest.NewRecorder()
-			p.ServeHTTP(w, tc.Request)
+			p.ServeHTTP(&plugin.Context{}, w, tc.Request)
 			assert.Equal(t, tc.ExpectedStatusCode, w.Result().StatusCode)
 		})
 	}
