@@ -3,7 +3,7 @@ backend:
     executable: plugin.exe
 name: JIRA
 description: Receives webhook events from JIRA and makes Mattermost posts for them.
-version: '0.1.2'
+version: '1.0.0'
 settings_schema:
   settings:
     - key: Enabled
