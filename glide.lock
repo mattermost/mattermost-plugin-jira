@@ -1,23 +1,39 @@
 hash: 5f70014e098292babafccc5c2f975cefb83c54c19ccd09b99c986e46dd4e88fc
-updated: 2017-12-05T17:37:05.367648-06:00
+updated: 2018-07-15T20:52:37.714560347-04:00
 imports:
-- name: github.com/alecthomas/log4go
-  version: 3fbce08846379ec7f4f6bc7fce6dd01ce28fae4c
-  repo: https://github.com/mattermost/log4go.git
 - name: github.com/davecgh/go-spew
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
   subpackages:
   - spew
+- name: github.com/golang/protobuf
+  version: 14aad3d5ea4c323bcd7a2137e735da24a76e814c
+  subpackages:
+  - proto
+  - ptypes
+  - ptypes/any
+  - ptypes/duration
+  - ptypes/timestamp
 - name: github.com/gorilla/websocket
   version: ea4d1f681babbce9545c9c5f3d5194a789c89f5b
+- name: github.com/hashicorp/go-hclog
+  version: ff2cf002a8dd750586d91dddd4470c341f981fe1
+- name: github.com/hashicorp/go-plugin
+  version: e8d22c780116115ae5624720c9af0c97afe4f551
+- name: github.com/hashicorp/yamux
+  version: 3520598351bb3500a49ae9563f5539666ae0a27c
 - name: github.com/mattermost/mattermost-server
-  version: eb027c0d3bcd473db17ef6f9c96545b9406b3636
+  version: 62c64594ccaa0e634023b358758f2a6bf04164ad
   subpackages:
   - model
   - plugin
+  - plugin/rpcplugin
   - plugin/plugintest
   - plugin/plugintest/mock
-  - plugin/rpcplugin
+  - mlog
+  - utils/jsonutils
+  - utils/markdown
+- name: github.com/mitchellh/go-testing-interface
+  version: a61a99592b77c9ba629d254a693acffaeb4b7e28
 - name: github.com/nicksnyder/go-i18n
   version: 0dc1626d56435e9d605a29875701721c54bc9bbd
   subpackages:
@@ -25,6 +41,8 @@ imports:
   - i18n/bundle
   - i18n/language
   - i18n/translation
+- name: github.com/oklog/run
+  version: 6934b124db28979da51d3470dadfa34d73d72652
 - name: github.com/pborman/uuid
   version: e790cca94e6cc75c7064b1332e63811d4aae1a53
 - name: github.com/pelletier/go-toml
@@ -41,13 +59,82 @@ imports:
   version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
   subpackages:
   - assert
-  - mock
   - require
+  - mock
+- name: go.uber.org/atomic
+  version: 1ea20fb1cbb1cc08cbd0d913a96dead89aa18289
+- name: go.uber.org/multierr
+  version: 3c4937480c32f4c13a875a1829af76c98ca3d40a
+- name: go.uber.org/zap
+  version: 7e7e266a8dbce911a49554b945538c5b950196b8
+  subpackages:
+  - zapcore
+  - internal/bufferpool
+  - buffer
+  - internal/color
+  - internal/exit
 - name: golang.org/x/crypto
   version: 94eea52f7b742c7cbe0b03b22f0c4c8631ece122
   subpackages:
   - bcrypt
   - blowfish
+- name: golang.org/x/net
+  version: d0887baf81f4598189d4e12a37c6da86f0bba4d0
+  subpackages:
+  - context
+  - http2
+  - trace
+  - http/httpguts
+  - http2/hpack
+  - idna
+  - internal/timeseries
+- name: golang.org/x/sys
+  version: ac767d655b305d4e9612f5f6e33120b9176c4ad4
+  subpackages:
+  - unix
+- name: golang.org/x/text
+  version: 0605a8320aceb4207a5fb3521281e17ec2075476
+  subpackages:
+  - secure/bidirule
+  - unicode/bidi
+  - unicode/norm
+  - transform
+- name: google.golang.org/genproto
+  version: e92b116572682a5b432ddd840aeaba2a559eeff1
+  subpackages:
+  - googleapis/rpc/status
+- name: google.golang.org/grpc
+  version: ce6ee6b031cb9e88a81e8d4d502d5b3eafb27f98
+  subpackages:
+  - credentials
+  - health
+  - health/grpc_health_v1
+  - balancer
+  - balancer/roundrobin
+  - codes
+  - connectivity
+  - encoding
+  - encoding/proto
+  - grpclog
+  - internal
+  - internal/backoff
+  - internal/channelz
+  - internal/envconfig
+  - internal/grpcrand
+  - internal/transport
+  - keepalive
+  - metadata
+  - naming
+  - peer
+  - resolver
+  - resolver/dns
+  - resolver/passthrough
+  - stats
+  - status
+  - tap
+  - balancer/base
+- name: gopkg.in/natefinch/lumberjack.v2
+  version: a96e63847dc3c67d17befa69c303767e2f84e54f
 - name: gopkg.in/yaml.v2
   version: 287cf08546ab5e7e37d55a84f7ed3fd1db036de5
 testImports: []
