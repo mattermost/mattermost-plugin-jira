@@ -139,13 +139,13 @@ func TestPlugin(t *testing.T) {
 			}, (*model.AppError)(nil))
 			api.On("GetTeamByName", "nottheteam").Return((*model.Team)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
 
-			api.On("GetChannelByName", "thechannel", "theteamid").Run(func(args mock.Arguments) {
+			api.On("GetChannelByName", "theteamid", "thechannel").Run(func(args mock.Arguments) {
 				api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, tc.CreatePostError)
 			}).Return(&model.Channel{
 				Id:     "thechannelid",
 				TeamId: "theteamid",
 			}, (*model.AppError)(nil))
-			api.On("GetChannelByName", "notthechannel", "theteamid").Return((*model.Channel)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
+			api.On("GetChannelByName", "theteamid", "notthechannel").Return((*model.Channel)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
 
 			p := Plugin{}
 			p.Enabled = tc.Configuration.Enabled
