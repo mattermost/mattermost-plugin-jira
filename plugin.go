@@ -44,9 +44,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		http.Error(w, "You must provide a channel.", http.StatusBadRequest)
 	} else if user, err := p.API.GetUserByUsername(p.UserName); err != nil {
 		http.Error(w, err.Message, err.StatusCode)
-	} else if team, err := p.API.GetTeamByName(r.URL.Query().Get("team")); err != nil {
-		http.Error(w, err.Message, err.StatusCode)
-	} else if channel, err := p.API.GetChannelByName(team.Id, r.URL.Query().Get("channel")); err != nil {
+	} else if channel, err := p.API.GetChannelByNameForTeamName(r.URL.Query().Get("team"), r.URL.Query().Get("channel")); err != nil {
 		http.Error(w, err.Message, err.StatusCode)
 	} else if _, err := p.API.CreatePost(&model.Post{
 		ChannelId: channel.Id,
