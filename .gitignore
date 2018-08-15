@@ -3,3 +3,7 @@
 /mattermost-jira-plugin.tar.gz
 /dist
 /vendor
+
+
+# Mac
+.DS_Store
