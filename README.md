@@ -10,9 +10,7 @@ Go to the GitHub releases tab and download the latest release for your server ar
 
 ## Developing
 
-Run `make vendor` to install dependencies, then develop like any other Go project: Hack away and use `go test`, `go build`, etc.
-
-If you want to create a fully bundled plugin that will run on a local server, you can use `make mattermost-jira-plugin.tar.gz`.
+Run `make` to build a distributable. Run `make deploy` to deploy to your development Mattermost server.
 
 ## Releasing
 
