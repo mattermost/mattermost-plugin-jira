@@ -134,18 +134,14 @@ func TestPlugin(t *testing.T) {
 			}, (*model.AppError)(nil))
 			api.On("GetUserByUsername", "nottheuser").Return((*model.User)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
 
-			api.On("GetTeamByName", "theteam").Return(&model.Team{
-				Id: "theteamid",
-			}, (*model.AppError)(nil))
-			api.On("GetTeamByName", "nottheteam").Return((*model.Team)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
-
-			api.On("GetChannelByName", "thechannel", "theteamid").Run(func(args mock.Arguments) {
+			api.On("GetChannelByNameForTeamName", "nottheteam", "thechannel").Return((*model.Channel)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
+			api.On("GetChannelByNameForTeamName", "theteam", "notthechannel").Return((*model.Channel)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
+			api.On("GetChannelByNameForTeamName", "theteam", "thechannel").Run(func(args mock.Arguments) {
 				api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, tc.CreatePostError)
 			}).Return(&model.Channel{
 				Id:     "thechannelid",
 				TeamId: "theteamid",
 			}, (*model.AppError)(nil))
-			api.On("GetChannelByName", "notthechannel", "theteamid").Return((*model.Channel)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
 
 			p := Plugin{}
 			p.Enabled = tc.Configuration.Enabled
