@@ -1,9 +1,4 @@
-/coverage.txt
-/plugin.exe
-/mattermost-jira-plugin.tar.gz
-/dist
-/vendor
+bin
+dist
 
-
-# Mac
 .DS_Store
