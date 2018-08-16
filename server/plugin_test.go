@@ -133,8 +133,26 @@ func TestPlugin(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
-			api.On("LogDebug", mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string")).Return(nil)
-			api.On("LogDebug", mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogDebug",
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogError",
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string")).Return(nil)
 
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
 				Id: "theuserid",
