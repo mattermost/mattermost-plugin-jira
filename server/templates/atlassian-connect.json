@@ -20,9 +20,19 @@
     },
     "scopes": [
       "READ",
-      "WRITE"
+      "WRITE",
+      "ACT_AS_USER"
     ],
     "modules": {
+        "generalPages": [
+            {
+              "url": "/connect",
+              "name": {
+              "value": "Connect to Mattermost"
+              },
+              "key": "mattermost-connect"
+            }
+        ],
       "webhooks": [
         {
           "event": "jira:issue_created",

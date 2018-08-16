@@ -2,10 +2,22 @@
 
 
 [[projects]]
+  name = "github.com/andygrunwald/go-jira"
+  packages = ["."]
+  revision = "0298784c4606cdf01e99644da115863c052a737c"
+  version = "v1.5.0"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
+
+[[projects]]
+  name = "github.com/fatih/structs"
+  packages = ["."]
+  revision = "a720dfa8df582c51dee1b36feabb906bde1588bd"
+  version = "v1.0"
 
 [[projects]]
   name = "github.com/golang/protobuf"
@@ -17,6 +29,12 @@
     "ptypes/timestamp"
   ]
   revision = "14aad3d5ea4c323bcd7a2137e735da24a76e814c"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/google/go-querystring"
+  packages = ["query"]
+  revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 
 [[projects]]
   branch = "master"
@@ -87,10 +105,10 @@
   revision = "5c5490133daa8660ec676ca8b096cc27e223beaa"
 
 [[projects]]
-  branch = "master"
   name = "github.com/pkg/errors"
   packages = ["."]
-  revision = "816c9085562cd7ee03e7f8188a1cfd942858cded"
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -113,6 +131,15 @@
   ]
   revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
   version = "v1.2.2"
+
+[[projects]]
+  name = "github.com/trivago/tgo"
+  packages = [
+    "tcontainer",
+    "treflect"
+  ]
+  revision = "315f955fa460a324c1de2f5d576a87c922c8bd93"
+  version = "v1.0.5"
 
 [[projects]]
   name = "go.uber.org/atomic"
@@ -150,6 +177,7 @@
   name = "golang.org/x/net"
   packages = [
     "context",
+    "context/ctxhttp",
     "http/httpguts",
     "http2",
     "http2/hpack",
@@ -158,6 +186,16 @@
     "trace"
   ]
   revision = "a680a1efc54dd51c040b3b5ce4939ea3cf2ea0d1"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/oauth2"
+  packages = [
+    ".",
+    "internal",
+    "jira"
+  ]
+  revision = "3d292e4d0cdc3a0113e6d207bb137145ef1de42f"
 
 [[projects]]
   name = "golang.org/x/sys"
@@ -185,6 +223,20 @@
     "unicode/rangetable"
   ]
   revision = "0605a8320aceb4207a5fb3521281e17ec2075476"
+
+[[projects]]
+  name = "google.golang.org/appengine"
+  packages = [
+    "internal",
+    "internal/base",
+    "internal/datastore",
+    "internal/log",
+    "internal/remote_api",
+    "internal/urlfetch",
+    "urlfetch"
+  ]
+  revision = "b1f26356af11148e710935ed1ac8a7f5702c7612"
+  version = "v1.1.0"
 
 [[projects]]
   name = "google.golang.org/genproto"
@@ -240,6 +292,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e8627466bc4bbecfdbb54a40620ff83d266dde7abf7049c88b6c93d723515ce6"
+  inputs-digest = "81c3784e3d2ff7ea0d69d8c9d0ad84468f6804c8e7e8d1103dac536daba2dcdc"
   solver-name = "gps-cdcl"
   solver-version = 1
