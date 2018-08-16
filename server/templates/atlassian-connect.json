@@ -1,0 +1,42 @@
+{{define "config"}}{
+    "key": "mattermost-jira-plugin",
+    "name": "Mattermost JIRA Plugin",
+    "description": "Add-on for the Mattermost JIRA plugin.",
+    "vendor": {
+      "name": "Mattermost",
+      "url": "https://github.com/mattermost"
+    },
+    "baseUrl": "{{ .BaseURL }}",
+    "links": {
+      "self": "{{ .BaseURL }}/atlassian-connect.json",
+      "homepage": "{{ .BaseURL }}/atlassian-connect.json"
+    },
+    "authentication": {
+      "type": "jwt"
+    },
+    "lifecycle": {
+      "installed": "/installed",
+      "uninstalled": "/uninstalled"
+    },
+    "scopes": [
+      "READ",
+      "WRITE"
+    ],
+    "modules": {
+      "webhooks": [
+        {
+          "event": "jira:issue_created",
+          "url": "/issue_event"
+        },
+        {
+          "event": "jira:issue_deleted",
+          "url": "/issue_event"
+        },
+        {
+          "event": "jira:issue_updated",
+          "url": "/issue_event"
+        }
+      ]
+    }
+  }
+{{ end }}

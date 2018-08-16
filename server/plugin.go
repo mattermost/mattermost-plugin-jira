@@ -3,10 +3,20 @@ package main
 import (
 	"crypto/subtle"
 	"encoding/json"
+	"fmt"
+	"html/template"
+	"io/ioutil"
+	"log"
 	"net/http"
+	"path"
+	"path/filepath"
 
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
+)
+
+const (
+	KEY_SECURITY_CONTEXT = "security_context"
 )
 
 type Plugin struct {
@@ -15,16 +25,86 @@ type Plugin struct {
 	Enabled  bool
 	Secret   string
 	UserName string
+
+	securityContext *SecurityContext
+}
+
+type SecurityContext struct {
+	Key            string `json:"key"`
+	ClientKey      string `json:"clientKey"`
+	PublicKey      string `json:"publicKey"`
+	SharedSecret   string `json:"sharedSecret"`
+	ServerVersion  string `json:"serverVersion"`
+	PluginsVersion string `json:"pluginsVersion"`
+	BaseURL        string `json:"baseUrl"`
+	ProductType    string `json:"productType"`
+	Description    string `json:"description"`
+	EventType      string `json:"eventType"`
 }
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
 	if !p.Enabled || p.Secret == "" || p.UserName == "" {
 		http.Error(w, "This plugin is not configured.", http.StatusForbidden)
 		return
-	} else if r.URL.Path != "/webhook" {
-		http.NotFound(w, r)
+	}
+
+	switch r.URL.Path {
+	case "/webhook":
+		p.serveWebhook(w, r)
 		return
-	} else if r.Method != http.MethodPost {
+	case "/atlassian-connect.json":
+		p.serveAtlassianConnect(w, r)
+		return
+	case "/installed":
+		p.serveInstalled(w, r)
+		return
+	case "/issue_event":
+		p.serveIssueEvent(w, r)
+		return
+	}
+
+	http.NotFound(w, r)
+}
+
+func (p *Plugin) serveAtlassianConnect(w http.ResponseWriter, r *http.Request) {
+	config := p.API.GetConfig()
+	baseURL := *config.ServiceSettings.SiteURL + "/" + path.Join("plugins", PluginId)
+
+	lp := filepath.Join(*config.PluginSettings.Directory, PluginId, "server", "dist", "templates", "atlassian-connect.json")
+	vals := map[string]string{
+		"BaseURL": baseURL,
+	}
+	tmpl, err := template.ParseFiles(lp)
+	if err != nil {
+		fmt.Printf("ERR: %v\n", err)
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	tmpl.ExecuteTemplate(w, "config", vals)
+}
+
+func (p *Plugin) serveInstalled(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Fatalf("Can't read request:%v\n", err)
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	var sc SecurityContext
+	json.Unmarshal(body, &sc)
+
+	p.securityContext = &sc
+
+	p.API.KVSet(KEY_SECURITY_CONTEXT, body)
+
+	json.NewEncoder(w).Encode([]string{"OK"})
+}
+
+func (p *Plugin) serveIssueEvent(w http.ResponseWriter, r *http.Request) {
+}
+
+func (p *Plugin) serveWebhook(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	} else if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(p.Secret)) != 1 {
