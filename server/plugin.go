@@ -89,6 +89,12 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	case "/installed":
 		p.serveInstalled(w, r)
 		return
+	case "/create_issue":
+		p.serveCreateIssue(w, r)
+		return
+	case "/create_issue_metadata":
+		p.serveCreateIssueMetadata(w, r)
+		return
 	}
 
 	http.NotFound(w, r)
@@ -125,6 +131,14 @@ func (p *Plugin) serveUserConnectPage(w http.ResponseWriter, r *http.Request) {
 type JiraUserInfo struct {
 	AccountId string
 	Name      string
+}
+
+type CreateIssue struct {
+	Project     string `json"project"`
+	IssueType   string `json:"type"`
+	Summary     string `json:"summary"`
+	Description string `json:"description"`
+	PostId      string `json:"post_id"`
 }
 
 func (p *Plugin) serveUserConnectComplete(w http.ResponseWriter, r *http.Request) {
@@ -196,6 +210,102 @@ func (p *Plugin) serveInstalled(w http.ResponseWriter, r *http.Request) {
 	p.API.KVSet(KEY_SECURITY_CONTEXT, body)
 
 	json.NewEncoder(w).Encode([]string{"OK"})
+}
+
+func (p *Plugin) serveCreateIssue(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var cr *CreateIssue
+	err := json.NewDecoder(r.Body).Decode(&cr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
+	userID := r.Header.Get("Mattermost-User-ID")
+	if userID == "" {
+		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		return
+	}
+
+	info, err := p.getJiraUserInfo(userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	jiraClient, err := p.getJIRAClientForUser(info.AccountId)
+	if err != nil {
+		http.Error(w, "could not get jira client, err="+err.Error(), 500)
+	}
+
+	issue := &jira.Issue{
+		Fields: &jira.IssueFields{
+			//Reporter: &jira.User{
+			//	Name: reporter.Name,
+			//},
+			Description: cr.Description,
+			Type: jira.IssueType{
+				Name: cr.IssueType,
+			},
+			Project: jira.Project{
+				Key: cr.Project,
+			},
+			Summary: cr.Summary,
+		},
+	}
+
+	created, _, err := jiraClient.Issue.Create(issue)
+	if err != nil {
+		http.Error(w, "could not create the issue on Jira, err="+err.Error(), 500)
+	}
+
+	// In case the post message is different than the description
+	post, err := p.API.GetPost(cr.PostId)
+	if post != nil &&
+		post.UserId == userID &&
+		post.Message != cr.Description &&
+		len(cr.Description) > 0 {
+		post.Message = cr.Description
+		p.API.UpdatePost(post)
+	}
+
+	userBytes, _ := json.Marshal(created)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(userBytes)
+}
+
+func (p *Plugin) serveCreateIssueMetadata(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID := r.Header.Get("Mattermost-User-ID")
+	if userID == "" {
+		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		return
+	}
+
+	info, err := p.getJiraUserInfo(userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	jiraClient, err := p.getJIRAClientForUser(info.AccountId)
+	if err != nil {
+		http.Error(w, "could not get jira client, err="+err.Error(), 500)
+	}
+
+	metadata, _, err := jiraClient.Issue.GetCreateMeta("")
+	if err != nil {
+		http.Error(w, "could not get the create issue metadata from Jira, err="+err.Error(), 500)
+	}
+
+	userBytes, _ := json.Marshal(metadata)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(userBytes)
 }
 
 func (p *Plugin) getJiraUserInfo(userID string) (*JiraUserInfo, error) {
