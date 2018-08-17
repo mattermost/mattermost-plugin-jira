@@ -10,45 +10,52 @@ import (
 
 type Webhook struct {
 	WebhookEvent string
-	Issue        struct {
-		Self   string
-		Key    string
-		Fields struct {
-			Assignee *struct {
-				DisplayName string
-				Name        string
-			}
-			Summary     string
-			Description string
-			Priority    *struct {
-				Id   string
-				Name string
-			}
-			IssueType struct {
-				Name    string
-				IconURL string
-			}
-			Resolution *struct {
-				Id string
-			}
-			Status struct {
-				Id string
-			}
-		}
-	}
-	User struct {
-		Name        string
-		AvatarUrls  map[string]string
-		DisplayName string
-	}
-	Comment struct {
-		Body string
+	Issue        *Issue
+	User         *User
+	Comment      struct {
+		Body   string
+		Author *User
 	}
 	ChangeLog struct {
 		Items []struct {
 			FromString string
 			ToString   string
 			Field      string
+		}
+	}
+}
+
+type User struct {
+	Name        string
+	AccountId   string
+	AvatarUrls  map[string]string
+	DisplayName string
+}
+
+type Issue struct {
+	Self    string
+	Key     string
+	Summary string
+	Fields  struct {
+		Assignee *struct {
+			DisplayName string
+			Name        string
+		}
+		Summary     string
+		Description string
+		Priority    *struct {
+			Id   string
+			Name string
+		}
+		IssueType struct {
+			Name    string
+			IconURL string
+		}
+		Resolution *struct {
+			Id string
+		}
+		Status struct {
+			Id string
 		}
 	}
 }

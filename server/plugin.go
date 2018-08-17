@@ -12,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/mattermost/mattermost-server/mlog"
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
 
@@ -20,8 +21,11 @@ import (
 )
 
 const (
-	KEY_SECURITY_CONTEXT = "security_context"
-	KEY_USER_INFO        = "user_info_"
+	JIRA_USERNAME              = "Jira Plugin"
+	JIRA_ICON_URL              = "https://s3.amazonaws.com/mattermost-plugin-media/jira.jpg"
+	KEY_SECURITY_CONTEXT       = "security_context"
+	KEY_USER_INFO              = "user_info_"
+	KEY_JIRA_USER_TO_MM_USERID = "jira_user_"
 )
 
 type Plugin struct {
@@ -31,6 +35,7 @@ type Plugin struct {
 	Secret   string
 	UserName string
 
+	botUserID       string
 	securityContext *SecurityContext
 }
 
@@ -46,6 +51,17 @@ type SecurityContext struct {
 	Description    string `json:"description"`
 	EventType      string `json:"eventType"`
 	OAuthClientId  string `json:"oauthClientId"`
+}
+
+func (p *Plugin) OnActivate() error {
+	user, err := p.API.GetUserByUsername(p.UserName)
+	if err != nil {
+		mlog.Error(err.Error())
+		return fmt.Errorf("Unable to find user with configured username: %v", p.UserName)
+	}
+
+	p.botUserID = user.Id
+	return nil
 }
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
@@ -72,9 +88,6 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return
 	case "/installed":
 		p.serveInstalled(w, r)
-		return
-	case "/issue_event":
-		p.serveIssueEvent(w, r)
 		return
 	}
 
@@ -111,6 +124,7 @@ func (p *Plugin) serveUserConnectPage(w http.ResponseWriter, r *http.Request) {
 
 type JiraUserInfo struct {
 	AccountId string
+	Name      string
 }
 
 func (p *Plugin) serveUserConnectComplete(w http.ResponseWriter, r *http.Request) {
@@ -127,10 +141,6 @@ func (p *Plugin) serveUserConnectComplete(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	b, _ := json.Marshal(info)
-
-	p.API.KVSet(KEY_USER_INFO+userID, b)
-
 	jiraClient, err := p.getJIRAClientForUser(info.AccountId)
 	if err != nil {
 		http.Error(w, "could not get jira client, err="+err.Error(), 500)
@@ -140,6 +150,13 @@ func (p *Plugin) serveUserConnectComplete(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		http.Error(w, "could not get the user, err="+err.Error(), 500)
 	}
+
+	info.Name = user.Name
+
+	b, _ := json.Marshal(info)
+
+	p.API.KVSet(KEY_USER_INFO+userID, b)
+	p.API.KVSet(KEY_JIRA_USER_TO_MM_USERID+info.Name, []byte(userID))
 
 	userBytes, _ := json.Marshal(user)
 	w.Header().Set("Content-Type", "application/json")
@@ -213,7 +230,7 @@ func (p *Plugin) serveTest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not get jira client, err="+err.Error(), 500)
 	}
 
-	user, _, err := jiraClient.User.GetSelf()
+	user, _, err := jiraClient.Issue.GetCreateMeta("")
 	if err != nil {
 		http.Error(w, "could not get the user, err="+err.Error(), 500)
 	}
@@ -248,7 +265,31 @@ func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, error) {
 	return jira.NewClient(c.Client(context.Background()), c.BaseURL)
 }
 
-func (p *Plugin) serveIssueEvent(w http.ResponseWriter, r *http.Request) {
+func (p *Plugin) CreateBotDMPost(userID, message, postType string) *model.AppError {
+	channel, err := p.API.GetDirectChannel(userID, p.botUserID)
+	if err != nil {
+		mlog.Error("Couldn't get bot's DM channel", mlog.String("user_id", userID))
+		return err
+	}
+
+	post := &model.Post{
+		UserId:    p.botUserID,
+		ChannelId: channel.Id,
+		Message:   message,
+		Type:      postType,
+		Props: map[string]interface{}{
+			"from_webhook":      "true",
+			"override_username": JIRA_USERNAME,
+			"override_icon_url": JIRA_ICON_URL,
+		},
+	}
+
+	if _, err := p.API.CreatePost(post); err != nil {
+		mlog.Error(err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (p *Plugin) serveWebhook(w http.ResponseWriter, r *http.Request) {
@@ -264,26 +305,130 @@ func (p *Plugin) serveWebhook(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&webhook); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-	} else if attachment, err := webhook.SlackAttachment(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	} else if attachment == nil {
 		return
-	} else if r.URL.Query().Get("channel") == "" {
-		http.Error(w, "You must provide a channel.", http.StatusBadRequest)
-	} else if user, err := p.API.GetUserByUsername(p.UserName); err != nil {
-		http.Error(w, err.Message, err.StatusCode)
-	} else if channel, err := p.API.GetChannelByNameForTeamName(r.URL.Query().Get("team"), r.URL.Query().Get("channel")); err != nil {
-		http.Error(w, err.Message, err.StatusCode)
-	} else if _, err := p.API.CreatePost(&model.Post{
-		ChannelId: channel.Id,
-		Type:      model.POST_SLACK_ATTACHMENT,
-		UserId:    user.Id,
-		Props: map[string]interface{}{
-			"from_webhook":  "true",
-			"use_user_icon": "true",
-			"attachments":   []*model.SlackAttachment{attachment},
-		},
-	}); err != nil {
-		http.Error(w, err.Message, err.StatusCode)
+	}
+
+	p.handleNotifications(&webhook)
+
+	/*
+		} else if attachment, err := webhook.SlackAttachment(); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else if attachment == nil {
+			return
+		} else if r.URL.Query().Get("channel") == "" {
+			http.Error(w, "You must provide a channel.", http.StatusBadRequest)
+		} else if user, err := p.API.GetUserByUsername(p.UserName); err != nil {
+			http.Error(w, err.Message, err.StatusCode)
+		} else if channel, err := p.API.GetChannelByNameForTeamName(r.URL.Query().Get("team"), r.URL.Query().Get("channel")); err != nil {
+			http.Error(w, err.Message, err.StatusCode)
+		} else if _, err := p.API.CreatePost(&model.Post{
+			ChannelId: channel.Id,
+			Type:      model.POST_SLACK_ATTACHMENT,
+			UserId:    user.Id,
+			Props: map[string]interface{}{
+				"from_webhook":  "true",
+				"use_user_icon": "true",
+				"attachments":   []*model.SlackAttachment{attachment},
+			},
+		}); err != nil {
+			http.Error(w, err.Message, err.StatusCode)
+		}
+	*/
+}
+
+func (p *Plugin) handleNotifications(w *Webhook) {
+
+	switch w.WebhookEvent {
+	case "jira:issue_updated":
+		p.handleIssueUpdatedNotifications(w)
+	case "comment_created":
+		p.handleCommentCreatedNotifications(w)
+	}
+}
+
+// Notify a user when they are assigned to an existing issue
+func (p *Plugin) handleIssueUpdatedNotifications(w *Webhook) {
+	change := w.ChangeLog.Items[0]
+	if change.Field != "assignee" || change.ToString == "" {
+		return
+	}
+
+	if w.Issue.Fields.Assignee == nil {
+		return
+	}
+
+	assignee := w.Issue.Fields.Assignee.Name
+	if w.User.Name == assignee {
+		return
+	}
+
+	b, _ := p.API.KVGet(KEY_JIRA_USER_TO_MM_USERID + assignee)
+	if b == nil {
+		return
+	}
+
+	userID := string(b)
+	issueURL := getIssueURL(w.Issue)
+	userURL := getUserURL(w.Issue, w.User)
+
+	message := "[%s](%s) assigned you to [%s](%s)"
+
+	p.CreateBotDMPost(userID, fmt.Sprintf(message, w.User.DisplayName, userURL, w.Issue.Key, issueURL), "custom_jira_assigned")
+}
+
+func (p *Plugin) handleCommentCreatedNotifications(w *Webhook) {
+	p.handleCommentMentions(w)
+
+	if w.Issue.Fields.Assignee == nil {
+		return
+	}
+
+	assignee := w.Issue.Fields.Assignee.Name
+	if assignee == w.Comment.Author.Name {
+		return
+	}
+
+	b, _ := p.API.KVGet(KEY_JIRA_USER_TO_MM_USERID + assignee)
+	if b == nil {
+		return
+	}
+
+	userID := string(b)
+	issueURL := getIssueURL(w.Issue)
+	userURL := getUserURL(w.Issue, w.Comment.Author)
+
+	message := "[%s](%s) commented on [%s](%s):\n>%s"
+
+	p.CreateBotDMPost(userID, fmt.Sprintf(message, w.Comment.Author.DisplayName, userURL, w.Issue.Key, issueURL, w.Comment.Body), "custom_jira_comment")
+}
+
+func (p *Plugin) handleCommentMentions(w *Webhook) {
+	mentions := parseJiraUsernamesFromText(w.Comment.Body)
+
+	message := "[%s](%s) mentioned you on [%s](%s):\n>%s"
+	issueURL := getIssueURL(w.Issue)
+
+	for _, username := range mentions {
+		// Don't notify users of their own comments
+		if username == w.Comment.Author.Name {
+			continue
+		}
+
+		// Notifications for issue assignees are handled separately
+		if w.Issue.Fields.Assignee != nil && username == w.Issue.Fields.Assignee.Name {
+			continue
+		}
+
+		fmt.Println(username)
+
+		b, _ := p.API.KVGet(KEY_JIRA_USER_TO_MM_USERID + username)
+		if b == nil {
+			continue
+		}
+
+		userID := string(b)
+		userURL := getUserURL(w.Issue, w.Comment.Author)
+
+		p.CreateBotDMPost(userID, fmt.Sprintf(message, w.Comment.Author.DisplayName, userURL, w.Issue.Key, issueURL, w.Comment.Body), "custom_jira_mention")
 	}
 }

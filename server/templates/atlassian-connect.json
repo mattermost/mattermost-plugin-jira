@@ -32,21 +32,7 @@
               },
               "key": "mattermost-connect"
             }
-        ],
-      "webhooks": [
-        {
-          "event": "jira:issue_created",
-          "url": "/issue_event"
-        },
-        {
-          "event": "jira:issue_deleted",
-          "url": "/issue_event"
-        },
-        {
-          "event": "jira:issue_updated",
-          "url": "/issue_event"
-        }
-      ]
+        ]
     }
   }
 {{ end }}
