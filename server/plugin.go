@@ -17,7 +17,8 @@ import (
 	"github.com/mattermost/mattermost-server/plugin"
 
 	jira "github.com/andygrunwald/go-jira"
-	jwt "golang.org/x/oauth2/jira"
+	jwt "github.com/rbriski/atlassian-jwt"
+	oauth2 "golang.org/x/oauth2/jira"
 )
 
 const (
@@ -362,7 +363,7 @@ func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, error) {
 		p.loadSecurityContext()
 	}
 
-	c := jwt.Config{
+	c := oauth2.Config{
 		BaseURL: p.securityContext.BaseURL,
 		Subject: jiraUser,
 	}
@@ -373,6 +374,21 @@ func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, error) {
 	c.Config.Endpoint.TokenURL = "https://auth.atlassian.io/oauth2/token"
 
 	return jira.NewClient(c.Client(context.Background()), c.BaseURL)
+}
+
+func (p *Plugin) getJIRAClientForServer() (*jira.Client, error) {
+	if p.securityContext == nil {
+		p.loadSecurityContext()
+	}
+
+	c := &jwt.Config{
+		Key:          p.securityContext.Key,
+		ClientKey:    p.securityContext.ClientKey,
+		SharedSecret: p.securityContext.SharedSecret,
+		BaseURL:      p.securityContext.BaseURL,
+	}
+
+	return jira.NewClient(c.Client(), c.BaseURL)
 }
 
 func (p *Plugin) CreateBotDMPost(userID, message, postType string) *model.AppError {
@@ -487,6 +503,10 @@ func (p *Plugin) handleIssueUpdatedNotifications(w *Webhook) {
 }
 
 func (p *Plugin) handleCommentCreatedNotifications(w *Webhook) {
+	if w.Comment.Author.Name == "addon_mattermost-jira-plugin" {
+		return
+	}
+
 	p.handleCommentMentions(w)
 
 	if w.Issue.Fields.Assignee == nil {
@@ -529,8 +549,6 @@ func (p *Plugin) handleCommentMentions(w *Webhook) {
 			continue
 		}
 
-		fmt.Println(username)
-
 		b, _ := p.API.KVGet(KEY_JIRA_USER_TO_MM_USERID + username)
 		if b == nil {
 			continue
@@ -540,5 +558,49 @@ func (p *Plugin) handleCommentMentions(w *Webhook) {
 		userURL := getUserURL(w.Issue, w.Comment.Author)
 
 		p.CreateBotDMPost(userID, fmt.Sprintf(message, w.Comment.Author.DisplayName, userURL, w.Issue.Key, issueURL, w.Comment.Body), "custom_jira_mention")
+	}
+}
+
+func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
+	issues := parseJiraIssueFromText(post.Message)
+	if len(issues) == 0 {
+		return
+	}
+
+	jiraClient, _ := p.getJIRAClientForServer()
+
+	config := p.API.GetConfig()
+
+	channel, _ := p.API.GetChannel(post.ChannelId)
+	if channel == nil {
+		return
+	}
+
+	if channel.Type != model.CHANNEL_OPEN {
+		return
+	}
+
+	team, _ := p.API.GetTeam(channel.TeamId)
+	if team == nil {
+		return
+	}
+
+	user, _ := p.API.GetUser(post.UserId)
+	if user == nil {
+		return
+	}
+
+	for _, issue := range issues {
+		permalink := *config.ServiceSettings.SiteURL + "/" + team.Name + "/pl/" + post.Id
+
+		comment := &jira.Comment{
+			Body: fmt.Sprintf("%s mentioned this ticket in Mattermost:\n{quote}\n%s\n{quote}\n\n[View message in Mattermost|%s]", user.Username, post.Message, permalink),
+		}
+
+		_, resp, err := jiraClient.Issue.AddComment(issue, comment)
+		if err != nil {
+			fmt.Println(resp.StatusCode)
+			fmt.Println(err.Error())
+		}
 	}
 }

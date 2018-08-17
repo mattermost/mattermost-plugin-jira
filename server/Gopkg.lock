@@ -14,6 +14,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
+
+[[projects]]
   name = "github.com/fatih/structs"
   packages = ["."]
   revision = "a720dfa8df582c51dee1b36feabb906bde1588bd"
@@ -115,6 +121,12 @@
   packages = ["difflib"]
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/rbriski/atlassian-jwt"
+  packages = ["."]
+  revision = "7bb4ae273058ad8c9e864806e9a3673cc334f7ef"
 
 [[projects]]
   name = "github.com/stretchr/objx"
@@ -292,6 +304,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "81c3784e3d2ff7ea0d69d8c9d0ad84468f6804c8e7e8d1103dac536daba2dcdc"
+  inputs-digest = "e95eaccd310e5290cacc219c9bc94e694f69831dac2c79e174fc17d34a4ac48e"
   solver-name = "gps-cdcl"
   solver-version = 1
