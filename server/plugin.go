@@ -24,6 +24,7 @@ import (
 	"github.com/dghubble/oauth1"
 	jwt "github.com/rbriski/atlassian-jwt"
 	oauth2 "golang.org/x/oauth2/jira"
+	"bytes"
 )
 
 const (
@@ -369,6 +370,21 @@ func (p *Plugin) serveCreateIssue(w http.ResponseWriter, r *http.Request) {
 		len(cr.Description) > 0 {
 		post.Message = cr.Description
 		p.API.UpdatePost(post)
+	}
+
+	if post != nil && len(post.FileIds) > 0 {
+		go func() {
+			for _, fileId := range post.FileIds {
+				info, err := p.API.GetFileInfo(fileId)
+				if err == nil {
+					byteData, err := p.API.ReadFileAtPath(info.Path)
+					if err != nil {
+						return
+					}
+					jiraClient.Issue.PostAttachment(created.ID, bytes.NewReader(byteData), info.Name)
+				}
+			}
+		}()
 	}
 
 	userBytes, _ := json.Marshal(created)
