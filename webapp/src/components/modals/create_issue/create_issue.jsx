@@ -107,7 +107,11 @@ export default class CreateIssueModal extends PureComponent {
         return [];
     };
 
-    handleCreate = () => {
+    handleCreate = (e) => {
+        if (e && e.preventDefault) {
+            e.preventDefault();
+        }
+
         const {create, post} = this.props;
         const {fields} = this.state;
 
@@ -123,7 +127,7 @@ export default class CreateIssueModal extends PureComponent {
                 this.setState({error: created.error.message, submitting: false});
                 return;
             }
-            this.handleClose();
+            this.handleClose(e);
         })
     };
 

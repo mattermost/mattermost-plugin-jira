@@ -339,6 +339,27 @@ func (p *Plugin) serveCreateIssue(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not get jira client, err="+err.Error(), 500)
 	}
 
+	// Lets add a permalink to the post in the Jira Description
+	description := cr.Fields.Description
+	post, _ := p.API.GetPost(cr.PostId)
+	if channel, _ := p.API.GetChannel(post.ChannelId); channel != nil {
+		if team, _ := p.API.GetTeam(channel.TeamId); team != nil {
+			config := p.API.GetConfig()
+			baseURL := *config.ServiceSettings.SiteURL
+			permalink := fmt.Sprintf("%v/%v/pl/%v",
+				baseURL,
+				team.Name,
+				cr.PostId,
+			)
+
+			if len(cr.Fields.Description) > 0 {
+				cr.Fields.Description += fmt.Sprintf("\n%v", permalink)
+			} else {
+				cr.Fields.Description = permalink
+			}
+		}
+	}
+
 	issue := &jira.Issue{
 		Fields: &cr.Fields,
 	}
@@ -349,12 +370,11 @@ func (p *Plugin) serveCreateIssue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// In case the post message is different than the description
-	post, err := p.API.GetPost(cr.PostId)
 	if post != nil &&
 		post.UserId == userID &&
-		post.Message != cr.Fields.Description &&
-		len(cr.Fields.Description) > 0 {
-		post.Message = cr.Fields.Description
+		post.Message != description &&
+		len(description) > 0 {
+		post.Message = description
 		p.API.UpdatePost(post)
 	}
 
@@ -372,6 +392,15 @@ func (p *Plugin) serveCreateIssue(w http.ResponseWriter, r *http.Request) {
 			}
 		}()
 	}
+
+	// Reply to the post with the issue link that was created
+	reply := &model.Post{
+		Message: fmt.Sprintf("Created a Jira issue %v/browse/%v", p.securityContext.BaseURL, created.Key),
+		ChannelId: post.ChannelId,
+		RootId: cr.PostId,
+		UserId: userID,
+	}
+	p.API.CreatePost(reply)
 
 	userBytes, _ := json.Marshal(created)
 	w.Header().Set("Content-Type", "application/json")
