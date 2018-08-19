@@ -14,6 +14,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/dghubble/oauth1"
+  packages = ["."]
+  revision = "70562a5920ad9b6ff03ef697c0f90ae569abbd2b"
+  version = "v0.4.0"
+
+[[projects]]
   name = "github.com/dgrijalva/jwt-go"
   packages = ["."]
   revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
@@ -304,6 +310,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e95eaccd310e5290cacc219c9bc94e694f69831dac2c79e174fc17d34a4ac48e"
+  inputs-digest = "f980c14521640e616e719097bacb89f5ed372645c3c2ca7c5baa8f8b9f9df8a8"
   solver-name = "gps-cdcl"
   solver-version = 1

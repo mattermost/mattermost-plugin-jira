@@ -2,8 +2,12 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/subtle"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -17,6 +21,7 @@ import (
 	"github.com/mattermost/mattermost-server/plugin"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/dghubble/oauth1"
 	jwt "github.com/rbriski/atlassian-jwt"
 	oauth2 "golang.org/x/oauth2/jira"
 )
@@ -27,6 +32,8 @@ const (
 	KEY_SECURITY_CONTEXT       = "security_context"
 	KEY_USER_INFO              = "user_info_"
 	KEY_JIRA_USER_TO_MM_USERID = "jira_user_"
+	KEY_RSA                    = "rsa_key"
+	KEY_OAUTH1_REQUEST         = "oauth1_request_"
 )
 
 type Plugin struct {
@@ -35,9 +42,12 @@ type Plugin struct {
 	Enabled  bool
 	Secret   string
 	UserName string
+	JiraURL  string
 
 	botUserID       string
 	securityContext *SecurityContext
+	rsaKey          *rsa.PrivateKey
+	oauth1Config    *oauth1.Config
 }
 
 type SecurityContext struct {
@@ -61,8 +71,47 @@ func (p *Plugin) OnActivate() error {
 		return fmt.Errorf("Unable to find user with configured username: %v", p.UserName)
 	}
 
+	p.API.RegisterCommand(getCommand())
+
 	p.botUserID = user.Id
+	p.rsaKey = p.getRSAKey()
+
+	p.oauth1Config = &oauth1.Config{
+		ConsumerKey:    "OauthKey",
+		ConsumerSecret: "dont_care",
+		CallbackURL:    *p.API.GetConfig().ServiceSettings.SiteURL + "/plugins/jira/oauth/complete",
+		Endpoint: oauth1.Endpoint{
+			RequestTokenURL: p.JiraURL + "/plugins/servlet/oauth/request-token",
+			AuthorizeURL:    p.JiraURL + "/plugins/servlet/oauth/authorize",
+			AccessTokenURL:  p.JiraURL + "/plugins/servlet/oauth/access-token",
+		},
+		Signer: &oauth1.RSASigner{PrivateKey: p.rsaKey},
+	}
+
 	return nil
+}
+
+func (p *Plugin) getRSAKey() *rsa.PrivateKey {
+	b, _ := p.API.KVGet(KEY_RSA)
+	if b != nil {
+		var key rsa.PrivateKey
+		if err := json.Unmarshal(b, &key); err != nil {
+			fmt.Println(err.Error())
+			return nil
+		}
+		return &key
+	}
+
+	key, err := rsa.GenerateKey(rand.Reader, 1024)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil
+	}
+
+	b, _ = json.Marshal(key)
+	p.API.KVSet(KEY_RSA, b)
+
+	return key
 }
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
@@ -75,11 +124,14 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	case "/test":
 		p.serveTest(w, r)
 		return
-	case "/connect":
-		p.serveUserConnectPage(w, r)
+	case "/public-key":
+		p.servePublicKey(w, r)
 		return
-	case "/connect/complete":
-		p.serveUserConnectComplete(w, r)
+	case "/oauth/connect":
+		p.serveOAuthRequest(w, r)
+		return
+	case "/oauth/complete":
+		p.serveOAuthComplete(w, r)
 		return
 	case "/webhook":
 		p.serveWebhook(w, r)
@@ -101,37 +153,120 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	http.NotFound(w, r)
 }
 
-func (p *Plugin) serveUserConnectPage(w http.ResponseWriter, r *http.Request) {
-	jiraURL := r.URL.Query().Get("xdm_e")
+func (p *Plugin) serveOAuthRequest(w http.ResponseWriter, r *http.Request) {
+	requestToken, requestSecret, err := p.oauth1Config.RequestToken()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	config := p.API.GetConfig()
-	completeURL := *config.ServiceSettings.SiteURL + "/" + path.Join("plugins", PluginId, "connect", "complete")
+	if err := p.API.KVSet(KEY_OAUTH1_REQUEST+requestToken, []byte(requestSecret)); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	authURL, err := p.oauth1Config.AuthorizationURL(requestToken)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, authURL.String(), http.StatusFound)
+}
+
+func (p *Plugin) serveOAuthComplete(w http.ResponseWriter, r *http.Request) {
+	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	requestSecret := ""
+	if b, err := p.API.KVGet(KEY_OAUTH1_REQUEST + requestToken); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	} else {
+		requestSecret = string(b)
+	}
+
+	p.API.KVDelete(KEY_OAUTH1_REQUEST + requestToken)
+
+	userID := r.Header.Get("Mattermost-User-ID")
+	if userID == "" {
+		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		return
+	}
+
+	accessToken, accessSecret, err := p.oauth1Config.AccessToken(requestToken, requestSecret, verifier)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	token := oauth1.NewToken(accessToken, accessSecret)
+	httpClient := p.oauth1Config.Client(oauth1.NoContext, token)
+
+	info := &JiraUserInfo{}
+
+	jiraClient, err := jira.NewClient(httpClient, p.JiraURL)
+	if err != nil {
+		http.Error(w, "could not get jira client, err="+err.Error(), 500)
+	}
+
+	req, _ := jiraClient.NewRequest("GET", "rest/api/2/myself", nil)
+
+	data := map[string]interface{}{}
+	_, err = jiraClient.Do(req, &data)
+	if err != nil {
+		http.Error(w, "could not get the user, err="+err.Error(), 500)
+	}
+
+	info.AccountId = data["accountId"].(string)
+	info.Name = data["name"].(string)
+
+	b, _ := json.Marshal(info)
+
+	p.API.KVSet(KEY_USER_INFO+userID, b)
+	p.API.KVSet(KEY_JIRA_USER_TO_MM_USERID+info.Name, []byte(userID))
 
 	html := `
-	<!DOCTYPE html>
-	<html>
-		<head>
-			<script src="%s/atlassian-connect/all.js"></script>
-			<script>
-				AP.getCurrentUser(function(user){
-					console.log("user id:", user.atlassianAccountId);
-					window.open("%s?account_id=" + user.atlassianAccountId);
-				});
-			</script>
-		</head>
-		<body>
-			<p>From the Mattermost JIRA plugin.</p>
-		</body>
-	</html>
-	`
+<!DOCTYPE html>
+<html>
+	<head>
+		<script>
+			window.close();
+		</script>
+	</head>
+	<body>
+		<p>Completed connecting to JIRA.</p>
+	</body>
+</html>
+`
 
 	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(fmt.Sprintf(html, jiraURL, completeURL)))
+	w.Write([]byte(html))
 }
 
 type JiraUserInfo struct {
 	AccountId string
 	Name      string
+}
+
+func (p *Plugin) servePublicKey(w http.ResponseWriter, r *http.Request) {
+
+	b, err := x509.MarshalPKIXPublicKey(&p.rsaKey.PublicKey)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	pemkey := &pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: b,
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write(pem.EncodeToMemory(pemkey))
 }
 
 type CreateIssue struct {
@@ -140,42 +275,6 @@ type CreateIssue struct {
 	Summary     string `json:"summary"`
 	Description string `json:"description"`
 	PostId      string `json:"post_id"`
-}
-
-func (p *Plugin) serveUserConnectComplete(w http.ResponseWriter, r *http.Request) {
-	userID := r.Header.Get("Mattermost-User-ID")
-	if userID == "" {
-		http.Error(w, "Not authorized", http.StatusUnauthorized)
-		return
-	}
-
-	info := &JiraUserInfo{AccountId: r.URL.Query().Get("account_id")}
-
-	if info.AccountId == "" {
-		http.Error(w, "Missing account_id", http.StatusBadRequest)
-		return
-	}
-
-	jiraClient, err := p.getJIRAClientForUser(info.AccountId)
-	if err != nil {
-		http.Error(w, "could not get jira client, err="+err.Error(), 500)
-	}
-
-	user, _, err := jiraClient.User.GetSelf()
-	if err != nil {
-		http.Error(w, "could not get the user, err="+err.Error(), 500)
-	}
-
-	info.Name = user.Name
-
-	b, _ := json.Marshal(info)
-
-	p.API.KVSet(KEY_USER_INFO+userID, b)
-	p.API.KVSet(KEY_JIRA_USER_TO_MM_USERID+info.Name, []byte(userID))
-
-	userBytes, _ := json.Marshal(user)
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(userBytes)
 }
 
 func (p *Plugin) serveAtlassianConnect(w http.ResponseWriter, r *http.Request) {
