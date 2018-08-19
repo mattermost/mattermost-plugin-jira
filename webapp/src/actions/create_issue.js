@@ -24,7 +24,7 @@ export const getCreateIssueMetadata = () => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            const data = await doFetch(`${baseUrl}/create_issue_metadata`, {
+            const data = await doFetch(`${baseUrl}/create-issue-metadata`, {
                 method: 'get',
             });
 
@@ -39,7 +39,7 @@ export const createIssue = (payload) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            const data = await doFetch(`${baseUrl}/create_issue`, {
+            const data = await doFetch(`${baseUrl}/create-issue`, {
                 method: 'post',
                 body: JSON.stringify(payload),
             });

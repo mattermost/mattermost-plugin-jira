@@ -9,16 +9,19 @@ import DropDown from 'components/settings/dropdown';
 import FormButton from 'components/form_button';
 import Input from 'components/settings/input';
 import Loading from 'components/loading';
+import MultiSelect from 'components/settings/multiselect';
 
 const initialState = {
     submitting:false,
     metadata: null,
-    issue: {
+    fields: {
         description: '',
-        fields: [],
-        project: '',
-        summary: '',
-        type: '',
+        project: {
+            key: ''
+        },
+        issuetype: {
+            name: ''
+        }
     },
     error: null,
 };
@@ -47,7 +50,7 @@ export default class CreateIssueModal extends PureComponent {
 
     getMetadata = (description) => {
         const {getMetadata} = this.props;
-        const {issue} = this.state;
+        const {fields} = this.state;
         getMetadata().then((meta) => {
             if (meta.error) {
                 this.setState({error: meta.error.message});
@@ -55,45 +58,67 @@ export default class CreateIssueModal extends PureComponent {
             }
 
             console.log('create meta', meta.data);
-            const updateIssue = {
-                ...issue,
-                description,
+            const nFields = {
+                ...fields,
             };
 
+            nFields.description = description;
             if (meta.data && meta.data.projects && meta.data.projects.length) {
                 const pr = meta.data.projects[0];
-                updateIssue.project = pr.key;
-                updateIssue.type = pr.issuetypes[0].name
+                nFields.project.key = pr.key;
+                nFields.issuetype.name = pr.issuetypes[0].name
             }
             this.setState({
                 metadata: meta.data,
-                issue: updateIssue,
+                fields: nFields,
             });
         })
     };
 
     getProjectMeta = (projectKey) => {
         const {metadata} = this.state;
-        return metadata.projects.find((p) => p.key === projectKey) || [];
+        if (metadata && metadata.projects) {
+            return metadata.projects.find((p) => p.key === projectKey) || [];
+        }
+
+        return [];
     };
 
     getProjectIssueTypes = (projectKey) => {
         const project = this.getProjectMeta(projectKey);
-        return project.issuetypes || [];
+        if (project.issuetypes) {
+            return project.issuetypes.filter((i) => !i.subtask);
+        }
+        return [];
+    };
+
+    getFields = (projectKey, issueType) => {
+        if (projectKey && issueType) {
+            const issues = this.getProjectIssueTypes(projectKey);
+            const issue = issues.find((i) => i.name === issueType);
+            if (issue) {
+                return Object.values(issue.fields).filter((f) => {
+                    return (f.required || f.key === 'description') &&
+                        f.key !== 'project' && f.key !== 'issuetype' && f.key !== 'reporter';
+                });
+            }
+        }
+
+        return [];
     };
 
     handleCreate = () => {
         const {create, post} = this.props;
-        const {issue} = this.state;
+        const {fields} = this.state;
 
-        const data = {
+        const issue = {
             post_id: post.id,
-            ...issue,
+            fields,
         };
 
         this.setState({submitting: true});
 
-        create(data).then((created) => {
+        create(issue).then((created) => {
             if (created.error) {
                 this.setState({error: created.error.message, submitting: false});
                 return;
@@ -112,66 +137,133 @@ export default class CreateIssueModal extends PureComponent {
 
     handleDescriptionChange = (e) => {
         const description = e.target.value;
-        const {issue} = this.state;
-        const updateIssue = {
-            ...issue,
+        const {fields} = this.state;
+        const nFields = {
+            ...fields,
             description,
         };
 
-        this.setState({issue: updateIssue});
+        this.setState({fields: nFields});
     };
 
     handleSettingChange = (id, value) => {
-        const {issue} = this.state;
-        const updateIssue = {...issue};
+        const {description, project} = this.state.fields;
         switch(id) {
-        case 'selectProject':
-            updateIssue.project = value;
+        case 'selectProject': {
+            const fields = {
+                description,
+                project: {
+                    key: value,
+                }
+            };
             const issueTypes = this.getProjectIssueTypes(value);
-            updateIssue.type = issueTypes.length && issueTypes[0].name;
-            this.setState({issue: updateIssue});
+            fields.issuetype = {
+                name: issueTypes.length && issueTypes[0].name,
+            };
+            this.setState({fields});
             break;
-        case 'selectType':
-            updateIssue.type = value;
-            this.setState({issue: updateIssue});
+        }
+        case 'selectType': {
+            const fields = {
+                description,
+                project,
+                issuetype: {
+                    name: value,
+                },
+            };
+            this.setState({fields});
             break;
-        case 'description':
-            updateIssue.description = value;
-            this.setState({issue: updateIssue});
+        }
+        default: {
+            const nFields = {...this.state.fields};
+            nFields[id] = value;
+            this.setState({fields: nFields});
             break;
-        case 'summary':
-            updateIssue.summary = value;
-            this.setState({issue: updateIssue});
-            break;
+        }
         }
     };
 
-    canSubmit = () => {
-        const {issue, metadata, submitting} = this.state;
-        const {description, project, type, summary} = issue;
+    renderFields = () => {
+        const {fields} = this.state;
+        const fieldsToRender = this.getFields(fields.project.key, fields.issuetype.name);
 
-        return project && type && description &&
-            summary && metadata && !submitting;
+        return fieldsToRender.map((f) => {
+            if (f.key === 'description') {
+                return (
+                    <Input
+                        key={`${fields.issuetype.name}-${f.key}`}
+                        id={f.key}
+                        label={f.name}
+                        type='textarea'
+                        value={fields[f.key]}
+                        onChange={this.handleSettingChange}
+                        required={f.required}
+                    />
+                )
+            }
+
+            if (f.schema.type === 'string') {
+                return (
+                    <Input
+                        key={`${fields.issuetype.name}-${f.key}`}
+                        id={f.key}
+                        label={f.name}
+                        value={fields[f.key]}
+                        onChange={this.handleSettingChange}
+                        required={f.required}
+                    />
+                );
+            }
+
+            let value;
+            if (f.hasDefaultValue && !fields[f.key]) {
+                value = f.defaultValue && f.defaultValue.name;
+            } else {
+                value = fields[f.key]
+            }
+
+            if (f.allowedValues && f.allowedValues.length) {
+                const options = f.allowedValues.map((o) => ({value: o.name, text: o.name}));
+
+                return (
+                    <MultiSelect
+                        key={`${fields.issuetype.name}-${f.key}`}
+                        id={f.key}
+                        label={f.name}
+                        options={options}
+                        selected={value && value.map((v) => v.name)}
+                        required={f.required}
+                        onChange={this.handleSettingChange}
+                    />
+                );
+            }
+
+            return null;
+        });
     };
 
     render() {
         const {post, visible, theme} = this.props;
-        const {issue, error, metadata, submitting} = this.state;
+        const {fields, error, metadata, submitting} = this.state;
         const style = getStyle(theme);
+
+        if (!visible) {
+            return null;
+        }
 
         let component;
         if (error) {
             console.error('render error', error);
         }
 
-        if (!post || !metadata) {
+        if (!post || !metadata || !fields.project.key) {
             component =  <Loading/>;
         } else {
             const projectsOption = (
                 <DropDown
                     id='selectProject'
                     values={metadata.projects.map((p) => ({value: p.key, text: p.name}))}
-                    value={issue.project}
+                    value={fields.project.key}
                     label='Project'
                     required={true}
                     onChange={this.handleSettingChange}
@@ -181,8 +273,8 @@ export default class CreateIssueModal extends PureComponent {
             const issueTypes = (
                 <DropDown
                     id='selectType'
-                    values={this.getProjectIssueTypes(issue.project).map((i) => ({value: i.name, text: i.name}))}
-                    value={issue.type}
+                    values={this.getProjectIssueTypes(fields.project.key).map((i) => ({value: i.name, text: i.name}))}
+                    value={fields.issuetype.name}
                     label='Issue Type'
                     required={true}
                     onChange={this.handleSettingChange}
@@ -193,21 +285,7 @@ export default class CreateIssueModal extends PureComponent {
                 <div style={style.modal}>
                     {projectsOption}
                     {issueTypes}
-                    <Input
-                        id='summary'
-                        label='Summary'
-                        value={issue.summary}
-                        onChange={this.handleSettingChange}
-                        required={true}
-                    />
-                    <Input
-                        id='description'
-                        label='Description'
-                        type='textarea'
-                        value={issue.description}
-                        onChange={this.handleSettingChange}
-                        required={true}
-                    />
+                    {this.renderFields()}
                     <br/>
                 </div>
             );
@@ -237,7 +315,6 @@ export default class CreateIssueModal extends PureComponent {
                             onClick={this.handleClose}
                         />
                         <FormButton
-                            disabled={!this.canSubmit()}
                             btnClass='btn btn-primary'
                             saving={submitting}
                             onClick={this.handleCreate}

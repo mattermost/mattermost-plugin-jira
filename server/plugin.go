@@ -20,11 +20,12 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
 
+	"bytes"
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/dghubble/oauth1"
 	jwt "github.com/rbriski/atlassian-jwt"
 	oauth2 "golang.org/x/oauth2/jira"
-	"bytes"
+	"github.com/google/go-querystring/query"
 )
 
 const (
@@ -143,10 +144,10 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	case "/installed":
 		p.serveInstalled(w, r)
 		return
-	case "/create_issue":
+	case "/create-issue":
 		p.serveCreateIssue(w, r)
 		return
-	case "/create_issue_metadata":
+	case "/create-issue-metadata":
 		p.serveCreateIssueMetadata(w, r)
 		return
 	}
@@ -253,6 +254,11 @@ type JiraUserInfo struct {
 	Name      string
 }
 
+type CreateIssue struct {
+	PostId string           `json:"post_id"`
+	Fields jira.IssueFields `json:"fields"`
+}
+
 func (p *Plugin) servePublicKey(w http.ResponseWriter, r *http.Request) {
 
 	b, err := x509.MarshalPKIXPublicKey(&p.rsaKey.PublicKey)
@@ -268,14 +274,6 @@ func (p *Plugin) servePublicKey(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write(pem.EncodeToMemory(pemkey))
-}
-
-type CreateIssue struct {
-	Project     string `json"project"`
-	IssueType   string `json:"type"`
-	Summary     string `json:"summary"`
-	Description string `json:"description"`
-	PostId      string `json:"post_id"`
 }
 
 func (p *Plugin) serveAtlassianConnect(w http.ResponseWriter, r *http.Request) {
@@ -336,25 +334,13 @@ func (p *Plugin) serveCreateIssue(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	jiraClient, err := p.getJIRAClientForUser(info.AccountId)
+	jiraClient, _, err := p.getJIRAClientForUser(info.AccountId)
 	if err != nil {
 		http.Error(w, "could not get jira client, err="+err.Error(), 500)
 	}
 
 	issue := &jira.Issue{
-		Fields: &jira.IssueFields{
-			//Reporter: &jira.User{
-			//	Name: reporter.Name,
-			//},
-			Description: cr.Description,
-			Type: jira.IssueType{
-				Name: cr.IssueType,
-			},
-			Project: jira.Project{
-				Key: cr.Project,
-			},
-			Summary: cr.Summary,
-		},
+		Fields: &cr.Fields,
 	}
 
 	created, _, err := jiraClient.Issue.Create(issue)
@@ -366,9 +352,9 @@ func (p *Plugin) serveCreateIssue(w http.ResponseWriter, r *http.Request) {
 	post, err := p.API.GetPost(cr.PostId)
 	if post != nil &&
 		post.UserId == userID &&
-		post.Message != cr.Description &&
-		len(cr.Description) > 0 {
-		post.Message = cr.Description
+		post.Message != cr.Fields.Description &&
+		len(cr.Fields.Description) > 0 {
+		post.Message = cr.Fields.Description
 		p.API.UpdatePost(post)
 	}
 
@@ -409,19 +395,35 @@ func (p *Plugin) serveCreateIssueMetadata(w http.ResponseWriter, r *http.Request
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	jiraClient, err := p.getJIRAClientForUser(info.AccountId)
+	jiraClient, client, err := p.getJIRAClientForUser(info.AccountId)
 	if err != nil {
 		http.Error(w, "could not get jira client, err="+err.Error(), 500)
 	}
 
-	metadata, _, err := jiraClient.Issue.GetCreateMeta("")
-	if err != nil {
-		http.Error(w, "could not get the create issue metadata from Jira, err="+err.Error(), 500)
+	var metadata []byte
+	options := &jira.GetQueryOptions{ProjectKeys: "", Expand: "projects.issuetypes.fields"}
+	req, _ := jiraClient.NewRawRequest("GET", "rest/api/2/issue/createmeta", nil)
+
+	if options != nil {
+		q, err := query.Values(options)
+		if err != nil {
+			http.Error(w, "could not get the create issue metadata from Jira, err="+err.Error(), 500)
+			return
+		}
+		req.URL.RawQuery = q.Encode()
 	}
 
-	userBytes, _ := json.Marshal(metadata)
+	httpResp, err := client.Do(req)
+	if err != nil {
+		http.Error(w, "could not get the create issue metadata from Jira in request, err="+err.Error(), 500)
+		return
+	} else {
+		defer httpResp.Body.Close()
+		metadata, _ = ioutil.ReadAll(httpResp.Body)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(userBytes)
+	w.Write(metadata)
 }
 
 func (p *Plugin) getJiraUserInfo(userID string) (*JiraUserInfo, error) {
@@ -451,7 +453,7 @@ func (p *Plugin) serveTest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	jiraClient, err := p.getJIRAClientForUser(info.AccountId)
+	jiraClient, _, err := p.getJIRAClientForUser(info.AccountId)
 	if err != nil {
 		http.Error(w, "could not get jira client, err="+err.Error(), 500)
 	}
@@ -473,7 +475,7 @@ func (p *Plugin) loadSecurityContext() {
 	p.securityContext = &sc
 }
 
-func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, error) {
+func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, *http.Client, error) {
 	if p.securityContext == nil {
 		p.loadSecurityContext()
 	}
@@ -488,7 +490,10 @@ func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, error) {
 	c.Config.Endpoint.AuthURL = "https://auth.atlassian.io"
 	c.Config.Endpoint.TokenURL = "https://auth.atlassian.io/oauth2/token"
 
-	return jira.NewClient(c.Client(context.Background()), c.BaseURL)
+	httpClient := c.Client(context.Background())
+
+	jiraClient, err := jira.NewClient(httpClient, c.BaseURL)
+	return jiraClient, httpClient, err
 }
 
 func (p *Plugin) getJIRAClientForServer() (*jira.Client, error) {
