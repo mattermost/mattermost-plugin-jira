@@ -2,7 +2,7 @@
 
 This plugin will create a webhook that your JIRA server can use to post messages to Mattermost when issues are created:
 
-<img src="screenshot.png" width="667" height="394" />
+<img src="images/screenshot.png" width="667" height="394" />
 
 ## Installation
 
