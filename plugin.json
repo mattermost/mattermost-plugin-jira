@@ -1,0 +1,35 @@
+{
+    "id": "com.mattermost.jira",
+    "name": "Jira",
+    "description": "Receives webhook events from JIRA and makes Mattermost posts for them.",
+    "version": "1.0.2",
+    "server": {
+        "executables": {
+            "linux-amd64": "server/dist/plugin-linux-amd64",
+            "darwin-amd64": "server/dist/plugin-darwin-amd64",
+            "windows-amd64": "server/dist/plugin-windows-amd64.exe"
+        },
+        "executable": ""
+    },
+    "settings_schema": {
+        "header": "",
+        "footer": "Use this webhook URL to set up the JIRA integration. See [documentation](https://about.mattermost.com/default-jira-plugin) to learn more.\n\n`https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL`",
+        "settings": [{
+            "key": "Enabled",
+            "display_name": "Enable JIRA",
+            "type": "bool",
+            "help_text": "When true, you can configure JIRA webhooks to post message in Mattermost. To help combat phishing attacks, all posts are labelled by a BOT tag."
+        }, {
+            "key": "UserName",
+            "display_name": "User",
+            "type": "username",
+            "help_text": "Select the username that this integration is attached to."
+        }, {
+            "key": "Secret",
+            "display_name": "Secret",
+            "type": "generated",
+            "help_text": "This secret is used to authenticate to Mattermost.",
+            "regenerate_help_text": "Regenerates the secret for the webhook URL endpoint. Regenerating the secret invalidates your existing JIRA integrations."
+        }]
+    }
+}
