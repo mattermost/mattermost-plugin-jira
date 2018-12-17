@@ -2,7 +2,7 @@
     "id": "jira",
     "name": "Jira",
     "description": "Receives webhook events from JIRA and makes Mattermost posts for them.",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "server": {
         "executables": {
             "linux-amd64": "server/dist/plugin-linux-amd64",
