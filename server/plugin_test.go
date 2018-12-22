@@ -147,9 +147,11 @@ func TestPlugin(t *testing.T) {
 			}, (*model.AppError)(nil))
 
 			p := Plugin{}
-			p.Enabled = tc.Configuration.Enabled
-			p.Secret = tc.Configuration.Secret
-			p.UserName = tc.Configuration.UserName
+			p.setConfiguration(&configuration{
+				Enabled:  tc.Configuration.Enabled,
+				Secret:   tc.Configuration.Secret,
+				UserName: tc.Configuration.UserName,
+			})
 			p.SetAPI(api)
 
 			w := httptest.NewRecorder()
