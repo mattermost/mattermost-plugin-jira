@@ -7,6 +7,7 @@ import (
 	"crypto/subtle"
 	"encoding/json"
 	"net/http"
+	"sync"
 
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
@@ -15,13 +16,17 @@ import (
 type Plugin struct {
 	plugin.MattermostPlugin
 
-	Enabled  bool
-	Secret   string
-	UserName string
+	// configurationLock synchronizes access to the configuration.
+	configurationLock sync.RWMutex
+
+	// configuration is the active plugin configuration. Consult getConfiguration and
+	// setConfiguration for usage.
+	configuration *configuration
 }
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	if !p.Enabled || p.Secret == "" || p.UserName == "" {
+	config := p.getConfiguration()
+	if !config.Enabled || config.Secret == "" || config.UserName == "" {
 		http.Error(w, "This plugin is not configured.", http.StatusForbidden)
 		return
 	} else if r.URL.Path != "/webhook" {
@@ -30,7 +35,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	} else if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
-	} else if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(p.Secret)) != 1 {
+	} else if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(config.Secret)) != 1 {
 		http.Error(w, "You must provide the configured secret.", http.StatusForbidden)
 		return
 	}
@@ -45,7 +50,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return
 	} else if r.URL.Query().Get("channel") == "" {
 		http.Error(w, "You must provide a channel.", http.StatusBadRequest)
-	} else if user, err := p.API.GetUserByUsername(p.UserName); err != nil {
+	} else if user, err := p.API.GetUserByUsername(config.UserName); err != nil {
 		http.Error(w, err.Message, err.StatusCode)
 	} else if channel, err := p.API.GetChannelByNameForTeamName(r.URL.Query().Get("team"), r.URL.Query().Get("channel"), false); err != nil {
 		http.Error(w, err.Message, err.StatusCode)
