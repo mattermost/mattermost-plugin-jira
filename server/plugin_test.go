@@ -86,7 +86,7 @@ func TestPlugin(t *testing.T) {
 		"UnknownJSONPayload": {
 			Configuration:      validConfiguration,
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", ioutil.NopCloser(bytes.NewBufferString("{}"))),
-			ExpectedStatusCode: http.StatusOK,
+			ExpectedStatusCode: http.StatusBadRequest,
 		},
 		"InvalidChannel": {
 			Configuration:      validConfiguration,

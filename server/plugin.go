@@ -29,41 +29,69 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	if !config.Enabled || config.Secret == "" || config.UserName == "" {
 		http.Error(w, "This plugin is not configured.", http.StatusForbidden)
 		return
-	} else if r.URL.Path != "/webhook" {
+	}
+
+	if r.URL.Path != "/webhook" {
 		http.NotFound(w, r)
 		return
-	} else if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed.", http.StatusMethodNotAllowed)
 		return
-	} else if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(config.Secret)) != 1 {
+	}
+
+	if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(config.Secret)) != 1 {
 		http.Error(w, "You must provide the configured secret.", http.StatusForbidden)
 		return
 	}
 
-	var webhook Webhook
-
-	if err := json.NewDecoder(r.Body).Decode(&webhook); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	} else if attachment, err := webhook.SlackAttachment(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	} else if attachment == nil {
+	channelID := r.URL.Query().Get("channel")
+	if channelID == "" {
+		http.Error(w, "You must provide a channelID.", http.StatusBadRequest)
 		return
-	} else if r.URL.Query().Get("channel") == "" {
-		http.Error(w, "You must provide a channel.", http.StatusBadRequest)
-	} else if user, err := p.API.GetUserByUsername(config.UserName); err != nil {
-		http.Error(w, err.Message, err.StatusCode)
-	} else if channel, err := p.API.GetChannelByNameForTeamName(r.URL.Query().Get("team"), r.URL.Query().Get("channel"), false); err != nil {
-		http.Error(w, err.Message, err.StatusCode)
-	} else if _, err := p.API.CreatePost(&model.Post{
+	}
+	teamName := r.URL.Query().Get("team")
+	// Can be "" for DM
+
+	var webhook *Webhook
+	if err := json.NewDecoder(r.Body).Decode(&webhook); err != nil || webhook == nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := webhook.IsValid(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	attachment, err := webhook.SlackAttachment()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	user, appErr := p.API.GetUserByUsername(config.UserName)
+	if appErr != nil {
+		http.Error(w, appErr.Message, appErr.StatusCode)
+		return
+	}
+
+	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelID, false)
+	if appErr != nil {
+		http.Error(w, appErr.Message, appErr.StatusCode)
+		return
+	}
+
+	post := &model.Post{
 		ChannelId: channel.Id,
-		Type:      model.POST_SLACK_ATTACHMENT,
 		UserId:    user.Id,
 		Props: map[string]interface{}{
 			"from_webhook":  "true",
 			"use_user_icon": "true",
-			"attachments":   []*model.SlackAttachment{attachment},
 		},
-	}); err != nil {
-		http.Error(w, err.Message, err.StatusCode)
+	}
+	model.ParseSlackAttachment(post, []*model.SlackAttachment{attachment})
+	if _, appErr := p.API.CreatePost(post); appErr != nil {
+		http.Error(w, appErr.Message, appErr.StatusCode)
+		return
 	}
 }
