@@ -73,6 +73,9 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	if attachment == nil {
+		http.Error(w, "Failed to create post", http.StatusInternalServerError)
+	}
 
 	user, appErr := p.API.GetUserByUsername(config.UserName)
 	if appErr != nil {
