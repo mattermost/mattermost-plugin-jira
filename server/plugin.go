@@ -48,13 +48,16 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	teamName := r.URL.Query().Get("team")
+	if teamName == "" {
+		http.Error(w, "You must provide a teamName.", http.StatusBadRequest)
+		return
+	}
 	channelID := r.URL.Query().Get("channel")
 	if channelID == "" {
 		http.Error(w, "You must provide a channelID.", http.StatusBadRequest)
 		return
 	}
-	teamName := r.URL.Query().Get("team")
-	// Can be "" for DM
 
 	var webhook *Webhook
 	if err := json.NewDecoder(r.Body).Decode(&webhook); err != nil || webhook == nil {

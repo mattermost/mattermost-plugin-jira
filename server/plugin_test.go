@@ -73,6 +73,11 @@ func TestPlugin(t *testing.T) {
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
+		"NoTeam": {
+			Configuration:      validConfiguration,
+			Request:            httptest.NewRequest("POST", "/webhook?channel=thechannel&secret=thesecret", validRequestBody()),
+			ExpectedStatusCode: http.StatusBadRequest,
+		},
 		"WrongSecret": {
 			Configuration:      validConfiguration,
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=notthesecret", validRequestBody()),
