@@ -29,62 +29,80 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 	config := p.getConfiguration()
 	if !config.Enabled || config.Secret == "" || config.UserName == "" {
-		http.Error(w, "This plugin is not configured.", http.StatusForbidden)
+		errorMessage := "This plugin is not configured"
+		p.postHTTPDebugMessage(errorMessage)
+		http.Error(w, errorMessage, http.StatusForbidden)
 		return
 	}
 
 	if r.URL.Path != "/webhook" {
+		p.postHTTPDebugMessage("Invalid URL path")
 		http.NotFound(w, r)
 		return
 	}
 
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed.", http.StatusMethodNotAllowed)
+		errorMessage := "Method not allowed"
+		p.postHTTPDebugMessage(errorMessage)
+		http.Error(w, errorMessage, http.StatusMethodNotAllowed)
 		return
 	}
 
 	if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(config.Secret)) != 1 {
-		http.Error(w, "You must provide the configured secret.", http.StatusForbidden)
+		errorMessage := "You must provide the configured secret"
+		p.postHTTPDebugMessage(errorMessage)
+		http.Error(w, errorMessage, http.StatusForbidden)
 		return
 	}
 
 	teamName := r.URL.Query().Get("team")
 	if teamName == "" {
-		http.Error(w, "You must provide a teamName.", http.StatusBadRequest)
+		errorMessage := "You must provide a teamName"
+		p.postHTTPDebugMessage(errorMessage)
+		http.Error(w, errorMessage, http.StatusBadRequest)
 		return
 	}
 	channelID := r.URL.Query().Get("channel")
 	if channelID == "" {
-		http.Error(w, "You must provide a channelID.", http.StatusBadRequest)
+		errorMessage := "You must provide a channelID"
+		p.postHTTPDebugMessage(errorMessage)
+		http.Error(w, errorMessage, http.StatusBadRequest)
 		return
 	}
 
 	var webhook *Webhook
 	if err := json.NewDecoder(r.Body).Decode(&webhook); err != nil || webhook == nil {
+		p.postHTTPDebugMessage(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	if err := webhook.IsValid(); err != nil {
+		p.postHTTPDebugMessage(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	attachment, err := webhook.SlackAttachment()
 	if err != nil {
+		p.postHTTPDebugMessage(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if attachment == nil {
-		http.Error(w, "Failed to create post", http.StatusInternalServerError)
+		errorMessage := "Failed to create post"
+		p.postHTTPDebugMessage(errorMessage)
+		http.Error(w, errorMessage, http.StatusInternalServerError)
 	}
 
 	user, appErr := p.API.GetUserByUsername(config.UserName)
 	if appErr != nil {
+		p.postHTTPDebugMessage(appErr.Message)
 		http.Error(w, appErr.Message, appErr.StatusCode)
 		return
 	}
 
 	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelID, false)
 	if appErr != nil {
+		p.postHTTPDebugMessage(appErr.Message)
 		http.Error(w, appErr.Message, appErr.StatusCode)
 		return
 	}
@@ -99,7 +117,12 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	}
 	model.ParseSlackAttachment(post, []*model.SlackAttachment{attachment})
 	if _, appErr := p.API.CreatePost(post); appErr != nil {
+		p.postHTTPDebugMessage(appErr.Message)
 		http.Error(w, appErr.Message, appErr.StatusCode)
 		return
 	}
+}
+
+func (p *Plugin) postHTTPDebugMessage(errorMessage string) {
+	p.API.LogDebug("Failed to serve HTTP request", "Error message", errorMessage)
 }
