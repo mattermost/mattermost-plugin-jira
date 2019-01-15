@@ -5,6 +5,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"strings"
 	"text/template"
 
@@ -56,7 +57,7 @@ type Webhook struct {
 	}
 }
 
-// Returns the text to be placed in the resulting post or an empty string if nothing should be
+// SlackAttachment returns the text to be placed in the resulting post or an empty string if nothing should be
 // posted.
 func (w *Webhook) SlackAttachment() (*model.SlackAttachment, error) {
 	switch w.WebhookEvent {
@@ -171,4 +172,11 @@ func (w *Webhook) renderText(tplBody string) (string, error) {
 		return "", err
 	}
 	return buf.String(), nil
+}
+
+func (w *Webhook) IsValid() error {
+	if w.WebhookEvent == "" {
+		return errors.New("WebhookEvent missing")
+	}
+	return nil
 }

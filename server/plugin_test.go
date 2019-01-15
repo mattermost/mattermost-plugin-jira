@@ -73,6 +73,11 @@ func TestPlugin(t *testing.T) {
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
+		"NoTeam": {
+			Configuration:      validConfiguration,
+			Request:            httptest.NewRequest("POST", "/webhook?channel=thechannel&secret=thesecret", validRequestBody()),
+			ExpectedStatusCode: http.StatusBadRequest,
+		},
 		"WrongSecret": {
 			Configuration:      validConfiguration,
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=notthesecret", validRequestBody()),
@@ -86,7 +91,7 @@ func TestPlugin(t *testing.T) {
 		"UnknownJSONPayload": {
 			Configuration:      validConfiguration,
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", ioutil.NopCloser(bytes.NewBufferString("{}"))),
-			ExpectedStatusCode: http.StatusOK,
+			ExpectedStatusCode: http.StatusBadRequest,
 		},
 		"InvalidChannel": {
 			Configuration:      validConfiguration,
@@ -131,6 +136,9 @@ func TestPlugin(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
+
+			api.On("LogDebug", mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogDebug", mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string")).Return(nil)
 
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
 				Id: "theuserid",
