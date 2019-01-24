@@ -91,6 +91,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		errorMessage := "Failed to create post"
 		p.postHTTPDebugMessage(errorMessage)
 		http.Error(w, errorMessage, http.StatusInternalServerError)
+		return
 	}
 
 	user, appErr := p.API.GetUserByUsername(config.UserName)
