@@ -6,7 +6,6 @@ package main
 import (
 	"fmt"
 	"strings"
-	// "github.com/mattermost/mattermost-server/model"
 )
 
 type WebhookUser struct {
@@ -68,52 +67,44 @@ type Webhook struct {
 }
 
 const (
-	md_RootStyle   = "## "
-	md_UpdateStyle = "###### "
+	mdRootStyle   = "## "
+	mdUpdateStyle = "###### "
 )
 
-var formatters = map[string]func(w *Webhook) string{
-	"jira:issue_created": mdIssueCreated,
-	"jira:issue_updated": mdIssueUpdated,
-	"comment_created":    mdComment,
-	"comment_updated":    mdComment,
-	"comment_deleted":    mdComment,
-}
-
 func (w *Webhook) Markdown() string {
-	f := formatters[w.WebhookEvent]
-	if f == nil {
-		f = mdDefault
+	switch w.WebhookEvent {
+	case "jira:issue_created":
+		return mdIssueCreated(w)
+	case "jira:issue_updated":
+		return mdIssueUpdated(w)
+	case "comment_created", "comment_updated", "comment_deleted":
+		return mdComment(w)
 	}
-	return f(w)
-}
-
-func mdDefault(w *Webhook) string {
 	return ""
 }
 
 func mdIssueCreated(w *Webhook) string {
-	s := md_RootStyle
-	s += fmt.Sprintf("%v created a %v %v", md_User(&w.User), md_IssueType(w), md_IssueLongLink(w))
+	s := mdRootStyle
+	s += fmt.Sprintf("%v created a %v %v", mdUser(&w.User), mdIssueType(w), mdIssueLongLink(w))
 	s += "\n"
 
 	s += join(w,
-		md_IssuePriority,
-		md_IssueAssignedTo,
-		md_IssueReportedBy,
-		md_IssueLabels,
-		md_IssueHashtags,
+		mdIssuePriority,
+		mdIssueAssignedTo,
+		mdIssueReportedBy,
+		mdIssueLabels,
+		mdIssueHashtags,
 	)
 	s += "\n"
 	s += "\n"
 
-	s += md_IssueDescription(w)
+	s += mdIssueDescription(w)
 
 	return s
 }
 
 func mdIssueUpdated(w *Webhook) string {
-	s := md_UpdateStyle
+	s := mdUpdateStyle
 	headline := ""
 	extra := ""
 
@@ -121,24 +112,23 @@ func mdIssueUpdated(w *Webhook) string {
 	case "issue_assigned":
 		assignee := "_nobody_"
 		if w.Issue.Fields.Assignee != nil {
-			assignee = md_User(w.Issue.Fields.Assignee)
+			assignee = mdUser(w.Issue.Fields.Assignee)
 		}
-		headline = fmt.Sprintf("assigned %v to %v", md_IssueLongLink(w), assignee)
+		headline = fmt.Sprintf("assigned %v to %v", mdIssueLongLink(w), assignee)
 
 	case "issue_updated",
 		"issue_generic":
 		// edited summary, description, updated priority, status, etc.
-		headline = md_HeadlineFromChangeLog(w)
+		headline = mdHeadlineFromChangeLog(w)
 		if w.showDescription {
-			extra = md_IssueDescription(w)
+			extra = mdIssueDescription(w)
 		}
 	}
 	if headline == "" {
-		// return fmt.Sprintf("```%v```\n", w.RawJSON)
 		return ""
 	}
 
-	s += md_User(&w.User) + " " + headline + " " + md_IssueHashtags(w)
+	s += mdUser(&w.User) + " " + headline + " " + mdIssueHashtags(w)
 	s += "\n"
 
 	if extra != "" {
@@ -150,20 +140,20 @@ func mdIssueUpdated(w *Webhook) string {
 }
 
 func mdComment(w *Webhook) string {
-	s := md_UpdateStyle
+	s := mdUpdateStyle
 	headline := ""
 	extra := ""
 
 	switch w.WebhookEvent {
 	case "comment_deleted":
-		headline = fmt.Sprintf("removed a comment from %v", md_IssueLongLink(w))
+		headline = fmt.Sprintf("removed a comment from %v", mdIssueLongLink(w))
 
 	case "comment_updated":
-		headline = fmt.Sprintf("edited a comment in %v", md_IssueLongLink(w))
+		headline = fmt.Sprintf("edited a comment in %v", mdIssueLongLink(w))
 		extra = w.Comment.Body
 
 	case "comment_created":
-		headline = fmt.Sprintf("commented on %v", md_IssueLongLink(w))
+		headline = fmt.Sprintf("commented on %v", mdIssueLongLink(w))
 		extra = w.Comment.Body
 
 	}
@@ -171,7 +161,7 @@ func mdComment(w *Webhook) string {
 		return ""
 	}
 
-	s += md_User(&w.Comment.UpdateAuthor) + " " + headline + " " + md_IssueHashtags(w)
+	s += mdUser(&w.Comment.UpdateAuthor) + " " + headline + " " + mdIssueHashtags(w)
 	s += "\n"
 	if extra != "" {
 		s += extra
@@ -180,98 +170,95 @@ func mdComment(w *Webhook) string {
 	return s
 }
 
-func md_HeadlineFromChangeLog(w *Webhook) string {
+func mdHeadlineFromChangeLog(w *Webhook) string {
 	for _, item := range w.ChangeLog.Items {
 		to := item.ToString
 		from := item.FromString
 		switch {
 		case item.Field == "resolution" && to == "" && from != "":
-			return fmt.Sprintf("reopened %v", md_IssueLongLink(w))
+			return fmt.Sprintf("reopened %v", mdIssueLongLink(w))
 
 		case item.Field == "resolution" && to != "" && from == "":
-			return fmt.Sprintf("resolved %v", md_IssueLongLink(w))
+			return fmt.Sprintf("resolved %v", mdIssueLongLink(w))
 
 		case item.Field == "status" && to == "In Progress":
-			return fmt.Sprintf("started working on %v", md_IssueLongLink(w))
+			return fmt.Sprintf("started working on %v", mdIssueLongLink(w))
 
 		case item.Field == "priority" && item.From > item.To:
-			return fmt.Sprintf("raised priority of %v to %v", md_IssueLongLink(w), to)
+			return fmt.Sprintf("raised priority of %v to %v", mdIssueLongLink(w), to)
 
 		case item.Field == "priority" && item.From < item.To:
-			return fmt.Sprintf("lowered priority of %v to %v", md_IssueLongLink(w), to)
+			return fmt.Sprintf("lowered priority of %v to %v", mdIssueLongLink(w), to)
 
 		case item.Field == "summary":
-			return fmt.Sprintf("renamed %v to %v", md_IssueLink(w), md_IssueSummary(w))
+			return fmt.Sprintf("renamed %v to %v", mdIssueLink(w), mdIssueSummary(w))
 
 		case item.Field == "description":
 			w.showDescription = true
-			return fmt.Sprintf("edited description of %v", md_IssueLongLink(w))
+			return fmt.Sprintf("edited description of %v", mdIssueLongLink(w))
 
 		case item.Field == "Sprint" && len(to) > 0:
-			return fmt.Sprintf("moved %v to %v", md_IssueLongLink(w), to)
+			return fmt.Sprintf("moved %v to %v", mdIssueLongLink(w), to)
 
 		case item.Field == "Rank" && len(to) > 0:
-			return fmt.Sprintf("%v %v", strings.ToLower(to), md_IssueLongLink(w))
+			return fmt.Sprintf("%v %v", strings.ToLower(to), mdIssueLongLink(w))
 
 		case item.Field == "Attachment":
-			return fmt.Sprintf("%v %v", md_AddRemove(from, to, "attached", "removed attachments"), md_IssueLongLink(w))
+			return fmt.Sprintf("%v %v", mdAddRemove(from, to, "attached", "removed attachments"), mdIssueLongLink(w))
 
 		case item.Field == "labels":
-			return fmt.Sprintf("%v %v", md_AddRemove(from, to, "added labels", "removed labels"), md_IssueLongLink(w))
-
-		default:
-			// return fmt.Sprintf("updated %v from %v to %v on %v", item.Field, from, to, md_IssueLongLink(w))
+			return fmt.Sprintf("%v %v", mdAddRemove(from, to, "added labels", "removed labels"), mdIssueLongLink(w))
 		}
 	}
 	return ""
 }
 
-func md_IssueSummary(w *Webhook) string {
+func mdIssueSummary(w *Webhook) string {
 	return truncate(w.Issue.Fields.Summary, 80)
 }
 
-func md_IssueDescription(w *Webhook) string {
+func mdIssueDescription(w *Webhook) string {
 	return fmt.Sprintf("```\n%v\n```", truncate(w.Issue.Fields.Description, 3000))
 }
 
-func md_IssueAssignedTo(w *Webhook) string {
+func mdIssueAssignedTo(w *Webhook) string {
 	if w.Issue.Fields.Assignee == nil {
 		return ""
 	}
-	return "Assigned to: " + mdBOLD(md_User(w.Issue.Fields.Assignee))
+	return "Assigned to: " + mdBOLD(mdUser(w.Issue.Fields.Assignee))
 }
 
-func md_IssueReportedBy(w *Webhook) string {
+func mdIssueReportedBy(w *Webhook) string {
 	if w.Issue.Fields.Reporter == nil {
 		return ""
 	}
-	return "Reported by: " + mdBOLD(md_User(w.Issue.Fields.Reporter))
+	return "Reported by: " + mdBOLD(mdUser(w.Issue.Fields.Reporter))
 }
 
-func md_IssueLabels(w *Webhook) string {
+func mdIssueLabels(w *Webhook) string {
 	if len(w.Issue.Fields.Labels) == 0 {
 		return ""
 	}
 	return "Labels: " + strings.Join(w.Issue.Fields.Labels, ",")
 }
 
-func md_IssuePriority(w *Webhook) string {
+func mdIssuePriority(w *Webhook) string {
 	return "Priority: " + mdBOLD(w.Issue.Fields.Priority.Name)
 }
 
-func md_IssueType(w *Webhook) string {
+func mdIssueType(w *Webhook) string {
 	return strings.ToLower(w.Issue.Fields.IssueType.Name)
 }
 
-func md_IssueLongLink(w *Webhook) string {
-	return fmt.Sprintf("[%v: %v](%v/browse/%v)", w.Issue.Key, md_IssueSummary(w), jiraURL(w), w.Issue.Key)
+func mdIssueLongLink(w *Webhook) string {
+	return fmt.Sprintf("[%v: %v](%v/browse/%v)", w.Issue.Key, mdIssueSummary(w), jiraURL(w), w.Issue.Key)
 }
 
-func md_IssueLink(w *Webhook) string {
+func mdIssueLink(w *Webhook) string {
 	return fmt.Sprintf("[%v](%v/browse/%v)", w.Issue.Key, jiraURL(w), w.Issue.Key)
 }
 
-func md_IssueHashtags(w *Webhook) string {
+func mdIssueHashtags(w *Webhook) string {
 	s := "("
 	if w.WebhookEvent == "jira:issue_created" {
 		s += "#jira-new "
@@ -281,9 +268,9 @@ func md_IssueHashtags(w *Webhook) string {
 	return s
 }
 
-func md_AddRemove(from, to, add, remove string) string {
-	added := md_Diff(from, to)
-	removed := md_Diff(to, from)
+func mdAddRemove(from, to, add, remove string) string {
+	added := mdDiff(from, to)
+	removed := mdDiff(to, from)
 	s := ""
 	if added != "" {
 		s += fmt.Sprintf("%v [%v] to", add, added)
@@ -297,7 +284,7 @@ func md_AddRemove(from, to, add, remove string) string {
 	return s
 }
 
-func md_Diff(from, to string) string {
+func mdDiff(from, to string) string {
 	fromStrings := strings.Split(from, " ")
 	toStrings := strings.Split(to, " ")
 	fromMap := map[string]bool{}
@@ -309,7 +296,7 @@ func md_Diff(from, to string) string {
 		toMap[s] = true
 	}
 	added := []string{}
-	for s, _ := range toMap {
+	for s := range toMap {
 		if !fromMap[s] {
 			added = append(added, s)
 		}
@@ -318,14 +305,14 @@ func md_Diff(from, to string) string {
 	return strings.Join(added, ",")
 }
 
-func md_User(user *WebhookUser) string {
+func mdUser(user *WebhookUser) string {
 	if user == nil {
 		return ""
 	}
 	return user.DisplayName
 }
 
-func md_UserWithAvatar(user *WebhookUser) string {
+func mdUserWithAvatar(user *WebhookUser) string {
 	if user == nil {
 		return ""
 	}
