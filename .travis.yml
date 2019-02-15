@@ -1,23 +1,30 @@
-dist: trusty
-sudo: false
+notifications:
+  email: false
+
 language: go
 go:
   - "1.11.x"
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
 
 install:
   - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+
 script:
   - make check-style
   - make test
 
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
+before_deploy:
+  - make dist
+
 deploy:
   provider: releases
   api_key:
-    secure: lwY0c02bGtmFZKfU82RlRIGKUI+eU/ibuUuuxtp8u9A4917qu3ZkoMXGmzmgMiPwMilPBj6jbmUtL5jXMJK/fPda7FKzGFxWPYTi2es5W6uwXlGmYJld2cqYdXEROAnbgr6GJEF0EJ29SYw5tZaCz1lj/LVaolkcPRGY/Z9U0/0stabWBNM00JMsmd0O63DgYG4RvqaUlUmrJsFaewG0UQTtnHU0xzKu2ebVcuNT4vPYBOxN5Jcu+MvwDw98fWsw8yDLC8CM5zA4QFkmsdfycNGrGBGVOtFumR5ouJWsy6wepYsYeaZybM7zE9Ls4SlkR1mUBsOj3DoPg/HD6HK1m9liPhVpoJLC762WuqtrYFsZjPzCoGaU/eQGcmm5EF0/kn4fl1seERWtP7/bfMX/c8e5p1l5rDDdxroT1tWp8uxH9R4LpLMJLtDQIFoxwmwiT9MkKxdTuVtM5qmcd6zAHc7Ud15NEdNfFQMyOKk5z22HGpRFpZRypljbpxL8vgv6tnWhpVi5+Q/30a93DwBZ/R+tJ9m9dnGaUJ+ONAFUVS4WvbRQmuS7oHzHtJsih8yN71cw11IvyevigBBaPrvJvMOTOMRZt0+Xtk0CPFMMpi2SvG55/rV5JKC4MXb/rxGcEKhFYsG1rg+w7vNyrfCVkFdxvo7e0y4t57V6ik3JE10=
-  file_glob: true
-  file: dist/*
+    secure: cPCbvo6Nk4fhG6OjfSmB1ftH/sbpiv0Bw/Z1t9uQDDs7jYotmF+bMap6nkhX/iyiSVfkJSmXBJ41jW7fyAHqZdM73dgqsQuDQ0Q8sVJ9PduoSKoF9LZVrbObVVsUvhJzw/pAw88zSGtbVjoz7GJIXfCk7Tp+8Yt76q8nHZUNG+dsbCkuULqZEW+JHXfgOvSX/LnvkpiVOebDRkVoQLjy62rdNtfyIERczo/sBUOxuJIH47RhD8upx1r6+QiqRO44lTeUPCLl/4wVpMYmeUwCnqLsvbKnZKPkq8vl3beV+PrPpDYtzwbgIuq3MWH+02bK0wkD4HLInsI8r7CIjE2WAX6P064PYNgdQAP+8xJ05SCHbGKOgFr/bQJaTudB8IQGgnrpG4iU1DlCRmzN+4rcHJUrbkBuZh8JOLQcxNWfrPwgBaMfqxCzBd/LCdKHQoC7uPKFneM7go18yHWmkJah24nKI3LSrDbagdBCL/03YqdFDCMkGEFnIA6F6Bv4ar7PW1UIpcevbUgSKfUu3ohWvTyd6NVVsNDFuKjCMvzjJQRoH1vwaSQICWBIM2MLPddhwWimwMq8cStwrI9F3ju5wIjxL60yFDfqZN2pLbgXvhE/Xc6lP7qFziAz7cvmlXZxQIElKLbIcKniahmOw4ll80RBU2perbb00tXWYF2a0GY=
   skip_cleanup: true
+  file_glob: true
+  file: "dist/jira-*.tar.gz"
   on:
+    repo: mattermost/mattermost-plugin-jira
     tags: true
