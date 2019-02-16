@@ -6,6 +6,7 @@ package main
 import (
 	"crypto/subtle"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sync"
@@ -28,70 +29,67 @@ type Plugin struct {
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
 	p.API.LogDebug("HTTP request", "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
 
+	err, status := p.handleHTTPRequest(c, w, r)
+	if err != nil {
+		p.API.LogDebug("Failed to serve HTTP request", "Error message", err.Error())
+		http.Error(w, err.Error(), status)
+	}
+}
+
+func (p *Plugin) handleHTTPRequest(c *plugin.Context, w http.ResponseWriter, r *http.Request) (error, int) {
 	config := p.getConfiguration()
 	if config.Secret == "" || config.UserName == "" {
-		http.Error(w, p.debug("JIRA plugin not configured correctly; must provide Secret and UserName"), http.StatusForbidden)
-		return
+		return fmt.Errorf("JIRA plugin not configured correctly; must provide Secret and UserName"), http.StatusForbidden
 	}
 
 	if r.URL.Path != "/webhook" {
-		http.Error(w, p.debug("Request URL: unsupported path: "+r.URL.Path+", must be /webhook"), http.StatusNotFound)
-		return
+		return fmt.Errorf("Request URL: unsupported path: " + r.URL.Path + ", must be /webhook"), http.StatusNotFound
 	}
 	if r.Method != http.MethodPost {
-		http.Error(w, p.debug("Request: "+r.Method+" is not allowed, must be POST"), http.StatusMethodNotAllowed)
-		return
+		return fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST"), http.StatusMethodNotAllowed
 	}
 
 	if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(config.Secret)) != 1 {
-		http.Error(w, p.debug("Request URL: secret did not match"), http.StatusForbidden)
-		return
+		return fmt.Errorf("Request URL: secret did not match"), http.StatusForbidden
 	}
 
 	teamName := r.URL.Query().Get("team")
 	if teamName == "" {
-		http.Error(w, p.debug("Request URL: team is empty"), http.StatusBadRequest)
-		return
+		return fmt.Errorf("Request URL: team is empty"), http.StatusBadRequest
 	}
 	channelID := r.URL.Query().Get("channel")
 	if channelID == "" {
-		http.Error(w, p.debug("Request URL: channel is empty"), http.StatusBadRequest)
-		return
+		return fmt.Errorf("Request URL: channel is empty"), http.StatusBadRequest
 	}
 
 	user, appErr := p.API.GetUserByUsername(config.UserName)
 	if appErr != nil {
-		http.Error(w, p.debug(appErr.Message), appErr.StatusCode)
-		return
+		return fmt.Errorf(appErr.Message), appErr.StatusCode
 	}
 
 	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelID, false)
 	if appErr != nil {
-		http.Error(w, p.debug(appErr.Message), appErr.StatusCode)
-		return
+		return fmt.Errorf(appErr.Message), appErr.StatusCode
 	}
 
 	bb, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, p.debug(err.Error()), http.StatusBadRequest)
-		return
+		return fmt.Errorf(err.Error()), http.StatusBadRequest
 	}
 
 	var webhook Webhook
 	err = json.Unmarshal(bb, &webhook)
 	if err != nil {
-		http.Error(w, p.debug(err.Error()), http.StatusBadRequest)
-		return
+		return fmt.Errorf(err.Error()), http.StatusBadRequest
 	}
 	if webhook.WebhookEvent == "" {
-		http.Error(w, p.debug("No webhook event"), http.StatusBadRequest)
-		return
+		return fmt.Errorf("No webhook event"), http.StatusBadRequest
 	}
 	webhook.RawJSON = string(bb)
 
 	message := webhook.Markdown()
 	if message == "" {
-		return
+		return nil, http.StatusOK
 	}
 	post := &model.Post{
 		ChannelId: channel.Id,
@@ -105,12 +103,8 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 	_, appErr = p.API.CreatePost(post)
 	if appErr != nil {
-		http.Error(w, p.debug(appErr.Message), appErr.StatusCode)
-		return
+		return fmt.Errorf(appErr.Message), appErr.StatusCode
 	}
-}
 
-func (p *Plugin) debug(errorMessage string) string {
-	p.API.LogDebug("Failed to serve HTTP request", "Error message", errorMessage)
-	return errorMessage
+	return nil, http.StatusOK
 }
