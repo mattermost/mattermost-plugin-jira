@@ -312,18 +312,6 @@ func mdUser(user *WebhookUser) string {
 	return user.DisplayName
 }
 
-func mdUserWithAvatar(user *WebhookUser) string {
-	if user == nil {
-		return ""
-	}
-
-	avatar := ""
-	if len(user.AvatarURLs) > 0 {
-		avatar = fmt.Sprintf("![](%v) ", user.AvatarURLs["24x24"])
-	}
-	return avatar + user.DisplayName
-}
-
 func jiraURL(w *Webhook) string {
 	pos := strings.LastIndex(w.Issue.Self, "/rest/api")
 	if pos < 0 {
@@ -333,13 +321,13 @@ func jiraURL(w *Webhook) string {
 }
 
 func truncate(s string, max int) string {
-	if len(s) < max {
+	if len(s) <= max || max < 0 {
 		return s
 	}
 	if max > 3 {
-		max -= 3
+		return s[:max-3] + "..."
 	}
-	return s[:max] + "..."
+	return s[:max]
 }
 
 func join(w *Webhook, functions ...func(w *Webhook) string) string {
