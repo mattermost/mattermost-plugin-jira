@@ -23,7 +23,7 @@ import (
 )
 
 func validRequestBody() io.ReadCloser {
-	if f, err := os.Open("testdata/webhook_issue_created.json"); err != nil {
+	if f, err := os.Open("testdata/webhook-issue-created.json"); err != nil {
 		panic(err)
 	} else {
 		return f
@@ -36,7 +36,7 @@ type TestConfiguration struct {
 }
 
 func TestPlugin(t *testing.T) {
-	f, err := os.Open("testdata/webhook_issue_created.json")
+	f, err := os.Open("testdata/webhook-issue-created.json")
 	require.NoError(t, err)
 	defer f.Close()
 	var webhook Webhook
