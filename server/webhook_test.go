@@ -12,73 +12,112 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWebhookJSONUnmarshal(t *testing.T) {
-	f, err := os.Open("testdata/webhook_issue_resolved.json")
-	require.NoError(t, err)
-	defer f.Close()
-	var w Webhook
-	require.NoError(t, json.NewDecoder(f).Decode(&w))
-	assert.Equal(t, w.WebhookEvent, "jira:issue_updated")
-	assert.NotNil(t, w.Issue.Fields.Assignee)
-	assert.Equal(t, w.Issue.Fields.Description, "asdfasdf")
-	assert.NotNil(t, w.Issue.Fields.Priority)
-	assert.NotNil(t, w.Issue.Fields.Status)
-	assert.NotNil(t, w.ChangeLog)
-}
-
-func TestWebhookSlackAttachment(t *testing.T) {
+func TestWebhookMarkdown(t *testing.T) {
 	for _, tc := range []struct {
-		File                   string
-		ShouldHaveAttachment   bool
-		ExpectedNumberOfFields int
-	}{
-		{
-			File:                   "testdata/webhook_issue_created.json",
-			ShouldHaveAttachment:   true,
-			ExpectedNumberOfFields: 2,
-		},
-		{
-			File: "testdata/webhook_issue_comment.json",
-		},
-		{
-			File:                 "testdata/webhook_issue_resolved.json",
-			ShouldHaveAttachment: true,
-		},
-		{
-			File:                 "testdata/webhook_issue_reopened.json",
-			ShouldHaveAttachment: true,
-		},
-		{
-			File:                 "testdata/webhook_issue_deleted.json",
-			ShouldHaveAttachment: true,
-		},
+		file     string
+		expected string
+	}{{
+		file:     "testdata/webhook-comment-created.json",
+		expected: "###### Test User commented on [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)\nAdded a comment\n",
+	}, {
+		file:     "testdata/webhook-comment-deleted.json",
+		expected: "###### Test User removed a comment from [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)\n\n",
+	}, {
+		file:     "testdata/webhook-comment-updated.json",
+		expected: "###### Test User edited a comment in [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)\nAdded a comment, then edited it\n",
+	}, {
+		file:     "testdata/webhook-issue-created.json",
+		expected: "## Test User created a story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)\nPriority: **High**, Reported by: **Test User**, Labels: test-label, (#jira-new #TES-41)\n\n```\nUnit test description, not that long\n```",
+	}, {
+		file:     "testdata/webhook-issue-updated-assigned-nobody.json",
+		expected: "###### Test User assigned [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to _nobody_ (#TES-41)\n\n",
+	}, {
+		file:     "testdata/webhook-issue-updated-assigned.json",
+		expected: "###### Test User assigned [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to Test User (#TES-41)\n\n",
+	}, {
+		file:     "testdata/webhook-issue-updated-attachments.json",
+		expected: "###### Test User attached [test.gif] to, removed attachments [test.json] from [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)\n\n",
+	}, {
+		file:     "testdata/webhook-issue-updated-edited.json",
+		expected: "###### Test User edited description of [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)\n```\nUnit test description, not that long, a little longer now\n```\n",
+	}, {
+		file:     "testdata/webhook-issue-updated-labels.json",
+		expected: "###### Test User added labels [sad] to, removed labels [bad] from [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)\n\n",
+	}, {
+		file:     "testdata/webhook-issue-updated-lowered-priority.json",
+		expected: "###### Test User lowered priority of [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to Low (#TES-41)\n\n",
+	}, {
+		file:     "testdata/webhook-issue-updated-raised-priority.json",
+		expected: "###### Test User raised priority of [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to High (#TES-41)\n\n",
+	}, {
+		file:     "testdata/webhook-issue-updated-rank.json",
+		expected: "###### Test User ranked higher [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)\n\n",
+	}, {
+		file:     "testdata/webhook-issue-updated-renamed.json",
+		expected: "###### Test User renamed [TES-41](https://some-instance-test.atlassian.net/browse/TES-41) to Unit test summary 1 (#TES-41)\n\n",
+	}, {
+		file:     "testdata/webhook-issue-updated-reopened.json",
+		expected: "###### Test User reopened [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)\n\n",
+	}, {
+		file:     "testdata/webhook-issue-updated-resolved.json",
+		expected: "###### Test User resolved [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)\n\n",
+	}, {
+		file:     "testdata/webhook-issue-updated-sprint.json",
+		expected: "###### Test User moved [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to Sprint 2 (#TES-41)\n\n",
+	}, {
+		file:     "testdata/webhook-issue-updated-started-working.json",
+		expected: "###### Test User started working on [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)\n\n",
+	},
 	} {
-		f, err := os.Open(tc.File)
-		require.NoError(t, err)
-		defer f.Close()
-		var w Webhook
-		require.NoError(t, json.NewDecoder(f).Decode(&w))
-		attachment, err := w.SlackAttachment()
-		require.NoError(t, err)
-		if tc.ShouldHaveAttachment {
-			assert.NotNil(t, attachment)
-		} else {
-			assert.Nil(t, attachment)
-		}
-		if attachment == nil {
-			continue
-		}
-		assert.Equal(t, tc.ExpectedNumberOfFields, len(attachment.Fields))
-		assert.NotEmpty(t, attachment.Fallback)
-		assert.NotEmpty(t, attachment.Text)
+		t.Run(tc.file, func(t *testing.T) {
+			f, err := os.Open(tc.file)
+			require.NoError(t, err)
+			defer f.Close()
+			var w Webhook
+			require.NoError(t, json.NewDecoder(f).Decode(&w))
+			assert.Equal(t, tc.expected, w.Markdown())
+		})
 	}
 }
 
-func TestWebhookJIRAURL(t *testing.T) {
+func TestWebhookVariousErrorsForCoverage(t *testing.T) {
+	assert.Equal(t, "", mdUser(nil))
+
+	var w = &Webhook{}
+	assert.Equal(t, "", mdIssueReportedBy(w))
+	assert.Equal(t, "", mdIssueLabels(w))
+	assert.Equal(t, "", jiraURL(w))
+	assert.Equal(t, "", mdComment(w))
+	assert.Equal(t, "", mdHeadlineFromChangeLog(w))
+
+	w.WebhookEvent = "something-else"
+	assert.Equal(t, "", w.Markdown())
+
+	w.WebhookEvent = "jira:issue_updated"
+	w.IssueEventTypeName = "something-else"
+	assert.Equal(t, "", w.Markdown())
+
+	w.Issue.Fields.Assignee = &WebhookUser{
+		DisplayName: "test",
+	}
+	assert.Equal(t, "Assigned to: **test**", mdIssueAssignedTo(w))
+}
+
+func TestTruncate(t *testing.T) {
+	assert.Equal(t, "12345", truncate("12345", 5))
+	assert.Equal(t, "12345", truncate("12345", 6))
+	assert.Equal(t, "1...", truncate("12345", 4))
+	assert.Equal(t, "12", truncate("12345", 2))
+	assert.Equal(t, "1", truncate("12345", 1))
+	assert.Equal(t, "", truncate("12345", 0))
+	assert.Equal(t, "12345", truncate("12345", -1))
+}
+
+func TestWebhookJiraURL(t *testing.T) {
 	var w Webhook
 	w.Issue.Self = "http://localhost:8080/rest/api/2/issue/10006"
-	assert.Equal(t, "http://localhost:8080", w.JIRAURL())
+	assert.Equal(t, "http://localhost:8080", jiraURL(&w))
 
 	w.Issue.Self = "http://localhost:8080/foo/bar/rest/api/2/issue/10006"
-	assert.Equal(t, "http://localhost:8080/foo/bar", w.JIRAURL())
+	assert.Equal(t, "http://localhost:8080/foo/bar", jiraURL(&w))
 }
