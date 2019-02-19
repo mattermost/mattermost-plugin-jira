@@ -218,7 +218,13 @@ func mdIssueSummary(w *Webhook) string {
 }
 
 func mdIssueDescription(w *Webhook) string {
-	return fmt.Sprintf("```\n%v\n```", truncate(w.Issue.Fields.Description, 3000))
+	return fmt.Sprintf(
+		"\n%s\n",
+		truncate(
+			jiraToMarkdown(w.Issue.Fields.Description),
+			3000),
+	)
+	// return fmt.Sprintf("```\n%v\n```", truncate(w.Issue.Fields.Description, 3000))
 }
 
 func mdIssueAssignedTo(w *Webhook) string {
