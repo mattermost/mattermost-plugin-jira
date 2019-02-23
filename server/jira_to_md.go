@@ -20,6 +20,12 @@ type jiraReplacer struct {
 var (
 	jiraReplacers = []jiraReplacer{
 
+		jiraReplacer{
+			Type:           "Lists",
+			RegExp:         `[ \t]*(#+)\s+`,
+			ReplaceStrFunc: replaceNumberedListItems,
+		},
+
 		// Headers
 		jiraReplacer{
 			Type:           "Headers",
@@ -137,6 +143,7 @@ var (
 
 		// remove leading-space of table headers and rows
 		// "|": `^[ \t]*\|`,
+
 	}
 )
 
@@ -181,6 +188,14 @@ func replaceTableHeaders(repl string) string {
 	repl = fmt.Sprintf("\n%s\n%s", headers, re.ReplaceAllString(repl, "| --- "))
 
 	return repl
+}
+
+func replaceNumberedListItems(repl string) string {
+
+	repl = strings.TrimLeft(strings.TrimSpace(repl), "#")
+
+	return fmt.Sprintf("1. %s", repl)
+
 }
 
 func replaceHeaders(repl string) string {
