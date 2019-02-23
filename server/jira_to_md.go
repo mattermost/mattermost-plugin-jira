@@ -48,14 +48,15 @@ var (
 			Replace: "`${1}`",
 		},
 
-		// // Underline
+		// // Underline (not a thing in md)
 		// jiraReplacer{
 		//  RegExp:  `\+([^+]*)\+`,
 		//  Replace: "${1}",
 		// },
 
 		// Citations (buggy)
-		//.replace(/\?\?((?:.[^?]|[^?].)+)\?\?/g, '<cite>$1</cite>')
+		// \?\?((?:.[^?]|[^?].)+)\?\?
+		// '<cite>$1</cite>'
 
 		// Superscript
 		jiraReplacer{
@@ -123,7 +124,7 @@ var (
 		// // panel into table
 		jiraReplacer{
 			Type:    "Panel (to table)",
-			RegExp:  `(?s){panel:title=([^}]*)}\n?(.*?)\n?{panel}`,
+			RegExp:  `(?s){panel:title=([^}]*)}\r\n?(.*?)\r\n?{panel}`,
 			Replace: "\n| ${1} |\n| --- |\n| ${2} |",
 		},
 
@@ -187,7 +188,7 @@ func replaceHeaders(repl string) string {
 
 	levelStr := re.ReplaceAllString(repl, "${1}")
 	level, _ := strconv.Atoi(levelStr)
-	content := re.ReplaceAllString(repl, "${2}")
+	content := re.ReplaceAllString(repl, "${2}\n")
 
 	return fmt.Sprintf("%s %s", strings.Join(make([]string, level+1), "#"), content)
 }
