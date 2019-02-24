@@ -27,7 +27,7 @@ func TestWebhookMarkdown(t *testing.T) {
 		expected: "###### Test User edited a comment in [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)\nAdded a comment, then edited it\n",
 	}, {
 		file:     "testdata/webhook-issue-created.json",
-		expected: "## Test User created a story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)\nPriority: **High**, Reported by: **Test User**, Labels: test-label, (#jira-new #TES-41)\n\n```\nUnit test description, not that long\n```",
+		expected: "## Test User created a story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)\nPriority: **High**, Reported by: **Test User**, Labels: test-label, (#jira-new #TES-41)\n\n\nUnit test description, not that long\n",
 	}, {
 		file:     "testdata/webhook-issue-updated-assigned-nobody.json",
 		expected: "###### Test User assigned [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to _nobody_ (#TES-41)\n\n",
@@ -39,7 +39,7 @@ func TestWebhookMarkdown(t *testing.T) {
 		expected: "###### Test User attached [test.gif] to, removed attachments [test.json] from [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)\n\n",
 	}, {
 		file:     "testdata/webhook-issue-updated-edited.json",
-		expected: "###### Test User edited description of [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)\n```\nUnit test description, not that long, a little longer now\n```\n",
+		expected: "###### Test User edited description of [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)\n\nUnit test description, not that long, a little longer now\n\n",
 	}, {
 		file:     "testdata/webhook-issue-updated-labels.json",
 		expected: "###### Test User added labels [sad] to, removed labels [bad] from [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)\n\n",
