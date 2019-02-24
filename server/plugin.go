@@ -5,9 +5,7 @@ package main
 
 import (
 	"crypto/subtle"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"sync"
 
@@ -72,25 +70,11 @@ func (p *Plugin) handleHTTPRequest(c *plugin.Context, w http.ResponseWriter, r *
 		return fmt.Errorf(appErr.Message), appErr.StatusCode
 	}
 
-	bb, err := ioutil.ReadAll(r.Body)
+	initPost, err := AsSlackAttachment(r.Body)
 	if err != nil {
-		return fmt.Errorf(err.Error()), http.StatusBadRequest
+		return err, http.StatusBadRequest
 	}
 
-	var webhook Webhook
-	err = json.Unmarshal(bb, &webhook)
-	if err != nil {
-		return fmt.Errorf(err.Error()), http.StatusBadRequest
-	}
-	if webhook.WebhookEvent == "" {
-		return fmt.Errorf("No webhook event"), http.StatusBadRequest
-	}
-	webhook.RawJSON = string(bb)
-
-	message := webhook.Markdown()
-	if message == "" {
-		return nil, http.StatusOK
-	}
 	post := &model.Post{
 		ChannelId: channel.Id,
 		UserId:    user.Id,
@@ -98,8 +82,8 @@ func (p *Plugin) handleHTTPRequest(c *plugin.Context, w http.ResponseWriter, r *
 			"from_webhook":  "true",
 			"use_user_icon": "true",
 		},
-		Message: message,
 	}
+	initPost(post)
 
 	_, appErr = p.API.CreatePost(post)
 	if appErr != nil {
