@@ -23,6 +23,7 @@ import (
 type configuration struct {
 	Secret   string
 	UserName string
+	JiraURL  string
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
