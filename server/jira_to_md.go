@@ -20,35 +20,35 @@ type jiraReplacer struct {
 var (
 	jiraReplacers = []jiraReplacer{
 
-		jiraReplacer{
+		{
 			Type:           "Lists",
 			RegExp:         `[ \t]*(#+)\s+`,
 			ReplaceStrFunc: replaceNumberedListItems,
 		},
 
 		// Headers
-		jiraReplacer{
+		{
 			Type:           "Headers",
 			RegExp:         `h([0-6]+)\. (.*?)(\r|\n)`,
 			ReplaceStrFunc: replaceHeaders,
 		},
 
 		// Bold
-		jiraReplacer{
+		{
 			Type:    "Bold",
 			RegExp:  `\*(\S.*?)\*`,
 			Replace: "**${1}**",
 		},
 
 		// Italic (same in jira and md)
-		jiraReplacer{
+		{
 			Type:    "Italic",
 			RegExp:  `\_(\S.*?)\_`,
 			Replace: "*${1}*",
 		},
 
 		// Monospaced text
-		jiraReplacer{
+		{
 			Type:    "Monospaced",
 			RegExp:  `\{\{([^}]+)\}\}`,
 			Replace: "`${1}`",
@@ -65,28 +65,28 @@ var (
 		// '<cite>$1</cite>'
 
 		// Superscript
-		jiraReplacer{
+		{
 			Type:    "Superscript",
 			RegExp:  `\^([^^]*)\^`,
 			Replace: "<sup>${1}</sup>",
 		},
 
 		// Subscript
-		jiraReplacer{
+		{
 			Type:    "Subscript",
 			RegExp:  `~([^~]*)~`,
 			Replace: "<sub>${1}</sub>",
 		},
 
 		// Strikethrough
-		jiraReplacer{
+		{
 			Type:    "Strikethrough",
 			RegExp:  `\s-(\S+.*?\S)-(?s)`,
 			Replace: " ~~${1}~~ ",
 		},
 
 		// Code Block
-		jiraReplacer{
+		{
 			Type: "Code Block",
 			// RegExp: `(?s){code(:([a-z]+))?}(.*){code}`,
 			RegExp:  `(?s){code(:([a-z]+))?([:|]?(title|borderStyle|borderColor|borderWidth|bgColor|titleBGColor)=.+?)*}(.*?){code}`,
@@ -94,14 +94,14 @@ var (
 		},
 
 		// Pre-formatted text
-		jiraReplacer{
+		{
 			Type:    "Pre-formatted",
 			RegExp:  `{noformat}`,
 			Replace: "```",
 		},
 
 		// Named Links
-		jiraReplacer{
+		{
 			Type:    "Named Link",
 			RegExp:  `\[(.+?)\|(.*?)\]`,
 			Replace: "[${1}](${2})",
@@ -121,21 +121,21 @@ var (
 		// },
 
 		// Remove color: unsupported in md
-		jiraReplacer{
+		{
 			Type:    "Text Color",
 			RegExp:  `{color:.+}(.*){color}`,
 			Replace: "${1}",
 		},
 
 		// // panel into table
-		jiraReplacer{
+		{
 			Type:    "Panel (to table)",
 			RegExp:  `(?s){panel:title=([^}]*)}\r\n?(.*?)\r\n?{panel}`,
 			Replace: "\n| ${1} |\n| --- |\n| ${2} |",
 		},
 
 		// table header
-		jiraReplacer{
+		{
 			Type:           "Table Header",
 			RegExp:         `[ \t]*((?:\|\|.*?)+\|\|)[ \t]*`,
 			ReplaceStrFunc: replaceTableHeaders,
