@@ -1,4 +1,4 @@
-# mattermost-plugin-jira [![Build Status](https://travis-ci.org/mattermost/mattermost-plugin-jira.svg?branch=master)](https://travis-ci.org/mattermost/mattermost-plugin-jira) [![codecov](https://codecov.io/gh/mattermost/mattermost-plugin-jira/branch/master/graph/badge.svg)](https://codecov.io/gh/mattermost/mattermost-plugin-jira)
+# mattermost-plugin-jira [![CircleCI](https://circleci.com/gh/mattermost/mattermost-plugin-jira.svg?style=svg)](https://circleci.com/gh/mattermost/mattermost-plugin-jira) [![codecov](https://codecov.io/gh/mattermost/mattermost-plugin-jira/branch/master/graph/badge.svg)](https://codecov.io/gh/mattermost/mattermost-plugin-jira)
 
 This plugin will create a webhook that your JIRA server can use to post messages to Mattermost when issues are created:
 
