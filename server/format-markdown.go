@@ -110,12 +110,12 @@ func parse(in io.Reader, linkf func(w *Webhook) string) (*parsed, error) {
 	case "comment_updated":
 		user = &parsed.Comment.UpdateAuthor
 		headline = fmt.Sprintf("edited a comment in %v", issue)
-		parsed.edited = truncate(parsed.Comment.Body, 3000)
+		parsed.edited = truncate(jiraToMarkdown(parsed.Comment.Body), 3000)
 
 	case "comment_created":
 		user = &parsed.Comment.UpdateAuthor
 		headline = fmt.Sprintf("commented on %v", issue)
-		parsed.edited = truncate(parsed.Comment.Body, 3000)
+		parsed.edited = truncate(jiraToMarkdown(parsed.Comment.Body), 3000)
 	}
 	if headline == "" {
 		return nil, fmt.Errorf("Unsupported webhook")
@@ -184,11 +184,11 @@ func (w *Webhook) mdIssueCreatedDetails() string {
 }
 
 func (w *Webhook) mdIssueSummary() string {
-	return truncate(w.Issue.Fields.Summary, 80)
+	return truncate(jiraToMarkdown(w.Issue.Fields.Summary), 80)
 }
 
 func (w *Webhook) mdIssueDescription() string {
-	return truncate(w.Issue.Fields.Description, 3000)
+	return truncate(jiraToMarkdown(w.Issue.Fields.Description), 3000)
 }
 
 func (w *Webhook) mdIssueAssignee() string {
