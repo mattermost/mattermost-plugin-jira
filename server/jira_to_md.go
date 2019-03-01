@@ -1,6 +1,11 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
+/*
+JIRA Text Formatting Reference
+https://jira.atlassian.com/secure/WikiRendererHelpAction.jspa?section=all
+*/
+
 package main
 
 import (
@@ -18,6 +23,13 @@ type jiraReplacer struct {
 }
 
 var (
+
+	// Headers ReplaceFunc Regular Expression
+	headersReplaceFuncRegExp = regexp.MustCompile(`h([1-6]+)\. (.*?)(\r|\n)`)
+
+	// Table Headers ReplaceFunc Regular Expression
+	tableHeadersReplaceFuncRegExp = regexp.MustCompile(`\|([^|]+)`)
+
 	jiraReplacers = []jiraReplacer{
 
 		{
@@ -29,7 +41,7 @@ var (
 		// Headers
 		{
 			Type:           "Headers",
-			RegExp:         `h([0-6]+)\. (.*?)(\r|\n)`,
+			RegExp:         `h([1-6]+)\. (.*?)(\r|\n)`,
 			ReplaceStrFunc: replaceHeaders,
 		},
 
@@ -130,7 +142,7 @@ var (
 		// // panel into table
 		{
 			Type:    "Panel (to table)",
-			RegExp:  `(?s){panel:title=([^}]*)}\r\n?(.*?)\r\n?{panel}`,
+			RegExp:  `(?s){panel:title=([^}]*)}\n?(.*?)\n?{panel}`,
 			Replace: "\n| ${1} |\n| --- |\n| ${2} |",
 		},
 
@@ -181,11 +193,9 @@ func replaceTableHeaders(repl string) string {
 
 	repl = strings.Replace(repl, "||", "|", -1)
 
-	re := regexp.MustCompile(`\|([^|]+)`)
+	headers := tableHeadersReplaceFuncRegExp.ReplaceAllString(repl, "| ${1} ")
 
-	headers := re.ReplaceAllString(repl, "| ${1} ")
-
-	repl = fmt.Sprintf("\n%s\n%s", headers, re.ReplaceAllString(repl, "| --- "))
+	repl = fmt.Sprintf("\n%s\n%s", headers, tableHeadersReplaceFuncRegExp.ReplaceAllString(repl, "| --- "))
 
 	return repl
 }
@@ -199,11 +209,19 @@ func replaceNumberedListItems(repl string) string {
 }
 
 func replaceHeaders(repl string) string {
-	re := regexp.MustCompile(`h([0-6]+)\. (.*?)(\r|\n)`)
 
-	levelStr := re.ReplaceAllString(repl, "${1}")
-	level, _ := strconv.Atoi(levelStr)
-	content := re.ReplaceAllString(repl, "${2}\n")
+	level, _ := strconv.Atoi(headersReplaceFuncRegExp.ReplaceAllString(repl, "${1}"))
+	content := headersReplaceFuncRegExp.ReplaceAllString(repl, "${2}\n")
 
-	return fmt.Sprintf("%s %s", strings.Join(make([]string, level+1), "#"), content)
+	if level == 0 {
+		return content
+	}
+
+	str := "#"
+	for level > 1 {
+		str += "#"
+		level--
+	}
+
+	return fmt.Sprintf("%s %s", str, content)
 }
