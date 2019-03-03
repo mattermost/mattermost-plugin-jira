@@ -8,15 +8,17 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/subtle"
+	// "crypto/subtle"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"html/template"
+	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
+	"net/http/httputil"
+	// "net/url"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -32,8 +34,6 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
 )
-
-const PluginId = "jira"
 
 const (
 	JIRA_USERNAME              = "Jira Plugin"
@@ -56,11 +56,14 @@ type Plugin struct {
 	// setConfiguration for usage.
 	configuration *configuration
 
-	botUserID       string
-	securityContext *SecurityContext
-	rsaKey          *rsa.PrivateKey
-	oauth1Config    *oauth1.Config
-	projectKeys     []string
+	// SecurityContext is provided by JIRA upon the installation of this integration
+	// on the JIRA side. We store it in the DB and refresh as needed
+	sc           SecurityContext
+	oauth1Config *oauth1.Config
+
+	botUserID   string
+	rsaKey      *rsa.PrivateKey
+	projectKeys []string
 }
 
 type SecurityContext struct {
@@ -78,35 +81,58 @@ type SecurityContext struct {
 }
 
 func (p *Plugin) OnActivate() error {
-	config := p.getConfiguration()
-	fmt.Printf("<><> OnActivate %#v\n", config)
-
-	user, err := p.API.GetUserByUsername(config.UserName)
+	var err error
+	err = p.loadSecurityContext()
 	if err != nil {
-		mlog.Error(err.Error())
-		return fmt.Errorf("Unable to find user with configured username: %v", config.UserName)
+		p.API.LogInfo("Failed to load the security context to connect to JIRA. Make sure you install on the JIRA side\n")
 	}
+	fmt.Printf("<><> 2 OnActivate: err: %v, sc:%#v\n", err, p.sc)
 
-	p.API.RegisterCommand(getCommand())
+	config := p.getConfiguration()
+	user, apperr := p.API.GetUserByUsername(config.UserName)
+	if apperr != nil {
+		return fmt.Errorf("Unable to find user with configured username: %v, error: %v", config.UserName, apperr)
+	}
 
 	p.botUserID = user.Id
 	p.rsaKey = p.getRSAKey()
 
+	// Temporary hack until we can pull the project keys dynamically
+	p.projectKeys = []string{"MM"}
+
 	p.oauth1Config = &oauth1.Config{
 		ConsumerKey:    "OauthKey",
 		ConsumerSecret: "dont_care",
-		CallbackURL:    *p.API.GetConfig().ServiceSettings.SiteURL + "/plugins/" + PluginId + "/oauth/complete",
+		CallbackURL:    p.externalURL() + "/plugins/" + manifest.Id + "/oauth/complete",
 		Endpoint: oauth1.Endpoint{
-			RequestTokenURL: config.JiraURL + "/plugins/servlet/oauth/request-token",
-			AuthorizeURL:    config.JiraURL + "/plugins/servlet/oauth/authorize",
-			AccessTokenURL:  config.JiraURL + "/plugins/servlet/oauth/access-token",
+			RequestTokenURL: p.sc.BaseURL + "/plugins/servlet/oauth/request-token",
+			AuthorizeURL:    p.sc.BaseURL + "/plugins/servlet/oauth/authorize",
+			AccessTokenURL:  p.sc.BaseURL + "/plugins/servlet/oauth/access-token",
 		},
 		Signer: &oauth1.RSASigner{PrivateKey: p.rsaKey},
 	}
 
-	// Temporary hack until we can pull the project keys dynamically
-	p.projectKeys = []string{"MM"}
+	p.API.RegisterCommand(getCommand())
 
+	return nil
+}
+
+func (p *Plugin) loadSecurityContext() error {
+	// Since .sc is not a pointer, use .Key to check if it's already loaded
+	if p.sc.Key != "" {
+		return nil
+	}
+
+	b, apperr := p.API.KVGet(KEY_SECURITY_CONTEXT)
+	if apperr != nil {
+		return apperr
+	}
+	var sc SecurityContext
+	err := json.Unmarshal(b, &sc)
+	if err != nil {
+		return err
+	}
+	p.sc = sc
 	return nil
 }
 
@@ -134,43 +160,46 @@ func (p *Plugin) getRSAKey() *rsa.PrivateKey {
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
 	config := p.getConfiguration()
-	if config.Secret == "" || config.UserName == "" {
-		http.Error(w, "JIRA plugin not configured correctly; must provide Secret and UserName", http.StatusForbidden)
+	if config.UserName == "" {
+		http.Error(w, "JIRA plugin not configured correctly; must provide UserName", http.StatusForbidden)
 		return
 	}
 
-	status, err := p.handleHTTPRequest(c, config, w, r)
+	status, err := p.handleHTTPRequest(w, r)
 	if err != nil {
-		// panic(err.Error())
-		p.API.LogError(strconv.Itoa(status), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
+		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
 		http.Error(w, err.Error(), status)
 	}
-	p.API.LogDebug(strconv.Itoa(status), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
+	p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
 }
 
-func (p *Plugin) handleHTTPRequest(c *plugin.Context, config *configuration, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) handleHTTPRequest(w http.ResponseWriter, r *http.Request) (int, error) {
 	switch r.URL.Path {
 	case "/test":
-		return p.serveTest(c, config, w, r)
+		return p.serveTest(w, r)
 	case "/public-key":
-		return p.servePublicKey(c, config, w, r)
+		return p.servePublicKey(w, r)
 	case "/oauth/connect":
-		return p.serveOAuthRequest(c, config, w, r)
+		return p.serveOAuthRequest(w, r)
 	case "/oauth/complete":
-		return p.serveOAuthComplete(c, config, w, r)
+		return p.serveOAuthComplete(w, r)
 	case "/webhook",
 		"/issue_event":
-		return p.serveWebhook(c, config, w, r)
-	case "/atlassian-connect.json":
-		return p.serveAtlassianConnect(c, config, w, r)
+		return p.serveWebhook(w, r)
+	case "/atlassian-connect-jwt.json":
+		return p.serveAtlassianConnectJWT(w, r)
+	case "/atlassian-connect-oauth.json":
+		return p.serveAtlassianConnectOauth(w, r)
 	case "/installed":
-		return p.serveInstalled(c, config, w, r)
+		return p.serveInstalled(w, r)
+	case "/uninstalled":
+		return p.serveUninstalled(w, r)
 	case "/create-issue":
-		return p.serveCreateIssue(c, config, w, r)
+		return p.serveCreateIssue(w, r)
 	case "/create-issue-metadata":
-		return p.serveCreateIssueMetadata(c, config, w, r)
+		return p.serveCreateIssueMetadata(w, r)
 	case "/api/v1/connected":
-		return p.serveGetConnected(c, config, w, r)
+		return p.serveGetConnected(w, r)
 	}
 
 	return http.StatusNotFound, fmt.Errorf("Not found")
@@ -183,13 +212,13 @@ type ConnectedResponse struct {
 	JiraURL       string `json:"jira_url"`
 }
 
-func (p *Plugin) serveGetConnected(c *plugin.Context, config *configuration, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) serveGetConnected(w http.ResponseWriter, r *http.Request) (int, error) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	if userID == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	resp := &ConnectedResponse{Connected: false, JiraURL: config.JiraURL}
+	resp := &ConnectedResponse{Connected: false, JiraURL: p.sc.BaseURL}
 
 	info, _ := p.getJiraUserInfo(userID)
 	if info != nil {
@@ -203,88 +232,97 @@ func (p *Plugin) serveGetConnected(c *plugin.Context, config *configuration, w h
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) serveOAuthRequest(c *plugin.Context, config *configuration, w http.ResponseWriter, r *http.Request) (int, error) {
-	fmt.Printf("<><> 1 %#v\n", p.oauth1Config)
-	requestToken, requestSecret, err := p.oauth1Config.RequestToken()
-	fmt.Printf("<><> 2 %v %v %v\n", requestToken, requestSecret, err)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	if err := p.API.KVSet(KEY_OAUTH1_REQUEST+requestToken, []byte(requestSecret)); err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	authURL, err := p.oauth1Config.AuthorizationURL(requestToken)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	http.Redirect(w, r, authURL.String(), http.StatusFound)
-	return http.StatusFound, nil
-}
-
-func (p *Plugin) serveOAuthComplete(c *plugin.Context, config *configuration, w http.ResponseWriter, r *http.Request) (int, error) {
-	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(r)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	requestSecret := ""
-	if b, err := p.API.KVGet(KEY_OAUTH1_REQUEST + requestToken); err != nil {
-		return http.StatusInternalServerError, err
-	} else {
-		requestSecret = string(b)
-	}
-	p.API.KVDelete(KEY_OAUTH1_REQUEST + requestToken)
-
+func (p *Plugin) serveOAuthRequest(w http.ResponseWriter, r *http.Request) (int, error) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	if userID == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	accessToken, accessSecret, err := p.oauth1Config.AccessToken(requestToken, requestSecret, verifier)
+	requestToken, requestSecret, err := p.oauth1Config.RequestToken()
+	fmt.Printf("<><> serveOAuthRequest %v '%v' '%v'", err, requestToken, requestSecret)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	token := oauth1.NewToken(accessToken, accessSecret)
-	httpClient := p.oauth1Config.Client(oauth1.NoContext, token)
+	// values := url.Values{}
+	// values.Add("scope", "read:jira-work")
+	// values.Add("client_id", p.sc.OAuthClientId)
+	// values.Add("redirect_uri", fmt.Sprintf("%v/plugins/%v/oath/complete", p.externalURL(), manifest.Id))
+	// values.Add("state", userID)
+	// values.Add("audience", "api.atlassian.com")
+	// values.Add("response_type", "code")
+	// values.Add("prompt", "consent")
+	// linkURL := "https://auth.atlassian.com/authorize?" + values.Encode()
+	// fmt.Printf("<><> %q\n", linkURL)
 
-	info := &JiraUserInfo{}
+	//http.Redirect(w, r, linkURL, http.StatusFound)
+	// return http.StatusFound, nil
+	return http.StatusOK, nil
+}
 
-	jiraClient, err := jira.NewClient(httpClient, config.JiraURL)
-	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("could not get jira client: %v", err)
-	}
-
-	req, _ := jiraClient.NewRequest("GET", "rest/api/2/myself", nil)
-
-	data := map[string]interface{}{}
-	_, err = jiraClient.Do(req, &data)
-	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("could not get user: %v", err)
-	}
-
-	info.AccountId = data["accountId"].(string)
-	info.Name = data["name"].(string)
-
-	b, _ := json.Marshal(info)
-
-	p.API.KVSet(KEY_USER_INFO+userID, b)
-	p.API.KVSet(KEY_JIRA_USER_TO_MM_USERID+info.Name, []byte(userID))
-
-	p.API.PublishWebSocketEvent(
-		WS_EVENT_CONNECT,
-		map[string]interface{}{
-			"connected":       true,
-			"jira_username":   info.Name,
-			"jira_account_id": info.AccountId,
-			"jira_url":        config.JiraURL,
-		},
-		&model.WebsocketBroadcast{UserId: userID},
-	)
-
+func (p *Plugin) serveOAuthComplete(w http.ResponseWriter, r *http.Request) (int, error) {
+	bb, err := httputil.DumpRequest(r, true)
+	fmt.Printf("<><> serveOAuthComplete %v %v", err, string(bb))
+	// requestToken, verifier, err := oauth1.ParseAuthorizationCallback(r)
+	// if err != nil {
+	// 	return http.StatusInternalServerError, err
+	// }
+	//
+	// requestSecret := ""
+	// if b, err := p.API.KVGet(KEY_OAUTH1_REQUEST + requestToken); err != nil {
+	// 	return http.StatusInternalServerError, err
+	// } else {
+	// 	requestSecret = string(b)
+	// }
+	// p.API.KVDelete(KEY_OAUTH1_REQUEST + requestToken)
+	//
+	// userID := r.Header.Get("Mattermost-User-ID")
+	// if userID == "" {
+	// 	return http.StatusUnauthorized, fmt.Errorf("Not authorized")
+	// }
+	//
+	// accessToken, accessSecret, err := p.oauth1Config.AccessToken(requestToken, requestSecret, verifier)
+	// if err != nil {
+	// 	return http.StatusInternalServerError, err
+	// }
+	//
+	// token := oauth1.NewToken(accessToken, accessSecret)
+	// httpClient := p.oauth1Config.Client(oauth1.NoContext, token)
+	//
+	// info := &JiraUserInfo{}
+	//
+	// jiraClient, err := jira.NewClient(httpClient, p.sc.BaseURL)
+	// if err != nil {
+	// 	return http.StatusInternalServerError, fmt.Errorf("could not get jira client: %v", err)
+	// }
+	//
+	// req, _ := jiraClient.NewRequest("GET", "rest/api/2/myself", nil)
+	//
+	// data := map[string]interface{}{}
+	// _, err = jiraClient.Do(req, &data)
+	// if err != nil {
+	// 	return http.StatusInternalServerError, fmt.Errorf("could not get user: %v", err)
+	// }
+	//
+	// info.AccountId = data["accountId"].(string)
+	// info.Name = data["name"].(string)
+	//
+	// b, _ := json.Marshal(info)
+	//
+	// p.API.KVSet(KEY_USER_INFO+userID, b)
+	// p.API.KVSet(KEY_JIRA_USER_TO_MM_USERID+info.Name, []byte(userID))
+	//
+	// p.API.PublishWebSocketEvent(
+	// 	WS_EVENT_CONNECT,
+	// 	map[string]interface{}{
+	// 		"connected":       true,
+	// 		"jira_username":   info.Name,
+	// 		"jira_account_id": info.AccountId,
+	// 		"jira_url":        p.sc.BaseURL,
+	// 	},
+	// 	&model.WebsocketBroadcast{UserId: userID},
+	// )
+	//
 	html := `
 <!DOCTYPE html>
 <html>
@@ -314,7 +352,7 @@ type CreateIssue struct {
 	Fields jira.IssueFields `json:"fields"`
 }
 
-func (p *Plugin) servePublicKey(c *plugin.Context, config *configuration, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) servePublicKey(w http.ResponseWriter, r *http.Request) (int, error) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	if userID == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
@@ -339,11 +377,28 @@ func (p *Plugin) servePublicKey(c *plugin.Context, config *configuration, w http
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) serveAtlassianConnect(c *plugin.Context, config *configuration, w http.ResponseWriter, r *http.Request) (int, error) {
-	mmConfig := p.API.GetConfig()
-	baseURL := *mmConfig.ServiceSettings.SiteURL + "/" + path.Join("plugins", PluginId)
+func (p Plugin) externalURL() string {
+	config := p.getConfiguration()
+	if config.ExternalURL != "" {
+		return config.ExternalURL
+	}
+	return *p.API.GetConfig().ServiceSettings.SiteURL
+}
 
-	lp := filepath.Join(*mmConfig.PluginSettings.Directory, PluginId, "server", "dist", "templates", "atlassian-connect.json")
+func (p *Plugin) serveAtlassianConnectJWT(w http.ResponseWriter, r *http.Request) (int, error) {
+	return p.serveAtlassianConnectJSON(w, r, "jwt")
+}
+
+func (p *Plugin) serveAtlassianConnectOauth(w http.ResponseWriter, r *http.Request) (int, error) {
+	return p.serveAtlassianConnectJSON(w, r, "oauth")
+}
+
+func (p *Plugin) serveAtlassianConnectJSON(w http.ResponseWriter, r *http.Request, authType string) (int, error) {
+	baseURL := p.externalURL() + "/" + path.Join("plugins", manifest.Id)
+
+	fmt.Println("<><><><><>", *p.API.GetConfig().PluginSettings.Directory, manifest.Id, "server", "dist", "templates", "atlassian-connect"+authType+".json")
+	lp := filepath.Join(*p.API.GetConfig().PluginSettings.Directory, manifest.Id, "server", "dist", "templates", "atlassian-connect-"+authType+".json")
+	fmt.Printf("<><> serveAtlassianConnect: %v\n", lp)
 	vals := map[string]string{
 		"BaseURL": baseURL,
 	}
@@ -351,22 +406,30 @@ func (p *Plugin) serveAtlassianConnect(c *plugin.Context, config *configuration,
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	tmpl.ExecuteTemplate(w, "config", vals)
+	bb := &bytes.Buffer{}
+	tmpl.ExecuteTemplate(bb, "config", vals)
+	fmt.Printf("<><> serveAtlassianConnect: %v\n", bb.String())
+	io.Copy(w, bb)
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) serveInstalled(c *plugin.Context, config *configuration, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) serveInstalled(w http.ResponseWriter, r *http.Request) (int, error) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Fatalf("Can't read request:%v\n", err)
 		return http.StatusInternalServerError, err
 	}
+
 	var sc SecurityContext
-	json.Unmarshal(body, &sc)
+	err = json.Unmarshal(body, &sc)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	p.sc = sc
 
-	p.securityContext = &sc
-
-	p.API.KVSet(KEY_SECURITY_CONTEXT, body)
+	// TODO in a cluster situation, other instances should be notified and re-configure
+	// themselves
+	appErr := p.API.KVSet(KEY_SECURITY_CONTEXT, body)
+	fmt.Printf("<><> SecurityContext payload (%v): %v\n", appErr, string(body))
 
 	// Attempted to auto load the project keys but the jira client was failing for some reason
 	// Need to look into it some more later
@@ -401,7 +464,20 @@ func (p *Plugin) serveInstalled(c *plugin.Context, config *configuration, w http
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) serveCreateIssue(c *plugin.Context, config *configuration, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) serveUninstalled(w http.ResponseWriter, r *http.Request) (int, error) {
+	// body, err := ioutil.ReadAll(r.Body)
+	// if err != nil {
+	// 	log.Fatalf("Can't read request:%v\n", err)
+	// 	return http.StatusInternalServerError, err
+	// }
+	//
+	// fmt.Printf("<><> SecurityContext payload: %v\n", string(body))
+	//
+	json.NewEncoder(w).Encode([]string{"OK"})
+	return http.StatusOK, nil
+}
+
+func (p *Plugin) serveCreateIssue(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
@@ -433,10 +509,8 @@ func (p *Plugin) serveCreateIssue(c *plugin.Context, config *configuration, w ht
 	post, _ := p.API.GetPost(cr.PostId)
 	if channel, _ := p.API.GetChannel(post.ChannelId); channel != nil {
 		if team, _ := p.API.GetTeam(channel.TeamId); team != nil {
-			config := p.API.GetConfig()
-			baseURL := *config.ServiceSettings.SiteURL
 			permalink := fmt.Sprintf("%v/%v/pl/%v",
-				baseURL,
+				p.externalURL(),
 				team.Name,
 				cr.PostId,
 			)
@@ -484,7 +558,7 @@ func (p *Plugin) serveCreateIssue(c *plugin.Context, config *configuration, w ht
 
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
-		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", p.securityContext.BaseURL, created.Key),
+		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", p.sc.BaseURL, created.Key),
 		ChannelId: post.ChannelId,
 		RootId:    cr.PostId,
 		UserId:    userID,
@@ -497,7 +571,7 @@ func (p *Plugin) serveCreateIssue(c *plugin.Context, config *configuration, w ht
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) serveCreateIssueMetadata(c *plugin.Context, config *configuration, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) serveCreateIssueMetadata(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
@@ -557,7 +631,7 @@ func (p *Plugin) getJiraUserInfo(userID string) (*JiraUserInfo, error) {
 	return &info, nil
 }
 
-func (p *Plugin) serveTest(c *plugin.Context, config *configuration, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) serveTest(w http.ResponseWriter, r *http.Request) (int, error) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	if userID == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
@@ -584,25 +658,20 @@ func (p *Plugin) serveTest(c *plugin.Context, config *configuration, w http.Resp
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) loadSecurityContext() {
-	b, _ := p.API.KVGet(KEY_SECURITY_CONTEXT)
-	var sc SecurityContext
-	json.Unmarshal(b, &sc)
-	p.securityContext = &sc
-}
-
 func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, *http.Client, error) {
-	if p.securityContext == nil {
-		p.loadSecurityContext()
+	// TODO Is this redundant?
+	err := p.loadSecurityContext()
+	if err != nil {
+		return nil, nil, err
 	}
 
 	c := oauth2.Config{
-		BaseURL: p.securityContext.BaseURL,
+		BaseURL: p.sc.BaseURL,
 		Subject: jiraUser,
 	}
 
-	c.Config.ClientID = p.securityContext.OAuthClientId
-	c.Config.ClientSecret = p.securityContext.SharedSecret
+	c.Config.ClientID = p.sc.OAuthClientId
+	c.Config.ClientSecret = p.sc.SharedSecret
 	c.Config.Endpoint.AuthURL = "https://auth.atlassian.io"
 	c.Config.Endpoint.TokenURL = "https://auth.atlassian.io/oauth2/token"
 
@@ -613,15 +682,17 @@ func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, *http.Clie
 }
 
 func (p *Plugin) getJIRAClientForServer() (*jira.Client, error) {
-	if p.securityContext == nil {
-		p.loadSecurityContext()
+	// TODO Is this redundant?
+	err := p.loadSecurityContext()
+	if err != nil {
+		return nil, err
 	}
 
 	c := &jwt.Config{
-		Key:          p.securityContext.Key,
-		ClientKey:    p.securityContext.ClientKey,
-		SharedSecret: p.securityContext.SharedSecret,
-		BaseURL:      p.securityContext.BaseURL,
+		Key:          p.sc.Key,
+		ClientKey:    p.sc.ClientKey,
+		SharedSecret: p.sc.SharedSecret,
+		BaseURL:      p.sc.BaseURL,
 	}
 
 	return jira.NewClient(c.Client(), c.BaseURL)
@@ -654,15 +725,16 @@ func (p *Plugin) CreateBotDMPost(userID, message, postType string) *model.AppErr
 	return nil
 }
 
-func (p *Plugin) serveWebhook(c *plugin.Context, config *configuration, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) serveWebhook(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
 	}
-	if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(config.Secret)) != 1 {
-		return http.StatusForbidden,
-			fmt.Errorf("Request URL: secret did not match")
-	}
+	// TODO redo with JWT
+	// if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(config.Secret)) != 1 {
+	// 	return http.StatusForbidden,
+	// 		fmt.Errorf("Request URL: secret did not match")
+	// }
 
 	teamName := r.URL.Query().Get("team")
 	if teamName == "" {
@@ -675,6 +747,7 @@ func (p *Plugin) serveWebhook(c *plugin.Context, config *configuration, w http.R
 			fmt.Errorf("Request URL: channel is empty")
 	}
 
+	config := p.getConfiguration()
 	user, appErr := p.API.GetUserByUsername(config.UserName)
 	if appErr != nil {
 		return appErr.StatusCode, fmt.Errorf(appErr.Message)

@@ -35,26 +35,23 @@ func getCommandResponse(responseType, text string) *model.CommandResponse {
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	split := strings.Fields(args.Command)
 	command := split[0]
-	//parameters := []string{}
 	action := ""
 	if len(split) > 1 {
 		action = split[1]
 	}
-	//if len(split) > 2 {
-	//	parameters = split[2:]
-	//}
-
 	if command != "/jira" {
 		return nil, nil
 	}
 
-	if action == "connect" {
-		config := p.API.GetConfig()
-		if config.ServiceSettings.SiteURL == nil {
-			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "Encountered an error connecting to JIRA."), nil
+	switch action {
+	case "connect":
+		if *p.API.GetConfig().ServiceSettings.SiteURL == "" {
+			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "plugin configuration error."), nil
 		}
 
-		resp := getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, fmt.Sprintf("[Click here to link your JIRA account.](%s/plugins/%s/oauth/connect)", *config.ServiceSettings.SiteURL, PluginId))
+		resp := getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
+			fmt.Sprintf("[Click here to link your JIRA account.](%s/plugins/%s/oauth/connect)",
+				*p.API.GetConfig().ServiceSettings.SiteURL, manifest.Id))
 		return resp, nil
 	}
 

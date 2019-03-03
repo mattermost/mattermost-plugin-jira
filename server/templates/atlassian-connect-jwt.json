@@ -8,8 +8,8 @@
     },
     "baseUrl": "{{ .BaseURL }}",
     "links": {
-      "self": "{{ .BaseURL }}/atlassian-connect.json",
-      "homepage": "{{ .BaseURL }}/atlassian-connect.json"
+      "self": "{{ .BaseURL }}/atlassian-connect.json?auth=jwt",
+      "homepage": "{{ .BaseURL }}/atlassian-connect.json?auth=jwt"
     },
     "authentication": {
       "type": "jwt"
@@ -20,7 +20,8 @@
     },
     "scopes": [
       "READ",
-      "WRITE"
+      "WRITE",
+      "ACT_AS_USER"
     ],
     "modules": {
       "webhooks": [
