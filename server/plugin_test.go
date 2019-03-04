@@ -170,7 +170,7 @@ func TestPlugin(t *testing.T) {
 
 			p := Plugin{}
 			p.setConfiguration(&configuration{
-				Secret:   tc.Configuration.Secret,
+				// Secret:   tc.Configuration.Secret,
 				UserName: tc.Configuration.UserName,
 			})
 			p.SetAPI(api)
