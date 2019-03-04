@@ -4,7 +4,6 @@
 package main
 
 import (
-	"regexp"
 	"testing"
 )
 
@@ -25,16 +24,11 @@ func TestJiraToMarkdown(t *testing.T) {
 
 		// t.Logf("Testing: %s %s", jiraReplacers[i].Type, jiraReplacers[i].RegExp)
 
-		re, err := regexp.Compile(jiraReplacers[i].RegExp)
-		if err != nil {
-			t.Error(err)
-		}
-
 		switch jiraReplacers[i].Type {
 
 		// Bold requires separate test text due to Italic md being the same as jira
 		case "Bold":
-			if !re.MatchString(jiraBoldText) {
+			if !jiraReplacers[i].RegExp.MatchString(jiraBoldText) {
 				t.Error(jiraReplacers[i].Type, ": RegExp", jiraReplacers[i].RegExp, "not found in test content.")
 			}
 
@@ -45,7 +39,7 @@ func TestJiraToMarkdown(t *testing.T) {
 
 			// Subscript requires separate test text due to strikethrough
 		case "Subscript":
-			if !re.MatchString(jiraSubscriptText) {
+			if !jiraReplacers[i].RegExp.MatchString(jiraSubscriptText) {
 				t.Error(jiraReplacers[i].Type, ": RegExp", jiraReplacers[i].RegExp, "not found in test content.")
 			}
 
@@ -56,7 +50,7 @@ func TestJiraToMarkdown(t *testing.T) {
 
 			// Strikethrough requires separate test text due to subscript
 		case "Strikethrough":
-			if !re.MatchString(jiraStrikethroughText) {
+			if !jiraReplacers[i].RegExp.MatchString(jiraStrikethroughText) {
 				t.Error(jiraReplacers[i].Type, ": RegExp", jiraReplacers[i].RegExp, "not found in test content.")
 			}
 
@@ -67,7 +61,7 @@ func TestJiraToMarkdown(t *testing.T) {
 
 			// Lists requires separate test text due to bold
 		case "Lists":
-			if !re.MatchString(jiraListText) {
+			if !jiraReplacers[i].RegExp.MatchString(jiraListText) {
 				t.Error(jiraReplacers[i].Type, ": RegExp", jiraReplacers[i].RegExp, "not found in test content.")
 			}
 
@@ -79,11 +73,11 @@ func TestJiraToMarkdown(t *testing.T) {
 		default:
 			// Default handling of any other types
 
-			if !re.MatchString(originalContent) {
+			if !jiraReplacers[i].RegExp.MatchString(originalContent) {
 				t.Error(jiraReplacers[i].Type, ": RegExp", jiraReplacers[i].RegExp, "not found in test content.")
 			}
 
-			if re.MatchString(replacedContent) {
+			if jiraReplacers[i].RegExp.MatchString(replacedContent) {
 				t.Error(jiraReplacers[i].Type, ": RegExp", jiraReplacers[i].RegExp, " was not replaced.")
 			}
 

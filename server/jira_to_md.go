@@ -17,7 +17,7 @@ import (
 
 type jiraReplacer struct {
 	Type           string
-	RegExp         string
+	RegExp         *regexp.Regexp
 	Replace        string
 	ReplaceStrFunc func(string) string // Takes priority
 }
@@ -34,41 +34,41 @@ var (
 
 		{
 			Type:           "Lists",
-			RegExp:         `[ \t]*(#+)\s+`,
+			RegExp:         regexp.MustCompile(`(m?)[ ^\t]*(#+)\s+`),
 			ReplaceStrFunc: replaceNumberedListItems,
 		},
 
 		// Headers
 		{
 			Type:           "Headers",
-			RegExp:         `h([1-6]+)\. (.*?)(\r|\n)`,
+			RegExp:         regexp.MustCompile(`h([1-6]+)\. (.*?)(\r|\n)`),
 			ReplaceStrFunc: replaceHeaders,
 		},
 
 		// Bold
 		{
 			Type:    "Bold",
-			RegExp:  `\*(\S.*?)\*`,
+			RegExp:  regexp.MustCompile(`\*(\S.*?)\*`),
 			Replace: "**${1}**",
 		},
 
 		// Italic (same in jira and md)
 		{
 			Type:    "Italic",
-			RegExp:  `\_(\S.*?)\_`,
+			RegExp:  regexp.MustCompile(`\_(\S.*?)\_`),
 			Replace: "*${1}*",
 		},
 
 		// Monospaced text
 		{
 			Type:    "Monospaced",
-			RegExp:  `\{\{([^}]+)\}\}`,
+			RegExp:  regexp.MustCompile(`\{\{([^}]+)\}\}`),
 			Replace: "`${1}`",
 		},
 
 		// // Underline (not a thing in md)
 		// jiraReplacer{
-		//  RegExp:  `\+([^+]*)\+`,
+		//  RegExp: regexp.MustCompile( `\+([^+]*)\+`),
 		//  Replace: "${1}",
 		// },
 
@@ -79,77 +79,77 @@ var (
 		// Superscript
 		{
 			Type:    "Superscript",
-			RegExp:  `\^([^^]*)\^`,
+			RegExp:  regexp.MustCompile(`\^([^^]*)\^`),
 			Replace: "<sup>${1}</sup>",
 		},
 
 		// Subscript
 		{
 			Type:    "Subscript",
-			RegExp:  `~([^~]*)~`,
+			RegExp:  regexp.MustCompile(`~([^~]*)~`),
 			Replace: "<sub>${1}</sub>",
 		},
 
 		// Strikethrough
 		{
 			Type:    "Strikethrough",
-			RegExp:  `\s-(\S+.*?\S)-(?s)`,
+			RegExp:  regexp.MustCompile(`\s-(\S+.*?\S)-(?s)`),
 			Replace: " ~~${1}~~ ",
 		},
 
 		// Code Block
 		{
 			Type: "Code Block",
-			// RegExp: `(?s){code(:([a-z]+))?}(.*){code}`,
-			RegExp:  `(?s){code(:([a-z]+))?([:|]?(title|borderStyle|borderColor|borderWidth|bgColor|titleBGColor)=.+?)*}(.*?){code}`,
+			// RegExp: regexp.MustCompile(`(?s){code(:([a-z]+))?}(.*){code}`),
+			RegExp:  regexp.MustCompile(`(?s){code(:([a-z]+))?([:|]?(title|borderStyle|borderColor|borderWidth|bgColor|titleBGColor)=.+?)*}(.*?){code}`),
 			Replace: "```${2}${5}```",
 		},
 
 		// Pre-formatted text
 		{
 			Type:    "Pre-formatted",
-			RegExp:  `{noformat}`,
+			RegExp:  regexp.MustCompile(`{noformat}`),
 			Replace: "```",
 		},
 
 		// Named Links
 		{
 			Type:    "Named Link",
-			RegExp:  `\[(.+?)\|(.*?)\]`,
+			RegExp:  regexp.MustCompile(`\[(.+?)\|(.*?)\]`),
 			Replace: "[${1}](${2})",
 		},
 
 		// Un-named Links
 		// jiraReplacer{
 		// 	Type:    "Un-named Link",
-		// 	RegExp:  `\[([^|]+)\]`,
+		// 	RegExp: regexp.MustCompile( `\[([^|]+)\]`),
 		// 	Replace: "<${1}>${2}",
 		// },
 
 		// // Single Paragraph Blockquote
 		// jiraReplacer{
-		//  RegExp:  `^bq\.\s+`,
+		//  RegExp: regexp.MustCompile( `^bq\.\s+`),
 		//  Replace: "> ",
 		// },
 
 		// Remove color: unsupported in md
 		{
 			Type:    "Text Color",
-			RegExp:  `{color:.+}(.*){color}`,
+			RegExp:  regexp.MustCompile(`{color:.+}(.*){color}`),
 			Replace: "${1}",
 		},
 
 		// // panel into table
 		{
 			Type:    "Panel (to table)",
-			RegExp:  `(?s){panel:title=([^}]*)}\n?(.*?)\n?{panel}`,
+			RegExp:  regexp.MustCompile(`(?s){panel:title=([^}]*)}\n?(.*?)\n?{panel}`),
 			Replace: "\n| ${1} |\n| --- |\n| ${2} |",
 		},
 
 		// table header
 		{
 			Type:           "Table Header",
-			RegExp:         `[ \t]*((?:\|\|.*?)+\|\|)[ \t]*`,
+			RegExp:         regexp.MustCompile(`[ \t]*((?:\|\|.*?)+\|\|)[ \t]*`),
 			ReplaceStrFunc: replaceTableHeaders,
 		},
 
@@ -165,22 +165,17 @@ func jiraToMarkdown(body string) string {
 
 	for i := range jiraReplacers {
 
-		re, err := regexp.Compile(jiraReplacers[i].RegExp)
-		if err != nil {
-			fmt.Println(jiraReplacers[i].Type, "RegExp Error:", err.Error())
+		if jiraReplacers[i].RegExp == nil {
 			continue
 		}
 
 		if jiraReplacers[i].ReplaceStrFunc != nil {
-
-			result = re.ReplaceAllStringFunc(result, jiraReplacers[i].ReplaceStrFunc)
+			result = jiraReplacers[i].RegExp.ReplaceAllStringFunc(result, jiraReplacers[i].ReplaceStrFunc)
 			continue
-
 		}
 
 		if jiraReplacers[i].Replace != "" {
-
-			result = re.ReplaceAllString(result, jiraReplacers[i].Replace)
+			result = jiraReplacers[i].RegExp.ReplaceAllString(result, jiraReplacers[i].Replace)
 			continue
 		}
 
