@@ -3,14 +3,16 @@
 
 package main
 
-import (
-	"bytes"
-	"errors"
-	"strings"
-	"text/template"
-
-	"github.com/mattermost/mattermost-server/model"
-)
+type WebhookUser struct {
+	Self         string
+	Name         string
+	Key          string
+	EmailAddress string
+	AvatarURLs   map[string]string
+	DisplayName  string
+	Active       bool
+	TimeZone     string
+}
 
 type Webhook struct {
 	WebhookEvent string
@@ -18,15 +20,14 @@ type Webhook struct {
 		Self   string
 		Key    string
 		Fields struct {
-			Assignee *struct {
-				DisplayName string
-				Name        string
-			}
+			Assignee    *WebhookUser
+			Reporter    *WebhookUser
 			Summary     string
 			Description string
 			Priority    *struct {
-				Id   string
-				Name string
+				Id      string
+				Name    string
+				IconURL string
 			}
 			IssueType struct {
 				Name    string
@@ -38,145 +39,22 @@ type Webhook struct {
 			Status struct {
 				Id string
 			}
+			Labels []string
 		}
 	}
-	User struct {
-		Name        string
-		AvatarUrls  map[string]string
-		DisplayName string
-	}
+	User    WebhookUser
 	Comment struct {
-		Body string
+		Body         string
+		UpdateAuthor WebhookUser
 	}
 	ChangeLog struct {
 		Items []struct {
+			From       string
 			FromString string
+			To         string
 			ToString   string
 			Field      string
 		}
 	}
-}
-
-// SlackAttachment returns the text to be placed in the resulting post or an empty string if nothing should be
-// posted.
-func (w *Webhook) SlackAttachment() (*model.SlackAttachment, error) {
-	switch w.WebhookEvent {
-	case "jira:issue_created":
-	case "jira:issue_updated":
-		isResolutionChange := false
-		for _, change := range w.ChangeLog.Items {
-			if change.Field == "resolution" {
-				isResolutionChange = (change.FromString == "") != (change.ToString == "")
-				break
-			}
-		}
-		if !isResolutionChange {
-			return nil, nil
-		}
-	case "jira:issue_deleted":
-		if w.Issue.Fields.Resolution != nil {
-			return nil, nil
-		}
-	default:
-		return nil, nil
-	}
-
-	pretext, err := w.renderText("" +
-		"{{.User.DisplayName}} {{.Verb}} {{.Issue.Fields.IssueType.Name}} " +
-		"[{{.Issue.Key}}]({{.JIRAURL}}/browse/{{.Issue.Key}})" +
-		"")
-	if err != nil {
-		return nil, err
-	}
-
-	text, err := w.renderText("" +
-		"[{{.Issue.Fields.Summary}}]({{.JIRAURL}}/browse/{{.Issue.Key}})" +
-		"{{if eq .WebhookEvent \"jira:issue_created\"}}{{if ne .Issue.Fields.Description \"\"}}" +
-		"{{if len .Issue.Fields.Description | lt 3000}}" +
-		"\n\n{{printf \"%.3000s\" .Issue.Fields.Description}}..." +
-		"{{else}}" +
-		"\n\n{{.Issue.Fields.Description}}" +
-		"{{end}}" +
-		"{{end}}{{end}}" +
-		"")
-	if err != nil {
-		return nil, err
-	}
-
-	var fields []*model.SlackAttachmentField
-	if w.WebhookEvent == "jira:issue_created" {
-		if w.Issue.Fields.Assignee != nil {
-			fields = append(fields, &model.SlackAttachmentField{
-				Title: "Assignee",
-				Value: w.Issue.Fields.Assignee.DisplayName,
-				Short: true,
-			})
-		}
-		if w.Issue.Fields.Priority != nil {
-			fields = append(fields, &model.SlackAttachmentField{
-				Title: "Priority",
-				Value: w.Issue.Fields.Priority.Name,
-				Short: true,
-			})
-		}
-	}
-
-	return &model.SlackAttachment{
-		Fallback: pretext,
-		Color:    "#95b7d0",
-		Pretext:  pretext,
-		Text:     text,
-		Fields:   fields,
-	}, nil
-}
-
-func (w *Webhook) JIRAURL() string {
-	pos := strings.LastIndex(w.Issue.Self, "/rest/api")
-	if pos < 0 {
-		return ""
-	}
-	return w.Issue.Self[:pos]
-}
-
-func (w *Webhook) renderText(tplBody string) (string, error) {
-	verb := strings.TrimPrefix(w.WebhookEvent, "jira:issue_")
-
-	if w.WebhookEvent == "jira:issue_updated" {
-		for _, change := range w.ChangeLog.Items {
-			if change.Field == "resolution" {
-				if change.ToString == "" && change.FromString != "" {
-					verb = "reopened"
-				} else if change.ToString != "" && change.FromString == "" {
-					verb = "resolved"
-				}
-				break
-			}
-		}
-	}
-
-	tpl, err := template.New("post").Parse(tplBody)
-	if err != nil {
-		return "", err
-	}
-
-	var buf bytes.Buffer
-	if err := tpl.Execute(&buf, struct {
-		*Webhook
-		JIRAURL string
-		Verb    string
-	}{
-		Webhook: w,
-		JIRAURL: w.JIRAURL(),
-		Verb:    verb,
-	}); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
-func (w *Webhook) IsValid() error {
-	if w.WebhookEvent == "" {
-		return errors.New("WebhookEvent missing")
-	}
-	return nil
+	IssueEventTypeName string `json:"issue_event_type_name"`
 }

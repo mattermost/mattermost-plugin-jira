@@ -23,7 +23,7 @@ import (
 )
 
 func validRequestBody() io.ReadCloser {
-	if f, err := os.Open("testdata/webhook_issue_created.json"); err != nil {
+	if f, err := os.Open("testdata/webhook-issue-created.json"); err != nil {
 		panic(err)
 	} else {
 		return f
@@ -31,20 +31,18 @@ func validRequestBody() io.ReadCloser {
 }
 
 type TestConfiguration struct {
-	Enabled  bool
 	Secret   string
 	UserName string
 }
 
 func TestPlugin(t *testing.T) {
-	f, err := os.Open("testdata/webhook_issue_created.json")
+	f, err := os.Open("testdata/webhook-issue-created.json")
 	require.NoError(t, err)
 	defer f.Close()
 	var webhook Webhook
 	require.NoError(t, json.NewDecoder(f).Decode(&webhook))
 
 	validConfiguration := TestConfiguration{
-		Enabled:  true,
 		Secret:   "thesecret",
 		UserName: "theuser",
 	}
@@ -62,8 +60,7 @@ func TestPlugin(t *testing.T) {
 		},
 		"NoUserConfiguration": {
 			Configuration: TestConfiguration{
-				Enabled: true,
-				Secret:  "thesecret",
+				Secret: "thesecret",
 			},
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusForbidden,
@@ -105,7 +102,6 @@ func TestPlugin(t *testing.T) {
 		},
 		"InvalidUser": {
 			Configuration: TestConfiguration{
-				Enabled:  true,
 				Secret:   "thesecret",
 				UserName: "nottheuser",
 			},
@@ -156,7 +152,6 @@ func TestPlugin(t *testing.T) {
 
 			p := Plugin{}
 			p.setConfiguration(&configuration{
-				Enabled:  tc.Configuration.Enabled,
 				Secret:   tc.Configuration.Secret,
 				UserName: tc.Configuration.UserName,
 			})

@@ -15,11 +15,6 @@
         "header": "",
         "footer": "Use this webhook URL to set up the JIRA integration. See [documentation](https://about.mattermost.com/default-jira-plugin) to learn more.\n\n`https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL`",
         "settings": [{
-            "key": "Enabled",
-            "display_name": "Enable JIRA",
-            "type": "bool",
-            "help_text": "When true, you can configure JIRA webhooks to post message in Mattermost. To help combat phishing attacks, all posts are labelled by a BOT tag."
-        }, {
             "key": "UserName",
             "display_name": "User",
             "type": "username",
