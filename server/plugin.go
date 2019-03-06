@@ -91,6 +91,8 @@ func (p *Plugin) OnActivate() error {
 	if err != nil {
 		p.API.LogInfo("Failed to load the security context to connect to JIRA. Make sure you install on the JIRA side\n")
 	}
+	p.API.LogInfo("<><> OnActivate", "client ID", p.sc.OAuthClientId)
+	p.API.LogInfo("<><> OnActivate", "shared secret", p.sc.SharedSecret)
 
 	config := p.getConfiguration()
 	user, apperr := p.API.GetUserByUsername(config.UserName)
@@ -112,7 +114,7 @@ func (p *Plugin) OnActivate() error {
 			AuthURL:  "https://auth.atlassian.com/authorize",
 			TokenURL: "https://auth.atlassian.com/oauth/token",
 		},
-		RedirectURL: fmt.Sprintf("%v/plugins/%v/oauth/complete2", p.externalURL(), manifest.Id),
+		RedirectURL: fmt.Sprintf("%v/plugins/%v/oauth/complete", p.externalURL(), manifest.Id),
 	}
 
 	p.API.RegisterCommand(getCommand())
@@ -405,6 +407,7 @@ func (p *Plugin) serveAtlassianConnectJSON(w http.ResponseWriter, r *http.Reques
 	bb := &bytes.Buffer{}
 	tmpl.ExecuteTemplate(bb, "config", vals)
 	io.Copy(w, bb)
+	fmt.Printf("%v\n", bb.String())
 	return http.StatusOK, nil
 }
 

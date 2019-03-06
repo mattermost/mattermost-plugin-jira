@@ -26,14 +26,6 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:7996ce08c1b325e680c5770db348669be994f296d694faa07bc739a8c8fe0be7"
-  name = "github.com/dghubble/oauth1"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "f0fe2bff8fbf301b33359ca431e4afc90390aab0"
-  version = "v0.5.0"
-
-[[projects]]
   digest = "1:7a6852b35eb5bbc184561443762d225116ae630c26a7c4d90546619f1e7d2ad2"
   name = "github.com/dgrijalva/jwt-go"
   packages = ["."]
@@ -489,7 +481,6 @@
   analyzer-version = 1
   input-imports = [
     "github.com/andygrunwald/go-jira",
-    "github.com/dghubble/oauth1",
     "github.com/google/go-querystring/query",
     "github.com/mattermost/mattermost-server/mlog",
     "github.com/mattermost/mattermost-server/model",
@@ -500,6 +491,7 @@
     "github.com/rbriski/atlassian-jwt",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
+    "golang.org/x/oauth2",
     "golang.org/x/oauth2/jira",
   ]
   solver-name = "gps-cdcl"

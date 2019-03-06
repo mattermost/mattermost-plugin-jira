@@ -32,16 +32,17 @@ func getCommandResponse(responseType, text string) *model.CommandResponse {
 	}
 }
 
-func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	split := strings.Fields(args.Command)
-	command := split[0]
-	action := ""
-	if len(split) > 1 {
-		action = split[1]
+func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
+	split := strings.Fields(commandArgs.Command)
+	if len(split) < 2 {
+		return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "Command not supported."), nil
 	}
+	command := split[0]
 	if command != "/jira" {
 		return nil, nil
 	}
+	action := split[1]
+	args := split[2:]
 
 	switch action {
 	case "connect":
@@ -50,9 +51,20 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 		}
 
 		resp := getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-			fmt.Sprintf("[Click here to link your JIRA account.](%s/plugins/%s/oauth/connect2)",
+			fmt.Sprintf("[Click here to link your JIRA account.](%s/plugins/%s/oauth/connect)",
 				*p.API.GetConfig().ServiceSettings.SiteURL, manifest.Id))
 		return resp, nil
+
+	case "subscribe":
+		if len(args) < 0 {
+			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "---- TODO SUBSCRIBE HELP ---- "), nil
+		}
+
+		err := p.loadSecurityContext()
+		if err != nil {
+			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, err.Error()), nil
+		}
+
 	}
 
 	return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "Command not supported."), nil
