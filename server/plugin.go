@@ -92,6 +92,8 @@ func (p *Plugin) OnActivate() error {
 		p.API.LogInfo("Failed to load the security context to connect to JIRA. Make sure you install on the JIRA side\n")
 	}
 	p.API.LogInfo("<><> OnActivate", "client ID", p.sc.OAuthClientId)
+	p.API.LogInfo("<><> OnActivate", "key", p.sc.Key)
+	p.API.LogInfo("<><> OnActivate", "client key", p.sc.ClientKey)
 	p.API.LogInfo("<><> OnActivate", "shared secret", p.sc.SharedSecret)
 
 	config := p.getConfiguration()
