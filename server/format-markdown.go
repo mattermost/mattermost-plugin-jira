@@ -18,7 +18,7 @@ const (
 	mdUpdateStyle = "###### "
 )
 
-type parsed struct {
+type parsedWebhook struct {
 	*Webhook
 	RawJSON  string
 	headline string
@@ -43,7 +43,7 @@ func AsMarkdown(in io.Reader) (func(post *model.Post), error) {
 	}, nil
 }
 
-func newMarkdownMessage(parsed *parsed) string {
+func newMarkdownMessage(parsed *parsedWebhook) string {
 	if parsed.headline == "" {
 		return ""
 	}
@@ -57,7 +57,7 @@ func newMarkdownMessage(parsed *parsed) string {
 	return s
 }
 
-func parse(in io.Reader, linkf func(w *Webhook) string) (*parsed, error) {
+func parse(in io.Reader, linkf func(w *Webhook) string) (*parsedWebhook, error) {
 	bb, err := ioutil.ReadAll(in)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func parse(in io.Reader, linkf func(w *Webhook) string) (*parsed, error) {
 		return nil, fmt.Errorf("No webhook event")
 	}
 
-	parsed := parsed{
+	parsed := parsedWebhook{
 		Webhook: &webhook,
 	}
 	parsed.RawJSON = string(bb)
@@ -124,7 +124,7 @@ func parse(in io.Reader, linkf func(w *Webhook) string) (*parsed, error) {
 	return &parsed, nil
 }
 
-func (p *parsed) fromChangeLog(issue string) (string, string) {
+func (p *parsedWebhook) fromChangeLog(issue string) (string, string) {
 	for _, item := range p.ChangeLog.Items {
 		to := item.ToString
 		from := item.FromString

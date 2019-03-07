@@ -125,7 +125,7 @@ func TestMarkdown(t *testing.T) {
 func TestWebhookVariousErrorsForCoverage(t *testing.T) {
 	assert.Equal(t, "", mdUser(nil))
 
-	parsed := &parsed{
+	parsed := &parsedWebhook{
 		Webhook: &Webhook{},
 	}
 	assert.Equal(t, "", parsed.mdIssueReportedBy())
