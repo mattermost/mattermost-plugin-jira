@@ -23,7 +23,7 @@ func AsSlackAttachment(in io.Reader) (func(post *model.Post), error) {
 	}, nil
 }
 
-func newSlackAttachment(parsed *parsed) *model.SlackAttachment {
+func newSlackAttachment(parsed *parsedWebhook) *model.SlackAttachment {
 	if parsed.headline == "" {
 		return nil
 	}

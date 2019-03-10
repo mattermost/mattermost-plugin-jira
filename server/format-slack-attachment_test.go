@@ -30,7 +30,7 @@ func TestSlackAttachment(t *testing.T) {
 }
 
 func TestSlackAttachmentForCoverage(t *testing.T) {
-	parsed := &parsed{
+	parsed := &parsedWebhook{
 		Webhook: &Webhook{},
 	}
 	parsed.WebhookEvent = "something-else"
