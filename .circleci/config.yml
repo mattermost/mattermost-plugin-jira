@@ -1,27 +1,30 @@
 version: 2.1
-jobs:
-  lint:
+executors:
+  default:
+    working_directory: /go/src/github.com/mattermost/mattermost-plugin-jira
     docker:
       - image: circleci/golang:1.12-node
-    working_directory: /go/src/github.com/mattermost/mattermost-plugin-jira
+
+jobs:
+  lint:
+    executor:
+      name: default
     steps:
       - checkout
       - run: curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
       - run: make check-style
 
   test:
-    docker:
-      - image: circleci/golang:1.12-node
-    working_directory: /go/src/github.com/mattermost/mattermost-plugin-jira
+    executor:
+      name: default
     steps:
       - checkout
       - run: curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
       - run: make test
 
   build:
-    docker:
-      - image: circleci/golang:1.12-node
-    working_directory: /go/src/github.com/mattermost/mattermost-plugin-jira
+    executor:
+      name: default
     steps:
       - checkout
       - run: curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
