@@ -220,6 +220,9 @@ func (w *Webhook) mdIssueLabels() string {
 }
 
 func (w *Webhook) mdIssuePriority() string {
+	if w.Issue.Fields.Priority == nil {
+		return ""
+	}
 	return "Priority: " + mdBOLD(w.Issue.Fields.Priority.Name)
 }
 
