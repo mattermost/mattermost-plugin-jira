@@ -35,14 +35,14 @@ func getCommandResponse(responseType, text string) *model.CommandResponse {
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	split := strings.Fields(commandArgs.Command)
 	if len(split) < 2 {
-		return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "Command not supported."), nil
+		return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, fmt.Sprintf("Command not supported. %v", len(split))), nil
 	}
 	command := split[0]
 	if command != "/jira" {
 		return nil, nil
 	}
 	action := split[1]
-	args := split[2:]
+	// args := split[2:]
 
 	switch action {
 	case "connect":
@@ -55,10 +55,10 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 				*p.API.GetConfig().ServiceSettings.SiteURL, manifest.Id))
 		return resp, nil
 
-	case "subscribe":
-		if len(args) < 0 {
-			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "---- TODO SUBSCRIBE HELP ---- "), nil
-		}
+	case "test":
+		// if len(args) < 0 {
+		// 	return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "---- TODO SUBSCRIBE HELP ---- "), nil
+		// }
 
 		err := p.loadSecurityContext()
 		if err != nil {
@@ -70,6 +70,9 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, err.Error()), nil
 		}
 
+		u, _, err := jirac.User.GetSelf()
+		return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
+			fmt.Sprintf("<><> err:%v, u:%#v", err, u)), nil
 	}
 
 	return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "Command not supported."), nil

@@ -37,7 +37,23 @@
           "event": "jira:issue_updated",
           "url": "/issue_event"
         }
-      ]
+      ],
+      "adminPages": [
+      {
+        "url": "/my-admin-page",
+        "name": {
+          "value": "My Admin Page"
+        },
+        "key": "my-admin-page"
+      }
+    ],
+    "configurePage": {
+      "url": "/my-config-page",
+      "name": {
+        "value": "My Configure Page"
+      },
+      "key": "my-config-page"
+    }
     }
   }
 {{ end }}
