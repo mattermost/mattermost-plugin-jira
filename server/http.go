@@ -28,27 +28,38 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 func (p *Plugin) handleHTTPRequest(w http.ResponseWriter, r *http.Request) (int, error) {
 	switch r.URL.Path {
-	case "/test":
-		return p.serveTest(w, r)
+	// Atlassian connect and its "lifecycle events"
+	case "/atlassian-connect.json":
+		return p.handleHTTPAtlassianConnect(w, r)
+	case "/installed":
+		return p.handleHTTPInstalled(w, r)
+	case "/uninstalled":
+		return p.handleHTTPUninstalled(w, r)
+
+	// OAuth end-points
 	case "/oauth/connect":
-		return p.serveOAuth2Connect(w, r)
+		return p.handleHTTPOAuth2Connect(w, r)
 	case "/oauth/complete":
-		return p.serveOAuth2Complete(w, r)
+		return p.handleHTTPOAuth2Complete(w, r)
+
 	case "/webhook",
 		"/issue_event":
-		return p.handleWebhook(w, r)
-	case "/atlassian-connect.json":
-		return p.serveAtlassianConnect(w, r)
-	case "/installed":
-		return p.serveInstalled(w, r)
-	case "/uninstalled":
-		return p.serveUninstalled(w, r)
+		return p.handleHTTPWebhook(w, r)
+
+	// User mapping page
+	case "/user-connect":
+		return p.handleHTTPUserConnect(w, r)
+	case "/config":
+		return p.handleHTTPUserConfig(w, r)
+	case "/api/v1/userinfo":
+		return p.handleHTTPGetUserInfo(w, r)
+
 	case "/create-issue":
-		return p.serveCreateIssue(w, r)
+		return p.handleHTTPCreateIssue(w, r)
+	case "/test":
+		return p.serveTest(w, r)
 	case "/create-issue-metadata":
 		return p.serveCreateIssueMetadata(w, r)
-	case "/api/v1/connected":
-		return p.serveGetConnected(w, r)
 	}
 
 	return http.StatusNotFound, fmt.Errorf("Not found")

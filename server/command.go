@@ -51,7 +51,8 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 		}
 
 		resp := getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-			fmt.Sprintf("[Click here to link your JIRA account.](%s/plugins/%s/oauth/connect)",
+			// fmt.Sprintf("[Click here to link your JIRA account.](%s/plugins/%s/oauth/connect)",
+			fmt.Sprintf("[Click here to link your JIRA account.](%s/plugins/%s/user-connect)",
 				*p.API.GetConfig().ServiceSettings.SiteURL, manifest.Id))
 		return resp, nil
 

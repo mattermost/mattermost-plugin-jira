@@ -34,26 +34,7 @@ type SecurityContext struct {
 	OAuthClientId  string `json:"oauthClientId"`
 }
 
-func (p *Plugin) loadSecurityContext() error {
-	// Since .sc is not a pointer, use .Key to check if it's already loaded
-	if p.sc.Key != "" {
-		return nil
-	}
-
-	b, apperr := p.API.KVGet(KEY_SECURITY_CONTEXT)
-	if apperr != nil {
-		return apperr
-	}
-	var sc SecurityContext
-	err := json.Unmarshal(b, &sc)
-	if err != nil {
-		return err
-	}
-	p.sc = sc
-	return nil
-}
-
-func (p *Plugin) serveAtlassianConnect(w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) handleHTTPAtlassianConnect(w http.ResponseWriter, r *http.Request) (int, error) {
 	baseURL := p.externalURL() + "/" + path.Join("plugins", manifest.Id)
 
 	lp := filepath.Join(*p.API.GetConfig().PluginSettings.Directory, manifest.Id, "server", "dist", "templates", "atlassian-connect.json")
@@ -65,13 +46,15 @@ func (p *Plugin) serveAtlassianConnect(w http.ResponseWriter, r *http.Request) (
 		return http.StatusInternalServerError, err
 	}
 	bb := &bytes.Buffer{}
-	tmpl.ExecuteTemplate(bb, "config", vals)
-	io.Copy(w, bb)
-	fmt.Printf("%v\n", bb.String())
+	err = tmpl.ExecuteTemplate(bb, "config", vals)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	io.Copy(w, bytes.NewReader(bb.Bytes()))
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) serveInstalled(w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) handleHTTPInstalled(w http.ResponseWriter, r *http.Request) (int, error) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return http.StatusInternalServerError, err
@@ -122,13 +105,32 @@ func (p *Plugin) serveInstalled(w http.ResponseWriter, r *http.Request) (int, er
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) serveUninstalled(w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) handleHTTPUninstalled(w http.ResponseWriter, r *http.Request) (int, error) {
 	json.NewEncoder(w).Encode([]string{"OK"})
 	return http.StatusOK, nil
 }
 
+func (p *Plugin) loadSecurityContext() error {
+	// Since .sc is not a pointer, use .Key to check if it's already loaded
+	if p.sc.Key != "" {
+		return nil
+	}
+
+	b, apperr := p.API.KVGet(KEY_SECURITY_CONTEXT)
+	if apperr != nil {
+		return apperr
+	}
+	var sc SecurityContext
+	err := json.Unmarshal(b, &sc)
+	if err != nil {
+		return err
+	}
+	p.sc = sc
+	return nil
+}
+
+// Creates a client for acting on behalf of a user
 func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, *http.Client, error) {
-	// TODO Is this redundant?
 	err := p.loadSecurityContext()
 	if err != nil {
 		return nil, nil, err
@@ -150,8 +152,8 @@ func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, *http.Clie
 	return jiraClient, httpClient, err
 }
 
+// Creates a client with a JWT
 func (p *Plugin) getJIRAClientForServer() (*jira.Client, error) {
-	// TODO Is this redundant?
 	err := p.loadSecurityContext()
 	if err != nil {
 		return nil, err

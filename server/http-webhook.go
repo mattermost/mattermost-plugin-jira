@@ -66,7 +66,7 @@ type Webhook struct {
 	IssueEventTypeName string `json:"issue_event_type_name"`
 }
 
-func (p *Plugin) handleWebhook(w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) handleHTTPWebhook(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")

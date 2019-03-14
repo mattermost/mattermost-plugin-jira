@@ -1,5 +1,6 @@
-{{define "config"}}{
-    "key": "mattermost-jira-plugin",
+{{define "config"}}
+{
+    "key": "mattermost-plugin",
     "name": "Mattermost JIRA Plugin",
     "description": "Add-on for the Mattermost JIRA plugin.",
     "vendor": {
@@ -8,8 +9,8 @@
     },
     "baseUrl": "{{ .BaseURL }}",
     "links": {
-      "self": "{{ .BaseURL }}/atlassian-connect-jwt.json",
-      "homepage": "{{ .BaseURL }}/atlassian-connect-jwt.json"
+      "self": "{{ .BaseURL }}/atlassian-connect.json",
+      "homepage": "{{ .BaseURL }}/atlassian-connect.json"
     },
     "authentication": {
       "type": "jwt"
@@ -24,36 +25,36 @@
       "ACT_AS_USER"
     ],
     "modules": {
-      "webhooks": [
-        {
-          "event": "jira:issue_created",
-          "url": "/issue_event"
-        },
-        {
-          "event": "jira:issue_deleted",
-          "url": "/issue_event"
-        },
-        {
-          "event": "jira:issue_updated",
-          "url": "/issue_event"
-        }
-      ],
-      "adminPages": [
-      {
-        "url": "/my-admin-page",
-        "name": {
-          "value": "My Admin Page"
-        },
-        "key": "my-admin-page"
-      }
-    ],
-    "configurePage": {
-      "url": "/my-config-page",
-      "name": {
-        "value": "My Configure Page"
-      },
-      "key": "my-config-page"
+	    "generalPages": [
+		    {
+			    "url": "/completed",
+			    "icon": {
+				    "width": 80,
+				    "height": 80,
+				    "url": "https://en.wikipedia.org/wiki/File:Run.svg"
+			    },
+			    "name": {
+				    "value": "My General Page"
+			    },
+			    "key": "my-general-page"
+		    }
+	    ],
+	    "adminPages": [
+		    {
+			    "url": "/admin",
+			    "name": {
+				    "value": "Administer Mattermost integration"
+			    },
+			    "key": "admin"
+		    }
+	    ],
+	    "configurePage": {
+		    "url": "/config",
+		    "name": {
+			    "value": "My Configure Page"
+		    },
+		    "key": "config"
+	    }
     }
-    }
-  }
+}
 {{ end }}
