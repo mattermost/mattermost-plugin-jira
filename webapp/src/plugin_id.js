@@ -1,1 +1,1 @@
-export default 'jira2';
+export default 'jira';

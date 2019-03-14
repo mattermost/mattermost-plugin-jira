@@ -56,13 +56,15 @@ export function getConnected() {
         let data;
         const baseUrl = getPluginServerRoute(getState());
         try {
-            data = await doFetch(`${baseUrl}/api/v1/connected`, {
+            data = await doFetch(`${baseUrl}/api/v1/userinfo`, {
                 method: 'get',
             });
         } catch (error) {
             return {error};
         }
 
+	    console.log('<><> getConnected: received');
+	    console.log(data);
         dispatch({
             type: CreateTypes.RECEIVED_CONNECTED,
             data,

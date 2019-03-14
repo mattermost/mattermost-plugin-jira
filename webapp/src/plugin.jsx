@@ -16,6 +16,7 @@ export default class Plugin {
         await getConnected()(store.dispatch, store.getState);
 
         registry.registerRootComponent(CreateIssueModal);
+	    console.log("<><> registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);")
         registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
 
         registry.registerWebSocketEventHandler(`custom_${PluginId}_connect`, handleConnect(store));

@@ -210,6 +210,7 @@ func (p *Plugin) handleHTTPGetUserInfo(w http.ResponseWriter, r *http.Request) (
 
 	b, _ := json.Marshal(resp)
 	w.Write(b)
+	fmt.Println(string(b))
 	return http.StatusOK, nil
 }
 
