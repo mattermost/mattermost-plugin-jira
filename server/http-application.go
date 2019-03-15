@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -20,7 +19,7 @@ import (
 	oauth2_jira "golang.org/x/oauth2/jira"
 )
 
-type SecurityContext struct {
+type AtlassianSecurityContext struct {
 	Key            string `json:"key"`
 	ClientKey      string `json:"clientKey"`
 	PublicKey      string `json:"publicKey"`
@@ -37,6 +36,7 @@ type SecurityContext struct {
 func (p *Plugin) handleHTTPAtlassianConnect(w http.ResponseWriter, r *http.Request) (int, error) {
 	baseURL := p.externalURL() + "/" + path.Join("plugins", manifest.Id)
 
+	//TODO Update this when there's a GetBundlePath API available
 	lp := filepath.Join(*p.API.GetConfig().PluginSettings.Directory, manifest.Id, "server", "dist", "templates", "atlassian-connect.json")
 	vals := map[string]string{
 		"BaseURL": baseURL,
@@ -60,46 +60,16 @@ func (p *Plugin) handleHTTPInstalled(w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, err
 	}
 
-	var sc SecurityContext
+	var sc AtlassianSecurityContext
 	err = json.Unmarshal(body, &sc)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	p.sc = sc
 
-	// TODO in a cluster situation, other instances should be notified and re-configure
-	// themselves
 	appErr := p.API.KVSet(KEY_SECURITY_CONTEXT, body)
-	fmt.Printf("<><> SecurityContext payload (%v) (%v): %v\n", appErr, len(body), string(body))
-
-	// Attempted to auto load the project keys but the jira client was failing for some reason
-	// Need to look into it some more later
-
-	/*if jiraClient, _ := p.getJIRAClientForServer(); jiraClient != nil {
-	        fmt.Println("HIT0")
-	        req, _ := jiraClient.NewRawRequest(http.MethodGet, "/rest/api/2/project", nil)
-	        list1 := jira.ProjectList{}
-	        _, err1 := jiraClient.Do(req, &list1)
-	        if err1 != nil {
-	                fmt.Println(err1.Error())
-	        }
-
-	        fmt.Println(list1)
-
-	        if list, resp, err := jiraClient.Project.GetList(); err == nil {
-	                fmt.Println("HIT1")
-	                keys := []string{}
-	                for _, proj := range *list {
-	                        keys = append(keys, proj.Key)
-	                }
-	                p.projectKeys = keys
-	                fmt.Println(p.projectKeys)
-	        } else {
-	                body, _ := ioutil.ReadAll(resp.Body)
-	                fmt.Println(string(body))
-	                fmt.Println(err.Error())
-	        }
-	}*/
+	if appErr != nil {
+		return http.StatusInternalServerError, appErr
+	}
 
 	json.NewEncoder(w).Encode([]string{"OK"})
 	return http.StatusOK, nil
@@ -110,39 +80,35 @@ func (p *Plugin) handleHTTPUninstalled(w http.ResponseWriter, r *http.Request) (
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) loadSecurityContext() error {
-	// Since .sc is not a pointer, use .Key to check if it's already loaded
-	if p.sc.Key != "" {
-		return nil
-	}
+func (p *Plugin) loadSecurityContext() (AtlassianSecurityContext, error) {
+	// For HA/Cluster configurations must not cache, load from the database every timne
 
 	b, apperr := p.API.KVGet(KEY_SECURITY_CONTEXT)
 	if apperr != nil {
-		return apperr
+		return AtlassianSecurityContext{}, apperr
 	}
-	var sc SecurityContext
-	err := json.Unmarshal(b, &sc)
+	var asc AtlassianSecurityContext
+	err := json.Unmarshal(b, &asc)
 	if err != nil {
-		return err
+		return AtlassianSecurityContext{}, err
 	}
-	p.sc = sc
-	return nil
+	return asc, nil
 }
 
 // Creates a client for acting on behalf of a user
 func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, *http.Client, error) {
-	err := p.loadSecurityContext()
+	sc, err := p.loadSecurityContext()
 	if err != nil {
 		return nil, nil, err
 	}
 
 	c := oauth2_jira.Config{
-		BaseURL: p.sc.BaseURL,
+		BaseURL: sc.BaseURL,
 		Subject: jiraUser,
 	}
 
-	c.Config.ClientID = p.sc.OAuthClientId
-	c.Config.ClientSecret = p.sc.SharedSecret
+	c.Config.ClientID = sc.OAuthClientId
+	c.Config.ClientSecret = sc.SharedSecret
 	c.Config.Endpoint.AuthURL = "https://auth.atlassian.io"
 	c.Config.Endpoint.TokenURL = "https://auth.atlassian.io/oauth2/token"
 
@@ -154,16 +120,16 @@ func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, *http.Clie
 
 // Creates a client with a JWT
 func (p *Plugin) getJIRAClientForServer() (*jira.Client, error) {
-	err := p.loadSecurityContext()
+	sc, err := p.loadSecurityContext()
 	if err != nil {
 		return nil, err
 	}
 
 	c := &jwt.Config{
-		Key:          p.sc.Key,
-		ClientKey:    p.sc.ClientKey,
-		SharedSecret: p.sc.SharedSecret,
-		BaseURL:      p.sc.BaseURL,
+		Key:          sc.Key,
+		ClientKey:    sc.ClientKey,
+		SharedSecret: sc.SharedSecret,
+		BaseURL:      sc.BaseURL,
 	}
 
 	return jira.NewClient(c.Client(), c.BaseURL)

@@ -19,7 +19,7 @@ const (
 )
 
 type parsed struct {
-	*Webhook
+	*JIRAWebhook
 	RawJSON  string
 	headline string
 	details  string
@@ -28,7 +28,7 @@ type parsed struct {
 }
 
 func AsMarkdown(in io.Reader) (func(post *model.Post), error) {
-	parsed, err := parse(in, func(w *Webhook) string {
+	parsed, err := parse(in, func(w *JIRAWebhook) string {
 		return w.mdIssueLongLink()
 	})
 	if err != nil {
@@ -57,13 +57,13 @@ func newMarkdownMessage(parsed *parsed) string {
 	return s
 }
 
-func parse(in io.Reader, linkf func(w *Webhook) string) (*parsed, error) {
+func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsed, error) {
 	bb, err := ioutil.ReadAll(in)
 	if err != nil {
 		return nil, err
 	}
 
-	webhook := Webhook{}
+	webhook := JIRAWebhook{}
 	err = json.Unmarshal(bb, &webhook)
 	if err != nil {
 		return nil, err
@@ -73,11 +73,11 @@ func parse(in io.Reader, linkf func(w *Webhook) string) (*parsed, error) {
 	}
 
 	parsed := parsed{
-		Webhook: &webhook,
+		JIRAWebhook: &webhook,
 	}
 	parsed.RawJSON = string(bb)
 	if linkf == nil {
-		linkf = func(w *Webhook) string {
+		linkf = func(w *JIRAWebhook) string {
 			return parsed.mdIssueLink()
 		}
 	}
@@ -85,7 +85,7 @@ func parse(in io.Reader, linkf func(w *Webhook) string) (*parsed, error) {
 	headline := ""
 	user := &parsed.User
 	parsed.style = mdUpdateStyle
-	issue := parsed.mdIssueType() + " " + linkf(parsed.Webhook)
+	issue := parsed.mdIssueType() + " " + linkf(parsed.JIRAWebhook)
 	switch parsed.WebhookEvent {
 	case "jira:issue_created":
 		parsed.style = mdRootStyle
@@ -167,7 +167,7 @@ func (p *parsed) fromChangeLog(issue string) (string, string) {
 	return "", ""
 }
 
-func (w *Webhook) mdIssueCreatedDetails() string {
+func (w *JIRAWebhook) mdIssueCreatedDetails() string {
 	attrs := []string{}
 	for _, a := range []string{
 		w.mdIssuePriority(),
@@ -183,59 +183,59 @@ func (w *Webhook) mdIssueCreatedDetails() string {
 	return s
 }
 
-func (w *Webhook) mdIssueSummary() string {
+func (w *JIRAWebhook) mdIssueSummary() string {
 	return truncate(w.Issue.Fields.Summary, 80)
 }
 
-func (w *Webhook) mdIssueDescription() string {
+func (w *JIRAWebhook) mdIssueDescription() string {
 	return truncate(w.Issue.Fields.Description, 3000)
 }
 
-func (w *Webhook) mdIssueAssignee() string {
+func (w *JIRAWebhook) mdIssueAssignee() string {
 	if w.Issue.Fields.Assignee == nil {
 		return "_nobody_"
 	}
 	return mdUser(w.Issue.Fields.Assignee)
 }
 
-func (w *Webhook) mdIssueAssignedTo() string {
+func (w *JIRAWebhook) mdIssueAssignedTo() string {
 	if w.Issue.Fields.Assignee == nil {
 		return ""
 	}
 	return "Assigned to: " + mdBOLD(w.mdIssueAssignee())
 }
 
-func (w *Webhook) mdIssueReportedBy() string {
+func (w *JIRAWebhook) mdIssueReportedBy() string {
 	if w.Issue.Fields.Reporter == nil {
 		return ""
 	}
 	return "Reported by: " + mdBOLD(mdUser(w.Issue.Fields.Reporter))
 }
 
-func (w *Webhook) mdIssueLabels() string {
+func (w *JIRAWebhook) mdIssueLabels() string {
 	if len(w.Issue.Fields.Labels) == 0 {
 		return ""
 	}
 	return "Labels: " + strings.Join(w.Issue.Fields.Labels, ",")
 }
 
-func (w *Webhook) mdIssuePriority() string {
+func (w *JIRAWebhook) mdIssuePriority() string {
 	return "Priority: " + mdBOLD(w.Issue.Fields.Priority.Name)
 }
 
-func (w *Webhook) mdIssueType() string {
+func (w *JIRAWebhook) mdIssueType() string {
 	return strings.ToLower(w.Issue.Fields.IssueType.Name)
 }
 
-func (w *Webhook) mdIssueLongLink() string {
+func (w *JIRAWebhook) mdIssueLongLink() string {
 	return fmt.Sprintf("[%v: %v](%v/browse/%v)", w.Issue.Key, w.mdIssueSummary(), w.jiraURL(), w.Issue.Key)
 }
 
-func (w *Webhook) mdIssueLink() string {
+func (w *JIRAWebhook) mdIssueLink() string {
 	return fmt.Sprintf("[%v](%v/browse/%v)", w.Issue.Key, w.jiraURL(), w.Issue.Key)
 }
 
-func (w *Webhook) mdIssueHashtags() string {
+func (w *JIRAWebhook) mdIssueHashtags() string {
 	s := "("
 	if w.WebhookEvent == "jira:issue_created" {
 		s += "#jira-new "
@@ -282,7 +282,7 @@ func mdDiff(from, to string) string {
 	return strings.Join(added, ",")
 }
 
-func mdUser(user *WebhookUser) string {
+func mdUser(user *JIRAWebhookUser) string {
 	if user == nil {
 		return ""
 	}
@@ -302,7 +302,7 @@ func truncate(s string, max int) string {
 	}
 	return s[:max]
 }
-func (w *Webhook) jiraURL() string {
+func (w *JIRAWebhook) jiraURL() string {
 	pos := strings.LastIndex(w.Issue.Self, "/rest/api")
 	if pos < 0 {
 		return ""

@@ -61,11 +61,6 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 		// 	return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "---- TODO SUBSCRIBE HELP ---- "), nil
 		// }
 
-		err := p.loadSecurityContext()
-		if err != nil {
-			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, err.Error()), nil
-		}
-
 		jirac, err := p.getJIRAClientForServer()
 		if err != nil {
 			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, err.Error()), nil

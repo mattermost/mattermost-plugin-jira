@@ -59,7 +59,7 @@ func (p *Plugin) handleHTTPRequest(w http.ResponseWriter, r *http.Request) (int,
 	case "/test":
 		return p.serveTest(w, r)
 	case "/create-issue-metadata":
-		return p.serveCreateIssueMetadata(w, r)
+		return p.handleHTTPCreateIssueMetadata(w, r)
 	}
 
 	return http.StatusNotFound, fmt.Errorf("Not found")

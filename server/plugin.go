@@ -4,19 +4,16 @@
 package main
 
 import (
-	// "bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	// "io/ioutil"
 	"net/http"
 	"sync"
 
-	// jira "github.com/andygrunwald/go-jira"
-	// "github.com/google/go-querystring/query"
+	jira "github.com/andygrunwald/go-jira"
 	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-server/mlog"
@@ -41,9 +38,6 @@ type Plugin struct {
 	// setConfiguration for usage.
 	configuration *configuration
 
-	// SecurityContext is provided by JIRA upon the installation of this integration
-	// on the JIRA side. We store it in the DB and refresh as needed
-	sc           SecurityContext
 	oauth2Config oauth2.Config
 
 	botUserID   string
@@ -51,23 +45,7 @@ type Plugin struct {
 	projectKeys []string
 }
 
-type JiraUserInfo struct {
-	Key       string `json:"key,omitempty"`
-	AccountId string `json:"accountId,omitempty"`
-	Name      string `json:"name,omitempty"`
-}
-
 func (p *Plugin) OnActivate() error {
-	var err error
-	err = p.loadSecurityContext()
-	if err != nil {
-		p.API.LogInfo("Failed to load the security context to connect to JIRA. Make sure you install on the JIRA side\n")
-	}
-	p.API.LogInfo("<><> OnActivate", "client ID", p.sc.OAuthClientId)
-	p.API.LogInfo("<><> OnActivate", "key", p.sc.Key)
-	p.API.LogInfo("<><> OnActivate", "client key", p.sc.ClientKey)
-	p.API.LogInfo("<><> OnActivate", "shared secret", p.sc.SharedSecret)
-
 	config := p.getConfiguration()
 	user, apperr := p.API.GetUserByUsername(config.UserName)
 	if apperr != nil {
@@ -202,5 +180,30 @@ func (p *Plugin) CreateBotDMPost(userID, message, postType string) *model.AppErr
 		return err
 	}
 
+	return nil
+}
+func (p *Plugin) loadJIRAProjectKeys(w http.ResponseWriter, r *http.Request) error {
+	jiraClient, err := p.getJIRAClientForServer()
+	if err != nil {
+		return err
+	}
+
+	req, _ := jiraClient.NewRawRequest(http.MethodGet, "/rest/api/2/project", nil)
+	list1 := jira.ProjectList{}
+	_, err = jiraClient.Do(req, &list1)
+	if err != nil {
+		return err
+	}
+
+	list, _, err := jiraClient.Project.GetList()
+	if err != nil {
+		return err
+	}
+	keys := []string{}
+	for _, proj := range *list {
+		keys = append(keys, proj.Key)
+	}
+
+	p.projectKeys = keys
 	return nil
 }

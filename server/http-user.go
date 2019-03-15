@@ -36,19 +36,19 @@ type UserInfo struct {
 }
 
 func (p *Plugin) handleHTTPUserConnect(w http.ResponseWriter, r *http.Request) (int, error) {
-	// TODO MUST BE A GET
+	// TODO Enforce a GET
 	userID := r.Header.Get("Mattermost-User-ID")
 	if userID == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	err := p.loadSecurityContext()
+	sc, err := p.loadSecurityContext()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
 	// TODO: Add an encrypted token that contains MM user ID so that UserConfig
-	redirectURL := fmt.Sprintf("%v/login?dest-url=%v/plugins/servlet/ac/mattermost-plugin/config?qqqqq=wwwww", p.sc.BaseURL, p.sc.BaseURL)
+	redirectURL := fmt.Sprintf("%v/login?dest-url=%v/plugins/servlet/ac/mattermost-plugin/config?qqqqq=wwwww", sc.BaseURL, sc.BaseURL)
 	http.Redirect(w, r, redirectURL, http.StatusFound)
 	return http.StatusFound, nil
 }
@@ -56,9 +56,6 @@ func (p *Plugin) handleHTTPUserConnect(w http.ResponseWriter, r *http.Request) (
 func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (int, error) {
 	w.Header().Set("Content-Type", "text/html")
 	bb, _ := httputil.DumpRequest(r, true)
-	// w.Write([]byte("<html><code>"))
-	// w.Write(bb)
-	// w.Write([]byte("</code></html>"))
 	w.Write([]byte(`<!DOCTYPE html>
 <html lang="en">
     <head>
@@ -78,11 +75,6 @@ func (p *Plugin) handleHTTPOAuth2Connect(w http.ResponseWriter, r *http.Request)
 	userID := r.Header.Get("Mattermost-User-ID")
 	if userID == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
-	}
-
-	err := p.loadSecurityContext()
-	if err != nil {
-		return http.StatusInternalServerError, err
 	}
 
 	// TODO encruypt UserID
@@ -148,6 +140,11 @@ func (p *Plugin) handleHTTPOAuth2Complete(w http.ResponseWriter, r *http.Request
 		return http.StatusInternalServerError, fmt.Errorf("could not get user: %v", err)
 	}
 
+	sc, err := p.loadSecurityContext()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
 	b, _ := json.Marshal(info)
 
 	p.API.KVSet(KEY_USER_INFO+mattermostUserID, b)
@@ -159,7 +156,7 @@ func (p *Plugin) handleHTTPOAuth2Complete(w http.ResponseWriter, r *http.Request
 			"connected":       true,
 			"jira_username":   info.Name,
 			"jira_account_id": info.AccountId,
-			// "jira_url":        p.sc.BaseURL,
+			"jira_url":        sc.BaseURL,
 		},
 		&model.WebsocketBroadcast{UserId: mattermostUserID},
 	)
@@ -189,23 +186,19 @@ func (p *Plugin) handleHTTPGetUserInfo(w http.ResponseWriter, r *http.Request) (
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	// resp := UserInfo{}
-	// jiraUserInfo, err := p.getUserKey(mattermostUserID)
-	// if err == nil {
-	// 	resp = UserInfo{
-	// 		JIRAUserInfo: jiraUserInfo,
-	// 		IsConnected:  true,
-	// 		JIRAURL:      p.sc.BaseURL,
-	// 	}
-	// }
-	resp := UserInfo{
-		JIRAUserInfo: JIRAUserInfo{
-			Key:       "admin",
-			AccountId: "admin",
-			Name:      "Admin Name",
-		},
-		IsConnected: true,
-		JIRAURL:     p.sc.BaseURL,
+	sc, err := p.loadSecurityContext()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	resp := UserInfo{}
+	jiraUserInfo, err := p.getJIRAUserInfo(mattermostUserID)
+	if err == nil {
+		resp = UserInfo{
+			JIRAUserInfo: jiraUserInfo,
+			IsConnected:  true,
+			JIRAURL:      sc.BaseURL,
+		}
 	}
 
 	b, _ := json.Marshal(resp)
@@ -214,16 +207,20 @@ func (p *Plugin) handleHTTPGetUserInfo(w http.ResponseWriter, r *http.Request) (
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) getUserKey(mattermostUserID string) (JIRAUserInfo, error) {
-	b, _ := p.API.KVGet(KEY_USER_INFO + mattermostUserID)
-	if b == nil {
-		return JIRAUserInfo{}, fmt.Errorf("could not find jira user info")
-	}
-
-	info := JIRAUserInfo{}
-	err := json.Unmarshal(b, &info)
-	if err != nil {
-		return JIRAUserInfo{}, err
-	}
-	return info, nil
+func (p *Plugin) getJIRAUserInfo(mattermostUserID string) (JIRAUserInfo, error) {
+	// b, _ := p.API.KVGet(KEY_USER_INFO + mattermostUserID)
+	// if b == nil {
+	// 	return JIRAUserInfo{}, fmt.Errorf("could not find jira user info")
+	// }
+	//
+	// info := JIRAUserInfo{}
+	// err := json.Unmarshal(b, &info)
+	// if err != nil {
+	// 	return JIRAUserInfo{}, err
+	// }
+	return JIRAUserInfo{
+		Key:       "admin",
+		AccountId: "admin",
+		Name:      "Admin Name",
+	}, nil
 }

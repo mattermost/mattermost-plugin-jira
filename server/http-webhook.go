@@ -10,7 +10,7 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
-type WebhookUser struct {
+type JIRAWebhookUser struct {
 	Self         string
 	Name         string
 	Key          string
@@ -21,14 +21,14 @@ type WebhookUser struct {
 	TimeZone     string
 }
 
-type Webhook struct {
+type JIRAWebhook struct {
 	WebhookEvent string
 	Issue        struct {
 		Self   string
 		Key    string
 		Fields struct {
-			Assignee    *WebhookUser
-			Reporter    *WebhookUser
+			Assignee    *JIRAWebhookUser
+			Reporter    *JIRAWebhookUser
 			Summary     string
 			Description string
 			Priority    *struct {
@@ -49,10 +49,10 @@ type Webhook struct {
 			Labels []string
 		}
 	}
-	User    WebhookUser
+	User    JIRAWebhookUser
 	Comment struct {
 		Body         string
-		UpdateAuthor WebhookUser
+		UpdateAuthor JIRAWebhookUser
 	}
 	ChangeLog struct {
 		Items []struct {
