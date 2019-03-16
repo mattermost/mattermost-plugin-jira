@@ -481,6 +481,8 @@
   analyzer-version = 1
   input-imports = [
     "github.com/andygrunwald/go-jira",
+    "github.com/dgrijalva/jwt-go",
+    "github.com/google/go-querystring/query",
     "github.com/mattermost/mattermost-server/mlog",
     "github.com/mattermost/mattermost-server/model",
     "github.com/mattermost/mattermost-server/plugin",
