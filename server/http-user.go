@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
-	jwt "github.com/dgrijalva/jwt-go"
 	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -58,31 +57,15 @@ func (p *Plugin) handleHTTPUserConnect(w http.ResponseWriter, r *http.Request) (
 func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (int, error) {
 	bb, _ := httputil.DumpRequest(r, true)
 
-	r.ParseForm()
-
-	tokenString := r.Form.Get("jwt")
-	if tokenString == "" {
-		return http.StatusBadRequest, fmt.Errorf("expected a jwt")
-	}
-
 	sc, err := p.loadSecurityContext()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	_, err = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-		}
-		// hmac secret is a []byte containing your secret, e.g. []byte("my_secret_key")
-		return []byte(sc.SharedSecret), nil
-	})
+	_, err = validateJWT(r, sc)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return http.StatusBadRequest, err
 	}
-
-	// claims, ok := token.Claims.(jwt.MapClaims)
 
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(`<!DOCTYPE html>
@@ -94,6 +77,11 @@ func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (i
     <body>
         <section id="content" class="ac-content">
             <h1>Hello World</h1>
+	    <p id="demo"></p>
+	    <script>
+document.getElementById("demo").innerHTML =
+"The full URL of this page is:<br>" + window.location.href;
+</script>
 	    <code>`))
 
 	w.Write([]byte(strings.ReplaceAll(string(bb), "\r\n", "<BR>")))
