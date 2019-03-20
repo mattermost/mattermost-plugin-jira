@@ -35,7 +35,7 @@ jobs:
 
   publish-github-release:
     docker:
-      - image: cibuilds/github:0.12-node
+      - image: cibuilds/github:0.12
     steps:
       - attach_workspace:
           at: .
