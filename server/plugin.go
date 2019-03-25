@@ -22,10 +22,8 @@ import (
 )
 
 const (
-	JIRA_USERNAME        = "Jira Plugin"
-	JIRA_ICON_URL        = "https://s3.amazonaws.com/mattermost-plugin-media/jira.jpg"
-	KEY_SECURITY_CONTEXT = "security_context"
-	KEY_RSA              = "rsa_key"
+	JIRA_USERNAME = "Jira Plugin"
+	JIRA_ICON_URL = "https://s3.amazonaws.com/mattermost-plugin-media/jira.jpg"
 )
 
 type Plugin struct {
@@ -182,7 +180,8 @@ func (p *Plugin) CreateBotDMPost(userID, message, postType string) *model.AppErr
 
 	return nil
 }
-func (p *Plugin) loadJIRAProjectKeys(w http.ResponseWriter, r *http.Request) error {
+
+func (p *Plugin) fetchJIRAProjectKeys(w http.ResponseWriter, r *http.Request) error {
 	jiraClient, err := p.getJIRAClientForServer()
 	if err != nil {
 		return err

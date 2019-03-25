@@ -38,12 +38,12 @@ func (p *Plugin) handleHTTPCreateIssue(w http.ResponseWriter, r *http.Request) (
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	sc, err := p.loadSecurityContext()
+	sc, err := p.LoadSecurityContext()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	info, err := p.getJIRAUserInfo(mmUserID)
+	info, err := p.LoadJIRAUserInfo(mmUserID)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -129,7 +129,7 @@ func (p *Plugin) handleHTTPCreateIssueMetadata(w http.ResponseWriter, r *http.Re
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	info, err := p.getJIRAUserInfo(mmUserID)
+	info, err := p.LoadJIRAUserInfo(mmUserID)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

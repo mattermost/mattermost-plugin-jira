@@ -8,8 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httputil"
-	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
 	"golang.org/x/oauth2"
@@ -18,9 +16,7 @@ import (
 )
 
 const (
-	KEY_USER_INFO              = "user_info_"
-	KEY_JIRA_USER_TO_MM_USERID = "jira_user_"
-	WS_EVENT_CONNECT           = "connect"
+	WS_EVENT_CONNECT = "connect"
 )
 
 type JIRAUserInfo struct {
@@ -43,7 +39,7 @@ func (p *Plugin) handleHTTPUserConnect(w http.ResponseWriter, r *http.Request) (
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	sc, err := p.loadSecurityContext()
+	sc, err := p.LoadSecurityContext()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -55,9 +51,7 @@ func (p *Plugin) handleHTTPUserConnect(w http.ResponseWriter, r *http.Request) (
 }
 
 func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (int, error) {
-	bb, _ := httputil.DumpRequest(r, true)
-
-	sc, err := p.loadSecurityContext()
+	sc, err := p.LoadSecurityContext()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -67,26 +61,36 @@ func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (i
 		return http.StatusBadRequest, err
 	}
 
+	// <script src="https://connect-cdn.atl-paas.net/all.js" data-options="base:true" async></script>
+
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(`<!DOCTYPE html>
 <html lang="en">
     <head>
         <link rel="stylesheet" href="https://unpkg.com/@atlaskit/css-reset@2.0.0/dist/bundle.css" media="all">
-        <script src="https://connect-cdn.atl-paas.net/all.js" async></script>
+	<script src="https://connect-cdn.atl-paas.net/all.js"></script>
+
+	<script>
+		function getParameterByName(name, url) {
+		    	var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+				results = regex.exec(url);
+		    	if (!results) return null;
+		    	if (!results[2]) return '';
+		    	return decodeURIComponent(results[2].replace(/\+/g, ' '));
+		}
+
+		AP.getLocation(function (location) {
+			document.getElementById("mm-token").value = getParameterByName("mm-token", location);
+		});
+	</script>
     </head>
     <body>
-        <section id="content" class="ac-content">
-            <h1>Hello World</h1>
-	    <p id="demo"></p>
-	    <script>
-document.getElementById("demo").innerHTML =
-"The full URL of this page is:<br>" + window.location.href;
-</script>
-	    <code>`))
-
-	w.Write([]byte(strings.ReplaceAll(string(bb), "\r\n", "<BR>")))
-
-	w.Write([]byte(`</code>></section></body></html>`))
+      <form action="/plugins/jira/config-2">
+        <input type="hidden" id="mm-token" name="mm-token" value="none"/>
+        <input type="submit" value="Submit"/>
+      </form>
+    </body>
+</html>`))
 	return http.StatusOK, nil
 }
 
@@ -149,7 +153,7 @@ func (p *Plugin) handleHTTPOAuth2Complete(w http.ResponseWriter, r *http.Request
 		return http.StatusInternalServerError, err
 	}
 
-	info := &UserInfo{}
+	info := JIRAUserInfo{}
 	req, err = jirac.NewRequest("GET", "rest/api/2/myself", nil)
 	if err != nil {
 		return http.StatusInternalServerError, err
@@ -159,15 +163,15 @@ func (p *Plugin) handleHTTPOAuth2Complete(w http.ResponseWriter, r *http.Request
 		return http.StatusInternalServerError, fmt.Errorf("could not get user: %v", err)
 	}
 
-	sc, err := p.loadSecurityContext()
+	sc, err := p.LoadSecurityContext()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	b, _ := json.Marshal(info)
-
-	p.API.KVSet(KEY_USER_INFO+mattermostUserID, b)
-	p.API.KVSet(KEY_JIRA_USER_TO_MM_USERID+info.Name, []byte(mattermostUserID))
+	err = p.StoreUserInfo(mattermostUserID, info)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
 
 	p.API.PublishWebSocketEvent(
 		WS_EVENT_CONNECT,
@@ -205,13 +209,13 @@ func (p *Plugin) handleHTTPGetUserInfo(w http.ResponseWriter, r *http.Request) (
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	sc, err := p.loadSecurityContext()
+	sc, err := p.LoadSecurityContext()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
 	resp := UserInfo{}
-	jiraUserInfo, err := p.getJIRAUserInfo(mattermostUserID)
+	jiraUserInfo, err := p.LoadJIRAUserInfo(mattermostUserID)
 	if err == nil {
 		resp = UserInfo{
 			JIRAUserInfo: jiraUserInfo,
@@ -224,22 +228,4 @@ func (p *Plugin) handleHTTPGetUserInfo(w http.ResponseWriter, r *http.Request) (
 	w.Write(b)
 	fmt.Println(string(b))
 	return http.StatusOK, nil
-}
-
-func (p *Plugin) getJIRAUserInfo(mattermostUserID string) (JIRAUserInfo, error) {
-	// b, _ := p.API.KVGet(KEY_USER_INFO + mattermostUserID)
-	// if b == nil {
-	// 	return JIRAUserInfo{}, fmt.Errorf("could not find jira user info")
-	// }
-	//
-	// info := JIRAUserInfo{}
-	// err := json.Unmarshal(b, &info)
-	// if err != nil {
-	// 	return JIRAUserInfo{}, err
-	// }
-	return JIRAUserInfo{
-		Key:       "admin",
-		AccountId: "admin",
-		Name:      "Admin Name",
-	}, nil
 }

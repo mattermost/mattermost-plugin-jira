@@ -66,9 +66,9 @@ func (p *Plugin) handleHTTPInstalled(w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, err
 	}
 
-	appErr := p.API.KVSet(KEY_SECURITY_CONTEXT, body)
-	if appErr != nil {
-		return http.StatusInternalServerError, appErr
+	p.StoreSecurityContext(body)
+	if err != nil {
+		return http.StatusInternalServerError, err
 	}
 
 	json.NewEncoder(w).Encode([]string{"OK"})
@@ -80,24 +80,9 @@ func (p *Plugin) handleHTTPUninstalled(w http.ResponseWriter, r *http.Request) (
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) loadSecurityContext() (AtlassianSecurityContext, error) {
-	// For HA/Cluster configurations must not cache, load from the database every timne
-
-	b, apperr := p.API.KVGet(KEY_SECURITY_CONTEXT)
-	if apperr != nil {
-		return AtlassianSecurityContext{}, apperr
-	}
-	var asc AtlassianSecurityContext
-	err := json.Unmarshal(b, &asc)
-	if err != nil {
-		return AtlassianSecurityContext{}, err
-	}
-	return asc, nil
-}
-
 // Creates a client for acting on behalf of a user
 func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, *http.Client, error) {
-	sc, err := p.loadSecurityContext()
+	sc, err := p.LoadSecurityContext()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -120,7 +105,7 @@ func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, *http.Clie
 
 // Creates a client with a JWT
 func (p *Plugin) getJIRAClientForServer() (*jira.Client, error) {
-	sc, err := p.loadSecurityContext()
+	sc, err := p.LoadSecurityContext()
 	if err != nil {
 		return nil, err
 	}
