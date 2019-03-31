@@ -56,6 +56,17 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 				*p.API.GetConfig().ServiceSettings.SiteURL, manifest.Id))
 		return resp, nil
 
+	case "disconnect":
+		if *p.API.GetConfig().ServiceSettings.SiteURL == "" {
+			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "plugin configuration error."), nil
+		}
+
+		resp := getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
+			// fmt.Sprintf("[Click here to link your JIRA account.](%s/plugins/%s/oauth/connect)",
+			fmt.Sprintf("[Click here to unlink your JIRA account.](%s/plugins/%s/user-disconnect)",
+				*p.API.GetConfig().ServiceSettings.SiteURL, manifest.Id))
+		return resp, nil
+
 	case "test":
 		// if len(args) < 0 {
 		// 	return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "---- TODO SUBSCRIBE HELP ---- "), nil

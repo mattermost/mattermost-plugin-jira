@@ -55,6 +55,21 @@ func (p *Plugin) StoreUserInfo(mattermostUserID string, info JIRAUserInfo) error
 	return nil
 }
 
+func (p *Plugin) DeleteUserInfo(mattermostUserID string, info JIRAUserInfo) error {
+	apperr := p.API.KVDelete(KEY_JIRA_USER_INFO+mattermostUserID)
+	if apperr != nil {
+		return apperr
+	}
+
+	apperr = p.API.KVDelete(KEY_MATTERMOST_USER_ID+info.Key)
+	if apperr != nil {
+		return apperr
+	}
+
+	return nil
+}
+
+
 func (p *Plugin) LoadJIRAUserInfo(mattermostUserID string) (JIRAUserInfo, error) {
 	b, _ := p.API.KVGet(KEY_JIRA_USER_INFO + mattermostUserID)
 	if b == nil {

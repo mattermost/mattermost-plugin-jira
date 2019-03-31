@@ -64,6 +64,43 @@ func (p *Plugin) handleHTTPUserConnect(w http.ResponseWriter, r *http.Request) (
 	return http.StatusFound, nil
 }
 
+func (p *Plugin) handleHTTPUserDisconnect(w http.ResponseWriter, r *http.Request) (int, error) {
+	// TODO Enforce a GET
+	mattermostUserID := r.Header.Get("Mattermost-User-ID")
+	if mattermostUserID == "" {
+		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
+	}
+
+	info, err := p.LoadJIRAUserInfo(mattermostUserID)
+	if err != nil {
+		return http.StatusNotFound, err
+	}
+
+	err = p.DeleteUserInfo(mattermostUserID, info)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	html := `
+<!DOCTYPE html>
+<html>
+       <head>
+               <script>
+                       window.close();
+               </script>
+       </head>
+       <body>
+               <p>Disconnected from JIRA. Please close this page.</p>
+       </body>
+</html>
+`
+
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(html))
+
+	return http.StatusOK, nil
+}
+
 func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (int, error) {
 	sc, err := p.LoadSecurityContext()
 	if err != nil {
