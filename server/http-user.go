@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	jira "github.com/andygrunwald/go-jira"
 	"golang.org/x/oauth2"
@@ -41,8 +42,8 @@ type UserInfo struct {
 
 func (p *Plugin) handleHTTPUserConnect(w http.ResponseWriter, r *http.Request) (int, error) {
 	// TODO Enforce a GET
-	userID := r.Header.Get("Mattermost-User-ID")
-	if userID == "" {
+	mattermostUserID := r.Header.Get("Mattermost-User-ID")
+	if mattermostUserID == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
@@ -51,8 +52,14 @@ func (p *Plugin) handleHTTPUserConnect(w http.ResponseWriter, r *http.Request) (
 		return http.StatusInternalServerError, err
 	}
 
-	// TODO: Add an encrypted token that contains MM user ID so that UserConfig
-	redirectURL := fmt.Sprintf("%v/login?dest-url=%v/plugins/servlet/ac/mattermost-plugin/user-config?%v=XXXXX", sc.BaseURL, sc.BaseURL, argMMToken)
+	token, err := p.NewEncodedAuthToken(mattermostUserID)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	v := url.Values{}
+	v.Add(argMMToken, token)
+	redirectURL := fmt.Sprintf("%v/login?dest-url=%v/plugins/servlet/ac/mattermost-plugin/user-config?%v", sc.BaseURL, sc.BaseURL, v.Encode())
 	http.Redirect(w, r, redirectURL, http.StatusFound)
 	return http.StatusFound, nil
 }
@@ -88,14 +95,39 @@ func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (i
 }
 
 func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Request) (int, error) {
-	// sc, err := p.LoadSecurityContext()
-	// if err != nil {
-	// 	return http.StatusInternalServerError, err
-	// }
-	//
-	// r.ParseForm()
-	// mmToken := r.Form.Get(argMMToken)
-	// atlassianAccountID := r.Form.Get(argAtlassianAccountID)
+	sc, err := p.LoadSecurityContext()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	r.ParseForm()
+	mmToken := r.Form.Get(argMMToken)
+	uinfo := JIRAUserInfo{
+		Key:       r.Form.Get(argJIRAUserKey),
+		AccountId: r.Form.Get(argAtlassianAccountID),
+		Name:      r.Form.Get(argJIRAUserName),
+	}
+
+	mattermostUserID, err := p.ParseAuthToken(mmToken)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+
+	err = p.StoreUserInfo(mattermostUserID, uinfo)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	p.API.PublishWebSocketEvent(
+		WS_EVENT_CONNECT,
+		map[string]interface{}{
+			"connected":       true,
+			"jira_username":   uinfo.Name,
+			"jira_account_id": uinfo.AccountId,
+			"jira_url":        sc.BaseURL,
+		},
+		&model.WebsocketBroadcast{UserId: mattermostUserID},
+	)
 
 	// <script src="https://connect-cdn.atl-paas.net/all.js" data-options="base:true" async></script>
 	w.Header().Set("Content-Type", "text/html")
@@ -106,7 +138,7 @@ func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Reque
 	<script src="https://connect-cdn.atl-paas.net/all.js" data-options=""></script>
     </head>
     <body>
-    granted user XXXX access to JIRA as ZZZZZ
+    granted user ` + mattermostUserID + ` access to JIRA as ` + uinfo.Name + `
     </body>
 </html>`))
 	return http.StatusOK, nil
