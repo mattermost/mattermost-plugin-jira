@@ -8,7 +8,7 @@ import {CreateTypes} from 'action_types';
 function connected(state = false, action) {
     switch (action.type) {
     case CreateTypes.RECEIVED_CONNECTED:
-        return action.data.is_connected;
+        return action.data.is_connected || false;
     default:
         return state;
     }

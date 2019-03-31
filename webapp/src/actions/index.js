@@ -74,7 +74,7 @@ export function getConnected() {
     };
 }
 
-export function handleConnect(store) {
+export function handleConnectChange(store) {
     return (msg) => {
         if (!msg.data) {
             return;

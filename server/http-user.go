@@ -20,6 +20,7 @@ import (
 
 const (
 	WS_EVENT_CONNECT = "connect"
+	WS_EVENT_DISCONNECT = "disconnect"
 
 	argMMToken            = "mm_token"
 	argAtlassianAccountID = "atlassian_account_id"
@@ -80,6 +81,13 @@ func (p *Plugin) handleHTTPUserDisconnect(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
+	p.API.PublishWebSocketEvent(
+		WS_EVENT_DISCONNECT,
+		map[string]interface{}{
+			"is_connected": false,
+		},
+		&model.WebsocketBroadcast{UserId: mattermostUserID},
+	)
 
 	html := `
 <!DOCTYPE html>
@@ -158,7 +166,7 @@ func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Reque
 	p.API.PublishWebSocketEvent(
 		WS_EVENT_CONNECT,
 		map[string]interface{}{
-			"connected":       true,
+			"is_connected":       true,
 			"jira_username":   uinfo.Name,
 			"jira_account_id": uinfo.AccountId,
 			"jira_url":        sc.BaseURL,

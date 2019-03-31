@@ -7,7 +7,7 @@ import CreateIssueModal from 'components/modals/create_issue';
 import PluginId from 'plugin_id';
 
 import reducers from './reducers';
-import {handleConnect, getConnected} from './actions';
+import {handleConnectChange, getConnected} from './actions';
 
 export default class Plugin {
     async initialize(registry, store) {
@@ -18,7 +18,7 @@ export default class Plugin {
         registry.registerRootComponent(CreateIssueModal);
 	    console.log("<><> registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);")
         registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
-
-        registry.registerWebSocketEventHandler(`custom_${PluginId}_connect`, handleConnect(store));
+        registry.registerWebSocketEventHandler(`custom_${PluginId}_connect`, handleConnectChange(store));
+        registry.registerWebSocketEventHandler(`custom_${PluginId}_disconnect`, handleConnectChange(store));
     }
 }
