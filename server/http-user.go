@@ -37,7 +37,7 @@ type JIRAUserInfo struct {
 
 type UserInfo struct {
 	JIRAUserInfo
-	IsConnected bool   `json:"is_connected,omitempty"`
+	IsConnected bool   `json:"is_connected"`
 	JIRAURL     string `json:"jira_url,omitempty"`
 }
 

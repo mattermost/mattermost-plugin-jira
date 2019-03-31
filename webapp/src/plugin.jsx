@@ -13,12 +13,16 @@ export default class Plugin {
     async initialize(registry, store) {
         registry.registerReducer(reducers);
 
-        await getConnected()(store.dispatch, store.getState);
+        try {
+            await getConnected()(store.dispatch, store.getState);
 
-        registry.registerRootComponent(CreateIssueModal);
-	    console.log("<><> registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);")
-        registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
-        registry.registerWebSocketEventHandler(`custom_${PluginId}_connect`, handleConnectChange(store));
-        registry.registerWebSocketEventHandler(`custom_${PluginId}_disconnect`, handleConnectChange(store));
+            registry.registerRootComponent(CreateIssueModal);
+            registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
+        } catch (err) {
+            throw err;
+        } finally {
+            registry.registerWebSocketEventHandler(`custom_${PluginId}_connect`, handleConnectChange(store));
+            registry.registerWebSocketEventHandler(`custom_${PluginId}_disconnect`, handleConnectChange(store));
+        }
     }
 }
