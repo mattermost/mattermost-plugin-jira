@@ -11,7 +11,9 @@ import (
 	"encoding/pem"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"sync"
+	"text/template"
 
 	jira "github.com/andygrunwald/go-jira"
 	"golang.org/x/oauth2"
@@ -41,6 +43,9 @@ type Plugin struct {
 	botUserID   string
 	rsaKey      *rsa.PrivateKey
 	projectKeys []string
+
+	atlassianConnectTemplate *template.Template
+	userConfigTemplate       *template.Template
 }
 
 func (p *Plugin) OnActivate() error {
@@ -48,6 +53,23 @@ func (p *Plugin) OnActivate() error {
 	user, apperr := p.API.GetUserByUsername(config.UserName)
 	if apperr != nil {
 		return fmt.Errorf("Unable to find user with configured username: %v, error: %v", config.UserName, apperr)
+	}
+
+	bpath, err := p.API.GetBundlePath()
+	if err != nil {
+		return err
+	}
+
+	fpath := filepath.Join(bpath, "server", "dist", "templates", "atlassian-connect.json")
+	p.atlassianConnectTemplate, err = template.ParseFiles(fpath)
+	if err != nil {
+		return err
+	}
+
+	fpath = filepath.Join(bpath, "server", "dist", "templates", "user-config.html")
+	p.userConfigTemplate, err = template.ParseFiles(fpath)
+	if err != nil {
+		return err
 	}
 
 	p.botUserID = user.Id

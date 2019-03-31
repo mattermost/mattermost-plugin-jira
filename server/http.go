@@ -50,8 +50,10 @@ func (p *Plugin) handleHTTPRequest(w http.ResponseWriter, r *http.Request) (int,
 	// User mapping page
 	case "/user-connect":
 		return p.handleHTTPUserConnect(w, r)
-	case "/config":
+	case "/user-config":
 		return p.handleHTTPUserConfig(w, r)
+	case "/user-config-submit":
+		return p.handleHTTPUserConfigSubmit(w, r)
 	case "/api/v1/userinfo":
 		return p.handleHTTPGetUserInfo(w, r)
 

@@ -49,11 +49,11 @@
 		    }
 	    ],
 	    "configurePage": {
-		    "url": "/config",
+		    "url": "/user-config",
 		    "name": {
 			    "value": "My Configure Page"
 		    },
-		    "key": "config"
+		    "key": "user-config"
 	    }
     }
 }

@@ -7,12 +7,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"html/template"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"path"
-	"path/filepath"
 
 	jira "github.com/andygrunwald/go-jira"
 	jwt "github.com/rbriski/atlassian-jwt"
@@ -34,19 +32,11 @@ type AtlassianSecurityContext struct {
 }
 
 func (p *Plugin) handleHTTPAtlassianConnect(w http.ResponseWriter, r *http.Request) (int, error) {
-	baseURL := p.externalURL() + "/" + path.Join("plugins", manifest.Id)
-
-	//TODO Update this when there's a GetBundlePath API available
-	lp := filepath.Join(*p.API.GetConfig().PluginSettings.Directory, manifest.Id, "server", "dist", "templates", "atlassian-connect.json")
 	vals := map[string]string{
-		"BaseURL": baseURL,
-	}
-	tmpl, err := template.ParseFiles(lp)
-	if err != nil {
-		return http.StatusInternalServerError, err
+		"BaseURL": p.externalURL() + "/" + path.Join("plugins", manifest.Id),
 	}
 	bb := &bytes.Buffer{}
-	err = tmpl.ExecuteTemplate(bb, "config", vals)
+	err := p.atlassianConnectTemplate.ExecuteTemplate(bb, "config", vals)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

@@ -4,9 +4,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -17,6 +19,11 @@ import (
 
 const (
 	WS_EVENT_CONNECT = "connect"
+
+	argMMToken            = "mm_token"
+	argAtlassianAccountID = "atlassian_account_id"
+	argJIRAUserKey        = "jira_user_key"
+	argJIRAUserName       = "jira_user_name"
 )
 
 type JIRAUserInfo struct {
@@ -45,7 +52,7 @@ func (p *Plugin) handleHTTPUserConnect(w http.ResponseWriter, r *http.Request) (
 	}
 
 	// TODO: Add an encrypted token that contains MM user ID so that UserConfig
-	redirectURL := fmt.Sprintf("%v/login?dest-url=%v/plugins/servlet/ac/mattermost-plugin/config?qqqqq=wwwww", sc.BaseURL, sc.BaseURL)
+	redirectURL := fmt.Sprintf("%v/login?dest-url=%v/plugins/servlet/ac/mattermost-plugin/user-config?%v=XXXXX", sc.BaseURL, sc.BaseURL, argMMToken)
 	http.Redirect(w, r, redirectURL, http.StatusFound)
 	return http.StatusFound, nil
 }
@@ -61,34 +68,45 @@ func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (i
 		return http.StatusBadRequest, err
 	}
 
-	// <script src="https://connect-cdn.atl-paas.net/all.js" data-options="base:true" async></script>
+	// TODO: Ideally find a way to display a message in the form that includes
+	// the MM user ID, not yet sure how to best do it.
 
+	bb := &bytes.Buffer{}
+	err = p.userConfigTemplate.ExecuteTemplate(bb, "config",
+		struct {
+			ArgMMToken            string
+			ArgAtlassianAccountID string
+			ArgJIRAUserKey        string
+			ArgJIRAUserName       string
+		}{argMMToken, argAtlassianAccountID, argJIRAUserKey, argJIRAUserName})
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	w.Header().Set("Content-Type", "text/html")
+	io.Copy(w, bytes.NewReader(bb.Bytes()))
+	return http.StatusOK, nil
+}
+
+func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Request) (int, error) {
+	// sc, err := p.LoadSecurityContext()
+	// if err != nil {
+	// 	return http.StatusInternalServerError, err
+	// }
+	//
+	// r.ParseForm()
+	// mmToken := r.Form.Get(argMMToken)
+	// atlassianAccountID := r.Form.Get(argAtlassianAccountID)
+
+	// <script src="https://connect-cdn.atl-paas.net/all.js" data-options="base:true" async></script>
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(`<!DOCTYPE html>
 <html lang="en">
     <head>
         <link rel="stylesheet" href="https://unpkg.com/@atlaskit/css-reset@2.0.0/dist/bundle.css" media="all">
-	<script src="https://connect-cdn.atl-paas.net/all.js"></script>
-
-	<script>
-		function getParameterByName(name, url) {
-		    	var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
-				results = regex.exec(url);
-		    	if (!results) return null;
-		    	if (!results[2]) return '';
-		    	return decodeURIComponent(results[2].replace(/\+/g, ' '));
-		}
-
-		AP.getLocation(function (location) {
-			document.getElementById("mm-token").value = getParameterByName("mm-token", location);
-		});
-	</script>
+	<script src="https://connect-cdn.atl-paas.net/all.js" data-options=""></script>
     </head>
     <body>
-      <form action="/plugins/jira/config-2">
-        <input type="hidden" id="mm-token" name="mm-token" value="none"/>
-        <input type="submit" value="Submit"/>
-      </form>
+    granted user XXXX access to JIRA as ZZZZZ
     </body>
 </html>`))
 	return http.StatusOK, nil
