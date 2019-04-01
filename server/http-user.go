@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	WS_EVENT_CONNECT = "connect"
+	WS_EVENT_CONNECT    = "connect"
 	WS_EVENT_DISCONNECT = "disconnect"
 
 	argMMToken            = "mm_token"
@@ -81,6 +81,7 @@ func (p *Plugin) handleHTTPUserDisconnect(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
+
 	p.API.PublishWebSocketEvent(
 		WS_EVENT_DISCONNECT,
 		map[string]interface{}{
@@ -122,6 +123,9 @@ func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (i
 
 	// TODO: Ideally find a way to display a message in the form that includes
 	// the MM user ID, not yet sure how to best do it.
+
+	//TODO encrypt the JIRA user atttributes and send them as a hidden form
+	// element
 
 	bb := &bytes.Buffer{}
 	err = p.userConfigTemplate.ExecuteTemplate(bb, "config",
@@ -166,7 +170,7 @@ func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Reque
 	p.API.PublishWebSocketEvent(
 		WS_EVENT_CONNECT,
 		map[string]interface{}{
-			"is_connected":       true,
+			"is_connected":    true,
 			"jira_username":   uinfo.Name,
 			"jira_account_id": uinfo.AccountId,
 			"jira_url":        sc.BaseURL,
