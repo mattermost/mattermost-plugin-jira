@@ -18,24 +18,12 @@
 				document.getElementById("{{ .ArgMMToken }}").value = getParameterByName("{{ .ArgMMToken }}", loc);
 			});
 
-			AP.request('/rest/api/2/myself')
-				.then(data => {
-					console.log(data);
-					const user = JSON.parse(data.body);
-					document.getElementById("{{ .ArgAtlassianAccountID }}").value = user.accountId;
-					document.getElementById("{{ .ArgJIRAUserKey }}").value = user.key;
-					document.getElementById("{{ .ArgJIRAUserName }}").value = user.name;
-				})
-				.catch(e => alert(e.err));
-
 		</script>
 	</head>
 	<body>
 		<form action="/plugins/jira/user-config-submit">
+			<input type="hidden" id="jwt" name="jwt" value="{{ .JWT }}"/>
 			<input type="hidden" id="{{ .ArgMMToken }}" name="{{ .ArgMMToken}}" value="none"/>
-			<input type="hidden" id="{{ .ArgAtlassianAccountID }}" name="{{ .ArgAtlassianAccountID}}" value="no one"/>
-			<input type="hidden" id="{{ .ArgJIRAUserKey }}" name="{{ .ArgJIRAUserKey}}" value="no one"/>
-			<input type="hidden" id="{{ .ArgJIRAUserName }}" name="{{ .ArgJIRAUserName }}" value="none"/>
 			<input type="submit" value="Submit"/>
 		</form>
 	</body>

@@ -13,6 +13,7 @@ import (
 	"net/url"
 
 	jira "github.com/andygrunwald/go-jira"
+	jwt "github.com/dgrijalva/jwt-go"
 	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -22,10 +23,7 @@ const (
 	WS_EVENT_CONNECT    = "connect"
 	WS_EVENT_DISCONNECT = "disconnect"
 
-	argMMToken            = "mm_token"
-	argAtlassianAccountID = "atlassian_account_id"
-	argJIRAUserKey        = "jira_user_key"
-	argJIRAUserName       = "jira_user_name"
+	argMMToken = "mm_token"
 )
 
 type JIRAUserInfo struct {
@@ -95,7 +93,7 @@ func (p *Plugin) handleHTTPUserDisconnect(w http.ResponseWriter, r *http.Request
 <html>
        <head>
                <script>
-                       window.close();
+                       // window.close();
                </script>
        </head>
        <body>
@@ -116,7 +114,7 @@ func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (i
 		return http.StatusInternalServerError, err
 	}
 
-	_, err = validateJWT(r, sc)
+	_, tokenString, err := validateJWT(r, sc)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -124,17 +122,15 @@ func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (i
 	// TODO: Ideally find a way to display a message in the form that includes
 	// the MM user ID, not yet sure how to best do it.
 
-	//TODO encrypt the JIRA user atttributes and send them as a hidden form
-	// element
-
 	bb := &bytes.Buffer{}
 	err = p.userConfigTemplate.ExecuteTemplate(bb, "config",
 		struct {
-			ArgMMToken            string
-			ArgAtlassianAccountID string
-			ArgJIRAUserKey        string
-			ArgJIRAUserName       string
-		}{argMMToken, argAtlassianAccountID, argJIRAUserKey, argJIRAUserName})
+			JWT        string
+			ArgMMToken string
+		}{
+			JWT:        tokenString,
+			ArgMMToken: argMMToken,
+		})
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -149,12 +145,33 @@ func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Reque
 		return http.StatusInternalServerError, err
 	}
 
-	r.ParseForm()
+	jwtToken, _, err := validateJWT(r, sc)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+	claims, ok := jwtToken.Claims.(jwt.MapClaims)
+	if !ok {
+		return http.StatusBadRequest, fmt.Errorf("invalid JWT claims")
+	}
+	context, ok := claims["context"].(map[string]interface{})
+	if !ok {
+		return http.StatusBadRequest, fmt.Errorf("invalid JWT claim context")
+	}
+	user, ok := context["user"].(map[string]interface{})
+	if !ok {
+		return http.StatusBadRequest, fmt.Errorf("invalid JWT: no user data")
+	}
+
+	userKey, _ := user["userKey"].(string)
+	username, _ := user["username"].(string)
+	accountId, _ := user["accountId"].(string)
+	displayName, _ := user["displayName"].(string)
+
 	mmToken := r.Form.Get(argMMToken)
 	uinfo := JIRAUserInfo{
-		Key:       r.Form.Get(argJIRAUserKey),
-		AccountId: r.Form.Get(argAtlassianAccountID),
-		Name:      r.Form.Get(argJIRAUserName),
+		Key:       userKey,
+		AccountId: accountId,
+		Name:      username,
 	}
 
 	mattermostUserID, err := p.ParseAuthToken(mmToken)
@@ -178,6 +195,10 @@ func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Reque
 		&model.WebsocketBroadcast{UserId: mattermostUserID},
 	)
 
+	mmuser, aerr := p.API.GetUser(mattermostUserID)
+	if aerr != nil {
+		return http.StatusInternalServerError, aerr
+	}
 	// <script src="https://connect-cdn.atl-paas.net/all.js" data-options="base:true" async></script>
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(`<!DOCTYPE html>
@@ -187,7 +208,7 @@ func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Reque
 	<script src="https://connect-cdn.atl-paas.net/all.js" data-options=""></script>
     </head>
     <body>
-    granted user ` + mattermostUserID + ` access to JIRA as ` + uinfo.Name + `
+    granted Mattermost user ` + mmuser.GetDisplayName(model.SHOW_NICKNAME_FULLNAME) + " (" + mmuser.Username + `) access to JIRA as ` + displayName + " (" + username + `)
     </body>
 </html>`))
 	return http.StatusOK, nil

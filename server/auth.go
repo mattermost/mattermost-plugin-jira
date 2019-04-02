@@ -147,11 +147,11 @@ func decrypt(encrypted, secret []byte) ([]byte, error) {
 	return plain, nil
 }
 
-func validateJWT(r *http.Request, sc AtlassianSecurityContext) (*jwt.Token, error) {
+func validateJWT(r *http.Request, sc AtlassianSecurityContext) (*jwt.Token, string, error) {
 	r.ParseForm()
 	tokenString := r.Form.Get("jwt")
 	if tokenString == "" {
-		return nil, fmt.Errorf("expected a jwt")
+		return nil, "", fmt.Errorf("expected a jwt")
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -162,8 +162,8 @@ func validateJWT(r *http.Request, sc AtlassianSecurityContext) (*jwt.Token, erro
 		return []byte(sc.SharedSecret), nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return token, nil
+	return token, tokenString, nil
 }
