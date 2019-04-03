@@ -11,7 +11,7 @@ import (
 
 const (
 	KEY_JIRA_USER_INFO     = "jira_user_info_"
-	KEY_MATTERMOST_USER_ID = "mattermost_user_id"
+	KEY_MATTERMOST_USER_ID = "mattermost_user_id_"
 	KEY_SECURITY_CONTEXT   = "security_context"
 	KEY_RSA                = "rsa_key"
 	KEY_TOKEN_SECRET       = "token_secret"
@@ -42,12 +42,14 @@ func (p *Plugin) StoreUserInfo(mattermostUserID string, info JIRAUserInfo) error
 		return err
 	}
 
+	fmt.Printf("<><> StoreUserInfo: key: %v:%v\n", KEY_JIRA_USER_INFO+mattermostUserID, info.Name)
 	apperr := p.API.KVSet(KEY_JIRA_USER_INFO+mattermostUserID, b)
 	if apperr != nil {
 		return apperr
 	}
 
-	apperr = p.API.KVSet(KEY_MATTERMOST_USER_ID+info.Key, []byte(mattermostUserID))
+	fmt.Printf("<><> StoreUserInfo: key: %v:%v\n", KEY_MATTERMOST_USER_ID+info.Name, mattermostUserID)
+	apperr = p.API.KVSet(KEY_MATTERMOST_USER_ID+info.Name, []byte(mattermostUserID))
 	if apperr != nil {
 		return apperr
 	}
@@ -56,19 +58,18 @@ func (p *Plugin) StoreUserInfo(mattermostUserID string, info JIRAUserInfo) error
 }
 
 func (p *Plugin) DeleteUserInfo(mattermostUserID string, info JIRAUserInfo) error {
-	apperr := p.API.KVDelete(KEY_JIRA_USER_INFO+mattermostUserID)
+	apperr := p.API.KVDelete(KEY_JIRA_USER_INFO + mattermostUserID)
 	if apperr != nil {
 		return apperr
 	}
 
-	apperr = p.API.KVDelete(KEY_MATTERMOST_USER_ID+info.Key)
+	apperr = p.API.KVDelete(KEY_MATTERMOST_USER_ID + info.Name)
 	if apperr != nil {
 		return apperr
 	}
 
 	return nil
 }
-
 
 func (p *Plugin) LoadJIRAUserInfo(mattermostUserID string) (JIRAUserInfo, error) {
 	b, _ := p.API.KVGet(KEY_JIRA_USER_INFO + mattermostUserID)
