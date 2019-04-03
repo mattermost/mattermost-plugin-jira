@@ -4,6 +4,7 @@
 package main
 
 import (
+	"crypto/subtle"
 	"fmt"
 	"net/http"
 
@@ -71,24 +72,32 @@ func (p *Plugin) handleHTTPWebhook(w http.ResponseWriter, r *http.Request) (int,
 		return http.StatusMethodNotAllowed,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
 	}
-	// TODO redo with JWT
-	// if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(config.Secret)) != 1 {
-	// 	return http.StatusForbidden,
-	// 		fmt.Errorf("Request URL: secret did not match")
-	// }
+	// TODO add JWT support
+	config := p.getConfiguration()
+	if config.Secret == "" || config.UserName == "" {
+		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret and UserName")
+	}
 
-	teamName := r.URL.Query().Get("team")
+	err := r.ParseForm()
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+	if subtle.ConstantTimeCompare([]byte(r.Form.Get("secret")), []byte(config.Secret)) != 1 {
+		return http.StatusForbidden,
+			fmt.Errorf("Request URL: secret did not match")
+	}
+
+	teamName := r.Form.Get("team")
 	if teamName == "" {
 		return http.StatusBadRequest,
 			fmt.Errorf("Request URL: team is empty")
 	}
-	channelID := r.URL.Query().Get("channel")
+	channelID := r.Form.Get("channel")
 	if channelID == "" {
 		return http.StatusBadRequest,
 			fmt.Errorf("Request URL: channel is empty")
 	}
 
-	config := p.getConfiguration()
 	user, appErr := p.API.GetUserByUsername(config.UserName)
 	if appErr != nil {
 		return appErr.StatusCode, fmt.Errorf(appErr.Message)

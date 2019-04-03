@@ -118,7 +118,7 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsed, error) {
 		parsed.edited = truncate(parsed.Comment.Body, 3000)
 	}
 	if headline == "" {
-		return nil, fmt.Errorf("Unsupported webhook")
+		return nil, fmt.Errorf("Unsupported webhook data: %v", parsed.WebhookEvent)
 	}
 	parsed.headline = fmt.Sprintf("%v %v %v", mdUser(user), headline, parsed.mdIssueHashtags())
 	return &parsed, nil
@@ -135,8 +135,14 @@ func (p *parsed) fromChangeLog(issue string) (string, string) {
 		case item.Field == "resolution" && to != "" && from == "":
 			return fmt.Sprintf("resolved %v", issue), ""
 
+		case item.Field == "status" && to == "Backlog":
+			return fmt.Sprintf("moved %v to backlog", issue), ""
+
 		case item.Field == "status" && to == "In Progress":
 			return fmt.Sprintf("started working on %v", issue), ""
+
+		case item.Field == "status" && to == "Selected for Development":
+			return fmt.Sprintf("selected %v for development", issue), ""
 
 		case item.Field == "priority" && item.From > item.To:
 			return fmt.Sprintf("raised priority of %v to %v", issue, to), ""

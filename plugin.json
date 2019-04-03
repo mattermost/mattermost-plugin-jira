@@ -25,6 +25,12 @@
             "display_name": "External Mattermost URL",
             "type": "text",
             "help_text": "External URL for your Mattermost instance, e.g. \"https://mattermost.my-company-name.com\""
+        }, {
+            "key": "Secret",
+            "display_name": "Secret",
+            "type": "generated",
+            "help_text": "This secret is used to authenticate to Mattermost.",
+            "regenerate_help_text": "Regenerates the secret for the webhook URL endpoint. Regenerating the secret invalidates your existing JIRA integrations."
         }],
         "footer": "Use this webhook URL to set up the JIRA integration. See [documentation](https://about.mattermost.com/default-jira-plugin) to learn more.\n\n`https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL`"
     }
