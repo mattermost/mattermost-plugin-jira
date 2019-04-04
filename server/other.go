@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"net/http"
 
-	jira "github.com/andygrunwald/go-jira"
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/mlog"
 	"github.com/mattermost/mattermost-server/model"
@@ -119,22 +119,19 @@ func (p *Plugin) CreateBotDMPost(userID, message, postType string) *model.AppErr
 	return nil
 }
 
-func (p *Plugin) fetchJIRAProjectKeys(w http.ResponseWriter, r *http.Request) error {
-	jiraClient, err := p.getJIRAClientForServer()
-	if err != nil {
-		return err
+func (p *Plugin) loadJIRAProjectKeys(forceReload bool) ([]string, error) {
+	if len(p.projectKeys) > 0 && !forceReload {
+		return p.projectKeys, nil
 	}
 
-	req, _ := jiraClient.NewRawRequest(http.MethodGet, "/rest/api/2/project", nil)
-	list1 := jira.ProjectList{}
-	_, err = jiraClient.Do(req, &list1)
+	jiraClient, err := p.getJIRAClientForServer()
 	if err != nil {
-		return err
+		return nil, errors.WithMessage(err, "Error connecting to JIRA")
 	}
 
 	list, _, err := jiraClient.Project.GetList()
 	if err != nil {
-		return err
+		return nil, errors.WithMessage(err, "Error requesting list of JIRA projects")
 	}
 	keys := []string{}
 	for _, proj := range *list {
@@ -142,5 +139,5 @@ func (p *Plugin) fetchJIRAProjectKeys(w http.ResponseWriter, r *http.Request) er
 	}
 
 	p.projectKeys = keys
-	return nil
+	return keys, nil
 }

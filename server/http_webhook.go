@@ -296,7 +296,7 @@ func (p *Plugin) notify(parsed *parsed, text string) {
 		return
 	}
 
-	for _, u := range parseJiraUsernamesFromText(text) {
+	for _, u := range parseJIRAUsernamesFromText(text) {
 		// don't mention the author of the text
 		if u == parsed.authorUsername {
 			continue

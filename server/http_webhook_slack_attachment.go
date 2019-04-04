@@ -4,7 +4,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -18,7 +17,6 @@ func AsSlackAttachment(in io.Reader, n notifier) (func(post *model.Post), error)
 
 	a := newSlackAttachment(parsed)
 
-	fmt.Printf("<><> AsSlackAttachment: text: %v\n", parsed.text)
 	if parsed.text != "" && n != nil {
 		n.notify(parsed, parsed.text)
 	}

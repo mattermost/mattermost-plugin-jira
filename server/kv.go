@@ -42,28 +42,12 @@ func (p *Plugin) StoreUserInfo(mattermostUserID string, info JIRAUserInfo) error
 		return err
 	}
 
-	fmt.Printf("<><> StoreUserInfo: key: %v:%v\n", KEY_JIRA_USER_INFO+mattermostUserID, info.Name)
 	apperr := p.API.KVSet(KEY_JIRA_USER_INFO+mattermostUserID, b)
 	if apperr != nil {
 		return apperr
 	}
 
-	fmt.Printf("<><> StoreUserInfo: key: %v:%v\n", KEY_MATTERMOST_USER_ID+info.Name, mattermostUserID)
 	apperr = p.API.KVSet(KEY_MATTERMOST_USER_ID+info.Name, []byte(mattermostUserID))
-	if apperr != nil {
-		return apperr
-	}
-
-	return nil
-}
-
-func (p *Plugin) DeleteUserInfo(mattermostUserID string, info JIRAUserInfo) error {
-	apperr := p.API.KVDelete(KEY_JIRA_USER_INFO + mattermostUserID)
-	if apperr != nil {
-		return apperr
-	}
-
-	apperr = p.API.KVDelete(KEY_MATTERMOST_USER_ID + info.Name)
 	if apperr != nil {
 		return apperr
 	}
@@ -95,6 +79,20 @@ func (p *Plugin) LoadMattermostUserID(jiraUserKey string) (string, error) {
 		return "", fmt.Errorf("could not find jira user info")
 	}
 	return string(b), nil
+}
+
+func (p *Plugin) DeleteUserInfo(mattermostUserID string, info JIRAUserInfo) error {
+	apperr := p.API.KVDelete(KEY_JIRA_USER_INFO + mattermostUserID)
+	if apperr != nil {
+		return apperr
+	}
+
+	apperr = p.API.KVDelete(KEY_MATTERMOST_USER_ID + info.Name)
+	if apperr != nil {
+		return apperr
+	}
+
+	return nil
 }
 
 func (p *Plugin) EnsureTokenSecret() ([]byte, error) {

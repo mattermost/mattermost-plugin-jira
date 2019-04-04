@@ -6,7 +6,7 @@ import (
 	"regexp"
 )
 
-func parseJiraUsernamesFromText(text string) []string {
+func parseJIRAUsernamesFromText(text string) []string {
 	usernameMap := map[string]bool{}
 	usernames := []string{}
 
@@ -23,7 +23,7 @@ func parseJiraUsernamesFromText(text string) []string {
 	return usernames
 }
 
-func parseJiraIssueFromText(text string, keys []string) []string {
+func parseJIRAIssuesFromText(text string, keys []string) []string {
 	issueMap := map[string]bool{}
 	issues := []string{}
 

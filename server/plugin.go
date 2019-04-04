@@ -10,8 +10,11 @@ import (
 	"sync"
 	"text/template"
 
+	jira "github.com/andygrunwald/go-jira"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
+	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
 )
 
@@ -67,9 +70,6 @@ func (p *Plugin) OnActivate() error {
 	p.botUserID = user.Id
 	p.rsaKey = p.getRSAKey()
 
-	// Temporary hack until we can pull the project keys dynamically
-	p.projectKeys = []string{"MM"}
-
 	p.oauth2Config = oauth2.Config{
 		ClientID:     "LimAAPOhX7ncIN7cPB77tZ1Gwz0r2WmL",
 		ClientSecret: "01_Y6g1JRmLnSGcaRU19LzhfnsXHAGwtuQTacQscxR3eCy7tzhLYYbuQHXiVIJq_",
@@ -86,10 +86,83 @@ func (p *Plugin) OnActivate() error {
 	return nil
 }
 
+func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
+	projectKeys, err := p.loadJIRAProjectKeys(false)
+	if err != nil {
+		return
+	}
+
+	issues := parseJIRAIssuesFromText(post.Message, projectKeys)
+	if len(issues) == 0 {
+		return
+	}
+
+	channel, _ := p.API.GetChannel(post.ChannelId)
+	if channel == nil {
+		return
+	}
+
+	if channel.Type != model.CHANNEL_OPEN {
+		return
+	}
+
+	team, _ := p.API.GetTeam(channel.TeamId)
+	if team == nil {
+		return
+	}
+
+	user, _ := p.API.GetUser(post.UserId)
+	if user == nil {
+		return
+	}
+
+	config := p.API.GetConfig()
+	permalink := fmt.Sprintf("%v/%v/pl/%v", *config.ServiceSettings.SiteURL, team.Name, post.Id)
+
+	var jiraClient *jira.Client
+	userinfo, err := p.LoadJIRAUserInfo(post.UserId)
+	if err == nil {
+		jiraClient, _, err = p.getJIRAClientForUser(userinfo.AccountId)
+	} else {
+		if !team.AllowOpenInvite {
+			return
+		}
+
+		jiraClient, err = p.getJIRAClientForServer()
+	}
+	if err != nil {
+		return
+	}
+
+	for _, issue := range issues {
+		comment := &jira.Comment{
+			Body: fmt.Sprintf("%s mentioned this ticket in Mattermost:\n{quote}\n%s\n{quote}\n\n[View message in Mattermost|%s]",
+				user.Username, post.Message, permalink),
+		}
+
+		_, _, err := jiraClient.Issue.AddComment(issue, comment)
+		if err != nil {
+			p.errorf("%v", errors.WithMessage(err, "failed to add comment"))
+		}
+	}
+}
+
 func (p *Plugin) externalURL() string {
 	config := p.getConfiguration()
 	if config.ExternalURL != "" {
 		return config.ExternalURL
 	}
 	return *p.API.GetConfig().ServiceSettings.SiteURL
+}
+
+func (p *Plugin) debugf(f string, args ...interface{}) {
+	p.API.LogDebug(fmt.Sprintf(f, args...))
+}
+
+func (p *Plugin) infof(f string, args ...interface{}) {
+	p.API.LogInfo(fmt.Sprintf(f, args...))
+}
+
+func (p *Plugin) errorf(f string, args ...interface{}) {
+	p.API.LogError(fmt.Sprintf(f, args...))
 }
