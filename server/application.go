@@ -93,7 +93,7 @@ func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, *http.Clie
 	return jiraClient, httpClient, err
 }
 
-// Creates a client with a JWT
+// Creates a "bot" client with a JWT
 func (p *Plugin) getJIRAClientForServer() (*jira.Client, error) {
 	sc, err := p.LoadSecurityContext()
 	if err != nil {

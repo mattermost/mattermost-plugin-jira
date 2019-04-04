@@ -17,7 +17,7 @@ func getCommand() *model.Command {
 		DisplayName:      "JIRA",
 		Description:      "Integration with JIRA.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect",
+		AutoCompleteDesc: "Available commands: connect, disconnect",
 		AutoCompleteHint: "[command]",
 	}
 }
@@ -42,7 +42,6 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 		return nil, nil
 	}
 	action := split[1]
-	// args := split[2:]
 
 	switch action {
 	case "connect":
@@ -66,20 +65,6 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 			fmt.Sprintf("[Click here to unlink your JIRA account.](%s/plugins/%s/user-disconnect)",
 				*p.API.GetConfig().ServiceSettings.SiteURL, manifest.Id))
 		return resp, nil
-
-	case "test":
-		// if len(args) < 0 {
-		// 	return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "---- TODO SUBSCRIBE HELP ---- "), nil
-		// }
-
-		jirac, err := p.getJIRAClientForServer()
-		if err != nil {
-			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, err.Error()), nil
-		}
-
-		u, _, err := jirac.User.GetSelf()
-		return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-			fmt.Sprintf("<><> err:%v, u:%#v", err, u)), nil
 	}
 
 	return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "Command not supported."), nil
