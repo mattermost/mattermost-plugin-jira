@@ -11,7 +11,6 @@ import (
 	"text/template"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -89,6 +88,7 @@ func (p *Plugin) OnActivate() error {
 func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 	projectKeys, err := p.loadJIRAProjectKeys(false)
 	if err != nil {
+		p.errorf("MessageHasBeenPosted: failed to load project keys from JIRA: %v", err)
 		return
 	}
 
@@ -97,22 +97,26 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 		return
 	}
 
-	channel, _ := p.API.GetChannel(post.ChannelId)
-	if channel == nil {
+	channel, aerr := p.API.GetChannel(post.ChannelId)
+	if aerr != nil {
+		p.errorf("MessageHasBeenPosted: failed to load channel ID: %v, error: %v.", post.ChannelId, aerr)
 		return
 	}
 
 	if channel.Type != model.CHANNEL_OPEN {
+		p.infof("MessageHasBeenPosted: ignoring JIRA comment in %v: not a public channel.", channel.Name)
 		return
 	}
 
-	team, _ := p.API.GetTeam(channel.TeamId)
-	if team == nil {
+	team, aerr := p.API.GetTeam(channel.TeamId)
+	if aerr != nil {
+		p.errorf("MessageHasBeenPosted: failed to load team ID: %v, error: %v.", channel.TeamId, aerr)
 		return
 	}
 
-	user, _ := p.API.GetUser(post.UserId)
-	if user == nil {
+	user, aerr := p.API.GetUser(post.UserId)
+	if aerr != nil {
+		p.errorf("MessageHasBeenPosted: failed to load user ID: %v, error: %v.", post.UserId, aerr)
 		return
 	}
 
@@ -125,12 +129,15 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 		jiraClient, _, err = p.getJIRAClientForUser(userinfo.AccountId)
 	} else {
 		if !team.AllowOpenInvite {
+			p.errorf("User %v is not connected and team %v does not allow open invites",
+				user.GetDisplayName(model.SHOW_NICKNAME_FULLNAME), team.DisplayName)
 			return
 		}
 
 		jiraClient, err = p.getJIRAClientForServer()
 	}
 	if err != nil {
+		p.errorf("MessageHasBeenPosted: failed to obtain an authenticated client, error: %v.", err)
 		return
 	}
 
@@ -142,7 +149,7 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 
 		_, _, err := jiraClient.Issue.AddComment(issue, comment)
 		if err != nil {
-			p.errorf("%v", errors.WithMessage(err, "failed to add comment"))
+			p.errorf("MessageHasBeenPosted: failed to add the comment to JIRA, error: %v", err)
 		}
 	}
 }
