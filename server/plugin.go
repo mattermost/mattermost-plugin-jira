@@ -49,18 +49,15 @@ func (p *Plugin) OnActivate() error {
 		return fmt.Errorf("Unable to find user with configured username: %v, error: %v", config.UserName, apperr)
 	}
 
-	bpath, err := p.API.GetBundlePath()
-	if err != nil {
-		return err
-	}
+	tpath := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
 
-	fpath := filepath.Join(bpath, "server", "dist", "templates", "atlassian-connect.json")
+	var err error
+	fpath := filepath.Join(tpath, "atlassian-connect.json")
 	p.atlassianConnectTemplate, err = template.ParseFiles(fpath)
 	if err != nil {
 		return err
 	}
-
-	fpath = filepath.Join(bpath, "server", "dist", "templates", "user-config.html")
+	fpath = filepath.Join(tpath, "user-config.html")
 	p.userConfigTemplate, err = template.ParseFiles(fpath)
 	if err != nil {
 		return err
