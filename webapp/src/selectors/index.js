@@ -1,11 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import PluginId from 'plugin_id';
 import {createSelector} from 'reselect';
 
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+
+import PluginId from 'plugin_id';
 
 const getPluginState = (state) => state['plugins-' + PluginId] || {};
 
@@ -16,8 +17,8 @@ export const getPluginServerRoute = (state) => {
     if (config && config.SiteURL) {
         basePath = new URL(config.SiteURL).pathname;
 
-        if (basePath && basePath[basePath.length-1] === '/') {
-            basePath = basePath.substr(0, basePath.length-1);
+        if (basePath && basePath[basePath.length - 1] === '/') {
+            basePath = basePath.substr(0, basePath.length - 1);
         }
     }
 

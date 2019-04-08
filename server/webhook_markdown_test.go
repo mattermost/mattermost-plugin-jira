@@ -97,14 +97,14 @@ func TestParse(t *testing.T) {
 			f, err := os.Open(tc.file)
 			require.NoError(t, err)
 			defer f.Close()
-			parsed, err := parse(f, func(w *Webhook) string {
+			parsed, err := parse(f, func(w *JIRAWebhook) string {
 				return w.mdIssueLongLink()
 			})
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedStyle, parsed.style)
 			assert.Equal(t, tc.expectedHeadline, parsed.headline)
 			assert.Equal(t, tc.expectedDetails, parsed.details)
-			assert.Equal(t, tc.expectedText, parsed.edited)
+			assert.Equal(t, tc.expectedText, parsed.text)
 		})
 	}
 }
@@ -113,7 +113,7 @@ func TestMarkdown(t *testing.T) {
 	f, err := os.Open("testdata/webhook-issue-created.json")
 	require.NoError(t, err)
 	defer f.Close()
-	parsed, err := parse(f, func(w *Webhook) string {
+	parsed, err := parse(f, func(w *JIRAWebhook) string {
 		return w.mdIssueLongLink()
 	})
 	require.NoError(t, err)
@@ -126,14 +126,14 @@ func TestWebhookVariousErrorsForCoverage(t *testing.T) {
 	assert.Equal(t, "", mdUser(nil))
 
 	parsed := &parsed{
-		Webhook: &Webhook{},
+		JIRAWebhook: &JIRAWebhook{},
 	}
 	assert.Equal(t, "", parsed.mdIssueReportedBy())
 	assert.Equal(t, "", parsed.mdIssueLabels())
 	assert.Equal(t, "", parsed.jiraURL())
 	parsed.fromChangeLog("link")
 	assert.Equal(t, "", parsed.headline)
-	assert.Equal(t, "", parsed.edited)
+	assert.Equal(t, "", parsed.text)
 
 	parsed.WebhookEvent = "something-else"
 	assert.Equal(t, "", newMarkdownMessage(parsed))
@@ -142,7 +142,7 @@ func TestWebhookVariousErrorsForCoverage(t *testing.T) {
 	parsed.IssueEventTypeName = "something-else"
 	assert.Equal(t, "", newMarkdownMessage(parsed))
 
-	parsed.Issue.Fields.Assignee = &WebhookUser{
+	parsed.Issue.Fields.Assignee = &JIRAWebhookUser{
 		DisplayName: "test",
 	}
 	assert.Equal(t, "Assigned to: **test**", parsed.mdIssueAssignedTo())
@@ -159,7 +159,7 @@ func TestTruncate(t *testing.T) {
 }
 
 func TestWebhookJiraURL(t *testing.T) {
-	var w Webhook
+	var w JIRAWebhook
 	w.Issue.Self = "http://localhost:8080/rest/api/2/issue/10006"
 	assert.Equal(t, "http://localhost:8080", w.jiraURL())
 

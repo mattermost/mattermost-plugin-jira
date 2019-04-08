@@ -27,7 +27,7 @@ export default class InputSetting extends PureComponent {
         ]),
     };
 
-    static defaultProps =  {
+    static defaultProps = {
         type: 'input',
         maxLength: null,
         required: false,

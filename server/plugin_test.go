@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -14,7 +13,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
@@ -36,12 +34,6 @@ type TestConfiguration struct {
 }
 
 func TestPlugin(t *testing.T) {
-	f, err := os.Open("testdata/webhook-issue-created.json")
-	require.NoError(t, err)
-	defer f.Close()
-	var webhook Webhook
-	require.NoError(t, json.NewDecoder(f).Decode(&webhook))
-
 	validConfiguration := TestConfiguration{
 		Secret:   "thesecret",
 		UserName: "theuser",
@@ -142,6 +134,8 @@ func TestPlugin(t *testing.T) {
 				mock.AnythingOfTypeArgument("string"),
 				mock.AnythingOfTypeArgument("string"),
 				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
 				mock.AnythingOfTypeArgument("string")).Return(nil)
 			api.On("LogError",
 				mock.AnythingOfTypeArgument("string"),
@@ -152,8 +146,26 @@ func TestPlugin(t *testing.T) {
 				mock.AnythingOfTypeArgument("string"),
 				mock.AnythingOfTypeArgument("string"),
 				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogError",
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
+				mock.AnythingOfTypeArgument("string"),
 				mock.AnythingOfTypeArgument("string")).Return(nil)
 
+			api.On("KVGet", mock.AnythingOfTypeArgument("string")).Return(make([]byte, 0), (*model.AppError)(nil))
+			api.On("GetDirectChannel", mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string")).Return(
+				&model.Channel{}, (*model.AppError)(nil))
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
 				Id: "theuserid",
 			}, (*model.AppError)(nil))
@@ -170,7 +182,7 @@ func TestPlugin(t *testing.T) {
 
 			p := Plugin{}
 			p.setConfiguration(&configuration{
-				// Secret:   tc.Configuration.Secret,
+				Secret:   tc.Configuration.Secret,
 				UserName: tc.Configuration.UserName,
 			})
 			p.SetAPI(api)

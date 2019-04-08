@@ -217,7 +217,7 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsed, error) {
 
 	case "comment_updated":
 		user = &parsed.Comment.UpdateAuthor
-		headline = fmt.Sprintf("text a comment in %v", issue)
+		headline = fmt.Sprintf("edited a comment in %v", issue)
 		parsed.text = truncate(parsed.Comment.Body, 3000)
 
 	case "comment_created":

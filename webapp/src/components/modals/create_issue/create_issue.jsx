@@ -57,7 +57,6 @@ export default class CreateIssueModal extends PureComponent {
                 return;
             }
 
-            console.log('create meta', meta.data);
             const nFields = {
                 ...fields,
             };

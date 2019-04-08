@@ -17,14 +17,14 @@ export default class MultiSelectSetting extends PureComponent {
         disabled: PropTypes.bool,
         required: PropTypes.bool,
         helpText: PropTypes.node,
-        noResultText: PropTypes.node,// ?
+        noResultText: PropTypes.node, // ?
         errorText: PropTypes.node, // ?
-        notPresent: PropTypes.node,// ?
+        notPresent: PropTypes.node, // ?
     };
 
     static defaultProps = {
         disabled: false,
-        required: false
+        required: false,
     };
 
     handleChange = (newValue) => {
@@ -57,6 +57,5 @@ export default class MultiSelectSetting extends PureComponent {
                 />
             </Setting>
         );
-
     }
 }

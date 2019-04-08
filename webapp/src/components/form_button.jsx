@@ -61,5 +61,4 @@ export default class FormButton extends PureComponent {
             </button>
         );
     }
-
 }

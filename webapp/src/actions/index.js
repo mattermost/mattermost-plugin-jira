@@ -63,8 +63,6 @@ export function getConnected() {
             return {error};
         }
 
-	    console.log('<><> getConnected: received');
-	    console.log(data);
         dispatch({
             type: CreateTypes.RECEIVED_CONNECTED,
             data,
