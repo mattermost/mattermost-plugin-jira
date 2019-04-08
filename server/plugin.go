@@ -4,13 +4,22 @@
 package main
 
 import (
-	"crypto/subtle"
+	"crypto/rsa"
 	"fmt"
-	"net/http"
+	"path/filepath"
 	"sync"
+	"text/template"
+
+	jira "github.com/andygrunwald/go-jira"
+	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
+)
+
+const (
+	JIRA_USERNAME = "Jira Plugin"
+	JIRA_ICON_URL = "https://s3.amazonaws.com/mattermost-plugin-media/jira.jpg"
 )
 
 type Plugin struct {
@@ -22,73 +31,142 @@ type Plugin struct {
 	// configuration is the active plugin configuration. Consult getConfiguration and
 	// setConfiguration for usage.
 	configuration *configuration
+
+	oauth2Config oauth2.Config
+
+	botUserID   string
+	rsaKey      *rsa.PrivateKey
+	projectKeys []string
+
+	atlassianConnectTemplate *template.Template
+	userConfigTemplate       *template.Template
 }
 
-func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	p.API.LogDebug("HTTP request", "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
-
-	err, status := p.handleHTTPRequest(c, w, r)
-	if err != nil {
-		p.API.LogDebug("Failed to serve HTTP request", "Error message", err.Error())
-		http.Error(w, err.Error(), status)
-	}
-}
-
-func (p *Plugin) handleHTTPRequest(c *plugin.Context, w http.ResponseWriter, r *http.Request) (error, int) {
+func (p *Plugin) OnActivate() error {
 	config := p.getConfiguration()
-	if config.Secret == "" || config.UserName == "" {
-		return fmt.Errorf("JIRA plugin not configured correctly; must provide Secret and UserName"), http.StatusForbidden
+	user, apperr := p.API.GetUserByUsername(config.UserName)
+	if apperr != nil {
+		return fmt.Errorf("Unable to find user with configured username: %v, error: %v", config.UserName, apperr)
 	}
 
-	if r.URL.Path != "/webhook" {
-		return fmt.Errorf("Request URL: unsupported path: " + r.URL.Path + ", must be /webhook"), http.StatusNotFound
-	}
-	if r.Method != http.MethodPost {
-		return fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST"), http.StatusMethodNotAllowed
-	}
+	tpath := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
 
-	if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(config.Secret)) != 1 {
-		return fmt.Errorf("Request URL: secret did not match"), http.StatusForbidden
-	}
-
-	teamName := r.URL.Query().Get("team")
-	if teamName == "" {
-		return fmt.Errorf("Request URL: team is empty"), http.StatusBadRequest
-	}
-	channelID := r.URL.Query().Get("channel")
-	if channelID == "" {
-		return fmt.Errorf("Request URL: channel is empty"), http.StatusBadRequest
-	}
-
-	user, appErr := p.API.GetUserByUsername(config.UserName)
-	if appErr != nil {
-		return fmt.Errorf(appErr.Message), appErr.StatusCode
-	}
-
-	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelID, false)
-	if appErr != nil {
-		return fmt.Errorf(appErr.Message), appErr.StatusCode
-	}
-
-	initPost, err := AsSlackAttachment(r.Body)
+	var err error
+	fpath := filepath.Join(tpath, "atlassian-connect.json")
+	p.atlassianConnectTemplate, err = template.ParseFiles(fpath)
 	if err != nil {
-		return err, http.StatusBadRequest
+		return err
+	}
+	fpath = filepath.Join(tpath, "user-config.html")
+	p.userConfigTemplate, err = template.ParseFiles(fpath)
+	if err != nil {
+		return err
 	}
 
-	post := &model.Post{
-		ChannelId: channel.Id,
-		UserId:    user.Id,
-		Props: map[string]interface{}{
-			"from_webhook":  "true",
-			"use_user_icon": "true",
+	p.botUserID = user.Id
+	p.rsaKey = p.getRSAKey()
+
+	p.oauth2Config = oauth2.Config{
+		ClientID:     "LimAAPOhX7ncIN7cPB77tZ1Gwz0r2WmL",
+		ClientSecret: "01_Y6g1JRmLnSGcaRU19LzhfnsXHAGwtuQTacQscxR3eCy7tzhLYYbuQHXiVIJq_",
+		Scopes:       []string{"read:jira-work", "read:jira-user", "write:jira-work"},
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "https://auth.atlassian.com/authorize",
+			TokenURL: "https://auth.atlassian.com/oauth/token",
 		},
-	}
-	initPost(post)
-
-	_, appErr = p.API.CreatePost(post)
-	if appErr != nil {
-		return fmt.Errorf(appErr.Message), appErr.StatusCode
+		RedirectURL: fmt.Sprintf("%v/plugins/%v/oauth/complete", p.externalURL(), manifest.Id),
 	}
 
-	return nil, http.StatusOK
+	p.API.RegisterCommand(getCommand())
+
+	return nil
+}
+
+func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
+	projectKeys, err := p.loadJIRAProjectKeys(false)
+	if err != nil {
+		p.errorf("MessageHasBeenPosted: failed to load project keys from JIRA: %v", err)
+		return
+	}
+
+	issues := parseJIRAIssuesFromText(post.Message, projectKeys)
+	if len(issues) == 0 {
+		return
+	}
+
+	channel, aerr := p.API.GetChannel(post.ChannelId)
+	if aerr != nil {
+		p.errorf("MessageHasBeenPosted: failed to load channel ID: %v, error: %v.", post.ChannelId, aerr)
+		return
+	}
+
+	if channel.Type != model.CHANNEL_OPEN {
+		p.infof("MessageHasBeenPosted: ignoring JIRA comment in %v: not a public channel.", channel.Name)
+		return
+	}
+
+	team, aerr := p.API.GetTeam(channel.TeamId)
+	if aerr != nil {
+		p.errorf("MessageHasBeenPosted: failed to load team ID: %v, error: %v.", channel.TeamId, aerr)
+		return
+	}
+
+	user, aerr := p.API.GetUser(post.UserId)
+	if aerr != nil {
+		p.errorf("MessageHasBeenPosted: failed to load user ID: %v, error: %v.", post.UserId, aerr)
+		return
+	}
+
+	config := p.API.GetConfig()
+	permalink := fmt.Sprintf("%v/%v/pl/%v", *config.ServiceSettings.SiteURL, team.Name, post.Id)
+
+	var jiraClient *jira.Client
+	userinfo, err := p.LoadJIRAUserInfo(post.UserId)
+	if err == nil {
+		jiraClient, _, err = p.getJIRAClientForUser(userinfo.AccountId)
+	} else {
+		if !team.AllowOpenInvite {
+			p.errorf("User %v is not connected and team %v does not allow open invites",
+				user.GetDisplayName(model.SHOW_NICKNAME_FULLNAME), team.DisplayName)
+			return
+		}
+
+		jiraClient, err = p.getJIRAClientForServer()
+	}
+	if err != nil {
+		p.errorf("MessageHasBeenPosted: failed to obtain an authenticated client, error: %v.", err)
+		return
+	}
+
+	for _, issue := range issues {
+		comment := &jira.Comment{
+			Body: fmt.Sprintf("%s mentioned this ticket in Mattermost:\n{quote}\n%s\n{quote}\n\n[View message in Mattermost|%s]",
+				user.Username, post.Message, permalink),
+		}
+
+		_, _, err := jiraClient.Issue.AddComment(issue, comment)
+		if err != nil {
+			p.errorf("MessageHasBeenPosted: failed to add the comment to JIRA, error: %v", err)
+		}
+	}
+}
+
+func (p *Plugin) externalURL() string {
+	config := p.getConfiguration()
+	if config.ExternalURL != "" {
+		return config.ExternalURL
+	}
+	return *p.API.GetConfig().ServiceSettings.SiteURL
+}
+
+func (p *Plugin) debugf(f string, args ...interface{}) {
+	p.API.LogDebug(fmt.Sprintf(f, args...))
+}
+
+func (p *Plugin) infof(f string, args ...interface{}) {
+	p.API.LogInfo(fmt.Sprintf(f, args...))
+}
+
+func (p *Plugin) errorf(f string, args ...interface{}) {
+	p.API.LogError(fmt.Sprintf(f, args...))
 }

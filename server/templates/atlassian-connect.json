@@ -1,0 +1,60 @@
+{{define "config"}}
+{
+    "key": "mattermost-plugin",
+    "name": "Mattermost JIRA Plugin",
+    "description": "Add-on for the Mattermost JIRA plugin.",
+    "vendor": {
+      "name": "Mattermost",
+      "url": "https://github.com/mattermost"
+    },
+    "baseUrl": "{{ .BaseURL }}",
+    "links": {
+      "self": "{{ .BaseURL }}/atlassian-connect.json",
+      "homepage": "{{ .BaseURL }}/atlassian-connect.json"
+    },
+    "authentication": {
+      "type": "jwt"
+    },
+    "lifecycle": {
+      "installed": "/installed",
+      "uninstalled": "/uninstalled"
+    },
+    "scopes": [
+      "READ",
+      "WRITE",
+      "ACT_AS_USER"
+    ],
+    "modules": {
+	    "generalPages": [
+		    {
+			    "url": "/completed",
+			    "icon": {
+				    "width": 80,
+				    "height": 80,
+				    "url": "https://en.wikipedia.org/wiki/File:Run.svg"
+			    },
+			    "name": {
+				    "value": "My General Page"
+			    },
+			    "key": "my-general-page"
+		    }
+	    ],
+	    "adminPages": [
+		    {
+			    "url": "/admin",
+			    "name": {
+				    "value": "Administer Mattermost integration"
+			    },
+			    "key": "admin"
+		    }
+	    ],
+	    "configurePage": {
+		    "url": "/user-config",
+		    "name": {
+			    "value": "My Configure Page"
+		    },
+		    "key": "user-config"
+	    }
+    }
+}
+{{ end }}

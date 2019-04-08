@@ -21,8 +21,13 @@ import (
 // If you add non-reference types to your configuration struct, be sure to rewrite Clone as a deep
 // copy appropriate for your types.
 type configuration struct {
-	Secret   string
 	UserName string
+
+	// TODO This is a placeholder, there's got to be a better way to do this
+	ExternalURL string
+
+	// Legacy 1.x Webhook secret
+	Secret string
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
