@@ -33,7 +33,8 @@ type AtlassianSecurityContext struct {
 
 func (p *Plugin) handleHTTPAtlassianConnect(w http.ResponseWriter, r *http.Request) (int, error) {
 	vals := map[string]string{
-		"BaseURL": p.externalURL() + "/" + path.Join("plugins", manifest.Id),
+		"BaseURL":     p.externalURL() + "/" + path.Join("plugins", manifest.Id),
+		"ExternalURL": p.externalURL(),
 	}
 	bb := &bytes.Buffer{}
 	err := p.atlassianConnectTemplate.ExecuteTemplate(bb, "config", vals)
