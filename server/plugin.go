@@ -11,6 +11,7 @@ import (
 	"text/template"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -22,28 +23,81 @@ const (
 	JIRA_ICON_URL = "https://s3.amazonaws.com/mattermost-plugin-media/jira.jpg"
 )
 
+type externalConfig struct {
+	// Bot username
+	UserName string
+
+	// Legacy 1.x Webhook secret
+	Secret string
+
+	// TODO remove
+	ExternalURL string
+}
+
+// config captures all cached values that need to be synchronized
+type config struct {
+	externalConfig
+
+	// Cached actual bot user ID (derived from c.UserName)
+	botUserID string
+
+	// Generated once, then cached in the database, and here deserialized
+	rsaKey *rsa.PrivateKey
+
+	// secret used to generate auth tokens in the Atlassian connect
+	// user mapping flow
+	tokenSecret []byte
+
+	// Fetched from JIRA once, then cached
+	projectKeys []string
+}
+
 type Plugin struct {
 	plugin.MattermostPlugin
+	JIRAInstance
 
-	// configurationLock synchronizes access to the configuration.
-	configurationLock sync.RWMutex
-
-	// configuration is the active plugin configuration. Consult getConfiguration and
-	// setConfiguration for usage.
-	configuration *configuration
+	// configuration and a muttex to control concurrent access
+	config
+	configLock sync.RWMutex
 
 	oauth2Config oauth2.Config
-
-	botUserID   string
-	rsaKey      *rsa.PrivateKey
-	projectKeys []string
 
 	atlassianConnectTemplate *template.Template
 	userConfigTemplate       *template.Template
 }
 
+func (p *Plugin) getConfig() config {
+	p.configLock.RLock()
+	defer p.configLock.RUnlock()
+	return p.config
+}
+
+func (p *Plugin) updateConfig(f func(c *config)) config {
+	p.configLock.Lock()
+	defer p.configLock.Unlock()
+
+	f(&p.config)
+	return p.config
+}
+
+// OnConfigurationChange is invoked when configuration changes may have been made.
+func (p *Plugin) OnConfigurationChange() error {
+
+	// Load the public configuration fields from the Mattermost server configuration.
+	ec := externalConfig{}
+	err := p.API.LoadPluginConfiguration(&ec)
+	if err != nil {
+		return errors.Wrap(err, "failed to load plugin configuration")
+	}
+
+	p.updateConfig(func(c *config) {
+		c.externalConfig = ec
+	})
+
+	return nil
+}
 func (p *Plugin) OnActivate() error {
-	config := p.getConfiguration()
+	config := p.getConfig()
 	user, apperr := p.API.GetUserByUsername(config.UserName)
 	if apperr != nil {
 		return fmt.Errorf("Unable to find user with configured username: %v, error: %v", config.UserName, apperr)
@@ -64,7 +118,6 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	p.botUserID = user.Id
-	p.rsaKey = p.getRSAKey()
 
 	p.oauth2Config = oauth2.Config{
 		ClientID:     "LimAAPOhX7ncIN7cPB77tZ1Gwz0r2WmL",
@@ -152,7 +205,7 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 }
 
 func (p *Plugin) externalURL() string {
-	config := p.getConfiguration()
+	config := p.getConfig()
 	if config.ExternalURL != "" {
 		return config.ExternalURL
 	}

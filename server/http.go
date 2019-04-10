@@ -12,7 +12,7 @@ import (
 )
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	config := p.getConfiguration()
+	config := p.getConfig()
 	if config.UserName == "" {
 		http.Error(w, "JIRA plugin not configured correctly; must provide UserName", http.StatusForbidden)
 		return

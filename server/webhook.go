@@ -99,7 +99,7 @@ func (p *Plugin) handleHTTPWebhook(w http.ResponseWriter, r *http.Request) (int,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
 	}
 	// TODO add JWT support
-	config := p.getConfiguration()
+	config := p.getConfig()
 	if config.Secret == "" || config.UserName == "" {
 		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret and UserName")
 	}

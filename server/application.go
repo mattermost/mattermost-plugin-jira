@@ -17,20 +17,6 @@ import (
 	oauth2_jira "golang.org/x/oauth2/jira"
 )
 
-type AtlassianSecurityContext struct {
-	Key            string `json:"key"`
-	ClientKey      string `json:"clientKey"`
-	PublicKey      string `json:"publicKey"`
-	SharedSecret   string `json:"sharedSecret"`
-	ServerVersion  string `json:"serverVersion"`
-	PluginsVersion string `json:"pluginsVersion"`
-	BaseURL        string `json:"baseUrl"`
-	ProductType    string `json:"productType"`
-	Description    string `json:"description"`
-	EventType      string `json:"eventType"`
-	OAuthClientId  string `json:"oauthClientId"`
-}
-
 func (p *Plugin) handleHTTPAtlassianConnect(w http.ResponseWriter, r *http.Request) (int, error) {
 	vals := map[string]string{
 		"BaseURL":     p.externalURL() + "/" + path.Join("plugins", manifest.Id),
@@ -51,13 +37,32 @@ func (p *Plugin) handleHTTPInstalled(w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, err
 	}
 
-	var sc AtlassianSecurityContext
-	err = json.Unmarshal(body, &sc)
+	var asc AtlassianSecurityContext
+	err = json.Unmarshal(body, &asc)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+
+	// Create or overwrite the instance record, also store it
+	// as current
+	jiraInstance := JIRAInstance{
+		Key:                         asc.BaseURL,
+		Type:                        JIRACloudType,
+		AtlassianSecurityContextRaw: string(body),
+		asc:                         &asc,
+	}
+	err = p.StoreJIRAInstance(jiraInstance, true)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	p.StoreSecurityContext(body)
+	// Update the known instances
+	known, err := p.LoadKnownJIRAInstances()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	known[jiraInstance.Key] = jiraInstance.Type
+	err = p.StoreKnownJIRAInstances(known)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -73,18 +78,18 @@ func (p *Plugin) handleHTTPUninstalled(w http.ResponseWriter, r *http.Request) (
 
 // Creates a client for acting on behalf of a user
 func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, *http.Client, error) {
-	sc, err := p.LoadSecurityContext()
+	jiraInstance, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return nil, nil, err
 	}
 
 	c := oauth2_jira.Config{
-		BaseURL: sc.BaseURL,
+		BaseURL: jiraInstance.asc.BaseURL,
 		Subject: jiraUser,
 	}
 
-	c.Config.ClientID = sc.OAuthClientId
-	c.Config.ClientSecret = sc.SharedSecret
+	c.Config.ClientID = jiraInstance.asc.OAuthClientId
+	c.Config.ClientSecret = jiraInstance.asc.SharedSecret
 	c.Config.Endpoint.AuthURL = "https://auth.atlassian.io"
 	c.Config.Endpoint.TokenURL = "https://auth.atlassian.io/oauth2/token"
 
@@ -96,16 +101,16 @@ func (p *Plugin) getJIRAClientForUser(jiraUser string) (*jira.Client, *http.Clie
 
 // Creates a "bot" client with a JWT
 func (p *Plugin) getJIRAClientForServer() (*jira.Client, error) {
-	sc, err := p.LoadSecurityContext()
+	jiraInstance, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return nil, err
 	}
 
 	c := &jwt.Config{
-		Key:          sc.Key,
-		ClientKey:    sc.ClientKey,
-		SharedSecret: sc.SharedSecret,
-		BaseURL:      sc.BaseURL,
+		Key:          jiraInstance.asc.Key,
+		ClientKey:    jiraInstance.asc.ClientKey,
+		SharedSecret: jiraInstance.asc.SharedSecret,
+		BaseURL:      jiraInstance.asc.BaseURL,
 	}
 
 	return jira.NewClient(c.Client(), c.BaseURL)

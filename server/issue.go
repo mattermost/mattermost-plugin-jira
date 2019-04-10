@@ -38,7 +38,7 @@ func (p *Plugin) handleHTTPCreateIssue(w http.ResponseWriter, r *http.Request) (
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	sc, err := p.LoadSecurityContext()
+	jiraInstance, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -105,7 +105,7 @@ func (p *Plugin) handleHTTPCreateIssue(w http.ResponseWriter, r *http.Request) (
 	// Reply to the post with the issue link that was created
 
 	reply := &model.Post{
-		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", sc.BaseURL, created.Key),
+		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", jiraInstance.asc.BaseURL, created.Key),
 		ChannelId: post.ChannelId,
 		RootId:    create.PostId,
 		UserId:    mmUserID,

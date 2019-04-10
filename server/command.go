@@ -65,6 +65,33 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 			fmt.Sprintf("[Click here to unlink your JIRA account.](%s/plugins/%s/user-disconnect)",
 				*p.API.GetConfig().ServiceSettings.SiteURL, manifest.Id))
 		return resp, nil
+
+	case "instances":
+		known, err := p.LoadKnownJIRAInstances()
+		if err != nil {
+			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, err.Error()), nil
+		}
+
+		current, err := p.LoadCurrentJIRAInstance()
+		if err != nil {
+			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, err.Error()), nil
+		}
+
+		text := ""
+		for key, typ := range known {
+			if key == current.Key {
+				text += "*"
+			} else {
+				text += " "
+			}
+			text += key + ": " + typ + "\n"
+		}
+
+		if text == "" {
+			text = "(none installed)"
+		}
+
+		return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, text), nil
 	}
 
 	return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "Command not supported."), nil

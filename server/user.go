@@ -26,13 +26,6 @@ const (
 	argMMToken = "mm_token"
 )
 
-type JIRAUserInfo struct {
-	// These fields come from JIRA, so their JSON names must not change.
-	Key       string `json:"key,omitempty"`
-	AccountId string `json:"accountId,omitempty"`
-	Name      string `json:"name,omitempty"`
-}
-
 type UserInfo struct {
 	JIRAUserInfo
 	IsConnected bool   `json:"is_connected"`
@@ -46,7 +39,7 @@ func (p *Plugin) handleHTTPUserConnect(w http.ResponseWriter, r *http.Request) (
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	sc, err := p.LoadSecurityContext()
+	jiraInstance, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -58,7 +51,8 @@ func (p *Plugin) handleHTTPUserConnect(w http.ResponseWriter, r *http.Request) (
 
 	v := url.Values{}
 	v.Add(argMMToken, token)
-	redirectURL := fmt.Sprintf("%v/login?dest-url=%v/plugins/servlet/ac/mattermost-plugin/user-config?%v", sc.BaseURL, sc.BaseURL, v.Encode())
+	redirectURL := fmt.Sprintf("%v/login?dest-url=%v/plugins/servlet/ac/mattermost-plugin/user-config?%v",
+		jiraInstance.asc.BaseURL, jiraInstance.asc.BaseURL, v.Encode())
 	http.Redirect(w, r, redirectURL, http.StatusFound)
 	return http.StatusFound, nil
 }
@@ -109,12 +103,12 @@ func (p *Plugin) handleHTTPUserDisconnect(w http.ResponseWriter, r *http.Request
 }
 
 func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (int, error) {
-	sc, err := p.LoadSecurityContext()
+	jiraInstance, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	_, tokenString, err := validateJWT(r, sc)
+	_, tokenString, err := validateJWT(r, jiraInstance.asc)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -140,12 +134,12 @@ func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (i
 }
 
 func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Request) (int, error) {
-	sc, err := p.LoadSecurityContext()
+	jiraInstance, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	jwtToken, _, err := validateJWT(r, sc)
+	jwtToken, _, err := validateJWT(r, jiraInstance.asc)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -190,7 +184,7 @@ func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Reque
 			"is_connected":    true,
 			"jira_username":   uinfo.Name,
 			"jira_account_id": uinfo.AccountId,
-			"jira_url":        sc.BaseURL,
+			"jira_url":        jiraInstance.asc.BaseURL,
 		},
 		&model.WebsocketBroadcast{UserId: mattermostUserID},
 	)
@@ -283,7 +277,7 @@ func (p *Plugin) handleHTTPOAuth2Complete(w http.ResponseWriter, r *http.Request
 		return http.StatusInternalServerError, fmt.Errorf("could not get user: %v", err)
 	}
 
-	sc, err := p.LoadSecurityContext()
+	jiraInstance, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -299,7 +293,7 @@ func (p *Plugin) handleHTTPOAuth2Complete(w http.ResponseWriter, r *http.Request
 			"connected":       true,
 			"jira_username":   info.Name,
 			"jira_account_id": info.AccountId,
-			"jira_url":        sc.BaseURL,
+			"jira_url":        jiraInstance.asc.BaseURL,
 		},
 		&model.WebsocketBroadcast{UserId: mattermostUserID},
 	)
@@ -329,7 +323,7 @@ func (p *Plugin) handleHTTPGetUserInfo(w http.ResponseWriter, r *http.Request) (
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	sc, err := p.LoadSecurityContext()
+	jiraInstance, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -340,7 +334,7 @@ func (p *Plugin) handleHTTPGetUserInfo(w http.ResponseWriter, r *http.Request) (
 		resp = UserInfo{
 			JIRAUserInfo: jiraUserInfo,
 			IsConnected:  true,
-			JIRAURL:      sc.BaseURL,
+			JIRAURL:      jiraInstance.asc.BaseURL,
 		}
 	}
 

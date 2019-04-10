@@ -4,10 +4,7 @@
 package main
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
-	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"net/http"
@@ -17,28 +14,6 @@ import (
 	"github.com/mattermost/mattermost-server/mlog"
 	"github.com/mattermost/mattermost-server/model"
 )
-
-func (p *Plugin) getRSAKey() *rsa.PrivateKey {
-	b, _ := p.API.KVGet(KEY_RSA)
-	if b != nil {
-		var key rsa.PrivateKey
-		if err := json.Unmarshal(b, &key); err != nil {
-			fmt.Println(err.Error())
-			return nil
-		}
-		return &key
-	}
-
-	key, err := rsa.GenerateKey(rand.Reader, 1024)
-	if err != nil {
-		fmt.Println(err.Error())
-		return nil
-	}
-	b, _ = json.Marshal(key)
-	p.API.KVSet(KEY_RSA, b)
-
-	return key
-}
 
 func (p *Plugin) servePublicKey(w http.ResponseWriter, r *http.Request) (int, error) {
 	userID := r.Header.Get("Mattermost-User-ID")

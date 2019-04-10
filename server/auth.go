@@ -147,7 +147,7 @@ func decrypt(encrypted, secret []byte) ([]byte, error) {
 	return plain, nil
 }
 
-func validateJWT(r *http.Request, sc AtlassianSecurityContext) (*jwt.Token, string, error) {
+func validateJWT(r *http.Request, sc *AtlassianSecurityContext) (*jwt.Token, string, error) {
 	r.ParseForm()
 	tokenString := r.Form.Get("jwt")
 	if tokenString == "" {
