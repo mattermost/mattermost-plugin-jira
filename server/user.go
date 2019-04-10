@@ -34,17 +34,17 @@ type UserInfo struct {
 
 func (p *Plugin) handleHTTPUserConnect(w http.ResponseWriter, r *http.Request) (int, error) {
 	// TODO Enforce a GET
-	mattermostUserID := r.Header.Get("Mattermost-User-ID")
-	if mattermostUserID == "" {
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	jiraInstance, err := p.LoadCurrentJIRAInstance()
+	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	token, err := p.NewEncodedAuthToken(mattermostUserID)
+	token, err := p.NewEncodedAuthToken(mattermostUserId)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -52,24 +52,24 @@ func (p *Plugin) handleHTTPUserConnect(w http.ResponseWriter, r *http.Request) (
 	v := url.Values{}
 	v.Add(argMMToken, token)
 	redirectURL := fmt.Sprintf("%v/login?dest-url=%v/plugins/servlet/ac/mattermost-plugin/user-config?%v",
-		jiraInstance.asc.BaseURL, jiraInstance.asc.BaseURL, v.Encode())
+		ji.asc.BaseURL, ji.asc.BaseURL, v.Encode())
 	http.Redirect(w, r, redirectURL, http.StatusFound)
 	return http.StatusFound, nil
 }
 
 func (p *Plugin) handleHTTPUserDisconnect(w http.ResponseWriter, r *http.Request) (int, error) {
 	// TODO Enforce a GET
-	mattermostUserID := r.Header.Get("Mattermost-User-ID")
-	if mattermostUserID == "" {
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	info, err := p.LoadJIRAUserInfo(mattermostUserID)
+	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
-		return http.StatusNotFound, err
+		return http.StatusInternalServerError, err
 	}
 
-	err = p.DeleteUserInfo(mattermostUserID, info)
+	err = p.DeleteUserInfo(ji, mattermostUserId)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -79,7 +79,7 @@ func (p *Plugin) handleHTTPUserDisconnect(w http.ResponseWriter, r *http.Request
 		map[string]interface{}{
 			"is_connected": false,
 		},
-		&model.WebsocketBroadcast{UserId: mattermostUserID},
+		&model.WebsocketBroadcast{UserId: mattermostUserId},
 	)
 
 	html := `
@@ -103,12 +103,12 @@ func (p *Plugin) handleHTTPUserDisconnect(w http.ResponseWriter, r *http.Request
 }
 
 func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (int, error) {
-	jiraInstance, err := p.LoadCurrentJIRAInstance()
+	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	_, tokenString, err := validateJWT(r, jiraInstance.asc)
+	_, tokenString, err := validateJWT(r, ji.asc)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -134,12 +134,12 @@ func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (i
 }
 
 func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Request) (int, error) {
-	jiraInstance, err := p.LoadCurrentJIRAInstance()
+	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	jwtToken, _, err := validateJWT(r, jiraInstance.asc)
+	jwtToken, _, err := validateJWT(r, ji.asc)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -168,12 +168,12 @@ func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Reque
 		Name:      username,
 	}
 
-	mattermostUserID, err := p.ParseAuthToken(mmToken)
+	mattermostUserId, err := p.ParseAuthToken(mmToken)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
 
-	err = p.StoreUserInfo(mattermostUserID, uinfo)
+	err = p.StoreUserInfo(ji, mattermostUserId, uinfo)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -184,12 +184,12 @@ func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Reque
 			"is_connected":    true,
 			"jira_username":   uinfo.Name,
 			"jira_account_id": uinfo.AccountId,
-			"jira_url":        jiraInstance.asc.BaseURL,
+			"jira_url":        ji.asc.BaseURL,
 		},
-		&model.WebsocketBroadcast{UserId: mattermostUserID},
+		&model.WebsocketBroadcast{UserId: mattermostUserId},
 	)
 
-	mmuser, aerr := p.API.GetUser(mattermostUserID)
+	mmuser, aerr := p.API.GetUser(mattermostUserId)
 	if aerr != nil {
 		return http.StatusInternalServerError, aerr
 	}
@@ -209,14 +209,14 @@ func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Reque
 }
 
 func (p *Plugin) handleHTTPOAuth2Connect(w http.ResponseWriter, r *http.Request) (int, error) {
-	userID := r.Header.Get("Mattermost-User-ID")
-	if userID == "" {
+	userId := r.Header.Get("Mattermost-User-Id")
+	if userId == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
 	// TODO encruypt UserID
 	linkURL := p.oauth2Config.AuthCodeURL(
-		userID,
+		userId,
 		oauth2.SetAuthURLParam("prompt", "consent"),
 		oauth2.SetAuthURLParam("audience", "api.atlassian.com"),
 	)
@@ -235,7 +235,7 @@ func (p *Plugin) handleHTTPOAuth2Complete(w http.ResponseWriter, r *http.Request
 	code := r.Form.Get("code")
 	state := r.Form.Get("state")
 	// TODO decrypt MM userID
-	mattermostUserID := state
+	mattermostUserId := state
 
 	tok, err := p.oauth2Config.Exchange(ctx, code)
 	if err != nil {
@@ -277,12 +277,12 @@ func (p *Plugin) handleHTTPOAuth2Complete(w http.ResponseWriter, r *http.Request
 		return http.StatusInternalServerError, fmt.Errorf("could not get user: %v", err)
 	}
 
-	jiraInstance, err := p.LoadCurrentJIRAInstance()
+	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	err = p.StoreUserInfo(mattermostUserID, info)
+	err = p.StoreUserInfo(ji, mattermostUserId, info)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -293,9 +293,9 @@ func (p *Plugin) handleHTTPOAuth2Complete(w http.ResponseWriter, r *http.Request
 			"connected":       true,
 			"jira_username":   info.Name,
 			"jira_account_id": info.AccountId,
-			"jira_url":        jiraInstance.asc.BaseURL,
+			"jira_url":        ji.asc.BaseURL,
 		},
-		&model.WebsocketBroadcast{UserId: mattermostUserID},
+		&model.WebsocketBroadcast{UserId: mattermostUserId},
 	)
 
 	html := `
@@ -318,23 +318,23 @@ func (p *Plugin) handleHTTPOAuth2Complete(w http.ResponseWriter, r *http.Request
 }
 
 func (p *Plugin) handleHTTPGetUserInfo(w http.ResponseWriter, r *http.Request) (int, error) {
-	mattermostUserID := r.Header.Get("Mattermost-User-ID")
-	if mattermostUserID == "" {
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	jiraInstance, err := p.LoadCurrentJIRAInstance()
+	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
 	resp := UserInfo{}
-	jiraUserInfo, err := p.LoadJIRAUserInfo(mattermostUserID)
+	jiraUserInfo, err := p.LoadJIRAUserInfo(ji, mattermostUserId)
 	if err == nil {
 		resp = UserInfo{
 			JIRAUserInfo: jiraUserInfo,
 			IsConnected:  true,
-			JIRAURL:      jiraInstance.asc.BaseURL,
+			JIRAURL:      ji.asc.BaseURL,
 		}
 	}
 

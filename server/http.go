@@ -61,8 +61,6 @@ func (p *Plugin) handleHTTPRequest(w http.ResponseWriter, r *http.Request) (int,
 
 	case "/create-issue":
 		return p.handleHTTPCreateIssue(w, r)
-	case "/test":
-		return p.serveTest(w, r)
 	case "/create-issue-metadata":
 		return p.handleHTTPCreateIssueMetadata(w, r)
 	}

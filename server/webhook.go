@@ -90,7 +90,7 @@ type parsed struct {
 }
 
 type notifier interface {
-	notify(parsed *parsed, text string)
+	notify(ji JIRAInstance, parsed *parsed, text string)
 }
 
 func (p *Plugin) handleHTTPWebhook(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -118,8 +118,8 @@ func (p *Plugin) handleHTTPWebhook(w http.ResponseWriter, r *http.Request) (int,
 		return http.StatusBadRequest,
 			fmt.Errorf("Request URL: team is empty")
 	}
-	channelID := r.Form.Get("channel")
-	if channelID == "" {
+	channelId := r.Form.Get("channel")
+	if channelId == "" {
 		return http.StatusBadRequest,
 			fmt.Errorf("Request URL: channel is empty")
 	}
@@ -129,12 +129,17 @@ func (p *Plugin) handleHTTPWebhook(w http.ResponseWriter, r *http.Request) (int,
 		return appErr.StatusCode, fmt.Errorf(appErr.Message)
 	}
 
-	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelID, false)
+	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelId, false)
 	if appErr != nil {
 		return appErr.StatusCode, fmt.Errorf(appErr.Message)
 	}
 
-	initPost, err := AsSlackAttachment(r.Body, p)
+	ji, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	initPost, err := AsSlackAttachment(r.Body, p, ji)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -291,7 +296,7 @@ func (p *parsed) fromChangeLog(issue string) (string, string) {
 	return "", ""
 }
 
-func (p *Plugin) notify(parsed *parsed, text string) {
+func (p *Plugin) notify(ji JIRAInstance, parsed *parsed, text string) {
 	if parsed.authorUsername == "" {
 		return
 	}
@@ -306,12 +311,12 @@ func (p *Plugin) notify(parsed *parsed, text string) {
 			continue
 		}
 
-		mattermostUserID, err := p.LoadMattermostUserID(u)
+		mattermostUserId, err := p.LoadMattermostUserId(ji, u)
 		if err != nil {
 			continue
 		}
 
-		p.CreateBotDMPost(mattermostUserID,
+		p.CreateBotDMPost(mattermostUserId,
 			fmt.Sprintf("[%s](%s) mentioned you on [%s](%s):\n>%s",
 				parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL, text),
 			"custom_jira_mention")
@@ -321,12 +326,12 @@ func (p *Plugin) notify(parsed *parsed, text string) {
 		return
 	}
 
-	mattermostUserID, err := p.LoadMattermostUserID(parsed.assigneeUsername)
+	mattermostUserId, err := p.LoadMattermostUserId(ji, parsed.assigneeUsername)
 	if err != nil {
 		return
 	}
 
-	p.CreateBotDMPost(mattermostUserID,
+	p.CreateBotDMPost(mattermostUserId,
 		fmt.Sprintf("[%s](%s) commented on [%s](%s):\n>%s",
 			parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL, text),
 		"custom_jira_comment")

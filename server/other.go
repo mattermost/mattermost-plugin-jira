@@ -11,12 +11,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/mlog"
 	"github.com/mattermost/mattermost-server/model"
 )
 
 func (p *Plugin) servePublicKey(w http.ResponseWriter, r *http.Request) (int, error) {
-	userID := r.Header.Get("Mattermost-User-ID")
+	userID := r.Header.Get("Mattermost-User-Id")
 	if userID == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
@@ -40,38 +39,11 @@ func (p *Plugin) servePublicKey(w http.ResponseWriter, r *http.Request) (int, er
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) serveTest(w http.ResponseWriter, r *http.Request) (int, error) {
-	userID := r.Header.Get("Mattermost-User-ID")
-	if userID == "" {
-		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
-	}
-
-	// info, err := p.getJiraUserInfo(userID)
-	// if err != nil {
-	// 	return http.StatusInternalServerError, err
-	// }
-	//
-	// jiraClient, _, err := p.getJIRAClientForUser(info.AccountId)
-	// if err != nil {
-	// 	return http.StatusInternalServerError, fmt.Errorf("could not get jira client: %v", err)
-	// }
-	//
-	// user, _, err := jiraClient.Issue.GetCreateMeta("")
-	// if err != nil {
-	// 	return http.StatusInternalServerError, fmt.Errorf("could not get metadata: %v", err)
-	// }
-	//
-	// userBytes, _ := json.Marshal(user)
-	// w.Header().Set("Content-Type", "application/json")
-	// w.Write(userBytes)
-	return http.StatusOK, nil
-}
-
 func (p *Plugin) CreateBotDMPost(userID, message, postType string) *model.AppError {
-	channel, err := p.API.GetDirectChannel(userID, p.botUserID)
-	if err != nil {
-		mlog.Error("Couldn't get bot's DM channel", mlog.String("user_id", userID))
-		return err
+	channel, aerr := p.API.GetDirectChannel(userID, p.botUserID)
+	if aerr != nil {
+		p.errorf("Couldn't get bot's DM channel to userId:%v, error:%v", userID, aerr.Error())
+		return aerr
 	}
 
 	post := &model.Post{
@@ -86,9 +58,10 @@ func (p *Plugin) CreateBotDMPost(userID, message, postType string) *model.AppErr
 		},
 	}
 
-	if _, err := p.API.CreatePost(post); err != nil {
-		mlog.Error(err.Error())
-		return err
+	_, aerr = p.API.CreatePost(post)
+	if aerr != nil {
+		p.errorf("Couldn't create post, error:%v", aerr.Error())
+		return aerr
 	}
 
 	return nil

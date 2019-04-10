@@ -9,7 +9,7 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
-func AsSlackAttachment(in io.Reader, n notifier) (func(post *model.Post), error) {
+func AsSlackAttachment(in io.Reader, n notifier, ji JIRAInstance) (func(post *model.Post), error) {
 	parsed, err := parse(in, nil)
 	if err != nil {
 		return nil, err
@@ -18,7 +18,7 @@ func AsSlackAttachment(in io.Reader, n notifier) (func(post *model.Post), error)
 	a := newSlackAttachment(parsed)
 
 	if parsed.text != "" && n != nil {
-		n.notify(parsed, parsed.text)
+		n.notify(ji, parsed, parsed.text)
 	}
 
 	// Return a function that adds to a post as a SlackAttachment

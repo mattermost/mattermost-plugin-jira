@@ -33,17 +33,17 @@ func (p *Plugin) handleHTTPCreateIssue(w http.ResponseWriter, r *http.Request) (
 		return http.StatusBadRequest, err
 	}
 
-	mmUserID := r.Header.Get("Mattermost-User-ID")
+	mmUserID := r.Header.Get("Mattermost-User-Id")
 	if mmUserID == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	jiraInstance, err := p.LoadCurrentJIRAInstance()
+	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	info, err := p.LoadJIRAUserInfo(mmUserID)
+	info, err := p.LoadJIRAUserInfo(ji, mmUserID)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -90,10 +90,10 @@ func (p *Plugin) handleHTTPCreateIssue(w http.ResponseWriter, r *http.Request) (
 	if post != nil && len(post.FileIds) > 0 {
 		go func() {
 			for _, fileId := range post.FileIds {
-				info, err := p.API.GetFileInfo(fileId)
-				if err == nil {
-					byteData, err := p.API.ReadFile(info.Path)
-					if err != nil {
+				info, aerr := p.API.GetFileInfo(fileId)
+				if aerr == nil {
+					byteData, aerr := p.API.ReadFile(info.Path)
+					if aerr != nil {
 						return
 					}
 					jiraClient.Issue.PostAttachment(created.ID, bytes.NewReader(byteData), info.Name)
@@ -105,7 +105,7 @@ func (p *Plugin) handleHTTPCreateIssue(w http.ResponseWriter, r *http.Request) (
 	// Reply to the post with the issue link that was created
 
 	reply := &model.Post{
-		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", jiraInstance.asc.BaseURL, created.Key),
+		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.asc.BaseURL, created.Key),
 		ChannelId: post.ChannelId,
 		RootId:    create.PostId,
 		UserId:    mmUserID,
@@ -124,12 +124,17 @@ func (p *Plugin) handleHTTPCreateIssueMetadata(w http.ResponseWriter, r *http.Re
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
 	}
 
-	mmUserID := r.Header.Get("Mattermost-User-ID")
+	mmUserID := r.Header.Get("Mattermost-User-Id")
 	if mmUserID == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
-	info, err := p.LoadJIRAUserInfo(mmUserID)
+	ji, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	info, err := p.LoadJIRAUserInfo(ji, mmUserID)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

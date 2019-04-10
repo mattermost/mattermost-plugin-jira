@@ -54,7 +54,7 @@ type config struct {
 
 type Plugin struct {
 	plugin.MattermostPlugin
-	JIRAInstance
+	// JIRAInstance
 
 	// configuration and a muttex to control concurrent access
 	config
@@ -173,8 +173,14 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 	config := p.API.GetConfig()
 	permalink := fmt.Sprintf("%v/%v/pl/%v", *config.ServiceSettings.SiteURL, team.Name, post.Id)
 
+	ji, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		p.errorf("MessageHasBeenPosted: failed to load JIRA instance: %v.", err)
+		return
+	}
+
 	var jiraClient *jira.Client
-	userinfo, err := p.LoadJIRAUserInfo(post.UserId)
+	userinfo, err := p.LoadJIRAUserInfo(ji, post.UserId)
 	if err == nil {
 		jiraClient, _, err = p.getJIRAClientForUser(userinfo.AccountId)
 	} else {
