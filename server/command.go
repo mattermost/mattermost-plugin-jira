@@ -22,10 +22,10 @@ func getCommand() *model.Command {
 	}
 }
 
-func getCommandResponse(responseType, text string) *model.CommandResponse {
+func ephf(format string, args ...interface{}) *model.CommandResponse {
 	return &model.CommandResponse{
-		ResponseType: responseType,
-		Text:         text,
+		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
+		Text:         fmt.Sprintf(format, args...),
 		Username:     JIRA_USERNAME,
 		IconURL:      JIRA_ICON_URL,
 		Type:         model.POST_DEFAULT,
@@ -35,46 +35,41 @@ func getCommandResponse(responseType, text string) *model.CommandResponse {
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	split := strings.Fields(commandArgs.Command)
 	if len(split) < 2 {
-		return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, fmt.Sprintf("Command not supported. %v", len(split))), nil
+		return ephf("Invalid syntax. Must be at least /jira action."), nil
 	}
 	command := split[0]
 	if command != "/jira" {
 		return nil, nil
 	}
 	action := split[1]
+	split = split[2:]
 
 	switch action {
 	case "connect":
-		if *p.API.GetConfig().ServiceSettings.SiteURL == "" {
-			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "plugin configuration error."), nil
+		if p.externalURL() == "" {
+			return ephf("plugin configuration error."), nil
 		}
 
-		resp := getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-			// fmt.Sprintf("[Click here to link your JIRA account.](%s/plugins/%s/oauth/connect)",
-			fmt.Sprintf("[Click here to link your JIRA account.](%s/plugins/%s/user-connect)",
-				*p.API.GetConfig().ServiceSettings.SiteURL, manifest.Id))
-		return resp, nil
+		return ephf("[Click here to link your JIRA account.](%s/plugins/%s/user-connect)",
+			p.externalURL(), manifest.Id), nil
 
 	case "disconnect":
-		if *p.API.GetConfig().ServiceSettings.SiteURL == "" {
-			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "plugin configuration error."), nil
+		if p.externalURL() == "" {
+			return ephf("plugin configuration error."), nil
 		}
 
-		resp := getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-			// fmt.Sprintf("[Click here to link your JIRA account.](%s/plugins/%s/oauth/connect)",
-			fmt.Sprintf("[Click here to unlink your JIRA account.](%s/plugins/%s/user-disconnect)",
-				*p.API.GetConfig().ServiceSettings.SiteURL, manifest.Id))
-		return resp, nil
+		return ephf("[Click here to unlink your JIRA account.](%s/plugins/%s/user-disconnect)",
+			p.externalURL(), manifest.Id), nil
 
 	case "instances":
 		known, err := p.LoadKnownJIRAInstances()
 		if err != nil {
-			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, err.Error()), nil
+			return ephf("couldn't load known JIRA instances: %v", err), nil
 		}
 
 		current, err := p.LoadCurrentJIRAInstance()
 		if err != nil {
-			return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, err.Error()), nil
+			return ephf("couldn't load current JIRA instance: %v", err), nil
 		}
 
 		text := ""
@@ -90,9 +85,32 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 		if text == "" {
 			text = "(none installed)"
 		}
+		return ephf(text), nil
 
-		return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, text), nil
+	case "add":
+		if len(split) < 2 {
+			return ephf("/jira add {type} {URL}"), nil
+		}
+		typ := split[0]
+		if typ != JIRAServerType {
+			return ephf(`only type "server" supported by /jira add`), nil
+		}
+		jiraURL := split[1]
+
+		// Create or overwrite the instance record, also store it
+		// as current
+		rsaKey, err := p.EnsureRSAKey()
+		if err != nil {
+			return ephf("failed to obtain an RSA key: %v", err), nil
+		}
+		jiraInstance := NewJIRAServerInstance(jiraURL, p.externalURL(), rsaKey)
+		err = p.StoreJIRAInstance(jiraInstance, true)
+		if err != nil {
+			return ephf("failed to store JIRA instance %s: %v", jiraURL, err), nil
+		}
+
+		return ephf("Added and selected %s (type %s).", jiraURL, typ), nil
 	}
 
-	return getCommandResponse(model.COMMAND_RESPONSE_TYPE_EPHEMERAL, "Command not supported."), nil
+	return ephf("Command %v is not supported.", action), nil
 }

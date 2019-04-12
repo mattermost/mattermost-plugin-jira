@@ -26,6 +26,11 @@
             "type": "text",
             "help_text": "External URL for your Mattermost instance, e.g. \"https://mattermost.my-company-name.com\""
         }, {
+            "key": "JiraServerURL",
+            "display_name": "JIRA Server URL",
+            "type": "text",
+            "help_text": "URL of the JIRA Server to connect to, e.g. \"https://jira.internal.my-company-name.com\""
+        }, {
             "key": "Secret",
             "display_name": "Secret",
             "type": "generated",

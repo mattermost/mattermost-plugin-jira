@@ -11,11 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"time"
-
-	jwt "github.com/dgrijalva/jwt-go"
-	// "github.com/mattermost/mattermost-server/model"
 )
 
 const ttl = 15 * time.Minute
@@ -145,25 +141,4 @@ func decrypt(encrypted, secret []byte) ([]byte, error) {
 	}
 
 	return plain, nil
-}
-
-func validateJWT(r *http.Request, sc *AtlassianSecurityContext) (*jwt.Token, string, error) {
-	r.ParseForm()
-	tokenString := r.Form.Get("jwt")
-	if tokenString == "" {
-		return nil, "", fmt.Errorf("expected a jwt")
-	}
-
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-		}
-		// HMAC secret is a []byte
-		return []byte(sc.SharedSecret), nil
-	})
-	if err != nil {
-		return nil, "", err
-	}
-
-	return token, tokenString, nil
 }

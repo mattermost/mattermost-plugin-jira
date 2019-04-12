@@ -4,7 +4,72 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+
+	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-server/model"
 )
+
+func (p *Plugin) CreateBotDMPost(userID, message, postType string) *model.AppError {
+	conf := p.getConfig()
+	channel, aerr := p.API.GetDirectChannel(userID, conf.botUserID)
+	if aerr != nil {
+		p.errorf("Couldn't get bot's DM channel to userId:%v, error:%v", userID, aerr.Error())
+		return aerr
+	}
+
+	post := &model.Post{
+		UserId:    conf.botUserID,
+		ChannelId: channel.Id,
+		Message:   message,
+		Type:      postType,
+		Props: map[string]interface{}{
+			"from_webhook":      "true",
+			"override_username": JIRA_USERNAME,
+			"override_icon_url": JIRA_ICON_URL,
+		},
+	}
+
+	_, aerr = p.API.CreatePost(post)
+	if aerr != nil {
+		p.errorf("Couldn't create post, error:%v", aerr.Error())
+		return aerr
+	}
+
+	return nil
+}
+
+func (p *Plugin) loadJIRAProjectKeys(ji JIRAInstance, forceReload bool) ([]string, error) {
+	conf := p.getConfig()
+
+	if ji.Type != JIRACloudType {
+		return nil, errors.New("Not supported for type " + ji.Type)
+	}
+
+	if len(conf.projectKeys) > 0 && !forceReload {
+		return conf.projectKeys, nil
+	}
+
+	jiraClient, err := ji.getJIRACloudClientForServer()
+	if err != nil {
+		return nil, errors.WithMessage(err, "Error connecting to JIRA")
+	}
+
+	list, _, err := jiraClient.Project.GetList()
+	if err != nil {
+		return nil, errors.WithMessage(err, "Error requesting list of JIRA projects")
+	}
+	projectKeys := []string{}
+	for _, proj := range *list {
+		projectKeys = append(projectKeys, proj.Key)
+	}
+
+	p.updateConfig(func(conf *config) {
+		conf.projectKeys = projectKeys
+	})
+
+	return projectKeys, nil
+}
 
 func parseJIRAUsernamesFromText(text string) []string {
 	usernameMap := map[string]bool{}

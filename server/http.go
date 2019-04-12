@@ -37,11 +37,19 @@ func (p *Plugin) handleHTTPRequest(w http.ResponseWriter, r *http.Request) (int,
 	case "/uninstalled":
 		return p.handleHTTPUninstalled(w, r)
 
-	// OAuth end-points
-	case "/oauth/connect":
-		return p.handleHTTPOAuth2Connect(w, r)
-	case "/oauth/complete":
-		return p.handleHTTPOAuth2Complete(w, r)
+	// OAuth1 end-points
+	case "/oauth1/public-key":
+		return p.handleHTTPOAuth1PublicKey(w, r)
+	case "/oauth1/connect":
+		return p.handleHTTPOAuth1Connect(w, r)
+	case "/oauth1/complete":
+		return p.handleHTTPOAuth1Complete(w, r)
+
+	// OAuth2 end-points - NOT FUNCTIONAL
+	// case "/oauth2/connect":
+	// 	return p.handleHTTPOAuth2Connect(w, r)
+	// case "/oauth2/complete":
+	// 	return p.handleHTTPOAuth2Complete(w, r)
 
 	case "/webhook",
 		"/issue_event":

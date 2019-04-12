@@ -26,6 +26,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:7996ce08c1b325e680c5770db348669be994f296d694faa07bc739a8c8fe0be7"
+  name = "github.com/dghubble/oauth1"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "f0fe2bff8fbf301b33359ca431e4afc90390aab0"
+  version = "v0.5.0"
+
+[[projects]]
   digest = "1:7a6852b35eb5bbc184561443762d225116ae630c26a7c4d90546619f1e7d2ad2"
   name = "github.com/dgrijalva/jwt-go"
   packages = ["."]
@@ -219,12 +227,12 @@
   version = "v1.2"
 
 [[projects]]
-  digest = "1:51ea800cff51752ff68e12e04106f5887b4daec6f9356721238c28019f0b42db"
+  digest = "1:f0ef3f67e144a3c491fd687cc3a82850a23ae62736ff6a2602c861afd9233ada"
   name = "github.com/pelletier/go-toml"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "c01d1270ff3e442a8a57cddc1c92dc1138598194"
-  version = "v1.2.0"
+  revision = "63909f0a90ab0f36909e8e044e46ace10cf13ba2"
+  version = "v1.3.0"
 
 [[projects]]
   digest = "1:14715f705ff5dfe0ffd6571d7d201dd8e921030f8070321a79380d8ca4ec1a24"
@@ -356,7 +364,7 @@
     "blowfish",
   ]
   pruneopts = "NUT"
-  revision = "a5d413f7728c81fb97d96a2b722368945f651e78"
+  revision = "38d8ce5564a5b71b2e3a00553993f1b9a7ae852f"
 
 [[projects]]
   branch = "master"
@@ -375,7 +383,7 @@
     "trace",
   ]
   pruneopts = "NUT"
-  revision = "74de082e2cca95839e88aa0aeee5aadf6ce7710f"
+  revision = "eb5bcb51f2a31c7d5141d810b70815c05d9c9146"
 
 [[projects]]
   branch = "master"
@@ -387,15 +395,15 @@
     "jira",
   ]
   pruneopts = "NUT"
-  revision = "c85d3e98c914e3a33234ad863dcbff5dbc425bb8"
+  revision = "9f3314589c9a9136388751d9adae6b0ed400978a"
 
 [[projects]]
   branch = "master"
-  digest = "1:8618cca3810dc2fece236e1a5fad719074b3b4954ec542d02a8a9e62f6a844df"
+  digest = "1:89f3fe107fcc4ce01d3009cd9a6193fe616c57c6e09650c321e77d70e3a45f8e"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "NUT"
-  revision = "9eb1bfa1ce65ae8a6ff3114b0aaf9a41a6cf3560"
+  revision = "0ad05ae3009d6413d3363aa09b350b2ec37daf09"
 
 [[projects]]
   digest = "1:e7071ed636b5422cc51c0e3a6cebc229d6c9fffc528814b519a980641422d619"
@@ -442,10 +450,10 @@
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
   pruneopts = "NUT"
-  revision = "d831d65fe17df2e52bcc4316d4a9f7a418701f43"
+  revision = "64821d5d210748c883cd2b809589555ae4654203"
 
 [[projects]]
-  digest = "1:0b1629e326b8754726e94f2c3acc87fbc6669a6c1e36ab059bdde62462ccd1a2"
+  digest = "1:a053fd2605b0b8feabdd78d0ad522687ab08c0e32f92ea537fa68bbf56367133"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -464,6 +472,7 @@
     "health/grpc_health_v1",
     "internal",
     "internal/backoff",
+    "internal/balancerload",
     "internal/binarylog",
     "internal/channelz",
     "internal/envconfig",
@@ -483,8 +492,8 @@
     "tap",
   ]
   pruneopts = "NUT"
-  revision = "3507fb8e1a5ad030303c106fef3a47c9fdad16ad"
-  version = "v1.19.1"
+  revision = "236199dd5f8031d698fb64091194aecd1c3895b2"
+  version = "v1.20.0"
 
 [[projects]]
   digest = "1:80c34337e8a734e190f2d1b716cae774cca74db98315166f92074434e9af0227"
@@ -507,9 +516,9 @@
   analyzer-version = 1
   input-imports = [
     "github.com/andygrunwald/go-jira",
+    "github.com/dghubble/oauth1",
     "github.com/dgrijalva/jwt-go",
     "github.com/google/go-querystring/query",
-    "github.com/mattermost/mattermost-server/mlog",
     "github.com/mattermost/mattermost-server/model",
     "github.com/mattermost/mattermost-server/plugin",
     "github.com/mattermost/mattermost-server/plugin/plugintest",

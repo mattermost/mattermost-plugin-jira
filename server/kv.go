@@ -12,49 +12,15 @@ import (
 )
 
 const (
-	keyKnownJIRAInstances  = "known_jira_instances"
-	keyTokenSecret         = "token_secret"
-	keyRSAKey              = "rsa_key"
-	keyCurrentJIRAInstance = "current_jira_instance"
-	prefixJIRAUserInfo     = "mm_j_" // + Mattermost user ID
-	prefixMattermostUserId = "j_mm_" // + JIRA username
-	prefixJIRAInstance     = "jira_instance_"
+	keyCurrentJIRAInstance   = "current_jira_instance"
+	keyKnownJIRAInstances    = "known_jira_instances"
+	keyRSAKey                = "rsa_key"
+	keyTokenSecret           = "token_secret"
+	prefixJIRAInstance       = "jira_instance_"
+	prefixJIRAUserInfo       = "mm_j_" // + Mattermost user ID
+	prefixMattermostUserId   = "j_mm_" // + JIRA username
+	prefixOAuth1RequestToken = "oauth1_request_token_"
 )
-
-const prefixForInstance = true
-
-const (
-	JIRACloudType  = "cloud"
-	JIRAServerType = "server"
-)
-
-type JIRAInstance struct {
-	Key                         string
-	Type                        string
-	AtlassianSecurityContextRaw string
-	asc                         *AtlassianSecurityContext `json:"none"`
-}
-
-type AtlassianSecurityContext struct {
-	Key            string `json:"key"`
-	ClientKey      string `json:"clientKey"`
-	PublicKey      string `json:"publicKey"`
-	SharedSecret   string `json:"sharedSecret"`
-	ServerVersion  string `json:"serverVersion"`
-	PluginsVersion string `json:"pluginsVersion"`
-	BaseURL        string `json:"baseUrl"`
-	ProductType    string `json:"productType"`
-	Description    string `json:"description"`
-	EventType      string `json:"eventType"`
-	OAuthClientId  string `json:"oauthClientId"`
-}
-
-type JIRAUserInfo struct {
-	// These fields come from JIRA, so their JSON names must not change.
-	Key       string `json:"key,omitempty"`
-	AccountId string `json:"accountId,omitempty"`
-	Name      string `json:"name,omitempty"`
-}
 
 func (ji JIRAInstance) keyWithInstance(key string) string {
 	if prefixForInstance {
@@ -74,25 +40,76 @@ func (ji JIRAInstance) keyMattermostUserId(jiraUsername string) string {
 }
 
 func keyJIRAInstance(key string) string {
+	h := md5.New()
+	h.Write([]byte(key))
+	key = fmt.Sprintf("%x", h.Sum(nil))
 	return prefixJIRAInstance + key
 }
 
-func (p *Plugin) StoreJIRAInstance(jiraInstance JIRAInstance, current bool) error {
-	b, err := json.Marshal(jiraInstance)
+func (p *Plugin) kvGet(key string, v interface{}) error {
+	data, appErr := p.API.KVGet(key)
+	if appErr != nil {
+		return appErr
+	}
+
+	if data == nil {
+		return nil
+	}
+
+	err := json.Unmarshal(data, v)
 	if err != nil {
 		return err
 	}
-	aerr := p.API.KVSet(keyJIRAInstance(jiraInstance.Key), b)
+
+	return nil
+}
+
+func (p *Plugin) kvSet(key string, v interface{}) error {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	aerr := p.API.KVSet(key, data)
 	if aerr != nil {
 		return aerr
 	}
+	return nil
+}
+
+func (p *Plugin) StoreJIRAInstance(ji JIRAInstance, current bool) (err error) {
+	defer func() {
+		if err != nil {
+			p.errorf("Failed to store JIRA instance:%#v", ji)
+			return
+		}
+		p.debugf("Stored: JIRA instance (current:%v): %#v", current, ji)
+	}()
+
+	err = p.kvSet(keyJIRAInstance(ji.Key), ji)
+	if err != nil {
+		return err
+	}
+
+	// Update known instances
+	known, err := p.LoadKnownJIRAInstances()
+	if err != nil {
+		return err
+	}
+	known[ji.Key] = ji.Type
+	err = p.StoreKnownJIRAInstances(known)
+	if err != nil {
+		return err
+	}
+
+	// Update the current instance if needed
 	if current {
-		aerr = p.API.KVSet(keyCurrentJIRAInstance, b)
-		if aerr != nil {
-			return aerr
+		err = p.kvSet(keyCurrentJIRAInstance, ji)
+		if err != nil {
+			return err
 		}
 	}
-	p.debugf("Stored: JIRA instance, current:%v, %#v", current, jiraInstance)
+
 	return nil
 }
 
@@ -104,109 +121,96 @@ func (p *Plugin) LoadJIRAInstance(key string) (JIRAInstance, error) {
 	return p.loadJIRAInstance(keyJIRAInstance(key))
 }
 
-func (p *Plugin) loadJIRAInstance(fullkey string) (JIRAInstance, error) {
-	b, aerr := p.API.KVGet(fullkey)
-	if aerr != nil {
-		return JIRAInstance{}, aerr
-	}
-	if len(b) == 0 {
-		return JIRAInstance{}, fmt.Errorf("JIRA instance %v not found", fullkey)
-	}
-
-	jiraInstance := JIRAInstance{}
-	err := json.Unmarshal(b, &jiraInstance)
+func (p *Plugin) loadJIRAInstance(fullkey string) (ji JIRAInstance, err error) {
+	ji = JIRAInstance{}
+	err = p.kvGet(fullkey, &ji)
 	if err != nil {
-		return JIRAInstance{}, err
+		return JIRAInstance{}, fmt.Errorf("Error loading JIRA instance %s: %v", fullkey, err)
+	}
+	if ji.isEmpty() {
+		return JIRAInstance{}, fmt.Errorf("JIRA instance %s not found", fullkey)
 	}
 
-	if jiraInstance.Type == JIRACloudType {
-		asc := AtlassianSecurityContext{}
-		err := json.Unmarshal([]byte(jiraInstance.AtlassianSecurityContextRaw), &asc)
-		if err != nil {
-			return JIRAInstance{}, err
-		}
-		jiraInstance.asc = &asc
+	switch ji.Type {
+	case JIRACloudType:
+		return NewJIRACloudInstance(ji.Key, ji.RawAtlassianSecurityContext, ji.AtlassianSecurityContext), nil
+
+	case JIRAServerType:
+		conf := p.getConfig()
+		return NewJIRAServerInstance(ji.JIRAServerURL, p.externalURL(), conf.rsaKey), nil
 	}
 
-	return jiraInstance, nil
+	return JIRAInstance{}, fmt.Errorf("JIRA instance %s has unsupported type: %s", fullkey, ji.Type)
 }
 
-func (p *Plugin) StoreKnownJIRAInstances(known map[string]string) error {
-	b, err := json.Marshal(known)
+func (p *Plugin) StoreKnownJIRAInstances(known map[string]string) (err error) {
+	defer func() {
+		if err != nil {
+			p.errorf("Failed to store known JIRA instance:%#v", known)
+			return
+		}
+		p.debugf("Stored: known JIRA instances: %#v", known)
+	}()
+
+	err = p.kvSet(keyKnownJIRAInstances, known)
 	if err != nil {
 		return err
 	}
-	aerr := p.API.KVSet(keyKnownJIRAInstances, b)
-	if aerr != nil {
-		return aerr
-	}
-	p.debugf("Stored: known JIRA instances, %+v", known)
 	return nil
 }
 
 func (p *Plugin) LoadKnownJIRAInstances() (map[string]string, error) {
-	b, aerr := p.API.KVGet(keyKnownJIRAInstances)
-	if aerr != nil {
-		return nil, aerr
-	}
-
 	known := map[string]string{}
-	if len(b) != 0 {
-		err := json.Unmarshal(b, &known)
-		if err != nil {
-			return nil, err
-		}
+	err := p.kvGet(keyKnownJIRAInstances, &known)
+	if err != nil {
+		return nil, err
 	}
-
 	return known, nil
 }
 
-func (p *Plugin) StoreUserInfo(ji JIRAInstance, mattermostUserId string, info JIRAUserInfo) error {
-	b, err := json.Marshal(info)
+func (p *Plugin) StoreUserInfo(ji JIRAInstance, mattermostUserId string, info JIRAUserInfo) (err error) {
+	defer func() {
+		if err != nil {
+			p.errorf("Failed to store user info, mattermostUserId:%s, info:%#v: %v", mattermostUserId, info, err)
+			return
+		}
+		p.debugf("Stored: user info, keys:\n\t%s (%s): %+v\n\t%s (%s): %s",
+			ji.keyJIRAUserInfo(mattermostUserId), mattermostUserId, info,
+			ji.keyMattermostUserId(info.Name), info.Name, mattermostUserId)
+	}()
+
+	err = p.kvSet(ji.keyJIRAUserInfo(mattermostUserId), info)
 	if err != nil {
 		return err
 	}
 
-	aerr := p.API.KVSet(ji.keyJIRAUserInfo(mattermostUserId), b)
-	if aerr != nil {
-		return aerr
+	err = p.kvSet(ji.keyMattermostUserId(info.Name), mattermostUserId)
+	if err != nil {
+		return err
 	}
 
-	aerr = p.API.KVSet(ji.keyMattermostUserId(info.Name), []byte(mattermostUserId))
-	if aerr != nil {
-		return aerr
-	}
-
-	p.debugf("Stored: user info, keys:\n\t%s (%s): %+v\n\t%s (%s): %s",
-		ji.keyJIRAUserInfo(mattermostUserId), mattermostUserId, info,
-		ji.keyMattermostUserId(info.Name), info.Name, mattermostUserId)
 	return nil
 }
 
 func (p *Plugin) LoadJIRAUserInfo(ji JIRAInstance, mattermostUserId string) (JIRAUserInfo, error) {
-	b, _ := p.API.KVGet(ji.keyJIRAUserInfo(mattermostUserId))
-	if len(b) == 0 {
+	info := JIRAUserInfo{}
+	_ = p.kvGet(ji.keyJIRAUserInfo(mattermostUserId), &info)
+	if len(info.Key) == 0 {
 		return JIRAUserInfo{}, fmt.Errorf("could not find jira user info for %v", mattermostUserId)
 	}
-
-	info := JIRAUserInfo{}
-	err := json.Unmarshal(b, &info)
-	if err != nil {
-		return JIRAUserInfo{}, err
-	}
-
 	return info, nil
 }
 
 func (p *Plugin) LoadMattermostUserId(ji JIRAInstance, jiraUserName string) (string, error) {
-	b, aerr := p.API.KVGet(ji.keyMattermostUserId(jiraUserName))
-	if aerr != nil {
-		return "", aerr
+	mattermostUserId := ""
+	err := p.kvGet(ji.keyMattermostUserId(jiraUserName), &mattermostUserId)
+	if err != nil {
+		return "", err
 	}
-	if len(b) == 0 {
+	if len(mattermostUserId) == 0 {
 		return "", fmt.Errorf("could not find jira user info for %v", jiraUserName)
 	}
-	return string(b), nil
+	return mattermostUserId, nil
 }
 
 func (p *Plugin) DeleteUserInfo(ji JIRAInstance, mattermostUserId string) error {
@@ -231,7 +235,15 @@ func (p *Plugin) DeleteUserInfo(ji JIRAInstance, mattermostUserId string) error 
 	return nil
 }
 
-func (p *Plugin) EnsureTokenSecret() ([]byte, error) {
+func (p *Plugin) EnsureTokenSecret() (secret []byte, err error) {
+	defer func() {
+		if err != nil {
+			p.errorf("Failed to ensure auth token secret: %v", err)
+			return
+		}
+		p.debugf("Stored: auth token secret")
+	}()
+
 	// nil, nil == NOT_FOUND, if we don't already have a key, try to generate one.
 	secret, aerr := p.API.KVGet(keyTokenSecret)
 	if aerr != nil {
@@ -263,24 +275,58 @@ func (p *Plugin) EnsureTokenSecret() ([]byte, error) {
 	return secret, nil
 }
 
-func (p *Plugin) EnsureRSAKey() (*rsa.PrivateKey, error) {
+func (p *Plugin) EnsureRSAKey() (rsaKey *rsa.PrivateKey, err error) {
+	defer func() {
+		if err != nil {
+			p.errorf("Failed to ensure RSA key: %v", err)
+			return
+		}
+		p.debugf("Stored: RSA key")
+	}()
+
 	b, _ := p.API.KVGet(keyRSAKey)
 	if len(b) != 0 {
-		var key rsa.PrivateKey
-		if err := json.Unmarshal(b, &key); err != nil {
-			fmt.Println(err.Error())
+		rsaKey = &rsa.PrivateKey{}
+		err = json.Unmarshal(b, &rsaKey)
+		if err != nil {
 			return nil, err
 		}
-		return &key, nil
+		return rsaKey, nil
 	}
 
-	key, err := rsa.GenerateKey(rand.Reader, 1024)
+	rsaKey, err = rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
-		fmt.Println(err.Error())
 		return nil, err
 	}
-	b, _ = json.Marshal(key)
-	p.API.KVSet(keyRSAKey, b)
 
-	return key, nil
+	err = p.kvSet(keyRSAKey, rsaKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return rsaKey, nil
+}
+
+func (p *Plugin) StoreOAuth1RequestToken(token, secret string) error {
+	aerr := p.API.KVSet(prefixOAuth1RequestToken+token, []byte(secret))
+	if aerr != nil {
+		return aerr
+	}
+	return nil
+}
+
+func (p *Plugin) LoadOAuth1RequestToken(token string) (string, error) {
+	b, aerr := p.API.KVGet(prefixOAuth1RequestToken + token)
+	if aerr != nil {
+		return "", aerr
+	}
+	return string(b), nil
+}
+
+func (p *Plugin) DeleteOAuth1RequestToken(token string) error {
+	aerr := p.API.KVDelete(prefixOAuth1RequestToken + token)
+	if aerr != nil {
+		return aerr
+	}
+	return nil
 }

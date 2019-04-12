@@ -48,7 +48,7 @@ func (p *Plugin) handleHTTPCreateIssue(w http.ResponseWriter, r *http.Request) (
 		return http.StatusInternalServerError, err
 	}
 
-	jiraClient, _, err := p.getJIRAClientForUser(info.AccountId)
+	jiraClient, _, err := ji.GetJIRAClientForUser(info)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("could not get jira client: %v", err)
 	}
@@ -105,7 +105,8 @@ func (p *Plugin) handleHTTPCreateIssue(w http.ResponseWriter, r *http.Request) (
 	// Reply to the post with the issue link that was created
 
 	reply := &model.Post{
-		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.asc.BaseURL, created.Key),
+		// TODO: Why is this not created.Self?
+		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.URL(), created.Key),
 		ChannelId: post.ChannelId,
 		RootId:    create.PostId,
 		UserId:    mmUserID,
@@ -139,7 +140,7 @@ func (p *Plugin) handleHTTPCreateIssueMetadata(w http.ResponseWriter, r *http.Re
 		return http.StatusInternalServerError, err
 	}
 
-	jiraClient, client, err := p.getJIRAClientForUser(info.AccountId)
+	jiraClient, client, err := ji.GetJIRAClientForUser(info)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("could not get jira client: %v", err)
 	}

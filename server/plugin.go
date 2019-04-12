@@ -12,7 +12,6 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
-	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
@@ -32,6 +31,11 @@ type externalConfig struct {
 
 	// TODO remove
 	ExternalURL string
+
+	// TODO: support mutiple instances, how? Seems like the config UI needs to be rethought
+	// for things like multiple instances.
+	// JiraServerURL needs to be configured to run in the JIRA Server mode
+	// JiraServerURL string
 }
 
 // config captures all cached values that need to be synchronized
@@ -54,30 +58,27 @@ type config struct {
 
 type Plugin struct {
 	plugin.MattermostPlugin
-	// JIRAInstance
 
 	// configuration and a muttex to control concurrent access
-	config
-	configLock sync.RWMutex
-
-	oauth2Config oauth2.Config
+	conf     config
+	confLock sync.RWMutex
 
 	atlassianConnectTemplate *template.Template
 	userConfigTemplate       *template.Template
 }
 
 func (p *Plugin) getConfig() config {
-	p.configLock.RLock()
-	defer p.configLock.RUnlock()
-	return p.config
+	p.confLock.RLock()
+	defer p.confLock.RUnlock()
+	return p.conf
 }
 
-func (p *Plugin) updateConfig(f func(c *config)) config {
-	p.configLock.Lock()
-	defer p.configLock.Unlock()
+func (p *Plugin) updateConfig(f func(conf *config)) config {
+	p.confLock.Lock()
+	defer p.confLock.Unlock()
 
-	f(&p.config)
-	return p.config
+	f(&p.conf)
+	return p.conf
 }
 
 // OnConfigurationChange is invoked when configuration changes may have been made.
@@ -90,17 +91,17 @@ func (p *Plugin) OnConfigurationChange() error {
 		return errors.Wrap(err, "failed to load plugin configuration")
 	}
 
-	p.updateConfig(func(c *config) {
-		c.externalConfig = ec
+	p.updateConfig(func(conf *config) {
+		conf.externalConfig = ec
 	})
 
 	return nil
 }
 func (p *Plugin) OnActivate() error {
-	config := p.getConfig()
-	user, apperr := p.API.GetUserByUsername(config.UserName)
+	conf := p.getConfig()
+	user, apperr := p.API.GetUserByUsername(conf.UserName)
 	if apperr != nil {
-		return fmt.Errorf("Unable to find user with configured username: %v, error: %v", config.UserName, apperr)
+		return fmt.Errorf("Unable to find user with configured username: %v, error: %v", conf.UserName, apperr)
 	}
 
 	tpath := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
@@ -117,18 +118,10 @@ func (p *Plugin) OnActivate() error {
 		return err
 	}
 
-	p.botUserID = user.Id
+	conf = p.updateConfig(func(conf *config) {
+		conf.botUserID = user.Id
 
-	p.oauth2Config = oauth2.Config{
-		ClientID:     "LimAAPOhX7ncIN7cPB77tZ1Gwz0r2WmL",
-		ClientSecret: "01_Y6g1JRmLnSGcaRU19LzhfnsXHAGwtuQTacQscxR3eCy7tzhLYYbuQHXiVIJq_",
-		Scopes:       []string{"read:jira-work", "read:jira-user", "write:jira-work"},
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://auth.atlassian.com/authorize",
-			TokenURL: "https://auth.atlassian.com/oauth/token",
-		},
-		RedirectURL: fmt.Sprintf("%v/plugins/%v/oauth/complete", p.externalURL(), manifest.Id),
-	}
+	})
 
 	p.API.RegisterCommand(getCommand())
 
@@ -136,9 +129,22 @@ func (p *Plugin) OnActivate() error {
 }
 
 func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
-	projectKeys, err := p.loadJIRAProjectKeys(false)
+	var err error
+	defer func() {
+		if err != nil {
+			p.errorf("MessageHasBeenPosted: %s", err.Error())
+		}
+	}()
+
+	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
-		p.errorf("MessageHasBeenPosted: failed to load project keys from JIRA: %v", err)
+		err = errors.WithMessage(err, "failed to load current JIRA instance")
+		return
+	}
+
+	projectKeys, err := p.loadJIRAProjectKeys(ji, false)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to load project keys from JIRA")
 		return
 	}
 
@@ -149,40 +155,34 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 
 	channel, aerr := p.API.GetChannel(post.ChannelId)
 	if aerr != nil {
-		p.errorf("MessageHasBeenPosted: failed to load channel ID: %v, error: %v.", post.ChannelId, aerr)
+		err = errors.WithMessagef(aerr, "failed to load channel ID: %s", post.ChannelId)
 		return
 	}
 
 	if channel.Type != model.CHANNEL_OPEN {
-		p.infof("MessageHasBeenPosted: ignoring JIRA comment in %v: not a public channel.", channel.Name)
+		err = errors.New("ignoring JIRA comment in " + channel.Name)
 		return
 	}
 
 	team, aerr := p.API.GetTeam(channel.TeamId)
 	if aerr != nil {
-		p.errorf("MessageHasBeenPosted: failed to load team ID: %v, error: %v.", channel.TeamId, aerr)
+		err = errors.WithMessagef(aerr, "failed to load team ID: %v", channel.TeamId)
 		return
 	}
 
 	user, aerr := p.API.GetUser(post.UserId)
 	if aerr != nil {
-		p.errorf("MessageHasBeenPosted: failed to load user ID: %v, error: %v.", post.UserId, aerr)
+		err = errors.WithMessagef(aerr, "failed to load user ID: %v", post.UserId)
 		return
 	}
 
-	config := p.API.GetConfig()
-	permalink := fmt.Sprintf("%v/%v/pl/%v", *config.ServiceSettings.SiteURL, team.Name, post.Id)
-
-	ji, err := p.LoadCurrentJIRAInstance()
-	if err != nil {
-		p.errorf("MessageHasBeenPosted: failed to load JIRA instance: %v.", err)
-		return
-	}
+	conf := p.API.GetConfig()
+	permalink := fmt.Sprintf("%v/%v/pl/%v", *conf.ServiceSettings.SiteURL, team.Name, post.Id)
 
 	var jiraClient *jira.Client
 	userinfo, err := p.LoadJIRAUserInfo(ji, post.UserId)
 	if err == nil {
-		jiraClient, _, err = p.getJIRAClientForUser(userinfo.AccountId)
+		jiraClient, _, err = ji.GetJIRAClientForUser(userinfo)
 	} else {
 		if !team.AllowOpenInvite {
 			p.errorf("User %v is not connected and team %v does not allow open invites",
@@ -190,7 +190,9 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 			return
 		}
 
-		jiraClient, err = p.getJIRAClientForServer()
+		// TODO reconsider enabling posting comments anonymously if the author
+		// has not connected his account
+		// jiraClient, err = p.GetJIRAClientForServer()
 	}
 	if err != nil {
 		p.errorf("MessageHasBeenPosted: failed to obtain an authenticated client, error: %v.", err)
@@ -211,9 +213,9 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 }
 
 func (p *Plugin) externalURL() string {
-	config := p.getConfig()
-	if config.ExternalURL != "" {
-		return config.ExternalURL
+	conf := p.getConfig()
+	if conf.ExternalURL != "" {
+		return conf.ExternalURL
 	}
 	return *p.API.GetConfig().ServiceSettings.SiteURL
 }
