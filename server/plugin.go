@@ -99,9 +99,9 @@ func (p *Plugin) OnConfigurationChange() error {
 }
 func (p *Plugin) OnActivate() error {
 	conf := p.getConfig()
-	user, apperr := p.API.GetUserByUsername(conf.UserName)
-	if apperr != nil {
-		return fmt.Errorf("Unable to find user with configured username: %v, error: %v", conf.UserName, apperr)
+	user, aerr := p.API.GetUserByUsername(conf.UserName)
+	if aerr != nil {
+		return fmt.Errorf("Unable to find user with configured username: %v, error: %v", conf.UserName, aerr)
 	}
 
 	tpath := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
