@@ -37,7 +37,23 @@ func (p *Plugin) handleHTTPRequest(w http.ResponseWriter, r *http.Request) (int,
 	case "/uninstalled":
 		return p.handleHTTPUninstalled(w, r)
 
-	// OAuth1 end-points
+	// User mapping page
+	case "/user-connect":
+		return p.handleHTTPUserConnect(w, r)
+	case "/user-disconnect":
+		return p.handleHTTPUserDisconnect(w, r)
+
+	// TODO use a router, make current JIRA instance register its own end-points
+
+	// Atlassian-connect based user mapping, used for JIRA Cloud
+	case "/user-config":
+		return p.handleHTTPUserConfig(w, r)
+	case "/user-config-submit":
+		return p.handleHTTPUserConfigSubmit(w, r)
+	case "/api/v1/userinfo":
+		return p.handleHTTPGetUserInfo(w, r)
+
+	// OAuth1 based user mapping, used in JIRA Server
 	case "/oauth1/public-key":
 		return p.handleHTTPOAuth1PublicKey(w, r)
 	case "/oauth1/connect":
@@ -45,7 +61,9 @@ func (p *Plugin) handleHTTPRequest(w http.ResponseWriter, r *http.Request) (int,
 	case "/oauth1/complete":
 		return p.handleHTTPOAuth1Complete(w, r)
 
-	// OAuth2 end-points - NOT FUNCTIONAL
+	// OAuth2 end-points - NOT FUNCTIONAL. They work with JIRA cloud, but there is
+	// no good way I found to get per-Mattermost instance OAuth2 credentials from
+	// JIRA Cloud.
 	// case "/oauth2/connect":
 	// 	return p.handleHTTPOAuth2Connect(w, r)
 	// case "/oauth2/complete":
@@ -54,18 +72,6 @@ func (p *Plugin) handleHTTPRequest(w http.ResponseWriter, r *http.Request) (int,
 	case "/webhook",
 		"/issue_event":
 		return p.handleHTTPWebhook(w, r)
-
-	// User mapping page
-	case "/user-connect":
-		return p.handleHTTPUserConnect(w, r)
-	case "/user-disconnect":
-		return p.handleHTTPUserDisconnect(w, r)
-	case "/user-config":
-		return p.handleHTTPUserConfig(w, r)
-	case "/user-config-submit":
-		return p.handleHTTPUserConfigSubmit(w, r)
-	case "/api/v1/userinfo":
-		return p.handleHTTPGetUserInfo(w, r)
 
 	case "/create-issue":
 		return p.handleHTTPCreateIssue(w, r)

@@ -42,15 +42,11 @@ func (p *Plugin) CreateBotDMPost(userID, message, postType string) *model.AppErr
 func (p *Plugin) loadJIRAProjectKeys(ji JIRAInstance, forceReload bool) ([]string, error) {
 	conf := p.getConfig()
 
-	if ji.Type != JIRACloudType {
-		return nil, errors.New("Not supported for type " + ji.Type)
-	}
-
 	if len(conf.projectKeys) > 0 && !forceReload {
 		return conf.projectKeys, nil
 	}
 
-	jiraClient, err := ji.getJIRACloudClientForServer()
+	jiraClient, err := ji.GetJIRAClientForServer()
 	if err != nil {
 		return nil, errors.WithMessage(err, "Error connecting to JIRA")
 	}

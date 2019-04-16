@@ -31,13 +31,6 @@
 				"location": "none"
 			}
 		],
-		"configurePage": {
-			"url": "/admin-config",
-			"name": {
-				"value": "My Configure Page"
-			},
-			"key": "admin-config"
-		}
 	}
 }
 {{ end }}

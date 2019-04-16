@@ -46,70 +46,93 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 
 	switch action {
 	case "connect":
-		if p.externalURL() == "" {
+		if p.GetSiteURL() == "" {
 			return ephf("plugin configuration error."), nil
 		}
 
-		return ephf("[Click here to link your JIRA account.](%s/plugins/%s/user-connect)",
-			p.externalURL(), manifest.Id), nil
+		return ephf("[Click here to link your JIRA account.](%s/user-connect)",
+			p.GetPluginURL()), nil
 
 	case "disconnect":
-		if p.externalURL() == "" {
+		if p.GetSiteURL() == "" {
 			return ephf("plugin configuration error."), nil
 		}
 
-		return ephf("[Click here to unlink your JIRA account.](%s/plugins/%s/user-disconnect)",
-			p.externalURL(), manifest.Id), nil
+		return ephf("[Click here to unlink your JIRA account.](%s/user-disconnect)",
+			p.GetPluginURL()), nil
 
-	case "instances":
-		known, err := p.LoadKnownJIRAInstances()
-		if err != nil {
-			return ephf("couldn't load known JIRA instances: %v", err), nil
+	case "instance":
+		if len(split) < 1 {
+			return ephf("/jira instance [add,list,select]"), nil
 		}
+		verb := split[0]
+		split = split[1:]
 
-		current, err := p.LoadCurrentJIRAInstance()
-		if err != nil {
-			return ephf("couldn't load current JIRA instance: %v", err), nil
-		}
-
-		text := ""
-		for key, typ := range known {
-			if key == current.Key {
-				text += "*"
-			} else {
-				text += " "
+		switch verb {
+		case "list":
+			known, err := p.LoadKnownJIRAInstances()
+			if err != nil {
+				return ephf("couldn't load known JIRA instances: %v", err), nil
 			}
-			text += key + ": " + typ + "\n"
-		}
 
-		if text == "" {
-			text = "(none installed)"
-		}
-		return ephf(text), nil
+			current, err := p.LoadCurrentJIRAInstance()
+			if err != nil {
+				return ephf("couldn't load current JIRA instance: %v", err), nil
+			}
 
-	case "add":
-		if len(split) < 2 {
-			return ephf("/jira add {type} {URL}"), nil
-		}
-		typ := split[0]
-		if typ != JIRAServerType {
-			return ephf(`only type "server" supported by /jira add`), nil
-		}
-		jiraURL := split[1]
+			text := ""
+			for key, typ := range known {
+				if key == current.GetURL() {
+					text += "**"
+				}
+				text += key + " - " + typ
+				if key == current.GetURL() {
+					text += "**"
+				}
+				text += "\n"
+			}
 
-		// Create or overwrite the instance record, also store it
-		// as current
-		rsaKey, err := p.EnsureRSAKey()
-		if err != nil {
-			return ephf("failed to obtain an RSA key: %v", err), nil
-		}
-		jiraInstance := NewJIRAServerInstance(jiraURL, p.externalURL(), rsaKey)
-		err = p.StoreJIRAInstance(jiraInstance, true)
-		if err != nil {
-			return ephf("failed to store JIRA instance %s: %v", jiraURL, err), nil
-		}
+			if text == "" {
+				text = "(none installed)\n"
+			}
 
-		return ephf("Added and selected %s (type %s).", jiraURL, typ), nil
+			return ephf(text), nil
+
+		case "add":
+			if len(split) < 2 {
+				return ephf("/jira instance add {type} {URL}"), nil
+			}
+			typ := split[0]
+			if typ != JIRAServerType {
+				return ephf(`only type "server" supported by /jira add`), nil
+			}
+			jiraURL := split[1]
+
+			ji := NewJIRAServerInstance(p, jiraURL)
+			err := p.StoreJIRAInstance(ji, true)
+			if err != nil {
+				return ephf("failed to store JIRA instance %s: %v", jiraURL, err), nil
+			}
+
+			return ephf("Added and selected %s (type %s).", jiraURL, typ), nil
+
+		case "select":
+			if len(split) < 1 {
+				return ephf("/jira instance select {URL}"), nil
+			}
+			jiraURL := split[0]
+
+			ji, err := p.LoadJIRAInstance(jiraURL)
+			if err != nil {
+				return ephf("failed to load JIRA instance %s: %v", jiraURL, err), nil
+			}
+			err = p.StoreJIRAInstance(ji, true)
+			if err != nil {
+				return ephf("failed to store JIRA instance %s: %v", jiraURL, err), nil
+			}
+
+			return ephf("Now using JIRA at %s", jiraURL), nil
+		}
 	}
 
 	return ephf("Command %v is not supported.", action), nil

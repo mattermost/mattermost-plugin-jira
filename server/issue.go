@@ -59,7 +59,7 @@ func (p *Plugin) handleHTTPCreateIssue(w http.ResponseWriter, r *http.Request) (
 	if channel, _ := p.API.GetChannel(post.ChannelId); channel != nil {
 		if team, _ := p.API.GetTeam(channel.TeamId); team != nil {
 			permalink := fmt.Sprintf("%v/%v/pl/%v",
-				p.externalURL(),
+				p.GetSiteURL(),
 				team.Name,
 				create.PostId,
 			)
@@ -106,7 +106,7 @@ func (p *Plugin) handleHTTPCreateIssue(w http.ResponseWriter, r *http.Request) (
 
 	reply := &model.Post{
 		// TODO: Why is this not created.Self?
-		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.URL(), created.Key),
+		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.GetURL(), created.Key),
 		ChannelId: post.ChannelId,
 		RootId:    create.PostId,
 		UserId:    mmUserID,

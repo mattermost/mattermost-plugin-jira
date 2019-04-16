@@ -9,13 +9,12 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"path"
 )
 
 func (p *Plugin) handleHTTPAtlassianConnect(w http.ResponseWriter, r *http.Request) (int, error) {
 	vals := map[string]string{
-		"BaseURL":     p.externalURL() + "/" + path.Join("plugins", manifest.Id),
-		"ExternalURL": p.externalURL(),
+		"BaseURL":     p.GetPluginURL(),
+		"ExternalURL": p.GetSiteURL(),
 	}
 	bb := &bytes.Buffer{}
 	err := p.atlassianConnectTemplate.ExecuteTemplate(bb, "config", vals)
@@ -23,6 +22,7 @@ func (p *Plugin) handleHTTPAtlassianConnect(w http.ResponseWriter, r *http.Reque
 		return http.StatusInternalServerError, err
 	}
 	io.Copy(w, bytes.NewReader(bb.Bytes()))
+	p.debugf("Served atlassian-connect.json:\n%s", bb.String())
 	return http.StatusOK, nil
 }
 

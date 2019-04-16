@@ -10,10 +10,8 @@ import (
 	"sync"
 	"text/template"
 
-	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
 )
 
@@ -29,9 +27,6 @@ type externalConfig struct {
 	// Legacy 1.x Webhook secret
 	Secret string
 
-	// TODO remove
-	ExternalURL string
-
 	// TODO: support mutiple instances, how? Seems like the config UI needs to be rethought
 	// for things like multiple instances.
 	// JiraServerURL needs to be configured to run in the JIRA Server mode
@@ -44,9 +39,6 @@ type config struct {
 
 	// Cached actual bot user ID (derived from c.UserName)
 	botUserID string
-
-	// Generated once, then cached in the database, and here deserialized
-	rsaKey *rsa.PrivateKey
 
 	// secret used to generate auth tokens in the Atlassian connect
 	// user mapping flow
@@ -62,6 +54,9 @@ type Plugin struct {
 	// configuration and a muttex to control concurrent access
 	conf     config
 	confLock sync.RWMutex
+
+	// Generated once, then cached in the database, and here deserialized
+	RSAKey *rsa.PrivateKey `json:",omitempty"`
 
 	atlassianConnectTemplate *template.Template
 	userConfigTemplate       *template.Template
@@ -97,6 +92,7 @@ func (p *Plugin) OnConfigurationChange() error {
 
 	return nil
 }
+
 func (p *Plugin) OnActivate() error {
 	conf := p.getConfig()
 	user, aerr := p.API.GetUserByUsername(conf.UserName)
@@ -128,95 +124,11 @@ func (p *Plugin) OnActivate() error {
 	return nil
 }
 
-func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
-	var err error
-	defer func() {
-		if err != nil {
-			p.errorf("MessageHasBeenPosted: %s", err.Error())
-		}
-	}()
-
-	ji, err := p.LoadCurrentJIRAInstance()
-	if err != nil {
-		err = errors.WithMessage(err, "failed to load current JIRA instance")
-		return
-	}
-
-	projectKeys, err := p.loadJIRAProjectKeys(ji, false)
-	if err != nil {
-		err = errors.WithMessage(err, "failed to load project keys from JIRA")
-		return
-	}
-
-	issues := parseJIRAIssuesFromText(post.Message, projectKeys)
-	if len(issues) == 0 {
-		return
-	}
-
-	channel, aerr := p.API.GetChannel(post.ChannelId)
-	if aerr != nil {
-		err = errors.WithMessagef(aerr, "failed to load channel ID: %s", post.ChannelId)
-		return
-	}
-
-	if channel.Type != model.CHANNEL_OPEN {
-		err = errors.New("ignoring JIRA comment in " + channel.Name)
-		return
-	}
-
-	team, aerr := p.API.GetTeam(channel.TeamId)
-	if aerr != nil {
-		err = errors.WithMessagef(aerr, "failed to load team ID: %v", channel.TeamId)
-		return
-	}
-
-	user, aerr := p.API.GetUser(post.UserId)
-	if aerr != nil {
-		err = errors.WithMessagef(aerr, "failed to load user ID: %v", post.UserId)
-		return
-	}
-
-	conf := p.API.GetConfig()
-	permalink := fmt.Sprintf("%v/%v/pl/%v", *conf.ServiceSettings.SiteURL, team.Name, post.Id)
-
-	var jiraClient *jira.Client
-	userinfo, err := p.LoadJIRAUserInfo(ji, post.UserId)
-	if err == nil {
-		jiraClient, _, err = ji.GetJIRAClientForUser(userinfo)
-	} else {
-		if !team.AllowOpenInvite {
-			p.errorf("User %v is not connected and team %v does not allow open invites",
-				user.GetDisplayName(model.SHOW_NICKNAME_FULLNAME), team.DisplayName)
-			return
-		}
-
-		// TODO reconsider enabling posting comments anonymously if the author
-		// has not connected his account
-		// jiraClient, err = p.GetJIRAClientForServer()
-	}
-	if err != nil {
-		p.errorf("MessageHasBeenPosted: failed to obtain an authenticated client, error: %v.", err)
-		return
-	}
-
-	for _, issue := range issues {
-		comment := &jira.Comment{
-			Body: fmt.Sprintf("%s mentioned this ticket in Mattermost:\n{quote}\n%s\n{quote}\n\n[View message in Mattermost|%s]",
-				user.Username, post.Message, permalink),
-		}
-
-		_, _, err := jiraClient.Issue.AddComment(issue, comment)
-		if err != nil {
-			p.errorf("MessageHasBeenPosted: failed to add the comment to JIRA, error: %v", err)
-		}
-	}
+func (p Plugin) GetPluginURL() string {
+	return p.GetSiteURL() + "/plugins/" + manifest.Id
 }
 
-func (p *Plugin) externalURL() string {
-	conf := p.getConfig()
-	if conf.ExternalURL != "" {
-		return conf.ExternalURL
-	}
+func (p Plugin) GetSiteURL() string {
 	return *p.API.GetConfig().ServiceSettings.SiteURL
 }
 
