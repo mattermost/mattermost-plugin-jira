@@ -10,7 +10,7 @@
 	"baseUrl": "{{ .BaseURL }}",
 	"links": {
 		"self": "{{ .BaseURL }}/atlassian-connect.json",
-		"homepage": "{{ .BaseURL }}/atlassian-connect.json"
+		"homepage": "https://www.mattermost.com"
 	},
 	"authentication": {
 		"type": "jwt"
@@ -30,7 +30,7 @@
 				"key": "user-config",
 				"location": "none"
 			}
-		],
+		]
 	}
 }
 {{ end }}

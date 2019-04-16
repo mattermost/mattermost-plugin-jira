@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-const ttl = 15 * time.Minute
+const authTokenTTL = 15 * time.Minute
 
 type AuthToken struct {
 	MattermostUserID string    `json:"mattermost_user_id,omitempty"`
@@ -29,7 +29,7 @@ func (p *Plugin) NewEncodedAuthToken(mattermostUserID string) (string, error) {
 
 	t := AuthToken{
 		MattermostUserID: mattermostUserID,
-		Expires:          time.Now().Add(ttl),
+		Expires:          time.Now().Add(authTokenTTL),
 	}
 
 	jsonBytes, err := json.Marshal(t)

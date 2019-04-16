@@ -154,7 +154,6 @@ func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
-
 	err = p.StoreAndNotifyUserInfo(ji, mattermostUserId, uinfo)
 	if err != nil {
 		return http.StatusInternalServerError, err
@@ -164,7 +163,6 @@ func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Reque
 	if aerr != nil {
 		return http.StatusInternalServerError, aerr
 	}
-	// <script src="https://connect-cdn.atl-paas.net/all.js" data-options="base:true" async></script>
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(`<!DOCTYPE html>
 <html lang="en">
