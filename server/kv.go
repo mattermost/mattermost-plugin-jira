@@ -118,7 +118,7 @@ func (p *Plugin) loadJIRAInstance(fullkey string) (JIRAInstance, error) {
 		return nil, aerr
 	}
 	if data == nil {
-		return nil, nil
+		return nil, fmt.Errorf("Not found: %s", fullkey)
 	}
 
 	// Unmarshal into any of the types just so that we can get the common data
