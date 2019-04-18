@@ -22,11 +22,11 @@ const (
 	prefixOAuth1RequestToken = "oauth1_reqtok_"
 )
 
-func keyJIRAUserInfo(ji JIRAInstance, mattermostUserId string) string {
+func keyJIRAUserInfo(ji Instance, mattermostUserId string) string {
 	return prefixJIRAUserInfo + ji.WrapDatabaseKey(mattermostUserId)
 }
 
-func keyMattermostUserId(ji JIRAInstance, jiraUsername string) string {
+func keyMattermostUserId(ji Instance, jiraUsername string) string {
 	return prefixMattermostUserId + ji.WrapDatabaseKey(jiraUsername)
 }
 
@@ -68,7 +68,7 @@ func (p *Plugin) kvSet(key string, v interface{}) error {
 	return nil
 }
 
-func (p *Plugin) StoreJIRAInstance(ji JIRAInstance, current bool) (err error) {
+func (p *Plugin) StoreJIRAInstance(ji Instance, current bool) (err error) {
 	defer func() {
 		if err != nil {
 			p.errorf("Failed to store JIRA instance:%#v", ji)
@@ -104,15 +104,15 @@ func (p *Plugin) StoreJIRAInstance(ji JIRAInstance, current bool) (err error) {
 	return nil
 }
 
-func (p *Plugin) LoadCurrentJIRAInstance() (JIRAInstance, error) {
+func (p *Plugin) LoadCurrentJIRAInstance() (Instance, error) {
 	return p.loadJIRAInstance(keyCurrentJIRAInstance)
 }
 
-func (p *Plugin) LoadJIRAInstance(key string) (JIRAInstance, error) {
+func (p *Plugin) LoadJIRAInstance(key string) (Instance, error) {
 	return p.loadJIRAInstance(md5key(prefixJIRAInstance, key))
 }
 
-func (p *Plugin) loadJIRAInstance(fullkey string) (JIRAInstance, error) {
+func (p *Plugin) loadJIRAInstance(fullkey string) (Instance, error) {
 	data, aerr := p.API.KVGet(fullkey)
 	if aerr != nil {
 		return nil, aerr
@@ -129,17 +129,16 @@ func (p *Plugin) loadJIRAInstance(fullkey string) (JIRAInstance, error) {
 	}
 
 	switch jsi.Type {
-	case JIRACloudType:
-		jic := jiraCloudInstance{}
-		err = json.Unmarshal(data, &jic)
+	case JIRATypeCloud:
+		jci := jiraCloudInstance{}
+		err = json.Unmarshal(data, &jci)
 		if err != nil {
 			return nil, err
 		}
-		return NewJIRACloudInstance(jic.jiraInstance.Key, jic.RawAtlassianSecurityContext,
-			jic.AtlassianSecurityContext), nil
+		return jci.InitWithPlugin(p), nil
 
-	case JIRAServerType:
-		return NewJIRAServerInstance(p, jsi.JIRAServerURL), nil
+	case JIRATypeServer:
+		return jsi.InitWithPlugin(p), nil
 	}
 
 	return nil, fmt.Errorf("JIRA instance %s has unsupported type: %s", fullkey, jsi.Type)
@@ -170,7 +169,7 @@ func (p *Plugin) LoadKnownJIRAInstances() (map[string]string, error) {
 	return known, nil
 }
 
-func (p *Plugin) StoreUserInfo(ji JIRAInstance, mattermostUserId string, info JIRAUserInfo) (err error) {
+func (p *Plugin) StoreUserInfo(ji Instance, mattermostUserId string, info JIRAUserInfo) (err error) {
 	defer func() {
 		if err != nil {
 			p.errorf("Failed to store user info, mattermostUserId:%s, info:%#v: %v", mattermostUserId, info, err)
@@ -194,7 +193,7 @@ func (p *Plugin) StoreUserInfo(ji JIRAInstance, mattermostUserId string, info JI
 	return nil
 }
 
-func (p *Plugin) LoadJIRAUserInfo(ji JIRAInstance, mattermostUserId string) (JIRAUserInfo, error) {
+func (p *Plugin) LoadJIRAUserInfo(ji Instance, mattermostUserId string) (JIRAUserInfo, error) {
 	info := JIRAUserInfo{}
 	_ = p.kvGet(keyJIRAUserInfo(ji, mattermostUserId), &info)
 	if len(info.Key) == 0 {
@@ -203,7 +202,7 @@ func (p *Plugin) LoadJIRAUserInfo(ji JIRAInstance, mattermostUserId string) (JIR
 	return info, nil
 }
 
-func (p *Plugin) LoadMattermostUserId(ji JIRAInstance, jiraUserName string) (string, error) {
+func (p *Plugin) LoadMattermostUserId(ji Instance, jiraUserName string) (string, error) {
 	mattermostUserId := ""
 	err := p.kvGet(keyMattermostUserId(ji, jiraUserName), &mattermostUserId)
 	if err != nil {
@@ -215,7 +214,7 @@ func (p *Plugin) LoadMattermostUserId(ji JIRAInstance, jiraUserName string) (str
 	return mattermostUserId, nil
 }
 
-func (p *Plugin) DeleteUserInfo(ji JIRAInstance, mattermostUserId string) error {
+func (p *Plugin) DeleteUserInfo(ji Instance, mattermostUserId string) error {
 	info, err := p.LoadJIRAUserInfo(ji, mattermostUserId)
 	if err != nil {
 		return err

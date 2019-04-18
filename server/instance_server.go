@@ -6,7 +6,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"sync"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/dghubble/oauth1"
@@ -14,26 +13,24 @@ import (
 )
 
 type jiraServerInstance struct {
-	jiraInstance
-	lock *sync.RWMutex
+	*JIRAInstance
 
 	JIRAServerURL string
 
 	oauth1Config *oauth1.Config `json:"none"`
 }
 
-var _ JIRAInstance = (*jiraServerInstance)(nil)
+var _ Instance = (*jiraServerInstance)(nil)
 
-func NewJIRAServerInstance(p *Plugin, jiraURL string) JIRAInstance {
+func NewJIRAServerInstance(p *Plugin, jiraURL string) Instance {
 	return &jiraServerInstance{
-		jiraInstance: jiraInstance{
-			Plugin: p,
-			Type:   JIRAServerType,
-			Key:    jiraURL,
-		},
-		lock:          &sync.RWMutex{},
+		JIRAInstance:  NewJIRAInstance(p, JIRATypeServer, jiraURL),
 		JIRAServerURL: jiraURL,
 	}
+}
+
+func (jsi jiraServerInstance) InitWithPlugin(p *Plugin) Instance {
+	return NewJIRAServerInstance(p, jsi.JIRAServerURL)
 }
 
 func (jis jiraServerInstance) GetURL() string {
@@ -64,12 +61,8 @@ func (jis jiraServerInstance) GetUserConnectURL(p *Plugin, mattermostUserId stri
 	return authURL.String(), nil
 }
 
-func (jis jiraServerInstance) GetJIRAClientForUser(info JIRAUserInfo) (*jira.Client, *http.Client, error) {
-	return nil, nil, fmt.Errorf("NOT IMPLEMENTED: GetJIRAClientForUser")
-}
-
-func (jis jiraServerInstance) GetJIRAClientForServer() (*jira.Client, error) {
-	return nil, fmt.Errorf("NOT IMPLEMENTED: GetJIRAClientForServer")
+func (jis jiraServerInstance) GetJIRAClient(info JIRAUserInfo) (*jira.Client, error) {
+	return nil, fmt.Errorf("NOT IMPLEMENTED: GetJIRAClientForUser")
 }
 
 func (jis jiraServerInstance) ParseHTTPRequestJWT(r *http.Request) (*jwt.Token, string, error) {

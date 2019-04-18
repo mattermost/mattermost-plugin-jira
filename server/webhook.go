@@ -90,7 +90,7 @@ type parsed struct {
 }
 
 type notifier interface {
-	notify(ji JIRAInstance, parsed *parsed, text string)
+	notify(ji Instance, parsed *parsed, text string)
 }
 
 func (p *Plugin) handleHTTPWebhook(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -296,7 +296,7 @@ func (p *parsed) fromChangeLog(issue string) (string, string) {
 	return "", ""
 }
 
-func (p *Plugin) notify(ji JIRAInstance, parsed *parsed, text string) {
+func (p *Plugin) notify(ji Instance, parsed *parsed, text string) {
 	if parsed.authorUsername == "" {
 		return
 	}

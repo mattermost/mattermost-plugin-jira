@@ -6,23 +6,21 @@ package main
 import (
 	"crypto/md5"
 	"fmt"
-	"net/http"
+	"sync"
 
 	"github.com/andygrunwald/go-jira"
-	"github.com/dgrijalva/jwt-go"
 )
 
 const (
-	JIRACloudType  = "cloud"
-	JIRAServerType = "server"
+	JIRATypeCloud  = "cloud"
+	JIRATypeServer = "server"
 )
 
 const prefixForInstance = true
 
-type JIRAInstance interface {
-	GetJIRAClientForServer() (*jira.Client, error)
-	GetJIRAClientForUser(info JIRAUserInfo) (*jira.Client, *http.Client, error)
-	ParseHTTPRequestJWT(r *http.Request) (*jwt.Token, string, error)
+type Instance interface {
+	InitWithPlugin(p *Plugin) Instance
+	GetJIRAClient(info JIRAUserInfo) (*jira.Client, error)
 	GetKey() string
 	GetType() string
 	GetURL() string
@@ -30,14 +28,24 @@ type JIRAInstance interface {
 	WrapDatabaseKey(key string) string
 }
 
-type jiraInstance struct {
+type JIRAInstance struct {
 	*Plugin `json:"-"`
+	lock    *sync.RWMutex
 
 	Key  string
 	Type string
 }
 
-func (ji jiraInstance) WrapDatabaseKey(key string) string {
+func NewJIRAInstance(p *Plugin, typ, key string) *JIRAInstance {
+	return &JIRAInstance{
+		Plugin: p,
+		Type:   typ,
+		Key:    key,
+		lock:   &sync.RWMutex{},
+	}
+}
+
+func (ji JIRAInstance) WrapDatabaseKey(key string) string {
 	if prefixForInstance {
 		h := md5.New()
 		fmt.Fprintf(h, "%s/%s", ji.Key, key)
@@ -46,10 +54,10 @@ func (ji jiraInstance) WrapDatabaseKey(key string) string {
 	return key
 }
 
-func (ji jiraInstance) GetKey() string {
+func (ji JIRAInstance) GetKey() string {
 	return ji.Key
 }
 
-func (ji jiraInstance) GetType() string {
+func (ji JIRAInstance) GetType() string {
 	return ji.Type
 }

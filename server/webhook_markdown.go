@@ -16,7 +16,7 @@ const (
 	mdUpdateStyle = "###### "
 )
 
-func AsMarkdown(in io.Reader, n notifier, ji JIRAInstance) (func(post *model.Post), error) {
+func AsMarkdown(in io.Reader, n notifier, ji Instance) (func(post *model.Post), error) {
 	parsed, err := parse(in, func(w *JIRAWebhook) string {
 		return w.mdIssueLongLink()
 	})

@@ -103,7 +103,7 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 				return ephf("/jira instance add {type} {URL}"), nil
 			}
 			typ := split[0]
-			if typ != JIRAServerType {
+			if typ != JIRATypeServer {
 				return ephf(`only type "server" supported by /jira add`), nil
 			}
 			jiraURL := split[1]

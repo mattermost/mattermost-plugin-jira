@@ -7,11 +7,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/google/go-querystring/query"
 
 	"github.com/mattermost/mattermost-server/model"
 )
@@ -48,7 +46,7 @@ func (p *Plugin) handleHTTPCreateIssue(w http.ResponseWriter, r *http.Request) (
 		return http.StatusInternalServerError, err
 	}
 
-	jiraClient, _, err := ji.GetJIRAClientForUser(info)
+	jiraClient, err := ji.GetJIRAClient(info)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("could not get jira client: %v", err)
 	}
@@ -140,28 +138,46 @@ func (p *Plugin) handleHTTPCreateIssueMetadata(w http.ResponseWriter, r *http.Re
 		return http.StatusInternalServerError, err
 	}
 
-	jiraClient, client, err := ji.GetJIRAClientForUser(info)
+	jiraClient, err := ji.GetJIRAClient(info)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("could not get jira client: %v", err)
 	}
 
-	options := &jira.GetQueryOptions{ProjectKeys: "", Expand: "projects.issuetypes.fields"}
-	req, _ := jiraClient.NewRawRequest("GET", "rest/api/2/issue/createmeta", nil)
-
-	if options != nil {
-		q, err := query.Values(options)
-		if err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("could not get the create issue metadata from Jira: %v", err)
-		}
-		req.URL.RawQuery = q.Encode()
-	}
-	httpResp, err := client.Do(req)
+	cimd, _, err := jiraClient.Issue.GetCreateMetaWithOptions(&jira.GetQueryOptions{
+		// ProjectKeys: "",
+		Expand: "projects.issuetypes.fields",
+	})
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("could not get the create issue metadata from Jira in request: %v", err)
+		return http.StatusInternalServerError, fmt.Errorf("could not get issue metadata: %v", err)
 	}
 
-	defer httpResp.Body.Close()
 	w.Header().Set("Content-Type", "application/json")
-	io.Copy(w, httpResp.Body)
+	b, err := json.Marshal(cimd)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("could not marshal CreateIssueMetadata: %v", err)
+	}
+	_, err = w.Write(b)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("could not write output: %v", err)
+	}
+
+	// req, _ := jiraClient.NewRawRequest("GET", "rest/api/2/issue/createmeta", nil)
+	//
+	// if options != nil {
+	// 	q, err := query.Values(options)
+	// 	if err != nil {
+	// 		return http.StatusInternalServerError, fmt.Errorf("could not get the create issue metadata from Jira: %v", err)
+	// 	}
+	// 	req.URL.RawQuery = q.Encode()
+	// }
+	// httpResp, err := client.Do(req)
+	// if err != nil {
+	// 	return http.StatusInternalServerError, fmt.Errorf("could not get the create issue metadata from Jira in request: %v", err)
+	// }
+	//
+	// defer httpResp.Body.Close()
+	// w.Header().Set("Content-Type", "application/json")
+	// io.Copy(w, httpResp.Body)
+
 	return http.StatusOK, nil
 }

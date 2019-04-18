@@ -56,7 +56,7 @@ func (p *Plugin) handleHTTPGetUserInfo(w http.ResponseWriter, r *http.Request) (
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) StoreAndNotifyUserInfo(ji JIRAInstance, mattermostUserId string, info JIRAUserInfo) error {
+func (p *Plugin) StoreAndNotifyUserInfo(ji Instance, mattermostUserId string, info JIRAUserInfo) error {
 	err := p.StoreUserInfo(ji, mattermostUserId, info)
 	if err != nil {
 		return err

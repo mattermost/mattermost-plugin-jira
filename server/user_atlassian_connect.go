@@ -89,8 +89,12 @@ func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (i
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
+	jci, ok := ji.(*jiraCloudInstance)
+	if !ok {
+		return http.StatusBadRequest, fmt.Errorf("Must be a JIRA Cloud instance, is %s", ji.GetType())
+	}
 
-	_, tokenString, err := ji.ParseHTTPRequestJWT(r)
+	_, tokenString, err := jci.parseHTTPRequestJWT(r)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -120,8 +124,12 @@ func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
+	jci, ok := ji.(*jiraCloudInstance)
+	if !ok {
+		return http.StatusBadRequest, fmt.Errorf("Must be a JIRA Cloud instance, is %s", ji.GetType())
+	}
 
-	jwtToken, _, err := ji.ParseHTTPRequestJWT(r)
+	jwtToken, _, err := jci.parseHTTPRequestJWT(r)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}

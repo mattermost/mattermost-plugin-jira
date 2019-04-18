@@ -40,7 +40,7 @@ func (p *Plugin) handleHTTPInstalled(w http.ResponseWriter, r *http.Request) (in
 
 	// Create or overwrite the instance record, also store it
 	// as current
-	jiraInstance := NewJIRACloudInstance(asc.BaseURL, string(body), &asc)
+	jiraInstance := NewJIRACloudInstance(p, asc.BaseURL, string(body), &asc)
 	err = p.StoreJIRAInstance(jiraInstance, true)
 	if err != nil {
 		return http.StatusInternalServerError, err

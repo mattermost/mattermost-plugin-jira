@@ -6,7 +6,7 @@ package main
 import (
 	"fmt"
 
-	jira "github.com/andygrunwald/go-jira"
+	"github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -17,7 +17,7 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 	var err error
 	defer func() {
 		if err != nil {
-			p.errorf("MessageHasBeenPosted: %s", err.Error())
+			p.errorf("MessageHasBeenPosted: %v", err)
 		}
 	}()
 
@@ -27,7 +27,18 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 		return
 	}
 
-	projectKeys, err := p.loadJIRAProjectKeys(ji, false)
+	userinfo, err := p.LoadJIRAUserInfo(ji, post.UserId)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to load current JIRA userId: "+post.UserId)
+	}
+
+	jiraClient, err := ji.GetJIRAClient(userinfo)
+	if err != nil {
+		err = errors.WithMessage(err, fmt.Sprintf("failed to get a JIRA client for user %+v", userinfo))
+		return
+	}
+
+	projectKeys, err := p.loadJIRAProjectKeys(jiraClient, false)
 	if err != nil {
 		err = errors.WithMessage(err, "failed to load project keys from JIRA")
 		return
@@ -63,26 +74,6 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 
 	conf := p.API.GetConfig()
 	permalink := fmt.Sprintf("%v/%v/pl/%v", *conf.ServiceSettings.SiteURL, team.Name, post.Id)
-
-	var jiraClient *jira.Client
-	userinfo, err := p.LoadJIRAUserInfo(ji, post.UserId)
-	if err == nil {
-		jiraClient, _, err = ji.GetJIRAClientForUser(userinfo)
-	} else {
-		if !team.AllowOpenInvite {
-			p.errorf("User %v is not connected and team %v does not allow open invites",
-				user.GetDisplayName(model.SHOW_NICKNAME_FULLNAME), team.DisplayName)
-			return
-		}
-
-		// TODO reconsider enabling posting comments anonymously if the author
-		// has not connected his account
-		// jiraClient, err = p.GetJIRAClientForServer()
-	}
-	if err != nil {
-		p.errorf("MessageHasBeenPosted: failed to obtain an authenticated client, error: %v.", err)
-		return
-	}
 
 	for _, issue := range issues {
 		comment := &jira.Comment{

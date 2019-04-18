@@ -18,7 +18,7 @@ import (
 )
 
 type jiraCloudInstance struct {
-	jiraInstance
+	*JIRAInstance
 
 	// For cloud instances (atlassian-connect.json install and user auth)
 	RawAtlassianSecurityContext string
@@ -26,7 +26,7 @@ type jiraCloudInstance struct {
 	oauth2Config                oauth2.Config `json:"none"`
 }
 
-var _ JIRAInstance = (*jiraCloudInstance)(nil)
+var _ Instance = (*jiraCloudInstance)(nil)
 
 type AtlassianSecurityContext struct {
 	Key            string `json:"key"`
@@ -42,37 +42,16 @@ type AtlassianSecurityContext struct {
 	OAuthClientId  string `json:"oauthClientId"`
 }
 
-func NewJIRACloudInstance(key, rawASC string, asc *AtlassianSecurityContext) JIRAInstance {
-	jci := &jiraCloudInstance{
-		jiraInstance: jiraInstance{
-			Type: JIRACloudType,
-			Key:  key,
-		},
+func NewJIRACloudInstance(p *Plugin, key, rawASC string, asc *AtlassianSecurityContext) Instance {
+	return &jiraCloudInstance{
+		JIRAInstance:                NewJIRAInstance(p, JIRATypeCloud, key),
 		RawAtlassianSecurityContext: rawASC,
 		AtlassianSecurityContext:    asc,
 	}
+}
 
-	// This was experimental. There is a way to define an application on
-	// dev.atlassian.com, and have valid OAuth2 credentials issued, that could then
-	// be cut & pasted into config values and used. However, the application would
-	// then have a singular OAuth2 callback URL configured in the dev.atlassian.com
-	// web site, essenttially requiring thatt a separate application is defined for
-	// each relevant Mattermost instance. I was not able to make OAuth2 work with
-	// credentials obtained from atlassian-connect.json /installed callback.
-	//
-	// Keeping the code for now, in case something changes.
-	jci.oauth2Config = oauth2.Config{
-		// ClientID:     "LimAAPOhX7ncIN7cPB77tZ1Gwz0r2WmL",
-		// ClientSecret: "01_Y6g1JRmLnSGcaRU19LzhfnsXHAGwtuQTacQscxR3eCy7tzhLYYbuQHXiVIJq_",
-		// Scopes:       []string{"read:jira-work", "read:jira-user", "write:jira-work"},
-		// Endpoint: oauth2.Endpoint{
-		// 	AuthURL:  "https://auth.atlassian.com/authorize",
-		// 	TokenURL: "https://auth.atlassian.com/oauth/token",
-		// },
-		// RedirectURL: fmt.Sprintf("%v/plugins/%v/oauth/complete", p.externalURL(), manifest.Id),
-	}
-
-	return jci
+func (jci jiraCloudInstance) InitWithPlugin(p *Plugin) Instance {
+	return NewJIRACloudInstance(p, jci.JIRAInstance.Key, jci.RawAtlassianSecurityContext, jci.AtlassianSecurityContext)
 }
 
 func (jci jiraCloudInstance) GetUserConnectURL(p *Plugin, mattermostUserId string) (string, error) {
@@ -91,8 +70,22 @@ func (jci jiraCloudInstance) GetURL() string {
 	return jci.AtlassianSecurityContext.BaseURL
 }
 
+func (jci jiraCloudInstance) GetJIRAClient(info JIRAUserInfo) (*jira.Client, error) {
+	client, _, err := jci.getJIRAClientForUser(info)
+	if err == nil {
+		return client, nil
+	}
+
+	client, err = jci.getJIRAClientForServer()
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
 // Creates a client for acting on behalf of a user
-func (jci jiraCloudInstance) GetJIRAClientForUser(info JIRAUserInfo) (*jira.Client, *http.Client, error) {
+func (jci jiraCloudInstance) getJIRAClientForUser(info JIRAUserInfo) (*jira.Client, *http.Client, error) {
 	oauth2Conf := oauth2_jira.Config{
 		BaseURL: jci.GetURL(),
 		Subject: info.Name,
@@ -110,7 +103,7 @@ func (jci jiraCloudInstance) GetJIRAClientForUser(info JIRAUserInfo) (*jira.Clie
 }
 
 // Creates a "bot" client with a JWT
-func (jci jiraCloudInstance) GetJIRAClientForServer() (*jira.Client, error) {
+func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
 	jwtConf := &ajwt.Config{
 		Key:          jci.AtlassianSecurityContext.Key,
 		ClientKey:    jci.AtlassianSecurityContext.ClientKey,
@@ -121,7 +114,7 @@ func (jci jiraCloudInstance) GetJIRAClientForServer() (*jira.Client, error) {
 	return jira.NewClient(jwtConf.Client(), jwtConf.BaseURL)
 }
 
-func (jci jiraCloudInstance) ParseHTTPRequestJWT(r *http.Request) (*jwt.Token, string, error) {
+func (jci jiraCloudInstance) parseHTTPRequestJWT(r *http.Request) (*jwt.Token, string, error) {
 	r.ParseForm()
 	tokenString := r.Form.Get("jwt")
 	if tokenString == "" {

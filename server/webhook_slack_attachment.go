@@ -9,7 +9,7 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
-func AsSlackAttachment(in io.Reader, n notifier, ji JIRAInstance) (func(post *model.Post), error) {
+func AsSlackAttachment(in io.Reader, n notifier, ji Instance) (func(post *model.Post), error) {
 	parsed, err := parse(in, nil)
 	if err != nil {
 		return nil, err

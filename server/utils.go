@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"regexp"
 
+	"github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -39,16 +40,11 @@ func (p *Plugin) CreateBotDMPost(userID, message, postType string) *model.AppErr
 	return nil
 }
 
-func (p *Plugin) loadJIRAProjectKeys(ji JIRAInstance, forceReload bool) ([]string, error) {
+func (p *Plugin) loadJIRAProjectKeys(jiraClient *jira.Client, forceReload bool) ([]string, error) {
 	conf := p.getConfig()
 
 	if len(conf.projectKeys) > 0 && !forceReload {
 		return conf.projectKeys, nil
-	}
-
-	jiraClient, err := ji.GetJIRAClientForServer()
-	if err != nil {
-		return nil, errors.WithMessage(err, "Error connecting to JIRA")
 	}
 
 	list, _, err := jiraClient.Project.GetList()
