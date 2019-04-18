@@ -22,12 +22,13 @@ const (
 	prefixOAuth1RequestToken = "oauth1_reqtok_"
 )
 
-func keyJIRAUserInfo(ji Instance, mattermostUserId string) string {
-	return prefixJIRAUserInfo + ji.WrapDatabaseKey(mattermostUserId)
-}
-
-func keyMattermostUserId(ji Instance, jiraUsername string) string {
-	return prefixMattermostUserId + ji.WrapDatabaseKey(jiraUsername)
+func keyWithInstance(ji Instance, key string) string {
+	if prefixForInstance {
+		h := md5.New()
+		fmt.Fprintf(h, "%s/%s", ji.GetKey(), key)
+		key = fmt.Sprintf("%x", h.Sum(nil))
+	}
+	return key
 }
 
 func md5key(prefix, key string) string {
@@ -169,23 +170,23 @@ func (p *Plugin) LoadKnownJIRAInstances() (map[string]string, error) {
 	return known, nil
 }
 
-func (p *Plugin) StoreUserInfo(ji Instance, mattermostUserId string, info JIRAUserInfo) (err error) {
+func (p *Plugin) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JIRAUser) (err error) {
 	defer func() {
 		if err != nil {
-			p.errorf("Failed to store user info, mattermostUserId:%s, info:%#v: %v", mattermostUserId, info, err)
+			p.errorf("Failed to store JIRA user, mattermostUserId:%s, user:%#v: %v", mattermostUserId, jiraUser, err)
 			return
 		}
-		p.debugf("Stored: user info, keys:\n\t%s (%s): %+v\n\t%s (%s): %s",
-			keyJIRAUserInfo(ji, mattermostUserId), mattermostUserId, info,
-			keyMattermostUserId(ji, info.Name), info.Name, mattermostUserId)
+		p.debugf("Stored: JIRA user, keys:\n\t%s (%s): %+v\n\t%s (%s): %s",
+			keyWithInstance(ji, mattermostUserId), mattermostUserId, jiraUser,
+			keyWithInstance(ji, jiraUser.Name), jiraUser.Name, mattermostUserId)
 	}()
 
-	err = p.kvSet(keyJIRAUserInfo(ji, mattermostUserId), info)
+	err = p.kvSet(keyWithInstance(ji, mattermostUserId), jiraUser)
 	if err != nil {
 		return err
 	}
 
-	err = p.kvSet(keyMattermostUserId(ji, info.Name), mattermostUserId)
+	err = p.kvSet(keyWithInstance(ji, jiraUser.Name), mattermostUserId)
 	if err != nil {
 		return err
 	}
@@ -193,18 +194,18 @@ func (p *Plugin) StoreUserInfo(ji Instance, mattermostUserId string, info JIRAUs
 	return nil
 }
 
-func (p *Plugin) LoadJIRAUserInfo(ji Instance, mattermostUserId string) (JIRAUserInfo, error) {
-	info := JIRAUserInfo{}
-	_ = p.kvGet(keyJIRAUserInfo(ji, mattermostUserId), &info)
-	if len(info.Key) == 0 {
-		return JIRAUserInfo{}, fmt.Errorf("could not find jira user info for %v", mattermostUserId)
+func (p *Plugin) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, error) {
+	jiraUser := JIRAUser{}
+	_ = p.kvGet(keyWithInstance(ji, mattermostUserId), &jiraUser)
+	if len(jiraUser.Key) == 0 {
+		return JIRAUser{}, fmt.Errorf("could not find JIRA user for %v", mattermostUserId)
 	}
-	return info, nil
+	return jiraUser, nil
 }
 
 func (p *Plugin) LoadMattermostUserId(ji Instance, jiraUserName string) (string, error) {
 	mattermostUserId := ""
-	err := p.kvGet(keyMattermostUserId(ji, jiraUserName), &mattermostUserId)
+	err := p.kvGet(keyWithInstance(ji, jiraUserName), &mattermostUserId)
 	if err != nil {
 		return "", err
 	}
@@ -215,24 +216,24 @@ func (p *Plugin) LoadMattermostUserId(ji Instance, jiraUserName string) (string,
 }
 
 func (p *Plugin) DeleteUserInfo(ji Instance, mattermostUserId string) error {
-	info, err := p.LoadJIRAUserInfo(ji, mattermostUserId)
+	jiraUser, err := p.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
 		return err
 	}
 
-	aerr := p.API.KVDelete(keyJIRAUserInfo(ji, mattermostUserId))
+	aerr := p.API.KVDelete(keyWithInstance(ji, mattermostUserId))
 	if aerr != nil {
 		return aerr
 	}
 
-	aerr = p.API.KVDelete(keyMattermostUserId(ji, info.Name))
+	aerr = p.API.KVDelete(keyWithInstance(ji, jiraUser.Name))
 	if aerr != nil {
 		return aerr
 	}
 
-	p.debugf("Deleted: user info, keys: %s(%s), %s(%s)",
-		mattermostUserId, keyJIRAUserInfo(ji, mattermostUserId),
-		info.Name, keyMattermostUserId(ji, info.Name))
+	p.debugf("Deleted: user, keys: %s(%s), %s(%s)",
+		mattermostUserId, keyWithInstance(ji, mattermostUserId),
+		jiraUser.Name, keyWithInstance(ji, jiraUser.Name))
 	return nil
 }
 

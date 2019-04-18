@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/andygrunwald/go-jira"
+
 	"github.com/mattermost/mattermost-server/model"
 )
 
@@ -16,15 +18,14 @@ const (
 	WS_EVENT_DISCONNECT = "disconnect"
 )
 
-type JIRAUserInfo struct {
-	// These fields come from JIRA, so their JSON names must not change.
-	Key       string `json:"key,omitempty"`
-	AccountId string `json:"accountId,omitempty"`
-	Name      string `json:"name,omitempty"`
+type JIRAUser struct {
+	jira.User
+	Oauth1AccessToken  string `json:",omitempty"`
+	Oauth1AccessSecret string `json:",omitempty"`
 }
 
 type UserInfo struct {
-	JIRAUserInfo
+	JIRAUser
 	IsConnected bool   `json:"is_connected"`
 	JIRAURL     string `json:"jira_url,omitempty"`
 }
@@ -41,12 +42,12 @@ func (p *Plugin) handleHTTPGetUserInfo(w http.ResponseWriter, r *http.Request) (
 	}
 
 	resp := UserInfo{}
-	jiraUserInfo, err := p.LoadJIRAUserInfo(ji, mattermostUserId)
+	jiraUser, err := p.LoadJIRAUser(ji, mattermostUserId)
 	if err == nil {
 		resp = UserInfo{
-			JIRAUserInfo: jiraUserInfo,
-			IsConnected:  true,
-			JIRAURL:      ji.GetURL(),
+			JIRAUser:    jiraUser,
+			IsConnected: true,
+			JIRAURL:     ji.GetURL(),
 		}
 	}
 
@@ -56,8 +57,8 @@ func (p *Plugin) handleHTTPGetUserInfo(w http.ResponseWriter, r *http.Request) (
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) StoreAndNotifyUserInfo(ji Instance, mattermostUserId string, info JIRAUserInfo) error {
-	err := p.StoreUserInfo(ji, mattermostUserId, info)
+func (p *Plugin) StoreAndNotifyUserInfo(ji Instance, mattermostUserId string, jiraUser JIRAUser) error {
+	err := p.StoreUserInfo(ji, mattermostUserId, jiraUser)
 	if err != nil {
 		return err
 	}
@@ -65,10 +66,9 @@ func (p *Plugin) StoreAndNotifyUserInfo(ji Instance, mattermostUserId string, in
 	p.API.PublishWebSocketEvent(
 		WS_EVENT_CONNECT,
 		map[string]interface{}{
-			"is_connected":    true,
-			"jira_username":   info.Name,
-			"jira_account_id": info.AccountId,
-			"jira_url":        ji.GetURL(),
+			"is_connected":  true,
+			"jira_username": jiraUser.Name,
+			"jira_url":      ji.GetURL(),
 		},
 		&model.WebsocketBroadcast{UserId: mattermostUserId},
 	)

@@ -102,7 +102,6 @@ func getIssueURL(i *JIRAWebhookIssue) string {
 	return u.Scheme + "://" + u.Host + "/browse/" + i.Key
 }
 
-func getUserURL(issue *JIRAWebhookIssue, user *JIRAWebhookUser) string {
-	u, _ := url.Parse(issue.Self)
-	return u.Scheme + "://" + u.Host + "/people/" + user.AccountId
+func getUserURL(issue *JIRAWebhookIssue, user *jira.User) string {
+	return user.Self
 }

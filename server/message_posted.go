@@ -27,14 +27,14 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 		return
 	}
 
-	userinfo, err := p.LoadJIRAUserInfo(ji, post.UserId)
+	jiraUser, err := p.LoadJIRAUser(ji, post.UserId)
 	if err != nil {
 		err = errors.WithMessage(err, "failed to load current JIRA userId: "+post.UserId)
 	}
 
-	jiraClient, err := ji.GetJIRAClient(userinfo)
+	jiraClient, err := ji.GetJIRAClient(jiraUser)
 	if err != nil {
-		err = errors.WithMessage(err, fmt.Sprintf("failed to get a JIRA client for user %+v", userinfo))
+		err = errors.WithMessage(err, fmt.Sprintf("failed to get a JIRA client for user %+v", jiraUser))
 		return
 	}
 

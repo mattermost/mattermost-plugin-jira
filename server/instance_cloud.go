@@ -70,8 +70,8 @@ func (jci jiraCloudInstance) GetURL() string {
 	return jci.AtlassianSecurityContext.BaseURL
 }
 
-func (jci jiraCloudInstance) GetJIRAClient(info JIRAUserInfo) (*jira.Client, error) {
-	client, _, err := jci.getJIRAClientForUser(info)
+func (jci jiraCloudInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error) {
+	client, _, err := jci.getJIRAClientForUser(jiraUser)
 	if err == nil {
 		return client, nil
 	}
@@ -85,10 +85,10 @@ func (jci jiraCloudInstance) GetJIRAClient(info JIRAUserInfo) (*jira.Client, err
 }
 
 // Creates a client for acting on behalf of a user
-func (jci jiraCloudInstance) getJIRAClientForUser(info JIRAUserInfo) (*jira.Client, *http.Client, error) {
+func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Client, *http.Client, error) {
 	oauth2Conf := oauth2_jira.Config{
 		BaseURL: jci.GetURL(),
-		Subject: info.Name,
+		Subject: jiraUser.Name,
 	}
 
 	oauth2Conf.Config.ClientID = jci.AtlassianSecurityContext.OAuthClientId

@@ -9,7 +9,8 @@ import (
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/dghubble/oauth1"
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/pkg/errors"
 )
 
 type jiraServerInstance struct {
@@ -61,8 +62,24 @@ func (jis jiraServerInstance) GetUserConnectURL(p *Plugin, mattermostUserId stri
 	return authURL.String(), nil
 }
 
-func (jis jiraServerInstance) GetJIRAClient(info JIRAUserInfo) (*jira.Client, error) {
-	return nil, fmt.Errorf("NOT IMPLEMENTED: GetJIRAClientForUser")
+func (jis jiraServerInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error) {
+	if jiraUser.Oauth1AccessToken == "" || jiraUser.Oauth1AccessSecret == "" {
+		return nil, errors.New("No access token, please use /jira connect")
+	}
+
+	oauth1Config, err := jis.GetOAuth1Config()
+	if err != nil {
+		return nil, errors.WithMessage(err, "could not get oauth1 config")
+	}
+
+	token := oauth1.NewToken(jiraUser.Oauth1AccessToken, jiraUser.Oauth1AccessSecret)
+	httpClient := oauth1Config.Client(oauth1.NoContext, token)
+	jiraClient, err := jira.NewClient(httpClient, jis.GetURL())
+	if err != nil {
+		return nil, errors.WithMessage(err, "could not get jira client")
+	}
+
+	return jiraClient, nil
 }
 
 func (jis jiraServerInstance) ParseHTTPRequestJWT(r *http.Request) (*jwt.Token, string, error) {

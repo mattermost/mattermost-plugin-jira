@@ -4,8 +4,6 @@
 package main
 
 import (
-	"crypto/md5"
-	"fmt"
 	"sync"
 
 	"github.com/andygrunwald/go-jira"
@@ -20,12 +18,11 @@ const prefixForInstance = true
 
 type Instance interface {
 	InitWithPlugin(p *Plugin) Instance
-	GetJIRAClient(info JIRAUserInfo) (*jira.Client, error)
+	GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error)
 	GetKey() string
 	GetType() string
 	GetURL() string
 	GetUserConnectURL(p *Plugin, mattermostUserId string) (string, error)
-	WrapDatabaseKey(key string) string
 }
 
 type JIRAInstance struct {
@@ -43,15 +40,6 @@ func NewJIRAInstance(p *Plugin, typ, key string) *JIRAInstance {
 		Key:    key,
 		lock:   &sync.RWMutex{},
 	}
-}
-
-func (ji JIRAInstance) WrapDatabaseKey(key string) string {
-	if prefixForInstance {
-		h := md5.New()
-		fmt.Fprintf(h, "%s/%s", ji.Key, key)
-		key = fmt.Sprintf("%x", h.Sum(nil))
-	}
-	return key
 }
 
 func (ji JIRAInstance) GetKey() string {

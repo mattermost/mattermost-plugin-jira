@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/dgrijalva/jwt-go"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -148,14 +149,14 @@ func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Reque
 
 	userKey, _ := user["userKey"].(string)
 	username, _ := user["username"].(string)
-	accountId, _ := user["accountId"].(string)
 	displayName, _ := user["displayName"].(string)
 
 	mmToken := r.Form.Get(argMMToken)
-	uinfo := JIRAUserInfo{
-		Key:       userKey,
-		AccountId: accountId,
-		Name:      username,
+	uinfo := JIRAUser{
+		User: jira.User{
+			Key:  userKey,
+			Name: username,
+		},
 	}
 
 	mattermostUserId, err := p.ParseAuthToken(mmToken)

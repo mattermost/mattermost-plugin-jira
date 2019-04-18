@@ -12,27 +12,17 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/andygrunwald/go-jira"
+
 	"github.com/mattermost/mattermost-server/model"
 )
-
-type JIRAWebhookUser struct {
-	AccountId    string
-	Self         string
-	Name         string
-	Key          string
-	EmailAddress string
-	AvatarURLs   map[string]string
-	DisplayName  string
-	Active       bool
-	TimeZone     string
-}
 
 type JIRAWebhookIssue struct {
 	Self   string
 	Key    string
 	Fields struct {
-		Assignee    *JIRAWebhookUser
-		Reporter    *JIRAWebhookUser
+		Assignee    *jira.User
+		Reporter    *jira.User
 		Summary     string
 		Description string
 		Priority    *struct {
@@ -57,10 +47,10 @@ type JIRAWebhookIssue struct {
 type JIRAWebhook struct {
 	WebhookEvent string
 	Issue        JIRAWebhookIssue
-	User         JIRAWebhookUser
+	User         jira.User
 	Comment      struct {
 		Body         string
-		UpdateAuthor JIRAWebhookUser
+		UpdateAuthor jira.User
 	}
 	ChangeLog struct {
 		Items []struct {

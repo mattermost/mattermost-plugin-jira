@@ -91,17 +91,17 @@ func (p *Plugin) handleHTTPOAuth2Complete(w http.ResponseWriter, r *http.Request
 		return http.StatusInternalServerError, err
 	}
 
-	info := JIRAUserInfo{}
+	jiraUser := JIRAUser{}
 	req, err = jirac.NewRequest("GET", "rest/api/2/myself", nil)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	_, err = jirac.Do(req, &info)
+	_, err = jirac.Do(req, &jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("could not get user: %v", err)
 	}
 
-	err = p.StoreAndNotifyUserInfo(ji, mattermostUserId, info)
+	err = p.StoreAndNotifyUserInfo(ji, mattermostUserId, jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

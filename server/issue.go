@@ -41,12 +41,12 @@ func (p *Plugin) handleHTTPCreateIssue(w http.ResponseWriter, r *http.Request) (
 		return http.StatusInternalServerError, err
 	}
 
-	info, err := p.LoadJIRAUserInfo(ji, mmUserID)
+	jiraUser, err := p.LoadJIRAUser(ji, mmUserID)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	jiraClient, err := ji.GetJIRAClient(info)
+	jiraClient, err := ji.GetJIRAClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("could not get jira client: %v", err)
 	}
@@ -133,12 +133,12 @@ func (p *Plugin) handleHTTPCreateIssueMetadata(w http.ResponseWriter, r *http.Re
 		return http.StatusInternalServerError, err
 	}
 
-	info, err := p.LoadJIRAUserInfo(ji, mmUserID)
+	jiraUser, err := p.LoadJIRAUser(ji, mmUserID)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	jiraClient, err := ji.GetJIRAClient(info)
+	jiraClient, err := ji.GetJIRAClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("could not get jira client: %v", err)
 	}

@@ -8,6 +8,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/andygrunwald/go-jira"
+
 	"github.com/mattermost/mattermost-server/model"
 )
 
@@ -165,7 +167,7 @@ func mdDiff(from, to string) string {
 	return strings.Join(added, ",")
 }
 
-func mdUser(user *JIRAWebhookUser) string {
+func mdUser(user *jira.User) string {
 	if user == nil {
 		return ""
 	}

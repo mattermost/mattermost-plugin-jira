@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/http"
 
-	jira "github.com/andygrunwald/go-jira"
 	"github.com/dghubble/oauth1"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -88,23 +87,23 @@ func (p *Plugin) handleHTTPOAuth1Complete(w http.ResponseWriter, r *http.Request
 		return http.StatusInternalServerError, err
 	}
 
-	token := oauth1.NewToken(accessToken, accessSecret)
-	httpClient := oauth1Config.Client(oauth1.NoContext, token)
+	jiraUser := JIRAUser{
+		Oauth1AccessToken:  accessToken,
+		Oauth1AccessSecret: accessSecret,
+	}
 
-	info := JIRAUserInfo{}
-
-	jiraClient, err := jira.NewClient(httpClient, ji.GetURL())
+	jiraClient, err := ji.GetJIRAClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("could not get jira client: %v", err)
 	}
 
-	req, _ := jiraClient.NewRequest("GET", "rest/api/2/myself", nil)
-	_, err = jiraClient.Do(req, &info)
+	user, _, err := jiraClient.User.GetSelf()
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("could not get current user: %v", err)
 	}
+	jiraUser.User = *user
 
-	err = p.StoreAndNotifyUserInfo(ji, mattermostUserId, info)
+	err = p.StoreAndNotifyUserInfo(ji, mattermostUserId, jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

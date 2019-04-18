@@ -83,7 +83,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	ec := externalConfig{}
 	err := p.API.LoadPluginConfiguration(&ec)
 	if err != nil {
-		return errors.Wrap(err, "failed to load plugin configuration")
+		return errors.WithMessage(err, "failed to load plugin configuration")
 	}
 
 	p.updateConfig(func(conf *config) {
