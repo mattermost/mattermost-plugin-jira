@@ -19,7 +19,7 @@ type MattermostCreateIssueRequest struct {
 	Fields jira.IssueFields `json:"fields"`
 }
 
-func (p *Plugin) handleHTTPCreateIssue(w http.ResponseWriter, r *http.Request) (int, error) {
+func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
@@ -117,7 +117,7 @@ func (p *Plugin) handleHTTPCreateIssue(w http.ResponseWriter, r *http.Request) (
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) handleHTTPCreateIssueMetadata(w http.ResponseWriter, r *http.Request) (int, error) {
+func httpAPIGetCreateIssueMetadata(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")

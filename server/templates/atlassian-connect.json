@@ -1,29 +1,29 @@
 {{define "config"}}
 {
 	"key": "{{ .Key }}",
-	"name": "Mattermost Plugin ({{ .ExternalURL }})",
-	"description": "Add-on for the Mattermost JIRA plugin.",
+	"name": "Mattermost Plugin for ({{ .ExternalURL }})",
+	"description": "Integrates JIRA with Mattermost for in-place interactions and notifications",
 	"vendor": {
 		"name": "Mattermost",
 		"url": "https://github.com/mattermost"
 	},
 	"baseUrl": "{{ .BaseURL }}",
 	"links": {
-		"self": "{{ .BaseURL }}/atlassian-connect.json",
+		"self": "{{ .BaseURL }}{{ .RouteACJSON }}",
 		"homepage": "https://www.mattermost.com"
 	},
 	"authentication": {
 		"type": "jwt"
 	},
 	"lifecycle": {
-		"installed": "/installed",
-		"uninstalled": "/uninstalled"
+		"installed": "{{ .RouteACInstalled }}",
+		"uninstalled": "{{ .RouteACUninstalled }}"
 	},
 	"scopes": [ "READ", "WRITE", "ACT_AS_USER" ],
 	"modules": {
 		"generalPages": [
 			{
-				"url": "/user-config",
+				"url": "{{ .RouteACUserConfig }}",
 				"name": {
 					"value": "User mapping and configuration page"
 				},

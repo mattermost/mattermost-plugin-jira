@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/dgrijalva/jwt-go"
@@ -19,73 +20,7 @@ const (
 	argMMToken = "mm_token"
 )
 
-func (p *Plugin) handleHTTPUserConnect(w http.ResponseWriter, r *http.Request) (int, error) {
-	// TODO Enforce a GET
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
-	}
-
-	ji, err := p.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	redirectURL, err := ji.GetUserConnectURL(p, mattermostUserId)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	http.Redirect(w, r, redirectURL, http.StatusFound)
-	return http.StatusFound, nil
-}
-
-func (p *Plugin) handleHTTPUserDisconnect(w http.ResponseWriter, r *http.Request) (int, error) {
-	// TODO Enforce a GET
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
-	}
-
-	ji, err := p.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	err = p.DeleteUserInfo(ji, mattermostUserId)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	p.API.PublishWebSocketEvent(
-		WS_EVENT_DISCONNECT,
-		map[string]interface{}{
-			"is_connected": false,
-		},
-		&model.WebsocketBroadcast{UserId: mattermostUserId},
-	)
-
-	html := `
-<!DOCTYPE html>
-<html>
-       <head>
-               <script>
-                       // window.close();
-               </script>
-       </head>
-       <body>
-               <p>Disconnected from JIRA. Please close this page.</p>
-       </body>
-</html>
-`
-
-	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(html))
-
-	return http.StatusOK, nil
-}
-
-func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (int, error) {
+func httpACUserConfig(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
@@ -106,9 +41,11 @@ func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (i
 	bb := &bytes.Buffer{}
 	err = p.userConfigTemplate.ExecuteTemplate(bb, "config",
 		struct {
+			SubmitURL  string
 			JWT        string
 			ArgMMToken string
 		}{
+			SubmitURL:  path.Join(p.GetPluginURLPath(), routeACUserConfigSubmit),
 			JWT:        tokenString,
 			ArgMMToken: argMMToken,
 		})
@@ -120,7 +57,7 @@ func (p *Plugin) handleHTTPUserConfig(w http.ResponseWriter, r *http.Request) (i
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) handleHTTPUserConfigSubmit(w http.ResponseWriter, r *http.Request) (int, error) {
+func httpACUserConfigSubmit(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err

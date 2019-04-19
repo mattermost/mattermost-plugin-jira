@@ -11,6 +11,24 @@ import (
 	"github.com/mattermost/mattermost-server/plugin"
 )
 
+const (
+	routeAPICreateIssue            = "/api/v2/create-issue"
+	routeAPIGetCreateIssueMetadata = "/api/v2//get-create-issue-metadata"
+	routeAPIUserInfo               = "/api/v2/userinfo"
+	routeACInstalled               = "/ac/installed"
+	routeACJSON                    = "/ac/atlassian-connect.json"
+	routeACUninstalled             = "/ac/uninstalled"
+	routeACUserConfig              = "/ac/user-config"
+	routeACUserConfigSubmit        = "/ac/user-config-submit"
+	routeIncomingIssueEvent        = "/issue_event"
+	routeIncomingWebhook           = "/webhook"
+	routeOAuth1Complete            = "/oauth1/complete"
+	routeOAuth1Connect             = "/oauth1/connect"
+	routeOAuth1PublicKey           = "/oauth1/public-key"
+	routeUserConnect               = "/user/connect"
+	routeUserDisconnect            = "/user/disconnect"
+)
+
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
 	config := p.getConfig()
 	if config.UserName == "" {
@@ -18,7 +36,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	status, err := p.handleHTTPRequest(w, r)
+	status, err := handleHTTPRequest(p, w, r)
 	if err != nil {
 		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
 		http.Error(w, err.Error(), status)
@@ -27,56 +45,49 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
 }
 
-func (p *Plugin) handleHTTPRequest(w http.ResponseWriter, r *http.Request) (int, error) {
+func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	switch r.URL.Path {
-	// Atlassian connect and its "lifecycle events"
-	case "/atlassian-connect.json":
-		return p.handleHTTPAtlassianConnect(w, r)
-	case "/installed":
-		return p.handleHTTPInstalled(w, r)
-	case "/uninstalled":
-		return p.handleHTTPUninstalled(w, r)
+	// Issue APIs
+	case routeAPICreateIssue:
+		return httpAPICreateIssue(p, w, r)
+	case routeAPIGetCreateIssueMetadata:
+		return httpAPIGetCreateIssueMetadata(p, w, r)
 
-	// User mapping page
-	case "/user-connect":
-		return p.handleHTTPUserConnect(w, r)
-	case "/user-disconnect":
-		return p.handleHTTPUserDisconnect(w, r)
+	// User APIs
+	case routeAPIUserInfo:
+		return httpAPIGetUserInfo(p, w, r)
 
-	// TODO use a router, make current JIRA instance register its own end-points
+	// Atlassian Connect application
+	case routeACInstalled:
+		return httpACInstalled(p, w, r)
+	case routeACJSON:
+		return httpACJSON(p, w, r)
+	case routeACUninstalled:
+		return httpACUninstalled(p, w, r)
 
-	// Atlassian-connect based user mapping, used for JIRA Cloud
-	case "/user-config":
-		return p.handleHTTPUserConfig(w, r)
-	case "/user-config-submit":
-		return p.handleHTTPUserConfigSubmit(w, r)
-	case "/api/v1/userinfo":
-		return p.handleHTTPGetUserInfo(w, r)
+	// Atlassian Connect user mapping
+	case routeACUserConfig:
+		return httpACUserConfig(p, w, r)
+	case routeACUserConfigSubmit:
+		return httpACUserConfigSubmit(p, w, r)
 
-	// OAuth1 based user mapping, used in JIRA Server
-	case "/oauth1/public-key":
-		return p.handleHTTPOAuth1PublicKey(w, r)
-	case "/oauth1/connect":
-		return p.handleHTTPOAuth1Connect(w, r)
-	case "/oauth1/complete":
-		return p.handleHTTPOAuth1Complete(w, r)
+	// Incoming webhook
+	case routeIncomingWebhook, routeIncomingIssueEvent:
+		return httpWebhook(p, w, r)
 
-	// OAuth2 end-points - NOT FUNCTIONAL. They work with JIRA cloud, but there is
-	// no good way I found to get per-Mattermost instance OAuth2 credentials from
-	// JIRA Cloud.
-	// case "/oauth2/connect":
-	// 	return p.handleHTTPOAuth2Connect(w, r)
-	// case "/oauth2/complete":
-	// 	return p.handleHTTPOAuth2Complete(w, r)
+	// Oauth1 (JIRA Server)
+	case routeOAuth1Complete:
+		return httpOAuth1Complete(p, w, r)
+	case routeOAuth1Connect:
+		return httpOAuth1Connect(p, w, r)
+	case routeOAuth1PublicKey:
+		return httpOAuth1PublicKey(p, w, r)
 
-	case "/webhook",
-		"/issue_event":
-		return p.handleHTTPWebhook(w, r)
-
-	case "/create-issue":
-		return p.handleHTTPCreateIssue(w, r)
-	case "/create-issue-metadata":
-		return p.handleHTTPCreateIssueMetadata(w, r)
+	// User connect/disconnect links
+	case routeUserConnect:
+		return httpUserConnect(p, w, r)
+	case routeUserDisconnect:
+		return httpUserDisconnect(p, w, r)
 	}
 
 	return http.StatusNotFound, fmt.Errorf("Not found")

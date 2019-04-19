@@ -21,7 +21,7 @@
 		</script>
 	</head>
 	<body>
-		<form action="/plugins/jira/user-config-submit">
+		<form action="{{ .SubmitURL }}">
 			<input type="hidden" id="jwt" name="jwt" value="{{ .JWT }}"/>
 			<input type="hidden" id="{{ .ArgMMToken }}" name="{{ .ArgMMToken}}" value="none"/>
 			<input type="submit" value="Submit"/>

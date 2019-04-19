@@ -13,7 +13,6 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 	ajwt "github.com/rbriski/atlassian-jwt"
-	"golang.org/x/oauth2"
 	oauth2_jira "golang.org/x/oauth2/jira"
 )
 
@@ -23,7 +22,6 @@ type jiraCloudInstance struct {
 	// For cloud instances (atlassian-connect.json install and user auth)
 	RawAtlassianSecurityContext string
 	*AtlassianSecurityContext   `json:"none"`
-	oauth2Config                oauth2.Config `json:"none"`
 }
 
 var _ Instance = (*jiraCloudInstance)(nil)

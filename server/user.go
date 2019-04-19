@@ -30,7 +30,73 @@ type UserInfo struct {
 	JIRAURL     string `json:"jira_url,omitempty"`
 }
 
-func (p *Plugin) handleHTTPGetUserInfo(w http.ResponseWriter, r *http.Request) (int, error) {
+func httpUserConnect(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+	// TODO Enforce a GET
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
+		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
+	}
+
+	ji, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	redirectURL, err := ji.GetUserConnectURL(p, mattermostUserId)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	http.Redirect(w, r, redirectURL, http.StatusFound)
+	return http.StatusFound, nil
+}
+
+func httpUserDisconnect(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+	// TODO Enforce a GET
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
+		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
+	}
+
+	ji, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	err = p.DeleteUserInfo(ji, mattermostUserId)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	p.API.PublishWebSocketEvent(
+		WS_EVENT_DISCONNECT,
+		map[string]interface{}{
+			"is_connected": false,
+		},
+		&model.WebsocketBroadcast{UserId: mattermostUserId},
+	)
+
+	html := `
+<!DOCTYPE html>
+<html>
+       <head>
+               <script>
+                       // window.close();
+               </script>
+       </head>
+       <body>
+               <p>Disconnected from JIRA. Please close this page.</p>
+       </body>
+</html>
+`
+
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(html))
+
+	return http.StatusOK, nil
+}
+
+func httpAPIGetUserInfo(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")

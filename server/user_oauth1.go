@@ -14,7 +14,7 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
-func (p *Plugin) handleHTTPOAuth1Connect(w http.ResponseWriter, r *http.Request) (int, error) {
+func httpOAuth1Connect(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
@@ -49,7 +49,7 @@ func (p *Plugin) handleHTTPOAuth1Connect(w http.ResponseWriter, r *http.Request)
 	return http.StatusFound, nil
 }
 
-func (p *Plugin) handleHTTPOAuth1Complete(w http.ResponseWriter, r *http.Request) (int, error) {
+func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
@@ -127,7 +127,7 @@ func (p *Plugin) handleHTTPOAuth1Complete(w http.ResponseWriter, r *http.Request
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) handleHTTPOAuth1PublicKey(w http.ResponseWriter, r *http.Request) (int, error) {
+func httpOAuth1PublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	userID := r.Header.Get("Mattermost-User-Id")
 	if userID == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")

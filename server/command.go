@@ -2,13 +2,21 @@ package main
 
 import (
 	"fmt"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
 )
 
-const COMMAND_HELP = `* |/jira connect| - Connect your Mattermost account to your JIRA account
+const helpText = `/jira command help:
+
+| command | description |
+| ------- | ----------- |
+| /jira connect | Connect your Mattermost account to your JIRA account |
+| /jira disconnect | Disconnect your Mattermost account to your JIRA account |
+| /jira instance [list/add/select] | Manage JIRA instances connected to Mattermost |
 `
 
 func getCommand() *model.Command {
@@ -17,9 +25,156 @@ func getCommand() *model.Command {
 		DisplayName:      "JIRA",
 		Description:      "Integration with JIRA.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect",
+		AutoCompleteDesc: "Available commands: connect, disconnect, help",
 		AutoCompleteHint: "[command]",
 	}
+}
+
+func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
+	args := strings.Fields(commandArgs.Command)
+	if len(args) < 2 {
+		return responsef("Invalid syntax. Must be at least /jira action."), nil
+	}
+	action := args[1]
+	args = args[2:]
+
+	switch action {
+	case "help":
+		return responsef(helpText), nil
+	case "connect":
+		return executeConnect(p, c, args, true), nil
+	case "disconnect":
+		return executeConnect(p, c, args, false), nil
+	case "instance":
+		return executeInstance(p, c, args), nil
+	}
+
+	return responsef("Action %v is not supported.", action), nil
+}
+
+// executeConnect handles "connect" and "disconnect" commands
+func executeConnect(p *Plugin, c *plugin.Context, args []string, connect bool) *model.CommandResponse {
+	if connect {
+		return responsef("[Click here to link your JIRA account.](%s/%s)",
+			p.GetPluginURL(), routeUserConnect)
+	} else {
+		return responsef("[Click here to unlink your JIRA account.](%s/%s)",
+			p.GetPluginURL(), routeUserDisconnect)
+	}
+}
+
+func executeInstance(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
+	if len(args) < 1 {
+		return responsef("Usage: /jira instance [add,list,select,delete]")
+	}
+	action := args[0]
+	args = args[1:]
+
+	switch action {
+	case "list":
+		return executeInstanceList(p, c, args)
+	case "add":
+		return executeInstanceAdd(p, c, args)
+	case "select":
+		return executeInstanceSelect(p, c, args)
+	}
+	return responsef("Usage: /jira instance [add,list,select,delete]")
+}
+
+func executeInstanceList(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
+	known, err := p.LoadKnownJIRAInstances()
+	if err != nil {
+		return responsef("Failed to load known JIRA instances: %v", err)
+	}
+	if len(known) == 0 {
+		return responsef("(none installed)\n")
+	}
+
+	current, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return responsef("Failed to load current JIRA instance: %v", err)
+	}
+
+	keys := []string{}
+	for key, _ := range known {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	text := "Known JIRA instances (currently instance is **bold**)\n\n| |Key|Type|\n|--|--|--|\n"
+	for i, key := range keys {
+		typ := known[key]
+		if key == current.GetURL() {
+			key = "**" + key + "**"
+			typ = "**" + typ + "**"
+		}
+		text += fmt.Sprintf("|%v|%s|%s|\n", i+1, key, typ)
+	}
+	return responsef(text)
+}
+
+func executeInstanceAdd(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
+
+	if len(args) < 1 {
+		return responsef("Usage: `/jira instance add server {URL}` or `/jira instance add cloud`")
+	}
+	typ := args[0]
+
+	switch typ {
+	case JIRATypeServer:
+		if len(args) < 2 {
+			return responsef("Usage: `/jira instance add server {URL}`")
+		}
+		jiraURL := args[1]
+
+		ji := NewJIRAServerInstance(p, jiraURL)
+		err := p.StoreJIRAInstance(ji, true)
+		if err != nil {
+			return responsef("Failed to store JIRA instance %s: %v", jiraURL, err)
+		}
+		return executeInstanceList(p, c, nil)
+
+	case JIRATypeCloud:
+		// TODO the exact group membership in JIRA?
+		return responsef(`As an admin, upload an application from %s/%s. The link can be found in "JIRA Settings/Applications/Manage"`,
+			p.GetPluginURL(), routeACJSON)
+	}
+
+	return responsef("Usage: `/jira instance add server {URL}` or `/jira instance add cloud`")
+}
+
+func executeInstanceSelect(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
+	if len(args) < 1 {
+		return responsef("/jira instance select {URL|#} ")
+	}
+	instanceKey := args[0]
+	num, err := strconv.ParseUint(instanceKey, 10, 8)
+	if err == nil {
+		known, err := p.LoadKnownJIRAInstances()
+		if err != nil {
+			return responsef("Failed to load known JIRA instances: %v", err)
+		}
+		if num < 1 || int(num) > len(known) {
+			return responsef("Wrong instance number %v, must be 1-%v\n", num, len(known))
+		}
+
+		keys := []string{}
+		for key, _ := range known {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		instanceKey = keys[num-1]
+	}
+
+	ji, err := p.LoadJIRAInstance(instanceKey)
+	if err != nil {
+		return responsef("failed to load JIRA instance %s: %v", instanceKey, err)
+	}
+	err = p.StoreJIRAInstance(ji, true)
+	if err != nil {
+		return responsef("failed to store JIRA instance %s: %v", instanceKey, err)
+	}
+
+	return executeInstanceList(p, c, args)
 }
 
 func responsef(format string, args ...interface{}) *model.CommandResponse {
@@ -30,110 +185,4 @@ func responsef(format string, args ...interface{}) *model.CommandResponse {
 		IconURL:      JIRA_ICON_URL,
 		Type:         model.POST_DEFAULT,
 	}
-}
-
-func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	split := strings.Fields(commandArgs.Command)
-	if len(split) < 2 {
-		return responsef("Invalid syntax. Must be at least /jira action."), nil
-	}
-	command := split[0]
-	if command != "/jira" {
-		return nil, nil
-	}
-	action := split[1]
-	split = split[2:]
-
-	switch action {
-	case "connect":
-		if p.GetSiteURL() == "" {
-			return responsef("plugin configuration error."), nil
-		}
-
-		return responsef("[Click here to link your JIRA account.](%s/user-connect)",
-			p.GetPluginURL()), nil
-
-	case "disconnect":
-		if p.GetSiteURL() == "" {
-			return responsef("plugin configuration error."), nil
-		}
-
-		return responsef("[Click here to unlink your JIRA account.](%s/user-disconnect)",
-			p.GetPluginURL()), nil
-
-	case "instance":
-		if len(split) < 1 {
-			return responsef("/jira instance [add,list,select]"), nil
-		}
-		verb := split[0]
-		split = split[1:]
-
-		switch verb {
-		case "list":
-			known, err := p.LoadKnownJIRAInstances()
-			if err != nil {
-				return responsef("couldn't load known JIRA instances: %v", err), nil
-			}
-
-			current, err := p.LoadCurrentJIRAInstance()
-			if err != nil {
-				return responsef("couldn't load current JIRA instance: %v", err), nil
-			}
-
-			text := ""
-			for key, typ := range known {
-				if key == current.GetURL() {
-					text += "**"
-				}
-				text += key + " - " + typ
-				if key == current.GetURL() {
-					text += "**"
-				}
-				text += "\n"
-			}
-
-			if text == "" {
-				text = "(none installed)\n"
-			}
-
-			return responsef(text), nil
-
-		case "add":
-			if len(split) < 2 {
-				return responsef("/jira instance add {type} {URL}"), nil
-			}
-			typ := split[0]
-			if typ != JIRATypeServer {
-				return responsef(`only type "server" supported by /jira add`), nil
-			}
-			jiraURL := split[1]
-
-			ji := NewJIRAServerInstance(p, jiraURL)
-			err := p.StoreJIRAInstance(ji, true)
-			if err != nil {
-				return responsef("failed to store JIRA instance %s: %v", jiraURL, err), nil
-			}
-
-			return responsef("Added and selected %s (type %s).", jiraURL, typ), nil
-
-		case "select":
-			if len(split) < 1 {
-				return responsef("/jira instance select {URL}"), nil
-			}
-			jiraURL := split[0]
-
-			ji, err := p.LoadJIRAInstance(jiraURL)
-			if err != nil {
-				return responsef("failed to load JIRA instance %s: %v", jiraURL, err), nil
-			}
-			err = p.StoreJIRAInstance(ji, true)
-			if err != nil {
-				return responsef("failed to store JIRA instance %s: %v", jiraURL, err), nil
-			}
-
-			return responsef("Now using JIRA at %s", jiraURL), nil
-		}
-	}
-
-	return responsef("Command %v is not supported.", action), nil
 }

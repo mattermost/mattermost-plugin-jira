@@ -24,7 +24,7 @@ export const getCreateIssueMetadata = () => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            const data = await doFetch(`${baseUrl}/create-issue-metadata`, {
+            const data = await doFetch(`${baseUrl}/api/v2/create-issue-metadata`, {
                 method: 'get',
             });
 
@@ -39,7 +39,7 @@ export const createIssue = (payload) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            const data = await doFetch(`${baseUrl}/create-issue`, {
+            const data = await doFetch(`${baseUrl}/api/v2/create-issue`, {
                 method: 'post',
                 body: JSON.stringify(payload),
             });
@@ -56,7 +56,7 @@ export function getConnected() {
         let data;
         const baseUrl = getPluginServerRoute(getState());
         try {
-            data = await doFetch(`${baseUrl}/api/v1/userinfo`, {
+            data = await doFetch(`${baseUrl}/api/v2/userinfo`, {
                 method: 'get',
             });
         } catch (error) {

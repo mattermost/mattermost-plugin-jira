@@ -526,7 +526,6 @@
     "github.com/rbriski/atlassian-jwt",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
-    "golang.org/x/oauth2",
     "golang.org/x/oauth2/jira",
   ]
   solver-name = "gps-cdcl"
