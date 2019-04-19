@@ -62,8 +62,8 @@ func (jci jiraCloudInstance) GetUserConnectURL(p *Plugin, mattermostUserId strin
 
 	v := url.Values{}
 	v.Add(argMMToken, token)
-	return fmt.Sprintf("%v/login?dest-url=%v/plugins/servlet/ac/mattermost-plugin/user-config?%v",
-		jci.GetURL(), jci.GetURL(), v.Encode()), nil
+	return fmt.Sprintf("%v/login?dest-url=%v/plugins/servlet/ac/%s/user-config?%v",
+		jci.GetURL(), jci.GetURL(), jci.AtlassianSecurityContext.Key, v.Encode()), nil
 }
 
 func (jci jiraCloudInstance) GetURL() string {

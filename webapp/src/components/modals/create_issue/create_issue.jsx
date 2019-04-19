@@ -97,8 +97,8 @@ export default class CreateIssueModal extends PureComponent {
             const issue = issues.find((i) => i.name === issueType);
             if (issue) {
                 return Object.values(issue.fields).filter((f) => {
-                    return (f.required || f.key === 'description') &&
-                        f.key !== 'project' && f.key !== 'issuetype' && f.key !== 'reporter';
+                    return (f.required || f.schema.system === 'description') &&
+                        f.schema.system !== 'project' && f.schema.system !== 'issuetype' && f.schema.system !== 'reporter';
                 });
             }
         }
@@ -189,16 +189,15 @@ export default class CreateIssueModal extends PureComponent {
     renderFields = () => {
         const {fields} = this.state;
         const fieldsToRender = this.getFields(fields.project.key, fields.issuetype.name);
-
         return fieldsToRender.map((f) => {
-            if (f.key === 'description') {
+            if (f.schema.system === 'description') {
                 return (
                     <Input
-                        key={`${fields.issuetype.name}-${f.key}`}
-                        id={f.key}
-                        label={f.name}
+                        key={`${fields.issuetype.name}-${f.schema.system}`}
+                        id={f.schema.system}
+                        label={f.schema.system}
                         type='textarea'
-                        value={fields[f.key]}
+                        value={fields[f.schema.system]}
                         onChange={this.handleSettingChange}
                         required={f.required}
                     />
@@ -206,12 +205,16 @@ export default class CreateIssueModal extends PureComponent {
             }
 
             if (f.schema.type === 'string') {
+                let value = '';
+                if (fields[f.schema.system]) {
+                    value = fields[f.schema.system];
+                }
                 return (
                     <Input
-                        key={`${fields.issuetype.name}-${f.key}`}
-                        id={f.key}
-                        label={f.name}
-                        value={fields[f.key]}
+                        key={`${fields.issuetype.name}-${f.schema.system}`}
+                        id={f.schema.system}
+                        label={f.schema.system}
+                        value={value}
                         onChange={this.handleSettingChange}
                         required={f.required}
                     />
@@ -219,10 +222,10 @@ export default class CreateIssueModal extends PureComponent {
             }
 
             let value;
-            if (f.hasDefaultValue && !fields[f.key]) {
+            if (f.hasDefaultValue && !fields[f.schema.system]) {
                 value = f.defaultValue && f.defaultValue.name;
             } else {
-                value = fields[f.key];
+                value = fields[f.schema.system];
             }
 
             if (f.allowedValues && f.allowedValues.length) {
@@ -230,9 +233,9 @@ export default class CreateIssueModal extends PureComponent {
 
                 return (
                     <MultiSelect
-                        key={`${fields.issuetype.name}-${f.key}`}
-                        id={f.key}
-                        label={f.name}
+                        key={`${fields.issuetype.name}-${f.schema.system}`}
+                        id={f.schema.system}
+                        label={f.schema.system}
                         options={options}
                         selected={value && value.map((v) => v.name)}
                         required={f.required}

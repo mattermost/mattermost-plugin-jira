@@ -38,7 +38,7 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 		return
 	}
 
-	projectKeys, err := p.loadJIRAProjectKeys(jiraClient, false)
+	projectKeys, err := p.loadJIRAProjectKeys(jiraClient)
 	if err != nil {
 		err = errors.WithMessage(err, "failed to load project keys from JIRA")
 		return

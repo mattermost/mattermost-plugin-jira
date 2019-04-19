@@ -43,9 +43,6 @@ type config struct {
 	// secret used to generate auth tokens in the Atlassian connect
 	// user mapping flow
 	tokenSecret []byte
-
-	// Fetched from JIRA once, then cached
-	projectKeys []string
 }
 
 type Plugin struct {

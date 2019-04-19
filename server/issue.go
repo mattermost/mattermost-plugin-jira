@@ -144,7 +144,6 @@ func (p *Plugin) handleHTTPCreateIssueMetadata(w http.ResponseWriter, r *http.Re
 	}
 
 	cimd, _, err := jiraClient.Issue.GetCreateMetaWithOptions(&jira.GetQueryOptions{
-		// ProjectKeys: "",
 		Expand: "projects.issuetypes.fields",
 	})
 	if err != nil {
@@ -160,24 +159,6 @@ func (p *Plugin) handleHTTPCreateIssueMetadata(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("could not write output: %v", err)
 	}
-
-	// req, _ := jiraClient.NewRawRequest("GET", "rest/api/2/issue/createmeta", nil)
-	//
-	// if options != nil {
-	// 	q, err := query.Values(options)
-	// 	if err != nil {
-	// 		return http.StatusInternalServerError, fmt.Errorf("could not get the create issue metadata from Jira: %v", err)
-	// 	}
-	// 	req.URL.RawQuery = q.Encode()
-	// }
-	// httpResp, err := client.Do(req)
-	// if err != nil {
-	// 	return http.StatusInternalServerError, fmt.Errorf("could not get the create issue metadata from Jira in request: %v", err)
-	// }
-	//
-	// defer httpResp.Body.Close()
-	// w.Header().Set("Content-Type", "application/json")
-	// io.Copy(w, httpResp.Body)
 
 	return http.StatusOK, nil
 }

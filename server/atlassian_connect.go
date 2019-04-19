@@ -9,12 +9,20 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 )
 
+var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
+
 func (p *Plugin) handleHTTPAtlassianConnect(w http.ResponseWriter, r *http.Request) (int, error) {
+	enc := func(in string) string {
+		return regexpNonAlnum.ReplaceAllString(in, "-")
+	}
+
 	vals := map[string]string{
 		"BaseURL":     p.GetPluginURL(),
 		"ExternalURL": p.GetSiteURL(),
+		"Key":         "mattermost-" + enc(p.GetSiteURL()),
 	}
 	bb := &bytes.Buffer{}
 	err := p.atlassianConnectTemplate.ExecuteTemplate(bb, "config", vals)

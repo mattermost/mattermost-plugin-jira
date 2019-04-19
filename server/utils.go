@@ -40,26 +40,16 @@ func (p *Plugin) CreateBotDMPost(userID, message, postType string) *model.AppErr
 	return nil
 }
 
-func (p *Plugin) loadJIRAProjectKeys(jiraClient *jira.Client, forceReload bool) ([]string, error) {
-	conf := p.getConfig()
-
-	if len(conf.projectKeys) > 0 && !forceReload {
-		return conf.projectKeys, nil
-	}
-
+func (p *Plugin) loadJIRAProjectKeys(jiraClient *jira.Client) ([]string, error) {
 	list, _, err := jiraClient.Project.GetList()
 	if err != nil {
 		return nil, errors.WithMessage(err, "Error requesting list of JIRA projects")
 	}
+
 	projectKeys := []string{}
 	for _, proj := range *list {
 		projectKeys = append(projectKeys, proj.Key)
 	}
-
-	p.updateConfig(func(conf *config) {
-		conf.projectKeys = projectKeys
-	})
-
 	return projectKeys, nil
 }
 

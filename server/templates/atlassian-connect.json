@@ -1,6 +1,6 @@
 {{define "config"}}
 {
-	"key": "mattermost-plugin",
+	"key": "{{ .Key }}",
 	"name": "Mattermost Plugin ({{ .ExternalURL }})",
 	"description": "Add-on for the Mattermost JIRA plugin.",
 	"vendor": {
