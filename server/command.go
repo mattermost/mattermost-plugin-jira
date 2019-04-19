@@ -22,7 +22,7 @@ func getCommand() *model.Command {
 	}
 }
 
-func ephf(format string, args ...interface{}) *model.CommandResponse {
+func responsef(format string, args ...interface{}) *model.CommandResponse {
 	return &model.CommandResponse{
 		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
 		Text:         fmt.Sprintf(format, args...),
@@ -35,7 +35,7 @@ func ephf(format string, args ...interface{}) *model.CommandResponse {
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	split := strings.Fields(commandArgs.Command)
 	if len(split) < 2 {
-		return ephf("Invalid syntax. Must be at least /jira action."), nil
+		return responsef("Invalid syntax. Must be at least /jira action."), nil
 	}
 	command := split[0]
 	if command != "/jira" {
@@ -47,23 +47,23 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 	switch action {
 	case "connect":
 		if p.GetSiteURL() == "" {
-			return ephf("plugin configuration error."), nil
+			return responsef("plugin configuration error."), nil
 		}
 
-		return ephf("[Click here to link your JIRA account.](%s/user-connect)",
+		return responsef("[Click here to link your JIRA account.](%s/user-connect)",
 			p.GetPluginURL()), nil
 
 	case "disconnect":
 		if p.GetSiteURL() == "" {
-			return ephf("plugin configuration error."), nil
+			return responsef("plugin configuration error."), nil
 		}
 
-		return ephf("[Click here to unlink your JIRA account.](%s/user-disconnect)",
+		return responsef("[Click here to unlink your JIRA account.](%s/user-disconnect)",
 			p.GetPluginURL()), nil
 
 	case "instance":
 		if len(split) < 1 {
-			return ephf("/jira instance [add,list,select]"), nil
+			return responsef("/jira instance [add,list,select]"), nil
 		}
 		verb := split[0]
 		split = split[1:]
@@ -72,12 +72,12 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 		case "list":
 			known, err := p.LoadKnownJIRAInstances()
 			if err != nil {
-				return ephf("couldn't load known JIRA instances: %v", err), nil
+				return responsef("couldn't load known JIRA instances: %v", err), nil
 			}
 
 			current, err := p.LoadCurrentJIRAInstance()
 			if err != nil {
-				return ephf("couldn't load current JIRA instance: %v", err), nil
+				return responsef("couldn't load current JIRA instance: %v", err), nil
 			}
 
 			text := ""
@@ -96,44 +96,44 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 				text = "(none installed)\n"
 			}
 
-			return ephf(text), nil
+			return responsef(text), nil
 
 		case "add":
 			if len(split) < 2 {
-				return ephf("/jira instance add {type} {URL}"), nil
+				return responsef("/jira instance add {type} {URL}"), nil
 			}
 			typ := split[0]
 			if typ != JIRATypeServer {
-				return ephf(`only type "server" supported by /jira add`), nil
+				return responsef(`only type "server" supported by /jira add`), nil
 			}
 			jiraURL := split[1]
 
 			ji := NewJIRAServerInstance(p, jiraURL)
 			err := p.StoreJIRAInstance(ji, true)
 			if err != nil {
-				return ephf("failed to store JIRA instance %s: %v", jiraURL, err), nil
+				return responsef("failed to store JIRA instance %s: %v", jiraURL, err), nil
 			}
 
-			return ephf("Added and selected %s (type %s).", jiraURL, typ), nil
+			return responsef("Added and selected %s (type %s).", jiraURL, typ), nil
 
 		case "select":
 			if len(split) < 1 {
-				return ephf("/jira instance select {URL}"), nil
+				return responsef("/jira instance select {URL}"), nil
 			}
 			jiraURL := split[0]
 
 			ji, err := p.LoadJIRAInstance(jiraURL)
 			if err != nil {
-				return ephf("failed to load JIRA instance %s: %v", jiraURL, err), nil
+				return responsef("failed to load JIRA instance %s: %v", jiraURL, err), nil
 			}
 			err = p.StoreJIRAInstance(ji, true)
 			if err != nil {
-				return ephf("failed to store JIRA instance %s: %v", jiraURL, err), nil
+				return responsef("failed to store JIRA instance %s: %v", jiraURL, err), nil
 			}
 
-			return ephf("Now using JIRA at %s", jiraURL), nil
+			return responsef("Now using JIRA at %s", jiraURL), nil
 		}
 	}
 
-	return ephf("Command %v is not supported.", action), nil
+	return responsef("Command %v is not supported.", action), nil
 }
