@@ -49,7 +49,7 @@ func (jis jiraServerInstance) GetUserConnectURL(p *Plugin, mattermostUserId stri
 		return "", err
 	}
 
-	err = p.StoreOAuth1RequestToken(token, secret)
+	err = p.StoreOneTimeSecret(token, secret)
 	if err != nil {
 		return "", err
 	}

@@ -23,7 +23,6 @@ const (
 	routeIncomingIssueEvent        = "/issue_event"
 	routeIncomingWebhook           = "/webhook"
 	routeOAuth1Complete            = "/oauth1/complete"
-	routeOAuth1Connect             = "/oauth1/connect"
 	routeOAuth1PublicKey           = "/oauth1/public-key"
 	routeUserConnect               = "/user/connect"
 	routeUserDisconnect            = "/user/disconnect"
@@ -78,8 +77,6 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	// Oauth1 (JIRA Server)
 	case routeOAuth1Complete:
 		return httpOAuth1Complete(p, w, r)
-	case routeOAuth1Connect:
-		return httpOAuth1Connect(p, w, r)
 	case routeOAuth1PublicKey:
 		return httpOAuth1PublicKey(p, w, r)
 

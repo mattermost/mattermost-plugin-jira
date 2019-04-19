@@ -12,14 +12,14 @@ import (
 )
 
 const (
-	keyCurrentJIRAInstance   = "current_jira_instance"
-	keyKnownJIRAInstances    = "known_jira_instances"
-	keyRSAKey                = "rsa_key"
-	keyTokenSecret           = "token_secret"
-	prefixJIRAInstance       = "jira_instance_"
-	prefixJIRAUserInfo       = "mm_j_" // + Mattermost user ID
-	prefixMattermostUserId   = "j_mm_" // + JIRA username
-	prefixOAuth1RequestToken = "oauth1_reqtok_"
+	keyCurrentJIRAInstance = "current_jira_instance"
+	keyKnownJIRAInstances  = "known_jira_instances"
+	keyRSAKey              = "rsa_key"
+	keyTokenSecret         = "token_secret"
+	prefixJIRAInstance     = "jira_instance_"
+	prefixJIRAUserInfo     = "mm_j_" // + Mattermost user ID
+	prefixMattermostUserId = "j_mm_" // + JIRA username
+	prefixOneTimeSecret    = "ots_"  // + unique key that will be deleted after the first verification
 )
 
 func keyWithInstance(ji Instance, key string) string {
@@ -309,24 +309,24 @@ func (p *Plugin) EnsureRSAKey() (rsaKey *rsa.PrivateKey, err error) {
 	return rsaKey, nil
 }
 
-func (p *Plugin) StoreOAuth1RequestToken(token, secret string) error {
-	aerr := p.API.KVSet(md5key(prefixOAuth1RequestToken, token), []byte(secret))
+func (p *Plugin) StoreOneTimeSecret(token, secret string) error {
+	aerr := p.API.KVSet(md5key(prefixOneTimeSecret, token), []byte(secret))
 	if aerr != nil {
 		return aerr
 	}
 	return nil
 }
 
-func (p *Plugin) LoadOAuth1RequestToken(token string) (string, error) {
-	b, aerr := p.API.KVGet(md5key(prefixOAuth1RequestToken, token))
+func (p *Plugin) LoadOneTimeSecret(token string) (string, error) {
+	b, aerr := p.API.KVGet(md5key(prefixOneTimeSecret, token))
 	if aerr != nil {
 		return "", aerr
 	}
 	return string(b), nil
 }
 
-func (p *Plugin) DeleteOAuth1RequestToken(token string) error {
-	aerr := p.API.KVDelete(md5key(prefixOAuth1RequestToken, token))
+func (p *Plugin) DeleteOneTimeSecret(token string) error {
+	aerr := p.API.KVDelete(md5key(prefixOneTimeSecret, token))
 	if aerr != nil {
 		return aerr
 	}

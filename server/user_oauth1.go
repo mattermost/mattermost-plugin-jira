@@ -14,40 +14,7 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
-func httpOAuth1Connect(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	ji, err := p.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	jis, ok := ji.(*jiraServerInstance)
-	if !ok {
-		return http.StatusInternalServerError, fmt.Errorf("Must be a JIRA Server instance")
-	}
-
-	oauth1Config, err := jis.GetOAuth1Config()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	requestToken, requestSecret, err := oauth1Config.RequestToken()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	err = p.StoreOAuth1RequestToken(requestToken, requestSecret)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	authURL, err := oauth1Config.AuthorizationURL(requestToken)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	http.Redirect(w, r, authURL.String(), http.StatusFound)
-	return http.StatusFound, nil
-}
+const paramOTS = "ots"
 
 func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	ji, err := p.LoadCurrentJIRAInstance()
@@ -65,12 +32,14 @@ func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 		return http.StatusInternalServerError, err
 	}
 
-	requestSecret, err := p.LoadOAuth1RequestToken(requestToken)
+	requestSecret, err := p.LoadOneTimeSecret(requestToken)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-
-	err = p.DeleteOAuth1RequestToken(requestToken)
+	err = p.DeleteOneTimeSecret(requestToken)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
 
 	mattermostUserId := r.Header.Get("Mattermost-User-ID")
 	if mattermostUserId == "" {

@@ -100,7 +100,7 @@ func executeInstanceList(p *Plugin, c *plugin.Context, args []string) *model.Com
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
-	text := "Known JIRA instances (currently instance is **bold**)\n\n| |Key|Type|\n|--|--|--|\n"
+	text := "Known JIRA instances (selected instance is **bold**)\n\n| |Key|Type|\n|--|--|--|\n"
 	for i, key := range keys {
 		typ := known[key]
 		if key == current.GetURL() {
