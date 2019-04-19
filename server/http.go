@@ -13,7 +13,7 @@ import (
 
 const (
 	routeAPICreateIssue            = "/api/v2/create-issue"
-	routeAPIGetCreateIssueMetadata = "/api/v2//get-create-issue-metadata"
+	routeAPIGetCreateIssueMetadata = "/api/v2/get-create-issue-metadata"
 	routeAPIUserInfo               = "/api/v2/userinfo"
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"

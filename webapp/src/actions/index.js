@@ -24,7 +24,7 @@ export const getCreateIssueMetadata = () => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            const data = await doFetch(`${baseUrl}/api/v2/create-issue-metadata`, {
+            const data = await doFetch(`${baseUrl}/api/v2/get-create-issue-metadata`, {
                 method: 'get',
             });
 
