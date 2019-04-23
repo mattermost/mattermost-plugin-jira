@@ -310,7 +310,8 @@ func (p *Plugin) EnsureRSAKey() (rsaKey *rsa.PrivateKey, err error) {
 }
 
 func (p *Plugin) StoreOneTimeSecret(token, secret string) error {
-	aerr := p.API.KVSet(md5key(prefixOneTimeSecret, token), []byte(secret))
+	// Expire in 15 minutes
+	aerr := p.API.KVSetWithExpiry(md5key(prefixOneTimeSecret, token), []byte(secret), 15*60)
 	if aerr != nil {
 		return aerr
 	}

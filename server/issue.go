@@ -14,18 +14,17 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
-type MattermostCreateIssueRequest struct {
-	PostId string           `json:"post_id"`
-	Fields jira.IssueFields `json:"fields"`
-}
-
 func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
 	}
 
-	create := &MattermostCreateIssueRequest{}
+	create := &struct {
+		PostId string           `json:"post_id"`
+		Fields jira.IssueFields `json:"fields"`
+	}{}
+
 	err := json.NewDecoder(r.Body).Decode(&create)
 	if err != nil {
 		return http.StatusBadRequest, err

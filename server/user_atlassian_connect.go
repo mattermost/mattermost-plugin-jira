@@ -35,9 +35,6 @@ func httpACUserConfig(p *Plugin, w http.ResponseWriter, r *http.Request) (int, e
 		return http.StatusBadRequest, err
 	}
 
-	// TODO: Ideally find a way to display a message in the form that includes
-	// the MM user ID, not yet sure how to best do it.
-
 	bb := &bytes.Buffer{}
 	err = p.userConfigTemplate.ExecuteTemplate(bb, "config",
 		struct {
