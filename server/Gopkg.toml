@@ -9,4 +9,4 @@
 
 [[constraint]]
   name = "github.com/mattermost/mattermost-server"
-  version = "5.8"
+  version = "5.6"

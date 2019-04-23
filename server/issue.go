@@ -9,7 +9,8 @@ import (
 	"fmt"
 	"net/http"
 
-	jira "github.com/andygrunwald/go-jira"
+	"github.com/andygrunwald/go-jira"
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
 )
@@ -17,7 +18,7 @@ import (
 func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,
-			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
+			errors.New("Request: " + r.Method + " is not allowed, must be POST")
 	}
 
 	create := &struct {
@@ -27,32 +28,37 @@ func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 
 	err := json.NewDecoder(r.Body).Decode(&create)
 	if err != nil {
-		return http.StatusBadRequest, err
+		return http.StatusBadRequest, errors.WithMessage(err, "Couldn't decode incoming request")
 	}
 
-	mmUserID := r.Header.Get("Mattermost-User-Id")
-	if mmUserID == "" {
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
 	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, errors.WithMessage(err, "Couldn't load current JIRA instance")
 	}
 
-	jiraUser, err := p.LoadJIRAUser(ji, mmUserID)
+	jiraUser, err := p.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, errors.WithMessage(err, "Couldn't load current JIRA user info for "+mattermostUserId)
 	}
 
 	jiraClient, err := ji.GetJIRAClient(jiraUser)
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("could not get jira client: %v", err)
+		return http.StatusInternalServerError, errors.WithMessage(err, fmt.Sprintf("Couldn't load JIRA client for %s at %s", jiraUser.Name, ji.GetKey()))
 	}
 
 	// Lets add a permalink to the post in the Jira Description
-	description := create.Fields.Description
-	post, _ := p.API.GetPost(create.PostId)
+	post, aerr := p.API.GetPost(create.PostId)
+	if aerr != nil {
+		return http.StatusInternalServerError, errors.WithMessage(aerr, "Couldn't load post "+create.PostId)
+	}
+	if post == nil {
+		return http.StatusInternalServerError, errors.New("Couldn't load post " + create.PostId + ": not found")
+	}
 	if channel, _ := p.API.GetChannel(post.ChannelId); channel != nil {
 		if team, _ := p.API.GetTeam(channel.TeamId); team != nil {
 			permalink := fmt.Sprintf("%v/%v/pl/%v",
@@ -78,19 +84,24 @@ func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 		return http.StatusInternalServerError, fmt.Errorf("could not create issue in jira: %v", err)
 	}
 
-	// In case the post message is different than the description
-	if post != nil && post.UserId == mmUserID && post.Message != description && len(description) > 0 {
-		post.Message = description
-		p.API.UpdatePost(post)
-	}
+	//TODO: raise with Jason
+	// // In case the post message is different than the description
+	// description := create.Fields.Description
+	// if post != nil && post.UserId == mattermostUserId && post.Message != description && len(description) > 0 {
+	// 	post.Message = description
+	// 	p.API.UpdatePost(post)
+	// }
 
-	if post != nil && len(post.FileIds) > 0 {
+	// Upload any attachments in the background
+	if len(post.FileIds) > 0 {
 		go func() {
 			for _, fileId := range post.FileIds {
 				info, aerr := p.API.GetFileInfo(fileId)
 				if aerr == nil {
+					// TODO: large file support? Ignoring errors for now is good enough...
 					byteData, aerr := p.API.ReadFile(info.Path)
 					if aerr != nil {
+						// TODO report errors, as DMs from JIRA bot?
 						return
 					}
 					jiraClient.Issue.PostAttachment(created.ID, bytes.NewReader(byteData), info.Name)
@@ -100,13 +111,12 @@ func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 	}
 
 	// Reply to the post with the issue link that was created
-
 	reply := &model.Post{
 		// TODO: Why is this not created.Self?
 		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.GetURL(), created.Key),
 		ChannelId: post.ChannelId,
 		RootId:    create.PostId,
-		UserId:    mmUserID,
+		UserId:    mattermostUserId,
 	}
 	p.API.CreatePost(reply)
 
@@ -122,8 +132,8 @@ func httpAPIGetCreateIssueMetadata(p *Plugin, w http.ResponseWriter, r *http.Req
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
 	}
 
-	mmUserID := r.Header.Get("Mattermost-User-Id")
-	if mmUserID == "" {
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
 		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
 	}
 
@@ -132,7 +142,7 @@ func httpAPIGetCreateIssueMetadata(p *Plugin, w http.ResponseWriter, r *http.Req
 		return http.StatusInternalServerError, err
 	}
 
-	jiraUser, err := p.LoadJIRAUser(ji, mmUserID)
+	jiraUser, err := p.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
