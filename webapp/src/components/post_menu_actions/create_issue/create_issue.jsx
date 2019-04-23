@@ -36,7 +36,7 @@ export default class CreateIssuePostMenuAction extends PureComponent {
     };
 
     connectClick = () => {
-        window.open('/plugins/' + PluginId + '/oauth/connect');
+        window.open('/plugins/' + PluginId + '/user/connect');
     }
 
     render() {
@@ -45,7 +45,6 @@ export default class CreateIssuePostMenuAction extends PureComponent {
         }
 
         const conn = this.props.connected || {};
-
         let content;
         if (conn.connected) {
             content = (
