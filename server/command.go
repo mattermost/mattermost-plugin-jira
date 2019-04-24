@@ -148,8 +148,8 @@ func executeInstanceSelect(p *Plugin, c *plugin.Context, args []string) *model.C
 	instanceKey := args[0]
 	num, err := strconv.ParseUint(instanceKey, 10, 8)
 	if err == nil {
-		known, err := p.LoadKnownJIRAInstances()
-		if err != nil {
+		known, loadErr := p.LoadKnownJIRAInstances()
+		if loadErr != nil {
 			return responsef("Failed to load known JIRA instances: %v", err)
 		}
 		if num < 1 || int(num) > len(known) {

@@ -64,7 +64,7 @@ type JIRAWebhook struct {
 	IssueEventTypeName string `json:"issue_event_type_name"`
 }
 
-type parsed struct {
+type parsedJIRAWebhook struct {
 	*JIRAWebhook
 	RawJSON           string
 	headline          string
@@ -80,7 +80,7 @@ type parsed struct {
 }
 
 type notifier interface {
-	notify(ji Instance, parsed *parsed, text string)
+	notify(ji Instance, parsed *parsedJIRAWebhook, text string)
 }
 
 func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -89,8 +89,8 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
 	}
 	// TODO add JWT support
-	config := p.getConfig()
-	if config.Secret == "" || config.UserName == "" {
+	cfg := p.getConfig()
+	if cfg.Secret == "" || cfg.UserName == "" {
 		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret and UserName")
 	}
 
@@ -98,7 +98,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
-	if subtle.ConstantTimeCompare([]byte(r.Form.Get("secret")), []byte(config.Secret)) != 1 {
+	if subtle.ConstantTimeCompare([]byte(r.Form.Get("secret")), []byte(cfg.Secret)) != 1 {
 		return http.StatusForbidden,
 			fmt.Errorf("Request URL: secret did not match")
 	}
@@ -114,7 +114,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 			fmt.Errorf("Request URL: channel is empty")
 	}
 
-	user, appErr := p.API.GetUserByUsername(config.UserName)
+	user, appErr := p.API.GetUserByUsername(cfg.UserName)
 	if appErr != nil {
 		return appErr.StatusCode, fmt.Errorf(appErr.Message)
 	}
@@ -160,7 +160,7 @@ func (w *JIRAWebhook) jiraURL() string {
 	return w.Issue.Self[:pos]
 }
 
-func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsed, error) {
+func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook, error) {
 	bb, err := ioutil.ReadAll(in)
 	if err != nil {
 		return nil, err
@@ -175,7 +175,7 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsed, error) {
 		return nil, fmt.Errorf("No webhook event")
 	}
 
-	parsed := parsed{
+	parsed := parsedJIRAWebhook{
 		JIRAWebhook: &webhook,
 	}
 	parsed.RawJSON = string(bb)
@@ -237,7 +237,7 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsed, error) {
 	return &parsed, nil
 }
 
-func (p *parsed) fromChangeLog(issue string) (string, string) {
+func (p *parsedJIRAWebhook) fromChangeLog(issue string) (string, string) {
 	for _, item := range p.ChangeLog.Items {
 		to := item.ToString
 		from := item.FromString
@@ -286,7 +286,7 @@ func (p *parsed) fromChangeLog(issue string) (string, string) {
 	return "", ""
 }
 
-func (p *Plugin) notify(ji Instance, parsed *parsed, text string) {
+func (p *Plugin) notify(ji Instance, parsed *parsedJIRAWebhook, text string) {
 	if parsed.authorUsername == "" {
 		return
 	}

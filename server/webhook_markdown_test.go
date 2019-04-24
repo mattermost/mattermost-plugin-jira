@@ -126,7 +126,7 @@ func TestMarkdown(t *testing.T) {
 func TestWebhookVariousErrorsForCoverage(t *testing.T) {
 	assert.Equal(t, "", mdUser(nil))
 
-	parsed := &parsed{
+	parsed := &parsedJIRAWebhook{
 		JIRAWebhook: &JIRAWebhook{},
 	}
 	assert.Equal(t, "", parsed.mdIssueReportedBy())

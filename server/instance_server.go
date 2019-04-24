@@ -16,7 +16,7 @@ type jiraServerInstance struct {
 
 	JIRAServerURL string
 
-	oauth1Config *oauth1.Config `json:"none"`
+	oauth1Config *oauth1.Config
 }
 
 var _ Instance = (*jiraServerInstance)(nil)

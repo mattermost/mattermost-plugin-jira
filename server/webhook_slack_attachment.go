@@ -27,7 +27,7 @@ func AsSlackAttachment(in io.Reader, n notifier, ji Instance) (func(post *model.
 	}, nil
 }
 
-func newSlackAttachment(parsed *parsed) *model.SlackAttachment {
+func newSlackAttachment(parsed *parsedJIRAWebhook) *model.SlackAttachment {
 	if parsed.headline == "" {
 		return nil
 	}

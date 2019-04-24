@@ -122,15 +122,15 @@ func (p *Plugin) OnActivate() error {
 	return nil
 }
 
-func (p Plugin) GetPluginURLPath() string {
+func (p *Plugin) GetPluginURLPath() string {
 	return "/plugins/" + manifest.Id
 }
 
-func (p Plugin) GetPluginURL() string {
+func (p *Plugin) GetPluginURL() string {
 	return p.GetSiteURL() + p.GetPluginURLPath()
 }
 
-func (p Plugin) GetSiteURL() string {
+func (p *Plugin) GetSiteURL() string {
 	return *p.API.GetConfig().ServiceSettings.SiteURL
 }
 

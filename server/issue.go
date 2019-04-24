@@ -89,17 +89,17 @@ func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 	if len(post.FileIds) > 0 {
 		go func() {
 			for _, fileId := range post.FileIds {
-				info, appErr := p.API.GetFileInfo(fileId)
-				if appErr == nil {
+				info, fileInfoError := p.API.GetFileInfo(fileId)
+				if fileInfoError == nil {
 					// TODO: large file support? Ignoring errors for now is good enough...
-					byteData, appErr := p.API.ReadFile(info.Path)
-					if appErr != nil {
+					byteData, readFileErr := p.API.ReadFile(info.Path)
+					if readFileErr != nil {
 						// TODO report errors, as DMs from JIRA bot?
-						p.errorf("failed to attach file %s to issue %s: %s", info.Path, created.Key, appErr.Error())
+						p.errorf("failed to attach file %s to issue %s: %s", info.Path, created.Key, readFileErr.Error())
 						return
 					}
-					_, _, err := jiraClient.Issue.PostAttachment(created.ID, bytes.NewReader(byteData), info.Name)
-					if err != nil {
+					_, _, postAttachmentErr := jiraClient.Issue.PostAttachment(created.ID, bytes.NewReader(byteData), info.Name)
+					if postAttachmentErr != nil {
 						// TODO report errors, as DMs from JIRA bot?
 						p.errorf("failed to attach file %s to issue %s: %v", info.Path, created.Key, err)
 						return

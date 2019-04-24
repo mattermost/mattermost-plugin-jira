@@ -38,7 +38,7 @@ func AsMarkdown(in io.Reader, n notifier, ji Instance) (func(post *model.Post), 
 	}, nil
 }
 
-func newMarkdownMessage(parsed *parsed) string {
+func newMarkdownMessage(parsed *parsedJIRAWebhook) string {
 	if parsed.headline == "" {
 		return ""
 	}
