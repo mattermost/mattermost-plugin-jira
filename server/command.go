@@ -10,14 +10,15 @@ import (
 	"github.com/mattermost/mattermost-server/plugin"
 )
 
-const helpText = `/jira command help:
-
-| command | description |
-| ------- | ----------- |
-| /jira connect | Connect your Mattermost account to your JIRA account |
-| /jira disconnect | Disconnect your Mattermost account to your JIRA account |
-| /jira instance [list/add/select] | Manage JIRA instances connected to Mattermost |
-`
+const helpText = "###### Mattermost JIRA Plugin - Slash Command Help\n" +
+	"* `/jira connect` - Connect your Mattermost account to your JIRA account\n" +
+	"* `/jira disconnect` - Disonnect your Mattermost account to your JIRA account\n" +
+	"* `/jira instance` - Manage JIRA instances connected to Mattermost\n" +
+	"  * `list` - List known JIRA instances\n" +
+	"  * `select <key or number>` - Select a known instance as current\n" +
+	"  * `add server <URL>` - Add a JIRA Server instance\n" +
+	"  * `add cloud` - Add a JIRA Cloud instance\n" +
+	""
 
 func getCommand() *model.Command {
 	return &model.Command{
@@ -112,7 +113,6 @@ func executeInstanceList(p *Plugin, c *plugin.Context, args []string) *model.Com
 }
 
 func executeInstanceAdd(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
-
 	if len(args) < 1 {
 		return responsef("Usage: `/jira instance add server {URL}` or `/jira instance add cloud`")
 	}
