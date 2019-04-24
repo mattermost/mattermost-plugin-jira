@@ -28,10 +28,10 @@ const doFetchWithResponse = async (url, options) => {
 
     data = await response.text();
 
-    throw {
+    throw new Error({
         message: data,
         server_error_id: '',
         status_code: 500,
         url,
-    };
+    });
 };

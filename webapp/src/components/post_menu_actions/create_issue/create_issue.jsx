@@ -77,11 +77,3 @@ export default class CreateIssuePostMenuAction extends PureComponent {
         );
     }
 }
-
-const getStyle = (theme) => ({
-    configuration: {
-        padding: '1em',
-        color: theme.centerChannelBg,
-        backgroundColor: theme.centerChannelColor,
-    },
-});

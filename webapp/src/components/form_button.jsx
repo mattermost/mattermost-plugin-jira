@@ -12,6 +12,8 @@ export default class FormButton extends PureComponent {
         defaultMessage: PropTypes.node,
         btnClass: PropTypes.string,
         extraClasses: PropTypes.string,
+        saving: PropTypes.bool,
+        savingMessage: PropTypes.string,
     };
 
     static defaultProps = {

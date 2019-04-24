@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/andygrunwald/go-jira"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -142,7 +143,7 @@ func TestWebhookVariousErrorsForCoverage(t *testing.T) {
 	parsed.IssueEventTypeName = "something-else"
 	assert.Equal(t, "", newMarkdownMessage(parsed))
 
-	parsed.Issue.Fields.Assignee = &JIRAWebhookUser{
+	parsed.Issue.Fields.Assignee = &jira.User{
 		DisplayName: "test",
 	}
 	assert.Equal(t, "Assigned to: **test**", parsed.mdIssueAssignedTo())

@@ -259,7 +259,7 @@ export default class CreateIssueModal extends PureComponent {
 
         let component;
         if (error) {
-            console.error('render error', error);
+            console.error('render error', error); //eslint-disable-line no-console
         }
 
         if (!post || !metadata || !fields.project.key) {
