@@ -23,24 +23,21 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 
 	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
-		err = errors.WithMessage(err, "failed to load current JIRA instance")
 		return
 	}
 
 	jiraUser, err := p.LoadJIRAUser(ji, post.UserId)
 	if err != nil {
-		err = errors.WithMessage(err, "failed to load current JIRA userId: "+post.UserId)
+		return
 	}
 
 	jiraClient, err := ji.GetJIRAClient(jiraUser)
 	if err != nil {
-		err = errors.WithMessage(err, fmt.Sprintf("failed to get a JIRA client for user %+v", jiraUser))
 		return
 	}
 
 	projectKeys, err := p.loadJIRAProjectKeys(jiraClient)
 	if err != nil {
-		err = errors.WithMessage(err, "failed to load project keys from JIRA")
 		return
 	}
 

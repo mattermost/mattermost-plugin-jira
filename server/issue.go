@@ -18,46 +18,48 @@ import (
 func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,
-			errors.New("Request: " + r.Method + " is not allowed, must be POST")
+			errors.New("method " + r.Method + " is not allowed, must be POST")
 	}
 
 	create := &struct {
 		PostId string           `json:"post_id"`
 		Fields jira.IssueFields `json:"fields"`
 	}{}
-
 	err := json.NewDecoder(r.Body).Decode(&create)
 	if err != nil {
-		return http.StatusBadRequest, errors.WithMessage(err, "Couldn't decode incoming request")
+		return http.StatusBadRequest,
+			errors.WithMessage(err, "failed to decode incoming request")
 	}
 
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
+		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
 	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "Couldn't load current JIRA instance")
+		return http.StatusInternalServerError, err
 	}
 
 	jiraUser, err := p.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "Couldn't load current JIRA user info for "+mattermostUserId)
+		return http.StatusInternalServerError, err
 	}
 
 	jiraClient, err := ji.GetJIRAClient(jiraUser)
 	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, fmt.Sprintf("Couldn't load JIRA client for %s at %s", jiraUser.Name, ji.GetKey()))
+		return http.StatusInternalServerError, err
 	}
 
 	// Lets add a permalink to the post in the Jira Description
-	post, aerr := p.API.GetPost(create.PostId)
-	if aerr != nil {
-		return http.StatusInternalServerError, errors.WithMessage(aerr, "Couldn't load post "+create.PostId)
+	post, appErr := p.API.GetPost(create.PostId)
+	if appErr != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to load post "+create.PostId)
 	}
 	if post == nil {
-		return http.StatusInternalServerError, errors.New("Couldn't load post " + create.PostId + ": not found")
+		return http.StatusInternalServerError,
+			errors.New("failed to load post " + create.PostId + ": not found")
 	}
 	if channel, _ := p.API.GetChannel(post.ChannelId); channel != nil {
 		if team, _ := p.API.GetTeam(channel.TeamId); team != nil {
@@ -75,36 +77,33 @@ func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 		}
 	}
 
-	issue := &jira.Issue{
+	created, _, err := jiraClient.Issue.Create(&jira.Issue{
 		Fields: &create.Fields,
-	}
-
-	created, _, err := jiraClient.Issue.Create(issue)
+	})
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("could not create issue in jira: %v", err)
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to create the issue, postId: "+create.PostId)
 	}
 
-	//TODO: raise with Jason
-	// // In case the post message is different than the description
-	// description := create.Fields.Description
-	// if post != nil && post.UserId == mattermostUserId && post.Message != description && len(description) > 0 {
-	// 	post.Message = description
-	// 	p.API.UpdatePost(post)
-	// }
-
-	// Upload any attachments in the background
+	// Upload file attachments in the background
 	if len(post.FileIds) > 0 {
 		go func() {
 			for _, fileId := range post.FileIds {
-				info, aerr := p.API.GetFileInfo(fileId)
-				if aerr == nil {
+				info, appErr := p.API.GetFileInfo(fileId)
+				if appErr == nil {
 					// TODO: large file support? Ignoring errors for now is good enough...
-					byteData, aerr := p.API.ReadFile(info.Path)
-					if aerr != nil {
+					byteData, appErr := p.API.ReadFile(info.Path)
+					if appErr != nil {
 						// TODO report errors, as DMs from JIRA bot?
+						p.errorf("failed to attach file %s to issue %s: %s", info.Path, created.Key, appErr.Error())
 						return
 					}
-					jiraClient.Issue.PostAttachment(created.ID, bytes.NewReader(byteData), info.Name)
+					_, _, err := jiraClient.Issue.PostAttachment(created.ID, bytes.NewReader(byteData), info.Name)
+					if err != nil {
+						// TODO report errors, as DMs from JIRA bot?
+						p.errorf("failed to attach file %s to issue %s: %v", info.Path, created.Key, err)
+						return
+					}
 				}
 			}
 		}()
@@ -118,23 +117,35 @@ func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 		RootId:    create.PostId,
 		UserId:    mattermostUserId,
 	}
-	p.API.CreatePost(reply)
+	_, appErr = p.API.CreatePost(reply)
+	if appErr != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to create notification post "+create.PostId)
+	}
 
-	userBytes, _ := json.Marshal(created)
+	userBytes, err := json.Marshal(created)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to marshal response "+create.PostId)
+	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(userBytes)
+	_, err = w.Write(userBytes)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to write response "+create.PostId)
+	}
 	return http.StatusOK, nil
 }
 
 func httpAPIGetCreateIssueMetadata(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
-			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
+			errors.New("Request: " + r.Method + " is not allowed, must be GET")
 	}
 
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
+		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
 	ji, err := p.LoadCurrentJIRAInstance()
@@ -149,24 +160,27 @@ func httpAPIGetCreateIssueMetadata(p *Plugin, w http.ResponseWriter, r *http.Req
 
 	jiraClient, err := ji.GetJIRAClient(jiraUser)
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("could not get jira client: %v", err)
+		return http.StatusInternalServerError, err
 	}
 
 	cimd, _, err := jiraClient.Issue.GetCreateMetaWithOptions(&jira.GetQueryOptions{
 		Expand: "projects.issuetypes.fields",
 	})
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("could not get issue metadata: %v", err)
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to get CreateIssue mettadata")
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	b, err := json.Marshal(cimd)
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("could not marshal CreateIssueMetadata: %v", err)
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to marshal response")
 	}
 	_, err = w.Write(b)
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("could not write output: %v", err)
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to write response")
 	}
 
 	return http.StatusOK, nil

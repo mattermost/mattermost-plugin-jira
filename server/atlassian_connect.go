@@ -4,17 +4,22 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"regexp"
+
+	"github.com/pkg/errors"
 )
 
 var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed,
+			errors.New("method " + r.Method + " is not allowed, must be GET")
+	}
+
 	enc := func(in string) string {
 		return regexpNonAlnum.ReplaceAllString(in, "-")
 	}
@@ -28,26 +33,31 @@ func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) 
 		"ExternalURL":        p.GetSiteURL(),
 		"Key":                "mattermost-" + enc(p.GetSiteURL()),
 	}
-	bb := &bytes.Buffer{}
-	err := p.atlassianConnectTemplate.ExecuteTemplate(bb, "config", vals)
+	err := p.atlassianConnectTemplate.ExecuteTemplate(w, "config", vals)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to write atlassian-connect.json")
 	}
-	io.Copy(w, bytes.NewReader(bb.Bytes()))
-	p.debugf("Served atlassian-connect.json:\n%s", bb.String())
 	return http.StatusOK, nil
 }
 
 func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodPost {
+		return http.StatusMethodNotAllowed,
+			errors.New("method " + r.Method + " is not allowed, must be POST")
+	}
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to decode request")
 	}
 
 	var asc AtlassianSecurityContext
 	err = json.Unmarshal(body, &asc)
 	if err != nil {
-		return http.StatusBadRequest, err
+		return http.StatusBadRequest,
+			errors.WithMessage(err, "failed to unmarshal request")
 	}
 
 	// Create or overwrite the instance record, also store it
@@ -58,11 +68,20 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 		return http.StatusInternalServerError, err
 	}
 
-	json.NewEncoder(w).Encode([]string{"OK"})
+	err = json.NewEncoder(w).Encode([]string{"OK"})
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to encode response")
+	}
 	return http.StatusOK, nil
 }
 
 func httpACUninstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	json.NewEncoder(w).Encode([]string{"OK"})
+	if r.Method != http.MethodPost {
+		return http.StatusMethodNotAllowed,
+			errors.New("method " + r.Method + " is not allowed, must be POST")
+	}
+
+	_ = json.NewEncoder(w).Encode([]string{"OK"})
 	return http.StatusOK, nil
 }

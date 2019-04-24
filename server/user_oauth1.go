@@ -6,15 +6,13 @@ package main
 import (
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"net/http"
 
 	"github.com/dghubble/oauth1"
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
 )
-
-const paramOTS = "ots"
 
 func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	ji, err := p.LoadCurrentJIRAInstance()
@@ -24,12 +22,14 @@ func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 
 	jis, ok := ji.(*jiraServerInstance)
 	if !ok {
-		return http.StatusInternalServerError, fmt.Errorf("Must be a JIRA Server instance")
+		return http.StatusInternalServerError,
+			errors.New("Must be a JIRA Server instance, is " + ji.GetType())
 	}
 
 	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(r)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to parse callback request from JIRA")
 	}
 
 	requestSecret, err := p.LoadOneTimeSecret(requestToken)
@@ -43,17 +43,19 @@ func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 
 	mattermostUserId := r.Header.Get("Mattermost-User-ID")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
+		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
 	oauth1Config, err := jis.GetOAuth1Config()
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to obtain oauth1 config")
 	}
 
 	accessToken, accessSecret, err := oauth1Config.AccessToken(requestToken, requestSecret, verifier)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to obtain oauth1 access token")
 	}
 
 	jiraUser := JIRAUser{
@@ -63,12 +65,12 @@ func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 
 	jiraClient, err := ji.GetJIRAClient(jiraUser)
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("could not get jira client: %v", err)
+		return http.StatusInternalServerError, err
 	}
 
 	user, _, err := jiraClient.User.GetSelf()
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("could not get current user: %v", err)
+		return http.StatusInternalServerError, err
 	}
 	jiraUser.User = *user
 
@@ -92,18 +94,27 @@ func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 `
 
 	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(html))
+	_, err = w.Write([]byte(html))
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to write response")
+	}
 	return http.StatusOK, nil
 }
 
 func httpOAuth1PublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed,
+			errors.New("method " + r.Method + " is not allowed, must be GET")
+	}
+
 	userID := r.Header.Get("Mattermost-User-Id")
 	if userID == "" {
-		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
+		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
 	if !p.API.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
-		return http.StatusForbidden, fmt.Errorf("Forbidden")
+		return http.StatusForbidden, errors.New("forbidden")
 	}
 
 	rsaKey, err := p.EnsureRSAKey()
@@ -113,7 +124,8 @@ func httpOAuth1PublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (int
 
 	b, err := x509.MarshalPKIXPublicKey(&rsaKey.PublicKey)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to encode public key")
 	}
 
 	pemkey := &pem.Block{
@@ -122,6 +134,10 @@ func httpOAuth1PublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (int
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
-	w.Write(pem.EncodeToMemory(pemkey))
+	_, err = w.Write(pem.EncodeToMemory(pemkey))
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to write response")
+	}
 	return http.StatusOK, nil
 }

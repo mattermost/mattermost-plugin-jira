@@ -303,13 +303,18 @@ func (p *Plugin) notify(ji Instance, parsed *parsed, text string) {
 
 		mattermostUserId, err := p.LoadMattermostUserId(ji, u)
 		if err != nil {
+			p.errorf("notify: %v", err)
 			continue
 		}
 
-		p.CreateBotDMPost(mattermostUserId,
+		err = p.CreateBotDMPost(mattermostUserId,
 			fmt.Sprintf("[%s](%s) mentioned you on [%s](%s):\n>%s",
 				parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL, text),
 			"custom_jira_mention")
+		if err != nil {
+			p.errorf("notify: %v", err)
+			continue
+		}
 	}
 
 	if parsed.assigneeUsername == parsed.authorUsername {
@@ -321,8 +326,11 @@ func (p *Plugin) notify(ji Instance, parsed *parsed, text string) {
 		return
 	}
 
-	p.CreateBotDMPost(mattermostUserId,
+	err = p.CreateBotDMPost(mattermostUserId,
 		fmt.Sprintf("[%s](%s) commented on [%s](%s):\n>%s",
 			parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL, text),
 		"custom_jira_comment")
+	if err != nil {
+		p.errorf("notify: %v", err)
+	}
 }

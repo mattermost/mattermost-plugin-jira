@@ -34,12 +34,19 @@ func (jsi jiraServerInstance) InitWithPlugin(p *Plugin) Instance {
 	return NewJIRAServerInstance(p, jsi.JIRAServerURL)
 }
 
-func (jis jiraServerInstance) GetURL() string {
-	return jis.JIRAServerURL
+func (jsi jiraServerInstance) GetURL() string {
+	return jsi.JIRAServerURL
 }
 
-func (jis jiraServerInstance) GetUserConnectURL(p *Plugin, mattermostUserId string) (string, error) {
-	oauth1Config, err := jis.GetOAuth1Config()
+func (jsi jiraServerInstance) GetUserConnectURL(p *Plugin, mattermostUserId string) (returnURL string, returnErr error) {
+	defer func() {
+		if returnErr == nil {
+			return
+		}
+		returnErr = errors.WithMessage(returnErr, "failed to get a connect link")
+	}()
+
+	oauth1Config, err := jsi.GetOAuth1Config()
 	if err != nil {
 		return "", err
 	}
@@ -62,62 +69,76 @@ func (jis jiraServerInstance) GetUserConnectURL(p *Plugin, mattermostUserId stri
 	return authURL.String(), nil
 }
 
-func (jis jiraServerInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error) {
+func (jsi jiraServerInstance) GetJIRAClient(jiraUser JIRAUser) (returnClient *jira.Client, returnErr error) {
+	defer func() {
+		if returnErr == nil {
+			return
+		}
+		returnErr = errors.WithMessage(returnErr, "failed to get a JIRA client for "+jiraUser.Name)
+	}()
+
 	if jiraUser.Oauth1AccessToken == "" || jiraUser.Oauth1AccessSecret == "" {
 		return nil, errors.New("No access token, please use /jira connect")
 	}
 
-	oauth1Config, err := jis.GetOAuth1Config()
+	oauth1Config, err := jsi.GetOAuth1Config()
 	if err != nil {
-		return nil, errors.WithMessage(err, "could not get oauth1 config")
+		return nil, err
 	}
 
 	token := oauth1.NewToken(jiraUser.Oauth1AccessToken, jiraUser.Oauth1AccessSecret)
 	httpClient := oauth1Config.Client(oauth1.NoContext, token)
-	jiraClient, err := jira.NewClient(httpClient, jis.GetURL())
+	jiraClient, err := jira.NewClient(httpClient, jsi.GetURL())
 	if err != nil {
-		return nil, errors.WithMessage(err, "could not get jira client")
+		return nil, err
 	}
 
 	return jiraClient, nil
 }
 
-func (jis jiraServerInstance) ParseHTTPRequestJWT(r *http.Request) (*jwt.Token, string, error) {
+func (jsi jiraServerInstance) ParseHTTPRequestJWT(r *http.Request) (*jwt.Token, string, error) {
 	return nil, "", fmt.Errorf("NOT IMPLEMENTED: ParseHTTPRequestJWT")
 }
 
-func (jis jiraServerInstance) getOAuth1Config() *oauth1.Config {
-	jis.lock.RLock()
-	defer jis.lock.RUnlock()
+func (jsi jiraServerInstance) getOAuth1Config() *oauth1.Config {
+	jsi.lock.RLock()
+	defer jsi.lock.RUnlock()
 
-	return jis.oauth1Config
+	return jsi.oauth1Config
 }
 
-func (jis *jiraServerInstance) GetOAuth1Config() (*oauth1.Config, error) {
-	oauth1Config := jis.getOAuth1Config()
+func (jsi *jiraServerInstance) GetOAuth1Config() (returnConfig *oauth1.Config, returnErr error) {
+	defer func() {
+		if returnErr == nil {
+			return
+		}
+		returnErr = errors.WithMessage(returnErr, "failed to create an OAuth1 config")
+	}()
+
+	oauth1Config := jsi.getOAuth1Config()
 	if oauth1Config != nil {
 		return oauth1Config, nil
 	}
 
-	rsaKey, err := jis.EnsureRSAKey()
+	rsaKey, err := jsi.EnsureRSAKey()
 	if err != nil {
 		return nil, err
 	}
 
-	jis.lock.Lock()
-	defer jis.lock.Unlock()
-	jis.oauth1Config = &oauth1.Config{
+	jsi.lock.Lock()
+	defer jsi.lock.Unlock()
+	jsi.oauth1Config = &oauth1.Config{
 		// TODO make these configurable
 		ConsumerKey:    "ConsumerKey",
 		ConsumerSecret: "dontcare",
-		CallbackURL:    fmt.Sprintf("%v/oauth1/complete", jis.GetPluginURL()),
+		CallbackURL:    fmt.Sprintf("%v/oauth1/complete", jsi.GetPluginURL()),
 		Endpoint: oauth1.Endpoint{
-			RequestTokenURL: jis.GetURL() + "/plugins/servlet/oauth/request-token",
-			AuthorizeURL:    jis.GetURL() + "/plugins/servlet/oauth/authorize",
-			AccessTokenURL:  jis.GetURL() + "/plugins/servlet/oauth/access-token",
+			RequestTokenURL: jsi.GetURL() + "/plugins/servlet/oauth/request-token",
+			AuthorizeURL:    jsi.GetURL() + "/plugins/servlet/oauth/authorize",
+			AccessTokenURL:  jsi.GetURL() + "/plugins/servlet/oauth/access-token",
 		},
 		Signer: &oauth1.RSASigner{PrivateKey: rsaKey},
 	}
 
-	return jis.oauth1Config, nil
+	return jsi.oauth1Config, nil
 }

@@ -42,9 +42,9 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 	case "help":
 		return responsef(helpText), nil
 	case "connect":
-		return executeConnect(p, c, args, true), nil
+		return executeConnect(p, c, args), nil
 	case "disconnect":
-		return executeConnect(p, c, args, false), nil
+		return executeDisconnect(p, c, args), nil
 	case "instance":
 		return executeInstance(p, c, args), nil
 	}
@@ -52,15 +52,14 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 	return responsef("Action %v is not supported.", action), nil
 }
 
-// executeConnect handles "connect" and "disconnect" commands
-func executeConnect(p *Plugin, c *plugin.Context, args []string, connect bool) *model.CommandResponse {
-	if connect {
-		return responsef("[Click here to link your JIRA account.](%s/%s)",
-			p.GetPluginURL(), routeUserConnect)
-	} else {
-		return responsef("[Click here to unlink your JIRA account.](%s/%s)",
-			p.GetPluginURL(), routeUserDisconnect)
-	}
+func executeConnect(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
+	return responsef("[Click here to link your JIRA account.](%s/%s)",
+		p.GetPluginURL(), routeUserConnect)
+}
+
+func executeDisconnect(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
+	return responsef("[Click here to unlink your JIRA account.](%s/%s)",
+		p.GetPluginURL(), routeUserDisconnect)
 }
 
 func executeInstance(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
@@ -96,7 +95,7 @@ func executeInstanceList(p *Plugin, c *plugin.Context, args []string) *model.Com
 	}
 
 	keys := []string{}
-	for key, _ := range known {
+	for key := range known {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
@@ -158,7 +157,7 @@ func executeInstanceSelect(p *Plugin, c *plugin.Context, args []string) *model.C
 		}
 
 		keys := []string{}
-		for key, _ := range known {
+		for key := range known {
 			keys = append(keys, key)
 		}
 		sort.Strings(keys)
@@ -181,8 +180,8 @@ func responsef(format string, args ...interface{}) *model.CommandResponse {
 	return &model.CommandResponse{
 		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
 		Text:         fmt.Sprintf(format, args...),
-		Username:     JIRA_USERNAME,
-		IconURL:      JIRA_ICON_URL,
+		Username:     PluginMattermostUsername,
+		IconURL:      PluginIconURL,
 		Type:         model.POST_DEFAULT,
 	}
 }

@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"io"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 const authTokenTTL = 15 * time.Minute
@@ -21,7 +23,14 @@ type AuthToken struct {
 	Expires          time.Time `json:"expires,omitempty"`
 }
 
-func (p *Plugin) NewEncodedAuthToken(mattermostUserID string) (string, error) {
+func (p *Plugin) NewEncodedAuthToken(mattermostUserID string) (returnTToken string, returnErr error) {
+	defer func() {
+		if returnErr == nil {
+			return
+		}
+		returnErr = errors.WithMessage(returnErr, "failed to create auth token")
+	}()
+
 	secret, err := p.EnsureTokenSecret()
 	if err != nil {
 		return "", err
@@ -45,7 +54,14 @@ func (p *Plugin) NewEncodedAuthToken(mattermostUserID string) (string, error) {
 	return encode(encrypted)
 }
 
-func (p *Plugin) ParseAuthToken(encoded string) (mattermostUserID string, err error) {
+func (p *Plugin) ParseAuthToken(encoded string) (mattermostUserID string, returnErr error) {
+	defer func() {
+		if returnErr == nil {
+			return
+		}
+		returnErr = errors.WithMessage(returnErr, "failed to parse auth token")
+	}()
+
 	secret, err := p.EnsureTokenSecret()
 	if err != nil {
 		return "", err
@@ -68,7 +84,7 @@ func (p *Plugin) ParseAuthToken(encoded string) (mattermostUserID string, err er
 	}
 
 	if t.Expires.Before(time.Now()) {
-		return "", fmt.Errorf("Expired token")
+		return "", errors.New("Expired token")
 	}
 
 	return t.MattermostUserID, nil

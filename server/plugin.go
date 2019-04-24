@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	JIRA_USERNAME = "Jira Plugin"
-	JIRA_ICON_URL = "https://s3.amazonaws.com/mattermost-plugin-media/jira.jpg"
+	PluginMattermostUsername = "Jira Plugin"
+	PluginIconURL            = "https://s3.amazonaws.com/mattermost-plugin-media/jira.jpg"
 )
 
 type externalConfig struct {
@@ -27,10 +27,13 @@ type externalConfig struct {
 	// Legacy 1.x Webhook secret
 	Secret string
 
-	// TODO: support mutiple instances, how? Seems like the config UI needs to be rethought
-	// for things like multiple instances.
-	// JiraServerURL needs to be configured to run in the JIRA Server mode
-	// JiraServerURL string
+	// TODO: support mutiple server instances, how? Seems like the config
+	// UI needs to be rethought for things like multiple instances. Or
+	// maybe we always check JIRAServerURL on config change (startup) and
+	// add/select it.
+	// JIRAServerURL needs to be configured to run in the JIRA Server
+	// mode
+	JIRAServerURL string
 }
 
 // config captures all cached values that need to be synchronized
@@ -39,10 +42,6 @@ type config struct {
 
 	// Cached actual bot user ID (derived from c.UserName)
 	botUserID string
-
-	// secret used to generate auth tokens in the Atlassian connect
-	// user mapping flow
-	tokenSecret []byte
 }
 
 type Plugin struct {
@@ -90,11 +89,11 @@ func (p *Plugin) OnConfigurationChange() error {
 	return nil
 }
 
-func (p *Plugin) OnActivate() error {
+func (p *Plugin) OnActivate() (returnErr error) {
 	conf := p.getConfig()
-	user, aerr := p.API.GetUserByUsername(conf.UserName)
-	if aerr != nil {
-		return fmt.Errorf("Unable to find user with configured username: %v, error: %v", conf.UserName, aerr)
+	user, appErr := p.API.GetUserByUsername(conf.UserName)
+	if appErr != nil {
+		return errors.WithMessage(appErr, fmt.Sprintf("OnActivate: unable to find user: %s", conf.UserName))
 	}
 
 	tpath := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
@@ -103,20 +102,22 @@ func (p *Plugin) OnActivate() error {
 	fpath := filepath.Join(tpath, "atlassian-connect.json")
 	p.atlassianConnectTemplate, err = template.ParseFiles(fpath)
 	if err != nil {
-		return err
+		return errors.WithMessage(err, fmt.Sprintf("OnActivate: failed to parse template: %s", fpath))
 	}
 	fpath = filepath.Join(tpath, "user-config.html")
 	p.userConfigTemplate, err = template.ParseFiles(fpath)
 	if err != nil {
-		return err
+		return errors.WithMessage(err, fmt.Sprintf("OnActivate: failed to parse template: %s", fpath))
 	}
 
 	conf = p.updateConfig(func(conf *config) {
 		conf.botUserID = user.Id
-
 	})
 
-	p.API.RegisterCommand(getCommand())
+	err = p.API.RegisterCommand(getCommand())
+	if err != nil {
+		return errors.WithMessage(err, "OnActivate: failed to register command")
+	}
 
 	return nil
 }

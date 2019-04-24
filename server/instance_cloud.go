@@ -74,9 +74,10 @@ func (jci jiraCloudInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, err
 		return client, nil
 	}
 
-	client, err = jci.getJIRAClientForServer()
+	//TODO decide if we ever need this as the default client
+	// client, err = jci.getJIRAClientForServer()
 	if err != nil {
-		return nil, err
+		return nil, errors.WithMessage(err, "failed to get JIRA client for user "+jiraUser.Name)
 	}
 
 	return client, nil
@@ -113,21 +114,25 @@ func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
 }
 
 func (jci jiraCloudInstance) parseHTTPRequestJWT(r *http.Request) (*jwt.Token, string, error) {
-	r.ParseForm()
+	err := r.ParseForm()
+	if err != nil {
+		return nil, "", errors.WithMessage(err, "failed to parse request")
+	}
 	tokenString := r.Form.Get("jwt")
 	if tokenString == "" {
-		return nil, "", errors.New("jwt not found in the request")
+		return nil, "", errors.New("no jwt in the request")
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, errors.New(
+				fmt.Sprintf("unsupported signing method: %v", token.Header["alg"]))
 		}
 		// HMAC secret is a []byte
 		return []byte(jci.AtlassianSecurityContext.SharedSecret), nil
 	})
 	if err != nil {
-		return nil, "", err
+		return nil, "", errors.WithMessage(err, "failed to validatte JWT")
 	}
 
 	return token, tokenString, nil

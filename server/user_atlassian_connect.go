@@ -4,30 +4,31 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
-	"io"
 	"net/http"
 	"path"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
 )
 
-const (
-	argMMToken = "mm_token"
-)
+const argMMToken = "mm_token"
 
 func httpACUserConfig(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed,
+			errors.New("method " + r.Method + " is not allowed, must be GET")
+	}
+
 	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 	jci, ok := ji.(*jiraCloudInstance)
 	if !ok {
-		return http.StatusBadRequest, fmt.Errorf("Must be a JIRA Cloud instance, is %s", ji.GetType())
+		return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
 	}
 
 	_, tokenString, err := jci.parseHTTPRequestJWT(r)
@@ -35,8 +36,8 @@ func httpACUserConfig(p *Plugin, w http.ResponseWriter, r *http.Request) (int, e
 		return http.StatusBadRequest, err
 	}
 
-	bb := &bytes.Buffer{}
-	err = p.userConfigTemplate.ExecuteTemplate(bb, "config",
+	w.Header().Set("Content-Type", "text/html")
+	err = p.userConfigTemplate.ExecuteTemplate(w, "config",
 		struct {
 			SubmitURL  string
 			JWT        string
@@ -47,10 +48,10 @@ func httpACUserConfig(p *Plugin, w http.ResponseWriter, r *http.Request) (int, e
 			ArgMMToken: argMMToken,
 		})
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to write response")
 	}
-	w.Header().Set("Content-Type", "text/html")
-	io.Copy(w, bytes.NewReader(bb.Bytes()))
+
 	return http.StatusOK, nil
 }
 
@@ -61,7 +62,7 @@ func httpACUserConfigSubmit(p *Plugin, w http.ResponseWriter, r *http.Request) (
 	}
 	jci, ok := ji.(*jiraCloudInstance)
 	if !ok {
-		return http.StatusBadRequest, fmt.Errorf("Must be a JIRA Cloud instance, is %s", ji.GetType())
+		return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
 	}
 
 	jwtToken, _, err := jci.parseHTTPRequestJWT(r)
@@ -70,15 +71,15 @@ func httpACUserConfigSubmit(p *Plugin, w http.ResponseWriter, r *http.Request) (
 	}
 	claims, ok := jwtToken.Claims.(jwt.MapClaims)
 	if !ok {
-		return http.StatusBadRequest, fmt.Errorf("invalid JWT claims")
+		return http.StatusBadRequest, errors.New("invalid JWT claims")
 	}
 	context, ok := claims["context"].(map[string]interface{})
 	if !ok {
-		return http.StatusBadRequest, fmt.Errorf("invalid JWT claim context")
+		return http.StatusBadRequest, errors.New("invalid JWT claim context")
 	}
 	user, ok := context["user"].(map[string]interface{})
 	if !ok {
-		return http.StatusBadRequest, fmt.Errorf("invalid JWT: no user data")
+		return http.StatusBadRequest, errors.New("invalid JWT: no user data")
 	}
 
 	userKey, _ := user["userKey"].(string)
@@ -102,12 +103,13 @@ func httpACUserConfigSubmit(p *Plugin, w http.ResponseWriter, r *http.Request) (
 		return http.StatusInternalServerError, err
 	}
 
-	mmuser, aerr := p.API.GetUser(mattermostUserId)
-	if aerr != nil {
-		return http.StatusInternalServerError, aerr
+	mmuser, appErr := p.API.GetUser(mattermostUserId)
+	if appErr != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to load user "+mattermostUserId)
 	}
 	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(`<!DOCTYPE html>
+	_, err = w.Write([]byte(`<!DOCTYPE html>
 <html lang="en">
     <head>
         <link rel="stylesheet" href="https://unpkg.com/@atlaskit/css-reset@2.0.0/dist/bundle.css" media="all">
@@ -117,5 +119,10 @@ func httpACUserConfigSubmit(p *Plugin, w http.ResponseWriter, r *http.Request) (
     granted Mattermost user ` + mmuser.GetDisplayName(model.SHOW_NICKNAME_FULLNAME) + " (" + mmuser.Username + `) access to JIRA as ` + displayName + " (" + username + `)
     </body>
 </html>`))
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to write response")
+	}
+
 	return http.StatusOK, nil
 }

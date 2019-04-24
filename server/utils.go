@@ -11,12 +11,18 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
-func (p *Plugin) CreateBotDMPost(userID, message, postType string) *model.AppError {
+func (p *Plugin) CreateBotDMPost(userId, message, postType string) (returnErr error) {
+	defer func() {
+		if returnErr != nil {
+			returnErr = errors.WithMessage(returnErr,
+				fmt.Sprintf("failed to create direct post to user %v: ", userId))
+		}
+	}()
+
 	conf := p.getConfig()
-	channel, aerr := p.API.GetDirectChannel(userID, conf.botUserID)
-	if aerr != nil {
-		p.errorf("Couldn't get bot's DM channel to userId:%v, error:%v", userID, aerr.Error())
-		return aerr
+	channel, appErr := p.API.GetDirectChannel(userId, conf.botUserID)
+	if appErr != nil {
+		return appErr
 	}
 
 	post := &model.Post{
@@ -26,15 +32,14 @@ func (p *Plugin) CreateBotDMPost(userID, message, postType string) *model.AppErr
 		Type:      postType,
 		Props: map[string]interface{}{
 			"from_webhook":      "true",
-			"override_username": JIRA_USERNAME,
-			"override_icon_url": JIRA_ICON_URL,
+			"override_username": PluginMattermostUsername,
+			"override_icon_url": PluginIconURL,
 		},
 	}
 
-	_, aerr = p.API.CreatePost(post)
-	if aerr != nil {
-		p.errorf("Couldn't create post, error:%v", aerr.Error())
-		return aerr
+	_, appErr = p.API.CreatePost(post)
+	if appErr != nil {
+		return appErr
 	}
 
 	return nil

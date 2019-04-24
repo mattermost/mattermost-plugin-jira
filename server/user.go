@@ -5,10 +5,10 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/andygrunwald/go-jira"
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
 )
@@ -31,10 +31,14 @@ type UserInfo struct {
 }
 
 func httpUserConnect(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	// TODO Enforce a GET
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed,
+			errors.New("method " + r.Method + " is not allowed, must be GET")
+	}
+
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
+		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
 	ji, err := p.LoadCurrentJIRAInstance()
@@ -52,10 +56,14 @@ func httpUserConnect(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 }
 
 func httpUserDisconnect(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	// TODO Enforce a GET
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed,
+			errors.New("method " + r.Method + " is not allowed, must be GET")
+	}
+
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
+		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
 	ji, err := p.LoadCurrentJIRAInstance()
@@ -91,15 +99,23 @@ func httpUserDisconnect(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 `
 
 	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(html))
+	_, err = w.Write([]byte(html))
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+	}
 
 	return http.StatusOK, nil
 }
 
 func httpAPIGetUserInfo(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed,
+			errors.New("method " + r.Method + " is not allowed, must be GET")
+	}
+
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, fmt.Errorf("Not authorized")
+		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
 	ji, err := p.LoadCurrentJIRAInstance()
@@ -118,8 +134,10 @@ func httpAPIGetUserInfo(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 	}
 
 	b, _ := json.Marshal(resp)
-	w.Write(b)
-	fmt.Println(string(b))
+	_, err = w.Write(b)
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+	}
 	return http.StatusOK, nil
 }
 
