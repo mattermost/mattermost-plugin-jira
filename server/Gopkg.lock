@@ -111,11 +111,11 @@
   revision = "e45cbeb79f0411b1cfedd3f226ff69d5d433c762"
 
 [[projects]]
-  digest = "1:e34b211a329e5b3af38f4794aca585e329e0db3f5328756ea2c4e0796ed0bb77"
+  digest = "1:af00abbd22cc527703068245c819a5f53567918f8c088157a4c01dd6244b58fb"
   name = "github.com/hashicorp/go-plugin"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "54b6ff97d8180dbbd93d2010dd4a92c86f604bb8"
+  revision = "a4620f9913d19f03a6bf19b2f304daaaf83ea130"
 
 [[projects]]
   digest = "1:11c6c696067d3127ecf332b10f89394d386d9083f82baf71f40f2da31841a009"
@@ -153,7 +153,7 @@
   version = "v1.8.0"
 
 [[projects]]
-  digest = "1:772eebe4b75d64cb1fa6ad5b742c4c0d0d982316912caa45568a841984958ba6"
+  digest = "1:8f570c431d78059770f1f9d0808ba9d84eecda76235790bc452b16c7075e5979"
   name = "github.com/mattermost/mattermost-server"
   packages = [
     "einterfaces",
@@ -162,15 +162,13 @@
     "plugin",
     "plugin/plugintest",
     "plugin/plugintest/mock",
-    "services/timezones",
     "utils",
-    "utils/fileutils",
     "utils/jsonutils",
     "utils/markdown",
   ]
   pruneopts = "NUT"
-  revision = "5ef499caae2bb751438b19151a9fcb4b27830bca"
-  version = "v5.9.0"
+  revision = "7f10b8349810f571de096e2430bcb56ab3527ae1"
+  version = "v5.6.5"
 
 [[projects]]
   branch = "mattermost"

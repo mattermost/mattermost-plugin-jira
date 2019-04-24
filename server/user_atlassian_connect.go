@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"path"
 
-	jira "github.com/andygrunwald/go-jira"
+	"github.com/andygrunwald/go-jira"
 	"github.com/dgrijalva/jwt-go"
 
 	"github.com/mattermost/mattermost-server/model"
