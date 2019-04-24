@@ -4,7 +4,9 @@
 package main
 
 import (
+	"bytes"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -70,7 +72,7 @@ func TestPlugin(t *testing.T) {
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=notthesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusForbidden,
 		},
-		/*"InvalidBody": {
+		"InvalidBody": {
 			Configuration:      validConfiguration,
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", ioutil.NopCloser(bytes.NewBufferString("foo"))),
 			ExpectedStatusCode: http.StatusBadRequest,
@@ -79,7 +81,7 @@ func TestPlugin(t *testing.T) {
 			Configuration:      validConfiguration,
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", ioutil.NopCloser(bytes.NewBufferString("{}"))),
 			ExpectedStatusCode: http.StatusBadRequest,
-		},*/
+		},
 		"InvalidChannel": {
 			Configuration:      validConfiguration,
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=notthechannel&secret=thesecret", validRequestBody()),
