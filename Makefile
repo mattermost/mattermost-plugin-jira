@@ -66,6 +66,7 @@ endif
 .PHONY: server
 server: server/.depensure
 ifneq ($(HAS_SERVER),)
+	rm -rf server/dist;
 	mkdir -p server/dist;
 	cd server && env GOOS=linux GOARCH=amd64 $(GO) build -o dist/plugin-linux-amd64;
 	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build -o dist/plugin-darwin-amd64;

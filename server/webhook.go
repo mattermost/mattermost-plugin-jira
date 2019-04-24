@@ -41,7 +41,10 @@ type JIRAWebhookIssue struct {
 		Status struct {
 			Id string
 		}
-		Labels []string
+		Labels  []string
+		Project struct {
+			Key string
+		}
 	}
 }
 
