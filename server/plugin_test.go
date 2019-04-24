@@ -100,11 +100,11 @@ func TestPlugin(t *testing.T) {
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
-		/*"ValidRequest": {
+		"ValidRequest": {
 			Configuration:      validConfiguration,
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusOK,
-		},*/
+		},
 		"CreatePostError": {
 			Configuration:      validConfiguration,
 			CreatePostError:    model.NewAppError("foo", "bar", nil, "", http.StatusInternalServerError),
