@@ -5,11 +5,9 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/dghubble/oauth1"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 )
 
@@ -94,10 +92,6 @@ func (jsi jiraServerInstance) GetJIRAClient(jiraUser JIRAUser) (returnClient *ji
 	}
 
 	return jiraClient, nil
-}
-
-func (jsi jiraServerInstance) ParseHTTPRequestJWT(r *http.Request) (*jwt.Token, string, error) {
-	return nil, "", fmt.Errorf("NOT IMPLEMENTED: ParseHTTPRequestJWT")
 }
 
 func (jsi jiraServerInstance) getOAuth1Config() *oauth1.Config {

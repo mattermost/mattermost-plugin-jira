@@ -89,7 +89,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	return nil
 }
 
-func (p *Plugin) OnActivate() (returnErr error) {
+func (p *Plugin) OnActivate() error {
 	conf := p.getConfig()
 	user, appErr := p.API.GetUserByUsername(conf.UserName)
 	if appErr != nil {

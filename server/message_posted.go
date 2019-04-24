@@ -46,9 +46,9 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 		return
 	}
 
-	channel, aerr := p.API.GetChannel(post.ChannelId)
-	if aerr != nil {
-		err = errors.WithMessagef(aerr, "failed to load channel ID: %s", post.ChannelId)
+	channel, appErr := p.API.GetChannel(post.ChannelId)
+	if appErr != nil {
+		err = errors.WithMessagef(appErr, "failed to load channel ID: %s", post.ChannelId)
 		return
 	}
 
@@ -57,15 +57,15 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 		return
 	}
 
-	team, aerr := p.API.GetTeam(channel.TeamId)
-	if aerr != nil {
-		err = errors.WithMessagef(aerr, "failed to load team ID: %v", channel.TeamId)
+	team, appErr := p.API.GetTeam(channel.TeamId)
+	if appErr != nil {
+		err = errors.WithMessagef(appErr, "failed to load team ID: %v", channel.TeamId)
 		return
 	}
 
-	user, aerr := p.API.GetUser(post.UserId)
-	if aerr != nil {
-		err = errors.WithMessagef(aerr, "failed to load user ID: %v", post.UserId)
+	user, appErr := p.API.GetUser(post.UserId)
+	if appErr != nil {
+		err = errors.WithMessagef(appErr, "failed to load user ID: %v", post.UserId)
 		return
 	}
 

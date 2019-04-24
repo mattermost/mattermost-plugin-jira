@@ -9,7 +9,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"time"
 
@@ -147,7 +146,7 @@ func decrypt(encrypted, secret []byte) ([]byte, error) {
 
 	nonceSize := aesgcm.NonceSize()
 	if len(encrypted) < nonceSize {
-		return nil, fmt.Errorf("token too short")
+		return nil, errors.New("token too short")
 	}
 
 	nonce, encrypted := encrypted[:nonceSize], encrypted[nonceSize:]

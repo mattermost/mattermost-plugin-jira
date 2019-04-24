@@ -4,9 +4,10 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/plugin"
 )
@@ -87,5 +88,5 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 		return httpUserDisconnect(p, w, r)
 	}
 
-	return http.StatusNotFound, fmt.Errorf("Not found")
+	return http.StatusNotFound, errors.New("not found")
 }
