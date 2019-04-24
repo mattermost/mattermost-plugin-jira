@@ -124,12 +124,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		return appErr.StatusCode, fmt.Errorf(appErr.Message)
 	}
 
-	ji, err := p.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	initPost, err := AsSlackAttachment(r.Body, p, ji)
+	initPost, err := AsSlackAttachment(r.Body)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
