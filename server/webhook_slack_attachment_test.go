@@ -30,8 +30,8 @@ func TestSlackAttachment(t *testing.T) {
 }
 
 func TestSlackAttachmentForCoverage(t *testing.T) {
-	parsed := &parsedWebhook{
-		Webhook: &Webhook{},
+	parsed := &parsedJIRAWebhook{
+		JIRAWebhook: &JIRAWebhook{},
 	}
 	parsed.WebhookEvent = "something-else"
 	assert.Nil(t, newSlackAttachment(parsed))

@@ -23,7 +23,7 @@ func AsSlackAttachment(in io.Reader) (func(post *model.Post), error) {
 	}, nil
 }
 
-func newSlackAttachment(parsed *parsedWebhook) *model.SlackAttachment {
+func newSlackAttachment(parsed *parsedJIRAWebhook) *model.SlackAttachment {
 	if parsed.headline == "" {
 		return nil
 	}
@@ -32,13 +32,13 @@ func newSlackAttachment(parsed *parsedWebhook) *model.SlackAttachment {
 		Color:    "#95b7d0",
 		Fallback: parsed.headline,
 		Pretext:  parsed.headline,
-		Text:     parsed.edited,
+		Text:     parsed.text,
 	}
 
 	text := parsed.mdIssueLongLink() + "\n"
-	if parsed.edited != "" {
+	if parsed.text != "" {
 		text += "\n"
-		text += parsed.edited + "\n"
+		text += parsed.text + "\n"
 	}
 
 	var fields []*model.SlackAttachmentField

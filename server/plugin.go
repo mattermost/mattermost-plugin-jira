@@ -4,91 +4,145 @@
 package main
 
 import (
-	"crypto/subtle"
+	"crypto/rsa"
 	"fmt"
-	"net/http"
+	"path/filepath"
+	"strings"
 	"sync"
+	"text/template"
 
-	"github.com/mattermost/mattermost-server/model"
+	"github.com/pkg/errors"
+
 	"github.com/mattermost/mattermost-server/plugin"
 )
+
+const (
+	PluginMattermostUsername = "Jira Plugin"
+	PluginIconURL            = "https://s3.amazonaws.com/mattermost-plugin-media/jira.jpg"
+)
+
+type externalConfig struct {
+	// Bot username
+	UserName string
+
+	// Legacy 1.x Webhook secret
+	Secret string
+
+	// TODO: support mutiple server instances, how? Seems like the config
+	// UI needs to be rethought for things like multiple instances. Or
+	// maybe we always check JIRAServerURL on config change (startup) and
+	// add/select it.
+	// JIRAServerURL needs to be configured to run in the JIRA Server
+	// mode
+	JIRAServerURL string
+}
+
+// config captures all cached values that need to be synchronized
+type config struct {
+	externalConfig
+
+	// Cached actual bot user ID (derived from c.UserName)
+	botUserID string
+}
 
 type Plugin struct {
 	plugin.MattermostPlugin
 
-	// configurationLock synchronizes access to the configuration.
-	configurationLock sync.RWMutex
+	// configuration and a muttex to control concurrent access
+	conf     config
+	confLock sync.RWMutex
 
-	// configuration is the active plugin configuration. Consult getConfiguration and
-	// setConfiguration for usage.
-	configuration *configuration
+	// Generated once, then cached in the database, and here deserialized
+	RSAKey *rsa.PrivateKey `json:",omitempty"`
+
+	atlassianConnectTemplate *template.Template
+	userConfigTemplate       *template.Template
 }
 
-func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	p.API.LogDebug("HTTP request", "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
-
-	err, status := p.handleHTTPRequest(c, w, r)
-	if err != nil {
-		p.API.LogDebug("Failed to serve HTTP request", "Error message", err.Error())
-		http.Error(w, err.Error(), status)
-	}
+func (p *Plugin) getConfig() config {
+	p.confLock.RLock()
+	defer p.confLock.RUnlock()
+	return p.conf
 }
 
-func (p *Plugin) handleHTTPRequest(c *plugin.Context, w http.ResponseWriter, r *http.Request) (error, int) {
-	config := p.getConfiguration()
-	if config.Secret == "" || config.UserName == "" {
-		return fmt.Errorf("JIRA plugin not configured correctly; must provide Secret and UserName"), http.StatusForbidden
-	}
+func (p *Plugin) updateConfig(f func(conf *config)) config {
+	p.confLock.Lock()
+	defer p.confLock.Unlock()
 
-	if r.URL.Path != "/webhook" {
-		return fmt.Errorf("Request URL: unsupported path: " + r.URL.Path + ", must be /webhook"), http.StatusNotFound
-	}
-	if r.Method != http.MethodPost {
-		return fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST"), http.StatusMethodNotAllowed
-	}
+	f(&p.conf)
+	return p.conf
+}
 
-	if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(config.Secret)) != 1 {
-		return fmt.Errorf("Request URL: secret did not match"), http.StatusForbidden
-	}
+// OnConfigurationChange is invoked when configuration changes may have been made.
+func (p *Plugin) OnConfigurationChange() error {
 
-	teamName := r.URL.Query().Get("team")
-	if teamName == "" {
-		return fmt.Errorf("Request URL: team is empty"), http.StatusBadRequest
-	}
-	channelID := r.URL.Query().Get("channel")
-	if channelID == "" {
-		return fmt.Errorf("Request URL: channel is empty"), http.StatusBadRequest
-	}
-
-	user, appErr := p.API.GetUserByUsername(config.UserName)
-	if appErr != nil {
-		return fmt.Errorf(appErr.Message), appErr.StatusCode
-	}
-
-	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelID, false)
-	if appErr != nil {
-		return fmt.Errorf(appErr.Message), appErr.StatusCode
-	}
-
-	initPost, err := AsSlackAttachment(r.Body)
+	// Load the public configuration fields from the Mattermost server configuration.
+	ec := externalConfig{}
+	err := p.API.LoadPluginConfiguration(&ec)
 	if err != nil {
-		return err, http.StatusBadRequest
+		return errors.WithMessage(err, "failed to load plugin configuration")
 	}
 
-	post := &model.Post{
-		ChannelId: channel.Id,
-		UserId:    user.Id,
-		Props: map[string]interface{}{
-			"from_webhook":  "true",
-			"use_user_icon": "true",
-		},
-	}
-	initPost(post)
+	p.updateConfig(func(conf *config) {
+		conf.externalConfig = ec
+	})
 
-	_, appErr = p.API.CreatePost(post)
+	return nil
+}
+
+func (p *Plugin) OnActivate() error {
+	conf := p.getConfig()
+	user, appErr := p.API.GetUserByUsername(conf.UserName)
 	if appErr != nil {
-		return fmt.Errorf(appErr.Message), appErr.StatusCode
+		return errors.WithMessage(appErr, fmt.Sprintf("OnActivate: unable to find user: %s", conf.UserName))
 	}
 
-	return nil, http.StatusOK
+	tpath := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
+
+	var err error
+	fpath := filepath.Join(tpath, "atlassian-connect.json")
+	p.atlassianConnectTemplate, err = template.ParseFiles(fpath)
+	if err != nil {
+		return errors.WithMessage(err, fmt.Sprintf("OnActivate: failed to parse template: %s", fpath))
+	}
+	fpath = filepath.Join(tpath, "user-config.html")
+	p.userConfigTemplate, err = template.ParseFiles(fpath)
+	if err != nil {
+		return errors.WithMessage(err, fmt.Sprintf("OnActivate: failed to parse template: %s", fpath))
+	}
+
+	conf = p.updateConfig(func(conf *config) {
+		conf.botUserID = user.Id
+	})
+
+	err = p.API.RegisterCommand(getCommand())
+	if err != nil {
+		return errors.WithMessage(err, "OnActivate: failed to register command")
+	}
+
+	return nil
+}
+
+func (p *Plugin) GetPluginURLPath() string {
+	return "/plugins/" + manifest.Id
+}
+
+func (p *Plugin) GetPluginURL() string {
+	return strings.TrimRight(p.GetSiteURL(), "/") + p.GetPluginURLPath()
+}
+
+func (p *Plugin) GetSiteURL() string {
+	return *p.API.GetConfig().ServiceSettings.SiteURL
+}
+
+func (p *Plugin) debugf(f string, args ...interface{}) {
+	p.API.LogDebug(fmt.Sprintf(f, args...))
+}
+
+func (p *Plugin) infof(f string, args ...interface{}) {
+	p.API.LogInfo(fmt.Sprintf(f, args...))
+}
+
+func (p *Plugin) errorf(f string, args ...interface{}) {
+	p.API.LogError(fmt.Sprintf(f, args...))
 }

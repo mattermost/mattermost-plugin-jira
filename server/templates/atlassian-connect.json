@@ -1,0 +1,36 @@
+{{define "config"}}
+{
+	"key": "{{ .Key }}",
+	"name": "Mattermost Plugin ({{ .ExternalURL }})",
+	"description": "Integrates JIRA with Mattermost for in-place interactions and notifications",
+	"vendor": {
+		"name": "Mattermost",
+		"url": "https://github.com/mattermost"
+	},
+	"baseUrl": "{{ .BaseURL }}",
+	"links": {
+		"self": "{{ .BaseURL }}{{ .RouteACJSON }}",
+		"homepage": "https://www.mattermost.com"
+	},
+	"authentication": {
+		"type": "jwt"
+	},
+	"lifecycle": {
+		"installed": "{{ .RouteACInstalled }}",
+		"uninstalled": "{{ .RouteACUninstalled }}"
+	},
+	"scopes": [ "READ", "WRITE", "ACT_AS_USER" ],
+	"modules": {
+		"generalPages": [
+			{
+				"url": "{{ .RouteACUserConfig }}",
+				"name": {
+					"value": "User mapping and configuration page"
+				},
+				"key": "user-config",
+				"location": "none"
+			}
+		]
+	}
+}
+{{ end }}
