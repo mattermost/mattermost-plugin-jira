@@ -7,6 +7,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 	"text/template"
 
@@ -127,7 +128,7 @@ func (p *Plugin) GetPluginURLPath() string {
 }
 
 func (p *Plugin) GetPluginURL() string {
-	return p.GetSiteURL() + p.GetPluginURLPath()
+	return strings.TrimRight(p.GetSiteURL(), "/") + p.GetPluginURLPath()
 }
 
 func (p *Plugin) GetSiteURL() string {
