@@ -36,11 +36,11 @@ We are looking for help from our community to complete the development of v2.0 o
   - `/jira subscribe` - Subscribe a Mattermost channel to receive notifications for above issue updates in a Jira project.
   - `/jira instance` - Manage connected Jira instances. Must have System Admin role in Mattermost.
   - `/jira create [description]` - Create a Jira ticket.
-  - `/jira assign <issue-key> <assignee>` - Assign a Jira issue specified by <issue-key>. <assignee> must be a member of the Jira project.
-  - `/jira transition <issue-key> <state>` - Transition a Jira issue specified by <issue-key>. <state> must be a valid Jira state such as "Done".
+  - `/jira assign <issue-key> <assignee>` - Assign a Jira issue specified by `issue-key`. `assignee` must be a member of the Jira project.
+  - `/jira transition <issue-key> <state>` - Transition a Jira issue specified by `issue-key`. `state` must be a valid Jira state such as "Done".
   - `/jira settings preview [on/off]` - Set whether previews of Jira issues are shown.
   - `/jira settings notifications [on/off]` - Set whether Direct Message notifications are sent for assignments and comments in assigned issues.
-  - `/jira view <issue-key>` - View a Jira issue specified by <issue-key>.  
+  - `/jira view <issue-key>` - View a Jira issue specified by `issue-key`.  
 
 ## 3. Installation
 
@@ -66,7 +66,7 @@ As a Jira administrator, you have two steps to configure the plugin:
   - Enabling development mode allows you to install apps that are not from the Atlassian Marketplace.
   - Mattermost has opted not to publish to Atlassian Marketplace, as we don’t have an efficient way to provide a callback URL for the app in the marketplace, to enable user-specific interactions between the Mattermost server and Jira cloud instance.
 
-3. Click **Upload add-on**, then enter the Atlassian Connect app descriptor in the form https://<SITEURL>/plugins/jira/atlassian-connect.json where `<SITEURL>` is your [Mattermost Site URL](https://docs.mattermost.com/administration/config-settings.html#site-url). Select **Upload**.
+3. Click **Upload add-on**, then enter the Atlassian Connect app descriptor in the form https://<SITEURL>/plugins/jira/atlassian-connect.json where `SITEURL` is your [Mattermost Site URL](https://docs.mattermost.com/administration/config-settings.html#site-url). Select **Upload**.
 
 4. Wait for the app to install.
 
