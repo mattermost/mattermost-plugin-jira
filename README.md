@@ -48,7 +48,7 @@ We are looking for help from our community to complete the development of v2.0 o
 
 #### 3.1.1 Mattermost
 
-1. Download this binary: // XXX
+1. Download this binary: https://s3.amazonaws.com/mattermost-public-plugins-kubernetes/jira-test-2.0.0.tar.gz
 2. Go to **System Console > Plugins (Beta) > Management** and upload the plugin from step 1. If you don't have the ability to upload plugins, uploads may be disabled on your server. To enable them, set **PluginSettings > EnableUploads** to `true` in your `config.json` file.
 3. Once uploaded, the Jira plugin will appear in a list of installed plugins. Click **Enable** to enable it.
 4. Go to **System Console > Plugins (Beta) > Management > Jira**, select the username that this plugin is attached to, generate a **Secret** and hit **Save**.
