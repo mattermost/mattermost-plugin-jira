@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const userRedirectPageKey = "user-redirect"
+
 var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -24,21 +26,16 @@ func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) 
 		return regexpNonAlnum.ReplaceAllString(in, "-")
 	}
 
-	vals := map[string]string{
-		"BaseURL":            p.GetPluginURL(),
-		"RouteACJSON":        routeACJSON,
-		"RouteACInstalled":   routeACInstalled,
-		"RouteACUninstalled": routeACUninstalled,
-		"RouteACUserConfig":  routeACUserConfig,
-		"ExternalURL":        p.GetSiteURL(),
-		"Key":                "mattermost-" + enc(p.GetSiteURL()),
-	}
-	err := p.atlassianConnectTemplate.ExecuteTemplate(w, "config", vals)
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write atlassian-connect.json")
-	}
-	return http.StatusOK, nil
+	return respondWithTemplate(w, r, p.templates, "application/json", map[string]string{
+		"BaseURL":                      p.GetPluginURL(),
+		"RouteACJSON":                  routeACJSON,
+		"RouteACInstalled":             routeACInstalled,
+		"RouteACUninstalled":           routeACUninstalled,
+		"RouteACUserRedirectWithToken": routeACUserRedirectWithToken,
+		"UserRedirectPageKey":          userRedirectPageKey,
+		"ExternalURL":                  p.GetSiteURL(),
+		"Key":                          "mattermost-" + enc(p.GetSiteURL()),
+	})
 }
 
 func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {

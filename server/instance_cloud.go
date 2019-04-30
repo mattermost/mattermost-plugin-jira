@@ -48,20 +48,28 @@ func NewJIRACloudInstance(p *Plugin, key, rawASC string, asc *AtlassianSecurityC
 	}
 }
 
-func (jci jiraCloudInstance) InitWithPlugin(p *Plugin) Instance {
-	return NewJIRACloudInstance(p, jci.JIRAInstance.Key, jci.RawAtlassianSecurityContext, jci.AtlassianSecurityContext)
+type withCloudInstanceFunc func(jci *jiraCloudInstance, w http.ResponseWriter, r *http.Request) (int, error)
+
+func withCloudInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f withCloudInstanceFunc) (int, error) {
+	return withInstance(p, w, r, func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+		jci, ok := ji.(*jiraCloudInstance)
+		if !ok {
+			return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
+		}
+		return f(jci, w, r)
+	})
 }
 
-func (jci jiraCloudInstance) GetUserConnectURL(p *Plugin, mattermostUserId string) (string, error) {
-	token, err := p.NewEncodedAuthToken(mattermostUserId)
+func (jci jiraCloudInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
+	token, err := jci.Plugin.NewEncodedAuthToken(mattermostUserId)
 	if err != nil {
 		return "", err
 	}
 
 	v := url.Values{}
 	v.Add(argMMToken, token)
-	return fmt.Sprintf("%v/login?dest-url=%v/plugins/servlet/ac/%s/user-config?%v",
-		jci.GetURL(), jci.GetURL(), jci.AtlassianSecurityContext.Key, v.Encode()), nil
+	return fmt.Sprintf("%v/login?dest-url=%v/plugins/servlet/ac/%s/%s?%v",
+		jci.GetURL(), jci.GetURL(), jci.AtlassianSecurityContext.Key, userRedirectPageKey, v.Encode()), nil
 }
 
 func (jci jiraCloudInstance) GetURL() string {

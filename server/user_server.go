@@ -14,29 +14,18 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
-func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	ji, err := p.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	jis, ok := ji.(*jiraServerInstance)
-	if !ok {
-		return http.StatusInternalServerError,
-			errors.New("Must be a JIRA Server instance, is " + ji.GetType())
-	}
-
+func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.Request) (int, error) {
 	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(r)
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to parse callback request from JIRA")
 	}
 
-	requestSecret, err := p.LoadOneTimeSecret(requestToken)
+	requestSecret, err := jsi.Plugin.LoadOneTimeSecret(requestToken)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	err = p.DeleteOneTimeSecret(requestToken)
+	err = jsi.Plugin.DeleteOneTimeSecret(requestToken)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -46,7 +35,7 @@ func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
-	oauth1Config, err := jis.GetOAuth1Config()
+	oauth1Config, err := jsi.GetOAuth1Config()
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to obtain oauth1 config")
@@ -63,7 +52,7 @@ func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 		Oauth1AccessSecret: accessSecret,
 	}
 
-	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	jiraClient, err := jsi.GetJIRAClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -74,7 +63,7 @@ func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 	}
 	jiraUser.User = *user
 
-	err = p.StoreAndNotifyUserInfo(ji, mattermostUserId, jiraUser)
+	err = jsi.Plugin.StoreUserInfoNotify(jsi, mattermostUserId, jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

@@ -6,6 +6,7 @@ package main
 import (
 	"net/http"
 	"strconv"
+	"text/template"
 
 	"github.com/pkg/errors"
 
@@ -19,8 +20,10 @@ const (
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"
 	routeACUninstalled             = "/ac/uninstalled"
-	routeACUserConfig              = "/ac/user-config"
-	routeACUserConfigSubmit        = "/ac/user-config-submit"
+	routeACUserRedirectWithToken   = "/ac/user_redirect.html"
+	routeACUserConfirm             = "/ac/user_confirm.html"
+	routeACUserConnected           = "/ac/user_connected.html"
+	routeACUserDisconnected        = "/ac/user_disconnected.html"
 	routeIncomingIssueEvent        = "/issue_event"
 	routeIncomingWebhook           = "/webhook"
 	routeOAuth1Complete            = "/oauth1/complete"
@@ -49,13 +52,13 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	switch r.URL.Path {
 	// Issue APIs
 	case routeAPICreateIssue:
-		return httpAPICreateIssue(p, w, r)
+		return withInstance(p, w, r, httpAPICreateIssue)
 	case routeAPIGetCreateIssueMetadata:
-		return httpAPIGetCreateIssueMetadata(p, w, r)
+		return withInstance(p, w, r, httpAPIGetCreateIssueMetadata)
 
 	// User APIs
 	case routeAPIUserInfo:
-		return httpAPIGetUserInfo(p, w, r)
+		return withInstance(p, w, r, httpAPIGetUserInfo)
 
 	// Atlassian Connect application
 	case routeACInstalled:
@@ -66,10 +69,14 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 		return httpACUninstalled(p, w, r)
 
 	// Atlassian Connect user mapping
-	case routeACUserConfig:
-		return httpACUserConfig(p, w, r)
-	case routeACUserConfigSubmit:
-		return httpACUserConfigSubmit(p, w, r)
+	case routeACUserRedirectWithToken:
+		return withCloudInstance(p, w, r, httpACUserRedirect)
+	// case routeACUserConfirm:
+	// 	return withCloudInstance(p, w, r, httpACUserConfirm)
+	case routeACUserConnected:
+		return withCloudInstance(p, w, r, httpACUserConnect)
+	case routeACUserDisconnected:
+		return withCloudInstance(p, w, r, httpACUserDisconnect)
 
 	// Incoming webhook
 	case routeIncomingWebhook, routeIncomingIssueEvent:
@@ -77,16 +84,33 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 
 	// Oauth1 (JIRA Server)
 	case routeOAuth1Complete:
-		return httpOAuth1Complete(p, w, r)
+		return withServerInstance(p, w, r, httpOAuth1Complete)
 	case routeOAuth1PublicKey:
 		return httpOAuth1PublicKey(p, w, r)
 
 	// User connect/disconnect links
 	case routeUserConnect:
-		return httpUserConnect(p, w, r)
+		return withInstance(p, w, r, httpUserConnect)
 	case routeUserDisconnect:
-		return httpUserDisconnect(p, w, r)
+		return withInstance(p, w, r, httpUserDisconnect)
 	}
 
 	return http.StatusNotFound, errors.New("not found")
+}
+
+func respondWithTemplate(w http.ResponseWriter, r *http.Request,
+	templates map[string]*template.Template, ct string, v interface{}) (int, error) {
+
+	w.Header().Set("Content-Type", ct)
+	t := templates[r.URL.Path]
+	if t == nil {
+		return http.StatusInternalServerError,
+			errors.New("no template found for " + r.URL.Path)
+	}
+	err := t.Execute(w, v)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to write response")
+	}
+	return http.StatusOK, nil
 }

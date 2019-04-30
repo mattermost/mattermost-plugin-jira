@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/dghubble/oauth1"
@@ -28,15 +29,23 @@ func NewJIRAServerInstance(p *Plugin, jiraURL string) Instance {
 	}
 }
 
-func (jsi jiraServerInstance) InitWithPlugin(p *Plugin) Instance {
-	return NewJIRAServerInstance(p, jsi.JIRAServerURL)
-}
-
 func (jsi jiraServerInstance) GetURL() string {
 	return jsi.JIRAServerURL
 }
 
-func (jsi jiraServerInstance) GetUserConnectURL(p *Plugin, mattermostUserId string) (returnURL string, returnErr error) {
+type withServerInstanceFunc func(jsi *jiraServerInstance, w http.ResponseWriter, r *http.Request) (int, error)
+
+func withServerInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f withServerInstanceFunc) (int, error) {
+	return withInstance(p, w, r, func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+		jsi, ok := ji.(*jiraServerInstance)
+		if !ok {
+			return http.StatusBadRequest, errors.New("Must be a JIRA Server instance, is " + ji.GetType())
+		}
+		return f(jsi, w, r)
+	})
+}
+
+func (jsi jiraServerInstance) GetUserConnectURL(mattermostUserId string) (returnURL string, returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -54,7 +63,7 @@ func (jsi jiraServerInstance) GetUserConnectURL(p *Plugin, mattermostUserId stri
 		return "", err
 	}
 
-	err = p.StoreOneTimeSecret(token, secret)
+	err = jsi.Plugin.StoreOneTimeSecret(token, secret)
 	if err != nil {
 		return "", err
 	}

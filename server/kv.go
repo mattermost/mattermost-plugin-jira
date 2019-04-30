@@ -162,10 +162,12 @@ func (p *Plugin) loadJIRAInstance(fullkey string) (Instance, error) {
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
 		}
-		return jci.InitWithPlugin(p), nil
+		jci.SetPlugin(p)
+		return &jci, nil
 
 	case JIRATypeServer:
-		return jsi.InitWithPlugin(p), nil
+		jsi.SetPlugin(p)
+		return &jsi, nil
 	}
 
 	return nil, errors.New(fmt.Sprintf("JIRA instance %s has unsupported type: %s", fullkey, jsi.Type))
