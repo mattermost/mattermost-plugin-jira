@@ -11,7 +11,7 @@ Below is a list of features currently supported. Each is considered Beta and may
 - Notifications for 10+ issue events from Jira to Mattermost with full JQL support, using webhooks. This includes notifications for the following events: issue created; issue transitioned to “Reopened”, “In Progress”, "Submitted" or “Resolved”; issue deleted or closed; comments created, updated or deleted; assignee, title, description, priority, sprint or rank updated; attachments or labels added; attachments or labels removed
 - Create Jira issues via Mattermost UI (Desktop App and browser only)
 - Scan posts for Jira issue references, and automatically add them as comments in Jira. (Note: This functionality will likely be removed when v2.0 is released)
-- Send direct messages for Jira at-mentions and issue assignments
+- Send direct messages for Jira at-mentions and issue assignments (Note: This functionality may be removed when v2.0 is released)
 - Slash commands for
   - `/jira connect` - Connect to a Jira project and subscribe to events.
   - `/jira disconnect` - Disconnect from a Jira project and subscribe from events.
