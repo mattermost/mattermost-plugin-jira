@@ -77,9 +77,9 @@ func (jci *jiraCloudInstance) userConnect(w http.ResponseWriter, r *http.Request
 			Name: username,
 		},
 	}
-	mattermostUserId, err := jci.Plugin.ParseAuthToken(mmToken)
+	mattermostUserId, secret, err := jci.Plugin.ParseAuthToken(mmToken)
 	if err != nil {
-		return http.StatusBadRequest, err
+		return http.StatusUnauthorized, err
 	}
 	mmuser, appErr := jci.Plugin.API.GetUser(mattermostUserId)
 	if appErr != nil {
@@ -89,7 +89,20 @@ func (jci *jiraCloudInstance) userConnect(w http.ResponseWriter, r *http.Request
 
 	switch r.URL.Path {
 	case routeACUserConnected:
+		value, err := jci.Plugin.LoadOneTimeSecret(secret)
+		if err != nil {
+			return http.StatusUnauthorized, err
+		}
+		err = jci.Plugin.DeleteOneTimeSecret(secret)
+		if err != nil {
+			return http.StatusInternalServerError, err
+		}
+		if len(value) == 0 {
+			return http.StatusUnauthorized, errors.New("link expired")
+		}
+
 		err = jci.Plugin.StoreUserInfoNotify(jci, mattermostUserId, uinfo)
+
 	case routeACUserDisconnected:
 		err = jci.Plugin.DeleteUserInfoNotify(jci, mattermostUserId)
 	}

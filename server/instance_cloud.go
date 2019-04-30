@@ -5,6 +5,8 @@ package main
 
 import (
 	"context"
+	"crypto/md5"
+	"crypto/rand"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -61,7 +63,21 @@ func withCloudInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f with
 }
 
 func (jci jiraCloudInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
-	token, err := jci.Plugin.NewEncodedAuthToken(mattermostUserId)
+	secret := make([]byte, 256)
+	_, err := rand.Read(secret)
+	if err != nil {
+		return "", err
+	}
+	h := md5.New()
+	_, _ = h.Write([]byte(secret))
+	secretKey := fmt.Sprintf("%x", h.Sum(nil))
+	secretValue := "true"
+	err = jci.Plugin.StoreOneTimeSecret(secretKey, secretValue)
+	if err != nil {
+		return "", err
+	}
+
+	token, err := jci.Plugin.NewEncodedAuthToken(mattermostUserId, secretKey)
 	if err != nil {
 		return "", err
 	}

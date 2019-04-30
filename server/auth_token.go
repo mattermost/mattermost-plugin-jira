@@ -19,10 +19,11 @@ const authTokenTTL = 15 * time.Minute
 
 type AuthToken struct {
 	MattermostUserID string    `json:"mattermost_user_id,omitempty"`
+	Secret           string    `json:"secret,omitempty"`
 	Expires          time.Time `json:"expires,omitempty"`
 }
 
-func (p *Plugin) NewEncodedAuthToken(mattermostUserID string) (returnTToken string, returnErr error) {
+func (p *Plugin) NewEncodedAuthToken(mattermostUserID, secret string) (returnToken string, returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -30,13 +31,14 @@ func (p *Plugin) NewEncodedAuthToken(mattermostUserID string) (returnTToken stri
 		returnErr = errors.WithMessage(returnErr, "failed to create auth token")
 	}()
 
-	secret, err := p.EnsureTokenSecret()
+	encryptSecret, err := p.EnsureAuthTokenEncryptSecret()
 	if err != nil {
 		return "", err
 	}
 
 	t := AuthToken{
 		MattermostUserID: mattermostUserID,
+		Secret:           secret,
 		Expires:          time.Now().Add(authTokenTTL),
 	}
 
@@ -45,7 +47,7 @@ func (p *Plugin) NewEncodedAuthToken(mattermostUserID string) (returnTToken stri
 		return "", err
 	}
 
-	encrypted, err := encrypt(jsonBytes, secret)
+	encrypted, err := encrypt(jsonBytes, encryptSecret)
 	if err != nil {
 		return "", err
 	}
@@ -53,7 +55,7 @@ func (p *Plugin) NewEncodedAuthToken(mattermostUserID string) (returnTToken stri
 	return encode(encrypted)
 }
 
-func (p *Plugin) ParseAuthToken(encoded string) (mattermostUserID string, returnErr error) {
+func (p *Plugin) ParseAuthToken(encoded string) (mattermostUserID, tokenSecret string, returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -61,32 +63,39 @@ func (p *Plugin) ParseAuthToken(encoded string) (mattermostUserID string, return
 		returnErr = errors.WithMessage(returnErr, "failed to parse auth token")
 	}()
 
-	secret, err := p.EnsureTokenSecret()
-	if err != nil {
-		return "", err
-	}
-
-	decoded, err := decode(encoded)
-	if err != nil {
-		return "", err
-	}
-
-	jsonBytes, err := decrypt(decoded, secret)
-	if err != nil {
-		return "", err
-	}
-
 	t := AuthToken{}
-	err = json.Unmarshal(jsonBytes, &t)
+	err := func() error {
+		encryptSecret, err := p.EnsureAuthTokenEncryptSecret()
+		if err != nil {
+			return err
+		}
+
+		decoded, err := decode(encoded)
+		if err != nil {
+			return err
+		}
+
+		jsonBytes, err := decrypt(decoded, encryptSecret)
+		if err != nil {
+			return err
+		}
+
+		err = json.Unmarshal(jsonBytes, &t)
+		if err != nil {
+			return err
+		}
+
+		if t.Expires.Before(time.Now()) {
+			return errors.New("Expired token")
+		}
+
+		return nil
+	}()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	if t.Expires.Before(time.Now()) {
-		return "", errors.New("Expired token")
-	}
-
-	return t.MattermostUserID, nil
+	return t.MattermostUserID, t.Secret, nil
 }
 
 func encode(encrypted []byte) (string, error) {

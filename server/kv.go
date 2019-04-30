@@ -278,7 +278,7 @@ func (p *Plugin) DeleteUserInfo(ji Instance, mattermostUserId string) (returnErr
 	return nil
 }
 
-func (p *Plugin) EnsureTokenSecret() (secret []byte, returnErr error) {
+func (p *Plugin) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
