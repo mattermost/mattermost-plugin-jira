@@ -71,12 +71,10 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	// Atlassian Connect user mapping
 	case routeACUserRedirectWithToken:
 		return withCloudInstance(p, w, r, httpACUserRedirect)
-	// case routeACUserConfirm:
-	// 	return withCloudInstance(p, w, r, httpACUserConfirm)
-	case routeACUserConnected:
-		return withCloudInstance(p, w, r, httpACUserConnect)
-	case routeACUserDisconnected:
-		return withCloudInstance(p, w, r, httpACUserDisconnect)
+	case routeACUserConfirm,
+		routeACUserConnected,
+		routeACUserDisconnected:
+		return withCloudInstance(p, w, r, httpACUserInteractive)
 
 	// Incoming webhook
 	case routeIncomingWebhook, routeIncomingIssueEvent:
