@@ -72,7 +72,7 @@ func (jsi jiraServerInstance) GetJIRAClient(jiraUser JIRAUser) (returnClient *ji
 		if returnErr == nil {
 			return
 		}
-		returnErr = errors.WithMessage(returnErr, "failed to get a JIRA client for "+jiraUser.Name)
+		returnErr = errors.WithMessage(returnErr, "failed to get a Jira client for "+jiraUser.Name)
 	}()
 
 	if jiraUser.Oauth1AccessToken == "" || jiraUser.Oauth1AccessSecret == "" {
