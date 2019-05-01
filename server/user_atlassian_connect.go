@@ -28,7 +28,7 @@ func httpACUserConfig(p *Plugin, w http.ResponseWriter, r *http.Request) (int, e
 	}
 	jci, ok := ji.(*jiraCloudInstance)
 	if !ok {
-		return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
+		return http.StatusBadRequest, errors.New("Must be a Jira Cloud instance, is " + ji.GetType())
 	}
 
 	_, tokenString, err := jci.parseHTTPRequestJWT(r)
@@ -62,7 +62,7 @@ func httpACUserConfigSubmit(p *Plugin, w http.ResponseWriter, r *http.Request) (
 	}
 	jci, ok := ji.(*jiraCloudInstance)
 	if !ok {
-		return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
+		return http.StatusBadRequest, errors.New("Must be a Jira Cloud instance, is " + ji.GetType())
 	}
 
 	jwtToken, _, err := jci.parseHTTPRequestJWT(r)
@@ -116,7 +116,7 @@ func httpACUserConfigSubmit(p *Plugin, w http.ResponseWriter, r *http.Request) (
 	<script src="https://connect-cdn.atl-paas.net/all.js" data-options=""></script>
     </head>
     <body>
-    granted Mattermost user ` + mmuser.GetDisplayName(model.SHOW_NICKNAME_FULLNAME) + " (" + mmuser.Username + `) access to JIRA as ` + displayName + " (" + username + `)
+    granted Mattermost user ` + mmuser.GetDisplayName(model.SHOW_NICKNAME_FULLNAME) + " (" + mmuser.Username + `) access to Jira as ` + displayName + " (" + username + `)
     </body>
 </html>`))
 	if err != nil {
