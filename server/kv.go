@@ -89,7 +89,7 @@ func (p *Plugin) StoreJIRAInstance(ji Instance, current bool) (returnErr error) 
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store JIRA instance:%+v", ji))
+			fmt.Sprintf("failed to store Jira instance:%+v", ji))
 	}()
 
 	err := p.kvSet(md5key(prefixJIRAInstance, ji.GetURL()), ji)
@@ -116,7 +116,7 @@ func (p *Plugin) StoreJIRAInstance(ji Instance, current bool) (returnErr error) 
 		}
 	}
 
-	p.debugf("Stored: JIRA instance (current:%v): %#v", current, ji)
+	p.debugf("Stored: Jira instance (current:%v): %#v", current, ji)
 
 	return nil
 }
@@ -124,7 +124,7 @@ func (p *Plugin) StoreJIRAInstance(ji Instance, current bool) (returnErr error) 
 func (p *Plugin) LoadCurrentJIRAInstance() (Instance, error) {
 	ji, err := p.loadJIRAInstance(keyCurrentJIRAInstance)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to load current JIRA instance")
+		return nil, errors.WithMessage(err, "failed to load current Jira instance")
 	}
 
 	return ji, nil
@@ -133,7 +133,7 @@ func (p *Plugin) LoadCurrentJIRAInstance() (Instance, error) {
 func (p *Plugin) LoadJIRAInstance(key string) (Instance, error) {
 	ji, err := p.loadJIRAInstance(md5key(prefixJIRAInstance, key))
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to load JIRA instance "+key)
+		return nil, errors.WithMessage(err, "failed to load Jira instance "+key)
 	}
 
 	return ji, nil
@@ -168,7 +168,7 @@ func (p *Plugin) loadJIRAInstance(fullkey string) (Instance, error) {
 		return jsi.InitWithPlugin(p), nil
 	}
 
-	return nil, errors.New(fmt.Sprintf("JIRA instance %s has unsupported type: %s", fullkey, jsi.Type))
+	return nil, errors.New(fmt.Sprintf("Jira instance %s has unsupported type: %s", fullkey, jsi.Type))
 }
 
 func (p *Plugin) StoreKnownJIRAInstances(known map[string]string) (returnErr error) {
@@ -177,7 +177,7 @@ func (p *Plugin) StoreKnownJIRAInstances(known map[string]string) (returnErr err
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store known JIRA instances %+v", known))
+			fmt.Sprintf("failed to store known Jira instances %+v", known))
 	}()
 
 	return p.kvSet(keyKnownJIRAInstances, known)
@@ -187,7 +187,7 @@ func (p *Plugin) LoadKnownJIRAInstances() (map[string]string, error) {
 	known := map[string]string{}
 	err := p.kvGet(keyKnownJIRAInstances, &known)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to load known JIRA instances")
+		return nil, errors.WithMessage(err, "failed to load known Jira instances")
 	}
 	return known, nil
 }
@@ -198,7 +198,7 @@ func (p *Plugin) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JI
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store JIRA user, mattermostUserId:%s, user:%#v", mattermostUserId, jiraUser))
+			fmt.Sprintf("failed to store Jira user, mattermostUserId:%s, user:%#v", mattermostUserId, jiraUser))
 	}()
 
 	err := p.kvSet(keyWithInstance(ji, mattermostUserId), jiraUser)
@@ -211,7 +211,7 @@ func (p *Plugin) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JI
 		return err
 	}
 
-	p.debugf("Stored: JIRA user, keys:\n\t%s (%s): %+v\n\t%s (%s): %s",
+	p.debugf("Stored: Jira user, keys:\n\t%s (%s): %+v\n\t%s (%s): %s",
 		keyWithInstance(ji, mattermostUserId), mattermostUserId, jiraUser,
 		keyWithInstance(ji, jiraUser.Name), jiraUser.Name, mattermostUserId)
 
@@ -225,7 +225,7 @@ func (p *Plugin) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, e
 	err := p.kvGet(keyWithInstance(ji, mattermostUserId), &jiraUser)
 	if err != nil {
 		return JIRAUser{}, errors.WithMessage(err,
-			fmt.Sprintf("failed to load JIRA user for mattermostUserId:%s", mattermostUserId))
+			fmt.Sprintf("failed to load Jira user for mattermostUserId:%s", mattermostUserId))
 	}
 	if len(jiraUser.Key) == 0 {
 		return JIRAUser{}, ErrUserNotFound
@@ -238,7 +238,7 @@ func (p *Plugin) LoadMattermostUserId(ji Instance, jiraUserName string) (string,
 	err := p.kvGet(keyWithInstance(ji, jiraUserName), &mattermostUserId)
 	if err != nil {
 		return "", errors.WithMessage(err,
-			"failed to load Mattermost user ID for JIRA user: "+jiraUserName)
+			"failed to load Mattermost user ID for Jira user: "+jiraUserName)
 	}
 	if len(mattermostUserId) == 0 {
 		return "", ErrUserNotFound
