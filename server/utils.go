@@ -48,7 +48,7 @@ func (p *Plugin) CreateBotDMPost(userId, message, postType string) (returnErr er
 func (p *Plugin) loadJIRAProjectKeys(jiraClient *jira.Client) ([]string, error) {
 	list, _, err := jiraClient.Project.GetList()
 	if err != nil {
-		return nil, errors.WithMessage(err, "Error requesting list of JIRA projects")
+		return nil, errors.WithMessage(err, "Error requesting list of Jira projects")
 	}
 
 	projectKeys := []string{}
