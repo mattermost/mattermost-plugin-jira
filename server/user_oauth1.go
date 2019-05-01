@@ -23,13 +23,13 @@ func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 	jis, ok := ji.(*jiraServerInstance)
 	if !ok {
 		return http.StatusInternalServerError,
-			errors.New("Must be a JIRA Server instance, is " + ji.GetType())
+			errors.New("Must be a Jira Server instance, is " + ji.GetType())
 	}
 
 	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(r)
 	if err != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to parse callback request from JIRA")
+			errors.WithMessage(err, "failed to parse callback request from Jira")
 	}
 
 	requestSecret, err := p.LoadOneTimeSecret(requestToken)
