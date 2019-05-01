@@ -66,7 +66,7 @@ As a Jira administrator, you have two steps to configure the plugin:
   - Enabling development mode allows you to install apps that are not from the Atlassian Marketplace.
   - Mattermost has opted not to publish to Atlassian Marketplace, as we don’t have an efficient way to provide a callback URL for the app in the marketplace, to enable user-specific interactions between the Mattermost server and Jira cloud instance.
 
-3. Click **Upload add-on**, then enter the Atlassian Connect app descriptor in the form https://<SITEURL>/plugins/jira/atlassian-connect.json where `SITEURL` is your [Mattermost Site URL](https://docs.mattermost.com/administration/config-settings.html#site-url). Select **Upload**.
+3. Click **Upload app**, then enter the Atlassian Connect app descriptor in the form https://<SITEURL>/plugins/jira/atlassian-connect.json where `SITEURL` is your [Mattermost Site URL](https://docs.mattermost.com/administration/config-settings.html#site-url). Select **Upload**.
 
 4. Wait for the app to install.
 
