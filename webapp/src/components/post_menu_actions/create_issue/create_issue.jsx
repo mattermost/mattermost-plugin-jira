@@ -63,7 +63,7 @@ export default class CreateIssuePostMenuAction extends PureComponent {
                     role='menuitem'
                     onClick={this.connectClick}
                 >
-                    {'Connect to JIRA'}
+                    {'Connect to Jira'}
                 </button>
             );
         }
