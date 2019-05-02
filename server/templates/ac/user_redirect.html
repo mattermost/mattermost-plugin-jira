@@ -14,7 +14,7 @@
 			}
 
 			AP.getLocation(function (loc) {
-				document.getElementById('{{ .ArgMMToken }}').value = getParameterByName("{{ .ArgMMToken }}", loc);
+				document.getElementById('{{ .ArgMMToken }}').value = getParameterByName('{{ .ArgMMToken }}', loc);
 			});
 
 			AP.context.getToken(function (token) {
