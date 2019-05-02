@@ -6,7 +6,6 @@ package main
 import (
 	"crypto/rsa"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -101,26 +100,8 @@ func (p *Plugin) OnActivate() error {
 		return errors.WithMessage(appErr, fmt.Sprintf("OnActivate: unable to find user: %s", conf.UserName))
 	}
 
-	templates := make(map[string]*template.Template)
 	dir := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
-
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			return nil
-		}
-		template, err := template.ParseFiles(path)
-		if err != nil {
-			p.errorf("OnActivate: failed to parse template %s: %v", path, err)
-			return nil
-		}
-		key := path[len(dir):]
-		templates[key] = template
-		p.debugf("loaded template %s", key)
-		return nil
-	})
+	templates, err := p.loadTemplates(dir)
 	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to load templates")
 	}

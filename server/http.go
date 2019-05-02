@@ -5,6 +5,8 @@ package main
 
 import (
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"text/template"
 
@@ -94,6 +96,31 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	}
 
 	return http.StatusNotFound, errors.New("not found")
+}
+
+func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {
+	templates := make(map[string]*template.Template)
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		template, err := template.ParseFiles(path)
+		if err != nil {
+			p.errorf("OnActivate: failed to parse template %s: %v", path, err)
+			return nil
+		}
+		key := path[len(dir):]
+		templates[key] = template
+		p.debugf("loaded template %s", key)
+		return nil
+	})
+	if err != nil {
+		return nil, errors.WithMessage(err, "OnActivate: failed to load templates")
+	}
+	return templates, nil
 }
 
 func respondWithTemplate(w http.ResponseWriter, r *http.Request,

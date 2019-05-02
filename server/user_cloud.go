@@ -88,7 +88,8 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 
 	switch r.URL.Path {
 	case routeACUserConnected:
-		value, err := jci.Plugin.LoadOneTimeSecret(secret)
+		value := ""
+		value, err = jci.Plugin.LoadOneTimeSecret(secret)
 		if err != nil {
 			return http.StatusUnauthorized, err
 		}
