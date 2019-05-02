@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -180,7 +181,9 @@ func TestPlugin(t *testing.T) {
 				TeamId: "theteamid",
 			}, (*model.AppError)(nil))
 
-			p := Plugin{}
+			p := Plugin{
+				confLock: &sync.RWMutex{},
+			}
 			p.updateConfig(func(conf *config) {
 				conf.Secret = tc.Configuration.Secret
 				conf.UserName = tc.Configuration.UserName
