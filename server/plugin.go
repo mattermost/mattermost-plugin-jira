@@ -48,7 +48,7 @@ type Plugin struct {
 
 	// configuration and a muttex to control concurrent access
 	conf     config
-	confLock sync.RWMutex
+	confLock *sync.RWMutex
 
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
@@ -73,6 +73,9 @@ func (p *Plugin) updateConfig(f func(conf *config)) config {
 
 // OnConfigurationChange is invoked when configuration changes may have been made.
 func (p *Plugin) OnConfigurationChange() error {
+	if p.confLock == nil {
+		p.confLock = &sync.RWMutex{}
+	}
 
 	// Load the public configuration fields from the Mattermost server configuration.
 	ec := externalConfig{}
@@ -89,6 +92,9 @@ func (p *Plugin) OnConfigurationChange() error {
 }
 
 func (p *Plugin) OnActivate() error {
+	if p.confLock == nil {
+		p.confLock = &sync.RWMutex{}
+	}
 	conf := p.getConfig()
 	user, appErr := p.API.GetUserByUsername(conf.UserName)
 	if appErr != nil {
@@ -132,29 +138,29 @@ func (p *Plugin) OnActivate() error {
 	return nil
 }
 
-func (p Plugin) GetPluginKey() string {
+func (p *Plugin) GetPluginKey() string {
 	return "mattermost_" + regexpNonAlnum.ReplaceAllString(p.GetSiteURL(), "_")
 }
-func (p Plugin) GetPluginURLPath() string {
+func (p *Plugin) GetPluginURLPath() string {
 	return "/plugins/" + manifest.Id
 }
 
-func (p Plugin) GetPluginURL() string {
+func (p *Plugin) GetPluginURL() string {
 	return strings.TrimRight(p.GetSiteURL(), "/") + p.GetPluginURLPath()
 }
 
-func (p Plugin) GetSiteURL() string {
+func (p *Plugin) GetSiteURL() string {
 	return *p.API.GetConfig().ServiceSettings.SiteURL
 }
 
-func (p Plugin) debugf(f string, args ...interface{}) {
+func (p *Plugin) debugf(f string, args ...interface{}) {
 	p.API.LogDebug(fmt.Sprintf(f, args...))
 }
 
-func (p Plugin) infof(f string, args ...interface{}) {
+func (p *Plugin) infof(f string, args ...interface{}) {
 	p.API.LogInfo(fmt.Sprintf(f, args...))
 }
 
-func (p Plugin) errorf(f string, args ...interface{}) {
+func (p *Plugin) errorf(f string, args ...interface{}) {
 	p.API.LogError(fmt.Sprintf(f, args...))
 }
