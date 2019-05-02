@@ -13,11 +13,11 @@ import (
 const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira connect` - Connect your Mattermost account to your Jira account and subscribe to events\n" +
 	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
-	"* `/jira instance [add/list/select]` - Manage connected Jira instances. Must have System Admin role in Mattermost\n" +
+	"* `/jira instance [add/list/select]` - Manage connected Jira instances\n" +
 	"  * `/jira instance add server <URL>` - Connect a Jira Server instance to Mattermost\n" +
 	"  * `/jira instance add cloud` - Connect a Jira Cloud instance to Mattermost\n" +
 	"  * `/jira instance list` - List connected Jira instances\n" +
-	"  * `/jira instance select <key or number>` - Select the active Jira instance. At most one active Jira instance is currently supported\n" +
+	"  * `/jira instance select <number or URL>` - Select the active Jira instance. At most one active Jira instance is currently supported\n" +
 	""
 
 func getCommand() *model.Command {
@@ -100,7 +100,7 @@ func executeInstanceList(p *Plugin, c *plugin.Context, args []string) *model.Com
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
-	text := "Known Jira instances (selected instance is **bold**)\n\n| |Key|Type|\n|--|--|--|\n"
+	text := "Known Jira instances (selected instance is **bold**)\n\n| |URL|Type|\n|--|--|--|\n"
 	for i, key := range keys {
 		typ := known[key]
 		if key == current.GetURL() {
@@ -166,11 +166,11 @@ func executeInstanceSelect(p *Plugin, c *plugin.Context, args []string) *model.C
 
 	ji, err := p.LoadJIRAInstance(instanceKey)
 	if err != nil {
-		return responsef("Failed to load JIRA instance %s: %v", instanceKey, err)
+		return responsef("Failed to load Jira instance %s: %v", instanceKey, err)
 	}
 	err = p.StoreJIRAInstance(ji, true)
 	if err != nil {
-		return responsef("Failed to store JIRA instance %s: %v", instanceKey, err)
+		return responsef("Failed to store Jira instance %s: %v", instanceKey, err)
 	}
 
 	return executeInstanceList(p, c, args)
