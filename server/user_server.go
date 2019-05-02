@@ -19,7 +19,7 @@ func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.
 	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(r)
 	if err != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to parse callback request from JIRA")
+			errors.WithMessage(err, "failed to parse callback request from Jira")
 	}
 
 	requestSecret, err := jsi.Plugin.LoadOneTimeSecret(requestToken)

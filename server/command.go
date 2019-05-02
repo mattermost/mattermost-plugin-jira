@@ -24,8 +24,8 @@ const helpText = "###### Mattermost JIRA Plugin - Slash Command Help\n" +
 func getCommand() *model.Command {
 	return &model.Command{
 		Trigger:          "jira",
-		DisplayName:      "JIRA",
-		Description:      "Integration with JIRA.",
+		DisplayName:      "Jira",
+		Description:      "Integration with Jira.",
 		AutoComplete:     true,
 		AutoCompleteDesc: "Available commands: connect, disconnect, help",
 		AutoCompleteHint: "[command]",
@@ -55,18 +55,18 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 }
 
 func executeConnect(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
-	return responsef("[Click here to link your JIRA account.](%s/%s)",
+	return responsef("[Click here to link your Jira account.](%s/%s)",
 		p.GetPluginURL(), routeUserConnect)
 }
 
 func executeDisconnect(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
-	return responsef("[Click here to unlink your JIRA account.](%s/%s)",
+	return responsef("[Click here to unlink your Jira account.](%s/%s)",
 		p.GetPluginURL(), routeUserDisconnect)
 }
 
 func executeInstance(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
 	if len(args) < 1 {
-		return responsef("Usage: /jira instance [add,list,select,delete]")
+		return responsef("Please specify a parameter in the form `/jira instance [add,list,select]")
 	}
 	action := args[0]
 	args = args[1:]
@@ -81,13 +81,13 @@ func executeInstance(p *Plugin, c *plugin.Context, args []string) *model.Command
 	case "delete":
 		return executeInstanceDelete(p, c, args...)
 	}
-	return responsef("Usage: /jira instance [add,list,select,delete]")
+	return responsef("Please specify a parameter in the form `/jira instance [add,list,select]")
 }
 
 func executeInstanceList(p *Plugin, c *plugin.Context) *model.CommandResponse {
 	known, err := p.LoadKnownJIRAInstances()
 	if err != nil {
-		return responsef("Failed to load known JIRA instances: %v", err)
+		return responsef("Failed to load known Jira instances: %v", err)
 	}
 	if len(known) == 0 {
 		return responsef("(none installed)\n")
@@ -95,7 +95,7 @@ func executeInstanceList(p *Plugin, c *plugin.Context) *model.CommandResponse {
 
 	current, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
-		return responsef("Failed to load current JIRA instance: %v", err)
+		return responsef("Failed to load current Jira instance: %v", err)
 	}
 
 	keys := []string{}
@@ -145,14 +145,14 @@ const addResponseFormat = `Instance has been added. You need to add an Applicati
 
 func executeInstanceAdd(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
 	if len(args) < 1 {
-		return responsef("Usage: `/jira instance add server {URL}` or `/jira instance add cloud`")
+		return responsef("Please specify a parameter in the form `/jira instance add server {URL}` or `/jira instance add cloud`")
 	}
 	typ := args[0]
 
 	switch typ {
 	case JIRATypeServer:
 		if len(args) < 2 {
-			return responsef("Usage: `/jira instance add server {URL}`")
+			return responsef("Please specify the server URL in the form `/jira instance add server {URL}`")
 		}
 		jiraURL := args[1]
 
@@ -170,11 +170,11 @@ func executeInstanceAdd(p *Plugin, c *plugin.Context, args ...string) *model.Com
 
 	case JIRATypeCloud:
 		// TODO the exact group membership in JIRA?
-		return responsef(`As an admin, upload an application from %s/%s. The link can be found in "JIRA Settings/Applications/Manage"`,
+		return responsef(`As an admin, upload an application from %s/%s. The link can be found in **JIRA Settings > Applications > Manage**`,
 			p.GetPluginURL(), routeACJSON)
 	}
 
-	return responsef("Usage: `/jira instance add server {URL}` or `/jira instance add cloud`")
+	return responsef("Please specify a parameter in the form `/jira instance add server {URL}` or `/jira instance add cloud`")
 }
 
 func executeInstanceSelect(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
@@ -202,11 +202,11 @@ func executeInstanceSelect(p *Plugin, c *plugin.Context, args ...string) *model.
 
 	ji, err := p.LoadJIRAInstance(instanceKey)
 	if err != nil {
-		return responsef("failed to load JIRA instance %s: %v", instanceKey, err)
+		return responsef("Failed to load Jira instance %s: %v", instanceKey, err)
 	}
 	err = p.StoreCurrentJIRAInstance(ji)
 	if err != nil {
-		return responsef("failed to store JIRA instance %s: %v", instanceKey, err)
+		return responsef("Failed to store Jira instance %s: %v", instanceKey, err)
 	}
 
 	return executeInstanceList(p, c)

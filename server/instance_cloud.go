@@ -113,7 +113,7 @@ func (jci jiraCloudInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, err
 	//TODO decide if we ever need this as the default client
 	// client, err = jci.getJIRAClientForServer()
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get JIRA client for user "+jiraUser.Name)
+		return nil, errors.WithMessage(err, "failed to get Jira client for user "+jiraUser.Name)
 	}
 
 	return client, nil
