@@ -53,7 +53,7 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 	}
 
 	if channel.Type != model.CHANNEL_OPEN {
-		err = errors.New("ignoring JIRA comment in " + channel.Name)
+		err = errors.New("ignoring Jira comment in " + channel.Name)
 		return
 	}
 
@@ -80,7 +80,7 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 
 		_, _, err := jiraClient.Issue.AddComment(issue, comment)
 		if err != nil {
-			p.errorf("MessageHasBeenPosted: failed to add the comment to JIRA, error: %v", err)
+			p.errorf("MessageHasBeenPosted: failed to add the comment to Jira, error: %v", err)
 		}
 	}
 }

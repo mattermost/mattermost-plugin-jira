@@ -93,7 +93,7 @@ func httpUserDisconnect(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
                </script>
        </head>
        <body>
-               <p>Disconnected from JIRA. Please close this page.</p>
+               <p>Disconnected from Jira. Please close this page.</p>
        </body>
 </html>
 `

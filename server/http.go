@@ -32,7 +32,7 @@ const (
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
 	config := p.getConfig()
 	if config.UserName == "" {
-		http.Error(w, "JIRA plugin not configured correctly; must provide UserName", http.StatusForbidden)
+		http.Error(w, "Jira plugin not configured correctly; must provide UserName", http.StatusForbidden)
 		return
 	}
 
@@ -75,7 +75,7 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	case routeIncomingWebhook, routeIncomingIssueEvent:
 		return httpWebhook(p, w, r)
 
-	// Oauth1 (JIRA Server)
+	// Oauth1 (Jira Server)
 	case routeOAuth1Complete:
 		return httpOAuth1Complete(p, w, r)
 	case routeOAuth1PublicKey:

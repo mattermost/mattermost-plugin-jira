@@ -91,7 +91,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 	// TODO add JWT support
 	cfg := p.getConfig()
 	if cfg.Secret == "" || cfg.UserName == "" {
-		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret and UserName")
+		return http.StatusForbidden, fmt.Errorf("Jira plugin not configured correctly; must provide Secret and UserName")
 	}
 
 	err := r.ParseForm()
