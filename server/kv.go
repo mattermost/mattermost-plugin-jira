@@ -121,7 +121,7 @@ func (p *Plugin) storeJiraInstance(ji Instance, storeKey, storeCurrent bool) (re
 		if err != nil {
 			return err
 		}
-		p.debugf("Stored: known JIRA instances: %+v", known)
+		p.debugf("Stored: known Jira instances: %+v", known)
 	}
 
 	// Update the current instance if needed
@@ -130,7 +130,7 @@ func (p *Plugin) storeJiraInstance(ji Instance, storeKey, storeCurrent bool) (re
 		if err != nil {
 			return err
 		}
-		p.debugf("Stored: current JIRA instance: %s", ji.GetURL())
+		p.debugf("Stored: current Jira instance: %s", ji.GetURL())
 	}
 
 	return nil
@@ -142,7 +142,7 @@ func (p *Plugin) DeleteJiraInstance(key string) (returnErr error) {
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to delete JIRA instance:%v", key))
+			fmt.Sprintf("failed to delete Jira instance:%v", key))
 	}()
 
 	// Delete the instance.
@@ -150,7 +150,7 @@ func (p *Plugin) DeleteJiraInstance(key string) (returnErr error) {
 	if appErr != nil {
 		return appErr
 	}
-	p.debugf("Deleted: JIRA instance: %s", key)
+	p.debugf("Deleted: Jira instance: %s", key)
 
 	// Update known instances
 	known, err := p.LoadKnownJIRAInstances()
@@ -167,7 +167,7 @@ func (p *Plugin) DeleteJiraInstance(key string) (returnErr error) {
 	if err != nil {
 		return err
 	}
-	p.debugf("Deleted: from known JIRA instances: %s", key)
+	p.debugf("Deleted: from known Jira instances: %s", key)
 
 	// Remove the current instance if it matches the deleted
 	current, err := p.LoadCurrentJIRAInstance()
@@ -179,7 +179,7 @@ func (p *Plugin) DeleteJiraInstance(key string) (returnErr error) {
 		if appErr != nil {
 			return appErr
 		}
-		p.debugf("Deleted: current JIRA instance")
+		p.debugf("Deleted: current Jira instance")
 	}
 
 	return nil
