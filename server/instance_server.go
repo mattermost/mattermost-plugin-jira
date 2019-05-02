@@ -4,8 +4,8 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
+	"path"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/dghubble/oauth1"
@@ -17,6 +17,9 @@ type jiraServerInstance struct {
 
 	JIRAServerURL string
 
+	// The SiteURL may change as we go, so we store the PluginKey when as it was installed
+	MattermostKey string
+
 	oauth1Config *oauth1.Config
 }
 
@@ -25,6 +28,7 @@ var _ Instance = (*jiraServerInstance)(nil)
 func NewJIRAServerInstance(p *Plugin, jiraURL string) Instance {
 	return &jiraServerInstance{
 		JIRAInstance:  NewJIRAInstance(p, JIRATypeServer, jiraURL),
+		MattermostKey: p.GetPluginKey(),
 		JIRAServerURL: jiraURL,
 	}
 }
@@ -43,6 +47,16 @@ func withServerInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f wit
 		}
 		return f(jsi, w, r)
 	})
+}
+
+func (jsi jiraServerInstance) GetMattermostKey() string {
+	return jsi.MattermostKey
+}
+
+func (jsi jiraServerInstance) GetDisplayDetails() map[string]string {
+	return map[string]string{
+		"MattermostKey": jsi.MattermostKey,
+	}
 }
 
 func (jsi jiraServerInstance) GetUserConnectURL(mattermostUserId string) (returnURL string, returnErr error) {
@@ -131,10 +145,9 @@ func (jsi *jiraServerInstance) GetOAuth1Config() (returnConfig *oauth1.Config, r
 	jsi.lock.Lock()
 	defer jsi.lock.Unlock()
 	jsi.oauth1Config = &oauth1.Config{
-		// TODO make these configurable
-		ConsumerKey:    "ConsumerKey",
+		ConsumerKey:    jsi.MattermostKey,
 		ConsumerSecret: "dontcare",
-		CallbackURL:    fmt.Sprintf("%v/oauth1/complete", jsi.GetPluginURL()),
+		CallbackURL:    path.Join(jsi.GetPluginURL(), routeOAuth1Complete),
 		Endpoint: oauth1.Endpoint{
 			RequestTokenURL: jsi.GetURL() + "/plugins/servlet/oauth/request-token",
 			AuthorizeURL:    jsi.GetURL() + "/plugins/servlet/oauth/authorize",

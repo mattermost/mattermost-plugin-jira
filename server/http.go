@@ -26,8 +26,8 @@ const (
 	routeACUserDisconnected        = "/ac/user_disconnected.html"
 	routeIncomingIssueEvent        = "/issue_event"
 	routeIncomingWebhook           = "/webhook"
-	routeOAuth1Complete            = "/oauth1/complete"
-	routeOAuth1PublicKey           = "/oauth1/public-key"
+	routeOAuth1Complete            = "/oauth1/complete.html"
+	routeOAuth1PublicKey           = "/oauth1/public_key.html" // TODO remove, debugging?
 	routeUserConnect               = "/user/connect"
 	routeUserDisconnect            = "/user/disconnect"
 )

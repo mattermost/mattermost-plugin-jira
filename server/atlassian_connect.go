@@ -7,23 +7,16 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"regexp"
 
 	"github.com/pkg/errors"
 )
 
 const userRedirectPageKey = "user-redirect"
 
-var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
-
 func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
 			errors.New("method " + r.Method + " is not allowed, must be GET")
-	}
-
-	enc := func(in string) string {
-		return regexpNonAlnum.ReplaceAllString(in, "-")
 	}
 
 	return respondWithTemplate(w, r, p.templates, "application/json", map[string]string{
@@ -34,7 +27,7 @@ func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) 
 		"RouteACUserRedirectWithToken": routeACUserRedirectWithToken,
 		"UserRedirectPageKey":          userRedirectPageKey,
 		"ExternalURL":                  p.GetSiteURL(),
-		"Key":                          "mattermost-" + enc(p.GetSiteURL()),
+		"PluginKey":                    p.GetPluginKey(),
 	})
 }
 
@@ -60,7 +53,7 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 	// Create or overwrite the instance record, also store it
 	// as current
 	jiraInstance := NewJIRACloudInstance(p, asc.BaseURL, string(body), &asc)
-	err = p.StoreJIRAInstance(jiraInstance, true)
+	err = p.StoreJIRAInstanceSetCurrent(jiraInstance)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

@@ -115,7 +115,7 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 		return http.StatusInternalServerError, err
 	}
 
-	// This set of props should work for both routes/templates
+	// This set of props should work for all relevant routes/templates
 	return respondWithTemplate(w, r, jci.Plugin.templates, "text/html", struct {
 		ConnectSubmitURL      string
 		DisconnectSubmitURL   string

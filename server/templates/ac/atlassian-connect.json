@@ -1,5 +1,5 @@
 {
-	"key": "{{ .Key }}",
+	"key": "{{ .PluginKey }}",
 	"name": "Mattermost Plugin ({{ .ExternalURL }})",
 	"description": "Integrates JIRA with Mattermost for in-place interactions and notifications",
 	"vendor": {

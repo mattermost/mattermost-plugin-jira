@@ -5,6 +5,7 @@ package main
 
 import (
 	"net/http"
+	"regexp"
 	"sync"
 
 	"github.com/andygrunwald/go-jira"
@@ -19,12 +20,13 @@ const prefixForInstance = true
 
 type Instance interface {
 	GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error)
-	GetKey() string
+	GetDisplayDetails() map[string]string
+	GetMattermostKey() string
 	GetPlugin() *Plugin
 	GetType() string
 	GetURL() string
 	GetUserConnectURL(mattermostUserId string) (string, error)
-	SetPlugin(p *Plugin)
+	Init(p *Plugin)
 }
 
 type JIRAInstance struct {
@@ -34,6 +36,8 @@ type JIRAInstance struct {
 	Key  string
 	Type string
 }
+
+var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 func NewJIRAInstance(p *Plugin, typ, key string) *JIRAInstance {
 	return &JIRAInstance{
@@ -56,8 +60,9 @@ func (ji JIRAInstance) GetPlugin() *Plugin {
 	return ji.Plugin
 }
 
-func (ji *JIRAInstance) SetPlugin(p *Plugin) {
+func (ji *JIRAInstance) Init(p *Plugin) {
 	ji.Plugin = p
+	ji.lock = &sync.RWMutex{}
 }
 
 type withInstanceFunc func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error)

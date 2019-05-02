@@ -31,7 +31,6 @@ var _ Instance = (*jiraCloudInstance)(nil)
 type AtlassianSecurityContext struct {
 	Key            string `json:"key"`
 	ClientKey      string `json:"clientKey"`
-	PublicKey      string `json:"publicKey"`
 	SharedSecret   string `json:"sharedSecret"`
 	ServerVersion  string `json:"serverVersion"`
 	PluginsVersion string `json:"pluginsVersion"`
@@ -60,6 +59,19 @@ func withCloudInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f with
 		}
 		return f(jci, w, r)
 	})
+}
+
+func (jci jiraCloudInstance) GetMattermostKey() string {
+	return jci.AtlassianSecurityContext.Key
+}
+
+func (jci jiraCloudInstance) GetDisplayDetails() map[string]string {
+	return map[string]string{
+		"Key":            jci.AtlassianSecurityContext.Key,
+		"ClientKey":      jci.AtlassianSecurityContext.ClientKey,
+		"ServerVersion":  jci.AtlassianSecurityContext.ServerVersion,
+		"PluginsVersion": jci.AtlassianSecurityContext.PluginsVersion,
+	}
 }
 
 func (jci jiraCloudInstance) GetUserConnectURL(mattermostUserId string) (string, error) {

@@ -25,7 +25,7 @@ const (
 func keyWithInstance(ji Instance, key string) string {
 	if prefixForInstance {
 		h := md5.New()
-		fmt.Fprintf(h, "%s/%s", ji.GetKey(), key)
+		fmt.Fprintf(h, "%s/%s", ji.GetURL(), key)
 		key = fmt.Sprintf("%x", h.Sum(nil))
 	}
 	return key
@@ -83,7 +83,19 @@ func (p *Plugin) kvSet(key string, v interface{}) (returnErr error) {
 	return nil
 }
 
-func (p *Plugin) StoreJIRAInstance(ji Instance, current bool) (returnErr error) {
+func (p *Plugin) StoreJIRAInstance(ji Instance) error {
+	return p.storeJiraInstance(ji, true, false)
+}
+
+func (p *Plugin) StoreJIRAInstanceSetCurrent(ji Instance) error {
+	return p.storeJiraInstance(ji, true, true)
+}
+
+func (p *Plugin) StoreCurrentJIRAInstance(ji Instance) error {
+	return p.storeJiraInstance(ji, false, true)
+}
+
+func (p *Plugin) storeJiraInstance(ji Instance, storeKey, storeCurrent bool) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -92,31 +104,83 @@ func (p *Plugin) StoreJIRAInstance(ji Instance, current bool) (returnErr error) 
 			fmt.Sprintf("failed to store JIRA instance:%+v", ji))
 	}()
 
-	err := p.kvSet(md5key(prefixJIRAInstance, ji.GetURL()), ji)
-	if err != nil {
-		return err
+	if storeKey {
+		err := p.kvSet(md5key(prefixJIRAInstance, ji.GetURL()), ji)
+		if err != nil {
+			return err
+		}
+		p.debugf("Stored: JIRA instance: %+v", ji)
+
+		// Update known instances
+		known, err := p.LoadKnownJIRAInstances()
+		if err != nil {
+			return err
+		}
+		known[ji.GetURL()] = ji.GetType()
+		err = p.StoreKnownJIRAInstances(known)
+		if err != nil {
+			return err
+		}
+		p.debugf("Stored: known JIRA instances: %+v", known)
 	}
+
+	// Update the current instance if needed
+	if storeCurrent {
+		err := p.kvSet(keyCurrentJIRAInstance, ji)
+		if err != nil {
+			return err
+		}
+		p.debugf("Stored: current JIRA instance: %s", ji.GetURL())
+	}
+
+	return nil
+}
+
+func (p *Plugin) DeleteJiraInstance(key string) (returnErr error) {
+	defer func() {
+		if returnErr == nil {
+			return
+		}
+		returnErr = errors.WithMessage(returnErr,
+			fmt.Sprintf("failed to delete JIRA instance:%v", key))
+	}()
+
+	// Delete the instance.
+	appErr := p.API.KVDelete(md5key(prefixJIRAInstance, key))
+	if appErr != nil {
+		return appErr
+	}
+	p.debugf("Deleted: JIRA instance: %s", key)
 
 	// Update known instances
 	known, err := p.LoadKnownJIRAInstances()
 	if err != nil {
 		return err
 	}
-	known[ji.GetKey()] = ji.GetType()
+	for k := range known {
+		if k == key {
+			delete(known, k)
+			break
+		}
+	}
 	err = p.StoreKnownJIRAInstances(known)
 	if err != nil {
 		return err
 	}
+	p.debugf("Deleted: from known JIRA instances: %s", key)
 
-	// Update the current instance if needed
-	if current {
-		err = p.kvSet(keyCurrentJIRAInstance, ji)
-		if err != nil {
-			return err
-		}
+	// Remove the current instance if it matches the deleted
+	current, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return err
 	}
-
-	p.debugf("Stored: JIRA instance (current:%v): %#v", current, ji)
+	if current.GetURL() == key {
+		appErr := p.API.KVDelete(keyCurrentJIRAInstance)
+		if appErr != nil {
+			return appErr
+		}
+		p.debugf("Deleted: current JIRA instance")
+	}
 
 	return nil
 }
@@ -162,11 +226,11 @@ func (p *Plugin) loadJIRAInstance(fullkey string) (Instance, error) {
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
 		}
-		jci.SetPlugin(p)
+		jci.Init(p)
 		return &jci, nil
 
 	case JIRATypeServer:
-		jsi.SetPlugin(p)
+		jsi.Init(p)
 		return &jsi, nil
 	}
 
