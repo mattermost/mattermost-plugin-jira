@@ -4,9 +4,9 @@
 package main
 
 import (
+	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 
@@ -24,7 +24,7 @@ const (
 
 func keyWithInstance(ji Instance, key string) string {
 	if prefixForInstance {
-		h := sha256.New()
+		h := md5.New()
 		fmt.Fprintf(h, "%s/%s", ji.GetURL(), key)
 		key = fmt.Sprintf("%x", h.Sum(nil))
 	}
@@ -32,7 +32,7 @@ func keyWithInstance(ji Instance, key string) string {
 }
 
 func hashkey(prefix, key string) string {
-	h := sha256.New()
+	h := md5.New()
 	_, _ = h.Write([]byte(key))
 	return fmt.Sprintf("%s%x", prefix, h.Sum(nil))
 }
