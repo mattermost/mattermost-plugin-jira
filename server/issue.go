@@ -15,11 +15,13 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
-func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,
 			errors.New("method " + r.Method + " is not allowed, must be POST")
 	}
+
+	api := ji.GetPlugin().API
 
 	create := &struct {
 		PostId string           `json:"post_id"`
@@ -36,12 +38,7 @@ func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
-	ji, err := p.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	jiraUser, err := p.LoadJIRAUser(ji, mattermostUserId)
+	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -52,7 +49,7 @@ func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 	}
 
 	// Lets add a permalink to the post in the Jira Description
-	post, appErr := p.API.GetPost(create.PostId)
+	post, appErr := api.GetPost(create.PostId)
 	if appErr != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(appErr, "failed to load post "+create.PostId)
@@ -61,10 +58,10 @@ func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 		return http.StatusInternalServerError,
 			errors.New("failed to load post " + create.PostId + ": not found")
 	}
-	if channel, _ := p.API.GetChannel(post.ChannelId); channel != nil {
-		if team, _ := p.API.GetTeam(channel.TeamId); team != nil {
+	if channel, _ := api.GetChannel(post.ChannelId); channel != nil {
+		if team, _ := api.GetTeam(channel.TeamId); team != nil {
 			permalink := fmt.Sprintf("%v/%v/pl/%v",
-				p.GetSiteURL(),
+				ji.GetPlugin().GetSiteURL(),
 				team.Name,
 				create.PostId,
 			)
@@ -89,22 +86,24 @@ func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 	if len(post.FileIds) > 0 {
 		go func() {
 			for _, fileId := range post.FileIds {
-				info, fileInfoError := p.API.GetFileInfo(fileId)
-				if fileInfoError == nil {
-					// TODO: large file support? Ignoring errors for now is good enough...
-					byteData, readFileErr := p.API.ReadFile(info.Path)
-					if readFileErr != nil {
-						// TODO report errors, as DMs from JIRA bot?
-						p.errorf("failed to attach file %s to issue %s: %s", info.Path, created.Key, readFileErr.Error())
-						return
-					}
-					_, _, postAttachmentErr := jiraClient.Issue.PostAttachment(created.ID, bytes.NewReader(byteData), info.Name)
-					if postAttachmentErr != nil {
-						// TODO report errors, as DMs from JIRA bot?
-						p.errorf("failed to attach file %s to issue %s: %v", info.Path, created.Key, err)
-						return
-					}
+				info, ae := api.GetFileInfo(fileId)
+				if ae != nil {
+					continue
 				}
+				// TODO: large file support? Ignoring errors for now is good enough...
+				byteData, ae := api.ReadFile(info.Path)
+				if ae != nil {
+					// TODO report errors, as DMs from JIRA bot?
+					api.LogError("failed to attach file to issue: "+ae.Error(), "file", info.Path, "issue", created.Key)
+					return
+				}
+				_, _, e := jiraClient.Issue.PostAttachment(created.ID, bytes.NewReader(byteData), info.Name)
+				if e != nil {
+					// TODO report errors, as DMs from JIRA bot?
+					api.LogError("failed to attach file to issue: "+e.Error(), "file", info.Path, "issue", created.Key)
+					return
+				}
+
 			}
 		}()
 	}
@@ -117,7 +116,7 @@ func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 		RootId:    create.PostId,
 		UserId:    mattermostUserId,
 	}
-	_, appErr = p.API.CreatePost(reply)
+	_, appErr = api.CreatePost(reply)
 	if appErr != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(appErr, "failed to create notification post "+create.PostId)
@@ -137,7 +136,7 @@ func httpAPICreateIssue(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 	return http.StatusOK, nil
 }
 
-func httpAPIGetCreateIssueMetadata(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpAPIGetCreateIssueMetadata(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
 			errors.New("Request: " + r.Method + " is not allowed, must be GET")
@@ -148,12 +147,7 @@ func httpAPIGetCreateIssueMetadata(p *Plugin, w http.ResponseWriter, r *http.Req
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
-	ji, err := p.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	jiraUser, err := p.LoadJIRAUser(ji, mattermostUserId)
+	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

@@ -28,12 +28,9 @@ type externalConfig struct {
 	// Legacy 1.x Webhook secret
 	Secret string
 
-	// TODO: support mutiple server instances, how? Seems like the config
-	// UI needs to be rethought for things like multiple instances. Or
-	// maybe we always check JIRAServerURL on config change (startup) and
-	// add/select it.
 	// JIRAServerURL needs to be configured to run in the JIRA Server
-	// mode
+	// mode.
+	// TODO If JIRAServerURL is configured, add/select the instance as needed
 	JIRAServerURL string
 }
 
@@ -55,8 +52,8 @@ type Plugin struct {
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
 
-	atlassianConnectTemplate *template.Template
-	userConfigTemplate       *template.Template
+	// templates are loaded on startup
+	templates map[string]*template.Template
 }
 
 func (p *Plugin) getConfig() config {
@@ -75,7 +72,6 @@ func (p *Plugin) updateConfig(f func(conf *config)) config {
 
 // OnConfigurationChange is invoked when configuration changes may have been made.
 func (p *Plugin) OnConfigurationChange() error {
-
 	// Load the public configuration fields from the Mattermost server configuration.
 	ec := externalConfig{}
 	err := p.API.LoadPluginConfiguration(&ec)
@@ -97,19 +93,12 @@ func (p *Plugin) OnActivate() error {
 		return errors.WithMessage(appErr, fmt.Sprintf("OnActivate: unable to find user: %s", conf.UserName))
 	}
 
-	tpath := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
-
-	var err error
-	fpath := filepath.Join(tpath, "atlassian-connect.json")
-	p.atlassianConnectTemplate, err = template.ParseFiles(fpath)
+	dir := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
+	templates, err := p.loadTemplates(dir)
 	if err != nil {
-		return errors.WithMessage(err, fmt.Sprintf("OnActivate: failed to parse template: %s", fpath))
+		return errors.WithMessage(err, "OnActivate: failed to load templates")
 	}
-	fpath = filepath.Join(tpath, "user-config.html")
-	p.userConfigTemplate, err = template.ParseFiles(fpath)
-	if err != nil {
-		return errors.WithMessage(err, fmt.Sprintf("OnActivate: failed to parse template: %s", fpath))
-	}
+	p.templates = templates
 
 	conf = p.updateConfig(func(conf *config) {
 		conf.botUserID = user.Id
@@ -123,6 +112,9 @@ func (p *Plugin) OnActivate() error {
 	return nil
 }
 
+func (p *Plugin) GetPluginKey() string {
+	return "mattermost_" + regexpNonAlnum.ReplaceAllString(p.GetSiteURL(), "_")
+}
 func (p *Plugin) GetPluginURLPath() string {
 	return "/plugins/" + manifest.Id
 }

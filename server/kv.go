@@ -25,17 +25,16 @@ const (
 func keyWithInstance(ji Instance, key string) string {
 	if prefixForInstance {
 		h := md5.New()
-		fmt.Fprintf(h, "%s/%s", ji.GetKey(), key)
+		fmt.Fprintf(h, "%s/%s", ji.GetURL(), key)
 		key = fmt.Sprintf("%x", h.Sum(nil))
 	}
 	return key
 }
 
-func md5key(prefix, key string) string {
+func hashkey(prefix, key string) string {
 	h := md5.New()
 	_, _ = h.Write([]byte(key))
-	key = fmt.Sprintf("%x", h.Sum(nil))
-	return prefix + key
+	return fmt.Sprintf("%s%x", prefix, h.Sum(nil))
 }
 
 func (p *Plugin) kvGet(key string, v interface{}) (returnErr error) {
@@ -83,40 +82,96 @@ func (p *Plugin) kvSet(key string, v interface{}) (returnErr error) {
 	return nil
 }
 
-func (p *Plugin) StoreJIRAInstance(ji Instance, current bool) (returnErr error) {
+func (p *Plugin) StoreJIRAInstance(ji Instance) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store Jira instance:%+v", ji))
+			fmt.Sprintf("failed to store Jira instance:%s", ji.GetURL()))
 	}()
 
-	err := p.kvSet(md5key(prefixJIRAInstance, ji.GetURL()), ji)
+	err := p.kvSet(hashkey(prefixJIRAInstance, ji.GetURL()), ji)
 	if err != nil {
 		return err
 	}
+	p.debugf("Stored: JIRA instance: %s", ji.GetURL())
 
 	// Update known instances
 	known, err := p.LoadKnownJIRAInstances()
 	if err != nil {
 		return err
 	}
-	known[ji.GetKey()] = ji.GetType()
+	known[ji.GetURL()] = ji.GetType()
 	err = p.StoreKnownJIRAInstances(known)
 	if err != nil {
 		return err
 	}
+	p.debugf("Stored: known Jira instances: %+v", known)
+	return nil
+}
 
-	// Update the current instance if needed
-	if current {
-		err = p.kvSet(keyCurrentJIRAInstance, ji)
-		if err != nil {
-			return err
+func (p *Plugin) StoreCurrentJIRAInstance(ji Instance) (returnErr error) {
+	defer func() {
+		if returnErr == nil {
+			return
+		}
+		returnErr = errors.WithMessage(returnErr,
+			fmt.Sprintf("failed to store current Jira instance:%s", ji.GetURL()))
+	}()
+	err := p.kvSet(keyCurrentJIRAInstance, ji)
+	if err != nil {
+		return err
+	}
+	p.debugf("Stored: current Jira instance: %s", ji.GetURL())
+	return nil
+}
+
+func (p *Plugin) DeleteJiraInstance(key string) (returnErr error) {
+	defer func() {
+		if returnErr == nil {
+			return
+		}
+		returnErr = errors.WithMessage(returnErr,
+			fmt.Sprintf("failed to delete Jira instance:%v", key))
+	}()
+
+	// Delete the instance.
+	appErr := p.API.KVDelete(hashkey(prefixJIRAInstance, key))
+	if appErr != nil {
+		return appErr
+	}
+	p.debugf("Deleted: Jira instance: %s", key)
+
+	// Update known instances
+	known, err := p.LoadKnownJIRAInstances()
+	if err != nil {
+		return err
+	}
+	for k := range known {
+		if k == key {
+			delete(known, k)
+			break
 		}
 	}
+	err = p.StoreKnownJIRAInstances(known)
+	if err != nil {
+		return err
+	}
+	p.debugf("Deleted: from known Jira instances: %s", key)
 
-	p.debugf("Stored: Jira instance (current:%v): %#v", current, ji)
+	// Remove the current instance if it matches the deleted
+	current, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return err
+	}
+	if current.GetURL() == key {
+		appErr := p.API.KVDelete(keyCurrentJIRAInstance)
+		if appErr != nil {
+			return appErr
+		}
+		p.debugf("Deleted: current Jira instance")
+	}
 
 	return nil
 }
@@ -131,7 +186,7 @@ func (p *Plugin) LoadCurrentJIRAInstance() (Instance, error) {
 }
 
 func (p *Plugin) LoadJIRAInstance(key string) (Instance, error) {
-	ji, err := p.loadJIRAInstance(md5key(prefixJIRAInstance, key))
+	ji, err := p.loadJIRAInstance(hashkey(prefixJIRAInstance, key))
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to load Jira instance "+key)
 	}
@@ -162,10 +217,12 @@ func (p *Plugin) loadJIRAInstance(fullkey string) (Instance, error) {
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
 		}
-		return jci.InitWithPlugin(p), nil
+		jci.Init(p)
+		return &jci, nil
 
 	case JIRATypeServer:
-		return jsi.InitWithPlugin(p), nil
+		jsi.Init(p)
+		return &jsi, nil
 	}
 
 	return nil, errors.New(fmt.Sprintf("Jira instance %s has unsupported type: %s", fullkey, jsi.Type))
@@ -198,7 +255,7 @@ func (p *Plugin) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JI
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store Jira user, mattermostUserId:%s, user:%#v", mattermostUserId, jiraUser))
+			fmt.Sprintf("failed to store user, mattermostUserId:%s, Jira user:%s", mattermostUserId, jiraUser.Name))
 	}()
 
 	err := p.kvSet(keyWithInstance(ji, mattermostUserId), jiraUser)
@@ -276,7 +333,7 @@ func (p *Plugin) DeleteUserInfo(ji Instance, mattermostUserId string) (returnErr
 	return nil
 }
 
-func (p *Plugin) EnsureTokenSecret() (secret []byte, returnErr error) {
+func (p *Plugin) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -358,7 +415,7 @@ func (p *Plugin) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
 
 func (p *Plugin) StoreOneTimeSecret(token, secret string) error {
 	// Expire in 15 minutes
-	appErr := p.API.KVSetWithExpiry(md5key(prefixOneTimeSecret, token), []byte(secret), 15*60)
+	appErr := p.API.KVSetWithExpiry(hashkey(prefixOneTimeSecret, token), []byte(secret), 15*60)
 	if appErr != nil {
 		return errors.WithMessage(appErr, "failed to store one-ttime secret "+token)
 	}
@@ -366,7 +423,7 @@ func (p *Plugin) StoreOneTimeSecret(token, secret string) error {
 }
 
 func (p *Plugin) LoadOneTimeSecret(token string) (string, error) {
-	b, appErr := p.API.KVGet(md5key(prefixOneTimeSecret, token))
+	b, appErr := p.API.KVGet(hashkey(prefixOneTimeSecret, token))
 	if appErr != nil {
 		return "", errors.WithMessage(appErr, "failed to load one-time secret "+token)
 	}
@@ -374,7 +431,7 @@ func (p *Plugin) LoadOneTimeSecret(token string) (string, error) {
 }
 
 func (p *Plugin) DeleteOneTimeSecret(token string) error {
-	appErr := p.API.KVDelete(md5key(prefixOneTimeSecret, token))
+	appErr := p.API.KVDelete(hashkey(prefixOneTimeSecret, token))
 	if appErr != nil {
 		return errors.WithMessage(appErr, "failed to delete one-time secret "+token)
 	}

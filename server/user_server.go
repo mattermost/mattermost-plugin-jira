@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"net/http"
+	"path"
 
 	"github.com/dghubble/oauth1"
 	"github.com/pkg/errors"
@@ -14,29 +15,18 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
-func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	ji, err := p.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	jis, ok := ji.(*jiraServerInstance)
-	if !ok {
-		return http.StatusInternalServerError,
-			errors.New("Must be a Jira Server instance, is " + ji.GetType())
-	}
-
+func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.Request) (int, error) {
 	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(r)
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to parse callback request from Jira")
 	}
 
-	requestSecret, err := p.LoadOneTimeSecret(requestToken)
+	requestSecret, err := jsi.Plugin.LoadOneTimeSecret(requestToken)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	err = p.DeleteOneTimeSecret(requestToken)
+	err = jsi.Plugin.DeleteOneTimeSecret(requestToken)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -45,8 +35,13 @@ func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 	if mattermostUserId == "" {
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
+	mmuser, appErr := jsi.Plugin.API.GetUser(mattermostUserId)
+	if appErr != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to load user "+mattermostUserId)
+	}
 
-	oauth1Config, err := jis.GetOAuth1Config()
+	oauth1Config, err := jsi.GetOAuth1Config()
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to obtain oauth1 config")
@@ -63,43 +58,31 @@ func httpOAuth1Complete(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 		Oauth1AccessSecret: accessSecret,
 	}
 
-	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	jiraClient, err := jsi.GetJIRAClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	user, _, err := jiraClient.User.GetSelf()
+	juser, _, err := jiraClient.User.GetSelf()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	jiraUser.User = *user
+	jiraUser.User = *juser
 
-	err = p.StoreAndNotifyUserInfo(ji, mattermostUserId, jiraUser)
+	err = jsi.Plugin.StoreUserInfoNotify(jsi, mattermostUserId, jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	html := `
-<!DOCTYPE html>
-<html>
-	<head>
-		<script>
-			window.close();
-		</script>
-	</head>
-	<body>
-		<p>Completed connecting to JIRA. Please close this page.</p>
-	</body>
-</html>
-`
-
-	w.Header().Set("Content-Type", "text/html")
-	_, err = w.Write([]byte(html))
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write response")
-	}
-	return http.StatusOK, nil
+	return jsi.Plugin.respondWithTemplate(w, r, "text/html", struct {
+		MattermostDisplayName string
+		JiraDisplayName       string
+		RevokeURL             string
+	}{
+		JiraDisplayName:       juser.DisplayName + " (" + juser.Name + ")",
+		MattermostDisplayName: mmuser.GetDisplayName(model.SHOW_NICKNAME_FULLNAME),
+		RevokeURL:             path.Join(jsi.Plugin.GetPluginURLPath(), routeUserDisconnect),
+	})
 }
 
 func httpOAuth1PublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -117,27 +100,33 @@ func httpOAuth1PublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (int
 		return http.StatusForbidden, errors.New("forbidden")
 	}
 
-	rsaKey, err := p.EnsureRSAKey()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	b, err := x509.MarshalPKIXPublicKey(&rsaKey.PublicKey)
+	w.Header().Set("Content-Type", "text/plain")
+	pkey, err := publicKeyString(p)
 	if err != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to encode public key")
+			errors.WithMessage(err, "failed to load public key")
 	}
-
-	pemkey := &pem.Block{
-		Type:  "PUBLIC KEY",
-		Bytes: b,
-	}
-
-	w.Header().Set("Content-Type", "text/plain")
-	_, err = w.Write(pem.EncodeToMemory(pemkey))
+	_, err = w.Write(pkey)
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to write response")
 	}
 	return http.StatusOK, nil
+}
+
+func publicKeyString(p *Plugin) ([]byte, error) {
+	rsaKey, err := p.EnsureRSAKey()
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := x509.MarshalPKIXPublicKey(&rsaKey.PublicKey)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to encode public key")
+	}
+
+	return pem.EncodeToMemory(&pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: b,
+	}), nil
 }
