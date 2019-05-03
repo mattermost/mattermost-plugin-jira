@@ -82,56 +82,48 @@ func (p *Plugin) kvSet(key string, v interface{}) (returnErr error) {
 	return nil
 }
 
-func (p *Plugin) StoreJIRAInstance(ji Instance) error {
-	return p.storeJiraInstance(ji, true, false)
-}
-
-func (p *Plugin) StoreJIRAInstanceSetCurrent(ji Instance) error {
-	return p.storeJiraInstance(ji, true, true)
-}
-
-func (p *Plugin) StoreCurrentJIRAInstance(ji Instance) error {
-	return p.storeJiraInstance(ji, false, true)
-}
-
-func (p *Plugin) storeJiraInstance(ji Instance, storeKey, storeCurrent bool) (returnErr error) {
+func (p *Plugin) StoreJIRAInstance(ji Instance) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store Jira instance:%+v", ji))
+			fmt.Sprintf("failed to store Jira instance:%s", ji.GetURL()))
 	}()
 
-	if storeKey {
-		err := p.kvSet(hashkey(prefixJIRAInstance, ji.GetURL()), ji)
-		if err != nil {
-			return err
-		}
-		p.debugf("Stored: JIRA instance: %+v", ji)
-
-		// Update known instances
-		known, err := p.LoadKnownJIRAInstances()
-		if err != nil {
-			return err
-		}
-		known[ji.GetURL()] = ji.GetType()
-		err = p.StoreKnownJIRAInstances(known)
-		if err != nil {
-			return err
-		}
-		p.debugf("Stored: known Jira instances: %+v", known)
+	err := p.kvSet(hashkey(prefixJIRAInstance, ji.GetURL()), ji)
+	if err != nil {
+		return err
 	}
+	p.debugf("Stored: JIRA instance: %s", ji.GetURL())
 
-	// Update the current instance if needed
-	if storeCurrent {
-		err := p.kvSet(keyCurrentJIRAInstance, ji)
-		if err != nil {
-			return err
-		}
-		p.debugf("Stored: current Jira instance: %s", ji.GetURL())
+	// Update known instances
+	known, err := p.LoadKnownJIRAInstances()
+	if err != nil {
+		return err
 	}
+	known[ji.GetURL()] = ji.GetType()
+	err = p.StoreKnownJIRAInstances(known)
+	if err != nil {
+		return err
+	}
+	p.debugf("Stored: known Jira instances: %+v", known)
+	return nil
+}
 
+func (p *Plugin) StoreCurrentJIRAInstance(ji Instance) (returnErr error) {
+	defer func() {
+		if returnErr == nil {
+			return
+		}
+		returnErr = errors.WithMessage(returnErr,
+			fmt.Sprintf("failed to store current Jira instance:%s", ji.GetURL()))
+	}()
+	err := p.kvSet(keyCurrentJIRAInstance, ji)
+	if err != nil {
+		return err
+	}
+	p.debugf("Stored: current Jira instance: %s", ji.GetURL())
 	return nil
 }
 
@@ -263,7 +255,7 @@ func (p *Plugin) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JI
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store Jira user, mattermostUserId:%s, user:%#v", mattermostUserId, jiraUser))
+			fmt.Sprintf("failed to store user, mattermostUserId:%s, Jira user:%s", mattermostUserId, jiraUser.Name))
 	}()
 
 	err := p.kvSet(keyWithInstance(ji, mattermostUserId), jiraUser)

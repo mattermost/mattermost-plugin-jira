@@ -157,9 +157,13 @@ func executeInstanceAdd(p *Plugin, c *plugin.Context, args ...string) *model.Com
 		jiraURL := args[1]
 
 		ji := NewJIRAServerInstance(p, jiraURL)
-		err := p.StoreJIRAInstanceSetCurrent(ji)
+		err := p.StoreJIRAInstance(ji)
 		if err != nil {
-			return responsef("Failed to store Jira instance %s: %v", jiraURL, err)
+			return responsef(err.Error())
+		}
+		err = p.StoreCurrentJIRAInstance(ji)
+		if err != nil {
+			return responsef(err.Error())
 		}
 
 		pkey, err := publicKeyString(p)
@@ -206,7 +210,7 @@ func executeInstanceSelect(p *Plugin, c *plugin.Context, args ...string) *model.
 	}
 	err = p.StoreCurrentJIRAInstance(ji)
 	if err != nil {
-		return responsef("Failed to store Jira instance %s: %v", instanceKey, err)
+		return responsef(err.Error())
 	}
 
 	return executeInstanceList(p, c)

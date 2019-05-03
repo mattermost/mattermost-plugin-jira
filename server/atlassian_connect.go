@@ -53,7 +53,11 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 	// Create or overwrite the instance record, also store it
 	// as current
 	jiraInstance := NewJIRACloudInstance(p, asc.BaseURL, string(body), &asc)
-	err = p.StoreJIRAInstanceSetCurrent(jiraInstance)
+	err = p.StoreJIRAInstance(jiraInstance)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	err = p.StoreCurrentJIRAInstance(jiraInstance)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
