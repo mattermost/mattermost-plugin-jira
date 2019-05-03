@@ -7,12 +7,11 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"regexp"
 
 	"github.com/pkg/errors"
 )
 
-var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
+const userRedirectPageKey = "user-redirect"
 
 func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
@@ -20,25 +19,16 @@ func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) 
 			errors.New("method " + r.Method + " is not allowed, must be GET")
 	}
 
-	enc := func(in string) string {
-		return regexpNonAlnum.ReplaceAllString(in, "-")
-	}
-
-	vals := map[string]string{
-		"BaseURL":            p.GetPluginURL(),
-		"RouteACJSON":        routeACJSON,
-		"RouteACInstalled":   routeACInstalled,
-		"RouteACUninstalled": routeACUninstalled,
-		"RouteACUserConfig":  routeACUserConfig,
-		"ExternalURL":        p.GetSiteURL(),
-		"Key":                "mattermost-" + enc(p.GetSiteURL()),
-	}
-	err := p.atlassianConnectTemplate.ExecuteTemplate(w, "config", vals)
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write atlassian-connect.json")
-	}
-	return http.StatusOK, nil
+	return p.respondWithTemplate(w, r, "application/json", map[string]string{
+		"BaseURL":                      p.GetPluginURL(),
+		"RouteACJSON":                  routeACJSON,
+		"RouteACInstalled":             routeACInstalled,
+		"RouteACUninstalled":           routeACUninstalled,
+		"RouteACUserRedirectWithToken": routeACUserRedirectWithToken,
+		"UserRedirectPageKey":          userRedirectPageKey,
+		"ExternalURL":                  p.GetSiteURL(),
+		"PluginKey":                    p.GetPluginKey(),
+	})
 }
 
 func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -63,7 +53,11 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 	// Create or overwrite the instance record, also store it
 	// as current
 	jiraInstance := NewJIRACloudInstance(p, asc.BaseURL, string(body), &asc)
-	err = p.StoreJIRAInstance(jiraInstance, true)
+	err = p.StoreJIRAInstance(jiraInstance)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	err = p.StoreCurrentJIRAInstance(jiraInstance)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

@@ -1,4 +1,3 @@
-{{define "config"}}
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -15,18 +14,20 @@
 			}
 
 			AP.getLocation(function (loc) {
-				document.getElementById("{{ .ArgMMToken }}").value = getParameterByName("{{ .ArgMMToken }}", loc);
+				document.getElementById('{{ .ArgMMToken }}').value = getParameterByName('{{ .ArgMMToken }}', loc);
 			});
 
+			AP.context.getToken(function (token) {
+				document.getElementById('{{ .ArgJiraJWT }}').value = token;
+				document.forms['user_connect'].submit();
+			});
 		</script>
 	</head>
 	<body>
-		<form action="{{ .SubmitURL }}">
-			<input type="hidden" id="jwt" name="jwt" value="{{ .JWT }}"/>
+		<form id="user_connect" name="user_connect" action="{{ .SubmitURL }}">
+			<input type="hidden" id="{{ .ArgJiraJWT }}" name="{{ .ArgJiraJWT}}" value="none"/>
 			<input type="hidden" id="{{ .ArgMMToken }}" name="{{ .ArgMMToken}}" value="none"/>
-			<input type="submit" value="Submit"/>
 		</form>
 	</body>
 </html>
-{{ end }}
 

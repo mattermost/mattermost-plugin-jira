@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<link rel="stylesheet" href="https://unpkg.com/@atlaskit/css-reset@2.0.0/dist/bundle.css" media="all">
+		<script src="https://connect-cdn.atl-paas.net/all.js" data-options=""></script>
+
+		<script>
+			AP.context.getToken(function (token) {
+				document.getElementById('{{ .ArgJiraJWT }}').value = token;
+			});
+		</script>
+	</head>
+	<body>
+		Mattermost user {{ .MattermostDisplayName }} is now connected as Jira user {{ .JiraDisplayName }}
+		<form id="user_connect" name="user_connect" action="{{ .DisconnectSubmitURL }}">
+			<input type="hidden" id="{{ .ArgJiraJWT }}" name="{{ .ArgJiraJWT}}" value="none"/>
+			<input type="hidden" id="{{ .ArgMMToken }}" name="{{ .ArgMMToken}}" value="{{ .MMToken }}"/>
+			<input type="submit" value="Disconnect"/>
+		</form>
+	</body>
+</html>
+

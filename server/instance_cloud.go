@@ -5,6 +5,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -29,7 +31,6 @@ var _ Instance = (*jiraCloudInstance)(nil)
 type AtlassianSecurityContext struct {
 	Key            string `json:"key"`
 	ClientKey      string `json:"clientKey"`
-	PublicKey      string `json:"publicKey"`
 	SharedSecret   string `json:"sharedSecret"`
 	ServerVersion  string `json:"serverVersion"`
 	PluginsVersion string `json:"pluginsVersion"`
@@ -48,20 +49,53 @@ func NewJIRACloudInstance(p *Plugin, key, rawASC string, asc *AtlassianSecurityC
 	}
 }
 
-func (jci jiraCloudInstance) InitWithPlugin(p *Plugin) Instance {
-	return NewJIRACloudInstance(p, jci.JIRAInstance.Key, jci.RawAtlassianSecurityContext, jci.AtlassianSecurityContext)
+type withCloudInstanceFunc func(jci *jiraCloudInstance, w http.ResponseWriter, r *http.Request) (int, error)
+
+func withCloudInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f withCloudInstanceFunc) (int, error) {
+	return withInstance(p, w, r, func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+		jci, ok := ji.(*jiraCloudInstance)
+		if !ok {
+			return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
+		}
+		return f(jci, w, r)
+	})
 }
 
-func (jci jiraCloudInstance) GetUserConnectURL(p *Plugin, mattermostUserId string) (string, error) {
-	token, err := p.NewEncodedAuthToken(mattermostUserId)
+func (jci jiraCloudInstance) GetMattermostKey() string {
+	return jci.AtlassianSecurityContext.Key
+}
+
+func (jci jiraCloudInstance) GetDisplayDetails() map[string]string {
+	return map[string]string{
+		"Key":            jci.AtlassianSecurityContext.Key,
+		"ClientKey":      jci.AtlassianSecurityContext.ClientKey,
+		"ServerVersion":  jci.AtlassianSecurityContext.ServerVersion,
+		"PluginsVersion": jci.AtlassianSecurityContext.PluginsVersion,
+	}
+}
+
+func (jci jiraCloudInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
+	secret := make([]byte, 256)
+	_, err := rand.Read(secret)
+	if err != nil {
+		return "", err
+	}
+	secretKey := fmt.Sprintf("%x", sha256.Sum256(secret))
+	secretValue := "true"
+	err = jci.Plugin.StoreOneTimeSecret(secretKey, secretValue)
+	if err != nil {
+		return "", err
+	}
+
+	token, err := jci.Plugin.NewEncodedAuthToken(mattermostUserId, secretKey)
 	if err != nil {
 		return "", err
 	}
 
 	v := url.Values{}
 	v.Add(argMMToken, token)
-	return fmt.Sprintf("%v/login?dest-url=%v/plugins/servlet/ac/%s/user-config?%v",
-		jci.GetURL(), jci.GetURL(), jci.AtlassianSecurityContext.Key, v.Encode()), nil
+	return fmt.Sprintf("%v/login?dest-url=%v/plugins/servlet/ac/%s/%s?%v",
+		jci.GetURL(), jci.GetURL(), jci.AtlassianSecurityContext.Key, userRedirectPageKey, v.Encode()), nil
 }
 
 func (jci jiraCloudInstance) GetURL() string {

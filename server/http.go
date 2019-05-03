@@ -5,7 +5,10 @@ package main
 
 import (
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"text/template"
 
 	"github.com/pkg/errors"
 
@@ -19,12 +22,14 @@ const (
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"
 	routeACUninstalled             = "/ac/uninstalled"
-	routeACUserConfig              = "/ac/user-config"
-	routeACUserConfigSubmit        = "/ac/user-config-submit"
+	routeACUserRedirectWithToken   = "/ac/user_redirect.html"
+	routeACUserConfirm             = "/ac/user_confirm.html"
+	routeACUserConnected           = "/ac/user_connected.html"
+	routeACUserDisconnected        = "/ac/user_disconnected.html"
 	routeIncomingIssueEvent        = "/issue_event"
 	routeIncomingWebhook           = "/webhook"
-	routeOAuth1Complete            = "/oauth1/complete"
-	routeOAuth1PublicKey           = "/oauth1/public-key"
+	routeOAuth1Complete            = "/oauth1/complete.html"
+	routeOAuth1PublicKey           = "/oauth1/public_key.html" // TODO remove, debugging?
 	routeUserConnect               = "/user/connect"
 	routeUserDisconnect            = "/user/disconnect"
 )
@@ -49,13 +54,13 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	switch r.URL.Path {
 	// Issue APIs
 	case routeAPICreateIssue:
-		return httpAPICreateIssue(p, w, r)
+		return withInstance(p, w, r, httpAPICreateIssue)
 	case routeAPIGetCreateIssueMetadata:
-		return httpAPIGetCreateIssueMetadata(p, w, r)
+		return withInstance(p, w, r, httpAPIGetCreateIssueMetadata)
 
 	// User APIs
 	case routeAPIUserInfo:
-		return httpAPIGetUserInfo(p, w, r)
+		return withInstance(p, w, r, httpAPIGetUserInfo)
 
 	// Atlassian Connect application
 	case routeACInstalled:
@@ -66,10 +71,12 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 		return httpACUninstalled(p, w, r)
 
 	// Atlassian Connect user mapping
-	case routeACUserConfig:
-		return httpACUserConfig(p, w, r)
-	case routeACUserConfigSubmit:
-		return httpACUserConfigSubmit(p, w, r)
+	case routeACUserRedirectWithToken:
+		return withCloudInstance(p, w, r, httpACUserRedirect)
+	case routeACUserConfirm,
+		routeACUserConnected,
+		routeACUserDisconnected:
+		return withCloudInstance(p, w, r, httpACUserInteractive)
 
 	// Incoming webhook
 	case routeIncomingWebhook, routeIncomingIssueEvent:
@@ -77,16 +84,56 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 
 	// Oauth1 (Jira Server)
 	case routeOAuth1Complete:
-		return httpOAuth1Complete(p, w, r)
+		return withServerInstance(p, w, r, httpOAuth1Complete)
 	case routeOAuth1PublicKey:
 		return httpOAuth1PublicKey(p, w, r)
 
 	// User connect/disconnect links
 	case routeUserConnect:
-		return httpUserConnect(p, w, r)
+		return withInstance(p, w, r, httpUserConnect)
 	case routeUserDisconnect:
-		return httpUserDisconnect(p, w, r)
+		return withInstance(p, w, r, httpUserDisconnect)
 	}
 
 	return http.StatusNotFound, errors.New("not found")
+}
+
+func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {
+	templates := make(map[string]*template.Template)
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		template, err := template.ParseFiles(path)
+		if err != nil {
+			p.errorf("OnActivate: failed to parse template %s: %v", path, err)
+			return nil
+		}
+		key := path[len(dir):]
+		templates[key] = template
+		p.debugf("loaded template %s", key)
+		return nil
+	})
+	if err != nil {
+		return nil, errors.WithMessage(err, "OnActivate: failed to load templates")
+	}
+	return templates, nil
+}
+
+func (p *Plugin) respondWithTemplate(w http.ResponseWriter, r *http.Request, contentType string, values interface{}) (int, error) {
+	w.Header().Set("Content-Type", contentType)
+	t := p.templates[r.URL.Path]
+	if t == nil {
+		return http.StatusInternalServerError,
+			errors.New("no template found for " + r.URL.Path)
+	}
+	err := t.Execute(w, values)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to write response")
+	}
+	return http.StatusOK, nil
 }

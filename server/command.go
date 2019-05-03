@@ -13,11 +13,12 @@ import (
 const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira connect` - Connect your Mattermost account to your Jira account and subscribe to events\n" +
 	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
-	"* `/jira instance [add/list/select]` - Manage connected Jira instances\n" +
-	"  * `/jira instance add server <URL>` - Connect a Jira Server instance to Mattermost\n" +
-	"  * `/jira instance add cloud` - Connect a Jira Cloud instance to Mattermost\n" +
-	"  * `/jira instance list` - List connected Jira instances\n" +
-	"  * `/jira instance select <number or URL>` - Select the active Jira instance. At most one active Jira instance is currently supported\n" +
+	"* `/jira instance [add/list/select/delete]` - Manage connected Jira instances\n" +
+	"  * `add server <URL>` - Add a Jira Server instance\n" +
+	"  * `add cloud` - Add a Jira Cloud instance\n" +
+	"  * `list` - List known Jira instances\n" +
+	"  * `select <number or URL>` - Select a known instance as current\n" +
+	"  * `delete <number or URL>` - Delete a known instance, select the first remaining as the current\n" +
 	""
 
 func getCommand() *model.Command {
@@ -72,16 +73,18 @@ func executeInstance(p *Plugin, c *plugin.Context, args []string) *model.Command
 
 	switch action {
 	case "list":
-		return executeInstanceList(p, c, args)
+		return executeInstanceList(p, c)
 	case "add":
-		return executeInstanceAdd(p, c, args)
+		return executeInstanceAdd(p, c, args...)
 	case "select":
-		return executeInstanceSelect(p, c, args)
+		return executeInstanceSelect(p, c, args...)
+	case "delete":
+		return executeInstanceDelete(p, c, args...)
 	}
 	return responsef("Please specify a parameter in the form `/jira instance [add,list,select]")
 }
 
-func executeInstanceList(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
+func executeInstanceList(p *Plugin, c *plugin.Context) *model.CommandResponse {
 	known, err := p.LoadKnownJIRAInstances()
 	if err != nil {
 		return responsef("Failed to load known Jira instances: %v", err)
@@ -102,17 +105,45 @@ func executeInstanceList(p *Plugin, c *plugin.Context, args []string) *model.Com
 	sort.Strings(keys)
 	text := "Known Jira instances (selected instance is **bold**)\n\n| |URL|Type|\n|--|--|--|\n"
 	for i, key := range keys {
-		typ := known[key]
-		if key == current.GetURL() {
-			key = "**" + key + "**"
-			typ = "**" + typ + "**"
+		ji, err := p.LoadJIRAInstance(key)
+		if err != nil {
+			text += fmt.Sprintf("|%v|%s|error: %v|\n", i+1, key, err)
+			continue
 		}
-		text += fmt.Sprintf("|%v|%s|%s|\n", i+1, key, typ)
+		details := ""
+		for k, v := range ji.GetDisplayDetails() {
+			details += fmt.Sprintf("%s:%s, ", k, v)
+		}
+		if len(details) > len(", ") {
+			details = details[:len(details)-2]
+		} else {
+			details = ji.GetType()
+		}
+		format := "|%v|%s|%s|\n"
+		if key == current.GetURL() {
+			format = "| **%v** | **%s** |%s|\n"
+		}
+		text += fmt.Sprintf(format, i+1, key, details)
 	}
 	return responsef(text)
 }
 
-func executeInstanceAdd(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
+const addResponseFormat = `Instance has been added. You need to add an Application Link to it in Jira now.
+1. Click %s, login as an admin.
+2. Navigate to (Jira) Settings > Applications > Application Links.
+3. Enter %s, anc click "Create new link".
+4. In "Configure Application URL" screen ignore any errors, click "Continue".
+5. In "Link Applications":
+  - Application Name: Mattermost
+  - Application Type: Generic Application
+  - IMPORTANT: Check "Create incoming link"
+6. In "Link Applications", pt. 2:
+  - Consumer Key: %s
+  - Consumer Name: Mattermost
+  - Public Key: %s
+`
+
+func executeInstanceAdd(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
 	if len(args) < 1 {
 		return responsef("Please specify a parameter in the form `/jira instance add server {URL}` or `/jira instance add cloud`")
 	}
@@ -126,22 +157,31 @@ func executeInstanceAdd(p *Plugin, c *plugin.Context, args []string) *model.Comm
 		jiraURL := args[1]
 
 		ji := NewJIRAServerInstance(p, jiraURL)
-		err := p.StoreJIRAInstance(ji, true)
+		err := p.StoreJIRAInstance(ji)
 		if err != nil {
-			return responsef("Failed to store JIRA instance %s: %v", jiraURL, err)
+			return responsef(err.Error())
 		}
-		return executeInstanceList(p, c, nil)
+		err = p.StoreCurrentJIRAInstance(ji)
+		if err != nil {
+			return responsef(err.Error())
+		}
+
+		pkey, err := publicKeyString(p)
+		if err != nil {
+			return responsef("Failed to load public key: %v", err)
+		}
+		return responsef(addResponseFormat, ji.GetURL(), p.GetSiteURL(), ji.GetMattermostKey(), pkey)
 
 	case JIRATypeCloud:
-		// TODO the exact group membership in JIRA?
-		return responsef(`As an admin, upload an application from %s/%s. The link can be found in **JIRA Settings > Applications > Manage**`,
+		// TODO the exact group membership in Jira?
+		return responsef(`As an admin, upload an application from %s/%s. The link can be found in **Jira Settings > Applications > Manage**`,
 			p.GetPluginURL(), routeACJSON)
 	}
 
 	return responsef("Please specify a parameter in the form `/jira instance add server {URL}` or `/jira instance add cloud`")
 }
 
-func executeInstanceSelect(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
+func executeInstanceSelect(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
 	if len(args) < 1 {
 		return responsef("/jira instance select {URL|#} ")
 	}
@@ -150,10 +190,10 @@ func executeInstanceSelect(p *Plugin, c *plugin.Context, args []string) *model.C
 	if err == nil {
 		known, loadErr := p.LoadKnownJIRAInstances()
 		if loadErr != nil {
-			return responsef("Failed to load known JIRA instances: %v", err)
+			return responsef("Failed to load known Jira instances: %v", err)
 		}
 		if num < 1 || int(num) > len(known) {
-			return responsef("Wrong instance number %v, must be 1-%v\n", num, len(known))
+			return responsef("Wrong instance number %v, must be 1-%v\n", num, len(known)+1)
 		}
 
 		keys := []string{}
@@ -168,12 +208,46 @@ func executeInstanceSelect(p *Plugin, c *plugin.Context, args []string) *model.C
 	if err != nil {
 		return responsef("Failed to load Jira instance %s: %v", instanceKey, err)
 	}
-	err = p.StoreJIRAInstance(ji, true)
+	err = p.StoreCurrentJIRAInstance(ji)
 	if err != nil {
-		return responsef("Failed to store Jira instance %s: %v", instanceKey, err)
+		return responsef(err.Error())
 	}
 
-	return executeInstanceList(p, c, args)
+	return executeInstanceList(p, c)
+}
+
+func executeInstanceDelete(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+	if len(args) < 1 {
+		return responsef("/jira instance delete {URL|#}")
+	}
+	instanceKey := args[0]
+
+	known, err := p.LoadKnownJIRAInstances()
+	if err != nil {
+		return responsef("Failed to load known JIRA instances: %v", err)
+	}
+
+	num, err := strconv.ParseUint(instanceKey, 10, 8)
+	if err == nil {
+		if num < 1 || int(num) > len(known) {
+			return responsef("Wrong instance number %v, must be 1-%v\n", num, len(known)+1)
+		}
+
+		keys := []string{}
+		for key := range known {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		instanceKey = keys[num-1]
+	}
+
+	// Remove the instance
+	err = p.DeleteJiraInstance(instanceKey)
+	if err != nil {
+		return responsef("failed to delete Jira instance %s: %v", instanceKey, err)
+	}
+
+	return executeInstanceSelect(p, c, "1")
 }
 
 func responsef(format string, args ...interface{}) *model.CommandResponse {
