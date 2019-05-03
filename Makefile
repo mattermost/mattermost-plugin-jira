@@ -4,6 +4,7 @@ NPM ?= $(shell command -v npm 2> /dev/null)
 HTTP ?= $(shell command -v http 2> /dev/null)
 CURL ?= $(shell command -v curl 2> /dev/null)
 MANIFEST_FILE ?= plugin.json
+PWD := $(shell pwd)
 
 # Verify environment, and define PLUGIN_ID, PLUGIN_VERSION, HAS_SERVER and HAS_WEBAPP as needed.
 include build/setup.mk
@@ -164,3 +165,67 @@ ifneq ($(HAS_WEBAPP),)
 	rm -fr webapp/node_modules
 endif
 	rm -fr build/bin/
+
+# debug builds and deploys a debug version of the webapp, for only my architecture.
+.PHONY: debug
+debug:
+	./build/bin/manifest apply
+ifneq ($(HAS_SERVER),)
+	mkdir -p server/dist
+	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-darwin-amd64
+
+	# uncomment for your own architecture. This speeds up the cycle.
+	#cd server && env GOOS=linux GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-linux-amd64;
+	#cd server && env GOOS=windows GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-windows-amd64.exe;
+	cd server && cp -r templates dist/templates
+endif
+	rm -rf dist/
+	mkdir -p dist/$(PLUGIN_ID)
+	cp $(MANIFEST_FILE) dist/$(PLUGIN_ID)/
+ifneq ($(HAS_SERVER),)
+	mkdir -p dist/$(PLUGIN_ID)/server/dist
+	cp -r server/dist/* dist/$(PLUGIN_ID)/server/dist/
+endif
+
+	mkdir -p ../mattermost-server/plugins
+	cp -r dist/* ../mattermost-server/plugins/
+
+	# if there is a current plugin running, kill it
+	$(eval PLUGIN_PID := $(shell ps aux | grep "$(PLUGIN_ID)" | grep -v "grep" | awk -F " " '{print $$2}'))
+ifneq ($(PLUGIN_PID),)
+	@echo "\n\n*** Located existing Plugin running with PID: $(PLUGIN_PID). Killing. \n*** Restart plugin from system conssole and run debug-plugin.sh\n\n"
+	kill -9 $(PLUGIN_PID)
+endif
+
+	# link the webapp directory for many benefits
+ifneq ($(HAS_WEBAPP),)
+	mkdir -p ../mattermost-server/plugins/$(PLUGIN_ID)/webapp
+	mkdir -p ./webapp
+	ln -nfs $(PWD)/webapp/dist ../mattermost-server/plugins/$(PLUGIN_ID)/webapp/dist
+	# start an npm watch
+	cd webapp && $(NPM) run run &
+endif
+
+	@echo "\n\n*** After the frontend is compiled, run 'make reset' to reset the plugin. Run reset to make the server pickup chages in your plugin.\n\n"
+
+# Reset the plugin
+reset:
+ifneq ($(and $(MM_SERVICESETTINGS_SITEURL),$(MM_ADMIN_USERNAME),$(MM_ADMIN_PASSWORD),$(CURL)),)
+	@echo "\n\nRestarting plugin via API"
+	$(eval TOKEN := $(shell curl -i -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/login -d '{"login_id": "$(MM_ADMIN_USERNAME)", "password": "$(MM_ADMIN_PASSWORD)"}' | grep Token | cut -f2 -d' '))
+	@curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/disable && \
+		curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/enable > /dev/null
+endif
+
+stop: ## Stops webpack
+	@echo Stopping changes watching
+
+ifeq ($(OS),Windows_NT)
+	wmic process where "Caption='node.exe' and CommandLine like '%webpack%'" call terminate
+else
+	@for PROCID in $$(ps -ef | grep "[n]ode.*[w]ebpack" | awk '{ print $$2 }'); do \
+		echo stopping webpack watch $$PROCID; \
+		kill $$PROCID; \
+	done
+endif
+
