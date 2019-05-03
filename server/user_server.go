@@ -74,7 +74,7 @@ func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.
 		return http.StatusInternalServerError, err
 	}
 
-	return respondWithTemplate(w, r, jsi.Plugin.templates, "text/html", struct {
+	return jsi.Plugin.respondWithTemplate(w, r, "text/html", struct {
 		MattermostDisplayName string
 		JiraDisplayName       string
 		RevokeURL             string

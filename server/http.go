@@ -123,16 +123,14 @@ func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error
 	return templates, nil
 }
 
-func respondWithTemplate(w http.ResponseWriter, r *http.Request,
-	templates map[string]*template.Template, ct string, v interface{}) (int, error) {
-
-	w.Header().Set("Content-Type", ct)
-	t := templates[r.URL.Path]
+func (p *Plugin) respondWithTemplate(w http.ResponseWriter, r *http.Request, contentType string, values interface{}) (int, error) {
+	w.Header().Set("Content-Type", contentType)
+	t := p.templates[r.URL.Path]
 	if t == nil {
 		return http.StatusInternalServerError,
 			errors.New("no template found for " + r.URL.Path)
 	}
-	err := t.Execute(w, v)
+	err := t.Execute(w, values)
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to write response")

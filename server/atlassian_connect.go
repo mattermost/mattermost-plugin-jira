@@ -19,7 +19,7 @@ func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) 
 			errors.New("method " + r.Method + " is not allowed, must be GET")
 	}
 
-	return respondWithTemplate(w, r, p.templates, "application/json", map[string]string{
+	return p.respondWithTemplate(w, r, "application/json", map[string]string{
 		"BaseURL":                      p.GetPluginURL(),
 		"RouteACJSON":                  routeACJSON,
 		"RouteACInstalled":             routeACInstalled,

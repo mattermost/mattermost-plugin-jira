@@ -37,7 +37,7 @@ func httpACUserRedirect(jci *jiraCloudInstance, w http.ResponseWriter, r *http.R
 		submitURL = path.Join(jci.Plugin.GetPluginURLPath(), routeACUserConfirm)
 	}
 
-	return respondWithTemplate(w, r, jci.Plugin.templates, "text/html", struct {
+	return jci.Plugin.respondWithTemplate(w, r, "text/html", struct {
 		SubmitURL  string
 		ArgJiraJWT string
 		ArgMMToken string
@@ -117,7 +117,7 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 	}
 
 	// This set of props should work for all relevant routes/templates
-	return respondWithTemplate(w, r, jci.Plugin.templates, "text/html", struct {
+	return jci.Plugin.respondWithTemplate(w, r, "text/html", struct {
 		ConnectSubmitURL      string
 		DisconnectSubmitURL   string
 		ArgJiraJWT            string
