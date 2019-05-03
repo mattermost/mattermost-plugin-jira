@@ -4,9 +4,9 @@
 package main
 
 import (
-	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 
@@ -24,18 +24,17 @@ const (
 
 func keyWithInstance(ji Instance, key string) string {
 	if prefixForInstance {
-		h := md5.New()
+		h := sha256.New()
 		fmt.Fprintf(h, "%s/%s", ji.GetURL(), key)
 		key = fmt.Sprintf("%x", h.Sum(nil))
 	}
 	return key
 }
 
-func md5key(prefix, key string) string {
-	h := md5.New()
+func hashkey(prefix, key string) string {
+	h := sha256.New()
 	_, _ = h.Write([]byte(key))
-	key = fmt.Sprintf("%x", h.Sum(nil))
-	return prefix + key
+	return fmt.Sprintf("%s%x", prefix, h.Sum(nil))
 }
 
 func (p *Plugin) kvGet(key string, v interface{}) (returnErr error) {
@@ -105,7 +104,7 @@ func (p *Plugin) storeJiraInstance(ji Instance, storeKey, storeCurrent bool) (re
 	}()
 
 	if storeKey {
-		err := p.kvSet(md5key(prefixJIRAInstance, ji.GetURL()), ji)
+		err := p.kvSet(hashkey(prefixJIRAInstance, ji.GetURL()), ji)
 		if err != nil {
 			return err
 		}
@@ -146,7 +145,7 @@ func (p *Plugin) DeleteJiraInstance(key string) (returnErr error) {
 	}()
 
 	// Delete the instance.
-	appErr := p.API.KVDelete(md5key(prefixJIRAInstance, key))
+	appErr := p.API.KVDelete(hashkey(prefixJIRAInstance, key))
 	if appErr != nil {
 		return appErr
 	}
@@ -195,7 +194,7 @@ func (p *Plugin) LoadCurrentJIRAInstance() (Instance, error) {
 }
 
 func (p *Plugin) LoadJIRAInstance(key string) (Instance, error) {
-	ji, err := p.loadJIRAInstance(md5key(prefixJIRAInstance, key))
+	ji, err := p.loadJIRAInstance(hashkey(prefixJIRAInstance, key))
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to load Jira instance "+key)
 	}
@@ -424,7 +423,7 @@ func (p *Plugin) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
 
 func (p *Plugin) StoreOneTimeSecret(token, secret string) error {
 	// Expire in 15 minutes
-	appErr := p.API.KVSetWithExpiry(md5key(prefixOneTimeSecret, token), []byte(secret), 15*60)
+	appErr := p.API.KVSetWithExpiry(hashkey(prefixOneTimeSecret, token), []byte(secret), 15*60)
 	if appErr != nil {
 		return errors.WithMessage(appErr, "failed to store one-ttime secret "+token)
 	}
@@ -432,7 +431,7 @@ func (p *Plugin) StoreOneTimeSecret(token, secret string) error {
 }
 
 func (p *Plugin) LoadOneTimeSecret(token string) (string, error) {
-	b, appErr := p.API.KVGet(md5key(prefixOneTimeSecret, token))
+	b, appErr := p.API.KVGet(hashkey(prefixOneTimeSecret, token))
 	if appErr != nil {
 		return "", errors.WithMessage(appErr, "failed to load one-time secret "+token)
 	}
@@ -440,7 +439,7 @@ func (p *Plugin) LoadOneTimeSecret(token string) (string, error) {
 }
 
 func (p *Plugin) DeleteOneTimeSecret(token string) error {
-	appErr := p.API.KVDelete(md5key(prefixOneTimeSecret, token))
+	appErr := p.API.KVDelete(hashkey(prefixOneTimeSecret, token))
 	if appErr != nil {
 		return errors.WithMessage(appErr, "failed to delete one-time secret "+token)
 	}

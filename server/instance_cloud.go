@@ -5,8 +5,8 @@ package main
 
 import (
 	"context"
-	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -80,9 +80,7 @@ func (jci jiraCloudInstance) GetUserConnectURL(mattermostUserId string) (string,
 	if err != nil {
 		return "", err
 	}
-	h := md5.New()
-	_, _ = h.Write([]byte(secret))
-	secretKey := fmt.Sprintf("%x", h.Sum(nil))
+	secretKey := fmt.Sprintf("%x", sha256.Sum256(secret))
 	secretValue := "true"
 	err = jci.Plugin.StoreOneTimeSecret(secretKey, secretValue)
 	if err != nil {
