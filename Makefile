@@ -166,39 +166,42 @@ ifneq ($(HAS_WEBAPP),)
 endif
 	rm -fr build/bin/
 
-# debug builds and deploys a debug version of the webapp, for only my architecture.
+# server-debug builds and deploys a debug version of the plugin for your architecture.
+# Then resets the plugin to pick up the changes.
 .PHONY: debug
-debug: stop
-	./build/bin/manifest apply
-ifneq ($(HAS_SERVER),)
-	mkdir -p server/dist
-	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-darwin-amd64
+debug: server-debug reset
 
-	# uncomment for your own architecture. This speeds up the cycle.
-	#cd server && env GOOS=linux GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-linux-amd64;
-	#cd server && env GOOS=windows GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-windows-amd64.exe;
-	cd server && cp -r templates dist/templates
+.PHONY: server-debug
+server-debug: server/.depensure
+
+	./build/bin/manifest apply
+	mkdir -p server/dist
+
+ifeq ($(OS),OSX)
+	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-darwin-amd64;
+else ifeq ($(OS),Linux)
+	cd server && env GOOS=linux GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-linux-amd64;
+else ifeq ($(OS),Windows_NT)
+	cd server && env GOOS=windows GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-windows-amd64.exe;
+else
+	$(error Please set your OS system env variable to: 'OSX', 'Windows_NT', or 'Linux')
 endif
+
+	cd server && cp -r templates dist/templates
 	rm -rf dist/
 	mkdir -p dist/$(PLUGIN_ID)
 	cp $(MANIFEST_FILE) dist/$(PLUGIN_ID)/
-ifneq ($(HAS_SERVER),)
 	mkdir -p dist/$(PLUGIN_ID)/server/dist
 	cp -r server/dist/* dist/$(PLUGIN_ID)/server/dist/
-endif
-
 	mkdir -p ../mattermost-server/plugins
 	cp -r dist/* ../mattermost-server/plugins/
 
-	# if there is a current plugin running, kill it
-	$(eval PLUGIN_PID := $(shell ps aux | grep "$(PLUGIN_ID)" | grep -v "grep" | awk -F " " '{print $$2}'))
-ifneq ($(PLUGIN_PID),)
-	@echo "\n\n*** Located existing Plugin running with PID: $(PLUGIN_PID). Killing. \n*** Restart plugin from system conssole and run debug-plugin.sh\n\n"
-	kill -9 $(PLUGIN_PID)
-endif
+# webapp-debug builds and deploys a debug version of the plugin's webapp
+.PHONY: webapp-debug
+webapp-debug:
 
-	# link the webapp directory for many benefits
 ifneq ($(HAS_WEBAPP),)
+	# link the webapp directory
 	mkdir -p ../mattermost-server/plugins/$(PLUGIN_ID)/webapp
 	mkdir -p ./webapp
 	ln -nfs $(PWD)/webapp/dist ../mattermost-server/plugins/$(PLUGIN_ID)/webapp/dist
@@ -206,18 +209,44 @@ ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run run &
 endif
 
-	@echo "\n\n*** After the frontend is compiled, run 'make reset' to reset the plugin. Run reset to make the server pickup chages in your plugin.\n\n"
+	@echo "\n\n*** After the frontend is compiled, run 'make reset' to reset the plugin. Run reset every time a change is made to force the server to serve the chages in your webapp portion of the plugin.\n\n"
 
 # Reset the plugin
+.PHONY: reset
 reset:
-ifneq ($(and $(MM_SERVICESETTINGS_SITEURL),$(MM_ADMIN_USERNAME),$(MM_ADMIN_PASSWORD),$(CURL)),)
-	@echo "\n\nRestarting plugin via API"
-	$(eval TOKEN := $(shell curl -i -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/login -d '{"login_id": "$(MM_ADMIN_USERNAME)", "password": "$(MM_ADMIN_PASSWORD)"}' | grep Token | cut -f2 -d' '))
-	@curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/disable > /dev/null && \
-		curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/enable > /dev/null
+ifeq ($(and $(MM_SERVICESETTINGS_SITEURL),$(MM_ADMIN_USERNAME),$(MM_ADMIN_PASSWORD)),)
+	$(error In order to use make reset, the following environment variables need to be defined: MM_SERVICESETTINGS_SITEURL, MM_ADMIN_USERNAME, MM_ADMIN_PASSWORD)
 endif
 
-stop: ## Stops webpack
+	# If we were debugging, we have to unattach the delve process or else we can't disable the plugin.
+	# NOTE: we are assuming the dlv was listening on port 2346, as in the debug-plugin.sh script.
+	@DELVE_PID=$(shell ps aux | grep "dlv attach.*2346" | grep -v "grep" | awk -F " " '{print $$2}') && \
+	if [ "$$DELVE_PID" -gt 0 ] > /dev/null 2>&1 ; then \
+		echo "Located existing delve process running with PID: $$DELVE_PID. Killing." ; \
+		kill -9 $$DELVE_PID ; \
+	fi
+
+ifneq ($(HTTP),)
+	@echo "\nRestarting plugin via API"
+		(TOKEN=`http --print h POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/login login_id=$(MM_ADMIN_USERNAME) password=$(MM_ADMIN_PASSWORD) X-Requested-With:"XMLHttpRequest" | grep Token | cut -f2 -d' '` && \
+		  http --print b GET $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/me Authorization:"Bearer $$TOKEN" && \
+			http --print b POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/disable Authorization:"Bearer $$TOKEN" && \
+		  http --print b POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/enable Authorization:"Bearer $$TOKEN" && \
+		  http --print b POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/logout Authorization:"Bearer $$TOKEN" \
+	  )
+else ifneq ($(CURL),)
+	@echo "\nRestarting plugin via API"
+	$(eval TOKEN := $(shell curl -i -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/login -d '{"login_id": "$(MM_ADMIN_USERNAME)", "password": "$(MM_ADMIN_PASSWORD)"}' | grep Token | cut -f2 -d' '))
+	@curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/disable > /dev/null && \
+		curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/enable > /dev/null && \
+		echo "OK." || echo "Sorry, something went wrong. Check that MM_ADMIN_USERNAME and MM_ADMIN_PASSWORD env variables are set correctly."
+else
+	$(error In order to use make reset, you need to have curl or http installed.)
+endif
+
+# Stop the webpack
+.PHONY: stop
+stop:
 	@echo Stopping changes watching
 
 ifeq ($(OS),Windows_NT)
