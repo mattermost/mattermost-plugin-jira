@@ -21,70 +21,68 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"  * `delete <number or URL>` - Delete a known instance, select the first remaining as the current\n" +
 	""
 
-func getCommand() *model.Command {
-	return &model.Command{
-		Trigger:          "jira",
-		DisplayName:      "Jira",
-		Description:      "Integration with Jira.",
-		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, help",
-		AutoCompleteHint: "[command]",
+type CommandHandlerFunc func(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse
+
+type CommandHandler struct {
+	handlers       map[string]CommandHandlerFunc
+	defaultHandler CommandHandlerFunc
+}
+
+var jiraCommandHandler = CommandHandler{
+	handlers: map[string]CommandHandlerFunc{
+		"instance/add/server": executeInstanceAddServer,
+		"instance/add/cloud":  executeInstanceAddCloud,
+		"instance/list":       executeInstanceList,
+		"instance/select":     executeInstanceSelect,
+		"instance/delete":     executeInstanceDelete,
+		"connect":             executeConnect,
+		"disconnect":          executeDisconnect,
+	},
+	defaultHandler: commandHelp,
+}
+
+func (ch CommandHandler) Handle(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+	for n := len(args); n > 0; n-- {
+		h := ch.handlers[strings.Join(args[:n], "/")]
+		if h != nil {
+			return h(p, c, args[n:]...)
+		}
 	}
+	return ch.defaultHandler(p, c, args...)
+}
+
+func commandHelp(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+	return responsef(helpText)
 }
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	args := strings.Fields(commandArgs.Command)
-	if len(args) < 2 {
-		return responsef("Invalid syntax. Must be at least /jira action."), nil
+	if len(args) == 0 || args[0] != "/jira" {
+		return commandHelp(p, c), nil
 	}
-	action := args[1]
-	args = args[2:]
-
-	switch action {
-	case "help":
-		return responsef(helpText), nil
-	case "connect":
-		return executeConnect(p, c, args), nil
-	case "disconnect":
-		return executeDisconnect(p, c, args), nil
-	case "instance":
-		return executeInstance(p, c, args), nil
-	}
-
-	return responsef("Action %v is not supported.", action), nil
+	return jiraCommandHandler.Handle(p, c, args[1:]...), nil
 }
 
-func executeConnect(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
+func executeConnect(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+	if len(args) != 0 {
+		return commandHelp(p, c, args...)
+	}
 	return responsef("[Click here to link your Jira account.](%s/%s)",
 		p.GetPluginURL(), routeUserConnect)
 }
 
-func executeDisconnect(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
+func executeDisconnect(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+	if len(args) != 0 {
+		return commandHelp(p, c, args...)
+	}
 	return responsef("[Click here to unlink your Jira account.](%s/%s)",
 		p.GetPluginURL(), routeUserDisconnect)
 }
 
-func executeInstance(p *Plugin, c *plugin.Context, args []string) *model.CommandResponse {
-	if len(args) < 1 {
-		return responsef("Please specify a parameter in the form `/jira instance [add,list,select]")
+func executeInstanceList(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+	if len(args) != 0 {
+		return commandHelp(p, c, args...)
 	}
-	action := args[0]
-	args = args[1:]
-
-	switch action {
-	case "list":
-		return executeInstanceList(p, c)
-	case "add":
-		return executeInstanceAdd(p, c, args...)
-	case "select":
-		return executeInstanceSelect(p, c, args...)
-	case "delete":
-		return executeInstanceDelete(p, c, args...)
-	}
-	return responsef("Please specify a parameter in the form `/jira instance [add,list,select]")
-}
-
-func executeInstanceList(p *Plugin, c *plugin.Context) *model.CommandResponse {
 	known, err := p.LoadKnownJIRAInstances()
 	if err != nil {
 		return responsef("Failed to load known Jira instances: %v", err)
@@ -128,7 +126,14 @@ func executeInstanceList(p *Plugin, c *plugin.Context) *model.CommandResponse {
 	return responsef(text)
 }
 
-const addResponseFormat = `Instance has been added. You need to add an Application Link to it in Jira now.
+func executeInstanceAddServer(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+	if len(args) != 1 {
+		return commandHelp(p, c, args...)
+	}
+	jiraURL := args[0]
+
+	const addResponseFormat = `` +
+		`Instance has been added. You need to add an Application Link to it in Jira now.
 1. Click %s, login as an admin.
 2. Navigate to (Jira) Settings > Applications > Application Links.
 3. Enter %s, anc click "Create new link".
@@ -142,48 +147,35 @@ const addResponseFormat = `Instance has been added. You need to add an Applicati
   - Consumer Name: Mattermost
   - Public Key: %s
 `
-
-func executeInstanceAdd(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
-	if len(args) < 1 {
-		return responsef("Please specify a parameter in the form `/jira instance add server {URL}` or `/jira instance add cloud`")
+	ji := NewJIRAServerInstance(p, jiraURL)
+	err := p.StoreJIRAInstance(ji)
+	if err != nil {
+		return responsef(err.Error())
 	}
-	typ := args[0]
-
-	switch typ {
-	case JIRATypeServer:
-		if len(args) < 2 {
-			return responsef("Please specify the server URL in the form `/jira instance add server {URL}`")
-		}
-		jiraURL := args[1]
-
-		ji := NewJIRAServerInstance(p, jiraURL)
-		err := p.StoreJIRAInstance(ji)
-		if err != nil {
-			return responsef(err.Error())
-		}
-		err = p.StoreCurrentJIRAInstance(ji)
-		if err != nil {
-			return responsef(err.Error())
-		}
-
-		pkey, err := publicKeyString(p)
-		if err != nil {
-			return responsef("Failed to load public key: %v", err)
-		}
-		return responsef(addResponseFormat, ji.GetURL(), p.GetSiteURL(), ji.GetMattermostKey(), pkey)
-
-	case JIRATypeCloud:
-		// TODO the exact group membership in Jira?
-		return responsef(`As an admin, upload an application from %s/%s. The link can be found in **Jira Settings > Applications > Manage**`,
-			p.GetPluginURL(), routeACJSON)
+	err = p.StoreCurrentJIRAInstance(ji)
+	if err != nil {
+		return responsef(err.Error())
 	}
 
-	return responsef("Please specify a parameter in the form `/jira instance add server {URL}` or `/jira instance add cloud`")
+	pkey, err := publicKeyString(p)
+	if err != nil {
+		return responsef("Failed to load public key: %v", err)
+	}
+	return responsef(addResponseFormat, ji.GetURL(), p.GetSiteURL(), ji.GetMattermostKey(), pkey)
+}
+
+func executeInstanceAddCloud(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+	if len(args) != 0 {
+		return commandHelp(p, c, args...)
+	}
+	// TODO What is the exact group membership in Jira required? Site-admins?
+	return responsef(`As an admin, upload an application from %s/%s. The link can be found in **Jira Settings > Applications > Manage**`,
+		p.GetPluginURL(), routeACJSON)
 }
 
 func executeInstanceSelect(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
-	if len(args) < 1 {
-		return responsef("/jira instance select {URL|#} ")
+	if len(args) != 1 {
+		return commandHelp(p, c, args...)
 	}
 	instanceKey := args[0]
 	num, err := strconv.ParseUint(instanceKey, 10, 8)
@@ -217,8 +209,8 @@ func executeInstanceSelect(p *Plugin, c *plugin.Context, args ...string) *model.
 }
 
 func executeInstanceDelete(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
-	if len(args) < 1 {
-		return responsef("/jira instance delete {URL|#}")
+	if len(args) != 1 {
+		return commandHelp(p, c, args...)
 	}
 	instanceKey := args[0]
 
@@ -248,6 +240,17 @@ func executeInstanceDelete(p *Plugin, c *plugin.Context, args ...string) *model.
 	}
 
 	return executeInstanceSelect(p, c, "1")
+}
+
+func getCommand() *model.Command {
+	return &model.Command{
+		Trigger:          "jira",
+		DisplayName:      "Jira",
+		Description:      "Integration with Jira.",
+		AutoComplete:     true,
+		AutoCompleteDesc: "Available commands: connect, disconnect, help",
+		AutoCompleteHint: "[command]",
+	}
 }
 
 func responsef(format string, args ...interface{}) *model.CommandResponse {
