@@ -111,6 +111,33 @@ func (p *Plugin) StoreJIRAInstance(ji Instance) (returnErr error) {
 	return nil
 }
 
+func (p *Plugin) StoreNewCloudInstance(jiraURL string) (returnErr error) {
+	defer func() {
+		if returnErr == nil {
+			return
+		}
+		returnErr = errors.WithMessage(returnErr,
+			fmt.Sprintf("failed to store new Jira Cloud instance:%s", jiraURL))
+	}()
+
+	ji := NewJIRACloudInstance(p, jiraURL,
+		fmt.Sprintf(`{"BaseURL": %s}`, jiraURL),
+		&AtlassianSecurityContext{BaseURL: jiraURL})
+
+	data, err := json.Marshal(ji)
+	if err != nil {
+		return err
+	}
+
+	// Expire in 15 minutes
+	appErr := p.API.KVSetWithExpiry(hashkey(prefixJIRAInstance, ji.GetURL()), data, 30)
+	if appErr != nil {
+		return appErr
+	}
+	p.debugf("Stored: new Jira Cloud instance: %s", ji.GetURL())
+	return nil
+}
+
 func (p *Plugin) StoreCurrentJIRAInstance(ji Instance) (returnErr error) {
 	defer func() {
 		if returnErr == nil {

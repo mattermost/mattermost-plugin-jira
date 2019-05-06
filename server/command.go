@@ -15,7 +15,7 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
 	"* `/jira instance [add/list/select/delete]` - Manage connected Jira instances\n" +
 	"  * `add server <URL>` - Add a Jira Server instance\n" +
-	"  * `add cloud` - Add a Jira Cloud instance\n" +
+	"  * `add cloud <URL>` - Add a Jira Cloud instance\n" +
 	"  * `list` - List known Jira instances\n" +
 	"  * `select <number or URL>` - Select a known instance as current\n" +
 	"  * `delete <number or URL>` - Delete a known instance, select the first remaining as the current\n" +
@@ -144,17 +144,17 @@ const addResponseFormat = `Instance has been added. You need to add an Applicati
 `
 
 func executeInstanceAdd(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
-	if len(args) < 1 {
-		return responsef("Please specify a parameter in the form `/jira instance add server {URL}` or `/jira instance add cloud`")
+	if len(args) != 2 {
+		return responsef("Please specify a parameter in the form `/jira instance add server {URL}` or `/jira instance add cloud {URL}`")
 	}
 	typ := args[0]
+	jiraURL := args[1]
 
 	switch typ {
 	case JIRATypeServer:
 		if len(args) < 2 {
 			return responsef("Please specify the server URL in the form `/jira instance add server {URL}`")
 		}
-		jiraURL := args[1]
 
 		ji := NewJIRAServerInstance(p, jiraURL)
 		err := p.StoreJIRAInstance(ji)
@@ -173,8 +173,14 @@ func executeInstanceAdd(p *Plugin, c *plugin.Context, args ...string) *model.Com
 		return responsef(addResponseFormat, ji.GetURL(), p.GetSiteURL(), ji.GetMattermostKey(), pkey)
 
 	case JIRATypeCloud:
+		// Create an "uninitialized" instance of Jira Cloud that will
+		// receive the /installed callback
+		err := p.StoreNewCloudInstance(jiraURL)
+		if err != nil {
+			return responsef(err.Error())
+		}
 		// TODO the exact group membership in Jira?
-		return responsef(`As an admin, upload an application from %s/%s. The link can be found in **Jira Settings > Applications > Manage**`,
+		return responsef(`As an admin, upload an application from %s/%s (expires in 15 minutes). The link can be found in **Jira Settings > Applications > Manage**`,
 			p.GetPluginURL(), routeACJSON)
 	}
 

@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -48,6 +49,26 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 	if err != nil {
 		return http.StatusBadRequest,
 			errors.WithMessage(err, "failed to unmarshal request")
+	}
+
+	// Only allow this operation once, a JIRA instance must already exist
+	// for asc.BaseURL but its EventType would be empty.
+	ji, err := p.LoadJIRAInstance(asc.BaseURL)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to load instance "+asc.BaseURL)
+	}
+	if ji == nil {
+		return http.StatusNotFound,
+			errors.New(fmt.Sprintf("Jira instance %s must first be added to Mattermost", asc.BaseURL))
+	}
+	jci, ok := ji.(*jiraCloudInstance)
+	if !ok {
+		return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
+	}
+	if jci.EventType == "installed" {
+		return http.StatusUnauthorized,
+			errors.New(fmt.Sprintf("Jira instance %s is already installed", asc.BaseURL))
 	}
 
 	// Create or overwrite the instance record, also store it
