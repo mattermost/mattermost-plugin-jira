@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/andygrunwald/go-jira"
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
 )
@@ -252,50 +251,6 @@ func executeInstanceDelete(p *Plugin, c *plugin.Context, args ...string) *model.
 	}
 
 	return executeInstanceSelect(p, c, "1")
-}
-
-func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) error {
-	ji, err := p.LoadCurrentJIRAInstance()
-	if err != nil {
-		return err
-	}
-
-	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mmUserId)
-	if err != nil {
-		return err
-	}
-
-	jiraClient, err := ji.GetJIRAClient(jiraUser)
-	if err != nil {
-		return err
-	}
-
-	transitions, _, err := jiraClient.Issue.GetTransitions(issueKey)
-	if err != nil {
-		return fmt.Errorf("We couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue.")
-	}
-
-	if len(transitions) < 1 {
-		return fmt.Errorf("You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.")
-	}
-
-	var transitionToUse *jira.Transition
-	for _, transition := range transitions {
-		if strings.Contains(strings.ToLower(transition.To.Name), strings.ToLower(toState)) {
-			transitionToUse = &transition
-			break
-		}
-	}
-
-	if transitionToUse == nil {
-		return fmt.Errorf("We couldn't find the state. Please use a Jira state such as 'done' and try again.")
-	}
-
-	if _, err := jiraClient.Issue.DoTransition(issueKey, transitionToUse.ID); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func executeTransition(p *Plugin, c *plugin.Context, args []string, userId string) *model.CommandResponse {
