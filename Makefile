@@ -5,6 +5,7 @@ HTTP ?= $(shell command -v http 2> /dev/null)
 CURL ?= $(shell command -v curl 2> /dev/null)
 MANIFEST_FILE ?= plugin.json
 PWD := $(shell pwd)
+OS := $(shell uname 2> /dev/null)
 
 # Verify environment, and define PLUGIN_ID, PLUGIN_VERSION, HAS_SERVER and HAS_WEBAPP as needed.
 include build/setup.mk
@@ -177,21 +178,20 @@ server-debug: server/.depensure
 	./build/bin/manifest apply
 	mkdir -p server/dist
 
-ifeq ($(OS),OSX)
+ifeq ($(OS),Darwin)
 	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-darwin-amd64;
 else ifeq ($(OS),Linux)
 	cd server && env GOOS=linux GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-linux-amd64;
 else ifeq ($(OS),Windows_NT)
 	cd server && env GOOS=windows GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-windows-amd64.exe;
 else
-	$(error Please set your OS system env variable to: 'OSX', 'Windows_NT', or 'Linux')
+	$(error make debug depends on uname to return your OS. If it does not return 'Darwin' (meaning OSX), 'Linux', or 'Windows_NT' (all recent versions of Windows), you will need to edit the Makefile for your own OS.)
 endif
 
 	cd server && cp -r templates dist/templates
 	rm -rf dist/
-	mkdir -p dist/$(PLUGIN_ID)
-	cp $(MANIFEST_FILE) dist/$(PLUGIN_ID)/
 	mkdir -p dist/$(PLUGIN_ID)/server/dist
+	cp $(MANIFEST_FILE) dist/$(PLUGIN_ID)/
 	cp -r server/dist/* dist/$(PLUGIN_ID)/server/dist/
 	mkdir -p ../mattermost-server/plugins
 	cp -r dist/* ../mattermost-server/plugins/
@@ -201,11 +201,10 @@ endif
 webapp-debug:
 
 ifneq ($(HAS_WEBAPP),)
-	# link the webapp directory
+# link the webapp directory
 	mkdir -p ../mattermost-server/plugins/$(PLUGIN_ID)/webapp
-	mkdir -p ./webapp
 	ln -nfs $(PWD)/webapp/dist ../mattermost-server/plugins/$(PLUGIN_ID)/webapp/dist
-	# start an npm watch
+# start an npm watch
 	cd webapp && $(NPM) run run &
 endif
 
@@ -218,30 +217,22 @@ ifeq ($(and $(MM_SERVICESETTINGS_SITEURL),$(MM_ADMIN_USERNAME),$(MM_ADMIN_PASSWO
 	$(error In order to use make reset, the following environment variables need to be defined: MM_SERVICESETTINGS_SITEURL, MM_ADMIN_USERNAME, MM_ADMIN_PASSWORD)
 endif
 
-	# If we were debugging, we have to unattach the delve process or else we can't disable the plugin.
-	# NOTE: we are assuming the dlv was listening on port 2346, as in the debug-plugin.sh script.
+# If we were debugging, we have to unattach the delve process or else we can't disable the plugin.
+# NOTE: we are assuming the dlv was listening on port 2346, as in the debug-plugin.sh script.
 	@DELVE_PID=$(shell ps aux | grep "dlv attach.*2346" | grep -v "grep" | awk -F " " '{print $$2}') && \
 	if [ "$$DELVE_PID" -gt 0 ] > /dev/null 2>&1 ; then \
 		echo "Located existing delve process running with PID: $$DELVE_PID. Killing." ; \
 		kill -9 $$DELVE_PID ; \
 	fi
 
-ifneq ($(HTTP),)
+ifneq ($(CURL),)
 	@echo "\nRestarting plugin via API"
-		(TOKEN=`http --print h POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/login login_id=$(MM_ADMIN_USERNAME) password=$(MM_ADMIN_PASSWORD) X-Requested-With:"XMLHttpRequest" | grep Token | cut -f2 -d' '` && \
-		  http --print b GET $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/me Authorization:"Bearer $$TOKEN" && \
-			http --print b POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/disable Authorization:"Bearer $$TOKEN" && \
-		  http --print b POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/enable Authorization:"Bearer $$TOKEN" && \
-		  http --print b POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/logout Authorization:"Bearer $$TOKEN" \
-	  )
-else ifneq ($(CURL),)
-	@echo "\nRestarting plugin via API"
-	$(eval TOKEN := $(shell curl -i -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/login -d '{"login_id": "$(MM_ADMIN_USERNAME)", "password": "$(MM_ADMIN_PASSWORD)"}' | grep Token | cut -f2 -d' '))
+	$(eval TOKEN := $(shell curl -i -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/login -d '{"login_id": "$(MM_ADMIN_USERNAME)", "password": "$(MM_ADMIN_PASSWORD)"}' | grep -o MMAUTHTOKEN=[0-9a-z]\* | cut -f2 -d'=' 2> /dev/null))
 	@curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/disable > /dev/null && \
 		curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/enable > /dev/null && \
 		echo "OK." || echo "Sorry, something went wrong. Check that MM_ADMIN_USERNAME and MM_ADMIN_PASSWORD env variables are set correctly."
 else
-	$(error In order to use make reset, you need to have curl or http installed.)
+	$(error In order to use make reset, you need to have curl installed.)
 endif
 
 # Stop the webpack
@@ -257,4 +248,3 @@ else
 		kill $$PROCID; \
 	done
 endif
-
