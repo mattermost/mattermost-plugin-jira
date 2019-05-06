@@ -130,7 +130,7 @@ func (p *Plugin) StoreNewCloudInstance(jiraURL string) (returnErr error) {
 	}
 
 	// Expire in 15 minutes
-	appErr := p.API.KVSetWithExpiry(hashkey(prefixJIRAInstance, ji.GetURL()), data, 30)
+	appErr := p.API.KVSetWithExpiry(hashkey(prefixJIRAInstance, ji.GetURL()), data, 15*60)
 	if appErr != nil {
 		return appErr
 	}
