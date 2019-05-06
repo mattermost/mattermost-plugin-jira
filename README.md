@@ -10,8 +10,6 @@ Below is a list of features currently supported. Each is considered Beta and may
 
 - Notifications for 10+ issue events from Jira to Mattermost with full JQL support, using webhooks. This includes notifications for the following events: issue created; issue transitioned to “Reopened”, “In Progress”, "Submitted" or “Resolved”; issue deleted or closed; comments created, updated or deleted; assignee, title, description, priority, sprint or rank updated; attachments or labels added; attachments or labels removed
 - Create Jira issues via Mattermost UI (Desktop App and browser only)
-- Scan posts for Jira issue references, and automatically add them as comments in Jira. (Note: This functionality will likely be removed when v2.0 is released)
-- Send direct messages for Jira at-mentions and issue assignments (Note: This functionality may be removed when v2.0 is released)
 - Slash commands for
   - `/jira connect` - Connect to a Jira project and subscribe to events.
   - `/jira disconnect` - Disconnect from a Jira project and subscribe from events.
@@ -25,21 +23,25 @@ Below is a full list of features planned for Jira plugin v2.0.
 
 We are looking for help from our community to complete the development of v2.0 of the Mattermost Jira plugin. If you're interested, review [open Help Wanted issues](https://github.com/mattermost/mattermost-plugin-jira/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) to get started.
 
-- Notifications for 10+ issue events from Jira to Mattermost with full JQL support, using webhooks. This includes notifications for the following events: issue created; issue transitioned to “Reopened”, “In Progress”, "Submitted" or “Resolved”; issue deleted or closed; comments created, updated or deleted; assignee, title, description, priority, sprint or rank updated; attachments or labels added; attachments or labels removed
+- Notifications for 10+ issue events from Jira to Mattermost with JQL support, using webhooks and channel subscriptions. This includes notifications for the following events: issue created; issue transitioned to “Reopened”, “In Progress”, "Submitted" or “Resolved”; issue deleted or closed; comments created, updated or deleted; assignee, title, description, priority, sprint or rank updated; attachments or labels added; attachments or labels removed
 - Create Jira issues via Mattermost UI (Desktop App and browser only)
 - Attach Mattermost messages to Jira issues via Mattermost UI (Desktop App and browser only)
 - Preview Jira issues in Mattermost when a ticket is referenced
-- Send direct messages for Jira at-mentions and issue assignments
+- (May not be released) Send direct messages for Jira at-mentions and issue assignments
 - Slash commands for
   - `/jira connect` - Connect to a Jira project and subscribe to events.
   - `/jira disconnect` - Disconnect from a Jira project and subscribe from events.
   - `/jira subscribe` - Subscribe a Mattermost channel to receive notifications for above issue updates in a Jira project.
-  - `/jira instance` - Manage connected Jira instances. Must have System Admin role in Mattermost.
+  - (May not be released) `/jira instance [add/list/select]` - Manage connected Jira instances. Must have System Admin role in Mattermost. Primarily intended for debugging and development purposes.
+      - `/jira instance add server <URL>` - Connect a Jira Server instance to Mattermost.
+      - `/jira instance add cloud` - Connect a Jira Cloud instance to Mattermost.
+      - `/jira instance list` - List connected Jira instances.
+      - `/jira instance select <key or number>` - Select the active Jira instance. At most one active Jira instance is currently supported.
   - `/jira create [description]` - Create a Jira ticket.
   - `/jira assign <issue-key> <assignee>` - Assign a Jira issue specified by `issue-key`. `assignee` must be a member of the Jira project.
   - `/jira transition <issue-key> <state>` - Transition a Jira issue specified by `issue-key`. `state` must be a valid Jira state such as "Done".
   - `/jira settings preview [on/off]` - Set whether previews of Jira issues are shown.
-  - `/jira settings notifications [on/off]` - Set whether Direct Message notifications are sent for assignments and comments in assigned issues.
+  - (May not be released) `/jira settings notifications [on/off]` - Set whether Direct Message notifications are sent for assignments and comments in assigned issues.
   - `/jira view <issue-key>` - View a Jira issue specified by `issue-key`.  
 
 ## 3. Installation
@@ -52,6 +54,7 @@ We are looking for help from our community to complete the development of v2.0 o
 2. Go to **System Console > Plugins (Beta) > Management** and upload the plugin from step 1. If you don't have the ability to upload plugins, uploads may be disabled on your server. To enable them, set **PluginSettings > EnableUploads** to `true` in your `config.json` file.
 3. Once uploaded, the Jira plugin will appear in a list of installed plugins. Click **Enable** to enable it.
 4. Go to **System Console > Plugins (Beta) > Management > Jira**, select the username that this plugin is attached to, generate a **Secret** and hit **Save**.
+   - You may optionally create a new user account for your Jira plugin, which can act as a bot account posting Jira updates to Mattermost channels.
 
 #### 3.1.2 Jira
 
@@ -83,7 +86,7 @@ Only the Jira System Admin has permissions to link a Jira project to a Mattermos
   - Make sure to replace `TEAMURL` and `CHANNELURL` with the Mattermost team URL and channel URL you want the JIRA events to post to. The values should be in lower case.
   - Moreover, replace `SITEURL` with the site URL of your Mattermost instance, and `WEBHOOKSECRET` with the secret generated in Mattermost via **System Console > Plugins (Beta) > Jira**
 
-For instance, if the team URL is `contributors`, channel URL is `town-square` and site URL is `https://community.mattermost.com`, and the generated webhook secrete is `5JlVk56KPxX629ujeU3MOuxaiwsPzLwh`, then the final webhook URL would be
+For instance, if the team URL is `contributors`, channel URL is `town-square` and site URL is `https://community.mattermost.com`, and the generated webhook secret is `5JlVk56KPxX629ujeU3MOuxaiwsPzLwh`, then the final webhook URL would be
 
 ```
 https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3MOuxaiwsPzLwh&team=contributors&channel=town-square
@@ -98,7 +101,59 @@ https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3
 
 ### 3.2 Jira Server (Core + Software)
 
-Documentation to be added.
+#### 3.2.1 Mattermost
+
+1. Download this binary: https://s3.amazonaws.com/mattermost-public-plugins-kubernetes/jira-test-2.0.0.tar.gz
+2. Go to **System Console > Plugins (Beta) > Management** and upload the plugin from step 1. If you don't have the ability to upload plugins, uploads may be disabled on your server. To enable them, set **PluginSettings > EnableUploads** to `true` in your `config.json` file.
+3. Once uploaded, the Jira plugin will appear in a list of installed plugins. Click **Enable** to enable it.
+4. Go to **System Console > Plugins (Beta) > Management > Jira**, select the username that this plugin is attached to, and enter your Jira Server URL.
+   - You may optionally create a new user account for your Jira plugin, which can act as a bot account posting Jira updates to Mattermost channels.
+
+#### 3.2.2 Jira
+
+As a Jira administrator, you have two steps to configure the plugin:
+
+#### 3.2.3 Jira - Deploy via Jira Application Links
+
+1. In Mattermost, post a command `/jira instance add server <your-jira-server-url>`. This generates the consumer key and public key used on a later step.
+2. As a Jira System Administrator, go to **Jira Settings > Applications > Application Links**.
+3. Enter your Mattermost URL as the application link, then click **Create new link**.
+4. In **Configure Application URL** screen, confirm your Mattermost URL is included as the application URL. Ignore any displayed errors and click **Continue**.
+5. In **Link Applications** screen, set the following values:
+  - **Application Name**: Mattermost
+  - **Application Type**: Generic Application
+6. Check the **Create incoming link** value, then click **Continue**.
+7. In the following **Link Applications** screen, set the following values:
+  - **Consumer Key**: Copy the value generated in step 1 for this field.
+  - **Consumer Name**: Mattermost
+  - **Public Key**: Copy the value generated in step 1 for this field.
+8. Click **Continue**.
+
+You're all set. Users can now connect their Mattermost account with Jira using `/jira connect`.
+
+#### 3.1.4 Jira - Configure Webhooks
+
+Only the Jira System Admin has permissions to link a Jira project to a Mattermost channel via webhooks. We are planning to allow anyone with access to subscribe a Jira project to a Mattermost channel via `/jira subscribe`.
+
+1. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
+  - For older versions of Jira, click the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
+
+2. Click **Create a WebHook** to create a new webhook. Choose a unique name and add the JIRA webhook URL https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL as the URL.
+  - Make sure to replace `TEAMURL` and `CHANNELURL` with the Mattermost team URL and channel URL you want the JIRA events to post to. The values should be in lower case.
+  - Moreover, replace `SITEURL` with the site URL of your Mattermost instance, and `WEBHOOKSECRET` with the secret generated in Mattermost via **System Console > Plugins (Beta) > Jira**
+
+For instance, if the team URL is `contributors`, channel URL is `town-square` and site URL is `https://community.mattermost.com`, and the generated webhook secret is `5JlVk56KPxX629ujeU3MOuxaiwsPzLwh`, then the final webhook URL would be
+
+```
+https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3MOuxaiwsPzLwh&team=contributors&channel=town-square
+```
+
+3. (Optional) Set a description and a custom JQL query to determine which types of tickets trigger events. For more information on JQL queries, refer to the [Atlassian help documentation](https://confluence.atlassian.com/jirasoftwarecloud/advanced-searching-764478330.html).
+
+4. Finally, set which issue events send messages to Mattermost channels. The following are supported:
+
+ - Issue: Created, Updated, Deleted
+ - Comment: Created, Updated, Deleted
 
 ## 4. Developing
 
