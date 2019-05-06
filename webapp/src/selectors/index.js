@@ -40,3 +40,5 @@ export const getCurrentUserLocale = createSelector(
 export const isCreateModalVisible = (state) => getPluginState(state).createModalVisible;
 
 export const getCreateModalForPostId = (state) => getPluginState(state).createModalForPostId;
+
+export const getJiraMetadata = (state) => getPluginState(state).jiraMetadata;

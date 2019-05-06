@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 
 import Setting from './setting.jsx';
 
-export default class InputSetting extends PureComponent {
+export default class Input extends PureComponent {
     static propTypes = {
         id: PropTypes.string.isRequired,
         label: PropTypes.node.isRequired,

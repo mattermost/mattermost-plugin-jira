@@ -5,15 +5,17 @@ import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 import {Modal} from 'react-bootstrap';
 
-import DropDown from 'components/settings/dropdown';
+import JiraFields from 'components/jira_fields';
 import FormButton from 'components/form_button';
-import Input from 'components/settings/input';
 import Loading from 'components/loading';
-import MultiSelect from 'components/settings/multiselect';
+import ReactSelectSetting from 'components/react_select_setting';
+
+import {getProjectValues, getIssueTypes, getIssueValues, getFields} from 'jira_issue_metadata';
 
 const initialState = {
     submitting: false,
-    metadata: null,
+    projectKey: null,
+    issueType: null,
     fields: {
         description: '',
         project: {
@@ -30,10 +32,11 @@ export default class CreateIssueModal extends PureComponent {
     static propTypes = {
         close: PropTypes.func.isRequired,
         create: PropTypes.func.isRequired,
-        getMetadata: PropTypes.func.isRequired,
         post: PropTypes.object,
         theme: PropTypes.object.isRequired,
         visible: PropTypes.bool.isRequired,
+        jiraMetadata: PropTypes.object,
+        getMetadata: PropTypes.func.isRequired,
     };
 
     constructor(props) {
@@ -42,86 +45,28 @@ export default class CreateIssueModal extends PureComponent {
         this.state = initialState;
     }
 
-    componentWillReceiveProps(nextProps) {
-        if (this.props.post !== nextProps.post && nextProps.post) {
-            this.getMetadata(nextProps.post.message);
+    componentDidUpdate(prevProps) {
+        if (this.props.post && (!prevProps.post || this.props.post.id !== prevProps.post.id)) {
+            this.props.getMetadata();
+            const fields = {...this.state.fields};
+            fields.description = this.props.post.message;
+            this.setState({fields}); //eslint-disable-line react/no-did-update-set-state
         }
     }
-
-    getMetadata = (description) => {
-        const {getMetadata} = this.props;
-        const {fields} = this.state;
-        getMetadata().then((meta) => {
-            if (meta.error) {
-                this.setState({error: meta.error.message});
-                return;
-            }
-
-            const nFields = {
-                ...fields,
-            };
-
-            nFields.description = description;
-            if (meta.data && meta.data.projects && meta.data.projects.length) {
-                const pr = meta.data.projects[0];
-                nFields.project.key = pr.key;
-                nFields.issuetype.name = pr.issuetypes[0].name;
-            }
-            this.setState({
-                metadata: meta.data,
-                fields: nFields,
-            });
-        });
-    };
-
-    getProjectMeta = (projectKey) => {
-        const {metadata} = this.state;
-        if (metadata && metadata.projects) {
-            return metadata.projects.find((p) => p.key === projectKey) || [];
-        }
-
-        return [];
-    };
-
-    getProjectIssueTypes = (projectKey) => {
-        const project = this.getProjectMeta(projectKey);
-        if (project.issuetypes) {
-            return project.issuetypes.filter((i) => !i.subtask);
-        }
-        return [];
-    };
-
-    getFields = (projectKey, issueType) => {
-        if (projectKey && issueType) {
-            const issues = this.getProjectIssueTypes(projectKey);
-            const issue = issues.find((i) => i.name === issueType);
-            if (issue) {
-                return Object.values(issue.fields).filter((f) => {
-                    return (f.required || f.schema.system === 'description') &&
-                        f.schema.system !== 'project' && f.schema.system !== 'issuetype' && f.schema.system !== 'reporter';
-                });
-            }
-        }
-
-        return [];
-    };
 
     handleCreate = (e) => {
         if (e && e.preventDefault) {
             e.preventDefault();
         }
 
-        const {create, post} = this.props;
-        const {fields} = this.state;
-
         const issue = {
-            post_id: post.id,
-            fields,
+            post_id: this.props.post.id,
+            fields: this.state.fields,
         };
 
         this.setState({submitting: true});
 
-        create(issue).then((created) => {
+        this.props.create(issue).then((created) => {
             if (created.error) {
                 this.setState({error: created.error.message, submitting: false});
                 return;
@@ -149,108 +94,47 @@ export default class CreateIssueModal extends PureComponent {
         this.setState({fields: nFields});
     };
 
-    handleSettingChange = (id, value) => {
-        const {description, project} = this.state.fields;
-        switch (id) {
-        case 'selectProject': {
-            const fields = {
-                description,
-                project: {
-                    key: value,
-                },
-            };
-            const issueTypes = this.getProjectIssueTypes(value);
-            fields.issuetype = {
-                name: issueTypes.length && issueTypes[0].name,
-            };
-            this.setState({fields});
-            break;
-        }
-        case 'selectType': {
-            const fields = {
-                description,
-                project,
-                issuetype: {
-                    name: value,
-                },
-            };
-            this.setState({fields});
-            break;
-        }
-        default: {
-            const nFields = {...this.state.fields};
-            nFields[id] = value;
-            this.setState({fields: nFields});
-            break;
-        }
-        }
-    };
-
-    renderFields = () => {
-        const {fields} = this.state;
-        const fieldsToRender = this.getFields(fields.project.key, fields.issuetype.name);
-        return fieldsToRender.map((f) => {
-            if (f.schema.system === 'description') {
-                return (
-                    <Input
-                        key={`${fields.issuetype.name}-${f.schema.system}`}
-                        id={f.schema.system}
-                        label={f.schema.system}
-                        type='textarea'
-                        value={fields[f.schema.system]}
-                        onChange={this.handleSettingChange}
-                        required={f.required}
-                    />
-                );
-            }
-
-            if (f.schema.type === 'string') {
-                let value = '';
-                if (fields[f.schema.system]) {
-                    value = fields[f.schema.system];
-                }
-                return (
-                    <Input
-                        key={`${fields.issuetype.name}-${f.schema.system}`}
-                        id={f.schema.system}
-                        label={f.schema.system}
-                        value={value}
-                        onChange={this.handleSettingChange}
-                        required={f.required}
-                    />
-                );
-            }
-
-            let value;
-            if (f.hasDefaultValue && !fields[f.schema.system]) {
-                value = f.defaultValue && f.defaultValue.name;
-            } else {
-                value = fields[f.schema.system];
-            }
-
-            if (f.allowedValues && f.allowedValues.length) {
-                const options = f.allowedValues.map((o) => ({value: o.name, text: o.name}));
-
-                return (
-                    <MultiSelect
-                        key={`${fields.issuetype.name}-${f.schema.system}`}
-                        id={f.schema.system}
-                        label={f.schema.system}
-                        options={options}
-                        selected={value && value.map((v) => v.name)}
-                        required={f.required}
-                        onChange={this.handleSettingChange}
-                    />
-                );
-            }
-
-            return null;
+    handleProjectChange = (id, value) => {
+        const fields = {...this.state.fields};
+        const issueTypes = getIssueTypes(this.props.jiraMetadata, value);
+        const issueType = issueTypes.length && issueTypes[0].id;
+        const projectKey = value;
+        fields.project = {
+            key: value,
+        };
+        fields.issuetype = {
+            id: issueType,
+        };
+        this.setState({
+            projectKey,
+            issueType,
+            fields,
         });
-    };
+    }
+
+    handleIssueTypeChange = (id, value) => {
+        const fields = {...this.state.fields};
+        const issueType = value;
+        fields.issuetype = {
+            id: issueType,
+        };
+        this.setState({
+            issueType,
+            fields,
+        });
+    }
+
+    handleFieldChange = (id, value) => {
+        const fields = {...this.state.fields};
+        fields[id] = value;
+        this.setState({
+            fields,
+        });
+    }
 
     render() {
-        const {post, visible, theme} = this.props;
-        const {fields, error, metadata, submitting} = this.state;
+        const {post, visible, theme, jiraMetadata} = this.props;
+        const {error, submitting} = this.state;
         const style = getStyle(theme);
 
         if (!visible) {
@@ -262,36 +146,37 @@ export default class CreateIssueModal extends PureComponent {
             console.error('render error', error); //eslint-disable-line no-console
         }
 
-        if (!post || !metadata || !fields.project.key) {
+        if (!post || !jiraMetadata || !jiraMetadata.projects) {
             component = <Loading/>;
         } else {
-            const projectsOption = (
-                <DropDown
-                    id='selectProject'
-                    values={metadata.projects.map((p) => ({value: p.key, text: p.name}))}
-                    value={fields.project.key}
-                    label='Project'
-                    required={true}
-                    onChange={this.handleSettingChange}
-                />
-            );
-
-            const issueTypes = (
-                <DropDown
-                    id='selectType'
-                    values={this.getProjectIssueTypes(fields.project.key).map((i) => ({value: i.name, text: i.name}))}
-                    value={fields.issuetype.name}
-                    label='Issue Type'
-                    required={true}
-                    onChange={this.handleSettingChange}
-                />
-            );
-
+            const issueOptions = getIssueValues(jiraMetadata, this.state.projectKey);
+            const projectOptions = getProjectValues(jiraMetadata);
             component = (
                 <div style={style.modal}>
-                    {projectsOption}
-                    {issueTypes}
-                    {this.renderFields()}
+                    <ReactSelectSetting
+                        name={'project'}
+                        label={'Project'}
+                        required={true}
+                        onChange={this.handleProjectChange}
+                        options={projectOptions}
+                        isMuli={false}
+                        key={'LT'}
+                        value={projectOptions.filter((option) => option.value === this.state.projectKey)}
+                    />
+                    <ReactSelectSetting
+                        name={'issue_type'}
+                        label={'Issue Type'}
+                        required={true}
+                        onChange={this.handleIssueTypeChange}
+                        options={issueOptions}
+                        isMuli={false}
+                        value={issueOptions.filter((option) => option.value === this.state.issueType)}
+                    />
+                    <JiraFields
+                        fields={getFields(jiraMetadata, this.state.projectKey, this.state.issueType)}
+                        onChange={this.handleFieldChange}
+                        values={this.state.fields}
+                    />
                     <br/>
                 </div>
             );
@@ -310,20 +195,24 @@ export default class CreateIssueModal extends PureComponent {
                         {'Create Jira Ticket'}
                     </Modal.Title>
                 </Modal.Header>
-                <form role='form'>
+                <form
+                    role='form'
+                    onSubmit={this.handleCreate}
+                >
                     <Modal.Body ref='modalBody'>
                         {component}
                     </Modal.Body>
                     <Modal.Footer>
                         <FormButton
+                            type='button'
                             btnClass='btn-default'
                             defaultMessage='Cancel'
                             onClick={this.handleClose}
                         />
                         <FormButton
+                            type='submit'
                             btnClass='btn btn-primary'
                             saving={submitting}
-                            onClick={this.handleCreate}
                         >
                             {'Create'}
                         </FormButton>

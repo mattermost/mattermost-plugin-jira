@@ -53,7 +53,6 @@ export default class FormButton extends PureComponent {
 
         return (
             <button
-                type='submit'
                 id='saveSetting'
                 className={className}
                 disabled={disabled}
