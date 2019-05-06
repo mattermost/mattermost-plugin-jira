@@ -107,16 +107,27 @@ https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3
 1. Download this binary: https://s3.amazonaws.com/mattermost-public-plugins-kubernetes/jira-test-2.0.0.tar.gz
 2. Go to **System Console > Plugins (Beta) > Management** and upload the plugin from step 1. If you don't have the ability to upload plugins, uploads may be disabled on your server. To enable them, set **PluginSettings > EnableUploads** to `true` in your `config.json` file.
 3. Once uploaded, the Jira plugin will appear in a list of installed plugins. Click **Enable** to enable it.
-4. Go to **System Console > Plugins (Beta) > Management > Jira**, select the username that this plugin is attached to.
-5.
+4. Go to **System Console > Plugins (Beta) > Management > Jira**, select the username that this plugin is attached to, and enter your Jira Server URL.
 
 #### 3.2.2 Jira
 
 As a Jira administrator, you have two steps to configure the plugin:
 
-#### 3.2.3 Jira - Deploy via Jira AppConnect
+#### 3.2.3 Jira - Deploy via Jira Application Links
 
-1. 
+1. In Mattermost, post a command `/jira instance add server <your-jira-server-url>`. This generates the consumer key and public key used on a later step.
+2. As a Jira System Administrator, go to **Jira Settings > Applications > Application Links**.
+3. Enter your Mattermost URL as the application link, then click **Create new link**.
+4. In **Configure Application URL** screen, confirm your Mattermost URL is included as the application URL. Ignore any displayed errors and click **Continue**.
+5. In **Link Applications** screen, set the following values:
+  - **Application Name**: Mattermost
+  - **Application Type**: Generic Application
+6. Check the **Create incoming link** value, then click **Continue**.
+7. In the following **Link Applications** screen, set the following values:
+  - **Consumer Key**: Copy the value generated in step 1 for this field.
+  - **Consumer Name**: Mattermost
+  - **Public Key**: Copy the value generated in step 1 for this field.
+8. Click **Continue**.
 
 You're all set. Users can now connect their Mattermost account with Jira using `/jira connect`.
 
