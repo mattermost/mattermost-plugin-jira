@@ -1,13 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {CreateTypes} from 'action_types';
+import ActionTypes from 'action_types';
 import {doFetch} from 'client';
 import {getPluginServerRoute} from 'selectors';
 
 export const openCreateModal = (postId) => {
     return {
-        type: CreateTypes.OPEN_CREATE_MODAL,
+        type: ActionTypes.OPEN_CREATE_ISSUE_MODAL,
         data: {
             postId,
         },
@@ -16,22 +16,28 @@ export const openCreateModal = (postId) => {
 
 export const closeCreateModal = () => {
     return {
-        type: CreateTypes.CLOSE_CREATE_MODAL,
+        type: ActionTypes.CLOSE_CREATE_ISSUE_MODAL,
     };
 };
 
-export const getCreateIssueMetadata = () => {
+export const fetchJiraIssueMetadata = () => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
+        let data = null;
         try {
-            const data = await doFetch(`${baseUrl}/api/v2/get-create-issue-metadata`, {
+            data = await doFetch(`${baseUrl}/api/v2/get-create-issue-metadata`, {
                 method: 'get',
             });
-
-            return {data};
         } catch (error) {
             return {error};
         }
+
+        dispatch({
+            type: ActionTypes.RECEIVED_JIRA_ISSUE_METADATA,
+            data,
+        });
+
+        return {data};
     };
 };
 
@@ -64,7 +70,7 @@ export function getConnected() {
         }
 
         dispatch({
-            type: CreateTypes.RECEIVED_CONNECTED,
+            type: ActionTypes.RECEIVED_CONNECTED,
             data,
         });
 
@@ -79,7 +85,7 @@ export function handleConnectChange(store) {
         }
 
         store.dispatch({
-            type: CreateTypes.RECEIVED_CONNECTED,
+            type: ActionTypes.RECEIVED_CONNECTED,
             data: msg.data,
         });
     };
