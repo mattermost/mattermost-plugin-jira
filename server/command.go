@@ -13,6 +13,7 @@ import (
 const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira connect` - Connect your Mattermost account to your Jira account and subscribe to events\n" +
 	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
+	"* `/jira transition <issue-key> <state>` - Changes the state of a Jira issue.\n" +
 	"* `/jira instance [add/list/select/delete]` - Manage connected Jira instances\n" +
 	"  * `add server <URL>` - Add a Jira Server instance\n" +
 	"  * `add cloud` - Add a Jira Cloud instance\n" +
@@ -27,7 +28,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, help",
+		AutoCompleteDesc: "Available commands: connect, disconnect, transition, instance, help",
 		AutoCompleteHint: "[command]",
 	}
 }
@@ -49,6 +50,8 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 		return executeDisconnect(p, c, args), nil
 	case "instance":
 		return executeInstance(p, c, args), nil
+	case "transition":
+		return executeTransition(p, c, args, commandArgs.UserId), nil
 	}
 
 	return responsef("Action %v is not supported.", action), nil
@@ -248,6 +251,20 @@ func executeInstanceDelete(p *Plugin, c *plugin.Context, args ...string) *model.
 	}
 
 	return executeInstanceSelect(p, c, "1")
+}
+
+func executeTransition(p *Plugin, c *plugin.Context, args []string, userId string) *model.CommandResponse {
+	if len(args) < 2 {
+		return responsef("Please specify both an issue key and state in the form `/jira transition <issue-key> <state>`")
+	}
+	issueKey := args[0]
+	toState := strings.Join(args[1:], " ")
+
+	if err := p.transitionJiraIssue(userId, issueKey, toState); err != nil {
+		return responsef("%v", err)
+	}
+
+	return responsef("Transition completed.")
 }
 
 func responsef(format string, args ...interface{}) *model.CommandResponse {
