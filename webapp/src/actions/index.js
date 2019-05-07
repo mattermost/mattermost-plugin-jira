@@ -7,7 +7,7 @@ import {getPluginServerRoute} from 'selectors';
 
 export const openCreateModal = (postId) => {
     return {
-        type: ActionTypes.OPEN_CREATE_MODAL,
+        type: ActionTypes.OPEN_CREATE_ISSUE_MODAL,
         data: {
             postId,
         },
@@ -16,11 +16,11 @@ export const openCreateModal = (postId) => {
 
 export const closeCreateModal = () => {
     return {
-        type: ActionTypes.CLOSE_CREATE_MODAL,
+        type: ActionTypes.CLOSE_CREATE_ISSUE_MODAL,
     };
 };
 
-export const getCreateIssueMetadata = () => {
+export const fetchJiraIssueMetadata = () => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         let data = null;
@@ -33,7 +33,7 @@ export const getCreateIssueMetadata = () => {
         }
 
         dispatch({
-            type: ActionTypes.RECEIVED_METADATA,
+            type: ActionTypes.RECEIVED_JIRA_ISSUE_METADATA,
             data,
         });
 

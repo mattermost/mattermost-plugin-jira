@@ -26,7 +26,8 @@ export default class JiraField extends React.PureComponent {
         }
     };
 
-    allowedValueToSelectValue = (allowedValue) => {
+    // Creates an option for react-select from an allowedValue from the jira field metadata
+    makeReactSelectValue = (allowedValue) => {
         const iconLabel = (
             <React.Fragment>
                 <img
@@ -73,7 +74,7 @@ export default class JiraField extends React.PureComponent {
         }
 
         if (field.allowedValues && field.allowedValues.length) {
-            const options = field.allowedValues.map(this.allowedValueToSelectValue);
+            const options = field.allowedValues.map(this.makeReactSelectValue);
             return (
                 <ReactSelectSetting
                     key={field.key}

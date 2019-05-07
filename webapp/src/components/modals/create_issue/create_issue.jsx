@@ -35,8 +35,8 @@ export default class CreateIssueModal extends PureComponent {
         post: PropTypes.object,
         theme: PropTypes.object.isRequired,
         visible: PropTypes.bool.isRequired,
-        jiraMetadata: PropTypes.object,
-        getMetadata: PropTypes.func.isRequired,
+        jiraIssueMetadata: PropTypes.object,
+        fetchJiraIssueMetadata: PropTypes.func.isRequired,
     };
 
     constructor(props) {
@@ -47,7 +47,7 @@ export default class CreateIssueModal extends PureComponent {
 
     componentDidUpdate(prevProps) {
         if (this.props.post && (!prevProps.post || this.props.post.id !== prevProps.post.id)) {
-            this.props.getMetadata();
+            this.props.fetchJiraIssueMetadata();
             const fields = {...this.state.fields};
             fields.description = this.props.post.message;
             this.setState({fields}); //eslint-disable-line react/no-did-update-set-state
@@ -96,7 +96,7 @@ export default class CreateIssueModal extends PureComponent {
 
     handleProjectChange = (id, value) => {
         const fields = {...this.state.fields};
-        const issueTypes = getIssueTypes(this.props.jiraMetadata, value);
+        const issueTypes = getIssueTypes(this.props.jiraIssueMetadata, value);
         const issueType = issueTypes.length && issueTypes[0].id;
         const projectKey = value;
         fields.project = {
@@ -133,7 +133,7 @@ export default class CreateIssueModal extends PureComponent {
     }
 
     render() {
-        const {post, visible, theme, jiraMetadata} = this.props;
+        const {post, visible, theme, jiraIssueMetadata} = this.props;
         const {error, submitting} = this.state;
         const style = getStyle(theme);
 
@@ -146,11 +146,11 @@ export default class CreateIssueModal extends PureComponent {
             console.error('render error', error); //eslint-disable-line no-console
         }
 
-        if (!post || !jiraMetadata || !jiraMetadata.projects) {
+        if (!post || !jiraIssueMetadata || !jiraIssueMetadata.projects) {
             component = <Loading/>;
         } else {
-            const issueOptions = getIssueValues(jiraMetadata, this.state.projectKey);
-            const projectOptions = getProjectValues(jiraMetadata);
+            const issueOptions = getIssueValues(jiraIssueMetadata, this.state.projectKey);
+            const projectOptions = getProjectValues(jiraIssueMetadata);
             component = (
                 <div style={style.modal}>
                     <ReactSelectSetting
@@ -173,7 +173,7 @@ export default class CreateIssueModal extends PureComponent {
                         value={issueOptions.filter((option) => option.value === this.state.issueType)}
                     />
                     <JiraFields
-                        fields={getFields(jiraMetadata, this.state.projectKey, this.state.issueType)}
+                        fields={getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType)}
                         onChange={this.handleFieldChange}
                         values={this.state.fields}
                     />

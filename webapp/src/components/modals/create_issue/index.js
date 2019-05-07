@@ -6,8 +6,8 @@ import {bindActionCreators} from 'redux';
 
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 
-import {closeCreateModal, createIssue, getCreateIssueMetadata} from 'actions';
-import {isCreateModalVisible, getCreateModalForPostId, getJiraMetadata} from 'selectors';
+import {closeCreateModal, createIssue, fetchJiraIssueMetadata} from 'actions';
+import {isCreateModalVisible, getCreateModalForPostId, getJiraIssueMetadata} from 'selectors';
 
 import CreateIssue from './create_issue';
 
@@ -15,11 +15,11 @@ const mapStateToProps = (state) => {
     const postId = getCreateModalForPostId(state);
     const post = getPost(state, postId);
 
-    const jiraMetadata = getJiraMetadata(state);
+    const jiraIssueMetadata = getJiraIssueMetadata(state);
 
     return {
         visible: isCreateModalVisible(state),
-        jiraMetadata,
+        jiraIssueMetadata,
         post,
     };
 };
@@ -27,7 +27,7 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = (dispatch) => bindActionCreators({
     close: closeCreateModal,
     create: createIssue,
-    getMetadata: getCreateIssueMetadata,
+    fetchJiraIssueMetadata,
 }, dispatch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(CreateIssue);
