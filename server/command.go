@@ -13,6 +13,7 @@ import (
 const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira connect` - Connect your Mattermost account to your Jira account and subscribe to events\n" +
 	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
+	"* `/jira transition <issue-key> <state>` - Changes the state of a Jira issue.\n" +
 	"* `/jira instance [add/list/select/delete]` - Manage connected Jira instances\n" +
 	"  * `add server <URL>` - Add a Jira Server instance\n" +
 	"  * `add cloud` - Add a Jira Cloud instance\n" +
@@ -21,7 +22,7 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"  * `delete <number or URL>` - Delete a known instance, select the first remaining as the current\n" +
 	""
 
-type CommandHandlerFunc func(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse
+type CommandHandlerFunc func(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse
 
 type CommandHandler struct {
 	handlers       map[string]CommandHandlerFunc
@@ -35,53 +36,58 @@ var jiraCommandHandler = CommandHandler{
 		"instance/list":       executeInstanceList,
 		"instance/select":     executeInstanceSelect,
 		"instance/delete":     executeInstanceDelete,
+		"transition":          executeTransition,
 		"connect":             executeConnect,
 		"disconnect":          executeDisconnect,
 	},
 	defaultHandler: commandHelp,
 }
 
-func (ch CommandHandler) Handle(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+func (ch CommandHandler) Handle(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	for n := len(args); n > 0; n-- {
 		h := ch.handlers[strings.Join(args[:n], "/")]
 		if h != nil {
-			return h(p, c, args[n:]...)
+			return h(p, c, header, args[n:]...)
 		}
 	}
-	return ch.defaultHandler(p, c, args...)
+	return ch.defaultHandler(p, c, header, args...)
 }
 
-func commandHelp(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+func commandHelp(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	return help()
+}
+
+func help() *model.CommandResponse {
 	return responsef(helpText)
 }
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	args := strings.Fields(commandArgs.Command)
 	if len(args) == 0 || args[0] != "/jira" {
-		return commandHelp(p, c), nil
+		return help(), nil
 	}
-	return jiraCommandHandler.Handle(p, c, args[1:]...), nil
+	return jiraCommandHandler.Handle(p, c, commandArgs, args[1:]...), nil
 }
 
-func executeConnect(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 0 {
-		return commandHelp(p, c, args...)
+		return help()
 	}
 	return responsef("[Click here to link your Jira account.](%s/%s)",
 		p.GetPluginURL(), routeUserConnect)
 }
 
-func executeDisconnect(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 0 {
-		return commandHelp(p, c, args...)
+		return help()
 	}
 	return responsef("[Click here to unlink your Jira account.](%s/%s)",
 		p.GetPluginURL(), routeUserDisconnect)
 }
 
-func executeInstanceList(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 0 {
-		return commandHelp(p, c, args...)
+		return help()
 	}
 	known, err := p.LoadKnownJIRAInstances()
 	if err != nil {
@@ -126,9 +132,9 @@ func executeInstanceList(p *Plugin, c *plugin.Context, args ...string) *model.Co
 	return responsef(text)
 }
 
-func executeInstanceAddServer(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+func executeInstanceAddServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 1 {
-		return commandHelp(p, c, args...)
+		return help()
 	}
 	jiraURL := args[0]
 
@@ -164,18 +170,18 @@ func executeInstanceAddServer(p *Plugin, c *plugin.Context, args ...string) *mod
 	return responsef(addResponseFormat, ji.GetURL(), p.GetSiteURL(), ji.GetMattermostKey(), pkey)
 }
 
-func executeInstanceAddCloud(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+func executeInstanceAddCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 0 {
-		return commandHelp(p, c, args...)
+		return help()
 	}
 	// TODO What is the exact group membership in Jira required? Site-admins?
 	return responsef(`As an admin, upload an application from %s/%s. The link can be found in **Jira Settings > Applications > Manage**`,
 		p.GetPluginURL(), routeACJSON)
 }
 
-func executeInstanceSelect(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+func executeInstanceSelect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 1 {
-		return commandHelp(p, c, args...)
+		return help()
 	}
 	instanceKey := args[0]
 	num, err := strconv.ParseUint(instanceKey, 10, 8)
@@ -205,12 +211,12 @@ func executeInstanceSelect(p *Plugin, c *plugin.Context, args ...string) *model.
 		return responsef(err.Error())
 	}
 
-	return executeInstanceList(p, c)
+	return executeInstanceList(p, c, header)
 }
 
-func executeInstanceDelete(p *Plugin, c *plugin.Context, args ...string) *model.CommandResponse {
+func executeInstanceDelete(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 1 {
-		return commandHelp(p, c, args...)
+		return help()
 	}
 	instanceKey := args[0]
 
@@ -239,7 +245,21 @@ func executeInstanceDelete(p *Plugin, c *plugin.Context, args ...string) *model.
 		return responsef("failed to delete Jira instance %s: %v", instanceKey, err)
 	}
 
-	return executeInstanceSelect(p, c, "1")
+	return executeInstanceSelect(p, c, header, "1")
+}
+
+func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) != 2 {
+		return help()
+	}
+	issueKey := args[0]
+	toState := strings.Join(args[1:], " ")
+
+	if err := p.transitionJiraIssue(header.UserId, issueKey, toState); err != nil {
+		return responsef("%v", err)
+	}
+
+	return responsef("Transition completed.")
 }
 
 func getCommand() *model.Command {
@@ -248,7 +268,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, help",
+		AutoCompleteDesc: "Available commands: connect, disconnect, transition, instance, help",
 		AutoCompleteHint: "[command]",
 	}
 }
