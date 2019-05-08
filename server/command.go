@@ -20,6 +20,7 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"  * `list` - List known Jira instances\n" +
 	"  * `select <number or URL>` - Select a known instance as current\n" +
 	"  * `delete <number or URL>` - Delete a known instance, select the first remaining as the current\n" +
+	"* `/jira webhook` - Display a Jira webhook URL customized for the current team/channel\n" +
 	""
 
 type CommandHandlerFunc func(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse
@@ -36,6 +37,8 @@ var jiraCommandHandler = CommandHandler{
 		"instance/list":       executeInstanceList,
 		"instance/select":     executeInstanceSelect,
 		"instance/delete":     executeInstanceDelete,
+		"webhook":             executeWebhookURL,
+		"webhook/url":         executeWebhookURL,
 		"transition":          executeTransition,
 		"connect":             executeConnect,
 		"disconnect":          executeDisconnect,
@@ -260,6 +263,18 @@ func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	}
 
 	return responsef("Transition completed.")
+}
+
+func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) != 0 {
+		return help()
+	}
+
+	u, err := p.GetWebhookURL(header.TeamId, header.ChannelId)
+	if err != nil {
+		return responsef(err.Error())
+	}
+	return responsef("Please use the following URL to set up a Jira webhook: %v", u)
 }
 
 func getCommand() *model.Command {
