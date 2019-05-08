@@ -33,6 +33,8 @@ export default class CreateIssueModal extends PureComponent {
         close: PropTypes.func.isRequired,
         create: PropTypes.func.isRequired,
         post: PropTypes.object,
+        description: PropTypes.string,
+        channelId: PropTypes.string,
         theme: PropTypes.object.isRequired,
         visible: PropTypes.bool.isRequired,
         jiraIssueMetadata: PropTypes.object,
@@ -51,6 +53,11 @@ export default class CreateIssueModal extends PureComponent {
             const fields = {...this.state.fields};
             fields.description = this.props.post.message;
             this.setState({fields}); //eslint-disable-line react/no-did-update-set-state
+        } else if (this.props.channelId && (this.props.channelId !== prevProps.channelId || this.props.description !== prevProps.description)) {
+            this.props.fetchJiraIssueMetadata();
+            const fields = {...this.state.fields};
+            fields.description = this.props.description;
+            this.setState({fields}); //eslint-disable-line react/no-did-update-set-state
         }
     }
 
@@ -59,9 +66,16 @@ export default class CreateIssueModal extends PureComponent {
             e.preventDefault();
         }
 
+        const {post, channelId} = this.props;
+
+        const attachedToPost = typeof post !== 'undefined';
+        const postId = attachedToPost ? post.id : null;
+
         const issue = {
-            post_id: this.props.post.id,
             fields: this.state.fields,
+            post_id: postId,
+            attached_to_post: attachedToPost,
+            channel_id: channelId,
         };
 
         this.setState({submitting: true});
@@ -133,7 +147,7 @@ export default class CreateIssueModal extends PureComponent {
     }
 
     render() {
-        const {post, visible, theme, jiraIssueMetadata} = this.props;
+        const {visible, theme, jiraIssueMetadata} = this.props;
         const {error, submitting} = this.state;
         const style = getStyle(theme);
 
@@ -146,7 +160,7 @@ export default class CreateIssueModal extends PureComponent {
             console.error('render error', error); //eslint-disable-line no-console
         }
 
-        if (!post || !jiraIssueMetadata || !jiraIssueMetadata.projects) {
+        if (!jiraIssueMetadata || !jiraIssueMetadata.projects) {
             component = <Loading/>;
         } else {
             const issueOptions = getIssueValues(jiraIssueMetadata, this.state.projectKey);

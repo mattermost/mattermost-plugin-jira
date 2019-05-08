@@ -41,4 +41,6 @@ export const isCreateModalVisible = (state) => getPluginState(state).createModal
 
 export const getCreateModalForPostId = (state) => getPluginState(state).createModalForPostId;
 
+export const getCreateModalEmpty = (state) => getPluginState(state).createModalEmpty;
+
 export const getJiraIssueMetadata = (state) => getPluginState(state).jiraIssueMetadata;

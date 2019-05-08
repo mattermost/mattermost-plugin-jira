@@ -14,6 +14,7 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira connect` - Connect your Mattermost account to your Jira account and subscribe to events\n" +
 	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
 	"* `/jira transition <issue-key> <state>` - Changes the state of a Jira issue.\n" +
+	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field.\n" +
 	"* `/jira instance [add/list/select/delete]` - Manage connected Jira instances\n" +
 	"  * `add server <URL>` - Add a Jira Server instance\n" +
 	"  * `add cloud` - Add a Jira Cloud instance\n" +
@@ -37,6 +38,7 @@ var jiraCommandHandler = CommandHandler{
 		"instance/select":     executeInstanceSelect,
 		"instance/delete":     executeInstanceDelete,
 		"transition":          executeTransition,
+		"create":              executeCreate,
 		"connect":             executeConnect,
 		"disconnect":          executeDisconnect,
 	},
@@ -260,6 +262,15 @@ func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	}
 
 	return responsef("Transition completed.")
+}
+
+func executeCreate(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	p.API.PublishWebSocketEvent("create_issue", map[string]interface{}{
+		"args":      args,
+		"channelId": header.ChannelId,
+	}, &model.WebsocketBroadcast{UserId: header.UserId})
+
+	return responsef("Creating issue with initial description: %s", strings.Join(args, " "))
 }
 
 func getCommand() *model.Command {

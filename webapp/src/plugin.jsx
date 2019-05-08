@@ -7,7 +7,7 @@ import CreateIssueModal from 'components/modals/create_issue';
 import PluginId from 'plugin_id';
 
 import reducers from './reducers';
-import {handleConnectChange, getConnected} from './actions';
+import {handleConnectChange, getConnected, openCreateModelEmpty} from './actions';
 
 export default class Plugin {
     async initialize(registry, store) {
@@ -18,6 +18,14 @@ export default class Plugin {
 
             registry.registerRootComponent(CreateIssueModal);
             registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
+
+            registry.registerWebSocketEventHandler(
+                'custom_' + PluginId + '_create_issue',
+                (payload) => {
+                    const description = payload.data.args ? payload.data.args.join(' ') : '';
+                    store.dispatch(openCreateModelEmpty(description, payload.data.channelId));
+                },
+            );
         } catch (err) {
             throw err;
         } finally {
