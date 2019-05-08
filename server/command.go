@@ -264,7 +264,7 @@ func executeTransition(p *Plugin, c *plugin.Context, args []string, userId strin
 		return responsef("%v", err)
 	}
 
-	return responsef("Transition completed.")
+	return responsef("issueKey transitioned to toState.")
 }
 
 func responsef(format string, args ...interface{}) *model.CommandResponse {
