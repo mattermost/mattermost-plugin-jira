@@ -1,6 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<style>
+			body {
+				color: rgb(23, 43, 77);
+				letter-spacing: -0.01em;
+			}
+
+			.flex-parent {
+				display: flex;
+				flex-direction: column;
+				padding: 50px;
+			}
+
+			.btn {
+				-webkit-transition: all 0.15s ease;
+				-webkit-transition-delay: 0s;
+				-moz-transition: all 0.15s ease;
+				-o-transition: all 0.15s ease;
+				transition: all 0.15s ease false;
+				padding-right: 1em;
+				padding-left: 1em;
+				font-size: inherit;
+				border: none;
+				height: 2.4em;
+				border-radius: 4px;
+				cursor: pointer;
+			}
+
+			.btn-primary {
+				color: rgb(255, 255, 255);
+				background: rgb(0, 82, 204);
+			}
+
+			.btn-primary:hover,
+			.btn-primary:active {
+				background: rgb(0, 101, 255);
+			}
+
+			.btn-link {
+				color: #505f79;
+				background: #f4f5f7;
+			}
+
+			.btn-link:hover,
+			.btn-link:active {
+				background: #ebecf0;
+			}
+
+			.accounts-container {
+				padding: 1.6em 0 0.8em;
+				opacity: .6;
+			}
+		</style>
 		<link rel="stylesheet" href="https://unpkg.com/@atlaskit/css-reset@2.0.0/dist/bundle.css" media="all">
 		<script src="https://connect-cdn.atl-paas.net/all.js" data-options=""></script>
 
@@ -11,12 +63,20 @@
 		</script>
 	</head>
 	<body>
-		Mattermost user {{ .MattermostDisplayName }} is requesting to connect as Jira user {{ .JiraDisplayName }}
-		<form id="user_connect" name="user_connect" action="{{ .ConnectSubmitURL }}">
-			<input type="hidden" id="{{ .ArgJiraJWT }}" name="{{ .ArgJiraJWT}}" value="none"/>
-			<input type="hidden" id="{{ .ArgMMToken }}" name="{{ .ArgMMToken}}" value="{{ .MMToken }}"/>
-			<input type="submit" value="Approve"/>
-		</form>
+		<div class="flex-parent">
+				<h3>
+					Mattermost user is trying to connect to Jira.
+				</h3>
+				<div class="accounts-container">
+					<div>Mattermost account: {{ .MattermostDisplayName }}</div>
+					<div>Jira account: {{ .JiraDisplayName }}</div>
+				</div>
+				<form id="user_connect" name="user_connect" action="{{ .ConnectSubmitURL }}">
+					<input type="hidden" id="{{ .ArgJiraJWT }}" name="{{ .ArgJiraJWT}}" value="none"/>
+					<input type="hidden" id="{{ .ArgMMToken }}" name="{{ .ArgMMToken}}" value="{{ .MMToken }}"/>
+					<input type="submit" class="btn btn-primary" value="Approve"/>
+				</form>
+		</div>
 	</body>
 </html>
 
