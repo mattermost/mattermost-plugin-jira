@@ -25,10 +25,9 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	api := ji.GetPlugin().API
 
 	create := &struct {
-		PostId         string           `json:"post_id"`
-		AttachedToPost bool             `json:"attached_to_post"`
-		ChannelId      string           `json:"channel_id"`
-		Fields         jira.IssueFields `json:"fields"`
+		PostId    string           `json:"post_id"`
+		ChannelId string           `json:"channel_id"`
+		Fields    jira.IssueFields `json:"fields"`
 	}{}
 	err := json.NewDecoder(r.Body).Decode(&create)
 	if err != nil {
@@ -55,7 +54,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	var appErr *model.AppError
 
 	// If this issue is attached to a post, lets add a permalink to the post in the Jira Description
-	if create.AttachedToPost {
+	if create.PostId != "" {
 		post, appErr = api.GetPost(create.PostId)
 		if appErr != nil {
 			return http.StatusInternalServerError,
@@ -87,22 +86,20 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	})
 
 	// For now, if we are not attaching to a post, just postId blank (this will only affect the error message)
-	var channelId, postId string
-	if create.AttachedToPost {
+	postId := ""
+	channelId := create.ChannelId
+	if post != nil {
 		channelId = post.ChannelId
 		postId = create.PostId
-	} else {
-		channelId = create.ChannelId
-		postId = ""
 	}
 
 	if err != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to create the issue, postId (if attached to a post): "+postId)
+			errors.WithMessage(err, "failed to create the issue, postId: "+postId)
 	}
 
 	// Upload file attachments in the background
-	if create.AttachedToPost && len(post.FileIds) > 0 {
+	if post != nil && len(post.FileIds) > 0 {
 		go func() {
 			for _, fileId := range post.FileIds {
 				info, ae := api.GetFileInfo(fileId)
@@ -138,19 +135,19 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	_, appErr = api.CreatePost(reply)
 	if appErr != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to create notification post, postId (if attached to a post): "+postId)
+			errors.WithMessage(appErr, "failed to create notification post, postId: "+postId)
 	}
 
 	userBytes, err := json.Marshal(created)
 	if err != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to marshal response, postId (if attached to a post) "+postId)
+			errors.WithMessage(err, "failed to marshal response, postId: "+postId)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(userBytes)
 	if err != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write response, postId (if attached to a post) "+postId)
+			errors.WithMessage(err, "failed to write response, postId: "+postId)
 	}
 	return http.StatusOK, nil
 }

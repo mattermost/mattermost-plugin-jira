@@ -279,7 +279,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, transition, instance, help",
+		AutoCompleteDesc: "Available commands: connect, disconnect, transition, create, instance, help",
 		AutoCompleteHint: "[command]",
 	}
 }

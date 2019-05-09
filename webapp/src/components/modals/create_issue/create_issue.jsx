@@ -74,7 +74,6 @@ export default class CreateIssueModal extends PureComponent {
         const issue = {
             fields: this.state.fields,
             post_id: postId,
-            attached_to_post: attachedToPost,
             channel_id: channelId,
         };
 
