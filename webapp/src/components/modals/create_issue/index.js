@@ -6,8 +6,8 @@ import {bindActionCreators} from 'redux';
 
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 
-import {closeCreateModal, createIssue, fetchJiraIssueMetadata} from '../../../actions';
-import {isCreateModalVisible, getCreateModal, getJiraIssueMetadata} from '../../../selectors';
+import {closeCreateModal, createIssue, fetchJiraIssueMetadata} from 'actions';
+import {isCreateModalVisible, getCreateModal, getJiraIssueMetadata} from 'selectors';
 
 import CreateIssue from './create_issue';
 
