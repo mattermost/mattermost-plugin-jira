@@ -4,6 +4,9 @@
 import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue';
 import CreateIssueModal from 'components/modals/create_issue';
 
+import AttachIssuePostMenuAction from 'components/post_menu_actions/attach_issue';
+import AttachIssueModal from 'components/modals/attach_issue';
+
 import PluginId from 'plugin_id';
 
 import reducers from './reducers';
@@ -18,6 +21,9 @@ export default class Plugin {
 
             registry.registerRootComponent(CreateIssueModal);
             registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
+
+            registry.registerRootComponent(AttachIssueModal);
+            registry.registerPostDropdownMenuComponent(AttachIssuePostMenuAction);
         } catch (err) {
             throw err;
         } finally {

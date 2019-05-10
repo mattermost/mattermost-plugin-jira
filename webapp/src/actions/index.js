@@ -20,6 +20,21 @@ export const closeCreateModal = () => {
     };
 };
 
+export const openAttachModal = (postId) => {
+    return {
+        type: ActionTypes.OPEN_ATTACH_ISSUE_MODAL,
+        data: {
+            postId,
+        },
+    };
+};
+
+export const closeAttachModal = () => {
+    return {
+        type: ActionTypes.CLOSE_ATTACH_ISSUE_MODAL,
+    };
+};
+
 export const fetchJiraIssueMetadata = () => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
@@ -46,6 +61,22 @@ export const createIssue = (payload) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/create-issue`, {
+                method: 'post',
+                body: JSON.stringify(payload),
+            });
+
+            return {data};
+        } catch (error) {
+            return {error};
+        }
+    };
+};
+
+export const attachIssue = (payload) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        try {
+            const data = await doFetch(`${baseUrl}/api/v2/attach-issue`, {
                 method: 'post',
                 body: JSON.stringify(payload),
             });

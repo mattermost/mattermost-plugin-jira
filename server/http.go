@@ -18,6 +18,8 @@ import (
 const (
 	routeAPICreateIssue            = "/api/v2/create-issue"
 	routeAPIGetCreateIssueMetadata = "/api/v2/get-create-issue-metadata"
+	routeAPIAttachIssue            = "/api/v2/attach-issue"
+	routeAPIGetAttachIssueMetadata = "/api/v2/get-attach-issue-metadata"
 	routeAPIUserInfo               = "/api/v2/userinfo"
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"
@@ -57,6 +59,10 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 		return withInstance(p, w, r, httpAPICreateIssue)
 	case routeAPIGetCreateIssueMetadata:
 		return withInstance(p, w, r, httpAPIGetCreateIssueMetadata)
+	case routeAPIAttachIssue:
+		return withInstance(p, w, r, httpAPIAttachIssue)
+	case routeAPIGetAttachIssueMetadata:
+		return withInstance(p, w, r, httpAPIGetAttachIssueMetadata)
 
 	// User APIs
 	case routeAPIUserInfo:
