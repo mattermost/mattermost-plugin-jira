@@ -4,7 +4,10 @@
 package main
 
 import (
+	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -23,20 +26,18 @@ const (
 
 type externalConfig struct {
 	// Bot username
-	UserName string
+	UserName string `json:"username"`
 
 	// Legacy 1.x Webhook secret
-	Secret string
-
-	// JIRAServerURL needs to be configured to run in the JIRA Server
-	// mode.
-	// TODO If JIRAServerURL is configured, add/select the instance as needed
-	JIRAServerURL string
+	Secret string `json:"secret"`
 }
 
-// config captures all cached values that need to be synchronized
 type config struct {
+	// externalConfig captures all cached values that need to be synchronized with the server's config.json
 	externalConfig
+
+	// onActivate needs to have been called before we can call API.SavePluginConfig
+	onActivateHasBeenCalled bool
 
 	// Cached actual bot user ID (derived from c.UserName)
 	botUserID string
@@ -70,6 +71,25 @@ func (p *Plugin) updateConfig(f func(conf *config)) config {
 	return p.conf
 }
 
+// saveConfigToServer persists the externalConfig portion of the plugin config to the server's config.json
+func (p *Plugin) saveConfigToServer() error {
+	b, err := json.Marshal(p.getConfig().externalConfig)
+	if err != nil {
+		return errors.Errorf("failed to Marshal externalConfig to bytes: %v", err)
+	}
+
+	mapString := make(map[string]interface{})
+	if err = json.Unmarshal(b, &mapString); err != nil {
+		return errors.Errorf("failed to Unmarshal bytes to a map[string]interface{}: %v", err)
+	}
+
+	if err = p.API.SavePluginConfig(mapString); err != nil {
+		return errors.Errorf("failed to savePluginConfig: %v", err)
+	}
+
+	return nil
+}
+
 // OnConfigurationChange is invoked when configuration changes may have been made.
 func (p *Plugin) OnConfigurationChange() error {
 	// Load the public configuration fields from the Mattermost server configuration.
@@ -79,9 +99,24 @@ func (p *Plugin) OnConfigurationChange() error {
 		return errors.WithMessage(err, "failed to load plugin configuration")
 	}
 
-	p.updateConfig(func(conf *config) {
-		conf.externalConfig = ec
-	})
+	if ec != p.getConfig().externalConfig {
+		// Logic to determine if we overwrite the server config with the local config. What takes precedence?
+		// For Secret: if it is blank on the server, the one in the plugin's config takes precedence,
+		//   because we are generating a key as a default for a new installation.
+		if ec.Secret == "" {
+			ec.Secret = p.getConfig().externalConfig.Secret
+		}
+		p.updateConfig(func(conf *config) {
+			conf.externalConfig = ec
+		})
+
+		// only save to the server once the plugin has been activated, or else we will enter a loop
+		if p.getConfig().onActivateHasBeenCalled {
+			if err = p.saveConfigToServer(); err != nil {
+				return errors.WithMessage(err, "OnConfigurationChange: failed to save plugin configuration")
+			}
+		}
+	}
 
 	return nil
 }
@@ -108,6 +143,26 @@ func (p *Plugin) OnActivate() error {
 	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to register command")
 	}
+
+	ec := externalConfig{}
+	if err = p.API.LoadPluginConfiguration(&ec); err != nil {
+		return errors.WithMessage(err, "OnActivate: failed to load plugin configuration")
+	}
+
+	// If the Secret is blank, generate a new one (to make setup easier for admins).
+	if ec.Secret == "" {
+		key := make([]byte, 256)
+		if _, err := rand.Read(key); err != nil {
+			return err
+		}
+		p.updateConfig(func(conf *config) {
+			conf.Secret = base64.RawURLEncoding.EncodeToString(key)[0:32]
+		})
+	}
+
+	p.updateConfig(func(conf *config) {
+		conf.onActivateHasBeenCalled = true
+	})
 
 	return nil
 }
