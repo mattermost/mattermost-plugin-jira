@@ -7,7 +7,7 @@ import CreateIssueModal from 'components/modals/create_issue';
 import PluginId from 'plugin_id';
 
 import reducers from './reducers';
-import {handleConnectChange, getConnected, openCreateModelEmpty} from './actions';
+import {handleConnectChange, getConnected, openCreateModalWithoutPost} from './actions';
 
 export default class Plugin {
     async initialize(registry, store) {
@@ -23,7 +23,7 @@ export default class Plugin {
                 'custom_' + PluginId + '_create_issue',
                 (payload) => {
                     const description = payload.data.args ? payload.data.args.join(' ') : '';
-                    store.dispatch(openCreateModelEmpty(description, payload.data.channelId));
+                    store.dispatch(openCreateModalWithoutPost(description, payload.data.channelId));
                 },
             );
         } catch (err) {

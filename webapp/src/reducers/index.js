@@ -17,7 +17,7 @@ function connected(state = false, action) {
 const createModalVisible = (state = false, action) => {
     switch (action.type) {
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL:
-    case ActionTypes.OPEN_CREATE_ISSUE_MODAL_EMPTY:
+    case ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST:
         return true;
     case ActionTypes.CLOSE_CREATE_ISSUE_MODAL:
         return false;
@@ -26,26 +26,18 @@ const createModalVisible = (state = false, action) => {
     }
 };
 
-const createModalEmpty = (state = '', action) => {
+const createModal = (state = {}, action) => {
     switch (action.type) {
-    case ActionTypes.OPEN_CREATE_ISSUE_MODAL_EMPTY:
+    case ActionTypes.OPEN_CREATE_ISSUE_MODAL:
+    case ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST:
         return {
+            ...state,
+            postId: action.data.postId,
             description: action.data.description,
             channelId: action.data.channelId,
         };
     case ActionTypes.CLOSE_CREATE_ISSUE_MODAL:
-        return '';
-    default:
-        return state;
-    }
-};
-
-const createModalForPostId = (state = '', action) => {
-    switch (action.type) {
-    case ActionTypes.OPEN_CREATE_ISSUE_MODAL:
-        return action.data.postId;
-    case ActionTypes.CLOSE_CREATE_ISSUE_MODAL:
-        return '';
+        return {};
     default:
         return state;
     }
@@ -63,7 +55,6 @@ const jiraIssueMetadata = (state = null, action) => {
 export default combineReducers({
     connected,
     createModalVisible,
-    createModalEmpty,
-    createModalForPostId,
+    createModal,
     jiraIssueMetadata,
 });

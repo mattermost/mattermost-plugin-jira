@@ -68,7 +68,7 @@ export default class CreateIssueModal extends PureComponent {
 
         const {post, channelId} = this.props;
 
-        const postId = (typeof post === 'undefined') ? '' : post.id;
+        const postId = (post) ? post.id : '';
 
         const issue = {
             fields: this.state.fields,

@@ -95,7 +95,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 
 	if err != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to create the issue, postId: "+postId)
+			errors.WithMessage(err, "failed to create the issue, postId: "+postId+", channelId: "+channelId)
 	}
 
 	// Upload file attachments in the background
@@ -119,7 +119,6 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 					api.LogError("failed to attach file to issue: "+e.Error(), "file", info.Path, "issue", created.Key)
 					return
 				}
-
 			}
 		}()
 	}
@@ -135,19 +134,19 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	_, appErr = api.CreatePost(reply)
 	if appErr != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to create notification post, postId: "+postId)
+			errors.WithMessage(appErr, "failed to create notification post, postId: "+postId+", channelId: "+channelId)
 	}
 
 	userBytes, err := json.Marshal(created)
 	if err != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to marshal response, postId: "+postId)
+			errors.WithMessage(err, "failed to marshal response, postId: "+postId+", channelId: "+channelId)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(userBytes)
 	if err != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write response, postId: "+postId)
+			errors.WithMessage(err, "failed to write response, postId: "+postId+", channelId: "+channelId)
 	}
 	return http.StatusOK, nil
 }
