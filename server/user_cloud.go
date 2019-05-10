@@ -19,8 +19,6 @@ const (
 	argMMToken = "mm_token"
 )
 
-const requireUserApproval = true
-
 func httpACUserRedirect(jci *jiraCloudInstance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
@@ -32,10 +30,7 @@ func httpACUserRedirect(jci *jiraCloudInstance, w http.ResponseWriter, r *http.R
 		return http.StatusBadRequest, err
 	}
 
-	submitURL := path.Join(jci.Plugin.GetPluginURLPath(), routeACUserConnected)
-	if requireUserApproval {
-		submitURL = path.Join(jci.Plugin.GetPluginURLPath(), routeACUserConfirm)
-	}
+	submitURL := path.Join(jci.Plugin.GetPluginURLPath(), routeACUserConfirm)
 
 	return jci.Plugin.respondWithTemplate(w, r, "text/html", struct {
 		SubmitURL  string
