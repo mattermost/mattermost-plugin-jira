@@ -224,6 +224,9 @@ func executeInstanceDelete(p *Plugin, c *plugin.Context, header *model.CommandAr
 	if err != nil {
 		return responsef("Failed to load known JIRA instances: %v", err)
 	}
+	if len(known) == 0 {
+		return responsef("There are no instances to delete.\n")
+	}
 
 	num, err := strconv.ParseUint(instanceKey, 10, 8)
 	if err == nil {
@@ -245,6 +248,10 @@ func executeInstanceDelete(p *Plugin, c *plugin.Context, header *model.CommandAr
 		return responsef("failed to delete Jira instance %s: %v", instanceKey, err)
 	}
 
+	// if that was our only instance, just respond with an empty list.
+	if len(known) == 1 {
+		return executeInstanceList(p, c, header)
+	}
 	return executeInstanceSelect(p, c, header, "1")
 }
 
