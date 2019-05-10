@@ -41,6 +41,11 @@ func httpUserConnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, 
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
+	// Users shouldn't be able to make multiple connections.
+	if jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId); err == nil && len(jiraUser.Key) != 0 {
+		return http.StatusBadRequest, errors.New("Already connected to a JIRA account. Please use /jira disconnect to disconnect.")
+	}
+
 	redirectURL, err := ji.GetUserConnectURL(mattermostUserId)
 	if err != nil {
 		return http.StatusInternalServerError, err
