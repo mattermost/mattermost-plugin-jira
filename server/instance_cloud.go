@@ -165,7 +165,7 @@ func (jci jiraCloudInstance) parseHTTPRequestJWT(r *http.Request) (*jwt.Token, s
 		// HMAC secret is a []byte
 		return []byte(jci.AtlassianSecurityContext.SharedSecret), nil
 	})
-	if err != nil {
+	if err != nil || !token.Valid {
 		return nil, "", errors.WithMessage(err, "failed to validatte JWT")
 	}
 
