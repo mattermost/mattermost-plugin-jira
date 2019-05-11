@@ -111,7 +111,7 @@ func (p *Plugin) StoreJIRAInstance(ji Instance) (returnErr error) {
 	return nil
 }
 
-func (p *Plugin) StoreNewCloudInstance(jiraURL string) (returnErr error) {
+func (p *Plugin) CreateInactiveCloudInstance(jiraURL string) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -120,7 +120,7 @@ func (p *Plugin) StoreNewCloudInstance(jiraURL string) (returnErr error) {
 			fmt.Sprintf("failed to store new Jira Cloud instance:%s", jiraURL))
 	}()
 
-	ji := NewJIRACloudInstance(p, jiraURL,
+	ji := NewJIRACloudInstance(p, jiraURL, false,
 		fmt.Sprintf(`{"BaseURL": %s}`, jiraURL),
 		&AtlassianSecurityContext{BaseURL: jiraURL})
 

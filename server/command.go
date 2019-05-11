@@ -171,12 +171,23 @@ func executeInstanceAddServer(p *Plugin, c *plugin.Context, header *model.Comman
 }
 
 func executeInstanceAddCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	if len(args) != 0 {
+	if len(args) != 1 {
 		return help()
 	}
+	jiraURL := args[0]
+
+	// Create an "uninitialized" instance of Jira Cloud that will
+	// receive the /installed callback
+	err := p.CreateInactiveCloudInstance(jiraURL)
+	if err != nil {
+		return responsef(err.Error())
+	}
 	// TODO What is the exact group membership in Jira required? Site-admins?
-	return responsef(`As an admin, upload an application from %s/%s. The link can be found in **Jira Settings > Applications > Manage**`,
-		p.GetPluginURL(), routeACJSON)
+	return responsef(`%s has been successfully added. To complete the installation:
+* navigate to [**Jira > Applications > Manage**](%s/plugins/servlet/upm?source=side_nav_manage_addons)
+* click "Upload app"
+* enter the following URL: %s/%s`,
+		jiraURL, jiraURL, p.GetPluginURL(), routeACJSON)
 }
 
 func executeInstanceSelect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

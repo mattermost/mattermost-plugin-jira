@@ -66,14 +66,13 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 	if !ok {
 		return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
 	}
-	if jci.EventType == "installed" {
+	if jci.Installed {
 		return http.StatusUnauthorized,
 			errors.New(fmt.Sprintf("Jira instance %s is already installed", asc.BaseURL))
 	}
 
-	// Create or overwrite the instance record, also store it
-	// as current
-	jiraInstance := NewJIRACloudInstance(p, asc.BaseURL, string(body), &asc)
+	// Create a permanent instance record, also store it as current
+	jiraInstance := NewJIRACloudInstance(p, asc.BaseURL, true, string(body), &asc)
 	err = p.StoreJIRAInstance(jiraInstance)
 	if err != nil {
 		return http.StatusInternalServerError, err
