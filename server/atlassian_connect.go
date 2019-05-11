@@ -5,7 +5,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -60,7 +59,7 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 	}
 	if ji == nil {
 		return http.StatusNotFound,
-			errors.New(fmt.Sprintf("Jira instance %s must first be added to Mattermost", asc.BaseURL))
+			errors.Errorf("Jira instance %s must first be added to Mattermost", asc.BaseURL)
 	}
 	jci, ok := ji.(*jiraCloudInstance)
 	if !ok {
@@ -68,7 +67,7 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 	}
 	if jci.Installed {
 		return http.StatusUnauthorized,
-			errors.New(fmt.Sprintf("Jira instance %s is already installed", asc.BaseURL))
+			errors.Errorf("Jira instance %s is already installed", asc.BaseURL)
 	}
 
 	// Create a permanent instance record, also store it as current
