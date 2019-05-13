@@ -21,6 +21,13 @@ import (
 type jiraCloudInstance struct {
 	*JIRAInstance
 
+	// Initially a new instance is created with an expiration time. The
+	// admin is expected to upload it to the Jira instance, and we will
+	// then receive a /installed callback that initializes the instance
+	// and makes it permanent. No subsequent /installed will be accepted
+	// for the instance.
+	Installed bool
+
 	// For cloud instances (atlassian-connect.json install and user auth)
 	RawAtlassianSecurityContext string
 	*AtlassianSecurityContext   `json:"none"`
@@ -41,9 +48,10 @@ type AtlassianSecurityContext struct {
 	OAuthClientId  string `json:"oauthClientId"`
 }
 
-func NewJIRACloudInstance(p *Plugin, key, rawASC string, asc *AtlassianSecurityContext) Instance {
+func NewJIRACloudInstance(p *Plugin, key string, installed bool, rawASC string, asc *AtlassianSecurityContext) Instance {
 	return &jiraCloudInstance{
 		JIRAInstance:                NewJIRAInstance(p, JIRATypeCloud, key),
+		Installed:                   installed,
 		RawAtlassianSecurityContext: rawASC,
 		AtlassianSecurityContext:    asc,
 	}
@@ -66,6 +74,12 @@ func (jci jiraCloudInstance) GetMattermostKey() string {
 }
 
 func (jci jiraCloudInstance) GetDisplayDetails() map[string]string {
+	if !jci.Installed {
+		return map[string]string{
+			"Setup": "In progress",
+		}
+	}
+
 	return map[string]string{
 		"Key":            jci.AtlassianSecurityContext.Key,
 		"ClientKey":      jci.AtlassianSecurityContext.ClientKey,
