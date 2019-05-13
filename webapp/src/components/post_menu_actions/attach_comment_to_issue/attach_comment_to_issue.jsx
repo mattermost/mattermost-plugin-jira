@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 
 import PluginId from 'plugin_id';
 
-export default class AttachIssuePostMenuAction extends PureComponent {
+export default class AttachCommentToIssuePostMenuAction extends PureComponent {
     static propTypes = {
         isSystemMessage: PropTypes.bool,
         locale: PropTypes.string,

@@ -20,18 +20,18 @@ export const closeCreateModal = () => {
     };
 };
 
-export const openAttachModal = (postId) => {
+export const openAttachCommentToIssueModal = (postId) => {
     return {
-        type: ActionTypes.OPEN_ATTACH_ISSUE_MODAL,
+        type: ActionTypes.OPEN_ATTACH_COMMENT_TO_ISSUE_MODAL,
         data: {
             postId,
         },
     };
 };
 
-export const closeAttachModal = () => {
+export const closeAttachCommentToIssueModal = () => {
     return {
-        type: ActionTypes.CLOSE_ATTACH_ISSUE_MODAL,
+        type: ActionTypes.CLOSE_ATTACH_COMMENT_TO_ISSUE_MODAL,
     };
 };
 
@@ -72,11 +72,11 @@ export const createIssue = (payload) => {
     };
 };
 
-export const attachIssue = (payload) => {
+export const attachCommentToIssue = (payload) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            const data = await doFetch(`${baseUrl}/api/v2/attach-issue`, {
+            const data = await doFetch(`${baseUrl}/api/v2/attach-comment-to-issue`, {
                 method: 'post',
                 body: JSON.stringify(payload),
             });

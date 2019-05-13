@@ -7,13 +7,13 @@ import {bindActionCreators} from 'redux';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
 
-import {openAttachModal} from 'actions';
+import {openAttachCommentToIssueModal} from 'actions';
 
 import {getCurrentUserLocale} from 'selectors';
 
 import PluginId from 'plugin_id';
 
-import AttachIssuePostMenuAction from './attach_issue';
+import AttachCommentToIssuePostMenuAction from './attach_comment_to_issue';
 
 const mapStateToProps = (state, ownProps) => {
     const post = getPost(state, ownProps.postId);
@@ -25,7 +25,7 @@ const mapStateToProps = (state, ownProps) => {
 };
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
-    open: openAttachModal,
+    open: openAttachCommentToIssueModal,
 }, dispatch);
 
-export default connect(mapStateToProps, mapDispatchToProps)(AttachIssuePostMenuAction);
+export default connect(mapStateToProps, mapDispatchToProps)(AttachCommentToIssuePostMenuAction);

@@ -36,22 +36,22 @@ const createModalForPostId = (state = '', action) => {
     }
 };
 
-const attachModalVisible = (state = false, action) => {
+const attachCommentToIssueModalVisible = (state = false, action) => {
     switch (action.type) {
-    case ActionTypes.OPEN_ATTACH_ISSUE_MODAL:
+    case ActionTypes.OPEN_ATTACH_COMMENT_TO_ISSUE_MODAL:
         return true;
-    case ActionTypes.CLOSE_ATTACH_ISSUE_MODAL:
+    case ActionTypes.CLOSE_ATTACH_COMMENT_TO_ISSUE_MODAL:
         return false;
     default:
         return state;
     }
 };
 
-const attachModalForPostId = (state = '', action) => {
+const attachCommentToIssueModalForPostId = (state = '', action) => {
     switch (action.type) {
-    case ActionTypes.OPEN_ATTACH_ISSUE_MODAL:
+    case ActionTypes.OPEN_ATTACH_COMMENT_TO_ISSUE_MODAL:
         return action.data.postId;
-    case ActionTypes.CLOSE_ATTACH_ISSUE_MODAL:
+    case ActionTypes.CLOSE_ATTACH_COMMENT_TO_ISSUE_MODAL:
         return '';
     default:
         return state;
@@ -71,7 +71,7 @@ export default combineReducers({
     connected,
     createModalVisible,
     createModalForPostId,
-    attachModalVisible,
-    attachModalForPostId,
+    attachCommentToIssueModalVisible,
+    attachCommentToIssueModalForPostId,
     jiraIssueMetadata,
 });

@@ -6,28 +6,28 @@ import {bindActionCreators} from 'redux';
 
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 
-import {closeAttachModal, attachIssue, fetchJiraIssueMetadata} from 'actions';
-import {isAttachModalVisible, getAttachModalForPostId, getJiraIssueMetadata} from 'selectors';
+import {closeAttachCommentToIssueModal, attachCommentToIssue, fetchJiraIssueMetadata} from 'actions';
+import {isAttachCommentToIssueModalVisible, getAttachCommentToIssueModalForPostId, getJiraIssueMetadata} from 'selectors';
 
-import AttachIssue from './attach_issue';
+import AttachCommentToIssue from './attach_comment_to_issue';
 
 const mapStateToProps = (state) => {
-    const postId = getAttachModalForPostId(state);
+    const postId = getAttachCommentToIssueModalForPostId(state);
     const post = getPost(state, postId);
 
     const jiraIssueMetadata = getJiraIssueMetadata(state);
 
     return {
-        visible: isAttachModalVisible(state),
+        visible: isAttachCommentToIssueModalVisible(state),
         jiraIssueMetadata,
         post,
     };
 };
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
-    close: closeAttachModal,
-    create: attachIssue,
+    close: closeAttachCommentToIssueModal,
+    create: attachCommentToIssue,
     fetchJiraIssueMetadata,
 }, dispatch);
 
-export default connect(mapStateToProps, mapDispatchToProps)(AttachIssue);
+export default connect(mapStateToProps, mapDispatchToProps)(AttachCommentToIssue);

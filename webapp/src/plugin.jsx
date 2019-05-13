@@ -4,8 +4,8 @@
 import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue';
 import CreateIssueModal from 'components/modals/create_issue';
 
-import AttachIssuePostMenuAction from 'components/post_menu_actions/attach_issue';
-import AttachIssueModal from 'components/modals/attach_issue';
+import AttachCommentToIssuePostMenuAction from 'components/post_menu_actions/attach_comment_to_issue';
+import AttachCommentToIssueModal from 'components/modals/attach_comment_to_issue';
 
 import PluginId from 'plugin_id';
 
@@ -22,8 +22,8 @@ export default class Plugin {
             registry.registerRootComponent(CreateIssueModal);
             registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
 
-            registry.registerRootComponent(AttachIssueModal);
-            registry.registerPostDropdownMenuComponent(AttachIssuePostMenuAction);
+            registry.registerRootComponent(AttachCommentToIssueModal);
+            registry.registerPostDropdownMenuComponent(AttachCommentToIssuePostMenuAction);
         } catch (err) {
             throw err;
         } finally {
