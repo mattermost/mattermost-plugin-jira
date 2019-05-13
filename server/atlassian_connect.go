@@ -66,7 +66,7 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 		return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
 	}
 	if jci.Installed {
-		return http.StatusUnauthorized,
+		return http.StatusForbidden,
 			errors.Errorf("Jira instance %s is already installed", asc.BaseURL)
 	}
 
