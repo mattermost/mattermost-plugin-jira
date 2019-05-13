@@ -16,7 +16,7 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira transition <issue-key> <state>` - Changes the state of a Jira issue.\n" +
 	"* `/jira instance [add/list/select/delete]` - Manage connected Jira instances\n" +
 	"  * `add server <URL>` - Add a Jira Server instance\n" +
-	"  * `add cloud` - Add a Jira Cloud instance\n" +
+	"  * `add cloud <URL>` - Add a Jira Cloud instance\n" +
 	"  * `list` - List known Jira instances\n" +
 	"  * `select <number or URL>` - Select a known instance as current\n" +
 	"  * `delete <number or URL>` - Delete a known instance, select the first remaining as the current\n" +
@@ -76,7 +76,7 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 	if len(args) != 0 {
 		return help()
 	}
-	return responsef("[Click here to link your Jira account.](%s/%s)",
+	return responsef("[Click here to link your Jira account.](%s%s)",
 		p.GetPluginURL(), routeUserConnect)
 }
 
@@ -84,7 +84,7 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	if len(args) != 0 {
 		return help()
 	}
-	return responsef("[Click here to unlink your Jira account.](%s/%s)",
+	return responsef("[Click here to unlink your Jira account.](%s%s)",
 		p.GetPluginURL(), routeUserDisconnect)
 }
 
@@ -174,12 +174,23 @@ func executeInstanceAddServer(p *Plugin, c *plugin.Context, header *model.Comman
 }
 
 func executeInstanceAddCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	if len(args) != 0 {
+	if len(args) != 1 {
 		return help()
 	}
+	jiraURL := args[0]
+
+	// Create an "uninitialized" instance of Jira Cloud that will
+	// receive the /installed callback
+	err := p.CreateInactiveCloudInstance(jiraURL)
+	if err != nil {
+		return responsef(err.Error())
+	}
 	// TODO What is the exact group membership in Jira required? Site-admins?
-	return responsef(`As an admin, upload an application from %s/%s. The link can be found in **Jira Settings > Applications > Manage**`,
-		p.GetPluginURL(), routeACJSON)
+	return responsef(`%s has been successfully added. To complete the installation:
+* navigate to [**Jira > Applications > Manage**](%s/plugins/servlet/upm?source=side_nav_manage_addons)
+* click "Upload app"
+* enter the following URL: %s%s`,
+		jiraURL, jiraURL, p.GetPluginURL(), routeACJSON)
 }
 
 func executeInstanceSelect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

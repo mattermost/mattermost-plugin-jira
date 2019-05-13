@@ -50,9 +50,28 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 			errors.WithMessage(err, "failed to unmarshal request")
 	}
 
-	// Create or overwrite the instance record, also store it
-	// as current
-	jiraInstance := NewJIRACloudInstance(p, asc.BaseURL, string(body), &asc)
+	// Only allow this operation once, a JIRA instance must already exist
+	// for asc.BaseURL but its EventType would be empty.
+	ji, err := p.LoadJIRAInstance(asc.BaseURL)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to load instance "+asc.BaseURL)
+	}
+	if ji == nil {
+		return http.StatusNotFound,
+			errors.Errorf("Jira instance %s must first be added to Mattermost", asc.BaseURL)
+	}
+	jci, ok := ji.(*jiraCloudInstance)
+	if !ok {
+		return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
+	}
+	if jci.Installed {
+		return http.StatusForbidden,
+			errors.Errorf("Jira instance %s is already installed", asc.BaseURL)
+	}
+
+	// Create a permanent instance record, also store it as current
+	jiraInstance := NewJIRACloudInstance(p, asc.BaseURL, true, string(body), &asc)
 	err = p.StoreJIRAInstance(jiraInstance)
 	if err != nil {
 		return http.StatusInternalServerError, err
