@@ -5,7 +5,6 @@ package main
 
 import (
 	"net/http"
-	"path"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/dghubble/oauth1"
@@ -147,7 +146,7 @@ func (jsi *jiraServerInstance) GetOAuth1Config() (returnConfig *oauth1.Config, r
 	jsi.oauth1Config = &oauth1.Config{
 		ConsumerKey:    jsi.MattermostKey,
 		ConsumerSecret: "dontcare",
-		CallbackURL:    path.Join(jsi.GetPluginURL(), routeOAuth1Complete),
+		CallbackURL:    jsi.GetPluginURL() + "/" + routeOAuth1Complete,
 		Endpoint: oauth1.Endpoint{
 			RequestTokenURL: jsi.GetURL() + "/plugins/servlet/oauth/request-token",
 			AuthorizeURL:    jsi.GetURL() + "/plugins/servlet/oauth/authorize",

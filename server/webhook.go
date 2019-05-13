@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/andygrunwald/go-jira"
@@ -94,21 +95,26 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		return http.StatusForbidden, fmt.Errorf("Jira plugin not configured correctly; must provide Secret and UserName")
 	}
 
-	err := r.ParseForm()
-	if err != nil {
-		return http.StatusBadRequest, err
-	}
-	if subtle.ConstantTimeCompare([]byte(r.Form.Get("secret")), []byte(cfg.Secret)) != 1 {
-		return http.StatusForbidden,
-			fmt.Errorf("Request URL: secret did not match")
+	secret := r.FormValue("secret")
+	for {
+		if subtle.ConstantTimeCompare([]byte(secret), []byte(cfg.Secret)) == 1 {
+			break
+		}
+
+		unescaped, _ := url.QueryUnescape(secret)
+		if unescaped == secret {
+			return http.StatusForbidden,
+				fmt.Errorf("Request URL: secret did not match")
+		}
+		secret = unescaped
 	}
 
-	teamName := r.Form.Get("team")
+	teamName := r.FormValue("team")
 	if teamName == "" {
 		return http.StatusBadRequest,
 			fmt.Errorf("Request URL: team is empty")
 	}
-	channelId := r.Form.Get("channel")
+	channelId := r.FormValue("channel")
 	if channelId == "" {
 		return http.StatusBadRequest,
 			fmt.Errorf("Request URL: channel is empty")
@@ -328,4 +334,25 @@ func (p *Plugin) notify(ji Instance, parsed *parsedJIRAWebhook, text string) {
 	if err != nil {
 		p.errorf("notify: %v", err)
 	}
+}
+
+func (p *Plugin) GetWebhookURL(teamId, channelId string) (string, error) {
+	cf := p.getConfig()
+
+	team, appErr := p.API.GetTeam(teamId)
+	if appErr != nil {
+		return "", appErr
+	}
+
+	channel, appErr := p.API.GetChannel(channelId)
+	if appErr != nil {
+		return "", appErr
+	}
+
+	v := url.Values{}
+	secret, _ := url.QueryUnescape(cf.Secret)
+	v.Add("secret", secret)
+	v.Add("team", team.Name)
+	v.Add("channel", channel.Name)
+	return p.GetPluginURL() + "/" + routeIncomingWebhook + "?" + v.Encode(), nil
 }
