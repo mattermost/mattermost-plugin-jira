@@ -70,6 +70,7 @@ export default class CreateIssuePostMenuAction extends PureComponent {
 
         return (
             <li
+                className='MenuItem'
                 role='presentation'
             >
                 {content}
