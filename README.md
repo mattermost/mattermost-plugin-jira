@@ -40,9 +40,8 @@ Below is a full list of features planned for Jira plugin v2.0.
   - `/jira disconnect` - Disconnect from a Jira project and subscribe from events.
   - `/jira create [description]` - Create a Jira ticket.
   - `/jira transition <issue-key> <state>` - Transition a Jira issue specified by `issue-key`. `state` must be a valid Jira state such as "Done".
-  - `/jira view <issue-key>` - View a Jira issue specified by `issue-key`.  
 
-Below is a full list of features tentatively planned for Jira plugin v2.0, but which are not guaranteed for the above timeline.
+Below is a full list of features which may also be added for Jira plugin v2.0, if they meet the above timeline:
 
 - Subscribe Jira projects to Mattermost channels through the Mattermost user interface. Available to any users with appropriate permissions.
    - Subscribed notifications include the following events: issue created; issue transitioned to “Reopened”, “In Progress”, "Submitted" or “Resolved”; issue deleted or closed; comments created, updated or deleted; assignee, title, description, priority, sprint or rank updated; attachments or labels added; attachments or labels removed
@@ -53,6 +52,7 @@ Below is a full list of features tentatively planned for Jira plugin v2.0, but w
   - `/jira subscribe` - Subscribe a Mattermost channel to receive notifications for issue updates in a Jira project.
   - `/jira settings preview [on/off]` - Set whether previews of Jira issues are shown.
   - `/jira settings notifications [on/off]` - Set whether Direct Message notifications are sent for assignments and comments in assigned issues.
+  - `/jira view <issue-key>` - View a Jira issue specified by `issue-key`.  
 
 Further features and improvements are considered for subsequent v2.X releases, including.
 
