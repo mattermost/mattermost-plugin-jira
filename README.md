@@ -21,11 +21,11 @@ The above are supported for Jira Core and Jira Software, both for Cloud and Serv
 
 ## 2. Jira Plugin v2.0 Roadmap
 
-The ship target dates are included below:
+The ship target dates are included below. These are subject to change:
   - May 16th: All features for the Jira plugin merged
   - May 17 - 21st: Testing and bug fixes, add minor enhancements
   - May 22nd: Jira 2.0 deployed to community.mattermost.com for wider testing
-  - May 22nd: Jira 2.0 shared with customers for feedback on additional functionality
+  - May 22nd: Jira 2.0 shared with customers for early feedback
   - May 22nd - early June: Testing and bug fixes
   - June 16th: Jira 2.0 released
 
