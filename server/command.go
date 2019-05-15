@@ -14,7 +14,7 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
 	"* `/jira transition <issue-key> <state>` - Changes the state of a Jira issue.\n" +
 	"\nFor system administrators:\n" +
-	"* `/jira add cloud` - add a cloud Jira instance\n" +
+	"* `/jira add cloud <URL>` - add a cloud Jira instance located at <URL>\n" +
 	"* `/jira add server <URL>` - add a server Jira instance located at <URL>\n" +
 	"* `/jira webhook` - Display a Jira webhook URL customized for the current team/channel\n" +
 	""
@@ -28,14 +28,14 @@ type CommandHandler struct {
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
-		"add/cloud":  executeAddCloud,
-		"add/server": executeAddServer,
-		"list":       executeList,
-		"transition": executeTransition,
-		"connect":    executeConnect,
-		"disconnect": executeDisconnect,
-		"webhook":             executeWebhookURL,
-		"webhook/url":         executeWebhookURL,
+		"add/cloud":   executeAddCloud,
+		"add/server":  executeAddServer,
+		"transition":  executeTransition,
+		"connect":     executeConnect,
+		"disconnect":  executeDisconnect,
+		"webhook":     executeWebhookURL,
+		"webhook/url": executeWebhookURL,
+		//"list":        executeList,
 		//"instance/select":     executeInstanceSelect,
 		//"instance/delete":     executeInstanceDelete,
 	},
@@ -158,9 +158,10 @@ func executeAddCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 	if !authorized {
 		return responsef("`/jira add` can only be run by a system administrator.")
 	}
-	if len(args) != 0 {
+	if len(args) != 1 {
 		return help()
 	}
+	jiraURL := args[0]
 
 	// Create an "uninitialized" instance of Jira Cloud that will
 	// receive the /installed callback
@@ -170,19 +171,20 @@ func executeAddCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 	}
 
 	const addResponseFormat = `
-Next steps: The Mattermost app needs to be added to your Jira cloud instance now.
+%s has been successfully added. To complete the installation, the Mattermost app needs to be added to your Jira app.
 
-1. Within your Jira cloud app, go to: **Settings > Apps > Manage Apps > Upload App**
-2. In the 'From this URL field' enter: %s%s
-3. You should see the 'Installed and ready to go!' message.
-4. Use the '/jira connect' command to connect your Mattermost account with your Jira account.
-5. Click the 'More Actions' (...) option of any message in the channel (available when you hover over a message). 
+1. Navigate to: [**Settings > Apps > Manage Apps**](%s/plugins/servlet/upm?source=side_nav_manage_addons)
+2. Click "Upload app""
+2. In the "From this URL field"" enter: %s%s
+3. You should see the "Installed and ready to go!" message.
+4. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
+5. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message). 
 
 If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://about.mattermost.com/default-jira-plugin) for troubleshooting help.
 `
 
 	// TODO What is the exact group membership in Jira required? Site-admins?
-	return responsef(addResponseFormat, p.GetPluginURL(), routeACJSON)
+	return responsef(addResponseFormat, jiraURL, jiraURL, p.GetPluginURL(), routeACJSON)
 }
 
 func executeAddServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -204,7 +206,7 @@ func executeAddServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, a
 2. Navigate to (Jira) Settings > Applications > Application Links.
 3. Enter %s, and click "Create new link".
 4. In "Configure Application URL" screen ignore any errors, click "Continue".
-5. In "Link Applications":
+5. In "Link applications":
   - Application Name: Mattermost
   - Application Type: Generic Application
   - IMPORTANT: Check "Create incoming link"
@@ -213,8 +215,8 @@ func executeAddServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, a
   - Consumer Key: %s
   - Consumer Name: Mattermost
   - Public Key: %s
-7. Use the '/jira connect' command to connect your Mattermost account with your Jira account.
-8. Click the 'More Actions' (...) option of any message in the channel (available when you hover over a message). 
+7. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
+8. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message). 
 
 If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://about.mattermost.com/default-jira-plugin) for troubleshooting help.
 `
@@ -250,6 +252,13 @@ func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 }
 
 func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return responsef("%v", err)
+	}
+	if !authorized {
+		return responsef("`/jira webhook` can only be run by a system administrator.")
+	}
 	if len(args) != 0 {
 		return help()
 	}
