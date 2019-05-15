@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -75,12 +76,17 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		}
 	}
 
-	created, _, err := jiraClient.Issue.Create(&jira.Issue{
+	created, resp, err := jiraClient.Issue.Create(&jira.Issue{
 		Fields: &create.Fields,
 	})
 	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to create the issue, postId: "+create.PostId)
+		message := "failed to create the issue, postId: " + create.PostId
+		if resp != nil {
+			bb, _ := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+			message += ", details:" + string(bb)
+		}
+		return http.StatusInternalServerError, errors.WithMessage(err, message)
 	}
 
 	// Upload file attachments in the background
@@ -158,12 +164,18 @@ func httpAPIGetCreateIssueMetadata(ji Instance, w http.ResponseWriter, r *http.R
 		return http.StatusInternalServerError, err
 	}
 
-	cimd, _, err := jiraClient.Issue.GetCreateMetaWithOptions(&jira.GetQueryOptions{
+	cimd, resp, err := jiraClient.Issue.GetCreateMetaWithOptions(&jira.GetQueryOptions{
 		Expand: "projects.issuetypes.fields",
 	})
 	if err != nil {
+		message := "failed to get CreateIssue metadata"
+		if resp != nil {
+			bb, _ := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+			message += ", details:" + string(bb)
+		}
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to get CreateIssue mettadata")
+			errors.WithMessage(err, message)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
