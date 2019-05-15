@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/subtle"
 	"encoding/json"
 	"fmt"
@@ -18,41 +19,12 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
-type JIRAWebhookIssue struct {
-	Self   string
-	Key    string
-	Fields struct {
-		Assignee    *jira.User
-		Reporter    *jira.User
-		Summary     string
-		Description string
-		Priority    *struct {
-			Id      string
-			Name    string
-			IconURL string
-		}
-		IssueType struct {
-			Name    string
-			IconURL string
-		}
-		Resolution *struct {
-			Id string
-		}
-		Status struct {
-			Id string
-		}
-		Labels []string
-	}
-}
 
 type JIRAWebhook struct {
 	WebhookEvent string
-	Issue        JIRAWebhookIssue
-	User         jira.User
-	Comment      struct {
-		Body         string
-		UpdateAuthor jira.User
-	}
+	jira.Issue
+	jira.User
+	jira.Comment
 	ChangeLog struct {
 		Items []struct {
 			From       string
@@ -67,7 +39,11 @@ type JIRAWebhook struct {
 
 type parsedJIRAWebhook struct {
 	*JIRAWebhook
-	RawJSON           string
+	RawJSON string
+
+	ActionUser string
+	ActionXXX  string
+
 	headline          string
 	details           string
 	text              string
@@ -130,7 +106,13 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		return appErr.StatusCode, fmt.Errorf(appErr.Message)
 	}
 
-	initPost, err := AsSlackAttachment(r.Body)
+	bbb, _ := ioutil.ReadAll(r.Body)
+	vvv := make(map[string]interface{})
+	_ = json.Unmarshal(bbb, &vvv)
+	bb, _ := json.MarshalIndent(vvv, "", "  ")
+	p.debugf("%s", string(bb))
+
+	initPost, err := AsSlackAttachment(bytes.NewReader(bbb))
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
