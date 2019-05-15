@@ -5,7 +5,6 @@ package main
 
 import (
 	"crypto/rsa"
-	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -64,25 +63,6 @@ func (p *Plugin) updateConfig(f func(conf *config)) config {
 
 	f(&p.conf)
 	return p.conf
-}
-
-// saveConfigToServer persists the externalConfig portion of the plugin config to the server's config.json
-func (p *Plugin) saveConfigToServer() error {
-	b, err := json.Marshal(p.getConfig().externalConfig)
-	if err != nil {
-		return errors.Errorf("failed to Marshal externalConfig to bytes: %v", err)
-	}
-
-	mapString := make(map[string]interface{})
-	if err = json.Unmarshal(b, &mapString); err != nil {
-		return errors.Errorf("failed to Unmarshal bytes to a map[string]interface{}: %v", err)
-	}
-
-	if err = p.API.SavePluginConfig(mapString); err != nil {
-		return errors.Errorf("failed to savePluginConfig: %v", err)
-	}
-
-	return nil
 }
 
 // OnConfigurationChange is invoked when configuration changes may have been made.
