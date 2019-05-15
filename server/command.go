@@ -76,7 +76,7 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 	if len(args) != 0 {
 		return help()
 	}
-	return responsef("[Click here to link your Jira account.](%s%s)",
+	return responsef("[Click here to link your Jira account](%s%s)",
 		p.GetPluginURL(), routeUserConnect)
 }
 
@@ -84,7 +84,7 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	if len(args) != 0 {
 		return help()
 	}
-	return responsef("[Click here to unlink your Jira account.](%s%s)",
+	return responsef("[Click here to unlink your Jira account](%s%s)",
 		p.GetPluginURL(), routeUserDisconnect)
 }
 
