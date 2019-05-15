@@ -14,9 +14,8 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
 	"* `/jira transition <issue-key> <state>` - Changes the state of a Jira issue.\n" +
 	"\nFor system administrators:\n" +
-	"* `/jira add cloud <URL>` - add a cloud Jira instance located at <URL>\n" +
-	"* `/jira add server <URL>` - add a server Jira instance located at <URL>\n" +
-	"* `/jira webhook` - Display a Jira webhook URL customized for the current team/channel\n" +
+	"* `/jira install cloud <URL>` - connect Mattermost to a cloud Jira instance located at <URL>\n" +
+	"* `/jira install server <URL>` - connect Mattermost to a server Jira instance located at <URL>\n" +
 	""
 
 type CommandHandlerFunc func(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse
@@ -28,13 +27,13 @@ type CommandHandler struct {
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
-		"add/cloud":   executeAddCloud,
-		"add/server":  executeAddServer,
-		"transition":  executeTransition,
-		"connect":     executeConnect,
-		"disconnect":  executeDisconnect,
-		"webhook":     executeWebhookURL,
-		"webhook/url": executeWebhookURL,
+		"install/cloud":  executeInstallCloud,
+		"install/server": executeInstallServer,
+		"transition":     executeTransition,
+		"connect":        executeConnect,
+		"disconnect":     executeDisconnect,
+		"webhook":        executeWebhookURL,
+		"webhook/url":    executeWebhookURL,
 		//"list":        executeList,
 		//"instance/select":     executeInstanceSelect,
 		//"instance/delete":     executeInstanceDelete,
@@ -150,13 +149,13 @@ func authorizedSysAdmin(p *Plugin, userId string) (bool, error) {
 	return true, nil
 }
 
-func executeAddCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
 		return responsef("%v", err)
 	}
 	if !authorized {
-		return responsef("`/jira add` can only be run by a system administrator.")
+		return responsef("`/jira install` can only be run by a system administrator.")
 	}
 	if len(args) != 1 {
 		return help()
@@ -187,13 +186,13 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	return responsef(addResponseFormat, jiraURL, jiraURL, p.GetPluginURL(), routeACJSON)
 }
 
-func executeAddServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
 		return responsef("%v", err)
 	}
 	if !authorized {
-		return responsef("`/jira add` can only be run by a system administrator.")
+		return responsef("`/jira install` can only be run by a system administrator.")
 	}
 	if len(args) != 1 {
 		return help()
@@ -276,7 +275,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, transition, add cloud, add server, webhook, webhook url, help",
+		AutoCompleteDesc: "Available commands: connect, disconnect, transition, install cloud, install server, help",
 		AutoCompleteHint: "[command]",
 	}
 }

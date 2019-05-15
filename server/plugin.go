@@ -4,9 +4,7 @@
 package main
 
 import (
-	"crypto/rand"
 	"crypto/rsa"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -33,11 +31,8 @@ type externalConfig struct {
 }
 
 type config struct {
-	// externalConfig captures all cached values that need to be synchronized with the server's config.json
+	// externalConfig caches values from the plugin's settings in the server's config.json
 	externalConfig
-
-	// onActivate needs to have been called before we can call API.SavePluginConfig
-	onActivateHasBeenCalled bool
 
 	// Cached actual bot user ID (derived from c.UserName)
 	botUserID string
@@ -99,24 +94,9 @@ func (p *Plugin) OnConfigurationChange() error {
 		return errors.WithMessage(err, "failed to load plugin configuration")
 	}
 
-	if ec != p.getConfig().externalConfig {
-		// Logic to determine if we overwrite the server config with the local config. What takes precedence?
-		// For Secret: if it is blank on the server, the one in the plugin's config takes precedence,
-		//   because we are generating a key as a default for a new installation.
-		if ec.Secret == "" {
-			ec.Secret = p.getConfig().externalConfig.Secret
-		}
-		p.updateConfig(func(conf *config) {
-			conf.externalConfig = ec
-		})
-
-		// only save to the server once the plugin has been activated, or else we will enter a loop
-		if p.getConfig().onActivateHasBeenCalled {
-			if err = p.saveConfigToServer(); err != nil {
-				return errors.WithMessage(err, "OnConfigurationChange: failed to save plugin configuration")
-			}
-		}
-	}
+	p.updateConfig(func(conf *config) {
+		conf.externalConfig = ec
+	})
 
 	return nil
 }
@@ -143,26 +123,6 @@ func (p *Plugin) OnActivate() error {
 	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to register command")
 	}
-
-	ec := externalConfig{}
-	if err = p.API.LoadPluginConfiguration(&ec); err != nil {
-		return errors.WithMessage(err, "OnActivate: failed to load plugin configuration")
-	}
-
-	// If the Secret is blank, generate a new one (to make setup easier for admins).
-	if ec.Secret == "" {
-		key := make([]byte, 256)
-		if _, err := rand.Read(key); err != nil {
-			return err
-		}
-		p.updateConfig(func(conf *config) {
-			conf.Secret = base64.RawURLEncoding.EncodeToString(key)[0:32]
-		})
-	}
-
-	p.updateConfig(func(conf *config) {
-		conf.onActivateHasBeenCalled = true
-	})
 
 	return nil
 }
