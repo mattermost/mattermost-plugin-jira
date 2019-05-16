@@ -172,12 +172,15 @@ func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs
 	const addResponseFormat = `
 %s has been successfully added. To complete the installation, the Mattermost app needs to be added to your Jira app.
 
-1. Navigate to: [**Settings > Apps > Manage Apps**](%s/plugins/servlet/upm?source=side_nav_manage_addons)
-2. Click "Upload app""
-2. In the "From this URL field"" enter: %s%s
-3. You should see the "Installed and ready to go!" message.
-4. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
-5. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message). 
+1. Navigate to [**Settings > Apps > Manage Apps**](%s/plugins/servlet/upm?source=side_nav_manage_addons).
+  - For older versions of Jira, navigate to **Administration > Applications > Add-ons > Manage add-ons**.
+2. Click **Settings** at bottom of page, enable development mode, and apply this change.
+  - Enabling development mode allows you to install apps that are not from the Atlassian Marketplace.
+3. Click **Upload app**.
+4. In the **From this URL field**, enter: %s%s
+5. Wait for the app to install. Once completed, you should see an "Installed and ready to go!" message.
+6. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
+7. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
 
 If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://about.mattermost.com/default-jira-plugin) for troubleshooting help.
 `
@@ -201,21 +204,21 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 
 	const addResponseFormat = `` +
 		`Server instance has been added. You need to add an Application Link to it in Jira now.
-1. Click %s, login as an admin.
-2. Navigate to (Jira) Settings > Applications > Application Links.
-3. Enter %s, and click "Create new link".
-4. In "Configure Application URL" screen ignore any errors, click "Continue".
-5. In "Link applications":
-  - Application Name: Mattermost
-  - Application Type: Generic Application
-  - IMPORTANT: Check "Create incoming link"
-  - click <Continue>
-6. In the next "Link Applications" dialog, enter:
-  - Consumer Key: %s
-  - Consumer Name: Mattermost
-  - Public Key: %s
-7. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
-8. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message). 
+
+1. Navigate to **Settings > Applications > Application Links**
+2. Enter %s as the application link, then click **Create new link**.
+3. In **Configure Application URL** screen, confirm your Mattermost URL is included as the application URL. Ignore any displayed errors and click **Continue**.
+4. In **Link Applications** screen, set the following values:
+  - **Application Name**: Mattermost
+  - **Application Type**: Generic Application
+5. Check the **Create incoming link** value, then click **Continue**.
+6. In the following **Link Applications** screen, set the following values:
+  - **Consumer Key**: %s
+  - **Consumer Name**: Mattermost
+  - **Public Key**: %s
+7. Click **Continue**.
+6. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
+7. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
 
 If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://about.mattermost.com/default-jira-plugin) for troubleshooting help.
 `
