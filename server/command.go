@@ -170,7 +170,7 @@ func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs
 	}
 
 	const addResponseFormat = `
-%s has been successfully added. To complete the installation, the Mattermost app needs to be added to your Jira app.
+%s has been successfully installed. To finish the configuration, create a new app in your Jira instance following these steps:
 
 1. Navigate to [**Settings > Apps > Manage Apps**](%s/plugins/servlet/upm?source=side_nav_manage_addons).
   - For older versions of Jira, navigate to **Administration > Applications > Add-ons > Manage add-ons**.
@@ -203,7 +203,7 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 	jiraURL := args[0]
 
 	const addResponseFormat = `` +
-		`Server instance has been added. You need to add an Application Link to it in Jira now.
+		`Server instance has been installed. To finish the configuration, add an Application Link in your Jira instance following these steps:
 
 1. Navigate to **Settings > Applications > Application Links**
 2. Enter %s as the application link, then click **Create new link**.
