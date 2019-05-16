@@ -16,6 +16,7 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"\nFor system administrators:\n" +
 	"* `/jira install cloud <URL>` - connect Mattermost to a cloud Jira instance located at <URL>\n" +
 	"* `/jira install server <URL>` - connect Mattermost to a server Jira instance located at <URL>\n" +
+	"* `/jira assign <issuekey> <assignee>` - Changes the assignee of a Jira issue.\n" +
 	""
 
 type CommandHandlerFunc func(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse
@@ -237,6 +238,23 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 		return responsef("Failed to load public key: %v", err)
 	}
 	return responsef(addResponseFormat, ji.GetURL(), p.GetSiteURL(), ji.GetMattermostKey(), pkey)
+}
+
+func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+
+	if len(args) <= 1 {
+		return responsef("Please specify both an issue key and assignee in the form `/jira assign <issue-key> <assignee>`.")
+	}
+
+	issueKey := args[0]
+	assignee := strings.Join(args[1:], " ")
+
+	msg, err := p.assignJiraIssue(header.UserId, issueKey, assignee)
+	if err != nil {
+		return responsef("%v", err)
+	}
+
+	return msg
 }
 
 func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
