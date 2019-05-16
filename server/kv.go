@@ -120,7 +120,7 @@ func (p *Plugin) CreateInactiveCloudInstance(jiraURL string) (returnErr error) {
 			fmt.Sprintf("failed to store new Jira Cloud instance:%s", jiraURL))
 	}()
 
-	ji := NewJIRACloudInstance(p, jiraURL, false,
+	ji := NewJIRACloudInstance(jiraURL, false,
 		fmt.Sprintf(`{"BaseURL": %s}`, jiraURL),
 		&AtlassianSecurityContext{BaseURL: jiraURL})
 
@@ -244,11 +244,9 @@ func (p *Plugin) loadJIRAInstance(fullkey string) (Instance, error) {
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
 		}
-		jci.Init(p)
 		return &jci, nil
 
 	case JIRATypeServer:
-		jsi.Init(p)
 		return &jsi, nil
 	}
 

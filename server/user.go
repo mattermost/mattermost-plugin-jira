@@ -4,11 +4,9 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/andygrunwald/go-jira"
-	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
 )
@@ -30,48 +28,32 @@ type UserInfo struct {
 	JIRAURL     string `json:"jira_url,omitempty"`
 }
 
-func httpUserConnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be GET")
-	}
-
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
+func httpUserConnect(a *Action) error {
 	// Users shouldn't be able to make multiple connections.
-	if jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId); err == nil && len(jiraUser.Key) != 0 {
-		return http.StatusBadRequest, errors.New("Already connected to a JIRA account. Please use /jira disconnect to disconnect.")
+	jiraUser, err := a.Plugin.LoadJIRAUser(a.Instance, a.MattermostUserId)
+	if err == nil && len(jiraUser.Key) != 0 {
+		return a.RespondError(http.StatusForbidden, nil,
+			"Already connected to a JIRA account. Please use /jira disconnect to disconnect.")
 	}
 
-	redirectURL, err := ji.GetUserConnectURL(mattermostUserId)
+	redirectURL, err := a.Instance.GetUserConnectURL(a)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return a.RespondError(http.StatusInternalServerError, err)
 	}
 
-	http.Redirect(w, r, redirectURL, http.StatusFound)
-	return http.StatusFound, nil
+	http.Redirect(a.HTTPResponseWriter, a.HTTPRequest, redirectURL, http.StatusFound)
+	a.HTTPStatusCode = http.StatusFound
+	return nil
 }
 
-func httpUserDisconnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be GET")
-	}
-
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
-	err := ji.GetPlugin().DeleteUserInfoNotify(ji, mattermostUserId)
+func httpUserDisconnect(a *Action) error {
+	err := a.Plugin.DeleteUserInfoNotify(a.Instance, a.MattermostUserId)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return a.RespondError(http.StatusInternalServerError, err)
 	}
 
-	html := `
+	// TODO replace with template
+	return a.RespondPrintf(`
 <!DOCTYPE html>
 <html>
        <head>
@@ -83,44 +65,21 @@ func httpUserDisconnect(ji Instance, w http.ResponseWriter, r *http.Request) (in
                <p>Disconnected from Jira. Please close this page.</p>
        </body>
 </html>
-`
-
-	w.Header().Set("Content-Type", "text/html")
-	_, err = w.Write([]byte(html))
-	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-	}
-
-	return http.StatusOK, nil
+`)
 }
 
-func httpAPIGetUserInfo(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be GET")
-	}
-
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
+func httpAPIGetUserInfo(a *Action) error {
 	resp := UserInfo{}
-	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId)
-	if err == nil {
+	if a.JiraUser != nil {
 		resp = UserInfo{
-			JIRAUser:    jiraUser,
+			JIRAUser:    *a.JiraUser,
 			IsConnected: true,
-			JIRAURL:     ji.GetURL(),
+			JIRAURL:     a.Instance.GetURL(),
 		}
 	}
 
-	b, _ := json.Marshal(resp)
-	_, err = w.Write(b)
-	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-	}
-	return http.StatusOK, nil
+	a.Plugin.debugf("httpAPIGetUserInfo: %+v", resp)
+	return a.RespondJSON(resp)
 }
 
 func (p *Plugin) StoreUserInfoNotify(ji Instance, mattermostUserId string, jiraUser JIRAUser) error {
@@ -148,7 +107,7 @@ func (p *Plugin) DeleteUserInfoNotify(ji Instance, mattermostUserId string) erro
 		return err
 	}
 
-	ji.GetPlugin().API.PublishWebSocketEvent(
+	p.API.PublishWebSocketEvent(
 		WS_EVENT_DISCONNECT,
 		map[string]interface{}{
 			"is_connected": false,

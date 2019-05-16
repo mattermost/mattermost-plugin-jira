@@ -7,94 +7,71 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/pkg/errors"
 )
 
 const userRedirectPageKey = "user-redirect"
 
-func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be GET")
-	}
-
-	return p.respondWithTemplate(w, r, "application/json", map[string]string{
-		"BaseURL":                      p.GetPluginURL(),
-		"RouteACJSON":                  routeACJSON,
-		"RouteACInstalled":             routeACInstalled,
-		"RouteACUninstalled":           routeACUninstalled,
-		"RouteACUserRedirectWithToken": routeACUserRedirectWithToken,
-		"UserRedirectPageKey":          userRedirectPageKey,
-		"ExternalURL":                  p.GetSiteURL(),
-		"PluginKey":                    p.GetPluginKey(),
-	})
+func httpACJSON(a *Action) error {
+	return a.RespondTemplate(
+		a.HTTPRequest.URL.Path,
+		"application/json",
+		map[string]string{
+			"BaseURL":                      a.Plugin.GetPluginURL(),
+			"RouteACJSON":                  routeACJSON,
+			"RouteACInstalled":             routeACInstalled,
+			"RouteACUninstalled":           routeACUninstalled,
+			"RouteACUserRedirectWithToken": routeACUserRedirectWithToken,
+			"UserRedirectPageKey":          userRedirectPageKey,
+			"ExternalURL":                  a.Plugin.GetSiteURL(),
+			"PluginKey":                    a.Plugin.GetPluginKey(),
+		})
 }
 
-func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodPost {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be POST")
-	}
-
-	body, err := ioutil.ReadAll(r.Body)
+func httpACInstalled(a *Action) error {
+	body, err := ioutil.ReadAll(a.HTTPRequest.Body)
 	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to decode request")
+		return a.RespondError(http.StatusInternalServerError, err,
+			"failed to decode request")
 	}
 
 	var asc AtlassianSecurityContext
 	err = json.Unmarshal(body, &asc)
 	if err != nil {
-		return http.StatusBadRequest,
-			errors.WithMessage(err, "failed to unmarshal request")
+		return a.RespondError(http.StatusBadRequest, err,
+			"failed to unmarshal request")
 	}
 
 	// Only allow this operation once, a JIRA instance must already exist
-	// for asc.BaseURL but its EventType would be empty.
-	ji, err := p.LoadJIRAInstance(asc.BaseURL)
+	// for asc.BaseURL but not installed.
+	ji, err := a.Plugin.LoadJIRAInstance(asc.BaseURL)
 	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to load instance "+asc.BaseURL)
+		return a.RespondError(http.StatusInternalServerError, err,
+			"failed to load instance %q", asc.BaseURL)
 	}
 	if ji == nil {
-		return http.StatusNotFound,
-			errors.Errorf("Jira instance %s must first be added to Mattermost", asc.BaseURL)
+		return a.RespondError(http.StatusNotFound, nil,
+			"Jira instance %q must first be added to Mattermost", asc.BaseURL)
 	}
 	jci, ok := ji.(*jiraCloudInstance)
 	if !ok {
-		return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
+		return a.RespondError(http.StatusBadRequest, nil,
+			"Must be a JIRA Cloud instance, is %q", ji.GetType())
 	}
 	if jci.Installed {
-		return http.StatusForbidden,
-			errors.Errorf("Jira instance %s is already installed", asc.BaseURL)
+		return a.RespondError(http.StatusForbidden, nil,
+			"Jira instance %q is already installed", asc.BaseURL)
 	}
 
 	// Create a permanent instance record, also store it as current
-	jiraInstance := NewJIRACloudInstance(p, asc.BaseURL, true, string(body), &asc)
-	err = p.StoreJIRAInstance(jiraInstance)
+	jiraInstance := NewJIRACloudInstance(asc.BaseURL, true, string(body), &asc)
+	err = a.Plugin.StoreJIRAInstance(jiraInstance)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return a.RespondError(http.StatusInternalServerError, err)
 	}
-	err = p.StoreCurrentJIRAInstance(jiraInstance)
+	err = a.Plugin.StoreCurrentJIRAInstance(jiraInstance)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return a.RespondError(http.StatusInternalServerError, err)
 	}
 
-	err = json.NewEncoder(w).Encode([]string{"OK"})
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to encode response")
-	}
-	return http.StatusOK, nil
-}
-
-func httpACUninstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodPost {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be POST")
-	}
-
-	_ = json.NewEncoder(w).Encode([]string{"OK"})
-	return http.StatusOK, nil
+	return a.RespondJSON([]string{"OK"})
 }
