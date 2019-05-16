@@ -193,75 +193,72 @@ func httpAPIGetCreateIssueMetadata(ji Instance, w http.ResponseWriter, r *http.R
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) assignJiraIssue(mmUserId, issueKey, jiraAssignee string) (*model.CommandResponse, error) {
+func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, error) {
 	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mmUserId)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	jiraClient, err := ji.GetJIRAClient(jiraUser)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	// check for valid issue key
 	_, _, err = jiraClient.Issue.Get(issueKey, nil)
 	if err != nil {
 		errorMsg := fmt.Sprintf("We couldn't find the issue key `%s`.  Please confirm the issue key and try again.", issueKey)
-		return responsef(errorMsg), nil
+		return errorMsg, nil
 	}
 
 	// Get list of assignable assignees
-	url := fmt.Sprintf("rest/api/2/user/assignable/search?issueKey=%s&query=%s", issueKey, jiraAssignee)
+	url := fmt.Sprintf("rest/api/3/user/assignable/search?issueKey=%s&query=%s", issueKey, assignee)
 	req, err := jiraClient.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	res, err := jiraClient.Do(req, nil)
 	if err != nil {
 		if res.Response.StatusCode == 401 {
-			errorMsg := fmt.Sprintf("You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.")
-			return responsef(errorMsg), nil
+			return "You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.", nil
 		}
-		return nil, err
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	var data []*jira.User
-	if err := json.Unmarshal([]byte(body), &data); err != nil {
-		return nil, err
+	if err := json.NewDecoder(res.Body).Decode(&data); err != nil {
+		return "", errors.WithMessage(err, "failed to decode incoming request")
 	}
+	defer res.Body.Close()
 
 	// handle number of returned jira users
 	if len(data) == 0 {
 		errorMsg := fmt.Sprintf("We couldn't find the assignee. Please use a Jira member and try again.")
-		return nil, fmt.Errorf(errorMsg)
-	} else if len(data) > 1 {
-		errorMsg := fmt.Sprintf("Your <assignee>, `%s`, matches %d users.  Please make your user request unique.", jiraAssignee, len(data))
-		return nil, fmt.Errorf(errorMsg)
+		return "", fmt.Errorf(errorMsg)
 	}
 
-	// assignee is array of one object
-	assignee := data[0]
+	if len(data) > 1 {
+		errorMsg := fmt.Sprintf("Your <assignee>, `%s`, matches %d users.  Please make your user request unique.", assignee, len(data))
+		return "", fmt.Errorf(errorMsg)
+	}
 
-	if _, err := jiraClient.Issue.UpdateAssignee(issueKey, assignee); err != nil {
-		return nil, err
+	// User is array of one object
+	User := data[0]
+
+	if _, err := jiraClient.Issue.UpdateAssignee(issueKey, User); err != nil {
+		return "", err
 	}
 
 	permalink := fmt.Sprintf("%v/browse/%v", ji.GetURL(), issueKey)
 
-	msg := fmt.Sprintf("`%s` assigned to Jira issue [%s](%s)", assignee.DisplayName, issueKey, permalink)
-	return responsef(msg), nil
+	msg := fmt.Sprintf("`%s` assigned to Jira issue [%s](%s)", User.DisplayName, issueKey, permalink)
+	return msg, nil
 
 }
 
