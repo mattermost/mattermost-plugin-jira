@@ -200,7 +200,7 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 	jiraURL := args[0]
 
 	const addResponseFormat = `` +
-		`Server instance has been added. You need to add an Application Link to it in Jira now.
+		`Server instance has been installed. To finish the configuration, add an Application Link in your Jira instance following these steps:
 1. Click %s, login as an admin.
 2. Navigate to (Jira) Settings > Applications > Application Links.
 3. Enter %s, and click "Create new link".
