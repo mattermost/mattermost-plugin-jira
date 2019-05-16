@@ -32,16 +32,17 @@ type CommandHandler struct {
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
-		"instance/add/server": executeInstanceAddServer,
-		"instance/add/cloud":  executeInstanceAddCloud,
-		"instance/list":       executeInstanceList,
-		"instance/select":     executeInstanceSelect,
-		"instance/delete":     executeInstanceDelete,
-		"webhook":             executeWebhookURL,
-		"webhook/url":         executeWebhookURL,
-		"transition":          executeTransition,
-		"connect":             executeConnect,
-		"disconnect":          executeDisconnect,
+		"instance/add/server":    executeInstanceAddServer,
+		"instance/add/cloud":     executeInstanceAddCloud,
+		"instance/list":          executeInstanceList,
+		"instance/select":        executeInstanceSelect,
+		"instance/delete":        executeInstanceDelete,
+		"settings/notifications": executeSettingsNotifications,
+		"webhook":                executeWebhookURL,
+		"webhook/url":            executeWebhookURL,
+		"transition":             executeTransition,
+		"connect":                executeConnect,
+		"disconnect":             executeDisconnect,
 	},
 	defaultHandler: commandHelp,
 }
@@ -86,6 +87,25 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	}
 	return responsef("[Click here to unlink your Jira account.](%s%s)",
 		p.GetPluginURL(), routeUserDisconnect)
+}
+
+func executeSettingsNotifications(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) != 1 {
+		return help()
+	}
+
+	ji, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return responsef("Failed to load current Jira instance: %v. Please contact your system administrator.", err)
+	}
+
+	mattermostUserId := header.UserId
+	jiraUser, err := p.LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		return responsef("Your username is not connected to Jira. Please type `jira connect`. %v", err)
+	}
+
+	return responsef("todo... JiraUser: %v", jiraUser)
 }
 
 func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

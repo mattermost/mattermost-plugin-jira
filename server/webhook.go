@@ -126,7 +126,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 	// Notify any users using a direct channel
 	err = p.handleNotifications(parsed)
 	if err != nil {
-		p.errorf("handleNotifications: %v", err)
+		p.errorf("httpWebhook, handleNotifications: %v", err)
 		return http.StatusBadRequest, err
 	}
 
