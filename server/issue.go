@@ -28,6 +28,8 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		PostId string           `json:"post_id"`
 		Fields jira.IssueFields `json:"fields"`
 	}{}
+
+	defer r.Body.Close()
 	err := json.NewDecoder(r.Body).Decode(&create)
 	if err != nil {
 		return http.StatusBadRequest,

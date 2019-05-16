@@ -37,6 +37,7 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 			errors.New("method " + r.Method + " is not allowed, must be POST")
 	}
 
+	defer r.Body.Close()
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return http.StatusInternalServerError,

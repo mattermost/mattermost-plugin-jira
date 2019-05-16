@@ -7,6 +7,7 @@ import (
 	"crypto/subtle"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -16,6 +17,11 @@ import (
 	"github.com/andygrunwald/go-jira"
 
 	"github.com/mattermost/mattermost-server/model"
+)
+
+const (
+	JiraCommentPostType = "custom_jira_comment"
+	JiraMentionPostType = "custom_jira_mention"
 )
 
 type JIRAWebhookIssue struct {
@@ -80,10 +86,6 @@ type parsedJIRAWebhook struct {
 	issueURL          string
 }
 
-type notifier interface {
-	notify(ji Instance, parsed *parsedJIRAWebhook, text string)
-}
-
 func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,
@@ -109,45 +111,23 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		secret = unescaped
 	}
 
-	teamName := r.FormValue("team")
-	if teamName == "" {
-		return http.StatusBadRequest,
-			fmt.Errorf("Request URL: team is empty")
-	}
-	channelId := r.FormValue("channel")
-	if channelId == "" {
-		return http.StatusBadRequest,
-			fmt.Errorf("Request URL: channel is empty")
-	}
-
-	user, appErr := p.API.GetUserByUsername(cfg.UserName)
-	if appErr != nil {
-		return appErr.StatusCode, fmt.Errorf(appErr.Message)
-	}
-
-	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelId, false)
-	if appErr != nil {
-		return appErr.StatusCode, fmt.Errorf(appErr.Message)
-	}
-
-	initPost, err := AsSlackAttachment(r.Body)
+	defer r.Body.Close()
+	parsed, err := parse(r.Body, nil)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
 
-	post := &model.Post{
-		ChannelId: channel.Id,
-		UserId:    user.Id,
-		Props: map[string]interface{}{
-			"from_webhook":  "true",
-			"use_user_icon": "true",
-		},
+	// Post the event to the subscribed channel
+	statusCode, err := p.postEvent(r, cfg, parsed)
+	if err != nil {
+		return statusCode, err
 	}
-	initPost(post)
 
-	_, appErr = p.API.CreatePost(post)
-	if appErr != nil {
-		return appErr.StatusCode, fmt.Errorf(appErr.Message)
+	// Notify any users using a direct channel
+	err = p.handleNotifications(parsed)
+	if err != nil {
+		p.errorf("handleNotifications: %v", err)
+		return http.StatusBadRequest, err
 	}
 
 	return http.StatusOK, nil
@@ -287,12 +267,97 @@ func (p *parsedJIRAWebhook) fromChangeLog(issue string) (string, string) {
 	return "", ""
 }
 
-func (p *Plugin) notify(ji Instance, parsed *parsedJIRAWebhook, text string) {
-	if parsed.authorUsername == "" {
-		return
+// postEvent posts the event to the channel that subscribed to it
+func (p *Plugin) postEvent(r *http.Request, cfg config, parsed *parsedJIRAWebhook) (int, error) {
+	teamName := r.FormValue("team")
+	if teamName == "" {
+		return http.StatusBadRequest,
+			fmt.Errorf("Request URL: team is empty")
 	}
 
-	for _, u := range parseJIRAUsernamesFromText(text) {
+	channelId := r.FormValue("channel")
+	if channelId == "" {
+		return http.StatusBadRequest,
+			fmt.Errorf("Request URL: channel is empty")
+	}
+
+	user, appErr := p.API.GetUserByUsername(cfg.UserName)
+	if appErr != nil {
+		return appErr.StatusCode, fmt.Errorf(appErr.Message)
+	}
+
+	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelId, false)
+	if appErr != nil {
+		return appErr.StatusCode, fmt.Errorf(appErr.Message)
+	}
+
+	initPost := AsSlackAttachment(parsed)
+
+	post := &model.Post{
+		ChannelId: channel.Id,
+		UserId:    user.Id,
+		Props: map[string]interface{}{
+			"from_webhook":  "true",
+			"use_user_icon": "true",
+		},
+	}
+	initPost(post)
+
+	_, appErr = p.API.CreatePost(post)
+	if appErr != nil {
+		return appErr.StatusCode, fmt.Errorf(appErr.Message)
+	}
+
+	return http.StatusOK, nil
+}
+
+// handleNotifications notifies users involved in the event, if they've enabled notifications
+func (p *Plugin) handleNotifications(parsed *parsedJIRAWebhook) error {
+	// This bothers me, to do this for every webhook event...
+	ji, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return errors.Errorf("Failed to load current Jira instance: %v", err)
+	}
+
+	switch parsed.JIRAWebhook.WebhookEvent {
+	case "jira:issue_updated", "jira:issue_created":
+		return p.handleIssueUpdatedNotifications(ji, parsed)
+	case "comment_created":
+		return p.handleCommentCreatedNotifications(ji, parsed)
+	default:
+		return nil
+	}
+}
+
+func (p *Plugin) handleIssueUpdatedNotifications(ji Instance, parsed *parsedJIRAWebhook) error {
+	change := parsed.ChangeLog.Items[0]
+	if change.Field != "assignee" || change.ToString == "" {
+		return nil
+	}
+
+	if parsed.assigneeUsername == "" {
+		return nil
+	}
+
+	mattermostUserId, err := p.LoadMattermostUserId(ji, parsed.assigneeUsername)
+	if err != nil {
+		return err
+	}
+
+	message := "[%s](%s) assigned you to [%s](%s)"
+	err = p.CreateBotDMPost(mattermostUserId, fmt.Sprintf(message, parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL), "custom_jira_assigned")
+	if err != nil {
+		return errors.Errorf("handleIssueUpdatedNotification failed: %v", err)
+	}
+	return nil
+}
+
+func (p *Plugin) handleCommentCreatedNotifications(ji Instance, parsed *parsedJIRAWebhook) error {
+	if parsed.authorUsername == "" {
+		return nil
+	}
+
+	for _, u := range parseJIRAUsernamesFromText(parsed.Comment.Body) {
 		// don't mention the author of the text
 		if u == parsed.authorUsername {
 			continue
@@ -304,36 +369,38 @@ func (p *Plugin) notify(ji Instance, parsed *parsedJIRAWebhook, text string) {
 
 		mattermostUserId, err := p.LoadMattermostUserId(ji, u)
 		if err != nil {
-			p.errorf("notify: %v", err)
+			p.errorf("handleCommentCreatedNotifications, LoadMattermostUserId: %v", err)
 			continue
 		}
 
 		err = p.CreateBotDMPost(mattermostUserId,
 			fmt.Sprintf("[%s](%s) mentioned you on [%s](%s):\n>%s",
-				parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL, text),
-			"custom_jira_mention")
+				parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL, parsed.text),
+			JiraMentionPostType)
 		if err != nil {
-			p.errorf("notify: %v", err)
+			p.errorf("handleCommentCreatedNotifications, CreateBotDMPost: %v", err)
 			continue
 		}
 	}
 
 	if parsed.assigneeUsername == parsed.authorUsername {
-		return
+		return nil
 	}
 
 	mattermostUserId, err := p.LoadMattermostUserId(ji, parsed.assigneeUsername)
 	if err != nil {
-		return
+		return err
 	}
 
 	err = p.CreateBotDMPost(mattermostUserId,
 		fmt.Sprintf("[%s](%s) commented on [%s](%s):\n>%s",
-			parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL, text),
-		"custom_jira_comment")
+			parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL, parsed.text),
+		JiraCommentPostType)
 	if err != nil {
-		p.errorf("notify: %v", err)
+		return errors.Errorf("handleCommentCreatedNotifications, CreateBotDMPost: %v", err)
 	}
+
+	return nil
 }
 
 func (p *Plugin) GetWebhookURL(teamId, channelId string) (string, error) {
