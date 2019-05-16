@@ -14,6 +14,9 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira connect` - Connect your Mattermost account to your Jira account and subscribe to events\n" +
 	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
 	"* `/jira transition <issue-key> <state>` - Changes the state of a Jira issue.\n" +
+	"* `/jira settings [setting] [value]` - Update your user settings\n" +
+	"  * [setting] can be `notifications`\n" +
+	"  * [value] can be `on` or `off`\n" +
 	"* `/jira instance [add/list/select/delete]` - Manage connected Jira instances\n" +
 	"  * `add server <URL>` - Add a Jira Server instance\n" +
 	"  * `add cloud <URL>` - Add a Jira Cloud instance\n" +
@@ -30,19 +33,24 @@ type CommandHandler struct {
 	defaultHandler CommandHandlerFunc
 }
 
+// Available settings
+const (
+	SETTINGS_NOTIFICATIONS = "notifications"
+)
+
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
-		"instance/add/server":    executeInstanceAddServer,
-		"instance/add/cloud":     executeInstanceAddCloud,
-		"instance/list":          executeInstanceList,
-		"instance/select":        executeInstanceSelect,
-		"instance/delete":        executeInstanceDelete,
-		"settings/notifications": executeSettingsNotifications,
-		"webhook":                executeWebhookURL,
-		"webhook/url":            executeWebhookURL,
-		"transition":             executeTransition,
-		"connect":                executeConnect,
-		"disconnect":             executeDisconnect,
+		"instance/add/server": executeInstanceAddServer,
+		"instance/add/cloud":  executeInstanceAddCloud,
+		"instance/list":       executeInstanceList,
+		"instance/select":     executeInstanceSelect,
+		"instance/delete":     executeInstanceDelete,
+		"settings":            executeSettings,
+		"webhook":             executeWebhookURL,
+		"webhook/url":         executeWebhookURL,
+		"transition":          executeTransition,
+		"connect":             executeConnect,
+		"disconnect":          executeDisconnect,
 	},
 	defaultHandler: commandHelp,
 }
@@ -89,8 +97,8 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 		p.GetPluginURL(), routeUserDisconnect)
 }
 
-func executeSettingsNotifications(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	if len(args) != 1 {
+func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) != 2 {
 		return help()
 	}
 
@@ -105,7 +113,12 @@ func executeSettingsNotifications(p *Plugin, c *plugin.Context, header *model.Co
 		return responsef("Your username is not connected to Jira. Please type `jira connect`. %v", err)
 	}
 
-	return responsef("todo... JiraUser: %v", jiraUser)
+	switch args[0] {
+	case SETTINGS_NOTIFICATIONS:
+		return p.settingsNotifications(ji, mattermostUserId, jiraUser, args[1:])
+	default:
+		return responsef("Unknown setting.")
+	}
 }
 
 func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -155,6 +168,26 @@ func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs
 	return responsef(text)
 }
 
+func executeInstanceAddCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) != 1 {
+		return help()
+	}
+	jiraURL := args[0]
+
+	// Create an "uninitialized" instance of Jira Cloud that will
+	// receive the /installed callback
+	err := p.CreateInactiveCloudInstance(jiraURL)
+	if err != nil {
+		return responsef(err.Error())
+	}
+	// TODO What is the exact group membership in Jira required? Site-admins?
+	return responsef(`%s has been successfully added. To complete the installation:
+* navigate to [**Jira > Applications > Manage**](%s/plugins/servlet/upm?source=side_nav_manage_addons)
+* click "Upload app"
+* enter the following URL: %s%s`,
+		jiraURL, jiraURL, p.GetPluginURL(), routeACJSON)
+}
+
 func executeInstanceAddServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 1 {
 		return help()
@@ -191,26 +224,6 @@ func executeInstanceAddServer(p *Plugin, c *plugin.Context, header *model.Comman
 		return responsef("Failed to load public key: %v", err)
 	}
 	return responsef(addResponseFormat, ji.GetURL(), p.GetSiteURL(), ji.GetMattermostKey(), pkey)
-}
-
-func executeInstanceAddCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	if len(args) != 1 {
-		return help()
-	}
-	jiraURL := args[0]
-
-	// Create an "uninitialized" instance of Jira Cloud that will
-	// receive the /installed callback
-	err := p.CreateInactiveCloudInstance(jiraURL)
-	if err != nil {
-		return responsef(err.Error())
-	}
-	// TODO What is the exact group membership in Jira required? Site-admins?
-	return responsef(`%s has been successfully added. To complete the installation:
-* navigate to [**Jira > Applications > Manage**](%s/plugins/servlet/upm?source=side_nav_manage_addons)
-* click "Upload app"
-* enter the following URL: %s%s`,
-		jiraURL, jiraURL, p.GetPluginURL(), routeACJSON)
 }
 
 func executeInstanceSelect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -321,7 +334,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, transition, instance, help",
+		AutoCompleteDesc: "Available commands: connect, disconnect, transition, settings, instance, help",
 		AutoCompleteHint: "[command]",
 	}
 }

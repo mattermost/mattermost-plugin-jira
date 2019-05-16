@@ -69,6 +69,9 @@ func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.
 	}
 	jiraUser.User = *juser
 
+	// Set default settings the first time a user connects
+	jiraUser.Settings = &UserSettings{Notifications: true}
+
 	err = jsi.Plugin.StoreUserInfoNotify(jsi, mattermostUserId, jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
