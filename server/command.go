@@ -12,11 +12,11 @@ import (
 const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira connect` - Connect your Mattermost account to your Jira account and subscribe to events\n" +
 	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
-	"* `/jira transition <issue-key> <state>` - Changes the state of a Jira issue.\n" +
+	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue.\n" +
+	"* `/jira assign <issuekey> <assignee>` - Change the assignee of a Jira issue.\n" +
 	"\nFor system administrators:\n" +
 	"* `/jira install cloud <URL>` - connect Mattermost to a cloud Jira instance located at <URL>\n" +
 	"* `/jira install server <URL>` - connect Mattermost to a server Jira instance located at <URL>\n" +
-	"* `/jira assign <issuekey> <assignee>` - Changes the assignee of a Jira issue.\n" +
 	""
 
 type CommandHandlerFunc func(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse
@@ -31,6 +31,7 @@ var jiraCommandHandler = CommandHandler{
 		"install/cloud":  executeInstallCloud,
 		"install/server": executeInstallServer,
 		"transition":     executeTransition,
+		"assign":         executeAssign,
 		"connect":        executeConnect,
 		"disconnect":     executeDisconnect,
 		//"webhook":        executeWebhookURL,
@@ -242,19 +243,19 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 
 func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 
-	if len(args) <= 1 {
+	if len(args) != 2 {
 		return responsef("Please specify both an issue key and assignee in the form `/jira assign <issue-key> <assignee>`.")
 	}
 
 	issueKey := args[0]
-	assignee := strings.Join(args[1:], " ")
+	assignee := args[1]
 
 	msg, err := p.assignJiraIssue(header.UserId, issueKey, assignee)
 	if err != nil {
 		return responsef("%v", err)
 	}
 
-	return msg
+	return responsef(msg)
 }
 
 func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
