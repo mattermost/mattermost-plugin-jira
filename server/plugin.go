@@ -23,19 +23,14 @@ const (
 
 type externalConfig struct {
 	// Bot username
-	UserName string
+	UserName string `json:"username"`
 
 	// Legacy 1.x Webhook secret
-	Secret string
-
-	// JIRAServerURL needs to be configured to run in the JIRA Server
-	// mode.
-	// TODO If JIRAServerURL is configured, add/select the instance as needed
-	JIRAServerURL string
+	Secret string `json:"secret"`
 }
 
-// config captures all cached values that need to be synchronized
 type config struct {
+	// externalConfig caches values from the plugin's settings in the server's config.json
 	externalConfig
 
 	// Cached actual bot user ID (derived from c.UserName)
