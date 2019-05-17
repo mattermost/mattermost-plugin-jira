@@ -346,10 +346,10 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 	}
 
 	var data []*jira.User
+	defer res.Body.Close()
 	if err := json.NewDecoder(res.Body).Decode(&data); err != nil {
 		return "", errors.WithMessage(err, "failed to decode incoming request")
 	}
-	defer res.Body.Close()
 
 	// handle number of returned jira users
 	if len(data) == 0 {
