@@ -123,7 +123,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		return statusCode, err
 	}
 
-	// Notify any users using a direct channel
+	// Notify any affected users using a direct channel
 	err = p.handleNotifications(parsed)
 	if err != nil {
 		p.errorf("httpWebhook, handleNotifications: %v", err)
@@ -345,7 +345,7 @@ func (p *Plugin) handleIssueUpdatedNotifications(ji Instance, parsed *parsedJIRA
 	}
 
 	message := "[%s](%s) assigned you to [%s](%s)"
-	err = p.CreateBotDMPost(mattermostUserId, fmt.Sprintf(message, parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL), "custom_jira_assigned")
+	err = p.CreateBotDMPost(ji, mattermostUserId, fmt.Sprintf(message, parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL), "custom_jira_assigned")
 	if err != nil {
 		return errors.Errorf("handleIssueUpdatedNotification failed: %v", err)
 	}
@@ -373,7 +373,7 @@ func (p *Plugin) handleCommentCreatedNotifications(ji Instance, parsed *parsedJI
 			continue
 		}
 
-		err = p.CreateBotDMPost(mattermostUserId,
+		err = p.CreateBotDMPost(ji, mattermostUserId,
 			fmt.Sprintf("[%s](%s) mentioned you on [%s](%s):\n>%s",
 				parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL, parsed.text),
 			JiraMentionPostType)
@@ -392,7 +392,7 @@ func (p *Plugin) handleCommentCreatedNotifications(ji Instance, parsed *parsedJI
 		return err
 	}
 
-	err = p.CreateBotDMPost(mattermostUserId,
+	err = p.CreateBotDMPost(ji, mattermostUserId,
 		fmt.Sprintf("[%s](%s) commented on [%s](%s):\n>%s",
 			parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL, parsed.text),
 		JiraCommentPostType)

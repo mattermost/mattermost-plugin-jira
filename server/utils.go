@@ -11,13 +11,23 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
-func (p *Plugin) CreateBotDMPost(userId, message, postType string) (returnErr error) {
+func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) (returnErr error) {
 	defer func() {
 		if returnErr != nil {
 			returnErr = errors.WithMessage(returnErr,
 				fmt.Sprintf("failed to create direct post to user %v: ", userId))
 		}
 	}()
+
+	// Don't send DMs to users who have turned off notifications
+	jiraUser, err := p.LoadJIRAUser(ji, userId)
+	if err != nil {
+		// not connected to Jira, so no need to send a DM, and no need to report an error
+		return
+	}
+	if !jiraUser.Settings.Notifications {
+		return
+	}
 
 	conf := p.getConfig()
 	channel, appErr := p.API.GetDirectChannel(userId, conf.botUserID)
