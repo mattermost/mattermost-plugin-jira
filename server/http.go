@@ -95,6 +95,7 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	case routeUserConnect:
 		return withInstance(p, w, r, httpUserConnect)
 	case routeUserDisconnect:
+		return withInstance(p, w, r, httpUserDisconnect)
 
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:

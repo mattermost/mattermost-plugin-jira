@@ -143,8 +143,20 @@ func (p *Plugin) getChannelsSubscribed(webhook *parsedJIRAWebhook) ([]string, er
 				}
 			case "project":
 				found := false
-				for _, acceptableEvent := range acceptableValues {
-					if acceptableEvent == webhook.Issue.Fields.Project.Key {
+				for _, acceptableProject := range acceptableValues {
+					if acceptableProject == webhook.Issue.Fields.Project.Key {
+						found = true
+						break
+					}
+				}
+				if !found {
+					acceptable = false
+					break
+				}
+			case "issue_type":
+				found := false
+				for _, acceptableIssueType := range acceptableValues {
+					if acceptableIssueType == webhook.Issue.Fields.IssueType.Id {
 						found = true
 						break
 					}
@@ -269,13 +281,17 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 
 	success := false
 	for !success {
-		initialBytes, newValue, err := readModify()
+		//initialBytes, newValue, err := readModify()
+		_, newValue, err := readModify()
 		if err != nil {
 			return err
 		}
 
 		var setError *model.AppError
-		success, setError = p.API.KVCompareAndSet(key, initialBytes, newValue)
+		// Commenting this out so we can support < 5.12 for 2.0
+		//success, setError = p.API.KVCompareAndSet(key, initialBytes, newValue)
+		setError = p.API.KVSet(key, newValue)
+		success = true
 		if setError != nil {
 			return errors.Wrap(setError, "problem writing value")
 		}
@@ -300,6 +316,7 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusForbidden, fmt.Errorf("Request URL: secret did not match")
 	}
 
+	defer r.Body.Close()
 	parsed, err := parse(r.Body, nil)
 	if err != nil {
 		return http.StatusInternalServerError, err
@@ -334,7 +351,7 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		}
 	}
 
-	return 200, nil
+	return http.StatusOK, nil
 }
 
 func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -361,7 +378,7 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte("{\"status\": \"OK\"}"))
 
-	return 200, nil
+	return http.StatusOK, nil
 }
 
 func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -388,7 +405,7 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte("{\"status\": \"OK\"}"))
 
-	return 200, nil
+	return http.StatusOK, nil
 }
 
 func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -409,7 +426,7 @@ func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte("{\"status\": \"OK\"}"))
 
-	return 200, nil
+	return http.StatusOK, nil
 }
 
 func httpChannelGetSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -436,7 +453,7 @@ func httpChannelGetSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(bytes)
 
-	return 200, nil
+	return http.StatusOK, nil
 }
 
 func httpChannelSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -450,6 +467,6 @@ func httpChannelSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Request)
 	case http.MethodPut:
 		return httpChannelEditSubscription(p, w, r)
 	default:
-		return http.StatusMethodNotAllowed, fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
+		return http.StatusMethodNotAllowed, fmt.Errorf("Request: " + r.Method + " is not allowed.")
 	}
 }

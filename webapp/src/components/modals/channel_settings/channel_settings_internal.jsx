@@ -162,9 +162,9 @@ export default class ChannelSettingsModalInner extends PureComponent {
                         type='submit'
                         btnClass='btn btn-primary'
                         saving={this.state.submitting}
-                    >
-                        {'Set Subscription'}
-                    </FormButton>
+                        defaultMessage='Set Subscription'
+                        savingMessage='Setting'
+                    />
                 </Modal.Footer>
             </form>
         );

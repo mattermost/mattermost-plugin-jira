@@ -32,6 +32,7 @@ type JIRAWebhookIssue struct {
 			IconURL string
 		}
 		IssueType struct {
+			Id      string
 			Name    string
 			IconURL string
 		}
