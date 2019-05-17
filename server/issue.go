@@ -186,11 +186,11 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 
 	api := ji.GetPlugin().API
 
-	comment := &struct {
-		PostId string       `json:"post_id"`
-		Fields jira.Comment `json:"fields"`
+	attach := &struct {
+		PostId   string `json:"post_id"`
+		IssueKey string `json:"issueKey"`
 	}{}
-	err := json.NewDecoder(r.Body).Decode(&comment)
+	err := json.NewDecoder(r.Body).Decode(&attach)
 	if err != nil {
 		return http.StatusBadRequest,
 			errors.WithMessage(err, "failed to decode incoming request")
@@ -212,14 +212,14 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 	}
 
 	// Lets add a permalink to the post in the Jira Description
-	post, appErr := api.GetPost(comment.PostId)
+	post, appErr := api.GetPost(attach.PostId)
 	if appErr != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to load post "+comment.PostId)
+			errors.WithMessage(appErr, "failed to load post "+attach.PostId)
 	}
 	if post == nil {
 		return http.StatusInternalServerError,
-			errors.New("failed to load post " + comment.PostId + ": not found")
+			errors.New("failed to load post " + attach.PostId + ": not found")
 	}
 
 	commentUser, appErr := api.GetUser(post.UserId)
@@ -228,50 +228,47 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 			errors.New("failed to load post.UserID " + post.UserId + ": not found")
 	}
 
-	permalink, err := getPermaLink(ji, comment.PostId, post)
+	permalink, err := getPermaLink(ji, attach.PostId, post)
 	if err != nil {
 		return http.StatusInternalServerError,
-			errors.New("failed to get permalink for " + comment.PostId + ": not found")
+			errors.New("failed to get permalink for " + attach.PostId + ": not found")
 	}
 
 	permalinkMessage := fmt.Sprintf("*@%s attached a* [message|%s] *from @%s*\n", jiraUser.User.Name, permalink, commentUser.Username)
 
-	if len(comment.Fields.Body) > 0 {
-		comment.Fields.Body += fmt.Sprintf("\n%v", permalinkMessage)
-	} else {
-		comment.Fields.Body = permalinkMessage
-	}
-	comment.Fields.Body += post.Message
+	var jiraComment jira.Comment
+	jiraComment.Body = permalinkMessage
+	jiraComment.Body += post.Message
 
-	commentAdded, _, err := jiraClient.Issue.AddComment(comment.Fields.ID, &comment.Fields)
+	commentAdded, _, err := jiraClient.Issue.AddComment(attach.IssueKey, &jiraComment)
 	if err != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to attach the comment, postId: "+comment.PostId)
+			errors.WithMessage(err, "failed to attach the comment, postId: "+attach.PostId)
 	}
 
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
-		Message:   fmt.Sprintf("Message attached to [%v](%v/browse/%v)", comment.Fields.ID, ji.GetURL(), comment.Fields.ID),
+		Message:   fmt.Sprintf("Message attached to [%v](%v/browse/%v)", attach.IssueKey, ji.GetURL(), attach.IssueKey),
 		ChannelId: post.ChannelId,
-		RootId:    comment.PostId,
+		RootId:    attach.PostId,
 		UserId:    mattermostUserId,
 	}
 	_, appErr = api.CreatePost(reply)
 	if appErr != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to create notification post "+comment.PostId)
+			errors.WithMessage(appErr, "failed to create notification post "+attach.PostId)
 	}
 
 	userBytes, err := json.Marshal(commentAdded)
 	if err != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to marshal response "+comment.PostId)
+			errors.WithMessage(err, "failed to marshal response "+attach.PostId)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(userBytes)
 	if err != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write response "+comment.PostId)
+			errors.WithMessage(err, "failed to write response "+attach.PostId)
 	}
 	return http.StatusOK, nil
 }
