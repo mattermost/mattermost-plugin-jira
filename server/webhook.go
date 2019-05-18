@@ -316,7 +316,10 @@ func (p *Plugin) handleNotifications(parsed *parsedJIRAWebhook) error {
 	// This bothers me, to do this for every webhook event...
 	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
-		return errors.Errorf("Failed to load current Jira instance: %v", err)
+		// It won't break anything if we can't find the Jira Instance here -- we just can't notify anyone.
+		return nil
+		// Alternative:
+		//return errors.Errorf("Failed to load current Jira instance: %v", err)
 	}
 
 	switch parsed.JIRAWebhook.WebhookEvent {
