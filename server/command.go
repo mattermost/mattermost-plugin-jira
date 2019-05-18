@@ -236,7 +236,7 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	if err != nil {
 		return responsef("Failed to load public key: %v", err)
 	}
-	return responsef(addResponseFormat, ji.GetURL(), p.GetSiteURL(), ji.GetMattermostKey(), pkey)
+	return responsef(addResponseFormat, ji.GetURL(), ji.GetMattermostKey(), pkey)
 }
 
 func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
