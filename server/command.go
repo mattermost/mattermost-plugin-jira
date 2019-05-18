@@ -30,7 +30,6 @@ var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
 		"install/cloud":  executeInstallCloud,
 		"install/server": executeInstallServer,
-		"create":              executeCreate,
 		"transition":     executeTransition,
 		"connect":        executeConnect,
 		"disconnect":     executeDisconnect,
@@ -272,15 +271,6 @@ func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 		return responsef(err.Error())
 	}
 	return responsef("Please use the following URL to set up a Jira webhook: %v", u)
-}
-
-func executeCreate(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	p.API.PublishWebSocketEvent("create_issue", map[string]interface{}{
-		"args":      args,
-		"channelId": header.ChannelId,
-	}, &model.WebsocketBroadcast{UserId: header.UserId})
-
-	return responsef("Creating issue with initial description: %s", strings.Join(args, " "))
 }
 
 func getCommand() *model.Command {

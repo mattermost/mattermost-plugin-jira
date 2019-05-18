@@ -95,7 +95,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	}
 
 	if err != nil {
-		message := "failed to create the issue, postId: " + create.PostId ", channelId: " + channelId
+		message := "failed to create the issue, postId: " + create.PostId + ", channelId: " + channelId
 		if resp != nil {
 			bb, _ := ioutil.ReadAll(resp.Body)
 			resp.Body.Close()
