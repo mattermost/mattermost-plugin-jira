@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -81,11 +82,11 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		}
 	}
 
-	created, _, err := jiraClient.Issue.Create(&jira.Issue{
+	created, resp, err := jiraClient.Issue.Create(&jira.Issue{
 		Fields: &create.Fields,
 	})
 
-	// For now, if we are not attaching to a post, just postId blank (this will only affect the error message)
+	// For now, if we are not attaching to a post, leave postId blank (this will only affect the error message)
 	postId := ""
 	channelId := create.ChannelId
 	if post != nil {
@@ -94,8 +95,13 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	}
 
 	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to create the issue, postId: "+postId+", channelId: "+channelId)
+		message := "failed to create the issue, postId: " + create.PostId ", channelId: " + channelId
+		if resp != nil {
+			bb, _ := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+			message += ", details:" + string(bb)
+		}
+		return http.StatusInternalServerError, errors.WithMessage(err, message)
 	}
 
 	// Upload file attachments in the background
@@ -172,12 +178,18 @@ func httpAPIGetCreateIssueMetadata(ji Instance, w http.ResponseWriter, r *http.R
 		return http.StatusInternalServerError, err
 	}
 
-	cimd, _, err := jiraClient.Issue.GetCreateMetaWithOptions(&jira.GetQueryOptions{
+	cimd, resp, err := jiraClient.Issue.GetCreateMetaWithOptions(&jira.GetQueryOptions{
 		Expand: "projects.issuetypes.fields",
 	})
 	if err != nil {
+		message := "failed to get CreateIssue metadata"
+		if resp != nil {
+			bb, _ := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+			message += ", details:" + string(bb)
+		}
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to get CreateIssue mettadata")
+			errors.WithMessage(err, message)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -213,11 +225,11 @@ func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) error {
 
 	transitions, _, err := jiraClient.Issue.GetTransitions(issueKey)
 	if err != nil {
-		return fmt.Errorf("We couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue.")
+		return errors.New("We couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue.")
 	}
 
 	if len(transitions) < 1 {
-		return fmt.Errorf("You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.")
+		return errors.New("You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.")
 	}
 
 	var transitionToUse *jira.Transition
@@ -229,7 +241,7 @@ func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) error {
 	}
 
 	if transitionToUse == nil {
-		return fmt.Errorf("We couldn't find the state. Please use a Jira state such as 'done' and try again.")
+		return errors.New("We couldn't find the state. Please use a Jira state such as 'done' and try again.")
 	}
 
 	if _, err := jiraClient.Issue.DoTransition(issueKey, transitionToUse.ID); err != nil {
