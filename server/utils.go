@@ -23,10 +23,10 @@ func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) 
 	jiraUser, err := p.LoadJIRAUser(ji, userId)
 	if err != nil {
 		// not connected to Jira, so no need to send a DM, and no need to report an error
-		return
+		return nil
 	}
 	if !jiraUser.Settings.Notifications {
-		return
+		return nil
 	}
 
 	conf := p.getConfig()
