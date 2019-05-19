@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -14,13 +13,9 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira connect` - Connect your Mattermost account to your Jira account and subscribe to events\n" +
 	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
 	"* `/jira transition <issue-key> <state>` - Changes the state of a Jira issue.\n" +
-	"* `/jira instance [add/list/select/delete]` - Manage connected Jira instances\n" +
-	"  * `add server <URL>` - Add a Jira Server instance\n" +
-	"  * `add cloud <URL>` - Add a Jira Cloud instance\n" +
-	"  * `list` - List known Jira instances\n" +
-	"  * `select <number or URL>` - Select a known instance as current\n" +
-	"  * `delete <number or URL>` - Delete a known instance, select the first remaining as the current\n" +
-	"* `/jira webhook` - Display a Jira webhook URL customized for the current team/channel\n" +
+	"\nFor system administrators:\n" +
+	"* `/jira install cloud <URL>` - connect Mattermost to a cloud Jira instance located at <URL>\n" +
+	"* `/jira install server <URL>` - connect Mattermost to a server Jira instance located at <URL>\n" +
 	""
 
 var commandRouter = ActionRouter{
@@ -33,24 +28,27 @@ var commandRouter = ActionRouter{
 	},
 	RouteHandlers: map[string]*ActionScript{
 		"instance/add/server": &ActionScript{
-			Handler: executeInstanceAddServer,
+			Filters: []ActionFunc{RequireCommandMattermostUserId, RequireMattermostSysAdmin},
+			Handler: executeInstallServer,
 		},
 		"instance/add/cloud": &ActionScript{
-			Handler: executeInstanceAddCloud,
+			Filters: []ActionFunc{RequireCommandMattermostUserId, RequireMattermostSysAdmin},
+			Handler: executeInstallCloud,
 		},
 		"instance/list": &ActionScript{
+			Filters: []ActionFunc{RequireCommandMattermostUserId, RequireMattermostSysAdmin},
 			Handler: executeInstanceList,
 		},
 		"instance/select": &ActionScript{
+			Filters: []ActionFunc{RequireCommandMattermostUserId, RequireMattermostSysAdmin},
 			Handler: executeInstanceSelect,
 		},
 		"instance/delete": &ActionScript{
+			Filters: []ActionFunc{RequireCommandMattermostUserId, RequireMattermostSysAdmin},
 			Handler: executeInstanceDelete,
 		},
 		"webhook": &ActionScript{
-			Handler: executeWebhookURL,
-		},
-		"webhook/url": &ActionScript{
+			Filters: []ActionFunc{RequireCommandMattermostUserId, RequireMattermostSysAdmin},
 			Handler: executeWebhookURL,
 		},
 		"transition": &ActionScript{
@@ -159,26 +157,64 @@ func executeInstanceList(a *Action) error {
 	return a.RespondPrintf(text)
 }
 
-func executeInstanceAddServer(a *Action) error {
+func executeInstallCloud(a *Action) error {
+	if len(a.CommandArgs) != 1 {
+		return executeHelp(a)
+	}
+	jiraURL := a.CommandArgs[0]
+
+	// Create an "uninitialized" instance of Jira Cloud that will
+	// receive the /installed callback
+	err := a.Plugin.CreateInactiveCloudInstance(jiraURL)
+	if err != nil {
+		return a.RespondError(0, err)
+	}
+
+	const addResponseFormat = `
+%s has been successfully installed. To finish the configuration, create a new app in your Jira instance following these steps:
+
+1. Navigate to [**Settings > Apps > Manage Apps**](%s/plugins/servlet/upm?source=side_nav_manage_addons).
+  - For older versions of Jira, navigate to **Administration > Applications > Add-ons > Manage add-ons**.
+2. Click **Settings** at bottom of page, enable development mode, and apply this change.
+  - Enabling development mode allows you to install apps that are not from the Atlassian Marketplace.
+3. Click **Upload app**.
+4. In the **From this URL field**, enter: %s%s
+5. Wait for the app to install. Once completed, you should see an "Installed and ready to go!" message.
+6. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
+7. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
+
+If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://about.mattermost.com/default-jira-plugin) for troubleshooting help.
+`
+
+	// TODO What is the exact group membership in Jira required? Site-admins?
+	return a.RespondPrintf(addResponseFormat, jiraURL, jiraURL, a.Plugin.GetPluginURL(), routeACJSON)
+}
+
+func executeInstallServer(a *Action) error {
 	if len(a.CommandArgs) != 1 {
 		return executeHelp(a)
 	}
 	jiraURL := a.CommandArgs[0]
 
 	const addResponseFormat = `` +
-		`Instance has been added. You need to add an Application Link to it in Jira now.
-1. Click %s, login as an admin.
-2. Navigate to (Jira) Settings > Applications > Application Links.
-3. Enter %s, anc click "Create new link".
-4. In "Configure Application URL" screen ignore any errors, click "Continue".
-5. In "Link Applications":
-  - Application Name: Mattermost
-  - Application Type: Generic Application
-  - IMPORTANT: Check "Create incoming link"
-6. In "Link Applications", pt. 2:
-  - Consumer Key: %s
-  - Consumer Name: Mattermost
-  - Public Key: %s
+		`Server instance has been installed. To finish the configuration, add an Application Link in your Jira instance following these steps:
+
+1. Navigate to **Settings > Applications > Application Links**
+2. Enter %s as the application link, then click **Create new link**.
+3. In **Configure Application URL** screen, confirm your Mattermost URL is included as the application URL. Ignore any displayed errors and click **Continue**.
+4. In **Link Applications** screen, set the following values:
+  - **Application Name**: Mattermost
+  - **Application Type**: Generic Application
+5. Check the **Create incoming link** value, then click **Continue**.
+6. In the following **Link Applications** screen, set the following values:
+  - **Consumer Key**: %s
+  - **Consumer Name**: Mattermost
+  - **Public Key**: %s
+7. Click **Continue**.
+6. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
+7. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
+
+If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://about.mattermost.com/default-jira-plugin) for troubleshooting help.
 `
 	ji := NewJIRAServerInstance(jiraURL, a.Plugin.GetPluginKey())
 	err := a.Plugin.StoreJIRAInstance(ji)
@@ -194,112 +230,7 @@ func executeInstanceAddServer(a *Action) error {
 	if err != nil {
 		return a.RespondError(0, err)
 	}
-	return a.RespondPrintf(addResponseFormat,
-		ji.GetURL(), a.Plugin.GetSiteURL(), ji.GetMattermostKey(), pkey)
-}
-
-func executeInstanceAddCloud(a *Action) error {
-	if len(a.CommandArgs) != 1 {
-		return executeHelp(a)
-	}
-	jiraURL := a.CommandArgs[0]
-
-	// Create an "uninitialized" instance of Jira Cloud that will
-	// receive the /installed callback
-	err := a.Plugin.CreateInactiveCloudInstance(jiraURL)
-	if err != nil {
-		return a.RespondError(0, err)
-	}
-	// TODO What is the exact group membership in Jira required? Site-admins?
-	return a.RespondPrintf(`%s has been successfully added. To complete the installation:
-* navigate to [**Jira > Applications > Manage**](%s/plugins/servlet/upm?source=side_nav_manage_addons)
-* click "Upload app"
-* enter the following URL: %s%s`,
-		jiraURL, jiraURL, a.Plugin.GetPluginURL(), routeACJSON)
-}
-
-func executeInstanceSelect(a *Action) error {
-	if len(a.CommandArgs) != 1 {
-		return executeHelp(a)
-	}
-	instanceKey := a.CommandArgs[0]
-	num, err := strconv.ParseUint(instanceKey, 10, 8)
-	if err == nil {
-		known, loadErr := a.Plugin.LoadKnownJIRAInstances()
-		if loadErr != nil {
-			return a.RespondError(0, err)
-		}
-		if num < 1 || int(num) > len(known) {
-			return a.RespondError(0, nil,
-				"Wrong instance number %v, must be 1-%v\n", num, len(known)+1)
-		}
-
-		keys := []string{}
-		for key := range known {
-			keys = append(keys, key)
-		}
-		sort.Strings(keys)
-		instanceKey = keys[num-1]
-	}
-
-	ji, err := a.Plugin.LoadJIRAInstance(instanceKey)
-	if err != nil {
-		return a.RespondError(0, err)
-	}
-	err = a.Plugin.StoreCurrentJIRAInstance(ji)
-	if err != nil {
-		return a.RespondError(0, err)
-	}
-
-	a.CommandArgs = []string{}
-	return executeInstanceList(a)
-}
-
-func executeInstanceDelete(a *Action) error {
-	if len(a.CommandArgs) != 1 {
-		return executeHelp(a)
-	}
-	instanceKey := a.CommandArgs[0]
-
-	known, err := a.Plugin.LoadKnownJIRAInstances()
-	if err != nil {
-		return a.RespondError(0, err)
-	}
-	if len(known) == 0 {
-		return a.RespondError(0, nil,
-			"There are no instances to delete.\n")
-	}
-
-	num, err := strconv.ParseUint(instanceKey, 10, 8)
-	if err == nil {
-		if num < 1 || int(num) > len(known) {
-			return a.RespondError(0, nil,
-				"Wrong instance number %v, must be 1-%v\n", num, len(known)+1)
-		}
-
-		keys := []string{}
-		for key := range known {
-			keys = append(keys, key)
-		}
-		sort.Strings(keys)
-		instanceKey = keys[num-1]
-	}
-
-	// Remove the instance
-	err = a.Plugin.DeleteJiraInstance(instanceKey)
-	if err != nil {
-		return a.RespondError(0, err)
-	}
-
-	// if that was our only instance, just respond with an empty list.
-	if len(known) == 1 {
-		a.CommandArgs = []string{}
-		return executeInstanceList(a)
-	}
-
-	// Select instance #1
-	a.CommandArgs = []string{"1"}
-	return executeInstanceSelect(a)
+	return a.RespondPrintf(addResponseFormat, ji.GetURL(), ji.GetMattermostKey(), pkey)
 }
 
 func executeTransition(a *Action) error {
@@ -333,7 +264,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, transition, instance, help",
+		AutoCompleteDesc: "Available commands: connect, disconnect, transition, install cloud, install server, help",
 		AutoCompleteHint: "[command]",
 	}
 }

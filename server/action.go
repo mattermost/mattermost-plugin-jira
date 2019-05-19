@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/dgrijalva/jwt-go"
@@ -87,6 +88,14 @@ func RequireMattermostUser(a *Action) error {
 
 	a.MattermostUser = mmuser
 	a.Plugin.debugf("action: loaded Mattermost user %v", mmuser.GetDisplayName(""))
+	return nil
+}
+
+func RequireMattermostSysAdmin(a *Action) error {
+	if !strings.Contains(a.MattermostUser.Roles, "system_admin") {
+		return a.RespondError(http.StatusUnauthorized, nil,
+			"reserverd for system administrators")
+	}
 	return nil
 }
 
