@@ -5,11 +5,6 @@ package main
 
 import (
 	"net/http"
-	"os"
-	"path/filepath"
-	"text/template"
-
-	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/plugin"
 )
@@ -34,11 +29,23 @@ const (
 	routeUserDisconnect            = "/user/disconnect"
 )
 
+func httpPostFilter(ff ...ActionFunc) ActionFilter {
+	return append(ActionFilter{RequireHTTPPost}, ff...)
+}
+
+func httpGetFilter(ff ...ActionFunc) ActionFilter {
+	return append(ActionFilter{RequireHTTPPost}, ff...)
+}
+
+var httpInstanceFilter = ActionFilter{RequireHTTPMattermostUserId, RequireInstance}
+var httpJiraUserFilter = ActionFilter{RequireHTTPMattermostUserId, RequireInstance, RequireJiraUser}
+var httpJiraClientFilter = append(httpJiraUserFilter, RequireJiraClient)
+
 var httpRouter = ActionRouter{
 	DefaultRouteHandler: func(a *Action) error {
 		return a.RespondError(http.StatusNotFound, nil, "not found")
 	},
-	Log: []ActionFunc{
+	Log: ActionFilter{
 		func(a *Action) error {
 			if a.HTTPStatusCode == 0 {
 				a.HTTPStatusCode = http.StatusOK
@@ -53,84 +60,31 @@ var httpRouter = ActionRouter{
 	},
 	RouteHandlers: map[string]*ActionScript{
 		// MM client APIs
-		routeAPICreateIssue: {
-			Filters: []ActionFunc{
-				RequireHTTPPost,
-				RequireHTTPMattermostUserId,
-				RequireJiraClient,
-			},
-			Handler: httpAPICreateIssue,
-		},
-		routeAPIAttachCommentToIssue: {
-			Filters: []ActionFunc{
-				RequireHTTPPost,
-				RequireHTTPMattermostUserId,
-				RequireJiraClient,
-			},
-			Handler: httpAPIAttachCommentToIssue,
-		},
+		routeAPICreateIssue:            {Filter: httpPostFilter(httpJiraClientFilter...), Handler: httpAPICreateIssue},
+		routeAPIAttachCommentToIssue:   {Filter: httpPostFilter(httpJiraClientFilter...), Handler: httpAPIAttachCommentToIssue},
+		routeAPIGetCreateIssueMetadata: {Filter: httpGetFilter(httpJiraClientFilter...), Handler: httpAPIGetCreateIssueMetadata},
+		routeAPIUserInfo:               {Filter: httpGetFilter(httpJiraUserFilter...), Handler: httpAPIGetUserInfo},
 
-		routeAPIGetCreateIssueMetadata: {
-			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPMattermostUserId, RequireJiraClient},
-			Handler: httpAPIGetCreateIssueMetadata,
-		},
-		routeAPIUserInfo: {
-			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPMattermostUserId, RequireJiraUser},
-			Handler: httpAPIGetUserInfo,
-		},
 		// Atlassian Connect application
-		routeACInstalled: {
-			Filters: []ActionFunc{RequireHTTPPost},
-			Handler: httpACInstalled,
-		},
-		routeACJSON: {
-			Filters: []ActionFunc{RequireHTTPGet},
-			Handler: httpACJSON,
-		},
+		routeACInstalled: {Filter: httpPostFilter(), Handler: httpACInstalled},
+		routeACJSON:      {Filter: httpGetFilter(), Handler: httpACJSON},
 
 		// User connect and disconnect URLs
-		routeUserConnect: {
-			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPMattermostUserId, RequireInstance},
-			Handler: httpUserConnect,
-		},
-		routeUserDisconnect: {
-			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPMattermostUserId, RequireInstance, RequireJiraUser},
-			Handler: httpUserDisconnect,
-		},
+		routeUserConnect:    {Filter: httpGetFilter(RequireHTTPMattermostUserId, RequireInstance), Handler: httpUserConnect},
+		routeUserDisconnect: {Filter: httpGetFilter(httpJiraUserFilter...), Handler: httpUserDisconnect},
 
 		// Atlassian Connect user mapping
-		routeACUserRedirectWithToken: {
-			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPCloudJWT},
-			Handler: httpACUserRedirect,
-		},
-		routeACUserConfirm: {
-			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPCloudJWT},
-			Handler: httpACUserInteractive,
-		},
-		routeACUserConnected: {
-			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPCloudJWT},
-			Handler: httpACUserInteractive,
-		},
-		routeACUserDisconnected: {
-			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPCloudJWT},
-			Handler: httpACUserInteractive,
-		},
+		routeACUserRedirectWithToken: {Filter: httpGetFilter(RequireHTTPCloudJWT), Handler: httpACUserRedirect},
+		routeACUserConfirm:           {Filter: httpGetFilter(RequireHTTPCloudJWT), Handler: httpACUserInteractive},
+		routeACUserConnected:         {Filter: httpGetFilter(RequireHTTPCloudJWT), Handler: httpACUserInteractive},
+		routeACUserDisconnected:      {Filter: httpGetFilter(RequireHTTPCloudJWT), Handler: httpACUserInteractive},
 
 		// Oauth1 (Jira Server) user mapping
-		routeOAuth1Complete: {
-			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPMattermostUserId, RequireServerInstance, RequireMattermostUser},
-			Handler: httpOAuth1Complete,
-		},
+		routeOAuth1Complete: {Filter: httpGetFilter(RequireHTTPMattermostUserId, RequireServerInstance, RequireMattermostUser), Handler: httpOAuth1Complete},
 
 		// incoming webhooks
-		routeIncomingWebhook: {
-			Filters: []ActionFunc{RequireHTTPPost},
-			Handler: httpWebhook,
-		},
-		routeIncomingIssueEvent: {
-			Filters: []ActionFunc{RequireHTTPPost},
-			Handler: httpWebhook,
-		},
+		routeIncomingWebhook:    {Filter: httpPostFilter(), Handler: httpWebhook},
+		routeIncomingIssueEvent: {Filter: httpPostFilter(), Handler: httpWebhook},
 	},
 }
 
@@ -144,29 +98,4 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	httpRouter.Run(r.URL.Path, action)
-}
-
-func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {
-	templates := make(map[string]*template.Template)
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			return nil
-		}
-		template, err := template.ParseFiles(path)
-		if err != nil {
-			p.errorf("OnActivate: failed to parse template %s: %v", path, err)
-			return nil
-		}
-		key := path[len(dir):]
-		templates[key] = template
-		p.debugf("loaded template %s", key)
-		return nil
-	})
-	if err != nil {
-		return nil, errors.WithMessage(err, "OnActivate: failed to load templates")
-	}
-	return templates, nil
 }

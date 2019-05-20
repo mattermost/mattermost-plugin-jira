@@ -64,6 +64,7 @@ func httpACInstalled(a *Action) error {
 
 	// Create a permanent instance record, also store it as current
 	jiraInstance := NewJIRACloudInstance(asc.BaseURL, true, string(body), &asc)
+	// StoreJIRAInstance also updates the list of known Jira instances
 	err = a.Plugin.StoreJIRAInstance(jiraInstance)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)

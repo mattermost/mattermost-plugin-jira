@@ -19,19 +19,13 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira install server <URL>` - connect Mattermost to a server Jira instance located at <URL>\n" +
 	""
 
-var commandSysAdmin = []ActionFunc{
-	RequireCommandMattermostUserId,
-	RequireMattermostSysAdmin,
-}
-
-var commandJiraClient = []ActionFunc{
-	RequireCommandMattermostUserId,
-	RequireJiraClient,
-}
+var instanceFilter = ActionFilter{RequireInstance}
+var commandSysAdminFilter = ActionFilter{RequireCommandMattermostUserId, RequireMattermostSysAdmin}
+var commandJiraClientFilter = ActionFilter{RequireCommandMattermostUserId, RequireJiraClient}
 
 var commandRouter = ActionRouter{
 	DefaultRouteHandler: executeHelp,
-	Log: []ActionFunc{
+	Log: ActionFilter{
 		func(a *Action) error {
 			if a.Err != nil {
 				a.Plugin.errorf("command: %q error:%v", a.CommandHeader.Command, a.Err)
@@ -42,41 +36,17 @@ var commandRouter = ActionRouter{
 		},
 	},
 	RouteHandlers: map[string]*ActionScript{
-		"connect": {
-			Handler: executeConnect,
-		},
-		"disconnect": {
-			Handler: executeDisconnect,
-		},
-		"install/server": {
-			Filters: commandSysAdmin,
-			Handler: executeInstallServer},
-		"install/cloud": {
-			Filters: commandSysAdmin,
-			Handler: executeInstallCloud,
-		},
-		"transition": {
-			Filters: commandJiraClient,
-			Handler: executeTransition,
-		},
+		"connect":        {Filter: instanceFilter, Handler: executeConnect},
+		"disconnect":     {Filter: instanceFilter, Handler: executeDisconnect},
+		"install/server": {Filter: commandSysAdminFilter, Handler: executeInstallServer},
+		"install/cloud":  {Filter: commandSysAdminFilter, Handler: executeInstallCloud},
+		"transition":     {Filter: commandJiraClientFilter, Handler: executeTransition},
 
 		// used for debugging, uncomment if needed
-		"instance/list": {
-			Filters: commandSysAdmin,
-			Handler: executeInstanceList,
-		},
-		"instance/select": {
-			Filters: commandSysAdmin,
-			Handler: executeInstanceSelect,
-		},
-		"instance/delete": {
-			Filters: commandSysAdmin,
-			Handler: executeInstanceDelete,
-		},
-		"webhook": {
-			Filters: commandSysAdmin,
-			Handler: executeWebhookURL,
-		},
+		// "instance/list":   {Filter: commandSysAdminFilter, Handler: executeInstanceList},
+		// "instance/select": {Filter: commandSysAdminFilter, Handler: executeInstanceSelect},
+		// "instance/delete": {Filter: commandSysAdminFilter, Handler: executeInstanceDelete},
+		// "webhook":         {Filter: commandSysAdminFilter, Handler: executeWebhookURL},
 	},
 }
 
@@ -232,12 +202,12 @@ func executeInstallServer(a *Action) error {
 
 If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://about.mattermost.com/default-jira-plugin) for troubleshooting help.
 `
-	ji := NewJIRAServerInstance(jiraURL, a.Plugin.GetPluginKey())
-	err := a.Plugin.StoreJIRAInstance(ji)
+	jsi := NewJIRAServerInstance(jiraURL, a.Plugin.GetPluginKey())
+	err := a.Plugin.StoreJIRAInstance(jsi)
 	if err != nil {
 		return a.RespondError(0, err)
 	}
-	err = a.Plugin.StoreCurrentJIRAInstance(ji)
+	err = a.Plugin.StoreCurrentJIRAInstance(jsi)
 	if err != nil {
 		return a.RespondError(0, err)
 	}
@@ -246,7 +216,7 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	if err != nil {
 		return a.RespondError(0, err)
 	}
-	return a.RespondPrintf(addResponseFormat, ji.GetURL(), ji.GetMattermostKey(), pkey)
+	return a.RespondPrintf(addResponseFormat, jsi.GetURL(), jsi.GetMattermostKey(), pkey)
 }
 
 func executeTransition(a *Action) error {

@@ -53,15 +53,17 @@ type Action struct {
 	JiraRawJWT        string
 }
 
+type ActionFilter []ActionFunc
+
 type ActionScript struct {
-	Filters []ActionFunc
+	Filter  ActionFilter
 	Handler ActionFunc
 }
 
 type ActionRouter struct {
 	RouteHandlers       map[string]*ActionScript
 	DefaultRouteHandler ActionFunc
-	Log                 []ActionFunc
+	Log                 ActionFilter
 }
 
 func NewAction(p *Plugin, c *plugin.Context) *Action {
@@ -373,20 +375,9 @@ func (ar ActionRouter) Run(key string, a *Action) {
 		}
 	}
 
-	// A helper to run a []ActionFunc
-	runList := func(list []ActionFunc) error {
-		for _, f := range list {
-			err := f(a)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-
 	// Run the script
 	func() {
-		err := runList(script.Filters)
+		err := script.Filter.Run(a)
 		if err != nil {
 			return
 		}
@@ -399,5 +390,15 @@ func (ar ActionRouter) Run(key string, a *Action) {
 	}()
 
 	// Log
-	runList(ar.Log)
+	_ = ar.Log.Run(a)
+}
+
+func (af ActionFilter) Run(a *Action) error {
+	for _, f := range af {
+		err := f(a)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

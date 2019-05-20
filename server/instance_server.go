@@ -26,7 +26,7 @@ type jiraServerInstance struct {
 
 var _ Instance = (*jiraServerInstance)(nil)
 
-func NewJIRAServerInstance(jiraURL, mattermostKey string) Instance {
+func NewJIRAServerInstance(jiraURL, mattermostKey string) *jiraServerInstance {
 	return &jiraServerInstance{
 		JIRAInstance:  NewJIRAInstance(JIRATypeServer, jiraURL),
 		MattermostKey: mattermostKey,
