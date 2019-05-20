@@ -35,6 +35,7 @@ type Action struct {
 	CommandResponse    *model.CommandResponse
 	HTTPResponseWriter http.ResponseWriter
 	HTTPStatusCode     int
+	Err                error
 
 	// Variables
 	Instance         Instance
@@ -92,6 +93,10 @@ func RequireMattermostUser(a *Action) error {
 }
 
 func RequireMattermostSysAdmin(a *Action) error {
+	err := RequireMattermostUser(a)
+	if err != nil {
+		return err
+	}
 	if !strings.Contains(a.MattermostUser.Roles, "system_admin") {
 		return a.RespondError(http.StatusUnauthorized, nil,
 			"reserverd for system administrators")
@@ -295,6 +300,7 @@ func (a *Action) RespondError(httpStatusCode int, err error, wrap ...interface{}
 		a.CommandResponse = commandResponse(err.Error())
 	}
 
+	a.Err = err
 	return err
 }
 

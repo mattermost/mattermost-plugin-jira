@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -18,49 +19,40 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira install server <URL>` - connect Mattermost to a server Jira instance located at <URL>\n" +
 	""
 
+var commandSysAdmin = []ActionFunc{
+	RequireCommandMattermostUserId,
+	RequireMattermostSysAdmin,
+}
+
+var commandJiraClient = []ActionFunc{
+	RequireCommandMattermostUserId,
+	RequireJiraClient,
+}
+
 var commandRouter = ActionRouter{
 	DefaultRouteHandler: executeHelp,
 	Log: []ActionFunc{
 		func(a *Action) error {
-			a.Plugin.debugf("command: %q", a.CommandHeader.Command)
+			if a.Err != nil {
+				a.Plugin.errorf("command: %q error:%v", a.CommandHeader.Command, a.Err)
+			} else {
+				a.Plugin.debugf("command: %q", a.CommandHeader.Command)
+			}
 			return nil
 		},
 	},
 	RouteHandlers: map[string]*ActionScript{
-		"instance/add/server": &ActionScript{
-			Filters: []ActionFunc{RequireCommandMattermostUserId, RequireMattermostSysAdmin},
-			Handler: executeInstallServer,
-		},
-		"instance/add/cloud": &ActionScript{
-			Filters: []ActionFunc{RequireCommandMattermostUserId, RequireMattermostSysAdmin},
-			Handler: executeInstallCloud,
-		},
-		"instance/list": &ActionScript{
-			Filters: []ActionFunc{RequireCommandMattermostUserId, RequireMattermostSysAdmin},
-			Handler: executeInstanceList,
-		},
-		"instance/select": &ActionScript{
-			Filters: []ActionFunc{RequireCommandMattermostUserId, RequireMattermostSysAdmin},
-			Handler: executeInstanceSelect,
-		},
-		"instance/delete": &ActionScript{
-			Filters: []ActionFunc{RequireCommandMattermostUserId, RequireMattermostSysAdmin},
-			Handler: executeInstanceDelete,
-		},
-		"webhook": &ActionScript{
-			Filters: []ActionFunc{RequireCommandMattermostUserId, RequireMattermostSysAdmin},
-			Handler: executeWebhookURL,
-		},
-		"transition": &ActionScript{
-			Filters: []ActionFunc{RequireCommandMattermostUserId, RequireJiraClient},
-			Handler: executeTransition,
-		},
-		"connect": &ActionScript{
-			Handler: executeConnect,
-		},
-		"disconnect": &ActionScript{
-			Handler: executeDisconnect,
-		},
+		"connect":        &ActionScript{Handler: executeConnect},
+		"disconnect":     &ActionScript{Handler: executeDisconnect},
+		"install/server": &ActionScript{Filters: commandSysAdmin, Handler: executeInstallServer},
+		"install/cloud":  &ActionScript{Filters: commandSysAdmin, Handler: executeInstallCloud},
+		"transition":     &ActionScript{Filters: commandJiraClient, Handler: executeTransition},
+
+		// used for debugging, uncomment if needed
+		"instance/list":   &ActionScript{Filters: commandSysAdmin, Handler: executeInstanceList},
+		"instance/select": &ActionScript{Filters: commandSysAdmin, Handler: executeInstanceSelect},
+		"instance/delete": &ActionScript{Filters: commandSysAdmin, Handler: executeInstanceDelete},
+		"webhook":         &ActionScript{Filters: commandSysAdmin, Handler: executeWebhookURL},
 	},
 }
 
@@ -276,4 +268,88 @@ func commandResponse(format string, args ...interface{}) *model.CommandResponse 
 		IconURL:      PluginIconURL,
 		Type:         model.POST_DEFAULT,
 	}
+}
+
+func executeInstanceSelect(a *Action) error {
+	if len(a.CommandArgs) != 1 {
+		return executeHelp(a)
+	}
+	instanceKey := a.CommandArgs[0]
+	num, err := strconv.ParseUint(instanceKey, 10, 8)
+	if err == nil {
+		known, loadErr := a.Plugin.LoadKnownJIRAInstances()
+		if loadErr != nil {
+			return a.RespondError(0, err)
+		}
+		if num < 1 || int(num) > len(known) {
+			return a.RespondError(0, nil,
+				"Wrong instance number %v, must be 1-%v\n", num, len(known))
+		}
+
+		keys := []string{}
+		for key := range known {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		instanceKey = keys[num-1]
+	}
+
+	ji, err := a.Plugin.LoadJIRAInstance(instanceKey)
+	if err != nil {
+		return a.RespondError(0, err)
+	}
+	err = a.Plugin.StoreCurrentJIRAInstance(ji)
+	if err != nil {
+		return a.RespondError(0, err)
+	}
+
+	a.CommandArgs = []string{}
+	return executeInstanceList(a)
+}
+
+func executeInstanceDelete(a *Action) error {
+	if len(a.CommandArgs) != 1 {
+		return executeHelp(a)
+	}
+	instanceKey := a.CommandArgs[0]
+
+	known, err := a.Plugin.LoadKnownJIRAInstances()
+	if err != nil {
+		return a.RespondError(0, err)
+	}
+	if len(known) == 0 {
+		return a.RespondError(0, nil,
+			"There are no instances to delete.\n")
+	}
+
+	num, err := strconv.ParseUint(instanceKey, 10, 8)
+	if err == nil {
+		if num < 1 || int(num) > len(known) {
+			return a.RespondError(0, nil,
+				"Wrong instance number %v, must be 1-%v\n", num, len(known)+1)
+		}
+
+		keys := []string{}
+		for key := range known {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		instanceKey = keys[num-1]
+	}
+
+	// Remove the instance
+	err = a.Plugin.DeleteJiraInstance(instanceKey)
+	if err != nil {
+		return a.RespondError(0, err)
+	}
+
+	// if that was our only instance, just respond with an empty list.
+	if len(known) == 1 {
+		a.CommandArgs = []string{}
+		return executeInstanceList(a)
+	}
+
+	// Select instance #1
+	a.CommandArgs = []string{"1"}
+	return executeInstanceSelect(a)
 }

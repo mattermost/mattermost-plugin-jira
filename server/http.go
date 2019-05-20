@@ -42,7 +42,11 @@ var httpRouter = ActionRouter{
 			if a.HTTPStatusCode == 0 {
 				a.HTTPStatusCode = http.StatusOK
 			}
-			a.Plugin.debugf("http: %v %s", a.HTTPStatusCode, a.HTTPRequest.URL.String())
+			if a.Err != nil {
+				a.Plugin.errorf("http: %v %s %v", a.HTTPStatusCode, a.HTTPRequest.URL.String(), a.Err)
+			} else {
+				a.Plugin.debugf("http: %v %s", a.HTTPStatusCode, a.HTTPRequest.URL.String())
+			}
 			return nil
 		},
 	},
