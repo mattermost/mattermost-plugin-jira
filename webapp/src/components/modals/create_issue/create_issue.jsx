@@ -192,7 +192,7 @@ export default class CreateIssueModal extends PureComponent {
             >
                 <Modal.Header closeButton={true}>
                     <Modal.Title>
-                        {'Create Jira Ticket'}
+                        {'Create Jira Issue'}
                     </Modal.Title>
                 </Modal.Header>
                 <form
