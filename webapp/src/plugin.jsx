@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import ChannelHeaderButtonIcon from 'components/icon';
+import JiraIcon from 'components/icon';
 
 import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue';
 import CreateIssueModal from 'components/modals/create_issue';
@@ -23,7 +23,7 @@ export default class Plugin {
             registry.registerRootComponent(ChannelSettingsModal);
             registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
             registry.registerChannelHeaderButtonAction(
-                <ChannelHeaderButtonIcon/>,
+                <JiraIcon/>,
                 (channel) => store.dispatch(openChannelSettings(channel.id)),
                 'JIRA',
             );

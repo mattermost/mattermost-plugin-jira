@@ -4,7 +4,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-export default class ChannelHeaderButtonIcon extends React.PureComponent {
+export default class JiraIcon extends React.PureComponent {
     static propTypes = {
         type: PropTypes.string,
     }
