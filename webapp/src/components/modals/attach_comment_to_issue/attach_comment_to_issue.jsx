@@ -109,7 +109,7 @@ export default class AttachIssueModal extends PureComponent {
                         label={'Project'}
                         required={true}
                         onChange={this.handleProjectChange}
-                        placeholder={'Select...'}
+                        placeholder={'Select project'}
                         options={projectOptions}
                         isMuli={false}
                         key={'LT'}
