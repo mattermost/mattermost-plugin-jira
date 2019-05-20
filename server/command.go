@@ -42,17 +42,41 @@ var commandRouter = ActionRouter{
 		},
 	},
 	RouteHandlers: map[string]*ActionScript{
-		"connect":        &ActionScript{Handler: executeConnect},
-		"disconnect":     &ActionScript{Handler: executeDisconnect},
-		"install/server": &ActionScript{Filters: commandSysAdmin, Handler: executeInstallServer},
-		"install/cloud":  &ActionScript{Filters: commandSysAdmin, Handler: executeInstallCloud},
-		"transition":     &ActionScript{Filters: commandJiraClient, Handler: executeTransition},
+		"connect": {
+			Handler: executeConnect,
+		},
+		"disconnect": {
+			Handler: executeDisconnect,
+		},
+		"install/server": {
+			Filters: commandSysAdmin,
+			Handler: executeInstallServer},
+		"install/cloud": {
+			Filters: commandSysAdmin,
+			Handler: executeInstallCloud,
+		},
+		"transition": {
+			Filters: commandJiraClient,
+			Handler: executeTransition,
+		},
 
 		// used for debugging, uncomment if needed
-		"instance/list":   &ActionScript{Filters: commandSysAdmin, Handler: executeInstanceList},
-		"instance/select": &ActionScript{Filters: commandSysAdmin, Handler: executeInstanceSelect},
-		"instance/delete": &ActionScript{Filters: commandSysAdmin, Handler: executeInstanceDelete},
-		"webhook":         &ActionScript{Filters: commandSysAdmin, Handler: executeWebhookURL},
+		"instance/list": {
+			Filters: commandSysAdmin,
+			Handler: executeInstanceList,
+		},
+		"instance/select": {
+			Filters: commandSysAdmin,
+			Handler: executeInstanceSelect,
+		},
+		"instance/delete": {
+			Filters: commandSysAdmin,
+			Handler: executeInstanceDelete,
+		},
+		"webhook": {
+			Filters: commandSysAdmin,
+			Handler: executeWebhookURL,
+		},
 	},
 }
 

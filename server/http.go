@@ -33,6 +33,11 @@ const (
 	routeUserDisconnect            = "/user/disconnect"
 )
 
+var httpRequireJiraClient = []ActionFunc{
+	RequireCommandMattermostUserId,
+	RequireJiraClient,
+}
+
 var httpRouter = ActionRouter{
 	DefaultRouteHandler: func(a *Action) error {
 		return a.RespondError(http.StatusNotFound, nil, "not found")
@@ -52,68 +57,68 @@ var httpRouter = ActionRouter{
 	},
 	RouteHandlers: map[string]*ActionScript{
 		// MM client APIs
-		routeAPICreateIssue: &ActionScript{
+		routeAPICreateIssue: {
 			Filters: []ActionFunc{RequireHTTPPost, RequireHTTPMattermostUserId, RequireJiraClient},
 			Handler: httpAPICreateIssue,
 		},
-		routeAPIGetCreateIssueMetadata: &ActionScript{
+		routeAPIGetCreateIssueMetadata: {
 			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPMattermostUserId, RequireJiraClient},
 			Handler: httpAPIGetCreateIssueMetadata,
 		},
-		routeAPIUserInfo: &ActionScript{
+		routeAPIUserInfo: {
 			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPMattermostUserId, RequireJiraUser},
 			Handler: httpAPIGetUserInfo,
 		},
 		// Atlassian Connect application
-		routeACInstalled: &ActionScript{
+		routeACInstalled: {
 			Filters: []ActionFunc{RequireHTTPPost},
 			Handler: httpACInstalled,
 		},
-		routeACJSON: &ActionScript{
+		routeACJSON: {
 			Filters: []ActionFunc{RequireHTTPGet},
 			Handler: httpACJSON,
 		},
 
 		// User connect and disconnect URLs
-		routeUserConnect: &ActionScript{
+		routeUserConnect: {
 			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPMattermostUserId, RequireInstance},
 			Handler: httpUserConnect,
 		},
-		routeUserDisconnect: &ActionScript{
+		routeUserDisconnect: {
 			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPMattermostUserId, RequireInstance, RequireJiraUser},
 			Handler: httpUserDisconnect,
 		},
 
 		// Atlassian Connect user mapping
-		routeACUserRedirectWithToken: &ActionScript{
+		routeACUserRedirectWithToken: {
 			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPCloudJWT},
 			Handler: httpACUserRedirect,
 		},
-		routeACUserConfirm: &ActionScript{
+		routeACUserConfirm: {
 			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPCloudJWT},
 			Handler: httpACUserInteractive,
 		},
-		routeACUserConnected: &ActionScript{
+		routeACUserConnected: {
 			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPCloudJWT},
 			Handler: httpACUserInteractive,
 		},
-		routeACUserDisconnected: &ActionScript{
+		routeACUserDisconnected: {
 			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPCloudJWT},
 			Handler: httpACUserInteractive,
 		},
 
 		// Oauth1 (Jira Server) user mapping
-		routeOAuth1Complete: &ActionScript{
+		routeOAuth1Complete: {
 			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPMattermostUserId, RequireServerInstance, RequireMattermostUser},
 			Handler: httpOAuth1Complete,
 		},
 
 		// incoming webhooks
-		routeIncomingWebhook: &ActionScript{
+		routeIncomingWebhook: {
 			Filters: []ActionFunc{RequireHTTPPost},
 			Handler: httpWebhook,
 		},
-		routeIncomingIssueEvent: &ActionScript{
+		routeIncomingIssueEvent: {
 			Filters: []ActionFunc{RequireHTTPPost},
 			Handler: httpWebhook,
 		},
