@@ -5,6 +5,7 @@ import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 
 import PluginId from 'plugin_id';
+import ChannelHeaderButtonIcon from 'components/icon';
 
 export default class CreateIssuePostMenuAction extends PureComponent {
     static propTypes = {
@@ -53,6 +54,7 @@ export default class CreateIssuePostMenuAction extends PureComponent {
                     role='menuitem'
                     onClick={this.handleClick}
                 >
+                    <ChannelHeaderButtonIcon type='menu'/>
                     {this.getLocalizedTitle()}
                 </button>
             );
