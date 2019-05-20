@@ -40,20 +40,17 @@ func httpAPICreateIssue(a *Action) error {
 		return a.RespondError(http.StatusInternalServerError, nil,
 			"failed to load post %q: not found", create.PostId)
 	}
-	if channel, _ := api.GetChannel(post.ChannelId); channel != nil {
-		if team, _ := api.GetTeam(channel.TeamId); team != nil {
-			permalink := fmt.Sprintf("%v/%v/pl/%v",
-				a.Plugin.GetSiteURL(),
-				team.Name,
-				create.PostId,
-			)
 
-			if len(create.Fields.Description) > 0 {
-				create.Fields.Description += fmt.Sprintf("\n%v", permalink)
-			} else {
-				create.Fields.Description = permalink
-			}
-		}
+	permalink, err := getPermaLink(a, create.PostId, post)
+	if err != nil {
+		return a.RespondError(http.StatusInternalServerError, nil,
+			"failed to get permalink for: %q", create.PostId)
+	}
+
+	if len(create.Fields.Description) > 0 {
+		create.Fields.Description += fmt.Sprintf("\n%v", permalink)
+	} else {
+		create.Fields.Description = permalink
 	}
 
 	created, resp, err := a.JiraClient.Issue.Create(&jira.Issue{
@@ -120,6 +117,68 @@ func httpAPIGetCreateIssueMetadata(a *Action) error {
 	return a.RespondJSON(cimd)
 }
 
+func httpAPIAttachCommentToIssue(a *Action) error {
+	api := a.Plugin.API
+
+	attach := &struct {
+		PostId   string `json:"post_id"`
+		IssueKey string `json:"issueKey"`
+	}{}
+	err := json.NewDecoder(a.HTTPRequest.Body).Decode(&attach)
+	if err != nil {
+		return a.RespondError(http.StatusBadRequest, err,
+			"failed to decode incoming request")
+	}
+
+	// Add a permalink to the post to the issue description
+	post, appErr := api.GetPost(attach.PostId)
+	if appErr != nil || post == nil {
+		a.RespondError(http.StatusInternalServerError, appErr,
+			"failed to load or find post %q", attach.PostId)
+	}
+
+	commentUser, appErr := api.GetUser(post.UserId)
+	if appErr != nil {
+		return a.RespondError(http.StatusInternalServerError, appErr,
+			"failed to load User %q", post.UserId)
+	}
+
+	permalink, err := getPermaLink(a, attach.PostId, post)
+	if err != nil {
+		return a.RespondError(http.StatusInternalServerError, err,
+			"failed to get permalink for %q", attach.PostId)
+	}
+
+	permalinkMessage := fmt.Sprintf("*@%s attached a* [message|%s] *from @%s*\n",
+		a.JiraUser.User.Name, permalink, commentUser.Username)
+
+	var jiraComment jira.Comment
+	jiraComment.Body = permalinkMessage
+	jiraComment.Body += post.Message
+
+	commentAdded, _, err := a.JiraClient.Issue.AddComment(attach.IssueKey, &jiraComment)
+	if err != nil {
+		return a.RespondError(http.StatusInternalServerError, err,
+			"failed to attach the comment, postId: %q", attach.PostId)
+	}
+
+	// Reply to the post with the issue link that was created
+	reply := &model.Post{
+		Message: fmt.Sprintf("Message attached to [%v](%v/browse/%v)",
+			attach.IssueKey, a.Instance.GetURL(), attach.IssueKey),
+		ChannelId: post.ChannelId,
+		RootId:    attach.PostId,
+		UserId:    a.MattermostUserId,
+	}
+	_, appErr = api.CreatePost(reply)
+	if appErr != nil {
+		return a.RespondError(http.StatusInternalServerError, appErr,
+			"failed to create notification post %q", attach.PostId)
+	}
+
+	return a.RespondJSON(commentAdded)
+}
+
 func getCreateIssueMetadata(jiraClient *jira.Client) (*jira.CreateMetaInfo, error) {
 	cimd, resp, err := jiraClient.Issue.GetCreateMetaWithOptions(&jira.GetQueryOptions{
 		Expand: "projects.issuetypes.fields",
@@ -134,6 +193,25 @@ func getCreateIssueMetadata(jiraClient *jira.Client) (*jira.CreateMetaInfo, erro
 		return nil, errors.WithMessage(err, message)
 	}
 	return cimd, nil
+}
+
+func getPermaLink(a *Action, postId string, post *model.Post) (string, error) {
+	channel, appErr := a.Plugin.API.GetChannel(post.ChannelId)
+	if appErr != nil {
+		return "", errors.WithMessage(appErr, "failed to get ChannelId, ChannelId: "+post.ChannelId)
+	}
+
+	team, appErr := a.Plugin.API.GetTeam(channel.TeamId)
+	if appErr != nil {
+		return "", errors.WithMessage(appErr, "failed to get team, TeamId: "+channel.TeamId)
+	}
+
+	permalink := fmt.Sprintf("%v/%v/pl/%v",
+		a.Plugin.GetSiteURL(),
+		team.Name,
+		postId,
+	)
+	return permalink, nil
 }
 
 func transitionJiraIssue(a *Action, issueKey, toState string) error {

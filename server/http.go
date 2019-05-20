@@ -17,6 +17,7 @@ import (
 const (
 	routeAPICreateIssue            = "/api/v2/create-issue"
 	routeAPIGetCreateIssueMetadata = "/api/v2/get-create-issue-metadata"
+	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
 	routeAPIUserInfo               = "/api/v2/userinfo"
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"
@@ -32,11 +33,6 @@ const (
 	routeUserConnect               = "/user/connect"
 	routeUserDisconnect            = "/user/disconnect"
 )
-
-var httpRequireJiraClient = []ActionFunc{
-	RequireCommandMattermostUserId,
-	RequireJiraClient,
-}
 
 var httpRouter = ActionRouter{
 	DefaultRouteHandler: func(a *Action) error {
@@ -58,9 +54,22 @@ var httpRouter = ActionRouter{
 	RouteHandlers: map[string]*ActionScript{
 		// MM client APIs
 		routeAPICreateIssue: {
-			Filters: []ActionFunc{RequireHTTPPost, RequireHTTPMattermostUserId, RequireJiraClient},
+			Filters: []ActionFunc{
+				RequireHTTPPost,
+				RequireHTTPMattermostUserId,
+				RequireJiraClient,
+			},
 			Handler: httpAPICreateIssue,
 		},
+		routeAPIAttachCommentToIssue: {
+			Filters: []ActionFunc{
+				RequireHTTPPost,
+				RequireHTTPMattermostUserId,
+				RequireJiraClient,
+			},
+			Handler: httpAPIAttachCommentToIssue,
+		},
+
 		routeAPIGetCreateIssueMetadata: {
 			Filters: []ActionFunc{RequireHTTPGet, RequireHTTPMattermostUserId, RequireJiraClient},
 			Handler: httpAPIGetCreateIssueMetadata,
