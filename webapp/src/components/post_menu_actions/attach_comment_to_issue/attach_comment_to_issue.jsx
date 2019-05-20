@@ -25,7 +25,7 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
         case 'es':
             return 'Crear incidencia en Jira';
         default:
-            return 'Attach Jira Issue';
+            return 'Attach to Jira Issue';
         }
     };
 
