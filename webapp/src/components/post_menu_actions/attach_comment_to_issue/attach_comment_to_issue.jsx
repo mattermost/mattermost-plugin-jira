@@ -40,23 +40,20 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
     }
 
     render() {
-        if (this.props.isSystemMessage) {
+        const conn = this.props.connected || {};
+        if (this.props.isSystemMessage || !conn.connected) {
             return null;
         }
 
-        const conn = this.props.connected || {};
-        let content;
-        if (conn.connected) {
-            content = (
-                <button
-                    className='style--none'
-                    role='menuitem'
-                    onClick={this.handleClick}
-                >
-                    {this.getLocalizedTitle()}
-                </button>
-            );
-        }
+        const content = (
+            <button
+                className='style--none'
+                role='menuitem'
+                onClick={this.handleClick}
+            >
+                {this.getLocalizedTitle()}
+            </button>
+        );
 
         return (
             <li
