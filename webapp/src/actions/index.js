@@ -20,6 +20,21 @@ export const closeCreateModal = () => {
     };
 };
 
+export const openAttachCommentToIssueModal = (postId) => {
+    return {
+        type: ActionTypes.OPEN_ATTACH_COMMENT_TO_ISSUE_MODAL,
+        data: {
+            postId,
+        },
+    };
+};
+
+export const closeAttachCommentToIssueModal = () => {
+    return {
+        type: ActionTypes.CLOSE_ATTACH_COMMENT_TO_ISSUE_MODAL,
+    };
+};
+
 export const fetchJiraIssueMetadata = () => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
@@ -46,6 +61,21 @@ export const createIssue = (payload) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/create-issue`, {
+                method: 'post',
+                body: JSON.stringify(payload),
+            });
+
+            return {data};
+        } catch (error) {
+            return {error};
+        }
+    };
+};
+export const attachCommentToIssue = (payload) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        try {
+            const data = await doFetch(`${baseUrl}/api/v2/attach-comment-to-issue`, {
                 method: 'post',
                 body: JSON.stringify(payload),
             });

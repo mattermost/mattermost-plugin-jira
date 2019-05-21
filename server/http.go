@@ -19,6 +19,7 @@ import (
 const (
 	routeAPICreateIssue            = "/api/v2/create-issue"
 	routeAPIGetCreateIssueMetadata = "/api/v2/get-create-issue-metadata"
+	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
 	routeAPIUserInfo               = "/api/v2/userinfo"
 	routeAPISubscribeWebhook       = "/api/v2/webhook"
 	routeAPISubscriptionsChannel   = "/api/v2/subscriptions/channel"
@@ -60,6 +61,8 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 		return withInstance(p, w, r, httpAPICreateIssue)
 	case routeAPIGetCreateIssueMetadata:
 		return withInstance(p, w, r, httpAPIGetCreateIssueMetadata)
+	case routeAPIAttachCommentToIssue:
+		return withInstance(p, w, r, httpAPIAttachCommentToIssue)
 
 	// User APIs
 	case routeAPIUserInfo:
