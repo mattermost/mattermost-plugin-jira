@@ -246,11 +246,12 @@ func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	issueKey := args[0]
 	toState := strings.Join(args[1:], " ")
 
-	if err := p.transitionJiraIssue(header.UserId, issueKey, toState); err != nil {
+	msg, err := p.transitionJiraIssue(header.UserId, issueKey, toState)
+	if err != nil {
 		return responsef("%v", err)
 	}
 
-	return responsef("Transition completed.")
+	return responsef(msg)
 }
 
 func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
