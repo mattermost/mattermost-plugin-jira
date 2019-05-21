@@ -263,6 +263,8 @@ func TestSubscribe(t *testing.T) {
 				mock.AnythingOfTypeArgument("string"),
 				mock.AnythingOfTypeArgument("string")).Return(nil)
 
+			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
 			}
@@ -377,6 +379,8 @@ func TestDeleteSubscription(t *testing.T) {
 				mock.AnythingOfTypeArgument("string"),
 				mock.AnythingOfTypeArgument("string"),
 				mock.AnythingOfTypeArgument("string")).Return(nil)
+
+			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
@@ -496,6 +500,8 @@ func TestEditSubscription(t *testing.T) {
 				mock.AnythingOfTypeArgument("string"),
 				mock.AnythingOfTypeArgument("string"),
 				mock.AnythingOfTypeArgument("string")).Return(nil)
+
+			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
@@ -678,6 +684,8 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 				mock.AnythingOfTypeArgument("string"),
 				mock.AnythingOfTypeArgument("string"),
 				mock.AnythingOfTypeArgument("string")).Return(nil)
+
+			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)

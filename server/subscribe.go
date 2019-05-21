@@ -45,26 +45,20 @@ func NewChannelSubscriptions() *ChannelSubscriptions {
 func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
 	delete(s.ById, sub.Id)
 
-	iToRemove := -1
-	for i, subId := range s.IdByChannelId[sub.ChannelId] {
-		if subId == sub.Id {
-			iToRemove = i
-			break
-		}
-	}
-	s.IdByChannelId[sub.ChannelId][iToRemove] = s.IdByChannelId[sub.ChannelId][len(s.IdByChannelId[sub.ChannelId])-1]
-	s.IdByChannelId[sub.ChannelId] = s.IdByChannelId[sub.ChannelId][:len(s.IdByChannelId[sub.ChannelId])-1]
-
-	for _, event := range sub.Filters["events"] {
-		iToRemove := -1
-		for i, subId := range s.IdByEvent[event] {
-			if subId == sub.Id {
-				iToRemove = i
-				break
+	remove := func(ids []string, idToRemove string) []string {
+		for i, id := range ids {
+			if id == idToRemove {
+				ids[i] = ids[len(ids)-1]
+				return ids[:len(ids)-1]
 			}
 		}
-		s.IdByEvent[event][iToRemove] = s.IdByEvent[event][len(s.IdByEvent[event])-1]
-		s.IdByEvent[event] = s.IdByEvent[event][:len(s.IdByEvent[event])-1]
+		return ids
+	}
+
+	s.IdByChannelId[sub.ChannelId] = remove(s.IdByChannelId[sub.ChannelId], sub.Id)
+
+	for _, event := range sub.Filters["events"] {
+		s.IdByEvent[event] = remove(s.IdByEvent[event], sub.Id)
 	}
 }
 
@@ -87,17 +81,17 @@ func NewSubscriptions() *Subscriptions {
 }
 
 func SubscriptionsFromJson(bytes []byte) (*Subscriptions, error) {
-	var subs Subscriptions
+	var subs *Subscriptions
 	if len(bytes) != 0 {
 		unmarshalErr := json.Unmarshal(bytes, &subs)
 		if unmarshalErr != nil {
 			return nil, unmarshalErr
 		}
 	} else {
-		subs = *NewSubscriptions()
+		subs = NewSubscriptions()
 	}
 
-	return &subs, nil
+	return subs, nil
 }
 
 func (p *Plugin) getUserID() (string, error) {
@@ -196,6 +190,20 @@ func (p *Plugin) getSubscriptionsForChannel(channelId string) ([]ChannelSubscrip
 	}
 
 	return channelSubscriptions, nil
+}
+
+func (p *Plugin) getChannelSubscription(subscriptionId string) (*ChannelSubscription, error) {
+	subs, err := p.getSubscriptions()
+	if err != nil {
+		return nil, err
+	}
+
+	subscription, ok := subs.Channel.ById[subscriptionId]
+	if !ok {
+		return nil, errors.New("could not find subscription")
+	}
+
+	return &subscription, nil
 }
 
 func (p *Plugin) removeChannelSubscription(subscriptionId string) error {
@@ -369,6 +377,10 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 		return http.StatusBadRequest, fmt.Errorf("Channel subscription invalid")
 	}
 
+	if _, err := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); err != nil {
+		return http.StatusForbidden, errors.New("Not a member of the channel specified")
+	}
+
 	if err := p.addChannelSubscription(&subscription); err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -396,6 +408,10 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 		return http.StatusBadRequest, fmt.Errorf("Channel subscription invalid")
 	}
 
+	if _, err := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); err != nil {
+		return http.StatusForbidden, errors.New("Not a member of the channel specified")
+	}
+
 	if err := p.editChannelSubscription(&subscription); err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -417,6 +433,15 @@ func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 		return http.StatusBadRequest, errors.New("bad subscription id")
 	}
 
+	subscription, err := p.getChannelSubscription(subscriptionId)
+	if err != nil {
+		return http.StatusBadRequest, errors.Wrap(err, "bad subscription id")
+	}
+
+	if _, err := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); err != nil {
+		return http.StatusForbidden, errors.New("Not a member of the channel specified")
+	}
+
 	if err := p.removeChannelSubscription(subscriptionId); err != nil {
 		return http.StatusInternalServerError, errors.Wrap(err, "unable to remove channel subscription")
 	}
@@ -436,6 +461,10 @@ func httpChannelGetSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Reque
 	channelId := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionsChannel+"/")
 	if len(channelId) != 26 {
 		return http.StatusBadRequest, errors.New("bad channel id")
+	}
+
+	if _, err := p.API.GetChannelMember(channelId, mattermostUserId); err != nil {
+		return http.StatusForbidden, errors.New("Not a member of the channel specified")
 	}
 
 	subscriptions, err := p.getSubscriptionsForChannel(channelId)
