@@ -21,17 +21,17 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira install server <URL>` - connect Mattermost to a server Jira instance located at <URL>\n" +
 	""
 
+// Available settings
+const (
+	settingsNotifications = "notifications"
+)
+
 type CommandHandlerFunc func(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse
 
 type CommandHandler struct {
 	handlers       map[string]CommandHandlerFunc
 	defaultHandler CommandHandlerFunc
 }
-
-// Available settings
-const (
-	SETTINGS_NOTIFICATIONS = "notifications"
-)
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
@@ -109,7 +109,7 @@ func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 	}
 
 	switch args[0] {
-	case SETTINGS_NOTIFICATIONS:
+	case settingsNotifications:
 		return p.settingsNotifications(ji, mattermostUserId, jiraUser, args[1:])
 	default:
 		return responsef("Unknown setting.")

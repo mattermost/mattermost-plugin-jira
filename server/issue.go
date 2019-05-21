@@ -30,7 +30,6 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		Fields jira.IssueFields `json:"fields"`
 	}{}
 
-	defer r.Body.Close()
 	err := json.NewDecoder(r.Body).Decode(&create)
 	if err != nil {
 		return http.StatusBadRequest,
@@ -85,7 +84,6 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		message := "failed to create the issue, postId: " + create.PostId
 		if resp != nil {
 			bb, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
 			message += ", details:" + string(bb)
 		}
 		return http.StatusInternalServerError, errors.WithMessage(err, message)
@@ -173,7 +171,6 @@ func httpAPIGetCreateIssueMetadata(ji Instance, w http.ResponseWriter, r *http.R
 		message := "failed to get CreateIssue metadata"
 		if resp != nil {
 			bb, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
 			message += ", details:" + string(bb)
 		}
 		return http.StatusInternalServerError,

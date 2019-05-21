@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	JiraCommentPostType = "custom_jira_comment"
-	JiraMentionPostType = "custom_jira_mention"
+	jiraCommentPostType = "custom_jira_comment"
+	jiraMentionPostType = "custom_jira_mention"
 )
 
 type JIRAWebhookIssue struct {
@@ -111,7 +111,6 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		secret = unescaped
 	}
 
-	defer r.Body.Close()
 	parsed, err := parse(r.Body, nil)
 	if err != nil {
 		return http.StatusBadRequest, err
@@ -379,7 +378,7 @@ func (p *Plugin) handleCommentCreatedNotifications(ji Instance, parsed *parsedJI
 		err = p.CreateBotDMPost(ji, mattermostUserId,
 			fmt.Sprintf("[%s](%s) mentioned you on [%s](%s):\n>%s",
 				parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL, parsed.text),
-			JiraMentionPostType)
+			jiraMentionPostType)
 		if err != nil {
 			p.errorf("handleCommentCreatedNotifications, CreateBotDMPost: %v", err)
 			continue
@@ -398,7 +397,7 @@ func (p *Plugin) handleCommentCreatedNotifications(ji Instance, parsed *parsedJI
 	err = p.CreateBotDMPost(ji, mattermostUserId,
 		fmt.Sprintf("[%s](%s) commented on [%s](%s):\n>%s",
 			parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL, parsed.text),
-		JiraCommentPostType)
+		jiraCommentPostType)
 	if err != nil {
 		return errors.Errorf("handleCommentCreatedNotifications, CreateBotDMPost: %v", err)
 	}
