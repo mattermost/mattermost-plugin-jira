@@ -65,6 +65,7 @@ export default class CreateIssuePostMenuAction extends PureComponent {
                     role='menuitem'
                     onClick={this.connectClick}
                 >
+                    <JiraIcon type='menu'/>
                     {'Connect to Jira'}
                 </button>
             );
@@ -75,7 +76,6 @@ export default class CreateIssuePostMenuAction extends PureComponent {
                 className='MenuItem'
                 role='presentation'
             >
-                <JiraIcon type='menu'/>
                 {content}
             </li>
         );
