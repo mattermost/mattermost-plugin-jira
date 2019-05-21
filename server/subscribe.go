@@ -35,11 +35,11 @@ type ChannelSubscriptions struct {
 }
 
 func NewChannelSubscriptions() *ChannelSubscriptions {
-	var cs ChannelSubscriptions
-	cs.ById = make(map[string]ChannelSubscription)
-	cs.IdByChannelId = make(map[string][]string)
-	cs.IdByEvent = make(map[string][]string)
-	return &cs
+	return &ChannelSubscriptions{
+		ById:          map[string]ChannelSubscription{},
+		IdByChannelId: map[string][]string{},
+		IdByEvent:     map[string][]string{},
+	}
 }
 
 func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
@@ -77,13 +77,13 @@ func (s *ChannelSubscriptions) add(newSubscription *ChannelSubscription) {
 }
 
 type Subscriptions struct {
-	Channel ChannelSubscriptions
+	Channel *ChannelSubscriptions
 }
 
 func NewSubscriptions() *Subscriptions {
-	var subs Subscriptions
-	subs.Channel = *NewChannelSubscriptions()
-	return &subs
+	return &Subscriptions{
+		Channel: NewChannelSubscriptions(),
+	}
 }
 
 func SubscriptionsFromJson(bytes []byte) (*Subscriptions, error) {
@@ -165,7 +165,6 @@ func (p *Plugin) getChannelsSubscribed(webhook *parsedJIRAWebhook) ([]string, er
 					acceptable = false
 					break
 				}
-			default:
 			}
 		}
 
@@ -316,7 +315,6 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusForbidden, fmt.Errorf("Request URL: secret did not match")
 	}
 
-	defer r.Body.Close()
 	parsed, err := parse(r.Body, nil)
 	if err != nil {
 		return http.StatusInternalServerError, err
