@@ -56,16 +56,6 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
                     {this.getLocalizedTitle()}
                 </button>
             );
-        } else {
-            content = (
-                <button
-                    className='style--none'
-                    role='menuitem'
-                    onClick={this.connectClick}
-                >
-                    {'Connect to Jira'}
-                </button>
-            );
         }
 
         return (
