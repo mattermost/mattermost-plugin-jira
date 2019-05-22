@@ -72,12 +72,18 @@ export default class CreateIssuePostMenuAction extends PureComponent {
         }
 
         return (
-            <li
-                className='MenuItem'
-                role='menuitem'
-            >
-                {content}
-            </li>
+            <React.Fragment>
+                <li
+                    className='MenuItem__divider'
+                    role='menuitem'
+                />
+                <li
+                    className='MenuItem'
+                    role='menuitem'
+                >
+                    {content}
+                </li>
+            </React.Fragment>
         );
     }
 }
