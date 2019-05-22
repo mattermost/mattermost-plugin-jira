@@ -7,13 +7,14 @@ import PropTypes from 'prop-types';
 import ReactSelectSetting from 'components/react_select_setting';
 import Input from 'components/input';
 
-export default class JiraField extends React.PureComponent {
+export default class JiraField extends React.Component {
     static propTypes = {
         id: PropTypes.object.isRequired,
         field: PropTypes.object.isRequired,
         obeyRequired: PropTypes.bool,
         onChange: PropTypes.func,
         value: PropTypes.any,
+        isFilter: PropTypes.bool,
     };
 
     static defaultProps = {
@@ -42,7 +43,7 @@ export default class JiraField extends React.PureComponent {
         );
     }
 
-    render() {
+    renderCreateFields() {
         const field = this.props.field;
 
         if (field.schema.system === 'description') {
@@ -89,6 +90,41 @@ export default class JiraField extends React.PureComponent {
             );
         }
         return null;
+    }
+
+    renderFilterFields() {
+        const field = this.props.field;
+
+        if (field.allowedValues && field.allowedValues.length) {
+            const options = field.allowedValues.map(this.makeReactSelectValue);
+            let value;
+            if (this.props.value) {
+                value = options.filter((option) => this.props.value.includes(option.value));
+            }
+
+            return (
+                <ReactSelectSetting
+                    key={field.key}
+                    name={field.key}
+                    label={field.name}
+                    options={options}
+                    required={this.props.obeyRequired && field.required}
+                    onChange={this.handleChange}
+                    isMulti={true}
+                    value={value}
+                />
+            );
+        }
+
+        return null;
+    }
+
+    render() {
+        if (this.props.isFilter) {
+            return this.renderFilterFields();
+        }
+
+        return this.renderCreateFields();
     }
 }
 

@@ -13,4 +13,9 @@ export default {
     RECEIVED_CONNECTED: `${PluginId}_connected`,
 
     RECEIVED_JIRA_ISSUE_METADATA: `${PluginId}_received_metadata`,
+
+    OPEN_CHANNEL_SETTINGS: `${PluginId}_open_channel_settings`,
+    CLOSE_CHANNEL_SETTINGS: `${PluginId}_close_channel_settings`,
+
+    RECEIVED_CHANNEL_SUBSCRIPTIONS: `${PluginId}_recevied_channel_subscriptions`,
 };
