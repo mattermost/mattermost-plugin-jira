@@ -67,6 +67,29 @@ const jiraIssueMetadata = (state = null, action) => {
     }
 };
 
+const channelIdWithSettingsOpen = (state = '', action) => {
+    switch (action.type) {
+    case ActionTypes.OPEN_CHANNEL_SETTINGS:
+        return action.data.channelId;
+    case ActionTypes.CLOSE_CHANNEL_SETTINGS:
+        return '';
+    default:
+        return state;
+    }
+};
+
+const channelSubscripitons = (state = {}, action) => {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_CHANNEL_SUBSCRIPTIONS: {
+        const nextState = {...state};
+        nextState[action.channelId] = action.data;
+        return nextState;
+    }
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     connected,
     createModalVisible,
@@ -74,4 +97,6 @@ export default combineReducers({
     attachCommentToIssueModalVisible,
     attachCommentToIssueModalForPostId,
     jiraIssueMetadata,
+    channelIdWithSettingsOpen,
+    channelSubscripitons,
 });

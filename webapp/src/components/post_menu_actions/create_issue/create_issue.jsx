@@ -5,6 +5,7 @@ import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 
 import PluginId from 'plugin_id';
+import JiraIcon from 'components/icon';
 
 export default class CreateIssuePostMenuAction extends PureComponent {
     static propTypes = {
@@ -53,6 +54,7 @@ export default class CreateIssuePostMenuAction extends PureComponent {
                     role='menuitem'
                     onClick={this.handleClick}
                 >
+                    <JiraIcon type='menu'/>
                     {this.getLocalizedTitle()}
                 </button>
             );
@@ -63,6 +65,7 @@ export default class CreateIssuePostMenuAction extends PureComponent {
                     role='menuitem'
                     onClick={this.connectClick}
                 >
+                    <JiraIcon type='menu'/>
                     {'Connect to Jira'}
                 </button>
             );
