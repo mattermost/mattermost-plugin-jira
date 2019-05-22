@@ -5,36 +5,25 @@ import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 import {Modal} from 'react-bootstrap';
 
-import JiraFields from 'components/jira_fields';
 import FormButton from 'components/form_button';
 import Loading from 'components/loading';
 import ReactSelectSetting from 'components/react_select_setting';
+import Input from 'components/input';
 
-import {getProjectValues, getIssueTypes, getIssueValues, getFields} from 'jira_issue_metadata';
+import {getProjectValues} from 'jira_issue_metadata';
 
 const initialState = {
     submitting: false,
     projectKey: null,
-    issueType: null,
-    fields: {
-        description: '',
-        project: {
-            key: '',
-        },
-        issuetype: {
-            name: '',
-        },
-    },
+    issueKey: null,
     error: null,
 };
 
-export default class CreateIssueModal extends PureComponent {
+export default class AttachIssueModal extends PureComponent {
     static propTypes = {
         close: PropTypes.func.isRequired,
         create: PropTypes.func.isRequired,
         post: PropTypes.object,
-        description: PropTypes.string,
-        channelId: PropTypes.string,
         theme: PropTypes.object.isRequired,
         visible: PropTypes.bool.isRequired,
         jiraIssueMetadata: PropTypes.object,
@@ -43,21 +32,12 @@ export default class CreateIssueModal extends PureComponent {
 
     constructor(props) {
         super(props);
-
         this.state = initialState;
     }
 
     componentDidUpdate(prevProps) {
         if (this.props.post && (!prevProps.post || this.props.post.id !== prevProps.post.id)) {
             this.props.fetchJiraIssueMetadata();
-            const fields = {...this.state.fields};
-            fields.description = this.props.post.message;
-            this.setState({fields}); //eslint-disable-line react/no-did-update-set-state
-        } else if (this.props.channelId && (this.props.channelId !== prevProps.channelId || this.props.description !== prevProps.description)) {
-            this.props.fetchJiraIssueMetadata();
-            const fields = {...this.state.fields};
-            fields.description = this.props.description;
-            this.setState({fields}); //eslint-disable-line react/no-did-update-set-state
         }
     }
 
@@ -66,14 +46,9 @@ export default class CreateIssueModal extends PureComponent {
             e.preventDefault();
         }
 
-        const {post, channelId} = this.props;
-
-        const postId = (post) ? post.id : '';
-
         const issue = {
-            fields: this.state.fields,
-            post_id: postId,
-            channel_id: channelId,
+            post_id: this.props.post.id,
+            issueKey: this.state.issueKey,
         };
 
         this.setState({submitting: true});
@@ -95,57 +70,22 @@ export default class CreateIssueModal extends PureComponent {
         this.setState(initialState, close);
     };
 
-    handleDescriptionChange = (e) => {
-        const description = e.target.value;
-        const {fields} = this.state;
-        const nFields = {
-            ...fields,
-            description,
-        };
-
-        this.setState({fields: nFields});
-    };
-
     handleProjectChange = (id, value) => {
-        const fields = {...this.state.fields};
-        const issueTypes = getIssueTypes(this.props.jiraIssueMetadata, value);
-        const issueType = issueTypes.length && issueTypes[0].id;
         const projectKey = value;
-        fields.project = {
-            key: value,
-        };
-        fields.issuetype = {
-            id: issueType,
-        };
         this.setState({
             projectKey,
-            issueType,
-            fields,
         });
     }
 
-    handleIssueTypeChange = (id, value) => {
-        const fields = {...this.state.fields};
-        const issueType = value;
-        fields.issuetype = {
-            id: issueType,
-        };
+    handleIssueKeyChange = (id, value) => {
+        const issueKey = value;
         this.setState({
-            issueType,
-            fields,
-        });
-    }
-
-    handleFieldChange = (id, value) => {
-        const fields = {...this.state.fields};
-        fields[id] = value;
-        this.setState({
-            fields,
+            issueKey,
         });
     }
 
     render() {
-        const {visible, theme, jiraIssueMetadata} = this.props;
+        const {post, visible, theme, jiraIssueMetadata} = this.props;
         const {error, submitting} = this.state;
         const style = getStyle(theme);
 
@@ -158,10 +98,9 @@ export default class CreateIssueModal extends PureComponent {
             console.error('render error', error); //eslint-disable-line no-console
         }
 
-        if (!jiraIssueMetadata || !jiraIssueMetadata.projects) {
+        if (!post || !jiraIssueMetadata || !jiraIssueMetadata.projects) {
             component = <Loading/>;
         } else {
-            const issueOptions = getIssueValues(jiraIssueMetadata, this.state.projectKey);
             const projectOptions = getProjectValues(jiraIssueMetadata);
             component = (
                 <div style={style.modal}>
@@ -170,24 +109,28 @@ export default class CreateIssueModal extends PureComponent {
                         label={'Project'}
                         required={true}
                         onChange={this.handleProjectChange}
+                        placeholder={'Select project'}
                         options={projectOptions}
                         isMuli={false}
                         key={'LT'}
                         value={projectOptions.filter((option) => option.value === this.state.projectKey)}
                     />
-                    <ReactSelectSetting
-                        name={'issue_type'}
-                        label={'Issue Type'}
+                    <Input
+                        key='key'
+                        id='issueKey'
+                        placeholder={'Enter issue key to attach message to, e.g. EXT-20'}
+                        label='Issue Key'
+                        type='input'
+                        onChange={this.handleIssueKeyChange}
                         required={true}
-                        onChange={this.handleIssueTypeChange}
-                        options={issueOptions}
-                        isMuli={false}
-                        value={issueOptions.filter((option) => option.value === this.state.issueType)}
+                        disabled={false}
                     />
-                    <JiraFields
-                        fields={getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType)}
-                        onChange={this.handleFieldChange}
-                        values={this.state.fields}
+                    <Input
+                        label='Message Attached to Jira Issue'
+                        type='textarea'
+                        isDisabled={true}
+                        value={this.props.post.message}
+                        disabled={false}
                     />
                     <br/>
                 </div>
@@ -204,7 +147,7 @@ export default class CreateIssueModal extends PureComponent {
             >
                 <Modal.Header closeButton={true}>
                     <Modal.Title>
-                        {'Create Jira Issue'}
+                        {'Attach Message to Jira Issue'}
                     </Modal.Title>
                 </Modal.Header>
                 <form
@@ -225,8 +168,10 @@ export default class CreateIssueModal extends PureComponent {
                             type='submit'
                             btnClass='btn btn-primary'
                             saving={submitting}
+                            defaultMessage='Attach'
+                            savingMessage='Attaching'
                         >
-                            {'Create'}
+                            {'Attach'}
                         </FormButton>
                     </Modal.Footer>
                 </form>

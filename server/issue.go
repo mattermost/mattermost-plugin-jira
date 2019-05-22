@@ -207,29 +207,146 @@ func httpAPIGetCreateIssueMetadata(ji Instance, w http.ResponseWriter, r *http.R
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) error {
-	ji, err := p.LoadCurrentJIRAInstance()
-	if err != nil {
-		return err
+func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodPost {
+		return http.StatusMethodNotAllowed,
+			errors.New("method " + r.Method + " is not allowed, must be POST")
 	}
 
-	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mmUserId)
+	api := ji.GetPlugin().API
+
+	attach := &struct {
+		PostId   string `json:"post_id"`
+		IssueKey string `json:"issueKey"`
+	}{}
+	err := json.NewDecoder(r.Body).Decode(&attach)
 	if err != nil {
-		return err
+		return http.StatusBadRequest,
+			errors.WithMessage(err, "failed to decode incoming request")
+	}
+
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		return http.StatusInternalServerError, err
 	}
 
 	jiraClient, err := ji.GetJIRAClient(jiraUser)
 	if err != nil {
-		return err
+		return http.StatusInternalServerError, err
+	}
+
+	// Lets add a permalink to the post in the Jira Description
+	post, appErr := api.GetPost(attach.PostId)
+	if appErr != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to load post "+attach.PostId)
+	}
+	if post == nil {
+		return http.StatusInternalServerError,
+			errors.New("failed to load post " + attach.PostId + ": not found")
+	}
+
+	commentUser, appErr := api.GetUser(post.UserId)
+	if appErr != nil {
+		return http.StatusInternalServerError,
+			errors.New("failed to load post.UserID " + post.UserId + ": not found")
+	}
+
+	permalink, err := getPermaLink(ji, attach.PostId, post)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.New("failed to get permalink for " + attach.PostId + ": not found")
+	}
+
+	permalinkMessage := fmt.Sprintf("*@%s attached a* [message|%s] *from @%s*\n", jiraUser.User.Name, permalink, commentUser.Username)
+
+	var jiraComment jira.Comment
+	jiraComment.Body = permalinkMessage
+	jiraComment.Body += post.Message
+
+	commentAdded, _, err := jiraClient.Issue.AddComment(attach.IssueKey, &jiraComment)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to attach the comment, postId: "+attach.PostId)
+	}
+
+	// Reply to the post with the issue link that was created
+	reply := &model.Post{
+		Message:   fmt.Sprintf("Message attached to [%v](%v/browse/%v)", attach.IssueKey, ji.GetURL(), attach.IssueKey),
+		ChannelId: post.ChannelId,
+		RootId:    attach.PostId,
+		UserId:    mattermostUserId,
+	}
+	_, appErr = api.CreatePost(reply)
+	if appErr != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to create notification post "+attach.PostId)
+	}
+
+	userBytes, err := json.Marshal(commentAdded)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to marshal response "+attach.PostId)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(userBytes)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to write response "+attach.PostId)
+	}
+	return http.StatusOK, nil
+}
+
+func getPermaLink(ji Instance, postId string, post *model.Post) (string, error) {
+
+	api := ji.GetPlugin().API
+
+	channel, appErr := api.GetChannel(post.ChannelId)
+	if appErr != nil {
+		return "", errors.WithMessage(appErr, "failed to get ChannelId, ChannelId: "+post.ChannelId)
+	}
+
+	team, appErr := api.GetTeam(channel.TeamId)
+	if appErr != nil {
+		return "", errors.WithMessage(appErr, "failed to get team, TeamId: "+channel.TeamId)
+	}
+
+	permalink := fmt.Sprintf("%v/%v/pl/%v",
+		ji.GetPlugin().GetSiteURL(),
+		team.Name,
+		postId,
+	)
+	return permalink, nil
+}
+
+func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string, error) {
+	ji, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return "", err
+	}
+
+	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mmUserId)
+	if err != nil {
+		return "", err
+	}
+
+	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	if err != nil {
+		return "", err
 	}
 
 	transitions, _, err := jiraClient.Issue.GetTransitions(issueKey)
 	if err != nil {
-		return errors.New("We couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue.")
+		return "", errors.New("We couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue.")
 	}
 
 	if len(transitions) < 1 {
-		return errors.New("You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.")
+		return "", errors.New("You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.")
 	}
 
 	var transitionToUse *jira.Transition
@@ -241,12 +358,13 @@ func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) error {
 	}
 
 	if transitionToUse == nil {
-		return errors.New("We couldn't find the state. Please use a Jira state such as 'done' and try again.")
+		return "", errors.New("We couldn't find the state. Please use a Jira state such as 'done' and try again.")
 	}
 
 	if _, err := jiraClient.Issue.DoTransition(issueKey, transitionToUse.ID); err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	msg := fmt.Sprintf("[%s](%v/browse/%v) transitioned to `%s`", issueKey, ji.GetURL(), issueKey, toState)
+	return msg, nil
 }

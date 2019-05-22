@@ -72,7 +72,7 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 	if len(args) != 0 {
 		return help()
 	}
-	return responsef("[Click here to link your Jira account.](%s%s)",
+	return responsef("[Click here to link your Jira account](%s%s)",
 		p.GetPluginURL(), routeUserConnect)
 }
 
@@ -80,7 +80,7 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	if len(args) != 0 {
 		return help()
 	}
-	return responsef("[Click here to unlink your Jira account.](%s%s)",
+	return responsef("[Click here to unlink your Jira account](%s%s)",
 		p.GetPluginURL(), routeUserDisconnect)
 }
 
@@ -247,11 +247,12 @@ func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	issueKey := args[0]
 	toState := strings.Join(args[1:], " ")
 
-	if err := p.transitionJiraIssue(header.UserId, issueKey, toState); err != nil {
+	msg, err := p.transitionJiraIssue(header.UserId, issueKey, toState)
+	if err != nil {
 		return responsef("%v", err)
 	}
 
-	return responsef("Transition completed.")
+	return responsef(msg)
 }
 
 func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

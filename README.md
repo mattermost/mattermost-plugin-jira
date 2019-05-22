@@ -19,42 +19,52 @@ Below is a list of features currently supported. Each is considered Beta and may
 
 The above are supported for Jira Core and Jira Software, both for Cloud and Server platforms.
 
-## 2. Jira Plugin v2.0 Roadmap
+## 2. Jira Plugin v2 Roadmap
+
+### Timeline
 
 The ship target dates are included below. These are subject to change:
-  - May 16th: All features for the Jira plugin merged
-  - May 17 - 21st: Testing and bug fixes, add minor enhancements
-  - May 22nd: Jira 2.0 deployed to community.mattermost.com for wider testing
-  - May 22nd: Jira 2.0 shared with customers for early feedback
-  - May 22nd - early June: Testing and bug fixes
-  - June 16th: Jira 2.0 released
+  - May 29th: Jira 2.0 Release Candidate cut
+       - Deployed to community.mattermost.com for wider testing
+       - Shared with customers for early feedback
+  - June 16th: Jira 2.0 released as part of Mattermost Server v5.12
+  - June 19th: Jira 2.1 Release Candidate cut
+       - Deployed to community.mattermost.com for wider testing
+       - Shared with customers for early feedback
+  - August 16th: Jira 2.1 released as part of Mattermost Server v5.14
 
-Below is a full list of features planned for Jira plugin v2.0.
+### Jira 2.0 Features
+
+Below is a full list of features scheduled for v2.0.
 
 - Send notifications for issue events from Jira to Mattermost with full JQL support, using webhooks. Restricted to Jira System Admins only.
    - This includes notifications for the following events: issue created; issue transitioned to “Reopened”, “In Progress”, "Submitted" or “Resolved”; issue deleted or closed; comments created, updated or deleted; assignee updated
 - Create Jira issues via Mattermost UI (Desktop App and browser only)
 - Attach Mattermost messages to Jira issues via Mattermost UI (Desktop App and browser only)
 - Slash commands for
-  - `/jira connect` - Connect to a Jira project and subscribe to events.
-  - `/jira disconnect` - Disconnect from a Jira project and subscribe from events.
-  - `/jira create [description]` - Create a Jira ticket.
+  - `/jira connect` - Connect your Mattermost account to Jira. Enables you to create issues, attach messages to Jira and transition issues in Mattermost.
+  - `/jira disconnect` - Disconnect your Mattermost account from Jira.
   - `/jira transition <issue-key> <state>` - Transition a Jira issue specified by `issue-key`. `state` must be a valid Jira state such as "Done".
 
-Below is a full list of features which may also be added for Jira plugin v2.0, if they meet the above timeline:
+### Jira 2.1 Features
+
+Below is a full list of features scheduled for v2.1.
 
 - Subscribe Jira projects to Mattermost channels through the Mattermost user interface. Available to any users with appropriate permissions.
    - Subscribed notifications include the following events: issue created; issue transitioned to “Reopened”, “In Progress”, "Submitted" or “Resolved”; issue deleted or closed; comments created, updated or deleted; assignee, title, description, priority, sprint or rank updated; attachments or labels added; attachments or labels removed
-- Preview Jira issues in Mattermost when a ticket is referenced
-- Send direct messages for Jira at-mentions and issue assignments
+- Send notifications for issue events from Jira to Mattermost with full JQL support, using webhooks. Restricted to Jira System Admins only.
+   - This includes notifications for the following events: issue created; issue transitioned to “Reopened”, “In Progress”, "Submitted" or “Resolved”; issue deleted or closed; comments created, updated or deleted; assignee updated
+- Create Jira issues via Mattermost UI (Desktop App and browser only)
+- Attach Mattermost messages to Jira issues via Mattermost UI (Desktop App and browser only)
+- Receive direct messages for Jira at-mentions and issue assignments
 - Slash commands for
+  - `/jira connect` - Connect your Mattermost account to Jira. Enables you to create issues, attach messages to Jira and take other quick actions in Mattermost.
+  - `/jira disconnect` - Disconnect your Mattermost account from Jira.
   - `/jira assign <issue-key> <assignee>` - Assign a Jira issue specified by `issue-key`. `assignee` must be a member of the Jira project.
-  - `/jira subscribe` - Subscribe a Mattermost channel to receive notifications for issue updates in a Jira project.
-  - `/jira settings preview [on/off]` - Set whether previews of Jira issues are shown.
+  - `/jira create [description]` - Create a Jira ticket.
   - `/jira settings notifications [on/off]` - Set whether Direct Message notifications are sent for assignments and comments in assigned issues.
+  - `/jira transition <issue-key> <state>` - Transition a Jira issue specified by `issue-key`. `state` must be a valid Jira state such as "Done".
   - `/jira view <issue-key>` - View a Jira issue specified by `issue-key`.  
-
-Further features and improvements are considered for subsequent v2.X releases, including.
 
 If you're interested add improvements or bug fixes, review [open Help Wanted issues](https://github.com/mattermost/mattermost-plugin-jira/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) to get started.
 

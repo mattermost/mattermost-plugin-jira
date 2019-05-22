@@ -41,4 +41,12 @@ export const isCreateModalVisible = (state) => getPluginState(state).createModal
 
 export const getCreateModal = (state) => getPluginState(state).createModal;
 
+export const isAttachCommentToIssueModalVisible = (state) => getPluginState(state).attachCommentToIssueModalVisible;
+
+export const getAttachCommentToIssueModalForPostId = (state) => getPluginState(state).attachCommentToIssueModalForPostId;
+
 export const getJiraIssueMetadata = (state) => getPluginState(state).jiraIssueMetadata;
+
+export const getChannelIdWithSettingsOpen = (state) => getPluginState(state).channelIdWithSettingsOpen;
+
+export const getChannelSubscriptions = (state) => getPluginState(state).channelSubscripitons;
