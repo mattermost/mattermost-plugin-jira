@@ -6,6 +6,7 @@ package main
 import (
 	"crypto/rsa"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -51,20 +52,6 @@ type Plugin struct {
 	templates map[string]*template.Template
 }
 
-func (p *Plugin) getConfig() config {
-	p.confLock.RLock()
-	defer p.confLock.RUnlock()
-	return p.conf
-}
-
-func (p *Plugin) updateConfig(f func(conf *config)) config {
-	p.confLock.Lock()
-	defer p.confLock.Unlock()
-
-	f(&p.conf)
-	return p.conf
-}
-
 // OnConfigurationChange is invoked when configuration changes may have been made.
 func (p *Plugin) OnConfigurationChange() error {
 	// Load the public configuration fields from the Mattermost server configuration.
@@ -105,6 +92,45 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	return nil
+}
+
+func (p *Plugin) getConfig() config {
+	p.confLock.RLock()
+	defer p.confLock.RUnlock()
+	return p.conf
+}
+
+func (p *Plugin) updateConfig(f func(conf *config)) config {
+	p.confLock.Lock()
+	defer p.confLock.Unlock()
+
+	f(&p.conf)
+	return p.conf
+}
+
+func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {
+	templates := make(map[string]*template.Template)
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		template, err := template.ParseFiles(path)
+		if err != nil {
+			p.errorf("OnActivate: failed to parse template %s: %v", path, err)
+			return nil
+		}
+		key := path[len(dir):]
+		templates[key] = template
+		p.debugf("loaded template %s", key)
+		return nil
+	})
+	if err != nil {
+		return nil, errors.WithMessage(err, "OnActivate: failed to load templates")
+	}
+	return templates, nil
 }
 
 func (p *Plugin) GetPluginKey() string {

@@ -12,7 +12,6 @@ import (
 	"net/url"
 
 	"github.com/andygrunwald/go-jira"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 	ajwt "github.com/rbriski/atlassian-jwt"
 	oauth2_jira "golang.org/x/oauth2/jira"
@@ -48,25 +47,15 @@ type AtlassianSecurityContext struct {
 	OAuthClientId  string `json:"oauthClientId"`
 }
 
-func NewJIRACloudInstance(p *Plugin, key string, installed bool, rawASC string, asc *AtlassianSecurityContext) Instance {
+func NewJIRACloudInstance(key string, installed bool, rawASC string,
+	asc *AtlassianSecurityContext) *jiraCloudInstance {
+
 	return &jiraCloudInstance{
-		JIRAInstance:                NewJIRAInstance(p, JIRATypeCloud, key),
+		JIRAInstance:                NewJIRAInstance(JIRATypeCloud, key),
 		Installed:                   installed,
 		RawAtlassianSecurityContext: rawASC,
 		AtlassianSecurityContext:    asc,
 	}
-}
-
-type withCloudInstanceFunc func(jci *jiraCloudInstance, w http.ResponseWriter, r *http.Request) (int, error)
-
-func withCloudInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f withCloudInstanceFunc) (int, error) {
-	return withInstance(p, w, r, func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
-		jci, ok := ji.(*jiraCloudInstance)
-		if !ok {
-			return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
-		}
-		return f(jci, w, r)
-	})
 }
 
 func (jci jiraCloudInstance) GetMattermostKey() string {
@@ -88,7 +77,7 @@ func (jci jiraCloudInstance) GetDisplayDetails() map[string]string {
 	}
 }
 
-func (jci jiraCloudInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
+func (jci jiraCloudInstance) GetUserConnectURL(a *Action) (string, error) {
 	secret := make([]byte, 256)
 	_, err := rand.Read(secret)
 	if err != nil {
@@ -96,12 +85,12 @@ func (jci jiraCloudInstance) GetUserConnectURL(mattermostUserId string) (string,
 	}
 	secretKey := fmt.Sprintf("%x", sha256.Sum256(secret))
 	secretValue := "true"
-	err = jci.Plugin.StoreOneTimeSecret(secretKey, secretValue)
+	err = a.Plugin.StoreOneTimeSecret(secretKey, secretValue)
 	if err != nil {
 		return "", err
 	}
 
-	token, err := jci.Plugin.NewEncodedAuthToken(mattermostUserId, secretKey)
+	token, err := NewEncodedAuthToken(a.Plugin, a.MattermostUserId, secretKey)
 	if err != nil {
 		return "", err
 	}
@@ -116,8 +105,11 @@ func (jci jiraCloudInstance) GetURL() string {
 	return jci.AtlassianSecurityContext.BaseURL
 }
 
-func (jci jiraCloudInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error) {
-	client, _, err := jci.getJIRAClientForUser(jiraUser)
+func (jci jiraCloudInstance) GetJIRAClient(a *Action, jiraUser *JIRAUser) (*jira.Client, error) {
+	if jiraUser == nil {
+		jiraUser = a.JiraUser
+	}
+	client, _, err := jci.getJIRAClientForUser(a, jiraUser)
 	if err == nil {
 		return client, nil
 	}
@@ -125,14 +117,14 @@ func (jci jiraCloudInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, err
 	//TODO decide if we ever need this as the default client
 	// client, err = jci.getJIRAClientForServer()
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get Jira client for user "+jiraUser.Name)
+		return nil, errors.WithMessage(err, "failed to get Jira client for user "+a.JiraUser.Name)
 	}
 
 	return client, nil
 }
 
 // Creates a client for acting on behalf of a user
-func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Client, *http.Client, error) {
+func (jci jiraCloudInstance) getJIRAClientForUser(a *Action, jiraUser *JIRAUser) (*jira.Client, *http.Client, error) {
 	oauth2Conf := oauth2_jira.Config{
 		BaseURL: jci.GetURL(),
 		Subject: jiraUser.Name,
@@ -159,29 +151,4 @@ func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
 	}
 
 	return jira.NewClient(jwtConf.Client(), jwtConf.BaseURL)
-}
-
-func (jci jiraCloudInstance) parseHTTPRequestJWT(r *http.Request) (*jwt.Token, string, error) {
-	err := r.ParseForm()
-	if err != nil {
-		return nil, "", errors.WithMessage(err, "failed to parse request")
-	}
-	tokenString := r.Form.Get("jwt")
-	if tokenString == "" {
-		return nil, "", errors.New("no jwt in the request")
-	}
-
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New(
-				fmt.Sprintf("unsupported signing method: %v", token.Header["alg"]))
-		}
-		// HMAC secret is a []byte
-		return []byte(jci.AtlassianSecurityContext.SharedSecret), nil
-	})
-	if err != nil || !token.Valid {
-		return nil, "", errors.WithMessage(err, "failed to validatte JWT")
-	}
-
-	return token, tokenString, nil
 }

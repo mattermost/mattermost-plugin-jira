@@ -5,13 +5,6 @@ package main
 
 import (
 	"net/http"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"text/template"
-
-	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/plugin"
 )
@@ -38,116 +31,75 @@ const (
 	routeUserDisconnect            = "/user/disconnect"
 )
 
+func httpPostFilter(ff ...ActionFunc) ActionFilter {
+	return append(ActionFilter{RequireHTTPPost}, ff...)
+}
+
+func httpGetFilter(ff ...ActionFunc) ActionFilter {
+	return append(ActionFilter{RequireHTTPPost}, ff...)
+}
+
+var httpInstanceFilter = ActionFilter{RequireHTTPMattermostUserId, RequireInstance}
+var httpJiraUserFilter = ActionFilter{RequireHTTPMattermostUserId, RequireInstance, RequireJiraUser}
+var httpJiraClientFilter = append(httpJiraUserFilter, RequireJiraClient)
+
+var httpRouter = ActionRouter{
+	DefaultRouteHandler: func(a *Action) error {
+		return a.RespondError(http.StatusNotFound, nil, "not found")
+	},
+	Log: ActionFilter{
+		func(a *Action) error {
+			if a.HTTPStatusCode == 0 {
+				a.HTTPStatusCode = http.StatusOK
+			}
+			if a.Err != nil {
+				a.Plugin.errorf("http: %v %s %v", a.HTTPStatusCode, a.HTTPRequest.URL.String(), a.Err)
+			} else {
+				a.Plugin.debugf("http: %v %s", a.HTTPStatusCode, a.HTTPRequest.URL.String())
+			}
+			return nil
+		},
+	},
+	RouteHandlers: map[string]*ActionScript{
+		// MM client APIs
+		routeAPICreateIssue:            {Filter: httpPostFilter(httpJiraClientFilter...), Handler: httpAPICreateIssue},
+		routeAPIAttachCommentToIssue:   {Filter: httpPostFilter(httpJiraClientFilter...), Handler: httpAPIAttachCommentToIssue},
+		routeAPIGetCreateIssueMetadata: {Filter: httpGetFilter(httpJiraClientFilter...), Handler: httpAPIGetCreateIssueMetadata},
+		routeAPIUserInfo:               {Filter: httpGetFilter(httpJiraUserFilter...), Handler: httpAPIGetUserInfo},
+		routeAPISubscribeWebhook:       {Filter: httpPostFilter(), Handler: httpSubscribeWebhook},
+		routeAPISubscriptionsChannel:   {Filter: ActionFilter{RequireHTTPMattermostUserId}, Handler: httpChannelSubscriptions},
+
+		// Atlassian Connect application
+		routeACInstalled: {Filter: httpPostFilter(), Handler: httpACInstalled},
+		routeACJSON:      {Filter: httpGetFilter(), Handler: httpACJSON},
+
+		// User connect and disconnect URLs
+		routeUserConnect:    {Filter: httpGetFilter(RequireHTTPMattermostUserId, RequireInstance), Handler: httpUserConnect},
+		routeUserDisconnect: {Filter: httpGetFilter(httpJiraUserFilter...), Handler: httpUserDisconnect},
+
+		// Atlassian Connect user mapping
+		routeACUserRedirectWithToken: {Filter: httpGetFilter(RequireHTTPCloudJWT), Handler: httpACUserRedirect},
+		routeACUserConfirm:           {Filter: httpGetFilter(RequireHTTPCloudJWT), Handler: httpACUserInteractive},
+		routeACUserConnected:         {Filter: httpGetFilter(RequireHTTPCloudJWT), Handler: httpACUserInteractive},
+		routeACUserDisconnected:      {Filter: httpGetFilter(RequireHTTPCloudJWT), Handler: httpACUserInteractive},
+
+		// Oauth1 (Jira Server) user mapping
+		routeOAuth1Complete: {Filter: httpGetFilter(RequireHTTPMattermostUserId, RequireServerInstance, RequireMattermostUser), Handler: httpOAuth1Complete},
+
+		// incoming webhooks
+		routeIncomingWebhook:    {Filter: httpPostFilter(), Handler: httpWebhook},
+		routeIncomingIssueEvent: {Filter: httpPostFilter(), Handler: httpWebhook},
+	},
+}
+
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	config := p.getConfig()
-	if config.UserName == "" {
+	action := NewAction(p, c)
+	action.HTTPRequest = r
+	action.HTTPResponseWriter = w
+	if action.PluginConfig.UserName == "" {
 		http.Error(w, "Jira plugin not configured correctly; must provide UserName", http.StatusForbidden)
 		return
 	}
 
-	status, err := handleHTTPRequest(p, w, r)
-	if err != nil {
-		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
-		http.Error(w, err.Error(), status)
-		return
-	}
-	p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
-}
-
-func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	switch r.URL.Path {
-	// Issue APIs
-	case routeAPICreateIssue:
-		return withInstance(p, w, r, httpAPICreateIssue)
-	case routeAPIGetCreateIssueMetadata:
-		return withInstance(p, w, r, httpAPIGetCreateIssueMetadata)
-	case routeAPIAttachCommentToIssue:
-		return withInstance(p, w, r, httpAPIAttachCommentToIssue)
-
-	// User APIs
-	case routeAPIUserInfo:
-		return withInstance(p, w, r, httpAPIGetUserInfo)
-
-	// Atlassian Connect application
-	case routeACInstalled:
-		return httpACInstalled(p, w, r)
-	case routeACJSON:
-		return httpACJSON(p, w, r)
-	case routeACUninstalled:
-		return httpACUninstalled(p, w, r)
-
-	// Atlassian Connect user mapping
-	case routeACUserRedirectWithToken:
-		return withCloudInstance(p, w, r, httpACUserRedirect)
-	case routeACUserConfirm,
-		routeACUserConnected,
-		routeACUserDisconnected:
-		return withCloudInstance(p, w, r, httpACUserInteractive)
-
-	// Incoming webhook
-	case routeIncomingWebhook, routeIncomingIssueEvent:
-		return httpWebhook(p, w, r)
-
-	// Oauth1 (Jira Server)
-	case routeOAuth1Complete:
-		return withServerInstance(p, w, r, httpOAuth1Complete)
-	case routeOAuth1PublicKey:
-		return httpOAuth1PublicKey(p, w, r)
-
-	// User connect/disconnect links
-	case routeUserConnect:
-		return withInstance(p, w, r, httpUserConnect)
-	case routeUserDisconnect:
-		return withInstance(p, w, r, httpUserDisconnect)
-
-	// Firehose webhook setup for channel subscriptions
-	case routeAPISubscribeWebhook:
-		return httpSubscribeWebhook(p, w, r)
-	}
-
-	if strings.HasPrefix(r.URL.Path, routeAPISubscriptionsChannel) {
-		return httpChannelSubscriptions(p, w, r)
-	}
-
-	return http.StatusNotFound, errors.New("not found")
-}
-
-func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {
-	templates := make(map[string]*template.Template)
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			return nil
-		}
-		template, err := template.ParseFiles(path)
-		if err != nil {
-			p.errorf("OnActivate: failed to parse template %s: %v", path, err)
-			return nil
-		}
-		key := path[len(dir):]
-		templates[key] = template
-		p.debugf("loaded template %s", key)
-		return nil
-	})
-	if err != nil {
-		return nil, errors.WithMessage(err, "OnActivate: failed to load templates")
-	}
-	return templates, nil
-}
-
-func (p *Plugin) respondWithTemplate(w http.ResponseWriter, r *http.Request, contentType string, values interface{}) (int, error) {
-	w.Header().Set("Content-Type", contentType)
-	t := p.templates[r.URL.Path]
-	if t == nil {
-		return http.StatusInternalServerError,
-			errors.New("no template found for " + r.URL.Path)
-	}
-	err := t.Execute(w, values)
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write response")
-	}
-	return http.StatusOK, nil
+	httpRouter.Run(r.URL.Path, action)
 }

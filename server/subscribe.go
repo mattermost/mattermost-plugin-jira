@@ -308,34 +308,37 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 	return nil
 }
 
-func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodPost {
-		return http.StatusMethodNotAllowed,
-			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
-	}
-
-	cfg := p.getConfig()
-	if cfg.Secret == "" || cfg.UserName == "" {
-		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret and UserName")
-	}
-
-	if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(cfg.Secret)) != 1 {
-		return http.StatusForbidden, fmt.Errorf("Request URL: secret did not match")
-	}
-
-	parsed, err := parse(r.Body, nil)
+func httpSubscribeWebhook(a *Action) error {
+	err := RequireHTTPPost(a)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return err
 	}
 
-	botUserId, err := p.getUserID()
-	if err != nil {
-		return http.StatusInternalServerError, err
+	if a.PluginConfig.Secret == "" || a.PluginConfig.UserName == "" {
+		return a.RespondError(http.StatusForbidden, nil,
+			"Jira plugin not configured correctly; must provide Secret and UserName")
 	}
 
-	channelIds, err := p.getChannelsSubscribed(parsed)
+	if subtle.ConstantTimeCompare(
+		[]byte(a.HTTPRequest.URL.Query().Get("secret")),
+		[]byte(a.PluginConfig.Secret)) != 1 {
+		return a.RespondError(http.StatusForbidden, nil,
+			"request URL: secret did not match")
+	}
+
+	parsed, err := parse(a.HTTPRequest.Body, nil)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return a.RespondError(http.StatusInternalServerError, err)
+	}
+
+	botUserId, err := a.Plugin.getUserID()
+	if err != nil {
+		return a.RespondError(http.StatusInternalServerError, err)
+	}
+
+	channelIds, err := a.Plugin.getChannelsSubscribed(parsed)
+	if err != nil {
+		return a.RespondError(http.StatusInternalServerError, err)
 	}
 
 	attachment := newSlackAttachment(parsed)
@@ -349,151 +352,127 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		model.ParseSlackAttachment(post, []*model.SlackAttachment{attachment})
 
 		if err != nil {
-			return http.StatusBadGateway, err
+			return a.RespondError(http.StatusBadGateway, err)
 		}
-		_, appErr := p.API.CreatePost(post)
+		_, appErr := a.Plugin.API.CreatePost(post)
 		if appErr != nil {
-			return appErr.StatusCode, fmt.Errorf(appErr.Message)
+			return a.RespondError(appErr.StatusCode, appErr)
 		}
 	}
-
-	return http.StatusOK, nil
+	return nil
 }
 
-func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
+func httpChannelCreateSubscription(a *Action) error {
 	subscription := ChannelSubscription{}
-	err := json.NewDecoder(r.Body).Decode(&subscription)
+	err := json.NewDecoder(a.HTTPRequest.Body).Decode(&subscription)
 	if err != nil {
-		return http.StatusBadRequest, errors.WithMessage(err, "failed to decode incoming request")
+		return a.RespondError(http.StatusBadRequest, err,
+			"failed to decode incoming request")
 	}
 
 	if len(subscription.ChannelId) != 26 ||
 		len(subscription.Id) != 0 {
-		return http.StatusBadRequest, fmt.Errorf("Channel subscription invalid")
+		return a.RespondError(http.StatusBadRequest, nil,
+			"Channel subscription invalid")
 	}
 
-	if _, err := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); err != nil {
-		return http.StatusForbidden, errors.New("Not a member of the channel specified")
+	_, appErr := a.Plugin.API.GetChannelMember(subscription.ChannelId, a.MattermostUserId)
+	if appErr != nil {
+		return a.RespondError(http.StatusForbidden, nil,
+			"Not a member of the channel specified")
 	}
 
-	if err := p.addChannelSubscription(&subscription); err != nil {
-		return http.StatusInternalServerError, err
+	if err := a.Plugin.addChannelSubscription(&subscription); err != nil {
+		a.RespondError(http.StatusInternalServerError, err)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("{\"status\": \"OK\"}"))
-
-	return http.StatusOK, nil
+	return a.RespondJSON(map[string]string{"status": "OK"})
 }
 
-func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
+func httpChannelEditSubscription(a *Action) error {
 	subscription := ChannelSubscription{}
-	err := json.NewDecoder(r.Body).Decode(&subscription)
+	err := json.NewDecoder(a.HTTPRequest.Body).Decode(&subscription)
 	if err != nil {
-		return http.StatusBadRequest, errors.WithMessage(err, "failed to decode incoming request")
+		return a.RespondError(http.StatusBadRequest, err,
+			"failed to decode incoming request")
 	}
 
 	if len(subscription.ChannelId) != 26 ||
 		len(subscription.Id) != 26 {
-		return http.StatusBadRequest, fmt.Errorf("Channel subscription invalid")
+		return a.RespondError(http.StatusBadRequest, nil,
+			"Channel subscription invalid")
 	}
 
-	if _, err := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); err != nil {
-		return http.StatusForbidden, errors.New("Not a member of the channel specified")
+	if _, appErr := a.Plugin.API.GetChannelMember(subscription.ChannelId, a.MattermostUserId); appErr != nil {
+		return a.RespondError(http.StatusForbidden, nil,
+			"Not a member of the channel specified")
 	}
 
-	if err := p.editChannelSubscription(&subscription); err != nil {
-		return http.StatusInternalServerError, err
+	if err := a.Plugin.editChannelSubscription(&subscription); err != nil {
+		return a.RespondError(http.StatusInternalServerError, err)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("{\"status\": \"OK\"}"))
-
-	return http.StatusOK, nil
+	return a.RespondJSON(map[string]string{"status": "OK"})
 }
 
-func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
-	subscriptionId := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionsChannel+"/")
+func httpChannelDeleteSubscription(a *Action) error {
+	subscriptionId := strings.TrimPrefix(a.HTTPRequest.URL.Path, routeAPISubscriptionsChannel+"/")
 	if len(subscriptionId) != 26 {
-		return http.StatusBadRequest, errors.New("bad subscription id")
+		return a.RespondError(http.StatusBadRequest, nil,
+			"bad subscription id")
 	}
 
-	subscription, err := p.getChannelSubscription(subscriptionId)
+	subscription, err := a.Plugin.getChannelSubscription(subscriptionId)
 	if err != nil {
-		return http.StatusBadRequest, errors.Wrap(err, "bad subscription id")
+		return a.RespondError(http.StatusBadRequest, err, "bad subscription id")
 	}
 
-	if _, err := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); err != nil {
-		return http.StatusForbidden, errors.New("Not a member of the channel specified")
+	_, appErr := a.Plugin.API.GetChannelMember(subscription.ChannelId, a.MattermostUserId)
+	if appErr != nil {
+		return a.RespondError(http.StatusForbidden, nil,
+			"Not a member of the channel specified")
 	}
 
-	if err := p.removeChannelSubscription(subscriptionId); err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "unable to remove channel subscription")
+	if err := a.Plugin.removeChannelSubscription(subscriptionId); err != nil {
+		return a.RespondError(http.StatusInternalServerError, err,
+			"unable to remove channel subscription")
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("{\"status\": \"OK\"}"))
-
-	return http.StatusOK, nil
+	return a.RespondJSON(map[string]string{"status": "OK"})
 }
 
-func httpChannelGetSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
-	channelId := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionsChannel+"/")
+func httpChannelGetSubscriptions(a *Action) error {
+	channelId := strings.TrimPrefix(a.HTTPRequest.URL.Path, routeAPISubscriptionsChannel+"/")
 	if len(channelId) != 26 {
-		return http.StatusBadRequest, errors.New("bad channel id")
+		return a.RespondError(http.StatusBadRequest, nil,
+			"bad channel id")
 	}
 
-	if _, err := p.API.GetChannelMember(channelId, mattermostUserId); err != nil {
-		return http.StatusForbidden, errors.New("Not a member of the channel specified")
+	if _, appErr := a.Plugin.API.GetChannelMember(channelId, a.MattermostUserId); appErr != nil {
+		return a.RespondError(http.StatusForbidden, nil,
+			"Not a member of the channel specified")
 	}
 
-	subscriptions, err := p.getSubscriptionsForChannel(channelId)
+	subscriptions, err := a.Plugin.getSubscriptionsForChannel(channelId)
 	if err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "unable to get channel subscriptions")
+		return a.RespondError(http.StatusInternalServerError, err,
+			"unable to get channel subscriptions")
 	}
 
-	bytes, err := json.Marshal(subscriptions)
-	if err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "unable to marshal subscriptions")
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(bytes)
-
-	return http.StatusOK, nil
+	return a.RespondJSON(subscriptions)
 }
 
-func httpChannelSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	switch r.Method {
+func httpChannelSubscriptions(a *Action) error {
+	switch a.HTTPRequest.Method {
 	case http.MethodPost:
-		return httpChannelCreateSubscription(p, w, r)
+		return httpChannelCreateSubscription(a)
 	case http.MethodDelete:
-		return httpChannelDeleteSubscription(p, w, r)
+		return httpChannelDeleteSubscription(a)
 	case http.MethodGet:
-		return httpChannelGetSubscriptions(p, w, r)
+		return httpChannelGetSubscriptions(a)
 	case http.MethodPut:
-		return httpChannelEditSubscription(p, w, r)
+		return httpChannelEditSubscription(a)
 	default:
-		return http.StatusMethodNotAllowed, fmt.Errorf("Request: " + r.Method + " is not allowed.")
+		return a.RespondError(http.StatusMethodNotAllowed, nil, "Request: %q is not allowed.", a.HTTPRequest.Method)
 	}
 }

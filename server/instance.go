@@ -4,9 +4,7 @@
 package main
 
 import (
-	"net/http"
 	"regexp"
-	"sync"
 
 	"github.com/andygrunwald/go-jira"
 )
@@ -19,32 +17,25 @@ const (
 const prefixForInstance = true
 
 type Instance interface {
-	GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error)
 	GetDisplayDetails() map[string]string
 	GetMattermostKey() string
-	GetPlugin() *Plugin
 	GetType() string
 	GetURL() string
-	GetUserConnectURL(mattermostUserId string) (string, error)
-	Init(p *Plugin)
+	GetUserConnectURL(a *Action) (string, error)
+	GetJIRAClient(a *Action, jiraUser *JIRAUser) (*jira.Client, error)
 }
 
 type JIRAInstance struct {
-	*Plugin `json:"-"`
-	lock    *sync.RWMutex
-
 	Key  string
 	Type string
 }
 
 var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
 
-func NewJIRAInstance(p *Plugin, typ, key string) *JIRAInstance {
+func NewJIRAInstance(typ, key string) *JIRAInstance {
 	return &JIRAInstance{
-		Plugin: p,
-		Type:   typ,
-		Key:    key,
-		lock:   &sync.RWMutex{},
+		Type: typ,
+		Key:  key,
 	}
 }
 
@@ -54,23 +45,4 @@ func (ji JIRAInstance) GetKey() string {
 
 func (ji JIRAInstance) GetType() string {
 	return ji.Type
-}
-
-func (ji JIRAInstance) GetPlugin() *Plugin {
-	return ji.Plugin
-}
-
-func (ji *JIRAInstance) Init(p *Plugin) {
-	ji.Plugin = p
-	ji.lock = &sync.RWMutex{}
-}
-
-type withInstanceFunc func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error)
-
-func withInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f withInstanceFunc) (int, error) {
-	ji, err := p.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	return f(ji, w, r)
 }

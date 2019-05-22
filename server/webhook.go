@@ -88,55 +88,51 @@ type notifier interface {
 	notify(ji Instance, parsed *parsedJIRAWebhook, text string)
 }
 
-func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodPost {
-		return http.StatusMethodNotAllowed,
-			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
+func httpWebhook(a *Action) error {
+	if a.PluginConfig.Secret == "" || a.PluginConfig.UserName == "" {
+		return a.RespondError(http.StatusForbidden, nil,
+			"Jira plugin not configured correctly; must provide Secret and UserName")
 	}
-	// TODO add JWT support
-	cfg := p.getConfig()
-	if cfg.Secret == "" || cfg.UserName == "" {
-		return http.StatusForbidden, fmt.Errorf("Jira plugin not configured correctly; must provide Secret and UserName")
-	}
+	r := a.HTTPRequest
 
 	secret := r.FormValue("secret")
 	for {
-		if subtle.ConstantTimeCompare([]byte(secret), []byte(cfg.Secret)) == 1 {
+		if subtle.ConstantTimeCompare([]byte(secret), []byte(a.PluginConfig.Secret)) == 1 {
 			break
 		}
 
 		unescaped, _ := url.QueryUnescape(secret)
 		if unescaped == secret {
-			return http.StatusForbidden,
-				fmt.Errorf("Request URL: secret did not match")
+			return a.RespondError(http.StatusForbidden, nil,
+				"Request URL: secret did not match")
 		}
 		secret = unescaped
 	}
 
 	teamName := r.FormValue("team")
 	if teamName == "" {
-		return http.StatusBadRequest,
-			fmt.Errorf("Request URL: team is empty")
+		return a.RespondError(http.StatusBadRequest, nil,
+			"Request URL: team is empty")
 	}
 	channelId := r.FormValue("channel")
 	if channelId == "" {
-		return http.StatusBadRequest,
-			fmt.Errorf("Request URL: channel is empty")
+		return a.RespondError(http.StatusBadRequest, nil,
+			"Request URL: channel is empty")
 	}
 
-	user, appErr := p.API.GetUserByUsername(cfg.UserName)
+	user, appErr := a.Plugin.API.GetUserByUsername(a.PluginConfig.UserName)
 	if appErr != nil {
-		return appErr.StatusCode, fmt.Errorf(appErr.Message)
+		return a.RespondError(appErr.StatusCode, appErr)
 	}
 
-	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelId, false)
+	channel, appErr := a.Plugin.API.GetChannelByNameForTeamName(teamName, channelId, false)
 	if appErr != nil {
-		return appErr.StatusCode, fmt.Errorf(appErr.Message)
+		return a.RespondError(appErr.StatusCode, appErr)
 	}
 
 	initPost, err := AsSlackAttachment(r.Body)
 	if err != nil {
-		return http.StatusBadRequest, err
+		return a.RespondError(http.StatusBadRequest, err)
 	}
 
 	post := &model.Post{
@@ -149,12 +145,12 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 	}
 	initPost(post)
 
-	_, appErr = p.API.CreatePost(post)
+	_, appErr = a.Plugin.API.CreatePost(post)
 	if appErr != nil {
-		return appErr.StatusCode, fmt.Errorf(appErr.Message)
+		return a.RespondError(appErr.StatusCode, appErr)
 	}
 
-	return http.StatusOK, nil
+	return nil
 }
 
 func (w *JIRAWebhook) jiraURL() string {

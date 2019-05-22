@@ -4,6 +4,8 @@
 package main
 
 import (
+	"crypto/x509"
+	"encoding/pem"
 	"net/http"
 
 	"github.com/andygrunwald/go-jira"
@@ -24,10 +26,10 @@ type jiraServerInstance struct {
 
 var _ Instance = (*jiraServerInstance)(nil)
 
-func NewJIRAServerInstance(p *Plugin, jiraURL string) Instance {
+func NewJIRAServerInstance(jiraURL, mattermostKey string) *jiraServerInstance {
 	return &jiraServerInstance{
-		JIRAInstance:  NewJIRAInstance(p, JIRATypeServer, jiraURL),
-		MattermostKey: p.GetPluginKey(),
+		JIRAInstance:  NewJIRAInstance(JIRATypeServer, jiraURL),
+		MattermostKey: mattermostKey,
 		JIRAServerURL: jiraURL,
 	}
 }
@@ -37,16 +39,6 @@ func (jsi jiraServerInstance) GetURL() string {
 }
 
 type withServerInstanceFunc func(jsi *jiraServerInstance, w http.ResponseWriter, r *http.Request) (int, error)
-
-func withServerInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f withServerInstanceFunc) (int, error) {
-	return withInstance(p, w, r, func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
-		jsi, ok := ji.(*jiraServerInstance)
-		if !ok {
-			return http.StatusBadRequest, errors.New("Must be a Jira Server instance, is " + ji.GetType())
-		}
-		return f(jsi, w, r)
-	})
-}
 
 func (jsi jiraServerInstance) GetMattermostKey() string {
 	return jsi.MattermostKey
@@ -58,15 +50,14 @@ func (jsi jiraServerInstance) GetDisplayDetails() map[string]string {
 	}
 }
 
-func (jsi jiraServerInstance) GetUserConnectURL(mattermostUserId string) (returnURL string, returnErr error) {
+func (jsi jiraServerInstance) GetUserConnectURL(a *Action) (returnURL string, returnErr error) {
 	defer func() {
-		if returnErr == nil {
-			return
+		if returnErr != nil {
+			returnErr = errors.WithMessage(returnErr, "failed to get a connect link")
 		}
-		returnErr = errors.WithMessage(returnErr, "failed to get a connect link")
 	}()
 
-	oauth1Config, err := jsi.GetOAuth1Config()
+	oauth1Config, err := jsi.GetOAuth1Config(a)
 	if err != nil {
 		return "", err
 	}
@@ -76,7 +67,7 @@ func (jsi jiraServerInstance) GetUserConnectURL(mattermostUserId string) (return
 		return "", err
 	}
 
-	err = jsi.Plugin.StoreOneTimeSecret(token, secret)
+	err = a.Plugin.StoreOneTimeSecret(token, secret)
 	if err != nil {
 		return "", err
 	}
@@ -89,19 +80,25 @@ func (jsi jiraServerInstance) GetUserConnectURL(mattermostUserId string) (return
 	return authURL.String(), nil
 }
 
-func (jsi jiraServerInstance) GetJIRAClient(jiraUser JIRAUser) (returnClient *jira.Client, returnErr error) {
+func (jsi jiraServerInstance) GetJIRAClient(a *Action, jiraUser *JIRAUser) (
+	returnClient *jira.Client, returnErr error) {
+
+	if jiraUser == nil {
+		jiraUser = a.JiraUser
+	}
+
 	defer func() {
-		if returnErr == nil {
-			return
+		if returnErr != nil {
+			returnErr = errors.WithMessagef(returnErr,
+				"failed to get a Jira client for %q", jiraUser.Name)
 		}
-		returnErr = errors.WithMessage(returnErr, "failed to get a Jira client for "+jiraUser.Name)
 	}()
 
 	if jiraUser.Oauth1AccessToken == "" || jiraUser.Oauth1AccessSecret == "" {
 		return nil, errors.New("No access token, please use /jira connect")
 	}
 
-	oauth1Config, err := jsi.GetOAuth1Config()
+	oauth1Config, err := jsi.GetOAuth1Config(a)
 	if err != nil {
 		return nil, err
 	}
@@ -116,44 +113,38 @@ func (jsi jiraServerInstance) GetJIRAClient(jiraUser JIRAUser) (returnClient *ji
 	return jiraClient, nil
 }
 
-func (jsi jiraServerInstance) getOAuth1Config() *oauth1.Config {
-	jsi.lock.RLock()
-	defer jsi.lock.RUnlock()
-
-	return jsi.oauth1Config
-}
-
-func (jsi *jiraServerInstance) GetOAuth1Config() (returnConfig *oauth1.Config, returnErr error) {
-	defer func() {
-		if returnErr == nil {
-			return
-		}
-		returnErr = errors.WithMessage(returnErr, "failed to create an OAuth1 config")
-	}()
-
-	oauth1Config := jsi.getOAuth1Config()
-	if oauth1Config != nil {
-		return oauth1Config, nil
-	}
-
-	rsaKey, err := jsi.EnsureRSAKey()
+func (jsi *jiraServerInstance) GetOAuth1Config(a *Action) (*oauth1.Config, error) {
+	rsaKey, err := a.Plugin.EnsureRSAKey()
 	if err != nil {
-		return nil, err
+		return nil, errors.WithMessage(err, "failed to create an OAuth1 config")
 	}
 
-	jsi.lock.Lock()
-	defer jsi.lock.Unlock()
-	jsi.oauth1Config = &oauth1.Config{
+	return &oauth1.Config{
 		ConsumerKey:    jsi.MattermostKey,
 		ConsumerSecret: "dontcare",
-		CallbackURL:    jsi.GetPluginURL() + "/" + routeOAuth1Complete,
+		CallbackURL:    a.Plugin.GetPluginURL() + "/" + routeOAuth1Complete,
 		Endpoint: oauth1.Endpoint{
 			RequestTokenURL: jsi.GetURL() + "/plugins/servlet/oauth/request-token",
 			AuthorizeURL:    jsi.GetURL() + "/plugins/servlet/oauth/authorize",
 			AccessTokenURL:  jsi.GetURL() + "/plugins/servlet/oauth/access-token",
 		},
 		Signer: &oauth1.RSASigner{PrivateKey: rsaKey},
+	}, nil
+}
+
+func publicKeyString(p *Plugin) ([]byte, error) {
+	rsaKey, err := p.EnsureRSAKey()
+	if err != nil {
+		return nil, err
 	}
 
-	return jsi.oauth1Config, nil
+	b, err := x509.MarshalPKIXPublicKey(&rsaKey.PublicKey)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to encode public key")
+	}
+
+	return pem.EncodeToMemory(&pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: b,
+	}), nil
 }
