@@ -36,7 +36,7 @@ func httpPostFilter(ff ...ActionFunc) ActionFilter {
 }
 
 func httpGetFilter(ff ...ActionFunc) ActionFilter {
-	return append(ActionFilter{RequireHTTPPost}, ff...)
+	return append(ActionFilter{RequireHTTPGet}, ff...)
 }
 
 var httpInstanceFilter = ActionFilter{RequireHTTPMattermostUserId, RequireInstance}
