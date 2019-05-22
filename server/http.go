@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -21,8 +20,6 @@ const (
 	routeAPIGetCreateIssueMetadata = "/api/v2/get-create-issue-metadata"
 	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
 	routeAPIUserInfo               = "/api/v2/userinfo"
-	routeAPISubscribeWebhook       = "/api/v2/webhook"
-	routeAPISubscriptionsChannel   = "/api/v2/subscriptions/channel"
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"
 	routeACUninstalled             = "/ac/uninstalled"
@@ -99,14 +96,6 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 		return withInstance(p, w, r, httpUserConnect)
 	case routeUserDisconnect:
 		return withInstance(p, w, r, httpUserDisconnect)
-
-	// Firehose webhook setup for channel subscriptions
-	case routeAPISubscribeWebhook:
-		return httpSubscribeWebhook(p, w, r)
-	}
-
-	if strings.HasPrefix(r.URL.Path, routeAPISubscriptionsChannel) {
-		return httpChannelSubscriptions(p, w, r)
 	}
 
 	return http.StatusNotFound, errors.New("not found")
