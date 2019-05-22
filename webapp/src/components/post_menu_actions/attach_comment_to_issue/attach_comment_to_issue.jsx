@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 
 import PluginId from 'plugin_id';
 
-import jiraIcon from 'assets/JiraIcon.png';
+import JiraIcon from 'components/icon';
 
 export default class AttachCommentToIssuePostMenuAction extends PureComponent {
     static propTypes = {
@@ -55,10 +55,7 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
                     role='presentation'
                     onClick={this.handleClick}
                 >
-                    <img
-                        style={{width: '18px', marginRight: 2}}
-                        src={jiraIcon}
-                    />
+                    <JiraIcon type='menu'/>
                     {this.getLocalizedTitle()}
                 </button>
             );
