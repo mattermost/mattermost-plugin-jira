@@ -337,41 +337,36 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 		return "", err
 	}
 
-	res, err := jiraClient.Do(req, nil)
+	var jiraUsers []*jira.User
+	resp, err := jiraClient.Do(req, &jiraUsers)
 	if err != nil {
-		if res.Response.StatusCode == 401 {
+		if resp.Response.StatusCode == 401 {
 			return "You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.", nil
 		}
 		return "", err
 	}
 
-	var data []*jira.User
-	defer res.Body.Close()
-	if err := json.NewDecoder(res.Body).Decode(&data); err != nil {
-		return "", errors.WithMessage(err, "failed to decode incoming request")
-	}
-
 	// handle number of returned jira users
-	if len(data) == 0 {
+	if len(jiraUsers) == 0 {
 		errorMsg := fmt.Sprintf("We couldn't find the assignee. Please use a Jira member and try again.")
 		return "", fmt.Errorf(errorMsg)
 	}
 
-	if len(data) > 1 {
-		errorMsg := fmt.Sprintf("Your <assignee>, `%s`, matches %d users.  Please make your user request unique.", assignee, len(data))
+	if len(jiraUsers) > 1 {
+		errorMsg := fmt.Sprintf("Your <assignee>, `%s`, matches %d users.  Please make your user request unique.", assignee, len(jiraUsers))
 		return "", fmt.Errorf(errorMsg)
 	}
 
-	// User is array of one object
-	User := data[0]
+	// user is array of one object
+	user := jiraUsers[0]
 
-	if _, err := jiraClient.Issue.UpdateAssignee(issueKey, User); err != nil {
+	if _, err := jiraClient.Issue.UpdateAssignee(issueKey, user); err != nil {
 		return "", err
 	}
 
 	permalink := fmt.Sprintf("%v/browse/%v", ji.GetURL(), issueKey)
 
-	msg := fmt.Sprintf("`%s` assigned to Jira issue [%s](%s)", User.DisplayName, issueKey, permalink)
+	msg := fmt.Sprintf("`%s` assigned to Jira issue [%s](%s)", user.DisplayName, issueKey, permalink)
 	return msg, nil
 
 }
