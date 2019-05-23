@@ -3,16 +3,16 @@ package main
 import "github.com/mattermost/mattermost-server/model"
 
 const (
-	SETTING_ON  = "on"
-	SETTING_OFF = "off"
+	settingOn  = "on"
+	settingOff = "off"
 )
 
 func (p *Plugin) settingsNotifications(ji Instance, mattermostUserId string, jiraUser JIRAUser, args []string) *model.CommandResponse {
 	var value bool
 	switch args[0] {
-	case SETTING_ON:
+	case settingOn:
 		value = true
-	case SETTING_OFF:
+	case settingOff:
 		value = false
 	default:
 		return responsef("Invalid value. Accepted values are: `on` or `off`.")
