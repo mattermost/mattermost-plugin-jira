@@ -56,6 +56,7 @@ const maskDefault = maskLegacy
 var eventParamMasks = map[string]uint64{
 	"ecomment_created": eventCommentCreated,         // new comments
 	"eistatus":         eventIssueUpdatedStatus,     // transitions like Done, In Progress
+	"eiassigned":       eventIssueAssigned,          // re-assigned
 	"eiprio":           eventIssueUpdatePriority,    // changes in priority
 	"uirename":         eventIssueUpdateSummary,     // issue renamed
 	"eiedit":           eventIssueUpdateDescription, // issue description edited
