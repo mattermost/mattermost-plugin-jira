@@ -233,7 +233,7 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook,
 	case "jira:issue_deleted":
 		parsed.events = parsed.events | eventIssueDeleted
 		if parsed.Issue.Fields != nil && parsed.Issue.Fields.Resolution == nil {
-			parsed.events = parsed.events | eventIssueDeleted
+			parsed.events = parsed.events | eventUnresolvedIssueDeleted
 		}
 		headline = fmt.Sprintf("deleted %v", issue)
 	case "jira:issue_updated":
