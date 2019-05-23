@@ -8,14 +8,20 @@ const (
 )
 
 func (p *Plugin) settingsNotifications(ji Instance, mattermostUserId string, jiraUser JIRAUser, args []string) *model.CommandResponse {
+	const helpText = "`/jira settings notifications [value]`\n* Invalid value. Accepted values are: `on` or `off`."
+
+	if len(args) != 2 {
+		return responsef(helpText)
+	}
+
 	var value bool
-	switch args[0] {
+	switch args[1] {
 	case settingOn:
 		value = true
 	case settingOff:
 		value = false
 	default:
-		return responsef("Invalid value. Accepted values are: `on` or `off`.")
+		return responsef(helpText)
 	}
 
 	if jiraUser.Settings == nil {

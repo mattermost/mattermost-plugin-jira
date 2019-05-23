@@ -336,24 +336,25 @@ func (p *Plugin) handleNotifications(parsed *parsedJIRAWebhook) error {
 }
 
 func (p *Plugin) handleIssueUpdatedNotifications(ji Instance, parsed *parsedJIRAWebhook) error {
-	change := parsed.ChangeLog.Items[0]
-	if change.Field != "assignee" || change.ToString == "" {
-		return nil
-	}
+	for _, change := range parsed.ChangeLog.Items {
+		if change.Field != "assignee" || change.ToString == "" {
+			return nil
+		}
 
-	if parsed.assigneeUsername == "" {
-		return nil
-	}
+		if parsed.assigneeUsername == "" {
+			return nil
+		}
 
-	mattermostUserId, err := p.LoadMattermostUserId(ji, parsed.assigneeUsername)
-	if err != nil {
-		return err
-	}
+		mattermostUserId, err := p.LoadMattermostUserId(ji, parsed.assigneeUsername)
+		if err != nil {
+			return err
+		}
 
-	message := "[%s](%s) assigned you to [%s](%s)"
-	err = p.CreateBotDMPost(ji, mattermostUserId, fmt.Sprintf(message, parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL), "custom_jira_assigned")
-	if err != nil {
-		return errors.Errorf("handleIssueUpdatedNotification failed: %v", err)
+		message := "[%s](%s) assigned you to [%s](%s)"
+		err = p.CreateBotDMPost(ji, mattermostUserId, fmt.Sprintf(message, parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL), "custom_jira_assigned")
+		if err != nil {
+			return errors.Errorf("handleIssueUpdatedNotification failed: %v", err)
+		}
 	}
 	return nil
 }

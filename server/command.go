@@ -94,7 +94,7 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 }
 
 func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	if len(args) != 2 {
+	if len(args) < 1 {
 		return help()
 	}
 
@@ -111,7 +111,7 @@ func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 
 	switch args[0] {
 	case settingsNotifications:
-		return p.settingsNotifications(ji, mattermostUserId, jiraUser, args[1:])
+		return p.settingsNotifications(ji, mattermostUserId, jiraUser, args)
 	default:
 		return responsef("Unknown setting.")
 	}
