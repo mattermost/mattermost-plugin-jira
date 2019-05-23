@@ -160,7 +160,7 @@ export default class AttachIssueModal extends PureComponent {
                     <Modal.Footer>
                         <FormButton
                             type='button'
-                            btnClass='btn-default'
+                            btnClass='btn-link'
                             defaultMessage='Cancel'
                             onClick={this.handleClose}
                         />

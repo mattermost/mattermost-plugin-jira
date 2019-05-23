@@ -75,8 +75,9 @@ export default class Input extends PureComponent {
             input = (
                 <textarea
                     id={this.props.id}
-                    className='form-control'
+                    className='form-control asd'
                     rows='5'
+                    readOnly
                     placeholder={this.props.placeholder}
                     value={this.props.value}
                     maxLength={this.props.maxLength}
