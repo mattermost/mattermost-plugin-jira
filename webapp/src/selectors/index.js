@@ -39,7 +39,7 @@ export const getCurrentUserLocale = createSelector(
 
 export const isCreateModalVisible = (state) => getPluginState(state).createModalVisible;
 
-export const getCreateModalForPostId = (state) => getPluginState(state).createModalForPostId;
+export const getCreateModal = (state) => getPluginState(state).createModal;
 
 export const isAttachCommentToIssueModalVisible = (state) => getPluginState(state).attachCommentToIssueModalVisible;
 

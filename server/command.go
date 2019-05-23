@@ -12,6 +12,7 @@ import (
 const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira connect` - Connect your Mattermost account to your Jira account and subscribe to events\n" +
 	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
+	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field.\n" +
 	"* `/jira transition <issue-key> <state>` - Changes the state of a Jira issue.\n" +
 	"* `/jira settings [setting] [value]` - Update your user settings\n" +
 	"  * [setting] can be `notifications`\n" +
@@ -312,7 +313,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, transition, settings, install cloud, install server, help",
+		AutoCompleteDesc: "Available commands: connect, disconnect, create, transition, settings, install cloud, install server, help",
 		AutoCompleteHint: "[command]",
 	}
 }
