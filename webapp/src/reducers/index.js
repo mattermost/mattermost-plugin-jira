@@ -26,7 +26,7 @@ const createModalVisible = (state = false, action) => {
     }
 };
 
-const createModalForPostId = (state = '', action) => {
+const createModal = (state = '', action) => {
     switch (action.type) {
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL:
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST:

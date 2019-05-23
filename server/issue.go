@@ -320,29 +320,29 @@ func getPermaLink(ji Instance, postId string, post *model.Post) (string, error) 
 	return permalink, nil
 }
 
-func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) error {
+func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string, error) {
 	ji, err := p.LoadCurrentJIRAInstance()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mmUserId)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	jiraClient, err := ji.GetJIRAClient(jiraUser)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	transitions, _, err := jiraClient.Issue.GetTransitions(issueKey)
 	if err != nil {
-		return errors.New("We couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue.")
+		return "", errors.New("We couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue.")
 	}
 
 	if len(transitions) < 1 {
-		return errors.New("You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.")
+		return "", errors.New("You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.")
 	}
 
 	var transitionToUse *jira.Transition
@@ -354,12 +354,13 @@ func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) error {
 	}
 
 	if transitionToUse == nil {
-		return errors.New("We couldn't find the state. Please use a Jira state such as 'done' and try again.")
+		return "", errors.New("We couldn't find the state. Please use a Jira state such as 'done' and try again.")
 	}
 
 	if _, err := jiraClient.Issue.DoTransition(issueKey, transitionToUse.ID); err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	msg := fmt.Sprintf("[%s](%v/browse/%v) transitioned to `%s`", issueKey, ji.GetURL(), issueKey, toState)
+	return msg, nil
 }
