@@ -128,6 +128,7 @@ export default class AttachIssueModal extends PureComponent {
                     <Input
                         label='Message Attached to Jira Issue'
                         type='textarea'
+                        readOnly={true}
                         isDisabled={true}
                         value={this.props.post.message}
                         disabled={false}
