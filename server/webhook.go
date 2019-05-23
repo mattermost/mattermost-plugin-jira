@@ -4,7 +4,6 @@
 package main
 
 import (
-	"bytes"
 	"crypto/subtle"
 	"encoding/json"
 	"fmt"
@@ -19,13 +18,58 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
+const (
+	eventIssueCreated = uint64(1 << iota)
+	eventIssueDeleted
+	eventUnresolvedIssueDeleted
+	eventIssueAssigned
+	eventIssueReopened
+	eventIssueResolved
+	eventIssueUpdatedStatus
+	eventIssueUpdatePriority
+	eventIssueUpdateSummary
+	eventIssueUpdateDescription
+	eventIssueUpdateSprint
+	eventIssueUpdateRank
+	eventIssueUpdatedAttachment
+	eventIssueUpdatedLabels
+	eventCommentCreated
+	eventCommentDeleted
+	eventCommentUpdated
+	eventMax = iota
+)
+
+const maskLegacy = eventIssueCreated |
+	eventIssueReopened |
+	eventIssueResolved |
+	eventUnresolvedIssueDeleted
+
+const maskComments = eventCommentCreated |
+	eventCommentDeleted |
+	eventCommentUpdated
+
+const maskDefault = maskLegacy
+
+// The keys listed here can be used in the Webhook URL to control what events
+// are posted to Mattermost. A matching parameter with a non-empty value must
+// be added to turn on the event display.
+var eventParamMasks = map[string]uint64{
+	"ecomment_created": eventCommentCreated,         // new comments
+	"eistatus":         eventIssueUpdatedStatus,     // transitions like Done, In Progress
+	"eiprio":           eventIssueUpdatePriority,    // changes in priority
+	"uirename":         eventIssueUpdateSummary,     // issue renamed
+	"eiedit":           eventIssueUpdateDescription, // issue description edited
+	"eisprint":         eventIssueUpdateSprint,      // assigned to a different sprint
+	"eall_comments":    maskComments,                // all comment events
+	"eall":             ^(-1 << eventMax),           // all events
+}
 
 type JIRAWebhook struct {
-	WebhookEvent string
-	jira.Issue
-	jira.User
-	jira.Comment
-	ChangeLog struct {
+	WebhookEvent string       `json:"webhookEvent,omitempty"`
+	Issue        jira.Issue   `json:"issue,omitempty"`
+	User         jira.User    `json:"user,omitempty"`
+	Comment      jira.Comment `json:"comment,omitempty"`
+	ChangeLog    struct {
 		Items []struct {
 			From       string
 			FromString string
@@ -33,17 +77,14 @@ type JIRAWebhook struct {
 			ToString   string
 			Field      string
 		}
-	}
+	} `json:"changelog,omitempty"`
 	IssueEventTypeName string `json:"issue_event_type_name"`
 }
 
 type parsedJIRAWebhook struct {
 	*JIRAWebhook
-	RawJSON string
-
-	ActionUser string
-	ActionXXX  string
-
+	RawJSON           string
+	events            uint64
 	headline          string
 	details           string
 	text              string
@@ -106,17 +147,24 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		return appErr.StatusCode, fmt.Errorf(appErr.Message)
 	}
 
-	bbb, _ := ioutil.ReadAll(r.Body)
-	vvv := make(map[string]interface{})
-	_ = json.Unmarshal(bbb, &vvv)
-	bb, _ := json.MarshalIndent(vvv, "", "  ")
-	p.debugf("%s", string(bb))
-
-	initPost, err := AsSlackAttachment(bytes.NewReader(bbb))
+	parsed, err := parse(r.Body, nil)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
 
+	eventMask := maskDefault
+	for key, paramMask := range eventParamMasks {
+		if r.FormValue(key) == "" {
+			continue
+		}
+		eventMask = eventMask | paramMask
+	}
+	if parsed.events&eventMask == 0 {
+		p.debugf("skipping: %q", parsed.headline)
+		return http.StatusOK, nil
+	}
+
+	slackAttachment := newSlackAttachment(parsed)
 	post := &model.Post{
 		ChannelId: channel.Id,
 		UserId:    user.Id,
@@ -125,7 +173,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 			"use_user_icon": "true",
 		},
 	}
-	initPost(post)
+	model.ParseSlackAttachment(post, []*model.SlackAttachment{slackAttachment})
 
 	_, appErr = p.API.CreatePost(post)
 	if appErr != nil {
@@ -157,6 +205,9 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook,
 	if webhook.WebhookEvent == "" {
 		return nil, fmt.Errorf("No webhook event")
 	}
+	if webhook.Issue.Fields == nil {
+		return nil, fmt.Errorf("Invalid webhook event")
+	}
 
 	parsed := parsedJIRAWebhook{
 		JIRAWebhook: &webhook,
@@ -174,15 +225,21 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook,
 	issue := parsed.mdIssueType() + " " + linkf(parsed.JIRAWebhook)
 	switch parsed.WebhookEvent {
 	case "jira:issue_created":
+		parsed.events = parsed.events | eventIssueCreated
 		parsed.style = mdRootStyle
 		headline = fmt.Sprintf("created %v", issue)
 		parsed.details = parsed.mdIssueCreatedDetails()
 		parsed.text = parsed.mdIssueDescription()
 	case "jira:issue_deleted":
+		parsed.events = parsed.events | eventIssueDeleted
+		if parsed.Issue.Fields != nil && parsed.Issue.Fields.Resolution == nil {
+			parsed.events = parsed.events | eventIssueDeleted
+		}
 		headline = fmt.Sprintf("deleted %v", issue)
 	case "jira:issue_updated":
 		switch parsed.IssueEventTypeName {
 		case "issue_assigned":
+			parsed.events = parsed.events | eventIssueAssigned
 			headline = fmt.Sprintf("assigned %v to %v", issue, parsed.mdIssueAssignee())
 
 		case "issue_updated", "issue_generic":
@@ -190,15 +247,18 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook,
 			headline, parsed.text = parsed.fromChangeLog(issue)
 		}
 	case "comment_deleted":
+		parsed.events = parsed.events | eventCommentDeleted
 		user = &parsed.Comment.UpdateAuthor
 		headline = fmt.Sprintf("removed a comment from %v", issue)
 
 	case "comment_updated":
+		parsed.events = parsed.events | eventCommentUpdated
 		user = &parsed.Comment.UpdateAuthor
 		headline = fmt.Sprintf("edited a comment in %v", issue)
 		parsed.text = truncate(parsed.Comment.Body, 3000)
 
 	case "comment_created":
+		parsed.events = parsed.events | eventCommentCreated
 		user = &parsed.Comment.UpdateAuthor
 		headline = fmt.Sprintf("commented on %v", issue)
 		parsed.text = truncate(parsed.Comment.Body, 3000)
@@ -206,7 +266,7 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook,
 	if headline == "" {
 		return nil, fmt.Errorf("Unsupported webhook data: %v", parsed.WebhookEvent)
 	}
-	parsed.headline = fmt.Sprintf("%v %v %v", mdUser(user), headline, parsed.mdIssueHashtags())
+	parsed.headline = fmt.Sprintf("%v %v", mdUser(user), headline)
 
 	parsed.authorDisplayName = user.DisplayName
 	parsed.authorUsername = user.Name
@@ -226,43 +286,56 @@ func (p *parsedJIRAWebhook) fromChangeLog(issue string) (string, string) {
 		from := item.FromString
 		switch {
 		case item.Field == "resolution" && to == "" && from != "":
+			p.events = p.events | eventIssueReopened
 			return fmt.Sprintf("reopened %v", issue), ""
 
 		case item.Field == "resolution" && to != "" && from == "":
+			p.events = p.events | eventIssueResolved
 			return fmt.Sprintf("resolved %v", issue), ""
 
 		case item.Field == "status" && to == "Backlog":
+			p.events = p.events | eventIssueUpdatedStatus
 			return fmt.Sprintf("moved %v to backlog", issue), ""
 
 		case item.Field == "status" && to == "In Progress":
+			p.events = p.events | eventIssueUpdatedStatus
 			return fmt.Sprintf("started working on %v", issue), ""
 
 		case item.Field == "status" && to == "Selected for Development":
+			p.events = p.events | eventIssueUpdatedStatus
 			return fmt.Sprintf("selected %v for development", issue), ""
 
 		case item.Field == "priority" && item.From > item.To:
+			p.events = p.events | eventIssueUpdatePriority
 			return fmt.Sprintf("raised priority of %v to %v", issue, to), ""
 
 		case item.Field == "priority" && item.From < item.To:
+			p.events = p.events | eventIssueUpdatePriority
 			return fmt.Sprintf("lowered priority of %v to %v", issue, to), ""
 
 		case item.Field == "summary":
+			p.events = p.events | eventIssueUpdateSummary
 			return fmt.Sprintf("renamed %v to %v", issue, p.mdIssueSummary()), ""
 
 		case item.Field == "description":
+			p.events = p.events | eventIssueUpdateDescription
 			return fmt.Sprintf("edited description of %v", issue),
 				p.mdIssueDescription()
 
 		case item.Field == "Sprint" && len(to) > 0:
+			p.events = p.events | eventIssueUpdateSprint
 			return fmt.Sprintf("moved %v to %v", issue, to), ""
 
 		case item.Field == "Rank" && len(to) > 0:
+			p.events = p.events | eventIssueUpdateRank
 			return fmt.Sprintf("%v %v", strings.ToLower(to), issue), ""
 
 		case item.Field == "Attachment":
+			p.events = p.events | eventIssueUpdatedAttachment
 			return fmt.Sprintf("%v %v", mdAddRemove(from, to, "attached", "removed attachments"), issue), ""
 
 		case item.Field == "labels":
+			p.events = p.events | eventIssueUpdatedLabels
 			return fmt.Sprintf("%v %v", mdAddRemove(from, to, "added labels", "removed labels"), issue), ""
 		}
 	}

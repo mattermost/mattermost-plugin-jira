@@ -105,7 +105,7 @@ func (w *JIRAWebhook) mdIssuePriority() string {
 }
 
 func (w *JIRAWebhook) mdIssueType() string {
-	return strings.ToLower(w.Issue.Fields.IssueType.Name)
+	return strings.ToLower(w.Issue.Fields.Type.Name)
 }
 
 func (w *JIRAWebhook) mdIssueLongLink() string {
@@ -114,16 +114,6 @@ func (w *JIRAWebhook) mdIssueLongLink() string {
 
 func (w *JIRAWebhook) mdIssueLink() string {
 	return fmt.Sprintf("[%v](%v/browse/%v)", w.Issue.Key, w.jiraURL(), w.Issue.Key)
-}
-
-func (w *JIRAWebhook) mdIssueHashtags() string {
-	s := "("
-	if w.WebhookEvent == "jira:issue_created" {
-		s += "#jira-new "
-	}
-	s += "#" + w.Issue.Key
-	s += ")"
-	return s
 }
 
 func mdAddRemove(from, to, add, remove string) string {
