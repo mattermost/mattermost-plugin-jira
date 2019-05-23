@@ -77,7 +77,6 @@ export default class Input extends PureComponent {
                     id={this.props.id}
                     className='form-control'
                     rows='5'
-                    readOnly
                     placeholder={this.props.placeholder}
                     value={this.props.value}
                     maxLength={this.props.maxLength}
