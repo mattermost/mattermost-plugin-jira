@@ -14,6 +14,7 @@ import PluginId from 'plugin_id';
 
 import reducers from './reducers';
 import {handleConnectChange, getConnected, openChannelSettings} from './actions';
+import Hooks from './hooks/hooks';
 
 export default class Plugin {
     async initialize(registry, store) {
@@ -32,6 +33,9 @@ export default class Plugin {
             );
             registry.registerRootComponent(AttachCommentToIssueModal);
             registry.registerPostDropdownMenuComponent(AttachCommentToIssuePostMenuAction);
+
+            const hooks = new Hooks(store);
+            registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);
         } catch (err) {
             throw err;
         } finally {

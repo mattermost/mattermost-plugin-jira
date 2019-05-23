@@ -14,6 +14,14 @@ export const openCreateModal = (postId) => {
     };
 };
 
+export const openCreateModalWithoutPost = (description, channelId) => (dispatch) => dispatch({
+    type: ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST,
+    data: {
+        description,
+        channelId,
+    },
+});
+
 export const closeCreateModal = () => {
     return {
         type: ActionTypes.CLOSE_CREATE_ISSUE_MODAL,

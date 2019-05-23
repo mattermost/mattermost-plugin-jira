@@ -21,8 +21,9 @@ func httpAPICreateIssue(a *Action) error {
 	api := a.Plugin.API
 
 	create := &struct {
-		PostId string           `json:"post_id"`
-		Fields jira.IssueFields `json:"fields"`
+		PostId    string           `json:"post_id"`
+		ChannelId string           `json:"channel_id"`
+		Fields    jira.IssueFields `json:"fields"`
 	}{}
 	err := json.NewDecoder(a.HTTPRequest.Body).Decode(&create)
 	if err != nil {
@@ -30,34 +31,47 @@ func httpAPICreateIssue(a *Action) error {
 			"failed to decode incoming request")
 	}
 
-	// Lets add a permalink to the post in the Jira Description
-	post, appErr := api.GetPost(create.PostId)
-	if appErr != nil {
-		return a.RespondError(http.StatusInternalServerError, appErr,
-			"failed to load post %q", create.PostId)
-	}
-	if post == nil {
-		return a.RespondError(http.StatusInternalServerError, nil,
-			"failed to load post %q: not found", create.PostId)
-	}
+	var post *model.Post
+	var appErr *model.AppError
 
-	permalink, err := getPermaLink(a, create.PostId, post)
-	if err != nil {
-		return a.RespondError(http.StatusInternalServerError, nil,
-			"failed to get permalink for: %q", create.PostId)
-	}
+	// If this issue is attached to a post, lets add a permalink to the post in the Jira Description
+	if create.PostId != "" {
+		post, appErr = api.GetPost(create.PostId)
+		if appErr != nil {
+			return a.RespondError(http.StatusInternalServerError, appErr,
+				"failed to load post %q", create.PostId)
+		}
+		if post == nil {
+			return a.RespondError(http.StatusInternalServerError, nil,
+				"failed to load post %q: not found", create.PostId)
+		}
+		permalink, err2 := getPermaLink(a, create.PostId, post)
+		if err2 != nil {
+			return a.RespondError(http.StatusInternalServerError, nil,
+				"failed to get permalink for: %q", create.PostId)
+		}
 
-	if len(create.Fields.Description) > 0 {
-		create.Fields.Description += fmt.Sprintf("\n%v", permalink)
-	} else {
-		create.Fields.Description = permalink
+		if len(create.Fields.Description) > 0 {
+			create.Fields.Description += fmt.Sprintf("\n%v", permalink)
+		} else {
+			create.Fields.Description = permalink
+		}
 	}
 
 	created, resp, err := a.JiraClient.Issue.Create(&jira.Issue{
 		Fields: &create.Fields,
 	})
+
+	// For now, if we are not attaching to a post, leave postId blank (this will only affect the error message)
+	postId := ""
+	channelId := create.ChannelId
+	if post != nil {
+		channelId = post.ChannelId
+		postId = create.PostId
+	}
+
 	if err != nil {
-		message := "failed to create the issue, postId: " + create.PostId
+		message := "failed to create the issue, postId: " + create.PostId + ", channelId: " + channelId
 		if resp != nil {
 			bb, _ := ioutil.ReadAll(resp.Body)
 			resp.Body.Close()
@@ -67,7 +81,7 @@ func httpAPICreateIssue(a *Action) error {
 	}
 
 	// Upload file attachments in the background
-	if len(post.FileIds) > 0 {
+	if post != nil && len(post.FileIds) > 0 {
 		go func() {
 			for _, fileId := range post.FileIds {
 				info, ae := api.GetFileInfo(fileId)
@@ -87,17 +101,15 @@ func httpAPICreateIssue(a *Action) error {
 					api.LogError("failed to attach file to issue: "+e.Error(), "file", info.Path, "issue", created.Key)
 					return
 				}
-
 			}
 		}()
 	}
 
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
-		// TODO: Why is this not created.Self?
 		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", a.Instance.GetURL(), created.Key),
-		ChannelId: post.ChannelId,
-		RootId:    create.PostId,
+		ChannelId: channelId,
+		RootId:    postId,
 		UserId:    a.MattermostUserId,
 	}
 	_, appErr = api.CreatePost(reply)

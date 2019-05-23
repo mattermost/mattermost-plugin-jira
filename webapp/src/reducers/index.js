@@ -17,6 +17,7 @@ function connected(state = false, action) {
 const createModalVisible = (state = false, action) => {
     switch (action.type) {
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL:
+    case ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST:
         return true;
     case ActionTypes.CLOSE_CREATE_ISSUE_MODAL:
         return false;
@@ -25,12 +26,18 @@ const createModalVisible = (state = false, action) => {
     }
 };
 
-const createModalForPostId = (state = '', action) => {
+const createModal = (state = '', action) => {
     switch (action.type) {
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL:
-        return action.data.postId;
+    case ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST:
+        return {
+            ...state,
+            postId: action.data.postId,
+            description: action.data.description,
+            channelId: action.data.channelId,
+        };
     case ActionTypes.CLOSE_CREATE_ISSUE_MODAL:
-        return '';
+        return {};
     default:
         return state;
     }
@@ -93,7 +100,7 @@ const channelSubscripitons = (state = {}, action) => {
 export default combineReducers({
     connected,
     createModalVisible,
-    createModalForPostId,
+    createModal,
     attachCommentToIssueModalVisible,
     attachCommentToIssueModalForPostId,
     jiraIssueMetadata,
