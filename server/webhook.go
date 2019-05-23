@@ -19,34 +19,34 @@ import (
 )
 
 const (
-	eventIssueCreated = uint64(1 << iota)
-	eventIssueDeleted
-	eventUnresolvedIssueDeleted
-	eventIssueAssigned
-	eventIssueReopened
-	eventIssueResolved
-	eventIssueUpdatedStatus
-	eventIssueUpdatePriority
-	eventIssueUpdateSummary
-	eventIssueUpdateDescription
-	eventIssueUpdateSprint
-	eventIssueUpdateRank
-	eventIssueUpdatedAttachment
-	eventIssueUpdatedLabels
-	eventCommentCreated
-	eventCommentDeleted
-	eventCommentUpdated
+	eventCreated = uint64(1 << iota)
+	eventCreatedComment
+	eventDeleted
+	eventDeletedComment
+	eventDeletedUnresolved
+	eventUpdatedAssignee
+	eventUpdatedAttachment
+	eventUpdatedComment
+	eventUpdatedDescription
+	eventUpdatedLabels
+	eventUpdatedPriority
+	eventUpdatedRank
+	eventUpdatedReopened
+	eventUpdatedResolved
+	eventUpdatedSprint
+	eventUpdatedStatus
+	eventUpdatedSummary
 	eventMax = iota
 )
 
-const maskLegacy = eventIssueCreated |
-	eventIssueReopened |
-	eventIssueResolved |
-	eventUnresolvedIssueDeleted
+const maskLegacy = eventCreated |
+	eventUpdatedReopened |
+	eventUpdatedResolved |
+	eventDeletedUnresolved
 
-const maskComments = eventCommentCreated |
-	eventCommentDeleted |
-	eventCommentUpdated
+const maskComments = eventCreatedComment |
+	eventDeletedComment |
+	eventUpdatedComment
 
 const maskDefault = maskLegacy
 
@@ -54,15 +54,18 @@ const maskDefault = maskLegacy
 // are posted to Mattermost. A matching parameter with a non-empty value must
 // be added to turn on the event display.
 var eventParamMasks = map[string]uint64{
-	"ecomment_created": eventCommentCreated,         // new comments
-	"eistatus":         eventIssueUpdatedStatus,     // transitions like Done, In Progress
-	"eiassigned":       eventIssueAssigned,          // re-assigned
-	"eiprio":           eventIssueUpdatePriority,    // changes in priority
-	"uirename":         eventIssueUpdateSummary,     // issue renamed
-	"eiedit":           eventIssueUpdateDescription, // issue description edited
-	"eisprint":         eventIssueUpdateSprint,      // assigned to a different sprint
-	"eall_comments":    maskComments,                // all comment events
-	"eall":             ^(-1 << eventMax),           // all events
+	"updated_created_comment": eventCreatedComment,     // new comments
+	"updated_assignee":        eventUpdatedAssignee,    // re-assigned
+	"updated_attachment":      eventUpdatedAttachment,  // updated attachments
+	"updated_description":     eventUpdatedDescription, // issue description edited
+	"updated_labels":          eventUpdatedLabels,      // updated labels
+	"updated_prioity":         eventUpdatedPriority,    // changes in priority
+	"updated_rank":            eventUpdatedRank,        // ranked higher or lower
+	"updated_sprint":          eventUpdatedSprint,      // assigned to a different sprint
+	"updated_status":          eventUpdatedStatus,      // transitions like Done, In Progress
+	"updated_summary":         eventUpdatedSummary,     // issue renamed
+	"updated_all_comments":    maskComments,            // all comment events
+	"updated_all":             ^(-1 << eventMax),       // all events
 }
 
 type JIRAWebhook struct {
@@ -226,21 +229,21 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook,
 	issue := parsed.mdIssueType() + " " + linkf(parsed.JIRAWebhook)
 	switch parsed.WebhookEvent {
 	case "jira:issue_created":
-		parsed.events = parsed.events | eventIssueCreated
+		parsed.event(eventCreated)
 		parsed.style = mdRootStyle
 		headline = fmt.Sprintf("created %v", issue)
 		parsed.details = parsed.mdIssueCreatedDetails()
 		parsed.text = parsed.mdIssueDescription()
 	case "jira:issue_deleted":
-		parsed.events = parsed.events | eventIssueDeleted
+		parsed.event(eventDeleted)
 		if parsed.Issue.Fields != nil && parsed.Issue.Fields.Resolution == nil {
-			parsed.events = parsed.events | eventUnresolvedIssueDeleted
+			parsed.event(eventDeletedUnresolved)
 		}
 		headline = fmt.Sprintf("deleted %v", issue)
 	case "jira:issue_updated":
 		switch parsed.IssueEventTypeName {
 		case "issue_assigned":
-			parsed.events = parsed.events | eventIssueAssigned
+			parsed.event(eventUpdatedAssignee)
 			headline = fmt.Sprintf("assigned %v to %v", issue, parsed.mdIssueAssignee())
 
 		case "issue_updated", "issue_generic":
@@ -248,18 +251,18 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook,
 			headline, parsed.text = parsed.fromChangeLog(issue)
 		}
 	case "comment_deleted":
-		parsed.events = parsed.events | eventCommentDeleted
+		parsed.event(eventDeletedComment)
 		user = &parsed.Comment.UpdateAuthor
 		headline = fmt.Sprintf("removed a comment from %v", issue)
 
 	case "comment_updated":
-		parsed.events = parsed.events | eventCommentUpdated
+		parsed.event(eventUpdatedComment)
 		user = &parsed.Comment.UpdateAuthor
 		headline = fmt.Sprintf("edited a comment in %v", issue)
 		parsed.text = truncate(parsed.Comment.Body, 3000)
 
 	case "comment_created":
-		parsed.events = parsed.events | eventCommentCreated
+		parsed.event(eventCreatedComment)
 		user = &parsed.Comment.UpdateAuthor
 		headline = fmt.Sprintf("commented on %v", issue)
 		parsed.text = truncate(parsed.Comment.Body, 3000)
@@ -271,7 +274,7 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook,
 
 	parsed.authorDisplayName = user.DisplayName
 	parsed.authorUsername = user.Name
-	parsed.authorURL = getUserURL(&parsed.Issue, user)
+	parsed.authorURL = getUserURL(user)
 	if parsed.Issue.Fields.Assignee != nil {
 		parsed.assigneeUsername = parsed.Issue.Fields.Assignee.Name
 	}
@@ -287,60 +290,64 @@ func (p *parsedJIRAWebhook) fromChangeLog(issue string) (string, string) {
 		from := item.FromString
 		switch {
 		case item.Field == "resolution" && to == "" && from != "":
-			p.events = p.events | eventIssueReopened
+			p.event(eventUpdatedReopened)
 			return fmt.Sprintf("reopened %v", issue), ""
 
 		case item.Field == "resolution" && to != "" && from == "":
-			p.events = p.events | eventIssueResolved
+			p.event(eventUpdatedResolved)
 			return fmt.Sprintf("resolved %v", issue), ""
 
 		case item.Field == "status" && to == "Backlog":
-			p.events = p.events | eventIssueUpdatedStatus
+			p.event(eventUpdatedStatus)
 			return fmt.Sprintf("moved %v to backlog", issue), ""
 
 		case item.Field == "status" && to == "In Progress":
-			p.events = p.events | eventIssueUpdatedStatus
+			p.event(eventUpdatedStatus)
 			return fmt.Sprintf("started working on %v", issue), ""
 
 		case item.Field == "status" && to == "Selected for Development":
-			p.events = p.events | eventIssueUpdatedStatus
+			p.event(eventUpdatedStatus)
 			return fmt.Sprintf("selected %v for development", issue), ""
 
 		case item.Field == "priority" && item.From > item.To:
-			p.events = p.events | eventIssueUpdatePriority
+			p.event(eventUpdatedPriority)
 			return fmt.Sprintf("raised priority of %v to %v", issue, to), ""
 
 		case item.Field == "priority" && item.From < item.To:
-			p.events = p.events | eventIssueUpdatePriority
+			p.event(eventUpdatedPriority)
 			return fmt.Sprintf("lowered priority of %v to %v", issue, to), ""
 
 		case item.Field == "summary":
-			p.events = p.events | eventIssueUpdateSummary
+			p.event(eventUpdatedSummary)
 			return fmt.Sprintf("renamed %v to %v", issue, p.mdIssueSummary()), ""
 
 		case item.Field == "description":
-			p.events = p.events | eventIssueUpdateDescription
+			p.event(eventUpdatedDescription)
 			return fmt.Sprintf("edited description of %v", issue),
 				p.mdIssueDescription()
 
 		case item.Field == "Sprint" && len(to) > 0:
-			p.events = p.events | eventIssueUpdateSprint
+			p.event(eventUpdatedSprint)
 			return fmt.Sprintf("moved %v to %v", issue, to), ""
 
 		case item.Field == "Rank" && len(to) > 0:
-			p.events = p.events | eventIssueUpdateRank
+			p.event(eventUpdatedRank)
 			return fmt.Sprintf("%v %v", strings.ToLower(to), issue), ""
 
 		case item.Field == "Attachment":
-			p.events = p.events | eventIssueUpdatedAttachment
+			p.event(eventUpdatedAttachment)
 			return fmt.Sprintf("%v %v", mdAddRemove(from, to, "attached", "removed attachments"), issue), ""
 
 		case item.Field == "labels":
-			p.events = p.events | eventIssueUpdatedLabels
+			p.event(eventUpdatedLabels)
 			return fmt.Sprintf("%v %v", mdAddRemove(from, to, "added labels", "removed labels"), issue), ""
 		}
 	}
 	return "", ""
+}
+
+func (parsed *parsedJIRAWebhook) event(event uint64) {
+	parsed.events = parsed.events | event
 }
 
 func (p *Plugin) notify(ji Instance, parsed *parsedJIRAWebhook, text string) {

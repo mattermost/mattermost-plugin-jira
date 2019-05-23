@@ -100,10 +100,7 @@ func getIssueURL(issue *jira.Issue) string {
 	return u.Scheme + "://" + u.Host + "/browse/" + issue.Key
 }
 
-func getUserURL(issue *jira.Issue, user *jira.User) string {
-	if issue == nil {
-		return ""
-	}
+func getUserURL(user *jira.User) string {
 	// TODO is this right?
 	return user.Self
 }
