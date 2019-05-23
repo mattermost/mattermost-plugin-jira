@@ -65,8 +65,8 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 			return http.StatusInternalServerError,
 				errors.New("failed to load post " + create.PostId + ": not found")
 		}
-		permalink, err := getPermaLink(ji, create.PostId, post)
-		if err != nil {
+		permalink, err2 := getPermaLink(ji, create.PostId, post)
+		if err2 != nil {
 			return http.StatusInternalServerError,
 				errors.New("failed to get permalink for " + create.PostId + ": not found")
 		}
