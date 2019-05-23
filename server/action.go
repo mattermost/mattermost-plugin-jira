@@ -370,13 +370,16 @@ func (ar ActionRouter) Run(key string, a *Action) {
 	key = strings.TrimRight(key, "/")
 	// See if we have a script for the exact key
 	script := ar.RouteHandlers[key]
+	if script == nil {
+		script = ar.RouteHandlers[key+"/*"]
+	}
 	for script == nil {
 		n := strings.LastIndex(key, "/")
 		if n == -1 {
 			break
 		}
-		key = key[:n] + "/*"
-		script = ar.RouteHandlers[key]
+		script = ar.RouteHandlers[key[:n]+"/*"]
+		key = key[:n]
 	}
 	if script == nil {
 		script = &ActionScript{

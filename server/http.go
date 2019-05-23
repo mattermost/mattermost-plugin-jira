@@ -15,7 +15,7 @@ const (
 	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
 	routeAPIUserInfo               = "/api/v2/userinfo"
 	routeAPISubscribeWebhook       = "/api/v2/webhook"
-	routeAPISubscriptionsChannel   = "/api/v2/subscriptions/channel"
+	routeAPISubscriptionsChannel   = "/api/v2/subscriptions/channel/*"
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"
 	routeACUninstalled             = "/ac/uninstalled"

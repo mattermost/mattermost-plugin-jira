@@ -416,7 +416,8 @@ func httpChannelEditSubscription(a *Action) error {
 }
 
 func httpChannelDeleteSubscription(a *Action) error {
-	subscriptionId := strings.TrimPrefix(a.HTTPRequest.URL.Path, routeAPISubscriptionsChannel+"/")
+	subscriptionId := strings.TrimPrefix(a.HTTPRequest.URL.Path,
+		strings.TrimSuffix(routeAPISubscriptionsChannel, "*"))
 	if len(subscriptionId) != 26 {
 		return a.RespondError(http.StatusBadRequest, nil,
 			"bad subscription id")
@@ -442,7 +443,8 @@ func httpChannelDeleteSubscription(a *Action) error {
 }
 
 func httpChannelGetSubscriptions(a *Action) error {
-	channelId := strings.TrimPrefix(a.HTTPRequest.URL.Path, routeAPISubscriptionsChannel+"/")
+	channelId := strings.TrimPrefix(a.HTTPRequest.URL.Path,
+		strings.TrimSuffix(routeAPISubscriptionsChannel, "*"))
 	if len(channelId) != 26 {
 		return a.RespondError(http.StatusBadRequest, nil,
 			"bad channel id")
