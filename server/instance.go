@@ -4,8 +4,6 @@
 package main
 
 import (
-	"encoding/json"
-	"github.com/pkg/errors"
 	"net/http"
 	"regexp"
 	"sync"
@@ -80,30 +78,4 @@ func withInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f withInsta
 		return http.StatusInternalServerError, err
 	}
 	return f(ji, w, r)
-}
-
-func httpAPIGetInstanceStatus(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be GET")
-	}
-
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
-	resp := InstanceStatus{InstanceInstalled: true}
-
-	_, err := p.LoadCurrentJIRAInstance()
-	if err != nil {
-		resp = InstanceStatus{InstanceInstalled: false}
-	}
-
-	b, _ := json.Marshal(resp)
-	_, err = w.Write(b)
-	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-	}
-	return http.StatusOK, nil
 }
