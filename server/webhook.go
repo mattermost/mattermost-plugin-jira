@@ -48,24 +48,23 @@ const maskComments = eventCreatedComment |
 	eventDeletedComment |
 	eventUpdatedComment
 
-const maskDefault = maskLegacy
+const maskDefault = maskLegacy |
+	eventUpdatedAssignee |
+	maskComments
 
 // The keys listed here can be used in the Webhook URL to control what events
 // are posted to Mattermost. A matching parameter with a non-empty value must
 // be added to turn on the event display.
 var eventParamMasks = map[string]uint64{
-	"updated_created_comment": eventCreatedComment,     // new comments
-	"updated_assignee":        eventUpdatedAssignee,    // re-assigned
-	"updated_attachment":      eventUpdatedAttachment,  // updated attachments
-	"updated_description":     eventUpdatedDescription, // issue description edited
-	"updated_labels":          eventUpdatedLabels,      // updated labels
-	"updated_prioity":         eventUpdatedPriority,    // changes in priority
-	"updated_rank":            eventUpdatedRank,        // ranked higher or lower
-	"updated_sprint":          eventUpdatedSprint,      // assigned to a different sprint
-	"updated_status":          eventUpdatedStatus,      // transitions like Done, In Progress
-	"updated_summary":         eventUpdatedSummary,     // issue renamed
-	"updated_all_comments":    maskComments,            // all comment events
-	"updated_all":             ^(-1 << eventMax),       // all events
+	"updated_attachment":  eventUpdatedAttachment,  // updated attachments
+	"updated_description": eventUpdatedDescription, // issue description edited
+	"updated_labels":      eventUpdatedLabels,      // updated labels
+	"updated_prioity":     eventUpdatedPriority,    // changes in priority
+	"updated_rank":        eventUpdatedRank,        // ranked higher or lower
+	"updated_sprint":      eventUpdatedSprint,      // assigned to a different sprint
+	"updated_status":      eventUpdatedStatus,      // transitions like Done, In Progress
+	"updated_summary":     eventUpdatedSummary,     // issue renamed
+	"updated_all":         ^(-1 << eventMax),       // all events
 }
 
 type JIRAWebhook struct {
