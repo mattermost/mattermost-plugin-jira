@@ -105,6 +105,11 @@ export function getConnected() {
             data,
         });
 
+        dispatch({
+            type: ActionTypes.RECEIVED_INSTANCE_STATUS,
+            data,
+        });
+
         return {data};
     };
 }
@@ -121,27 +126,6 @@ export function handleConnectChange(store) {
         });
     };
 }
-
-export const getInstanceStatus = () => {
-    return async (dispatch, getState) => {
-        let data;
-        const baseUrl = getPluginServerRoute(getState());
-        try {
-            data = await doFetch(`${baseUrl}/api/v2/instancestatus`, {
-                method: 'get',
-            });
-        } catch (error) {
-            return {error};
-        }
-
-        dispatch({
-            type: ActionTypes.RECEIVED_INSTANCE_STATUS,
-            data,
-        });
-
-        return {data};
-    };
-};
 
 export function handleInstanceStatusChange(store) {
     return (msg) => {

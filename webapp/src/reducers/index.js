@@ -15,7 +15,10 @@ function userConnected(state = false, action) {
 }
 
 function instanceInstalled(state = false, action) {
+    // We're notified of the instance status at startup (through getConnected)
+    // and when we get a websocket instance_status event
     switch (action.type) {
+    case ActionTypes.RECEIVED_CONNECTED:
     case ActionTypes.RECEIVED_INSTANCE_STATUS:
         return action.data.instance_installed;
     default:
