@@ -6,6 +6,8 @@ import PropTypes from 'prop-types';
 
 import PluginId from 'plugin_id';
 
+import JiraIcon from 'components/icon';
+
 export default class CreateIssuePostMenuAction extends PureComponent {
     static propTypes = {
         isSystemMessage: PropTypes.bool,
@@ -50,9 +52,10 @@ export default class CreateIssuePostMenuAction extends PureComponent {
             content = (
                 <button
                     className='style--none'
-                    role='menuitem'
+                    role='presentation'
                     onClick={this.handleClick}
                 >
+                    <JiraIcon type='menu'/>
                     {this.getLocalizedTitle()}
                 </button>
             );
@@ -69,12 +72,18 @@ export default class CreateIssuePostMenuAction extends PureComponent {
         }
 
         return (
-            <li
-                className='MenuItem'
-                role='presentation'
-            >
-                {content}
-            </li>
+            <React.Fragment>
+                <li
+                    className='MenuItem__divider'
+                    role='menuitem'
+                />
+                <li
+                    className='MenuItem'
+                    role='menuitem'
+                >
+                    {content}
+                </li>
+            </React.Fragment>
         );
     }
 }
