@@ -14,7 +14,8 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
         locale: PropTypes.string,
         open: PropTypes.func.isRequired,
         postId: PropTypes.string,
-        connected: PropTypes.object.isRequired,
+        userConnected: PropTypes.bool.isRequired,
+        instanceInstalled: PropTypes.bool.isRequired,
     };
 
     static defaultTypes = {
@@ -39,16 +40,15 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
 
     connectClick = () => {
         window.open('/plugins/' + PluginId + '/user/connect');
-    }
+    };
 
     render() {
-        if (this.props.isSystemMessage) {
+        if (this.props.isSystemMessage || !this.props.instanceInstalled) {
             return null;
         }
 
-        const conn = this.props.connected || {};
         let content;
-        if (conn.connected) {
+        if (this.props.userConnected) {
             content = (
                 <button
                     className='style--none'

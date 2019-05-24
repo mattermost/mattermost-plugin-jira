@@ -227,7 +227,7 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	if err != nil {
 		return responsef(err.Error())
 	}
-	err = p.StoreCurrentJIRAInstance(ji)
+	err = p.StoreCurrentJIRAInstanceAndNotify(ji)
 	if err != nil {
 		return responsef(err.Error())
 	}
@@ -323,7 +323,7 @@ func responsef(format string, args ...interface{}) *model.CommandResponse {
 //	if err != nil {
 //		return responsef("Failed to load Jira instance %s: %v", instanceKey, err)
 //	}
-//	err = p.StoreCurrentJIRAInstance(ji)
+//	err = p.StoreCurrentJIRAInstanceAndNotify(ji)
 //	if err != nil {
 //		return responsef(err.Error())
 //	}

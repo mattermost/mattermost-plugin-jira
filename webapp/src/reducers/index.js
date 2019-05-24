@@ -5,10 +5,19 @@ import {combineReducers} from 'redux';
 
 import ActionTypes from 'action_types';
 
-function connected(state = false, action) {
+function userConnected(state = false, action) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
         return action.data.is_connected;
+    default:
+        return state;
+    }
+}
+
+function instanceInstalled(state = false, action) {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_INSTANCE_STATUS:
+        return action.data.instance_installed;
     default:
         return state;
     }
@@ -68,7 +77,8 @@ const jiraIssueMetadata = (state = null, action) => {
 };
 
 export default combineReducers({
-    connected,
+    userConnected,
+    instanceInstalled,
     createModalVisible,
     createModalForPostId,
     attachCommentToIssueModalVisible,

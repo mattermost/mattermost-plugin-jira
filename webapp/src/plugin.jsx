@@ -10,14 +10,17 @@ import AttachCommentToIssueModal from 'components/modals/attach_comment_to_issue
 import PluginId from 'plugin_id';
 
 import reducers from './reducers';
-import {handleConnectChange, getConnected} from './actions';
+import {handleConnectChange, getConnected, getInstanceStatus, handleInstanceStatusChange} from './actions';
 
 export default class Plugin {
     async initialize(registry, store) {
         registry.registerReducer(reducers);
 
         try {
-            await getConnected()(store.dispatch, store.getState);
+            await Promise.all([
+                getConnected()(store.dispatch, store.getState),
+                getInstanceStatus()(store.dispatch, store.getState),
+            ]);
 
             registry.registerRootComponent(CreateIssueModal);
             registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
@@ -29,6 +32,7 @@ export default class Plugin {
         } finally {
             registry.registerWebSocketEventHandler(`custom_${PluginId}_connect`, handleConnectChange(store));
             registry.registerWebSocketEventHandler(`custom_${PluginId}_disconnect`, handleConnectChange(store));
+            registry.registerWebSocketEventHandler(`custom_${PluginId}_instance_status`, handleInstanceStatusChange(store));
         }
     }
 }

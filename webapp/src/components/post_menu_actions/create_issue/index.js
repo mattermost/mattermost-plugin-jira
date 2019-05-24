@@ -20,7 +20,8 @@ const mapStateToProps = (state, ownProps) => {
     return {
         locale: getCurrentUserLocale(state),
         isSystemMessage: isSystemMessage(post),
-        connected: state[`plugins-${PluginId}`],
+        userConnected: state[`plugins-${PluginId}`].userConnected,
+        instanceInstalled: state[`plugins-${PluginId}`].instanceInstalled,
     };
 };
 

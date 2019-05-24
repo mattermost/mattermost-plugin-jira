@@ -20,6 +20,7 @@ const (
 	routeAPIGetCreateIssueMetadata = "/api/v2/get-create-issue-metadata"
 	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
 	routeAPIUserInfo               = "/api/v2/userinfo"
+	routeAPIInstanceStatus         = "/api/v2/instancestatus"
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"
 	routeACUninstalled             = "/ac/uninstalled"
@@ -64,6 +65,10 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	// User APIs
 	case routeAPIUserInfo:
 		return withInstance(p, w, r, httpAPIGetUserInfo)
+
+	// Instance APIs
+	case routeAPIInstanceStatus:
+		return httpAPIGetInstanceStatus(p, w, r)
 
 	// Atlassian Connect application
 	case routeACInstalled:
