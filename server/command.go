@@ -10,12 +10,12 @@ import (
 )
 
 const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
-	"* `/jira connect` - Connect your Mattermost account to your Jira account and subscribe to events\n" +
-	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
-	"* `/jira transition <issue-key> <state>` - Changes the state of a Jira issue.\n" +
-	"\nFor system administrators:\n" +
-	"* `/jira install cloud <URL>` - connect Mattermost to a cloud Jira instance located at <URL>\n" +
-	"* `/jira install server <URL>` - connect Mattermost to a server Jira instance located at <URL>\n" +
+	"* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
+	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
+	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
+	"\nFor System Administrators:\n" +
+	"* `/jira install cloud <URL>` - Connect Mattermost to a Jira Cloud instance located at <URL>\n" +
+	"* `/jira install server <URL>` - Connect Mattermost to a Jira Server or Data Center instance located at <URL>\n" +
 	""
 
 type CommandHandlerFunc func(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse
