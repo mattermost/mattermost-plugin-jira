@@ -65,14 +65,23 @@ func (w *JIRAWebhook) mdIssueCreatedDetails() string {
 }
 
 func (w *JIRAWebhook) mdIssueSummary() string {
+	if w.Issue.Fields == nil {
+		return ""
+	}
 	return truncate(w.Issue.Fields.Summary, 80)
 }
 
 func (w *JIRAWebhook) mdIssueDescription() string {
+	if w.Issue.Fields == nil {
+		return ""
+	}
 	return truncate(w.Issue.Fields.Description, 3000)
 }
 
 func (w *JIRAWebhook) mdIssueAssignee() string {
+	if w.Issue.Fields == nil {
+		return ""
+	}
 	if w.Issue.Fields.Assignee == nil {
 		return "_nobody_"
 	}
@@ -80,32 +89,38 @@ func (w *JIRAWebhook) mdIssueAssignee() string {
 }
 
 func (w *JIRAWebhook) mdIssueAssignedTo() string {
-	if w.Issue.Fields.Assignee == nil {
+	if w.Issue.Fields == nil || w.Issue.Fields.Assignee == nil {
 		return ""
 	}
 	return "Assigned to: " + mdBOLD(w.mdIssueAssignee())
 }
 
 func (w *JIRAWebhook) mdIssueReportedBy() string {
-	if w.Issue.Fields.Reporter == nil {
+	if w.Issue.Fields == nil || w.Issue.Fields.Reporter == nil {
 		return ""
 	}
 	return "Reported by: " + mdBOLD(mdUser(w.Issue.Fields.Reporter))
 }
 
 func (w *JIRAWebhook) mdIssueLabels() string {
-	if len(w.Issue.Fields.Labels) == 0 {
+	if w.Issue.Fields == nil || len(w.Issue.Fields.Labels) == 0 {
 		return ""
 	}
 	return "Labels: " + strings.Join(w.Issue.Fields.Labels, ",")
 }
 
 func (w *JIRAWebhook) mdIssuePriority() string {
+	if w.Issue.Fields == nil || w.Issue.Fields.Priority == nil {
+		return ""
+	}
 	return "Priority: " + mdBOLD(w.Issue.Fields.Priority.Name)
 }
 
 func (w *JIRAWebhook) mdIssueType() string {
-	return strings.ToLower(w.Issue.Fields.IssueType.Name)
+	if w.Issue.Fields == nil {
+		return ""
+	}
+	return strings.ToLower(w.Issue.Fields.Type.Name)
 }
 
 func (w *JIRAWebhook) mdIssueLongLink() string {
@@ -114,16 +129,6 @@ func (w *JIRAWebhook) mdIssueLongLink() string {
 
 func (w *JIRAWebhook) mdIssueLink() string {
 	return fmt.Sprintf("[%v](%v/browse/%v)", w.Issue.Key, w.jiraURL(), w.Issue.Key)
-}
-
-func (w *JIRAWebhook) mdIssueHashtags() string {
-	s := "("
-	if w.WebhookEvent == "jira:issue_created" {
-		s += "#jira-new "
-	}
-	s += "#" + w.Issue.Key
-	s += ")"
-	return s
 }
 
 func mdAddRemove(from, to, add, remove string) string {

@@ -22,76 +22,76 @@ func TestParse(t *testing.T) {
 	}{{
 		file:             "testdata/webhook-comment-created.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User commented on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)",
+		expectedHeadline: "Test User commented on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 		expectedText:     "Added a comment",
 	}, {
 		file:             "testdata/webhook-comment-deleted.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User removed a comment from story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)",
+		expectedHeadline: "Test User removed a comment from story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 	}, {
 		file:             "testdata/webhook-comment-updated.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User edited a comment in story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)",
+		expectedHeadline: "Test User edited a comment in story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 		expectedText:     "Added a comment, then edited it",
 	}, {
 		file:             "testdata/webhook-issue-created.json",
 		expectedStyle:    mdRootStyle,
-		expectedHeadline: "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41) (#jira-new #TES-41)",
+		expectedHeadline: "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 		expectedDetails:  "Priority: **High**, Reported by: **Test User**, Labels: test-label",
 		expectedText:     "Unit test description, not that long",
 	}, {
 		file:             "testdata/webhook-issue-updated-assigned-nobody.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User assigned story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to _nobody_ (#TES-41)",
+		expectedHeadline: "Test User assigned story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to _nobody_",
 	}, {
 		file:             "testdata/webhook-issue-updated-assigned.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User assigned story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to Test User (#TES-41)",
+		expectedHeadline: "Test User assigned story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to Test User",
 	}, {
 		file:             "testdata/webhook-issue-updated-attachments.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User attached [test.gif] to, removed attachments [test.json] from story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)",
+		expectedHeadline: "Test User attached [test.gif] to, removed attachments [test.json] from story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 	}, {
 		file:             "testdata/webhook-issue-updated-edited.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User edited description of story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)",
+		expectedHeadline: "Test User edited description of story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 		expectedText:     "Unit test description, not that long, a little longer now",
 	}, {
 		file:             "testdata/webhook-issue-updated-labels.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User added labels [sad] to, removed labels [bad] from story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)",
+		expectedHeadline: "Test User added labels [sad] to, removed labels [bad] from story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 	}, {
 		file:             "testdata/webhook-issue-updated-lowered-priority.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User lowered priority of story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to Low (#TES-41)",
+		expectedHeadline: "Test User lowered priority of story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to Low",
 	}, {
 		file:             "testdata/webhook-issue-updated-raised-priority.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User raised priority of story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to High (#TES-41)",
+		expectedHeadline: "Test User raised priority of story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to High",
 	}, {
 		file:             "testdata/webhook-issue-updated-rank.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User ranked higher story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)",
+		expectedHeadline: "Test User ranked higher story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 	}, {
 		file:             "testdata/webhook-issue-updated-renamed.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User renamed story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to Unit test summary 1 (#TES-41)",
+		expectedHeadline: "Test User renamed story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to Unit test summary 1",
 	}, {
 		file:             "testdata/webhook-issue-updated-reopened.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User reopened story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)",
+		expectedHeadline: "Test User reopened story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 	}, {
 		file:             "testdata/webhook-issue-updated-resolved.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User resolved story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)",
+		expectedHeadline: "Test User resolved story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 	}, {
 		file:             "testdata/webhook-issue-updated-sprint.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User moved story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to Sprint 2 (#TES-41)",
+		expectedHeadline: "Test User moved story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to Sprint 2",
 	}, {
 		file:             "testdata/webhook-issue-updated-started-working.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User started working on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) (#TES-41)",
+		expectedHeadline: "Test User started working on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 	},
 	} {
 		t.Run(tc.file, func(t *testing.T) {
@@ -120,7 +120,7 @@ func TestMarkdown(t *testing.T) {
 	require.NoError(t, err)
 	m := newMarkdownMessage(parsed)
 
-	assert.Equal(t, "## Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41) (#jira-new #TES-41)\nPriority: **High**, Reported by: **Test User**, Labels: test-label\nUnit test description, not that long\n", m)
+	assert.Equal(t, "## Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)\nPriority: **High**, Reported by: **Test User**, Labels: test-label\nUnit test description, not that long\n", m)
 }
 
 func TestWebhookVariousErrorsForCoverage(t *testing.T) {
@@ -143,8 +143,10 @@ func TestWebhookVariousErrorsForCoverage(t *testing.T) {
 	parsed.IssueEventTypeName = "something-else"
 	assert.Equal(t, "", newMarkdownMessage(parsed))
 
-	parsed.Issue.Fields.Assignee = &jira.User{
-		DisplayName: "test",
+	parsed.Issue.Fields = &jira.IssueFields{
+		Assignee: &jira.User{
+			DisplayName: "test",
+		},
 	}
 	assert.Equal(t, "Assigned to: **test**", parsed.mdIssueAssignedTo())
 }

@@ -150,7 +150,7 @@ func (p *Plugin) getChannelsSubscribed(webhook *parsedJIRAWebhook) ([]string, er
 			case "issue_type":
 				found := false
 				for _, acceptableIssueType := range acceptableValues {
-					if acceptableIssueType == webhook.Issue.Fields.IssueType.Id {
+					if acceptableIssueType == webhook.Issue.Fields.Type.ID {
 						found = true
 						break
 					}
