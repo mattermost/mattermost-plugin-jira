@@ -131,6 +131,7 @@ export default class AttachIssueModal extends PureComponent {
                         isDisabled={true}
                         value={this.props.post.message}
                         disabled={false}
+                        readOnly={true}
                     />
                     <br/>
                 </div>
@@ -160,7 +161,7 @@ export default class AttachIssueModal extends PureComponent {
                     <Modal.Footer>
                         <FormButton
                             type='button'
-                            btnClass='btn-default'
+                            btnClass='btn-link'
                             defaultMessage='Cancel'
                             onClick={this.handleClose}
                         />
