@@ -102,6 +102,7 @@ func parseJIRAIssuesFromText(text string, keys []string) []string {
 	return issues
 }
 
+// TODO consider making getIssueURL and getUserURL Instance methods, use BaseURL
 func getIssueURL(issue *jira.Issue) string {
 	if issue == nil {
 		return ""
@@ -111,6 +112,9 @@ func getIssueURL(issue *jira.Issue) string {
 }
 
 func getUserURL(user *jira.User) string {
-	// TODO is this right?
-	return user.Self
+	if user == nil {
+		return ""
+	}
+	u, _ := url.Parse(user.Self)
+	return u.Scheme + "://" + u.Host + "/browse/" + user.Key
 }

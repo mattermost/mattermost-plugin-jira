@@ -79,7 +79,8 @@ type JIRAWebhook struct {
 	Issue        jira.Issue   `json:"issue,omitempty"`
 	User         jira.User    `json:"user,omitempty"`
 	Comment      jira.Comment `json:"comment,omitempty"`
-	ChangeLog    struct {
+	// TODO figure out why jira.Changelog didn't work
+	ChangeLog struct {
 		Items []struct {
 			From       string
 			FromString string
@@ -354,6 +355,10 @@ func (p *parsedJIRAWebhook) fromChangeLog(issue string) (string, string) {
 	return "", ""
 }
 
+func (parsed *parsedJIRAWebhook) event(event uint64) {
+	parsed.events = parsed.events | event
+}
+
 // postEvent posts the event to the channel that subscribed to it
 func (p *Plugin) postEvent(r *http.Request, cfg config, parsed *parsedJIRAWebhook) (int, error) {
 	teamName := r.FormValue("team")
@@ -441,10 +446,6 @@ func (p *Plugin) handleIssueUpdatedNotifications(ji Instance, parsed *parsedJIRA
 		}
 	}
 	return nil
-}
-
-func (parsed *parsedJIRAWebhook) event(event uint64) {
-	parsed.events = parsed.events | event
 }
 
 func (p *Plugin) handleCommentCreatedNotifications(ji Instance, parsed *parsedJIRAWebhook) error {
