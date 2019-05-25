@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"net/url"
 	"strings"
@@ -43,7 +44,6 @@ const (
 	eventUpdatedSprint
 	eventUpdatedStatus
 	eventUpdatedSummary
-	eventMax = iota
 )
 
 const maskLegacy = eventCreated |
@@ -59,6 +59,8 @@ const maskDefault = maskLegacy |
 	eventUpdatedAssignee |
 	maskComments
 
+const maskAll = math.MaxUint64
+
 // The keys listed here can be used in the Webhook URL to control what events
 // are posted to Mattermost. A matching parameter with a non-empty value must
 // be added to turn on the event display.
@@ -71,7 +73,7 @@ var eventParamMasks = map[string]uint64{
 	"updated_sprint":      eventUpdatedSprint,      // assigned to a different sprint
 	"updated_status":      eventUpdatedStatus,      // transitions like Done, In Progress
 	"updated_summary":     eventUpdatedSummary,     // issue renamed
-	"updated_all":         ^(-1 << eventMax),       // all events
+	"updated_all":         maskAll,                 // all events
 }
 
 type JIRAWebhook struct {
