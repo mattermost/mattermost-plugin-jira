@@ -67,6 +67,15 @@ const jiraIssueMetadata = (state = null, action) => {
     }
 };
 
+const jiraIssues = (state = [], action) => {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_JIRA_ISSUES:
+        return action.data;
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     connected,
     createModalVisible,
@@ -74,4 +83,5 @@ export default combineReducers({
     attachCommentToIssueModalVisible,
     attachCommentToIssueModalForPostId,
     jiraIssueMetadata,
+    jiraIssues,
 });

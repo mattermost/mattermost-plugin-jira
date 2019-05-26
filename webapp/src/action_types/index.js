@@ -13,4 +13,5 @@ export default {
     RECEIVED_CONNECTED: `${PluginId}_connected`,
 
     RECEIVED_JIRA_ISSUE_METADATA: `${PluginId}_received_metadata`,
+    RECEIVED_JIRA_ISSUES: `${PluginId}_received_search_issues`,
 };

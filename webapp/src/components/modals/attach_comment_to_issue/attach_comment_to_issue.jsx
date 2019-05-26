@@ -4,6 +4,7 @@
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 import {Modal} from 'react-bootstrap';
+import debounce from 'lodash/debounce';
 
 import FormButton from 'components/form_button';
 import Loading from 'components/loading';
@@ -16,8 +17,12 @@ const initialState = {
     submitting: false,
     projectKey: null,
     issueKey: null,
+    textSearchTerms: '',
     error: null,
 };
+
+const searchDefaults = 'ORDER BY updated DESC';
+const searchDebounceDelay = 400;
 
 export default class AttachIssueModal extends PureComponent {
     static propTypes = {
@@ -27,7 +32,9 @@ export default class AttachIssueModal extends PureComponent {
         theme: PropTypes.object.isRequired,
         visible: PropTypes.bool.isRequired,
         jiraIssueMetadata: PropTypes.object,
+        jiraIssueOptions: PropTypes.array,
         fetchJiraIssueMetadata: PropTypes.func.isRequired,
+        fetchJiraIssues: PropTypes.func.isRequired,
     };
 
     constructor(props) {
@@ -38,6 +45,7 @@ export default class AttachIssueModal extends PureComponent {
     componentDidUpdate(prevProps) {
         if (this.props.post && (!prevProps.post || this.props.post.id !== prevProps.post.id)) {
             this.props.fetchJiraIssueMetadata();
+            this.props.fetchJiraIssues(searchDefaults);
         }
     }
 
@@ -71,21 +79,38 @@ export default class AttachIssueModal extends PureComponent {
     };
 
     handleProjectChange = (id, value) => {
-        const projectKey = value;
         this.setState({
-            projectKey,
+            projectKey: value,
+            jiraIssueOptions: [],
         });
-    }
 
-    handleIssueKeyChange = (id, value) => {
-        const issueKey = value;
+        this.searchTermsChanged(value, this.state.textSearchTerms);
+    };
+
+    handleIssueKeyChange = ({value}) => {
         this.setState({
-            issueKey,
+            issueKey: value,
         });
-    }
+    };
+
+    handleIssueSearchTermChange = (id, value) => {
+        this.setState({
+            textSearchTerms: value,
+        });
+
+        this.searchTermsChanged(this.state.projectKey, value);
+    };
+
+    searchTermsChanged = debounce((projectKey, text) => {
+        const projectSearchTerm = projectKey ? 'project=' + projectKey : '';
+        const textEncoded = encodeURIComponent(text.replace(/"/g, '\\"'));
+        const textSearchTerm = (textEncoded.length > 0) ? 'text ~ "' + textEncoded + '"' : '';
+        const combinedTerms = (projectSearchTerm.length > 0 && textSearchTerm.length > 0) ? projectSearchTerm + ' AND ' + textSearchTerm : projectSearchTerm + textSearchTerm;
+        this.props.fetchJiraIssues(combinedTerms + ' ' + searchDefaults);
+    }, searchDebounceDelay);
 
     render() {
-        const {post, visible, theme, jiraIssueMetadata} = this.props;
+        const {post, visible, theme, jiraIssueMetadata, jiraIssueOptions} = this.props;
         const {error, submitting} = this.state;
         const style = getStyle(theme);
 
@@ -111,19 +136,32 @@ export default class AttachIssueModal extends PureComponent {
                         onChange={this.handleProjectChange}
                         placeholder={'Select project'}
                         options={projectOptions}
-                        isMuli={false}
+                        isMulti={false}
                         key={'LT'}
                         value={projectOptions.filter((option) => option.value === this.state.projectKey)}
                     />
-                    <Input
-                        key='key'
-                        id='issueKey'
-                        placeholder={'Enter issue key to attach message to, e.g. EXT-20'}
-                        label='Issue Key'
-                        type='input'
+                    <ReactSelectSetting
+                        key={'issueToAttach'}
+                        name={'issue'}
+                        placeholder={'Select an issue to attach the message to...'}
+                        label={'Issue Key'}
                         onChange={this.handleIssueKeyChange}
                         required={true}
                         disabled={false}
+                        isMulti={false}
+                        isClearable={true}
+                        options={jiraIssueOptions}
+                        helpText={'Showing the ' + jiraIssueOptions.length + ' most recently changed items.'}
+                    />
+                    <Input
+                        id='issueSearchTerms'
+                        placeholder={'Find issues containing the text...'}
+                        label='Search for the issues containing:'
+                        type='input'
+                        onChange={this.handleIssueSearchTermChange}
+                        required={false}
+                        disabled={false}
+                        helpText={'Tips: use AND, OR, *, ?, ~, etc., just like any JQL query.'}
                     />
                     <Input
                         label='Message Attached to Jira Issue'
@@ -186,6 +224,7 @@ const getStyle = (theme) => ({
         padding: '1em',
         color: theme.centerChannelColor,
         backgroundColor: theme.centerChannelBg,
+        height: '460px',
     },
     descriptionArea: {
         height: 'auto',

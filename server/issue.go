@@ -190,6 +190,78 @@ func httpAPIGetCreateIssueMetadata(ji Instance, w http.ResponseWriter, r *http.R
 	return http.StatusOK, nil
 }
 
+func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed,
+			errors.New("Request: " + r.Method + " is not allowed, must be GET")
+	}
+
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to parse request")
+	}
+
+	jqlString := r.Form.Get("jql")
+
+	searchRes, resp, err := jiraClient.Issue.Search(jqlString, &jira.SearchOptions{
+		MaxResults: 50,
+		Fields:     []string{"key", "summary"},
+	})
+
+	if err != nil {
+		message := "failed to get search results"
+		if resp != nil {
+			bb, _ := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+			message += ", details: " + string(bb)
+		}
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, message)
+	}
+
+	// We only need to send down a summary of the data
+	type keySummary struct {
+		Key     string `json:"key"`
+		Summary string `json:"summary"`
+	}
+	resSummary := make([]keySummary, 0, len(searchRes))
+	for _, res := range searchRes {
+		resSummary = append(resSummary, keySummary{
+			Key:     res.Key,
+			Summary: res.Fields.Summary,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	b, err := json.Marshal(resSummary)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to marshal response")
+	}
+	_, err = w.Write(b)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to write response")
+	}
+
+	return http.StatusOK, nil
+}
+
 func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,

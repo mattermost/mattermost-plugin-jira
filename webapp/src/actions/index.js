@@ -56,6 +56,27 @@ export const fetchJiraIssueMetadata = () => {
     };
 };
 
+export const fetchJiraIssues = (jql) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        let data = null;
+        try {
+            data = await doFetch(`${baseUrl}/api/v2/get-search-issues?jql=${jql}`, {
+                method: 'get',
+            });
+        } catch (error) {
+            return {error};
+        }
+
+        dispatch({
+            type: ActionTypes.RECEIVED_JIRA_ISSUES,
+            data,
+        });
+
+        return {data};
+    };
+};
+
 export const createIssue = (payload) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
