@@ -207,7 +207,7 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 
 1. Navigate to **Settings > Applications > Application Links**
 2. Enter %s as the application link, then click **Create new link**.
-3. In **Configure Application URL** screen, confirm your Mattermost URL is included as the application URL. Ignore any displayed errors and click **Continue**.
+3. In **Configure Application URL** screen, confirm your Mattermost URL is entered as the "New URL". Ignore any displayed errors and click **Continue**.
 4. In **Link Applications** screen, set the following values:
   - **Application Name**: Mattermost
   - **Application Type**: Generic Application
@@ -236,7 +236,7 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	if err != nil {
 		return responsef("Failed to load public key: %v", err)
 	}
-	return responsef(addResponseFormat, ji.GetURL(), ji.GetMattermostKey(), pkey)
+	return responsef(addResponseFormat, p.GetSiteURL(), ji.GetMattermostKey(), pkey)
 }
 
 func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
