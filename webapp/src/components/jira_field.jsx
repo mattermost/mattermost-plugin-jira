@@ -11,6 +11,7 @@ export default class JiraField extends React.PureComponent {
     static propTypes = {
         id: PropTypes.object.isRequired,
         field: PropTypes.object.isRequired,
+        fieldKey: PropTypes.string.isRequired,
         obeyRequired: PropTypes.bool,
         onChange: PropTypes.func,
         value: PropTypes.any,
@@ -40,16 +41,16 @@ export default class JiraField extends React.PureComponent {
         return (
             {value: allowedValue.id, label: iconLabel}
         );
-    }
+    };
 
     render() {
-        const field = this.props.field;
+        const {field, fieldKey, obeyRequired} = this.props;
 
         if (field.schema.system === 'description') {
             return (
                 <Input
-                    key={field.key}
-                    id={field.key}
+                    key={fieldKey}
+                    id={fieldKey}
                     label={field.name}
                     type='textarea'
                     onChange={this.handleChange}
@@ -62,8 +63,8 @@ export default class JiraField extends React.PureComponent {
         if (field.schema.type === 'string') {
             return (
                 <Input
-                    key={field.key}
-                    id={field.key}
+                    key={fieldKey}
+                    id={fieldKey}
                     label={field.name}
                     type='input'
                     onChange={this.handleChange}
@@ -79,20 +80,14 @@ export default class JiraField extends React.PureComponent {
 
             return (
                 <ReactSelectSetting
-                    key={field.key}
-                    name={field.key}
+                    key={fieldKey}
+                    name={fieldKey}
                     label={field.name}
                     options={options}
-                    required={this.props.obeyRequired && field.required}
-                    onChange={this.handleChange}
+                    required={obeyRequired && field.required}
+                    onChange={(id, val) => this.props.onChange(id, {id: val})}
                     isMulti={false}
-                    value={options.filter((option) => {
-                        if (!this.props.value) {
-                            return false;
-                        }
-                        return option.value === this.props.value.id;
-                    }
-                    )}
+                    value={options.find((option) => option.value === this.props.value)}
                 />
             );
         }

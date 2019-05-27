@@ -110,7 +110,7 @@ export default class CreateIssueModal extends PureComponent {
             issueType,
             fields,
         });
-    }
+    };
 
     handleIssueTypeChange = (id, value) => {
         const fields = {...this.state.fields};
@@ -122,23 +122,15 @@ export default class CreateIssueModal extends PureComponent {
             issueType,
             fields,
         });
-    }
+    };
 
     handleFieldChange = (id, value) => {
         const fields = {...this.state.fields};
-
-        if (id === 'priority') {
-            fields.priority = {
-                id: value,
-            };
-        } else {
-            fields[id] = value;
-        }
-
+        fields[id] = value;
         this.setState({
             fields,
         });
-    }
+    };
 
     render() {
         const {post, visible, theme, jiraIssueMetadata} = this.props;
