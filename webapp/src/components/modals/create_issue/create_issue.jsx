@@ -24,9 +24,6 @@ const initialState = {
         issuetype: {
             name: '',
         },
-        priority: {
-            id: '',
-        },
     },
     error: null,
 };
