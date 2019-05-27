@@ -10,16 +10,16 @@ import (
 )
 
 const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
-	"* `/jira connect` - Connect your Mattermost account to your Jira account and subscribe to events\n" +
-	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
+	"* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
+	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
 	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field.\n" +
-	"* `/jira transition <issue-key> <state>` - Changes the state of a Jira issue.\n" +
+	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
 	"* `/jira settings [setting] [value]` - Update your user settings\n" +
 	"  * [setting] can be `notifications`\n" +
 	"  * [value] can be `on` or `off`\n" +
-	"\nFor system administrators:\n" +
-	"* `/jira install cloud <URL>` - connect Mattermost to a cloud Jira instance located at <URL>\n" +
-	"* `/jira install server <URL>` - connect Mattermost to a server Jira instance located at <URL>\n" +
+	"\nFor System Administrators:\n" +
+	"* `/jira install cloud <URL>` - Connect Mattermost to a Jira Cloud instance located at <URL>\n" +
+	"* `/jira install server <URL>` - Connect Mattermost to a Jira Server or Data Center instance located at <URL>\n" +
 	""
 
 // Available settings
