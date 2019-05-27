@@ -31,7 +31,7 @@ func (p *Plugin) NewEncodedAuthToken(mattermostUserID, secret string) (returnTok
 		returnErr = errors.WithMessage(returnErr, "failed to create auth token")
 	}()
 
-	encryptSecret, err := p.EnsureAuthTokenEncryptSecret()
+	encryptSecret, err := p.secretsStore.EnsureAuthTokenEncryptSecret()
 	if err != nil {
 		return "", err
 	}
@@ -65,7 +65,7 @@ func (p *Plugin) ParseAuthToken(encoded string) (mattermostUserID, tokenSecret s
 
 	t := AuthToken{}
 	err := func() error {
-		encryptSecret, err := p.EnsureAuthTokenEncryptSecret()
+		encryptSecret, err := p.secretsStore.EnsureAuthTokenEncryptSecret()
 		if err != nil {
 			return err
 		}

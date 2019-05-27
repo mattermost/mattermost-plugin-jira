@@ -47,7 +47,7 @@ func httpUserConnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, 
 	}
 
 	// Users shouldn't be able to make multiple connections.
-	if jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId); err == nil && len(jiraUser.Key) != 0 {
+	if jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId); err == nil && len(jiraUser.Key) != 0 {
 		return http.StatusBadRequest, errors.New("Already connected to a JIRA account. Please use /jira disconnect to disconnect.")
 	}
 
@@ -111,7 +111,7 @@ func httpAPIGetUserInfo(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	}
 
 	resp := UserInfo{}
-	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId)
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err == nil {
 		resp = UserInfo{
 			JIRAUser:    jiraUser,
@@ -129,7 +129,7 @@ func httpAPIGetUserInfo(ji Instance, w http.ResponseWriter, r *http.Request) (in
 }
 
 func (p *Plugin) StoreUserInfoNotify(ji Instance, mattermostUserId string, jiraUser JIRAUser) error {
-	err := p.StoreUserInfo(ji, mattermostUserId, jiraUser)
+	err := p.userStore.StoreUserInfo(ji, mattermostUserId, jiraUser)
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func (p *Plugin) StoreUserInfoNotify(ji Instance, mattermostUserId string, jiraU
 }
 
 func (p *Plugin) DeleteUserInfoNotify(ji Instance, mattermostUserId string) error {
-	err := p.DeleteUserInfo(ji, mattermostUserId)
+	err := p.userStore.DeleteUserInfo(ji, mattermostUserId)
 	if err != nil {
 		return err
 	}

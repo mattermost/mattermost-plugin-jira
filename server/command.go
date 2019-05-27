@@ -98,13 +98,13 @@ func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 		return help()
 	}
 
-	ji, err := p.LoadCurrentJIRAInstance()
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
 		return responsef("Failed to load current Jira instance: %v. Please contact your system administrator.", err)
 	}
 
 	mattermostUserId := header.UserId
-	jiraUser, err := p.LoadJIRAUser(ji, mattermostUserId)
+	jiraUser, err := p.userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
 		return responsef("Your username is not connected to Jira. Please type `jira connect`. %v", err)
 	}
@@ -129,7 +129,7 @@ func executeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 		return help()
 	}
 
-	known, err := p.LoadKnownJIRAInstances()
+	known, err := p.instanceStore.LoadKnownJIRAInstances()
 	if err != nil {
 		return responsef("Failed to load known Jira instances: %v", err)
 	}
@@ -137,7 +137,7 @@ func executeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 		return responsef("(none installed)\n")
 	}
 
-	current, err := p.LoadCurrentJIRAInstance()
+	current, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
 		return responsef("Failed to load current Jira instance: %v", err)
 	}
@@ -149,7 +149,7 @@ func executeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	sort.Strings(keys)
 	text := "Known Jira instances (selected instance is **bold**)\n\n| |URL|Type|\n|--|--|--|\n"
 	for i, key := range keys {
-		ji, err := p.LoadJIRAInstance(key)
+		ji, err := p.instanceStore.LoadJIRAInstance(key)
 		if err != nil {
 			text += fmt.Sprintf("|%v|%s|error: %v|\n", i+1, key, err)
 			continue
@@ -198,7 +198,7 @@ func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs
 
 	// Create an "uninitialized" instance of Jira Cloud that will
 	// receive the /installed callback
-	err = p.CreateInactiveCloudInstance(jiraURL)
+	err = p.instanceStore.CreateInactiveCloudInstance(jiraURL)
 	if err != nil {
 		return responsef(err.Error())
 	}
@@ -257,11 +257,11 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://about.mattermost.com/default-jira-plugin) for troubleshooting help.
 `
 	ji := NewJIRAServerInstance(p, jiraURL)
-	err = p.StoreJIRAInstance(ji)
+	err = p.instanceStore.StoreJIRAInstance(ji)
 	if err != nil {
 		return responsef(err.Error())
 	}
-	err = p.StoreCurrentJIRAInstance(ji)
+	err = p.currentInstanceStore.StoreCurrentJIRAInstance(ji)
 	if err != nil {
 		return responsef(err.Error())
 	}

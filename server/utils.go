@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 	"regexp"
 
 	"github.com/andygrunwald/go-jira"
@@ -11,7 +10,8 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
-func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) (returnErr error) {
+func (p *Plugin) CreateBotDMPost(ji Instance, userId, message,
+	postType string) (post *model.Post, returnErr error) {
 	defer func() {
 		if returnErr != nil {
 			returnErr = errors.WithMessage(returnErr,
@@ -20,22 +20,22 @@ func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) 
 	}()
 
 	// Don't send DMs to users who have turned off notifications
-	jiraUser, err := p.LoadJIRAUser(ji, userId)
+	jiraUser, err := p.userStore.LoadJIRAUser(ji, userId)
 	if err != nil {
 		// not connected to Jira, so no need to send a DM, and no need to report an error
-		return nil
+		return nil, nil
 	}
-	if !jiraUser.Settings.Notifications {
-		return nil
+	if jiraUser.Settings == nil || !jiraUser.Settings.Notifications {
+		return nil, nil
 	}
 
 	conf := p.getConfig()
 	channel, appErr := p.API.GetDirectChannel(userId, conf.botUserID)
 	if appErr != nil {
-		return appErr
+		return nil, appErr
 	}
 
-	post := &model.Post{
+	post = &model.Post{
 		UserId:    conf.botUserID,
 		ChannelId: channel.Id,
 		Message:   message,
@@ -49,10 +49,10 @@ func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) 
 
 	_, appErr = p.API.CreatePost(post)
 	if appErr != nil {
-		return appErr
+		return nil, appErr
 	}
 
-	return nil
+	return post, nil
 }
 
 func (p *Plugin) loadJIRAProjectKeys(jiraClient *jira.Client) ([]string, error) {
@@ -100,21 +100,4 @@ func parseJIRAIssuesFromText(text string, keys []string) []string {
 	}
 
 	return issues
-}
-
-// TODO consider making getIssueURL and getUserURL Instance methods, use BaseURL
-func getIssueURL(issue *jira.Issue) string {
-	if issue == nil {
-		return ""
-	}
-	u, _ := url.Parse(issue.Self)
-	return u.Scheme + "://" + u.Host + "/browse/" + issue.Key
-}
-
-func getUserURL(user *jira.User) string {
-	if user == nil {
-		return ""
-	}
-	u, _ := url.Parse(user.Self)
-	return u.Scheme + "://" + u.Host + "/browse/" + user.Key
 }

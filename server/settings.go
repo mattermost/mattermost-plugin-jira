@@ -28,13 +28,13 @@ func (p *Plugin) settingsNotifications(ji Instance, mattermostUserId string, jir
 		jiraUser.Settings = &UserSettings{}
 	}
 	jiraUser.Settings.Notifications = value
-	if err := p.StoreUserInfo(ji, mattermostUserId, jiraUser); err != nil {
+	if err := p.userStore.StoreUserInfo(ji, mattermostUserId, jiraUser); err != nil {
 		p.errorf("settingsNotifications, err: %v", err)
 		responsef("Could not store new settings. Please contact your system administrator. error: %v", err)
 	}
 
 	// send back the actual value
-	updatedJiraUser, err := p.LoadJIRAUser(ji, mattermostUserId)
+	updatedJiraUser, err := p.userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
 		return responsef("Your username is not connected to Jira. Please type `jira connect`. %v", err)
 	}

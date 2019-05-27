@@ -67,8 +67,8 @@ func (ji *JIRAInstance) Init(p *Plugin) {
 
 type withInstanceFunc func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error)
 
-func withInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f withInstanceFunc) (int, error) {
-	ji, err := p.LoadCurrentJIRAInstance()
+func withInstance(store CurrentInstanceStore, w http.ResponseWriter, r *http.Request, f withInstanceFunc) (int, error) {
+	ji, err := store.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
