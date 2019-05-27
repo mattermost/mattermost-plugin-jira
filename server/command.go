@@ -10,14 +10,22 @@ import (
 )
 
 const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
-	"* `/jira connect` - Connect your Mattermost account to your Jira account and subscribe to events\n" +
-	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
+	"* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
+	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
 	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field.\n" +
-	"* `/jira transition <issue-key> <state>` - Changes the state of a Jira issue.\n" +
-	"\nFor system administrators:\n" +
-	"* `/jira install cloud <URL>` - connect Mattermost to a cloud Jira instance located at <URL>\n" +
-	"* `/jira install server <URL>` - connect Mattermost to a server Jira instance located at <URL>\n" +
+	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
+	"* `/jira settings [setting] [value]` - Update your user settings\n" +
+	"  * [setting] can be `notifications`\n" +
+	"  * [value] can be `on` or `off`\n" +
+	"\nFor System Administrators:\n" +
+	"* `/jira install cloud <URL>` - Connect Mattermost to a Jira Cloud instance located at <URL>\n" +
+	"* `/jira install server <URL>` - Connect Mattermost to a Jira Server or Data Center instance located at <URL>\n" +
 	""
+
+// Available settings
+const (
+	settingsNotifications = "notifications"
+)
 
 type CommandHandlerFunc func(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse
 
@@ -33,6 +41,7 @@ var jiraCommandHandler = CommandHandler{
 		"transition":     executeTransition,
 		"connect":        executeConnect,
 		"disconnect":     executeDisconnect,
+		"settings":       executeSettings,
 		//"webhook":        executeWebhookURL,
 		//"webhook/url":    executeWebhookURL,
 		//"list":        executeList,
@@ -82,6 +91,30 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	}
 	return responsef("[Click here to unlink your Jira account](%s%s)",
 		p.GetPluginURL(), routeUserDisconnect)
+}
+
+func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) < 1 {
+		return help()
+	}
+
+	ji, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return responsef("Failed to load current Jira instance: %v. Please contact your system administrator.", err)
+	}
+
+	mattermostUserId := header.UserId
+	jiraUser, err := p.LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		return responsef("Your username is not connected to Jira. Please type `jira connect`. %v", err)
+	}
+
+	switch args[0] {
+	case settingsNotifications:
+		return p.settingsNotifications(ji, mattermostUserId, jiraUser, args)
+	default:
+		return responsef("Unknown setting.")
+	}
 }
 
 func executeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -208,7 +241,7 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 
 1. Navigate to **Settings > Applications > Application Links**
 2. Enter %s as the application link, then click **Create new link**.
-3. In **Configure Application URL** screen, confirm your Mattermost URL is included as the application URL. Ignore any displayed errors and click **Continue**.
+3. In **Configure Application URL** screen, confirm your Mattermost URL is entered as the "New URL". Ignore any displayed errors and click **Continue**.
 4. In **Link Applications** screen, set the following values:
   - **Application Name**: Mattermost
   - **Application Type**: Generic Application
@@ -237,7 +270,7 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	if err != nil {
 		return responsef("Failed to load public key: %v", err)
 	}
-	return responsef(addResponseFormat, ji.GetURL(), ji.GetMattermostKey(), pkey)
+	return responsef(addResponseFormat, p.GetSiteURL(), ji.GetMattermostKey(), pkey)
 }
 
 func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -280,7 +313,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, create, transition, install cloud, install server, help",
+		AutoCompleteDesc: "Available commands: connect, disconnect, create, transition, settings, install cloud, install server, help",
 		AutoCompleteHint: "[command]",
 	}
 }

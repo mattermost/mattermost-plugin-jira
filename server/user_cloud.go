@@ -96,6 +96,9 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 			return http.StatusUnauthorized, errors.New("link expired")
 		}
 
+		// Set default settings the first time a user connects
+		uinfo.Settings = &UserSettings{Notifications: true}
+
 		err = jci.Plugin.StoreUserInfoNotify(jci, mattermostUserId, uinfo)
 
 	case routeACUserDisconnected:

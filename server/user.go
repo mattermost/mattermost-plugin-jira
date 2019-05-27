@@ -22,6 +22,11 @@ type JIRAUser struct {
 	jira.User
 	Oauth1AccessToken  string `json:",omitempty"`
 	Oauth1AccessSecret string `json:",omitempty"`
+	Settings           *UserSettings
+}
+
+type UserSettings struct {
+	Notifications bool `json:"notifications"`
 }
 
 type UserInfo struct {
