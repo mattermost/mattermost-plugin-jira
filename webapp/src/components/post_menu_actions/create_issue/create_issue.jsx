@@ -7,8 +7,6 @@ import PropTypes from 'prop-types';
 import PluginId from 'plugin_id';
 import JiraIcon from 'components/icon';
 
-import JiraIcon from 'components/icon';
-
 export default class CreateIssuePostMenuAction extends PureComponent {
     static propTypes = {
         isSystemMessage: PropTypes.bool,
