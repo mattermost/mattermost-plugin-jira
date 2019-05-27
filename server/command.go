@@ -17,7 +17,7 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira settings [setting] [value]` - Update your user settings\n" +
 	"  * [setting] can be `notifications`\n" +
 	"  * [value] can be `on` or `off`\n" +
-	"\nFor system administrators:\n" +
+	"\nFor System Administrators:\n" +
 	"* `/jira install cloud <URL>` - Connect Mattermost to a Jira Cloud instance located at <URL>\n" +
 	"* `/jira install server <URL>` - Connect Mattermost to a Jira Server or Data Center instance located at <URL>\n" +
 	""
