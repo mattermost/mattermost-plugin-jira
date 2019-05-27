@@ -75,6 +75,22 @@ export default class JiraField extends React.PureComponent {
 
         if (field.allowedValues && field.allowedValues.length) {
             const options = field.allowedValues.map(this.makeReactSelectValue);
+
+            if (field.schema.system === 'priority') {
+                return (
+                    <ReactSelectSetting
+                        key={field.key}
+                        name={field.key}
+                        label={field.name}
+                        options={options}
+                        required={this.props.obeyRequired && field.required}
+                        onChange={this.handleChange}
+                        isMulti={false}
+                        value={options.filter((option) => option.value === this.props.value.id)}
+                    />
+                );
+            }
+
             return (
                 <ReactSelectSetting
                     key={field.key}

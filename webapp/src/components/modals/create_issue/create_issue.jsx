@@ -24,6 +24,9 @@ const initialState = {
         issuetype: {
             name: '',
         },
+        priority: {
+            id: '',
+        },
     },
     error: null,
 };
@@ -126,7 +129,15 @@ export default class CreateIssueModal extends PureComponent {
 
     handleFieldChange = (id, value) => {
         const fields = {...this.state.fields};
-        fields[id] = value;
+
+        if (id === 'priority') {
+            fields.priority = {
+                id: value,
+            };
+        } else {
+            fields[id] = value;
+        }
+
         this.setState({
             fields,
         });
