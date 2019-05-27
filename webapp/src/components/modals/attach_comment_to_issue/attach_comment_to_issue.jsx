@@ -109,7 +109,7 @@ export default class AttachIssueModal extends PureComponent {
                         label={'Project'}
                         required={true}
                         onChange={this.handleProjectChange}
-                        placeholder={'Select the project containing the issue you wish to attach the message to.'}
+                        placeholder={'Select project'}
                         options={projectOptions}
                         isMuli={false}
                         key={'LT'}
@@ -118,7 +118,7 @@ export default class AttachIssueModal extends PureComponent {
                     <Input
                         key='key'
                         id='issueKey'
-                        placeholder={'Enter the issue key, e.g. EXT-20'}
+                        placeholder={'Enter issue key to attach message to, e.g. EXT-20'}
                         label='Issue Key'
                         type='input'
                         onChange={this.handleIssueKeyChange}
@@ -131,6 +131,7 @@ export default class AttachIssueModal extends PureComponent {
                         isDisabled={true}
                         value={this.props.post.message}
                         disabled={false}
+                        readOnly={true}
                     />
                     <br/>
                 </div>
@@ -147,7 +148,7 @@ export default class AttachIssueModal extends PureComponent {
             >
                 <Modal.Header closeButton={true}>
                     <Modal.Title>
-                        {'Attach Message To Jira Issue'}
+                        {'Attach Message to Jira Issue'}
                     </Modal.Title>
                 </Modal.Header>
                 <form
@@ -160,7 +161,7 @@ export default class AttachIssueModal extends PureComponent {
                     <Modal.Footer>
                         <FormButton
                             type='button'
-                            btnClass='btn-default'
+                            btnClass='btn-link'
                             defaultMessage='Cancel'
                             onClick={this.handleClose}
                         />

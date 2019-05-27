@@ -6,6 +6,8 @@ import PropTypes from 'prop-types';
 
 import PluginId from 'plugin_id';
 
+import JiraIcon from 'components/icon';
+
 export default class AttachCommentToIssuePostMenuAction extends PureComponent {
     static propTypes = {
         isSystemMessage: PropTypes.bool,
@@ -25,7 +27,7 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
         case 'es':
             return 'Crear incidencia en Jira';
         default:
-            return 'Attach Jira Issue';
+            return 'Attach to Jira Issue';
         }
     };
 
@@ -45,19 +47,34 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
             return null;
         }
 
-        const content = (
-            <button
-                className='style--none'
-                role='menuitem'
-                onClick={this.handleClick}
-            >
-                {this.getLocalizedTitle()}
-            </button>
-        );
+        let content;
+        if (conn.connected) {
+            content = (
+                <button
+                    className='style--none'
+                    role='presentation'
+                    onClick={this.handleClick}
+                >
+                    <JiraIcon type='menu'/>
+                    {this.getLocalizedTitle()}
+                </button>
+            );
+        } else {
+            content = (
+                <button
+                    className='style--none'
+                    role='menuitem'
+                    onClick={this.connectClick}
+                >
+                    {'Connect to Jira'}
+                </button>
+            );
+        }
 
         return (
             <li
-                role='presentation'
+                className='MenuItem'
+                role='menuitem'
             >
                 {content}
             </li>

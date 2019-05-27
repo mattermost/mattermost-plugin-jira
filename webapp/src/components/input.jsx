@@ -20,6 +20,7 @@ export default class Input extends PureComponent {
         onChange: PropTypes.func,
         disabled: PropTypes.bool,
         required: PropTypes.bool,
+        readOnly: PropTypes.bool,
         type: PropTypes.oneOf([
             'number',
             'input',
@@ -31,6 +32,7 @@ export default class Input extends PureComponent {
         type: 'input',
         maxLength: null,
         required: false,
+        readOnly: false,
     };
 
     handleChange = (e) => {
@@ -55,6 +57,7 @@ export default class Input extends PureComponent {
                     onChange={this.handleChange}
                     disabled={this.props.disabled}
                     required={this.props.required}
+                    readOnly={this.props.readOnly}
                 />
             );
         } else if (this.props.type === 'number') {
@@ -69,6 +72,7 @@ export default class Input extends PureComponent {
                     onChange={this.handleChange}
                     disabled={this.props.disabled}
                     required={this.props.required}
+                    readOnly={this.props.readOnly}
                 />
             );
         } else if (this.props.type === 'textarea') {
@@ -83,6 +87,7 @@ export default class Input extends PureComponent {
                     onChange={this.handleChange}
                     disabled={this.props.disabled}
                     required={this.props.required}
+                    readOnly={this.props.readOnly}
                 />
             );
         }

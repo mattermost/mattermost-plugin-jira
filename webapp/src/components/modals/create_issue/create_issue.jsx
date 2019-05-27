@@ -192,7 +192,7 @@ export default class CreateIssueModal extends PureComponent {
             >
                 <Modal.Header closeButton={true}>
                     <Modal.Title>
-                        {'Create Jira Ticket'}
+                        {'Create Jira Issue'}
                     </Modal.Title>
                 </Modal.Header>
                 <form
@@ -205,7 +205,7 @@ export default class CreateIssueModal extends PureComponent {
                     <Modal.Footer>
                         <FormButton
                             type='button'
-                            btnClass='btn-default'
+                            btnClass='btn-link'
                             defaultMessage='Cancel'
                             onClick={this.handleClose}
                         />
