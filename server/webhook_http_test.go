@@ -4,7 +4,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -194,16 +193,12 @@ func TestWebhookHTTP(t *testing.T) {
 				mock.AnythingOfTypeArgument("string"),
 				mock.AnythingOfTypeArgument("string")).Return(nil)
 
-			// api.On("KVGet", mock.AnythingOfTypeArgument("string")).Return(make([]byte, 0), (*model.AppError)(nil))
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
 				Id: "theuserid",
 			}, (*model.AppError)(nil))
-			// api.On("GetUserByUsername", "nottheuser").Return((*model.User)(nil), model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest))
 			api.On("GetChannelByNameForTeamName", "theteam", "thechannel",
 				false).Run(func(args mock.Arguments) {
-
-				call := api.On("CreatePost", mock.AnythingOfType("*model.Post"))
-				call.Return(&model.Post{}, (*model.AppError)(nil))
+				api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, (*model.AppError)(nil))
 			}).Return(&model.Channel{
 				Id:     "thechannelid",
 				TeamId: "theteamid",
