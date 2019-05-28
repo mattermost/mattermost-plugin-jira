@@ -9,7 +9,7 @@ import JiraField from 'components/jira_field';
 export default class JiraFields extends React.PureComponent {
     static propTypes = {
         fields: PropTypes.object.isRequired,
-        onChange: PropTypes.func,
+        onChange: PropTypes.func.isRequired,
         values: PropTypes.object,
     };
 
