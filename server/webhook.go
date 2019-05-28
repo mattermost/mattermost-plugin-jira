@@ -295,8 +295,6 @@ func (p *parsedJIRAWebhook) fromChangeLog(issue string) (string, string) {
 	for _, item := range p.ChangeLog.Items {
 		to := item.ToString
 		from := item.FromString
-		lto := strings.ToLower(item.ToString)
-		lfrom := strings.ToLower(item.FromString)
 		switch {
 		case item.Field == "resolution" && to == "" && from != "":
 			p.event(eventUpdatedReopened)
@@ -306,21 +304,9 @@ func (p *parsedJIRAWebhook) fromChangeLog(issue string) (string, string) {
 			p.event(eventUpdatedResolved)
 			return fmt.Sprintf("resolved %v", issue), ""
 
-		case item.Field == "status" && lto == "in progress":
-			p.event(eventUpdatedStatus)
-			return fmt.Sprintf("started working on %v", issue), ""
-
-		case item.Field == "status" && lfrom == "in progress" && lto == "to do":
-			p.event(eventUpdatedStatus)
-			return fmt.Sprintf("stopped working on %v", issue), ""
-
-		case item.Field == "status" && lfrom == "in progress" && lto == "done":
-			p.event(eventUpdatedStatus)
-			return fmt.Sprintf("finished work on %v", issue), ""
-
 		case item.Field == "status":
 			p.event(eventUpdatedStatus)
-			return fmt.Sprintf("transitioned %v to %q", issue, to), ""
+			return fmt.Sprintf("transitioned %v from %q to %q", issue, from, to), ""
 
 		case item.Field == "priority" && item.From > item.To:
 			p.event(eventUpdatedPriority)
