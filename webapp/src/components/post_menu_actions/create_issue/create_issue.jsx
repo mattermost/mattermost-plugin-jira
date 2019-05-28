@@ -39,7 +39,7 @@ export default class CreateIssuePostMenuAction extends PureComponent {
 
     connectClick = () => {
         window.open('/plugins/' + PluginId + '/user/connect');
-    }
+    };
 
     render() {
         if (this.props.isSystemMessage) {
