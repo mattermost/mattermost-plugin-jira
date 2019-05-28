@@ -280,11 +280,6 @@ func executeUninstallCloud(p *Plugin, c *plugin.Context, header *model.CommandAr
 	}
 
 	// Notify users we have uninstalled an instance
-	// We're doing this as early as possible because there's a chance of getting into a state where the clients
-	// think there is an instance_installed, but the admin has deleted the instance somehow (eg. through the
-	// slash commands if we expose them). If that happens, then we'll error out of this function before we get
-	// to the end, but there will be no instance_installed. We want to make sure to send the notification
-	// to clients that there is no instance_installed.
 	p.API.PublishWebSocketEvent(
 		wSEventInstanceStatus,
 		map[string]interface{}{
@@ -331,11 +326,6 @@ func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandA
 	}
 
 	// Notify users we have uninstalled an instance
-	// We're doing this as early as possible because there's a chance of getting into a state where the clients
-	// think there is an instance_installed, but the admin has deleted the instance somehow (eg. through the
-	// slash commands if we expose them). If that happens, then we'll error out of this function before we get
-	// to the end, but there will be no instance_installed. We want to make sure to send the notification
-	// to clients that there is no instance_installed.
 	p.API.PublishWebSocketEvent(
 		wSEventInstanceStatus,
 		map[string]interface{}{
