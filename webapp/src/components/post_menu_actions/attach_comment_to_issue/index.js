@@ -9,7 +9,7 @@ import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
 
 import {openAttachCommentToIssueModal} from 'actions';
 
-import {getCurrentUserLocale, isConnected} from 'selectors';
+import {getCurrentUserLocale, isUserConnected, isInstanceInstalled} from 'selectors';
 
 import AttachCommentToIssuePostMenuAction from './attach_comment_to_issue';
 
@@ -18,8 +18,8 @@ const mapStateToProps = (state, ownProps) => {
     return {
         locale: getCurrentUserLocale(state),
         isSystemMessage: isSystemMessage(post),
-        connected: isConnected(state),
-        instanceInstalled: state[`plugins-${PluginId}`].instanceInstalled,
+        userConnected: isUserConnected(state),
+        instanceInstalled: isInstanceInstalled(state),
     };
 };
 

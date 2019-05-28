@@ -43,7 +43,7 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
     };
 
     render() {
-        if (this.props.isSystemMessage || !this.props.instanceInstalled || !this.props.connected) {
+        if (this.props.isSystemMessage || !this.props.instanceInstalled || !this.props.userConnected) {
             return null;
         }
 
