@@ -19,6 +19,7 @@ function instanceInstalled(state = false, action) {
     // and when we get a websocket instance_status event
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
+        return action.data.instance_installed ? action.data.instance_installed : state;
     case ActionTypes.RECEIVED_INSTANCE_STATUS:
         return action.data.instance_installed;
     default:

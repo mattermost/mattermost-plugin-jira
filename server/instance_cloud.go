@@ -180,7 +180,7 @@ func (jci jiraCloudInstance) parseHTTPRequestJWT(r *http.Request) (*jwt.Token, s
 		return []byte(jci.AtlassianSecurityContext.SharedSecret), nil
 	})
 	if err != nil || !token.Valid {
-		return nil, "", errors.WithMessage(err, "failed to validatte JWT")
+		return nil, "", errors.WithMessage(err, "failed to validate JWT")
 	}
 
 	return token, tokenString, nil

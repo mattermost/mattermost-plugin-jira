@@ -12,12 +12,13 @@ import (
 )
 
 const (
-	JIRATypeCloud         = "cloud"
-	JIRATypeServer        = "server"
-	wSEventInstanceStatus = "instance_status"
+	JIRATypeCloud  = "cloud"
+	JIRATypeServer = "server"
 )
 
 const prefixForInstance = true
+
+const wSEventInstanceStatus = "instance_status"
 
 type Instance interface {
 	GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error)

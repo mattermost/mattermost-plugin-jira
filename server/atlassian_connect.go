@@ -5,7 +5,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/mattermost/mattermost-server/model"
 	"io/ioutil"
 	"net/http"
 
@@ -96,32 +95,7 @@ func httpACUninstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 			errors.New("method " + r.Method + " is not allowed, must be POST")
 	}
 
-	// Notify users we have uninstalled an instance
-	// We're doing this first because there's a chance of getting into a state where the clients think there is an
-	// instance_installed, but the admin has deleted the instance somehow (eg. through the slash commands if we
-	// expose them). If that happens, then we'll error out of this function before we get to the end.
-	// We want to make sure to send the notification to clients that there is no instance_installed.
-	p.API.PublishWebSocketEvent(
-		wSEventInstanceStatus,
-		map[string]interface{}{
-			"instance_installed": false,
-		},
-		&model.WebsocketBroadcast{},
-	)
-
-	ji, err := p.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "no current Jira instance to uninstall")
-	}
-
-	// Remove the instance. If we don't, we will mistakenly think that there is a connected instance.
-	err = p.DeleteJiraInstance(ji.GetURL())
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to delete Jira instance"+ji.GetURL())
-	}
-
+	// Just send an ok to the Jira server, even though we're not doing anything.
 	_ = json.NewEncoder(w).Encode([]string{"OK"})
 	return http.StatusOK, nil
 }

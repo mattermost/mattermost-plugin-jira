@@ -9,13 +9,17 @@ import (
 	"github.com/mattermost/mattermost-server/plugin"
 )
 
-const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
+const helpText = "##### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira connect` - Connect your Mattermost account to your Jira account and subscribe to events\n" +
 	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
 	"* `/jira transition <issue-key> <state>` - Changes the state of a Jira issue.\n" +
-	"\nFor system administrators:\n" +
+	"\n###### For system administrators:\n" +
+	"Install:\n" +
 	"* `/jira install cloud <URL>` - connect Mattermost to a cloud Jira instance located at <URL>\n" +
 	"* `/jira install server <URL>` - connect Mattermost to a server Jira instance located at <URL>\n" +
+	"Uninstall:\n" +
+	"* `/jira uninstall cloud <URL>` - disconnect Mattermost from the cloud Jira instance located at <URL>\n" +
+	"* `/jira uninstall server <URL>` - disconnect Mattermost from the server Jira instance located at <URL>\n" +
 	""
 
 type CommandHandlerFunc func(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse
@@ -27,16 +31,18 @@ type CommandHandler struct {
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
-		"install/cloud":  executeInstallCloud,
-		"install/server": executeInstallServer,
-		"transition":     executeTransition,
-		"connect":        executeConnect,
-		"disconnect":     executeDisconnect,
+		"install/cloud":    executeInstallCloud,
+		"uninstall/cloud":  executeUninstallCloud,
+		"install/server":   executeInstallServer,
+		"uninstall/server": executeUninstallServer,
+		"transition":       executeTransition,
+		"connect":          executeConnect,
+		"disconnect":       executeDisconnect,
 		//"webhook":        executeWebhookURL,
 		//"webhook/url":    executeWebhookURL,
-		//"list":        executeList,
+		//"list": executeList,
 		//"instance/select":     executeInstanceSelect,
-		//"instance/delete":     executeInstanceDelete,
+		//"instance/delete": executeInstanceDelete,
 	},
 	defaultHandler: commandHelp,
 }
@@ -239,6 +245,110 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	return responsef(addResponseFormat, ji.GetURL(), ji.GetMattermostKey(), pkey)
 }
 
+// executeUninstallCloud will uninstall the jira cloud instance if the url matches, and then update all connected
+// clients so that their Jira-related menu options are removed.
+func executeUninstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return responsef("%v", err)
+	}
+	if !authorized {
+		return responsef("`/jira uninstall` can only be run by a system administrator.")
+	}
+	if len(args) != 1 {
+		return help()
+	}
+	jiraURL := args[0]
+
+	ji, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return responsef("No current Jira instance to uninstall")
+	}
+
+	jci, ok := ji.(*jiraCloudInstance)
+	if !ok {
+		return responsef("The current Jira instance is not a cloud instance")
+	}
+
+	if jiraURL != jci.GetURL() {
+		return responsef("You have entered an incorrect URL. The current Jira instance URL is: `" + jci.GetURL() + "`. Please enter the URL correctly to confirm the uninstall command.")
+	}
+
+	err = p.DeleteJiraInstance(jci.GetURL())
+	if err != nil {
+		return responsef("Failed to delete Jira instance " + ji.GetURL())
+	}
+
+	// Notify users we have uninstalled an instance
+	// We're doing this as early as possible because there's a chance of getting into a state where the clients
+	// think there is an instance_installed, but the admin has deleted the instance somehow (eg. through the
+	// slash commands if we expose them). If that happens, then we'll error out of this function before we get
+	// to the end, but there will be no instance_installed. We want to make sure to send the notification
+	// to clients that there is no instance_installed.
+	p.API.PublishWebSocketEvent(
+		wSEventInstanceStatus,
+		map[string]interface{}{
+			"instance_installed": false,
+		},
+		&model.WebsocketBroadcast{},
+	)
+
+	const uninstallInstructions = `Jira instance successfully disconnected. Go to XXX to remove the application in your Jira Cloud instance.`
+
+	return responsef(uninstallInstructions)
+}
+
+func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return responsef("%v", err)
+	}
+	if !authorized {
+		return responsef("`/jira uninstall` can only be run by a system administrator.")
+	}
+	if len(args) != 1 {
+		return help()
+	}
+	jiraURL := args[0]
+
+	ji, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return responsef("No current Jira instance to uninstall")
+	}
+
+	jsi, ok := ji.(*jiraServerInstance)
+	if !ok {
+		return responsef("The current Jira instance is not a server instance")
+	}
+
+	if jiraURL != jsi.GetURL() {
+		return responsef("You have entered an incorrect URL. The current Jira instance URL is: `" + jsi.GetURL() + "`. Please enter the URL correctly to confirm the uninstall command.")
+	}
+
+	err = p.DeleteJiraInstance(jsi.GetURL())
+	if err != nil {
+		return responsef("Failed to delete Jira instance " + ji.GetURL())
+	}
+
+	// Notify users we have uninstalled an instance
+	// We're doing this as early as possible because there's a chance of getting into a state where the clients
+	// think there is an instance_installed, but the admin has deleted the instance somehow (eg. through the
+	// slash commands if we expose them). If that happens, then we'll error out of this function before we get
+	// to the end, but there will be no instance_installed. We want to make sure to send the notification
+	// to clients that there is no instance_installed.
+	p.API.PublishWebSocketEvent(
+		wSEventInstanceStatus,
+		map[string]interface{}{
+			"instance_installed": false,
+		},
+		&model.WebsocketBroadcast{},
+	)
+
+	const uninstallInstructions = `Jira instance successfully disconnected. Go to XXX to remove the application in your Jira Server instance.`
+
+	return responsef(uninstallInstructions)
+}
+
 func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 2 {
 		return help()
@@ -279,7 +389,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, transition, install cloud, install server, help",
+		AutoCompleteDesc: "Available commands: connect, disconnect, transition, install cloud/server, uninstall cloud/server, help",
 		AutoCompleteHint: "[command]",
 	}
 }
