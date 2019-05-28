@@ -112,12 +112,21 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		}()
 	}
 
+	rootId := create.PostId
+	parentId := ""
+	if post.ParentId != "" {
+		// the original post was a reply
+		rootId = post.RootId
+		parentId = create.PostId
+	}
+
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
 		// TODO: Why is this not created.Self?
 		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.GetURL(), created.Key),
 		ChannelId: post.ChannelId,
-		RootId:    create.PostId,
+		RootId:    rootId,
+		ParentId:  parentId,
 		UserId:    mattermostUserId,
 	}
 	_, appErr = api.CreatePost(reply)
@@ -258,11 +267,20 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 			errors.WithMessage(err, "failed to attach the comment, postId: "+attach.PostId)
 	}
 
+	rootId := attach.PostId
+	parentId := ""
+	if post.ParentId != "" {
+		// the original post was a reply
+		rootId = post.RootId
+		parentId = attach.PostId
+	}
+
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
 		Message:   fmt.Sprintf("Message attached to [%v](%v/browse/%v)", attach.IssueKey, ji.GetURL(), attach.IssueKey),
 		ChannelId: post.ChannelId,
-		RootId:    attach.PostId,
+		RootId:    rootId,
+		ParentId:  parentId,
 		UserId:    mattermostUserId,
 	}
 	_, appErr = api.CreatePost(reply)
