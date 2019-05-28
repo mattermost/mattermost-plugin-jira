@@ -21,20 +21,22 @@ func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to parse callback request from Jira")
 	}
-
-	requestSecret, err := jsi.Plugin.LoadOneTimeSecret(requestToken)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	err = jsi.Plugin.DeleteOneTimeSecret(requestToken)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
 	mattermostUserId := r.Header.Get("Mattermost-User-ID")
 	if mattermostUserId == "" {
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
+
+	storedRequestSecret, err := jsi.Plugin.LoadOneTimeSecret(mattermostUserId)
+	if err != nil {
+		return http.StatusUnauthorized, err
+	}
+	// Unfortunately, passing the wrong secret to oauth1Config.AccessToken does
+	// not appear to fail as expected, so have to add this extra protection,
+	// making the secret value useless?
+	if len(storedRequestSecret) == 0 {
+		return http.StatusUnauthorized, ErrLinkUnauthorized
+	}
+
 	mmuser, appErr := jsi.Plugin.API.GetUser(mattermostUserId)
 	if appErr != nil {
 		return http.StatusInternalServerError,
@@ -47,7 +49,7 @@ func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.
 			errors.WithMessage(err, "failed to obtain oauth1 config")
 	}
 
-	accessToken, accessSecret, err := oauth1Config.AccessToken(requestToken, requestSecret, verifier)
+	accessToken, accessSecret, err := oauth1Config.AccessToken(requestToken, storedRequestSecret, verifier)
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to obtain oauth1 access token")

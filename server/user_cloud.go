@@ -83,17 +83,13 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 
 	switch r.URL.Path {
 	case routeACUserConnected:
-		value := ""
-		value, err = jci.Plugin.LoadOneTimeSecret(secret)
+		storedSecret := ""
+		storedSecret, err = jci.Plugin.LoadOneTimeSecret(mattermostUserId)
 		if err != nil {
 			return http.StatusUnauthorized, err
 		}
-		err = jci.Plugin.DeleteOneTimeSecret(secret)
-		if err != nil {
-			return http.StatusInternalServerError, err
-		}
-		if len(value) == 0 {
-			return http.StatusUnauthorized, errors.New("link expired")
+		if len(storedSecret) == 0 || storedSecret != secret {
+			return http.StatusUnauthorized, ErrLinkUnauthorized
 		}
 
 		err = jci.Plugin.StoreUserInfoNotify(jci, mattermostUserId, uinfo)

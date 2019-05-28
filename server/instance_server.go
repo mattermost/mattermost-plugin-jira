@@ -76,7 +76,7 @@ func (jsi jiraServerInstance) GetUserConnectURL(mattermostUserId string) (return
 		return "", err
 	}
 
-	err = jsi.Plugin.StoreOneTimeSecret(token, secret)
+	err = jsi.Plugin.StoreOneTimeSecret(mattermostUserId, secret)
 	if err != nil {
 		return "", err
 	}

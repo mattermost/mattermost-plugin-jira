@@ -440,27 +440,25 @@ func (p *Plugin) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
 	return rsaKey, nil
 }
 
-func (p *Plugin) StoreOneTimeSecret(token, secret string) error {
+func (p *Plugin) StoreOneTimeSecret(key, secret string) error {
 	// Expire in 15 minutes
-	appErr := p.API.KVSetWithExpiry(hashkey(prefixOneTimeSecret, token), []byte(secret), 15*60)
+	appErr := p.API.KVSetWithExpiry(hashkey(prefixOneTimeSecret, key), []byte(secret), 15*60)
 	if appErr != nil {
-		return errors.WithMessage(appErr, "failed to store one-ttime secret "+token)
+		return errors.WithMessagef(appErr, "failed to store one-ttime secret for %q", key)
 	}
 	return nil
 }
 
-func (p *Plugin) LoadOneTimeSecret(token string) (string, error) {
-	b, appErr := p.API.KVGet(hashkey(prefixOneTimeSecret, token))
-	if appErr != nil {
-		return "", errors.WithMessage(appErr, "failed to load one-time secret "+token)
-	}
-	return string(b), nil
-}
+var ErrLinkUnauthorized = errors.New("link is not authorized")
 
-func (p *Plugin) DeleteOneTimeSecret(token string) error {
-	appErr := p.API.KVDelete(hashkey(prefixOneTimeSecret, token))
+func (p *Plugin) LoadOneTimeSecret(key string) (string, error) {
+	bb, appErr := p.API.KVGet(hashkey(prefixOneTimeSecret, key))
 	if appErr != nil {
-		return errors.WithMessage(appErr, "failed to delete one-time secret "+token)
+		return "", errors.WithMessagef(appErr, "failed to load one-time secret for %q", key)
 	}
-	return nil
+	appErr = p.API.KVDelete(hashkey(prefixOneTimeSecret, key))
+	if appErr != nil {
+		return "", errors.WithMessagef(appErr, "failed to delete one-time secret for %q", key)
+	}
+	return string(bb), nil
 }
