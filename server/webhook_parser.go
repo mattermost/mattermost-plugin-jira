@@ -29,28 +29,26 @@ func ParseWebhook(in io.Reader) (Webhook, *JiraWebhook, error) {
 		return nil, jwh, errors.New("Invalid webhook event")
 	}
 
-	wh := func() Webhook {
-		switch jwh.WebhookEvent {
-		case "jira:issue_created":
-			return parseWebhookCreated(jwh)
-		case "jira:issue_deleted":
-			return parseWebhookDeleted(jwh)
-		case "jira:issue_updated":
-			switch jwh.IssueEventTypeName {
-			case "issue_assigned":
-				return parseWebhookAssigned(jwh)
-			case "issue_updated", "issue_generic":
-				return parseWebhookChangeLog(jwh)
-			}
-		case "comment_created":
-			return parseWebhookCommentCreated(jwh)
-		case "comment_updated":
-			return parseWebhookCommentUpdated(jwh)
-		case "comment_deleted":
-			return parseWebhookCommentDeleted(jwh)
+	var wh Webhook
+	switch jwh.WebhookEvent {
+	case "jira:issue_created":
+		wh = parseWebhookCreated(jwh)
+	case "jira:issue_deleted":
+		wh = parseWebhookDeleted(jwh)
+	case "jira:issue_updated":
+		switch jwh.IssueEventTypeName {
+		case "issue_assigned":
+			wh = parseWebhookAssigned(jwh)
+		case "issue_updated", "issue_generic":
+			wh = parseWebhookChangeLog(jwh)
 		}
-		return nil
-	}()
+	case "comment_created":
+		wh = parseWebhookCommentCreated(jwh)
+	case "comment_updated":
+		wh = parseWebhookCommentUpdated(jwh)
+	case "comment_deleted":
+		wh = parseWebhookCommentDeleted(jwh)
+	}
 	if wh == nil {
 		return nil, jwh, errors.Errorf("Unsupported webhook data: %v", jwh.WebhookEvent)
 	}

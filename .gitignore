@@ -5,7 +5,7 @@ bin
 vendor
 
 # Dev
-.code-workspace
+*.code-workspace
 
 # Mac
 .DS_Store
