@@ -4,24 +4,8 @@
 package main
 
 import (
-	"io"
-
 	"github.com/mattermost/mattermost-server/model"
 )
-
-func AsSlackAttachment(in io.Reader) (func(post *model.Post), error) {
-	parsed, err := parse(in, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	a := newSlackAttachment(parsed)
-
-	// Return a function that adds to a post as a SlackAttachment
-	return func(post *model.Post) {
-		model.ParseSlackAttachment(post, []*model.SlackAttachment{a})
-	}, nil
-}
 
 func newSlackAttachment(parsed *parsedJIRAWebhook) *model.SlackAttachment {
 	if parsed.headline == "" {
@@ -33,12 +17,6 @@ func newSlackAttachment(parsed *parsedJIRAWebhook) *model.SlackAttachment {
 		Fallback: parsed.headline,
 		Pretext:  parsed.headline,
 		Text:     parsed.text,
-	}
-
-	text := parsed.mdIssueLongLink() + "\n"
-	if parsed.text != "" {
-		text += "\n"
-		text += parsed.text + "\n"
 	}
 
 	var fields []*model.SlackAttachmentField
@@ -60,7 +38,6 @@ func newSlackAttachment(parsed *parsedJIRAWebhook) *model.SlackAttachment {
 		}
 	}
 
-	a.Text = text
 	a.Fields = fields
 	return a
 }

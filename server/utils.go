@@ -92,11 +92,15 @@ func parseJIRAIssuesFromText(text string, keys []string) []string {
 	return issues
 }
 
-func getIssueURL(i *JIRAWebhookIssue) string {
-	u, _ := url.Parse(i.Self)
-	return u.Scheme + "://" + u.Host + "/browse/" + i.Key
+func getIssueURL(issue *jira.Issue) string {
+	if issue == nil {
+		return ""
+	}
+	u, _ := url.Parse(issue.Self)
+	return u.Scheme + "://" + u.Host + "/browse/" + issue.Key
 }
 
-func getUserURL(issue *JIRAWebhookIssue, user *jira.User) string {
+func getUserURL(user *jira.User) string {
+	// TODO is this right?
 	return user.Self
 }

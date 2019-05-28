@@ -9,9 +9,7 @@ import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
 
 import {openCreateModal} from 'actions';
 
-import {getCurrentUserLocale} from 'selectors';
-
-import PluginId from 'plugin_id';
+import {getCurrentUserLocale, isConnected} from 'selectors';
 
 import CreateIssuePostMenuAction from './create_issue';
 
@@ -20,7 +18,7 @@ const mapStateToProps = (state, ownProps) => {
     return {
         locale: getCurrentUserLocale(state),
         isSystemMessage: isSystemMessage(post),
-        userConnected: state[`plugins-${PluginId}`].userConnected,
+        connected: isConnected(state),
         instanceInstalled: state[`plugins-${PluginId}`].instanceInstalled,
     };
 };
