@@ -19,12 +19,6 @@ func newSlackAttachment(parsed *parsedJIRAWebhook) *model.SlackAttachment {
 		Text:     parsed.text,
 	}
 
-	text := parsed.mdIssueLongLink() + "\n"
-	if parsed.text != "" {
-		text += "\n"
-		text += parsed.text + "\n"
-	}
-
 	var fields []*model.SlackAttachmentField
 	if parsed.WebhookEvent == "jira:issue_created" {
 
@@ -44,7 +38,6 @@ func newSlackAttachment(parsed *parsedJIRAWebhook) *model.SlackAttachment {
 		}
 	}
 
-	a.Text = text
 	a.Fields = fields
 	return a
 }

@@ -91,7 +91,7 @@ func TestParse(t *testing.T) {
 	}, {
 		file:             "testdata/webhook-issue-updated-started-working.json",
 		expectedStyle:    mdUpdateStyle,
-		expectedHeadline: "Test User started working on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+		expectedHeadline: "Test User transitioned story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) from \"To Do\" to \"In Progress\"",
 	},
 	} {
 		t.Run(tc.file, func(t *testing.T) {
