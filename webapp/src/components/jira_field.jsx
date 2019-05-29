@@ -11,7 +11,6 @@ export default class JiraField extends React.PureComponent {
     static propTypes = {
         id: PropTypes.object.isRequired,
         field: PropTypes.object.isRequired,
-        fieldKey: PropTypes.string.isRequired,
         obeyRequired: PropTypes.bool,
         onChange: PropTypes.func.isRequired,
         value: PropTypes.any,
@@ -38,17 +37,17 @@ export default class JiraField extends React.PureComponent {
     };
 
     render() {
-        const {field, fieldKey, obeyRequired} = this.props;
+        const field = this.props.field;
 
         if (field.schema.system === 'description') {
             return (
                 <Input
-                    key={fieldKey}
-                    id={fieldKey}
+                    key={this.props.id}
+                    id={this.props.id}
                     label={field.name}
                     type='textarea'
                     onChange={this.props.onChange}
-                    required={obeyRequired && field.required}
+                    required={this.props.obeyRequired && field.required}
                     value={this.props.value}
                 />
             );
@@ -57,12 +56,12 @@ export default class JiraField extends React.PureComponent {
         if (field.schema.type === 'string') {
             return (
                 <Input
-                    key={fieldKey}
-                    id={fieldKey}
+                    key={this.props.id}
+                    id={this.props.id}
                     label={field.name}
                     type='input'
                     onChange={this.props.onChange}
-                    required={obeyRequired && field.required}
+                    required={this.props.obeyRequired && field.required}
                     value={this.props.value}
                 />
             );
@@ -74,11 +73,11 @@ export default class JiraField extends React.PureComponent {
 
             return (
                 <ReactSelectSetting
-                    key={fieldKey}
-                    name={fieldKey}
+                    key={this.props.id}
+                    name={this.props.id}
                     label={field.name}
                     options={options}
-                    required={obeyRequired && field.required}
+                    required={this.props.obeyRequired && field.required}
                     onChange={(id, val) => this.props.onChange(id, {id: val})}
                     isMulti={false}
                     value={options.find((option) => option.value === this.props.value)}

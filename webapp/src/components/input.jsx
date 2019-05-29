@@ -17,7 +17,7 @@ export default class Input extends PureComponent {
             PropTypes.number,
         ]).isRequired,
         maxLength: PropTypes.number,
-        onChange: PropTypes.func,
+        onChange: PropTypes.func.isRequired,
         disabled: PropTypes.bool,
         required: PropTypes.bool,
         readOnly: PropTypes.bool,
