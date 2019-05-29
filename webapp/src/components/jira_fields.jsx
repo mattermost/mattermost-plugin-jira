@@ -9,7 +9,7 @@ import JiraField from 'components/jira_field';
 export default class JiraFields extends React.Component {
     static propTypes = {
         fields: PropTypes.object.isRequired,
-        onChange: PropTypes.func,
+        onChange: PropTypes.func.isRequired,
         values: PropTypes.object,
         isFilter: PropTypes.bool,
     };
@@ -34,6 +34,7 @@ export default class JiraFields extends React.Component {
                 <JiraField
                     key={fieldName}
                     id={fieldName}
+                    fieldKey={fieldName}
                     field={this.props.fields[fieldName]}
                     obeyRequired={true}
                     onChange={this.props.onChange}
