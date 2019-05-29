@@ -9,6 +9,7 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"github.com/mattermost/mattermost-server/model"
 
 	"github.com/pkg/errors"
 )
@@ -138,7 +139,7 @@ func (p *Plugin) CreateInactiveCloudInstance(jiraURL string) (returnErr error) {
 	return nil
 }
 
-func (p *Plugin) StoreCurrentJIRAInstance(ji Instance) (returnErr error) {
+func (p *Plugin) StoreCurrentJIRAInstanceAndNotify(ji Instance) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -151,6 +152,16 @@ func (p *Plugin) StoreCurrentJIRAInstance(ji Instance) (returnErr error) {
 		return err
 	}
 	p.debugf("Stored: current Jira instance: %s", ji.GetURL())
+
+	// Notify users we have installed an instance
+	p.API.PublishWebSocketEvent(
+		wSEventInstanceStatus,
+		map[string]interface{}{
+			"instance_installed": true,
+		},
+		&model.WebsocketBroadcast{},
+	)
+
 	return nil
 }
 

@@ -13,9 +13,13 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
 	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
 	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
-	"\nFor System Administrators:\n" +
+	"\n###### For System Administrators:\n" +
+	"Install:\n" +
 	"* `/jira install cloud <URL>` - Connect Mattermost to a Jira Cloud instance located at <URL>\n" +
 	"* `/jira install server <URL>` - Connect Mattermost to a Jira Server or Data Center instance located at <URL>\n" +
+	"Uninstall:\n" +
+	"* `/jira uninstall cloud <URL>` - Disconnect Mattermost from a Jira Cloud instance located at <URL>\n" +
+	"* `/jira uninstall server <URL>` - Disconnect Mattermost from a Jira Server or Data Center instance located at <URL>\n" +
 	""
 
 type CommandHandlerFunc func(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse
@@ -27,11 +31,13 @@ type CommandHandler struct {
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
-		"install/cloud":  executeInstallCloud,
-		"install/server": executeInstallServer,
-		"transition":     executeTransition,
-		"connect":        executeConnect,
-		"disconnect":     executeDisconnect,
+		"install/cloud":    executeInstallCloud,
+		"uninstall/cloud":  executeUninstallCloud,
+		"install/server":   executeInstallServer,
+		"uninstall/server": executeUninstallServer,
+		"transition":       executeTransition,
+		"connect":          executeConnect,
+		"disconnect":       executeDisconnect,
 		//"webhook":        executeWebhookURL,
 		//"webhook/url":    executeWebhookURL,
 		//"list":        executeList,
@@ -207,7 +213,7 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 
 1. Navigate to **Settings > Applications > Application Links**
 2. Enter %s as the application link, then click **Create new link**.
-3. In **Configure Application URL** screen, confirm your Mattermost URL is included as the application URL. Ignore any displayed errors and click **Continue**.
+3. In **Configure Application URL** screen, confirm your Mattermost URL is entered as the "New URL". Ignore any displayed errors and click **Continue**.
 4. In **Link Applications** screen, set the following values:
   - **Application Name**: Mattermost
   - **Application Type**: Generic Application
@@ -227,7 +233,7 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	if err != nil {
 		return responsef(err.Error())
 	}
-	err = p.StoreCurrentJIRAInstance(ji)
+	err = p.StoreCurrentJIRAInstanceAndNotify(ji)
 	if err != nil {
 		return responsef(err.Error())
 	}
@@ -236,7 +242,101 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	if err != nil {
 		return responsef("Failed to load public key: %v", err)
 	}
-	return responsef(addResponseFormat, ji.GetURL(), ji.GetMattermostKey(), pkey)
+	return responsef(addResponseFormat, p.GetSiteURL(), ji.GetMattermostKey(), pkey)
+}
+
+// executeUninstallCloud will uninstall the jira cloud instance if the url matches, and then update all connected
+// clients so that their Jira-related menu options are removed.
+func executeUninstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return responsef("%v", err)
+	}
+	if !authorized {
+		return responsef("`/jira uninstall` can only be run by a System Administrator.")
+	}
+	if len(args) != 1 {
+		return help()
+	}
+	jiraURL := args[0]
+
+	ji, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return responsef("No current Jira instance to uninstall")
+	}
+
+	jci, ok := ji.(*jiraCloudInstance)
+	if !ok {
+		return responsef("The current Jira instance is not a cloud instance")
+	}
+
+	if jiraURL != jci.GetURL() {
+		return responsef("You have entered an incorrect URL. The current Jira instance URL is: `" + jci.GetURL() + "`. Please enter the URL correctly to confirm the uninstall command.")
+	}
+
+	err = p.DeleteJiraInstance(jci.GetURL())
+	if err != nil {
+		return responsef("Failed to delete Jira instance " + ji.GetURL())
+	}
+
+	// Notify users we have uninstalled an instance
+	p.API.PublishWebSocketEvent(
+		wSEventInstanceStatus,
+		map[string]interface{}{
+			"instance_installed": false,
+		},
+		&model.WebsocketBroadcast{},
+	)
+
+	const uninstallInstructions = `Jira instance successfully disconnected. Go to **Settings > Apps > Manage Apps** to remove the application in your Jira Cloud instance.`
+
+	return responsef(uninstallInstructions)
+}
+
+func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return responsef("%v", err)
+	}
+	if !authorized {
+		return responsef("`/jira uninstall` can only be run by a System Administrator.")
+	}
+	if len(args) != 1 {
+		return help()
+	}
+	jiraURL := args[0]
+
+	ji, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return responsef("No current Jira instance to uninstall")
+	}
+
+	jsi, ok := ji.(*jiraServerInstance)
+	if !ok {
+		return responsef("The current Jira instance is not a server instance")
+	}
+
+	if jiraURL != jsi.GetURL() {
+		return responsef("You have entered an incorrect URL. The current Jira instance URL is: `" + jsi.GetURL() + "`. Please enter the URL correctly to confirm the uninstall command.")
+	}
+
+	err = p.DeleteJiraInstance(jsi.GetURL())
+	if err != nil {
+		return responsef("Failed to delete Jira instance " + ji.GetURL())
+	}
+
+	// Notify users we have uninstalled an instance
+	p.API.PublishWebSocketEvent(
+		wSEventInstanceStatus,
+		map[string]interface{}{
+			"instance_installed": false,
+		},
+		&model.WebsocketBroadcast{},
+	)
+
+	const uninstallInstructions = `Jira instance successfully disconnected. Go to **Settings > Applications > Application Links** to remove the application in your Jira Server or Data Center instance.`
+
+	return responsef(uninstallInstructions)
 }
 
 func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -279,7 +379,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, transition, install cloud, install server, help",
+		AutoCompleteDesc: "Available commands: connect, disconnect, transition, install cloud/server, uninstall cloud/server, help",
 		AutoCompleteHint: "[command]",
 	}
 }
@@ -323,7 +423,7 @@ func responsef(format string, args ...interface{}) *model.CommandResponse {
 //	if err != nil {
 //		return responsef("Failed to load Jira instance %s: %v", instanceKey, err)
 //	}
-//	err = p.StoreCurrentJIRAInstance(ji)
+//	err = p.StoreCurrentJIRAInstanceAndNotify(ji)
 //	if err != nil {
 //		return responsef(err.Error())
 //	}

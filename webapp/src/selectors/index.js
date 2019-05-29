@@ -46,3 +46,7 @@ export const isAttachCommentToIssueModalVisible = (state) => getPluginState(stat
 export const getAttachCommentToIssueModalForPostId = (state) => getPluginState(state).attachCommentToIssueModalForPostId;
 
 export const getJiraIssueMetadata = (state) => getPluginState(state).jiraIssueMetadata;
+
+export const isUserConnected = (state) => getPluginState(state).userConnected;
+
+export const isInstanceInstalled = (state) => getPluginState(state).instanceInstalled;
