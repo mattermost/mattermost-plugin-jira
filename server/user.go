@@ -31,8 +31,9 @@ type UserSettings struct {
 
 type UserInfo struct {
 	JIRAUser
-	IsConnected bool   `json:"is_connected"`
-	JIRAURL     string `json:"jira_url,omitempty"`
+	IsConnected       bool   `json:"is_connected"`
+	InstanceInstalled bool   `json:"instance_installed"`
+	JIRAURL           string `json:"jira_url,omitempty"`
 }
 
 func httpUserConnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -99,7 +100,7 @@ func httpUserDisconnect(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	return http.StatusOK, nil
 }
 
-func httpAPIGetUserInfo(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpAPIGetUserInfo(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
 			errors.New("method " + r.Method + " is not allowed, must be GET")
@@ -111,17 +112,19 @@ func httpAPIGetUserInfo(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	}
 
 	resp := UserInfo{}
-	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId)
-	if err == nil {
-		resp = UserInfo{
-			JIRAUser:    jiraUser,
-			IsConnected: true,
-			JIRAURL:     ji.GetURL(),
+	if ji, err := p.LoadCurrentJIRAInstance(); err == nil {
+		if jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId); err == nil {
+			resp = UserInfo{
+				JIRAUser:          jiraUser,
+				InstanceInstalled: true,
+				IsConnected:       true,
+				JIRAURL:           ji.GetURL(),
+			}
 		}
 	}
 
 	b, _ := json.Marshal(resp)
-	_, err = w.Write(b)
+	_, err := w.Write(b)
 	if err != nil {
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
 	}

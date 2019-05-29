@@ -18,6 +18,8 @@ const (
 
 const prefixForInstance = true
 
+const wSEventInstanceStatus = "instance_status"
+
 type Instance interface {
 	GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error)
 	GetDisplayDetails() map[string]string
@@ -35,6 +37,10 @@ type JIRAInstance struct {
 
 	Key  string
 	Type string
+}
+
+type InstanceStatus struct {
+	InstanceInstalled bool `json:"instance_installed"`
 }
 
 var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")

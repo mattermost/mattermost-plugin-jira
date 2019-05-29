@@ -76,7 +76,7 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	err = p.StoreCurrentJIRAInstance(jiraInstance)
+	err = p.StoreCurrentJIRAInstanceAndNotify(jiraInstance)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -95,6 +95,7 @@ func httpACUninstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 			errors.New("method " + r.Method + " is not allowed, must be POST")
 	}
 
+	// Just send an ok to the Jira server, even though we're not doing anything.
 	_ = json.NewEncoder(w).Encode([]string{"OK"})
 	return http.StatusOK, nil
 }
