@@ -42,34 +42,20 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
     }
 
     render() {
-        if (this.props.isSystemMessage) {
+        if (this.props.isSystemMessage || !this.props.connected) {
             return null;
         }
 
-        const conn = this.props.connected || {};
-        let content;
-        if (conn.connected) {
-            content = (
-                <button
-                    className='style--none'
-                    role='presentation'
-                    onClick={this.handleClick}
-                >
-                    <JiraIcon type='menu'/>
-                    {this.getLocalizedTitle()}
-                </button>
-            );
-        } else {
-            content = (
-                <button
-                    className='style--none'
-                    role='menuitem'
-                    onClick={this.connectClick}
-                >
-                    {'Connect to Jira'}
-                </button>
-            );
-        }
+        const content = (
+            <button
+                className='style--none'
+                role='presentation'
+                onClick={this.handleClick}
+            >
+                <JiraIcon type='menu'/>
+                {this.getLocalizedTitle()}
+            </button>
+        );
 
         return (
             <li

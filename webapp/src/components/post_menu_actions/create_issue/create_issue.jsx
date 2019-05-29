@@ -45,9 +45,8 @@ export default class CreateIssuePostMenuAction extends PureComponent {
             return null;
         }
 
-        const conn = this.props.connected || {};
         let content;
-        if (conn.connected) {
+        if (this.props.connected) {
             content = (
                 <button
                     className='style--none'
