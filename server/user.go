@@ -163,7 +163,7 @@ func (p *Plugin) DeleteUserInfoNotify(ji Instance, mattermostUserId string) erro
 }
 
 func (p *Plugin) userDisconnect(ji Instance, mattermostUserId string) error {
-	if err := ji.GetPlugin().DeleteUserInfoNotify(ji, mattermostUserId); err != nil {
+	if err := p.DeleteUserInfoNotify(ji, mattermostUserId); err != nil {
 		return err
 	}
 	return nil
