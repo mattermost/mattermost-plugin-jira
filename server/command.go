@@ -42,7 +42,7 @@ var commandRouter = ActionRouter{
 	RouteHandlers: map[string]*ActionScript{
 		"connect":        {Filter: instanceFilter, Handler: executeConnect},
 		"disconnect":     {Filter: instanceFilter, Handler: executeDisconnect},
-		"settings":       {Filter: instanceFilter, Handler: executeSettings},
+		"settings":       {Filter: commandJiraClientFilter, Handler: executeSettings},
 		"transition":     {Filter: commandJiraClientFilter, Handler: executeTransition},
 		"install/server": {Filter: commandSysAdminFilter, Handler: executeInstallServer},
 		"install/cloud":  {Filter: commandSysAdminFilter, Handler: executeInstallCloud},
