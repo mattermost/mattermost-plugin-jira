@@ -296,6 +296,10 @@ func (p *parsedJIRAWebhook) fromChangeLog(issue string) (string, string) {
 		to := item.ToString
 		from := item.FromString
 		switch {
+		case item.Field == "assignee":
+			p.event(eventUpdatedAssignee)
+			return fmt.Sprintf("assigned %v to %v", issue, p.mdIssueAssignee()), ""
+
 		case item.Field == "resolution" && to == "" && from != "":
 			p.event(eventUpdatedReopened)
 			return fmt.Sprintf("reopened %v", issue), ""
