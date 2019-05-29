@@ -253,7 +253,7 @@ func executeUninstallCloud(p *Plugin, c *plugin.Context, header *model.CommandAr
 		return responsef("%v", err)
 	}
 	if !authorized {
-		return responsef("`/jira uninstall` can only be run by a system administrator.")
+		return responsef("`/jira uninstall` can only be run by a System Administrator.")
 	}
 	if len(args) != 1 {
 		return help()
