@@ -334,7 +334,7 @@ func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandA
 		&model.WebsocketBroadcast{},
 	)
 
-	const uninstallInstructions = `Jira instance successfully disconnected. Go to XXX to remove the application in your Jira Server instance.`
+	const uninstallInstructions = `Jira instance successfully disconnected. Go to **Settings > Applications > Application Links** to remove the application in your Jira Server or Data Center instance.`
 
 	return responsef(uninstallInstructions)
 }
