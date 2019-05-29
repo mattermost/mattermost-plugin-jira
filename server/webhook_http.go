@@ -80,6 +80,8 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		return http.StatusForbidden, fmt.Errorf("Jira plugin not configured correctly; must provide Secret and UserName")
 	}
 	secret := r.FormValue("secret")
+	// secret may be URL-escaped, potentially mroe than once. Loop until there
+	// are no % escapes left.
 	for {
 		if subtle.ConstantTimeCompare([]byte(secret), []byte(cfg.Secret)) == 1 {
 			break
