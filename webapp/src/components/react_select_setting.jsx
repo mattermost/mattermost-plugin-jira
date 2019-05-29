@@ -14,7 +14,7 @@ export default class ReactSelectSetting extends React.PureComponent {
     static propTypes = {
         name: PropTypes.string.isRequired,
         onChange: PropTypes.func,
-        theme: PropTypes.object,
+        theme: PropTypes.object.isRequired,
     };
 
     handleChange = (value) => {
@@ -83,7 +83,7 @@ export default class ReactSelectSetting extends React.PureComponent {
             >
                 <ReactSelect
                     {...this.props}
-                    styles={this.getStyle(this.props.theme)}
+                    styles={this.props.theme && this.getStyle(this.props.theme)}
                     onChange={this.handleChange}
                 />
             </Setting>

@@ -11,6 +11,7 @@ export default class JiraFields extends React.PureComponent {
         fields: PropTypes.object.isRequired,
         onChange: PropTypes.func.isRequired,
         values: PropTypes.object,
+        theme: PropTypes.object.isRequired,
     };
 
     render() {
@@ -37,6 +38,7 @@ export default class JiraFields extends React.PureComponent {
                     obeyRequired={true}
                     onChange={this.props.onChange}
                     value={this.props.values && this.props.values[fieldName]}
+                    theme={this.props.theme}
                 />
             );
         });

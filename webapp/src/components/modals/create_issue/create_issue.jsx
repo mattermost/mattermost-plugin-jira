@@ -178,6 +178,7 @@ export default class CreateIssueModal extends PureComponent {
                         fields={getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType)}
                         onChange={this.handleFieldChange}
                         values={this.state.fields}
+                        theme={theme}
                     />
                     <br/>
                 </div>
