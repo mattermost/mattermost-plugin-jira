@@ -113,7 +113,6 @@ export default class AttachIssueModal extends PureComponent {
                         options={projectOptions}
                         isMuli={false}
                         key={'LT'}
-                        theme={theme}
                         value={projectOptions.filter((option) => option.value === this.state.projectKey)}
                     />
                     <Input

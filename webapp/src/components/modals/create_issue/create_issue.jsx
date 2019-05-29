@@ -161,7 +161,6 @@ export default class CreateIssueModal extends PureComponent {
                         options={projectOptions}
                         isMuli={false}
                         key={'LT'}
-                        theme={theme}
                         value={projectOptions.filter((option) => option.value === this.state.projectKey)}
                     />
                     <ReactSelectSetting
@@ -171,7 +170,6 @@ export default class CreateIssueModal extends PureComponent {
                         onChange={this.handleIssueTypeChange}
                         options={issueOptions}
                         isMuli={false}
-                        theme={theme}
                         value={issueOptions.filter((option) => option.value === this.state.issueType)}
                     />
                     <JiraFields
