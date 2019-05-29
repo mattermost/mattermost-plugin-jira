@@ -75,8 +75,6 @@ export default class JiraField extends React.PureComponent {
                 <ReactSelectSetting
                     key={this.props.id}
                     name={this.props.id}
-                    key={fieldKey}
-                    name={fieldKey}
                     label={field.name}
                     options={options}
                     required={this.props.obeyRequired && field.required}
