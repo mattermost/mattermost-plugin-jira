@@ -85,6 +85,9 @@ func httpACUserInteractive(a *Action) error {
 			return a.RespondError(http.StatusUnauthorized, nil, "link expired")
 		}
 
+		// Set default settings the first time a user connects
+		uinfo.Settings = &UserSettings{Notifications: true}
+
 		err = a.Plugin.StoreUserInfoNotify(a.Instance, mattermostUserId, uinfo)
 		a.Plugin.debugf("Stored and notified: %s %+v", mattermostUserId, uinfo)
 

@@ -359,6 +359,14 @@ func httpSubscribeWebhook(a *Action) error {
 			return a.RespondError(appErr.StatusCode, appErr)
 		}
 	}
+
+	// Notify any affected users using a direct channel
+	err = a.Plugin.handleNotifications(parsed)
+	if err != nil {
+		a.Plugin.errorf("httpSubscribeWebhook, handleNotifications: %v", err)
+		return a.RespondError(http.StatusBadRequest, err)
+	}
+
 	return nil
 }
 

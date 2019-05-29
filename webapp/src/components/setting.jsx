@@ -31,7 +31,12 @@ export default class Setting extends React.PureComponent {
                     {label}
                 </label>
                 {required &&
-                <span style={{color: '#ff0000'}}>{'*'}</span>
+                <span
+                    className='error-text'
+                    style={{marginLeft: '3px'}}
+                >
+                    {'*'}
+                </span>
                 }
                 <div>
                     {children}

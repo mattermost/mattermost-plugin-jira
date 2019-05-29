@@ -11,13 +11,16 @@ import (
 )
 
 const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
-	"* `/jira connect` - Connect your Mattermost account to your Jira account and subscribe to events\n" +
-	"* `/jira disconnect` - Disonnect your Mattermost account from your Jira account\n" +
+	"* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
+	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
 	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field.\n" +
-	"* `/jira transition <issue-key> <state>` - Changes the state of a Jira issue.\n" +
-	"\nFor system administrators:\n" +
-	"* `/jira install cloud <URL>` - connect Mattermost to a cloud Jira instance located at <URL>\n" +
-	"* `/jira install server <URL>` - connect Mattermost to a server Jira instance located at <URL>\n" +
+	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
+	"* `/jira settings [setting] [value]` - Update your user settings\n" +
+	"  * [setting] can be `notifications`\n" +
+	"  * [value] can be `on` or `off`\n" +
+	"\nFor System Administrators:\n" +
+	"* `/jira install cloud <URL>` - Connect Mattermost to a Jira Cloud instance located at <URL>\n" +
+	"* `/jira install server <URL>` - Connect Mattermost to a Jira Server or Data Center instance located at <URL>\n" +
 	""
 
 var instanceFilter = ActionFilter{RequireInstance}
@@ -39,9 +42,10 @@ var commandRouter = ActionRouter{
 	RouteHandlers: map[string]*ActionScript{
 		"connect":        {Filter: instanceFilter, Handler: executeConnect},
 		"disconnect":     {Filter: instanceFilter, Handler: executeDisconnect},
+		"settings":       {Filter: instanceFilter, Handler: executeSettings},
+		"transition":     {Filter: commandJiraClientFilter, Handler: executeTransition},
 		"install/server": {Filter: commandSysAdminFilter, Handler: executeInstallServer},
 		"install/cloud":  {Filter: commandSysAdminFilter, Handler: executeInstallCloud},
-		"transition":     {Filter: commandJiraClientFilter, Handler: executeTransition},
 
 		// used for debugging, uncomment if needed
 		// "instance/list":   {Filter: commandSysAdminFilter, Handler: executeInstanceList},
@@ -50,6 +54,11 @@ var commandRouter = ActionRouter{
 		// "webhook":         {Filter: commandSysAdminFilter, Handler: executeWebhookURL},
 	},
 }
+
+// Available settings
+const (
+	settingsNotifications = "notifications"
+)
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	args := strings.Fields(commandArgs.Command)
@@ -97,6 +106,23 @@ func executeDisconnect(a *Action) error {
 		a.Plugin.GetPluginURL(), routeUserDisconnect)
 }
 
+func executeSettings(a *Action) error {
+	if len(a.CommandArgs) < 1 {
+		return executeHelp(a)
+	}
+
+	switch a.CommandArgs[0] {
+	case settingsNotifications:
+		resp, err := a.Plugin.settingsNotifications(a)
+		if err != nil {
+			return a.RespondError(0, err)
+		}
+		return a.RespondPrintf(resp)
+	default:
+		return a.RespondError(0, nil, "Unknown setting %q.", a.CommandArgs[0])
+	}
+}
+
 func executeInstanceList(a *Action) error {
 	if len(a.CommandArgs) != 0 {
 		return executeHelp(a)
@@ -107,11 +133,6 @@ func executeInstanceList(a *Action) error {
 	}
 	if len(known) == 0 {
 		return a.RespondPrintf("(none installed)\n")
-	}
-
-	current, err := a.Plugin.LoadCurrentJIRAInstance()
-	if err != nil {
-		return a.RespondError(0, err)
 	}
 
 	keys := []string{}
@@ -136,7 +157,7 @@ func executeInstanceList(a *Action) error {
 			details = ji.GetType()
 		}
 		format := "|%v|%s|%s|\n"
-		if key == current.GetURL() {
+		if key == a.Instance.GetURL() {
 			format = "| **%v** | **%s** |%s|\n"
 		}
 		text += fmt.Sprintf(format, i+1, key, details)
@@ -188,7 +209,7 @@ func executeInstallServer(a *Action) error {
 
 1. Navigate to **Settings > Applications > Application Links**
 2. Enter %s as the application link, then click **Create new link**.
-3. In **Configure Application URL** screen, confirm your Mattermost URL is included as the application URL. Ignore any displayed errors and click **Continue**.
+3. In **Configure Application URL** screen, confirm your Mattermost URL is entered as the "New URL". Ignore any displayed errors and click **Continue**.
 4. In **Link Applications** screen, set the following values:
   - **Application Name**: Mattermost
   - **Application Type**: Generic Application
@@ -217,7 +238,7 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	if err != nil {
 		return a.RespondError(0, err)
 	}
-	return a.RespondPrintf(addResponseFormat, jsi.GetURL(), jsi.GetMattermostKey(), pkey)
+	return a.RespondPrintf(addResponseFormat, a.Plugin.GetSiteURL(), jsi.GetMattermostKey(), pkey)
 }
 
 func executeTransition(a *Action) error {
@@ -252,7 +273,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, create, transition, install cloud, install server, help",
+		AutoCompleteDesc: "Available commands: connect, disconnect, create, transition, settings, install cloud, install server, help",
 		AutoCompleteHint: "[command]",
 	}
 }

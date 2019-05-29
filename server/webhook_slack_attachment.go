@@ -4,23 +4,16 @@
 package main
 
 import (
-	"io"
-
 	"github.com/mattermost/mattermost-server/model"
 )
 
-func AsSlackAttachment(in io.Reader) (func(post *model.Post), error) {
-	parsed, err := parse(in, nil)
-	if err != nil {
-		return nil, err
-	}
-
+func AsSlackAttachment(parsed *parsedJIRAWebhook) func(post *model.Post) {
 	a := newSlackAttachment(parsed)
 
 	// Return a function that adds to a post as a SlackAttachment
 	return func(post *model.Post) {
 		model.ParseSlackAttachment(post, []*model.SlackAttachment{a})
-	}, nil
+	}
 }
 
 func newSlackAttachment(parsed *parsedJIRAWebhook) *model.SlackAttachment {
