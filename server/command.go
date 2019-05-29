@@ -13,7 +13,7 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
 	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
 	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
-	"\n###### For system administrators:\n" +
+	"\n###### For System Administrators:\n" +
 	"Install:\n" +
 	"* `/jira install cloud <URL>` - Connect Mattermost to a Jira Cloud instance located at <URL>\n" +
 	"* `/jira install server <URL>` - Connect Mattermost to a Jira Server or Data Center instance located at <URL>\n" +
