@@ -67,18 +67,22 @@ export default class JiraField extends React.PureComponent {
             );
         }
 
+        // if this.props.field has allowedValues, then props.value will be an object
         if (field.allowedValues && field.allowedValues.length) {
             const options = field.allowedValues.map(this.makeReactSelectValue);
+
             return (
                 <ReactSelectSetting
                     key={this.props.id}
                     name={this.props.id}
+                    key={fieldKey}
+                    name={fieldKey}
                     label={field.name}
                     options={options}
                     required={this.props.obeyRequired && field.required}
-                    onChange={this.props.onChange}
+                    onChange={(id, val) => this.props.onChange(id, {id: val})}
                     isMulti={false}
-                    value={options.filter((option) => option.value === this.props.value)}
+                    value={options.find((option) => option.value === this.props.value)}
                 />
             );
         }

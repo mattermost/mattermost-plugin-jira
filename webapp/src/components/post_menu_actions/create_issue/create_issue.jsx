@@ -14,7 +14,8 @@ export default class CreateIssuePostMenuAction extends PureComponent {
         locale: PropTypes.string,
         open: PropTypes.func.isRequired,
         postId: PropTypes.string,
-        connected: PropTypes.object.isRequired,
+        userConnected: PropTypes.bool.isRequired,
+        instanceInstalled: PropTypes.bool.isRequired,
     };
 
     static defaultTypes = {
@@ -42,12 +43,12 @@ export default class CreateIssuePostMenuAction extends PureComponent {
     };
 
     render() {
-        if (this.props.isSystemMessage) {
+        if (this.props.isSystemMessage || !this.props.instanceInstalled) {
             return null;
         }
 
         let content;
-        if (this.props.connected) {
+        if (this.props.userConnected) {
             content = (
                 <button
                     className='style--none'
