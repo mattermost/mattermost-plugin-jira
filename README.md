@@ -1,10 +1,41 @@
 # Mattermost Jira Plugin ![CircleCI branch](https://img.shields.io/circleci/project/github/mattermost/mattermost-plugin-jira/master.svg) ![Codecov branch](https://img.shields.io/codecov/c/github/mattermost/mattermost-plugin-jira/master.svg)
 
-This plugin supports a two-way integration between Mattermost and Jira. It is currently in development and not yet considered stable for production. For a stable production release, please download the latest version [in the Releases tab](https://github.com/mattermost/mattermost-plugin-jira/releases) and follow [this documentation](https://docs.mattermost.com/integrations/jira.html) for install and configuration.
+This plugin supports a two-way integration between Mattermost and Jira. For a stable production release, please download the latest version [in the Releases tab](https://github.com/mattermost/mattermost-plugin-jira/releases) and follow [these instructions](#installation) for install and configuration.
 
-We are looking for help from our community to complete the development of v2.0 of the Mattermost Jira plugin. If you're interested, review [open Help Wanted issues](https://github.com/mattermost/mattermost-plugin-jira/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) to get started.
+This plugin supports Jira Core and Jira Software products, for Cloud, Server and Data Center platforms.
 
 ## 1. Features
+
+### 1.1 Send notifications from Jira to Mattermost
+
+including use cases, feature and functionality descriptions, screenshots
+
+### 1.2 Create and manage Jira issues in Mattermost
+
+including use cases, feature and functionality descriptions, screenshots
+
+## 2. Installation
+
+## 3. Jira v2.1 Roadmap
+
+## 4. Development
+
+This plugin contains both a server and web app portion.
+
+Use `make dist` to build distributions of the plugin that you can upload to a Mattermost server.
+Use `make check-style` to check the style.
+Use `make deploy` to deploy the plugin to your local server.
+
+For additional information on developing plugins, refer to [our plugin developer documentation](https://developers.mattermost.com/extend/plugins/).
+
+To test your changes against Jira locally, we recommend starting a 14-day trial for Jira Software Cloud, if you don't have a Jira project to test against. More information can be found here: https://www.atlassian.com/software/jira/try
+
+## 5. Frequently Asked Questions (FAQ)
+
+
+
+
+
 
 Below is a list of features currently supported. Each is considered Beta and may be removed in subsequent updates. We are also aware of a few known issues and are tracking development [in Jira](https://mattermost.atlassian.net/issues/?jql=status%20in%20(%22At%20Risk%22%2C%20Backlog%2C%20%22Future%20Consideration%22%2C%20%22In%20Progress%22%2C%20Open%2C%20Pending%2C%20%22Planned%3A%20Backlog%22%2C%20%22Planned%3A%20Scheduled%22%2C%20Reopened%2C%20Resolved%2C%20Reverted%2C%20%22Selected%20for%20Development%22%2C%20Submitted%2C%20%22To%20Do%22)%20AND%20%22Epic%20Link%22%20%3D%20MM-12474%20ORDER%20BY%20cf%5B10011%5D%20ASC%2C%20created%20DESC).
 
@@ -179,14 +210,4 @@ https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3
  - Issue: Created, Updated, Deleted
  - Comment: Created, Updated, Deleted
 
-## 4. Developing
 
-This plugin contains both a server and web app portion.
-
-Use `make dist` to build distributions of the plugin that you can upload to a Mattermost server.
-Use `make check-style` to check the style.
-Use `make deploy` to deploy the plugin to your local server.
-
-For additional information on developing plugins, refer to [our plugin developer documentation](https://developers.mattermost.com/extend/plugins/).
-
-To test your changes against Jira locally, we recommend starting a 14-day trial for Jira Software Cloud, if you don't have a Jira project to test against. More information can be found here: https://www.atlassian.com/software/jira/try
