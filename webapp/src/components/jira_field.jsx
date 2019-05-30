@@ -44,12 +44,12 @@ export default class JiraField extends React.Component {
         if (field.schema.system === 'description') {
             return (
                 <Input
-                    key={fieldKey}
-                    id={fieldKey}
+                    key={this.props.id}
+                    id={this.props.id}
                     label={field.name}
                     type='textarea'
                     onChange={this.props.onChange}
-                    required={obeyRequired && field.required}
+                    required={this.props.obeyRequired && field.required}
                     value={this.props.value}
                 />
             );
@@ -58,12 +58,12 @@ export default class JiraField extends React.Component {
         if (field.schema.type === 'string') {
             return (
                 <Input
-                    key={fieldKey}
-                    id={fieldKey}
+                    key={this.props.id}
+                    id={this.props.id}
                     label={field.name}
                     type='input'
                     onChange={this.props.onChange}
-                    required={obeyRequired && field.required}
+                    required={this.props.obeyRequired && field.required}
                     value={this.props.value}
                 />
             );
@@ -75,11 +75,11 @@ export default class JiraField extends React.Component {
 
             return (
                 <ReactSelectSetting
-                    key={fieldKey}
-                    name={fieldKey}
+                    key={this.props.id}
+                    name={this.props.id}
                     label={field.name}
                     options={options}
-                    required={obeyRequired && field.required}
+                    required={this.props.obeyRequired && field.required}
                     onChange={(id, val) => this.props.onChange(id, {id: val})}
                     isMulti={false}
                     value={options.find((option) => option.value === this.props.value)}
