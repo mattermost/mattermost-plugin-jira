@@ -22,6 +22,9 @@ export default class JiraField extends React.PureComponent {
     };
 
     // Creates an option for react-select from an allowedValue from the jira field metadata
+    // includes both .value and .name because allowedValue test cases have used .value or .name
+    // and are mutually exclusive.
+    // should wrap this with some if else logic
     makeReactSelectValue = (allowedValue) => {
         const iconLabel = (
             <React.Fragment>
@@ -29,9 +32,6 @@ export default class JiraField extends React.PureComponent {
                     style={getStyle().jiraIcon}
                     src={allowedValue.iconUrl}
                 />
-                {/* this works because allowedValue test cases have */}
-                {/* been .value or .name and are mutually exclusive  */}
-                {/* should wrap this with some if else logic */}
                 {allowedValue.value}
                 {allowedValue.name}
             </React.Fragment>
