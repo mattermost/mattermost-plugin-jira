@@ -11,7 +11,6 @@ export default class JiraField extends React.Component {
     static propTypes = {
         id: PropTypes.object.isRequired,
         field: PropTypes.object.isRequired,
-        fieldKey: PropTypes.string.isRequired,
         obeyRequired: PropTypes.bool,
         onChange: PropTypes.func.isRequired,
         value: PropTypes.any,
@@ -39,7 +38,7 @@ export default class JiraField extends React.Component {
     };
 
     renderCreateFields() {
-        const {field, fieldKey, obeyRequired} = this.props;
+        const field = this.props;
 
         if (field.schema.system === 'description') {
             return (
