@@ -20,7 +20,9 @@ Support for multiple Jira instances is considered, but not yet supported.
 
 Notify your team of latest updated by sending notifications from your Jira projects to Mattermost channels.
 
-// TODO: Add 1 or 2 screenshots
+![image](https://user-images.githubusercontent.com/13119842/58668896-5cb73b80-8308-11e9-892c-79e4240203ea.png)
+
+![image](https://user-images.githubusercontent.com/13119842/58669245-858c0080-8309-11e9-9408-e4c636768d09.png)
 
 Notifications are configured with webhooks and offer full JQL support. Configuration is restricted to Jira System Admins only. See [these instructions](#2-installation) for install and configuration.
 
@@ -101,10 +103,10 @@ If you want to [send notifications from Jira to Mattermost](#11-send-notificatio
   - For older versions of Jira, click the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
 
 2. Click **Create a WebHook** to create a new webhook. Choose a unique name and add the JIRA webhook URL https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL as the URL.
-  - Make sure to replace `TEAMURL` and `CHANNELURL` with the Mattermost team URL and channel URL you want the JIRA events to post to. The values should be in lower case.
-  - Moreover, replace `SITEURL` with the site URL of your Mattermost instance, and `WEBHOOKSECRET` with the secret generated in Mattermost via **System Console > Integrations > Jira**
+  - Replace `TEAMURL` and `CHANNELURL` with the Mattermost team URL and channel URL you want the JIRA events to post to. The values should be in lower case.
+  - Replace `SITEURL` with the site URL of your Mattermost instance, and `WEBHOOKSECRET` with the secret generated in Mattermost via **System Console > Integrations > Jira**
 
-For instance, if the team URL is `contributors`, channel URL is `town-square` and site URL is `https://community.mattermost.com`, and the generated webhook secret is `5JlVk56KPxX629ujeU3MOuxaiwsPzLwh`, then the final webhook URL would be
+For instance, if the team URL is `contributors`, channel URL is `town-square`, site URL is `https://community.mattermost.com`, and the generated webhook secret is `5JlVk56KPxX629ujeU3MOuxaiwsPzLwh`, then the final webhook URL would be
 
 ```
 https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3MOuxaiwsPzLwh&team=contributors&channel=town-square
@@ -112,50 +114,19 @@ https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3
 
 3. (Optional) Set a description and a custom JQL query to determine which tickets trigger events. For more information on JQL queries, refer to the [Atlassian help documentation](https://confluence.atlassian.com/jirasoftwarecloud/advanced-searching-764478330.html).
 
-4. Finally, set which issue events send messages to Mattermost channels. The following are supported:
+4. Finally, set which issue events send messages to Mattermost channels, then hit **Save**. The following issue events are supported:
 
-// TODO: Add a screenshot
+![image](https://user-images.githubusercontent.com/13119842/58669333-d4d23100-8309-11e9-8618-ec7ec18d28bc.png)
 
 #### Step 3: Link the plugin as an application in Jira
 
-See separate instructions for [Jira Cloud](#step-3-jira-cloud) and for [Jira Server or Data Center](#step-3-jira-server-or-data-center) to complete this step.
+Finally, link the plugin as an application in your Jira instance.
 
-##### Step 3: Jira Cloud
+For Jira Cloud instances, post `/jira install cloud <your-jira-url>` to a Mattermost channel as a Mattermost System Admin, and follow the steps posted to the channel.
 
-As a Mattermost System Admin, post `/jira install cloud <your-jira-url>`, and follow the steps posted to the channel. They are also outlined below:
+For Jira Server or Data Center, post `/jira install server <your-jira-url>`.
 
-1. As a Jira System Administrator, go to **Jira Settings > Apps > Manage Apps**. 
-  - For older versions of Jira, go to **Administration > Applications > Add-ons > Manage add-ons**
-2. Click **Settings** at bottom of page, enable development mode, and apply this change.
-  - Enabling development mode allows you to install apps that are not from the Atlassian Marketplace.
-3. Click **Upload app**.
-4. In the **From this URL field**, enter: %s%s
-5. Wait for the app to install. Once completed, you should see an "Installed and ready to go!" message.
-6. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
-7. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
-
-If you see an option to create a Jira issue, you're all set! If not, see our [Frequently Asked Questions](#5-frequently-asked-questions-faq) for troubleshooting help.
-
-##### Step 3: Jira Server or Data Center
-
-As a Mattermost System Admin, post `/jira install server <your-jira-url>`, and follow the steps posted to the channel. They are also outlined below:
-
-1. As a Jira System Administrator, go to **Jira Settings > Applications > Application Links**.
-2. Enter your Mattermost URL as the application link, then click **Create new link**.
-3. In **Configure Application URL** screen, confirm your Mattermost URL is entered as the "New URL". Ignore any displayed errors and click **Continue**.
-4. In **Link Applications** screen, set the following values:
-  - **Application Name**: Mattermost
-  - **Application Type**: Generic Application
-5. Check the **Create incoming link** value, then click **Continue**.
-6. In the following **Link Applications** screen, set the following values:
-  - **Consumer Key**: Copy the value generated in step 1 for this field.
-  - **Consumer Name**: Mattermost
-  - **Public Key**: Copy the value generated in step 1 for this field.
-7. Click **Continue**.
-8. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
-9. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
-
-If you see an option to create a Jira issue, you're all set! If not, see our [Frequently Asked Questions](#5-frequently-asked-questions-faq) for troubleshooting help.
+If you face issues installing the plugin, see our [Frequently Asked Questions](#5-frequently-asked-questions-faq) for troubleshooting help.
 
 ## 3. Jira v2 Roadmap
 
