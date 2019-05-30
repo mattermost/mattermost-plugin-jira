@@ -15,6 +15,7 @@ export default class JiraField extends React.Component {
         onChange: PropTypes.func.isRequired,
         value: PropTypes.any,
         isFilter: PropTypes.bool,
+        theme: PropTypes.object.isRequired,
     };
 
     static defaultProps = {
@@ -82,6 +83,7 @@ export default class JiraField extends React.Component {
                     onChange={(id, val) => this.props.onChange(id, {id: val})}
                     isMulti={false}
                     value={options.find((option) => option.value === this.props.value)}
+                    theme={this.props.theme}
                 />
             );
         }
