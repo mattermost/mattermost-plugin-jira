@@ -49,11 +49,11 @@ export default class JiraField extends React.Component {
         if (field.schema.system === 'description') {
             return (
                 <Input
-                    key={field.key}
-                    id={field.key}
+                    key={this.props.id}
+                    id={this.props.id}
                     label={field.name}
                     type='textarea'
-                    onChange={this.handleChange}
+                    onChange={this.props.onChange}
                     required={this.props.obeyRequired && field.required}
                     value={this.props.value}
                 />
@@ -63,11 +63,11 @@ export default class JiraField extends React.Component {
         if (field.schema.type === 'string') {
             return (
                 <Input
-                    key={field.key}
-                    id={field.key}
+                    key={this.props.id}
+                    id={this.props.id}
                     label={field.name}
                     type='input'
-                    onChange={this.handleChange}
+                    onChange={this.props.onChange}
                     required={this.props.obeyRequired && field.required}
                     value={this.props.value}
                 />
@@ -78,12 +78,12 @@ export default class JiraField extends React.Component {
             const options = field.allowedValues.map(this.makeReactSelectValue);
             return (
                 <ReactSelectSetting
-                    key={field.key}
-                    name={field.key}
+                    key={this.props.id}
+                    name={this.props.id}
                     label={field.name}
                     options={options}
                     required={this.props.obeyRequired && field.required}
-                    onChange={this.handleChange}
+                    onChange={(id, val) => this.props.onChange(id, {id: val})}
                     isMulti={false}
                     value={options.filter((option) => option.value === this.props.value)}
                 />
