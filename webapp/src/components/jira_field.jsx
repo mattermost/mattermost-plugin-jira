@@ -22,6 +22,9 @@ export default class JiraField extends React.Component {
     };
 
     // Creates an option for react-select from an allowedValue from the jira field metadata
+    // includes both .value and .name because allowedValue test cases have used .value or .name
+    // and are mutually exclusive.
+    // should wrap this with some if else logic
     makeReactSelectValue = (allowedValue) => {
         const iconLabel = (
             <React.Fragment>
@@ -29,6 +32,7 @@ export default class JiraField extends React.Component {
                     style={getStyle().jiraIcon}
                     src={allowedValue.iconUrl}
                 />
+                {allowedValue.value}
                 {allowedValue.name}
             </React.Fragment>
         );
@@ -41,6 +45,21 @@ export default class JiraField extends React.Component {
         const field = this.props.field;
 
         if (field.schema.system === 'description') {
+            return (
+                <Input
+                    key={this.props.id}
+                    id={this.props.id}
+                    label={field.name}
+                    type='textarea'
+                    onChange={this.props.onChange}
+                    required={this.props.obeyRequired && field.required}
+                    value={this.props.value}
+                />
+            );
+        }
+
+        // detect if JIRA multiline textarea, and set for JiraField component
+        if (field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:textarea') {
             return (
                 <Input
                     key={this.props.id}
