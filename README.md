@@ -4,6 +4,8 @@ This plugin supports a two-way integration between Mattermost and Jira. For a st
 
 This plugin supports Jira Core and Jira Software products, for Cloud, Server and Data Center platforms.
 
+Support for multiple Jira instances is considered, but not yet supported.
+
 ## Table of Contents
 
  - [1. Features](#1-features)
@@ -93,7 +95,7 @@ Note that states and issue transitions are based on your Jira project workflow c
 
 #### Step 2: Configure webhooks in Jira
 
-If you want to [send notifications from Jira to Mattermost](#11-send-notifications-from-Jira-to-Mattermost), sign in to your Jira instance as a System Admin to link a Jira project to a Mattermost channel via webhooks.
+If you want to [send notifications from Jira to Mattermost](#11-send-notifications-from-Jira-to-Mattermost), link a Jira project to a Mattermost channel via webhooks.
 
 1. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
   - For older versions of Jira, click the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
@@ -108,14 +110,11 @@ For instance, if the team URL is `contributors`, channel URL is `town-square` an
 https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3MOuxaiwsPzLwh&team=contributors&channel=town-square
 ```
 
-3. (Optional) Set a description and a custom JQL query to determine which types of tickets trigger events. For more information on JQL queries, refer to the [Atlassian help documentation](https://confluence.atlassian.com/jirasoftwarecloud/advanced-searching-764478330.html).
+3. (Optional) Set a description and a custom JQL query to determine which tickets trigger events. For more information on JQL queries, refer to the [Atlassian help documentation](https://confluence.atlassian.com/jirasoftwarecloud/advanced-searching-764478330.html).
 
 4. Finally, set which issue events send messages to Mattermost channels. The following are supported:
 
- - Issue: Created, Updated, Deleted
- - Comment: Created, Updated, Deleted
-
-The **Issue: Updated** event sends notifications when an issue is reopened or resolved, or when the assignee is changed.
+// TODO: Add a screenshot
 
 #### Step 3: Link the plugin as an application in Jira
 
@@ -123,38 +122,40 @@ See separate instructions for [Jira Cloud](#step-3-jira-cloud) and for [Jira Ser
 
 ##### Step 3: Jira Cloud
 
+As a Mattermost System Admin, post `/jira install cloud <your-jira-url>`, and follow the steps posted to the channel. They are also outlined below:
+
 1. As a Jira System Administrator, go to **Jira Settings > Apps > Manage Apps**. 
   - For older versions of Jira, go to **Administration > Applications > Add-ons > Manage add-ons**
-
-2. Click **Settings** at bottom of page and enable development mode, and apply this change.
+2. Click **Settings** at bottom of page, enable development mode, and apply this change.
   - Enabling development mode allows you to install apps that are not from the Atlassian Marketplace.
-  - Mattermost has opted not to publish to Atlassian Marketplace, as we don’t have an efficient way to provide a callback URL for the app in the marketplace, to enable user-specific interactions between the Mattermost server and Jira cloud instance.
+3. Click **Upload app**.
+4. In the **From this URL field**, enter: %s%s
+5. Wait for the app to install. Once completed, you should see an "Installed and ready to go!" message.
+6. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
+7. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
 
-3. Click **Upload app**, then enter the Atlassian Connect app descriptor in the form https://SITEURL/plugins/jira//ac/atlassian-connect.json where `SITEURL` is your [Mattermost Site URL](https://docs.mattermost.com/administration/config-settings.html#site-url). Select **Upload**.
-
-4. Wait for the app to install.
-
-You're all set. Users can now connect their Mattermost account with Jira using `/jira connect`.
+If you see an option to create a Jira issue, you're all set! If not, see our [Frequently Asked Questions](#5-frequently-asked-questions-faq) for troubleshooting help.
 
 ##### Step 3: Jira Server or Data Center
 
-As a Jira administrator, you have two steps to configure the plugin:
+As a Mattermost System Admin, post `/jira install server <your-jira-url>`, and follow the steps posted to the channel. They are also outlined below:
 
-1. In Mattermost, post a command `/jira instance add server <your-jira-server-url>`. This generates the consumer key and public key used on a later step.
-2. As a Jira System Administrator, go to **Jira Settings > Applications > Application Links**.
-3. Enter your Mattermost URL as the application link, then click **Create new link**.
-4. In **Configure Application URL** screen, confirm your Mattermost URL is included as the application URL. Ignore any displayed errors and click **Continue**.
-5. In **Link Applications** screen, set the following values:
+1. As a Jira System Administrator, go to **Jira Settings > Applications > Application Links**.
+2. Enter your Mattermost URL as the application link, then click **Create new link**.
+3. In **Configure Application URL** screen, confirm your Mattermost URL is entered as the "New URL". Ignore any displayed errors and click **Continue**.
+4. In **Link Applications** screen, set the following values:
   - **Application Name**: Mattermost
   - **Application Type**: Generic Application
-6. Check the **Create incoming link** value, then click **Continue**.
-7. In the following **Link Applications** screen, set the following values:
+5. Check the **Create incoming link** value, then click **Continue**.
+6. In the following **Link Applications** screen, set the following values:
   - **Consumer Key**: Copy the value generated in step 1 for this field.
   - **Consumer Name**: Mattermost
   - **Public Key**: Copy the value generated in step 1 for this field.
-8. Click **Continue**.
+7. Click **Continue**.
+8. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
+9. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
 
-You're all set. Users can now connect their Mattermost account with Jira using `/jira connect`.
+If you see an option to create a Jira issue, you're all set! If not, see our [Frequently Asked Questions](#5-frequently-asked-questions-faq) for troubleshooting help.
 
 ## 3. Jira v2 Roadmap
 
@@ -261,3 +262,7 @@ where `<your-mattermost-url>`, `<your-port>`, `<your-secret>`, `<your-team-url>`
 You can generate a new secret in **System Console > Integrations > Jira**, and paste the new webhook URL in your JIRA webhook configuration. 
 
 This might result in downtime of the JIRA plugin, but it should only be a few minutes at most.
+
+### Why does Jira issue creation fail?
+
+// TODO: E.g. https://mattermost.atlassian.net/browse/MM-15828 ?
