@@ -66,7 +66,7 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 
 	// User APIs
 	case routeAPIUserInfo:
-		return withInstance(p.currentInstanceStore, w, r, httpAPIGetUserInfo)
+		return httpAPIGetUserInfo(p, w, r)
 
 	// Atlassian Connect application
 	case routeACInstalled:

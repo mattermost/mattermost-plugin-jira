@@ -55,6 +55,22 @@ func (p *Plugin) CreateBotDMPost(ji Instance, userId, message,
 	return post, nil
 }
 
+func (p *Plugin) StoreCurrentJIRAInstanceAndNotify(ji Instance) error {
+	appErr := p.currentInstanceStore.StoreCurrentJIRAInstance(ji)
+	if appErr != nil {
+		return appErr
+	}
+	// Notify users we have installed an instance
+	p.API.PublishWebSocketEvent(
+		wSEventInstanceStatus,
+		map[string]interface{}{
+			"instance_installed": true,
+		},
+		&model.WebsocketBroadcast{},
+	)
+	return nil
+}
+
 func (p *Plugin) loadJIRAProjectKeys(jiraClient *jira.Client) ([]string, error) {
 	list, _, err := jiraClient.Project.GetList()
 	if err != nil {

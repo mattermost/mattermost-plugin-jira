@@ -181,6 +181,11 @@ export function getConnected() {
             data,
         });
 
+        dispatch({
+            type: ActionTypes.RECEIVED_INSTANCE_STATUS,
+            data,
+        });
+
         return {data};
     };
 }
@@ -212,3 +217,16 @@ export const closeChannelSettings = () => {
         type: ActionTypes.CLOSE_CHANNEL_SETTINGS,
     };
 };
+
+export function handleInstanceStatusChange(store) {
+    return (msg) => {
+        if (!msg.data) {
+            return;
+        }
+
+        store.dispatch({
+            type: ActionTypes.RECEIVED_INSTANCE_STATUS,
+            data: msg.data,
+        });
+    };
+}

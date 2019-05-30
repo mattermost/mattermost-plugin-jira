@@ -13,7 +13,7 @@ import AttachCommentToIssueModal from 'components/modals/attach_comment_to_issue
 import PluginId from 'plugin_id';
 
 import reducers from './reducers';
-import {handleConnectChange, getConnected, openChannelSettings} from './actions';
+import {handleConnectChange, getConnected, openChannelSettings, handleInstanceStatusChange} from './actions';
 import Hooks from './hooks/hooks';
 
 export default class Plugin {
@@ -41,6 +41,7 @@ export default class Plugin {
         } finally {
             registry.registerWebSocketEventHandler(`custom_${PluginId}_connect`, handleConnectChange(store));
             registry.registerWebSocketEventHandler(`custom_${PluginId}_disconnect`, handleConnectChange(store));
+            registry.registerWebSocketEventHandler(`custom_${PluginId}_instance_status`, handleInstanceStatusChange(store));
         }
     }
 }
