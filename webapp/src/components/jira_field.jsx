@@ -12,19 +12,13 @@ export default class JiraField extends React.Component {
         id: PropTypes.object.isRequired,
         field: PropTypes.object.isRequired,
         obeyRequired: PropTypes.bool,
-        onChange: PropTypes.func,
+        onChange: PropTypes.func.isRequired,
         value: PropTypes.any,
         isFilter: PropTypes.bool,
     };
 
     static defaultProps = {
         obeyRequired: true,
-    };
-
-    handleChange = (id, value) => {
-        if (this.props.onChange) {
-            this.props.onChange(id, value);
-        }
     };
 
     // Creates an option for react-select from an allowedValue from the jira field metadata
@@ -41,7 +35,7 @@ export default class JiraField extends React.Component {
         return (
             {value: allowedValue.id, label: iconLabel}
         );
-    }
+    };
 
     renderCreateFields() {
         const field = this.props.field;
@@ -74,8 +68,10 @@ export default class JiraField extends React.Component {
             );
         }
 
+        // if this.props.field has allowedValues, then props.value will be an object
         if (field.allowedValues && field.allowedValues.length) {
             const options = field.allowedValues.map(this.makeReactSelectValue);
+
             return (
                 <ReactSelectSetting
                     key={this.props.id}
@@ -85,7 +81,7 @@ export default class JiraField extends React.Component {
                     required={this.props.obeyRequired && field.required}
                     onChange={(id, val) => this.props.onChange(id, {id: val})}
                     isMulti={false}
-                    value={options.filter((option) => option.value === this.props.value)}
+                    value={options.find((option) => option.value === this.props.value)}
                 />
             );
         }
