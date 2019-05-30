@@ -34,7 +34,6 @@ export default class JiraFields extends React.Component {
                 <JiraField
                     key={fieldName}
                     id={fieldName}
-                    fieldKey={fieldName}
                     field={this.props.fields[fieldName]}
                     obeyRequired={true}
                     onChange={this.props.onChange}

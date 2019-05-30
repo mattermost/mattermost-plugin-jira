@@ -38,7 +38,7 @@ export default class JiraField extends React.Component {
     };
 
     renderCreateFields() {
-        const field = this.props;
+        const field = this.props.field;
 
         if (field.schema.system === 'description') {
             return (
