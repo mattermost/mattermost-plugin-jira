@@ -355,55 +355,6 @@ func (parsed *parsedJIRAWebhook) event(event uint64) {
 	parsed.events = parsed.events | event
 }
 
-func (p *Plugin) notify(ji Instance, parsed *parsedJIRAWebhook, text string) {
-	if parsed.authorUsername == "" {
-		return
-	}
-
-	for _, u := range parseJIRAUsernamesFromText(text) {
-		// don't mention the author of the text
-		if u == parsed.authorUsername {
-			continue
-		}
-		// assignee gets a special notice
-		if u == parsed.assigneeUsername {
-			continue
-		}
-
-		mattermostUserId, err := p.LoadMattermostUserId(ji, u)
-		if err != nil {
-			p.errorf("notify: %v", err)
-			continue
-		}
-
-		err = p.CreateBotDMPost(mattermostUserId,
-			fmt.Sprintf("[%s](%s) mentioned you on [%s](%s):\n>%s",
-				parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL, text),
-			"custom_jira_mention")
-		if err != nil {
-			p.errorf("notify: %v", err)
-			continue
-		}
-	}
-
-	if parsed.assigneeUsername == parsed.authorUsername {
-		return
-	}
-
-	mattermostUserId, err := p.LoadMattermostUserId(ji, parsed.assigneeUsername)
-	if err != nil {
-		return
-	}
-
-	err = p.CreateBotDMPost(mattermostUserId,
-		fmt.Sprintf("[%s](%s) commented on [%s](%s):\n>%s",
-			parsed.authorDisplayName, parsed.authorURL, parsed.issueKey, parsed.issueURL, text),
-		"custom_jira_comment")
-	if err != nil {
-		p.errorf("notify: %v", err)
-	}
-}
-
 func (p *Plugin) GetWebhookURL(teamId, channelId string) (string, error) {
 	cf := p.getConfig()
 
