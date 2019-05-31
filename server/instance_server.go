@@ -39,7 +39,7 @@ func (jsi jiraServerInstance) GetURL() string {
 type withServerInstanceFunc func(jsi *jiraServerInstance, w http.ResponseWriter, r *http.Request) (int, error)
 
 func withServerInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f withServerInstanceFunc) (int, error) {
-	return withInstance(p, w, r, func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+	return withInstance(p.currentInstanceStore, w, r, func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 		jsi, ok := ji.(*jiraServerInstance)
 		if !ok {
 			return http.StatusBadRequest, errors.New("Must be a Jira Server instance, is " + ji.GetType())
@@ -76,7 +76,7 @@ func (jsi jiraServerInstance) GetUserConnectURL(mattermostUserId string) (return
 		return "", err
 	}
 
-	err = jsi.Plugin.StoreOneTimeSecret(token, secret)
+	err = jsi.Plugin.otsStore.StoreOneTimeSecret(token, secret)
 	if err != nil {
 		return "", err
 	}
@@ -136,7 +136,7 @@ func (jsi *jiraServerInstance) GetOAuth1Config() (returnConfig *oauth1.Config, r
 		return oauth1Config, nil
 	}
 
-	rsaKey, err := jsi.EnsureRSAKey()
+	rsaKey, err := jsi.secretsStore.EnsureRSAKey()
 	if err != nil {
 		return nil, err
 	}

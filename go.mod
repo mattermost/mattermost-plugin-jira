@@ -9,6 +9,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dyatlov/go-opengraph v0.0.0-20180429202543-816b6608b3c8 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
+	github.com/go-ldap/ldap v3.0.3+incompatible // indirect
 	github.com/golang/protobuf v1.3.1 // indirect
 	github.com/google/go-querystring v0.0.0-20190318165438-c8c88dbee036 // indirect
 	github.com/google/uuid v1.1.1 // indirect
@@ -16,7 +17,7 @@ require (
 	github.com/hashicorp/go-hclog v0.0.0-20180910232447-e45cbeb79f04 // indirect
 	github.com/hashicorp/go-plugin v0.0.0-20180814222501-a4620f9913d1 // indirect
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
-	github.com/mattermost/mattermost-server v5.6.5+incompatible
+	github.com/mattermost/mattermost-server v5.10.1+incompatible
 	github.com/mattermost/viper v0.0.0-20181112161711-f99c30686b86 // indirect
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
@@ -43,5 +44,6 @@ require (
 	google.golang.org/appengine v1.5.0 // indirect
 	google.golang.org/genproto v0.0.0-20190404172233-64821d5d2107 // indirect
 	google.golang.org/grpc v1.20.0 // indirect
+	gopkg.in/asn1-ber.v1 v1.0.0-20181015200546-f715ec2f112d // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20170531160350-a96e63847dc3 // indirect
 )

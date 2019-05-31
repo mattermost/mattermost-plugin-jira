@@ -60,7 +60,7 @@ func NewJIRACloudInstance(p *Plugin, key string, installed bool, rawASC string, 
 type withCloudInstanceFunc func(jci *jiraCloudInstance, w http.ResponseWriter, r *http.Request) (int, error)
 
 func withCloudInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f withCloudInstanceFunc) (int, error) {
-	return withInstance(p, w, r, func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+	return withInstance(p.currentInstanceStore, w, r, func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 		jci, ok := ji.(*jiraCloudInstance)
 		if !ok {
 			return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
@@ -96,7 +96,7 @@ func (jci jiraCloudInstance) GetUserConnectURL(mattermostUserId string) (string,
 	}
 	secretKey := fmt.Sprintf("%x", sha256.Sum256(secret))
 	secretValue := "true"
-	err = jci.Plugin.StoreOneTimeSecret(secretKey, secretValue)
+	err = jci.Plugin.otsStore.StoreOneTimeSecret(secretKey, secretValue)
 	if err != nil {
 		return "", err
 	}

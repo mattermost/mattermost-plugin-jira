@@ -44,6 +44,12 @@ type Plugin struct {
 	conf     config
 	confLock sync.RWMutex
 
+	currentInstanceStore CurrentInstanceStore
+	instanceStore        InstanceStore
+	userStore            UserStore
+	otsStore             OTSStore
+	secretsStore         SecretsStore
+
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
 
@@ -87,6 +93,13 @@ func (p *Plugin) OnActivate() error {
 	if appErr != nil {
 		return errors.WithMessage(appErr, fmt.Sprintf("OnActivate: unable to find user: %s", conf.UserName))
 	}
+
+	store := NewStore(p)
+	p.currentInstanceStore = store
+	p.instanceStore = store
+	p.userStore = store
+	p.secretsStore = store
+	p.otsStore = store
 
 	dir := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
 	templates, err := p.loadTemplates(dir)

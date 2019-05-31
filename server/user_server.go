@@ -22,11 +22,11 @@ func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.
 			errors.WithMessage(err, "failed to parse callback request from Jira")
 	}
 
-	requestSecret, err := jsi.Plugin.LoadOneTimeSecret(requestToken)
+	requestSecret, err := jsi.Plugin.otsStore.LoadOneTimeSecret(requestToken)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	err = jsi.Plugin.DeleteOneTimeSecret(requestToken)
+	err = jsi.Plugin.otsStore.DeleteOneTimeSecret(requestToken)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -118,7 +118,7 @@ func httpOAuth1PublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (int
 }
 
 func publicKeyString(p *Plugin) ([]byte, error) {
-	rsaKey, err := p.EnsureRSAKey()
+	rsaKey, err := p.secretsStore.EnsureRSAKey()
 	if err != nil {
 		return nil, err
 	}

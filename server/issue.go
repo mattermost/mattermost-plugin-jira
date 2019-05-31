@@ -41,7 +41,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
-	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId)
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -173,7 +173,7 @@ func httpAPIGetCreateIssueMetadata(ji Instance, w http.ResponseWriter, r *http.R
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
-	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId)
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -235,7 +235,7 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
-	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId)
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -339,12 +339,12 @@ func getPermaLink(ji Instance, postId string, post *model.Post) (string, error) 
 }
 
 func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string, error) {
-	ji, err := p.LoadCurrentJIRAInstance()
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
 		return "", err
 	}
 
-	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mmUserId)
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mmUserId)
 	if err != nil {
 		return "", err
 	}

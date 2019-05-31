@@ -104,13 +104,13 @@ func (p *Plugin) getUserID() (string, error) {
 	return user.Id, nil
 }
 
-func (p *Plugin) getChannelsSubscribed(webhook *parsedJIRAWebhook) ([]string, error) {
+func (p *Plugin) getChannelsSubscribed(jwh *JiraWebhook) ([]string, error) {
 	subs, err := p.getSubscriptions()
 	if err != nil {
 		return nil, err
 	}
 
-	subIds := subs.Channel.IdByEvent[webhook.WebhookEvent]
+	subIds := subs.Channel.IdByEvent[jwh.WebhookEvent]
 
 	channelIds := []string{}
 	for _, subId := range subIds {
@@ -126,7 +126,7 @@ func (p *Plugin) getChannelsSubscribed(webhook *parsedJIRAWebhook) ([]string, er
 			case "event":
 				found := false
 				for _, acceptableEvent := range acceptableValues {
-					if acceptableEvent == webhook.WebhookEvent {
+					if acceptableEvent == jwh.WebhookEvent {
 						found = true
 						break
 					}
@@ -138,7 +138,7 @@ func (p *Plugin) getChannelsSubscribed(webhook *parsedJIRAWebhook) ([]string, er
 			case "project":
 				found := false
 				for _, acceptableProject := range acceptableValues {
-					if acceptableProject == webhook.Issue.Fields.Project.Key {
+					if acceptableProject == jwh.Issue.Fields.Project.Key {
 						found = true
 						break
 					}
@@ -150,7 +150,7 @@ func (p *Plugin) getChannelsSubscribed(webhook *parsedJIRAWebhook) ([]string, er
 			case "issue_type":
 				found := false
 				for _, acceptableIssueType := range acceptableValues {
-					if acceptableIssueType == webhook.Issue.Fields.IssueType.Id {
+					if acceptableIssueType == jwh.Issue.Fields.Type.ID {
 						found = true
 						break
 					}
@@ -313,17 +313,20 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusMethodNotAllowed,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
 	}
-
 	cfg := p.getConfig()
 	if cfg.Secret == "" || cfg.UserName == "" {
 		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret and UserName")
+	}
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return http.StatusInternalServerError, err
 	}
 
 	if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(cfg.Secret)) != 1 {
 		return http.StatusForbidden, fmt.Errorf("Request URL: secret did not match")
 	}
 
-	parsed, err := parse(r.Body, nil)
+	wh, jwh, err := ParseWebhook(r.Body)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -333,37 +336,21 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, err
 	}
 
-	channelIds, err := p.getChannelsSubscribed(parsed)
+	channelIds, err := p.getChannelsSubscribed(jwh)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	attachment := newSlackAttachment(parsed)
-
 	for _, channelId := range channelIds {
-		post := &model.Post{
-			ChannelId: channelId,
-			UserId:    botUserId,
-		}
-
-		model.ParseSlackAttachment(post, []*model.SlackAttachment{attachment})
-
-		if err != nil {
-			return http.StatusBadGateway, err
-		}
-		_, appErr := p.API.CreatePost(post)
-		if appErr != nil {
-			return appErr.StatusCode, fmt.Errorf(appErr.Message)
+		if _, status, err1 := wh.PostToChannel(p, channelId, botUserId); err1 != nil {
+			return status, err1
 		}
 	}
 
-	// Notify any affected users using a direct channel
-	err = p.handleNotifications(parsed)
+	_, status, err := wh.PostNotifications(p, ji)
 	if err != nil {
-		p.errorf("httpSubscribeWebhook, handleNotifications: %v", err)
-		return http.StatusBadRequest, err
+		return status, err
 	}
-
 	return http.StatusOK, nil
 }
 
