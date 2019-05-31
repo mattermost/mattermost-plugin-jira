@@ -220,12 +220,7 @@ func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request)
 		return http.StatusInternalServerError, err
 	}
 
-	err = r.ParseForm()
-	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to parse request")
-	}
-
-	jqlString := r.Form.Get("jql")
+	jqlString := r.FormValue("jql")
 
 	searchRes, resp, err := jiraClient.Issue.Search(jqlString, &jira.SearchOptions{
 		MaxResults: 50,

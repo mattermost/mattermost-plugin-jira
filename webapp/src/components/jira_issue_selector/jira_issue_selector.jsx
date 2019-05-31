@@ -25,7 +25,7 @@ export default class JiraIssueSelector extends Component {
 
     searchIssues = (text) => {
         const projectSearchTerm = this.props.currentProject ? 'project=' + this.props.currentProject : '';
-        const textEncoded = encodeURIComponent(text.replace(/"/g, '\\"'));
+        const textEncoded = encodeURIComponent(text.trim().replace(/"/g, '\\"'));
         const textSearchTerm = (textEncoded.length > 0) ? 'text ~ "' + textEncoded + '*"' : '';
         const combinedTerms = (projectSearchTerm.length > 0 && textSearchTerm.length > 0) ? projectSearchTerm + ' AND ' + textSearchTerm : projectSearchTerm + textSearchTerm;
         const finalQuery = combinedTerms + ' ' + searchDefaults;
