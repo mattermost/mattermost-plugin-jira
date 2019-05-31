@@ -86,18 +86,19 @@ type JIRAWebhook struct {
 
 type parsedJIRAWebhook struct {
 	*JIRAWebhook
-	RawJSON           string
-	events            uint64
-	headline          string
-	details           string
-	text              string
-	style             string
-	authorDisplayName string
-	authorUsername    string
-	authorURL         string
-	assigneeUsername  string
-	issueKey          string
-	issueURL          string
+	RawJSON            string
+	events             uint64
+	headline           string
+	details            string
+	text               string
+	style              string
+	useSlackAttachment bool
+	authorDisplayName  string
+	authorUsername     string
+	authorURL          string
+	assigneeUsername   string
+	issueKey           string
+	issueURL           string
 }
 
 type notifier interface {
@@ -167,7 +168,6 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		return http.StatusOK, nil
 	}
 
-	slackAttachment := newSlackAttachment(parsed)
 	post := &model.Post{
 		ChannelId: channel.Id,
 		UserId:    user.Id,
@@ -176,7 +176,12 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 			"use_user_icon": "true",
 		},
 	}
-	model.ParseSlackAttachment(post, []*model.SlackAttachment{slackAttachment})
+	if parsed.useSlackAttachment {
+		slackAttachment := newSlackAttachment(parsed)
+		model.ParseSlackAttachment(post, []*model.SlackAttachment{slackAttachment})
+	} else {
+		post.Message = parsed.headline
+	}
 
 	_, appErr = p.API.CreatePost(post)
 	if appErr != nil {
@@ -218,7 +223,7 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook,
 	parsed.RawJSON = string(bb)
 	if linkf == nil {
 		linkf = func(w *JIRAWebhook) string {
-			return parsed.mdIssueLink()
+			return parsed.mdIssueLongLink()
 		}
 	}
 
@@ -233,6 +238,7 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook,
 		headline = fmt.Sprintf("created %v", issue)
 		parsed.details = parsed.mdIssueCreatedDetails()
 		parsed.text = parsed.mdIssueDescription()
+		parsed.useSlackAttachment = true
 	case "jira:issue_deleted":
 		parsed.event(eventDeleted)
 		if parsed.Issue.Fields != nil && parsed.Issue.Fields.Resolution == nil {
@@ -259,12 +265,14 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook,
 		user = &parsed.Comment.UpdateAuthor
 		headline = fmt.Sprintf("edited a comment in %v", issue)
 		parsed.text = truncate(parsed.Comment.Body, 3000)
+		parsed.useSlackAttachment = true
 
 	case "comment_created":
 		parsed.event(eventCreatedComment)
 		user = &parsed.Comment.UpdateAuthor
 		headline = fmt.Sprintf("commented on %v", issue)
 		parsed.text = truncate(parsed.Comment.Body, 3000)
+		parsed.useSlackAttachment = true
 	}
 	if headline == "" {
 		return nil, fmt.Errorf("Unsupported webhook data: %v", parsed.WebhookEvent)
@@ -288,6 +296,10 @@ func (p *parsedJIRAWebhook) fromChangeLog(issue string) (string, string) {
 		to := item.ToString
 		from := item.FromString
 		switch {
+		case item.Field == "assignee":
+			p.event(eventUpdatedAssignee)
+			return fmt.Sprintf("assigned %v to %v", issue, p.mdIssueAssignee()), ""
+
 		case item.Field == "resolution" && to == "" && from != "":
 			p.event(eventUpdatedReopened)
 			return fmt.Sprintf("reopened %v", issue), ""
@@ -296,17 +308,9 @@ func (p *parsedJIRAWebhook) fromChangeLog(issue string) (string, string) {
 			p.event(eventUpdatedResolved)
 			return fmt.Sprintf("resolved %v", issue), ""
 
-		case item.Field == "status" && to == "Backlog":
+		case item.Field == "status":
 			p.event(eventUpdatedStatus)
-			return fmt.Sprintf("moved %v to backlog", issue), ""
-
-		case item.Field == "status" && to == "In Progress":
-			p.event(eventUpdatedStatus)
-			return fmt.Sprintf("started working on %v", issue), ""
-
-		case item.Field == "status" && to == "Selected for Development":
-			p.event(eventUpdatedStatus)
-			return fmt.Sprintf("selected %v for development", issue), ""
+			return fmt.Sprintf("transitioned %v from %q to %q", issue, from, to), ""
 
 		case item.Field == "priority" && item.From > item.To:
 			p.event(eventUpdatedPriority)
@@ -322,6 +326,8 @@ func (p *parsedJIRAWebhook) fromChangeLog(issue string) (string, string) {
 
 		case item.Field == "description":
 			p.event(eventUpdatedDescription)
+			p.text = p.mdIssueDescription()
+			p.useSlackAttachment = true
 			return fmt.Sprintf("edited description of %v", issue),
 				p.mdIssueDescription()
 

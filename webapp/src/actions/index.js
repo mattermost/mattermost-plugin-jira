@@ -126,6 +126,11 @@ export function getConnected() {
             data,
         });
 
+        dispatch({
+            type: ActionTypes.RECEIVED_INSTANCE_STATUS,
+            data,
+        });
+
         return {data};
     };
 }
@@ -138,6 +143,19 @@ export function handleConnectChange(store) {
 
         store.dispatch({
             type: ActionTypes.RECEIVED_CONNECTED,
+            data: msg.data,
+        });
+    };
+}
+
+export function handleInstanceStatusChange(store) {
+    return (msg) => {
+        if (!msg.data) {
+            return;
+        }
+
+        store.dispatch({
+            type: ActionTypes.RECEIVED_INSTANCE_STATUS,
             data: msg.data,
         });
     };
