@@ -1,6 +1,6 @@
 # Mattermost Jira Plugin ![CircleCI branch](https://img.shields.io/circleci/project/github/mattermost/mattermost-plugin-jira/master.svg) ![Codecov branch](https://img.shields.io/codecov/c/github/mattermost/mattermost-plugin-jira/master.svg)
 
-This plugin supports a two-way integration between Mattermost and Jira. For a stable production release, please download the latest version [in the Releases tab](https://github.com/mattermost/mattermost-plugin-jira/releases) and follow [these instructions](#2-installation) for install and configuration.
+This plugin supports a two-way integration between Mattermost and Jira. For a stable production release, please download the latest version [in the Releases tab](https://github.com/mattermost/mattermost-plugin-jira/releases) and follow [these instructions](#2-configuration) for install and configuration.
 
 This plugin supports Jira Core and Jira Software products, for Cloud, Server and Data Center platforms.
 
@@ -9,7 +9,7 @@ Support for multiple Jira instances is considered, but not yet supported.
 ## Table of Contents
 
  - [1. Features](#1-features)
- - [2. Installation](#2-installation)
+ - [2. Configuration](#2-configuration)
  - [3. Jira v2 Roadmap](#3-jira-v2-roadmap)
  - [4. Development](#4-development)
  - [5. Frequently Asked Questions (FAQ)](#5-frequently-asked-questions-faq)
@@ -24,7 +24,7 @@ Notify your team of latest updated by sending notifications from your Jira proje
 
 ![image](https://user-images.githubusercontent.com/13119842/58669245-858c0080-8309-11e9-9408-e4c636768d09.png)
 
-Notifications are configured with webhooks and offer full JQL support. Configuration is restricted to Jira System Admins only. See [these instructions](#2-installation) for install and configuration.
+Notifications are configured with webhooks and offer full JQL support. Configuration is restricted to Jira System Admins only. See [these instructions](#2-configuration) for install and configuration.
 
 The following Jira event notifications are supported:
 
@@ -86,7 +86,7 @@ For instance, `/jira transition MM-1234 done` transitions the issue key **MM-123
 
 Note that states and issue transitions are based on your Jira project workflow configuration.
 
-## 2. Installation
+## 2. Configuration
 
 #### Step 1: Configure plugin in Mattermost
 
