@@ -235,15 +235,15 @@ func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request)
 	}
 
 	// We only need to send down a summary of the data
-	type keySummary struct {
-		Key     string `json:"key"`
-		Summary string `json:"summary"`
+	type issueSummary struct {
+		Value string `json:"value"`
+		Label string `json:"label"`
 	}
-	resSummary := make([]keySummary, 0, len(searchRes))
+	resSummary := make([]issueSummary, 0, len(searchRes))
 	for _, res := range searchRes {
-		resSummary = append(resSummary, keySummary{
-			Key:     res.Key,
-			Summary: res.Fields.Summary,
+		resSummary = append(resSummary, issueSummary{
+			Value: res.Key,
+			Label: res.Key + ": " + res.Fields.Summary,
 		})
 	}
 
