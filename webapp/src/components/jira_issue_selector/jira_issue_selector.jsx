@@ -13,6 +13,7 @@ const searchDebounceDelay = 400;
 export default class JiraIssueSelector extends Component {
     static propTypes = {
         isRequired: PropTypes.bool,
+        theme: PropTypes.object.isRequired,
         currentProject: PropTypes.string.isRequired,
         onChange: PropTypes.func.isRequired,
         fetchIssuesEndpoint: PropTypes.string.isRequired,

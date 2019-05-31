@@ -105,6 +105,7 @@ export default class AttachIssueModal extends PureComponent {
                         currentProject={this.state.projectKey}
                         onChange={this.handleIssueKeyChange}
                         isRequired={true}
+                        theme={theme}
                     />
                     <Input
                         label='Message Attached to Jira Issue'
