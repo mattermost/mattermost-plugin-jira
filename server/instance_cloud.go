@@ -6,7 +6,6 @@ package main
 import (
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -89,19 +88,18 @@ func (jci jiraCloudInstance) GetDisplayDetails() map[string]string {
 }
 
 func (jci jiraCloudInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
-	secret := make([]byte, 256)
-	_, err := rand.Read(secret)
+	randomBytes := make([]byte, 32)
+	_, err := rand.Read(randomBytes)
 	if err != nil {
 		return "", err
 	}
-	secretKey := fmt.Sprintf("%x", sha256.Sum256(secret))
-	secretValue := "true"
-	err = jci.Plugin.StoreOneTimeSecret(secretKey, secretValue)
+	secret := fmt.Sprintf("%x", randomBytes)
+	err = jci.Plugin.StoreOneTimeSecret(mattermostUserId, secret)
 	if err != nil {
 		return "", err
 	}
 
-	token, err := jci.Plugin.NewEncodedAuthToken(mattermostUserId, secretKey)
+	token, err := jci.Plugin.NewEncodedAuthToken(mattermostUserId, secret)
 	if err != nil {
 		return "", err
 	}
