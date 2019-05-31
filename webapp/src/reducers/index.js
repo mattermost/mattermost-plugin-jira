@@ -79,7 +79,6 @@ const jiraIssueMetadata = (state = null, action) => {
         return state;
     }
 };
-
 export default combineReducers({
     userConnected,
     instanceInstalled,
