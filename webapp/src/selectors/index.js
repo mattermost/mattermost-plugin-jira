@@ -37,13 +37,6 @@ export const getCurrentUserLocale = createSelector(
     }
 );
 
-export const getJiraIssueOptions = (state) => {
-    if (getPluginState(state).jiraIssues) {
-        return getPluginState(state).jiraIssues.map((i) => ({value: i.key, label: i.key + ': ' + i.summary}));
-    }
-    return getPluginState(state).jiraIssues;
-};
-
 export const isCreateModalVisible = (state) => getPluginState(state).createModalVisible;
 
 export const getCreateModalForPostId = (state) => getPluginState(state).createModalForPostId;

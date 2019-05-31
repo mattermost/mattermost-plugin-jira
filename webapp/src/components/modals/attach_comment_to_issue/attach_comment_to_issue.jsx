@@ -6,14 +6,12 @@ import PropTypes from 'prop-types';
 import {Modal} from 'react-bootstrap';
 
 import FormButton from 'components/form_button';
-import Loading from 'components/loading';
 import Input from 'components/input';
 
 import JiraIssueSelector from '../../jira_issue_selector';
 
 const initialState = {
     submitting: false,
-    projectKey: null,
     issueKey: null,
     textSearchTerms: '',
     error: null,
@@ -26,19 +24,11 @@ export default class AttachIssueModal extends PureComponent {
         post: PropTypes.object,
         theme: PropTypes.object.isRequired,
         visible: PropTypes.bool.isRequired,
-        jiraIssueMetadata: PropTypes.object,
-        fetchJiraIssueMetadata: PropTypes.func.isRequired,
     };
 
     constructor(props) {
         super(props);
         this.state = initialState;
-    }
-
-    componentDidUpdate(prevProps) {
-        if (this.props.post && (!prevProps.post || this.props.post.id !== prevProps.post.id)) {
-            this.props.fetchJiraIssueMetadata();
-        }
     }
 
     handleCreate = (e) => {
@@ -70,12 +60,6 @@ export default class AttachIssueModal extends PureComponent {
         this.setState(initialState, close);
     };
 
-    handleProjectChange = (id, value) => {
-        this.setState({
-            projectKey: value,
-        });
-    };
-
     handleIssueKeyChange = (newValue) => {
         this.setState({
             issueKey: newValue,
@@ -83,7 +67,7 @@ export default class AttachIssueModal extends PureComponent {
     };
 
     render() {
-        const {post, visible, theme, jiraIssueMetadata} = this.props;
+        const {visible, theme} = this.props;
         const {error, submitting} = this.state;
         const style = getStyle(theme);
 
@@ -91,34 +75,28 @@ export default class AttachIssueModal extends PureComponent {
             return null;
         }
 
-        let component;
         if (error) {
             console.error('render error', error); //eslint-disable-line no-console
         }
 
-        if (!post || !jiraIssueMetadata || !jiraIssueMetadata.projects) {
-            component = <Loading/>;
-        } else {
-            component = (
-                <div style={style.modal}>
-                    <JiraIssueSelector
-                        currentProject={this.state.projectKey}
-                        onChange={this.handleIssueKeyChange}
-                        isRequired={true}
-                        theme={theme}
-                    />
-                    <Input
-                        label='Message Attached to Jira Issue'
-                        type='textarea'
-                        isDisabled={true}
-                        value={this.props.post.message}
-                        disabled={false}
-                        readOnly={true}
-                    />
-                    <br/>
-                </div>
-            );
-        }
+        const component = (
+            <div style={style.modal}>
+                <JiraIssueSelector
+                    onChange={this.handleIssueKeyChange}
+                    isRequired={true}
+                    theme={theme}
+                />
+                <Input
+                    label='Message Attached to Jira Issue'
+                    type='textarea'
+                    isDisabled={true}
+                    value={this.props.post.message}
+                    disabled={false}
+                    readOnly={true}
+                />
+                <br/>
+            </div>
+        );
 
         return (
             <Modal
