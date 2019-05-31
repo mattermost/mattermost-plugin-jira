@@ -53,7 +53,6 @@ export default class JiraIssueSelector extends Component {
                 <label
                     className={'control-label'}
                     htmlFor={'issue'}
-                    aria-required={true}
                 >
                     {'Jira Issue'}
                 </label>
