@@ -14,16 +14,24 @@ export default class ReactSelectSetting extends React.PureComponent {
     static propTypes = {
         name: PropTypes.string.isRequired,
         onChange: PropTypes.func,
-        theme: PropTypes.object.isRequired,
+        theme: PropTypes.object,
     };
 
     handleChange = (value) => {
         if (this.props.onChange) {
-            this.props.onChange(this.props.name, value.value);
+            if (Array.isArray(value)) {
+                this.props.onChange(this.props.name, value.map((x) => x.value));
+            } else {
+                this.props.onChange(this.props.name, value.value);
+            }
         }
     }
 
     getStyle = (theme) => ({
+        menuPortal: (provided) => ({
+            ...provided,
+            zIndex: 9999,
+        }),
         control: (provided, state) => ({
             ...provided,
             color: theme.centerChannelColor,
@@ -83,8 +91,9 @@ export default class ReactSelectSetting extends React.PureComponent {
             >
                 <ReactSelect
                     {...this.props}
-                    styles={this.props.theme && this.getStyle(this.props.theme)}
+                    menuPortalTarget={document.body}
                     onChange={this.handleChange}
+                    styles={this.getStyle(this.props.theme)}
                 />
             </Setting>
         );
