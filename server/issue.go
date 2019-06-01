@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/andygrunwald/go-jira"
+	"github.com/google/go-querystring/query"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -26,8 +27,9 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	api := ji.GetPlugin().API
 
 	create := &struct {
-		PostId string           `json:"post_id"`
-		Fields jira.IssueFields `json:"fields"`
+		RequiredFieldsNotCovered []string         `json:"required_fields_not_covered"`
+		PostId                   string           `json:"post_id"`
+		Fields                   jira.IssueFields `json:"fields"`
 	}{}
 	err := json.NewDecoder(r.Body).Decode(&create)
 	if err != nil {
@@ -73,6 +75,37 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		create.Fields.Description = permalink
 	}
 
+	rootId := create.PostId
+	parentId := ""
+	if post.ParentId != "" {
+		// the original post was a reply
+		rootId = post.RootId
+		parentId = create.PostId
+	}
+
+	if len(create.RequiredFieldsNotCovered) > 0 {
+
+		v, _ := query.Values(create.Fields)
+
+		message := "The project you tried to create an issue for has **required fields** this plugin does not yet support. "
+		url := fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", ji.GetURL())
+		query := "pid=10000&issuetype=10004"
+
+		reply := &model.Post{
+			Message:   fmt.Sprintf("%v Please [create your Jira issue manually](%v?%v&%v).", message, url, query, v.Encode()),
+			ChannelId: post.ChannelId,
+			RootId:    rootId,
+			ParentId:  parentId,
+			UserId:    mattermostUserId,
+		}
+		_, appErr = api.CreatePost(reply)
+		if appErr != nil {
+			return http.StatusInternalServerError,
+				errors.WithMessage(appErr, "failed to create notification post "+create.PostId)
+		}
+		return http.StatusOK, nil
+	}
+
 	created, resp, err := jiraClient.Issue.Create(&jira.Issue{
 		Fields: &create.Fields,
 	})
@@ -84,6 +117,21 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 			message += ", details:" + string(bb)
 		}
 		return http.StatusInternalServerError, errors.WithMessage(err, message)
+	}
+
+	// Reply to the post with the issue link that was created
+	reply := &model.Post{
+		// TODO: Why is this not created.Self?
+		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.GetURL(), created.Key),
+		ChannelId: post.ChannelId,
+		RootId:    rootId,
+		ParentId:  parentId,
+		UserId:    mattermostUserId,
+	}
+	_, appErr = api.CreatePost(reply)
+	if appErr != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to create notification post "+create.PostId)
 	}
 
 	// Upload file attachments in the background
@@ -110,29 +158,6 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 
 			}
 		}()
-	}
-
-	rootId := create.PostId
-	parentId := ""
-	if post.ParentId != "" {
-		// the original post was a reply
-		rootId = post.RootId
-		parentId = create.PostId
-	}
-
-	// Reply to the post with the issue link that was created
-	reply := &model.Post{
-		// TODO: Why is this not created.Self?
-		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.GetURL(), created.Key),
-		ChannelId: post.ChannelId,
-		RootId:    rootId,
-		ParentId:  parentId,
-		UserId:    mattermostUserId,
-	}
-	_, appErr = api.CreatePost(reply)
-	if appErr != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to create notification post "+create.PostId)
 	}
 
 	userBytes, err := json.Marshal(created)

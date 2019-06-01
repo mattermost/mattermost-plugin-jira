@@ -54,7 +54,47 @@ export default class CreateIssueModal extends PureComponent {
         }
     }
 
+    allowedFields = [
+        'project',
+        'issuetype',
+        'priority',
+        'description',
+        'summary',
+    ]
+
+    allowedSchemaCustom = [
+        'com.atlassian.jira.plugin.system.customfieldtypes:textarea',
+        'com.atlassian.jira.plugin.system.customfieldtypes:textfield',
+        'com.atlassian.jira.plugin.system.customfieldtypes:select',
+        'com.pyxis.greenhopper.jira:gh-epic-label',
+        'com.atlassian.jira.plugin.system.customfieldtypes:project',
+    ];
+
+    getFieldsNotCovered() {
+        const {jiraIssueMetadata} = this.props;
+        const myfields = getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType);
+
+        const fieldsNotCovered = [];
+
+        Object.keys(myfields).forEach((key) => {
+            if (myfields[key].required) {
+                if ((!myfields[key].schema.custom && !this.allowedFields.includes(key)) ||
+                     (myfields[key].schema.custom && !this.allowedSchemaCustom.includes(myfields[key].schema.custom))
+                ) {
+                    if (!fieldsNotCovered.includes(key)) {
+                        console.log('found UNALLOWED value -> ', key);
+                        fieldsNotCovered.push(key);
+                    }
+                }
+            }
+        });
+        return fieldsNotCovered;
+    }
+
     handleCreate = (e) => {
+        const requiredFieldsNotCovered = this.getFieldsNotCovered();
+        console.log('create_issue.jsx -> requiredFieldsNotCovered', requiredFieldsNotCovered);
+
         if (e && e.preventDefault) {
             e.preventDefault();
         }
@@ -62,6 +102,7 @@ export default class CreateIssueModal extends PureComponent {
         const issue = {
             post_id: this.props.post.id,
             fields: this.state.fields,
+            required_fields_not_covered: requiredFieldsNotCovered,
         };
 
         this.setState({submitting: true});
@@ -178,6 +219,8 @@ export default class CreateIssueModal extends PureComponent {
                         fields={getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType)}
                         onChange={this.handleFieldChange}
                         values={this.state.fields}
+                        allowedFields={this.allowedFields}
+                        allowedSchemaCustom={this.allowedSchemaCustom}
                         theme={theme}
                     />
                     <br/>
