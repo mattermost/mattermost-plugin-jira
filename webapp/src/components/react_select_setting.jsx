@@ -19,7 +19,7 @@ export default class ReactSelectSetting extends React.PureComponent {
 
     handleChange = (value) => {
         if (this.props.onChange) {
-                this.props.onChange(this.props.name, value.value);
+            if (Array.isArray(value)) {
                 this.props.onChange(this.props.name, value.map((x) => x.value));
             } else {
                 this.props.onChange(this.props.name, value.value);
