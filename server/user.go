@@ -67,7 +67,7 @@ func httpUserDisconnect(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
-	err := ji.GetPlugin().DeleteUserInfoNotify(ji, mattermostUserId)
+	err := ji.GetPlugin().userDisconnect(ji, mattermostUserId)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -108,13 +108,11 @@ func httpAPIGetUserInfo(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 
 	resp := UserInfo{}
 	if ji, err := p.LoadCurrentJIRAInstance(); err == nil {
+		resp.InstanceInstalled = true
+		resp.JIRAURL = ji.GetURL()
 		if jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId); err == nil {
-			resp = UserInfo{
-				JIRAUser:          jiraUser,
-				InstanceInstalled: true,
-				IsConnected:       true,
-				JIRAURL:           ji.GetURL(),
-			}
+			resp.JIRAUser = jiraUser
+			resp.IsConnected = true
 		}
 	}
 
@@ -159,5 +157,12 @@ func (p *Plugin) DeleteUserInfoNotify(ji Instance, mattermostUserId string) erro
 		&model.WebsocketBroadcast{UserId: mattermostUserId},
 	)
 
+	return nil
+}
+
+func (p *Plugin) userDisconnect(ji Instance, mattermostUserId string) error {
+	if err := p.DeleteUserInfoNotify(ji, mattermostUserId); err != nil {
+		return err
+	}
 	return nil
 }

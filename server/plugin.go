@@ -17,11 +17,6 @@ import (
 	"github.com/mattermost/mattermost-server/plugin"
 )
 
-const (
-	PluginMattermostUsername = "Jira Plugin"
-	PluginIconURL            = "https://s3.amazonaws.com/mattermost-plugin-media/jira.jpg"
-)
-
 type externalConfig struct {
 	// Bot username
 	UserName string `json:"username"`
@@ -121,11 +116,12 @@ func (p *Plugin) GetPluginKey() string {
 func (p *Plugin) GetPluginURLPath() string {
 	return "/plugins/" + manifest.Id
 }
-
 func (p *Plugin) GetPluginURL() string {
 	return strings.TrimRight(p.GetSiteURL(), "/") + p.GetPluginURLPath()
 }
-
+func (p *Plugin) GetPluginIconURL() string {
+	return p.GetPluginURL() + routePluginIcon
+}
 func (p *Plugin) GetSiteURL() string {
 	return *p.API.GetConfig().ServiceSettings.SiteURL
 }

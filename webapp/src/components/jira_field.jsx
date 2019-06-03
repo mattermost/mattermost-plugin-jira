@@ -22,6 +22,9 @@ export default class JiraField extends React.PureComponent {
     };
 
     // Creates an option for react-select from an allowedValue from the jira field metadata
+    // includes both .value and .name because allowedValue test cases have used .value or .name
+    // and are mutually exclusive.
+    // should wrap this with some if else logic
     makeReactSelectValue = (allowedValue) => {
         const iconLabel = (
             <React.Fragment>
@@ -29,6 +32,7 @@ export default class JiraField extends React.PureComponent {
                     style={getStyle().jiraIcon}
                     src={allowedValue.iconUrl}
                 />
+                {allowedValue.value}
                 {allowedValue.name}
             </React.Fragment>
         );
@@ -40,7 +44,33 @@ export default class JiraField extends React.PureComponent {
     render() {
         const field = this.props.field;
 
+        // only allow these custom types until handle further types
+        if (field.schema.custom &&
+              (field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:textarea' &&
+               field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:textfield' &&
+               field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:select' &&
+               field.schema.custom !== 'com.pyxis.greenhopper.jira:gh-epic-label' &&
+               field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:project')
+        ) {
+            return null;
+        }
+
         if (field.schema.system === 'description') {
+            return (
+                <Input
+                    key={this.props.id}
+                    id={this.props.id}
+                    label={field.name}
+                    type='textarea'
+                    onChange={this.props.onChange}
+                    required={this.props.obeyRequired && field.required}
+                    value={this.props.value}
+                />
+            );
+        }
+
+        // detect if JIRA multiline textarea, and set for JiraField component
+        if (field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:textarea') {
             return (
                 <Input
                     key={this.props.id}
@@ -69,7 +99,7 @@ export default class JiraField extends React.PureComponent {
         }
 
         // if this.props.field has allowedValues, then props.value will be an object
-        if (field.allowedValues && field.allowedValues.length) {
+        if (field.allowedValues && field.allowedValues.length && field.schema.type !== 'array') {
             const options = field.allowedValues.map(this.makeReactSelectValue);
 
             return (

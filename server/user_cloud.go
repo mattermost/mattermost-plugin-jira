@@ -71,10 +71,20 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 			Name: username,
 		},
 	}
-	mattermostUserId, secret, err := jci.Plugin.ParseAuthToken(mmToken)
+	mattermostUserId := r.Header.Get("Mattermost-User-ID")
+	if mattermostUserId == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	requestedUserId, secret, err := jci.Plugin.ParseAuthToken(mmToken)
 	if err != nil {
 		return http.StatusUnauthorized, err
 	}
+
+	if mattermostUserId != requestedUserId {
+		return http.StatusUnauthorized, errors.New("not authorized, user id does not match link")
+	}
+
 	mmuser, appErr := jci.Plugin.API.GetUser(mattermostUserId)
 	if appErr != nil {
 		return http.StatusInternalServerError,
@@ -83,19 +93,14 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 
 	switch r.URL.Path {
 	case routeACUserConnected:
-		value := ""
-		value, err = jci.Plugin.LoadOneTimeSecret(secret)
+		storedSecret := ""
+		storedSecret, err = jci.Plugin.LoadOneTimeSecret(mattermostUserId)
 		if err != nil {
 			return http.StatusUnauthorized, err
 		}
-		err = jci.Plugin.DeleteOneTimeSecret(secret)
-		if err != nil {
-			return http.StatusInternalServerError, err
+		if len(storedSecret) == 0 || storedSecret != secret {
+			return http.StatusUnauthorized, errors.New("this link has already been used")
 		}
-		if len(value) == 0 {
-			return http.StatusUnauthorized, errors.New("link expired")
-		}
-
 		err = jci.Plugin.StoreUserInfoNotify(jci, mattermostUserId, uinfo)
 
 	case routeACUserDisconnected:
