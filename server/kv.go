@@ -9,8 +9,8 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
-	"github.com/mattermost/mattermost-server/model"
 
+	"github.com/mattermost/mattermost-server/model"
 	"github.com/pkg/errors"
 )
 
@@ -460,18 +460,45 @@ func (p *Plugin) StoreOneTimeSecret(token, secret string) error {
 	return nil
 }
 
-func (p *Plugin) LoadOneTimeSecret(token string) (string, error) {
-	b, appErr := p.API.KVGet(hashkey(prefixOneTimeSecret, token))
+func (p *Plugin) LoadOneTimeSecret(key string) (string, error) {
+	b, appErr := p.API.KVGet(hashkey(prefixOneTimeSecret, key))
 	if appErr != nil {
-		return "", errors.WithMessage(appErr, "failed to load one-time secret "+token)
+		return "", errors.WithMessage(appErr, "failed to load one-time secret "+key)
+	}
+
+	appErr = p.API.KVDelete(hashkey(prefixOneTimeSecret, key))
+	if appErr != nil {
+		return "", errors.WithMessage(appErr, "failed to delete one-time secret "+key)
 	}
 	return string(b), nil
 }
 
-func (p *Plugin) DeleteOneTimeSecret(token string) error {
-	appErr := p.API.KVDelete(hashkey(prefixOneTimeSecret, token))
+func (p *Plugin) StoreOauth1aTemporaryCredentials(mmUserId string, credentials *OAuth1aTemporaryCredentials) error {
+	data, err := json.Marshal(&credentials)
+	if err != nil {
+		return err
+	}
+	// Expire in 15 minutes
+	appErr := p.API.KVSetWithExpiry(hashkey(prefixOneTimeSecret, mmUserId), data, 15*60)
 	if appErr != nil {
-		return errors.WithMessage(appErr, "failed to delete one-time secret "+token)
+		return errors.WithMessage(appErr, "failed to store oauth temporary credentials for "+mmUserId)
 	}
 	return nil
+}
+
+func (p *Plugin) OneTimeLoadOauth1aTemporaryCredentials(mmUserId string) (*OAuth1aTemporaryCredentials, error) {
+	b, appErr := p.API.KVGet(hashkey(prefixOneTimeSecret, mmUserId))
+	if appErr != nil {
+		return nil, errors.WithMessage(appErr, "failed to load temporary credentials for "+mmUserId)
+	}
+	var credentials OAuth1aTemporaryCredentials
+	err := json.Unmarshal(b, &credentials)
+	if err != nil {
+		return nil, err
+	}
+	appErr = p.API.KVDelete(hashkey(prefixOneTimeSecret, mmUserId))
+	if appErr != nil {
+		return nil, errors.WithMessage(appErr, "failed to delete temporary credentials for "+mmUserId)
+	}
+	return &credentials, nil
 }
