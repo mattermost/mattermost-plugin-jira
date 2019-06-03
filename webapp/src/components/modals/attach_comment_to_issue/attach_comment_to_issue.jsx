@@ -146,7 +146,6 @@ const getStyle = (theme) => ({
         padding: '1em',
         color: theme.centerChannelColor,
         backgroundColor: theme.centerChannelBg,
-        height: '380px',
     },
     descriptionArea: {
         height: 'auto',
