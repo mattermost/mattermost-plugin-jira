@@ -34,7 +34,7 @@ type config struct {
 	// Cached actual bot user ID (derived from c.UserName)
 	botUserID string
 
-	// Cached current Jira instance. A non-0 expires indicates the presense
+	// Cached current Jira instance. A non-0 expires indicates the presence
 	// of a value. A nil value means there is no instance available.
 	currentInstance        Instance
 	currentInstanceExpires time.Time

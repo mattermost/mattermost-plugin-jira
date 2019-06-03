@@ -230,8 +230,10 @@ func (p *Plugin) LoadCurrentJIRAInstance() (Instance, error) {
 	now := time.Now()
 
 	if now.Before(conf.currentInstanceExpires) {
+		// if conf.currentInstanceExpires is set and there is no current
+		// instance, it's a cached "Not found"
 		if conf.currentInstance == nil {
-			return nil, errors.New("not found")
+			return nil, errors.New("failed to load current Jira instance: not found")
 		}
 		return conf.currentInstance, nil
 	}
