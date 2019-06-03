@@ -108,13 +108,11 @@ func httpAPIGetUserInfo(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 
 	resp := UserInfo{}
 	if ji, err := p.LoadCurrentJIRAInstance(); err == nil {
+		resp.InstanceInstalled = true
+		resp.JIRAURL = ji.GetURL()
 		if jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mattermostUserId); err == nil {
-			resp = UserInfo{
-				JIRAUser:          jiraUser,
-				InstanceInstalled: true,
-				IsConnected:       true,
-				JIRAURL:           ji.GetURL(),
-			}
+			resp.JIRAUser = jiraUser
+			resp.IsConnected = true
 		}
 	}
 
