@@ -59,7 +59,8 @@ type UserStore interface {
 type OTSStore interface {
 	StoreOneTimeSecret(token, secret string) error
 	LoadOneTimeSecret(token string) (string, error)
-	DeleteOneTimeSecret(token string) error
+	StoreOauth1aTemporaryCredentials(mmUserId string, credentials *OAuth1aTemporaryCredentials) error
+	OneTimeLoadOauth1aTemporaryCredentials(mmUserId string) (*OAuth1aTemporaryCredentials, error)
 }
 
 type store struct {
@@ -499,18 +500,45 @@ func (store store) StoreOneTimeSecret(token, secret string) error {
 	return nil
 }
 
-func (store store) LoadOneTimeSecret(token string) (string, error) {
-	b, appErr := store.plugin.API.KVGet(hashkey(prefixOneTimeSecret, token))
+func (store store) LoadOneTimeSecret(key string) (string, error) {
+	b, appErr := store.plugin.API.KVGet(hashkey(prefixOneTimeSecret, key))
 	if appErr != nil {
-		return "", errors.WithMessage(appErr, "failed to load one-time secret "+token)
+		return "", errors.WithMessage(appErr, "failed to load one-time secret "+key)
+	}
+
+	appErr = store.plugin.API.KVDelete(hashkey(prefixOneTimeSecret, key))
+	if appErr != nil {
+		return "", errors.WithMessage(appErr, "failed to delete one-time secret "+key)
 	}
 	return string(b), nil
 }
 
-func (store store) DeleteOneTimeSecret(token string) error {
-	appErr := store.plugin.API.KVDelete(hashkey(prefixOneTimeSecret, token))
+func (store store) StoreOauth1aTemporaryCredentials(mmUserId string, credentials *OAuth1aTemporaryCredentials) error {
+	data, err := json.Marshal(&credentials)
+	if err != nil {
+		return err
+	}
+	// Expire in 15 minutes
+	appErr := store.plugin.API.KVSetWithExpiry(hashkey(prefixOneTimeSecret, mmUserId), data, 15*60)
 	if appErr != nil {
-		return errors.WithMessage(appErr, "failed to delete one-time secret "+token)
+		return errors.WithMessage(appErr, "failed to store oauth temporary credentials for "+mmUserId)
 	}
 	return nil
+}
+
+func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserId string) (*OAuth1aTemporaryCredentials, error) {
+	b, appErr := store.plugin.API.KVGet(hashkey(prefixOneTimeSecret, mmUserId))
+	if appErr != nil {
+		return nil, errors.WithMessage(appErr, "failed to load temporary credentials for "+mmUserId)
+	}
+	var credentials OAuth1aTemporaryCredentials
+	err := json.Unmarshal(b, &credentials)
+	if err != nil {
+		return nil, err
+	}
+	appErr = store.plugin.API.KVDelete(hashkey(prefixOneTimeSecret, mmUserId))
+	if appErr != nil {
+		return nil, errors.WithMessage(appErr, "failed to delete temporary credentials for "+mmUserId)
+	}
+	return &credentials, nil
 }

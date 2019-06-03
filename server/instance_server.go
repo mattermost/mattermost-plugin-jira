@@ -76,7 +76,8 @@ func (jsi jiraServerInstance) GetUserConnectURL(mattermostUserId string) (return
 		return "", err
 	}
 
-	err = jsi.Plugin.otsStore.StoreOneTimeSecret(token, secret)
+	err = jsi.Plugin.otsStore.StoreOauth1aTemporaryCredentials(mattermostUserId,
+		&OAuth1aTemporaryCredentials{Token: token, Secret: secret})
 	if err != nil {
 		return "", err
 	}
