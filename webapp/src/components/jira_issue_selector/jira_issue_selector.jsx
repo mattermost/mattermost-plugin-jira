@@ -7,6 +7,8 @@ import PropTypes from 'prop-types';
 import debounce from 'debounce-promise';
 import AsyncSelect from 'react-select/lib/Async';
 
+import {getStyleForReactSelect} from '../utils';
+
 const searchDefaults = 'ORDER BY updated DESC';
 const searchDebounceDelay = 400;
 
@@ -50,7 +52,7 @@ export default class JiraIssueSelector extends Component {
         );
 
         return (
-            <div className={'form-group'}>
+            <div className={'form-group margin-bottom x3'}>
                 <label
                     className={'control-label'}
                     htmlFor={'issue'}
@@ -68,11 +70,11 @@ export default class JiraIssueSelector extends Component {
                     isClearable={true}
                     defaultOptions={true}
                     loadOptions={this.handleIssueSearchTermChange}
+                    menuPortalTarget={document.body}
+                    styles={getStyleForReactSelect(this.props.theme)}
                 />
                 <div className={'help-text'}>
-                    {'Returns issues sorted by most recently updated.'}
-                </div>
-                <div className={'help-text'}>
+                    {'Returns issues sorted by most recently updated.'} <br/>
                     {'Tip: Use AND, OR, *, ~, and other modifiers like in a JQL query.'}
                 </div>
             </div>
