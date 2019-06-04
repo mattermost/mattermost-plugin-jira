@@ -12,6 +12,7 @@ export default class JiraFields extends React.Component {
         onChange: PropTypes.func.isRequired,
         values: PropTypes.object,
         isFilter: PropTypes.bool,
+        theme: PropTypes.object.isRequired,
     };
 
     render() {
@@ -39,6 +40,7 @@ export default class JiraFields extends React.Component {
                     onChange={this.props.onChange}
                     value={this.props.values && this.props.values[fieldName]}
                     isFilter={this.props.isFilter}
+                    theme={this.props.theme}
                 />
             );
         });
