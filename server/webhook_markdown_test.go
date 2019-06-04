@@ -19,6 +19,7 @@ func TestParse(t *testing.T) {
 		expectedHeadline string
 		expectedDetails  string
 		expectedText     string
+		expectedIgnored  bool
 	}{{
 		file:             "testdata/webhook-comment-created.json",
 		expectedStyle:    mdUpdateStyle,
@@ -34,6 +35,24 @@ func TestParse(t *testing.T) {
 		expectedHeadline: "Test User edited a comment in story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 		expectedText:     "Added a comment, then edited it",
 	}, {
+		file:            "testdata/webhook-server-comment-created.json",
+		expectedIgnored: true,
+	}, {
+		file:             "testdata/webhook-server-issue-updated-commented.json",
+		expectedStyle:    mdUpdateStyle,
+		expectedHeadline: "Lev Brouk commented on story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
+		expectedText:     "unik",
+	}, {
+		file:             "testdata/webhook-server-issue-updated-comment-deleted.json",
+		expectedStyle:    mdUpdateStyle,
+		expectedHeadline: "Lev Brouk removed a comment from story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
+	}, {
+		file:             "testdata/webhook-server-issue-updated-comment-edited.json",
+		expectedStyle:    mdUpdateStyle,
+		expectedHeadline: "Lev Brouk edited a comment in story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
+		expectedText:     "and higher eeven higher",
+	}, {
+
 		file:             "testdata/webhook-issue-created.json",
 		expectedStyle:    mdRootStyle,
 		expectedHeadline: "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
@@ -101,6 +120,10 @@ func TestParse(t *testing.T) {
 			parsed, err := parse(f, func(w *JIRAWebhook) string {
 				return w.mdIssueLongLink()
 			})
+			if tc.expectedIgnored {
+				require.Equal(t, ErrWebhookIgnored, err)
+				return
+			}
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedStyle, parsed.style)
 			assert.Equal(t, tc.expectedHeadline, parsed.headline)

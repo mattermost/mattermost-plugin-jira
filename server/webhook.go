@@ -11,9 +11,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/andygrunwald/go-jira"
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
 )
@@ -105,6 +108,8 @@ type notifier interface {
 	notify(ji Instance, parsed *parsedJIRAWebhook, text string)
 }
 
+var ErrWebhookIgnored = errors.New("Webhook purposely ignored")
+
 func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,
@@ -152,6 +157,9 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 	}
 
 	parsed, err := parse(r.Body, nil)
+	if err == ErrWebhookIgnored {
+		return http.StatusOK, nil
+	}
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -199,11 +207,28 @@ func (w *JIRAWebhook) jiraURL() string {
 	return w.Issue.Self[:pos]
 }
 
-func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook, error) {
+func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (parsed *parsedJIRAWebhook, returnErr error) {
 	bb, err := ioutil.ReadAll(in)
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if returnErr == nil || returnErr == ErrWebhookIgnored {
+			return
+		}
+		if os.Getenv("MM_PLUGIN_JIRA_DEBUG_WEBHOOKS") == "" {
+			return
+		}
+		f, _ := ioutil.TempFile(os.TempDir(),
+			fmt.Sprintf("jira_plugin_webhook_%s_*.json",
+				time.Now().Format("2006-01-02-15-04")))
+		if f == nil {
+			return
+		}
+		_, _ = f.Write(bb)
+		_ = f.Close()
+		returnErr = errors.WithMessagef(returnErr, "Failed to process webhook. Body stored in %s", f.Name())
+	}()
 
 	webhook := JIRAWebhook{}
 	err = json.Unmarshal(bb, &webhook)
@@ -213,11 +238,8 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook,
 	if webhook.WebhookEvent == "" {
 		return nil, fmt.Errorf("No webhook event")
 	}
-	if webhook.Issue.Fields == nil {
-		return nil, fmt.Errorf("Invalid webhook event")
-	}
 
-	parsed := parsedJIRAWebhook{
+	parsed = &parsedJIRAWebhook{
 		JIRAWebhook: &webhook,
 	}
 	parsed.RawJSON = string(bb)
@@ -231,6 +253,7 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook,
 	user := &parsed.User
 	parsed.style = mdUpdateStyle
 	issue := parsed.mdIssueType() + " " + linkf(parsed.JIRAWebhook)
+
 	switch parsed.WebhookEvent {
 	case "jira:issue_created":
 		parsed.event(eventCreated)
@@ -251,28 +274,57 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook,
 			parsed.event(eventUpdatedAssignee)
 			headline = fmt.Sprintf("assigned %v to %v", issue, parsed.mdIssueAssignee())
 
+		// Summary, description, updated priority, status, etc.
 		case "issue_updated", "issue_generic":
-			// text summary, description, updated priority, status, etc.
 			headline, parsed.text = parsed.fromChangeLog(issue)
+
+		// Jira Server specific comment events
+		case "issue_commented":
+			parsed.event(eventCreatedComment)
+			headline = fmt.Sprintf("commented on %v", issue)
+			parsed.text = truncate(parsed.Comment.Body, 3000)
+			parsed.useSlackAttachment = true
+
+		case "issue_comment_edited":
+			parsed.event(eventUpdatedComment)
+			headline = fmt.Sprintf("edited a comment in %v", issue)
+			parsed.text = truncate(parsed.Comment.Body, 3000)
+			parsed.useSlackAttachment = true
+
+		case "issue_comment_deleted":
+			parsed.event(eventDeletedComment)
+			headline = fmt.Sprintf("removed a comment from %v", issue)
+
 		}
-	case "comment_deleted":
-		parsed.event(eventDeletedComment)
+
+	// Normal (Cloud?) comment events
+	case "comment_created":
+		if parsed.Issue.ID == "" {
+			return nil, ErrWebhookIgnored
+		}
 		user = &parsed.Comment.UpdateAuthor
-		headline = fmt.Sprintf("removed a comment from %v", issue)
+		parsed.event(eventCreatedComment)
+		headline = fmt.Sprintf("commented on %v", issue)
+		parsed.text = truncate(parsed.Comment.Body, 3000)
+		parsed.useSlackAttachment = true
 
 	case "comment_updated":
-		parsed.event(eventUpdatedComment)
+		if parsed.Issue.ID == "" {
+			return nil, ErrWebhookIgnored
+		}
 		user = &parsed.Comment.UpdateAuthor
+		parsed.event(eventUpdatedComment)
 		headline = fmt.Sprintf("edited a comment in %v", issue)
 		parsed.text = truncate(parsed.Comment.Body, 3000)
 		parsed.useSlackAttachment = true
 
-	case "comment_created":
-		parsed.event(eventCreatedComment)
+	case "comment_deleted":
+		if parsed.Issue.ID == "" {
+			return nil, ErrWebhookIgnored
+		}
 		user = &parsed.Comment.UpdateAuthor
-		headline = fmt.Sprintf("commented on %v", issue)
-		parsed.text = truncate(parsed.Comment.Body, 3000)
-		parsed.useSlackAttachment = true
+		parsed.event(eventDeletedComment)
+		headline = fmt.Sprintf("removed a comment from %v", issue)
 	}
 	if headline == "" {
 		return nil, fmt.Errorf("Unsupported webhook data: %v", parsed.WebhookEvent)
@@ -282,13 +334,13 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (*parsedJIRAWebhook,
 	parsed.authorDisplayName = user.DisplayName
 	parsed.authorUsername = user.Name
 	parsed.authorURL = getUserURL(user)
-	if parsed.Issue.Fields.Assignee != nil {
+	if parsed.Issue.Fields != nil && parsed.Issue.Fields.Assignee != nil {
 		parsed.assigneeUsername = parsed.Issue.Fields.Assignee.Name
 	}
 	parsed.issueKey = parsed.Issue.Key
 	parsed.issueURL = getIssueURL(&parsed.Issue)
 
-	return &parsed, nil
+	return parsed, nil
 }
 
 func (p *parsedJIRAWebhook) fromChangeLog(issue string) (string, string) {
