@@ -96,8 +96,23 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	if len(args) != 0 {
 		return help()
 	}
-	return responsef("[Click here to unlink your Jira account](%s%s)",
-		p.GetPluginURL(), routeUserDisconnect)
+
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return responsef("Failed to load current Jira instance: %v", err)
+	}
+
+	jiraUser, err := p.userStore.LoadJIRAUser(ji, header.UserId)
+	if err != nil {
+		return responsef("Could not complete the **disconnection** request. You do not currently have a Jira account linked to your Mattermost account.")
+	}
+
+	err = p.userDisconnect(ji, header.UserId)
+	if err != nil {
+		return responsef("Could not complete the **disconnection** request. Error: %v", err)
+	}
+
+	return responsef("You have successfully disconnected your Jira account (**%s**).", jiraUser.Name)
 }
 
 func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
