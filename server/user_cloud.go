@@ -4,13 +4,14 @@
 package main
 
 import (
-	"github.com/mattermost/mattermost-server/model"
 	"net/http"
 	"path"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-server/model"
 )
 
 const (
