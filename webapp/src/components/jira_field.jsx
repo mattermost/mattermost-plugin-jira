@@ -12,22 +12,20 @@ export default class JiraField extends React.Component {
         id: PropTypes.object.isRequired,
         field: PropTypes.object.isRequired,
         obeyRequired: PropTypes.bool,
-        onChange: PropTypes.func,
+        onChange: PropTypes.func.isRequired,
         value: PropTypes.any,
         isFilter: PropTypes.bool,
+        theme: PropTypes.object.isRequired,
     };
 
     static defaultProps = {
         obeyRequired: true,
     };
 
-    handleChange = (id, value) => {
-        if (this.props.onChange) {
-            this.props.onChange(id, value);
-        }
-    };
-
     // Creates an option for react-select from an allowedValue from the jira field metadata
+    // includes both .value and .name because allowedValue test cases have used .value or .name
+    // and are mutually exclusive.
+    // should wrap this with some if else logic
     makeReactSelectValue = (allowedValue) => {
         const iconLabel = (
             <React.Fragment>
@@ -35,25 +33,52 @@ export default class JiraField extends React.Component {
                     style={getStyle().jiraIcon}
                     src={allowedValue.iconUrl}
                 />
+                {allowedValue.value}
                 {allowedValue.name}
             </React.Fragment>
         );
         return (
             {value: allowedValue.id, label: iconLabel}
         );
-    }
+    };
 
     renderCreateFields() {
         const field = this.props.field;
 
+        // only allow these custom types until handle further types
+        if (field.schema.custom &&
+              (field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:textarea' &&
+               field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:textfield' &&
+               field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:select' &&
+               field.schema.custom !== 'com.pyxis.greenhopper.jira:gh-epic-label' &&
+               field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:project')
+        ) {
+            return null;
+        }
+
         if (field.schema.system === 'description') {
             return (
                 <Input
-                    key={field.key}
-                    id={field.key}
+                    key={this.props.id}
+                    id={this.props.id}
                     label={field.name}
                     type='textarea'
-                    onChange={this.handleChange}
+                    onChange={this.props.onChange}
+                    required={this.props.obeyRequired && field.required}
+                    value={this.props.value}
+                />
+            );
+        }
+
+        // detect if JIRA multiline textarea, and set for JiraField component
+        if (field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:textarea') {
+            return (
+                <Input
+                    key={this.props.id}
+                    id={this.props.id}
+                    label={field.name}
+                    type='textarea'
+                    onChange={this.props.onChange}
                     required={this.props.obeyRequired && field.required}
                     value={this.props.value}
                 />
@@ -63,29 +88,32 @@ export default class JiraField extends React.Component {
         if (field.schema.type === 'string') {
             return (
                 <Input
-                    key={field.key}
-                    id={field.key}
+                    key={this.props.id}
+                    id={this.props.id}
                     label={field.name}
                     type='input'
-                    onChange={this.handleChange}
+                    onChange={this.props.onChange}
                     required={this.props.obeyRequired && field.required}
                     value={this.props.value}
                 />
             );
         }
 
-        if (field.allowedValues && field.allowedValues.length) {
+        // if this.props.field has allowedValues, then props.value will be an object
+        if (field.allowedValues && field.allowedValues.length && field.schema.type !== 'array') {
             const options = field.allowedValues.map(this.makeReactSelectValue);
+
             return (
                 <ReactSelectSetting
-                    key={field.key}
-                    name={field.key}
+                    key={this.props.id}
+                    name={this.props.id}
                     label={field.name}
                     options={options}
                     required={this.props.obeyRequired && field.required}
-                    onChange={this.handleChange}
+                    onChange={(id, val) => this.props.onChange(id, {id: val})}
                     isMulti={false}
-                    value={options.filter((option) => option.value === this.props.value)}
+                    value={options.find((option) => option.value === this.props.value)}
+                    theme={this.props.theme}
                 />
             );
         }

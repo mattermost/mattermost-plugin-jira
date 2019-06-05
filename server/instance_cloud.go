@@ -6,7 +6,6 @@ package main
 import (
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -77,20 +76,20 @@ func (jci jiraCloudInstance) GetDisplayDetails() map[string]string {
 	}
 }
 
-func (jci jiraCloudInstance) GetUserConnectURL(a *Action) (string, error) {
-	secret := make([]byte, 256)
-	_, err := rand.Read(secret)
-	if err != nil {
-		return "", err
-	}
-	secretKey := fmt.Sprintf("%x", sha256.Sum256(secret))
-	secretValue := "true"
-	err = a.Plugin.StoreOneTimeSecret(secretKey, secretValue)
-	if err != nil {
-		return "", err
-	}
+func (jci jiraCloudInstance) GetUserConnectURL(conf Config, secretsStore SecretsStore,
+	mattermostUserId string) (string, error) {
 
-	token, err := NewEncodedAuthToken(a.Plugin, a.MattermostUserId, secretKey)
+	randomBytes := make([]byte, 32)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return "", err
+	}
+	secret := fmt.Sprintf("%x", randomBytes)
+	err = secretsStore.StoreOneTimeSecret(mattermostUserId, secret)
+	if err != nil {
+		return "", err
+	}
+	token, err := NewEncodedAuthToken(secretsStore, mattermostUserId, secret)
 	if err != nil {
 		return "", err
 	}
@@ -105,11 +104,10 @@ func (jci jiraCloudInstance) GetURL() string {
 	return jci.AtlassianSecurityContext.BaseURL
 }
 
-func (jci jiraCloudInstance) GetJIRAClient(a *Action, jiraUser *JIRAUser) (*jira.Client, error) {
-	if jiraUser == nil {
-		jiraUser = a.JiraUser
-	}
-	client, _, err := jci.getJIRAClientForUser(a, jiraUser)
+func (jci jiraCloudInstance) GetJIRAClient(conf Config, secretsStore SecretsStore,
+	jiraUser *JIRAUser) (*jira.Client, error) {
+
+	client, _, err := jci.getJIRAClientForUser(conf, secretsStore, jiraUser)
 	if err == nil {
 		return client, nil
 	}
@@ -117,14 +115,16 @@ func (jci jiraCloudInstance) GetJIRAClient(a *Action, jiraUser *JIRAUser) (*jira
 	//TODO decide if we ever need this as the default client
 	// client, err = jci.getJIRAClientForServer()
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get Jira client for user "+a.JiraUser.Name)
+		return nil, errors.WithMessagef(err, "failed to get Jira client for user %s", jiraUser.Name)
 	}
 
 	return client, nil
 }
 
 // Creates a client for acting on behalf of a user
-func (jci jiraCloudInstance) getJIRAClientForUser(a *Action, jiraUser *JIRAUser) (*jira.Client, *http.Client, error) {
+func (jci jiraCloudInstance) getJIRAClientForUser(conf Config, secretsStore SecretsStore,
+	jiraUser *JIRAUser) (*jira.Client, *http.Client, error) {
+
 	oauth2Conf := oauth2_jira.Config{
 		BaseURL: jci.GetURL(),
 		Subject: jiraUser.Name,

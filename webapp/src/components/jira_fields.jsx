@@ -9,9 +9,10 @@ import JiraField from 'components/jira_field';
 export default class JiraFields extends React.Component {
     static propTypes = {
         fields: PropTypes.object.isRequired,
-        onChange: PropTypes.func,
+        onChange: PropTypes.func.isRequired,
         values: PropTypes.object,
         isFilter: PropTypes.bool,
+        theme: PropTypes.object.isRequired,
     };
 
     render() {
@@ -27,7 +28,8 @@ export default class JiraFields extends React.Component {
         }
 
         return fieldNames.map((fieldName) => {
-            if (fieldName === 'project' || fieldName === 'issuetype' || fieldName === 'reporter' || (fieldName !== 'description' && !this.props.fields[fieldName].required)) {
+            // Always Required Jira fields
+            if (fieldName === 'project' || fieldName === 'issuetype') {
                 return null;
             }
             return (
@@ -39,6 +41,7 @@ export default class JiraFields extends React.Component {
                     onChange={this.props.onChange}
                     value={this.props.values && this.props.values[fieldName]}
                     isFilter={this.props.isFilter}
+                    theme={this.props.theme}
                 />
             );
         });

@@ -12,6 +12,7 @@ export default {
     OPEN_ATTACH_COMMENT_TO_ISSUE_MODAL: `${PluginId}_open_attach_modal`,
 
     RECEIVED_CONNECTED: `${PluginId}_connected`,
+    RECEIVED_INSTANCE_STATUS: `${PluginId}_instance_status`,
 
     RECEIVED_JIRA_ISSUE_METADATA: `${PluginId}_received_metadata`,
 

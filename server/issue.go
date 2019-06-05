@@ -18,7 +18,7 @@ import (
 )
 
 func httpAPICreateIssue(a *Action) error {
-	api := a.Plugin.API
+	api := a.API
 
 	create := &struct {
 		PostId    string           `json:"post_id"`
@@ -63,11 +63,11 @@ func httpAPICreateIssue(a *Action) error {
 	})
 
 	// For now, if we are not attaching to a post, leave postId blank (this will only affect the error message)
-	postId := ""
+	// postId := ""
 	channelId := create.ChannelId
 	if post != nil {
 		channelId = post.ChannelId
-		postId = create.PostId
+		// postId = create.PostId
 	}
 
 	if err != nil {
@@ -105,11 +105,20 @@ func httpAPICreateIssue(a *Action) error {
 		}()
 	}
 
+	rootId := create.PostId
+	parentId := ""
+	if post.ParentId != "" {
+		// the original post was a reply
+		rootId = post.RootId
+		parentId = create.PostId
+	}
+
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
 		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", a.Instance.GetURL(), created.Key),
 		ChannelId: channelId,
-		RootId:    postId,
+		RootId:    rootId,
+		ParentId:  parentId,
 		UserId:    a.MattermostUserId,
 	}
 	_, appErr = api.CreatePost(reply)
@@ -129,8 +138,42 @@ func httpAPIGetCreateIssueMetadata(a *Action) error {
 	return a.RespondJSON(cimd)
 }
 
+func httpAPIGetSearchIssues(a *Action) error {
+	jqlString := a.HTTPRequest.FormValue("jql")
+
+	searchRes, resp, err := a.JiraClient.Issue.Search(jqlString, &jira.SearchOptions{
+		MaxResults: 50,
+		Fields:     []string{"key", "summary"},
+	})
+
+	if err != nil {
+		message := "failed to get search results"
+		if resp != nil {
+			bb, _ := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+			message += ", details: " + string(bb)
+		}
+		return a.RespondError(http.StatusInternalServerError, err, message)
+	}
+
+	// We only need to send down a summary of the data
+	type issueSummary struct {
+		Value string `json:"value"`
+		Label string `json:"label"`
+	}
+	resSummary := make([]issueSummary, 0, len(searchRes))
+	for _, res := range searchRes {
+		resSummary = append(resSummary, issueSummary{
+			Value: res.Key,
+			Label: res.Key + ": " + res.Fields.Summary,
+		})
+	}
+
+	return a.RespondJSON(resSummary)
+}
+
 func httpAPIAttachCommentToIssue(a *Action) error {
-	api := a.Plugin.API
+	api := a.API
 
 	attach := &struct {
 		PostId   string `json:"post_id"`
@@ -174,12 +217,21 @@ func httpAPIAttachCommentToIssue(a *Action) error {
 			"failed to attach the comment, postId: %q", attach.PostId)
 	}
 
+	rootId := attach.PostId
+	parentId := ""
+	if post.ParentId != "" {
+		// the original post was a reply
+		rootId = post.RootId
+		parentId = attach.PostId
+	}
+
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
 		Message: fmt.Sprintf("Message attached to [%v](%v/browse/%v)",
 			attach.IssueKey, a.Instance.GetURL(), attach.IssueKey),
 		ChannelId: post.ChannelId,
-		RootId:    attach.PostId,
+		RootId:    rootId,
+		ParentId:  parentId,
 		UserId:    a.MattermostUserId,
 	}
 	_, appErr = api.CreatePost(reply)
@@ -208,18 +260,18 @@ func getCreateIssueMetadata(jiraClient *jira.Client) (*jira.CreateMetaInfo, erro
 }
 
 func getPermaLink(a *Action, postId string, post *model.Post) (string, error) {
-	channel, appErr := a.Plugin.API.GetChannel(post.ChannelId)
+	channel, appErr := a.API.GetChannel(post.ChannelId)
 	if appErr != nil {
 		return "", errors.WithMessage(appErr, "failed to get ChannelId, ChannelId: "+post.ChannelId)
 	}
 
-	team, appErr := a.Plugin.API.GetTeam(channel.TeamId)
+	team, appErr := a.API.GetTeam(channel.TeamId)
 	if appErr != nil {
 		return "", errors.WithMessage(appErr, "failed to get team, TeamId: "+channel.TeamId)
 	}
 
 	permalink := fmt.Sprintf("%v/%v/pl/%v",
-		a.Plugin.GetSiteURL(),
+		a.PluginConfig.SiteURL,
 		team.Name,
 		postId,
 	)

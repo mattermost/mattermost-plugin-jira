@@ -122,7 +122,7 @@ export default class CreateIssueModal extends PureComponent {
             issueType,
             fields,
         });
-    }
+    };
 
     handleIssueTypeChange = (id, value) => {
         const fields = {...this.state.fields};
@@ -134,7 +134,7 @@ export default class CreateIssueModal extends PureComponent {
             issueType,
             fields,
         });
-    }
+    };
 
     handleFieldChange = (id, value) => {
         const fields = {...this.state.fields};
@@ -142,7 +142,7 @@ export default class CreateIssueModal extends PureComponent {
         this.setState({
             fields,
         });
-    }
+    };
 
     render() {
         const {visible, theme, jiraIssueMetadata} = this.props;
@@ -173,6 +173,7 @@ export default class CreateIssueModal extends PureComponent {
                         options={projectOptions}
                         isMuli={false}
                         key={'LT'}
+                        theme={theme}
                         value={projectOptions.filter((option) => option.value === this.state.projectKey)}
                     />
                     <ReactSelectSetting
@@ -182,12 +183,14 @@ export default class CreateIssueModal extends PureComponent {
                         onChange={this.handleIssueTypeChange}
                         options={issueOptions}
                         isMuli={false}
+                        theme={theme}
                         value={issueOptions.filter((option) => option.value === this.state.issueType)}
                     />
                     <JiraFields
                         fields={getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType)}
                         onChange={this.handleFieldChange}
                         values={this.state.fields}
+                        theme={theme}
                     />
                     <br/>
                 </div>

@@ -186,6 +186,7 @@ func TestPlugin(t *testing.T) {
 				conf.UserName = tc.Configuration.UserName
 			})
 			p.SetAPI(api)
+			p.currentInstanceStore = mockCurrentInstanceStore{}
 
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, tc.Request)

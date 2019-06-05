@@ -2,16 +2,17 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 	"regexp"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
+	"github.com/mattermost/mattermost-server/plugin"
 )
 
-func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) (returnErr error) {
+func CreateBotDMPost(conf Config, api plugin.API, userStore UserStore, ji Instance, userId, message,
+	postType string) (post *model.Post, returnErr error) {
 	defer func() {
 		if returnErr != nil {
 			returnErr = errors.WithMessage(returnErr,
@@ -20,23 +21,22 @@ func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) 
 	}()
 
 	// Don't send DMs to users who have turned off notifications
-	jiraUser, err := p.LoadJIRAUser(ji, userId)
+	jiraUser, err := userStore.LoadJIRAUser(ji, userId)
 	if err != nil {
 		// not connected to Jira, so no need to send a DM, and no need to report an error
-		return nil
+		return nil, nil
 	}
-	if !jiraUser.Settings.Notifications {
-		return nil
+	if jiraUser.Settings == nil || !jiraUser.Settings.Notifications {
+		return nil, nil
 	}
 
-	conf := p.getConfig()
-	channel, appErr := p.API.GetDirectChannel(userId, conf.botUserID)
+	channel, appErr := api.GetDirectChannel(userId, conf.BotUserID)
 	if appErr != nil {
-		return appErr
+		return nil, appErr
 	}
 
-	post := &model.Post{
-		UserId:    conf.botUserID,
+	post = &model.Post{
+		UserId:    conf.BotUserID,
 		ChannelId: channel.Id,
 		Message:   message,
 		Type:      postType,
@@ -47,11 +47,27 @@ func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) 
 		},
 	}
 
-	_, appErr = p.API.CreatePost(post)
+	_, appErr = api.CreatePost(post)
+	if appErr != nil {
+		return nil, appErr
+	}
+
+	return post, nil
+}
+
+func StoreCurrentJIRAInstanceAndNotify(api plugin.API, currentInstanceStore CurrentInstanceStore, ji Instance) error {
+	appErr := currentInstanceStore.StoreCurrentJIRAInstance(ji)
 	if appErr != nil {
 		return appErr
 	}
-
+	// Notify users we have installed an instance
+	api.PublishWebSocketEvent(
+		wSEventInstanceStatus,
+		map[string]interface{}{
+			"instance_installed": true,
+		},
+		&model.WebsocketBroadcast{},
+	)
 	return nil
 }
 
@@ -100,13 +116,4 @@ func parseJIRAIssuesFromText(text string, keys []string) []string {
 	}
 
 	return issues
-}
-
-func getIssueURL(i *JIRAWebhookIssue) string {
-	u, _ := url.Parse(i.Self)
-	return u.Scheme + "://" + u.Host + "/browse/" + i.Key
-}
-
-func getUserURL(issue *JIRAWebhookIssue, user *jira.User) string {
-	return user.Self
 }

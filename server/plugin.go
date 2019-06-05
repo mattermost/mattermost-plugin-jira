@@ -22,7 +22,7 @@ const (
 	PluginIconURL            = "https://s3.amazonaws.com/mattermost-plugin-media/jira.jpg"
 )
 
-type externalConfig struct {
+type ExternalConfig struct {
 	// Bot username
 	UserName string `json:"username"`
 
@@ -30,60 +30,73 @@ type externalConfig struct {
 	Secret string `json:"secret"`
 }
 
-type config struct {
+type Config struct {
 	// externalConfig caches values from the plugin's settings in the server's config.json
-	externalConfig
+	ExternalConfig
 
 	// Cached actual bot user ID (derived from c.UserName)
-	botUserID string
+	BotUserID string
+
+	PluginKey     string
+	PluginURLPath string
+	PluginURL     string
+	SiteURL       string
+
+	// templates are loaded on startup
+	Templates map[string]*template.Template
 }
 
 type Plugin struct {
 	plugin.MattermostPlugin
 
+	Store Store
+
 	// configuration and a muttex to control concurrent access
-	conf     config
+	Config   Config
 	confLock sync.RWMutex
 
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
-
-	// templates are loaded on startup
-	templates map[string]*template.Template
 }
 
 // OnConfigurationChange is invoked when configuration changes may have been made.
 func (p *Plugin) OnConfigurationChange() error {
 	// Load the public configuration fields from the Mattermost server configuration.
-	ec := externalConfig{}
+	ec := ExternalConfig{}
 	err := p.API.LoadPluginConfiguration(&ec)
 	if err != nil {
 		return errors.WithMessage(err, "failed to load plugin configuration")
 	}
 
-	p.updateConfig(func(conf *config) {
-		conf.externalConfig = ec
+	p.UpdateConfig(func(conf *Config) {
+		conf.ExternalConfig = ec
 	})
 
 	return nil
 }
 
 func (p *Plugin) OnActivate() error {
-	conf := p.getConfig()
+	conf := p.GetConfig()
 	user, appErr := p.API.GetUserByUsername(conf.UserName)
 	if appErr != nil {
 		return errors.WithMessage(appErr, fmt.Sprintf("OnActivate: unable to find user: %s", conf.UserName))
 	}
+
+	p.Store = NewStore(p)
 
 	dir := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
 	templates, err := p.loadTemplates(dir)
 	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to load templates")
 	}
-	p.templates = templates
 
-	conf = p.updateConfig(func(conf *config) {
-		conf.botUserID = user.Id
+	conf = p.UpdateConfig(func(conf *Config) {
+		conf.BotUserID = user.Id
+		conf.SiteURL = *p.API.GetConfig().ServiceSettings.SiteURL
+		conf.PluginKey = "mattermost_" + regexpNonAlnum.ReplaceAllString(conf.SiteURL, "_")
+		conf.PluginURLPath = "/plugins/" + manifest.Id
+		conf.PluginURL = strings.TrimRight(conf.SiteURL, "/") + conf.PluginURLPath
+		conf.Templates = templates
 	})
 
 	err = p.API.RegisterCommand(getCommand())
@@ -94,18 +107,18 @@ func (p *Plugin) OnActivate() error {
 	return nil
 }
 
-func (p *Plugin) getConfig() config {
+func (p *Plugin) GetConfig() Config {
 	p.confLock.RLock()
 	defer p.confLock.RUnlock()
-	return p.conf
+	return p.Config
 }
 
-func (p *Plugin) updateConfig(f func(conf *config)) config {
+func (p *Plugin) UpdateConfig(f func(conf *Config)) Config {
 	p.confLock.Lock()
 	defer p.confLock.Unlock()
 
-	f(&p.conf)
-	return p.conf
+	f(&p.Config)
+	return p.Config
 }
 
 func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {
@@ -119,43 +132,15 @@ func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error
 		}
 		template, err := template.ParseFiles(path)
 		if err != nil {
-			p.errorf("OnActivate: failed to parse template %s: %v", path, err)
+			p.API.LogError(fmt.Sprintf("OnActivate: failed to parse template %s: %v", path, err))
 			return nil
 		}
 		key := path[len(dir):]
 		templates[key] = template
-		p.debugf("loaded template %s", key)
 		return nil
 	})
 	if err != nil {
 		return nil, errors.WithMessage(err, "OnActivate: failed to load templates")
 	}
 	return templates, nil
-}
-
-func (p *Plugin) GetPluginKey() string {
-	return "mattermost_" + regexpNonAlnum.ReplaceAllString(p.GetSiteURL(), "_")
-}
-func (p *Plugin) GetPluginURLPath() string {
-	return "/plugins/" + manifest.Id
-}
-
-func (p *Plugin) GetPluginURL() string {
-	return strings.TrimRight(p.GetSiteURL(), "/") + p.GetPluginURLPath()
-}
-
-func (p *Plugin) GetSiteURL() string {
-	return *p.API.GetConfig().ServiceSettings.SiteURL
-}
-
-func (p *Plugin) debugf(f string, args ...interface{}) {
-	p.API.LogDebug(fmt.Sprintf(f, args...))
-}
-
-func (p *Plugin) infof(f string, args ...interface{}) {
-	p.API.LogInfo(fmt.Sprintf(f, args...))
-}
-
-func (p *Plugin) errorf(f string, args ...interface{}) {
-	p.API.LogError(fmt.Sprintf(f, args...))
 }

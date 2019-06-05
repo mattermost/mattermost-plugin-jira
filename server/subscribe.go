@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/mattermost/mattermost-server/model"
+	"github.com/mattermost/mattermost-server/plugin"
 	"github.com/pkg/errors"
 )
 
@@ -94,9 +95,8 @@ func SubscriptionsFromJson(bytes []byte) (*Subscriptions, error) {
 	return subs, nil
 }
 
-func (p *Plugin) getUserID() (string, error) {
-	cfg := p.getConfig()
-	user, appErr := p.API.GetUserByUsername(cfg.UserName)
+func GetBotUserID(conf Config, api plugin.API) (string, error) {
+	user, appErr := api.GetUserByUsername(conf.UserName)
 	if appErr != nil {
 		return "", fmt.Errorf(appErr.Message)
 	}
@@ -104,13 +104,13 @@ func (p *Plugin) getUserID() (string, error) {
 	return user.Id, nil
 }
 
-func (p *Plugin) getChannelsSubscribed(webhook *parsedJIRAWebhook) ([]string, error) {
-	subs, err := p.getSubscriptions()
+func getChannelsSubscribed(api plugin.API, jwh *JiraWebhook) ([]string, error) {
+	subs, err := getSubscriptions(api)
 	if err != nil {
 		return nil, err
 	}
 
-	subIds := subs.Channel.IdByEvent[webhook.WebhookEvent]
+	subIds := subs.Channel.IdByEvent[jwh.WebhookEvent]
 
 	channelIds := []string{}
 	for _, subId := range subIds {
@@ -126,7 +126,7 @@ func (p *Plugin) getChannelsSubscribed(webhook *parsedJIRAWebhook) ([]string, er
 			case "event":
 				found := false
 				for _, acceptableEvent := range acceptableValues {
-					if acceptableEvent == webhook.WebhookEvent {
+					if acceptableEvent == jwh.WebhookEvent {
 						found = true
 						break
 					}
@@ -138,7 +138,7 @@ func (p *Plugin) getChannelsSubscribed(webhook *parsedJIRAWebhook) ([]string, er
 			case "project":
 				found := false
 				for _, acceptableProject := range acceptableValues {
-					if acceptableProject == webhook.Issue.Fields.Project.Key {
+					if acceptableProject == jwh.Issue.Fields.Project.Key {
 						found = true
 						break
 					}
@@ -150,7 +150,7 @@ func (p *Plugin) getChannelsSubscribed(webhook *parsedJIRAWebhook) ([]string, er
 			case "issue_type":
 				found := false
 				for _, acceptableIssueType := range acceptableValues {
-					if acceptableIssueType == webhook.Issue.Fields.IssueType.Id {
+					if acceptableIssueType == jwh.Issue.Fields.Type.ID {
 						found = true
 						break
 					}
@@ -170,16 +170,16 @@ func (p *Plugin) getChannelsSubscribed(webhook *parsedJIRAWebhook) ([]string, er
 	return channelIds, nil
 }
 
-func (p *Plugin) getSubscriptions() (*Subscriptions, error) {
-	data, err := p.API.KVGet(JIRA_SUBSCRIPTIONS_KEY)
+func getSubscriptions(api plugin.API) (*Subscriptions, error) {
+	data, err := api.KVGet(JIRA_SUBSCRIPTIONS_KEY)
 	if err != nil {
 		return nil, err
 	}
 	return SubscriptionsFromJson(data)
 }
 
-func (p *Plugin) getSubscriptionsForChannel(channelId string) ([]ChannelSubscription, error) {
-	subs, err := p.getSubscriptions()
+func getSubscriptionsForChannel(api plugin.API, channelId string) ([]ChannelSubscription, error) {
+	subs, err := getSubscriptions(api)
 	if err != nil {
 		return nil, err
 	}
@@ -192,8 +192,8 @@ func (p *Plugin) getSubscriptionsForChannel(channelId string) ([]ChannelSubscrip
 	return channelSubscriptions, nil
 }
 
-func (p *Plugin) getChannelSubscription(subscriptionId string) (*ChannelSubscription, error) {
-	subs, err := p.getSubscriptions()
+func getChannelSubscription(api plugin.API, subscriptionId string) (*ChannelSubscription, error) {
+	subs, err := getSubscriptions(api)
 	if err != nil {
 		return nil, err
 	}
@@ -206,8 +206,8 @@ func (p *Plugin) getChannelSubscription(subscriptionId string) (*ChannelSubscrip
 	return &subscription, nil
 }
 
-func (p *Plugin) removeChannelSubscription(subscriptionId string) error {
-	return p.atomicModify(JIRA_SUBSCRIPTIONS_KEY, func(initialBytes []byte) ([]byte, error) {
+func removeChannelSubscription(api plugin.API, subscriptionId string) error {
+	return atomicModify(api, JIRA_SUBSCRIPTIONS_KEY, func(initialBytes []byte) ([]byte, error) {
 		subs, err := SubscriptionsFromJson(initialBytes)
 		if err != nil {
 			return nil, err
@@ -229,8 +229,8 @@ func (p *Plugin) removeChannelSubscription(subscriptionId string) error {
 	})
 }
 
-func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) error {
-	return p.atomicModify(JIRA_SUBSCRIPTIONS_KEY, func(initialBytes []byte) ([]byte, error) {
+func addChannelSubscription(api plugin.API, newSubscription *ChannelSubscription) error {
+	return atomicModify(api, JIRA_SUBSCRIPTIONS_KEY, func(initialBytes []byte) ([]byte, error) {
 		subs, err := SubscriptionsFromJson(initialBytes)
 		if err != nil {
 			return nil, err
@@ -248,8 +248,8 @@ func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) er
 	})
 }
 
-func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscription) error {
-	return p.atomicModify(JIRA_SUBSCRIPTIONS_KEY, func(initialBytes []byte) ([]byte, error) {
+func editChannelSubscription(api plugin.API, modifiedSubscription *ChannelSubscription) error {
+	return atomicModify(api, JIRA_SUBSCRIPTIONS_KEY, func(initialBytes []byte) ([]byte, error) {
 		subs, err := SubscriptionsFromJson(initialBytes)
 		if err != nil {
 			return nil, err
@@ -271,9 +271,9 @@ func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscripti
 	})
 }
 
-func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]byte, error)) error {
+func atomicModify(api plugin.API, key string, modify func(initialValue []byte) ([]byte, error)) error {
 	readModify := func() ([]byte, []byte, error) {
-		initialBytes, appErr := p.API.KVGet(key)
+		initialBytes, appErr := api.KVGet(key)
 		if appErr != nil {
 			return nil, nil, errors.Wrap(appErr, "unable to read inital value")
 		}
@@ -297,7 +297,7 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 		var setError *model.AppError
 		// Commenting this out so we can support < 5.12 for 2.0
 		//success, setError = p.API.KVCompareAndSet(key, initialBytes, newValue)
-		setError = p.API.KVSet(key, newValue)
+		setError = api.KVSet(key, newValue)
 		success = true
 		if setError != nil {
 			return errors.Wrap(setError, "problem writing value")
@@ -318,6 +318,10 @@ func httpSubscribeWebhook(a *Action) error {
 		return a.RespondError(http.StatusForbidden, nil,
 			"Jira plugin not configured correctly; must provide Secret and UserName")
 	}
+	ji, err := a.CurrentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return a.RespondError(http.StatusInternalServerError, err)
+	}
 
 	if subtle.ConstantTimeCompare(
 		[]byte(a.HTTPRequest.URL.Query().Get("secret")),
@@ -326,45 +330,30 @@ func httpSubscribeWebhook(a *Action) error {
 			"request URL: secret did not match")
 	}
 
-	parsed, err := parse(a.HTTPRequest.Body, nil)
+	wh, jwh, err := ParseWebhook(a.HTTPRequest.Body)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
 
-	botUserId, err := a.Plugin.getUserID()
+	botUserId, err := GetBotUserID(a.PluginConfig, a.API)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
 
-	channelIds, err := a.Plugin.getChannelsSubscribed(parsed)
+	channelIds, err := getChannelsSubscribed(a.API, jwh)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
-
-	attachment := newSlackAttachment(parsed)
 
 	for _, channelId := range channelIds {
-		post := &model.Post{
-			ChannelId: channelId,
-			UserId:    botUserId,
-		}
-
-		model.ParseSlackAttachment(post, []*model.SlackAttachment{attachment})
-
-		if err != nil {
-			return a.RespondError(http.StatusBadGateway, err)
-		}
-		_, appErr := a.Plugin.API.CreatePost(post)
-		if appErr != nil {
-			return a.RespondError(appErr.StatusCode, appErr)
+		if _, status, err1 := wh.PostToChannel(a.API, channelId, botUserId); err1 != nil {
+			return a.RespondError(status, err1)
 		}
 	}
 
-	// Notify any affected users using a direct channel
-	err = a.Plugin.handleNotifications(parsed)
+	_, status, err := wh.PostNotifications(a.PluginConfig, a.API, a.UserStore, ji)
 	if err != nil {
-		a.Plugin.errorf("httpSubscribeWebhook, handleNotifications: %v", err)
-		return a.RespondError(http.StatusBadRequest, err)
+		return a.RespondError(status, err)
 	}
 
 	return nil
@@ -384,13 +373,13 @@ func httpChannelCreateSubscription(a *Action) error {
 			"Channel subscription invalid")
 	}
 
-	_, appErr := a.Plugin.API.GetChannelMember(subscription.ChannelId, a.MattermostUserId)
+	_, appErr := a.API.GetChannelMember(subscription.ChannelId, a.MattermostUserId)
 	if appErr != nil {
 		return a.RespondError(http.StatusForbidden, nil,
 			"Not a member of the channel specified")
 	}
 
-	if err := a.Plugin.addChannelSubscription(&subscription); err != nil {
+	if err := addChannelSubscription(a.API, &subscription); err != nil {
 		a.RespondError(http.StatusInternalServerError, err)
 	}
 
@@ -411,12 +400,12 @@ func httpChannelEditSubscription(a *Action) error {
 			"Channel subscription invalid")
 	}
 
-	if _, appErr := a.Plugin.API.GetChannelMember(subscription.ChannelId, a.MattermostUserId); appErr != nil {
+	if _, appErr := a.API.GetChannelMember(subscription.ChannelId, a.MattermostUserId); appErr != nil {
 		return a.RespondError(http.StatusForbidden, nil,
 			"Not a member of the channel specified")
 	}
 
-	if err := a.Plugin.editChannelSubscription(&subscription); err != nil {
+	if err := editChannelSubscription(a.API, &subscription); err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
 
@@ -431,18 +420,18 @@ func httpChannelDeleteSubscription(a *Action) error {
 			"bad subscription id")
 	}
 
-	subscription, err := a.Plugin.getChannelSubscription(subscriptionId)
+	subscription, err := getChannelSubscription(a.API, subscriptionId)
 	if err != nil {
 		return a.RespondError(http.StatusBadRequest, err, "bad subscription id")
 	}
 
-	_, appErr := a.Plugin.API.GetChannelMember(subscription.ChannelId, a.MattermostUserId)
+	_, appErr := a.API.GetChannelMember(subscription.ChannelId, a.MattermostUserId)
 	if appErr != nil {
 		return a.RespondError(http.StatusForbidden, nil,
 			"Not a member of the channel specified")
 	}
 
-	if err := a.Plugin.removeChannelSubscription(subscriptionId); err != nil {
+	if err := removeChannelSubscription(a.API, subscriptionId); err != nil {
 		return a.RespondError(http.StatusInternalServerError, err,
 			"unable to remove channel subscription")
 	}
@@ -458,12 +447,12 @@ func httpChannelGetSubscriptions(a *Action) error {
 			"bad channel id")
 	}
 
-	if _, appErr := a.Plugin.API.GetChannelMember(channelId, a.MattermostUserId); appErr != nil {
+	if _, appErr := a.API.GetChannelMember(channelId, a.MattermostUserId); appErr != nil {
 		return a.RespondError(http.StatusForbidden, nil,
 			"Not a member of the channel specified")
 	}
 
-	subscriptions, err := a.Plugin.getSubscriptionsForChannel(channelId)
+	subscriptions, err := getSubscriptionsForChannel(a.API, channelId)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err,
 			"unable to get channel subscriptions")

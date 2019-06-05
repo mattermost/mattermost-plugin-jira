@@ -12,6 +12,11 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
+type OAuth1aTemporaryCredentials struct {
+	Token  string
+	Secret string
+}
+
 func httpOAuth1Complete(a *Action) error {
 	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(a.HTTPRequest)
 	if err != nil {
@@ -19,21 +24,24 @@ func httpOAuth1Complete(a *Action) error {
 			"failed to parse callback request from Jira")
 	}
 
-	requestSecret, err := a.Plugin.LoadOneTimeSecret(requestToken)
-	if err != nil {
-		return a.RespondError(http.StatusInternalServerError, err)
+	oauthTmpCredentials, err := a.SecretsStore.OneTimeLoadOauth1aTemporaryCredentials(a.MattermostUserId)
+	if err != nil || oauthTmpCredentials == nil || len(oauthTmpCredentials.Token) <= 0 {
+		return a.RespondError(http.StatusInternalServerError, err, "failed to get temporary credentials for %q", a.MattermostUserId)
 	}
-	err = a.Plugin.DeleteOneTimeSecret(requestToken)
-	if err != nil {
-		return a.RespondError(http.StatusInternalServerError, err)
+
+	if oauthTmpCredentials.Token != requestToken {
+		return a.RespondError(http.StatusUnauthorized, nil, "request token mismatch")
 	}
-	oauth1Config, err := a.JiraServerInstance.GetOAuth1Config(a)
+
+	oauth1Config, err := a.JiraServerInstance.GetOAuth1Config(a.PluginConfig, a.SecretsStore)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err,
 			"failed to obtain oauth1 config")
 	}
 
-	accessToken, accessSecret, err := oauth1Config.AccessToken(requestToken, requestSecret, verifier)
+	// Although we pass the oauthTmpCredentials as required here. The JIRA server does not appar to validate it.
+	// We perform the check above for reuse so this is irrelavent to the security from our end.
+	accessToken, accessSecret, err := oauth1Config.AccessToken(requestToken, oauthTmpCredentials.Secret, verifier)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err,
 			"failed to obtain oauth1 access token")
@@ -44,7 +52,7 @@ func httpOAuth1Complete(a *Action) error {
 		Oauth1AccessSecret: accessSecret,
 	}
 
-	jiraClient, err := a.JiraServerInstance.GetJIRAClient(a, &jiraUser)
+	jiraClient, err := a.JiraServerInstance.GetJIRAClient(a.PluginConfig, a.SecretsStore, &jiraUser)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
@@ -56,11 +64,11 @@ func httpOAuth1Complete(a *Action) error {
 	// Set default settings the first time a user connects
 	jiraUser.Settings = &UserSettings{Notifications: true}
 
-	err = a.Plugin.StoreUserInfoNotify(a.Instance, a.MattermostUserId, jiraUser)
+	err = StoreUserInfoNotify(a.API, a.UserStore, a.Instance, a.MattermostUserId, jiraUser)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
-	a.Plugin.debugf("Stored and notified: %s %+v", a.MattermostUserId, jiraUser)
+	a.Debugf("Stored and notified: %s %+v", a.MattermostUserId, jiraUser)
 
 	return a.RespondTemplate(a.HTTPRequest.URL.Path, "text/html", struct {
 		MattermostDisplayName string
@@ -69,6 +77,18 @@ func httpOAuth1Complete(a *Action) error {
 	}{
 		JiraDisplayName:       juser.DisplayName + " (" + juser.Name + ")",
 		MattermostDisplayName: a.MattermostUser.GetDisplayName(model.SHOW_NICKNAME_FULLNAME),
-		RevokeURL:             path.Join(a.Plugin.GetPluginURLPath(), routeUserDisconnect),
+		RevokeURL:             path.Join(a.PluginConfig.PluginURLPath, routeUserDisconnect),
 	})
+}
+
+func httpOAuth1PublicKey(a *Action) error {
+	if !a.API.HasPermissionTo(a.MattermostUserId, model.PERMISSION_MANAGE_SYSTEM) {
+		return a.RespondError(http.StatusForbidden, nil, "forbidden")
+	}
+
+	pkey, err := publicKeyString(a.SecretsStore)
+	if err != nil {
+		return a.RespondError(http.StatusInternalServerError, err, "failed to load public key")
+	}
+	return a.RespondPrintf(string(pkey))
 }

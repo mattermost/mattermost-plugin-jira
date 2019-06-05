@@ -4,5 +4,11 @@ dist
 bin
 vendor
 
+# Dev
+*.code-workspace
+
 # Mac
 .DS_Store
+
+# Intellij
+.idea/

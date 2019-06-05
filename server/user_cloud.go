@@ -19,7 +19,7 @@ const (
 )
 
 func httpACUserRedirect(a *Action) error {
-	submitURL := path.Join(a.Plugin.GetPluginURLPath(), routeACUserConfirm)
+	submitURL := path.Join(a.PluginConfig.PluginURLPath, routeACUserConfirm)
 
 	return a.RespondTemplate(a.HTTPRequest.URL.Path, "text/html", struct {
 		SubmitURL  string
@@ -53,47 +53,43 @@ func httpACUserInteractive(a *Action) error {
 	displayName, _ := user["displayName"].(string)
 
 	mmToken := a.HTTPRequest.Form.Get(argMMToken)
-	uinfo := JIRAUser{
+	jiraUser := JIRAUser{
 		User: jira.User{
 			Key:  userKey,
 			Name: username,
 		},
 	}
-	mattermostUserId, secret, err := a.Plugin.ParseAuthToken(mmToken)
+
+	encryptSecret, err := a.SecretsStore.EnsureAuthTokenEncryptSecret()
+	if err != nil {
+		return a.RespondError(http.StatusInternalServerError, err)
+	}
+
+	requestedUserId, secret, err := ParseAuthToken(mmToken, encryptSecret)
 	if err != nil {
 		return a.RespondError(http.StatusUnauthorized, err)
 	}
-	mmuser, appErr := a.Plugin.API.GetUser(mattermostUserId)
-	if appErr != nil {
-		return a.RespondError(http.StatusInternalServerError, appErr,
-			"failed to load user %q", mattermostUserId)
+
+	if a.MattermostUserId != requestedUserId {
+		return a.RespondError(http.StatusUnauthorized, nil, "not authorized, user id does not match link")
 	}
 
 	route := a.HTTPRequest.URL.Path
 	switch route {
 	case routeACUserConnected:
-		value := ""
-		value, err = a.Plugin.LoadOneTimeSecret(secret)
+		storedSecret := ""
+		storedSecret, err = a.SecretsStore.LoadOneTimeSecret(a.MattermostUserId)
 		if err != nil {
 			return a.RespondError(http.StatusUnauthorized, err)
 		}
-		err = a.Plugin.DeleteOneTimeSecret(secret)
-		if err != nil {
-			return a.RespondError(http.StatusInternalServerError, err)
+		if len(storedSecret) == 0 || storedSecret != secret {
+			return a.RespondError(http.StatusUnauthorized, nil, "this link has already been used")
 		}
-		if len(value) == 0 {
-			return a.RespondError(http.StatusUnauthorized, nil, "link expired")
-		}
-
-		// Set default settings the first time a user connects
-		uinfo.Settings = &UserSettings{Notifications: true}
-
-		err = a.Plugin.StoreUserInfoNotify(a.Instance, mattermostUserId, uinfo)
-		a.Plugin.debugf("Stored and notified: %s %+v", mattermostUserId, uinfo)
+		err = StoreUserInfoNotify(a.API, a.UserStore, a.Instance, a.MattermostUserId, jiraUser)
 
 	case routeACUserDisconnected:
-		err = a.Plugin.DeleteUserInfoNotify(a.Instance, mattermostUserId)
-		a.Plugin.debugf("Deleted and notified: %s %+v", mattermostUserId, uinfo)
+		err = DeleteUserInfoNotify(a.API, a.UserStore, a.Instance, a.MattermostUserId)
+		a.Debugf("Deleted and notified: %s %+v", a.MattermostUserId, a.JiraUser)
 
 	case routeACUserConfirm:
 
@@ -115,12 +111,12 @@ func httpACUserInteractive(a *Action) error {
 		JiraDisplayName       string
 		MattermostDisplayName string
 	}{
-		DisconnectSubmitURL:   path.Join(a.Plugin.GetPluginURLPath(), routeACUserDisconnected),
-		ConnectSubmitURL:      path.Join(a.Plugin.GetPluginURLPath(), routeACUserConnected),
+		DisconnectSubmitURL:   path.Join(a.PluginConfig.PluginURLPath, routeACUserDisconnected),
+		ConnectSubmitURL:      path.Join(a.PluginConfig.PluginURLPath, routeACUserConnected),
 		ArgJiraJWT:            argJiraJWT,
 		ArgMMToken:            argMMToken,
 		MMToken:               mmToken,
 		JiraDisplayName:       displayName + " (" + username + ")",
-		MattermostDisplayName: mmuser.GetDisplayName(model.SHOW_NICKNAME_FULLNAME),
+		MattermostDisplayName: a.MattermostUser.GetDisplayName(model.SHOW_NICKNAME_FULLNAME),
 	})
 }

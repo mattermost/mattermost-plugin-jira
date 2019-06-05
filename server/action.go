@@ -22,9 +22,14 @@ type ActionFunc func(a *Action) error
 
 type Action struct {
 	// Always there
-	Plugin        *Plugin
-	PluginConfig  config
-	PluginContext *plugin.Context
+	// Plugin        *Plugin
+	API                  plugin.API
+	CurrentInstanceStore CurrentInstanceStore
+	InstanceStore        InstanceStore
+	SecretsStore         SecretsStore
+	UserStore            UserStore
+	PluginConfig         Config
+	PluginContext        *plugin.Context
 
 	// Input
 	CommandHeader *model.CommandArgs
@@ -68,12 +73,15 @@ type ActionRouter struct {
 
 func NewAction(p *Plugin, c *plugin.Context) *Action {
 	return &Action{
-		Plugin:        p,
-		PluginContext: c,
-		PluginConfig:  p.getConfig(),
+		API:                  p.API,
+		CurrentInstanceStore: p.Store,
+		InstanceStore:        p.Store,
+		SecretsStore:         p.Store,
+		UserStore:            p.Store,
+		PluginConfig:         p.Config,
+		PluginContext:        c,
 	}
 }
-
 func RequireMattermostUser(a *Action) error {
 	if a.MattermostUser != nil {
 		return nil
@@ -83,14 +91,14 @@ func RequireMattermostUser(a *Action) error {
 			"misconfiguration: required MattermostUserId missing")
 	}
 
-	mmuser, appErr := a.Plugin.API.GetUser(a.MattermostUserId)
+	mmuser, appErr := a.API.GetUser(a.MattermostUserId)
 	if appErr != nil {
 		return a.RespondError(http.StatusInternalServerError, appErr,
 			"failed to load Mattermost user Id:%s", a.MattermostUserId)
 	}
 
 	a.MattermostUser = mmuser
-	a.Plugin.debugf("action: loaded Mattermost user %v", mmuser.GetDisplayName(""))
+	a.Debugf("action: loaded Mattermost user %v", mmuser.GetDisplayName(""))
 	return nil
 }
 
@@ -119,11 +127,11 @@ func RequireJiraUser(a *Action) error {
 		return err
 	}
 
-	jiraUser, err := a.Plugin.LoadJIRAUser(a.Instance, a.MattermostUserId)
+	jiraUser, err := a.UserStore.LoadJIRAUser(a.Instance, a.MattermostUserId)
 	if err != nil {
 		return a.RespondError(http.StatusUnauthorized, err)
 	}
-	a.Plugin.debugf("action: loaded Jira user %v", jiraUser.Name)
+	a.Debugf("action: loaded Jira user %v", jiraUser.Name)
 	a.JiraUser = &jiraUser
 	return nil
 }
@@ -137,12 +145,12 @@ func RequireJiraClient(a *Action) error {
 		return err
 	}
 
-	jiraClient, err := a.Instance.GetJIRAClient(a, nil)
+	jiraClient, err := a.Instance.GetJIRAClient(a.PluginConfig, a.SecretsStore, a.JiraUser)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
 	a.JiraClient = jiraClient
-	a.Plugin.debugf("action: loaded Jira client")
+	a.Debugf("action: loaded Jira client")
 	return nil
 }
 
@@ -150,12 +158,12 @@ func RequireInstance(a *Action) error {
 	if a.Instance != nil {
 		return nil
 	}
-	ji, err := a.Plugin.LoadCurrentJIRAInstance()
+	ji, err := a.CurrentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
 	a.Instance = ji
-	a.Plugin.debugf("action: loaded Jira instance %v", ji.GetURL())
+	a.Debugf("action: loaded Jira instance %v", ji.GetURL())
 	return nil
 }
 
@@ -173,7 +181,7 @@ func RequireCloudInstance(a *Action) error {
 		return a.RespondError(http.StatusBadRequest, nil, "Must be a JIRA Cloud instance, is %s", a.Instance.GetType())
 	}
 	a.JiraCloudInstance = jci
-	a.Plugin.debugf("action: loaded Jira cloud instance %v", jci.GetURL())
+	a.Debugf("action: loaded Jira cloud instance %v", jci.GetURL())
 	return nil
 }
 
@@ -192,7 +200,7 @@ func RequireServerInstance(a *Action) error {
 			"must be a Jira Server instance, is %s", a.Instance.GetType())
 	}
 	a.JiraServerInstance = jsi
-	a.Plugin.debugf("action: loaded Jira server instance %v", jsi.GetURL())
+	a.Debugf("action: loaded Jira server instance %v", jsi.GetURL())
 	return nil
 }
 
@@ -209,7 +217,7 @@ func requireHTTPMethod(a *Action, method string) error {
 		return a.RespondError(http.StatusMethodNotAllowed, nil,
 			"method %s is not allowed, must be %s", a.HTTPRequest.Method, method)
 	}
-	a.Plugin.debugf("action: verified request method %v", method)
+	a.Debugf("action: verified request method %v", method)
 	return nil
 }
 
@@ -223,7 +231,7 @@ func RequireHTTPMattermostUserId(a *Action) error {
 			"not authorized")
 	}
 	a.MattermostUserId = mattermostUserId
-	a.Plugin.debugf("action: found MattermostUserId %v", mattermostUserId)
+	a.Debugf("action: found MattermostUserId %v", mattermostUserId)
 	return nil
 }
 
@@ -263,21 +271,7 @@ func RequireHTTPCloudJWT(a *Action) error {
 
 	a.JiraJWT = token
 	a.JiraRawJWT = tokenString
-	a.Plugin.debugf("action: verified Jira JWT")
-	return nil
-}
-
-func RequireCommandMattermostUserId(a *Action) error {
-	if a.MattermostUserId != "" {
-		return nil
-	}
-	mattermostUserId := a.CommandHeader.UserId
-	if mattermostUserId == "" {
-		return a.RespondError(http.StatusUnauthorized, nil,
-			"not authorized")
-	}
-	a.MattermostUserId = mattermostUserId
-	a.Plugin.debugf("action: found MattermostUserId %v", mattermostUserId)
+	a.Debugf("action: verified Jira JWT")
 	return nil
 }
 
@@ -323,7 +317,7 @@ func (a *Action) RespondPrintf(format string, args ...interface{}) error {
 }
 
 func (a *Action) RespondTemplate(templateKey, contentType string, values interface{}) error {
-	t := a.Plugin.templates[templateKey]
+	t := a.PluginConfig.Templates[templateKey]
 	if t == nil {
 		return a.RespondError(http.StatusInternalServerError, nil,
 			"no template found for %q", templateKey)
@@ -364,6 +358,18 @@ func (a *Action) RespondJSON(value interface{}) error {
 		a.CommandResponse = commandResponse(string(bb))
 	}
 	return nil
+}
+
+func (a *Action) Debugf(f string, args ...interface{}) {
+	a.API.LogDebug(fmt.Sprintf(f, args...))
+}
+
+func (a *Action) Infof(f string, args ...interface{}) {
+	a.API.LogInfo(fmt.Sprintf(f, args...))
+}
+
+func (a *Action) Errorf(f string, args ...interface{}) {
+	a.API.LogError(fmt.Sprintf(f, args...))
 }
 
 func (ar ActionRouter) Run(key string, a *Action) {

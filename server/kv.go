@@ -22,6 +22,51 @@ const (
 	prefixOneTimeSecret    = "ots_" // + unique key that will be deleted after the first verification
 )
 
+type Store interface {
+	CurrentInstanceStore
+	InstanceStore
+	UserStore
+	SecretsStore
+}
+
+type SecretsStore interface {
+	EnsureAuthTokenEncryptSecret() ([]byte, error)
+	EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error)
+	StoreOneTimeSecret(token, secret string) error
+	LoadOneTimeSecret(token string) (string, error)
+	StoreOauth1aTemporaryCredentials(mmUserId string, credentials *OAuth1aTemporaryCredentials) error
+	OneTimeLoadOauth1aTemporaryCredentials(mmUserId string) (*OAuth1aTemporaryCredentials, error)
+}
+
+type InstanceStore interface {
+	StoreJIRAInstance(ji Instance) error
+	CreateInactiveCloudInstance(jiraURL string) error
+	DeleteJiraInstance(key string) error
+	LoadJIRAInstance(key string) (Instance, error)
+	StoreKnownJIRAInstances(known map[string]string) error
+	LoadKnownJIRAInstances() (map[string]string, error)
+}
+
+type CurrentInstanceStore interface {
+	StoreCurrentJIRAInstance(ji Instance) error
+	LoadCurrentJIRAInstance() (Instance, error)
+}
+
+type UserStore interface {
+	StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JIRAUser) error
+	LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, error)
+	LoadMattermostUserId(ji Instance, jiraUserName string) (string, error)
+	DeleteUserInfo(ji Instance, mattermostUserId string) error
+}
+
+type store struct {
+	plugin *Plugin
+}
+
+func NewStore(p *Plugin) Store {
+	return &store{plugin: p}
+}
+
 func keyWithInstance(ji Instance, key string) string {
 	if prefixForInstance {
 		h := md5.New()
@@ -37,15 +82,15 @@ func hashkey(prefix, key string) string {
 	return fmt.Sprintf("%s%x", prefix, h.Sum(nil))
 }
 
-func (p *Plugin) kvGet(key string, v interface{}) (returnErr error) {
+func (store store) get(key string, v interface{}) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
 		}
-		returnErr = errors.WithMessage(returnErr, "kvGet")
+		returnErr = errors.WithMessage(returnErr, "failed to get from store")
 	}()
 
-	data, appErr := p.API.KVGet(key)
+	data, appErr := store.plugin.API.KVGet(key)
 	if appErr != nil {
 		return appErr
 	}
@@ -62,12 +107,12 @@ func (p *Plugin) kvGet(key string, v interface{}) (returnErr error) {
 	return nil
 }
 
-func (p *Plugin) kvSet(key string, v interface{}) (returnErr error) {
+func (store store) set(key string, v interface{}) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
 		}
-		returnErr = errors.WithMessage(returnErr, "kvSet")
+		returnErr = errors.WithMessage(returnErr, "failed to store")
 	}()
 
 	data, err := json.Marshal(v)
@@ -75,14 +120,14 @@ func (p *Plugin) kvSet(key string, v interface{}) (returnErr error) {
 		return err
 	}
 
-	appErr := p.API.KVSet(key, data)
+	appErr := store.plugin.API.KVSet(key, data)
 	if appErr != nil {
 		return appErr
 	}
 	return nil
 }
 
-func (p *Plugin) StoreJIRAInstance(ji Instance) (returnErr error) {
+func (store store) StoreJIRAInstance(ji Instance) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -91,33 +136,31 @@ func (p *Plugin) StoreJIRAInstance(ji Instance) (returnErr error) {
 			fmt.Sprintf("failed to store Jira instance:%s", ji.GetURL()))
 	}()
 
-	err := p.kvSet(hashkey(prefixJIRAInstance, ji.GetURL()), ji)
+	err := store.set(hashkey(prefixJIRAInstance, ji.GetURL()), ji)
 	if err != nil {
 		return err
 	}
-	p.debugf("Stored: JIRA instance: %s", ji.GetURL())
 
 	// Update known instances
-	known, err := p.LoadKnownJIRAInstances()
+	known, err := store.LoadKnownJIRAInstances()
 	if err != nil {
 		return err
 	}
 	known[ji.GetURL()] = ji.GetType()
-	err = p.StoreKnownJIRAInstances(known)
+	err = store.StoreKnownJIRAInstances(known)
 	if err != nil {
 		return err
 	}
-	p.debugf("Stored: known Jira instances: %+v", known)
 	return nil
 }
 
-func (p *Plugin) CreateInactiveCloudInstance(jiraURL string) (returnErr error) {
+func (store store) CreateInactiveCloudInstance(jiraURL string) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
 		}
-		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store new Jira Cloud instance:%s", jiraURL))
+		returnErr = errors.WithMessagef(returnErr,
+			"failed to store new Jira Cloud instance:%s", jiraURL)
 	}()
 
 	ji := NewJIRACloudInstance(jiraURL, false,
@@ -130,15 +173,15 @@ func (p *Plugin) CreateInactiveCloudInstance(jiraURL string) (returnErr error) {
 	}
 
 	// Expire in 15 minutes
-	appErr := p.API.KVSetWithExpiry(hashkey(prefixJIRAInstance, ji.GetURL()), data, 15*60)
+	appErr := store.plugin.API.KVSetWithExpiry(hashkey(prefixJIRAInstance,
+		ji.GetURL()), data, 15*60)
 	if appErr != nil {
 		return appErr
 	}
-	p.debugf("Stored: new Jira Cloud instance: %s", ji.GetURL())
 	return nil
 }
 
-func (p *Plugin) StoreCurrentJIRAInstance(ji Instance) (returnErr error) {
+func (store store) StoreCurrentJIRAInstance(ji Instance) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -146,15 +189,14 @@ func (p *Plugin) StoreCurrentJIRAInstance(ji Instance) (returnErr error) {
 		returnErr = errors.WithMessage(returnErr,
 			fmt.Sprintf("failed to store current Jira instance:%s", ji.GetURL()))
 	}()
-	err := p.kvSet(keyCurrentJIRAInstance, ji)
+	err := store.set(keyCurrentJIRAInstance, ji)
 	if err != nil {
 		return err
 	}
-	p.debugf("Stored: current Jira instance: %s", ji.GetURL())
 	return nil
 }
 
-func (p *Plugin) DeleteJiraInstance(key string) (returnErr error) {
+func (store store) DeleteJiraInstance(key string) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -164,14 +206,13 @@ func (p *Plugin) DeleteJiraInstance(key string) (returnErr error) {
 	}()
 
 	// Delete the instance.
-	appErr := p.API.KVDelete(hashkey(prefixJIRAInstance, key))
+	appErr := store.plugin.API.KVDelete(hashkey(prefixJIRAInstance, key))
 	if appErr != nil {
 		return appErr
 	}
-	p.debugf("Deleted: Jira instance: %s", key)
 
 	// Update known instances
-	known, err := p.LoadKnownJIRAInstances()
+	known, err := store.LoadKnownJIRAInstances()
 	if err != nil {
 		return err
 	}
@@ -181,30 +222,28 @@ func (p *Plugin) DeleteJiraInstance(key string) (returnErr error) {
 			break
 		}
 	}
-	err = p.StoreKnownJIRAInstances(known)
+	err = store.StoreKnownJIRAInstances(known)
 	if err != nil {
 		return err
 	}
-	p.debugf("Deleted: from known Jira instances: %s", key)
 
 	// Remove the current instance if it matches the deleted
-	current, err := p.LoadCurrentJIRAInstance()
+	current, err := store.LoadCurrentJIRAInstance()
 	if err != nil {
 		return err
 	}
 	if current.GetURL() == key {
-		appErr := p.API.KVDelete(keyCurrentJIRAInstance)
+		appErr := store.plugin.API.KVDelete(keyCurrentJIRAInstance)
 		if appErr != nil {
 			return appErr
 		}
-		p.debugf("Deleted: current Jira instance")
 	}
 
 	return nil
 }
 
-func (p *Plugin) LoadCurrentJIRAInstance() (Instance, error) {
-	ji, err := p.loadJIRAInstance(keyCurrentJIRAInstance)
+func (store store) LoadCurrentJIRAInstance() (Instance, error) {
+	ji, err := store.loadJIRAInstance(keyCurrentJIRAInstance)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to load current Jira instance")
 	}
@@ -212,8 +251,8 @@ func (p *Plugin) LoadCurrentJIRAInstance() (Instance, error) {
 	return ji, nil
 }
 
-func (p *Plugin) LoadJIRAInstance(key string) (Instance, error) {
-	ji, err := p.loadJIRAInstance(hashkey(prefixJIRAInstance, key))
+func (store store) LoadJIRAInstance(key string) (Instance, error) {
+	ji, err := store.loadJIRAInstance(hashkey(prefixJIRAInstance, key))
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to load Jira instance "+key)
 	}
@@ -221,8 +260,8 @@ func (p *Plugin) LoadJIRAInstance(key string) (Instance, error) {
 	return ji, nil
 }
 
-func (p *Plugin) loadJIRAInstance(fullkey string) (Instance, error) {
-	data, appErr := p.API.KVGet(fullkey)
+func (store store) loadJIRAInstance(fullkey string) (Instance, error) {
+	data, appErr := store.plugin.API.KVGet(fullkey)
 	if appErr != nil {
 		return nil, appErr
 	}
@@ -238,6 +277,9 @@ func (p *Plugin) loadJIRAInstance(fullkey string) (Instance, error) {
 	}
 
 	switch jsi.Type {
+	case JIRATypeServer:
+		return &jsi, nil
+
 	case JIRATypeCloud:
 		jci := jiraCloudInstance{}
 		err = json.Unmarshal(data, &jci)
@@ -245,15 +287,12 @@ func (p *Plugin) loadJIRAInstance(fullkey string) (Instance, error) {
 			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
 		}
 		return &jci, nil
-
-	case JIRATypeServer:
-		return &jsi, nil
 	}
 
 	return nil, errors.New(fmt.Sprintf("Jira instance %s has unsupported type: %s", fullkey, jsi.Type))
 }
 
-func (p *Plugin) StoreKnownJIRAInstances(known map[string]string) (returnErr error) {
+func (store store) StoreKnownJIRAInstances(known map[string]string) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -262,19 +301,19 @@ func (p *Plugin) StoreKnownJIRAInstances(known map[string]string) (returnErr err
 			fmt.Sprintf("failed to store known Jira instances %+v", known))
 	}()
 
-	return p.kvSet(keyKnownJIRAInstances, known)
+	return store.set(keyKnownJIRAInstances, known)
 }
 
-func (p *Plugin) LoadKnownJIRAInstances() (map[string]string, error) {
+func (store store) LoadKnownJIRAInstances() (map[string]string, error) {
 	known := map[string]string{}
-	err := p.kvGet(keyKnownJIRAInstances, &known)
+	err := store.get(keyKnownJIRAInstances, &known)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to load known Jira instances")
 	}
 	return known, nil
 }
 
-func (p *Plugin) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JIRAUser) (returnErr error) {
+func (store store) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JIRAUser) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -283,28 +322,24 @@ func (p *Plugin) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JI
 			fmt.Sprintf("failed to store user, mattermostUserId:%s, Jira user:%s", mattermostUserId, jiraUser.Name))
 	}()
 
-	err := p.kvSet(keyWithInstance(ji, mattermostUserId), jiraUser)
+	err := store.set(keyWithInstance(ji, mattermostUserId), jiraUser)
 	if err != nil {
 		return err
 	}
 
-	err = p.kvSet(keyWithInstance(ji, jiraUser.Name), mattermostUserId)
+	err = store.set(keyWithInstance(ji, jiraUser.Name), mattermostUserId)
 	if err != nil {
 		return err
 	}
-
-	p.debugf("Stored: Jira user, keys:\n\t%s (%s): %+v\n\t%s (%s): %s",
-		keyWithInstance(ji, mattermostUserId), mattermostUserId, jiraUser,
-		keyWithInstance(ji, jiraUser.Name), jiraUser.Name, mattermostUserId)
 
 	return nil
 }
 
 var ErrUserNotFound = errors.New("user not found")
 
-func (p *Plugin) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, error) {
+func (store store) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, error) {
 	jiraUser := JIRAUser{}
-	err := p.kvGet(keyWithInstance(ji, mattermostUserId), &jiraUser)
+	err := store.get(keyWithInstance(ji, mattermostUserId), &jiraUser)
 	if err != nil {
 		return JIRAUser{}, errors.WithMessage(err,
 			fmt.Sprintf("failed to load Jira user for mattermostUserId:%s", mattermostUserId))
@@ -315,9 +350,9 @@ func (p *Plugin) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, e
 	return jiraUser, nil
 }
 
-func (p *Plugin) LoadMattermostUserId(ji Instance, jiraUserName string) (string, error) {
+func (store store) LoadMattermostUserId(ji Instance, jiraUserName string) (string, error) {
 	mattermostUserId := ""
-	err := p.kvGet(keyWithInstance(ji, jiraUserName), &mattermostUserId)
+	err := store.get(keyWithInstance(ji, jiraUserName), &mattermostUserId)
 	if err != nil {
 		return "", errors.WithMessage(err,
 			"failed to load Mattermost user ID for Jira user: "+jiraUserName)
@@ -328,7 +363,7 @@ func (p *Plugin) LoadMattermostUserId(ji Instance, jiraUserName string) (string,
 	return mattermostUserId, nil
 }
 
-func (p *Plugin) DeleteUserInfo(ji Instance, mattermostUserId string) (returnErr error) {
+func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -337,28 +372,25 @@ func (p *Plugin) DeleteUserInfo(ji Instance, mattermostUserId string) (returnErr
 			fmt.Sprintf("failed to delete user, mattermostUserId:%s", mattermostUserId))
 	}()
 
-	jiraUser, err := p.LoadJIRAUser(ji, mattermostUserId)
+	jiraUser, err := store.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
 		return err
 	}
 
-	appErr := p.API.KVDelete(keyWithInstance(ji, mattermostUserId))
+	appErr := store.plugin.API.KVDelete(keyWithInstance(ji, mattermostUserId))
 	if appErr != nil {
 		return appErr
 	}
 
-	appErr = p.API.KVDelete(keyWithInstance(ji, jiraUser.Name))
+	appErr = store.plugin.API.KVDelete(keyWithInstance(ji, jiraUser.Name))
 	if appErr != nil {
 		return appErr
 	}
 
-	p.debugf("Deleted: user, keys: %s(%s), %s(%s)",
-		mattermostUserId, keyWithInstance(ji, mattermostUserId),
-		jiraUser.Name, keyWithInstance(ji, jiraUser.Name))
 	return nil
 }
 
-func (p *Plugin) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr error) {
+func (store store) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -367,7 +399,7 @@ func (p *Plugin) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr error)
 	}()
 
 	// nil, nil == NOT_FOUND, if we don't already have a key, try to generate one.
-	secret, appErr := p.API.KVGet(keyTokenSecret)
+	secret, appErr := store.plugin.API.KVGet(keyTokenSecret)
 	if appErr != nil {
 		return nil, appErr
 	}
@@ -379,18 +411,17 @@ func (p *Plugin) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr error)
 			return nil, err
 		}
 
-		appErr = p.API.KVSet(keyTokenSecret, newSecret)
+		appErr = store.plugin.API.KVSet(keyTokenSecret, newSecret)
 		if appErr != nil {
 			return nil, appErr
 		}
 		secret = newSecret
-		p.debugf("Stored: auth token secret")
 	}
 
 	// If we weren't able to save a new key above, another server must have beat us to it. Get the
 	// key from the database, and if that fails, error out.
 	if secret == nil {
-		secret, appErr = p.API.KVGet(keyTokenSecret)
+		secret, appErr = store.plugin.API.KVGet(keyTokenSecret)
 		if appErr != nil {
 			return nil, appErr
 		}
@@ -399,7 +430,7 @@ func (p *Plugin) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr error)
 	return secret, nil
 }
 
-func (p *Plugin) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
+func (store store) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -407,7 +438,7 @@ func (p *Plugin) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
 		returnErr = errors.WithMessage(returnErr, "failed to ensure RSA key")
 	}()
 
-	appErr := p.kvGet(keyRSAKey, &rsaKey)
+	appErr := store.get(keyRSAKey, &rsaKey)
 	if appErr != nil {
 		return nil, appErr
 	}
@@ -418,18 +449,17 @@ func (p *Plugin) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
 			return nil, err
 		}
 
-		appErr = p.kvSet(keyRSAKey, newRSAKey)
+		appErr = store.set(keyRSAKey, newRSAKey)
 		if appErr != nil {
 			return nil, appErr
 		}
 		rsaKey = newRSAKey
-		p.debugf("Stored: RSA key")
 	}
 
 	// If we weren't able to save a new key above, another server must have beat us to it. Get the
 	// key from the database, and if that fails, error out.
 	if rsaKey == nil {
-		appErr = p.kvGet(keyRSAKey, &rsaKey)
+		appErr = store.get(keyRSAKey, &rsaKey)
 		if appErr != nil {
 			return nil, appErr
 		}
@@ -438,27 +468,55 @@ func (p *Plugin) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
 	return rsaKey, nil
 }
 
-func (p *Plugin) StoreOneTimeSecret(token, secret string) error {
+func (store store) StoreOneTimeSecret(token, secret string) error {
 	// Expire in 15 minutes
-	appErr := p.API.KVSetWithExpiry(hashkey(prefixOneTimeSecret, token), []byte(secret), 15*60)
+	appErr := store.plugin.API.KVSetWithExpiry(
+		hashkey(prefixOneTimeSecret, token), []byte(secret), 15*60)
 	if appErr != nil {
 		return errors.WithMessage(appErr, "failed to store one-ttime secret "+token)
 	}
 	return nil
 }
 
-func (p *Plugin) LoadOneTimeSecret(token string) (string, error) {
-	b, appErr := p.API.KVGet(hashkey(prefixOneTimeSecret, token))
+func (store store) LoadOneTimeSecret(key string) (string, error) {
+	b, appErr := store.plugin.API.KVGet(hashkey(prefixOneTimeSecret, key))
 	if appErr != nil {
-		return "", errors.WithMessage(appErr, "failed to load one-time secret "+token)
+		return "", errors.WithMessage(appErr, "failed to load one-time secret "+key)
+	}
+
+	appErr = store.plugin.API.KVDelete(hashkey(prefixOneTimeSecret, key))
+	if appErr != nil {
+		return "", errors.WithMessage(appErr, "failed to delete one-time secret "+key)
 	}
 	return string(b), nil
 }
 
-func (p *Plugin) DeleteOneTimeSecret(token string) error {
-	appErr := p.API.KVDelete(hashkey(prefixOneTimeSecret, token))
+func (store store) StoreOauth1aTemporaryCredentials(mmUserId string, credentials *OAuth1aTemporaryCredentials) error {
+	data, err := json.Marshal(&credentials)
+	if err != nil {
+		return err
+	}
+	// Expire in 15 minutes
+	appErr := store.plugin.API.KVSetWithExpiry(hashkey(prefixOneTimeSecret, mmUserId), data, 15*60)
 	if appErr != nil {
-		return errors.WithMessage(appErr, "failed to delete one-time secret "+token)
+		return errors.WithMessage(appErr, "failed to store oauth temporary credentials for "+mmUserId)
 	}
 	return nil
+}
+
+func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserId string) (*OAuth1aTemporaryCredentials, error) {
+	b, appErr := store.plugin.API.KVGet(hashkey(prefixOneTimeSecret, mmUserId))
+	if appErr != nil {
+		return nil, errors.WithMessage(appErr, "failed to load temporary credentials for "+mmUserId)
+	}
+	var credentials OAuth1aTemporaryCredentials
+	err := json.Unmarshal(b, &credentials)
+	if err != nil {
+		return nil, err
+	}
+	appErr = store.plugin.API.KVDelete(hashkey(prefixOneTimeSecret, mmUserId))
+	if appErr != nil {
+		return nil, errors.WithMessage(appErr, "failed to delete temporary credentials for "+mmUserId)
+	}
+	return &credentials, nil
 }

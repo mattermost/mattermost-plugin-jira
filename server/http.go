@@ -12,6 +12,7 @@ import (
 const (
 	routeAPICreateIssue            = "/api/v2/create-issue"
 	routeAPIGetCreateIssueMetadata = "/api/v2/get-create-issue-metadata"
+	routeAPIGetSearchIssues        = "/api/v2/get-search-issues"
 	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
 	routeAPIUserInfo               = "/api/v2/userinfo"
 	routeAPISubscribeWebhook       = "/api/v2/webhook"
@@ -53,9 +54,9 @@ var httpRouter = ActionRouter{
 				a.HTTPStatusCode = http.StatusOK
 			}
 			if a.Err != nil {
-				a.Plugin.errorf("http: %v %s %v", a.HTTPStatusCode, a.HTTPRequest.URL.String(), a.Err)
+				a.Errorf("http: %v %s %v", a.HTTPStatusCode, a.HTTPRequest.URL.String(), a.Err)
 			} else {
-				a.Plugin.debugf("http: %v %s", a.HTTPStatusCode, a.HTTPRequest.URL.String())
+				a.Debugf("http: %v %s", a.HTTPStatusCode, a.HTTPRequest.URL.String())
 			}
 			return nil
 		},
@@ -84,11 +85,16 @@ var httpRouter = ActionRouter{
 		routeACUserDisconnected:      {Filter: httpGetFilter(RequireHTTPCloudJWT), Handler: httpACUserInteractive},
 
 		// Oauth1 (Jira Server) user mapping
-		routeOAuth1Complete: {Filter: httpGetFilter(RequireHTTPMattermostUserId, RequireServerInstance, RequireMattermostUser), Handler: httpOAuth1Complete},
+		routeOAuth1Complete: {
+			Filter:  httpGetFilter(RequireHTTPMattermostUserId, RequireServerInstance, RequireMattermostUser),
+			Handler: httpOAuth1Complete,
+		},
 
 		// incoming webhooks
 		routeIncomingWebhook:    {Filter: httpPostFilter(), Handler: httpWebhook},
 		routeIncomingIssueEvent: {Filter: httpPostFilter(), Handler: httpWebhook},
+
+		// TODO <><> compare to jira2
 	},
 }
 

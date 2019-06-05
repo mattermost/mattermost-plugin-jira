@@ -12,18 +12,19 @@ import (
 const userRedirectPageKey = "user-redirect"
 
 func httpACJSON(a *Action) error {
+
 	return a.RespondTemplate(
 		a.HTTPRequest.URL.Path,
 		"application/json",
 		map[string]string{
-			"BaseURL":                      a.Plugin.GetPluginURL(),
+			"BaseURL":                      a.PluginConfig.PluginURL,
 			"RouteACJSON":                  routeACJSON,
 			"RouteACInstalled":             routeACInstalled,
 			"RouteACUninstalled":           routeACUninstalled,
 			"RouteACUserRedirectWithToken": routeACUserRedirectWithToken,
 			"UserRedirectPageKey":          userRedirectPageKey,
-			"ExternalURL":                  a.Plugin.GetSiteURL(),
-			"PluginKey":                    a.Plugin.GetPluginKey(),
+			"ExternalURL":                  a.PluginConfig.SiteURL,
+			"PluginKey":                    a.PluginConfig.PluginKey,
 		})
 }
 
@@ -42,8 +43,8 @@ func httpACInstalled(a *Action) error {
 	}
 
 	// Only allow this operation once, a JIRA instance must already exist
-	// for asc.BaseURL but not installed.
-	ji, err := a.Plugin.LoadJIRAInstance(asc.BaseURL)
+	// for asc.BaseURL but not Installed.
+	ji, err := a.InstanceStore.LoadJIRAInstance(asc.BaseURL)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err,
 			"failed to load instance %q", asc.BaseURL)
@@ -65,11 +66,11 @@ func httpACInstalled(a *Action) error {
 	// Create a permanent instance record, also store it as current
 	jiraInstance := NewJIRACloudInstance(asc.BaseURL, true, string(body), &asc)
 	// StoreJIRAInstance also updates the list of known Jira instances
-	err = a.Plugin.StoreJIRAInstance(jiraInstance)
+	err = a.InstanceStore.StoreJIRAInstance(jiraInstance)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
-	err = a.Plugin.StoreCurrentJIRAInstance(jiraInstance)
+	err = a.CurrentInstanceStore.StoreCurrentJIRAInstance(jiraInstance)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
