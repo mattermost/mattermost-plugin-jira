@@ -9,8 +9,10 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/mattermost/mattermost-server/model"
+
 	"github.com/pkg/errors"
 )
 
@@ -151,6 +153,10 @@ func (p *Plugin) StoreCurrentJIRAInstanceAndNotify(ji Instance) (returnErr error
 	if err != nil {
 		return err
 	}
+	p.updateConfig(func(conf *config) {
+		conf.currentInstance = ji
+		conf.currentInstanceExpires = time.Now().Add(currentInstanceTTL)
+	})
 	p.debugf("Stored: current Jira instance: %s", ji.GetURL())
 
 	// Notify users we have installed an instance
@@ -208,6 +214,11 @@ func (p *Plugin) DeleteJiraInstance(key string) (returnErr error) {
 		if appErr != nil {
 			return appErr
 		}
+		p.updateConfig(func(conf *config) {
+			// Reset, will get re-initialized as needed
+			conf.currentInstance = nil
+			conf.currentInstanceExpires = time.Time{}
+		})
 		p.debugf("Deleted: current Jira instance")
 	}
 
@@ -215,10 +226,26 @@ func (p *Plugin) DeleteJiraInstance(key string) (returnErr error) {
 }
 
 func (p *Plugin) LoadCurrentJIRAInstance() (Instance, error) {
+	conf := p.getConfig()
+	now := time.Now()
+
+	if now.Before(conf.currentInstanceExpires) {
+		// if conf.currentInstanceExpires is set and there is no current
+		// instance, it's a cached "Not found"
+		if conf.currentInstance == nil {
+			return nil, errors.New("failed to load current Jira instance: not found")
+		}
+		return conf.currentInstance, nil
+	}
+
 	ji, err := p.loadJIRAInstance(keyCurrentJIRAInstance)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to load current Jira instance")
 	}
+	p.updateConfig(func(conf *config) {
+		conf.currentInstance = ji
+		conf.currentInstanceExpires = now.Add(currentInstanceTTL)
+	})
 
 	return ji, nil
 }
