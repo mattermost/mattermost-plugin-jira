@@ -38,7 +38,7 @@ type InstanceStatus struct {
 
 var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
 
-func NewJIRAInstance(typ, key string) *JIRAInstance {
+func newJIRAInstance(typ, key string) *JIRAInstance {
 	return &JIRAInstance{
 		Type: typ,
 		Key:  key,

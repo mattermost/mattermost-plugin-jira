@@ -11,8 +11,12 @@ import (
 
 const userRedirectPageKey = "user-redirect"
 
-func httpACJSON(a *Action) error {
+var httpACJSON = []ActionFunc{
+	RequireHTTPGet,
+	handleACInstalled,
+}
 
+func handleACJSON(a *Action) error {
 	return a.RespondTemplate(
 		a.HTTPRequest.URL.Path,
 		"application/json",
@@ -28,7 +32,12 @@ func httpACJSON(a *Action) error {
 		})
 }
 
-func httpACInstalled(a *Action) error {
+var httpACInstalled = []ActionFunc{
+	RequireHTTPPost,
+	handleACInstalled,
+}
+
+func handleACInstalled(a *Action) error {
 	body, err := ioutil.ReadAll(a.HTTPRequest.Body)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err,
@@ -44,21 +53,21 @@ func httpACInstalled(a *Action) error {
 
 	// Only allow this operation once, a JIRA instance must already exist
 	// for asc.BaseURL but not Installed.
-	ji, err := a.InstanceStore.LoadJIRAInstance(asc.BaseURL)
+	instance, err := a.InstanceStore.LoadJIRAInstance(asc.BaseURL)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err,
 			"failed to load instance %q", asc.BaseURL)
 	}
-	if ji == nil {
+	if instance == nil {
 		return a.RespondError(http.StatusNotFound, nil,
 			"Jira instance %q must first be added to Mattermost", asc.BaseURL)
 	}
-	jci, ok := ji.(*jiraCloudInstance)
+	cloudInstance, ok := instance.(*jiraCloudInstance)
 	if !ok {
 		return a.RespondError(http.StatusBadRequest, nil,
-			"Must be a JIRA Cloud instance, is %q", ji.GetType())
+			"Must be a JIRA Cloud instance, is %q", instance.GetType())
 	}
-	if jci.Installed {
+	if cloudInstance.Installed {
 		return a.RespondError(http.StatusForbidden, nil,
 			"Jira instance %q is already installed", asc.BaseURL)
 	}
@@ -70,7 +79,7 @@ func httpACInstalled(a *Action) error {
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
-	err = a.CurrentInstanceStore.StoreCurrentJIRAInstance(jiraInstance)
+	err = StoreCurrentJIRAInstanceAndNotify(a.API, a.CurrentInstanceStore, jiraInstance)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}

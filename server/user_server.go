@@ -17,7 +17,17 @@ type OAuth1aTemporaryCredentials struct {
 	Secret string
 }
 
-func httpOAuth1Complete(a *Action) error {
+var httpOAuth1Complete = []ActionFunc{
+	// TODO Should this be a post? Can it be one (Jira/OAuth1 controls)?
+	RequireHTTPGet,
+	RequireHTTPMattermostUserId,
+	RequireMattermostUser,
+	RequireInstance,
+	RequireServerInstance,
+	handleOAuth1Complete,
+}
+
+func handleOAuth1Complete(a *Action) error {
 	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(a.HTTPRequest)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err,
@@ -81,7 +91,13 @@ func httpOAuth1Complete(a *Action) error {
 	})
 }
 
-func httpOAuth1PublicKey(a *Action) error {
+var httpOAuth1PublicKey = []ActionFunc{
+	RequireHTTPGet,
+	RequireHTTPMattermostUserId,
+	handleOAuth1PublicKey,
+}
+
+func handleOAuth1PublicKey(a *Action) error {
 	if !a.API.HasPermissionTo(a.MattermostUserId, model.PERMISSION_MANAGE_SYSTEM) {
 		return a.RespondError(http.StatusForbidden, nil, "forbidden")
 	}

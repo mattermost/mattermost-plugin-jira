@@ -23,10 +23,10 @@ func (jti jiraTestInstance) GetMattermostKey() string {
 func (jti jiraTestInstance) GetDisplayDetails() map[string]string {
 	return map[string]string{}
 }
-func (jti jiraTestInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
+func (jti jiraTestInstance) GetUserConnectURL(Config, SecretsStore, string) (string, error) {
 	return "http://jiraTestInstanceUserConnectURL.some", nil
 }
-func (jti jiraTestInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error) {
+func (jti jiraTestInstance) GetJIRAClient(Config, SecretsStore, *JIRAUser) (*jira.Client, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -39,7 +39,7 @@ func (store mockCurrentInstanceStore) StoreCurrentJIRAInstance(ji Instance) erro
 }
 func (store mockCurrentInstanceStore) LoadCurrentJIRAInstance() (Instance, error) {
 	return &jiraTestInstance{
-		JIRAInstance: *NewJIRAInstance(store.plugin, "test", "jiraTestInstanceKey"),
+		JIRAInstance: *newJIRAInstance("test", "jiraTestInstanceKey"),
 	}, nil
 }
 

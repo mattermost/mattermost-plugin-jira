@@ -72,9 +72,9 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 		case field == "resolution" && to != "" && from == "":
 			return parseWebhookResolved(jwh)
 		case field == "status":
-			return parseWebhookUpdatedField(jwh, eventUpdatedStatus, field, to, from)
+			return parseWebhookUpdatedField(jwh, eventUpdatedStatus, field, from, to)
 		case field == "priority":
-			return parseWebhookUpdatedField(jwh, eventUpdatedPriority, field, to, from)
+			return parseWebhookUpdatedField(jwh, eventUpdatedPriority, field, from, to)
 		case field == "summary":
 			return parseWebhookUpdatedSummary(jwh)
 		case field == "description":

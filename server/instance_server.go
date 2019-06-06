@@ -27,7 +27,7 @@ var _ Instance = (*jiraServerInstance)(nil)
 
 func NewJIRAServerInstance(jiraURL, mattermostKey string) *jiraServerInstance {
 	return &jiraServerInstance{
-		JIRAInstance:  NewJIRAInstance(JIRATypeServer, jiraURL),
+		JIRAInstance:  newJIRAInstance(JIRATypeServer, jiraURL),
 		MattermostKey: mattermostKey,
 		JIRAServerURL: jiraURL,
 	}

@@ -66,7 +66,13 @@ var eventParamMasks = map[string]uint64{
 	"updated_all":         maskAll,                 // all events
 }
 
-func httpWebhook(a *Action) error {
+var httpWebhook = []ActionFunc{
+	RequireHTTPPost,
+	RequireInstance,
+	handleWebhook,
+}
+
+func handleWebhook(a *Action) error {
 	if a.PluginConfig.Secret == "" || a.PluginConfig.UserName == "" {
 		return a.RespondError(http.StatusForbidden, nil,
 			"Jira plugin not configured correctly; must provide Secret and UserName")

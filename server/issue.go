@@ -17,7 +17,16 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
-func httpAPICreateIssue(a *Action) error {
+var httpAPICreateIssue = []ActionFunc{
+	RequireHTTPPost,
+	RequireHTTPMattermostUserId,
+	RequireInstance,
+	RequireJiraUser,
+	RequireJiraClient,
+	handleAPICreateIssue,
+}
+
+func handleAPICreateIssue(a *Action) error {
 	api := a.API
 
 	create := &struct {
@@ -130,7 +139,16 @@ func httpAPICreateIssue(a *Action) error {
 	return a.RespondJSON(created)
 }
 
-func httpAPIGetCreateIssueMetadata(a *Action) error {
+var httpAPIGetCreateIssueMetadata = []ActionFunc{
+	RequireHTTPGet,
+	RequireHTTPMattermostUserId,
+	RequireInstance,
+	RequireJiraUser,
+	RequireJiraClient,
+	handleAPIGetCreateIssueMetadata,
+}
+
+func handleAPIGetCreateIssueMetadata(a *Action) error {
 	cimd, err := getCreateIssueMetadata(a.JiraClient)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
@@ -138,7 +156,16 @@ func httpAPIGetCreateIssueMetadata(a *Action) error {
 	return a.RespondJSON(cimd)
 }
 
-func httpAPIGetSearchIssues(a *Action) error {
+var httpAPIGetSearchIssues = []ActionFunc{
+	RequireHTTPGet,
+	RequireHTTPMattermostUserId,
+	RequireInstance,
+	RequireJiraUser,
+	RequireJiraClient,
+	handleAPIGetSearchIssues,
+}
+
+func handleAPIGetSearchIssues(a *Action) error {
 	jqlString := a.HTTPRequest.FormValue("jql")
 
 	searchRes, resp, err := a.JiraClient.Issue.Search(jqlString, &jira.SearchOptions{
@@ -172,7 +199,16 @@ func httpAPIGetSearchIssues(a *Action) error {
 	return a.RespondJSON(resSummary)
 }
 
-func httpAPIAttachCommentToIssue(a *Action) error {
+var httpAPIAttachCommentToIssue = []ActionFunc{
+	RequireHTTPPost,
+	RequireHTTPMattermostUserId,
+	RequireInstance,
+	RequireJiraUser,
+	RequireJiraClient,
+	handleAPIAttachCommentToIssue,
+}
+
+func handleAPIAttachCommentToIssue(a *Action) error {
 	api := a.API
 
 	attach := &struct {
@@ -283,29 +319,38 @@ func transitionJiraIssue(a *Action, issueKey, toState string) (string, error) {
 	if err != nil {
 		return "", errors.New("We couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue.")
 	}
-
 	if len(transitions) < 1 {
 		return "", errors.New("You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.")
 	}
 
-	var transitionToUse *jira.Transition
+	transitionToUse := jira.Transition{}
+	matchingStates := []string{}
 	availableStates := []string{}
 	for _, transition := range transitions {
 		if strings.Contains(strings.ToLower(transition.To.Name), strings.ToLower(toState)) {
-			transitionToUse = &transition
+			matchingStates = append(matchingStates, transition.To.Name)
+			transitionToUse = transition
 		}
 		availableStates = append(availableStates, transition.To.Name)
 	}
 
-	if transitionToUse == nil {
+	switch len(matchingStates) {
+	case 0:
 		return "", errors.Errorf("%q is not a valid state. Please use one of: %q",
-			toState, strings.Join(availableStates, ","))
+			toState, strings.Join(availableStates, ", "))
+
+	case 1:
+		// proceed
+
+	default:
+		return "", errors.Errorf("please be more specific, %q matched several states: %q",
+			toState, strings.Join(matchingStates, ", "))
 	}
 
 	if _, err := a.JiraClient.Issue.DoTransition(issueKey, transitionToUse.ID); err != nil {
 		return "", err
 	}
 
-	msg := fmt.Sprintf("[%s](%v/browse/%v) transitioned to `%s`", issueKey, a.Instance.GetURL(), issueKey, toState)
+	msg := fmt.Sprintf("[%s](%v/browse/%v) transitioned to `%s`", issueKey, a.Instance.GetURL(), issueKey, transitionToUse.To.Name)
 	return msg, nil
 }

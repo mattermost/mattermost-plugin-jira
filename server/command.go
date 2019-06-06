@@ -28,38 +28,34 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira uninstall server <URL>` - Disconnect Mattermost from a Jira Server or Data Center instance located at <URL>\n" +
 	""
 
-var instanceFilter = ActionFilter{RequireInstance}
-var commandUserFilter = ActionFilter{RequireMattermostUser}
-var commandSysAdminFilter = ActionFilter{RequireMattermostSysAdmin}
-var commandJiraClientFilter = ActionFilter{RequireJiraClient}
-
 var commandRouter = ActionRouter{
-	DefaultRouteHandler: executeHelp,
-	Log: ActionFilter{
-		func(a *Action) error {
-			if a.Err != nil {
-				a.Errorf("command: %q error:%v", a.CommandHeader.Command, a.Err)
-			} else {
-				a.Debugf("command: %q", a.CommandHeader.Command)
-			}
-			return nil
-		},
+	Log: func(a *Action) error {
+		if a.LogErr != nil {
+			a.Errorf("command: %q error:%v", a.CommandHeader.Command, a.LogErr)
+		} else {
+			a.Debugf("command: %q", a.CommandHeader.Command)
+		}
+		return nil
 	},
-	RouteHandlers: map[string]*ActionScript{
-		"connect":          {Filter: instanceFilter, Handler: executeConnect},
-		"disconnect":       {Filter: instanceFilter, Handler: executeDisconnect},
-		"settings":         {Filter: commandJiraClientFilter, Handler: executeSettings},
-		"transition":       {Filter: commandJiraClientFilter, Handler: executeTransition},
-		"install/server":   {Filter: commandSysAdminFilter, Handler: executeInstallServer},
-		"install/cloud":    {Filter: commandSysAdminFilter, Handler: executeInstallCloud},
-		"uninstall/cloud":  {Filter: commandSysAdminFilter, Handler: executeUninstall},
-		"uninstall/server": {Filter: commandSysAdminFilter, Handler: executeUninstall},
+
+	DefaultRouteHandler: executeHelp,
+
+	// MattermostUserID is set for all commands, so no special "Requir" for it
+	RouteHandlers: map[string][]ActionFunc{
+		"connect":          commandConnect,
+		"disconnect":       commandDisconnect,
+		"settings":         commandSettings,
+		"transition":       commandTransition,
+		"install/server":   commandInstallServer,
+		"install/cloud":    commandInstallCloud,
+		"uninstall/cloud":  commandUninstall,
+		"uninstall/server": commandUninstall,
 
 		// used for debugging, uncomment if needed
-		"webhook":         {Filter: commandSysAdminFilter, Handler: executeWebhookURL},
-		"list":            {Filter: commandSysAdminFilter, Handler: executeList},
-		"instance/select": {Filter: commandSysAdminFilter, Handler: executeInstanceSelect},
-		"instance/delete": {Filter: commandSysAdminFilter, Handler: executeInstanceDelete},
+		"webhook":         commandWebhookURL,
+		"list":            commandList,
+		"instance/select": commandInstanceSelect,
+		"instance/delete": commandInstanceDelete,
 	},
 }
 
@@ -70,9 +66,10 @@ const (
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	args := strings.Fields(commandArgs.Command)
+	args = args[1:]
 	action := NewAction(p, c)
 	action.CommandHeader = commandArgs
-	action.CommandArgs = args[1:]
+	action.CommandArgs = args
 	action.MattermostUserId = commandArgs.UserId
 
 	scriptKey := ""
@@ -93,12 +90,27 @@ func executeHelp(a *Action) error {
 	return a.RespondPrintf(helpText)
 }
 
+var commandConnect = []ActionFunc{
+	RequireInstance,
+	executeConnect,
+}
+
 func executeConnect(a *Action) error {
 	if len(a.CommandArgs) != 0 {
 		return executeHelp(a)
 	}
-	return a.RespondPrintf("[Click here to link your Jira account.](%s%s)",
-		a.PluginConfig.PluginURL, routeUserConnect)
+
+	redirectURL, err := a.Instance.GetUserConnectURL(a.PluginConfig, a.SecretsStore, a.MattermostUserId)
+	if err != nil {
+		a.RespondError(0, err)
+	}
+	return a.RespondRedirect(redirectURL)
+}
+
+var commandDisconnect = []ActionFunc{
+	RequireInstance,
+	RequireJiraUser,
+	executeDisconnect,
 }
 
 func executeDisconnect(a *Action) error {
@@ -118,6 +130,11 @@ const (
 	settingOn  = "on"
 	settingOff = "off"
 )
+
+var commandSettings = []ActionFunc{
+	RequireJiraClient,
+	executeSettings,
+}
 
 func executeSettings(a *Action) error {
 	// TODO command-specific help
@@ -149,6 +166,11 @@ func executeSettings(a *Action) error {
 	}
 }
 
+var commandList = []ActionFunc{
+	RequireMattermostSysAdmin,
+	executeList,
+}
+
 func executeList(a *Action) error {
 	if len(a.CommandArgs) != 0 {
 		return executeHelp(a)
@@ -160,6 +182,9 @@ func executeList(a *Action) error {
 	if len(known) == 0 {
 		return a.RespondPrintf("(none installed)\n")
 	}
+
+	// error not important here, only need to highlight thee current in the list
+	currentInstance, _ := a.CurrentInstanceStore.LoadCurrentJIRAInstance()
 
 	keys := []string{}
 	for key := range known {
@@ -183,12 +208,17 @@ func executeList(a *Action) error {
 			details = ji.GetType()
 		}
 		format := "|%v|%s|%s|\n"
-		if key == a.Instance.GetURL() {
+		if currentInstance != nil && key == currentInstance.GetURL() {
 			format = "| **%v** | **%s** |%s|\n"
 		}
 		text += fmt.Sprintf(format, i+1, key, details)
 	}
 	return a.RespondPrintf(text)
+}
+
+var commandInstallCloud = []ActionFunc{
+	RequireMattermostSysAdmin,
+	executeInstallCloud,
 }
 
 func executeInstallCloud(a *Action) error {
@@ -222,6 +252,11 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 
 	// TODO What is the exact group membership in Jira required? Site-admins?
 	return a.RespondPrintf(addResponseFormat, jiraURL, jiraURL, a.PluginConfig.PluginURL, routeACJSON)
+}
+
+var commandInstallServer = []ActionFunc{
+	RequireMattermostSysAdmin,
+	executeInstallServer,
 }
 
 func executeInstallServer(a *Action) error {
@@ -267,6 +302,12 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	return a.RespondPrintf(addResponseFormat, a.PluginConfig.SiteURL, jsi.GetMattermostKey(), pkey)
 }
 
+var commandUninstall = []ActionFunc{
+	RequireInstance,
+	RequireMattermostSysAdmin,
+	executeUninstall,
+}
+
 // executeUninstall will uninstall the jira cloud instance if the url matches, and then update all connected
 // clients so that their Jira-related menu options are removed.
 func executeUninstall(a *Action) error {
@@ -302,6 +343,11 @@ func executeUninstall(a *Action) error {
 	return a.RespondPrintf(uninstallInstructions)
 }
 
+var commandTransition = []ActionFunc{
+	RequireJiraClient,
+	executeTransition,
+}
+
 func executeTransition(a *Action) error {
 	if len(a.CommandArgs) < 2 {
 		return executeHelp(a)
@@ -314,6 +360,11 @@ func executeTransition(a *Action) error {
 		return a.RespondError(0, err)
 	}
 	return a.RespondPrintf(msg)
+}
+
+var commandWebhookURL = []ActionFunc{
+	RequireMattermostSysAdmin,
+	executeWebhookURL,
 }
 
 func executeWebhookURL(a *Action) error {
@@ -338,6 +389,7 @@ func getCommand() *model.Command {
 		AutoCompleteHint: "[command]",
 	}
 }
+
 func commandResponse(format string, args ...interface{}) *model.CommandResponse {
 	return &model.CommandResponse{
 		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
@@ -346,6 +398,11 @@ func commandResponse(format string, args ...interface{}) *model.CommandResponse 
 		IconURL:      PluginIconURL,
 		Type:         model.POST_DEFAULT,
 	}
+}
+
+var commandInstanceSelect = []ActionFunc{
+	RequireMattermostSysAdmin,
+	executeInstanceSelect,
 }
 
 func executeInstanceSelect(a *Action) error {
@@ -383,6 +440,11 @@ func executeInstanceSelect(a *Action) error {
 
 	a.CommandArgs = []string{}
 	return executeList(a)
+}
+
+var commandInstanceDelete = []ActionFunc{
+	RequireMattermostSysAdmin,
+	executeInstanceDelete,
 }
 
 func executeInstanceDelete(a *Action) error {

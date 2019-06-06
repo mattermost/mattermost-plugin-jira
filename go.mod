@@ -3,6 +3,7 @@ module github.com/mattermost/mattermost-plugin-jira/server
 go 1.12
 
 require (
+	github.com/Masterminds/squirrel v1.1.0 // indirect
 	github.com/andygrunwald/go-jira v1.6.0
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/dghubble/oauth1 v0.5.0
@@ -10,6 +11,8 @@ require (
 	github.com/dyatlov/go-opengraph v0.0.0-20180429202543-816b6608b3c8 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/go-ldap/ldap v3.0.3+incompatible // indirect
+	github.com/go-redis/redis v6.15.2+incompatible // indirect
+	github.com/go-sql-driver/mysql v1.4.1 // indirect
 	github.com/golang/protobuf v1.3.1 // indirect
 	github.com/google/go-querystring v0.0.0-20190318165438-c8c88dbee036 // indirect
 	github.com/google/uuid v1.1.1 // indirect
@@ -17,6 +20,8 @@ require (
 	github.com/hashicorp/go-hclog v0.0.0-20180910232447-e45cbeb79f04 // indirect
 	github.com/hashicorp/go-plugin v0.0.0-20180814222501-a4620f9913d1 // indirect
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
+	github.com/lib/pq v1.1.1 // indirect
+	github.com/mattermost/gorp v2.0.0+incompatible // indirect
 	github.com/mattermost/mattermost-server v5.10.1+incompatible
 	github.com/mattermost/viper v0.0.0-20181112161711-f99c30686b86 // indirect
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect

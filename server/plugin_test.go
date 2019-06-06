@@ -181,12 +181,12 @@ func TestPlugin(t *testing.T) {
 			}, (*model.AppError)(nil))
 
 			p := Plugin{}
-			p.updateConfig(func(conf *config) {
+			p.UpdateConfig(func(conf *Config) {
 				conf.Secret = tc.Configuration.Secret
 				conf.UserName = tc.Configuration.UserName
 			})
 			p.SetAPI(api)
-			p.currentInstanceStore = mockCurrentInstanceStore{}
+			p.CurrentInstanceStore = mockCurrentInstanceStore{}
 
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, tc.Request)

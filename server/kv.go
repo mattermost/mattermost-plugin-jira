@@ -342,7 +342,7 @@ func (store store) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser,
 	err := store.get(keyWithInstance(ji, mattermostUserId), &jiraUser)
 	if err != nil {
 		return JIRAUser{}, errors.WithMessage(err,
-			fmt.Sprintf("failed to load Jira user for mattermostUserId:%s", mattermostUserId))
+			fmt.Sprintf("failed to load Jira user for user ID: %q", mattermostUserId))
 	}
 	if len(jiraUser.Key) == 0 {
 		return JIRAUser{}, ErrUserNotFound
@@ -369,7 +369,7 @@ func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnE
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to delete user, mattermostUserId:%s", mattermostUserId))
+			fmt.Sprintf("failed to delete user, user ID: %q", mattermostUserId))
 	}()
 
 	jiraUser, err := store.LoadJIRAUser(ji, mattermostUserId)

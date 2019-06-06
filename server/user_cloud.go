@@ -18,7 +18,13 @@ const (
 	argMMToken = "mm_token"
 )
 
-func httpACUserRedirect(a *Action) error {
+// TODO eliminate
+var httpACUserRedirect = []ActionFunc{
+	RequireHTTPGet,
+	handleACUserRedirect,
+}
+
+func handleACUserRedirect(a *Action) error {
 	submitURL := path.Join(a.PluginConfig.PluginURLPath, routeACUserConfirm)
 
 	return a.RespondTemplate(a.HTTPRequest.URL.Path, "text/html", struct {
@@ -32,7 +38,34 @@ func httpACUserRedirect(a *Action) error {
 	})
 }
 
-func httpACUserInteractive(a *Action) error {
+var httpACUserConfirm = []ActionFunc{
+	RequireHTTPGet,
+	RequireHTTPCloudJWT,
+	RequireHTTPMattermostUserId,
+	handleACUserInteractive,
+}
+
+var httpACUserConnected = []ActionFunc{
+	// TODO this is wrong, should be a post
+	RequireHTTPGet,
+	RequireHTTPCloudJWT,
+	RequireHTTPMattermostUserId,
+	RequireInstance,
+	handleACUserInteractive,
+}
+
+var httpACUserDisconnected = []ActionFunc{
+	// TODO this is wrong, should be a post
+	RequireHTTPGet,
+	RequireHTTPCloudJWT,
+	RequireHTTPMattermostUserId,
+	RequireMattermostUser,
+	RequireInstance,
+	RequireJiraUser,
+	handleACUserInteractive,
+}
+
+func handleACUserInteractive(a *Action) error {
 	claims, ok := a.JiraJWT.Claims.(jwt.MapClaims)
 	if !ok {
 		return a.RespondError(http.StatusBadRequest, nil,

@@ -38,15 +38,17 @@ type testWebhookWrapper struct {
 func (wh testWebhookWrapper) EventMask() uint64 {
 	return wh.Webhook.EventMask()
 }
-func (wh *testWebhookWrapper) PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error) {
-	post, status, err := wh.Webhook.PostToChannel(p, channelId, fromUserId)
+func (wh *testWebhookWrapper) PostToChannel(api plugin.API, channelId, fromUserId string) (*model.Post, int, error) {
+	post, status, err := wh.Webhook.PostToChannel(api, channelId, fromUserId)
 	if post != nil {
 		wh.postedToChannel = post
 	}
 	return post, status, err
 }
-func (wh *testWebhookWrapper) PostNotifications(p *Plugin, ji Instance) ([]*model.Post, int, error) {
-	posts, status, err := wh.Webhook.PostNotifications(p, ji)
+func (wh *testWebhookWrapper) PostNotifications(conf Config, api plugin.API,
+	userStore UserStore, instance Instance) ([]*model.Post, int, error) {
+
+	posts, status, err := wh.Webhook.PostNotifications(conf, api, userStore, instance)
 	if len(posts) != 0 {
 		wh.postedNotifications = append(wh.postedNotifications, posts...)
 	}
@@ -125,11 +127,11 @@ func TestWebhookHTTP(t *testing.T) {
 		},
 		"issue lowered priority": {
 			Request:          testWebhookRequest("webhook-issue-updated-lowered-priority.json"),
-			ExpectedHeadline: `Test User updated priority from "Low" to "High" on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			ExpectedHeadline: `Test User updated priority from "High" to "Low" on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)`,
 		},
 		"issue raised priority": {
 			Request:          testWebhookRequest("webhook-issue-updated-raised-priority.json"),
-			ExpectedHeadline: `Test User updated priority from "High" to "Low" on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			ExpectedHeadline: `Test User updated priority from "Low" to "High" on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)`,
 		},
 		"issue rank": {
 			Request:          testWebhookRequest("webhook-issue-updated-rank.json"),
@@ -149,7 +151,7 @@ func TestWebhookHTTP(t *testing.T) {
 		},
 		"issue started working": {
 			Request:          testWebhookRequest("webhook-issue-updated-started-working.json"),
-			ExpectedHeadline: "Test User updated status from \"In Progress\" to \"To Do\" on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User updated status from \"To Do\" to \"In Progress\" on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -205,13 +207,13 @@ func TestWebhookHTTP(t *testing.T) {
 			}, (*model.AppError)(nil))
 
 			p := Plugin{}
-			p.updateConfig(func(conf *config) {
+			p.UpdateConfig(func(conf *Config) {
 				conf.Secret = validConfiguration.Secret
 				conf.UserName = validConfiguration.UserName
 			})
 			p.SetAPI(api)
-			p.currentInstanceStore = mockCurrentInstanceStore{&p}
-			p.userStore = mockUserStore{}
+			p.CurrentInstanceStore = mockCurrentInstanceStore{&p}
+			p.UserStore = mockUserStore{}
 
 			w := httptest.NewRecorder()
 			recorder := &testWebhookWrapper{}

@@ -38,7 +38,14 @@ type UserInfo struct {
 	JIRAURL           string `json:"jira_url,omitempty"`
 }
 
-func httpUserConnect(a *Action) error {
+// TODO eliminate
+var httpUserConnect = []ActionFunc{
+	RequireInstance,
+	RequireHTTPMattermostUserId,
+	handleUserConnect,
+}
+
+func handleUserConnect(a *Action) error {
 	// Users shouldn't be able to make multiple connections.
 	jiraUser, err := a.UserStore.LoadJIRAUser(a.Instance, a.MattermostUserId)
 	if err == nil && len(jiraUser.Key) != 0 {
@@ -51,12 +58,17 @@ func httpUserConnect(a *Action) error {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
 
-	http.Redirect(a.HTTPResponseWriter, a.HTTPRequest, redirectURL, http.StatusFound)
-	a.HTTPStatusCode = http.StatusFound
+	a.RespondRedirect(redirectURL)
 	return nil
 }
 
-func httpUserDisconnect(a *Action) error {
+var httpUserDisconnect = []ActionFunc{
+	RequireInstance,
+	RequireHTTPMattermostUserId,
+	handleUserDisconnect,
+}
+
+func handleUserDisconnect(a *Action) error {
 	err := DeleteUserInfoNotify(a.API, a.UserStore, a.Instance, a.MattermostUserId)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
@@ -78,7 +90,13 @@ func httpUserDisconnect(a *Action) error {
 `)
 }
 
-func httpAPIGetUserInfo(a *Action) error {
+var httpAPIGetUserInfo = []ActionFunc{
+	RequireHTTPGet,
+	RequireHTTPMattermostUserId,
+	handleAPIGetUserInfo,
+}
+
+func handleAPIGetUserInfo(a *Action) error {
 	resp := UserInfo{}
 	if ji, err := a.CurrentInstanceStore.LoadCurrentJIRAInstance(); err == nil {
 		resp.InstanceInstalled = true

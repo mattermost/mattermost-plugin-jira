@@ -49,7 +49,10 @@ type Config struct {
 type Plugin struct {
 	plugin.MattermostPlugin
 
-	Store Store
+	CurrentInstanceStore CurrentInstanceStore
+	InstanceStore        InstanceStore
+	UserStore            UserStore
+	SecretsStore         SecretsStore
 
 	// configuration and a muttex to control concurrent access
 	Config   Config
@@ -82,7 +85,11 @@ func (p *Plugin) OnActivate() error {
 		return errors.WithMessage(appErr, fmt.Sprintf("OnActivate: unable to find user: %s", conf.UserName))
 	}
 
-	p.Store = NewStore(p)
+	store := NewStore(p)
+	p.CurrentInstanceStore = store
+	p.InstanceStore = store
+	p.UserStore = store
+	p.SecretsStore = store
 
 	dir := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
 	templates, err := p.loadTemplates(dir)

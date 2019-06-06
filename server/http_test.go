@@ -269,11 +269,12 @@ func TestSubscribe(t *testing.T) {
 				tc.apiCalls(api)
 			}
 
-			p.updateConfig(func(conf *config) {
+			p.UpdateConfig(func(conf *Config) {
 				conf.Secret = "somesecret"
 				conf.UserName = "someuser"
 			})
 			p.SetAPI(api)
+			p.CurrentInstanceStore = mockCurrentInstanceStore{&p}
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("POST", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
@@ -386,11 +387,12 @@ func TestDeleteSubscription(t *testing.T) {
 				tc.apiCalls(api)
 			}
 
-			p.updateConfig(func(conf *config) {
+			p.UpdateConfig(func(conf *Config) {
 				conf.Secret = "somesecret"
 				conf.UserName = "someuser"
 			})
 			p.SetAPI(api)
+			p.CurrentInstanceStore = mockCurrentInstanceStore{&p}
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("DELETE", "/api/v2/subscriptions/channel/"+tc.subscriptionId, nil)
@@ -507,11 +509,12 @@ func TestEditSubscription(t *testing.T) {
 				tc.apiCalls(api)
 			}
 
-			p.updateConfig(func(conf *config) {
+			p.UpdateConfig(func(conf *Config) {
 				conf.Secret = "somesecret"
 				conf.UserName = "someuser"
 			})
 			p.SetAPI(api)
+			p.CurrentInstanceStore = mockCurrentInstanceStore{&p}
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("PUT", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
@@ -691,11 +694,12 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 				tc.apiCalls(api)
 			}
 
-			p.updateConfig(func(conf *config) {
+			p.UpdateConfig(func(conf *Config) {
 				conf.Secret = "somesecret"
 				conf.UserName = "someuser"
 			})
 			p.SetAPI(api)
+			p.CurrentInstanceStore = mockCurrentInstanceStore{&p}
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("GET", "/api/v2/subscriptions/channel/"+tc.channelId, nil)

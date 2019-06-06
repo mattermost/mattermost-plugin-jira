@@ -40,7 +40,7 @@ type Action struct {
 	CommandResponse    *model.CommandResponse
 	HTTPResponseWriter http.ResponseWriter
 	HTTPStatusCode     int
-	Err                error
+	LogErr             error
 
 	// Variables
 	Instance         Instance
@@ -58,26 +58,19 @@ type Action struct {
 	JiraRawJWT        string
 }
 
-type ActionFilter []ActionFunc
-
-type ActionScript struct {
-	Filter  ActionFilter
-	Handler ActionFunc
-}
-
 type ActionRouter struct {
-	RouteHandlers       map[string]*ActionScript
+	RouteHandlers       map[string][]ActionFunc
 	DefaultRouteHandler ActionFunc
-	Log                 ActionFilter
+	Log                 ActionFunc
 }
 
 func NewAction(p *Plugin, c *plugin.Context) *Action {
 	return &Action{
 		API:                  p.API,
-		CurrentInstanceStore: p.Store,
-		InstanceStore:        p.Store,
-		SecretsStore:         p.Store,
-		UserStore:            p.Store,
+		CurrentInstanceStore: p.CurrentInstanceStore,
+		InstanceStore:        p.InstanceStore,
+		SecretsStore:         p.SecretsStore,
+		UserStore:            p.UserStore,
 		PluginConfig:         p.Config,
 		PluginContext:        c,
 	}
@@ -296,7 +289,6 @@ func (a *Action) RespondError(httpStatusCode int, err error, wrap ...interface{}
 		a.CommandResponse = commandResponse(err.Error())
 	}
 
-	a.Err = err
 	return err
 }
 
@@ -312,6 +304,22 @@ func (a *Action) RespondPrintf(format string, args ...interface{}) error {
 		}
 	} else {
 		a.CommandResponse = commandResponse(text)
+	}
+	return nil
+}
+
+func (a *Action) RespondRedirect(redirectURL string) error {
+	if a.HTTPResponseWriter != nil {
+		status := http.StatusFound
+		if a.HTTPRequest.Method != http.MethodGet {
+			status = http.StatusTemporaryRedirect
+		}
+		http.Redirect(a.HTTPResponseWriter, a.HTTPRequest, redirectURL, status)
+		a.HTTPStatusCode = status
+	} else {
+		a.CommandResponse = &model.CommandResponse{
+			GotoLocation: redirectURL,
+		}
 	}
 	return nil
 }
@@ -388,33 +396,28 @@ func (ar ActionRouter) Run(key string, a *Action) {
 		key = key[:n]
 	}
 	if script == nil {
-		script = &ActionScript{
-			Handler: ar.DefaultRouteHandler,
+		script = []ActionFunc{
+			ar.DefaultRouteHandler,
 		}
 	}
 
 	// Run the script
-	func() {
-		err := script.Filter.Run(a)
-		if err != nil {
-			return
-		}
-		if script.Handler != nil {
-			err = script.Handler(a)
-			if err != nil {
-				return
-			}
-		}
-	}()
+	err := RunAction(script, a)
+	if err != nil {
+		return
+	}
 
 	// Log
-	_ = ar.Log.Run(a)
+	if ar.Log != nil {
+		_ = ar.Log(a)
+	}
 }
 
-func (af ActionFilter) Run(a *Action) error {
-	for _, f := range af {
+func RunAction(script []ActionFunc, a *Action) error {
+	for _, f := range script {
 		err := f(a)
 		if err != nil {
+			a.LogErr = err
 			return err
 		}
 	}

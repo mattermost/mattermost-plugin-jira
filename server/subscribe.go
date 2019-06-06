@@ -308,19 +308,16 @@ func atomicModify(api plugin.API, key string, modify func(initialValue []byte) (
 	return nil
 }
 
-func httpSubscribeWebhook(a *Action) error {
-	err := RequireHTTPPost(a)
-	if err != nil {
-		return err
-	}
+var httpSubscribeWebhook = []ActionFunc{
+	RequireHTTPPost,
+	RequireInstance,
+	handleSubscribeWebhook,
+}
 
+func handleSubscribeWebhook(a *Action) error {
 	if a.PluginConfig.Secret == "" || a.PluginConfig.UserName == "" {
 		return a.RespondError(http.StatusForbidden, nil,
 			"Jira plugin not configured correctly; must provide Secret and UserName")
-	}
-	ji, err := a.CurrentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return a.RespondError(http.StatusInternalServerError, err)
 	}
 
 	if subtle.ConstantTimeCompare(
@@ -351,7 +348,7 @@ func httpSubscribeWebhook(a *Action) error {
 		}
 	}
 
-	_, status, err := wh.PostNotifications(a.PluginConfig, a.API, a.UserStore, ji)
+	_, status, err := wh.PostNotifications(a.PluginConfig, a.API, a.UserStore, a.Instance)
 	if err != nil {
 		return a.RespondError(status, err)
 	}
@@ -359,7 +356,27 @@ func httpSubscribeWebhook(a *Action) error {
 	return nil
 }
 
-func httpChannelCreateSubscription(a *Action) error {
+var httpChannelSubscriptions = []ActionFunc{
+	RequireHTTPMattermostUserId,
+	handleChannelSubscriptions,
+}
+
+func handleChannelSubscriptions(a *Action) error {
+	switch a.HTTPRequest.Method {
+	case http.MethodPost:
+		return handleChannelCreateSubscription(a)
+	case http.MethodDelete:
+		return handleChannelDeleteSubscription(a)
+	case http.MethodGet:
+		return handleChannelGetSubscriptions(a)
+	case http.MethodPut:
+		return handleChannelEditSubscription(a)
+	default:
+		return a.RespondError(http.StatusMethodNotAllowed, nil, "Request: %q is not allowed.", a.HTTPRequest.Method)
+	}
+}
+
+func handleChannelCreateSubscription(a *Action) error {
 	subscription := ChannelSubscription{}
 	err := json.NewDecoder(a.HTTPRequest.Body).Decode(&subscription)
 	if err != nil {
@@ -386,7 +403,7 @@ func httpChannelCreateSubscription(a *Action) error {
 	return a.RespondJSON(map[string]string{"status": "OK"})
 }
 
-func httpChannelEditSubscription(a *Action) error {
+func handleChannelEditSubscription(a *Action) error {
 	subscription := ChannelSubscription{}
 	err := json.NewDecoder(a.HTTPRequest.Body).Decode(&subscription)
 	if err != nil {
@@ -412,9 +429,9 @@ func httpChannelEditSubscription(a *Action) error {
 	return a.RespondJSON(map[string]string{"status": "OK"})
 }
 
-func httpChannelDeleteSubscription(a *Action) error {
-	subscriptionId := strings.TrimPrefix(a.HTTPRequest.URL.Path,
-		strings.TrimSuffix(routeAPISubscriptionsChannel, "*"))
+func handleChannelDeleteSubscription(a *Action) error {
+	// routeAPISubscriptionsChannel has the trailing '/'
+	subscriptionId := strings.TrimPrefix(a.HTTPRequest.URL.Path, routeAPISubscriptionsChannel)
 	if len(subscriptionId) != 26 {
 		return a.RespondError(http.StatusBadRequest, nil,
 			"bad subscription id")
@@ -439,9 +456,9 @@ func httpChannelDeleteSubscription(a *Action) error {
 	return a.RespondJSON(map[string]string{"status": "OK"})
 }
 
-func httpChannelGetSubscriptions(a *Action) error {
-	channelId := strings.TrimPrefix(a.HTTPRequest.URL.Path,
-		strings.TrimSuffix(routeAPISubscriptionsChannel, "*"))
+func handleChannelGetSubscriptions(a *Action) error {
+	// routeAPISubscriptionsChannel has the trailing '/'
+	channelId := strings.TrimPrefix(a.HTTPRequest.URL.Path, routeAPISubscriptionsChannel)
 	if len(channelId) != 26 {
 		return a.RespondError(http.StatusBadRequest, nil,
 			"bad channel id")
@@ -459,19 +476,4 @@ func httpChannelGetSubscriptions(a *Action) error {
 	}
 
 	return a.RespondJSON(subscriptions)
-}
-
-func httpChannelSubscriptions(a *Action) error {
-	switch a.HTTPRequest.Method {
-	case http.MethodPost:
-		return httpChannelCreateSubscription(a)
-	case http.MethodDelete:
-		return httpChannelDeleteSubscription(a)
-	case http.MethodGet:
-		return httpChannelGetSubscriptions(a)
-	case http.MethodPut:
-		return httpChannelEditSubscription(a)
-	default:
-		return a.RespondError(http.StatusMethodNotAllowed, nil, "Request: %q is not allowed.", a.HTTPRequest.Method)
-	}
 }

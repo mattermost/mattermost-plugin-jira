@@ -7,11 +7,9 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"net/http"
 	"net/url"
 
 	"github.com/andygrunwald/go-jira"
-	"github.com/pkg/errors"
 	ajwt "github.com/rbriski/atlassian-jwt"
 	oauth2_jira "golang.org/x/oauth2/jira"
 )
@@ -50,7 +48,7 @@ func NewJIRACloudInstance(key string, installed bool, rawASC string,
 	asc *AtlassianSecurityContext) *jiraCloudInstance {
 
 	return &jiraCloudInstance{
-		JIRAInstance:                NewJIRAInstance(JIRATypeCloud, key),
+		JIRAInstance:                newJIRAInstance(JIRATypeCloud, key),
 		Installed:                   installed,
 		RawAtlassianSecurityContext: rawASC,
 		AtlassianSecurityContext:    asc,
@@ -107,24 +105,6 @@ func (jci jiraCloudInstance) GetURL() string {
 func (jci jiraCloudInstance) GetJIRAClient(conf Config, secretsStore SecretsStore,
 	jiraUser *JIRAUser) (*jira.Client, error) {
 
-	client, _, err := jci.getJIRAClientForUser(conf, secretsStore, jiraUser)
-	if err == nil {
-		return client, nil
-	}
-
-	//TODO decide if we ever need this as the default client
-	// client, err = jci.getJIRAClientForServer()
-	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to get Jira client for user %s", jiraUser.Name)
-	}
-
-	return client, nil
-}
-
-// Creates a client for acting on behalf of a user
-func (jci jiraCloudInstance) getJIRAClientForUser(conf Config, secretsStore SecretsStore,
-	jiraUser *JIRAUser) (*jira.Client, *http.Client, error) {
-
 	oauth2Conf := oauth2_jira.Config{
 		BaseURL: jci.GetURL(),
 		Subject: jiraUser.Name,
@@ -138,7 +118,7 @@ func (jci jiraCloudInstance) getJIRAClientForUser(conf Config, secretsStore Secr
 	httpClient := oauth2Conf.Client(context.Background())
 
 	jiraClient, err := jira.NewClient(httpClient, oauth2Conf.BaseURL)
-	return jiraClient, httpClient, err
+	return jiraClient, err
 }
 
 // Creates a "bot" client with a JWT
