@@ -10,7 +10,7 @@ import JiraIcon from 'components/icon';
 
 export default class AttachCommentToIssuePostMenuAction extends PureComponent {
     static propTypes = {
-        isSystemMessage: PropTypes.bool,
+        isSystemMessage: PropTypes.bool.isRequired,
         locale: PropTypes.string,
         open: PropTypes.func.isRequired,
         postId: PropTypes.string,

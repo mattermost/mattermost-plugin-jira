@@ -10,14 +10,18 @@ import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
 import {openAttachCommentToIssueModal} from 'actions';
 
 import {getCurrentUserLocale, isUserConnected, isInstanceInstalled} from 'selectors';
+import {isCombinedUserActivityPost} from '../../utils';
 
 import AttachCommentToIssuePostMenuAction from './attach_comment_to_issue';
 
 const mapStateToProps = (state, ownProps) => {
     const post = getPost(state, ownProps.postId);
+    const oldSystemMessageOrNull = post ? isSystemMessage(post) : true;
+    const systemMessage = isCombinedUserActivityPost(post) || oldSystemMessageOrNull;
+
     return {
         locale: getCurrentUserLocale(state),
-        isSystemMessage: isSystemMessage(post),
+        isSystemMessage: systemMessage,
         userConnected: isUserConnected(state),
         instanceInstalled: isInstanceInstalled(state),
     };
