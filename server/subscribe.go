@@ -6,7 +6,6 @@ package main
 import (
 	"crypto/subtle"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -98,7 +97,7 @@ func SubscriptionsFromJson(bytes []byte) (*Subscriptions, error) {
 func GetBotUserID(conf Config, api plugin.API) (string, error) {
 	user, appErr := api.GetUserByUsername(conf.UserName)
 	if appErr != nil {
-		return "", fmt.Errorf(appErr.Message)
+		return "", errors.Errorf(appErr.Message)
 	}
 
 	return user.Id, nil

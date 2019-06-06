@@ -41,7 +41,7 @@ var httpRouter = ActionRouter{
 			a.HTTPStatusCode = http.StatusOK
 		}
 		if a.LogErr != nil {
-			a.Errorf("http: %v %s %v", a.HTTPStatusCode, a.HTTPRequest.URL.String(), a.LogErr)
+			a.Infof("http: %v %s %v", a.HTTPStatusCode, a.HTTPRequest.URL.String(), a.LogErr)
 		} else {
 			a.Debugf("http: %v %s", a.HTTPStatusCode, a.HTTPRequest.URL.String())
 		}

@@ -31,7 +31,7 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 var commandRouter = ActionRouter{
 	Log: func(a *Action) error {
 		if a.LogErr != nil {
-			a.Errorf("command: %q error:%v", a.CommandHeader.Command, a.LogErr)
+			a.Infof("command: %q error:%v", a.CommandHeader.Command, a.LogErr)
 		} else {
 			a.Debugf("command: %q", a.CommandHeader.Command)
 		}
