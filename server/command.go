@@ -391,7 +391,7 @@ func getCommand() *model.Command {
 	}
 }
 
-func commandResponse(format string, args ...interface{}) *model.CommandResponse {
+func commandResponsef(format string, args ...interface{}) *model.CommandResponse {
 	return &model.CommandResponse{
 		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
 		Text:         fmt.Sprintf(format, args...),

@@ -290,7 +290,7 @@ func (a *Action) RespondError(httpStatusCode int, err error, wrap ...interface{}
 		a.HTTPStatusCode = httpStatusCode
 		http.Error(a.HTTPResponseWriter, err.Error(), httpStatusCode)
 	} else {
-		a.CommandResponse = commandResponse(err.Error())
+		a.CommandResponse = commandResponsef(err.Error())
 	}
 
 	return err
@@ -307,7 +307,7 @@ func (a *Action) RespondPrintf(format string, args ...interface{}) error {
 				"failed to write response")
 		}
 	} else {
-		a.CommandResponse = commandResponse(text)
+		a.CommandResponse = commandResponsef(text)
 	}
 	return nil
 }
@@ -348,7 +348,7 @@ func (a *Action) RespondTemplate(templateKey, contentType string, values interfa
 			return a.RespondError(http.StatusInternalServerError, err,
 				"failed to write response")
 		}
-		a.CommandResponse = commandResponse(string(bb.Bytes()))
+		a.CommandResponse = commandResponsef(string(bb.Bytes()))
 	}
 	return nil
 }
@@ -367,7 +367,7 @@ func (a *Action) RespondJSON(value interface{}) error {
 			return a.RespondError(http.StatusInternalServerError, err,
 				"failed to write response")
 		}
-		a.CommandResponse = commandResponse(string(bb))
+		a.CommandResponse = commandResponsef(string(bb))
 	}
 	return nil
 }
