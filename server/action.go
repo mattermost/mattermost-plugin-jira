@@ -34,9 +34,9 @@ type Action struct {
 	PluginContext        *plugin.Context
 
 	// Input
-	CommandHeader *model.CommandArgs
-	CommandArgs   []string
-	HTTPRequest   *http.Request
+	CommandArgs *model.CommandArgs
+	Args        []string
+	HTTPRequest *http.Request
 
 	// Output
 	CommandResponse    *model.CommandResponse
@@ -83,8 +83,8 @@ func RequireMattermostUserId(a *Action) error {
 		return nil
 	}
 	mattermostUserId := ""
-	if a.CommandHeader != nil && a.CommandHeader.UserId != "" {
-		mattermostUserId = a.CommandHeader.UserId
+	if a.CommandArgs != nil && a.CommandArgs.UserId != "" {
+		mattermostUserId = a.CommandArgs.UserId
 	} else if a.HTTPRequest != nil {
 		mattermostUserId = a.HTTPRequest.Header.Get("Mattermost-User-Id")
 	}
