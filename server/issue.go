@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/andygrunwald/go-jira"
-	"github.com/google/go-querystring/query"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -83,16 +82,29 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		parentId = create.PostId
 	}
 
+	issue := &jira.Issue{
+		Fields: &create.Fields,
+	}
+
+	project, resp, err := jiraClient.Project.Get(issue.Fields.Project.Key)
+	if err != nil {
+		message := "failed to get the project, postId: " + create.PostId
+		if resp != nil {
+			bb, _ := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+			message += ", details:" + string(bb)
+		}
+
+		return http.StatusInternalServerError, errors.WithMessage(err, message)
+	}
+
 	if len(create.RequiredFieldsNotCovered) > 0 {
 
-		v, _ := query.Values(create.Fields)
+		req := buildCreateQuery(ji, project, issue)
 
 		message := "The project you tried to create an issue for has **required fields** this plugin does not yet support. "
-		url := fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", ji.GetURL())
-		query := "pid=10000&issuetype=10004"
-
 		reply := &model.Post{
-			Message:   fmt.Sprintf("%v Please [create your Jira issue manually](%v?%v&%v).", message, url, query, v.Encode()),
+			Message:   fmt.Sprintf("%v Please [create your Jira issue manually](%v).", message, req.URL.String()),
 			ChannelId: post.ChannelId,
 			RootId:    rootId,
 			ParentId:  parentId,
@@ -103,12 +115,13 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 			return http.StatusInternalServerError,
 				errors.WithMessage(appErr, "failed to create notification post "+create.PostId)
 		}
+
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, "{}")
 		return http.StatusOK, nil
 	}
 
-	created, resp, err := jiraClient.Issue.Create(&jira.Issue{
-		Fields: &create.Fields,
-	})
+	created, resp, err := jiraClient.Issue.Create(issue)
 	if err != nil {
 		message := "failed to create the issue, postId: " + create.PostId
 		if resp != nil {
@@ -393,6 +406,46 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 			errors.WithMessage(err, "failed to write response "+attach.PostId)
 	}
 	return http.StatusOK, nil
+}
+
+func buildCreateQuery(ji Instance, project *jira.Project, issue *jira.Issue) *http.Request {
+
+	url := fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", ji.GetURL())
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Printf("we've found the errro = %+v\n", err)
+	}
+
+	q := req.URL.Query()
+	q.Add("pid", project.ID)
+	q.Add("issuetype", issue.Fields.Type.ID)
+	q.Add("summary", issue.Fields.Summary)
+	q.Add("description", issue.Fields.Description)
+
+	// if no priority, ID field does not exist
+	if issue.Fields.Priority != nil {
+		q.Add("priority", issue.Fields.Priority.ID)
+	}
+
+	// add custom fields
+	for k, v := range issue.Fields.Unknowns {
+
+		strV, ok := v.(string)
+		if ok {
+			q.Add(k, strV)
+		}
+
+		if mapV, ok := v.(map[string]interface{}); ok {
+			if id, ok := mapV["id"].(string); ok {
+				q.Add(k, id)
+			}
+		}
+
+	}
+
+	req.URL.RawQuery = q.Encode()
+
+	return req
 }
 
 func getPermaLink(ji Instance, postId string, post *model.Post) (string, error) {
