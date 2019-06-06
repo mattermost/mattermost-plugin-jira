@@ -185,6 +185,13 @@ func httpAPIGetCreateIssueMetadata(ji Instance, w http.ResponseWriter, r *http.R
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+
+	if len(cimd.Projects) == 0 {
+		fmt.Fprintf(w, "{\"error\": \"You do not have permission to create issues in any projects. Please contact your Jira admin.\"}")
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to marshal response")
+	}
+
 	b, err := json.Marshal(cimd)
 	if err != nil {
 		return http.StatusInternalServerError,
