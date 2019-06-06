@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -29,12 +30,19 @@ type externalConfig struct {
 	Secret string `json:"secret"`
 }
 
+const currentInstanceTTL = 1 * time.Second
+
 type config struct {
 	// externalConfig caches values from the plugin's settings in the server's config.json
 	externalConfig
 
 	// Cached actual bot user ID (derived from c.UserName)
 	botUserID string
+
+	// Cached current Jira instance. A non-0 expires indicates the presence
+	// of a value. A nil value means there is no instance available.
+	currentInstance        Instance
+	currentInstanceExpires time.Time
 }
 
 type Plugin struct {
