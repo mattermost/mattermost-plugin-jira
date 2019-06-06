@@ -28,6 +28,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	create := &struct {
 		RequiredFieldsNotCovered []string         `json:"required_fields_not_covered"`
 		PostId                   string           `json:"post_id"`
+		CurrentTeam              string           `json:"current_team"`
 		Fields                   jira.IssueFields `json:"fields"`
 	}{}
 	err := json.NewDecoder(r.Body).Decode(&create)
@@ -62,16 +63,12 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 			errors.New("failed to load post " + create.PostId + ": not found")
 	}
 
-	permalink, err := getPermaLink(ji, create.PostId, post)
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.New("failed to get permalink for " + create.PostId + ": not found")
-	}
+	permalink := getPermaLink(ji, create.PostId, create.CurrentTeam)
 
 	if len(create.Fields.Description) > 0 {
-		create.Fields.Description += fmt.Sprintf("\n%v", permalink)
+		create.Fields.Description += fmt.Sprintf("\n\n_Issue created from a [message in Mattermost|%v]_.", permalink)
 	} else {
-		create.Fields.Description = permalink
+		create.Fields.Description = fmt.Sprintf("_Issue created from a [message in Mattermost|%v]_.", permalink)
 	}
 
 	rootId := create.PostId
@@ -313,8 +310,9 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 	api := ji.GetPlugin().API
 
 	attach := &struct {
-		PostId   string `json:"post_id"`
-		IssueKey string `json:"issueKey"`
+		PostId      string `json:"post_id"`
+		CurrentTeam string `json:"current_team"`
+		IssueKey    string `json:"issueKey"`
 	}{}
 	err := json.NewDecoder(r.Body).Decode(&attach)
 	if err != nil {
@@ -354,11 +352,7 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 			errors.New("failed to load post.UserID " + post.UserId + ": not found")
 	}
 
-	permalink, err := getPermaLink(ji, attach.PostId, post)
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.New("failed to get permalink for " + attach.PostId + ": not found")
-	}
+	permalink := getPermaLink(ji, attach.PostId, attach.CurrentTeam)
 
 	permalinkMessage := fmt.Sprintf("*@%s attached a* [message|%s] *from @%s*\n", jiraUser.User.Name, permalink, commentUser.Username)
 
@@ -448,26 +442,8 @@ func buildCreateQuery(ji Instance, project *jira.Project, issue *jira.Issue) *ht
 	return req
 }
 
-func getPermaLink(ji Instance, postId string, post *model.Post) (string, error) {
-
-	api := ji.GetPlugin().API
-
-	channel, appErr := api.GetChannel(post.ChannelId)
-	if appErr != nil {
-		return "", errors.WithMessage(appErr, "failed to get ChannelId, ChannelId: "+post.ChannelId)
-	}
-
-	team, appErr := api.GetTeam(channel.TeamId)
-	if appErr != nil {
-		return "", errors.WithMessage(appErr, "failed to get team, TeamId: "+channel.TeamId)
-	}
-
-	permalink := fmt.Sprintf("%v/%v/pl/%v",
-		ji.GetPlugin().GetSiteURL(),
-		team.Name,
-		postId,
-	)
-	return permalink, nil
+func getPermaLink(ji Instance, postId string, currentTeam string) string {
+	return fmt.Sprintf("%v/%v/pl/%v", ji.GetPlugin().GetSiteURL(), currentTeam, postId)
 }
 
 func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string, error) {

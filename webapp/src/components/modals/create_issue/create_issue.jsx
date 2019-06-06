@@ -33,6 +33,7 @@ export default class CreateIssueModal extends PureComponent {
         close: PropTypes.func.isRequired,
         create: PropTypes.func.isRequired,
         post: PropTypes.object,
+        currentTeam: PropTypes.string.isRequired,
         theme: PropTypes.object.isRequired,
         visible: PropTypes.bool.isRequired,
         jiraIssueMetadata: PropTypes.object,
@@ -103,6 +104,7 @@ export default class CreateIssueModal extends PureComponent {
 
         const issue = {
             post_id: this.props.post.id,
+            current_team: this.props.currentTeam.name,
             fields: this.state.fields,
             required_fields_not_covered: requiredFieldsNotCovered,
         };
