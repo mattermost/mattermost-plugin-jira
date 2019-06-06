@@ -15,7 +15,8 @@ import (
 type jiraServerInstance struct {
 	*instance
 
-	JIRAServerURL string
+	// The JSON name is v2.0 compatible
+	ServerURL string `json:"JIRAServerURL,omitempty"`
 
 	// The SiteURL may change as we go, so we store the PluginKey when as it was installed
 	MattermostKey string
@@ -29,12 +30,12 @@ func NewServerInstance(jiraURL, mattermostKey string) *jiraServerInstance {
 	return &jiraServerInstance{
 		instance:      newInstance(InstanceTypeServer, jiraURL),
 		MattermostKey: mattermostKey,
-		JIRAServerURL: jiraURL,
+		ServerURL:     jiraURL,
 	}
 }
 
 func (serverInstance jiraServerInstance) GetURL() string {
-	return serverInstance.JIRAServerURL
+	return serverInstance.ServerURL
 }
 
 func (serverInstance jiraServerInstance) GetMattermostKey() string {
