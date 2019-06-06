@@ -61,8 +61,8 @@ type Action struct {
 type ActionFilter []ActionFunc
 
 type ActionScript struct {
-	Filter  ActionFilter
 	Handler ActionFunc
+	Filter  ActionFilter
 }
 
 type ActionRouter struct {

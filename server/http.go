@@ -63,38 +63,59 @@ var httpRouter = ActionRouter{
 	},
 	RouteHandlers: map[string]*ActionScript{
 		// MM client APIs
-		routeAPICreateIssue:            {Filter: httpPostFilter(httpJiraClientFilter...), Handler: httpAPICreateIssue},
-		routeAPIAttachCommentToIssue:   {Filter: httpPostFilter(httpJiraClientFilter...), Handler: httpAPIAttachCommentToIssue},
-		routeAPIGetCreateIssueMetadata: {Filter: httpGetFilter(httpJiraClientFilter...), Handler: httpAPIGetCreateIssueMetadata},
-		routeAPIUserInfo:               {Filter: httpGetFilter(httpJiraUserFilter...), Handler: httpAPIGetUserInfo},
-		routeAPISubscribeWebhook:       {Filter: httpPostFilter(), Handler: httpSubscribeWebhook},
-		routeAPISubscriptionsChannel:   {Filter: ActionFilter{RequireHTTPMattermostUserId}, Handler: httpChannelSubscriptions},
+		routeAPICreateIssue: {
+			httpAPICreateIssue,
+			httpPostFilter(httpJiraClientFilter...)},
+		routeAPIAttachCommentToIssue: {
+			httpAPIAttachCommentToIssue,
+			httpPostFilter(httpJiraClientFilter...)},
+		routeAPIGetCreateIssueMetadata: {
+			httpAPIGetCreateIssueMetadata,
+			httpGetFilter(httpJiraClientFilter...)},
+		routeAPIUserInfo: {
+			httpAPIGetUserInfo,
+			httpGetFilter(httpJiraUserFilter...)},
+		routeAPISubscribeWebhook: {
+			httpSubscribeWebhook,
+			httpPostFilter()},
+		routeAPISubscriptionsChannel: {
+			httpChannelSubscriptions,
+			ActionFilter{RequireHTTPMattermostUserId}},
+
+		// Incoming webhooks
+		routeIncomingWebhook:    {httpWebhook, httpPostFilter()},
+		routeIncomingIssueEvent: {httpWebhook, httpPostFilter()},
 
 		// Atlassian Connect application
-		routeACInstalled: {Filter: httpPostFilter(), Handler: httpACInstalled},
-		routeACJSON:      {Filter: httpGetFilter(), Handler: httpACJSON},
+		routeACInstalled: {httpACInstalled, httpPostFilter()},
+		routeACJSON:      {httpACJSON, httpGetFilter()},
 
 		// User connect and disconnect URLs
-		routeUserConnect:    {Filter: httpGetFilter(RequireHTTPMattermostUserId, RequireInstance), Handler: httpUserConnect},
-		routeUserDisconnect: {Filter: httpGetFilter(httpJiraUserFilter...), Handler: httpUserDisconnect},
+		routeUserConnect: {
+			httpUserConnect,
+			httpGetFilter(RequireHTTPMattermostUserId, RequireInstance)},
+		routeUserDisconnect: {
+			httpUserDisconnect,
+			httpGetFilter(httpJiraUserFilter...)},
 
 		// Atlassian Connect user mapping
-		routeACUserRedirectWithToken: {Filter: httpGetFilter(RequireHTTPCloudJWT), Handler: httpACUserRedirect},
-		routeACUserConfirm:           {Filter: httpGetFilter(RequireHTTPCloudJWT), Handler: httpACUserInteractive},
-		routeACUserConnected:         {Filter: httpGetFilter(RequireHTTPCloudJWT), Handler: httpACUserInteractive},
-		routeACUserDisconnected:      {Filter: httpGetFilter(RequireHTTPCloudJWT), Handler: httpACUserInteractive},
+		routeACUserRedirectWithToken: {
+			httpACUserRedirect,
+			httpGetFilter(RequireHTTPCloudJWT)},
+		routeACUserConfirm: {
+			httpACUserInteractive,
+			httpGetFilter(RequireHTTPMattermostUserId, RequireMattermostUser, RequireHTTPCloudJWT)},
+		routeACUserConnected: {
+			httpACUserInteractive,
+			httpGetFilter(RequireHTTPMattermostUserId, RequireMattermostUser, RequireHTTPCloudJWT)},
+		routeACUserDisconnected: {
+			httpACUserInteractive,
+			httpGetFilter(RequireHTTPMattermostUserId, RequireMattermostUser, RequireHTTPCloudJWT)},
 
 		// Oauth1 (Jira Server) user mapping
 		routeOAuth1Complete: {
-			Filter:  httpGetFilter(RequireHTTPMattermostUserId, RequireServerInstance, RequireMattermostUser),
-			Handler: httpOAuth1Complete,
-		},
-
-		// incoming webhooks
-		routeIncomingWebhook:    {Filter: httpPostFilter(), Handler: httpWebhook},
-		routeIncomingIssueEvent: {Filter: httpPostFilter(), Handler: httpWebhook},
-
-		// TODO <><> compare to jira2
+			httpOAuth1Complete,
+			httpGetFilter(RequireHTTPMattermostUserId, RequireServerInstance, RequireMattermostUser)},
 	},
 }
 

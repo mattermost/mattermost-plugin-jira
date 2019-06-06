@@ -28,11 +28,6 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira uninstall server <URL>` - Disconnect Mattermost from a Jira Server or Data Center instance located at <URL>\n" +
 	""
 
-var instanceFilter = ActionFilter{RequireInstance}
-var commandUserFilter = ActionFilter{RequireMattermostUser}
-var commandSysAdminFilter = ActionFilter{RequireMattermostSysAdmin}
-var commandJiraClientFilter = ActionFilter{RequireJiraClient}
-
 var commandRouter = ActionRouter{
 	DefaultRouteHandler: executeHelp,
 	Log: ActionFilter{
@@ -45,21 +40,22 @@ var commandRouter = ActionRouter{
 			return nil
 		},
 	},
+	// MattermostUserID is set for all commands, so no special "Requir" for it
 	RouteHandlers: map[string]*ActionScript{
-		"connect":          {Filter: instanceFilter, Handler: executeConnect},
-		"disconnect":       {Filter: instanceFilter, Handler: executeDisconnect},
-		"settings":         {Filter: commandJiraClientFilter, Handler: executeSettings},
-		"transition":       {Filter: commandJiraClientFilter, Handler: executeTransition},
-		"install/server":   {Filter: commandSysAdminFilter, Handler: executeInstallServer},
-		"install/cloud":    {Filter: commandSysAdminFilter, Handler: executeInstallCloud},
-		"uninstall/cloud":  {Filter: commandSysAdminFilter, Handler: executeUninstall},
-		"uninstall/server": {Filter: commandSysAdminFilter, Handler: executeUninstall},
+		"connect":          {executeConnect, ActionFilter{RequireInstance}},
+		"disconnect":       {executeDisconnect, ActionFilter{RequireInstance, RequireJiraUser}},
+		"settings":         {executeSettings, ActionFilter{RequireJiraClient}},
+		"transition":       {executeTransition, ActionFilter{RequireJiraClient}},
+		"install/server":   {executeInstallServer, ActionFilter{RequireMattermostSysAdmin}},
+		"install/cloud":    {executeInstallCloud, ActionFilter{RequireMattermostSysAdmin}},
+		"uninstall/cloud":  {executeUninstall, ActionFilter{RequireInstance, RequireMattermostSysAdmin}},
+		"uninstall/server": {executeUninstall, ActionFilter{RequireInstance, RequireMattermostSysAdmin}},
 
 		// used for debugging, uncomment if needed
-		"webhook":         {Filter: commandSysAdminFilter, Handler: executeWebhookURL},
-		"list":            {Filter: commandSysAdminFilter, Handler: executeList},
-		"instance/select": {Filter: commandSysAdminFilter, Handler: executeInstanceSelect},
-		"instance/delete": {Filter: commandSysAdminFilter, Handler: executeInstanceDelete},
+		"webhook":         {executeWebhookURL, ActionFilter{RequireMattermostSysAdmin}},
+		"list":            {executeList, ActionFilter{RequireMattermostSysAdmin}},
+		"instance/select": {executeInstanceSelect, ActionFilter{RequireMattermostSysAdmin}},
+		"instance/delete": {executeInstanceDelete, ActionFilter{RequireMattermostSysAdmin}},
 	},
 }
 
@@ -70,9 +66,10 @@ const (
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	args := strings.Fields(commandArgs.Command)
+	args = args[1:]
 	action := NewAction(p, c)
 	action.CommandHeader = commandArgs
-	action.CommandArgs = args[1:]
+	action.CommandArgs = args
 	action.MattermostUserId = commandArgs.UserId
 
 	scriptKey := ""
@@ -161,6 +158,9 @@ func executeList(a *Action) error {
 		return a.RespondPrintf("(none installed)\n")
 	}
 
+	// error not important here, only need to highlight thee current in the list
+	currentInstance, _ := a.CurrentInstanceStore.LoadCurrentJIRAInstance()
+
 	keys := []string{}
 	for key := range known {
 		keys = append(keys, key)
@@ -183,7 +183,7 @@ func executeList(a *Action) error {
 			details = ji.GetType()
 		}
 		format := "|%v|%s|%s|\n"
-		if key == a.Instance.GetURL() {
+		if currentInstance != nil && key == currentInstance.GetURL() {
 			format = "| **%v** | **%s** |%s|\n"
 		}
 		text += fmt.Sprintf(format, i+1, key, details)
@@ -376,10 +376,12 @@ func executeInstanceSelect(a *Action) error {
 	if err != nil {
 		return a.RespondError(0, err)
 	}
+	a.Debugf("<><> loaded %v", ji)
 	err = a.CurrentInstanceStore.StoreCurrentJIRAInstance(ji)
 	if err != nil {
 		return a.RespondError(0, err)
 	}
+	a.Debugf("<><> saved %v", ji)
 
 	a.CommandArgs = []string{}
 	return executeList(a)
