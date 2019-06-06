@@ -27,7 +27,7 @@
         "display_name": "Webhook Secret",
         "type": "generated",
         "help_text": "The secret used to authenticate the webhook to Mattermost.",
-        "regenerate_help_text": "Regenerates the secret for the webhook URL endpoint. Regenerating the secret invalidates your existing JIRA integrations."
+        "regenerate_help_text": "Regenerates the secret for the webhook URL endpoint. Regenerating the secret invalidates your existing Jira integrations."
       }
     ],
     "footer": "Use this webhook URL to set up the Jira integration. See [documentation](https://about.mattermost.com/default-jira-plugin) to learn more.\n\n`https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL`"

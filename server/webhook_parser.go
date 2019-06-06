@@ -144,7 +144,7 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) Webhook {
 
 	message := fmt.Sprintf("%s mentioned you on %s:\n>%s",
 		jwh.mdUser(), jwh.mdKeyLink(), jwh.Comment.Body)
-	for _, u := range parseJIRAUsernamesFromText(wh.Comment.Body) {
+	for _, u := range parseJiraUsernamesFromText(wh.Comment.Body) {
 		// don't mention the author of the comment
 		if u == jwh.User.Name {
 			continue

@@ -49,7 +49,7 @@ func handleOAuth1Complete(a *Action) error {
 			"failed to obtain oauth1 config")
 	}
 
-	// Although we pass the oauthTmpCredentials as required here. The JIRA server does not appar to validate it.
+	// Although we pass the oauthTmpCredentials as required here. The Jira server does not appar to validate it.
 	// We perform the check above for reuse so this is irrelavent to the security from our end.
 	accessToken, accessSecret, err := oauth1Config.AccessToken(requestToken, oauthTmpCredentials.Secret, verifier)
 	if err != nil {
@@ -57,12 +57,12 @@ func handleOAuth1Complete(a *Action) error {
 			"failed to obtain oauth1 access token")
 	}
 
-	jiraUser := JIRAUser{
+	jiraUser := JiraUser{
 		Oauth1AccessToken:  accessToken,
 		Oauth1AccessSecret: accessSecret,
 	}
 
-	jiraClient, err := a.JiraServerInstance.GetJIRAClient(a.PluginConfig, a.SecretsStore, &jiraUser)
+	jiraClient, err := a.JiraServerInstance.GetClient(a.PluginConfig, a.SecretsStore, &jiraUser)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}

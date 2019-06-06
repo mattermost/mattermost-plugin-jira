@@ -51,9 +51,9 @@ func handleACInstalled(a *Action) error {
 			"failed to unmarshal request")
 	}
 
-	// Only allow this operation once, a JIRA instance must already exist
+	// Only allow this operation once, a Jira instance must already exist
 	// for asc.BaseURL but not Installed.
-	instance, err := a.InstanceStore.LoadJIRAInstance(asc.BaseURL)
+	instance, err := a.InstanceStore.LoadInstance(asc.BaseURL)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err,
 			"failed to load instance %q", asc.BaseURL)
@@ -65,7 +65,7 @@ func handleACInstalled(a *Action) error {
 	cloudInstance, ok := instance.(*jiraCloudInstance)
 	if !ok {
 		return a.RespondError(http.StatusBadRequest, nil,
-			"Must be a JIRA Cloud instance, is %q", instance.GetType())
+			"Must be a Jira Cloud instance, is %q", instance.GetType())
 	}
 	if cloudInstance.Installed {
 		return a.RespondError(http.StatusForbidden, nil,
@@ -73,13 +73,13 @@ func handleACInstalled(a *Action) error {
 	}
 
 	// Create a permanent instance record, also store it as current
-	jiraInstance := NewJIRACloudInstance(asc.BaseURL, true, string(body), &asc)
-	// StoreJIRAInstance also updates the list of known Jira instances
-	err = a.InstanceStore.StoreJIRAInstance(jiraInstance)
+	jiraInstance := NewCloudInstance(asc.BaseURL, true, string(body), &asc)
+	// StoreInstance also updates the list of known Jira instances
+	err = a.InstanceStore.StoreInstance(jiraInstance)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
-	err = StoreCurrentJIRAInstanceAndNotify(a.API, a.CurrentInstanceStore, jiraInstance)
+	err = StoreCurrentInstanceAndNotify(a.API, a.CurrentInstanceStore, jiraInstance)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}

@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	JIRATypeCloud  = "cloud"
-	JIRATypeServer = "server"
+	InstanceTypeCloud  = "cloud"
+	InstanceTypeServer = "server"
 )
 
 const prefixForInstance = true
@@ -24,10 +24,10 @@ type Instance interface {
 	GetType() string
 	GetURL() string
 	GetUserConnectURL(Config, SecretsStore, string) (string, error)
-	GetJIRAClient(Config, SecretsStore, *JIRAUser) (*jira.Client, error)
+	GetClient(Config, SecretsStore, *JiraUser) (*jira.Client, error)
 }
 
-type JIRAInstance struct {
+type instance struct {
 	Key  string
 	Type string
 }
@@ -38,17 +38,17 @@ type InstanceStatus struct {
 
 var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
 
-func newJIRAInstance(typ, key string) *JIRAInstance {
-	return &JIRAInstance{
+func newInstance(typ, key string) *instance {
+	return &instance{
 		Type: typ,
 		Key:  key,
 	}
 }
 
-func (ji JIRAInstance) GetKey() string {
-	return ji.Key
+func (instance instance) GetKey() string {
+	return instance.Key
 }
 
-func (ji JIRAInstance) GetType() string {
-	return ji.Type
+func (instance instance) GetType() string {
+	return instance.Type
 }

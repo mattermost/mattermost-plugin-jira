@@ -11,7 +11,7 @@ import (
 	"github.com/mattermost/mattermost-server/plugin"
 )
 
-func CreateBotDMPost(conf Config, api plugin.API, userStore UserStore, ji Instance, userId, message,
+func CreateBotDMPost(conf Config, api plugin.API, userStore UserStore, instance Instance, userId, message,
 	postType string) (post *model.Post, returnErr error) {
 	defer func() {
 		if returnErr != nil {
@@ -21,7 +21,7 @@ func CreateBotDMPost(conf Config, api plugin.API, userStore UserStore, ji Instan
 	}()
 
 	// Don't send DMs to users who have turned off notifications
-	jiraUser, err := userStore.LoadJIRAUser(ji, userId)
+	jiraUser, err := userStore.LoadJiraUser(instance, userId)
 	if err != nil {
 		// not connected to Jira, so no need to send a DM, and no need to report an error
 		return nil, nil
@@ -55,8 +55,10 @@ func CreateBotDMPost(conf Config, api plugin.API, userStore UserStore, ji Instan
 	return post, nil
 }
 
-func StoreCurrentJIRAInstanceAndNotify(api plugin.API, currentInstanceStore CurrentInstanceStore, ji Instance) error {
-	appErr := currentInstanceStore.StoreCurrentJIRAInstance(ji)
+func StoreCurrentInstanceAndNotify(api plugin.API, currentInstanceStore CurrentInstanceStore,
+	instance Instance) error {
+
+	appErr := currentInstanceStore.StoreCurrentInstance(instance)
 	if appErr != nil {
 		return appErr
 	}
@@ -71,7 +73,7 @@ func StoreCurrentJIRAInstanceAndNotify(api plugin.API, currentInstanceStore Curr
 	return nil
 }
 
-func (p *Plugin) loadJIRAProjectKeys(jiraClient *jira.Client) ([]string, error) {
+func (p *Plugin) loadProjectKeys(jiraClient *jira.Client) ([]string, error) {
 	list, _, err := jiraClient.Project.GetList()
 	if err != nil {
 		return nil, errors.WithMessage(err, "Error requesting list of Jira projects")
@@ -84,7 +86,7 @@ func (p *Plugin) loadJIRAProjectKeys(jiraClient *jira.Client) ([]string, error) 
 	return projectKeys, nil
 }
 
-func parseJIRAUsernamesFromText(text string) []string {
+func parseJiraUsernamesFromText(text string) []string {
 	usernameMap := map[string]bool{}
 	usernames := []string{}
 
@@ -101,7 +103,7 @@ func parseJIRAUsernamesFromText(text string) []string {
 	return usernames
 }
 
-func parseJIRAIssuesFromText(text string, keys []string) []string {
+func parseJiraIssuesFromText(text string, keys []string) []string {
 	issueMap := map[string]bool{}
 	issues := []string{}
 

@@ -15,7 +15,7 @@ import (
 )
 
 type jiraCloudInstance struct {
-	*JIRAInstance
+	*instance
 
 	// Initially a new instance is created with an expiration time. The
 	// admin is expected to upload it to the Jira instance, and we will
@@ -44,11 +44,11 @@ type AtlassianSecurityContext struct {
 	OAuthClientId  string `json:"oauthClientId"`
 }
 
-func NewJIRACloudInstance(key string, installed bool, rawASC string,
+func NewCloudInstance(key string, installed bool, rawASC string,
 	asc *AtlassianSecurityContext) *jiraCloudInstance {
 
 	return &jiraCloudInstance{
-		JIRAInstance:                newJIRAInstance(JIRATypeCloud, key),
+		instance:                    newInstance(InstanceTypeCloud, key),
 		Installed:                   installed,
 		RawAtlassianSecurityContext: rawASC,
 		AtlassianSecurityContext:    asc,
@@ -102,8 +102,8 @@ func (jci jiraCloudInstance) GetURL() string {
 	return jci.AtlassianSecurityContext.BaseURL
 }
 
-func (jci jiraCloudInstance) GetJIRAClient(conf Config, secretsStore SecretsStore,
-	jiraUser *JIRAUser) (*jira.Client, error) {
+func (jci jiraCloudInstance) GetClient(conf Config, secretsStore SecretsStore,
+	jiraUser *JiraUser) (*jira.Client, error) {
 
 	oauth2Conf := oauth2_jira.Config{
 		BaseURL: jci.GetURL(),
@@ -122,7 +122,7 @@ func (jci jiraCloudInstance) GetJIRAClient(conf Config, secretsStore SecretsStor
 }
 
 // Creates a "bot" client with a JWT
-func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
+func (jci jiraCloudInstance) getClientForServer() (*jira.Client, error) {
 	jwtConf := &ajwt.Config{
 		Key:          jci.AtlassianSecurityContext.Key,
 		ClientKey:    jci.AtlassianSecurityContext.ClientKey,

@@ -14,12 +14,12 @@ import (
 )
 
 const (
-	keyCurrentJIRAInstance = "current_jira_instance"
-	keyKnownJIRAInstances  = "known_jira_instances"
-	keyRSAKey              = "rsa_key"
-	keyTokenSecret         = "token_secret"
-	prefixJIRAInstance     = "jira_instance_"
-	prefixOneTimeSecret    = "ots_" // + unique key that will be deleted after the first verification
+	keyCurrentInstance  = "current_jira_instance"
+	keyKnownInstances   = "known_jira_instances"
+	keyRSAKey           = "rsa_key"
+	keyTokenSecret      = "token_secret"
+	prefixInstance      = "jira_instance_"
+	prefixOneTimeSecret = "ots_" // + unique key that will be deleted after the first verification
 )
 
 type Store interface {
@@ -39,24 +39,24 @@ type SecretsStore interface {
 }
 
 type InstanceStore interface {
-	StoreJIRAInstance(ji Instance) error
+	StoreInstance(Instance) error
 	CreateInactiveCloudInstance(jiraURL string) error
 	DeleteJiraInstance(key string) error
-	LoadJIRAInstance(key string) (Instance, error)
-	StoreKnownJIRAInstances(known map[string]string) error
-	LoadKnownJIRAInstances() (map[string]string, error)
+	LoadInstance(key string) (Instance, error)
+	StoreKnownInstances(known map[string]string) error
+	LoadKnownInstances() (map[string]string, error)
 }
 
 type CurrentInstanceStore interface {
-	StoreCurrentJIRAInstance(ji Instance) error
-	LoadCurrentJIRAInstance() (Instance, error)
+	StoreCurrentInstance(Instance) error
+	LoadCurrentInstance() (Instance, error)
 }
 
 type UserStore interface {
-	StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JIRAUser) error
-	LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, error)
-	LoadMattermostUserId(ji Instance, jiraUserName string) (string, error)
-	DeleteUserInfo(ji Instance, mattermostUserId string) error
+	StoreUserInfo(Instance, string, JiraUser) error
+	LoadJiraUser(Instance, string) (JiraUser, error)
+	LoadMattermostUserId(Instance, string) (string, error)
+	DeleteUserInfo(Instance, string) error
 }
 
 type store struct {
@@ -67,10 +67,10 @@ func NewStore(p *Plugin) Store {
 	return &store{plugin: p}
 }
 
-func keyWithInstance(ji Instance, key string) string {
+func keyWithInstance(instance Instance, key string) string {
 	if prefixForInstance {
 		h := md5.New()
-		fmt.Fprintf(h, "%s/%s", ji.GetURL(), key)
+		fmt.Fprintf(h, "%s/%s", instance.GetURL(), key)
 		key = fmt.Sprintf("%x", h.Sum(nil))
 	}
 	return key
@@ -127,27 +127,27 @@ func (store store) set(key string, v interface{}) (returnErr error) {
 	return nil
 }
 
-func (store store) StoreJIRAInstance(ji Instance) (returnErr error) {
+func (store store) StoreInstance(instance Instance) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store Jira instance:%s", ji.GetURL()))
+			fmt.Sprintf("failed to store Jira instance:%s", instance.GetURL()))
 	}()
 
-	err := store.set(hashkey(prefixJIRAInstance, ji.GetURL()), ji)
+	err := store.set(hashkey(prefixInstance, instance.GetURL()), instance)
 	if err != nil {
 		return err
 	}
 
 	// Update known instances
-	known, err := store.LoadKnownJIRAInstances()
+	known, err := store.LoadKnownInstances()
 	if err != nil {
 		return err
 	}
-	known[ji.GetURL()] = ji.GetType()
-	err = store.StoreKnownJIRAInstances(known)
+	known[instance.GetURL()] = instance.GetType()
+	err = store.StoreKnownInstances(known)
 	if err != nil {
 		return err
 	}
@@ -163,33 +163,33 @@ func (store store) CreateInactiveCloudInstance(jiraURL string) (returnErr error)
 			"failed to store new Jira Cloud instance:%s", jiraURL)
 	}()
 
-	ji := NewJIRACloudInstance(jiraURL, false,
+	instance := NewCloudInstance(jiraURL, false,
 		fmt.Sprintf(`{"BaseURL": %s}`, jiraURL),
 		&AtlassianSecurityContext{BaseURL: jiraURL})
 
-	data, err := json.Marshal(ji)
+	data, err := json.Marshal(instance)
 	if err != nil {
 		return err
 	}
 
 	// Expire in 15 minutes
-	appErr := store.plugin.API.KVSetWithExpiry(hashkey(prefixJIRAInstance,
-		ji.GetURL()), data, 15*60)
+	appErr := store.plugin.API.KVSetWithExpiry(hashkey(prefixInstance,
+		instance.GetURL()), data, 15*60)
 	if appErr != nil {
 		return appErr
 	}
 	return nil
 }
 
-func (store store) StoreCurrentJIRAInstance(ji Instance) (returnErr error) {
+func (store store) StoreCurrentInstance(instance Instance) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store current Jira instance:%s", ji.GetURL()))
+			fmt.Sprintf("failed to store current Jira instance:%s", instance.GetURL()))
 	}()
-	err := store.set(keyCurrentJIRAInstance, ji)
+	err := store.set(keyCurrentInstance, instance)
 	if err != nil {
 		return err
 	}
@@ -206,13 +206,13 @@ func (store store) DeleteJiraInstance(key string) (returnErr error) {
 	}()
 
 	// Delete the instance.
-	appErr := store.plugin.API.KVDelete(hashkey(prefixJIRAInstance, key))
+	appErr := store.plugin.API.KVDelete(hashkey(prefixInstance, key))
 	if appErr != nil {
 		return appErr
 	}
 
 	// Update known instances
-	known, err := store.LoadKnownJIRAInstances()
+	known, err := store.LoadKnownInstances()
 	if err != nil {
 		return err
 	}
@@ -222,18 +222,18 @@ func (store store) DeleteJiraInstance(key string) (returnErr error) {
 			break
 		}
 	}
-	err = store.StoreKnownJIRAInstances(known)
+	err = store.StoreKnownInstances(known)
 	if err != nil {
 		return err
 	}
 
 	// Remove the current instance if it matches the deleted
-	current, err := store.LoadCurrentJIRAInstance()
+	current, err := store.LoadCurrentInstance()
 	if err != nil {
 		return err
 	}
 	if current.GetURL() == key {
-		appErr := store.plugin.API.KVDelete(keyCurrentJIRAInstance)
+		appErr := store.plugin.API.KVDelete(keyCurrentInstance)
 		if appErr != nil {
 			return appErr
 		}
@@ -242,25 +242,25 @@ func (store store) DeleteJiraInstance(key string) (returnErr error) {
 	return nil
 }
 
-func (store store) LoadCurrentJIRAInstance() (Instance, error) {
-	ji, err := store.loadJIRAInstance(keyCurrentJIRAInstance)
+func (store store) LoadCurrentInstance() (Instance, error) {
+	instance, err := store.loadInstance(keyCurrentInstance)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to load current Jira instance")
 	}
 
-	return ji, nil
+	return instance, nil
 }
 
-func (store store) LoadJIRAInstance(key string) (Instance, error) {
-	ji, err := store.loadJIRAInstance(hashkey(prefixJIRAInstance, key))
+func (store store) LoadInstance(key string) (Instance, error) {
+	instance, err := store.loadInstance(hashkey(prefixInstance, key))
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to load Jira instance "+key)
 	}
 
-	return ji, nil
+	return instance, nil
 }
 
-func (store store) loadJIRAInstance(fullkey string) (Instance, error) {
+func (store store) loadInstance(fullkey string) (Instance, error) {
 	data, appErr := store.plugin.API.KVGet(fullkey)
 	if appErr != nil {
 		return nil, appErr
@@ -270,17 +270,17 @@ func (store store) loadJIRAInstance(fullkey string) (Instance, error) {
 	}
 
 	// Unmarshal into any of the types just so that we can get the common data
-	jsi := jiraServerInstance{}
-	err := json.Unmarshal(data, &jsi)
+	serverInstance := jiraServerInstance{}
+	err := json.Unmarshal(data, &serverInstance)
 	if err != nil {
 		return nil, err
 	}
 
-	switch jsi.Type {
-	case JIRATypeServer:
-		return &jsi, nil
+	switch serverInstance.Type {
+	case InstanceTypeServer:
+		return &serverInstance, nil
 
-	case JIRATypeCloud:
+	case InstanceTypeCloud:
 		jci := jiraCloudInstance{}
 		err = json.Unmarshal(data, &jci)
 		if err != nil {
@@ -289,10 +289,10 @@ func (store store) loadJIRAInstance(fullkey string) (Instance, error) {
 		return &jci, nil
 	}
 
-	return nil, errors.New(fmt.Sprintf("Jira instance %s has unsupported type: %s", fullkey, jsi.Type))
+	return nil, errors.New(fmt.Sprintf("Jira instance %s has unsupported type: %s", fullkey, serverInstance.Type))
 }
 
-func (store store) StoreKnownJIRAInstances(known map[string]string) (returnErr error) {
+func (store store) StoreKnownInstances(known map[string]string) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -301,19 +301,19 @@ func (store store) StoreKnownJIRAInstances(known map[string]string) (returnErr e
 			fmt.Sprintf("failed to store known Jira instances %+v", known))
 	}()
 
-	return store.set(keyKnownJIRAInstances, known)
+	return store.set(keyKnownInstances, known)
 }
 
-func (store store) LoadKnownJIRAInstances() (map[string]string, error) {
+func (store store) LoadKnownInstances() (map[string]string, error) {
 	known := map[string]string{}
-	err := store.get(keyKnownJIRAInstances, &known)
+	err := store.get(keyKnownInstances, &known)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to load known Jira instances")
 	}
 	return known, nil
 }
 
-func (store store) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JIRAUser) (returnErr error) {
+func (store store) StoreUserInfo(instance Instance, mattermostUserId string, jiraUser JiraUser) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -322,12 +322,12 @@ func (store store) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser 
 			fmt.Sprintf("failed to store user, mattermostUserId:%s, Jira user:%s", mattermostUserId, jiraUser.Name))
 	}()
 
-	err := store.set(keyWithInstance(ji, mattermostUserId), jiraUser)
+	err := store.set(keyWithInstance(instance, mattermostUserId), jiraUser)
 	if err != nil {
 		return err
 	}
 
-	err = store.set(keyWithInstance(ji, jiraUser.Name), mattermostUserId)
+	err = store.set(keyWithInstance(instance, jiraUser.Name), mattermostUserId)
 	if err != nil {
 		return err
 	}
@@ -337,22 +337,22 @@ func (store store) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser 
 
 var ErrUserNotFound = errors.New("user not found")
 
-func (store store) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, error) {
-	jiraUser := JIRAUser{}
-	err := store.get(keyWithInstance(ji, mattermostUserId), &jiraUser)
+func (store store) LoadJiraUser(instance Instance, mattermostUserId string) (JiraUser, error) {
+	jiraUser := JiraUser{}
+	err := store.get(keyWithInstance(instance, mattermostUserId), &jiraUser)
 	if err != nil {
-		return JIRAUser{}, errors.WithMessage(err,
+		return JiraUser{}, errors.WithMessage(err,
 			fmt.Sprintf("failed to load Jira user for user ID: %q", mattermostUserId))
 	}
 	if len(jiraUser.Key) == 0 {
-		return JIRAUser{}, ErrUserNotFound
+		return JiraUser{}, ErrUserNotFound
 	}
 	return jiraUser, nil
 }
 
-func (store store) LoadMattermostUserId(ji Instance, jiraUserName string) (string, error) {
+func (store store) LoadMattermostUserId(instance Instance, jiraUserName string) (string, error) {
 	mattermostUserId := ""
-	err := store.get(keyWithInstance(ji, jiraUserName), &mattermostUserId)
+	err := store.get(keyWithInstance(instance, jiraUserName), &mattermostUserId)
 	if err != nil {
 		return "", errors.WithMessage(err,
 			"failed to load Mattermost user ID for Jira user: "+jiraUserName)
@@ -363,7 +363,7 @@ func (store store) LoadMattermostUserId(ji Instance, jiraUserName string) (strin
 	return mattermostUserId, nil
 }
 
-func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnErr error) {
+func (store store) DeleteUserInfo(instance Instance, mattermostUserId string) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -372,17 +372,17 @@ func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnE
 			fmt.Sprintf("failed to delete user, user ID: %q", mattermostUserId))
 	}()
 
-	jiraUser, err := store.LoadJIRAUser(ji, mattermostUserId)
+	jiraUser, err := store.LoadJiraUser(instance, mattermostUserId)
 	if err != nil {
 		return err
 	}
 
-	appErr := store.plugin.API.KVDelete(keyWithInstance(ji, mattermostUserId))
+	appErr := store.plugin.API.KVDelete(keyWithInstance(instance, mattermostUserId))
 	if appErr != nil {
 		return appErr
 	}
 
-	appErr = store.plugin.API.KVDelete(keyWithInstance(ji, jiraUser.Name))
+	appErr = store.plugin.API.KVDelete(keyWithInstance(instance, jiraUser.Name))
 	if appErr != nil {
 		return appErr
 	}

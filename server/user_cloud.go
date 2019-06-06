@@ -86,7 +86,7 @@ func handleACUserInteractive(a *Action) error {
 	displayName, _ := user["displayName"].(string)
 
 	mmToken := a.HTTPRequest.Form.Get(argMMToken)
-	jiraUser := JIRAUser{
+	jiraUser := JiraUser{
 		User: jira.User{
 			Key:  userKey,
 			Name: username,

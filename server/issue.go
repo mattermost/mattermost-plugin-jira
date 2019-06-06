@@ -100,13 +100,13 @@ func handleAPICreateIssue(a *Action) error {
 				// TODO: large file support? Ignoring errors for now is good enough...
 				byteData, ae := api.ReadFile(info.Path)
 				if ae != nil {
-					// TODO report errors, as DMs from JIRA bot?
+					// TODO report errors, as DMs from Jira bot?
 					api.LogError("failed to attach file to issue: "+ae.Error(), "file", info.Path, "issue", created.Key)
 					return
 				}
 				_, _, e := a.JiraClient.Issue.PostAttachment(created.ID, bytes.NewReader(byteData), info.Name)
 				if e != nil {
-					// TODO report errors, as DMs from JIRA bot?
+					// TODO report errors, as DMs from Jira bot?
 					api.LogError("failed to attach file to issue: "+e.Error(), "file", info.Path, "issue", created.Key)
 					return
 				}

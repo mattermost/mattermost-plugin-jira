@@ -176,7 +176,7 @@ func executeList(a *Action) error {
 	if len(a.CommandArgs) != 0 {
 		return executeHelp(a)
 	}
-	known, err := a.InstanceStore.LoadKnownJIRAInstances()
+	known, err := a.InstanceStore.LoadKnownInstances()
 	if err != nil {
 		return a.RespondError(0, err)
 	}
@@ -185,7 +185,7 @@ func executeList(a *Action) error {
 	}
 
 	// error not important here, only need to highlight thee current in the list
-	currentInstance, _ := a.CurrentInstanceStore.LoadCurrentJIRAInstance()
+	currentInstance, _ := a.CurrentInstanceStore.LoadCurrentInstance()
 
 	keys := []string{}
 	for key := range known {
@@ -194,19 +194,19 @@ func executeList(a *Action) error {
 	sort.Strings(keys)
 	text := "Known Jira instances (selected instance is **bold**)\n\n| |URL|Type|\n|--|--|--|\n"
 	for i, key := range keys {
-		ji, err := a.InstanceStore.LoadJIRAInstance(key)
+		instance, err := a.InstanceStore.LoadInstance(key)
 		if err != nil {
 			text += fmt.Sprintf("|%v|%s|error: %v|\n", i+1, key, err)
 			continue
 		}
 		details := ""
-		for k, v := range ji.GetDisplayDetails() {
+		for k, v := range instance.GetDisplayDetails() {
 			details += fmt.Sprintf("%s:%s, ", k, v)
 		}
 		if len(details) > len(", ") {
 			details = details[:len(details)-2]
 		} else {
-			details = ji.GetType()
+			details = instance.GetType()
 		}
 		format := "|%v|%s|%s|\n"
 		if currentInstance != nil && key == currentInstance.GetURL() {
@@ -286,12 +286,12 @@ func executeInstallServer(a *Action) error {
 
 If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://about.mattermost.com/default-jira-plugin) for troubleshooting help.
 `
-	jsi := NewJIRAServerInstance(jiraURL, a.PluginConfig.PluginKey)
-	err := a.InstanceStore.StoreJIRAInstance(jsi)
+	serverInstance := NewServerInstance(jiraURL, a.PluginConfig.PluginKey)
+	err := a.InstanceStore.StoreInstance(serverInstance)
 	if err != nil {
 		return a.RespondError(0, err)
 	}
-	err = a.CurrentInstanceStore.StoreCurrentJIRAInstance(jsi)
+	err = a.CurrentInstanceStore.StoreCurrentInstance(serverInstance)
 	if err != nil {
 		return a.RespondError(0, err)
 	}
@@ -300,7 +300,7 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	if err != nil {
 		return a.RespondError(0, err)
 	}
-	return a.RespondPrintf(addResponseFormat, a.PluginConfig.SiteURL, jsi.GetMattermostKey(), pkey)
+	return a.RespondPrintf(addResponseFormat, a.PluginConfig.SiteURL, serverInstance.GetMattermostKey(), pkey)
 }
 
 var commandUninstall = ActionScript{
@@ -413,7 +413,7 @@ func executeInstanceSelect(a *Action) error {
 	instanceKey := a.CommandArgs[0]
 	num, err := strconv.ParseUint(instanceKey, 10, 8)
 	if err == nil {
-		known, loadErr := a.InstanceStore.LoadKnownJIRAInstances()
+		known, loadErr := a.InstanceStore.LoadKnownInstances()
 		if loadErr != nil {
 			return a.RespondError(0, err)
 		}
@@ -430,11 +430,11 @@ func executeInstanceSelect(a *Action) error {
 		instanceKey = keys[num-1]
 	}
 
-	ji, err := a.InstanceStore.LoadJIRAInstance(instanceKey)
+	instance, err := a.InstanceStore.LoadInstance(instanceKey)
 	if err != nil {
 		return a.RespondError(0, err)
 	}
-	err = a.CurrentInstanceStore.StoreCurrentJIRAInstance(ji)
+	err = a.CurrentInstanceStore.StoreCurrentInstance(instance)
 	if err != nil {
 		return a.RespondError(0, err)
 	}
@@ -454,7 +454,7 @@ func executeInstanceDelete(a *Action) error {
 	}
 	instanceKey := a.CommandArgs[0]
 
-	known, err := a.InstanceStore.LoadKnownJIRAInstances()
+	known, err := a.InstanceStore.LoadKnownInstances()
 	if err != nil {
 		return a.RespondError(0, err)
 	}

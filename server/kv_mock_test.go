@@ -9,7 +9,7 @@ import (
 )
 
 type jiraTestInstance struct {
-	JIRAInstance
+	instance
 }
 
 var _ Instance = (*jiraTestInstance)(nil)
@@ -26,7 +26,7 @@ func (jti jiraTestInstance) GetDisplayDetails() map[string]string {
 func (jti jiraTestInstance) GetUserConnectURL(Config, SecretsStore, string) (string, error) {
 	return "http://jiraTestInstanceUserConnectURL.some", nil
 }
-func (jti jiraTestInstance) GetJIRAClient(Config, SecretsStore, *JIRAUser) (*jira.Client, error) {
+func (jti jiraTestInstance) GetClient(Config, SecretsStore, *JiraUser) (*jira.Client, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -34,26 +34,26 @@ type mockCurrentInstanceStore struct {
 	plugin *Plugin
 }
 
-func (store mockCurrentInstanceStore) StoreCurrentJIRAInstance(ji Instance) error {
+func (store mockCurrentInstanceStore) StoreCurrentInstance(instance Instance) error {
 	return nil
 }
-func (store mockCurrentInstanceStore) LoadCurrentJIRAInstance() (Instance, error) {
+func (store mockCurrentInstanceStore) LoadCurrentInstance() (Instance, error) {
 	return &jiraTestInstance{
-		JIRAInstance: *newJIRAInstance("test", "jiraTestInstanceKey"),
+		instance: *newInstance("test", "jiraTestInstanceKey"),
 	}, nil
 }
 
 type mockUserStore struct{}
 
-func (store mockUserStore) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JIRAUser) error {
+func (store mockUserStore) StoreUserInfo(instance Instance, mattermostUserId string, jiraUser JiraUser) error {
 	return nil
 }
-func (store mockUserStore) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, error) {
-	return JIRAUser{}, nil
+func (store mockUserStore) LoadJiraUser(instance Instance, mattermostUserId string) (JiraUser, error) {
+	return JiraUser{}, nil
 }
-func (store mockUserStore) LoadMattermostUserId(ji Instance, jiraUserName string) (string, error) {
+func (store mockUserStore) LoadMattermostUserId(instance Instance, jiraUserName string) (string, error) {
 	return "testMattermostUserId012345", nil
 }
-func (store mockUserStore) DeleteUserInfo(ji Instance, mattermostUserId string) error {
+func (store mockUserStore) DeleteUserInfo(instance Instance, mattermostUserId string) error {
 	return nil
 }

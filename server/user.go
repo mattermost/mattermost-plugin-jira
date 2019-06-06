@@ -19,7 +19,7 @@ const (
 	WS_EVENT_DISCONNECT = "disconnect"
 )
 
-type JIRAUser struct {
+type JiraUser struct {
 	jira.User
 	Oauth1AccessToken  string `json:",omitempty"`
 	Oauth1AccessSecret string `json:",omitempty"`
@@ -32,7 +32,7 @@ type UserSettings struct {
 }
 
 type UserInfo struct {
-	JIRAUser
+	JiraUser
 	IsConnected       bool   `json:"is_connected"`
 	InstanceInstalled bool   `json:"instance_installed"`
 	JIRAURL           string `json:"jira_url,omitempty"`
@@ -47,10 +47,10 @@ var httpUserConnect = []ActionFunc{
 
 func handleUserConnect(a *Action) error {
 	// Users shouldn't be able to make multiple connections.
-	jiraUser, err := a.UserStore.LoadJIRAUser(a.Instance, a.MattermostUserId)
+	jiraUser, err := a.UserStore.LoadJiraUser(a.Instance, a.MattermostUserId)
 	if err == nil && len(jiraUser.Key) != 0 {
 		return a.RespondError(http.StatusForbidden, nil,
-			"Already connected to a JIRA account. Please use /jira disconnect to disconnect.")
+			"Already connected to a Jira account. Please use /jira disconnect to disconnect.")
 	}
 
 	redirectURL, err := a.Instance.GetUserConnectURL(a.PluginConfig, a.SecretsStore, a.MattermostUserId)
@@ -98,11 +98,11 @@ var httpAPIGetUserInfo = []ActionFunc{
 
 func handleAPIGetUserInfo(a *Action) error {
 	resp := UserInfo{}
-	if ji, err := a.CurrentInstanceStore.LoadCurrentJIRAInstance(); err == nil {
+	if instance, err := a.CurrentInstanceStore.LoadCurrentInstance(); err == nil {
 		resp.InstanceInstalled = true
-		resp.JIRAURL = ji.GetURL()
-		if jiraUser, err := a.UserStore.LoadJIRAUser(ji, a.MattermostUserId); err == nil {
-			resp.JIRAUser = jiraUser
+		resp.JIRAURL = instance.GetURL()
+		if jiraUser, err := a.UserStore.LoadJiraUser(instance, a.MattermostUserId); err == nil {
+			resp.JiraUser = jiraUser
 			resp.IsConnected = true
 		}
 	}
@@ -111,7 +111,7 @@ func handleAPIGetUserInfo(a *Action) error {
 }
 
 func StoreUserInfoNotify(api plugin.API, userStore UserStore, instance Instance,
-	mattermostUserId string, jiraUser JIRAUser) error {
+	mattermostUserId string, jiraUser JiraUser) error {
 
 	err := userStore.StoreUserInfo(instance, mattermostUserId, jiraUser)
 	if err != nil {
@@ -149,7 +149,7 @@ func DeleteUserInfoNotify(api plugin.API, userStore UserStore, instance Instance
 }
 
 func UserSettingsNotifications(userStore UserStore, instance Instance, mattermostUserId string,
-	jiraUser *JIRAUser, value bool) (string, error) {
+	jiraUser *JiraUser, value bool) (string, error) {
 
 	if jiraUser.Settings == nil {
 		jiraUser.Settings = &UserSettings{}

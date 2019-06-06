@@ -19,9 +19,9 @@ const (
 	JIRA_WEBHOOK_EVENT_ISSUE_CREATED = "jira:issue_created"
 	JIRA_WEBHOOK_EVENT_ISSUE_UPDATED = "jira:issue_updated"
 	JIRA_WEBHOOK_EVENT_ISSUE_DELETED = "jira:issue_deleted"
-
-	JIRA_SUBSCRIPTIONS_KEY = "jirasub"
 )
+
+const JiraSubscriptionsKey = "jirasub"
 
 type ChannelSubscription struct {
 	Id        string              `json:"id"`
@@ -171,7 +171,7 @@ func getChannelsSubscribed(api plugin.API, jwh *JiraWebhook) ([]string, error) {
 }
 
 func getSubscriptions(api plugin.API) (*Subscriptions, error) {
-	data, err := api.KVGet(JIRA_SUBSCRIPTIONS_KEY)
+	data, err := api.KVGet(JiraSubscriptionsKey)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func getChannelSubscription(api plugin.API, subscriptionId string) (*ChannelSubs
 }
 
 func removeChannelSubscription(api plugin.API, subscriptionId string) error {
-	return atomicModify(api, JIRA_SUBSCRIPTIONS_KEY, func(initialBytes []byte) ([]byte, error) {
+	return atomicModify(api, JiraSubscriptionsKey, func(initialBytes []byte) ([]byte, error) {
 		subs, err := SubscriptionsFromJson(initialBytes)
 		if err != nil {
 			return nil, err
@@ -230,7 +230,7 @@ func removeChannelSubscription(api plugin.API, subscriptionId string) error {
 }
 
 func addChannelSubscription(api plugin.API, newSubscription *ChannelSubscription) error {
-	return atomicModify(api, JIRA_SUBSCRIPTIONS_KEY, func(initialBytes []byte) ([]byte, error) {
+	return atomicModify(api, JiraSubscriptionsKey, func(initialBytes []byte) ([]byte, error) {
 		subs, err := SubscriptionsFromJson(initialBytes)
 		if err != nil {
 			return nil, err
@@ -249,7 +249,7 @@ func addChannelSubscription(api plugin.API, newSubscription *ChannelSubscription
 }
 
 func editChannelSubscription(api plugin.API, modifiedSubscription *ChannelSubscription) error {
-	return atomicModify(api, JIRA_SUBSCRIPTIONS_KEY, func(initialBytes []byte) ([]byte, error) {
+	return atomicModify(api, JiraSubscriptionsKey, func(initialBytes []byte) ([]byte, error) {
 		subs, err := SubscriptionsFromJson(initialBytes)
 		if err != nil {
 			return nil, err

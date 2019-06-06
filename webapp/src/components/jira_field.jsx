@@ -70,7 +70,7 @@ export default class JiraField extends React.Component {
             );
         }
 
-        // detect if JIRA multiline textarea, and set for JiraField component
+        // detect if Jira multiline textarea, and set for JiraField component
         if (field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:textarea') {
             return (
                 <Input

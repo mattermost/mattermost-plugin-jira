@@ -48,7 +48,7 @@ type Action struct {
 	Instance         Instance
 	MattermostUserId string
 	MattermostUser   *model.User
-	JiraUser         *JIRAUser
+	JiraUser         *JiraUser
 	JiraClient       *jira.Client
 
 	// Server-specific
@@ -138,7 +138,7 @@ func RequireJiraUser(a *Action) error {
 		return err
 	}
 
-	jiraUser, err := a.UserStore.LoadJIRAUser(a.Instance, a.MattermostUserId)
+	jiraUser, err := a.UserStore.LoadJiraUser(a.Instance, a.MattermostUserId)
 	if err != nil {
 		return a.RespondError(http.StatusUnauthorized, err)
 	}
@@ -156,7 +156,7 @@ func RequireJiraClient(a *Action) error {
 		return err
 	}
 
-	jiraClient, err := a.Instance.GetJIRAClient(a.PluginConfig, a.SecretsStore, a.JiraUser)
+	jiraClient, err := a.Instance.GetClient(a.PluginConfig, a.SecretsStore, a.JiraUser)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
@@ -169,12 +169,12 @@ func RequireInstance(a *Action) error {
 	if a.Instance != nil {
 		return nil
 	}
-	ji, err := a.CurrentInstanceStore.LoadCurrentJIRAInstance()
+	instance, err := a.CurrentInstanceStore.LoadCurrentInstance()
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
-	a.Instance = ji
-	a.Debugf("action: loaded Jira instance %v", ji.GetURL())
+	a.Instance = instance
+	a.Debugf("action: loaded Jira instance %v", instance.GetURL())
 	return nil
 }
 
@@ -189,7 +189,7 @@ func RequireCloudInstance(a *Action) error {
 
 	jci, ok := a.Instance.(*jiraCloudInstance)
 	if !ok {
-		return a.RespondError(http.StatusBadRequest, nil, "Must be a JIRA Cloud instance, is %s", a.Instance.GetType())
+		return a.RespondError(http.StatusBadRequest, nil, "Must be a Jira Cloud instance, is %s", a.Instance.GetType())
 	}
 	a.JiraCloudInstance = jci
 	a.Debugf("action: loaded Jira cloud instance %v", jci.GetURL())
@@ -205,13 +205,13 @@ func RequireServerInstance(a *Action) error {
 		return err
 	}
 
-	jsi, ok := a.Instance.(*jiraServerInstance)
+	serverInstance, ok := a.Instance.(*jiraServerInstance)
 	if !ok {
 		return a.RespondError(http.StatusInternalServerError, nil,
 			"must be a Jira Server instance, is %s", a.Instance.GetType())
 	}
-	a.JiraServerInstance = jsi
-	a.Debugf("action: loaded Jira server instance %v", jsi.GetURL())
+	a.JiraServerInstance = serverInstance
+	a.Debugf("action: loaded Jira server instance %v", serverInstance.GetURL())
 	return nil
 }
 
