@@ -71,6 +71,7 @@ export default class JiraIssueSelector extends Component {
                     defaultOptions={true}
                     loadOptions={this.handleIssueSearchTermChange}
                     menuPortalTarget={document.body}
+                    menuPlacement='auto'
                     styles={getStyleForReactSelect(this.props.theme)}
                 />
                 <div className={'help-text'}>
