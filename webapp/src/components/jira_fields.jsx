@@ -17,8 +17,7 @@ export default class JiraFields extends React.PureComponent {
     };
 
     render() {
-        const fields = this.props.fields;
-        const {allowedFields, allowedSchemaCustom} = this.props;
+        const {allowedFields, allowedSchemaCustom, fields} = this.props;
 
         if (!fields) {
             return null;
@@ -37,10 +36,13 @@ export default class JiraFields extends React.PureComponent {
                 return null;
             }
 
-            // only allow these default Jira fields and custom types until handle further types
-            if ((fields[fieldName].schema.custom && !allowedSchemaCustom.includes(fields[fieldName].schema.custom)) ||
-                (!fields[fieldName].schema.custom && !allowedFields.includes(fieldName))
-            ) {
+            // only allow these some custom types until handle further types
+            if (fields[fieldName].schema.custom && !allowedSchemaCustom.includes(fields[fieldName].schema.custom)) {
+                return null;
+            }
+
+            // only allow some default Jira fields until handle further types
+            if (!fields[fieldName].schema.custom && !allowedFields.includes(fieldName)) {
                 return null;
             }
 

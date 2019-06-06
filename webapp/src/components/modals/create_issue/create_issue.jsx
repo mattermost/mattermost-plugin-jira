@@ -66,8 +66,12 @@ export default class CreateIssueModal extends PureComponent {
         'com.atlassian.jira.plugin.system.customfieldtypes:textarea',
         'com.atlassian.jira.plugin.system.customfieldtypes:textfield',
         'com.atlassian.jira.plugin.system.customfieldtypes:select',
-        'com.pyxis.greenhopper.jira:gh-epic-label',
         'com.atlassian.jira.plugin.system.customfieldtypes:project',
+
+        // 'com.pyxis.greenhopper.jira:gh-epic-link',
+
+        // epic label is 'Epic Name' for cloud instance
+        'com.pyxis.greenhopper.jira:gh-epic-label',
     ];
 
     getFieldsNotCovered() {
@@ -82,7 +86,6 @@ export default class CreateIssueModal extends PureComponent {
                      (myfields[key].schema.custom && !this.allowedSchemaCustom.includes(myfields[key].schema.custom))
                 ) {
                     if (!fieldsNotCovered.includes(key)) {
-                        console.log('found UNALLOWED value -> ', key);
                         fieldsNotCovered.push(key);
                     }
                 }
@@ -93,7 +96,6 @@ export default class CreateIssueModal extends PureComponent {
 
     handleCreate = (e) => {
         const requiredFieldsNotCovered = this.getFieldsNotCovered();
-        console.log('create_issue.jsx -> requiredFieldsNotCovered', requiredFieldsNotCovered);
 
         if (e && e.preventDefault) {
             e.preventDefault();
