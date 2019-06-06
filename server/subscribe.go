@@ -357,7 +357,7 @@ func handleSubscribeWebhook(a *Action) error {
 }
 
 var httpChannelSubscriptions = []ActionFunc{
-	RequireHTTPMattermostUserId,
+	RequireMattermostUserId,
 	handleChannelSubscriptions,
 }
 

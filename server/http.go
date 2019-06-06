@@ -47,7 +47,7 @@ var httpRouter = ActionRouter{
 		}
 		return nil
 	},
-	RouteHandlers: map[string][]ActionFunc{
+	RouteHandlers: map[string]ActionScript{
 		// APIs
 		routeAPICreateIssue:            httpAPICreateIssue,
 		routeAPIAttachCommentToIssue:   httpAPIAttachCommentToIssue,

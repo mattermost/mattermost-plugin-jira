@@ -41,7 +41,7 @@ func handleACUserRedirect(a *Action) error {
 var httpACUserConfirm = []ActionFunc{
 	RequireHTTPGet,
 	RequireHTTPCloudJWT,
-	RequireHTTPMattermostUserId,
+	RequireMattermostUserId,
 	handleACUserInteractive,
 }
 
@@ -49,7 +49,7 @@ var httpACUserConnected = []ActionFunc{
 	// TODO this is wrong, should be a post
 	RequireHTTPGet,
 	RequireHTTPCloudJWT,
-	RequireHTTPMattermostUserId,
+	RequireMattermostUserId,
 	RequireInstance,
 	handleACUserInteractive,
 }
@@ -58,7 +58,7 @@ var httpACUserDisconnected = []ActionFunc{
 	// TODO this is wrong, should be a post
 	RequireHTTPGet,
 	RequireHTTPCloudJWT,
-	RequireHTTPMattermostUserId,
+	RequireMattermostUserId,
 	RequireMattermostUser,
 	RequireInstance,
 	RequireJiraUser,

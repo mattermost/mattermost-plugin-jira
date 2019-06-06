@@ -41,7 +41,7 @@ type UserInfo struct {
 // TODO eliminate
 var httpUserConnect = []ActionFunc{
 	RequireInstance,
-	RequireHTTPMattermostUserId,
+	RequireMattermostUserId,
 	handleUserConnect,
 }
 
@@ -64,7 +64,7 @@ func handleUserConnect(a *Action) error {
 
 var httpUserDisconnect = []ActionFunc{
 	RequireInstance,
-	RequireHTTPMattermostUserId,
+	RequireMattermostUserId,
 	handleUserDisconnect,
 }
 
@@ -92,7 +92,7 @@ func handleUserDisconnect(a *Action) error {
 
 var httpAPIGetUserInfo = []ActionFunc{
 	RequireHTTPGet,
-	RequireHTTPMattermostUserId,
+	RequireMattermostUserId,
 	handleAPIGetUserInfo,
 }
 

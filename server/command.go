@@ -41,7 +41,7 @@ var commandRouter = ActionRouter{
 	DefaultRouteHandler: executeHelp,
 
 	// MattermostUserID is set for all commands, so no special "Requir" for it
-	RouteHandlers: map[string][]ActionFunc{
+	RouteHandlers: map[string]ActionScript{
 		"connect":          commandConnect,
 		"disconnect":       commandDisconnect,
 		"settings":         commandSettings,
@@ -70,7 +70,8 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 	action := NewAction(p, c)
 	action.CommandHeader = commandArgs
 	action.CommandArgs = args
-	action.MattermostUserId = commandArgs.UserId
+
+	_ = RequireMattermostUserId(action)
 
 	scriptKey := ""
 	for n := len(args); n > 0; n-- {
@@ -90,7 +91,7 @@ func executeHelp(a *Action) error {
 	return a.RespondPrintf(helpText)
 }
 
-var commandConnect = []ActionFunc{
+var commandConnect = ActionScript{
 	RequireInstance,
 	executeConnect,
 }
@@ -107,7 +108,7 @@ func executeConnect(a *Action) error {
 	return a.RespondRedirect(redirectURL)
 }
 
-var commandDisconnect = []ActionFunc{
+var commandDisconnect = ActionScript{
 	RequireInstance,
 	RequireJiraUser,
 	executeDisconnect,
@@ -131,7 +132,7 @@ const (
 	settingOff = "off"
 )
 
-var commandSettings = []ActionFunc{
+var commandSettings = ActionScript{
 	RequireJiraClient,
 	executeSettings,
 }
@@ -166,7 +167,7 @@ func executeSettings(a *Action) error {
 	}
 }
 
-var commandList = []ActionFunc{
+var commandList = ActionScript{
 	RequireMattermostSysAdmin,
 	executeList,
 }
@@ -216,7 +217,7 @@ func executeList(a *Action) error {
 	return a.RespondPrintf(text)
 }
 
-var commandInstallCloud = []ActionFunc{
+var commandInstallCloud = ActionScript{
 	RequireMattermostSysAdmin,
 	executeInstallCloud,
 }
@@ -254,7 +255,7 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	return a.RespondPrintf(addResponseFormat, jiraURL, jiraURL, a.PluginConfig.PluginURL, routeACJSON)
 }
 
-var commandInstallServer = []ActionFunc{
+var commandInstallServer = ActionScript{
 	RequireMattermostSysAdmin,
 	executeInstallServer,
 }
@@ -302,7 +303,7 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	return a.RespondPrintf(addResponseFormat, a.PluginConfig.SiteURL, jsi.GetMattermostKey(), pkey)
 }
 
-var commandUninstall = []ActionFunc{
+var commandUninstall = ActionScript{
 	RequireInstance,
 	RequireMattermostSysAdmin,
 	executeUninstall,
@@ -343,7 +344,7 @@ func executeUninstall(a *Action) error {
 	return a.RespondPrintf(uninstallInstructions)
 }
 
-var commandTransition = []ActionFunc{
+var commandTransition = ActionScript{
 	RequireJiraClient,
 	executeTransition,
 }
@@ -362,7 +363,7 @@ func executeTransition(a *Action) error {
 	return a.RespondPrintf(msg)
 }
 
-var commandWebhookURL = []ActionFunc{
+var commandWebhookURL = ActionScript{
 	RequireMattermostSysAdmin,
 	executeWebhookURL,
 }
@@ -400,7 +401,7 @@ func commandResponse(format string, args ...interface{}) *model.CommandResponse 
 	}
 }
 
-var commandInstanceSelect = []ActionFunc{
+var commandInstanceSelect = ActionScript{
 	RequireMattermostSysAdmin,
 	executeInstanceSelect,
 }
@@ -442,7 +443,7 @@ func executeInstanceSelect(a *Action) error {
 	return executeList(a)
 }
 
-var commandInstanceDelete = []ActionFunc{
+var commandInstanceDelete = ActionScript{
 	RequireMattermostSysAdmin,
 	executeInstanceDelete,
 }

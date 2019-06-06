@@ -20,7 +20,7 @@ type OAuth1aTemporaryCredentials struct {
 var httpOAuth1Complete = []ActionFunc{
 	// TODO Should this be a post? Can it be one (Jira/OAuth1 controls)?
 	RequireHTTPGet,
-	RequireHTTPMattermostUserId,
+	RequireMattermostUserId,
 	RequireMattermostUser,
 	RequireInstance,
 	RequireServerInstance,
@@ -93,7 +93,7 @@ func handleOAuth1Complete(a *Action) error {
 
 var httpOAuth1PublicKey = []ActionFunc{
 	RequireHTTPGet,
-	RequireHTTPMattermostUserId,
+	RequireMattermostUserId,
 	handleOAuth1PublicKey,
 }
 

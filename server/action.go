@@ -20,6 +20,8 @@ import (
 
 type ActionFunc func(a *Action) error
 
+type ActionScript []ActionFunc
+
 type Action struct {
 	// Always there
 	// Plugin        *Plugin
@@ -59,7 +61,7 @@ type Action struct {
 }
 
 type ActionRouter struct {
-	RouteHandlers       map[string][]ActionFunc
+	RouteHandlers       map[string]ActionScript
 	DefaultRouteHandler ActionFunc
 	Log                 ActionFunc
 }
@@ -75,13 +77,33 @@ func NewAction(p *Plugin, c *plugin.Context) *Action {
 		PluginContext:        c,
 	}
 }
+
+func RequireMattermostUserId(a *Action) error {
+	if a.MattermostUserId != "" {
+		return nil
+	}
+	mattermostUserId := ""
+	if a.CommandHeader != nil && a.CommandHeader.UserId != "" {
+		mattermostUserId = a.CommandHeader.UserId
+	} else if a.HTTPRequest != nil {
+		mattermostUserId = a.HTTPRequest.Header.Get("Mattermost-User-Id")
+	}
+	if mattermostUserId == "" {
+		return a.RespondError(http.StatusUnauthorized, nil,
+			"not authorized")
+	}
+	a.MattermostUserId = mattermostUserId
+	a.Debugf("action: found MattermostUserId %v", mattermostUserId)
+	return nil
+}
+
 func RequireMattermostUser(a *Action) error {
 	if a.MattermostUser != nil {
 		return nil
 	}
-	if a.MattermostUserId == "" {
-		return a.RespondError(http.StatusInternalServerError, nil,
-			"misconfiguration: required MattermostUserId missing")
+	err := RequireMattermostUserId(a)
+	if err != nil {
+		return err
 	}
 
 	mmuser, appErr := a.API.GetUser(a.MattermostUserId)
@@ -96,7 +118,7 @@ func RequireMattermostUser(a *Action) error {
 }
 
 func RequireMattermostSysAdmin(a *Action) error {
-	err := RequireMattermostUser(a)
+	err := ActionScript{RequireMattermostUser, RequireInstance}.Run(a)
 	if err != nil {
 		return err
 	}
@@ -111,11 +133,7 @@ func RequireJiraUser(a *Action) error {
 	if a.JiraUser != nil {
 		return nil
 	}
-	if a.MattermostUserId == "" {
-		return a.RespondError(http.StatusInternalServerError, nil,
-			"misconfiguration: required MattermostUserId missing")
-	}
-	err := RequireInstance(a)
+	err := ActionScript{RequireMattermostUserId, RequireInstance}.Run(a)
 	if err != nil {
 		return err
 	}
@@ -211,20 +229,6 @@ func requireHTTPMethod(a *Action, method string) error {
 			"method %s is not allowed, must be %s", a.HTTPRequest.Method, method)
 	}
 	a.Debugf("action: verified request method %v", method)
-	return nil
-}
-
-func RequireHTTPMattermostUserId(a *Action) error {
-	if a.MattermostUserId != "" {
-		return nil
-	}
-	mattermostUserId := a.HTTPRequest.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return a.RespondError(http.StatusUnauthorized, nil,
-			"not authorized")
-	}
-	a.MattermostUserId = mattermostUserId
-	a.Debugf("action: found MattermostUserId %v", mattermostUserId)
 	return nil
 }
 
@@ -382,11 +386,13 @@ func (a *Action) Errorf(f string, args ...interface{}) {
 
 func (ar ActionRouter) Run(key string, a *Action) {
 	key = strings.TrimRight(key, "/")
-	// See if we have a script for the exact key
+	// See if we have a script for the exact key match
 	script := ar.RouteHandlers[key]
 	if script == nil {
+		// Look for a subpath match
 		script = ar.RouteHandlers[key+"/*"]
 	}
+	// Look for a /* above
 	for script == nil {
 		n := strings.LastIndex(key, "/")
 		if n == -1 {
@@ -395,14 +401,15 @@ func (ar ActionRouter) Run(key string, a *Action) {
 		script = ar.RouteHandlers[key[:n]+"/*"]
 		key = key[:n]
 	}
+	// Use the default, if needed
 	if script == nil {
-		script = []ActionFunc{
+		script = ActionScript{
 			ar.DefaultRouteHandler,
 		}
 	}
 
 	// Run the script
-	err := RunAction(script, a)
+	err := script.Run(a)
 	if err != nil {
 		return
 	}
@@ -413,8 +420,11 @@ func (ar ActionRouter) Run(key string, a *Action) {
 	}
 }
 
-func RunAction(script []ActionFunc, a *Action) error {
+func (script ActionScript) Run(a *Action) error {
 	for _, f := range script {
+		if f == nil {
+			continue
+		}
 		err := f(a)
 		if err != nil {
 			a.LogErr = err

@@ -19,7 +19,7 @@ import (
 
 var httpAPICreateIssue = []ActionFunc{
 	RequireHTTPPost,
-	RequireHTTPMattermostUserId,
+	RequireMattermostUserId,
 	RequireInstance,
 	RequireJiraUser,
 	RequireJiraClient,
@@ -141,7 +141,7 @@ func handleAPICreateIssue(a *Action) error {
 
 var httpAPIGetCreateIssueMetadata = []ActionFunc{
 	RequireHTTPGet,
-	RequireHTTPMattermostUserId,
+	RequireMattermostUserId,
 	RequireInstance,
 	RequireJiraUser,
 	RequireJiraClient,
@@ -158,7 +158,7 @@ func handleAPIGetCreateIssueMetadata(a *Action) error {
 
 var httpAPIGetSearchIssues = []ActionFunc{
 	RequireHTTPGet,
-	RequireHTTPMattermostUserId,
+	RequireMattermostUserId,
 	RequireInstance,
 	RequireJiraUser,
 	RequireJiraClient,
@@ -201,7 +201,7 @@ func handleAPIGetSearchIssues(a *Action) error {
 
 var httpAPIAttachCommentToIssue = []ActionFunc{
 	RequireHTTPPost,
-	RequireHTTPMattermostUserId,
+	RequireMattermostUserId,
 	RequireInstance,
 	RequireJiraUser,
 	RequireJiraClient,
