@@ -122,7 +122,7 @@ func RequireMattermostSysAdmin(a *Action) error {
 	if err != nil {
 		return err
 	}
-	if !strings.Contains(a.MattermostUser.Roles, "system_admin") {
+	if !a.MattermostUser.IsInRole(model.SYSTEM_ADMIN_ROLE_ID) {
 		return a.RespondError(http.StatusUnauthorized, nil,
 			"reserverd for system administrators")
 	}
