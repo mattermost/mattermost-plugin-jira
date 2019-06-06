@@ -10,7 +10,7 @@ import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
 import {openCreateModal} from 'actions';
 
 import {getCurrentUserLocale, isUserConnected, isInstanceInstalled} from 'selectors';
-import {isCombinedUserActivityPost} from '../../utils';
+import {isCombinedUserActivityPost} from 'utils/posts';
 
 import CreateIssuePostMenuAction from './create_issue';
 
