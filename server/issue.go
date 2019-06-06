@@ -29,12 +29,12 @@ var httpAPICreateIssue = []ActionFunc{
 func handleAPICreateIssue(a *Action) error {
 	api := a.API
 
-	create := &struct {
+	createRequest := &struct {
 		PostId    string           `json:"post_id"`
 		ChannelId string           `json:"channel_id"`
 		Fields    jira.IssueFields `json:"fields"`
 	}{}
-	err := json.NewDecoder(a.HTTPRequest.Body).Decode(&create)
+	err := json.NewDecoder(a.HTTPRequest.Body).Decode(&createRequest)
 	if err != nil {
 		return a.RespondError(http.StatusBadRequest, err,
 			"failed to decode incoming request")
@@ -44,43 +44,40 @@ func handleAPICreateIssue(a *Action) error {
 	var appErr *model.AppError
 
 	// If this issue is attached to a post, lets add a permalink to the post in the Jira Description
-	if create.PostId != "" {
-		post, appErr = api.GetPost(create.PostId)
+	if createRequest.PostId != "" {
+		post, appErr = api.GetPost(createRequest.PostId)
 		if appErr != nil {
 			return a.RespondError(http.StatusInternalServerError, appErr,
-				"failed to load post %q", create.PostId)
+				"failed to load post %q", createRequest.PostId)
 		}
 		if post == nil {
 			return a.RespondError(http.StatusInternalServerError, nil,
-				"failed to load post %q: not found", create.PostId)
+				"failed to load post %q: not found", createRequest.PostId)
 		}
-		permalink, err2 := getPermaLink(a, create.PostId, post)
-		if err2 != nil {
+		permalink := ""
+		permalink, err = getPermaLink(a, createRequest.PostId, post)
+		if err != nil {
 			return a.RespondError(http.StatusInternalServerError, nil,
-				"failed to get permalink for: %q", create.PostId)
+				"failed to get permalink for: %q", createRequest.PostId)
 		}
 
-		if len(create.Fields.Description) > 0 {
-			create.Fields.Description += fmt.Sprintf("\n%v", permalink)
+		if len(createRequest.Fields.Description) > 0 {
+			createRequest.Fields.Description += "\n" + permalink
 		} else {
-			create.Fields.Description = permalink
+			createRequest.Fields.Description = permalink
 		}
 	}
 
-	created, resp, err := a.JiraClient.Issue.Create(&jira.Issue{
-		Fields: &create.Fields,
-	})
-
-	// For now, if we are not attaching to a post, leave postId blank (this will only affect the error message)
-	// postId := ""
-	channelId := create.ChannelId
+	channelId := createRequest.ChannelId
 	if post != nil {
 		channelId = post.ChannelId
-		// postId = create.PostId
 	}
 
+	createdIssue, resp, err := a.JiraClient.Issue.Create(&jira.Issue{
+		Fields: &createRequest.Fields,
+	})
 	if err != nil {
-		message := "failed to create the issue, postId: " + create.PostId + ", channelId: " + channelId
+		message := "failed to create the issue, postId: " + createRequest.PostId + ", channelId: " + channelId
 		if resp != nil {
 			bb, _ := ioutil.ReadAll(resp.Body)
 			resp.Body.Close()
@@ -101,30 +98,32 @@ func handleAPICreateIssue(a *Action) error {
 				byteData, ae := api.ReadFile(info.Path)
 				if ae != nil {
 					// TODO report errors, as DMs from Jira bot?
-					api.LogError("failed to attach file to issue: "+ae.Error(), "file", info.Path, "issue", created.Key)
+					a.Infof("failed to attach file %q to issue %q: %s",
+						info.Path, createdIssue.Key, appErr.Error())
 					return
 				}
-				_, _, e := a.JiraClient.Issue.PostAttachment(created.ID, bytes.NewReader(byteData), info.Name)
+				_, _, e := a.JiraClient.Issue.PostAttachment(createdIssue.ID, bytes.NewReader(byteData), info.Name)
 				if e != nil {
 					// TODO report errors, as DMs from Jira bot?
-					api.LogError("failed to attach file to issue: "+e.Error(), "file", info.Path, "issue", created.Key)
+					a.Infof("failed to attach file %q to issue %q: %s",
+						info.Path, createdIssue.Key, appErr.Error())
 					return
 				}
 			}
 		}()
 	}
 
-	rootId := create.PostId
+	rootId := createRequest.PostId
 	parentId := ""
 	if post.ParentId != "" {
 		// the original post was a reply
 		rootId = post.RootId
-		parentId = create.PostId
+		parentId = createRequest.PostId
 	}
 
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
-		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", a.Instance.GetURL(), created.Key),
+		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", a.Instance.GetURL(), createdIssue.Key),
 		ChannelId: channelId,
 		RootId:    rootId,
 		ParentId:  parentId,
@@ -133,10 +132,10 @@ func handleAPICreateIssue(a *Action) error {
 	_, appErr = api.CreatePost(reply)
 	if appErr != nil {
 		return a.RespondError(http.StatusInternalServerError, appErr,
-			"failed to create notification post: %q", create.PostId)
+			"failed to create notification post: %q", createRequest.PostId)
 	}
 
-	return a.RespondJSON(created)
+	return a.RespondJSON(createdIssue)
 }
 
 var httpAPIGetCreateIssueMetadata = []ActionFunc{
