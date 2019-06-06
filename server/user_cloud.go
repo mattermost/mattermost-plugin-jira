@@ -116,6 +116,14 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 		return http.StatusInternalServerError, err
 	}
 
+	mmDisplayName := mmuser.GetDisplayName(model.SHOW_FULLNAME)
+	userName := mmuser.GetDisplayName(model.SHOW_USERNAME)
+	if mmDisplayName == userName {
+		mmDisplayName = "@" + mmDisplayName
+	} else {
+		mmDisplayName += " (@" + userName + ")"
+	}
+
 	// This set of props should work for all relevant routes/templates
 	return jci.Plugin.respondWithTemplate(w, r, "text/html", struct {
 		ConnectSubmitURL      string
@@ -132,6 +140,6 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 		ArgMMToken:            argMMToken,
 		MMToken:               mmToken,
 		JiraDisplayName:       displayName + " (" + username + ")",
-		MattermostDisplayName: mmuser.GetDisplayName(model.SHOW_NICKNAME_FULLNAME),
+		MattermostDisplayName: mmDisplayName,
 	})
 }
