@@ -1,14 +1,45 @@
+// Copyright (c) 2019-present Mattermost, Inc. All Rights Reserved.
+// See License for license information.
+
 package main
 
 import (
 	"fmt"
+	"net/url"
+	"path"
 	"regexp"
+	"strings"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
 )
+
+func normalizeInstallURL(jiraURL string) (string, error) {
+	u, err := url.Parse(jiraURL)
+	if err != nil {
+		return "", err
+	}
+	if u.Host == "" {
+		ss := strings.Split(u.Path, "/")
+		if len(ss) > 0 && ss[0] != "" {
+			u.Host = ss[0]
+			u.Path = path.Join(ss[1:]...)
+		}
+		u, err = url.Parse(u.String())
+		if err != nil {
+			return "", err
+		}
+	}
+	if u.Host == "" {
+		return "", errors.Errorf("Invalid URL, no hostname: %q", jiraURL)
+	}
+	if u.Scheme == "" {
+		u.Scheme = "https"
+	}
+	return strings.TrimSuffix(u.String(), "/"), nil
+}
 
 func (p *Plugin) CreateBotDMPost(ji Instance, userId, message,
 	postType string) (post *model.Post, returnErr error) {
