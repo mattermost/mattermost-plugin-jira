@@ -20,7 +20,7 @@ func newSlackAttachment(parsed *parsedJIRAWebhook) *model.SlackAttachment {
 	}
 
 	var fields []*model.SlackAttachmentField
-	if parsed.WebhookEvent == "jira:issue_created" {
+	if parsed.WebhookEvent == "jira:issue_created" && parsed.Issue.Fields != nil {
 
 		if parsed.Issue.Fields.Assignee != nil {
 			fields = append(fields, &model.SlackAttachmentField{
