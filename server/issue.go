@@ -107,7 +107,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		}
 
 		reply := &model.Post{
-			Message:   fmt.Sprintf("[Please create your Jira issue manually](%v). %v.\n%v", req.URL.String(), message, fieldsString),
+			Message:   fmt.Sprintf("[Please create your Jira issue manually](%v). %v\n%v", req.URL.String(), message, fieldsString),
 			ChannelId: post.ChannelId,
 			RootId:    rootId,
 			ParentId:  parentId,
