@@ -194,6 +194,8 @@ export default class CreateIssueModal extends PureComponent {
                 onHide={this.handleClose}
                 onExited={this.handleClose}
                 bsSize='large'
+                backdrop='static'
+                keyboard={false}
             >
                 <Modal.Header closeButton={true}>
                     <Modal.Title>
