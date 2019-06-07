@@ -43,19 +43,15 @@ Connect your Mattermost account to Jira via `/jira connect` command, then create
 
 Create Jira issues from a Mattermost message by clicking the **More Actions** (...) option of any message in the channel (available when you hover over a message), then selecting **Create Jira Issue**.
 
-// TODO: Add screenshot
-
 Then, on the resulting issue creation dialog, select the project, issue type and enter other fields to create the issue.
 
-// TODO: Add screenshot
+![image](https://user-images.githubusercontent.com/13119842/59112304-bfb06000-8910-11e9-8aff-d3029b8696bb.png)
 
-Click **Create** and the Jira issue is now created.
+Click **Create** and the Jira issue is now created, including any file attachments part of the Mattermost message.
 
-// TODO: Add screenshot
+![image](https://user-images.githubusercontent.com/13119842/59112323-cb9c2200-8910-11e9-9dcc-21fb7507ce0a.png)
 
-**NOTE**: This plugin does not support all Jira fields. If the project you tried to create an issue for has **required fields** not yet supported, you will be prompted to manually create an issue. Clicking the provided link brings the user to an issue creation screen in Jira, with the fields they entered previously pre-filled.
-
-// TODO: Add 1 or 2 screenshots
+**NOTE**: This plugin does not support all Jira fields. If the project you tried to create an issue for has **required fields** not yet supported, you will be prompted to manually create an issue. Clicking the provided link brings you to an issue creation screen in Jira, with the fields entered previously pre-filled.
 
 The supported Jira fields are:
 
@@ -68,15 +64,11 @@ The supported Jira fields are:
 
 Keep all information in one place by attaching parts of Mattermost conversations in Jira issues as comments. To attach a message, click the **More Actions** (...) option of any message in the channel (available when you hover over a message), then select **Attach to Jira Issue**.
 
-// TODO: Add screenshot
+Then, on the resulting dialog, select issue you want to attach it to. You may search for issues containing specific text.
 
-Then, on the resulting issue creation dialog, select the project and the issue you want to attach it to. You may search for issues containing specific text.
+![image](https://user-images.githubusercontent.com/13119842/59112601-51b86880-8911-11e9-91ed-b6359a3917b6.png)
 
-// TODO: Add screenshot
-
-Click **Attach** and the message is now attached to the Jira issue.
-
-// TODO: Add screenshot from Jira UI
+Click **Attach** and the message is attached to the selected Jira issue as a comment.
 
 #### 1.2.3 Transition Jira issues
 
@@ -114,6 +106,21 @@ https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3
 3. (Optional) Set a description and a custom JQL query to determine which tickets trigger events. For more information on JQL queries, refer to the [Atlassian help documentation](https://confluence.atlassian.com/jirasoftwarecloud/advanced-searching-764478330.html).
 
 4. Finally, set which issue events send messages to Mattermost channels, then hit **Save**. The following issue events are supported:
+
+  - **Jira Cloud**: 
+     - Issue Created; Issue Deleted
+     - Issue Updated, including when an issue is reopened or resolved, or when the assignee is changed
+     - Comments Created; Comments Updated; Comments Deleted
+
+  - **Jira Server or Data Center**: 
+     - Issue Created; Issue Deleted
+     - Issue Updated, including when an issue is reopened or resolved, or when the assignee is changed
+
+**Note**: For Jira Server or Data Center, send notifications for comments created, updated or deleted by selecting **Issue Updated** events, and adding `&updated_comments=1` to the end of the webhook URL, such as 
+
+```
+https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3MOuxaiwsPzLwh&team=contributors&channel=town-square&updated_comments=1
+```
 
 ![image](https://user-images.githubusercontent.com/13119842/58669333-d4d23100-8309-11e9-8618-ec7ec18d28bc.png)
 
@@ -232,7 +239,3 @@ where `<your-mattermost-url>`, `<your-port>`, `<your-secret>`, `<your-team-url>`
 You can generate a new secret in **System Console > Plugins > Jira**, and paste the new webhook URL in your JIRA webhook configuration. 
 
 This might result in downtime of the JIRA plugin, but it should only be a few minutes at most.
-
-### Why does Jira issue creation fail?
-
-// TODO: E.g. https://mattermost.atlassian.net/browse/MM-15828 ?
