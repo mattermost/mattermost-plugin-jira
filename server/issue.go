@@ -99,19 +99,21 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 
 		req := buildCreateQuery(ji, project, issue)
 
-		message := "The project you tried to create an issue for has **required fields** this plugin does not yet support. "
+		message := "The project you tried to create an issue for has **required fields** this plugin does not yet support:"
+
+		var fieldsString string
+		for _, v := range create.RequiredFieldsNotCovered {
+			fieldsString = fieldsString + fmt.Sprintf("- %+v\n", v)
+		}
+
 		reply := &model.Post{
-			Message:   fmt.Sprintf("%v Please [create your Jira issue manually](%v).", message, req.URL.String()),
+			Message:   fmt.Sprintf("[Please create your Jira issue manually](%v). %v.\n%v", req.URL.String(), message, fieldsString),
 			ChannelId: post.ChannelId,
 			RootId:    rootId,
 			ParentId:  parentId,
 			UserId:    mattermostUserId,
 		}
-		_, appErr = api.CreatePost(reply)
-		if appErr != nil {
-			return http.StatusInternalServerError,
-				errors.WithMessage(appErr, "failed to create notification post "+create.PostId)
-		}
+		_ = api.SendEphemeralPost(mattermostUserId, reply)
 
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, "{}")
