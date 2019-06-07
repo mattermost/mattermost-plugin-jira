@@ -145,7 +145,7 @@ export default class AttachIssueModal extends PureComponent {
 
 const getStyle = (theme) => ({
     modal: {
-        padding: '1em',
+        padding: '1em 1em 0',
         color: theme.centerChannelColor,
         backgroundColor: theme.centerChannelBg,
     },

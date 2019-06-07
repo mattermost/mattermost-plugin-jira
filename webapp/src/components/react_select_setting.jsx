@@ -34,6 +34,7 @@ export default class ReactSelectSetting extends React.PureComponent {
                 <ReactSelect
                     {...this.props}
                     menuPortalTarget={document.body}
+                    menuPlacement='auto'
                     onChange={this.handleChange}
                     styles={getStyleForReactSelect(this.props.theme)}
                 />
