@@ -22,6 +22,7 @@ const (
 	routeAPIGetSearchIssues        = "/api/v2/get-search-issues"
 	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
 	routeAPIUserInfo               = "/api/v2/userinfo"
+	routeAPISettingsInfo           = "/api/v2/settingsinfo"
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"
 	routeACUninstalled             = "/ac/uninstalled"
@@ -69,6 +70,8 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	// User APIs
 	case routeAPIUserInfo:
 		return httpAPIGetUserInfo(p, w, r)
+	case routeAPISettingsInfo:
+		return httpAPIGetSettingsInfo(p, w, r)
 
 	// Atlassian Connect application
 	case routeACInstalled:

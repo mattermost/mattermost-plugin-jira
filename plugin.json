@@ -23,6 +23,13 @@
         "help_text": "Select the username that this integration is attached to."
       },
       {
+        "key": "EnableJiraUI",
+        "display_name": "Allow users to connect their Mattermost accounts to Jira",
+        "type": "bool",
+        "help_text": "When true, users can create and manage issues across Mattermost channels by connecting their Mattermost account to Jira with '/jira connect'. \n \n After changing this setting to true, install this plugin to your Jira instance with '/jira install'. See [documentation](https://about.mattermost.com/default-jira-plugin-link-application) to learn more.",
+        "default": true
+      },
+      {
         "key": "Secret",
         "display_name": "Webhook Secret",
         "type": "generated",
