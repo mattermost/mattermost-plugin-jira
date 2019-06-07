@@ -181,7 +181,10 @@ func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs
 	if len(args) != 1 {
 		return help(p)
 	}
-	jiraURL := args[0]
+	jiraURL, err := normalizeInstallURL(args[0])
+	if err != nil {
+		return responsef(p, err.Error())
+	}
 
 	// Create an "uninitialized" instance of Jira Cloud that will
 	// receive the /installed callback
@@ -221,7 +224,10 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 	if len(args) != 1 {
 		return help(p)
 	}
-	jiraURL := args[0]
+	jiraURL, err := normalizeInstallURL(args[0])
+	if err != nil {
+		return responsef(p, err.Error())
+	}
 
 	const addResponseFormat = `` +
 		`Server instance has been installed. To finish the configuration, add an Application Link in your Jira instance following these steps:
