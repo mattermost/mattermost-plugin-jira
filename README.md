@@ -2,7 +2,7 @@
 
 This plugin supports a two-way integration between Mattermost and Jira. For a stable production release, please download the latest version [in the Releases tab](https://github.com/mattermost/mattermost-plugin-jira/releases) and follow [these instructions](#2-configuration) for install and configuration.
 
-This plugin supports Jira Core and Jira Software products, for Cloud, Server and Data Center platforms.
+This plugin supports Jira Core and Jira Software products, for Server, Data Center and Cloud platforms.
 
 Support for multiple Jira instances is considered, but not yet supported.
 
@@ -20,9 +20,9 @@ Support for multiple Jira instances is considered, but not yet supported.
 
 Notify your team of latest updated by sending notifications from your Jira projects to Mattermost channels.
 
-![image](https://user-images.githubusercontent.com/13119842/58668896-5cb73b80-8308-11e9-892c-79e4240203ea.png)
+![image](https://user-images.githubusercontent.com/13119842/59113100-6cd7a800-8912-11e9-9e23-3639c0eb9c4d.png)
 
-![image](https://user-images.githubusercontent.com/13119842/58669245-858c0080-8309-11e9-9408-e4c636768d09.png)
+![image](https://user-images.githubusercontent.com/13119842/59113138-7f51e180-8912-11e9-9fc5-3077ba90a8a8.png)
 
 Notifications are configured with webhooks and offer full JQL support. Configuration is restricted to Jira System Admins only. See [these instructions](#2-configuration) for install and configuration.
 
@@ -45,11 +45,11 @@ Create Jira issues from a Mattermost message by clicking the **More Actions** (.
 
 Then, on the resulting issue creation dialog, select the project, issue type and enter other fields to create the issue.
 
-![image](https://user-images.githubusercontent.com/13119842/59112304-bfb06000-8910-11e9-8aff-d3029b8696bb.png)
+![image](https://user-images.githubusercontent.com/13119842/59113188-985a9280-8912-11e9-9def-9a7382b4137e.png)
 
 Click **Create** and the Jira issue is now created, including any file attachments part of the Mattermost message.
 
-![image](https://user-images.githubusercontent.com/13119842/59112323-cb9c2200-8910-11e9-9dcc-21fb7507ce0a.png)
+![image](https://user-images.githubusercontent.com/13119842/59113219-a4deeb00-8912-11e9-9741-5ddc8a4b51fa.png)
 
 **NOTE**: This plugin does not support all Jira fields. If the project you tried to create an issue for has **required fields** not yet supported, you will be prompted to manually create an issue. Clicking the provided link brings you to an issue creation screen in Jira, with the fields entered previously pre-filled.
 
@@ -66,7 +66,7 @@ Keep all information in one place by attaching parts of Mattermost conversations
 
 Then, on the resulting dialog, select issue you want to attach it to. You may search for issues containing specific text.
 
-![image](https://user-images.githubusercontent.com/13119842/59112601-51b86880-8911-11e9-91ed-b6359a3917b6.png)
+![image](https://user-images.githubusercontent.com/13119842/59113267-b627f780-8912-11e9-90ec-417d430de7e6.png)
 
 Click **Attach** and the message is attached to the selected Jira issue as a comment.
 
@@ -74,7 +74,9 @@ Click **Attach** and the message is attached to the selected Jira issue as a com
 
 Transition issues without the need to switch to your Jira project. To transition an issue, use the `/jira transition <issue-key> <state>` command.
 
-For instance, `/jira transition MM-1234 done` transitions the issue key **MM-1234** to **Done**.
+For instance, `/jira transition EXT-20 done` transitions the issue key **EXT-20** to **Done**.
+
+![image](https://user-images.githubusercontent.com/13119842/59113377-dfe11e80-8912-11e9-8971-f869fa123366.png)
 
 Note that states and issue transitions are based on your Jira project workflow configuration.
 
@@ -93,57 +95,51 @@ If you want to [send notifications from Jira to Mattermost](#11-send-notificatio
 1. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
   - For older versions of Jira, click the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
 
-2. Click **Create a WebHook** to create a new webhook. Choose a unique name and add the JIRA webhook URL https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL as the URL.
+2. Click **Create a WebHook** to create a new webhook. Enter a **Name** for the webhook and add the JIRA webhook URL https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL as the **URL**.
   - Replace `TEAMURL` and `CHANNELURL` with the Mattermost team URL and channel URL you want the JIRA events to post to. The values should be in lower case.
   - Replace `SITEURL` with the site URL of your Mattermost instance, and `WEBHOOKSECRET` with the secret generated in Mattermost via **System Console > Plugins > Jira**
 
-For instance, if the team URL is `contributors`, channel URL is `town-square`, site URL is `https://community.mattermost.com`, and the generated webhook secret is `5JlVk56KPxX629ujeU3MOuxaiwsPzLwh`, then the final webhook URL would be
+  For instance, if the team URL is `contributors`, channel URL is `town-square`, site URL is `https://community.mattermost.com`, and the generated webhook secret is `5JlVk56KPxX629ujeU3MOuxaiwsPzLwh`, then the final webhook URL would be
 
-```
-https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3MOuxaiwsPzLwh&team=contributors&channel=town-square
-```
+  ```
+  https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3MOuxaiwsPzLwh&team=contributors&channel=town-square
+  ```
 
 3. (Optional) Set a description and a custom JQL query to determine which tickets trigger events. For more information on JQL queries, refer to the [Atlassian help documentation](https://confluence.atlassian.com/jirasoftwarecloud/advanced-searching-764478330.html).
 
 4. Finally, set which issue events send messages to Mattermost channels, then hit **Save**. The following issue events are supported:
+
+  - **Jira Server or Data Center**: 
+     - Issue Created; Issue Deleted
+     - Issue Updated, including when an issue is reopened or resolved, or when the assignee is changed
 
   - **Jira Cloud**: 
      - Issue Created; Issue Deleted
      - Issue Updated, including when an issue is reopened or resolved, or when the assignee is changed
      - Comments Created; Comments Updated; Comments Deleted
 
-  - **Jira Server or Data Center**: 
-     - Issue Created; Issue Deleted
-     - Issue Updated, including when an issue is reopened or resolved, or when the assignee is changed
-
-**Note**: For Jira Server or Data Center, send notifications for comments created, updated or deleted by selecting **Issue Updated** events, and adding `&updated_comments=1` to the end of the webhook URL, such as 
+**Note**: For Jira Server or Data Center, you can send notifications for comments by selecting **Issue Updated**, then adding `&updated_comments=1` to the end of the webhook URL, such as 
 
 ```
 https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3MOuxaiwsPzLwh&team=contributors&channel=town-square&updated_comments=1
 ```
 
-![image](https://user-images.githubusercontent.com/13119842/58669333-d4d23100-8309-11e9-8618-ec7ec18d28bc.png)
+#### Step 3: Install the plugin as an application in Jira
 
-#### Step 3: Link the plugin as an application in Jira
+If you want to allow users to [create and manage Jira issues across Mattermost channels](#11-create-and-manage-jira-issues-in-mattermost), install the plugin as an application in your Jira instance.
 
-Finally, link the plugin as an application in your Jira instance.
+1. Go to **System Console > Plugins > Jira**, and set **Allow users to connect their Mattermost accounts to Jira** to true.
+2. Install the plugin as an application. For Jira Server or Data Center instances, post `/jira install server <your-jira-url>` to a Mattermost channel as a Mattermost System Admin, and follow the steps posted to the channel. For Jira Cloud, post `/jira install cloud <your-jira-url>`.
 
-For Jira Cloud instances, post `/jira install cloud <your-jira-url>` to a Mattermost channel as a Mattermost System Admin, and follow the steps posted to the channel.
-
-For Jira Server or Data Center, post `/jira install server <your-jira-url>`.
-
-If you face issues installing the plugin, see our [Frequently Asked Questions](#5-frequently-asked-questions-faq) for troubleshooting help.
+If you face issues installing the plugin, see our [Frequently Asked Questions](#5-frequently-asked-questions-faq) for troubleshooting help, or open an issue in the [Mattermost Forum](http://forum.mattermost.org).
 
 ## 3. Jira v2 Roadmap
 
 ### Timeline
 
 The ship target dates are included below. These are subject to change:
-  - May 29th: Jira 2.0 Release Candidate cut
-       - Deployed to community.mattermost.com for wider testing
-       - Shared with customers for early feedback
   - June 16th: Jira 2.0 released as part of Mattermost Server v5.12
-  - June 19th: Jira 2.1 Release Candidate cut
+  - June 25th: Jira 2.1 Release Candidate cut
        - Deployed to community.mattermost.com for wider testing
        - Shared with customers for early feedback
   - August 16th: Jira 2.1 released as part of Mattermost Server v5.14
