@@ -113,6 +113,7 @@ export default class JiraField extends React.PureComponent {
                     isMulti={false}
                     value={options.find((option) => option.value === this.props.value)}
                     theme={this.props.theme}
+                    isClearable={true}
                 />
             );
         }
