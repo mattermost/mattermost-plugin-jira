@@ -111,7 +111,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 			ChannelId: post.ChannelId,
 			RootId:    rootId,
 			ParentId:  parentId,
-			UserId:    ji.GetPlugin().conf.botUserID,
+			UserId:    ji.GetPlugin().getConfig().botUserID,
 		}
 		_ = api.SendEphemeralPost(mattermostUserId, reply)
 
