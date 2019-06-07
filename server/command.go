@@ -77,8 +77,27 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 	if len(args) != 0 {
 		return help(p)
 	}
-	return responsef(p, "[Click here to link your Jira account](%s%s)",
-		p.GetPluginURL(), routeUserConnect)
+
+	instance, err := p.LoadCurrentJIRAInstance()
+	if err != nil {
+		return responsef(p, "No Jira instance available: %v", err)
+	}
+
+	// Users shouldn't be able to make multiple connections.
+	// TODO "connected" endpointts (http) should perform this check as well
+	jiraUser, err := p.LoadJIRAUser(instance, header.UserId)
+	if err == nil && len(jiraUser.Key) != 0 {
+		return responsef(p, "Already connected to a Jira account. Please use /jira disconnect to disconnect.")
+	}
+
+	redirectURL, err := instance.GetUserConnectURL(header.UserId)
+	if err != nil {
+		return responsef(p, "Failed: %v", err)
+	}
+
+	return &model.CommandResponse{
+		GotoLocation: redirectURL,
+	}
 }
 
 func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
