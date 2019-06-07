@@ -75,7 +75,7 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 	if mattermostUserId == "" {
 		return http.StatusUnauthorized, errors.New(
 			`Mattermost failed to recognize your user account. ` +
-				`Please make sure "Block 3rd party cookies" is turned off in your browser settings.`)
+				`Please make sure third-party cookies are not disabled in your browser settings.`)
 	}
 
 	requestedUserId, secret, err := jci.Plugin.ParseAuthToken(mmToken)
