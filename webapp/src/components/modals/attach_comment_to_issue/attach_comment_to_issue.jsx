@@ -8,7 +8,7 @@ import {Modal} from 'react-bootstrap';
 import FormButton from 'components/form_button';
 import Input from 'components/input';
 
-import JiraIssueSelector from '../../jira_issue_selector';
+import JiraIssueSelector from 'components/jira_issue_selector';
 
 const initialState = {
     submitting: false,
