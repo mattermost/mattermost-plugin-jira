@@ -17,7 +17,6 @@ export default class JiraIssueSelector extends Component {
     static propTypes = {
         isRequired: PropTypes.bool,
         theme: PropTypes.object.isRequired,
-        currentProject: PropTypes.string.isRequired,
         onChange: PropTypes.func.isRequired,
         fetchIssuesEndpoint: PropTypes.string.isRequired,
     };
@@ -27,11 +26,9 @@ export default class JiraIssueSelector extends Component {
     };
 
     searchIssues = (text) => {
-        const projectSearchTerm = this.props.currentProject ? 'project=' + this.props.currentProject : '';
         const textEncoded = encodeURIComponent(text.trim().replace(/"/g, '\\"'));
         const textSearchTerm = (textEncoded.length > 0) ? 'text ~ "' + textEncoded + '*"' : '';
-        const combinedTerms = (projectSearchTerm.length > 0 && textSearchTerm.length > 0) ? projectSearchTerm + ' AND ' + textSearchTerm : projectSearchTerm + textSearchTerm;
-        const finalQuery = combinedTerms + ' ' + searchDefaults;
+        const finalQuery = textSearchTerm + ' ' + searchDefaults;
 
         return doFetchWithResponse(this.props.fetchIssuesEndpoint + `?jql=${finalQuery}`).then(
             ({data}) => {
