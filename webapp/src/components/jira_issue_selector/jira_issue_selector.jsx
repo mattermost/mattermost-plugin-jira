@@ -7,7 +7,7 @@ import PropTypes from 'prop-types';
 import debounce from 'debounce-promise';
 import AsyncSelect from 'react-select/lib/Async';
 
-import {getStyleForReactSelect} from 'components/utils';
+import {getStyleForReactSelect} from 'utils/styles';
 import {doFetchPromise} from 'client';
 
 const searchDefaults = 'ORDER BY updated DESC';
