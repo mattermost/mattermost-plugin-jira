@@ -10,7 +10,7 @@ import FormButton from 'components/form_button';
 import Loading from 'components/loading';
 import ReactSelectSetting from 'components/react_select_setting';
 
-import {getProjectValues, getIssueTypes, getIssueValues, getFields} from 'jira_issue_metadata';
+import {getProjectValues, getIssueTypes, getIssueValues, getFields} from 'utils/jira_issue_metadata';
 
 const initialState = {
     submitting: false,
