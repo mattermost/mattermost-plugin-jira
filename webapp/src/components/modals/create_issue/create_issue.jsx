@@ -35,7 +35,7 @@ export default class CreateIssueModal extends PureComponent {
         post: PropTypes.object,
         description: PropTypes.string,
         channelId: PropTypes.string,
-        currentTeam: PropTypes.string.isRequired,
+        currentTeam: PropTypes.object.isRequired,
         theme: PropTypes.object.isRequired,
         visible: PropTypes.bool.isRequired,
         jiraIssueMetadata: PropTypes.object,

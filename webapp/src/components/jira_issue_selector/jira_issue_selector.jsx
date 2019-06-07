@@ -8,6 +8,7 @@ import debounce from 'debounce-promise';
 import AsyncSelect from 'react-select/lib/Async';
 
 import {getStyleForReactSelect} from 'utils/styles';
+import {doFetchWithResponse} from 'client';
 
 const searchDefaults = 'ORDER BY updated DESC';
 const searchDebounceDelay = 400;
@@ -32,10 +33,9 @@ export default class JiraIssueSelector extends Component {
         const combinedTerms = (projectSearchTerm.length > 0 && textSearchTerm.length > 0) ? projectSearchTerm + ' AND ' + textSearchTerm : projectSearchTerm + textSearchTerm;
         const finalQuery = combinedTerms + ' ' + searchDefaults;
 
-        return fetch(this.props.fetchIssuesEndpoint + `?jql=${finalQuery}`).then(
-            (response) => response.json()).then(
-            (json) => {
-                return json;
+        return doFetchWithResponse(this.props.fetchIssuesEndpoint + `?jql=${finalQuery}`).then(
+            ({data}) => {
+                return data;
             });
     };
 
