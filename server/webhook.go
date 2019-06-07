@@ -52,8 +52,7 @@ const maskComments = eventCreatedComment |
 	eventUpdatedComment
 
 const maskDefault = maskLegacy |
-	eventUpdatedAssignee |
-	maskComments
+	eventUpdatedAssignee
 
 // The keys listed here can be used in the Webhook URL to control what events
 // are posted to Mattermost. A matching parameter with a non-empty value must
@@ -67,6 +66,7 @@ var eventParamMasks = map[string]uint64{
 	"updated_sprint":      eventUpdatedSprint,      // assigned to a different sprint
 	"updated_status":      eventUpdatedStatus,      // transitions like Done, In Progress
 	"updated_summary":     eventUpdatedSummary,     // issue renamed
+	"updated_comments":    maskComments,            // issue renamed
 	"updated_all":         ^(-1 << eventMax),       // all events
 }
 
