@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -372,21 +371,8 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 	commentAdded, _, err := jiraClient.Issue.AddComment(attach.IssueKey, &jiraComment)
 	if err != nil {
 		if strings.Contains(err.Error(), "you do not have the permission to comment on this issue") {
-			reply := &model.Post{
-				Message:   "You do not have permission to create a comment in the selected Jira issue. Please choose another issue or contact your Jira admin.",
-				ChannelId: post.ChannelId,
-				UserId:    ji.GetPlugin().getConfig().botUserID,
-			}
-			_ = api.SendEphemeralPost(mattermostUserId, reply)
-
-			// No need to return an error to the client
-			w.Header().Set("Content-Type", "application/json")
-			_, err = io.WriteString(w, "{}")
-			if err != nil {
-				return http.StatusInternalServerError,
-					errors.WithMessage(err, "failed to write response")
-			}
-			return http.StatusOK, nil
+			return http.StatusNotFound,
+				errors.New("You do not have permission to create a comment in the selected Jira issue. Please choose another issue or contact your Jira admin.")
 		}
 
 		// The error was not a permissions error; it was unanticipated. Return it to the client.

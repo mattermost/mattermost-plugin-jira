@@ -3,7 +3,7 @@
 
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
-import {Modal} from 'react-bootstrap';
+import {Modal, Alert} from 'react-bootstrap';
 
 import FormButton from 'components/form_button';
 import Input from 'components/input';
@@ -77,8 +77,14 @@ export default class AttachIssueModal extends PureComponent {
             return null;
         }
 
+        let errorFeedback = null;
         if (error) {
-            console.error('render error', error); //eslint-disable-line no-console
+            errorFeedback = (
+                <Alert bsStyle='danger'>
+                    <h4>{'Error'}</h4>
+                    <p>{error}</p>
+                </Alert>
+            );
         }
 
         const component = (
@@ -121,6 +127,7 @@ export default class AttachIssueModal extends PureComponent {
                 >
                     <Modal.Body ref='modalBody'>
                         {component}
+                        {errorFeedback}
                     </Modal.Body>
                     <Modal.Footer>
                         <FormButton
