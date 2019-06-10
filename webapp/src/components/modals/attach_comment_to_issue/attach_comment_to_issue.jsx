@@ -77,16 +77,13 @@ export default class AttachIssueModal extends PureComponent {
             return null;
         }
 
-        if (error) {
-            console.error('render error', error); //eslint-disable-line no-console
-        }
-
         const component = (
             <div style={style.modal}>
                 <JiraIssueSelector
                     onChange={this.handleIssueKeyChange}
                     isRequired={true}
                     theme={theme}
+                    error={error}
                 />
                 <Input
                     label='Message Attached to Jira Issue'

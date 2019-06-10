@@ -17,9 +17,9 @@ export default class JiraIssueSelector extends Component {
     static propTypes = {
         isRequired: PropTypes.bool,
         theme: PropTypes.object.isRequired,
-        currentProject: PropTypes.string.isRequired,
         onChange: PropTypes.func.isRequired,
         fetchIssuesEndpoint: PropTypes.string.isRequired,
+        error: PropTypes.string.isRequired,
     };
 
     handleIssueSearchTermChange = (inputValue) => {
@@ -27,11 +27,9 @@ export default class JiraIssueSelector extends Component {
     };
 
     searchIssues = (text) => {
-        const projectSearchTerm = this.props.currentProject ? 'project=' + this.props.currentProject : '';
         const textEncoded = encodeURIComponent(text.trim().replace(/"/g, '\\"'));
         const textSearchTerm = (textEncoded.length > 0) ? 'text ~ "' + textEncoded + '*"' : '';
-        const combinedTerms = (projectSearchTerm.length > 0 && textSearchTerm.length > 0) ? projectSearchTerm + ' AND ' + textSearchTerm : projectSearchTerm + textSearchTerm;
-        const finalQuery = combinedTerms + ' ' + searchDefaults;
+        const finalQuery = textSearchTerm + ' ' + searchDefaults;
 
         return doFetchWithResponse(this.props.fetchIssuesEndpoint + `?jql=${finalQuery}`).then(
             ({data}) => {
@@ -42,6 +40,8 @@ export default class JiraIssueSelector extends Component {
     debouncedSearchIssues = debounce(this.searchIssues, searchDebounceDelay);
 
     render = () => {
+        const {error} = this.props;
+
         const requiredStar = (
             <span
                 className={'error-text'}
@@ -50,6 +50,15 @@ export default class JiraIssueSelector extends Component {
                 {'*'}
             </span>
         );
+
+        let issueError = null;
+        if (error) {
+            issueError = (
+                <p className='help-text error-text'>
+                    <span>{error}</span>
+                </p>
+            );
+        }
 
         return (
             <div className={'form-group margin-bottom x3'}>
@@ -74,6 +83,7 @@ export default class JiraIssueSelector extends Component {
                     menuPlacement='auto'
                     styles={getStyleForReactSelect(this.props.theme)}
                 />
+                {issueError}
                 <div className={'help-text'}>
                     {'Returns issues sorted by most recently updated.'} <br/>
                     {'Tip: Use AND, OR, *, ~, and other modifiers like in a JQL query.'}

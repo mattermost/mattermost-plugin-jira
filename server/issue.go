@@ -370,6 +370,12 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 
 	commentAdded, _, err := jiraClient.Issue.AddComment(attach.IssueKey, &jiraComment)
 	if err != nil {
+		if strings.Contains(err.Error(), "you do not have the permission to comment on this issue") {
+			return http.StatusNotFound,
+				errors.New("You do not have permission to create a comment in the selected Jira issue. Please choose another issue or contact your Jira admin.")
+		}
+
+		// The error was not a permissions error; it was unanticipated. Return it to the client.
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to attach the comment, postId: "+attach.PostId)
 	}
