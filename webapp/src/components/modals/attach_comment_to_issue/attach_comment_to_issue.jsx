@@ -77,22 +77,13 @@ export default class AttachIssueModal extends PureComponent {
             return null;
         }
 
-        let errorFeedback = null;
-        if (error) {
-            errorFeedback = (
-                <Alert bsStyle='danger'>
-                    <h4>{'Error'}</h4>
-                    <p>{error}</p>
-                </Alert>
-            );
-        }
-
         const component = (
             <div style={style.modal}>
                 <JiraIssueSelector
                     onChange={this.handleIssueKeyChange}
                     isRequired={true}
                     theme={theme}
+                    error={error}
                 />
                 <Input
                     label='Message Attached to Jira Issue'
@@ -127,7 +118,6 @@ export default class AttachIssueModal extends PureComponent {
                 >
                     <Modal.Body ref='modalBody'>
                         {component}
-                        {errorFeedback}
                     </Modal.Body>
                     <Modal.Footer>
                         <FormButton

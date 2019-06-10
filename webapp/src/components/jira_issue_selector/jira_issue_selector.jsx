@@ -19,6 +19,7 @@ export default class JiraIssueSelector extends Component {
         theme: PropTypes.object.isRequired,
         onChange: PropTypes.func.isRequired,
         fetchIssuesEndpoint: PropTypes.string.isRequired,
+        error: PropTypes.string.isRequired,
     };
 
     handleIssueSearchTermChange = (inputValue) => {
@@ -39,6 +40,8 @@ export default class JiraIssueSelector extends Component {
     debouncedSearchIssues = debounce(this.searchIssues, searchDebounceDelay);
 
     render = () => {
+        const {error} = this.props;
+
         const requiredStar = (
             <span
                 className={'error-text'}
@@ -47,6 +50,15 @@ export default class JiraIssueSelector extends Component {
                 {'*'}
             </span>
         );
+
+        let issueError = null;
+        if (error) {
+            issueError = (
+                <p className='help-text error-text'>
+                    <span>{error}</span>
+                </p>
+            );
+        }
 
         return (
             <div className={'form-group margin-bottom x3'}>
@@ -71,6 +83,7 @@ export default class JiraIssueSelector extends Component {
                     menuPlacement='auto'
                     styles={getStyleForReactSelect(this.props.theme)}
                 />
+                {issueError}
                 <div className={'help-text'}>
                     {'Returns issues sorted by most recently updated.'} <br/>
                     {'Tip: Use AND, OR, *, ~, and other modifiers like in a JQL query.'}
