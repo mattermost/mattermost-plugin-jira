@@ -45,7 +45,7 @@ var httpUserConnect = []ActionFunc{
 	handleUserConnect,
 }
 
-func handleUserConnect(a *Action) error {
+func handleUserConnect(a Action, ac *ActionContext) error {
 	// Users shouldn't be able to make multiple connections.
 	jiraUser, err := a.UserStore.LoadJiraUser(a.Instance, a.MattermostUserId)
 	if err == nil && len(jiraUser.Key) != 0 {
@@ -68,7 +68,7 @@ var httpUserDisconnect = []ActionFunc{
 	handleUserDisconnect,
 }
 
-func handleUserDisconnect(a *Action) error {
+func handleUserDisconnect(a Action, ac *ActionContext) error {
 	err := DeleteUserInfoNotify(a.API, a.UserStore, a.Instance, a.MattermostUserId)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
@@ -96,7 +96,7 @@ var httpAPIGetUserInfo = []ActionFunc{
 	handleAPIGetUserInfo,
 }
 
-func handleAPIGetUserInfo(a *Action) error {
+func handleAPIGetUserInfo(a Action, ac *ActionContext) error {
 	resp := UserInfo{}
 	if instance, err := a.CurrentInstanceStore.LoadCurrentInstance(); err == nil {
 		resp.InstanceInstalled = true

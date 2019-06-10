@@ -23,8 +23,8 @@ type Instance interface {
 	GetMattermostKey() string
 	GetType() string
 	GetURL() string
-	GetUserConnectURL(Config, SecretsStore, string) (string, error)
-	GetClient(Config, SecretsStore, *JiraUser) (*jira.Client, error)
+	GetUserConnectURL(Config, SecretStore, string) (string, error)
+	GetClient(Config, SecretStore, *JiraUser) (*jira.Client, error)
 }
 
 type instance struct {

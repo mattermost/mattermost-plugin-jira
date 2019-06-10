@@ -313,7 +313,7 @@ var httpSubscribeWebhook = []ActionFunc{
 	handleSubscribeWebhook,
 }
 
-func handleSubscribeWebhook(a *Action) error {
+func handleSubscribeWebhook(a Action, ac *ActionContext) error {
 	if a.PluginConfig.Secret == "" || a.PluginConfig.UserName == "" {
 		return a.RespondError(http.StatusForbidden, nil,
 			"Jira plugin not configured correctly; must provide Secret and UserName")
@@ -360,7 +360,7 @@ var httpChannelSubscriptions = []ActionFunc{
 	handleChannelSubscriptions,
 }
 
-func handleChannelSubscriptions(a *Action) error {
+func handleChannelSubscriptions(a Action, ac *ActionContext) error {
 	switch a.HTTPRequest.Method {
 	case http.MethodPost:
 		return handleChannelCreateSubscription(a)
@@ -375,7 +375,7 @@ func handleChannelSubscriptions(a *Action) error {
 	}
 }
 
-func handleChannelCreateSubscription(a *Action) error {
+func handleChannelCreateSubscription(a Action, ac *ActionContext) error {
 	subscription := ChannelSubscription{}
 	err := json.NewDecoder(a.HTTPRequest.Body).Decode(&subscription)
 	if err != nil {
@@ -402,7 +402,7 @@ func handleChannelCreateSubscription(a *Action) error {
 	return a.RespondJSON(map[string]string{"status": "OK"})
 }
 
-func handleChannelEditSubscription(a *Action) error {
+func handleChannelEditSubscription(a Action, ac *ActionContext) error {
 	subscription := ChannelSubscription{}
 	err := json.NewDecoder(a.HTTPRequest.Body).Decode(&subscription)
 	if err != nil {
@@ -428,7 +428,7 @@ func handleChannelEditSubscription(a *Action) error {
 	return a.RespondJSON(map[string]string{"status": "OK"})
 }
 
-func handleChannelDeleteSubscription(a *Action) error {
+func handleChannelDeleteSubscription(a Action, ac *ActionContext) error {
 	// routeAPISubscriptionsChannel has the trailing '/'
 	subscriptionId := strings.TrimPrefix(a.HTTPRequest.URL.Path, routeAPISubscriptionsChannel)
 	if len(subscriptionId) != 26 {
@@ -455,7 +455,7 @@ func handleChannelDeleteSubscription(a *Action) error {
 	return a.RespondJSON(map[string]string{"status": "OK"})
 }
 
-func handleChannelGetSubscriptions(a *Action) error {
+func handleChannelGetSubscriptions(a Action, ac *ActionContext) error {
 	// routeAPISubscriptionsChannel has the trailing '/'
 	channelId := strings.TrimPrefix(a.HTTPRequest.URL.Path, routeAPISubscriptionsChannel)
 	if len(channelId) != 26 {

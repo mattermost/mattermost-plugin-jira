@@ -52,7 +52,7 @@ type Plugin struct {
 	CurrentInstanceStore CurrentInstanceStore
 	InstanceStore        InstanceStore
 	UserStore            UserStore
-	SecretsStore         SecretsStore
+	SecretStore          SecretStore
 
 	// configuration and a muttex to control concurrent access
 	Config   Config
@@ -89,7 +89,7 @@ func (p *Plugin) OnActivate() error {
 	p.CurrentInstanceStore = store
 	p.InstanceStore = store
 	p.UserStore = store
-	p.SecretsStore = store
+	p.SecretStore = store
 
 	dir := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
 	templates, err := p.loadTemplates(dir)

@@ -48,7 +48,7 @@ func (serverInstance jiraServerInstance) GetDisplayDetails() map[string]string {
 	}
 }
 
-func (serverInstance jiraServerInstance) GetUserConnectURL(conf Config, secretsStore SecretsStore,
+func (serverInstance jiraServerInstance) GetUserConnectURL(conf Config, secretsStore SecretStore,
 	mattermostUserId string) (returnURL string, returnErr error) {
 
 	defer func() {
@@ -81,7 +81,7 @@ func (serverInstance jiraServerInstance) GetUserConnectURL(conf Config, secretsS
 	return authURL.String(), nil
 }
 
-func (serverInstance jiraServerInstance) GetClient(conf Config, secretsStore SecretsStore,
+func (serverInstance jiraServerInstance) GetClient(conf Config, secretsStore SecretStore,
 	jiraUser *JiraUser) (returnClient *jira.Client, returnErr error) {
 
 	defer func() {
@@ -110,7 +110,7 @@ func (serverInstance jiraServerInstance) GetClient(conf Config, secretsStore Sec
 	return jiraClient, nil
 }
 
-func (serverInstance *jiraServerInstance) GetOAuth1Config(conf Config, secretsStore SecretsStore) (*oauth1.Config, error) {
+func (serverInstance *jiraServerInstance) GetOAuth1Config(conf Config, secretsStore SecretStore) (*oauth1.Config, error) {
 	rsaKey, err := secretsStore.EnsureRSAKey()
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to create an OAuth1 config")
@@ -129,7 +129,7 @@ func (serverInstance *jiraServerInstance) GetOAuth1Config(conf Config, secretsSt
 	}, nil
 }
 
-func publicKeyString(secretsStore SecretsStore) ([]byte, error) {
+func publicKeyString(secretsStore SecretStore) ([]byte, error) {
 	rsaKey, err := secretsStore.EnsureRSAKey()
 	if err != nil {
 		return nil, err

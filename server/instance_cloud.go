@@ -8,10 +8,12 @@ import (
 	"crypto/rand"
 	"fmt"
 	"net/url"
+	"net/http"
 
 	"github.com/andygrunwald/go-jira"
 	ajwt "github.com/rbriski/atlassian-jwt"
 	oauth2_jira "golang.org/x/oauth2/jira"
+	"github.com/dgrijalva/jwt-go"
 )
 
 type jiraCloudInstance struct {
@@ -74,7 +76,7 @@ func (jci jiraCloudInstance) GetDisplayDetails() map[string]string {
 	}
 }
 
-func (jci jiraCloudInstance) GetUserConnectURL(conf Config, secretsStore SecretsStore,
+func (jci jiraCloudInstance) GetUserConnectURL(conf Config, secretsStore SecretStore,
 	mattermostUserId string) (string, error) {
 
 	randomBytes := make([]byte, 32)
@@ -102,7 +104,7 @@ func (jci jiraCloudInstance) GetURL() string {
 	return jci.AtlassianSecurityContext.BaseURL
 }
 
-func (jci jiraCloudInstance) GetClient(conf Config, secretsStore SecretsStore,
+func (jci jiraCloudInstance) GetClient(conf Config, secretsStore SecretStore,
 	jiraUser *JiraUser) (*jira.Client, error) {
 
 	oauth2Conf := oauth2_jira.Config{
@@ -131,4 +133,28 @@ func (jci jiraCloudInstance) getClientForServer() (*jira.Client, error) {
 	}
 
 	return jira.NewClient(jwtConf.Client(), jwtConf.BaseURL)
+}
+
+func (jci jiraCloudInstance) JWTFromHTTP(r *http.Request) (
+	token *jwt.Token, rawToken string, status int, err error) {
+
+	tokenString := r.FormValue("jwt")
+	if tokenString == "" {
+		return nil, "", http.StatusBadRequest, errors.New("no jwt found in the HTTP request")
+	}
+
+	token, err = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.Errorf(
+				"unsupported signing method: %v", token.Header["alg"])
+		}
+		// HMAC secret is a []byte
+		return []byte(a.JiraCloudInstance.AtlassianSecurityContext.SharedSecret), nil
+	})
+	if err != nil || !token.Valid {
+		return nil, "", http.StatusUnauthorized, errors.WithMessage(err, "failed to validatte JWT")
+	}
+
+	a.Debugf("action: verified Jira JWT")
+	return token, tokenString, http.StatusOK, nil
 }

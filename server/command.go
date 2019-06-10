@@ -29,7 +29,7 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	""
 
 var commandRouter = ActionRouter{
-	Log: func(a *Action) error {
+	LogFilter: func(a Action, ac *ActionContext) error {
 		if a.LogErr != nil {
 			a.Infof("command: %q error:%v", a.CommandArgs.Command, a.LogErr)
 		} else {
@@ -65,66 +65,66 @@ const (
 )
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
+	commandAction, ac := NewCommandAction(p, c, commandArgs)
+
+	err, key := commandAction.matchRequest()
+	if len(args) == 0 {
+		return nil, model.NewAppError("Jira plugin", "", nil, err.Error(), 0)
+	}
+
 	args := strings.Fields(commandArgs.Command)
-	args = args[1:]
-	action := NewAction(p, c)
-	action.CommandArgs = commandArgs
-	action.Args = args
-
-	_ = RequireMattermostUserId(action)
-
+	if len(args) == 0 {
+		return nil, model.NewAppError("Jira plugin", "", nil, "Should be unreachable", 0)
+	}
+	subcommands := args[1:]
 	scriptKey := ""
-	for n := len(args); n > 0; n-- {
-		key := strings.Join(args[:n], "/")
+	for len(args) > 0 {
+		key := strings.Join(subcommands, "/")
 		if commandRouter.RouteHandlers[key] != nil {
-			action.Args = args[n:]
+			subcommands = subcommands[:len(args)-1]
 			scriptKey = key
 			break
 		}
 	}
 
-	commandRouter.Run(scriptKey, action)
-	return action.CommandResponse, nil
+	// +1 for /jira
+	commandAction.Args = args[len(subcommands)+1:]
+	commandRouter.Run(scriptKey, commandAction, ac)
+	return commandAction.CommandResponse, nil
 }
 
-func executeHelp(a *Action) error {
+func executeHelp(a Action, ac *ActionContext) error {
 	return a.RespondPrintf(helpText)
 }
 
 var commandConnect = ActionScript{
 	RequireInstance,
-	executeConnect,
-}
-
-func executeConnect(a *Action) error {
-	if len(a.Args) != 0 {
-		return executeHelp(a)
-	}
-
-	redirectURL, err := a.Instance.GetUserConnectURL(a.PluginConfig, a.SecretsStore, a.MattermostUserId)
-	if err != nil {
-		a.RespondError(0, err)
-	}
-	return a.RespondRedirect(redirectURL)
+	func(a Action, ac *ActionContext) error {
+		if len(ac.Args) != 0 {
+			return a.RespondPrintf("Please use the correct syntax: `/jira connect`.")
+		}
+		redirectURL, err := a.Instance.GetUserConnectURL(a.PluginConfig, a.SecretsStore, a.MattermostUserId)
+		if err != nil {
+			a.RespondError(0, err)
+		}
+		return a.RespondRedirect(redirectURL)
+	},
 }
 
 var commandDisconnect = ActionScript{
 	RequireInstance,
 	RequireJiraUser,
-	executeDisconnect,
-}
-
-func executeDisconnect(a *Action) error {
-	if len(a.Args) != 0 {
-		return executeHelp(a)
-	}
-
-	err := DeleteUserInfoNotify(a.API, a.UserStore, a.Instance, a.MattermostUserId)
-	if err != nil {
-		return a.RespondError(0, err, "Could not complete the **disconnection** request")
-	}
-
-	return a.RespondPrintf("You have successfully disconnected your Jira account (**%s**).", a.JiraUser.Name)
+	func(a Action, ac *ActionContext) error {
+		if len(ac.Args) != 0 {
+			return a.RespondPrintf("Please use the correct syntax: `/jira disconnect`.")
+		}
+		err := DeleteUserInfoNotify(a.API, a.UserStore, a.Instance, a.MattermostUserId)
+		if err != nil {
+			return a.RespondError(0, err, "Could not complete the **disconnection** request")
+		}
+		return a.RespondPrintf("You have successfully disconnected your Jira account (**%s**).",
+			a.JiraUser.Name)
+	},
 }
 
 const (
@@ -137,32 +137,31 @@ var commandSettings = ActionScript{
 	executeSettings,
 }
 
-func executeSettings(a *Action) error {
-	// TODO command-specific help
-	// const helpText = "`/jira settings notifications [value]`\n* Invalid value. Accepted values are: `on` or `off`."
-	if len(a.Args) != 2 {
-		return executeHelp(a)
-	}
+func executeSettings(a Action, ac *ActionContext) error {
+	name := a.FormValue("$1")
+	valueStr := a.FormValue("$2")
 
-	switch a.Args[0] {
+	switch name {
 	case settingsNotifications:
 		value := false
-		switch a.Args[1] {
+		switch valueStr {
 		case settingOn:
 			value = true
 		case settingOff:
 			value = false
 		default:
-			return executeHelp(a)
+			return a.RespondPrintf(
+				"`/jira settings notifications [value]`\nInvalid value %q. Accepted values are: `on` or `off`.", valueStr)
 		}
-		resp, err := UserSettingsNotifications(a.UserStore, a.Instance, a.MattermostUserId, a.JiraUser, value)
+
+		resp, err := UserSettingsNotifications(ac.UserStore, ac.Instance, ac.MattermostUserId, ac.JiraUser, value)
 		if err != nil {
 			return a.RespondError(0, err)
 		}
 		return a.RespondPrintf(resp)
 
 	default:
-		return a.RespondError(0, nil, "Unknown setting %q.", a.Args[0])
+		return a.RespondError(0, nil, "Unknown setting %q.", name)
 	}
 }
 
@@ -171,9 +170,9 @@ var commandList = ActionScript{
 	executeList,
 }
 
-func executeList(a *Action) error {
-	if len(a.Args) != 0 {
-		return executeHelp(a)
+func executeList(a Action, ac *ActionContext) error {
+	if len(ac.Args) != 0 {
+		return a.RespondPrintf("Please use the correct syntax: `/jira connect`")
 	}
 	known, err := a.InstanceStore.LoadKnownInstances()
 	if err != nil {
@@ -221,11 +220,11 @@ var commandInstallCloud = ActionScript{
 	executeInstallCloud,
 }
 
-func executeInstallCloud(a *Action) error {
+func executeInstallCloud(a Action, ac *ActionContext) error {
 	if len(a.Args) != 1 {
 		return executeHelp(a)
 	}
-	jiraURL := a.Args[0]
+	jiraURL := a.FormValue("$1")
 
 	// Create an "uninitialized" instance of Jira Cloud that will
 	// receive the /installed callback
@@ -259,11 +258,11 @@ var commandInstallServer = ActionScript{
 	executeInstallServer,
 }
 
-func executeInstallServer(a *Action) error {
+func executeInstallServer(a Action, ac *ActionContext) error {
 	if len(a.Args) != 1 {
 		return executeHelp(a)
 	}
-	jiraURL := a.Args[0]
+	jiraURL := a.FormValue("$1")
 
 	const addResponseFormat = `` +
 		`Server instance has been installed. To finish the configuration, add an Application Link in your Jira instance following these steps:
@@ -310,11 +309,11 @@ var commandUninstall = ActionScript{
 
 // executeUninstall will uninstall the jira cloud instance if the url matches, and then update all connected
 // clients so that their Jira-related menu options are removed.
-func executeUninstall(a *Action) error {
+func executeUninstall(a Action, ac *ActionContext) error {
 	if len(a.Args) != 1 {
 		return executeHelp(a)
 	}
-	jiraURL := a.Args[0]
+	jiraURL := a.FormValue("$1")
 
 	if jiraURL != a.Instance.GetURL() {
 		return a.RespondError(0, nil,
@@ -348,11 +347,11 @@ var commandTransition = ActionScript{
 	executeTransition,
 }
 
-func executeTransition(a *Action) error {
+func executeTransition(a Action, ac *ActionContext) error {
 	if len(a.Args) < 2 {
 		return executeHelp(a)
 	}
-	issueKey := a.Args[0]
+	issueKey := a.FormValue("$1")
 	toState := strings.Join(a.Args[1:], " ")
 
 	msg, err := transitionJiraIssue(a, issueKey, toState)
@@ -367,7 +366,7 @@ var commandWebhookURL = ActionScript{
 	executeWebhookURL,
 }
 
-func executeWebhookURL(a *Action) error {
+func executeWebhookURL(a Action, ac *ActionContext) error {
 	if len(a.Args) != 0 {
 		return executeHelp(a)
 	}
@@ -405,11 +404,11 @@ var commandInstanceSelect = ActionScript{
 	executeInstanceSelect,
 }
 
-func executeInstanceSelect(a *Action) error {
+func executeInstanceSelect(a Action, ac *ActionContext) error {
 	if len(a.Args) != 1 {
 		return executeHelp(a)
 	}
-	instanceKey := a.Args[0]
+	instanceKey := a.FormValue("$1")
 	num, err := strconv.ParseUint(instanceKey, 10, 8)
 	if err == nil {
 		known, loadErr := a.InstanceStore.LoadKnownInstances()
@@ -447,11 +446,11 @@ var commandInstanceDelete = ActionScript{
 	executeInstanceDelete,
 }
 
-func executeInstanceDelete(a *Action) error {
+func executeInstanceDelete(a Action, ac *ActionContext) error {
 	if len(a.Args) != 1 {
 		return executeHelp(a)
 	}
-	instanceKey := a.Args[0]
+	instanceKey := a.FormValue("$1")
 
 	known, err := a.InstanceStore.LoadKnownInstances()
 	if err != nil {

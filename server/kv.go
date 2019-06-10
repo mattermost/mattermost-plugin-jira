@@ -26,10 +26,10 @@ type Store interface {
 	CurrentInstanceStore
 	InstanceStore
 	UserStore
-	SecretsStore
+	SecretStore
 }
 
-type SecretsStore interface {
+type SecretStore interface {
 	EnsureAuthTokenEncryptSecret() ([]byte, error)
 	EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error)
 	StoreOneTimeSecret(token, secret string) error

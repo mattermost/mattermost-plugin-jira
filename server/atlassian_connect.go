@@ -5,7 +5,6 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -16,19 +15,18 @@ var httpACJSON = []ActionFunc{
 	handleACInstalled,
 }
 
-func handleACJSON(a *Action) error {
-	return a.RespondTemplate(
-		a.HTTPRequest.URL.Path,
+func handleACJSON(a Action, ac *ActionContext) error {
+	return httpRespondTemplateForPath(a,
 		"application/json",
 		map[string]string{
-			"BaseURL":                      a.PluginConfig.PluginURL,
+			"BaseURL":                      ac.PluginConfig.PluginURL,
 			"RouteACJSON":                  routeACJSON,
 			"RouteACInstalled":             routeACInstalled,
 			"RouteACUninstalled":           routeACUninstalled,
 			"RouteACUserRedirectWithToken": routeACUserRedirectWithToken,
 			"UserRedirectPageKey":          userRedirectPageKey,
-			"ExternalURL":                  a.PluginConfig.SiteURL,
-			"PluginKey":                    a.PluginConfig.PluginKey,
+			"ExternalURL":                  ac.PluginConfig.SiteURL,
+			"PluginKey":                    ac.PluginConfig.PluginKey,
 		})
 }
 
@@ -37,8 +35,8 @@ var httpACInstalled = []ActionFunc{
 	handleACInstalled,
 }
 
-func handleACInstalled(a *Action) error {
-	body, err := ioutil.ReadAll(a.HTTPRequest.Body)
+func handleACInstalled(a Action, ac *ActionContext) error {
+	body, err := httpReadRequestBody(a, ac)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err,
 			"failed to decode request")
@@ -53,7 +51,7 @@ func handleACInstalled(a *Action) error {
 
 	// Only allow this operation once, a Jira instance must already exist
 	// for asc.BaseURL but not Installed.
-	instance, err := a.InstanceStore.LoadInstance(asc.BaseURL)
+	instance, err := ac.InstanceStore.LoadInstance(asc.BaseURL)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err,
 			"failed to load instance %q", asc.BaseURL)
@@ -75,11 +73,11 @@ func handleACInstalled(a *Action) error {
 	// Create a permanent instance record, also store it as current
 	jiraInstance := NewCloudInstance(asc.BaseURL, true, string(body), &asc)
 	// StoreInstance also updates the list of known Jira instances
-	err = a.InstanceStore.StoreInstance(jiraInstance)
+	err = ac.InstanceStore.StoreInstance(jiraInstance)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}
-	err = StoreCurrentInstanceAndNotify(a.API, a.CurrentInstanceStore, jiraInstance)
+	err = StoreCurrentInstanceAndNotify(ac.API, ac.CurrentInstanceStore, jiraInstance)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
 	}

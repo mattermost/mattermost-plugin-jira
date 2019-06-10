@@ -33,10 +33,10 @@ const (
 )
 
 var httpRouter = ActionRouter{
-	DefaultRouteHandler: func(a *Action) error {
+	DefaultRouteHandler: func(a Action, ac *ActionContext) error {
 		return a.RespondError(http.StatusNotFound, nil, "not found")
 	},
-	Log: func(a *Action) error {
+	LogFilter: func(a Action, ac *ActionContext) error {
 		if a.HTTPStatusCode == 0 {
 			a.HTTPStatusCode = http.StatusOK
 		}

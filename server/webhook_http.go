@@ -72,7 +72,7 @@ var httpWebhook = []ActionFunc{
 	handleWebhook,
 }
 
-func handleWebhook(a *Action) error {
+func handleWebhook(a Action, ac *ActionContext) error {
 	if a.PluginConfig.Secret == "" || a.PluginConfig.UserName == "" {
 		return a.RespondError(http.StatusForbidden, nil,
 			"Jira plugin not configured correctly; must provide Secret and UserName")

@@ -24,7 +24,7 @@ var httpACUserRedirect = []ActionFunc{
 	handleACUserRedirect,
 }
 
-func handleACUserRedirect(a *Action) error {
+func handleACUserRedirect(a Action, ac *ActionContext) error {
 	submitURL := path.Join(a.PluginConfig.PluginURLPath, routeACUserConfirm)
 
 	return a.RespondTemplate(a.HTTPRequest.URL.Path, "text/html", struct {
@@ -65,7 +65,7 @@ var httpACUserDisconnected = []ActionFunc{
 	handleACUserInteractive,
 }
 
-func handleACUserInteractive(a *Action) error {
+func handleACUserInteractive(a Action, ac *ActionContext) error {
 	claims, ok := a.JiraJWT.Claims.(jwt.MapClaims)
 	if !ok {
 		return a.RespondError(http.StatusBadRequest, nil,

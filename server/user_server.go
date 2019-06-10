@@ -27,7 +27,7 @@ var httpOAuth1Complete = []ActionFunc{
 	handleOAuth1Complete,
 }
 
-func handleOAuth1Complete(a *Action) error {
+func handleOAuth1Complete(a Action) error {
 	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(a.HTTPRequest)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err,
@@ -97,7 +97,7 @@ var httpOAuth1PublicKey = []ActionFunc{
 	handleOAuth1PublicKey,
 }
 
-func handleOAuth1PublicKey(a *Action) error {
+func handleOAuth1PublicKey(a Action) error {
 	if !a.API.HasPermissionTo(a.MattermostUserId, model.PERMISSION_MANAGE_SYSTEM) {
 		return a.RespondError(http.StatusForbidden, nil, "forbidden")
 	}

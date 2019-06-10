@@ -26,7 +26,7 @@ var httpAPICreateIssue = []ActionFunc{
 	handleAPICreateIssue,
 }
 
-func handleAPICreateIssue(a *Action) error {
+func handleAPICreateIssue(a Action, ac *ActionContext) error {
 	api := a.API
 
 	createRequest := &struct {
@@ -147,7 +147,7 @@ var httpAPIGetCreateIssueMetadata = []ActionFunc{
 	handleAPIGetCreateIssueMetadata,
 }
 
-func handleAPIGetCreateIssueMetadata(a *Action) error {
+func handleAPIGetCreateIssueMetadata(a Action, ac *ActionContext) error {
 	cimd, err := getCreateIssueMetadata(a.JiraClient)
 	if err != nil {
 		return a.RespondError(http.StatusInternalServerError, err)
@@ -164,7 +164,7 @@ var httpAPIGetSearchIssues = []ActionFunc{
 	handleAPIGetSearchIssues,
 }
 
-func handleAPIGetSearchIssues(a *Action) error {
+func handleAPIGetSearchIssues(a Action, ac *ActionContext) error {
 	jqlString := a.HTTPRequest.FormValue("jql")
 
 	searchRes, resp, err := a.JiraClient.Issue.Search(jqlString, &jira.SearchOptions{
@@ -207,7 +207,7 @@ var httpAPIAttachCommentToIssue = []ActionFunc{
 	handleAPIAttachCommentToIssue,
 }
 
-func handleAPIAttachCommentToIssue(a *Action) error {
+func handleAPIAttachCommentToIssue(a Action, ac *ActionContext) error {
 	api := a.API
 
 	attach := &struct {
@@ -294,7 +294,7 @@ func getCreateIssueMetadata(jiraClient *jira.Client) (*jira.CreateMetaInfo, erro
 	return cimd, nil
 }
 
-func getPermaLink(a *Action, postId string, post *model.Post) (string, error) {
+func getPermaLink(a Action, postId string, post *model.Post) (string, error) {
 	channel, appErr := a.API.GetChannel(post.ChannelId)
 	if appErr != nil {
 		return "", errors.WithMessage(appErr, "failed to get ChannelId, ChannelId: "+post.ChannelId)
@@ -313,7 +313,7 @@ func getPermaLink(a *Action, postId string, post *model.Post) (string, error) {
 	return permalink, nil
 }
 
-func transitionJiraIssue(a *Action, issueKey, toState string) (string, error) {
+func transitionJiraIssue(a Action, issueKey, toState string) (string, error) {
 	transitions, _, err := a.JiraClient.Issue.GetTransitions(issueKey)
 	if err != nil {
 		return "", errors.New("We couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue.")

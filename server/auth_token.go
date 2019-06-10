@@ -23,7 +23,7 @@ type AuthToken struct {
 	Expires          time.Time `json:"expires,omitempty"`
 }
 
-func NewEncodedAuthToken(secretStore SecretsStore, mattermostUserID, secret string) (returnToken string, returnErr error) {
+func NewEncodedAuthToken(secretStore SecretStore, mattermostUserID, secret string) (returnToken string, returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
