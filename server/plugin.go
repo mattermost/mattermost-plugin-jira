@@ -26,6 +26,9 @@ type externalConfig struct {
 	// Bot username
 	UserName string `json:"username"`
 
+	// Setting to turn on/off the webapp components of this plugin
+	EnableJiraUI bool `json:"enablejiraui"`
+
 	// Legacy 1.x Webhook secret
 	Secret string `json:"secret"`
 }
