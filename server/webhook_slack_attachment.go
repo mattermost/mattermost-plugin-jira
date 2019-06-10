@@ -19,25 +19,13 @@ func newSlackAttachment(parsed *parsedJIRAWebhook) *model.SlackAttachment {
 		Text:     parsed.text,
 	}
 
-	var fields []*model.SlackAttachmentField
-	if parsed.WebhookEvent == "jira:issue_created" && parsed.Issue.Fields != nil {
-
-		if parsed.Issue.Fields.Assignee != nil {
-			fields = append(fields, &model.SlackAttachmentField{
-				Title: "Assignee",
-				Value: parsed.Issue.Fields.Assignee.DisplayName,
-				Short: true,
-			})
-		}
-		if parsed.Issue.Fields.Priority != nil {
-			fields = append(fields, &model.SlackAttachmentField{
-				Title: "Priority",
-				Value: parsed.Issue.Fields.Priority.Name,
-				Short: true,
-			})
-		}
+	for _, field := range parsed.fields {
+		a.Fields = append(a.Fields, &model.SlackAttachmentField{
+			Title: field.name,
+			Value: field.value,
+			Short: true,
+		})
 	}
 
-	a.Fields = fields
 	return a
 }
