@@ -191,6 +191,17 @@ export default class CreateIssueModal extends PureComponent {
             console.error('render error', error); //eslint-disable-line no-console
         }
 
+        let issueError = null;
+        if (error) {
+            issueError = (
+                <React.Fragment>
+                    <p className='help-text error-text'>
+                        <span>{error}</span>
+                    </p>
+                    <br/>
+                </React.Fragment>
+            );
+        }
         let component;
         let footer = (
             <React.Fragment>
@@ -234,6 +245,7 @@ export default class CreateIssueModal extends PureComponent {
             const projectOptions = getProjectValues(jiraIssueMetadata);
             component = (
                 <div style={style.modal}>
+                    {issueError}
                     <ReactSelectSetting
                         name={'project'}
                         label={'Project'}
