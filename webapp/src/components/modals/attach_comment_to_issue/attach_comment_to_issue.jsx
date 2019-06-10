@@ -3,7 +3,7 @@
 
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
-import {Modal, Alert} from 'react-bootstrap';
+import {Modal} from 'react-bootstrap';
 
 import FormButton from 'components/form_button';
 import Input from 'components/input';
