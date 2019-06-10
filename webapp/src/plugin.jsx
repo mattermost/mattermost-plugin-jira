@@ -10,10 +10,15 @@ import AttachCommentToIssueModal from 'components/modals/attach_comment_to_issue
 import PluginId from 'plugin_id';
 
 import reducers from './reducers';
-import {handleConnectChange, getConnected, handleInstanceStatusChange} from './actions';
+import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings} from './actions';
 
 export default class Plugin {
     async initialize(registry, store) {
+        const settings = await getSettings(store.getState);
+        if (!settings.ui_enabled) {
+            return;
+        }
+
         registry.registerReducer(reducers);
 
         try {

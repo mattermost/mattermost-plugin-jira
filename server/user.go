@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/andygrunwald/go-jira"
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -114,6 +114,31 @@ func httpAPIGetUserInfo(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 			resp.JIRAUser = jiraUser
 			resp.IsConnected = true
 		}
+	}
+
+	b, _ := json.Marshal(resp)
+	_, err := w.Write(b)
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+	}
+	return http.StatusOK, nil
+}
+
+func httpAPIGetSettingsInfo(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed,
+			errors.New("method " + r.Method + " is not allowed, must be GET")
+	}
+
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	resp := struct {
+		UIEnabled bool `json:"ui_enabled"`
+	}{
+		UIEnabled: p.getConfig().EnableJiraUI,
 	}
 
 	b, _ := json.Marshal(resp)
