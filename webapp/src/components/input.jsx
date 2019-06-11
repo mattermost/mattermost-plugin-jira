@@ -66,9 +66,9 @@ export default class Input extends PureComponent {
 
     render() {
         const requiredMsg = 'This field is required.';
-        let error = null;
+        let validationError = null;
         if (this.props.required && this.state.invalidRequired) {
-            error = (
+            validationError = (
                 <p className='help-text error-text'>
                     <span>{requiredMsg}</span>
                 </p>
@@ -131,7 +131,7 @@ export default class Input extends PureComponent {
                 required={this.props.required}
             >
                 {input}
-                {error}
+                {validationError}
             </Setting>
         );
     }

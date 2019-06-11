@@ -15,12 +15,25 @@ const searchDebounceDelay = 400;
 
 export default class JiraIssueSelector extends Component {
     static propTypes = {
-        isRequired: PropTypes.bool,
+        required: PropTypes.bool,
         theme: PropTypes.object.isRequired,
         onChange: PropTypes.func.isRequired,
         fetchIssuesEndpoint: PropTypes.string.isRequired,
-        error: PropTypes.string.isRequired,
+        error: PropTypes.string,
+        value: PropTypes.object,
     };
+
+    constructor(props) {
+        super(props);
+
+        this.state = {invalidRequired: false};
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+        if (prevState.invalidRequired && this.props.value !== prevProps.value) {
+            this.setState({invalidRequired: false}); //eslint-disable-line react/no-did-update-set-state
+        }
+    }
 
     handleIssueSearchTermChange = (inputValue) => {
         return this.debouncedSearchIssues(inputValue);
@@ -38,6 +51,16 @@ export default class JiraIssueSelector extends Component {
     };
 
     debouncedSearchIssues = debounce(this.searchIssues, searchDebounceDelay);
+
+    isValid = () => {
+        if (!this.props.required) {
+            return true;
+        }
+
+        const valid = this.props.value && this.props.value.toString().length !== 0;
+        this.setState({invalidRequired: !valid});
+        return valid;
+    };
 
     render = () => {
         const {error} = this.props;
@@ -60,6 +83,16 @@ export default class JiraIssueSelector extends Component {
             );
         }
 
+        const requiredMsg = 'This field is required.';
+        let validationError = null;
+        if (this.props.required && this.state.invalidRequired) {
+            validationError = (
+                <p className='help-text error-text'>
+                    <span>{requiredMsg}</span>
+                </p>
+            );
+        }
+
         return (
             <div className={'form-group margin-bottom x3'}>
                 <label
@@ -68,7 +101,7 @@ export default class JiraIssueSelector extends Component {
                 >
                     {'Jira Issue'}
                 </label>
-                {this.props.isRequired && requiredStar}
+                {this.props.required && requiredStar}
                 <AsyncSelect
                     name={'issue'}
                     placeholder={'Search for issues containing text...'}
@@ -83,6 +116,7 @@ export default class JiraIssueSelector extends Component {
                     menuPlacement='auto'
                     styles={getStyleForReactSelect(this.props.theme)}
                 />
+                {validationError}
                 {issueError}
                 <div className={'help-text'}>
                     {'Returns issues sorted by most recently updated.'} <br/>

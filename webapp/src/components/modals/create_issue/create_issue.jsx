@@ -5,6 +5,7 @@ import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 import {Modal} from 'react-bootstrap';
 
+import Validator from 'components/validator';
 import JiraFields from 'components/jira_fields';
 import FormButton from 'components/form_button';
 import Loading from 'components/loading';
@@ -46,20 +47,19 @@ export default class CreateIssueModal extends PureComponent {
         this.state = initialState;
 
         this.projectRef = React.createRef();
-        this.issuesRef = React.createRef();
+        this.issueRef = React.createRef();
 
-        // Our list of components we have to validate before allowing a submit action.
-        this.toValidate = new Map();
+        this.validator = new Validator();
     }
 
     componentDidMount() {
-        this.addValidate('project', this.projectRef);
-        this.addValidate('issues', this.issuesRef);
+        this.validator.addComponent('project', this.projectRef);
+        this.validator.addComponent('issue', this.issueRef);
     }
 
     componentWillUnmount() {
-        this.removeValidate('project');
-        this.removeValidate('issues');
+        this.validator.removeComponent('project');
+        this.validator.removeComponent('issue');
     }
 
     componentDidUpdate(prevProps) {
@@ -112,28 +112,12 @@ export default class CreateIssueModal extends PureComponent {
         return fieldsNotCovered;
     }
 
-    addValidate = (key, ref) => {
-        this.toValidate.set(key, ref);
-    };
-
-    removeValidate = (key) => {
-        this.toValidate.delete(key);
-    };
-
-    validateFields = () => {
-        const validator = (accum, ref) => {
-            // Check every field, but only return true if every field is valid.
-            return ref.current.isValid() && accum;
-        };
-        return Array.from(this.toValidate.values()).reduce(validator, true);
-    };
-
     handleCreate = (e) => {
         if (e && e.preventDefault) {
             e.preventDefault();
         }
 
-        if (!this.validateFields()) {
+        if (!this.validator.validate()) {
             return;
         }
 
@@ -283,7 +267,7 @@ export default class CreateIssueModal extends PureComponent {
                         value={projectOptions.find((option) => option.value === this.state.projectKey)}
                     />
                     <ReactSelectSetting
-                        ref={this.issuesRef}
+                        ref={this.issueRef}
                         name={'issue_type'}
                         label={'Issue Type'}
                         required={true}
@@ -301,8 +285,8 @@ export default class CreateIssueModal extends PureComponent {
                         allowedSchemaCustom={this.allowedSchemaCustom}
                         theme={theme}
                         value={this.state.fields}
-                        addValidate={this.addValidate}
-                        removeValidate={this.removeValidate}
+                        addValidate={this.validator.addComponent}
+                        removeValidate={this.validator.removeComponent}
                     />
                     <br/>
                 </div>
