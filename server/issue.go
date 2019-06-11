@@ -83,6 +83,23 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		Fields: &create.Fields,
 	}
 
+	for i, notCovered := range create.RequiredFieldsNotCovered {
+
+		if notCovered == "reporter" || notCovered == "Reporter" {
+			requiredFieldsNotCovered := create.RequiredFieldsNotCovered[:i]
+			if i < len(create.RequiredFieldsNotCovered) {
+				requiredFieldsNotCovered = append(requiredFieldsNotCovered,
+					create.RequiredFieldsNotCovered[i+1:]...)
+			}
+			create.RequiredFieldsNotCovered = requiredFieldsNotCovered
+
+			if ji.GetType() == JIRATypeServer {
+				issue.Fields.Reporter = &jiraUser.User
+			}
+			break
+		}
+	}
+
 	project, resp, err := jiraClient.Project.Get(issue.Fields.Project.Key)
 	if err != nil {
 		message := "failed to get the project, postId: " + create.PostId
@@ -118,10 +135,6 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, "{}")
 		return http.StatusOK, nil
-	}
-
-	if issue.Fields.Reporter == nil && ji.GetType() == JIRATypeServer {
-		issue.Fields.Reporter = &jiraUser.User
 	}
 
 	created, resp, err := jiraClient.Issue.Create(issue)
