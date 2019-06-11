@@ -195,10 +195,13 @@ export default class CreateIssueModal extends PureComponent {
         if (error) {
             issueError = (
                 <React.Fragment>
-                    <p className='help-text error-text'>
+                    <p className='alert alert-danger'>
+                        <i
+                            className='fa fa-warning'
+                            title='Warning Icon'
+                        />
                         <span>{error}</span>
                     </p>
-                    <br/>
                 </React.Fragment>
             );
         }
