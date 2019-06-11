@@ -136,7 +136,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		if strings.Contains(message, "is required.") {
 			req := buildCreateQuery(ji, project, issue)
 
-			message := "This plugin did not receive all the required fields from your Jira project and could not complete the request. "
+			message = "This plugin did not receive all the required fields from your Jira project and could not complete the request. "
 			reply := &model.Post{
 				Message:   fmt.Sprintf("%v [Please create your Jira issue manually](%v) or contact your Jira administrator.", message, req.URL.String()),
 				ChannelId: post.ChannelId,
