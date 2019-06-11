@@ -200,7 +200,7 @@ export default class CreateIssueModal extends PureComponent {
                             className='fa fa-warning'
                             title='Warning Icon'
                         />
-                        <span>{error}</span>
+                        <span> {error}</span>
                     </p>
                 </React.Fragment>
             );
