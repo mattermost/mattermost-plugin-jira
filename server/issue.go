@@ -152,7 +152,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 			return http.StatusOK, nil
 		}
 
-		// The error was a fields required error; it was unanticipated. Return it to the client.
+		// The error was not a fields required error; it was unanticipated. Return it to the client.
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, message)
 	}
