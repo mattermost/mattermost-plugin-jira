@@ -187,10 +187,20 @@ export default class CreateIssueModal extends PureComponent {
             return null;
         }
 
+        let issueError = null;
         if (error) {
-            console.error('render error', error); //eslint-disable-line no-console
+            issueError = (
+                <React.Fragment>
+                    <p className='alert alert-danger'>
+                        <i
+                            className='fa fa-warning'
+                            title='Warning Icon'
+                        />
+                        <span> {error}</span>
+                    </p>
+                </React.Fragment>
+            );
         }
-
         let component;
         let footer = (
             <React.Fragment>
@@ -234,6 +244,7 @@ export default class CreateIssueModal extends PureComponent {
             const projectOptions = getProjectValues(jiraIssueMetadata);
             component = (
                 <div style={style.modal}>
+                    {issueError}
                     <ReactSelectSetting
                         name={'project'}
                         label={'Project'}

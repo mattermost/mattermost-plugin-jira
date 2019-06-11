@@ -128,7 +128,33 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 			resp.Body.Close()
 			message += ", details:" + string(bb)
 		}
-		return http.StatusInternalServerError, errors.WithMessage(err, message)
+
+		// if have an error and Jira tells us there are required fields send user
+		// link to jira with fields already filled in.  Note the user will also see
+		// these errors in Jira.
+		// Note that RequiredFieldsNotCovered is also empty
+		if strings.Contains(message, "is required.") {
+			req := buildCreateQuery(ji, project, issue)
+
+			message = "This plugin did not receive all the required fields from your Jira project and could not complete the request. "
+			reply := &model.Post{
+				Message:   fmt.Sprintf("%v [Please create your Jira issue manually](%v) or contact your Jira administrator.", message, req.URL.String()),
+				ChannelId: post.ChannelId,
+				RootId:    rootId,
+				ParentId:  parentId,
+				UserId:    ji.GetPlugin().getConfig().botUserID,
+			}
+
+			_ = api.SendEphemeralPost(mattermostUserId, reply)
+
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, "{}")
+			return http.StatusOK, nil
+		}
+
+		// The error was not a fields required error; it was unanticipated. Return it to the client.
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, message)
 	}
 
 	// Reply to the post with the issue link that was created
