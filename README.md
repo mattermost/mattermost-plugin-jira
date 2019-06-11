@@ -117,6 +117,8 @@ If you want to [send notifications from Jira to Mattermost](#11-send-notificatio
 https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3MOuxaiwsPzLwh&team=contributors&channel=town-square&updated_comments=1
 ```
 
+This sends all comment notifications to a Mattermost channel, including public and private comments, so be cautious of which channel you send these notifications to.
+
 #### Step 3: Install the plugin as an application in Jira
 
 If you want to allow users to [create and manage Jira issues across Mattermost channels](#11-create-and-manage-jira-issues-in-mattermost), install the plugin as an application in your Jira instance. For Jira Server or Data Center instances, post `/jira install server <your-jira-url>` to a Mattermost channel as a Mattermost System Admin, and follow the steps posted to the channel. For Jira Cloud, post `/jira install cloud <your-jira-url>`.
