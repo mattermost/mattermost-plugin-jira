@@ -44,6 +44,22 @@ export default class CreateIssueModal extends PureComponent {
         super(props);
 
         this.state = initialState;
+
+        this.projectRef = React.createRef();
+        this.issuesRef = React.createRef();
+
+        // Our list of components we have to validate before allowing a submit action.
+        this.toValidate = new Map();
+    }
+
+    componentDidMount() {
+        this.addValidate('project', this.projectRef);
+        this.addValidate('issues', this.issuesRef);
+    }
+
+    componentWillUnmount() {
+        this.removeValidate('project');
+        this.removeValidate('issues');
     }
 
     componentDidUpdate(prevProps) {
@@ -61,7 +77,7 @@ export default class CreateIssueModal extends PureComponent {
         'priority',
         'description',
         'summary',
-    ]
+    ];
 
     allowedSchemaCustom = [
         'com.atlassian.jira.plugin.system.customfieldtypes:textarea',
@@ -84,7 +100,7 @@ export default class CreateIssueModal extends PureComponent {
         Object.keys(myfields).forEach((key) => {
             if (myfields[key].required) {
                 if ((!myfields[key].schema.custom && !this.allowedFields.includes(key)) ||
-                     (myfields[key].schema.custom && !this.allowedSchemaCustom.includes(myfields[key].schema.custom))
+                    (myfields[key].schema.custom && !this.allowedSchemaCustom.includes(myfields[key].schema.custom))
                 ) {
                     if (!fieldsNotCovered.includes(key)) {
                         // fieldsNotCovered.push([key, myfields[key].name]);
@@ -96,12 +112,32 @@ export default class CreateIssueModal extends PureComponent {
         return fieldsNotCovered;
     }
 
-    handleCreate = (e) => {
-        const requiredFieldsNotCovered = this.getFieldsNotCovered();
+    addValidate = (key, ref) => {
+        this.toValidate.set(key, ref);
+    };
 
+    removeValidate = (key) => {
+        this.toValidate.delete(key);
+    };
+
+    validateFields = () => {
+        const validator = (accum, ref) => {
+            // Check every field, but only return true if every field is valid.
+            return ref.current.isValid() && accum;
+        };
+        return Array.from(this.toValidate.values()).reduce(validator, true);
+    };
+
+    handleCreate = (e) => {
         if (e && e.preventDefault) {
             e.preventDefault();
         }
+
+        if (!this.validateFields()) {
+            return;
+        }
+
+        const requiredFieldsNotCovered = this.getFieldsNotCovered();
 
         const issue = {
             post_id: this.props.post.id,
@@ -235,6 +271,7 @@ export default class CreateIssueModal extends PureComponent {
             component = (
                 <div style={style.modal}>
                     <ReactSelectSetting
+                        ref={this.projectRef}
                         name={'project'}
                         label={'Project'}
                         required={true}
@@ -243,9 +280,10 @@ export default class CreateIssueModal extends PureComponent {
                         isMuli={false}
                         key={'LT'}
                         theme={theme}
-                        value={projectOptions.filter((option) => option.value === this.state.projectKey)}
+                        value={projectOptions.find((option) => option.value === this.state.projectKey)}
                     />
                     <ReactSelectSetting
+                        ref={this.issuesRef}
                         name={'issue_type'}
                         label={'Issue Type'}
                         required={true}
@@ -253,7 +291,7 @@ export default class CreateIssueModal extends PureComponent {
                         options={issueOptions}
                         isMuli={false}
                         theme={theme}
-                        value={issueOptions.filter((option) => option.value === this.state.issueType)}
+                        value={issueOptions.find((option) => option.value === this.state.issueType)}
                     />
                     <JiraFields
                         fields={getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType)}
@@ -262,6 +300,9 @@ export default class CreateIssueModal extends PureComponent {
                         allowedFields={this.allowedFields}
                         allowedSchemaCustom={this.allowedSchemaCustom}
                         theme={theme}
+                        value={this.state.fields}
+                        addValidate={this.addValidate}
+                        removeValidate={this.removeValidate}
                     />
                     <br/>
                 </div>
