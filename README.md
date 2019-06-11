@@ -18,7 +18,7 @@ Support for multiple Jira instances is considered, but not yet supported.
 
 ### 1.1 Send notifications from Jira to Mattermost
 
-Notify your team of latest updated by sending notifications from your Jira projects to Mattermost channels.
+Notify your team of the latest updates by sending notifications from your Jira projects to Mattermost channels.
 
 ![image](https://user-images.githubusercontent.com/13119842/59113100-6cd7a800-8912-11e9-9e23-3639c0eb9c4d.png)
 
@@ -78,7 +78,7 @@ For instance, `/jira transition EXT-20 done` transitions the issue key **EXT-20*
 
 ![image](https://user-images.githubusercontent.com/13119842/59113377-dfe11e80-8912-11e9-8971-f869fa123366.png)
 
-Note that states and issue transitions are based on your Jira project workflow configuration.
+Note that states and issue transitions are based on your Jira project workflow configuration. If an invalid state is entered, an ephemeral message is returned mentioning that the state couldn't be found.
 
 ## 2. Configuration
 
