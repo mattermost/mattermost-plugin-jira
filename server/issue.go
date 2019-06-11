@@ -120,6 +120,10 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusOK, nil
 	}
 
+	if issue.Fields.Reporter == nil && ji.GetType() == JIRATypeServer {
+		issue.Fields.Reporter = &jiraUser.User
+	}
+
 	created, resp, err := jiraClient.Issue.Create(issue)
 	if err != nil {
 		message := "failed to create the issue, postId: " + create.PostId

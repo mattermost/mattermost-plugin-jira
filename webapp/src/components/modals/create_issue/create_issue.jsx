@@ -61,6 +61,7 @@ export default class CreateIssueModal extends PureComponent {
         'priority',
         'description',
         'summary',
+        'reporter',
     ]
 
     allowedSchemaCustom = [
