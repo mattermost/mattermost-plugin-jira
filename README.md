@@ -108,17 +108,10 @@ If you want to [send notifications from Jira to Mattermost](#11-send-notificatio
 3. (Optional) Set a description and a custom JQL query to determine which tickets trigger events. For more information on JQL queries, refer to the [Atlassian help documentation](https://confluence.atlassian.com/jirasoftwarecloud/advanced-searching-764478330.html).
 
 4. Finally, set which issue events send messages to Mattermost channels, then hit **Save**. The following issue events are supported:
-
-  - **Jira Server or Data Center**: 
      - Issue Created; Issue Deleted
-     - Issue Updated, including when an issue is reopened or resolved, or when the assignee is changed
+     - Issue Updated, including when an issue is reopened or resolved, or when the assignee is changed. Optionally send notifications for comments, see below.
 
-  - **Jira Cloud**: 
-     - Issue Created; Issue Deleted
-     - Issue Updated, including when an issue is reopened or resolved, or when the assignee is changed
-     - Comments Created; Comments Updated; Comments Deleted
-
-**Note**: For Jira Server or Data Center, you can send notifications for comments by selecting **Issue Updated**, then adding `&updated_comments=1` to the end of the webhook URL, such as 
+**Note**: You can send notifications for comments by selecting **Issue Updated**, then adding `&updated_comments=1` to the end of the webhook URL, such as 
 
 ```
 https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3MOuxaiwsPzLwh&team=contributors&channel=town-square&updated_comments=1
@@ -126,12 +119,11 @@ https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3
 
 #### Step 3: Install the plugin as an application in Jira
 
-If you want to allow users to [create and manage Jira issues across Mattermost channels](#11-create-and-manage-jira-issues-in-mattermost), install the plugin as an application in your Jira instance.
-
-1. Go to **System Console > Plugins > Jira**, and set **Allow users to connect their Mattermost accounts to Jira** to true.
-2. Install the plugin as an application. For Jira Server or Data Center instances, post `/jira install server <your-jira-url>` to a Mattermost channel as a Mattermost System Admin, and follow the steps posted to the channel. For Jira Cloud, post `/jira install cloud <your-jira-url>`.
+If you want to allow users to [create and manage Jira issues across Mattermost channels](#11-create-and-manage-jira-issues-in-mattermost), install the plugin as an application in your Jira instance. For Jira Server or Data Center instances, post `/jira install server <your-jira-url>` to a Mattermost channel as a Mattermost System Admin, and follow the steps posted to the channel. For Jira Cloud, post `/jira install cloud <your-jira-url>`.
 
 If you face issues installing the plugin, see our [Frequently Asked Questions](#5-frequently-asked-questions-faq) for troubleshooting help, or open an issue in the [Mattermost Forum](http://forum.mattermost.org).
+
+**Note**: If you experience problems with Jira-related user interactions in Mattermost such as creating issues, disable these features by setting **Allow users to connect their Mattermost accounts to Jira** to false in **System Console > Plugins > Jira**. This setting does not affect Jira webhook notifications. After changing this setting to false, disable, then re-enable this plugin in **System Console > Plugins > Plugin Management** to reset the plugin state for all users.
 
 ## 3. Jira v2 Roadmap
 
@@ -219,6 +211,8 @@ If you are still having trouble with configuration, please to post in our [Troub
 ### How do I disable the plugin quickly in an emergency?
 
 Disable the Jira plugin any time from **System Console > Plugins > Management**. Requests will stop immediately with an error code in **System Console > Logs**. No posts are created until the plugin is re-enabled.
+
+Alternatively, if you only experience problems with Jira-related user interactions in Mattermost such as creating issues, disable these features by setting **Allow users to connect their Mattermost accounts to Jira** to false in **System Console > Plugins > Jira**. This setting does not affect Jira webhook notifications. After changing this setting to false, disable, then re-enable this plugin in **System Console > Plugins > Plugin Management** to reset the plugin state for all users.
 
 ### Why do I get an error ``WebHooks can only use standard http and https ports (80 or 443).``?
 
