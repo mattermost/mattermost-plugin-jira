@@ -26,12 +26,12 @@ export default class JiraIssueSelector extends Component {
     constructor(props) {
         super(props);
 
-        this.state = {invalidRequired: false};
+        this.state = {invalid: false};
     }
 
     componentDidUpdate(prevProps, prevState) {
-        if (prevState.invalidRequired && this.props.value !== prevProps.value) {
-            this.setState({invalidRequired: false}); //eslint-disable-line react/no-did-update-set-state
+        if (prevState.invalid && this.props.value !== prevProps.value) {
+            this.setState({invalid: false}); //eslint-disable-line react/no-did-update-set-state
         }
     }
 
@@ -58,7 +58,7 @@ export default class JiraIssueSelector extends Component {
         }
 
         const valid = this.props.value && this.props.value.toString().length !== 0;
-        this.setState({invalidRequired: !valid});
+        this.setState({invalid: !valid});
         return valid;
     };
 
@@ -85,7 +85,7 @@ export default class JiraIssueSelector extends Component {
 
         const requiredMsg = 'This field is required.';
         let validationError = null;
-        if (this.props.required && this.state.invalidRequired) {
+        if (this.props.required && this.state.invalid) {
             validationError = (
                 <p className='help-text error-text'>
                     <span>{requiredMsg}</span>

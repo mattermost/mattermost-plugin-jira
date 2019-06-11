@@ -23,12 +23,12 @@ export default class ReactSelectSetting extends React.PureComponent {
     constructor(props) {
         super(props);
 
-        this.state = {invalidRequired: false};
+        this.state = {invalid: false};
     }
 
     componentDidUpdate(prevProps, prevState) {
-        if (prevState.invalidRequired && this.props.value !== prevProps.value) {
-            this.setState({invalidRequired: false}); //eslint-disable-line react/no-did-update-set-state
+        if (prevState.invalid && this.props.value !== prevProps.value) {
+            this.setState({invalid: false}); //eslint-disable-line react/no-did-update-set-state
         }
     }
 
@@ -44,14 +44,14 @@ export default class ReactSelectSetting extends React.PureComponent {
             return true;
         }
         const valid = Boolean(this.props.value);
-        this.setState({invalidRequired: !valid});
+        this.setState({invalid: !valid});
         return valid;
     };
 
     render() {
         const requiredMsg = 'This field is required.';
         let validationError = null;
-        if (this.props.required && this.state.invalidRequired) {
+        if (this.props.required && this.state.invalid) {
             validationError = (
                 <p className='help-text error-text'>
                     <span>{requiredMsg}</span>
