@@ -65,27 +65,12 @@ const (
 )
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	commandAction, ac := NewCommandAction(p, c, commandArgs)
-
-	err, key := commandAction.matchRequest()
-	if len(args) == 0 {
+	key, argMap, err := MatchCommand(commandRouter, commandArgs)
+	if err != nil {
 		return nil, model.NewAppError("Jira plugin", "", nil, err.Error(), 0)
 	}
 
-	args := strings.Fields(commandArgs.Command)
-	if len(args) == 0 {
-		return nil, model.NewAppError("Jira plugin", "", nil, "Should be unreachable", 0)
-	}
-	subcommands := args[1:]
-	scriptKey := ""
-	for len(args) > 0 {
-		key := strings.Join(subcommands, "/")
-		if commandRouter.RouteHandlers[key] != nil {
-			subcommands = subcommands[:len(args)-1]
-			scriptKey = key
-			break
-		}
-	}
+	commandAction, ac := NewCommandAction(p, c, argMap)
 
 	// +1 for /jira
 	commandAction.Args = args[len(subcommands)+1:]

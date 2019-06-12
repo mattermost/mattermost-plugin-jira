@@ -21,7 +21,7 @@ type CommandAction struct {
 	CommandMetadata
 	action
 
-	Args            []string
+	Args            map[string]string
 	CommandArgs     *model.CommandArgs
 	CommandResponse *model.CommandResponse
 }
@@ -42,6 +42,8 @@ var _ Action = (*CommandAction)(nil)
 
 func NewCommandAction(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs,
 	commandMetadata CommandMetadata) (*CommandAction, *ActionContext) {
+
+
 	action := *newAction(p, c, commandArgs.UserId)
 	return &CommandAction{
 		action:          action,
@@ -50,7 +52,34 @@ func NewCommandAction(p *Plugin, c *plugin.Context, commandArgs *model.CommandAr
 	}, &action.ActionContext
 }
 
-func ParseCommmandAction(
+func MakeCommandAction(
+	p *Plugin,
+	 c *plugin.Context,
+	 router *ActionRouter, 
+	 commandArgs *model.CommandArgs) (*CommandAction, *ActionContext, error) {
+
+	argv := strings.Fields(commandArgs.Command)
+	if len(argv) == 0 {
+		// argv[0] must be "/jira"
+		return nil, nil, errors.New("MatchCommand: unreachable code")
+	}
+	argv = argv[1:]
+	n := len(argv)
+	key := ""
+	for ; n > 0; n-- {
+		key = strings.Join(argv[:n], "/")
+		if router.RouteHandlers[key] != nil {
+			break
+		}
+	}
+
+	if key == "" {
+		return 
+	}
+
+	args = args[n:]
+
+	for i, argv := range args 
 
 	_ key) string {
 	if key == "" || key[0] != '$' {
