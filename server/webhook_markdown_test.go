@@ -19,6 +19,7 @@ func TestParse(t *testing.T) {
 		expectedHeadline string
 		expectedDetails  string
 		expectedText     string
+		expectedFields   []parsedField
 		expectedIgnored  bool
 	}{{
 		file:             "testdata/webhook-comment-created.json",
@@ -52,12 +53,33 @@ func TestParse(t *testing.T) {
 		expectedHeadline: "Lev Brouk edited a comment in story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
 		expectedText:     "and higher eeven higher",
 	}, {
-
 		file:             "testdata/webhook-issue-created.json",
 		expectedStyle:    mdRootStyle,
 		expectedHeadline: "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 		expectedDetails:  "Priority: **High**, Reported by: **Test User**, Labels: test-label",
 		expectedText:     "Unit test description, not that long",
+		expectedFields:   []parsedField{{name: "Priority", value: "High"}},
+	}, {
+		file:             "testdata/webhook-issue-created-no-description.json",
+		expectedStyle:    mdRootStyle,
+		expectedHeadline: "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
+		expectedDetails:  "Priority: **High**, Reported by: **Test User**, Labels: test-label",
+		expectedText:     "",
+		expectedFields:   []parsedField{{name: "Priority", value: "High"}},
+	}, {
+		file:             "testdata/webhook-issue-created-no-relevant-fields.json",
+		expectedStyle:    mdRootStyle,
+		expectedHeadline: "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
+		expectedDetails:  "Reported by: **Test User**, Labels: test-label",
+		expectedText:     "Unit test description, not that long",
+		expectedFields:   nil,
+	}, {
+		file:             "testdata/webhook-issue-created-no-description-nor-relevant-fields.json",
+		expectedStyle:    mdRootStyle,
+		expectedHeadline: "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
+		expectedDetails:  "Reported by: **Test User**, Labels: test-label",
+		expectedText:     "",
+		expectedFields:   nil,
 	}, {
 		file:             "testdata/webhook-issue-updated-assigned-nobody.json",
 		expectedStyle:    mdUpdateStyle,
@@ -129,6 +151,7 @@ func TestParse(t *testing.T) {
 			assert.Equal(t, tc.expectedHeadline, parsed.headline)
 			assert.Equal(t, tc.expectedDetails, parsed.details)
 			assert.Equal(t, tc.expectedText, parsed.text)
+			assert.Equal(t, tc.expectedFields, parsed.fields)
 		})
 	}
 }

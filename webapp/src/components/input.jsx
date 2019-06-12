@@ -8,7 +8,7 @@ import Setting from './setting.jsx';
 
 export default class Input extends PureComponent {
     static propTypes = {
-        id: PropTypes.string.isRequired,
+        id: PropTypes.string,
         label: PropTypes.node.isRequired,
         placeholder: PropTypes.string,
         helpText: PropTypes.node,
@@ -17,7 +17,7 @@ export default class Input extends PureComponent {
             PropTypes.number,
         ]).isRequired,
         maxLength: PropTypes.number,
-        onChange: PropTypes.func.isRequired,
+        onChange: PropTypes.func,
         disabled: PropTypes.bool,
         required: PropTypes.bool,
         readOnly: PropTypes.bool,

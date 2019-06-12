@@ -95,6 +95,7 @@ type parsedJIRAWebhook struct {
 	details            string
 	text               string
 	style              string
+	fields             []parsedField
 	useSlackAttachment bool
 	authorDisplayName  string
 	authorUsername     string
@@ -102,6 +103,10 @@ type parsedJIRAWebhook struct {
 	assigneeUsername   string
 	issueKey           string
 	issueURL           string
+}
+
+type parsedField struct {
+	name, value string
 }
 
 type notifier interface {
@@ -261,7 +266,18 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (parsed *parsedJIRAW
 		headline = fmt.Sprintf("created %v", issue)
 		parsed.details = parsed.mdIssueCreatedDetails()
 		parsed.text = parsed.mdIssueDescription()
-		parsed.useSlackAttachment = true
+		if parsed.Issue.Fields != nil {
+			if parsed.Issue.Fields.Assignee != nil {
+				parsed.fields = append(parsed.fields, parsedField{"Assignee", parsed.Issue.Fields.Assignee.DisplayName})
+			}
+			if parsed.Issue.Fields.Priority != nil {
+				parsed.fields = append(parsed.fields, parsedField{"Priority", parsed.Issue.Fields.Priority.Name})
+			}
+		}
+		if parsed.text != "" || len(parsed.fields) != 0 {
+			parsed.useSlackAttachment = true
+		}
+
 	case "jira:issue_deleted":
 		parsed.event(eventDeleted)
 		if parsed.Issue.Fields != nil && parsed.Issue.Fields.Resolution == nil {
@@ -283,13 +299,17 @@ func parse(in io.Reader, linkf func(w *JIRAWebhook) string) (parsed *parsedJIRAW
 			parsed.event(eventCreatedComment)
 			headline = fmt.Sprintf("commented on %v", issue)
 			parsed.text = truncate(parsed.Comment.Body, 3000)
-			parsed.useSlackAttachment = true
+			if parsed.text != "" {
+				parsed.useSlackAttachment = true
+			}
 
 		case "issue_comment_edited":
 			parsed.event(eventUpdatedComment)
 			headline = fmt.Sprintf("edited a comment in %v", issue)
 			parsed.text = truncate(parsed.Comment.Body, 3000)
-			parsed.useSlackAttachment = true
+			if parsed.text != "" {
+				parsed.useSlackAttachment = true
+			}
 
 		case "issue_comment_deleted":
 			parsed.event(eventDeletedComment)

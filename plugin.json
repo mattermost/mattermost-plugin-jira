@@ -2,7 +2,7 @@
   "id": "jira",
   "name": "Jira",
   "description": "Atlassian Jira plugin for Mattermost.",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "server": {
     "executables": {
       "linux-amd64": "server/dist/plugin-linux-amd64",
@@ -21,6 +21,13 @@
         "display_name": "User",
         "type": "username",
         "help_text": "Select the username that this integration is attached to."
+      },
+      {
+        "key": "EnableJiraUI",
+        "display_name": "Allow users to connect their Mattermost accounts to Jira",
+        "type": "bool",
+        "help_text": "When false, disables all Jira-related user interactions in Mattermost. Does not affect Jira webhook notifications. After changing this setting to false, disable, then re-enable this plugin in **System Console > Plugins > Plugin Management** to reset the plugin state for all users. \n \n When true, install this plugin to your Jira instance with '/jira install’ to allow users to create and manage issues across Mattermost channels. See [documentation](https://about.mattermost.com/default-jira-plugin-link-application) to learn more.",
+        "default": true
       },
       {
         "key": "Secret",
