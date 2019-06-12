@@ -85,7 +85,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 
 	for i, notCovered := range create.RequiredFieldsNotCovered {
 
-		if notCovered == "reporter" || notCovered == "Reporter" {
+		if strings.ToLower(notCovered) == "reporter" {
 			requiredFieldsNotCovered := create.RequiredFieldsNotCovered[:i]
 			if i+1 < len(create.RequiredFieldsNotCovered) {
 				requiredFieldsNotCovered = append(requiredFieldsNotCovered,
