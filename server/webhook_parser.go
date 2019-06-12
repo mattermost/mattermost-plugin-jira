@@ -92,7 +92,7 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 	return nil
 }
 
-func parseWebhookCreated(jwh *JiraWebhook) Webhook {
+func parseWebhookCreated(jwh *JiraWebhook) *webhook {
 	wh := newWebhook(jwh, eventCreated, "created")
 
 	wh.text = jwh.mdSummaryLink()
