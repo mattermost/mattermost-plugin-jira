@@ -9,6 +9,7 @@ import FormButton from 'components/form_button';
 import Input from 'components/input';
 
 import JiraIssueSelector from 'components/jira_issue_selector';
+import Validator from 'components/validator';
 
 const initialState = {
     submitting: false,
@@ -30,11 +31,27 @@ export default class AttachIssueModal extends PureComponent {
     constructor(props) {
         super(props);
         this.state = initialState;
+
+        this.issueRef = React.createRef();
+
+        this.validator = new Validator();
+    }
+
+    componentDidMount() {
+        this.validator.addComponent('issue', this.issueRef);
+    }
+
+    componentWillUnmount() {
+        this.validator.removeComponent('issue');
     }
 
     handleCreate = (e) => {
         if (e && e.preventDefault) {
             e.preventDefault();
+        }
+
+        if (!this.validator.validate()) {
+            return;
         }
 
         const issue = {
@@ -80,10 +97,12 @@ export default class AttachIssueModal extends PureComponent {
         const component = (
             <div style={style.modal}>
                 <JiraIssueSelector
+                    ref={this.issueRef}
                     onChange={this.handleIssueKeyChange}
-                    isRequired={true}
+                    required={true}
                     theme={theme}
                     error={error}
+                    value={this.state.issueKey}
                 />
                 <Input
                     label='Message Attached to Jira Issue'
