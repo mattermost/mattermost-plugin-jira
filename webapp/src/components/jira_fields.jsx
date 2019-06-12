@@ -8,13 +8,18 @@ import JiraField from 'components/jira_field';
 
 export default class JiraFields extends React.Component {
     static propTypes = {
-        fields: PropTypes.object.isRequired,
+        fields: PropTypes.oneOfType([
+            PropTypes.object,
+            PropTypes.array,
+        ]).isRequired,
         onChange: PropTypes.func.isRequired,
         values: PropTypes.object,
         isFilter: PropTypes.bool,
-        allowedFields: PropTypes.object.isRequired,
-        allowedSchemaCustom: PropTypes.object.isRequired,
+        allowedFields: PropTypes.array.isRequired,
+        allowedSchemaCustom: PropTypes.array.isRequired,
         theme: PropTypes.object.isRequired,
+        addValidate: PropTypes.func.isRequired,
+        removeValidate: PropTypes.func.isRequired,
     };
 
     render() {
@@ -57,6 +62,8 @@ export default class JiraFields extends React.Component {
                     value={this.props.values && this.props.values[fieldName]}
                     isFilter={this.props.isFilter}
                     theme={this.props.theme}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
                 />
             );
         });
