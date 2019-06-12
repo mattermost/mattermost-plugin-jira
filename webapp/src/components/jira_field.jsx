@@ -25,7 +25,7 @@ export default class JiraField extends React.PureComponent {
     // includes both .value and .name because allowedValue test cases have used .value or .name
     // and are mutually exclusive.
     // should wrap this with some if else logic
-    makeReactSelectValue = (allowedValue) => {
+    makeReactSelectIconValue = (allowedValue) => {
         const iconLabel = (
             <React.Fragment>
                 <img
@@ -38,6 +38,15 @@ export default class JiraField extends React.PureComponent {
         );
         return (
             {value: allowedValue.id, label: iconLabel}
+        );
+    };
+
+    makeReactSelectValue = (allowedValue) => {
+        // Project Picker uses .name
+        // other fields using this routine use .value
+        const labelValue = allowedValue.name ? allowedValue.name : allowedValue.value;
+        return (
+            {value: allowedValue.id, label: labelValue}
         );
     };
 
@@ -89,7 +98,10 @@ export default class JiraField extends React.PureComponent {
 
         // if this.props.field has allowedValues, then props.value will be an object
         if (field.allowedValues && field.allowedValues.length && field.schema.type !== 'array') {
-            const options = field.allowedValues.map(this.makeReactSelectValue);
+            let options = field.allowedValues.map(this.makeReactSelectValue);
+            if (field.name === 'Priority') {
+                options = field.allowedValues.map(this.makeReactSelectIconValue);
+            }
 
             return (
                 <ReactSelectSetting
