@@ -424,32 +424,13 @@ func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issue
 
 			// return more detail for an exceptional error case
 			bb, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
-			message += ", details:" + string(bb)
+			_ = resp.Body.Close()
+			message += ", details: " + string(bb)
 		}
 		return nil, errors.Wrap(err, message)
 	}
 
-	// reuse the webhook parser for now
-	jwh := &JiraWebhook{Issue: *issue}
-	wh := parseWebhookCreated(jwh)
-	wh.headline = jwh.mdJiraLink(issue.Key+": "+issue.Fields.Summary, "/browse/"+issue.Key)
-
-	post := &model.Post{}
-	if wh.text != "" || len(wh.fields) != 0 {
-		model.ParseSlackAttachment(post, []*model.SlackAttachment{
-			{
-				// TODO is this supposed to be themed?
-				Color:    "#95b7d0",
-				Fallback: wh.headline,
-				Pretext:  wh.headline,
-				Text:     wh.text,
-				Fields:   wh.fields,
-			},
-		})
-	}
-
-	return post.Attachments(), nil
+	return parseIssue(issue), nil
 }
 
 func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string, error) {
