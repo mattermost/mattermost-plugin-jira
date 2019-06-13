@@ -20,6 +20,8 @@ const (
 
 type JIRAUser struct {
 	jira.User
+	// TODO replace with jira.User.Key if it can be relied upon
+	UserKey            string
 	Oauth1AccessToken  string `json:",omitempty"`
 	Oauth1AccessSecret string `json:",omitempty"`
 }
@@ -158,9 +160,8 @@ func (p *Plugin) StoreUserInfoNotify(ji Instance, mattermostUserId string, jiraU
 	p.API.PublishWebSocketEvent(
 		WS_EVENT_CONNECT,
 		map[string]interface{}{
-			"is_connected":  true,
-			"jira_username": jiraUser.Name,
-			"jira_url":      ji.GetURL(),
+			"is_connected": true,
+			"jira_url":     ji.GetURL(),
 		},
 		&model.WebsocketBroadcast{UserId: mattermostUserId},
 	)

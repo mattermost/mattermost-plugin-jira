@@ -60,15 +60,20 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 	if !ok {
 		return http.StatusBadRequest, errors.New("invalid JWT: no user data")
 	}
+
+	accountId, _ := user["accountId"].(string)
+	displayName, _ := user["displayName"].(string)
 	userKey, _ := user["userKey"].(string)
 	username, _ := user["username"].(string)
-	displayName, _ := user["displayName"].(string)
 
 	mmToken := r.Form.Get(argMMToken)
 	uinfo := JIRAUser{
+		UserKey: accountId,
 		User: jira.User{
-			Key:  userKey,
-			Name: username,
+			AccountID:   accountId,
+			DisplayName: displayName,
+			Key:         userKey,
+			Name:        username,
 		},
 	}
 	mattermostUserId := r.Header.Get("Mattermost-User-ID")

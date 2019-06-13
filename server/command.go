@@ -101,7 +101,7 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 		return responsef(p, "Could not complete the **disconnection** request. Error: %v", err)
 	}
 
-	return responsef(p, "You have successfully disconnected your Jira account (**%s**).", jiraUser.Name)
+	return responsef(p, "You have successfully disconnected your Jira account (**%s**).", jiraUser.DisplayName)
 }
 
 func executeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
