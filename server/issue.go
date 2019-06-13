@@ -433,7 +433,7 @@ func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issue
 	// reuse the webhook parser for now
 	jwh := &JiraWebhook{Issue: *issue}
 	wh := parseWebhookCreated(jwh)
-	wh.headline = ""
+	wh.headline = jwh.mdJiraLink(issue.Key+": "+issue.Fields.Summary, "/browse/"+issue.Key)
 
 	post := &model.Post{}
 	if wh.text != "" || len(wh.fields) != 0 {
