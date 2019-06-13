@@ -131,7 +131,7 @@ export default class JiraField extends React.Component {
                     required={this.props.obeyRequired && field.required}
                     onChange={(id, val) => this.props.onChange(id, {id: val})}
                     isMulti={false}
-                    value={options.find((option) => option.value === this.props.value)}
+                    value={options.find((option) => option.value === (this.props.value && this.props.value.id))}
                     theme={this.props.theme}
                     isClearable={true}
                     components={{Option: JiraField.IconOption}}
