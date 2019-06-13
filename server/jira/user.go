@@ -19,18 +19,6 @@ const (
 	WS_EVENT_DISCONNECT = "disconnect"
 )
 
-type JiraUser struct {
-	jira.User
-	Oauth1AccessToken  string `json:",omitempty"`
-	Oauth1AccessSecret string `json:",omitempty"`
-	// TODO why is this a pointer?
-	Settings *UserSettings
-}
-
-type UserSettings struct {
-	Notifications bool `json:"notifications"`
-}
-
 type UserInfo struct {
 	JiraUser
 	IsConnected       bool   `json:"is_connected"`

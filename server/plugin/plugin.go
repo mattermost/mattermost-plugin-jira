@@ -15,6 +15,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/plugin"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/"
 )
 
 const (

@@ -15,26 +15,12 @@ import (
 	"github.com/mattermost/mattermost-server/plugin"
 )
 
-type ActionRouter struct {
-	RouteHandlers       map[string]ActionScript
-	DefaultRouteHandler ActionFunc
-	LogFilter           ActionFunc
-}
-
-type ActionScript []ActionFunc
-
-// c is a read/write pointer. If it is needed in a goroutine, please clone or
-// make separate pointers for the needed values.
-type ActionFunc func(a Action, ac *ActionContext) error
-
-type ActionHandler struct {
-	Func     ActionFunc
-	Metadata interface{}
+type Runner interface {
+	Run(a Action, ac *ActionContext) error
 }
 
 type Action interface {
 	FormValue(string) string
-
 	ActionResponder
 	Logger
 }
@@ -64,6 +50,15 @@ type ActionContext struct {
 	UpstreamJWT          *jwt.Token
 	UpstreamRawJWT       string
 	UserStore            UserStore
+}
+
+// c is a read/write pointer. If it is needed in a goroutine, please clone or
+// make separate pointers for the needed values.
+type ActionFunc func(a Action, ac *ActionContext) error
+
+type actionHandler struct {
+	run      ActionFunc
+	metadata interface{}
 }
 
 type action struct {

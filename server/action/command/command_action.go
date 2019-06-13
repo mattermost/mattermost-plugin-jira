@@ -26,7 +26,7 @@ type CommandAction struct {
 	CommandResponse *model.CommandResponse
 }
 
-type CommandMetadata struct {
+type commandRunner struct {
 	// MinTotalArgs and MaxTotalArgs are applied to the total number of
 	// whitespace-separated tokens, including the `/jira` and everything after
 	// it.
@@ -38,6 +38,9 @@ type CommandMetadata struct {
 	ArgNames []string
 }
 
+func (cr commandRunner) Run(a Action, ac *ActionContext) error {
+	ca, ok := 
+}
 var _ Action = (*CommandAction)(nil)
 
 func NewCommandAction(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs,
@@ -52,10 +55,9 @@ func NewCommandAction(p *Plugin, c *plugin.Context, commandArgs *model.CommandAr
 	}, &action.ActionContext
 }
 
-func MakeCommandAction(
-	p *Plugin,
-	 c *plugin.Context,
-	 router *ActionRouter, 
+var ErrCommandNotFound = errors.New("command not found")
+
+func MakeCommandAction( p *Plugin, c *plugin.Context, router *ActionRouter, 
 	 commandArgs *model.CommandArgs) (*CommandAction, *ActionContext, error) {
 
 	argv := strings.Fields(commandArgs.Command)
@@ -72,14 +74,14 @@ func MakeCommandAction(
 			break
 		}
 	}
-
 	if key == "" {
-		return 
+		return nil, nil, ErrCommandNotFound
 	}
 
-	args = args[n:]
-
-	for i, argv := range args 
+	cmd := router.
+	argv = argv[n:]
+	for i, arg := range argv {
+		if i < len
 
 	_ key) string {
 	if key == "" || key[0] != '$' {

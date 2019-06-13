@@ -1,7 +1,7 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
-package main
+package store
 
 import (
 	"crypto/md5"
@@ -11,6 +11,8 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/interface"
 )
 
 const (

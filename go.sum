@@ -61,6 +61,8 @@ github.com/magiconair/properties v1.8.0 h1:LLgXmsheXeRoUOBOjtwPQCWIYqM/LU1ayDtDe
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/mattermost/gorp v2.0.0+incompatible h1:/aLYsuWjk4kSVP3P3kn3zTGNUQxaCB6DjTejmwddKEs=
 github.com/mattermost/gorp v2.0.0+incompatible/go.mod h1:0kX1qa3DOpaPJyOdMLeo7TcBN0QmUszj9a/VygOhDe0=
+github.com/mattermost/mattermost-plugin-jira v1.1.1 h1:9zjahC1pjCsPVccxpvPgEPsJ+jjwY3qZ1kGg1A8/ZKc=
+github.com/mattermost/mattermost-plugin-jira v1.1.1/go.mod h1:6azAcyJsFIYhxM4gxeD/THZdlRzzc1pkNOQS8lVvvSc=
 github.com/mattermost/mattermost-server v5.6.5+incompatible h1:3GOnGVeecQ8o7kAQqIERdwblc7ezJ/pSWFkVWZEprLk=
 github.com/mattermost/mattermost-server v5.6.5+incompatible/go.mod h1:5L6MjAec+XXQwMIt791Ganu45GKsSiM+I0tLR9wUj8Y=
 github.com/mattermost/mattermost-server v5.10.1+incompatible h1:bSwuCGIOuKGVCxAMsVeEnBP8J2qxNL4/ik8ibDq+Q9U=
