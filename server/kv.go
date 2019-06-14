@@ -320,7 +320,7 @@ func (p *Plugin) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JI
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store user, mattermostUserId:%s, Jira user:%s", mattermostUserId, jiraUser.Name))
+			fmt.Sprintf("failed to store user, mattermostUserId:%s, Jira user:%q", mattermostUserId, jiraUser.DisplayName))
 	}()
 
 	err := p.kvSet(keyWithInstance(ji, mattermostUserId), jiraUser)
@@ -328,14 +328,14 @@ func (p *Plugin) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JI
 		return err
 	}
 
-	err = p.kvSet(keyWithInstance(ji, jiraUser.Name), mattermostUserId)
+	err = p.kvSet(keyWithInstance(ji, jiraUser.UserKey), mattermostUserId)
 	if err != nil {
 		return err
 	}
 
 	p.debugf("Stored: Jira user, keys:\n\t%s (%s): %+v\n\t%s (%s): %s",
 		keyWithInstance(ji, mattermostUserId), mattermostUserId, jiraUser,
-		keyWithInstance(ji, jiraUser.Name), jiraUser.Name, mattermostUserId)
+		keyWithInstance(ji, jiraUser.UserKey), jiraUser.DisplayName, mattermostUserId)
 
 	return nil
 }
@@ -353,19 +353,6 @@ func (p *Plugin) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, e
 		return JIRAUser{}, ErrUserNotFound
 	}
 	return jiraUser, nil
-}
-
-func (p *Plugin) LoadMattermostUserId(ji Instance, jiraUserName string) (string, error) {
-	mattermostUserId := ""
-	err := p.kvGet(keyWithInstance(ji, jiraUserName), &mattermostUserId)
-	if err != nil {
-		return "", errors.WithMessage(err,
-			"failed to load Mattermost user ID for Jira user: "+jiraUserName)
-	}
-	if len(mattermostUserId) == 0 {
-		return "", ErrUserNotFound
-	}
-	return mattermostUserId, nil
 }
 
 func (p *Plugin) DeleteUserInfo(ji Instance, mattermostUserId string) (returnErr error) {
@@ -387,14 +374,14 @@ func (p *Plugin) DeleteUserInfo(ji Instance, mattermostUserId string) (returnErr
 		return appErr
 	}
 
-	appErr = p.API.KVDelete(keyWithInstance(ji, jiraUser.Name))
+	appErr = p.API.KVDelete(keyWithInstance(ji, jiraUser.UserKey))
 	if appErr != nil {
 		return appErr
 	}
 
-	p.debugf("Deleted: user, keys: %s(%s), %s(%s)",
+	p.debugf("Deleted: user, keys: %s (%s), %q (%s)",
 		mattermostUserId, keyWithInstance(ji, mattermostUserId),
-		jiraUser.Name, keyWithInstance(ji, jiraUser.Name))
+		jiraUser.DisplayName, keyWithInstance(ji, jiraUser.UserKey))
 	return nil
 }
 

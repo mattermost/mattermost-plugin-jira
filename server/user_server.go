@@ -75,6 +75,7 @@ func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.
 		return http.StatusInternalServerError, err
 	}
 	jiraUser.User = *juser
+	jiraUser.UserKey = juser.Name
 
 	err = jsi.Plugin.StoreUserInfoNotify(jsi, mattermostUserId, jiraUser)
 	if err != nil {
