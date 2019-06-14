@@ -16,37 +16,12 @@ import (
 
 	"github.com/mattermost/mattermost-server/plugin"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/"
 )
 
 const (
 	PluginMattermostUsername = "Jira Plugin"
 	PluginIconURL            = "https://s3.amazonaws.com/mattermost-plugin-media/jira.jpg"
 )
-
-type ExternalConfig struct {
-	// Bot username
-	UserName string `json:"username"`
-
-	// Legacy 1.x Webhook secret
-	Secret string `json:"secret"`
-}
-
-type Config struct {
-	// externalConfig caches values from the plugin's settings in the server's config.json
-	ExternalConfig
-
-	// Cached actual bot user ID (derived from c.UserName)
-	BotUserID string
-
-	PluginKey     string
-	PluginURLPath string
-	PluginURL     string
-	SiteURL       string
-
-	// templates are loaded on startup
-	Templates map[string]*template.Template
-}
 
 type Plugin struct {
 	plugin.MattermostPlugin
@@ -59,9 +34,6 @@ type Plugin struct {
 	// configuration and a muttex to control concurrent access
 	Config   Config
 	confLock sync.RWMutex
-
-	// Generated once, then cached in the database, and here deserialized
-	RSAKey *rsa.PrivateKey `json:",omitempty"`
 }
 
 // OnConfigurationChange is invoked when configuration changes may have been made.

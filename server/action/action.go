@@ -13,6 +13,8 @@ import (
 
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
+
+	"github.com/mattermost/mattermost-plugin-jira/store"
 )
 
 type Runner interface {
@@ -36,7 +38,7 @@ type ActionResponder interface {
 type ActionContext struct {
 	ActionRouter         *ActionRouter
 	API                  plugin.API
-	CurrentInstanceStore CurrentInstanceStore
+	CurrentInstanceStore server.CurrentInstanceStore
 	Instance             Instance
 	InstanceStore        InstanceStore
 	JiraUser             *JiraUser

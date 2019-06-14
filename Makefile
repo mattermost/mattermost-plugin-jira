@@ -20,7 +20,8 @@ all: check-style test dist
 ## Propagates plugin manifest information into the server/ and webapp/ folders as required.
 .PHONY: apply
 apply:
-	./build/bin/manifest apply
+	echo "____________________________________"
+	#cd plugin && ../build/bin/manifest apply
 
 ## Runs govet and gofmt against all packages.
 .PHONY: check-style

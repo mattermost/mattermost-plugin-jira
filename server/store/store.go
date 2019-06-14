@@ -11,8 +11,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-
-	"github.com/mattermost/mattermost-plugin-jira/server/interface"
 )
 
 const (

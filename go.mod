@@ -1,4 +1,4 @@
-module github.com/mattermost/mattermost-plugin-jira/server
+module github.com/mattermost/mattermost-plugin-jira/
 
 go 1.12
 
