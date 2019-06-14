@@ -14,8 +14,12 @@ import reducers from './reducers';
 import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings} from './actions';
 
 export let setupUI;
+let haveSetUpUI = false;
 
 const setupUILater = (registry, store) => async () => {
+    if (haveSetUpUI) {
+        return;
+    }
     const settings = await getSettings(store.getState);
     if (!settings.ui_enabled) {
         return;
@@ -37,6 +41,7 @@ const setupUILater = (registry, store) => async () => {
         registry.registerWebSocketEventHandler(`custom_${PluginId}_connect`, handleConnectChange(store));
         registry.registerWebSocketEventHandler(`custom_${PluginId}_disconnect`, handleConnectChange(store));
         registry.registerWebSocketEventHandler(`custom_${PluginId}_instance_status`, handleInstanceStatusChange(store));
+        haveSetUpUI = true;
     }
 };
 
