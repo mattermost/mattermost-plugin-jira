@@ -355,19 +355,6 @@ func (p *Plugin) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, e
 	return jiraUser, nil
 }
 
-func (p *Plugin) LoadMattermostUserId(ji Instance, jiraUserName string) (string, error) {
-	mattermostUserId := ""
-	err := p.kvGet(keyWithInstance(ji, jiraUserName), &mattermostUserId)
-	if err != nil {
-		return "", errors.WithMessage(err,
-			"failed to load Mattermost user ID for Jira user: "+jiraUserName)
-	}
-	if len(mattermostUserId) == 0 {
-		return "", ErrUserNotFound
-	}
-	return mattermostUserId, nil
-}
-
 func (p *Plugin) DeleteUserInfo(ji Instance, mattermostUserId string) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
@@ -392,9 +379,9 @@ func (p *Plugin) DeleteUserInfo(ji Instance, mattermostUserId string) (returnErr
 		return appErr
 	}
 
-	p.debugf("Deleted: user, keys: %s(%s), %s(%s)",
+	p.debugf("Deleted: user, keys: %s (%s), %q (%s)",
 		mattermostUserId, keyWithInstance(ji, mattermostUserId),
-		jiraUser.UserKey, keyWithInstance(ji, jiraUser.DisplayName))
+		jiraUser.DisplayName, keyWithInstance(ji, jiraUser.UserKey))
 	return nil
 }
 
