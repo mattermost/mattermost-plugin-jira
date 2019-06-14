@@ -17,13 +17,15 @@ export let setupUI;
 let haveSetUpUI = false;
 
 const setupUILater = (registry, store) => async () => {
-    if (haveSetUpUI) {
-        return;
-    }
     const settings = await getSettings(store.getState);
     if (!settings.ui_enabled) {
         return;
     }
+
+    if (haveSetUpUI) {
+        return;
+    }
+    haveSetUpUI = true;
 
     registry.registerReducer(reducers);
 
@@ -41,7 +43,6 @@ const setupUILater = (registry, store) => async () => {
         registry.registerWebSocketEventHandler(`custom_${PluginId}_connect`, handleConnectChange(store));
         registry.registerWebSocketEventHandler(`custom_${PluginId}_disconnect`, handleConnectChange(store));
         registry.registerWebSocketEventHandler(`custom_${PluginId}_instance_status`, handleInstanceStatusChange(store));
-        haveSetUpUI = true;
     }
 };
 
