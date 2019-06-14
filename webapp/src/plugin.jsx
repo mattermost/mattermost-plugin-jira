@@ -14,12 +14,18 @@ import reducers from './reducers';
 import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings} from './actions';
 
 export let setupUI;
+let haveSetUpUI = false;
 
 const setupUILater = (registry, store) => async () => {
     const settings = await getSettings(store.getState);
     if (!settings.ui_enabled) {
         return;
     }
+
+    if (haveSetUpUI) {
+        return;
+    }
+    haveSetUpUI = true;
 
     registry.registerReducer(reducers);
 
