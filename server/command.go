@@ -14,6 +14,7 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
 	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field.\n" +
 	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
+	"* `/jira view <issue-key>` or `/jira <issue-key>` - View a Jira issue\n" +
 	"* `/jira settings [setting] [value]` - Update your user settings\n" +
 	"  * [setting] can be `notifications`\n" +
 	"  * [value] can be `on` or `off`\n" +
@@ -45,6 +46,7 @@ var jiraCommandHandler = CommandHandler{
 		"disconnect":       executeDisconnect,
 		"install/cloud":    executeInstallCloud,
 		"install/server":   executeInstallServer,
+		"view":             executeView,
 		"settings":         executeSettings,
 		"transition":       executeTransition,
 		"uninstall/cloud":  executeUninstallCloud,
@@ -55,7 +57,7 @@ var jiraCommandHandler = CommandHandler{
 		//"instance/select":     executeInstanceSelect,
 		//"instance/delete":     executeInstanceDelete,
 	},
-	defaultHandler: commandHelp,
+	defaultHandler: executeJiraDefault,
 }
 
 func (ch CommandHandler) Handle(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -136,6 +138,47 @@ func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 		return p.settingsNotifications(ji, mattermostUserId, jiraUser, args)
 	default:
 		return responsef("Unknown setting.")
+	}
+}
+
+// executeJiraDefault is the default command if no other command fits. It defaults to view issue.
+func executeJiraDefault(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) != 1 {
+		return help()
+	}
+
+	return executeView(p, c, header, args...)
+}
+
+// executeView returns a Jira issue formatted as a slack attachment, or an error message.
+func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) != 1 {
+		return responsef("Please specify an issue key in the form `/jira view <issue-key>`.")
+	}
+
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return responsef("Failed to load current Jira instance: %v. Please contact your system administrator.", err)
+	}
+
+	mattermostUserId := header.UserId
+	jiraUser, err := p.userStore.LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		// v2.2: try to retrieve the issue anonymously
+		return responsef("Your username is not connected to Jira. Please type `jira connect`.")
+	}
+
+	attachment, err := p.getIssueAsSlackAttachment(ji, jiraUser, strings.ToUpper(args[0]))
+	if err != nil {
+		return responsef(err.Error())
+	}
+
+	return &model.CommandResponse{
+		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
+		Username:     PluginMattermostUsername,
+		IconURL:      PluginIconURL,
+		Type:         model.POST_DEFAULT,
+		Attachments:  attachment,
 	}
 }
 
@@ -429,7 +472,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, create, transition, settings, install cloud/server, uninstall cloud/server, help",
+		AutoCompleteDesc: "Available commands: connect, disconnect, create, transition, view, settings, install cloud/server, uninstall cloud/server, help",
 		AutoCompleteHint: "[command]",
 	}
 }

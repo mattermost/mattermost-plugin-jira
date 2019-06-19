@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/andygrunwald/go-jira"
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -403,6 +403,34 @@ func getPermaLink(ji Instance, postId string, post *model.Post) (string, error) 
 		postId,
 	)
 	return permalink, nil
+}
+
+func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issueKey string) ([]*model.SlackAttachment, error) {
+	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	if err != nil {
+		return nil, err
+	}
+
+	issue, resp, err := jiraClient.Issue.Get(issueKey, nil)
+	if err != nil {
+		message := "request to Jira failed"
+		if resp != nil {
+			if resp.StatusCode == http.StatusNotFound {
+				return nil, errors.New("We couldn't find the issue key, or you do not have the appropriate permissions to view the issue. Please try again or contact your Jira administrator.")
+			}
+			if resp.StatusCode == http.StatusUnauthorized {
+				return nil, errors.New("You do not have the appropriate permissions to view the issue. Please contact your Jira administrator.")
+			}
+
+			// return more detail for an exceptional error case
+			bb, _ := ioutil.ReadAll(resp.Body)
+			_ = resp.Body.Close()
+			message += ", details: " + string(bb)
+		}
+		return nil, errors.Wrap(err, message)
+	}
+
+	return parseIssue(issue), nil
 }
 
 func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string, error) {
