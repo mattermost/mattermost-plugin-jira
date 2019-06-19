@@ -29,7 +29,6 @@ func mdKeySummaryLink(issue *jira.Issue) string {
 
 func parseIssue(issue *jira.Issue) []*model.SlackAttachment {
 	text := mdKeySummaryLink(issue)
-	fmt.Printf("%q", issue.Fields.Description)
 	desc := truncate(issue.Fields.Description, 3000)
 	desc = parseJiraLinksToMarkdown(desc)
 	if desc != "" {
