@@ -16,7 +16,7 @@ export default class Hooks {
                 return Promise.resolve({});
             }
             if (!isUserConnected(this.store.getState())) {
-                sendEphemeralPost(this.store, 'Your username is not connected to Jira. Please type `/jira connect`.');
+                sendEphemeralPost(this.store, 'Your Mattermost account is not connected to Jira. Please use `/jira connect` to connect your account, then try again.');
                 return Promise.resolve({});
             }
             const description = message.slice(12).trim();
