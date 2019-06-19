@@ -12,7 +12,7 @@ export default class Hooks {
     slashCommandWillBePostedHook = (message, contextArgs) => {
         if (message && (message.startsWith('/jira create ') || message === '/jira create')) {
             if (!isInstanceInstalled(this.store.getState())) {
-                sendEphemeralPost(this.store, 'There is not Jira instance installed. Please contact your system administrator.');
+                sendEphemeralPost(this.store, 'There is no Jira instance installed. Please contact your system administrator.');
                 return Promise.resolve({});
             }
             if (!isUserConnected(this.store.getState())) {
