@@ -69,9 +69,9 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		permalink := getPermaLink(ji, create.PostId, create.CurrentTeam)
 
 		if len(create.Fields.Description) > 0 {
-			create.Fields.Description += fmt.Sprintf("\n%v", permalink)
+			create.Fields.Description += fmt.Sprintf("\n\n_Issue created from a [message in Mattermost|%v]_.", permalink)
 		} else {
-			create.Fields.Description = permalink
+			create.Fields.Description = fmt.Sprintf("_Issue created from a [message in Mattermost|%v]_.", permalink)
 		}
 	}
 
