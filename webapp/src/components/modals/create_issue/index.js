@@ -5,6 +5,7 @@ import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {closeCreateModal, createIssue, fetchJiraIssueMetadata} from 'actions';
 import {isCreateModalVisible, getCreateModal, getJiraIssueMetadata} from 'selectors';
@@ -14,6 +15,7 @@ import CreateIssue from './create_issue';
 const mapStateToProps = (state) => {
     const {postId, description, channelId} = getCreateModal(state);
     const post = (postId) ? getPost(state, postId) : null;
+    const currentTeam = getCurrentTeam(state);
 
     const jiraIssueMetadata = getJiraIssueMetadata(state);
 
@@ -23,6 +25,7 @@ const mapStateToProps = (state) => {
         post,
         description,
         channelId,
+        currentTeam,
     };
 };
 

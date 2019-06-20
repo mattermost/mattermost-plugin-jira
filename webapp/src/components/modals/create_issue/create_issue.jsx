@@ -35,6 +35,7 @@ export default class CreateIssueModal extends PureComponent {
         post: PropTypes.object,
         description: PropTypes.string,
         channelId: PropTypes.string,
+        currentTeam: PropTypes.string.isRequired,
         theme: PropTypes.object.isRequired,
         visible: PropTypes.bool.isRequired,
         jiraIssueMetadata: PropTypes.object,
@@ -67,12 +68,12 @@ export default class CreateIssueModal extends PureComponent {
         }
 
         const {post, channelId} = this.props;
-
         const postId = (post) ? post.id : '';
 
         const issue = {
-            fields: this.state.fields,
             post_id: postId,
+            current_team: this.props.currentTeam.name,
+            fields: this.state.fields,
             channel_id: channelId,
         };
 
