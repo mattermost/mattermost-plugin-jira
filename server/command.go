@@ -90,6 +90,12 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 	if len(args) != 0 {
 		return help()
 	}
+
+	_, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return responsef("There is no Jira instance installed. Please contact your system administrator.")
+	}
+
 	return responsef("[Click here to link your Jira account](%s%s)",
 		p.GetPluginURL(), routeUserConnect)
 }
@@ -496,7 +502,7 @@ func responsef(format string, args ...interface{}) *model.CommandResponse {
 //	instanceKey := args[0]
 //	num, err := strconv.ParseUint(instanceKey, 10, 8)
 //	if err == nil {
-//		known, loadErr := p.LoadKnownJIRAInstances()
+//		known, loadErr := p.instanceStore.LoadKnownJIRAInstances()
 //		if loadErr != nil {
 //			return responsef("Failed to load known Jira instances: %v", err)
 //		}
@@ -512,7 +518,7 @@ func responsef(format string, args ...interface{}) *model.CommandResponse {
 //		instanceKey = keys[num-1]
 //	}
 //
-//	ji, err := p.LoadJIRAInstance(instanceKey)
+//	ji, err := p.instanceStore.LoadJIRAInstance(instanceKey)
 //	if err != nil {
 //		return responsef("Failed to load Jira instance %s: %v", instanceKey, err)
 //	}
@@ -530,7 +536,7 @@ func responsef(format string, args ...interface{}) *model.CommandResponse {
 //	}
 //	instanceKey := args[0]
 //
-//	known, err := p.LoadKnownJIRAInstances()
+//	known, err := p.instanceStore.LoadKnownJIRAInstances()
 //	if err != nil {
 //		return responsef("Failed to load known JIRA instances: %v", err)
 //	}
@@ -553,7 +559,7 @@ func responsef(format string, args ...interface{}) *model.CommandResponse {
 //	}
 //
 //	// Remove the instance
-//	err = p.DeleteJiraInstance(instanceKey)
+//	err = p.instanceStore.DeleteJiraInstance(instanceKey)
 //	if err != nil {
 //		return responsef("failed to delete Jira instance %s: %v", instanceKey, err)
 //	}
