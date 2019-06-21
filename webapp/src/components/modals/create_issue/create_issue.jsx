@@ -62,7 +62,50 @@ export default class CreateIssueModal extends PureComponent {
         }
     }
 
+    allowedFields = [
+        'project',
+        'issuetype',
+        'priority',
+        'description',
+        'summary',
+    ]
+
+    allowedSchemaCustom = [
+        'com.atlassian.jira.plugin.system.customfieldtypes:textarea',
+        'com.atlassian.jira.plugin.system.customfieldtypes:textfield',
+        'com.atlassian.jira.plugin.system.customfieldtypes:select',
+        'com.atlassian.jira.plugin.system.customfieldtypes:project',
+
+        // 'com.pyxis.greenhopper.jira:gh-epic-link',
+
+        // epic label is 'Epic Name' for cloud instance
+        'com.pyxis.greenhopper.jira:gh-epic-label',
+    ];
+
+    getFieldsNotCovered() {
+        const {jiraIssueMetadata} = this.props;
+        const myfields = getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType);
+
+        const fieldsNotCovered = [];
+
+        Object.keys(myfields).forEach((key) => {
+            if (myfields[key].required) {
+                if ((!myfields[key].schema.custom && !this.allowedFields.includes(key)) ||
+                     (myfields[key].schema.custom && !this.allowedSchemaCustom.includes(myfields[key].schema.custom))
+                ) {
+                    if (!fieldsNotCovered.includes(key)) {
+                        // fieldsNotCovered.push([key, myfields[key].name]);
+                        fieldsNotCovered.push(myfields[key].name);
+                    }
+                }
+            }
+        });
+        return fieldsNotCovered;
+    }
+
     handleCreate = (e) => {
+        const requiredFieldsNotCovered = this.getFieldsNotCovered();
+
         if (e && e.preventDefault) {
             e.preventDefault();
         }
@@ -75,6 +118,7 @@ export default class CreateIssueModal extends PureComponent {
             current_team: this.props.currentTeam.name,
             fields: this.state.fields,
             channel_id: channelId,
+            required_fields_not_covered: requiredFieldsNotCovered,
         };
 
         this.setState({submitting: true});
@@ -155,10 +199,20 @@ export default class CreateIssueModal extends PureComponent {
         }
 
         let component;
+        let issueError = null;
         if (error) {
-            console.error('render error', error); //eslint-disable-line no-console
+            issueError = (
+                <React.Fragment>
+                    <p className='alert alert-danger'>
+                        <i
+                            className='fa fa-warning'
+                            title='Warning Icon'
+                        />
+                        <span> {error}</span>
+                    </p>
+                </React.Fragment>
+            );
         }
-
         if (!jiraIssueMetadata || !jiraIssueMetadata.projects) {
             component = <Loading/>;
         } else {
@@ -166,6 +220,7 @@ export default class CreateIssueModal extends PureComponent {
             const projectOptions = getProjectValues(jiraIssueMetadata);
             component = (
                 <div style={style.modal}>
+                    {issueError}
                     <ReactSelectSetting
                         name={'project'}
                         label={'Project'}
@@ -191,6 +246,8 @@ export default class CreateIssueModal extends PureComponent {
                         fields={getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType)}
                         onChange={this.handleFieldChange}
                         values={this.state.fields}
+                        allowedFields={this.allowedFields}
+                        allowedSchemaCustom={this.allowedSchemaCustom}
                         theme={theme}
                     />
                     <br/>
