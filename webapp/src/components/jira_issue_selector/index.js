@@ -3,7 +3,7 @@
 
 import {connect} from 'react-redux';
 
-import {getPluginServerRoute} from '../../selectors';
+import {getPluginServerRoute} from 'selectors';
 
 import JiraIssueSelector from './jira_issue_selector';
 

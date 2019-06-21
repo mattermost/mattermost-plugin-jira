@@ -8,7 +8,7 @@ import {Modal} from 'react-bootstrap';
 import FormButton from 'components/form_button';
 import Input from 'components/input';
 
-import JiraIssueSelector from '../../jira_issue_selector';
+import JiraIssueSelector from 'components/jira_issue_selector';
 
 const initialState = {
     submitting: false,
@@ -22,7 +22,7 @@ export default class AttachIssueModal extends PureComponent {
         close: PropTypes.func.isRequired,
         create: PropTypes.func.isRequired,
         post: PropTypes.object,
-        currentTeam: PropTypes.string.isRequired,
+        currentTeam: PropTypes.object.isRequired,
         theme: PropTypes.object.isRequired,
         visible: PropTypes.bool.isRequired,
     };
@@ -77,16 +77,13 @@ export default class AttachIssueModal extends PureComponent {
             return null;
         }
 
-        if (error) {
-            console.error('render error', error); //eslint-disable-line no-console
-        }
-
         const component = (
             <div style={style.modal}>
                 <JiraIssueSelector
                     onChange={this.handleIssueKeyChange}
                     isRequired={true}
                     theme={theme}
+                    error={error}
                 />
                 <Input
                     label='Message Attached to Jira Issue'

@@ -8,7 +8,7 @@ import {Modal} from 'react-bootstrap';
 import ReactSelectSetting from 'components/react_select_setting';
 import FormButton from 'components/form_button';
 import Loading from 'components/loading';
-import {getProjectValues, getIssueValuesForMultipleProjects} from 'jira_issue_metadata';
+import {getProjectValues, getIssueValuesForMultipleProjects} from 'utils/jira_issue_metadata';
 
 const JiraEventOptions = [
     {value: 'jira:issue_created', label: 'Issue Created'},

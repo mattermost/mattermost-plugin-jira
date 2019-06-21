@@ -8,13 +8,14 @@ import ReactSelect from 'react-select';
 
 import Setting from 'components/setting';
 
-import {getStyleForReactSelect} from './utils';
+import {getStyleForReactSelect} from 'utils/styles';
 
 export default class ReactSelectSetting extends React.PureComponent {
     static propTypes = {
         name: PropTypes.string.isRequired,
         onChange: PropTypes.func,
         theme: PropTypes.object.isRequired,
+        isClearable: PropTypes.bool,
     };
 
     handleChange = (value) => {
@@ -22,10 +23,11 @@ export default class ReactSelectSetting extends React.PureComponent {
             if (Array.isArray(value)) {
                 this.props.onChange(this.props.name, value.map((x) => x.value));
             } else {
-                this.props.onChange(this.props.name, value.value);
+                const newValue = value ? value.value : null;
+                this.props.onChange(this.props.name, newValue);
             }
         }
-    }
+    };
 
     render() {
         return (

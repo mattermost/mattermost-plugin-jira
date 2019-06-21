@@ -10,7 +10,7 @@ import FormButton from 'components/form_button';
 import Loading from 'components/loading';
 import ReactSelectSetting from 'components/react_select_setting';
 
-import {getProjectValues, getIssueTypes, getIssueValues, getFields} from 'jira_issue_metadata';
+import {getProjectValues, getIssueTypes, getIssueValues, getFields} from 'utils/jira_issue_metadata';
 
 const initialState = {
     submitting: false,
@@ -35,7 +35,7 @@ export default class CreateIssueModal extends PureComponent {
         post: PropTypes.object,
         description: PropTypes.string,
         channelId: PropTypes.string,
-        currentTeam: PropTypes.string.isRequired,
+        currentTeam: PropTypes.object.isRequired,
         theme: PropTypes.object.isRequired,
         visible: PropTypes.bool.isRequired,
         jiraIssueMetadata: PropTypes.object,
@@ -62,7 +62,50 @@ export default class CreateIssueModal extends PureComponent {
         }
     }
 
+    allowedFields = [
+        'project',
+        'issuetype',
+        'priority',
+        'description',
+        'summary',
+    ]
+
+    allowedSchemaCustom = [
+        'com.atlassian.jira.plugin.system.customfieldtypes:textarea',
+        'com.atlassian.jira.plugin.system.customfieldtypes:textfield',
+        'com.atlassian.jira.plugin.system.customfieldtypes:select',
+        'com.atlassian.jira.plugin.system.customfieldtypes:project',
+
+        // 'com.pyxis.greenhopper.jira:gh-epic-link',
+
+        // epic label is 'Epic Name' for cloud instance
+        'com.pyxis.greenhopper.jira:gh-epic-label',
+    ];
+
+    getFieldsNotCovered() {
+        const {jiraIssueMetadata} = this.props;
+        const myfields = getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType);
+
+        const fieldsNotCovered = [];
+
+        Object.keys(myfields).forEach((key) => {
+            if (myfields[key].required) {
+                if ((!myfields[key].schema.custom && !this.allowedFields.includes(key)) ||
+                     (myfields[key].schema.custom && !this.allowedSchemaCustom.includes(myfields[key].schema.custom))
+                ) {
+                    if (!fieldsNotCovered.includes(key)) {
+                        // fieldsNotCovered.push([key, myfields[key].name]);
+                        fieldsNotCovered.push(myfields[key].name);
+                    }
+                }
+            }
+        });
+        return fieldsNotCovered;
+    }
+
     handleCreate = (e) => {
+        const requiredFieldsNotCovered = this.getFieldsNotCovered();
+
         if (e && e.preventDefault) {
             e.preventDefault();
         }
@@ -75,6 +118,7 @@ export default class CreateIssueModal extends PureComponent {
             current_team: this.props.currentTeam.name,
             fields: this.state.fields,
             channel_id: channelId,
+            required_fields_not_covered: requiredFieldsNotCovered,
         };
 
         this.setState({submitting: true});
@@ -154,8 +198,19 @@ export default class CreateIssueModal extends PureComponent {
             return null;
         }
 
+        let issueError = null;
         if (error) {
-            console.error('render error', error); //eslint-disable-line no-console
+            issueError = (
+                <React.Fragment>
+                    <p className='alert alert-danger'>
+                        <i
+                            className='fa fa-warning'
+                            title='Warning Icon'
+                        />
+                        <span> {error}</span>
+                    </p>
+                </React.Fragment>
+            );
         }
 
         let component;
@@ -201,6 +256,7 @@ export default class CreateIssueModal extends PureComponent {
             const projectOptions = getProjectValues(jiraIssueMetadata);
             component = (
                 <div style={style.modal}>
+                    {issueError}
                     <ReactSelectSetting
                         name={'project'}
                         label={'Project'}
@@ -226,6 +282,8 @@ export default class CreateIssueModal extends PureComponent {
                         fields={getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType)}
                         onChange={this.handleFieldChange}
                         values={this.state.fields}
+                        allowedFields={this.allowedFields}
+                        allowedSchemaCustom={this.allowedSchemaCustom}
                         theme={theme}
                     />
                     <br/>

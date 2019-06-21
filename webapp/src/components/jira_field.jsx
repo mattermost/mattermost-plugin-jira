@@ -45,17 +45,6 @@ export default class JiraField extends React.Component {
     renderCreateFields() {
         const field = this.props.field;
 
-        // only allow these custom types until handle further types
-        if (field.schema.custom &&
-              (field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:textarea' &&
-               field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:textfield' &&
-               field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:select' &&
-               field.schema.custom !== 'com.pyxis.greenhopper.jira:gh-epic-label' &&
-               field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:project')
-        ) {
-            return null;
-        }
-
         if (field.schema.system === 'description') {
             return (
                 <Input
@@ -114,6 +103,7 @@ export default class JiraField extends React.Component {
                     isMulti={false}
                     value={options.find((option) => option.value === this.props.value)}
                     theme={this.props.theme}
+                    isClearable={true}
                 />
             );
         }

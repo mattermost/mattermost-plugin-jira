@@ -163,6 +163,19 @@ export const fetchChannelSubscriptions = (channelId) => {
         return {data};
     };
 };
+export function getSettings(getState) {
+    let data;
+    const baseUrl = getPluginServerRoute(getState());
+    try {
+        data = doFetch(`${baseUrl}/api/v2/settingsinfo`, {
+            method: 'get',
+        });
+    } catch (error) {
+        return {error};
+    }
+
+    return data;
+}
 
 export function getConnected() {
     return async (dispatch, getState) => {
