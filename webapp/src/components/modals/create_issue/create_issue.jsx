@@ -190,7 +190,7 @@ export default class CreateIssueModal extends PureComponent {
     };
 
     render() {
-        const {visible, theme, jiraIssueMetadata} = this.props;
+        const {post, visible, theme, jiraIssueMetadata} = this.props;
         const {error, submitting} = this.state;
         const style = getStyle(theme);
 
@@ -249,7 +249,7 @@ export default class CreateIssueModal extends PureComponent {
                     />
                 </React.Fragment>
             );
-        } else if (!jiraIssueMetadata || !jiraIssueMetadata.projects) {
+        } else if (!post || !jiraIssueMetadata || !jiraIssueMetadata.projects) {
             component = <Loading/>;
         } else {
             const issueOptions = getIssueValues(jiraIssueMetadata, this.state.projectKey);
