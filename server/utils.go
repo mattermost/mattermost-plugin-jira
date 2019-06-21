@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/andygrunwald/go-jira"
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -73,8 +73,9 @@ func (p *Plugin) CreateBotDMPost(ji Instance, userId, message,
 		Type:      postType,
 		Props: map[string]interface{}{
 			"from_webhook":      "true",
-			"override_username": PluginMattermostUsername,
-			"override_icon_url": PluginIconURL,
+			"override_username": botUserName,
+			// TODO: to be fixed in MM-16508
+			//"override_icon_url": pluginIconURL(),
 		},
 	}
 

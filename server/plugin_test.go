@@ -35,8 +35,7 @@ type TestConfiguration struct {
 
 func TestPlugin(t *testing.T) {
 	validConfiguration := TestConfiguration{
-		Secret:   "thesecret",
-		UserName: "theuser",
+		Secret: "thesecret",
 	}
 
 	for name, tc := range map[string]struct {
@@ -183,7 +182,6 @@ func TestPlugin(t *testing.T) {
 			p := Plugin{}
 			p.updateConfig(func(conf *config) {
 				conf.Secret = tc.Configuration.Secret
-				conf.UserName = tc.Configuration.UserName
 			})
 			p.SetAPI(api)
 			p.currentInstanceStore = mockCurrentInstanceStore{}
