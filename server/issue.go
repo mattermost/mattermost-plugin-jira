@@ -93,6 +93,23 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		channelId = post.ChannelId
 	}
 
+	for i, notCovered := range create.RequiredFieldsNotCovered {
+
+		if strings.ToLower(notCovered) == "reporter" {
+			requiredFieldsNotCovered := create.RequiredFieldsNotCovered[:i]
+			if i+1 < len(create.RequiredFieldsNotCovered) {
+				requiredFieldsNotCovered = append(requiredFieldsNotCovered,
+					create.RequiredFieldsNotCovered[i+1:]...)
+			}
+			create.RequiredFieldsNotCovered = requiredFieldsNotCovered
+
+			if ji.GetType() == JIRATypeServer {
+				issue.Fields.Reporter = &jiraUser.User
+			}
+			break
+		}
+	}
+
 	project, resp, err := jiraClient.Project.Get(issue.Fields.Project.Key)
 	if err != nil {
 		message := "failed to get the project, postId: " + create.PostId
@@ -257,12 +274,18 @@ func httpAPIGetCreateIssueMetadata(ji Instance, w http.ResponseWriter, r *http.R
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	b, err := json.Marshal(cimd)
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to marshal response")
+
+	var bb []byte
+	if len(cimd.Projects) == 0 {
+		bb = []byte(`{"error": "You do not have permission to create issues in any projects. Please contact your Jira admin."}`)
+	} else {
+		bb, err = json.Marshal(cimd)
+		if err != nil {
+			return http.StatusInternalServerError,
+				errors.WithMessage(err, "failed to marshal response")
+		}
 	}
-	_, err = w.Write(b)
+	_, err = w.Write(bb)
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to write response")

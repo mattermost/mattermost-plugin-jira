@@ -218,7 +218,6 @@ export default class CreateIssueModal extends PureComponent {
             return null;
         }
 
-        let component;
         let issueError = null;
         if (error) {
             issueError = (
@@ -233,8 +232,43 @@ export default class CreateIssueModal extends PureComponent {
                 </React.Fragment>
             );
         }
+       let component;
+        let footer = (
+            <React.Fragment>
+                <FormButton
+                    type='button'
+                    btnClass='btn-link'
+                    defaultMessage='Cancel'
+                    onClick={this.handleClose}
+                />
+                <FormButton
+                    type='submit'
+                    btnClass='btn btn-primary'
+                    saving={submitting}
+                >
+                    {'Create'}
+                </FormButton>
+            </React.Fragment>
+        );
 
-        if (!post || !jiraIssueMetadata || !jiraIssueMetadata.projects) {
+        if (jiraIssueMetadata && jiraIssueMetadata.error) {
+            component = (
+                <div style={style.modal}>
+                    {jiraIssueMetadata.error}
+                </div>
+            );
+
+            footer = (
+                <React.Fragment>
+                    <FormButton
+                        type='submit'
+                        btnClass='btn btn-primary'
+                        defaultMessage='Close'
+                        onClick={this.handleClose}
+                    />
+                </React.Fragment>
+            );
+        } else if (!post || !jiraIssueMetadata || !jiraIssueMetadata.projects) {
             component = <Loading/>;
         } else {
             const issueOptions = getIssueValues(jiraIssueMetadata, this.state.projectKey);
@@ -304,19 +338,7 @@ export default class CreateIssueModal extends PureComponent {
                         {component}
                     </Modal.Body>
                     <Modal.Footer>
-                        <FormButton
-                            type='button'
-                            btnClass='btn-link'
-                            defaultMessage='Cancel'
-                            onClick={this.handleClose}
-                        />
-                        <FormButton
-                            type='submit'
-                            btnClass='btn btn-primary'
-                            saving={submitting}
-                        >
-                            {'Create'}
-                        </FormButton>
+                        {footer}
                     </Modal.Footer>
                 </form>
             </Modal>
