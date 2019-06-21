@@ -5,6 +5,7 @@ import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 import {Modal} from 'react-bootstrap';
 
+import Validator from 'components/validator';
 import JiraFields from 'components/jira_fields';
 import FormButton from 'components/form_button';
 import Loading from 'components/loading';
@@ -46,6 +47,21 @@ export default class CreateIssueModal extends PureComponent {
         super(props);
 
         this.state = initialState;
+
+        this.projectRef = React.createRef();
+        this.issueRef = React.createRef();
+
+        this.validator = new Validator();
+    }
+
+    componentDidMount() {
+        this.validator.addComponent('project', this.projectRef);
+        this.validator.addComponent('issue', this.issueRef);
+    }
+
+    componentWillUnmount() {
+        this.validator.removeComponent('project');
+        this.validator.removeComponent('issue');
     }
 
     componentDidUpdate(prevProps) {
@@ -68,7 +84,7 @@ export default class CreateIssueModal extends PureComponent {
         'priority',
         'description',
         'summary',
-    ]
+    ];
 
     allowedSchemaCustom = [
         'com.atlassian.jira.plugin.system.customfieldtypes:textarea',
@@ -91,7 +107,7 @@ export default class CreateIssueModal extends PureComponent {
         Object.keys(myfields).forEach((key) => {
             if (myfields[key].required) {
                 if ((!myfields[key].schema.custom && !this.allowedFields.includes(key)) ||
-                     (myfields[key].schema.custom && !this.allowedSchemaCustom.includes(myfields[key].schema.custom))
+                    (myfields[key].schema.custom && !this.allowedSchemaCustom.includes(myfields[key].schema.custom))
                 ) {
                     if (!fieldsNotCovered.includes(key)) {
                         // fieldsNotCovered.push([key, myfields[key].name]);
@@ -104,14 +120,18 @@ export default class CreateIssueModal extends PureComponent {
     }
 
     handleCreate = (e) => {
-        const requiredFieldsNotCovered = this.getFieldsNotCovered();
-
         if (e && e.preventDefault) {
             e.preventDefault();
         }
 
         const {post, channelId} = this.props;
         const postId = (post) ? post.id : '';
+
+        if (!this.validator.validate()) {
+            return;
+        }
+
+        const requiredFieldsNotCovered = this.getFieldsNotCovered();
 
         const issue = {
             post_id: postId,
@@ -212,8 +232,7 @@ export default class CreateIssueModal extends PureComponent {
                 </React.Fragment>
             );
         }
-
-        let component;
+       let component;
         let footer = (
             <React.Fragment>
                 <FormButton
@@ -258,6 +277,7 @@ export default class CreateIssueModal extends PureComponent {
                 <div style={style.modal}>
                     {issueError}
                     <ReactSelectSetting
+                        ref={this.projectRef}
                         name={'project'}
                         label={'Project'}
                         required={true}
@@ -266,9 +286,10 @@ export default class CreateIssueModal extends PureComponent {
                         isMuli={false}
                         key={'LT'}
                         theme={theme}
-                        value={projectOptions.filter((option) => option.value === this.state.projectKey)}
+                        value={projectOptions.find((option) => option.value === this.state.projectKey)}
                     />
                     <ReactSelectSetting
+                        ref={this.issueRef}
                         name={'issue_type'}
                         label={'Issue Type'}
                         required={true}
@@ -276,7 +297,7 @@ export default class CreateIssueModal extends PureComponent {
                         options={issueOptions}
                         isMuli={false}
                         theme={theme}
-                        value={issueOptions.filter((option) => option.value === this.state.issueType)}
+                        value={issueOptions.find((option) => option.value === this.state.issueType)}
                     />
                     <JiraFields
                         fields={getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType)}
@@ -285,6 +306,9 @@ export default class CreateIssueModal extends PureComponent {
                         allowedFields={this.allowedFields}
                         allowedSchemaCustom={this.allowedSchemaCustom}
                         theme={theme}
+                        value={this.state.fields}
+                        addValidate={this.validator.addComponent}
+                        removeValidate={this.validator.removeComponent}
                     />
                     <br/>
                 </div>

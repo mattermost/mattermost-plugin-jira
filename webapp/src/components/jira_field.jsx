@@ -9,18 +9,34 @@ import Input from 'components/input';
 
 export default class JiraField extends React.Component {
     static propTypes = {
-        id: PropTypes.object.isRequired,
+        id: PropTypes.string.isRequired,
         field: PropTypes.object.isRequired,
         obeyRequired: PropTypes.bool,
         onChange: PropTypes.func.isRequired,
         value: PropTypes.any,
         isFilter: PropTypes.bool,
         theme: PropTypes.object.isRequired,
+        addValidate: PropTypes.func.isRequired,
+        removeValidate: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
         obeyRequired: true,
     };
+
+    constructor(props) {
+        super(props);
+
+        this.ref = React.createRef();
+    }
+
+    componentDidMount() {
+        this.props.addValidate(this.props.id, this.ref);
+    }
+
+    componentWillUnmount() {
+        this.props.removeValidate(this.props.id);
+    }
 
     // Creates an option for react-select from an allowedValue from the jira field metadata
     // includes both .value and .name because allowedValue test cases have used .value or .name
@@ -48,6 +64,7 @@ export default class JiraField extends React.Component {
         if (field.schema.system === 'description') {
             return (
                 <Input
+                    ref={this.ref}
                     key={this.props.id}
                     id={this.props.id}
                     label={field.name}
@@ -63,6 +80,7 @@ export default class JiraField extends React.Component {
         if (field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:textarea') {
             return (
                 <Input
+                    ref={this.ref}
                     key={this.props.id}
                     id={this.props.id}
                     label={field.name}
@@ -77,6 +95,7 @@ export default class JiraField extends React.Component {
         if (field.schema.type === 'string') {
             return (
                 <Input
+                    ref={this.ref}
                     key={this.props.id}
                     id={this.props.id}
                     label={field.name}
@@ -94,6 +113,7 @@ export default class JiraField extends React.Component {
 
             return (
                 <ReactSelectSetting
+                    ref={this.ref}
                     key={this.props.id}
                     name={this.props.id}
                     label={field.name}

@@ -13,4 +13,4 @@ const mapStateToProps = (state) => {
     };
 };
 
-export default connect(mapStateToProps)(JiraIssueSelector);
+export default connect(mapStateToProps, null, null, {withRef: true})(JiraIssueSelector);
