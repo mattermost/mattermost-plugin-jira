@@ -49,13 +49,6 @@ func TestPlugin(t *testing.T) {
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusForbidden,
 		},
-		"NoUserConfiguration": {
-			Configuration: TestConfiguration{
-				Secret: "thesecret",
-			},
-			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
-			ExpectedStatusCode: http.StatusForbidden,
-		},
 		"NoChannel": {
 			Configuration:      validConfiguration,
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&secret=thesecret", validRequestBody()),
@@ -89,14 +82,6 @@ func TestPlugin(t *testing.T) {
 		"InvalidTeam": {
 			Configuration:      validConfiguration,
 			Request:            httptest.NewRequest("POST", "/webhook?team=nottheteam&channel=thechannel&secret=thesecret", validRequestBody()),
-			ExpectedStatusCode: http.StatusBadRequest,
-		},
-		"InvalidUser": {
-			Configuration: TestConfiguration{
-				Secret:   "thesecret",
-				UserName: "nottheuser",
-			},
-			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
 		"ValidRequest": {
