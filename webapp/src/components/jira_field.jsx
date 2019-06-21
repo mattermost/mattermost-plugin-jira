@@ -4,6 +4,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import {components} from 'react-select';
+
 import ReactSelectSetting from 'components/react_select_setting';
 import Input from 'components/input';
 
@@ -24,6 +26,27 @@ export default class JiraField extends React.Component {
         obeyRequired: true,
     };
 
+    static IconOption = (props) => {
+        let img = null;
+        if (props.data.allowedValue.iconUrl) {
+            img = (
+                <img
+                    style={getStyle().jiraIcon}
+                    src={props.data.allowedValue.iconUrl}
+                />
+            );
+        }
+        return (
+            <components.Option
+                {...props}
+                style={getStyle().selectComponent}
+            >
+                {img}
+                {props.data.label}
+            </components.Option>
+        );
+    };
+
     constructor(props) {
         super(props);
 
@@ -38,23 +61,10 @@ export default class JiraField extends React.Component {
         this.props.removeValidate(this.props.id);
     }
 
-    // Creates an option for react-select from an allowedValue from the jira field metadata
-    // includes both .value and .name because allowedValue test cases have used .value or .name
-    // and are mutually exclusive.
-    // should wrap this with some if else logic
     makeReactSelectValue = (allowedValue) => {
-        const iconLabel = (
-            <React.Fragment>
-                <img
-                    style={getStyle().jiraIcon}
-                    src={allowedValue.iconUrl}
-                />
-                {allowedValue.value}
-                {allowedValue.name}
-            </React.Fragment>
-        );
+        const label = allowedValue.name ? allowedValue.name : allowedValue.value;
         return (
-            {value: allowedValue.id, label: iconLabel}
+            {value: allowedValue.id, label, allowedValue}
         );
     };
 
@@ -124,6 +134,7 @@ export default class JiraField extends React.Component {
                     value={options.find((option) => option.value === this.props.value)}
                     theme={this.props.theme}
                     isClearable={true}
+                    components={{Option: JiraField.IconOption}}
                 />
             );
         }
