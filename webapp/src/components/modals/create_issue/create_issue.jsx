@@ -232,7 +232,7 @@ export default class CreateIssueModal extends PureComponent {
                 </React.Fragment>
             );
         }
-       let component;
+        let component;
         let footer = (
             <React.Fragment>
                 <FormButton
