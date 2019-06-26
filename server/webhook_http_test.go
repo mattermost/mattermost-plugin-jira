@@ -4,10 +4,12 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -226,14 +228,20 @@ func TestWebhookHTTP(t *testing.T) {
 			require.NotNil(t, recorder.postedToChannel)
 			post := recorder.postedToChannel
 
+			post.Message = post.Props["orig_message"].(string)
+
 			if !tc.ExpectedSlackAttachment {
 				assert.Equal(t, tc.ExpectedHeadline, post.Message)
 				return
 			}
 
 			require.NotNil(t, post.Props)
-			require.NotNil(t, post.Props["attachments"])
-			attachments := post.Props["attachments"].([]*model.SlackAttachment)
+
+			// Need to recreate the props that had been hidden by permissionsRestrictedPost
+			var attachments []*model.SlackAttachment
+			err := json.NewDecoder(strings.NewReader(post.Props["orig_sa"].(string))).Decode(&attachments)
+
+			require.NoError(t, err)
 			require.Equal(t, 1, len(attachments))
 
 			sa := attachments[0]

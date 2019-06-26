@@ -4,13 +4,14 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"path"
 	"regexp"
 	"strings"
 
-	"github.com/andygrunwald/go-jira"
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -147,4 +148,44 @@ func parseJIRAIssuesFromText(text string, keys []string) []string {
 	}
 
 	return issues
+}
+
+// permissionsRestrictPost creates a permissions-restricted post that will hide the post details until the
+// user is allowed to see them (a decision that's up to the client). In the future, this can be encrypted
+// here and decrypted on the client, or stored on the server and sent to the client when needed.
+func permissionsRestrictPost(post *model.Post, issueKey, issueLink string) error {
+	origProps, err := json.Marshal(post.Props)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal post.Props")
+	}
+
+	placeholderSuffix := " was changed."
+
+	// The only reason we are keeping the original slack attachments here is so that we can test the webhook parser.
+	// This is because Go seems to not be able to unmarshall the []*model.SlackAttachment inside the map[string]interface{}
+	// of the orig_props.
+	// TODO: remove orig_sa when we solve this.
+	origSa := ""
+	if len(post.Attachments()) > 0 {
+		bb, _ := json.Marshal(post.Attachments())
+		origSa = string(bb)
+	}
+
+	newProps := map[string]interface{}{
+		"orig_props":         string(origProps),
+		"orig_message":       post.Message,
+		"orig_sa":            origSa,
+		"issue_key":          issueKey,
+		"issue_link":         issueLink,
+		"placeholder_suffix": placeholderSuffix,
+	}
+	post.Props = newProps
+	post.Type = "custom_jira_restricted"
+
+	// Show a link as a the default message. We cannot keep everything as-is and then hide it on the client,
+	// because (just for a moment) the client will see the unaltered version before the custom post takes
+	// over rendering.
+	post.Message = issueLink + placeholderSuffix
+
+	return nil
 }

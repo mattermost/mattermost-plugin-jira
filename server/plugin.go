@@ -60,6 +60,7 @@ type Plugin struct {
 	userStore            UserStore
 	otsStore             OTSStore
 	secretsStore         SecretsStore
+	cacheStore           CacheStore
 
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
@@ -111,6 +112,7 @@ func (p *Plugin) OnActivate() error {
 	p.userStore = store
 	p.secretsStore = store
 	p.otsStore = store
+	p.cacheStore = store
 
 	dir := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
 	templates, err := p.loadTemplates(dir)

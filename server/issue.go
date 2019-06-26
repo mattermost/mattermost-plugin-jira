@@ -468,6 +468,75 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 	return http.StatusOK, nil
 }
 
+// httpAPIGetPermissionForIssue returns a json response indicating whether the user can view that issue.
+func httpAPIGetPermissionForIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed,
+			errors.New("Request: " + r.Method + " is not allowed, must be GET")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
+		w.Write([]byte("{\"permission\": false}"))
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		w.Write([]byte("{\"permission\": false}"))
+		return http.StatusUnauthorized, errors.New("not connected to Jira instance through Mattermost")
+	}
+
+	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	if err != nil {
+		w.Write([]byte("{\"permission\": false}"))
+		return http.StatusInternalServerError, err
+	}
+
+	issueKey := r.FormValue("issue-key")
+	if len(issueKey) == 0 {
+		w.Write([]byte("{\"permission\": false}"))
+		return http.StatusBadRequest, errors.New("no issue-key in the query parameters")
+	}
+
+	permission := false
+	// Check if we have permissions for this instance-user-issue in the cache
+	err = ji.GetPlugin().cacheStore.GetForInstanceForUser(ji, mattermostUserId, issueKey, &permission)
+	if err == nil {
+		// We found the key in the cache
+		res := fmt.Sprintf("{\"permission\": %t}", permission)
+		w.Write([]byte(res))
+		return http.StatusOK, nil
+	}
+
+	_, resp, err := jiraClient.Issue.Get(issueKey, &jira.GetQueryOptions{Fields: "[]"})
+	if err != nil {
+		if resp != nil {
+			if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusUnauthorized {
+				// These are the two status codes indicating either bad credentials or no permissions to view the issue.
+				// Cache this result for the future
+				_ = ji.GetPlugin().cacheStore.SetForInstanceForUser(ji, mattermostUserId, issueKey, &permission)
+				w.Write([]byte("{\"permission\": false}"))
+				// Returning a 404 because this matches what Jira returns for lack of permissions to view the issue
+				return http.StatusNotFound, nil
+			}
+			// return more detail for an exceptional error case
+			bb, _ := ioutil.ReadAll(resp.Body)
+			_ = resp.Body.Close()
+			w.Write([]byte("{\"permission\": false}"))
+			return http.StatusInternalServerError, errors.Wrap(err, "request to Jira failed, details: "+string(bb))
+		}
+	}
+
+	// User has permission to view. Cache this result for the future
+	permission = true
+	_ = ji.GetPlugin().cacheStore.SetForInstanceForUser(ji, mattermostUserId, issueKey, &permission)
+	w.Write([]byte("{\"permission\": true}"))
+	return http.StatusOK, nil
+}
+
 func buildCreateQuery(ji Instance, project *jira.Project, issue *jira.Issue) *http.Request {
 
 	url := fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", ji.GetURL())

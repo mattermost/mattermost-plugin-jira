@@ -23,6 +23,8 @@ const (
 	keyTokenSecret         = "token_secret"
 	prefixJIRAInstance     = "jira_instance_"
 	prefixOneTimeSecret    = "ots_" // + unique key that will be deleted after the first verification
+	prefixCache            = "cache_"
+	cacheExpiry            = 15 * 60 // 15 minute expiry on the cache store
 )
 
 type Store interface {
@@ -31,6 +33,7 @@ type Store interface {
 	UserStore
 	SecretsStore
 	OTSStore
+	CacheStore
 }
 
 type SecretsStore interface {
@@ -64,6 +67,11 @@ type OTSStore interface {
 	LoadOneTimeSecret(token string) (string, error)
 	StoreOauth1aTemporaryCredentials(mmUserId string, credentials *OAuth1aTemporaryCredentials) error
 	OneTimeLoadOauth1aTemporaryCredentials(mmUserId string) (*OAuth1aTemporaryCredentials, error)
+}
+
+type CacheStore interface {
+	SetForInstanceForUser(ji Instance, mattermostUserId, key string, value interface{}) error
+	GetForInstanceForUser(ji Instance, mattermostUserId, key string, value interface{}) error
 }
 
 type store struct {
@@ -579,4 +587,37 @@ func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserId string) (*OAu
 		return nil, errors.WithMessage(appErr, "failed to delete temporary credentials for "+mmUserId)
 	}
 	return &credentials, nil
+}
+
+func (store store) SetForInstanceForUser(ji Instance, mattermostUserId, key string, value interface{}) error {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+
+	uniqueKey := fmt.Sprintf("%s/%s/%s", ji.GetURL(), mattermostUserId, key)
+	appErr := store.plugin.API.KVSetWithExpiry(hashkey(prefixCache, uniqueKey), data, cacheExpiry)
+	if appErr != nil {
+		return errors.WithMessage(appErr, "failed to store value in the cache")
+	}
+	return nil
+}
+
+func (store store) GetForInstanceForUser(ji Instance, mattermostUserId, key string, value interface{}) error {
+	uniqueKey := fmt.Sprintf("%s/%s/%s", ji.GetURL(), mattermostUserId, key)
+	data, appErr := store.plugin.API.KVGet(hashkey(prefixCache, uniqueKey))
+	if appErr != nil {
+		return appErr
+	}
+
+	if data == nil {
+		return errors.New("not found")
+	}
+
+	err := json.Unmarshal(data, value)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

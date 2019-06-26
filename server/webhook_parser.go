@@ -140,6 +140,7 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) Webhook {
 		eventMask:   eventCreatedComment,
 		headline:    fmt.Sprintf("%s commented on %s", mdUser(&jwh.Comment.UpdateAuthor), jwh.mdKeyLink()),
 		text:        truncate(jwh.Comment.Body, 3000),
+		link:        jwh.keyLink(),
 	}
 
 	message := fmt.Sprintf("%s mentioned you on %s:\n>%s",
@@ -178,6 +179,7 @@ func parseWebhookCommentDeleted(jwh *JiraWebhook) Webhook {
 		JiraWebhook: jwh,
 		eventMask:   eventDeletedComment,
 		headline:    fmt.Sprintf("%s deleted comment in %s", mdUser(&jwh.Comment.UpdateAuthor), jwh.mdKeyLink()),
+		link:        jwh.keyLink(),
 	}
 }
 
@@ -187,6 +189,7 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) Webhook {
 		eventMask:   eventUpdatedComment,
 		headline:    fmt.Sprintf("%s edited comment in %s", mdUser(&jwh.Comment.UpdateAuthor), jwh.mdKeyLink()),
 		text:        truncate(jwh.Comment.Body, 3000),
+		link:        jwh.keyLink(),
 	}
 }
 
@@ -235,6 +238,7 @@ func parseWebhookUpdatedSprint(jwh *JiraWebhook, to string) Webhook {
 		JiraWebhook: jwh,
 		eventMask:   eventUpdatedSprint,
 		headline:    fmt.Sprintf("%s moved %s to %s", jwh.mdUser(), jwh.mdKeyLink(), to),
+		link:        jwh.keyLink(),
 	}
 }
 

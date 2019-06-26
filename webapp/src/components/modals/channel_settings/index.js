@@ -6,7 +6,7 @@ import {bindActionCreators} from 'redux';
 
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import {createChannelSubscription, fetchChannelSubscriptions, deleteChannelSubscription, editChannelSubscription, closeChannelSettings, fetchJiraIssueMetadata} from 'actions';
+import {createChannelSubscription, fetchChannelSubscriptions, deleteChannelSubscription, editChannelSubscription, closeChannelSettings, fetchJiraIssueMetadata} from '../../../actions';
 import {getChannelSubscriptions, getChannelIdWithSettingsOpen, getJiraIssueMetadata} from 'selectors';
 
 import ChannelSettingsModal from './channel_settings';

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/andygrunwald/go-jira"
+	jira "github.com/andygrunwald/go-jira"
 )
 
 type JiraWebhook struct {
@@ -28,12 +28,20 @@ type JiraWebhook struct {
 	IssueEventTypeName string `json:"issue_event_type_name"`
 }
 
+func (jwh *JiraWebhook) jiraLink(title, suffix string) string {
+	pos := strings.LastIndex(jwh.Issue.Self, "/rest/api")
+	if pos < 0 {
+		return ""
+	}
+	return jwh.Issue.Self[:pos] + suffix
+}
+
 func (jwh *JiraWebhook) mdJiraLink(title, suffix string) string {
 	pos := strings.LastIndex(jwh.Issue.Self, "/rest/api")
 	if pos < 0 {
 		return ""
 	}
-	return fmt.Sprintf("[%s](%s%s)", title, jwh.Issue.Self[:pos], suffix)
+	return fmt.Sprintf("[%s](%s)", title, jwh.jiraLink(title, suffix))
 }
 
 func (jwh *JiraWebhook) mdIssueDescription() string {
@@ -57,6 +65,10 @@ func (jwh *JiraWebhook) mdSummaryLink() string {
 
 func (jwh *JiraWebhook) mdKeyLink() string {
 	return jwh.mdIssueType() + " " + jwh.mdJiraLink(jwh.Issue.Key, "/browse/"+jwh.Issue.Key)
+}
+
+func (jwh *JiraWebhook) keyLink() string {
+	return jwh.jiraLink(jwh.Issue.Key, "/browse/"+jwh.Issue.Key)
 }
 
 func (jwh *JiraWebhook) mdUser() string {

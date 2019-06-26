@@ -24,6 +24,7 @@ type webhook struct {
 	eventMask     uint64
 	headline      string
 	text          string
+	link          string
 	fields        []*model.SlackAttachmentField
 	notifications []webhookNotification
 }
@@ -46,10 +47,6 @@ func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model
 	post := &model.Post{
 		ChannelId: channelId,
 		UserId:    fromUserId,
-		// Props: map[string]interface{}{
-		// 	"from_webhook":  "true",
-		// 	"use_user_icon": "true",
-		// },
 	}
 	if wh.text != "" || len(wh.fields) != 0 {
 		model.ParseSlackAttachment(post, []*model.SlackAttachment{
@@ -64,6 +61,11 @@ func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model
 		})
 	} else {
 		post.Message = wh.headline
+	}
+
+	err := permissionsRestrictPost(post, wh.Issue.Key, wh.link)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
 	}
 
 	_, appErr := p.API.CreatePost(post)
@@ -100,6 +102,7 @@ func newWebhook(jwh *JiraWebhook, eventMask uint64, format string, args ...inter
 		JiraWebhook: jwh,
 		eventMask:   eventMask,
 		headline:    jwh.mdUser() + " " + fmt.Sprintf(format, args...) + " " + jwh.mdKeyLink(),
+		link:        jwh.keyLink(),
 	}
 }
 

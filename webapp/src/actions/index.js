@@ -166,6 +166,7 @@ export const fetchChannelSubscriptions = (channelId) => {
         return {data};
     };
 };
+
 export function getSettings(getState) {
     let data;
     const baseUrl = getPluginServerRoute(getState());
@@ -268,3 +269,45 @@ export function sendEphemeralPost(store, message, channelId) {
         channelId,
     });
 }
+
+export const checkPermissionsForIssue = (issueKey) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        try {
+            const data = await doFetch(`${baseUrl}/api/v2/permission-for-issue?issue-key=${issueKey}`, {
+                method: 'get',
+            });
+            return data.permission;
+        } catch (error) {
+            return false;
+        }
+    };
+};
+
+export const removePermissionsBlockFromPost = (post) => {
+    return async (dispatch) => {
+        const origProps = JSON.parse(post.props.orig_props);
+        let origType = '';
+        const metadata = {};
+        if (origProps && origProps.attachments) {
+            origType = 'slack_attachment';
+            metadata.embeds = [{type: 'message_attachment'}];
+        }
+        const newPost = {
+            ...post,
+            type: origType,
+            update_at: Date.now(),
+            message: post.props.orig_message,
+            props: {
+                ...post.props,
+                ...origProps,
+            },
+            metadata,
+        };
+
+        dispatch({
+            type: PostTypes.RECEIVED_POST,
+            data: newPost,
+        });
+    };
+};

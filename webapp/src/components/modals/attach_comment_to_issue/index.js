@@ -7,7 +7,7 @@ import {bindActionCreators} from 'redux';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {closeAttachCommentToIssueModal, attachCommentToIssue} from 'actions';
+import {closeAttachCommentToIssueModal, attachCommentToIssue} from '../../../actions';
 import {isAttachCommentToIssueModalVisible, getAttachCommentToIssueModalForPostId} from 'selectors';
 
 import AttachCommentToIssue from './attach_comment_to_issue';

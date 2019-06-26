@@ -25,6 +25,7 @@ const (
 	routeAPISubscribeWebhook       = "/api/v2/webhook"
 	routeAPISubscriptionsChannel   = "/api/v2/subscriptions/channel"
 	routeAPISettingsInfo           = "/api/v2/settingsinfo"
+	routeAPIGetPermissionForIssue  = "/api/v2/permission-for-issue"
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"
 	routeACUninstalled             = "/ac/uninstalled"
@@ -67,6 +68,8 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 		return withInstance(p.currentInstanceStore, w, r, httpAPIGetSearchIssues)
 	case routeAPIAttachCommentToIssue:
 		return withInstance(p.currentInstanceStore, w, r, httpAPIAttachCommentToIssue)
+	case routeAPIGetPermissionForIssue:
+		return withInstance(p.currentInstanceStore, w, r, httpAPIGetPermissionForIssue)
 
 	// User APIs
 	case routeAPIUserInfo:

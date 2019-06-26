@@ -16,6 +16,7 @@ import PluginId from 'plugin_id';
 import reducers from './reducers';
 import {handleConnectChange, getConnected, openChannelSettings, handleInstanceStatusChange, getSettings} from './actions';
 import Hooks from './hooks/hooks';
+import PostTypeRestrictedPermissions from './components/post_type_permissions_restricted';
 
 export let setupUI;
 
@@ -43,6 +44,8 @@ const setupUILater = (registry, store) => async () => {
 
         const hooks = new Hooks(store);
         registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);
+
+        registry.registerPostTypeComponent('custom_jira_restricted', PostTypeRestrictedPermissions);
     } catch (err) {
         throw err;
     } finally {
