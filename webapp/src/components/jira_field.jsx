@@ -4,61 +4,77 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import {components} from 'react-select';
+
 import ReactSelectSetting from 'components/react_select_setting';
 import Input from 'components/input';
 
 export default class JiraField extends React.Component {
     static propTypes = {
-        id: PropTypes.object.isRequired,
+        id: PropTypes.string.isRequired,
         field: PropTypes.object.isRequired,
         obeyRequired: PropTypes.bool,
         onChange: PropTypes.func.isRequired,
         value: PropTypes.any,
         isFilter: PropTypes.bool,
         theme: PropTypes.object.isRequired,
+        addValidate: PropTypes.func.isRequired,
+        removeValidate: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
         obeyRequired: true,
     };
 
-    // Creates an option for react-select from an allowedValue from the jira field metadata
-    // includes both .value and .name because allowedValue test cases have used .value or .name
-    // and are mutually exclusive.
-    // should wrap this with some if else logic
-    makeReactSelectValue = (allowedValue) => {
-        const iconLabel = (
-            <React.Fragment>
+    static IconOption = (props) => {
+        let img = null;
+        if (props.data.allowedValue.iconUrl) {
+            img = (
                 <img
                     style={getStyle().jiraIcon}
-                    src={allowedValue.iconUrl}
+                    src={props.data.allowedValue.iconUrl}
                 />
-                {allowedValue.value}
-                {allowedValue.name}
-            </React.Fragment>
-        );
+            );
+        }
         return (
-            {value: allowedValue.id, label: iconLabel}
+            <components.Option
+                {...props}
+                style={getStyle().selectComponent}
+            >
+                {img}
+                {props.data.label}
+            </components.Option>
+        );
+    };
+
+    constructor(props) {
+        super(props);
+
+        this.ref = React.createRef();
+    }
+
+    componentDidMount() {
+        this.props.addValidate(this.props.id, this.ref);
+    }
+
+    componentWillUnmount() {
+        this.props.removeValidate(this.props.id);
+    }
+
+    makeReactSelectValue = (allowedValue) => {
+        const label = allowedValue.name ? allowedValue.name : allowedValue.value;
+        return (
+            {value: allowedValue.id, label, allowedValue}
         );
     };
 
     renderCreateFields() {
         const field = this.props.field;
 
-        // only allow these custom types until handle further types
-        if (field.schema.custom &&
-              (field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:textarea' &&
-               field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:textfield' &&
-               field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:select' &&
-               field.schema.custom !== 'com.pyxis.greenhopper.jira:gh-epic-label' &&
-               field.schema.custom !== 'com.atlassian.jira.plugin.system.customfieldtypes:project')
-        ) {
-            return null;
-        }
-
         if (field.schema.system === 'description') {
             return (
                 <Input
+                    ref={this.ref}
                     key={this.props.id}
                     id={this.props.id}
                     label={field.name}
@@ -74,6 +90,7 @@ export default class JiraField extends React.Component {
         if (field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:textarea') {
             return (
                 <Input
+                    ref={this.ref}
                     key={this.props.id}
                     id={this.props.id}
                     label={field.name}
@@ -88,6 +105,7 @@ export default class JiraField extends React.Component {
         if (field.schema.type === 'string') {
             return (
                 <Input
+                    ref={this.ref}
                     key={this.props.id}
                     id={this.props.id}
                     label={field.name}
@@ -105,6 +123,7 @@ export default class JiraField extends React.Component {
 
             return (
                 <ReactSelectSetting
+                    ref={this.ref}
                     key={this.props.id}
                     name={this.props.id}
                     label={field.name}
@@ -112,9 +131,10 @@ export default class JiraField extends React.Component {
                     required={this.props.obeyRequired && field.required}
                     onChange={(id, val) => this.props.onChange(id, {id: val})}
                     isMulti={false}
-                    value={options.find((option) => option.value === this.props.value)}
+                    value={options.find((option) => option.value === (this.props.value && this.props.value.id))}
                     theme={this.props.theme}
                     isClearable={true}
+                    components={{Option: JiraField.IconOption}}
                 />
             );
         }

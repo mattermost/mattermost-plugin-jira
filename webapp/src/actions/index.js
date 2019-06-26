@@ -1,6 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {PostTypes} from 'mattermost-redux/action_types';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
+
 import ActionTypes from 'action_types';
 import {doFetch} from 'client';
 import {getPluginServerRoute} from 'selectors';
@@ -242,4 +245,26 @@ export function handleInstanceStatusChange(store) {
             data: msg.data,
         });
     };
+}
+
+export function sendEphemeralPost(store, message, channelId) {
+    const timestamp = Date.now();
+    const post = {
+        id: 'jiraPlugin' + Date.now(),
+        user_id: store.getState().entities.users.currentUserId,
+        channel_id: channelId || getCurrentChannelId(store.getState()),
+        message,
+        type: 'system_ephemeral',
+        create_at: timestamp,
+        update_at: timestamp,
+        root_id: '',
+        parent_id: '',
+        props: {},
+    };
+
+    store.dispatch({
+        type: PostTypes.RECEIVED_NEW_POST,
+        data: post,
+        channelId,
+    });
 }

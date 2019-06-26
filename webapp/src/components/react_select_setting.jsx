@@ -16,7 +16,21 @@ export default class ReactSelectSetting extends React.PureComponent {
         onChange: PropTypes.func,
         theme: PropTypes.object.isRequired,
         isClearable: PropTypes.bool,
+        value: PropTypes.object,
+        required: PropTypes.bool,
     };
+
+    constructor(props) {
+        super(props);
+
+        this.state = {invalid: false};
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+        if (prevState.invalid && (this.props.value && this.props.value.value) !== (prevProps.value && prevProps.value.value)) {
+            this.setState({invalid: false}); //eslint-disable-line react/no-did-update-set-state
+        }
+    }
 
     handleChange = (value) => {
         if (this.props.onChange) {
@@ -29,7 +43,26 @@ export default class ReactSelectSetting extends React.PureComponent {
         }
     };
 
+    isValid = () => {
+        if (!this.props.required) {
+            return true;
+        }
+        const valid = Boolean(this.props.value);
+        this.setState({invalid: !valid});
+        return valid;
+    };
+
     render() {
+        const requiredMsg = 'This field is required.';
+        let validationError = null;
+        if (this.props.required && this.state.invalid) {
+            validationError = (
+                <p className='help-text error-text'>
+                    <span>{requiredMsg}</span>
+                </p>
+            );
+        }
+
         return (
             <Setting
                 inputId={this.props.name}
@@ -42,6 +75,7 @@ export default class ReactSelectSetting extends React.PureComponent {
                     onChange={this.handleChange}
                     styles={getStyleForReactSelect(this.props.theme)}
                 />
+                {validationError}
             </Setting>
         );
     }
