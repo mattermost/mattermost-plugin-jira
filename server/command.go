@@ -52,8 +52,9 @@ var jiraCommandHandler = CommandHandler{
 		"uninstall/cloud":  executeUninstallCloud,
 		"uninstall/server": executeUninstallServer,
 		"webhook":          executeWebhookURL,
+		"help":             commandHelp,
 		//"webhook/url":    executeWebhookURL,
-		//"list":        executeList,
+		//"list": executeList,
 		//"instance/select":     executeInstanceSelect,
 		//"instance/delete":     executeInstanceDelete,
 	},
@@ -108,7 +109,7 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
-		return p.responsef(header, "Failed to load current Jira instance: %v", err)
+		return p.responsef(header, "Failed to load current Jira instance. Please contact your system administrator.")
 	}
 
 	jiraUser, err := p.userStore.LoadJIRAUser(ji, header.UserId)
@@ -131,7 +132,7 @@ func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
-		return p.responsef(header, "Failed to load current Jira instance: %v. Please contact your system administrator.", err)
+		return p.responsef(header, "Failed to load current Jira instance. Please contact your system administrator.")
 	}
 
 	mattermostUserId := header.UserId
@@ -165,7 +166,7 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
-		return p.responsef(header, "Failed to load current Jira instance: %v. Please contact your system administrator.", err)
+		return p.responsef(header, "Failed to load current Jira instance. Please contact your system administrator.")
 	}
 
 	mattermostUserId := header.UserId
