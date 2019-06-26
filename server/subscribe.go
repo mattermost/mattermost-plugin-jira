@@ -94,14 +94,8 @@ func SubscriptionsFromJson(bytes []byte) (*Subscriptions, error) {
 	return subs, nil
 }
 
-func (p *Plugin) getUserID() (string, error) {
-	cfg := p.getConfig()
-	user, appErr := p.API.GetUserByUsername(cfg.UserName)
-	if appErr != nil {
-		return "", fmt.Errorf(appErr.Message)
-	}
-
-	return user.Id, nil
+func (p *Plugin) getUserID() string {
+	return p.getConfig().botUserID
 }
 
 func (p *Plugin) getChannelsSubscribed(jwh *JiraWebhook) ([]string, error) {
@@ -314,8 +308,8 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
 	}
 	cfg := p.getConfig()
-	if cfg.Secret == "" || cfg.UserName == "" {
-		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret and UserName")
+	if cfg.Secret == "" {
+		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret")
 	}
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
@@ -331,15 +325,12 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, err
 	}
 
-	botUserId, err := p.getUserID()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
 	channelIds, err := p.getChannelsSubscribed(jwh)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
+
+	botUserId := p.getUserID()
 
 	for _, channelId := range channelIds {
 		if _, status, err1 := wh.PostToChannel(p, channelId, botUserId); err1 != nil {

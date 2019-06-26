@@ -271,7 +271,6 @@ func TestSubscribe(t *testing.T) {
 
 			p.updateConfig(func(conf *config) {
 				conf.Secret = "somesecret"
-				conf.UserName = "someuser"
 			})
 			p.SetAPI(api)
 
@@ -388,7 +387,6 @@ func TestDeleteSubscription(t *testing.T) {
 
 			p.updateConfig(func(conf *config) {
 				conf.Secret = "somesecret"
-				conf.UserName = "someuser"
 			})
 			p.SetAPI(api)
 
@@ -509,7 +507,6 @@ func TestEditSubscription(t *testing.T) {
 
 			p.updateConfig(func(conf *config) {
 				conf.Secret = "somesecret"
-				conf.UserName = "someuser"
 			})
 			p.SetAPI(api)
 
@@ -693,7 +690,6 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 
 			p.updateConfig(func(conf *config) {
 				conf.Secret = "somesecret"
-				conf.UserName = "someuser"
 			})
 			p.SetAPI(api)
 

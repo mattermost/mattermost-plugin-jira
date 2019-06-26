@@ -17,12 +17,6 @@
     "header": "",
     "settings": [
       {
-        "key": "UserName",
-        "display_name": "User",
-        "type": "username",
-        "help_text": "Select the username that this integration is attached to."
-      },
-      {
         "key": "EnableJiraUI",
         "display_name": "Allow users to attach and create Jira issues in Mattermost",
         "type": "bool",

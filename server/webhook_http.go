@@ -76,8 +76,8 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
 	}
 	cfg := p.getConfig()
-	if cfg.Secret == "" || cfg.UserName == "" {
-		return http.StatusForbidden, fmt.Errorf("Jira plugin not configured correctly; must provide Secret and UserName")
+	if cfg.Secret == "" {
+		return http.StatusForbidden, fmt.Errorf("Jira plugin not configured correctly; must provide Secret")
 	}
 	secret := r.FormValue("secret")
 	// secret may be URL-escaped, potentially mroe than once. Loop until there
@@ -112,10 +112,6 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		eventMask = eventMask | paramMask
 	}
 
-	botUser, appErr := p.API.GetUserByUsername(cfg.UserName)
-	if appErr != nil {
-		return appErr.StatusCode, appErr
-	}
 	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelName, false)
 	if appErr != nil {
 		return appErr.StatusCode, appErr
@@ -141,7 +137,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 	}
 
 	// Post the event to the subscribed channel
-	_, statusCode, err := wh.PostToChannel(p, channel.Id, botUser.Id)
+	_, statusCode, err := wh.PostToChannel(p, channel.Id, p.getUserID())
 	if err != nil {
 		return statusCode, err
 	}
