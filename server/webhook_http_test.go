@@ -115,6 +115,10 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:          testWebhookRequest("webhook-issue-updated-assigned.json"),
 			ExpectedHeadline: "Test User assigned Test User to story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
 		},
+		"issue assigned on server": {
+			Request:          testWebhookRequest("webhook-issue-updated-assigned-on-server.json"),
+			ExpectedHeadline: "Test User assigned Test User to improvement [PRJA-37](http://some-instance-test.centralus.cloudapp.azure.com:8080/browse/PRJA-37)",
+		},
 		"issue attachments": {
 			Request:          testWebhookRequest("webhook-issue-updated-attachments.json"),
 			ExpectedHeadline: "Test User attached [test.gif] to, removed attachments [test.json] from story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
