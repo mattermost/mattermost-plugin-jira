@@ -19,20 +19,20 @@ const mapStateToProps = (state) => {
         channel = getChannel(state, channelId);
     }
 
-    const jiraMetadata = getJiraIssueMetadata(state);
+    const jiraIssueMetadata = getJiraIssueMetadata(state);
 
     const channelSubscriptions = getChannelSubscriptions(state)[channelId];
 
     return {
         channelSubscriptions,
         channel,
-        jiraMetadata,
+        jiraIssueMetadata,
     };
 };
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
     close: closeChannelSettings,
-    getMetadata: fetchJiraIssueMetadata,
+    fetchJiraIssueMetadata,
     createChannelSubscription,
     fetchChannelSubscriptions,
     deleteChannelSubscription,

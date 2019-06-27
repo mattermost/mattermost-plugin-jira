@@ -16,7 +16,10 @@ export default class ReactSelectSetting extends React.PureComponent {
         onChange: PropTypes.func,
         theme: PropTypes.object.isRequired,
         isClearable: PropTypes.bool,
-        value: PropTypes.object,
+        value: PropTypes.oneOfType([
+            PropTypes.object,
+            PropTypes.array,
+        ]),
         required: PropTypes.bool,
     };
 

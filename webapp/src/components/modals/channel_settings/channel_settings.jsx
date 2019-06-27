@@ -14,13 +14,13 @@ export default class ChannelSettingsModal extends PureComponent {
         close: PropTypes.func.isRequired,
         channel: PropTypes.object,
         channelSubscriptions: PropTypes.Array,
-        jiraMetadata: PropTypes.object,
-        getMetadata: PropTypes.func.isRequired,
+        jiraIssueMetadata: PropTypes.object,
+        fetchJiraIssueMetadata: PropTypes.func.isRequired,
         fetchChannelSubscriptions: PropTypes.func.isRequired,
     }
     componentDidUpdate(prevProps) {
         if (this.props.channel && (!prevProps.channel || this.props.channel.id !== prevProps.channel.id)) {
-            this.props.getMetadata();
+            this.props.fetchJiraIssueMetadata();
             this.props.fetchChannelSubscriptions(this.props.channel.id);
         }
     }
@@ -32,7 +32,7 @@ export default class ChannelSettingsModal extends PureComponent {
     };
     render() {
         let inner = <Loading/>;
-        if (this.props.channelSubscriptions && this.props.jiraMetadata) {
+        if (this.props.channelSubscriptions && this.props.jiraIssueMetadata) {
             inner = (
                 <ChannelSettingsModalInner
                     {...this.props}
