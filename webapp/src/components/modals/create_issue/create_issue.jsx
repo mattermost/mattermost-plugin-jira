@@ -35,6 +35,8 @@ export default class CreateIssueModal extends PureComponent {
         close: PropTypes.func.isRequired,
         create: PropTypes.func.isRequired,
         post: PropTypes.object,
+        description: PropTypes.string,
+        channelId: PropTypes.string,
         currentTeam: PropTypes.object.isRequired,
         theme: PropTypes.object.isRequired,
         visible: PropTypes.bool.isRequired,
@@ -72,6 +74,11 @@ export default class CreateIssueModal extends PureComponent {
             });
             const fields = {...this.state.fields};
             fields.description = this.props.post.message;
+            this.setState({fields}); //eslint-disable-line react/no-did-update-set-state
+        } else if (this.props.channelId && (this.props.channelId !== prevProps.channelId || this.props.description !== prevProps.description)) {
+            this.props.fetchJiraIssueMetadata();
+            const fields = {...this.state.fields};
+            fields.description = this.props.description;
             this.setState({fields}); //eslint-disable-line react/no-did-update-set-state
         }
     }
@@ -122,6 +129,9 @@ export default class CreateIssueModal extends PureComponent {
             e.preventDefault();
         }
 
+        const {post, channelId} = this.props;
+        const postId = (post) ? post.id : '';
+
         if (!this.validator.validate()) {
             return;
         }
@@ -129,9 +139,10 @@ export default class CreateIssueModal extends PureComponent {
         const requiredFieldsNotCovered = this.getFieldsNotCovered();
 
         const issue = {
-            post_id: this.props.post.id,
+            post_id: postId,
             current_team: this.props.currentTeam.name,
             fields: this.state.fields,
+            channel_id: channelId,
             required_fields_not_covered: requiredFieldsNotCovered,
         };
 
