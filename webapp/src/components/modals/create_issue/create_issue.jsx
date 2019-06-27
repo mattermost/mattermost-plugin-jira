@@ -110,8 +110,8 @@ export default class CreateIssueModal extends PureComponent {
                     (myfields[key].schema.custom && !this.allowedSchemaCustom.includes(myfields[key].schema.custom))
                 ) {
                     if (!fieldsNotCovered.includes(key)) {
-                        // fieldsNotCovered.push([key, myfields[key].name]);
-                        fieldsNotCovered.push(myfields[key].name);
+                        // Send down the key and the localized name.
+                        fieldsNotCovered.push([key, myfields[key].name]);
                     }
                 }
             }

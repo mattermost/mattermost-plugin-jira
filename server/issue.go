@@ -26,7 +26,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	api := ji.GetPlugin().API
 
 	create := &struct {
-		RequiredFieldsNotCovered []string         `json:"required_fields_not_covered"`
+		RequiredFieldsNotCovered [][]string       `json:"required_fields_not_covered"`
 		PostId                   string           `json:"post_id"`
 		CurrentTeam              string           `json:"current_team"`
 		ChannelId                string           `json:"channel_id"`
@@ -94,8 +94,8 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	}
 
 	for i, notCovered := range create.RequiredFieldsNotCovered {
-
-		if strings.ToLower(notCovered) == "reporter" {
+		// First position in the slice is the key value (shouldn't change, regardless of localization)
+		if strings.ToLower(notCovered[0]) == "reporter" {
 			requiredFieldsNotCovered := create.RequiredFieldsNotCovered[:i]
 			if i+1 < len(create.RequiredFieldsNotCovered) {
 				requiredFieldsNotCovered = append(requiredFieldsNotCovered,
@@ -130,7 +130,8 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 
 		var fieldsString string
 		for _, v := range create.RequiredFieldsNotCovered {
-			fieldsString = fieldsString + fmt.Sprintf("- %+v\n", v)
+			// Second position in the slice is the localized name of that key.
+			fieldsString = fieldsString + fmt.Sprintf("- %+v\n", v[1])
 		}
 
 		reply := &model.Post{
