@@ -5,7 +5,7 @@ import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 
 import debounce from 'debounce-promise';
-import AsyncSelect from 'react-select/lib/Async';
+import AsyncSelect from 'react-select/async';
 
 import {getStyleForReactSelect} from 'utils/styles';
 import {doFetchWithResponse} from 'client';
