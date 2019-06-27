@@ -21,13 +21,24 @@ workflows:
       - plugin-ci/deploy-ci:
           filters:
             branches:
-              only: jira2
+              only: master
           context: plugin-ci
           requires:
             - plugin-ci/lint
             - plugin-ci/test
             - plugin-ci/build
       - plugin-ci/deploy-release:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+          context: plugin-ci
+          requires:
+            - plugin-ci/lint
+            - plugin-ci/test
+            - plugin-ci/build
+      - plugin-ci/deploy-release-github:
           filters:
             tags:
               only: /^v.*/
