@@ -42,12 +42,6 @@ const (
 )
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	config := p.getConfig()
-	if config.UserName == "" {
-		http.Error(w, "Jira plugin not configured correctly; must provide UserName", http.StatusForbidden)
-		return
-	}
-
 	status, err := handleHTTPRequest(p, w, r)
 	if err != nil {
 		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())

@@ -6,11 +6,14 @@ package main
 import (
 	"crypto/rsa"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"strings"
 	"sync"
 	"text/template"
 	"time"
+
+	"github.com/mattermost/mattermost-server/model"
 
 	"github.com/pkg/errors"
 
@@ -18,14 +21,12 @@ import (
 )
 
 const (
-	PluginMattermostUsername = "Jira Plugin"
-	PluginIconURL            = "https://s3.amazonaws.com/mattermost-plugin-media/jira.jpg"
+	botUserName    = "jira"
+	botDisplayName = "Jira"
+	botDescription = "Created by the Jira Plugin."
 )
 
 type externalConfig struct {
-	// Bot username
-	UserName string `json:"username"`
-
 	// Setting to turn on/off the webapp components of this plugin
 	EnableJiraUI bool `json:"enablejiraui"`
 
@@ -39,7 +40,7 @@ type config struct {
 	// externalConfig caches values from the plugin's settings in the server's config.json
 	externalConfig
 
-	// Cached actual bot user ID (derived from c.UserName)
+	// user ID of the bot account
 	botUserID string
 
 	// Cached current Jira instance. A non-0 expires indicates the presence
@@ -100,10 +101,31 @@ func (p *Plugin) OnConfigurationChange() error {
 }
 
 func (p *Plugin) OnActivate() error {
-	conf := p.getConfig()
-	user, appErr := p.API.GetUserByUsername(conf.UserName)
-	if appErr != nil {
-		return errors.WithMessage(appErr, fmt.Sprintf("OnActivate: unable to find user: %s", conf.UserName))
+	botUserID, err := p.Helpers.EnsureBot(&model.Bot{
+		Username:    botUserName,
+		DisplayName: botDisplayName,
+		Description: botDescription,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure bot account")
+	}
+
+	p.updateConfig(func(conf *config) {
+		conf.botUserID = botUserID
+	})
+
+	bundlePath, err := p.API.GetBundlePath()
+	if err != nil {
+		return errors.Wrap(err, "couldn't get bundle path")
+	}
+
+	profileImage, err := ioutil.ReadFile(filepath.Join(bundlePath, "assets", "profile.png"))
+	if err != nil {
+		return errors.Wrap(err, "couldn't read profile image")
+	}
+
+	if appErr := p.API.SetProfileImage(botUserID, profileImage); appErr != nil {
+		return errors.Wrap(appErr, "couldn't set profile image")
 	}
 
 	store := NewStore(p)
@@ -114,16 +136,11 @@ func (p *Plugin) OnActivate() error {
 	p.otsStore = store
 	p.cacheStore = store
 
-	dir := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
-	templates, err := p.loadTemplates(dir)
+	templates, err := p.loadTemplates(filepath.Join(bundlePath, "server", "dist", "templates"))
 	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to load templates")
 	}
 	p.templates = templates
-
-	conf = p.updateConfig(func(conf *config) {
-		conf.botUserID = user.Id
-	})
 
 	err = p.API.RegisterCommand(getCommand())
 	if err != nil {

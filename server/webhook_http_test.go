@@ -209,7 +209,6 @@ func TestWebhookHTTP(t *testing.T) {
 			p := Plugin{}
 			p.updateConfig(func(conf *config) {
 				conf.Secret = validConfiguration.Secret
-				conf.UserName = validConfiguration.UserName
 			})
 			p.SetAPI(api)
 			p.currentInstanceStore = mockCurrentInstanceStore{&p}
