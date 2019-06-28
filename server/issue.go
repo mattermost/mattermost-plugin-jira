@@ -512,29 +512,33 @@ func httpAPIGetPermissionForIssue(ji Instance, w http.ResponseWriter, r *http.Re
 	}
 
 	_, resp, err := jiraClient.Issue.Get(issueKey, &jira.GetQueryOptions{Fields: "[]"})
-	if err != nil {
-		if resp != nil {
-			if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusUnauthorized {
-				// These are the two status codes indicating either bad credentials or no permissions to view the issue.
-				// Cache this result for the future
-				_ = ji.GetPlugin().cacheStore.SetForInstanceForUser(ji, mattermostUserId, issueKey, &permission)
-				w.Write([]byte("{\"permission\": false}"))
-				// Returning a 404 because this matches what Jira returns for lack of permissions to view the issue
-				return http.StatusNotFound, nil
-			}
-			// return more detail for an exceptional error case
-			bb, _ := ioutil.ReadAll(resp.Body)
-			_ = resp.Body.Close()
-			w.Write([]byte("{\"permission\": false}"))
-			return http.StatusInternalServerError, errors.Wrap(err, "request to Jira failed, details: "+string(bb))
-		}
+	if err == nil {
+		// User has permission to view. Cache this result for the future
+		permission = true
+		_ = ji.GetPlugin().cacheStore.SetForInstanceForUser(ji, mattermostUserId, issueKey, &permission)
+		w.Write([]byte("{\"permission\": true}"))
+		return http.StatusOK, nil
 	}
 
-	// User has permission to view. Cache this result for the future
-	permission = true
-	_ = ji.GetPlugin().cacheStore.SetForInstanceForUser(ji, mattermostUserId, issueKey, &permission)
-	w.Write([]byte("{\"permission\": true}"))
-	return http.StatusOK, nil
+	// Default to user does not have permissions to view
+	w.Write([]byte("{\"permission\": false}"))
+
+	if resp != nil {
+		if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusUnauthorized {
+			// These are the two status codes indicating either bad credentials or no permissions to view the issue.
+			// Cache this result for the future
+			_ = ji.GetPlugin().cacheStore.SetForInstanceForUser(ji, mattermostUserId, issueKey, &permission)
+			// Returning a 404 because this matches what Jira returns for lack of permissions to view the issue
+			return http.StatusNotFound, nil
+		}
+		// return more detail for an exceptional error case
+		bb, _ := ioutil.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		return http.StatusInternalServerError, errors.Wrap(err, "request to Jira failed, details: "+string(bb))
+	}
+
+	// Errored, but no response body.
+	return http.StatusInternalServerError, errors.Wrap(err, "request to Jira failed, no details")
 }
 
 func buildCreateQuery(ji Instance, project *jira.Project, issue *jira.Issue) *http.Request {
