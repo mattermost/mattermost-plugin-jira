@@ -87,6 +87,8 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 			return parseWebhookUpdatedAttachments(jwh, from, to)
 		case field == "labels":
 			return parseWebhookUpdatedLabels(jwh, from, to)
+		case field == "assignee":
+			return parseWebhookAssigned(jwh)
 		}
 	}
 	return nil
