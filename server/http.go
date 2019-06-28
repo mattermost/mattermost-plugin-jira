@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -18,7 +19,10 @@ import (
 const (
 	routeAPICreateIssue            = "/api/v2/create-issue"
 	routeAPIGetCreateIssueMetadata = "/api/v2/get-create-issue-metadata"
+	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
 	routeAPIUserInfo               = "/api/v2/userinfo"
+	routeAPISubscribeWebhook       = "/api/v2/webhook"
+	routeAPISubscriptionsChannel   = "/api/v2/subscriptions/channel"
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"
 	routeACUninstalled             = "/ac/uninstalled"
@@ -57,6 +61,8 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 		return withInstance(p, w, r, httpAPICreateIssue)
 	case routeAPIGetCreateIssueMetadata:
 		return withInstance(p, w, r, httpAPIGetCreateIssueMetadata)
+	case routeAPIAttachCommentToIssue:
+		return withInstance(p, w, r, httpAPIAttachCommentToIssue)
 
 	// User APIs
 	case routeAPIUserInfo:
@@ -93,6 +99,14 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 		return withInstance(p, w, r, httpUserConnect)
 	case routeUserDisconnect:
 		return withInstance(p, w, r, httpUserDisconnect)
+
+	// Firehose webhook setup for channel subscriptions
+	case routeAPISubscribeWebhook:
+		return httpSubscribeWebhook(p, w, r)
+	}
+
+	if strings.HasPrefix(r.URL.Path, routeAPISubscriptionsChannel) {
+		return httpChannelSubscriptions(p, w, r)
 	}
 
 	return http.StatusNotFound, errors.New("not found")

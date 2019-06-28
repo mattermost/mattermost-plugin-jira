@@ -20,6 +20,21 @@ export const closeCreateModal = () => {
     };
 };
 
+export const openAttachCommentToIssueModal = (postId) => {
+    return {
+        type: ActionTypes.OPEN_ATTACH_COMMENT_TO_ISSUE_MODAL,
+        data: {
+            postId,
+        },
+    };
+};
+
+export const closeAttachCommentToIssueModal = () => {
+    return {
+        type: ActionTypes.CLOSE_ATTACH_COMMENT_TO_ISSUE_MODAL,
+    };
+};
+
 export const fetchJiraIssueMetadata = () => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
@@ -56,6 +71,90 @@ export const createIssue = (payload) => {
         }
     };
 };
+export const attachCommentToIssue = (payload) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        try {
+            const data = await doFetch(`${baseUrl}/api/v2/attach-comment-to-issue`, {
+                method: 'post',
+                body: JSON.stringify(payload),
+            });
+
+            return {data};
+        } catch (error) {
+            return {error};
+        }
+    };
+};
+
+export const createChannelSubscription = (subscription) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        try {
+            const data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel`, {
+                method: 'post',
+                body: JSON.stringify(subscription),
+            });
+
+            return {data};
+        } catch (error) {
+            return {error};
+        }
+    };
+};
+
+export const editChannelSubscription = (subscription) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        try {
+            const data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel`, {
+                method: 'put',
+                body: JSON.stringify(subscription),
+            });
+
+            return {data};
+        } catch (error) {
+            return {error};
+        }
+    };
+};
+
+export const deleteChannelSubscription = (subscriptionId) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        try {
+            const data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel/${subscriptionId}`, {
+                method: 'delete',
+            });
+
+            return {data};
+        } catch (error) {
+            return {error};
+        }
+    };
+};
+
+export const fetchChannelSubscriptions = (channelId) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        let data = null;
+        try {
+            data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel/${channelId}`, {
+                method: 'get',
+            });
+        } catch (error) {
+            return {error};
+        }
+
+        dispatch({
+            type: ActionTypes.RECEIVED_CHANNEL_SUBSCRIPTIONS,
+            channelId,
+            data,
+        });
+
+        return {data};
+    };
+};
 
 export function getConnected() {
     return async (dispatch, getState) => {
@@ -90,3 +189,18 @@ export function handleConnectChange(store) {
         });
     };
 }
+
+export const openChannelSettings = (channelId) => {
+    return {
+        type: ActionTypes.OPEN_CHANNEL_SETTINGS,
+        data: {
+            channelId,
+        },
+    };
+};
+
+export const closeChannelSettings = () => {
+    return {
+        type: ActionTypes.CLOSE_CHANNEL_SETTINGS,
+    };
+};

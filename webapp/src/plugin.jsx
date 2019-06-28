@@ -1,13 +1,19 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import JiraIcon from 'components/icon';
+
 import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue';
 import CreateIssueModal from 'components/modals/create_issue';
+import ChannelSettingsModal from 'components/modals/channel_settings';
+
+import AttachCommentToIssuePostMenuAction from 'components/post_menu_actions/attach_comment_to_issue';
+import AttachCommentToIssueModal from 'components/modals/attach_comment_to_issue';
 
 import PluginId from 'plugin_id';
 
 import reducers from './reducers';
-import {handleConnectChange, getConnected} from './actions';
+import {handleConnectChange, getConnected, openChannelSettings} from './actions';
 
 export default class Plugin {
     async initialize(registry, store) {
@@ -17,7 +23,15 @@ export default class Plugin {
             await getConnected()(store.dispatch, store.getState);
 
             registry.registerRootComponent(CreateIssueModal);
+            registry.registerRootComponent(ChannelSettingsModal);
             registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
+            registry.registerChannelHeaderButtonAction(
+                <JiraIcon/>,
+                (channel) => store.dispatch(openChannelSettings(channel.id)),
+                'JIRA',
+            );
+            registry.registerRootComponent(AttachCommentToIssueModal);
+            registry.registerPostDropdownMenuComponent(AttachCommentToIssuePostMenuAction);
         } catch (err) {
             throw err;
         } finally {

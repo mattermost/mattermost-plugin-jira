@@ -5,9 +5,8 @@ import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 
 import PluginId from 'plugin_id';
-import JiraIcon from 'components/icon';
 
-export default class CreateIssuePostMenuAction extends PureComponent {
+export default class AttachCommentToIssuePostMenuAction extends PureComponent {
     static propTypes = {
         isSystemMessage: PropTypes.bool,
         locale: PropTypes.string,
@@ -26,7 +25,7 @@ export default class CreateIssuePostMenuAction extends PureComponent {
         case 'es':
             return 'Crear incidencia en Jira';
         default:
-            return 'Create Jira Issue';
+            return 'Attach to Jira Issue';
         }
     };
 
@@ -54,7 +53,6 @@ export default class CreateIssuePostMenuAction extends PureComponent {
                     role='menuitem'
                     onClick={this.handleClick}
                 >
-                    <JiraIcon type='menu'/>
                     {this.getLocalizedTitle()}
                 </button>
             );
@@ -65,7 +63,6 @@ export default class CreateIssuePostMenuAction extends PureComponent {
                     role='menuitem'
                     onClick={this.connectClick}
                 >
-                    <JiraIcon type='menu'/>
                     {'Connect to Jira'}
                 </button>
             );
@@ -73,7 +70,6 @@ export default class CreateIssuePostMenuAction extends PureComponent {
 
         return (
             <li
-                className='MenuItem'
                 role='presentation'
             >
                 {content}
