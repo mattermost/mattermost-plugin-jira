@@ -41,6 +41,8 @@ func ParseWebhook(in io.Reader) (Webhook, *JiraWebhook, error) {
 			wh = parseWebhookAssigned(jwh)
 		case "issue_updated", "issue_generic":
 			wh = parseWebhookChangeLog(jwh)
+		case "issue_commented":
+			wh = parseWebhookCommentCreated(jwh)
 		}
 	case "comment_created":
 		wh = parseWebhookCommentCreated(jwh)
