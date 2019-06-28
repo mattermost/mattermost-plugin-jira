@@ -29,9 +29,10 @@ type webhook struct {
 }
 
 type webhookNotification struct {
-	jiraUsername string
-	message      string
-	postType     string
+	jiraUsername  string
+	jiraAccountID string
+	message       string
+	postType      string
 }
 
 func (wh *webhook) EventMask() uint64 {
@@ -80,15 +81,22 @@ func (wh *webhook) PostNotifications(p *Plugin, ji Instance) ([]*model.Post, int
 		return nil, http.StatusOK, nil
 	}
 	for _, notification := range wh.notifications {
-		mattermostUserId, err := p.userStore.LoadMattermostUserId(
-			ji, notification.jiraUsername)
+		var mattermostUserId string
+		var err error
+
+		if notification.jiraUsername != "" {
+			mattermostUserId, err = p.userStore.LoadMattermostUserId(ji, notification.jiraUsername)
+		} else {
+			mattermostUserId, err = p.userStore.LoadMattermostUserId(ji, notification.jiraAccountID)
+		}
 		if err != nil {
-			return nil, http.StatusOK, nil
+			continue
 		}
 
 		post, err := ji.GetPlugin().CreateBotDMPost(ji, mattermostUserId, notification.message, notification.postType)
 		if err != nil {
-			return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to create notification post")
+			p.errorf("PostNotifications: failed to create notification post, err: %v", err)
+			continue
 		}
 		posts = append(posts, post)
 	}

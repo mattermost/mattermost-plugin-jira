@@ -135,10 +135,12 @@ func parseWebhookDeleted(jwh *JiraWebhook) Webhook {
 }
 
 func parseWebhookCommentCreated(jwh *JiraWebhook) Webhook {
+	commentAuthor := mdUser(&jwh.Comment.UpdateAuthor)
+
 	wh := &webhook{
 		JiraWebhook: jwh,
 		eventMask:   eventCreatedComment,
-		headline:    fmt.Sprintf("%s commented on %s", mdUser(&jwh.Comment.UpdateAuthor), jwh.mdKeyLink()),
+		headline:    fmt.Sprintf("%s commented on %s", commentAuthor, jwh.mdKeyLink()),
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
 
@@ -161,15 +163,20 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) Webhook {
 		})
 	}
 
-	if jwh.Issue.Fields.Assignee == nil || jwh.Issue.Fields.Assignee.Name == jwh.User.Name {
+	// Don't send a notification to the assignee if they don't exist, or if are also the author.
+	// Jira Server uses name field, Jira Cloud uses the AccountID field.
+	if jwh.Issue.Fields.Assignee == nil || jwh.Issue.Fields.Assignee.Name == jwh.User.Name ||
+		(jwh.Issue.Fields.Assignee.AccountID != "" && jwh.Comment.UpdateAuthor.AccountID != "" && jwh.Issue.Fields.Assignee.AccountID == jwh.Comment.UpdateAuthor.AccountID) {
 		return wh
 	}
 
 	wh.notifications = append(wh.notifications, webhookNotification{
-		jiraUsername: jwh.Issue.Fields.Assignee.Name,
-		message:      fmt.Sprintf("%s commented on %s:\n>%s", jwh.mdUser(), jwh.mdKeyLink(), jwh.Comment.Body),
-		postType:     PostTypeComment,
+		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
+		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
+		message:       fmt.Sprintf("%s commented on %s:\n>%s", commentAuthor, jwh.mdKeyLink(), jwh.Comment.Body),
+		postType:      PostTypeComment,
 	})
+
 	return wh
 }
 
@@ -195,9 +202,17 @@ func parseWebhookAssigned(jwh *JiraWebhook) Webhook {
 	if jwh.Issue.Fields.Assignee == nil {
 		return wh
 	}
+
+	// Don't send a notification to the assignee if they are the one who made the change. (They probably know already.)
+	if (jwh.User.Name != "" && jwh.User.Name == jwh.Issue.Fields.Assignee.Name) ||
+		(jwh.User.AccountID != "" && jwh.Issue.Fields.Assignee.AccountID != "" && jwh.User.AccountID == jwh.Issue.Fields.Assignee.AccountID) {
+		return wh
+	}
+
 	wh.notifications = append(wh.notifications, webhookNotification{
-		jiraUsername: jwh.Issue.Fields.Assignee.Name,
-		message:      fmt.Sprintf("%s assigned you to %s", jwh.mdUser(), jwh.mdKeyLink()),
+		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
+		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
+		message:       fmt.Sprintf("%s assigned you to %s", jwh.mdUser(), jwh.mdKeyLink()),
 	})
 	return wh
 }

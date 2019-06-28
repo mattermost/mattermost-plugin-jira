@@ -383,6 +383,13 @@ func (store store) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser 
 		return err
 	}
 
+	// Also store AccountID -> mattermostUserID because Jira Cloud is deprecating the name field
+	// https://developer.atlassian.com/cloud/jira/platform/api-changes-for-user-privacy-announcement/
+	err = store.set(keyWithInstance(ji, jiraUser.AccountID), mattermostUserId)
+	if err != nil {
+		return err
+	}
+
 	store.plugin.debugf("Stored: Jira user, keys:\n\t%s (%s): %+v\n\t%s (%s): %s",
 		keyWithInstance(ji, mattermostUserId), mattermostUserId, jiraUser,
 		keyWithInstance(ji, jiraUser.Name), jiraUser.Name, mattermostUserId)
@@ -405,12 +412,12 @@ func (store store) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser,
 	return jiraUser, nil
 }
 
-func (store store) LoadMattermostUserId(ji Instance, jiraUserName string) (string, error) {
+func (store store) LoadMattermostUserId(ji Instance, jiraUserNameOrID string) (string, error) {
 	mattermostUserId := ""
-	err := store.get(keyWithInstance(ji, jiraUserName), &mattermostUserId)
+	err := store.get(keyWithInstance(ji, jiraUserNameOrID), &mattermostUserId)
 	if err != nil {
 		return "", errors.WithMessage(err,
-			"failed to load Mattermost user ID for Jira user: "+jiraUserName)
+			"failed to load Mattermost user ID for Jira user/ID: "+jiraUserNameOrID)
 	}
 	if len(mattermostUserId) == 0 {
 		return "", ErrUserNotFound

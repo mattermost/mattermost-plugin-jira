@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"path"
 
-	"github.com/andygrunwald/go-jira"
-	"github.com/dgrijalva/jwt-go"
+	jira "github.com/andygrunwald/go-jira"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -60,6 +60,8 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 	if !ok {
 		return http.StatusBadRequest, errors.New("invalid JWT: no user data")
 	}
+
+	accountId, _ := user["accountId"].(string)
 	userKey, _ := user["userKey"].(string)
 	username, _ := user["username"].(string)
 	displayName, _ := user["displayName"].(string)
@@ -67,8 +69,14 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 	mmToken := r.Form.Get(argMMToken)
 	uinfo := JIRAUser{
 		User: jira.User{
-			Key:  userKey,
-			Name: username,
+			AccountID:   accountId,
+			Key:         userKey,
+			Name:        username,
+			DisplayName: displayName,
+		},
+		// Set default settings the first time a user connects
+		Settings: &UserSettings{
+			Notifications: true,
 		},
 	}
 	mattermostUserId := r.Header.Get("Mattermost-User-ID")
