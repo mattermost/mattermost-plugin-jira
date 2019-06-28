@@ -541,12 +541,12 @@ func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issue
 }
 
 func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, error) {
-	ji, err := p.LoadCurrentJIRAInstance()
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
 		return "", err
 	}
 
-	jiraUser, err := ji.GetPlugin().LoadJIRAUser(ji, mmUserId)
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mmUserId)
 	if err != nil {
 		return "", err
 	}
@@ -554,6 +554,13 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 	jiraClient, err := ji.GetJIRAClient(jiraUser)
 	if err != nil {
 		return "", err
+	}
+
+	// required minimum of three letters in assignee value
+	minChars := 3
+	if len(assignee) < minChars {
+		errorMsg := fmt.Sprintf("`%s` contains less than %v characters.", assignee, minChars)
+		return errorMsg, nil
 	}
 
 	// check for valid issue key
@@ -585,8 +592,22 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 		return "", fmt.Errorf(errorMsg)
 	}
 
+	maxDisplayedUsers := 10
 	if len(jiraUsers) > 1 {
-		errorMsg := fmt.Sprintf("Your <assignee>, `%s`, matches %d users.  Please make your user request unique.", assignee, len(jiraUsers))
+
+		errorMsg := fmt.Sprintf("`%s` matches %d users.  Please make your user request unique.\n", assignee, len(jiraUsers))
+
+		if len(jiraUsers) > maxDisplayedUsers {
+			errorMsg += fmt.Sprintf("\nFirst %+v users listed:\n", maxDisplayedUsers)
+		}
+
+		for i, _ := range jiraUsers {
+			if i == maxDisplayedUsers {
+				break
+			}
+			errorMsg += fmt.Sprintf("* %+v\n", jiraUsers[i].DisplayName)
+		}
+
 		return "", fmt.Errorf(errorMsg)
 	}
 

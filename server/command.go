@@ -12,7 +12,8 @@ import (
 const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
 	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
-	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field.\n" +
+	"* `/jira assign <issue-key> <assignee>` - Change the assignee of a Jira issue\n" +
+	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field\n" +
 	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
 	"* `/jira view <issue-key>` or `/jira <issue-key>` - View a Jira issue\n" +
 	"* `/jira settings [setting] [value]` - Update your user settings\n" +
@@ -451,7 +452,7 @@ func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandA
 func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 
 	if len(args) != 2 {
-		return responsef("Please specify both an issue key and assignee in the form `/jira assign <issue-key> <assignee>`.")
+		return p.responsef(header, "Please specify both an issue key and assignee in the form `/jira assign <issue-key> <assignee>`.")
 	}
 
 	issueKey := args[0]
@@ -459,10 +460,10 @@ func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args
 
 	msg, err := p.assignJiraIssue(header.UserId, issueKey, assignee)
 	if err != nil {
-		return responsef("%v", err)
+		return p.responsef(header, "%v", err)
 	}
 
-	return responsef(msg)
+	return p.responsef(header, msg)
 }
 
 func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
