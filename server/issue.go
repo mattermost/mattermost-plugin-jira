@@ -601,7 +601,7 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 			errorMsg += fmt.Sprintf("\nFirst %+v users listed:\n", maxDisplayedUsers)
 		}
 
-		for i, _ := range jiraUsers {
+		for i := range jiraUsers {
 			if i == maxDisplayedUsers {
 				break
 			}
