@@ -543,7 +543,8 @@ func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issue
 func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string, error) {
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
-		return "", err
+		p.errorf("transitionJiraIssue: failed to load current Jira instance: %v", err)
+		return "", errors.New("Failed to load current Jira instance. Please contact your system administrator.")
 	}
 
 	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mmUserId)
