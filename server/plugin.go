@@ -6,10 +6,14 @@ package main
 import (
 	"crypto/rsa"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"strings"
 	"sync"
 	"text/template"
+	"time"
+
+	"github.com/mattermost/mattermost-server/model"
 
 	"github.com/pkg/errors"
 
@@ -17,24 +21,32 @@ import (
 )
 
 const (
-	PluginMattermostUsername = "Jira Plugin"
-	PluginIconURL            = "https://s3.amazonaws.com/mattermost-plugin-media/jira.jpg"
+	botUserName    = "jira"
+	botDisplayName = "Jira"
+	botDescription = "Created by the Jira Plugin."
 )
 
 type externalConfig struct {
-	// Bot username
-	UserName string `json:"username"`
+	// Setting to turn on/off the webapp components of this plugin
+	EnableJiraUI bool `json:"enablejiraui"`
 
 	// Legacy 1.x Webhook secret
 	Secret string `json:"secret"`
 }
 
+const currentInstanceTTL = 1 * time.Second
+
 type config struct {
 	// externalConfig caches values from the plugin's settings in the server's config.json
 	externalConfig
 
-	// Cached actual bot user ID (derived from c.UserName)
+	// user ID of the bot account
 	botUserID string
+
+	// Cached current Jira instance. A non-0 expires indicates the presence
+	// of a value. A nil value means there is no instance available.
+	currentInstance        Instance
+	currentInstanceExpires time.Time
 }
 
 type Plugin struct {
@@ -43,6 +55,12 @@ type Plugin struct {
 	// configuration and a muttex to control concurrent access
 	conf     config
 	confLock sync.RWMutex
+
+	currentInstanceStore CurrentInstanceStore
+	instanceStore        InstanceStore
+	userStore            UserStore
+	otsStore             OTSStore
+	secretsStore         SecretsStore
 
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
@@ -82,22 +100,45 @@ func (p *Plugin) OnConfigurationChange() error {
 }
 
 func (p *Plugin) OnActivate() error {
-	conf := p.getConfig()
-	user, appErr := p.API.GetUserByUsername(conf.UserName)
-	if appErr != nil {
-		return errors.WithMessage(appErr, fmt.Sprintf("OnActivate: unable to find user: %s", conf.UserName))
+	botUserID, err := p.Helpers.EnsureBot(&model.Bot{
+		Username:    botUserName,
+		DisplayName: botDisplayName,
+		Description: botDescription,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure bot account")
 	}
 
-	dir := filepath.Join(*(p.API.GetConfig().PluginSettings.Directory), manifest.Id, "server", "dist", "templates")
-	templates, err := p.loadTemplates(dir)
+	p.updateConfig(func(conf *config) {
+		conf.botUserID = botUserID
+	})
+
+	bundlePath, err := p.API.GetBundlePath()
+	if err != nil {
+		return errors.Wrap(err, "couldn't get bundle path")
+	}
+
+	profileImage, err := ioutil.ReadFile(filepath.Join(bundlePath, "assets", "profile.png"))
+	if err != nil {
+		return errors.Wrap(err, "couldn't read profile image")
+	}
+
+	if appErr := p.API.SetProfileImage(botUserID, profileImage); appErr != nil {
+		return errors.Wrap(appErr, "couldn't set profile image")
+	}
+
+	store := NewStore(p)
+	p.currentInstanceStore = store
+	p.instanceStore = store
+	p.userStore = store
+	p.secretsStore = store
+	p.otsStore = store
+
+	templates, err := p.loadTemplates(filepath.Join(bundlePath, "server", "dist", "templates"))
 	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to load templates")
 	}
 	p.templates = templates
-
-	conf = p.updateConfig(func(conf *config) {
-		conf.botUserID = user.Id
-	})
 
 	err = p.API.RegisterCommand(getCommand())
 	if err != nil {

@@ -6,13 +6,16 @@ import PropTypes from 'prop-types';
 
 import PluginId from 'plugin_id';
 
+import JiraIcon from 'components/icon';
+
 export default class AttachCommentToIssuePostMenuAction extends PureComponent {
     static propTypes = {
-        isSystemMessage: PropTypes.bool,
+        isSystemMessage: PropTypes.bool.isRequired,
         locale: PropTypes.string,
         open: PropTypes.func.isRequired,
         postId: PropTypes.string,
-        connected: PropTypes.object.isRequired,
+        userConnected: PropTypes.bool.isRequired,
+        instanceInstalled: PropTypes.bool.isRequired,
     };
 
     static defaultTypes = {
@@ -37,40 +40,28 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
 
     connectClick = () => {
         window.open('/plugins/' + PluginId + '/user/connect');
-    }
+    };
 
     render() {
-        if (this.props.isSystemMessage) {
+        if (this.props.isSystemMessage || !this.props.instanceInstalled || !this.props.userConnected) {
             return null;
         }
 
-        const conn = this.props.connected || {};
-        let content;
-        if (conn.connected) {
-            content = (
-                <button
-                    className='style--none'
-                    role='menuitem'
-                    onClick={this.handleClick}
-                >
-                    {this.getLocalizedTitle()}
-                </button>
-            );
-        } else {
-            content = (
-                <button
-                    className='style--none'
-                    role='menuitem'
-                    onClick={this.connectClick}
-                >
-                    {'Connect to Jira'}
-                </button>
-            );
-        }
+        const content = (
+            <button
+                className='style--none'
+                role='presentation'
+                onClick={this.handleClick}
+            >
+                <JiraIcon type='menu'/>
+                {this.getLocalizedTitle()}
+            </button>
+        );
 
         return (
             <li
-                role='presentation'
+                className='MenuItem'
+                role='menuitem'
             >
                 {content}
             </li>

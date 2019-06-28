@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 
 export default class FormButton extends PureComponent {
     static propTypes = {
-        executing: PropTypes.bool.isRequired,
+        executing: PropTypes.bool,
         disabled: PropTypes.bool,
         executingMessage: PropTypes.node,
         defaultMessage: PropTypes.node,
@@ -14,6 +14,7 @@ export default class FormButton extends PureComponent {
         extraClasses: PropTypes.string,
         saving: PropTypes.bool,
         savingMessage: PropTypes.string,
+        type: PropTypes.string,
     };
 
     static defaultProps = {

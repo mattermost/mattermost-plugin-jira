@@ -1,17 +1,48 @@
+// Copyright (c) 2019-present Mattermost, Inc. All Rights Reserved.
+// See License for license information.
+
 package main
 
 import (
 	"fmt"
 	"net/url"
+	"path"
 	"regexp"
+	"strings"
 
-	"github.com/andygrunwald/go-jira"
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
 )
 
-func (p *Plugin) CreateBotDMPost(userId, message, postType string) (returnErr error) {
+func normalizeInstallURL(jiraURL string) (string, error) {
+	u, err := url.Parse(jiraURL)
+	if err != nil {
+		return "", err
+	}
+	if u.Host == "" {
+		ss := strings.Split(u.Path, "/")
+		if len(ss) > 0 && ss[0] != "" {
+			u.Host = ss[0]
+			u.Path = path.Join(ss[1:]...)
+		}
+		u, err = url.Parse(u.String())
+		if err != nil {
+			return "", err
+		}
+	}
+	if u.Host == "" {
+		return "", errors.Errorf("Invalid URL, no hostname: %q", jiraURL)
+	}
+	if u.Scheme == "" {
+		u.Scheme = "https"
+	}
+	return strings.TrimSuffix(u.String(), "/"), nil
+}
+
+func (p *Plugin) CreateBotDMPost(ji Instance, userId, message,
+	postType string) (post *model.Post, returnErr error) {
 	defer func() {
 		if returnErr != nil {
 			returnErr = errors.WithMessage(returnErr,
@@ -19,29 +50,56 @@ func (p *Plugin) CreateBotDMPost(userId, message, postType string) (returnErr er
 		}
 	}()
 
+	// Don't send DMs to users who have turned off notifications
+	jiraUser, err := p.userStore.LoadJIRAUser(ji, userId)
+	if err != nil {
+		// not connected to Jira, so no need to send a DM, and no need to report an error
+		return nil, nil
+	}
+	if jiraUser.Settings == nil || !jiraUser.Settings.Notifications {
+		return nil, nil
+	}
+
 	conf := p.getConfig()
 	channel, appErr := p.API.GetDirectChannel(userId, conf.botUserID)
 	if appErr != nil {
-		return appErr
+		return nil, appErr
 	}
 
-	post := &model.Post{
+	post = &model.Post{
 		UserId:    conf.botUserID,
 		ChannelId: channel.Id,
 		Message:   message,
 		Type:      postType,
 		Props: map[string]interface{}{
 			"from_webhook":      "true",
-			"override_username": PluginMattermostUsername,
-			"override_icon_url": PluginIconURL,
+			"override_username": botUserName,
+			// TODO: to be fixed in MM-16508
+			//"override_icon_url": pluginIconURL(),
 		},
 	}
 
 	_, appErr = p.API.CreatePost(post)
 	if appErr != nil {
-		return appErr
+		return nil, appErr
 	}
 
+	return post, nil
+}
+
+func (p *Plugin) StoreCurrentJIRAInstanceAndNotify(ji Instance) error {
+	appErr := p.currentInstanceStore.StoreCurrentJIRAInstance(ji)
+	if appErr != nil {
+		return appErr
+	}
+	// Notify users we have installed an instance
+	p.API.PublishWebSocketEvent(
+		wSEventInstanceStatus,
+		map[string]interface{}{
+			"instance_installed": true,
+		},
+		&model.WebsocketBroadcast{},
+	)
 	return nil
 }
 
@@ -90,13 +148,4 @@ func parseJIRAIssuesFromText(text string, keys []string) []string {
 	}
 
 	return issues
-}
-
-func getIssueURL(i *JIRAWebhookIssue) string {
-	u, _ := url.Parse(i.Self)
-	return u.Scheme + "://" + u.Host + "/browse/" + i.Key
-}
-
-func getUserURL(issue *JIRAWebhookIssue, user *jira.User) string {
-	return user.Self
 }

@@ -6,7 +6,6 @@ package main
 import (
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -60,7 +59,7 @@ func NewJIRACloudInstance(p *Plugin, key string, installed bool, rawASC string, 
 type withCloudInstanceFunc func(jci *jiraCloudInstance, w http.ResponseWriter, r *http.Request) (int, error)
 
 func withCloudInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f withCloudInstanceFunc) (int, error) {
-	return withInstance(p, w, r, func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+	return withInstance(p.currentInstanceStore, w, r, func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 		jci, ok := ji.(*jiraCloudInstance)
 		if !ok {
 			return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
@@ -89,19 +88,18 @@ func (jci jiraCloudInstance) GetDisplayDetails() map[string]string {
 }
 
 func (jci jiraCloudInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
-	secret := make([]byte, 256)
-	_, err := rand.Read(secret)
+	randomBytes := make([]byte, 32)
+	_, err := rand.Read(randomBytes)
 	if err != nil {
 		return "", err
 	}
-	secretKey := fmt.Sprintf("%x", sha256.Sum256(secret))
-	secretValue := "true"
-	err = jci.Plugin.StoreOneTimeSecret(secretKey, secretValue)
+	secret := fmt.Sprintf("%x", randomBytes)
+	err = jci.Plugin.otsStore.StoreOneTimeSecret(mattermostUserId, secret)
 	if err != nil {
 		return "", err
 	}
 
-	token, err := jci.Plugin.NewEncodedAuthToken(mattermostUserId, secretKey)
+	token, err := jci.Plugin.NewEncodedAuthToken(mattermostUserId, secret)
 	if err != nil {
 		return "", err
 	}
@@ -180,7 +178,7 @@ func (jci jiraCloudInstance) parseHTTPRequestJWT(r *http.Request) (*jwt.Token, s
 		return []byte(jci.AtlassianSecurityContext.SharedSecret), nil
 	})
 	if err != nil || !token.Valid {
-		return nil, "", errors.WithMessage(err, "failed to validatte JWT")
+		return nil, "", errors.WithMessage(err, "failed to validate JWT")
 	}
 
 	return token, tokenString, nil

@@ -5,7 +5,7 @@ import {combineReducers} from 'redux';
 
 import ActionTypes from 'action_types';
 
-function connected(state = false, action) {
+function userConnected(state = false, action) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
         return action.data.is_connected;
@@ -14,9 +14,23 @@ function connected(state = false, action) {
     }
 }
 
+function instanceInstalled(state = false, action) {
+    // We're notified of the instance status at startup (through getConnected)
+    // and when we get a websocket instance_status event
+    switch (action.type) {
+    case ActionTypes.RECEIVED_CONNECTED:
+        return action.data.instance_installed ? action.data.instance_installed : state;
+    case ActionTypes.RECEIVED_INSTANCE_STATUS:
+        return action.data.instance_installed;
+    default:
+        return state;
+    }
+}
+
 const createModalVisible = (state = false, action) => {
     switch (action.type) {
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL:
+    case ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST:
         return true;
     case ActionTypes.CLOSE_CREATE_ISSUE_MODAL:
         return false;
@@ -25,12 +39,18 @@ const createModalVisible = (state = false, action) => {
     }
 };
 
-const createModalForPostId = (state = '', action) => {
+const createModal = (state = '', action) => {
     switch (action.type) {
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL:
-        return action.data.postId;
+    case ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST:
+        return {
+            ...state,
+            postId: action.data.postId,
+            description: action.data.description,
+            channelId: action.data.channelId,
+        };
     case ActionTypes.CLOSE_CREATE_ISSUE_MODAL:
-        return '';
+        return {};
     default:
         return state;
     }
@@ -91,9 +111,10 @@ const channelSubscripitons = (state = {}, action) => {
 };
 
 export default combineReducers({
-    connected,
+    userConnected,
+    instanceInstalled,
     createModalVisible,
-    createModalForPostId,
+    createModal,
     attachCommentToIssueModalVisible,
     attachCommentToIssueModalForPostId,
     jiraIssueMetadata,

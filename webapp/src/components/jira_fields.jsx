@@ -8,18 +8,28 @@ import JiraField from 'components/jira_field';
 
 export default class JiraFields extends React.Component {
     static propTypes = {
-        fields: PropTypes.object.isRequired,
-        onChange: PropTypes.func,
+        fields: PropTypes.oneOfType([
+            PropTypes.object,
+            PropTypes.array,
+        ]).isRequired,
+        onChange: PropTypes.func.isRequired,
         values: PropTypes.object,
         isFilter: PropTypes.bool,
+        allowedFields: PropTypes.array.isRequired,
+        allowedSchemaCustom: PropTypes.array.isRequired,
+        theme: PropTypes.object.isRequired,
+        addValidate: PropTypes.func.isRequired,
+        removeValidate: PropTypes.func.isRequired,
     };
 
     render() {
-        if (!this.props.fields) {
+        const {allowedFields, allowedSchemaCustom, fields} = this.props;
+
+        if (!fields) {
             return null;
         }
 
-        let fieldNames = Object.keys(this.props.fields);
+        let fieldNames = Object.keys(fields);
         const fullLength = fieldNames.length;
         fieldNames = fieldNames.filter((name) => name !== 'summary');
         if (fullLength > fieldNames.length) {
@@ -27,18 +37,33 @@ export default class JiraFields extends React.Component {
         }
 
         return fieldNames.map((fieldName) => {
-            if (fieldName === 'project' || fieldName === 'issuetype' || fieldName === 'reporter' || (fieldName !== 'description' && !this.props.fields[fieldName].required)) {
+            // Always Required Jira fields
+            if (fieldName === 'project' || fieldName === 'issuetype') {
                 return null;
             }
+
+            // only allow these some custom types until handle further types
+            if (fields[fieldName].schema.custom && !allowedSchemaCustom.includes(fields[fieldName].schema.custom)) {
+                return null;
+            }
+
+            // only allow some default Jira fields until handle further types
+            if (!fields[fieldName].schema.custom && !allowedFields.includes(fieldName)) {
+                return null;
+            }
+
             return (
                 <JiraField
                     key={fieldName}
                     id={fieldName}
-                    field={this.props.fields[fieldName]}
+                    field={fields[fieldName]}
                     obeyRequired={true}
                     onChange={this.props.onChange}
                     value={this.props.values && this.props.values[fieldName]}
                     isFilter={this.props.isFilter}
+                    theme={this.props.theme}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
                 />
             );
         });

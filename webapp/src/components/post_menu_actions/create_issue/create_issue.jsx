@@ -9,11 +9,12 @@ import JiraIcon from 'components/icon';
 
 export default class CreateIssuePostMenuAction extends PureComponent {
     static propTypes = {
-        isSystemMessage: PropTypes.bool,
+        isSystemMessage: PropTypes.bool.isRequired,
         locale: PropTypes.string,
         open: PropTypes.func.isRequired,
         postId: PropTypes.string,
-        connected: PropTypes.object.isRequired,
+        userConnected: PropTypes.bool.isRequired,
+        instanceInstalled: PropTypes.bool.isRequired,
     };
 
     static defaultTypes = {
@@ -38,20 +39,19 @@ export default class CreateIssuePostMenuAction extends PureComponent {
 
     connectClick = () => {
         window.open('/plugins/' + PluginId + '/user/connect');
-    }
+    };
 
     render() {
-        if (this.props.isSystemMessage) {
+        if (this.props.isSystemMessage || !this.props.instanceInstalled) {
             return null;
         }
 
-        const conn = this.props.connected || {};
         let content;
-        if (conn.connected) {
+        if (this.props.userConnected) {
             content = (
                 <button
                     className='style--none'
-                    role='menuitem'
+                    role='presentation'
                     onClick={this.handleClick}
                 >
                     <JiraIcon type='menu'/>
@@ -72,12 +72,18 @@ export default class CreateIssuePostMenuAction extends PureComponent {
         }
 
         return (
-            <li
-                className='MenuItem'
-                role='presentation'
-            >
-                {content}
-            </li>
+            <React.Fragment>
+                <li
+                    className='MenuItem__divider'
+                    role='menuitem'
+                />
+                <li
+                    className='MenuItem'
+                    role='menuitem'
+                >
+                    {content}
+                </li>
+            </React.Fragment>
         );
     }
 }

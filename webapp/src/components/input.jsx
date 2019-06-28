@@ -8,7 +8,7 @@ import Setting from './setting.jsx';
 
 export default class Input extends PureComponent {
     static propTypes = {
-        id: PropTypes.string.isRequired,
+        id: PropTypes.string,
         label: PropTypes.node.isRequired,
         placeholder: PropTypes.string,
         helpText: PropTypes.node,
@@ -20,6 +20,7 @@ export default class Input extends PureComponent {
         onChange: PropTypes.func,
         disabled: PropTypes.bool,
         required: PropTypes.bool,
+        readOnly: PropTypes.bool,
         type: PropTypes.oneOf([
             'number',
             'input',
@@ -31,7 +32,20 @@ export default class Input extends PureComponent {
         type: 'input',
         maxLength: null,
         required: false,
+        readOnly: false,
     };
+
+    constructor(props) {
+        super(props);
+
+        this.state = {invalid: false};
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+        if (prevState.invalid && this.props.value !== prevProps.value) {
+            this.setState({invalid: false}); //eslint-disable-line react/no-did-update-set-state
+        }
+    }
 
     handleChange = (e) => {
         if (this.props.type === 'number') {
@@ -41,11 +55,31 @@ export default class Input extends PureComponent {
         }
     };
 
+    isValid = () => {
+        if (!this.props.required) {
+            return true;
+        }
+        const valid = this.props.value && this.props.value.toString().length !== 0;
+        this.setState({invalid: !valid});
+        return valid;
+    };
+
     render() {
+        const requiredMsg = 'This field is required.';
+        let validationError = null;
+        if (this.props.required && this.state.invalid) {
+            validationError = (
+                <p className='help-text error-text'>
+                    <span>{requiredMsg}</span>
+                </p>
+            );
+        }
+
         let input = null;
         if (this.props.type === 'input') {
             input = (
                 <input
+                    ref={this.ref}
                     id={this.props.id}
                     className='form-control'
                     type='text'
@@ -54,12 +88,13 @@ export default class Input extends PureComponent {
                     maxLength={this.props.maxLength}
                     onChange={this.handleChange}
                     disabled={this.props.disabled}
-                    required={this.props.required}
+                    readOnly={this.props.readOnly}
                 />
             );
         } else if (this.props.type === 'number') {
             input = (
                 <input
+                    ref={this.ref}
                     id={this.props.id}
                     className='form-control'
                     type='number'
@@ -68,12 +103,13 @@ export default class Input extends PureComponent {
                     maxLength={this.props.maxLength}
                     onChange={this.handleChange}
                     disabled={this.props.disabled}
-                    required={this.props.required}
+                    readOnly={this.props.readOnly}
                 />
             );
         } else if (this.props.type === 'textarea') {
             input = (
                 <textarea
+                    ref={this.ref}
                     id={this.props.id}
                     className='form-control'
                     rows='5'
@@ -82,7 +118,7 @@ export default class Input extends PureComponent {
                     maxLength={this.props.maxLength}
                     onChange={this.handleChange}
                     disabled={this.props.disabled}
-                    required={this.props.required}
+                    readOnly={this.props.readOnly}
                 />
             );
         }
@@ -95,6 +131,7 @@ export default class Input extends PureComponent {
                 required={this.props.required}
             >
                 {input}
+                {validationError}
             </Setting>
         );
     }

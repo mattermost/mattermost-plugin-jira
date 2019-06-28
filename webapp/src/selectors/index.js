@@ -39,7 +39,7 @@ export const getCurrentUserLocale = createSelector(
 
 export const isCreateModalVisible = (state) => getPluginState(state).createModalVisible;
 
-export const getCreateModalForPostId = (state) => getPluginState(state).createModalForPostId;
+export const getCreateModal = (state) => getPluginState(state).createModal;
 
 export const isAttachCommentToIssueModalVisible = (state) => getPluginState(state).attachCommentToIssueModalVisible;
 
@@ -50,3 +50,7 @@ export const getJiraIssueMetadata = (state) => getPluginState(state).jiraIssueMe
 export const getChannelIdWithSettingsOpen = (state) => getPluginState(state).channelIdWithSettingsOpen;
 
 export const getChannelSubscriptions = (state) => getPluginState(state).channelSubscripitons;
+
+export const isUserConnected = (state) => getPluginState(state).userConnected;
+
+export const isInstanceInstalled = (state) => getPluginState(state).instanceInstalled;

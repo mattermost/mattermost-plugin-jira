@@ -9,18 +9,21 @@ import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
 
 import {openAttachCommentToIssueModal} from 'actions';
 
-import {getCurrentUserLocale} from 'selectors';
-
-import PluginId from 'plugin_id';
+import {getCurrentUserLocale, isUserConnected, isInstanceInstalled} from 'selectors';
+import {isCombinedUserActivityPost} from 'utils/posts';
 
 import AttachCommentToIssuePostMenuAction from './attach_comment_to_issue';
 
 const mapStateToProps = (state, ownProps) => {
     const post = getPost(state, ownProps.postId);
+    const oldSystemMessageOrNull = post ? isSystemMessage(post) : true;
+    const systemMessage = isCombinedUserActivityPost(post) || oldSystemMessageOrNull;
+
     return {
         locale: getCurrentUserLocale(state),
-        isSystemMessage: isSystemMessage(post),
-        connected: state[`plugins-${PluginId}`],
+        isSystemMessage: systemMessage,
+        userConnected: isUserConnected(state),
+        instanceInstalled: isInstanceInstalled(state),
     };
 };
 

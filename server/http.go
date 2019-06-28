@@ -19,10 +19,12 @@ import (
 const (
 	routeAPICreateIssue            = "/api/v2/create-issue"
 	routeAPIGetCreateIssueMetadata = "/api/v2/get-create-issue-metadata"
+	routeAPIGetSearchIssues        = "/api/v2/get-search-issues"
 	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
 	routeAPIUserInfo               = "/api/v2/userinfo"
 	routeAPISubscribeWebhook       = "/api/v2/webhook"
 	routeAPISubscriptionsChannel   = "/api/v2/subscriptions/channel"
+	routeAPISettingsInfo           = "/api/v2/settingsinfo"
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"
 	routeACUninstalled             = "/ac/uninstalled"
@@ -39,12 +41,6 @@ const (
 )
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	config := p.getConfig()
-	if config.UserName == "" {
-		http.Error(w, "Jira plugin not configured correctly; must provide UserName", http.StatusForbidden)
-		return
-	}
-
 	status, err := handleHTTPRequest(p, w, r)
 	if err != nil {
 		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
@@ -58,15 +54,19 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	switch r.URL.Path {
 	// Issue APIs
 	case routeAPICreateIssue:
-		return withInstance(p, w, r, httpAPICreateIssue)
+		return withInstance(p.currentInstanceStore, w, r, httpAPICreateIssue)
 	case routeAPIGetCreateIssueMetadata:
-		return withInstance(p, w, r, httpAPIGetCreateIssueMetadata)
+		return withInstance(p.currentInstanceStore, w, r, httpAPIGetCreateIssueMetadata)
+	case routeAPIGetSearchIssues:
+		return withInstance(p.currentInstanceStore, w, r, httpAPIGetSearchIssues)
 	case routeAPIAttachCommentToIssue:
-		return withInstance(p, w, r, httpAPIAttachCommentToIssue)
+		return withInstance(p.currentInstanceStore, w, r, httpAPIAttachCommentToIssue)
 
 	// User APIs
 	case routeAPIUserInfo:
-		return withInstance(p, w, r, httpAPIGetUserInfo)
+		return httpAPIGetUserInfo(p, w, r)
+	case routeAPISettingsInfo:
+		return httpAPIGetSettingsInfo(p, w, r)
 
 	// Atlassian Connect application
 	case routeACInstalled:
@@ -96,9 +96,9 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 
 	// User connect/disconnect links
 	case routeUserConnect:
-		return withInstance(p, w, r, httpUserConnect)
+		return withInstance(p.currentInstanceStore, w, r, httpUserConnect)
 	case routeUserDisconnect:
-		return withInstance(p, w, r, httpUserDisconnect)
+		return withInstance(p.currentInstanceStore, w, r, httpUserDisconnect)
 
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:

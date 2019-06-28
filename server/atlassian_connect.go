@@ -52,7 +52,7 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 
 	// Only allow this operation once, a JIRA instance must already exist
 	// for asc.BaseURL but its EventType would be empty.
-	ji, err := p.LoadJIRAInstance(asc.BaseURL)
+	ji, err := p.instanceStore.LoadJIRAInstance(asc.BaseURL)
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to load instance "+asc.BaseURL)
@@ -72,11 +72,11 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 
 	// Create a permanent instance record, also store it as current
 	jiraInstance := NewJIRACloudInstance(p, asc.BaseURL, true, string(body), &asc)
-	err = p.StoreJIRAInstance(jiraInstance)
+	err = p.instanceStore.StoreJIRAInstance(jiraInstance)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	err = p.StoreCurrentJIRAInstance(jiraInstance)
+	err = p.StoreCurrentJIRAInstanceAndNotify(jiraInstance)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -95,6 +95,7 @@ func httpACUninstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 			errors.New("method " + r.Method + " is not allowed, must be POST")
 	}
 
+	// Just send an ok to the Jira server, even though we're not doing anything.
 	_ = json.NewEncoder(w).Encode([]string{"OK"})
 	return http.StatusOK, nil
 }

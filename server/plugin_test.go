@@ -35,8 +35,7 @@ type TestConfiguration struct {
 
 func TestPlugin(t *testing.T) {
 	validConfiguration := TestConfiguration{
-		Secret:   "thesecret",
-		UserName: "theuser",
+		Secret: "thesecret",
 	}
 
 	for name, tc := range map[string]struct {
@@ -47,13 +46,6 @@ func TestPlugin(t *testing.T) {
 	}{
 		"NoConfiguration": {
 			Configuration:      TestConfiguration{},
-			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
-			ExpectedStatusCode: http.StatusForbidden,
-		},
-		"NoUserConfiguration": {
-			Configuration: TestConfiguration{
-				Secret: "thesecret",
-			},
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusForbidden,
 		},
@@ -90,14 +82,6 @@ func TestPlugin(t *testing.T) {
 		"InvalidTeam": {
 			Configuration:      validConfiguration,
 			Request:            httptest.NewRequest("POST", "/webhook?team=nottheteam&channel=thechannel&secret=thesecret", validRequestBody()),
-			ExpectedStatusCode: http.StatusBadRequest,
-		},
-		"InvalidUser": {
-			Configuration: TestConfiguration{
-				Secret:   "thesecret",
-				UserName: "nottheuser",
-			},
-			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
 		"ValidRequest": {
@@ -183,9 +167,9 @@ func TestPlugin(t *testing.T) {
 			p := Plugin{}
 			p.updateConfig(func(conf *config) {
 				conf.Secret = tc.Configuration.Secret
-				conf.UserName = tc.Configuration.UserName
 			})
 			p.SetAPI(api)
+			p.currentInstanceStore = mockCurrentInstanceStore{}
 
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, tc.Request)

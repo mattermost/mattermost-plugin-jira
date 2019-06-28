@@ -1,6 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {PostTypes} from 'mattermost-redux/action_types';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
+
 import ActionTypes from 'action_types';
 import {doFetch} from 'client';
 import {getPluginServerRoute} from 'selectors';
@@ -13,6 +16,14 @@ export const openCreateModal = (postId) => {
         },
     };
 };
+
+export const openCreateModalWithoutPost = (description, channelId) => (dispatch) => dispatch({
+    type: ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST,
+    data: {
+        description,
+        channelId,
+    },
+});
 
 export const closeCreateModal = () => {
     return {
@@ -155,6 +166,19 @@ export const fetchChannelSubscriptions = (channelId) => {
         return {data};
     };
 };
+export function getSettings(getState) {
+    let data;
+    const baseUrl = getPluginServerRoute(getState());
+    try {
+        data = doFetch(`${baseUrl}/api/v2/settingsinfo`, {
+            method: 'get',
+        });
+    } catch (error) {
+        return {error};
+    }
+
+    return data;
+}
 
 export function getConnected() {
     return async (dispatch, getState) => {
@@ -170,6 +194,11 @@ export function getConnected() {
 
         dispatch({
             type: ActionTypes.RECEIVED_CONNECTED,
+            data,
+        });
+
+        dispatch({
+            type: ActionTypes.RECEIVED_INSTANCE_STATUS,
             data,
         });
 
@@ -204,3 +233,38 @@ export const closeChannelSettings = () => {
         type: ActionTypes.CLOSE_CHANNEL_SETTINGS,
     };
 };
+
+export function handleInstanceStatusChange(store) {
+    return (msg) => {
+        if (!msg.data) {
+            return;
+        }
+
+        store.dispatch({
+            type: ActionTypes.RECEIVED_INSTANCE_STATUS,
+            data: msg.data,
+        });
+    };
+}
+
+export function sendEphemeralPost(store, message, channelId) {
+    const timestamp = Date.now();
+    const post = {
+        id: 'jiraPlugin' + Date.now(),
+        user_id: store.getState().entities.users.currentUserId,
+        channel_id: channelId || getCurrentChannelId(store.getState()),
+        message,
+        type: 'system_ephemeral',
+        create_at: timestamp,
+        update_at: timestamp,
+        root_id: '',
+        parent_id: '',
+        props: {},
+    };
+
+    store.dispatch({
+        type: PostTypes.RECEIVED_NEW_POST,
+        data: post,
+        channelId,
+    });
+}

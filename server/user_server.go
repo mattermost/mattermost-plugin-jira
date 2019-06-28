@@ -15,20 +15,16 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
+type OAuth1aTemporaryCredentials struct {
+	Token  string
+	Secret string
+}
+
 func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.Request) (int, error) {
 	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(r)
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to parse callback request from Jira")
-	}
-
-	requestSecret, err := jsi.Plugin.LoadOneTimeSecret(requestToken)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	err = jsi.Plugin.DeleteOneTimeSecret(requestToken)
-	if err != nil {
-		return http.StatusInternalServerError, err
 	}
 
 	mattermostUserId := r.Header.Get("Mattermost-User-ID")
@@ -41,13 +37,24 @@ func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.
 			errors.WithMessage(appErr, "failed to load user "+mattermostUserId)
 	}
 
+	oauthTmpCredentials, err := jsi.Plugin.otsStore.OneTimeLoadOauth1aTemporaryCredentials(mattermostUserId)
+	if err != nil || oauthTmpCredentials == nil || len(oauthTmpCredentials.Token) <= 0 {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to get temporary credentials for "+mattermostUserId)
+	}
+
+	if oauthTmpCredentials.Token != requestToken {
+		return http.StatusUnauthorized, errors.New("request token mismatch")
+	}
+
 	oauth1Config, err := jsi.GetOAuth1Config()
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to obtain oauth1 config")
 	}
 
-	accessToken, accessSecret, err := oauth1Config.AccessToken(requestToken, requestSecret, verifier)
+	// Although we pass the oauthTmpCredentials as required here. The JIRA server does not appar to validate it.
+	// We perform the check above for reuse so this is irrelavent to the security from our end.
+	accessToken, accessSecret, err := oauth1Config.AccessToken(requestToken, oauthTmpCredentials.Secret, verifier)
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to obtain oauth1 access token")
@@ -68,6 +75,9 @@ func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.
 		return http.StatusInternalServerError, err
 	}
 	jiraUser.User = *juser
+
+	// Set default settings the first time a user connects
+	jiraUser.Settings = &UserSettings{Notifications: true}
 
 	err = jsi.Plugin.StoreUserInfoNotify(jsi, mattermostUserId, jiraUser)
 	if err != nil {
@@ -115,7 +125,7 @@ func httpOAuth1PublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (int
 }
 
 func publicKeyString(p *Plugin) ([]byte, error) {
-	rsaKey, err := p.EnsureRSAKey()
+	rsaKey, err := p.secretsStore.EnsureRSAKey()
 	if err != nil {
 		return nil, err
 	}

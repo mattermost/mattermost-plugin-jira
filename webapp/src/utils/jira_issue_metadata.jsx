@@ -10,7 +10,11 @@ export function getProjectValues(metadata) {
 }
 
 export function getIssueTypes(metadata, projectKey) {
-    return metadata.projects.find((project) => project.key === projectKey).issuetypes.filter((i) => !i.subtask);
+    const project = metadata.projects.find((proj) => proj.key === projectKey);
+    if (!project) {
+        return [];
+    }
+    return project.issuetypes.filter((i) => !i.subtask);
 }
 
 export function getIssueValues(metadata, projectKey) {
