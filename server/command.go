@@ -109,6 +109,7 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
+		p.errorf("executeDisconnect: failed to load current Jira instance: %v", err)
 		return p.responsef(header, "Failed to load current Jira instance. Please contact your system administrator.")
 	}
 
@@ -132,6 +133,7 @@ func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
+		p.errorf("executeSettings: failed to load current Jira instance: %v", err)
 		return p.responsef(header, "Failed to load current Jira instance. Please contact your system administrator.")
 	}
 
@@ -166,6 +168,7 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
+		p.errorf("executeView: failed to load current Jira instance: %v", err)
 		return p.responsef(header, "Failed to load current Jira instance. Please contact your system administrator.")
 	}
 
