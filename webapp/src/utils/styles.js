@@ -31,7 +31,7 @@ export const getStyleForReactSelect = (theme) => {
         }),
         option: (provided, state) => ({
             ...provided,
-            background: state.isSelected ? changeOpacity(theme.centerChannelColor, 0.12) : theme.centerChannelBg,
+            background: state.isFocused ? changeOpacity(theme.centerChannelColor, 0.12) : theme.centerChannelBg,
             color: theme.centerChannelColor,
             '&:hover': {
                 background: changeOpacity(theme.centerChannelColor, 0.12),
