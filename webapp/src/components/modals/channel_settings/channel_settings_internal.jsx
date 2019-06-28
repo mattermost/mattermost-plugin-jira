@@ -21,7 +21,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
         close: PropTypes.func.isRequired,
         channel: PropTypes.object.isRequired,
         theme: PropTypes.object.isRequired,
-        jiraMetadata: PropTypes.object.isRequired,
+        jiraIssueMetadata: PropTypes.object.isRequired,
         channelSubscriptions: PropTypes.array.isRequired,
         createChannelSubscription: PropTypes.func.isRequired,
         deleteChannelSubscription: PropTypes.func.isRequired,
@@ -102,8 +102,8 @@ export default class ChannelSettingsModalInner extends PureComponent {
 
     render() {
         const style = getStyle(this.props.theme);
-        const projectOptions = getProjectValues(this.props.jiraMetadata);
-        const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraMetadata, this.state.filters.project);
+        const projectOptions = getProjectValues(this.props.jiraIssueMetadata);
+        const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraIssueMetadata, this.state.filters.project);
 
         let component = null;
         if (this.props.channel && this.props.channelSubscriptions) {
@@ -116,6 +116,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
                         onChange={this.handleSettingChange}
                         options={JiraEventOptions}
                         isMulti={true}
+                        theme={this.props.theme}
                         value={JiraEventOptions.filter((option) => this.state.filters.events.includes(option.value))}
                     />
                     <ReactSelectSetting
@@ -125,6 +126,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
                         onChange={this.handleSettingChange}
                         options={projectOptions}
                         isMulti={true}
+                        theme={this.props.theme}
                         value={projectOptions.filter((option) => this.state.filters.project.includes(option.value))}
                     />
                     <ReactSelectSetting
@@ -134,6 +136,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
                         onChange={this.handleSettingChange}
                         options={issueOptions}
                         isMulti={true}
+                        theme={this.props.theme}
                         value={issueOptions.filter((option) => this.state.filters.issue_type.includes(option.value))}
                     />
                     <br/>
