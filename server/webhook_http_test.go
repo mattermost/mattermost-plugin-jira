@@ -97,6 +97,12 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Test User commented on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
 			ExpectedText:            "Added a comment",
 		},
+		"comment created on server": {
+			Request:                 testWebhookRequest("webhook-comment-created-server.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User commented on improvement [PRJA-42](http://test-server.azure.com:8080/browse/PRJA-42)",
+			ExpectedText:            "This is a test comment. We should act on it right away.",
+		},
 		"comment updated": {
 			Request:                 testWebhookRequest("webhook-comment-updated.json"),
 			ExpectedSlackAttachment: true,
