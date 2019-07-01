@@ -126,9 +126,9 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	wh.PostNotifications(p, ji)
+	_, statusCode, err := wh.PostNotifications(p, ji)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return statusCode, err
 	}
 
 	// Skip events we don't need to post
@@ -137,7 +137,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 	}
 
 	// Post the event to the subscribed channel
-	_, statusCode, err := wh.PostToChannel(p, channel.Id, p.getUserID())
+	_, statusCode, err = wh.PostToChannel(p, channel.Id, p.getUserID())
 	if err != nil {
 		return statusCode, err
 	}
