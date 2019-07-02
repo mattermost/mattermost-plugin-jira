@@ -27,6 +27,7 @@ const initialState = {
         },
     },
     error: null,
+    getMetaDataError: null,
 };
 
 export default class CreateIssueModal extends PureComponent {
@@ -66,7 +67,11 @@ export default class CreateIssueModal extends PureComponent {
 
     componentDidUpdate(prevProps) {
         if (this.props.post && (!prevProps.post || this.props.post.id !== prevProps.post.id)) {
-            this.props.fetchJiraIssueMetadata();
+            this.props.fetchJiraIssueMetadata().then((fetched) => {
+                if (fetched.error) {
+                    this.setState({getMetaDataError: fetched.error.message, submitting: false});
+                }
+            });
             const fields = {...this.state.fields};
             fields.description = this.props.post.message;
             this.setState({fields}); //eslint-disable-line react/no-did-update-set-state
@@ -211,28 +216,22 @@ export default class CreateIssueModal extends PureComponent {
 
     render() {
         const {post, visible, theme, jiraIssueMetadata} = this.props;
-        const {error, submitting} = this.state;
+        const {error, getMetaDataError, submitting} = this.state;
         const style = getStyle(theme);
 
         if (!visible) {
             return null;
         }
 
-        let issueError = null;
-        if (error) {
-            issueError = (
-                <React.Fragment>
-                    <p className='alert alert-danger'>
-                        <i
-                            className='fa fa-warning'
-                            title='Warning Icon'
-                        />
-                        <span> {error}</span>
-                    </p>
-                </React.Fragment>
-            );
-        }
-        let component;
+        const footerClose = (
+            <FormButton
+                type='submit'
+                btnClass='btn btn-primary'
+                defaultMessage='Close'
+                onClick={this.handleClose}
+            />
+        );
+
         let footer = (
             <React.Fragment>
                 <FormButton
@@ -251,23 +250,46 @@ export default class CreateIssueModal extends PureComponent {
             </React.Fragment>
         );
 
-        if (jiraIssueMetadata && jiraIssueMetadata.error) {
+        let issueError = null;
+        let component;
+
+        // if no getMetaDataError, show fields and allow user to input
+        // fields. An error at this point is from a server-side create
+        // issue submission and should be displayed (in addition to fields)
+        // to the user after clicking the create button.
+        if (error) {
+            issueError = (
+                <p className='alert alert-danger'>
+                    <i
+                        className='fa fa-warning'
+                        title='Warning Icon'
+                    />
+                    <span> {error}</span>
+                </p>
+            );
+        }
+
+        // if getmetadata fails, only display the error and a close button.
+        // user is not going to be able to create a ticket or even a partial
+        // ticket. likely a permissions error.
+        if (getMetaDataError) {
+            component = (
+                <p className='alert alert-danger'>
+                    <i
+                        className='fa fa-warning'
+                        title='Warning Icon'
+                    />
+                    <span> {getMetaDataError}</span>
+                </p>
+            );
+            footer = footerClose;
+        } else if (jiraIssueMetadata && jiraIssueMetadata.error) {
             component = (
                 <div style={style.modal}>
                     {jiraIssueMetadata.error}
                 </div>
             );
-
-            footer = (
-                <React.Fragment>
-                    <FormButton
-                        type='submit'
-                        btnClass='btn btn-primary'
-                        defaultMessage='Close'
-                        onClick={this.handleClose}
-                    />
-                </React.Fragment>
-            );
+            footer = footerClose;
         } else if (!post || !jiraIssueMetadata || !jiraIssueMetadata.projects) {
             component = <Loading/>;
         } else {
