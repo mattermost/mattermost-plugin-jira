@@ -10,6 +10,47 @@ import (
 	"github.com/andygrunwald/go-jira"
 )
 
+const (
+	eventCreatedStr            = "event_created"
+	eventCreatedCommentStr     = "event_created_comment"
+	eventDeletedStr            = "event_deleted"
+	eventDeletedCommentStr     = "event_deleted_comment"
+	eventDeletedUnresolvedStr  = "event_deleted_unresolved"
+	eventUpdatedAllStr         = "event_updated_all"
+	eventUpdatedAssigneeStr    = "event_updated_assignee"
+	eventUpdatedAttachmentStr  = "event_updated_attachment"
+	eventUpdatedCommentStr     = "event_updated_comment"
+	eventUpdatedDescriptionStr = "event_updated_description"
+	eventUpdatedLabelsStr      = "event_updated_labels"
+	eventUpdatedPriorityStr    = "event_updated_priority"
+	eventUpdatedRankStr        = "event_updated_rank"
+	eventUpdatedReopenedStr    = "event_updated_reopened"
+	eventUpdatedResolvedStr    = "event_updated_resolved"
+	eventUpdatedSprintStr      = "event_updated_sprint"
+	eventUpdatedStatusStr      = "event_updated_status"
+	eventUpdatedSummaryStr     = "event_updated_summary"
+)
+
+var webhookEventToEnumMap = map[string]string{
+	"comment_created":    eventCreatedCommentStr,
+	"comment_deleted":    eventDeletedCommentStr,
+	"comment_updated":    eventUpdatedCommentStr,
+	"jira:issue_created": eventCreatedStr,
+	"jira:issue_deleted": eventDeletedStr,
+}
+
+var updateFieldToEnumMap = map[string]string{
+	"assignee":    eventUpdatedAssigneeStr,
+	"Attachment":  eventUpdatedAttachmentStr,
+	"description": eventUpdatedDescriptionStr,
+	"labels":      eventUpdatedLabelsStr,
+	"priority":    eventUpdatedPriorityStr,
+	"Rank":        eventUpdatedRankStr,
+	"Sprint":      eventUpdatedSprintStr,
+	"summary":     eventUpdatedSummaryStr,
+	"status":      eventUpdatedStatusStr,
+}
+
 type JiraWebhook struct {
 	WebhookEvent string       `json:"webhookEvent,omitempty"`
 	Issue        jira.Issue   `json:"issue,omitempty"`
@@ -26,6 +67,37 @@ type JiraWebhook struct {
 		}
 	} `json:"changelog,omitempty"`
 	IssueEventTypeName string `json:"issue_event_type_name"`
+}
+
+// toEventEnums converts a JiraWebhook struct into a slice of internal event identifiers
+func (jwh *JiraWebhook) toEventEnums() []string {
+	we := jwh.WebhookEvent
+	etn := jwh.IssueEventTypeName
+
+	switch etn {
+	case "issue_generic":
+		item := jwh.ChangeLog.Items[0]
+		if item.Field == "resolution" {
+			if item.ToString == "Done" {
+				return []string{eventUpdatedResolvedStr, eventUpdatedStatusStr, eventUpdatedAllStr}
+			} else {
+				return []string{eventUpdatedReopenedStr, eventUpdatedStatusStr, eventUpdatedAllStr}
+			}
+		} else {
+			return []string{eventUpdatedStatusStr, eventUpdatedAllStr}
+		}
+	case "issue_updated":
+		field := jwh.ChangeLog.Items[0].Field
+		if updateFieldToEnumMap[field] != "" {
+			return []string{updateFieldToEnumMap[field], eventUpdatedAllStr}
+		} else {
+			// Custom field processing goes here
+			return []string{eventUpdatedAllStr}
+		}
+	case "issue_assigned":
+		return []string{eventUpdatedAssigneeStr, eventUpdatedAllStr}
+	}
+	return []string{webhookEventToEnumMap[we]}
 }
 
 func (jwh *JiraWebhook) mdJiraLink(title, suffix string) string {

@@ -135,11 +135,11 @@ func TestWebhookHTTP(t *testing.T) {
 		},
 		"issue lowered priority": {
 			Request:          testWebhookRequest("webhook-issue-updated-lowered-priority.json"),
-			ExpectedHeadline: `Test User updated priority from "Low" to "High" on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			ExpectedHeadline: `Test User updated priority from "High" to "Low" on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)`,
 		},
 		"issue raised priority": {
 			Request:          testWebhookRequest("webhook-issue-updated-raised-priority.json"),
-			ExpectedHeadline: `Test User updated priority from "High" to "Low" on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			ExpectedHeadline: `Test User updated priority from "Low" to "High" on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)`,
 		},
 		"issue rank": {
 			Request:          testWebhookRequest("webhook-issue-updated-rank.json"),
@@ -159,7 +159,7 @@ func TestWebhookHTTP(t *testing.T) {
 		},
 		"issue started working": {
 			Request:          testWebhookRequest("webhook-issue-updated-started-working.json"),
-			ExpectedHeadline: "Test User updated status from \"In Progress\" to \"To Do\" on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: `Test User updated status from "To Do" to "In Progress" on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)`,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

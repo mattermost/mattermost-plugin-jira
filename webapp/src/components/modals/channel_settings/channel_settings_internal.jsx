@@ -11,9 +11,23 @@ import Loading from 'components/loading';
 import {getProjectValues, getIssueValuesForMultipleProjects} from 'utils/jira_issue_metadata';
 
 const JiraEventOptions = [
-    {value: 'jira:issue_created', label: 'Issue Created'},
-    {value: 'jira:issue_updated', label: 'Issue Updated'},
-    {value: 'jira:issue_deleted', label: 'Issue Deleted'},
+    {value: 'event_created', label: 'Issue Created'},
+    {value: 'event_deleted', label: 'Issue Deleted'},
+    {value: 'event_updated_reopened', label: 'Issue Reopened'},
+    {value: 'event_updated_resolved', label: 'Issue Resolved'},
+    {value: 'event_created_comment', label: 'Comment Created'},
+    {value: 'event_updated_comment', label: 'Comment Updated'},
+    {value: 'event_deleted_comment', label: 'Comment Deleted'},
+    {value: 'event_updated_all', label: 'Issue Updated: All'},
+    {value: 'event_updated_assignee', label: 'Issue Updated: Assignee'},
+    {value: 'event_updated_attachment', label: 'Issue Updated: Attachment'},
+    {value: 'event_updated_description', label: 'Issue Updated: Description'},
+    {value: 'event_updated_labels', label: 'Issue Updated: Labels'},
+    {value: 'event_updated_priority', label: 'Issue Updated: Priority'},
+    {value: 'event_updated_rank', label: 'Issue Updated: Rank'},
+    {value: 'event_updated_sprint', label: 'Issue Updated: Sprint'},
+    {value: 'event_updated_status', label: 'Issue Updated: Status'},
+    {value: 'event_updated_summary', label: 'Issue Updated: Summary'},
 ];
 
 export default class ChannelSettingsModalInner extends PureComponent {

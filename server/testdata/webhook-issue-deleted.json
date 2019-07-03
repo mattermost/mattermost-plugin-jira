@@ -1,0 +1,237 @@
+{
+  "timestamp": 1562177136176,
+  "webhookEvent": "jira:issue_deleted",
+  "user": {
+    "self": "https://some-instance-test.atlassian.net/rest/api/2/user?accountId=5c5f880629be9642ba529340",
+    "name": "admin",
+    "key": "admin",
+    "accountId": "5c5f880629be9642ba529340",
+    "emailAddress": "some-instance-test@gmail.com",
+    "avatarUrls": {
+      "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5c5f880629be9642ba529340/7937ea7b-9272-49b3-a198-4a2ebf449d46/128?size=48&s=48",
+      "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5c5f880629be9642ba529340/7937ea7b-9272-49b3-a198-4a2ebf449d46/128?size=24&s=24",
+      "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5c5f880629be9642ba529340/7937ea7b-9272-49b3-a198-4a2ebf449d46/128?size=16&s=16",
+      "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5c5f880629be9642ba529340/7937ea7b-9272-49b3-a198-4a2ebf449d46/128?size=32&s=32"
+    },
+    "displayName": "Test User",
+    "active": true,
+    "timeZone": "America/Vancouver",
+    "accountType": "atlassian"
+  },
+  "issue": {
+    "id": "10303",
+    "self": "https://some-instance-test.atlassian.net/rest/api/2/issue/10303",
+    "key": "IDT-19",
+    "fields": {
+      "statuscategorychangedate": "2019-06-30T22:13:46.470-0700",
+      "fixVersions": [],
+      "resolution": null,
+      "lastViewed": "2019-07-03T11:04:07.726-0700",
+      "customfield_10060": null,
+      "customfield_10061": null,
+      "customfield_10062": null,
+      "customfield_10063": null,
+      "customfield_10064": null,
+      "customfield_10065": null,
+      "customfield_10066": null,
+      "priority": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/priority/3",
+        "iconUrl": "https://some-instance-test.atlassian.net/images/icons/priorities/medium.svg",
+        "name": "Medium",
+        "id": "3"
+      },
+      "labels": [],
+      "timeestimate": null,
+      "aggregatetimeoriginalestimate": null,
+      "versions": [],
+      "issuelinks": [],
+      "assignee": null,
+      "status": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/status/10004",
+        "description": "",
+        "iconUrl": "https://some-instance-test.atlassian.net/",
+        "name": "To Do",
+        "id": "10004",
+        "statusCategory": {
+          "self": "https://some-instance-test.atlassian.net/rest/api/2/statuscategory/2",
+          "id": 2,
+          "key": "new",
+          "colorName": "blue-gray",
+          "name": "To Do"
+        }
+      },
+      "components": [],
+      "customfield_10050": null,
+      "customfield_10051": null,
+      "customfield_10052": null,
+      "customfield_10053": null,
+      "customfield_10054": null,
+      "customfield_10055": null,
+      "customfield_10056": null,
+      "customfield_10057": null,
+      "customfield_10058": null,
+      "customfield_10059": null,
+      "customfield_10049": null,
+      "aggregatetimeestimate": null,
+      "creator": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/user?accountId=5c5f880629be9642ba529340",
+        "name": "admin",
+        "key": "admin",
+        "accountId": "5c5f880629be9642ba529340",
+        "emailAddress": "some-instance-test@gmail.com",
+        "avatarUrls": {
+          "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5c5f880629be9642ba529340/7937ea7b-9272-49b3-a198-4a2ebf449d46/128?size=48&s=48",
+          "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5c5f880629be9642ba529340/7937ea7b-9272-49b3-a198-4a2ebf449d46/128?size=24&s=24",
+          "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5c5f880629be9642ba529340/7937ea7b-9272-49b3-a198-4a2ebf449d46/128?size=16&s=16",
+          "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5c5f880629be9642ba529340/7937ea7b-9272-49b3-a198-4a2ebf449d46/128?size=32&s=32"
+        },
+        "displayName": "Test User",
+        "active": true,
+        "timeZone": "America/Vancouver",
+        "accountType": "atlassian"
+      },
+      "subtasks": [],
+      "customfield_10040": ["admin(admin)"],
+      "customfield_10041": null,
+      "customfield_10042": null,
+      "customfield_10043": "",
+      "reporter": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/user?accountId=5c5f880629be9642ba529340",
+        "name": "admin",
+        "key": "admin",
+        "accountId": "5c5f880629be9642ba529340",
+        "emailAddress": "some-instance-test@gmail.com",
+        "avatarUrls": {
+          "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5c5f880629be9642ba529340/7937ea7b-9272-49b3-a198-4a2ebf449d46/128?size=48&s=48",
+          "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5c5f880629be9642ba529340/7937ea7b-9272-49b3-a198-4a2ebf449d46/128?size=24&s=24",
+          "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5c5f880629be9642ba529340/7937ea7b-9272-49b3-a198-4a2ebf449d46/128?size=16&s=16",
+          "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5c5f880629be9642ba529340/7937ea7b-9272-49b3-a198-4a2ebf449d46/128?size=32&s=32"
+        },
+        "displayName": "Test User",
+        "active": true,
+        "timeZone": "America/Vancouver",
+        "accountType": "atlassian"
+      },
+      "aggregateprogress": {
+        "progress": 0,
+        "total": 0
+      },
+      "customfield_10044": "admin(admin)",
+      "customfield_10045": null,
+      "customfield_10046": null,
+      "customfield_10047": null,
+      "customfield_10048": null,
+      "customfield_10038": "0.0",
+      "customfield_10039": {
+        "hasEpicLinkFieldDependency": false,
+        "showField": false,
+        "nonEditableReason": {
+          "reason": "PLUGIN_LICENSE_ERROR",
+          "message": "Portfolio for Jira must be licensed for the Parent Link to be available."
+        }
+      },
+      "progress": {
+        "progress": 0,
+        "total": 0
+      },
+      "votes": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/issue/IDT-19/votes",
+        "votes": 0,
+        "hasVoted": false
+      },
+      "worklog": {
+        "startAt": 0,
+        "maxResults": 20,
+        "total": 0,
+        "worklogs": []
+      },
+      "issuetype": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/issuetype/10002",
+        "id": "10002",
+        "description": "A task that needs to be done.",
+        "iconUrl": "https://some-instance-test.atlassian.net/secure/viewavatar?size=medium&avatarId=10318&avatarType=issuetype",
+        "name": "Task",
+        "subtask": false,
+        "avatarId": 10318
+      },
+      "timespent": null,
+      "customfield_10030": "172800",
+      "customfield_10031": "",
+      "project": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/project/10004",
+        "id": "10004",
+        "key": "IDT",
+        "name": "Issue Dialog Testing",
+        "projectTypeKey": "software",
+        "simplified": false,
+        "avatarUrls": {
+          "48x48": "https://some-instance-test.atlassian.net/secure/projectavatar?pid=10004&avatarId=10405",
+          "24x24": "https://some-instance-test.atlassian.net/secure/projectavatar?size=small&s=small&pid=10004&avatarId=10405",
+          "16x16": "https://some-instance-test.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10004&avatarId=10405",
+          "32x32": "https://some-instance-test.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10004&avatarId=10405"
+        }
+      },
+      "customfield_10032": "mattermost.com",
+      "customfield_10033": "true",
+      "customfield_10034": "2019-07-01 05:13:46.091",
+      "aggregatetimespent": null,
+      "customfield_10035": null,
+      "customfield_10036": null,
+      "customfield_10037": "0.0",
+      "customfield_10027": null,
+      "customfield_10028": [],
+      "customfield_10029": null,
+      "resolutiondate": null,
+      "workratio": -1,
+      "watches": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/issue/IDT-19/watchers",
+        "watchCount": 1,
+        "isWatching": true
+      },
+      "created": "2019-06-30T22:13:46.091-0700",
+      "customfield_10020": null,
+      "customfield_10021": null,
+      "customfield_10022": "0|i001u7:",
+      "customfield_10026": null,
+      "customfield_10016": null,
+      "customfield_10017": null,
+      "customfield_10018": {
+        "hasEpicLinkFieldDependency": false,
+        "showField": false,
+        "nonEditableReason": {
+          "reason": "PLUGIN_LICENSE_ERROR",
+          "message": "Portfolio for Jira must be licensed for the Parent Link to be available."
+        }
+      },
+      "customfield_10019": null,
+      "updated": "2019-07-03T11:04:43.020-0700",
+      "timeoriginalestimate": null,
+      "description": "descxyvccfgf f+xbsdz 511f+",
+      "customfield_10010": null,
+      "customfield_10014": null,
+      "customfield_10015": null,
+      "timetracking": {},
+      "customfield_10005": null,
+      "customfield_10006": null,
+      "security": null,
+      "customfield_10007": null,
+      "customfield_10008": null,
+      "customfield_10009": null,
+      "attachment": [],
+      "summary": "hey",
+      "customfield_10000": "{}",
+      "customfield_10001": null,
+      "customfield_10002": null,
+      "customfield_10003": null,
+      "customfield_10004": null,
+      "environment": null,
+      "duedate": null,
+      "comment": {
+        "comments": [],
+        "maxResults": 0,
+        "total": 0,
+        "startAt": 0
+      }
+    }
+  }
+}
