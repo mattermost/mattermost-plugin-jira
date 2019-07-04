@@ -1,8 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import JiraIcon from 'components/icon';
-
 import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue';
 import CreateIssueModal from 'components/modals/create_issue';
 import ChannelSettingsModal from 'components/modals/channel_settings';
@@ -14,7 +12,7 @@ import SetupUI from 'components/setup_ui';
 import PluginId from 'plugin_id';
 
 import reducers from './reducers';
-import {handleConnectChange, getConnected, openChannelSettings, handleInstanceStatusChange, getSettings} from './actions';
+import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings} from './actions';
 import Hooks from './hooks/hooks';
 
 export let setupUI;
@@ -33,11 +31,6 @@ const setupUILater = (registry, store) => async () => {
         registry.registerRootComponent(CreateIssueModal);
         registry.registerRootComponent(ChannelSettingsModal);
         registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
-        registry.registerChannelHeaderButtonAction(
-            <JiraIcon/>,
-            (channel) => store.dispatch(openChannelSettings(channel.id)),
-            'JIRA',
-        );
         registry.registerRootComponent(AttachCommentToIssueModal);
         registry.registerPostDropdownMenuComponent(AttachCommentToIssuePostMenuAction);
 
@@ -57,6 +50,8 @@ export default class Plugin {
         setupUI = setupUILater(registry, store);
 
         // Register the dummy component, which will call setupUI when it is activated (i.e., when the user logs in)
-        registry.registerRootComponent(SetupUI);
+        registry.registerRootComponent(
+            () => <SetupUI registry={registry}/>
+        );
     }
 }
