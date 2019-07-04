@@ -27,13 +27,6 @@
       "fixVersions": [],
       "resolution": null,
       "lastViewed": "2019-07-03T11:04:07.726-0700",
-      "customfield_10060": null,
-      "customfield_10061": null,
-      "customfield_10062": null,
-      "customfield_10063": null,
-      "customfield_10064": null,
-      "customfield_10065": null,
-      "customfield_10066": null,
       "priority": {
         "self": "https://some-instance-test.atlassian.net/rest/api/2/priority/3",
         "iconUrl": "https://some-instance-test.atlassian.net/images/icons/priorities/medium.svg",
@@ -61,17 +54,6 @@
         }
       },
       "components": [],
-      "customfield_10050": null,
-      "customfield_10051": null,
-      "customfield_10052": null,
-      "customfield_10053": null,
-      "customfield_10054": null,
-      "customfield_10055": null,
-      "customfield_10056": null,
-      "customfield_10057": null,
-      "customfield_10058": null,
-      "customfield_10059": null,
-      "customfield_10049": null,
       "aggregatetimeestimate": null,
       "creator": {
         "self": "https://some-instance-test.atlassian.net/rest/api/2/user?accountId=5c5f880629be9642ba529340",
@@ -91,10 +73,6 @@
         "accountType": "atlassian"
       },
       "subtasks": [],
-      "customfield_10040": ["admin(admin)"],
-      "customfield_10041": null,
-      "customfield_10042": null,
-      "customfield_10043": "",
       "reporter": {
         "self": "https://some-instance-test.atlassian.net/rest/api/2/user?accountId=5c5f880629be9642ba529340",
         "name": "admin",
@@ -115,20 +93,6 @@
       "aggregateprogress": {
         "progress": 0,
         "total": 0
-      },
-      "customfield_10044": "admin(admin)",
-      "customfield_10045": null,
-      "customfield_10046": null,
-      "customfield_10047": null,
-      "customfield_10048": null,
-      "customfield_10038": "0.0",
-      "customfield_10039": {
-        "hasEpicLinkFieldDependency": false,
-        "showField": false,
-        "nonEditableReason": {
-          "reason": "PLUGIN_LICENSE_ERROR",
-          "message": "Portfolio for Jira must be licensed for the Parent Link to be available."
-        }
       },
       "progress": {
         "progress": 0,
@@ -171,16 +135,6 @@
           "32x32": "https://some-instance-test.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10004&avatarId=10405"
         }
       },
-      "customfield_10032": "mattermost.com",
-      "customfield_10033": "true",
-      "customfield_10034": "2019-07-01 05:13:46.091",
-      "aggregatetimespent": null,
-      "customfield_10035": null,
-      "customfield_10036": null,
-      "customfield_10037": "0.0",
-      "customfield_10027": null,
-      "customfield_10028": [],
-      "customfield_10029": null,
       "resolutiondate": null,
       "workratio": -1,
       "watches": {
@@ -189,41 +143,13 @@
         "isWatching": true
       },
       "created": "2019-06-30T22:13:46.091-0700",
-      "customfield_10020": null,
-      "customfield_10021": null,
-      "customfield_10022": "0|i001u7:",
-      "customfield_10026": null,
-      "customfield_10016": null,
-      "customfield_10017": null,
-      "customfield_10018": {
-        "hasEpicLinkFieldDependency": false,
-        "showField": false,
-        "nonEditableReason": {
-          "reason": "PLUGIN_LICENSE_ERROR",
-          "message": "Portfolio for Jira must be licensed for the Parent Link to be available."
-        }
-      },
-      "customfield_10019": null,
       "updated": "2019-07-03T11:04:43.020-0700",
       "timeoriginalestimate": null,
       "description": "descxyvccfgf f+xbsdz 511f+",
-      "customfield_10010": null,
-      "customfield_10014": null,
-      "customfield_10015": null,
       "timetracking": {},
-      "customfield_10005": null,
-      "customfield_10006": null,
       "security": null,
-      "customfield_10007": null,
-      "customfield_10008": null,
-      "customfield_10009": null,
       "attachment": [],
       "summary": "hey",
-      "customfield_10000": "{}",
-      "customfield_10001": null,
-      "customfield_10002": null,
-      "customfield_10003": null,
-      "customfield_10004": null,
       "environment": null,
       "duedate": null,
       "comment": {

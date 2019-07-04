@@ -118,7 +118,7 @@ func (p *Plugin) getChannelsSubscribed(jwh *JiraWebhook) ([]string, error) {
 	// Convert map to slice of sub ids
 	subIds := make([]string, len(subIdMap))
 	i := 0
-	for k, _ := range subIdMap {
+	for k := range subIdMap {
 		subIds[i] = k
 		i++
 	}
