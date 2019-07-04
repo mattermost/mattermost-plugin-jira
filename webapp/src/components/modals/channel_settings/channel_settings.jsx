@@ -13,7 +13,7 @@ export default class ChannelSettingsModal extends PureComponent {
     static propTypes = {
         close: PropTypes.func.isRequired,
         channel: PropTypes.object,
-        channelSubscriptions: PropTypes.Array,
+        channelSubscriptions: PropTypes.array,
         jiraIssueMetadata: PropTypes.object,
         fetchJiraIssueMetadata: PropTypes.func.isRequired,
         fetchChannelSubscriptions: PropTypes.func.isRequired,
