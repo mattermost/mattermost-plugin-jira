@@ -595,7 +595,7 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 	maxDisplayedUsers := 10
 	if len(jiraUsers) > 1 {
 
-		errorMsg := fmt.Sprintf("`%s` matches %d users.  Please make your user request unique.\n", assignee, len(jiraUsers))
+		errorMsg := fmt.Sprintf("`%s` matches %d users.  Please specify a unique assignee.\n", assignee, len(jiraUsers))
 
 		if len(jiraUsers) > maxDisplayedUsers {
 			errorMsg += fmt.Sprintf("\nFirst %+v users listed:\n", maxDisplayedUsers)
