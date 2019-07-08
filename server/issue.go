@@ -541,6 +541,91 @@ func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issue
 	return parseIssue(issue), nil
 }
 
+func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, error) {
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return "", err
+	}
+
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mmUserId)
+	if err != nil {
+		return "", err
+	}
+
+	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	if err != nil {
+		return "", err
+	}
+
+	// required minimum of three letters in assignee value
+	minChars := 3
+	if len(assignee) < minChars {
+		errorMsg := fmt.Sprintf("`%s` contains less than %v characters.", assignee, minChars)
+		return errorMsg, nil
+	}
+
+	// check for valid issue key
+	_, _, err = jiraClient.Issue.Get(issueKey, nil)
+	if err != nil {
+		errorMsg := fmt.Sprintf("We couldn't find the issue key `%s`.  Please confirm the issue key and try again.", issueKey)
+		return errorMsg, nil
+	}
+
+	// Get list of assignable assignees
+	url := fmt.Sprintf("rest/api/3/user/assignable/search?issueKey=%s&query=%s", issueKey, assignee)
+	req, err := jiraClient.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	var jiraUsers []*jira.User
+	resp, err := jiraClient.Do(req, &jiraUsers)
+	if err != nil {
+		if resp.Response.StatusCode == 401 {
+			return "You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.", nil
+		}
+		return "", err
+	}
+
+	// handle number of returned jira users
+	if len(jiraUsers) == 0 {
+		errorMsg := fmt.Sprintf("We couldn't find the assignee. Please use a Jira member and try again.")
+		return "", fmt.Errorf(errorMsg)
+	}
+
+	maxDisplayedUsers := 10
+	if len(jiraUsers) > 1 {
+
+		errorMsg := fmt.Sprintf("`%s` matches %d users.  Please specify a unique assignee.\n", assignee, len(jiraUsers))
+
+		if len(jiraUsers) > maxDisplayedUsers {
+			errorMsg += fmt.Sprintf("\nFirst %+v users listed:\n", maxDisplayedUsers)
+		}
+
+		for i := range jiraUsers {
+			if i == maxDisplayedUsers {
+				break
+			}
+			errorMsg += fmt.Sprintf("* %+v\n", jiraUsers[i].DisplayName)
+		}
+
+		return "", fmt.Errorf(errorMsg)
+	}
+
+	// user is array of one object
+	user := jiraUsers[0]
+
+	if _, err := jiraClient.Issue.UpdateAssignee(issueKey, user); err != nil {
+		return "", err
+	}
+
+	permalink := fmt.Sprintf("%v/browse/%v", ji.GetURL(), issueKey)
+
+	msg := fmt.Sprintf("`%s` assigned to Jira issue [%s](%s)", user.DisplayName, issueKey, permalink)
+	return msg, nil
+
+}
+
 func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string, error) {
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
