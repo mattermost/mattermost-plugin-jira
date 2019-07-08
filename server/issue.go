@@ -336,36 +336,33 @@ func httpAPIGetJiraProjectMetadata(ji Instance, w http.ResponseWriter, r *http.R
 
 	w.Header().Set("Content-Type", "application/json")
 
-	type issueType struct {
-		Value string `json:"value"`
-		Label string `json:"label"`
-	}
-	type project struct {
+	// Generic option, used in the options list in react-select
+	type option struct {
 		Value string `json:"value"`
 		Label string `json:"label"`
 	}
 	type projectMetadata struct {
-		Projects          []project              `json:"projects"`
-		IssuesPerProjects map[string][]issueType `json:"issues_per_project"`
+		Projects          []option            `json:"projects"`
+		IssuesPerProjects map[string][]option `json:"issues_per_project"`
 	}
 
 	var bb []byte
 	if len(cimd.Projects) == 0 {
 		bb = []byte(`{"error": "You do not have permission to create issues in any projects. Please contact your Jira admin."}`)
 	} else {
-		projects := make([]project, 0, len(cimd.Projects))
-		issues := make(map[string][]issueType, len(cimd.Projects))
+		projects := make([]option, 0, len(cimd.Projects))
+		issues := make(map[string][]option, len(cimd.Projects))
 		for _, prj := range cimd.Projects {
-			projects = append(projects, project{
+			projects = append(projects, option{
 				Value: prj.Key,
 				Label: prj.Name,
 			})
-			issueTypes := make([]issueType, 0, len(prj.IssueTypes))
+			issueTypes := make([]option, 0, len(prj.IssueTypes))
 			for _, issue := range prj.IssueTypes {
 				if issue.Subtasks {
 					continue
 				}
-				issueTypes = append(issueTypes, issueType{
+				issueTypes = append(issueTypes, option{
 					Value: issue.Id,
 					Label: issue.Name,
 				})
