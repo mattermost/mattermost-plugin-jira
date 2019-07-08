@@ -21,7 +21,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
         close: PropTypes.func.isRequired,
         channel: PropTypes.object.isRequired,
         theme: PropTypes.object.isRequired,
-        jiraIssueMetadata: PropTypes.object.isRequired,
+        jiraProjectMetadata: PropTypes.object.isRequired,
         channelSubscriptions: PropTypes.array.isRequired,
         createChannelSubscription: PropTypes.func.isRequired,
         deleteChannelSubscription: PropTypes.func.isRequired,
@@ -102,8 +102,8 @@ export default class ChannelSettingsModalInner extends PureComponent {
 
     render() {
         const style = getStyle(this.props.theme);
-        const projectOptions = getProjectValues(this.props.jiraIssueMetadata);
-        const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraIssueMetadata, this.state.filters.project);
+        const projectOptions = getProjectValues(this.props.jiraProjectMetadata);
+        const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, this.state.filters.project);
 
         let component = null;
         if (this.props.channel && this.props.channelSubscriptions) {

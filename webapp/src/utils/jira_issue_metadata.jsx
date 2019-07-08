@@ -6,7 +6,7 @@ export function getProjectValues(metadata) {
         return [];
     }
 
-    return metadata.projects.map((p) => ({value: p.key, label: p.name}));
+    return metadata.projects;
 }
 
 export function getIssueTypes(metadata, projectKey) {
@@ -22,31 +22,12 @@ export function getIssueValues(metadata, projectKey) {
         return [];
     }
 
-    return getIssueTypes(metadata, projectKey).map((issueType) => ({value: issueType.id, label: issueType.name}));
+    return metadata.issues_per_project[projectKey];
 }
 
 export function getIssueValuesForMultipleProjects(metadata, projectKeys) {
     return projectKeys.map((project) =>
-        getIssueValues(metadata, project)).
-        flat().
-        sort((a, b) => a.value - b.value).
-        filter((ele, i, me) => i === 0 || ele.value !== me[i - 1].value);
-}
-
-export function getIssueTypesForMultipleProjects(metadata, projectKeys) {
-    return projectKeys.map((project) =>
-        getIssueTypes(metadata, project)).
-        flat().
-        sort((a, b) => a.id - b.id).
-        filter((ele, i, me) => i === 0 || ele.id !== me[i - 1].id);
-}
-
-export function getFieldsForMultipleProjects(metadata, projectKeys) {
-    if (!metadata || !projectKeys) {
-        return [];
-    }
-
-    return getIssueTypesForMultipleProjects(metadata, projectKeys).map((issue) => issue.fields).reduce((acc, cur) => Object.assign(acc, cur), {});
+        getIssueValues(metadata, project)).flat().filter(Boolean).sort((a, b) => a.value - b.value).filter((ele, i, me) => i === 0 || ele.value !== me[i - 1].value);
 }
 
 export function getFields(metadata, projectKey, issueTypeId) {
