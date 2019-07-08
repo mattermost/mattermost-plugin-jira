@@ -82,6 +82,33 @@ func TestWebhookHTTP(t *testing.T) {
 				},
 			},
 		},
+		"issue created no fields": {
+			Request:                 testWebhookRequest("webhook-issue-created-no-relevant-fields.json"),
+			ExpectedStatus:          http.StatusOK,
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedText:            "Unit test description, not that long",
+			ExpectedFields:          []*model.SlackAttachmentField{},
+		},
+		"issue created no description": {
+			Request:                 testWebhookRequest("webhook-issue-created-no-description.json"),
+			ExpectedStatus:          http.StatusOK,
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
+			// ExpectedText:            "Unit test description, not that long",
+			ExpectedFields: []*model.SlackAttachmentField{
+				&model.SlackAttachmentField{
+					Title: "Priority",
+					Value: "High",
+					Short: true,
+				},
+			},
+		},
+		"issue created no description nor fields": {
+			Request:          testWebhookRequest("webhook-issue-created-no-description-nor-relevant-fields.json"),
+			ExpectedStatus:   http.StatusOK,
+			ExpectedHeadline: "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
+		},
 		"issue edited": {
 			Request:                 testWebhookRequest("webhook-issue-updated-edited.json"),
 			ExpectedSlackAttachment: true,
