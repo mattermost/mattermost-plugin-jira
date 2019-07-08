@@ -29,7 +29,7 @@ type jiraCloudInstance struct {
 
 	// For cloud instances (atlassian-connect.json install and user auth)
 	RawAtlassianSecurityContext string
-	*AtlassianSecurityContext   `json:"none"`
+	*AtlassianSecurityContext   `json:"-"`
 }
 
 var _ Instance = (*jiraCloudInstance)(nil)

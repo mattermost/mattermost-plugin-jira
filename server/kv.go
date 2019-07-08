@@ -332,6 +332,10 @@ func (store store) loadJIRAInstance(fullkey string) (Instance, error) {
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
 		}
+		err = json.Unmarshal([]byte(jci.RawAtlassianSecurityContext), &jci.AtlassianSecurityContext)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+		}
 		jci.Init(store.plugin)
 		return &jci, nil
 
