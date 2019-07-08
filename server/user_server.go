@@ -20,7 +20,22 @@ type OAuth1aTemporaryCredentials struct {
 	Secret string
 }
 
-func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpOAuth1aComplete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.Request) (status int, err error) {
+	// Prettify error output
+	defer func() {
+		if err == nil {
+			return
+		}
+
+		status, err = jsi.Plugin.respondSpecialTemplate(w, "/other/message.html", status, "text/html", struct {
+			Header  string
+			Message string
+		}{
+			Header:  "Failed to connect to Jira.",
+			Message: err.Error(),
+		})
+	}()
+
 	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(r)
 	if err != nil {
 		return http.StatusInternalServerError,
@@ -95,7 +110,33 @@ func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.
 	})
 }
 
-func httpOAuth1PublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpOAuth1aDisconnect(ji *jiraServerInstance, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed,
+			errors.New("method " + r.Method + " is not allowed, must be GET")
+	}
+
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	err := ji.GetPlugin().userDisconnect(ji, mattermostUserId)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return ji.GetPlugin().respondSpecialTemplate(w, "/other/message.html", http.StatusOK,
+		"text/html", struct {
+			Header  string
+			Message string
+		}{
+			Header:  "Disconnected from Jira.",
+			Message: "Please close this page.",
+		})
+}
+
+func httpOAuth1aPublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
 			errors.New("method " + r.Method + " is not allowed, must be GET")

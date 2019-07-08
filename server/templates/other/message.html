@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<style>
+			body {
+				color: rgb(23, 43, 77);
+				letter-spacing: -0.01em;
+			}
+
+			.flex-parent {
+				padding: 50px;
+			}
+
+			.message-container {
+				padding: 1.6em 0 0.8em;
+				opacity: .6;
+			}
+		</style>
+		<link rel="stylesheet" href="https://unpkg.com/@atlaskit/css-reset@2.0.0/dist/bundle.css" media="all">
+	</head>
+	<body>
+		<div class="flex-parent">
+			<h3>
+				{{ .Header}}
+			</h3>
+			<div class="message-container">
+				<div>{{ .Message }}</div>
+			</div>
+		</div>
+	</body>
+</html>

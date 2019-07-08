@@ -47,6 +47,14 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		http.Error(w, err.Error(), status)
 		return
 	}
+	switch status {
+	case http.StatusOK:
+		// pass through
+	case 0:
+		status = http.StatusOK
+	default:
+		w.WriteHeader(status)
+	}
 	p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
 }
 
@@ -90,16 +98,15 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 
 	// Oauth1 (Jira Server)
 	case routeOAuth1Complete:
-		return withServerInstance(p, w, r, httpOAuth1Complete)
+		return withServerInstance(p, w, r, httpOAuth1aComplete)
+	case routeUserDisconnect:
+		return withServerInstance(p, w, r, httpOAuth1aDisconnect)
 	case routeOAuth1PublicKey:
-		return httpOAuth1PublicKey(p, w, r)
+		return httpOAuth1aPublicKey(p, w, r)
 
 	// User connect/disconnect links
 	case routeUserConnect:
 		return withInstance(p.currentInstanceStore, w, r, httpUserConnect)
-	case routeUserDisconnect:
-		return withInstance(p.currentInstanceStore, w, r, httpUserDisconnect)
-
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:
 		return httpSubscribeWebhook(p, w, r)
@@ -150,4 +157,19 @@ func (p *Plugin) respondWithTemplate(w http.ResponseWriter, r *http.Request, con
 			errors.WithMessage(err, "failed to write response")
 	}
 	return http.StatusOK, nil
+}
+
+func (p *Plugin) respondSpecialTemplate(w http.ResponseWriter, key string, status int, contentType string, values interface{}) (int, error) {
+	w.Header().Set("Content-Type", contentType)
+	t := p.templates[key]
+	if t == nil {
+		return http.StatusInternalServerError,
+			errors.New("no template found for " + key)
+	}
+	err := t.Execute(w, values)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to write response")
+	}
+	return status, nil
 }
