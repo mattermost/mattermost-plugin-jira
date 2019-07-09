@@ -76,6 +76,10 @@ func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model
 }
 
 func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
+	if len(wh.notifications) == 0 {
+		return nil, http.StatusOK, nil
+	}
+
 	// We will only send webhook events if we have a connected instance.
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
@@ -84,9 +88,6 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 	}
 
 	posts := []*model.Post{}
-	if len(wh.notifications) == 0 {
-		return nil, http.StatusOK, nil
-	}
 	for _, notification := range wh.notifications {
 		var mattermostUserId string
 		var err error
