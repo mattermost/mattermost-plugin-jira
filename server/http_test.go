@@ -98,14 +98,6 @@ func checkHasSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 	}
 }
 
-func withExistingChannelSubscriptions(subscriptions []ChannelSubscription) *Subscriptions {
-	ret := NewSubscriptions()
-	for _, sub := range subscriptions {
-		ret.Channel.add(&sub)
-	}
-	return ret
-}
-
 func hasSubscriptions(subscriptions []ChannelSubscription, t *testing.T) func(api *plugintest.API) {
 	return func(api *plugintest.API) {
 		subs := withExistingChannelSubscriptions(subscriptions)

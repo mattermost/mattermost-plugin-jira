@@ -39,6 +39,13 @@ var webhookEventToEnumMap = map[string]string{
 	"jira:issue_deleted": eventDeletedStr,
 }
 
+var eventTypeNameToEnumMap = map[string]string{
+	"issue_created":         eventCreatedStr,
+	"issue_commented":       eventCreatedCommentStr,
+	"issue_comment_deleted": eventDeletedCommentStr,
+	"issue_comment_edited":  eventUpdatedCommentStr,
+}
+
 var updateFieldToEnumMap = map[string]string{
 	"assignee":    eventUpdatedAssigneeStr,
 	"Attachment":  eventUpdatedAttachmentStr,
@@ -70,34 +77,44 @@ type JiraWebhook struct {
 }
 
 // toEventEnums converts a JiraWebhook struct into a slice of internal event identifiers
-func (jwh *JiraWebhook) toEventEnums() []string {
+func (jwh *JiraWebhook) toEventEnums() map[string]bool {
 	we := jwh.WebhookEvent
 	etn := jwh.IssueEventTypeName
+	result := map[string]bool{}
+
+	if jwh.Issue.Fields == nil {
+		return result
+	}
 
 	switch etn {
-	case "issue_generic":
-		item := jwh.ChangeLog.Items[0]
-		if item.Field == "resolution" {
-			if item.ToString == "Done" {
-				return []string{eventUpdatedResolvedStr, eventUpdatedStatusStr, eventUpdatedAllStr}
+	case "issue_updated", "issue_generic":
+		result[eventUpdatedAllStr] = true
+		for _, item := range jwh.ChangeLog.Items {
+			field := item.Field
+			if updateFieldToEnumMap[field] != "" {
+				// Typical field
+				result[updateFieldToEnumMap[field]] = true
+			} else if field == "resolution" {
+				// Resolution
+				if item.ToString == "Done" {
+					result[eventUpdatedResolvedStr] = true
+				} else {
+					result[eventUpdatedReopenedStr] = true
+				}
 			} else {
-				return []string{eventUpdatedReopenedStr, eventUpdatedStatusStr, eventUpdatedAllStr}
+				// Custom field
 			}
-		} else {
-			return []string{eventUpdatedStatusStr, eventUpdatedAllStr}
-		}
-	case "issue_updated":
-		field := jwh.ChangeLog.Items[0].Field
-		if updateFieldToEnumMap[field] != "" {
-			return []string{updateFieldToEnumMap[field], eventUpdatedAllStr}
-		} else {
-			// Custom field processing goes here
-			return []string{eventUpdatedAllStr}
 		}
 	case "issue_assigned":
-		return []string{eventUpdatedAssigneeStr, eventUpdatedAllStr}
+		result[eventUpdatedAllStr] = true
+		result[eventUpdatedAssigneeStr] = true
+	case "":
+		result[webhookEventToEnumMap[we]] = true
+	default:
+		result[eventTypeNameToEnumMap[etn]] = true
 	}
-	return []string{webhookEventToEnumMap[we]}
+
+	return result
 }
 
 func (jwh *JiraWebhook) mdJiraLink(title, suffix string) string {

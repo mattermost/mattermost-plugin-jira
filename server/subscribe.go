@@ -103,30 +103,12 @@ func (p *Plugin) getChannelsSubscribed(jwh *JiraWebhook) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	eventEnums := jwh.toEventEnums()
 
-	// Gather sub ids in a map for performance
-	subIdMap := map[string]int{}
-	for _, enum := range eventEnums {
-		ids := subs.Channel.IdByEvent[enum]
-		for _, id := range ids {
-			subIdMap[id] = 0
-		}
-	}
-
-	// Convert map to slice of sub ids
-	subIds := make([]string, len(subIdMap))
-	i := 0
-	for k := range subIdMap {
-		subIds[i] = k
-		i++
-	}
+	subIds := subs.Channel.ById
 
 	channelIds := []string{}
-	for _, subId := range subIds {
-		sub := subs.Channel.ById[subId]
-
+	for _, sub := range subIds {
 		acceptable := true
 		for field, acceptableValues := range sub.Filters {
 			// Blank in acceptable values means all values are acceptable
@@ -137,7 +119,7 @@ func (p *Plugin) getChannelsSubscribed(jwh *JiraWebhook) ([]string, error) {
 			case "event":
 				found := false
 				for _, acceptableEvent := range acceptableValues {
-					for _, enum := range eventEnums {
+					for enum := range eventEnums {
 						if acceptableEvent == enum {
 							found = true
 							break

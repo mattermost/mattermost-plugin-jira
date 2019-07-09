@@ -47,7 +47,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
         super(props);
 
         let filters = {
-            events: [],
+            event: [],
             project: [],
             issue_type: [],
         };
@@ -83,6 +83,12 @@ export default class ChannelSettingsModalInner extends PureComponent {
     handleCreate = (e) => {
         if (e && e.preventDefault) {
             e.preventDefault();
+        }
+
+        const events = this.state.filters.event;
+        if (events.length === 0) {
+            this.setState({error: 'Please select an event.'});
+            return;
         }
 
         const subscription = {
@@ -124,14 +130,14 @@ export default class ChannelSettingsModalInner extends PureComponent {
             component = (
                 <div style={style.modal}>
                     <ReactSelectSetting
-                        name={'events'}
+                        name={'event'}
                         label={'Events'}
                         required={true}
                         onChange={this.handleSettingChange}
                         options={JiraEventOptions}
                         isMulti={true}
                         theme={this.props.theme}
-                        value={JiraEventOptions.filter((option) => this.state.filters.events.includes(option.value))}
+                        value={JiraEventOptions.filter((option) => this.state.filters.event.includes(option.value))}
                     />
                     <ReactSelectSetting
                         name={'project'}
@@ -166,6 +172,9 @@ export default class ChannelSettingsModalInner extends PureComponent {
                 onSubmit={this.handleCreate}
             >
                 <Modal.Body ref='modalBody'>
+                    <p className='help-text error-text'>
+                        <span>{this.state.error}</span>
+                    </p>
                     {component}
                 </Modal.Body>
                 <Modal.Footer>
