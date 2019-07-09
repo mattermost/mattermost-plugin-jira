@@ -311,10 +311,6 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 	if cfg.Secret == "" {
 		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret")
 	}
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
 
 	if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(cfg.Secret)) != 1 {
 		return http.StatusForbidden, fmt.Errorf("Request URL: secret did not match")
@@ -338,7 +334,7 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		}
 	}
 
-	_, status, err := wh.PostNotifications(p, ji)
+	_, status, err := wh.PostNotifications(p)
 	if err != nil {
 		return status, err
 	}

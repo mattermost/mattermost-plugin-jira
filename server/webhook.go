@@ -16,7 +16,7 @@ import (
 type Webhook interface {
 	EventMask() uint64
 	PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error)
-	PostNotifications(p *Plugin, ji Instance) ([]*model.Post, int, error)
+	PostNotifications(p *Plugin) ([]*model.Post, int, error)
 }
 
 type webhook struct {
@@ -75,7 +75,14 @@ func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model
 	return post, http.StatusOK, nil
 }
 
-func (wh *webhook) PostNotifications(p *Plugin, ji Instance) ([]*model.Post, int, error) {
+func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
+	// We will only send webhook events if we have a connected instance.
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		// This isn't an internal server error. There's just no instance installed.
+		return nil, http.StatusOK, nil
+	}
+
 	posts := []*model.Post{}
 	if len(wh.notifications) == 0 {
 		return nil, http.StatusOK, nil

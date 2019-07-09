@@ -45,8 +45,8 @@ func (wh *testWebhookWrapper) PostToChannel(p *Plugin, channelId, fromUserId str
 	}
 	return post, status, err
 }
-func (wh *testWebhookWrapper) PostNotifications(p *Plugin, ji Instance) ([]*model.Post, int, error) {
-	posts, status, err := wh.Webhook.PostNotifications(p, ji)
+func (wh *testWebhookWrapper) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
+	posts, status, err := wh.Webhook.PostNotifications(p)
 	if len(posts) != 0 {
 		wh.postedNotifications = append(wh.postedNotifications, posts...)
 	}
