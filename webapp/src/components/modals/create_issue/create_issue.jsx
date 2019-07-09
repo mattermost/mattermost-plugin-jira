@@ -11,7 +11,7 @@ import FormButton from 'components/form_button';
 import Loading from 'components/loading';
 import ReactSelectSetting from 'components/react_select_setting';
 
-import {getProjectValues, getIssueTypes, getIssueValues, getFields} from 'utils/jira_issue_metadata';
+import {getProjectValues, getIssueValues, getFields} from 'utils/jira_issue_metadata';
 
 const initialState = {
     submitting: false,
@@ -41,7 +41,10 @@ export default class CreateIssueModal extends PureComponent {
         theme: PropTypes.object.isRequired,
         visible: PropTypes.bool.isRequired,
         jiraIssueMetadata: PropTypes.object,
-        fetchJiraIssueMetadata: PropTypes.func.isRequired,
+        clearIssueMetadata: PropTypes.func.isRequired,
+        jiraProjectMetadata: PropTypes.object,
+        fetchJiraIssueMetadataForProject: PropTypes.func.isRequired,
+        fetchJiraProjectMetadata: PropTypes.func.isRequired,
     };
 
     constructor(props) {
@@ -67,7 +70,7 @@ export default class CreateIssueModal extends PureComponent {
 
     componentDidUpdate(prevProps) {
         if (this.props.post && (!prevProps.post || this.props.post.id !== prevProps.post.id)) {
-            this.props.fetchJiraIssueMetadata().then((fetched) => {
+            this.props.fetchJiraProjectMetadata().then((fetched) => {
                 if (fetched.error) {
                     this.setState({getMetaDataError: fetched.error.message, submitting: false});
                 }
@@ -76,7 +79,11 @@ export default class CreateIssueModal extends PureComponent {
             fields.description = this.props.post.message;
             this.setState({fields}); //eslint-disable-line react/no-did-update-set-state
         } else if (this.props.channelId && (this.props.channelId !== prevProps.channelId || this.props.description !== prevProps.description)) {
-            this.props.fetchJiraIssueMetadata();
+            this.props.fetchJiraProjectMetadata().then((fetched) => {
+                if (fetched.error) {
+                    this.setState({getMetaDataError: fetched.error.message, submitting: false});
+                }
+            });
             const fields = {...this.state.fields};
             fields.description = this.props.description;
             this.setState({fields}); //eslint-disable-line react/no-did-update-set-state
@@ -177,10 +184,19 @@ export default class CreateIssueModal extends PureComponent {
     };
 
     handleProjectChange = (id, value) => {
-        const fields = {...this.state.fields};
-        const issueTypes = getIssueTypes(this.props.jiraIssueMetadata, value);
-        const issueType = issueTypes.length && issueTypes[0].id;
         const projectKey = value;
+
+        // Clear the current metadata so that we display a loading indicator while we fetch the new metadata
+        this.props.clearIssueMetadata();
+        this.props.fetchJiraIssueMetadataForProject(projectKey).then((fetched) => {
+            if (fetched.error) {
+                this.setState({getMetaDataError: fetched.error.message, submitting: false});
+            }
+        });
+
+        const fields = {...this.state.fields};
+        const issueTypes = getIssueValues(this.props.jiraProjectMetadata, value);
+        const issueType = issueTypes.length && issueTypes[0].value;
         fields.project = {
             key: value,
         };
@@ -215,7 +231,7 @@ export default class CreateIssueModal extends PureComponent {
     };
 
     render() {
-        const {post, visible, theme, jiraIssueMetadata} = this.props;
+        const {post, visible, theme, jiraIssueMetadata, jiraProjectMetadata} = this.props;
         const {error, getMetaDataError, submitting} = this.state;
         const style = getStyle(theme);
 
@@ -283,18 +299,42 @@ export default class CreateIssueModal extends PureComponent {
                 </p>
             );
             footer = footerClose;
-        } else if (jiraIssueMetadata && jiraIssueMetadata.error) {
+        } else if ((jiraIssueMetadata && jiraIssueMetadata.error) ||
+            (jiraProjectMetadata && jiraProjectMetadata.error)) {
+            const msg = (jiraIssueMetadata && jiraIssueMetadata.error) ? jiraIssueMetadata.error : jiraProjectMetadata.error;
             component = (
                 <div style={style.modal}>
-                    {jiraIssueMetadata.error}
+                    {msg}
                 </div>
             );
             footer = footerClose;
-        } else if (!post || !jiraIssueMetadata || !jiraIssueMetadata.projects) {
+        } else if (!post || !jiraProjectMetadata || !jiraProjectMetadata.projects) {
             component = <Loading/>;
         } else {
-            const issueOptions = getIssueValues(jiraIssueMetadata, this.state.projectKey);
-            const projectOptions = getProjectValues(jiraIssueMetadata);
+            const issueOptions = getIssueValues(jiraProjectMetadata, this.state.projectKey);
+            const projectOptions = getProjectValues(jiraProjectMetadata);
+
+            let fieldsComponent;
+            if (!this.state.projectKey) {
+                fieldsComponent = null;
+            } else if (jiraIssueMetadata) {
+                fieldsComponent = (
+                    <JiraFields
+                        fields={getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType)}
+                        onChange={this.handleFieldChange}
+                        values={this.state.fields}
+                        allowedFields={this.allowedFields}
+                        allowedSchemaCustom={this.allowedSchemaCustom}
+                        theme={theme}
+                        value={this.state.fields}
+                        addValidate={this.validator.addComponent}
+                        removeValidate={this.validator.removeComponent}
+                    />
+                );
+            } else {
+                fieldsComponent = <Loading/>;
+            }
+
             component = (
                 <div style={style.modal}>
                     {issueError}
@@ -321,17 +361,7 @@ export default class CreateIssueModal extends PureComponent {
                         theme={theme}
                         value={issueOptions.find((option) => option.value === this.state.issueType)}
                     />
-                    <JiraFields
-                        fields={getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType)}
-                        onChange={this.handleFieldChange}
-                        values={this.state.fields}
-                        allowedFields={this.allowedFields}
-                        allowedSchemaCustom={this.allowedSchemaCustom}
-                        theme={theme}
-                        value={this.state.fields}
-                        addValidate={this.validator.addComponent}
-                        removeValidate={this.validator.removeComponent}
-                    />
+                    {fieldsComponent}
                     <br/>
                 </div>
             );

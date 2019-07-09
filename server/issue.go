@@ -239,7 +239,70 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	return http.StatusOK, nil
 }
 
-func httpAPIGetCreateIssueMetadata(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpAPIGetCreateIssueMetadataForProject(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed,
+			errors.New("Request: " + r.Method + " is not allowed, must be GET")
+	}
+
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	projectKey := r.FormValue("project-key")
+	if projectKey == "" {
+		return http.StatusBadRequest, errors.New("project-key query param is required")
+	}
+
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	cimd, resp, err := jiraClient.Issue.GetCreateMetaWithOptions(&jira.GetQueryOptions{
+		Expand:      "projects.issuetypes.fields",
+		ProjectKeys: projectKey,
+	})
+	if err != nil {
+		message := "failed to get CreateIssue metadata"
+		if resp != nil {
+			bb, _ := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+			message += ", details:" + string(bb)
+		}
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, message)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	var bb []byte
+	if len(cimd.Projects) == 0 {
+		bb = []byte(`{"error": "You do not have permission to create issues in that project. Please contact your Jira admin."}`)
+	} else {
+		bb, err = json.Marshal(cimd)
+		if err != nil {
+			return http.StatusInternalServerError,
+				errors.WithMessage(err, "failed to marshal response")
+		}
+	}
+
+	_, err = w.Write(bb)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to write response")
+	}
+
+	return http.StatusOK, nil
+}
+
+func httpAPIGetJiraProjectMetadata(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
 			errors.New("Request: " + r.Method + " is not allowed, must be GET")
@@ -260,9 +323,7 @@ func httpAPIGetCreateIssueMetadata(ji Instance, w http.ResponseWriter, r *http.R
 		return http.StatusInternalServerError, err
 	}
 
-	cimd, resp, err := jiraClient.Issue.GetCreateMetaWithOptions(&jira.GetQueryOptions{
-		Expand: "projects.issuetypes.fields",
-	})
+	cimd, resp, err := jiraClient.Issue.GetCreateMetaWithOptions(nil)
 	if err != nil {
 		message := "failed to get CreateIssue metadata"
 		if resp != nil {
@@ -270,26 +331,58 @@ func httpAPIGetCreateIssueMetadata(ji Instance, w http.ResponseWriter, r *http.R
 			resp.Body.Close()
 			message += ", details:" + string(bb)
 		}
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, message)
+		return http.StatusInternalServerError, errors.WithMessage(err, message)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+
+	// Generic option, used in the options list in react-select
+	type option struct {
+		Value string `json:"value"`
+		Label string `json:"label"`
+	}
+	type projectMetadata struct {
+		Projects          []option            `json:"projects"`
+		IssuesPerProjects map[string][]option `json:"issues_per_project"`
+	}
 
 	var bb []byte
 	if len(cimd.Projects) == 0 {
 		bb = []byte(`{"error": "You do not have permission to create issues in any projects. Please contact your Jira admin."}`)
 	} else {
-		bb, err = json.Marshal(cimd)
+		projects := make([]option, 0, len(cimd.Projects))
+		issues := make(map[string][]option, len(cimd.Projects))
+		for _, prj := range cimd.Projects {
+			projects = append(projects, option{
+				Value: prj.Key,
+				Label: prj.Name,
+			})
+			issueTypes := make([]option, 0, len(prj.IssueTypes))
+			for _, issue := range prj.IssueTypes {
+				if issue.Subtasks {
+					continue
+				}
+				issueTypes = append(issueTypes, option{
+					Value: issue.Id,
+					Label: issue.Name,
+				})
+			}
+			issues[prj.Key] = issueTypes
+		}
+		payload := projectMetadata{
+			Projects:          projects,
+			IssuesPerProjects: issues,
+		}
+
+		bb, err = json.Marshal(payload)
 		if err != nil {
-			return http.StatusInternalServerError,
-				errors.WithMessage(err, "failed to marshal response")
+			return http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal response")
 		}
 	}
+
 	_, err = w.Write(bb)
 	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write response")
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
 	}
 
 	return http.StatusOK, nil
