@@ -44,7 +44,7 @@ export default class JiraIssueSelector extends Component {
         const textSearchTerm = (textEncoded.length > 0) ? 'text ~ "' + textEncoded + '*"' : '';
         const finalQuery = textSearchTerm + ' ' + searchDefaults;
 
-        doFetchWithResponse(this.props.fetchIssuesEndpoint + `?jql=${finalQuery}`).then(({data}) => {
+        return doFetchWithResponse(this.props.fetchIssuesEndpoint + `?jql=${finalQuery}`).then(({data}) => {
             return data;
         }).catch((e) => {
             this.setState({error: e});

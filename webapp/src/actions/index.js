@@ -166,6 +166,7 @@ export const fetchChannelSubscriptions = (channelId) => {
         return {data};
     };
 };
+
 export function getSettings(getState) {
     let data;
     const baseUrl = getPluginServerRoute(getState());
@@ -236,6 +237,9 @@ export const closeChannelSettings = () => {
 
 export function handleInstanceStatusChange(store) {
     return (msg) => {
+        // Update the user's UI state when the instance state changes
+        getConnected()(store.dispatch, store.getState);
+
         if (!msg.data) {
             return;
         }

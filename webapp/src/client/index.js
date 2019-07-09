@@ -9,7 +9,7 @@ export const doFetch = async (url, options) => {
     return data;
 };
 
-export const doFetchWithResponse = async (url, options) => {
+export const doFetchWithResponse = async (url, options = {}) => {
     const response = await fetch(url, Client4.getOptions(options));
 
     let data;

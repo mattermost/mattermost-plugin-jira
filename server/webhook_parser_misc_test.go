@@ -21,7 +21,7 @@ func TestMarkdown(t *testing.T) {
 	w := wh.(*webhook)
 	require.NotNil(t, w)
 	require.Equal(t,
-		"Test User created story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
+		"Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 		w.headline)
 }
 

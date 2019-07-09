@@ -127,6 +127,12 @@ func (jwh *JiraWebhook) mdSummaryLink() string {
 	return jwh.mdIssueType() + " " + jwh.mdJiraLink(jwh.mdIssueSummary(), "/browse/"+jwh.Issue.Key)
 }
 
+func (jwh *JiraWebhook) mdKeySummaryLink() string {
+	return jwh.mdIssueType() + " " + jwh.mdJiraLink(
+		jwh.Issue.Key+": "+jwh.mdIssueSummary(),
+		"/browse/"+jwh.Issue.Key)
+}
+
 func (jwh *JiraWebhook) mdKeyLink() string {
 	return jwh.mdIssueType() + " " + jwh.mdJiraLink(jwh.Issue.Key, "/browse/"+jwh.Issue.Key)
 }

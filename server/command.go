@@ -12,7 +12,8 @@ import (
 const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
 	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
-	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field.\n" +
+	"* `/jira assign <issue-key> <assignee>` - Change the assignee of a Jira issue\n" +
+	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field\n" +
 	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
 	"* `/jira view <issue-key>` or `/jira <issue-key>` - View a Jira issue\n" +
 	"* `/jira settings [setting] [value]` - Update your user settings\n" +
@@ -49,14 +50,15 @@ var jiraCommandHandler = CommandHandler{
 		"view":             executeView,
 		"settings":         executeSettings,
 		"transition":       executeTransition,
+		"assign":           executeAssign,
 		"uninstall/cloud":  executeUninstallCloud,
 		"uninstall/server": executeUninstallServer,
 		"webhook":          executeWebhookURL,
 		"help":             commandHelp,
-		//"webhook/url":    executeWebhookURL,
-		//"list": executeList,
-		//"instance/select":     executeInstanceSelect,
-		//"instance/delete":     executeInstanceDelete,
+		// "webhook/url":      executeWebhookURL,
+		// "list":             executeList,
+		// "instance/select":  executeInstanceSelect,
+		// "instance/delete":  executeInstanceDelete,
 	},
 	defaultHandler: executeJiraDefault,
 }
@@ -451,6 +453,23 @@ func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandA
 	return p.responsef(header, uninstallInstructions)
 }
 
+func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+
+	if len(args) != 2 {
+		return p.responsef(header, "Please specify both an issue key and assignee in the form `/jira assign <issue-key> <assignee>`.")
+	}
+
+	issueKey := args[0]
+	assignee := args[1]
+
+	msg, err := p.assignJiraIssue(header.UserId, issueKey, assignee)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+
+	return p.responsef(header, msg)
+}
+
 func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 2 {
 		return p.help(header)
@@ -511,79 +530,79 @@ func (p *Plugin) responsef(commandArgs *model.CommandArgs, format string, args .
 }
 
 // Uncomment if needed for development: (and uncomment the command handlers above)
-//
-//func executeInstanceSelect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-//	if len(args) != 1 {
-//		return help()
-//	}
-//	instanceKey := args[0]
-//	num, err := strconv.ParseUint(instanceKey, 10, 8)
-//	if err == nil {
-//		known, loadErr := p.instanceStore.LoadKnownJIRAInstances()
-//		if loadErr != nil {
-//			return responsef("Failed to load known Jira instances: %v", err)
-//		}
-//		if num < 1 || int(num) > len(known) {
-//			return responsef("Wrong instance number %v, must be 1-%v\n", num, len(known)+1)
-//		}
-//
-//		keys := []string{}
-//		for key := range known {
-//			keys = append(keys, key)
-//		}
-//		sort.Strings(keys)
-//		instanceKey = keys[num-1]
-//	}
-//
-//	ji, err := p.instanceStore.LoadJIRAInstance(instanceKey)
-//	if err != nil {
-//		return responsef("Failed to load Jira instance %s: %v", instanceKey, err)
-//	}
-//	err = p.StoreCurrentJIRAInstanceAndNotify(ji)
-//	if err != nil {
-//		return responsef(err.Error())
-//	}
-//
-//	return executeList(p, c, header)
-//}
-//
-//func executeInstanceDelete(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-//	if len(args) != 1 {
-//		return help()
-//	}
-//	instanceKey := args[0]
-//
-//	known, err := p.instanceStore.LoadKnownJIRAInstances()
-//	if err != nil {
-//		return responsef("Failed to load known JIRA instances: %v", err)
-//	}
-//	if len(known) == 0 {
-//		return responsef("There are no instances to delete.\n")
-//	}
-//
-//	num, err := strconv.ParseUint(instanceKey, 10, 8)
-//	if err == nil {
-//		if num < 1 || int(num) > len(known) {
-//			return responsef("Wrong instance number %v, must be 1-%v\n", num, len(known)+1)
-//		}
-//
-//		keys := []string{}
-//		for key := range known {
-//			keys = append(keys, key)
-//		}
-//		sort.Strings(keys)
-//		instanceKey = keys[num-1]
-//	}
-//
-//	// Remove the instance
-//	err = p.instanceStore.DeleteJiraInstance(instanceKey)
-//	if err != nil {
-//		return responsef("failed to delete Jira instance %s: %v", instanceKey, err)
-//	}
-//
-//	// if that was our only instance, just respond with an empty list.
-//	if len(known) == 1 {
-//		return executeList(p, c, header)
-//	}
-//	return executeInstanceSelect(p, c, header, "1")
-//}
+
+// func executeInstanceSelect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+// 	if len(args) != 1 {
+// 		return p.help(header)
+// 	}
+// 	instanceKey := args[0]
+// 	num, err := strconv.ParseUint(instanceKey, 10, 8)
+// 	if err == nil {
+// 		known, loadErr := p.instanceStore.LoadKnownJIRAInstances()
+// 		if loadErr != nil {
+// 			return p.responsef(header, "Failed to load known Jira instances: %v", err)
+// 		}
+// 		if num < 1 || int(num) > len(known) {
+// 			return p.responsef(header, "Wrong instance number %v, must be 1-%v\n", num, len(known)+1)
+// 		}
+
+// 		keys := []string{}
+// 		for key := range known {
+// 			keys = append(keys, key)
+// 		}
+// 		sort.Strings(keys)
+// 		instanceKey = keys[num-1]
+// 	}
+
+// 	ji, err := p.instanceStore.LoadJIRAInstance(instanceKey)
+// 	if err != nil {
+// 		return p.responsef(header, "Failed to load Jira instance %s: %v", instanceKey, err)
+// 	}
+// 	err = p.StoreCurrentJIRAInstanceAndNotify(ji)
+// 	if err != nil {
+// 		return p.responsef(header, err.Error())
+// 	}
+
+// 	return executeList(p, c, header)
+// }
+
+// func executeInstanceDelete(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+// 	if len(args) != 1 {
+// 		return p.help(header)
+// 	}
+// 	instanceKey := args[0]
+
+// 	known, err := p.instanceStore.LoadKnownJIRAInstances()
+// 	if err != nil {
+// 		return p.responsef(header, "Failed to load known JIRA instances: %v", err)
+// 	}
+// 	if len(known) == 0 {
+// 		return p.responsef(header, "There are no instances to delete.\n")
+// 	}
+
+// 	num, err := strconv.ParseUint(instanceKey, 10, 8)
+// 	if err == nil {
+// 		if num < 1 || int(num) > len(known) {
+// 			return p.responsef(header, "Wrong instance number %v, must be 1-%v\n", num, len(known)+1)
+// 		}
+
+// 		keys := []string{}
+// 		for key := range known {
+// 			keys = append(keys, key)
+// 		}
+// 		sort.Strings(keys)
+// 		instanceKey = keys[num-1]
+// 	}
+
+// 	// Remove the instance
+// 	err = p.instanceStore.DeleteJiraInstance(instanceKey)
+// 	if err != nil {
+// 		return p.responsef(header, "failed to delete Jira instance %s: %v", instanceKey, err)
+// 	}
+
+// 	// if that was our only instance, just respond with an empty list.
+// 	if len(known) == 1 {
+// 		return executeList(p, c, header)
+// 	}
+// 	return executeInstanceSelect(p, c, header, "1")
+// }
