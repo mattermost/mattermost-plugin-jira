@@ -127,15 +127,13 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		return http.StatusBadRequest, err
 	}
 
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	_, statusCode, err := wh.PostNotifications(p, ji)
+	// Attempt to send webhook notifications to connected users.
+	_, statusCode, err := wh.PostNotifications(p)
 	if err != nil {
 		return statusCode, err
 	}
 
+	// Send webhook events to subscribed channels. This will work even if there isn't an instance installed.
 	// Skip events we don't need to post
 	if eventMask&wh.EventMask() == 0 {
 		return http.StatusOK, nil
