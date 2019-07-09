@@ -4,7 +4,7 @@
 package main
 
 import (
-	"github.com/andygrunwald/go-jira"
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 )
 
@@ -41,6 +41,17 @@ func (store mockCurrentInstanceStore) LoadCurrentJIRAInstance() (Instance, error
 	return &jiraTestInstance{
 		JIRAInstance: *NewJIRAInstance(store.plugin, "test", "jiraTestInstanceKey"),
 	}, nil
+}
+
+type mockCurrentInstanceStoreNoInstance struct {
+	plugin *Plugin
+}
+
+func (store mockCurrentInstanceStoreNoInstance) StoreCurrentJIRAInstance(ji Instance) error {
+	return nil
+}
+func (store mockCurrentInstanceStoreNoInstance) LoadCurrentJIRAInstance() (Instance, error) {
+	return nil, errors.New("failed to load current Jira instance: not found")
 }
 
 type mockUserStore struct{}
