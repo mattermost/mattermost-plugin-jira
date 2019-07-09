@@ -49,8 +49,7 @@ const maskComments = eventCreatedComment |
 	eventUpdatedComment
 
 const maskDefault = maskLegacy |
-	eventUpdatedAssignee |
-	maskComments
+	eventUpdatedAssignee
 
 const maskAll = math.MaxUint64
 
@@ -66,8 +65,11 @@ var eventParamMasks = map[string]uint64{
 	"updated_sprint":      eventUpdatedSprint,      // assigned to a different sprint
 	"updated_status":      eventUpdatedStatus,      // transitions like Done, In Progress
 	"updated_summary":     eventUpdatedSummary,     // issue renamed
+	"updated_comments":    maskComments,            // comment events
 	"updated_all":         maskAll,                 // all events
 }
+
+var ErrWebhookIgnored = errors.New("Webhook purposely ignored")
 
 func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	// Validate the request and extract params
@@ -118,6 +120,9 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 	}
 
 	wh, _, err := ParseWebhook(r.Body)
+	if err == ErrWebhookIgnored {
+		return http.StatusOK, nil
+	}
 	if err != nil {
 		return http.StatusBadRequest, err
 	}

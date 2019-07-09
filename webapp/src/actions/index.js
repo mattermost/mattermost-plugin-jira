@@ -46,12 +46,12 @@ export const closeAttachCommentToIssueModal = () => {
     };
 };
 
-export const fetchJiraIssueMetadata = () => {
+export const fetchJiraIssueMetadataForProject = (projectKey) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         let data = null;
         try {
-            data = await doFetch(`${baseUrl}/api/v2/get-create-issue-metadata`, {
+            data = await doFetch(`${baseUrl}/api/v2/get-create-issue-metadata-for-project?project-key=${projectKey}`, {
                 method: 'get',
             });
         } catch (error) {
@@ -60,6 +60,33 @@ export const fetchJiraIssueMetadata = () => {
 
         dispatch({
             type: ActionTypes.RECEIVED_JIRA_ISSUE_METADATA,
+            data,
+        });
+
+        return {data};
+    };
+};
+
+export const clearIssueMetadata = () => {
+    return async (dispatch) => {
+        dispatch({type: ActionTypes.CLEAR_JIRA_ISSUE_METADATA});
+    };
+};
+
+export const fetchJiraProjectMetadata = () => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        let data = null;
+        try {
+            data = await doFetch(`${baseUrl}/api/v2/get-jira-project-metadata`, {
+                method: 'get',
+            });
+        } catch (error) {
+            return {error};
+        }
+
+        dispatch({
+            type: ActionTypes.RECEIVED_JIRA_PROJECT_METADATA,
             data,
         });
 

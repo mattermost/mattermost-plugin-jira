@@ -18,7 +18,8 @@ import (
 
 const (
 	routeAPICreateIssue            = "/api/v2/create-issue"
-	routeAPIGetCreateIssueMetadata = "/api/v2/get-create-issue-metadata"
+	routeAPIGetCreateIssueMetadata = "/api/v2/get-create-issue-metadata-for-project"
+	routeAPIGetJiraProjectMetadata = "/api/v2/get-jira-project-metadata"
 	routeAPIGetSearchIssues        = "/api/v2/get-search-issues"
 	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
 	routeAPIUserInfo               = "/api/v2/userinfo"
@@ -56,7 +57,9 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	case routeAPICreateIssue:
 		return withInstance(p.currentInstanceStore, w, r, httpAPICreateIssue)
 	case routeAPIGetCreateIssueMetadata:
-		return withInstance(p.currentInstanceStore, w, r, httpAPIGetCreateIssueMetadata)
+		return withInstance(p.currentInstanceStore, w, r, httpAPIGetCreateIssueMetadataForProject)
+	case routeAPIGetJiraProjectMetadata:
+		return withInstance(p.currentInstanceStore, w, r, httpAPIGetJiraProjectMetadata)
 	case routeAPIGetSearchIssues:
 		return withInstance(p.currentInstanceStore, w, r, httpAPIGetSearchIssues)
 	case routeAPIAttachCommentToIssue:

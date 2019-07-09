@@ -115,7 +115,7 @@ func newWebhook(jwh *JiraWebhook, eventMask uint64, format string, args ...inter
 	return &webhook{
 		JiraWebhook: jwh,
 		eventMask:   eventMask,
-		headline:    jwh.mdUser() + " " + fmt.Sprintf(format, args...) + " " + jwh.mdKeyLink(),
+		headline:    jwh.mdUser() + " " + fmt.Sprintf(format, args...) + " " + jwh.mdKeySummaryLink(),
 	}
 }
 

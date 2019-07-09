@@ -14,25 +14,28 @@ export default class ChannelSettingsModal extends PureComponent {
         close: PropTypes.func.isRequired,
         channel: PropTypes.object,
         channelSubscriptions: PropTypes.array,
-        jiraIssueMetadata: PropTypes.object,
-        fetchJiraIssueMetadata: PropTypes.func.isRequired,
+        jiraProjectMetadata: PropTypes.object,
+        fetchJiraProjectMetadata: PropTypes.func.isRequired,
         fetchChannelSubscriptions: PropTypes.func.isRequired,
-    }
+    };
+
     componentDidUpdate(prevProps) {
         if (this.props.channel && (!prevProps.channel || this.props.channel.id !== prevProps.channel.id)) {
-            this.props.fetchJiraIssueMetadata();
+            this.props.fetchJiraProjectMetadata();
             this.props.fetchChannelSubscriptions(this.props.channel.id);
         }
     }
+
     handleClose = (e) => {
         if (e && e.preventDefault) {
             e.preventDefault();
         }
         this.props.close();
     };
+
     render() {
         let inner = <Loading/>;
-        if (this.props.channelSubscriptions && this.props.jiraIssueMetadata) {
+        if (this.props.channelSubscriptions && this.props.jiraProjectMetadata) {
             inner = (
                 <ChannelSettingsModalInner
                     {...this.props}
