@@ -740,27 +740,39 @@ func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string
 	if err != nil {
 		return "", errors.New("We couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue.")
 	}
-
 	if len(transitions) < 1 {
 		return "", errors.New("You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.")
 	}
 
-	var transitionToUse *jira.Transition
-	for _, transition := range transitions {
-		if strings.Contains(strings.ToLower(transition.To.Name), strings.ToLower(toState)) {
-			transitionToUse = &transition
-			break
+	var transition jira.Transition
+	matchingStates := []string{}
+	availableStates := []string{}
+	for _, t := range transitions {
+		if strings.Contains(strings.ToLower(t.To.Name), strings.ToLower(toState)) {
+			matchingStates = append(matchingStates, t.To.Name)
+			transition = t
 		}
+		availableStates = append(availableStates, t.To.Name)
 	}
 
-	if transitionToUse == nil {
-		return "", errors.New("We couldn't find the state. Please use a Jira state such as 'done' and try again.")
+	switch len(matchingStates) {
+	case 0:
+		return "", errors.Errorf("%q is not a valid state. Please use one of: %q",
+			toState, strings.Join(availableStates, ", "))
+
+	case 1:
+		// proceed
+
+	default:
+		return "", errors.Errorf("please be more specific, %q matched several states: %q",
+			toState, strings.Join(matchingStates, ", "))
 	}
 
-	if _, err := jiraClient.Issue.DoTransition(issueKey, transitionToUse.ID); err != nil {
+	if _, err := jiraClient.Issue.DoTransition(issueKey, transition.ID); err != nil {
 		return "", err
 	}
 
-	msg := fmt.Sprintf("[%s](%v/browse/%v) transitioned to `%s`", issueKey, ji.GetURL(), issueKey, toState)
+	msg := fmt.Sprintf("[%s](%v/browse/%v) transitioned to `%s`",
+		issueKey, ji.GetURL(), issueKey, transition.To.Name)
 	return msg, nil
 }
