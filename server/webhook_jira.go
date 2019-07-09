@@ -15,7 +15,7 @@ const (
 	eventCreatedCommentStr     = "event_created_comment"
 	eventDeletedStr            = "event_deleted"
 	eventDeletedCommentStr     = "event_deleted_comment"
-	eventDeletedUnresolvedStr  = "event_deleted_unresolved"
+	eventDeletedUnresolvedStr  = "event_deleted_unresolved" // unused
 	eventUpdatedAllStr         = "event_updated_all"
 	eventUpdatedAssigneeStr    = "event_updated_assignee"
 	eventUpdatedAttachmentStr  = "event_updated_attachment"

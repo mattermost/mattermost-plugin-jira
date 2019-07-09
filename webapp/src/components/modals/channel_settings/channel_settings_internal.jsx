@@ -166,15 +166,22 @@ export default class ChannelSettingsModalInner extends PureComponent {
             component = <Loading/>;
         }
 
+        let error = null;
+        if (this.state.error) {
+            error = (
+                <p className='help-text error-text'>
+                    <span>{this.state.error}</span>
+                </p>
+            );
+        }
+
         return (
             <form
                 role='form'
                 onSubmit={this.handleCreate}
             >
                 <Modal.Body ref='modalBody'>
-                    <p className='help-text error-text'>
-                        <span>{this.state.error}</span>
-                    </p>
+                    {error}
                     {component}
                 </Modal.Body>
                 <Modal.Footer>
