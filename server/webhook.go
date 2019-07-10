@@ -101,6 +101,29 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 			continue
 		}
 
+		// Check if the user has permissions to view the notifications
+		// For now just check permissions to view the issue itself.
+		jiraUser, err2 := p.userStore.LoadJIRAUser(ji, mattermostUserId)
+		if err2 != nil {
+			continue
+		}
+		jiraClient, err2 := ji.GetJIRAClient(jiraUser)
+		if err2 != nil {
+			p.errorf("PostNotifications: error while getting jiraClient, err: %v", err2)
+			continue
+		}
+		req, err2 := jiraClient.NewRequest("GET", wh.Issue.Self, nil)
+		if err2 != nil {
+			p.errorf("PostNotifications: error while creating NewRequest, err: %v", err2)
+			continue
+		}
+
+		resp, _ := jiraClient.Do(req, nil)
+		if resp.StatusCode != http.StatusOK {
+			// recipient does not have permissions to view the issue.
+			continue
+		}
+
 		post, err := ji.GetPlugin().CreateBotDMPost(ji, mattermostUserId, notification.message, notification.postType)
 		if err != nil {
 			p.errorf("PostNotifications: failed to create notification post, err: %v", err)
