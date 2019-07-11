@@ -325,11 +325,11 @@ func httpAPIGetJiraProjectMetadata(ji Instance, w http.ResponseWriter, r *http.R
 	}
 
 	cimd, resp, err := jiraClient.Issue.GetCreateMetaWithOptions(nil)
+	defer CloseJiraResponse(resp)
 	if err != nil {
 		message := "failed to get CreateIssue metadata"
 		if resp != nil {
 			bb, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
 			message += ", details:" + string(bb)
 		}
 		return http.StatusInternalServerError, errors.WithMessage(err, message)
@@ -615,6 +615,7 @@ func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issue
 	}
 
 	issue, resp, err := jiraClient.Issue.Get(issueKey, nil)
+	defer CloseJiraResponse(resp)
 	if err != nil {
 		message := "request to Jira failed"
 		if resp != nil {
@@ -627,7 +628,6 @@ func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issue
 
 			// return more detail for an exceptional error case
 			bb, _ := ioutil.ReadAll(resp.Body)
-			_ = resp.Body.Close()
 			message += ", details: " + string(bb)
 		}
 		return nil, errors.Wrap(err, message)
@@ -660,7 +660,8 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 	}
 
 	// check for valid issue key
-	_, _, err = jiraClient.Issue.Get(issueKey, nil)
+	_, resp, err := jiraClient.Issue.Get(issueKey, nil)
+	defer CloseJiraResponse(resp)
 	if err != nil {
 		errorMsg := fmt.Sprintf("We couldn't find the issue key `%s`.  Please confirm the issue key and try again.", issueKey)
 		return errorMsg, nil
@@ -674,7 +675,8 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 	}
 
 	var jiraUsers []*jira.User
-	resp, err := jiraClient.Do(req, &jiraUsers)
+	resp, err = jiraClient.Do(req, &jiraUsers)
+	defer CloseJiraResponse(resp)
 	if err != nil {
 		if resp.Response.StatusCode == 401 {
 			return "You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.", nil
@@ -710,7 +712,9 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 	// user is array of one object
 	user := jiraUsers[0]
 
-	if _, err := jiraClient.Issue.UpdateAssignee(issueKey, user); err != nil {
+	resp, err = jiraClient.Issue.UpdateAssignee(issueKey, user)
+	defer CloseJiraResponse(resp)
+	if err != nil {
 		return "", err
 	}
 

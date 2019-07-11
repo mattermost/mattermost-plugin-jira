@@ -123,6 +123,7 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 			}
 
 			resp, _ := jiraClient.Do(req, nil)
+			defer CloseJiraResponse(resp)
 			if resp.StatusCode != http.StatusOK {
 				// recipient does not have permissions to view the issue.
 				continue
@@ -135,6 +136,7 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 			}
 
 			resp, _ := jiraClient.Do(req, nil)
+			defer CloseJiraResponse(resp)
 			if resp.StatusCode != http.StatusOK {
 				// recipient does not have permissions to view the issue.
 				continue

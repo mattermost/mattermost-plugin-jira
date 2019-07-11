@@ -97,7 +97,8 @@ func (p *Plugin) StoreCurrentJIRAInstanceAndNotify(ji Instance) error {
 }
 
 func (p *Plugin) loadJIRAProjectKeys(jiraClient *jira.Client) ([]string, error) {
-	list, _, err := jiraClient.Project.GetList()
+	list, resp, err := jiraClient.Project.GetList()
+	defer CloseJiraResponse(resp)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Error requesting list of Jira projects")
 	}

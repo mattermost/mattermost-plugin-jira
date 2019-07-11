@@ -71,10 +71,10 @@ func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.
 	}
 
 	juser, resp, err := jiraClient.User.GetSelf()
+	defer CloseJiraResponse(resp)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	defer CloseJiraResponse(resp)
 
 	jiraUser.User = *juser
 
