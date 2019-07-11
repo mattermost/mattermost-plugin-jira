@@ -49,3 +49,9 @@ func getUserURL(user *jira.User) string {
 	// TODO is this right?
 	return user.Self
 }
+
+func CloseJiraResponse(resp *jira.Response) {
+	if resp != nil && resp.Response != nil {
+		resp.Body.Close()
+	}
+}

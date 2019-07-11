@@ -5,5 +5,5 @@ var manifest = struct {
 	Version string
 }{
 	Id:      "jira",
-	Version: "2.0.6",
+	Version: "2.0.7",
 }

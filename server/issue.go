@@ -101,11 +101,11 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	}
 
 	project, resp, err := jiraClient.Project.Get(issue.Fields.Project.Key)
+	defer CloseJiraResponse(resp)
 	if err != nil {
 		message := "failed to get the project, postId: " + create.PostId
 		if resp != nil {
 			bb, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
 			message += ", details:" + string(bb)
 		}
 
@@ -138,11 +138,11 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	}
 
 	created, resp, err := jiraClient.Issue.Create(issue)
+	defer CloseJiraResponse(resp)
 	if err != nil {
 		message := "failed to create the issue, postId: " + create.PostId
 		if resp != nil {
 			bb, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
 			message += ", details:" + string(bb)
 		}
 
@@ -204,7 +204,8 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 					api.LogError("failed to attach file to issue: "+ae.Error(), "file", info.Path, "issue", created.Key)
 					return
 				}
-				_, _, e := jiraClient.Issue.PostAttachment(created.ID, bytes.NewReader(byteData), info.Name)
+				_, resp, e := jiraClient.Issue.PostAttachment(created.ID, bytes.NewReader(byteData), info.Name)
+				defer CloseJiraResponse(resp)
 				if e != nil {
 					// TODO report errors, as DMs from JIRA bot?
 					api.LogError("failed to attach file to issue: "+e.Error(), "file", info.Path, "issue", created.Key)
@@ -253,11 +254,11 @@ func httpAPIGetCreateIssueMetadata(ji Instance, w http.ResponseWriter, r *http.R
 	cimd, resp, err := jiraClient.Issue.GetCreateMetaWithOptions(&jira.GetQueryOptions{
 		Expand: "projects.issuetypes.fields",
 	})
+	defer CloseJiraResponse(resp)
 	if err != nil {
 		message := "failed to get CreateIssue metadata"
 		if resp != nil {
 			bb, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
 			message += ", details:" + string(bb)
 		}
 		return http.StatusInternalServerError,
@@ -312,12 +313,12 @@ func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request)
 		MaxResults: 50,
 		Fields:     []string{"key", "summary"},
 	})
+	defer CloseJiraResponse(resp)
 
 	if err != nil {
 		message := "failed to get search results"
 		if resp != nil {
 			bb, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
 			message += ", details: " + string(bb)
 		}
 		return http.StatusInternalServerError,
@@ -411,7 +412,8 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 	jiraComment.Body = permalinkMessage
 	jiraComment.Body += post.Message
 
-	commentAdded, _, err := jiraClient.Issue.AddComment(attach.IssueKey, &jiraComment)
+	commentAdded, resp, err := jiraClient.Issue.AddComment(attach.IssueKey, &jiraComment)
+	defer CloseJiraResponse(resp)
 	if err != nil {
 		if strings.Contains(err.Error(), "you do not have the permission to comment on this issue") {
 			return http.StatusNotFound,
@@ -519,7 +521,8 @@ func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string
 		return "", err
 	}
 
-	transitions, _, err := jiraClient.Issue.GetTransitions(issueKey)
+	transitions, resp, err := jiraClient.Issue.GetTransitions(issueKey)
+	defer CloseJiraResponse(resp)
 	if err != nil {
 		return "", errors.New("We couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue.")
 	}
@@ -540,7 +543,9 @@ func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string
 		return "", errors.New("We couldn't find the state. Please use a Jira state such as 'done' and try again.")
 	}
 
-	if _, err := jiraClient.Issue.DoTransition(issueKey, transitionToUse.ID); err != nil {
+	resp, err = jiraClient.Issue.DoTransition(issueKey, transitionToUse.ID)
+	defer CloseJiraResponse(resp)
+	if err != nil {
 		return "", err
 	}
 
