@@ -33,6 +33,7 @@ type webhookNotification struct {
 	jiraAccountID string
 	message       string
 	postType      string
+	commentSelf   string
 }
 
 func (wh *webhook) EventMask() uint64 {
@@ -99,6 +100,46 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 		}
 		if err != nil {
 			continue
+		}
+
+		// Check if the user has permissions.
+		jiraUser, err2 := p.userStore.LoadJIRAUser(ji, mattermostUserId)
+		if err2 != nil {
+			// Not connected to Jira, so can't check permissions
+			continue
+		}
+		jiraClient, err2 := ji.GetJIRAClient(jiraUser)
+		if err2 != nil {
+			p.errorf("PostNotifications: error while getting jiraClient, err: %v", err2)
+			continue
+		}
+		// If this is a comment-related webhook, we need to check if they have permissions to read that.
+		// Otherwise, check if they can view the issue.
+		if wh.eventMask&maskComments != 0 {
+			req, err2 := jiraClient.NewRequest("GET", notification.commentSelf, nil)
+			if err2 != nil {
+				p.errorf("PostNotifications: error while creating NewRequest, err: %v", err2)
+				continue
+			}
+
+			resp, _ := jiraClient.Do(req, nil)
+			if resp.StatusCode != http.StatusOK {
+				// recipient does not have permissions to view the issue.
+				continue
+			}
+		} else {
+			req, err2 := jiraClient.NewRequest("GET", wh.Issue.Self, nil)
+			if err2 != nil {
+				p.errorf("PostNotifications: error while creating NewRequest, err: %v", err2)
+				continue
+			}
+
+			resp, _ := jiraClient.Do(req, nil)
+			if resp.StatusCode != http.StatusOK {
+				// recipient does not have permissions to view the issue.
+				continue
+			}
+
 		}
 
 		post, err := ji.GetPlugin().CreateBotDMPost(ji, mattermostUserId, notification.message, notification.postType)
