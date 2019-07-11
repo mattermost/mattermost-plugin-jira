@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"net/http"
 	"path"
+	"strings"
 
 	"github.com/dghubble/oauth1"
 	"github.com/pkg/errors"
@@ -20,7 +21,26 @@ type OAuth1aTemporaryCredentials struct {
 	Secret string
 }
 
-func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpOAuth1aComplete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.Request) (status int, err error) {
+	// Prettify error output
+	defer func() {
+		if err == nil {
+			return
+		}
+
+		errtext := err.Error()
+		if len(errtext) > 0 {
+			errtext = strings.ToUpper(errtext[:1]) + errtext[1:]
+		}
+		status, err = jsi.Plugin.respondSpecialTemplate(w, "/other/message.html", status, "text/html", struct {
+			Header  string
+			Message string
+		}{
+			Header:  "Failed to connect to Jira.",
+			Message: errtext,
+		})
+	}()
+
 	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(r)
 	if err != nil {
 		return http.StatusInternalServerError,
@@ -95,7 +115,33 @@ func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.
 	})
 }
 
-func httpOAuth1PublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpOAuth1aDisconnect(ji *jiraServerInstance, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed,
+			errors.New("method " + r.Method + " is not allowed, must be GET")
+	}
+
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	err := ji.GetPlugin().userDisconnect(ji, mattermostUserId)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return ji.GetPlugin().respondSpecialTemplate(w, "/other/message.html", http.StatusOK,
+		"text/html", struct {
+			Header  string
+			Message string
+		}{
+			Header:  "Disconnected from Jira.",
+			Message: "It is now safe to close this browser window.",
+		})
+}
+
+func httpOAuth1aPublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
 			errors.New("method " + r.Method + " is not allowed, must be GET")

@@ -62,45 +62,6 @@ func httpUserConnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, 
 	return http.StatusFound, nil
 }
 
-func httpUserDisconnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be GET")
-	}
-
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
-	err := ji.GetPlugin().userDisconnect(ji, mattermostUserId)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	html := `
-<!DOCTYPE html>
-<html>
-       <head>
-               <script>
-                       // window.close();
-               </script>
-       </head>
-       <body>
-               <p>Disconnected from Jira. Please close this page.</p>
-       </body>
-</html>
-`
-
-	w.Header().Set("Content-Type", "text/html")
-	_, err = w.Write([]byte(html))
-	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-	}
-
-	return http.StatusOK, nil
-}
-
 func httpAPIGetUserInfo(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
