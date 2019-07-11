@@ -82,6 +82,17 @@ const jiraIssueMetadata = (state = null, action) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_JIRA_ISSUE_METADATA:
         return action.data;
+    case ActionTypes.CLEAR_JIRA_ISSUE_METADATA:
+        return null;
+    default:
+        return state;
+    }
+};
+
+const jiraProjectMetadata = (state = null, action) => {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_JIRA_PROJECT_METADATA:
+        return action.data;
     default:
         return state;
     }
@@ -118,6 +129,7 @@ export default combineReducers({
     attachCommentToIssueModalVisible,
     attachCommentToIssueModalForPostId,
     jiraIssueMetadata,
+    jiraProjectMetadata,
     channelIdWithSettingsOpen,
     channelSubscripitons,
 });

@@ -173,7 +173,7 @@ func (store store) CreateInactiveCloudInstance(jiraURL string) (returnErr error)
 	}()
 
 	ji := NewJIRACloudInstance(store.plugin, jiraURL, false,
-		fmt.Sprintf(`{"BaseURL": %s}`, jiraURL),
+		fmt.Sprintf(`{"BaseURL": "%s"}`, jiraURL),
 		&AtlassianSecurityContext{BaseURL: jiraURL})
 
 	data, err := json.Marshal(ji)
@@ -332,9 +332,11 @@ func (store store) loadJIRAInstance(fullkey string) (Instance, error) {
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
 		}
-		err = json.Unmarshal([]byte(jci.RawAtlassianSecurityContext), &jci.AtlassianSecurityContext)
-		if err != nil {
-			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+		if len(jci.RawAtlassianSecurityContext) > 0 {
+			err = json.Unmarshal([]byte(jci.RawAtlassianSecurityContext), &jci.AtlassianSecurityContext)
+			if err != nil {
+				return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+			}
 		}
 		jci.Init(store.plugin)
 		return &jci, nil

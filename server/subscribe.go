@@ -103,13 +103,12 @@ func (p *Plugin) getChannelsSubscribed(jwh *JiraWebhook) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	eventEnums := jwh.toEventEnums()
 
-	subIds := subs.Channel.IdByEvent[jwh.WebhookEvent]
+	subIds := subs.Channel.ById
 
 	channelIds := []string{}
-	for _, subId := range subIds {
-		sub := subs.Channel.ById[subId]
-
+	for _, sub := range subIds {
 		acceptable := true
 		for field, acceptableValues := range sub.Filters {
 			// Blank in acceptable values means all values are acceptable
@@ -120,8 +119,13 @@ func (p *Plugin) getChannelsSubscribed(jwh *JiraWebhook) ([]string, error) {
 			case "event":
 				found := false
 				for _, acceptableEvent := range acceptableValues {
-					if acceptableEvent == jwh.WebhookEvent {
-						found = true
+					for enum := range eventEnums {
+						if acceptableEvent == enum {
+							found = true
+							break
+						}
+					}
+					if found {
 						break
 					}
 				}
@@ -311,10 +315,6 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 	if cfg.Secret == "" {
 		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret")
 	}
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
 
 	if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(cfg.Secret)) != 1 {
 		return http.StatusForbidden, fmt.Errorf("Request URL: secret did not match")
@@ -338,7 +338,7 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		}
 	}
 
-	_, status, err := wh.PostNotifications(p, ji)
+	_, status, err := wh.PostNotifications(p)
 	if err != nil {
 		return status, err
 	}

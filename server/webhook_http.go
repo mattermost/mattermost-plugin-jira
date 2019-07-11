@@ -49,8 +49,7 @@ const maskComments = eventCreatedComment |
 	eventUpdatedComment
 
 const maskDefault = maskLegacy |
-	eventUpdatedAssignee |
-	maskComments
+	eventUpdatedAssignee
 
 const maskAll = math.MaxUint64
 
@@ -66,8 +65,11 @@ var eventParamMasks = map[string]uint64{
 	"updated_sprint":      eventUpdatedSprint,      // assigned to a different sprint
 	"updated_status":      eventUpdatedStatus,      // transitions like Done, In Progress
 	"updated_summary":     eventUpdatedSummary,     // issue renamed
+	"updated_comments":    maskComments,            // comment events
 	"updated_all":         maskAll,                 // all events
 }
+
+var ErrWebhookIgnored = errors.New("Webhook purposely ignored")
 
 func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	// Validate the request and extract params
@@ -118,19 +120,20 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 	}
 
 	wh, _, err := ParseWebhook(r.Body)
+	if err == ErrWebhookIgnored {
+		return http.StatusOK, nil
+	}
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
 
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	_, statusCode, err := wh.PostNotifications(p, ji)
+	// Attempt to send webhook notifications to connected users.
+	_, statusCode, err := wh.PostNotifications(p)
 	if err != nil {
 		return statusCode, err
 	}
 
+	// Send webhook events to subscribed channels. This will work even if there isn't an instance installed.
 	// Skip events we don't need to post
 	if eventMask&wh.EventMask() == 0 {
 		return http.StatusOK, nil
