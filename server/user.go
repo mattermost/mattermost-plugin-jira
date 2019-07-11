@@ -31,9 +31,10 @@ type UserSettings struct {
 
 type UserInfo struct {
 	JIRAUser
-	IsConnected       bool   `json:"is_connected"`
-	InstanceInstalled bool   `json:"instance_installed"`
-	JIRAURL           string `json:"jira_url,omitempty"`
+	IsConnected       bool              `json:"is_connected"`
+	InstanceInstalled bool              `json:"instance_installed"`
+	JIRAURL           string            `json:"jira_url,omitempty"`
+	InstanceDetails   map[string]string `json:"instance_details,omitempty"`
 }
 
 func httpUserConnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -111,15 +112,7 @@ func httpAPIGetUserInfo(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
-	resp := UserInfo{}
-	if ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance(); err == nil {
-		resp.InstanceInstalled = true
-		resp.JIRAURL = ji.GetURL()
-		if jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId); err == nil {
-			resp.JIRAUser = jiraUser
-			resp.IsConnected = true
-		}
-	}
+	resp := getUserInfo(p, mattermostUserId)
 
 	b, _ := json.Marshal(resp)
 	_, err := w.Write(b)
@@ -127,6 +120,20 @@ func httpAPIGetUserInfo(p *Plugin, w http.ResponseWriter, r *http.Request) (int,
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
 	}
 	return http.StatusOK, nil
+}
+
+func getUserInfo(p *Plugin, mattermostUserId string) UserInfo {
+	resp := UserInfo{}
+	if ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance(); err == nil {
+		resp.InstanceInstalled = true
+		resp.InstanceDetails = ji.GetDisplayDetails()
+		resp.JIRAURL = ji.GetURL()
+		if jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId); err == nil {
+			resp.JIRAUser = jiraUser
+			resp.IsConnected = true
+		}
+	}
+	return resp
 }
 
 func httpAPIGetSettingsInfo(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {

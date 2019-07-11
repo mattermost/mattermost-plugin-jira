@@ -55,11 +55,11 @@ var jiraCommandHandler = CommandHandler{
 		"uninstall/cloud":  executeUninstallCloud,
 		"uninstall/server": executeUninstallServer,
 		"webhook":          executeWebhookURL,
+		"info":             executeInfo,
 		"help":             commandHelp,
-		// "webhook/url":      executeWebhookURL,
-		// "list":            executeList,
-		// "instance/select": executeInstanceSelect,
-		// "instance/delete": executeInstanceDelete,
+		// "list":             executeList,
+		// "instance/select":  executeInstanceSelect,
+		// "instance/delete":  executeInstanceDelete,
 	},
 	defaultHandler: executeJiraDefault,
 }
@@ -484,6 +484,51 @@ func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	}
 
 	return p.responsef(header, msg)
+}
+
+func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) != 0 {
+		return p.help(header)
+	}
+
+	uinfo := getUserInfo(p, header.UserId)
+
+	resp := ""
+	switch {
+	case uinfo.IsConnected:
+		resp = fmt.Sprintf("Connected to Jira %s as %s.\n", uinfo.JIRAURL, uinfo.JIRAUser.DisplayName)
+	case uinfo.InstanceInstalled:
+		resp = fmt.Sprintf("Jira %s is installed, but you are not connected. Please use `/jira connect`.\n", uinfo.JIRAURL)
+	default:
+		return p.responsef(header, "No Jira instance installed, please contact your system administrator.")
+	}
+
+	resp += fmt.Sprintf("\nJira instance: %q\n", uinfo.JIRAURL)
+	for k, v := range uinfo.InstanceDetails {
+		resp += fmt.Sprintf(" * %s: %s\n", k, v)
+	}
+
+	if uinfo.IsConnected {
+		resp += fmt.Sprintf("\nMattermost:\n")
+		resp += fmt.Sprintf(" * User ID: %s\n", header.UserId)
+		resp += fmt.Sprintf(" * Settings: %+v\n", uinfo.JIRAUser.Settings)
+
+		if uinfo.JIRAUser.Oauth1AccessToken != "" {
+			resp += fmt.Sprintf(" * OAuth1a access token: %s\n", uinfo.JIRAUser.Oauth1AccessToken)
+			resp += fmt.Sprintf(" * OAuth1a access secret: XXX (%v bytes)\n", len(uinfo.JIRAUser.Oauth1AccessSecret))
+		}
+
+		resp += fmt.Sprintf("\nJira user: %s\n", uinfo.JIRAUser.DisplayName)
+		resp += fmt.Sprintf(" * Self: %s\n", uinfo.JIRAUser.Self)
+		resp += fmt.Sprintf(" * AccountID: %s\n", uinfo.JIRAUser.AccountID)
+		resp += fmt.Sprintf(" * Name (deprecated): %s\n", uinfo.JIRAUser.Name)
+		resp += fmt.Sprintf(" * Key (deprecated): %s\n", uinfo.JIRAUser.Key)
+		resp += fmt.Sprintf(" * EmailAddress: %s\n", uinfo.JIRAUser.EmailAddress)
+		resp += fmt.Sprintf(" * Active: %v\n", uinfo.JIRAUser.Active)
+		resp += fmt.Sprintf(" * TimeZone: %v\n", uinfo.JIRAUser.TimeZone)
+		resp += fmt.Sprintf(" * ApplicationKeys: %s\n", uinfo.JIRAUser.ApplicationKeys)
+	}
+	return p.responsef(header, resp)
 }
 
 func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
