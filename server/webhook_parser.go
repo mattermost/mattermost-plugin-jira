@@ -202,6 +202,7 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 			jiraUsername: u,
 			message:      message,
 			postType:     PostTypeMention,
+			commentSelf:  jwh.Comment.Self,
 		})
 	}
 
@@ -217,6 +218,7 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
 		message:       fmt.Sprintf("%s commented on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
 		postType:      PostTypeComment,
+		commentSelf:   jwh.Comment.Self,
 	})
 
 	return wh, nil
