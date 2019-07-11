@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"net/http"
 	"path"
+	"strings"
 
 	"github.com/dghubble/oauth1"
 	"github.com/pkg/errors"
@@ -27,12 +28,16 @@ func httpOAuth1aComplete(jsi *jiraServerInstance, w http.ResponseWriter, r *http
 			return
 		}
 
+		errtext := err.Error()
+		if len(errtext) > 0 {
+			errtext = strings.ToUpper(errtext[:1]) + errtext[1:]
+		}
 		status, err = jsi.Plugin.respondSpecialTemplate(w, "/other/message.html", status, "text/html", struct {
 			Header  string
 			Message string
 		}{
 			Header:  "Failed to connect to Jira.",
-			Message: err.Error(),
+			Message: errtext,
 		})
 	}()
 
@@ -132,7 +137,7 @@ func httpOAuth1aDisconnect(ji *jiraServerInstance, w http.ResponseWriter, r *htt
 			Message string
 		}{
 			Header:  "Disconnected from Jira.",
-			Message: "Please close this page.",
+			Message: "It is now safe to close this browser window.",
 		})
 }
 
