@@ -142,3 +142,9 @@ func parseJIRAIssuesFromText(text string, keys []string) []string {
 
 	return issues
 }
+
+func CloseJiraResponse(resp *jira.Response) {
+	if resp != nil && resp.Response != nil {
+		resp.Response.Body.Close()
+	}
+}

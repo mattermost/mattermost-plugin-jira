@@ -70,10 +70,12 @@ func httpOAuth1Complete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.
 		return http.StatusInternalServerError, err
 	}
 
-	juser, _, err := jiraClient.User.GetSelf()
+	juser, resp, err := jiraClient.User.GetSelf()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
+	defer CloseJiraResponse(resp)
+
 	jiraUser.User = *juser
 
 	// Set default settings the first time a user connects
