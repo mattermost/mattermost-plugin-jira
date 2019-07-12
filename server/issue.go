@@ -216,7 +216,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 					return
 				}
 				_, resp, e := jiraClient.Issue.PostAttachment(created.ID, bytes.NewReader(byteData), info.Name)
-				defer CloseJiraResponse(resp)
+				CloseJiraResponse(resp)
 				if e != nil {
 					// TODO report errors, as DMs from JIRA bot?
 					api.LogError("failed to attach file to issue: "+e.Error(), "file", info.Path, "issue", created.Key)
