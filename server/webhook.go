@@ -19,6 +19,12 @@ type Webhook interface {
 	PostNotifications(p *Plugin) ([]*model.Post, int, error)
 }
 
+type webhookEvent struct {
+	field string
+	from  string
+	to    string
+}
+
 type webhook struct {
 	*JiraWebhook
 	eventMask     uint64
@@ -26,6 +32,7 @@ type webhook struct {
 	text          string
 	fields        []*model.SlackAttachmentField
 	notifications []webhookNotification
+	eventInfo     webhookEvent
 }
 
 type webhookNotification struct {

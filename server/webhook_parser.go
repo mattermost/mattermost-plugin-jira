@@ -95,36 +95,46 @@ func ParseWebhook(in io.Reader) (wh Webhook, jwh *JiraWebhook, err error) {
 }
 
 func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
+	var events []*webhook
 	for _, item := range jwh.ChangeLog.Items {
 		field := item.Field
 		to := item.ToString
 		from := item.FromString
 		switch {
 		case field == "resolution" && to == "" && from != "":
-			return parseWebhookReopened(jwh)
+			events = append(events, parseWebhookReopened(jwh, from))
 		case field == "resolution" && to != "" && from == "":
-			return parseWebhookResolved(jwh)
+			events = append(events, parseWebhookResolved(jwh, to))
 		case field == "status":
-			return parseWebhookUpdatedField(jwh, eventUpdatedStatus, field, from, to)
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedStatus, field, from, to))
 		case field == "priority":
-			return parseWebhookUpdatedField(jwh, eventUpdatedPriority, field, from, to)
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedPriority, field, from, to))
 		case field == "summary":
-			return parseWebhookUpdatedSummary(jwh)
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedSummary, field, from, to))
 		case field == "description":
-			return parseWebhookUpdatedDescription(jwh)
+			// need to handle wh.text
+			events = append(events, parseWebhookUpdatedDescription(jwh))
 		case field == "Sprint" && len(to) > 0:
-			return parseWebhookUpdatedSprint(jwh, to)
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedSprint, field, from, to))
 		case field == "Rank" && len(to) > 0:
-			return parseWebhookUpdatedRank(jwh, strings.ToLower(to))
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedRank, field, strings.ToLower(from), strings.ToLower(to)))
 		case field == "Attachment":
-			return parseWebhookUpdatedAttachments(jwh, from, to)
+			events = append(events, parseWebhookUpdatedAttachments(jwh, from, to))
 		case field == "labels":
-			return parseWebhookUpdatedLabels(jwh, from, to)
+			events = append(events, parseWebhookUpdatedLabels(jwh, from, to))
 		case field == "assignee":
-			return parseWebhookAssigned(jwh)
+			events = append(events, parseWebhookAssigned(jwh))
+		case field == "issuetype":
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedIssuetype, field, from, to))
 		}
 	}
-	return nil
+	if len(events) == 0 {
+		return nil
+	} else if len(events) == 1 {
+		return events[0]
+	} else {
+		return mergeWebhookEvents(events)
+	}
 }
 
 func parseWebhookCreated(jwh *JiraWebhook) Webhook {
@@ -252,7 +262,7 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) Webhook {
 	}
 }
 
-func parseWebhookAssigned(jwh *JiraWebhook) Webhook {
+func parseWebhookAssigned(jwh *JiraWebhook) *webhook {
 	wh := newWebhook(jwh, eventUpdatedAssignee, "assigned %s to", jwh.mdIssueAssignee())
 	if jwh.Issue.Fields.Assignee == nil {
 		return wh
@@ -272,45 +282,57 @@ func parseWebhookAssigned(jwh *JiraWebhook) Webhook {
 	return wh
 }
 
-func parseWebhookReopened(jwh *JiraWebhook) Webhook {
-	return newWebhook(jwh, eventUpdatedReopened, "reopened")
-}
-
-func parseWebhookResolved(jwh *JiraWebhook) Webhook {
-	return newWebhook(jwh, eventUpdatedResolved, "resolved")
-}
-
-func parseWebhookUpdatedField(jwh *JiraWebhook, eventMask uint64, field, from, to string) Webhook {
-	return newWebhook(jwh, eventMask, "updated %s from %q to %q on", field, from, to)
-}
-
-func parseWebhookUpdatedSummary(jwh *JiraWebhook) Webhook {
-	wh := newWebhook(jwh, eventUpdatedSummary, "renamed")
+func parseWebhookReopened(jwh *JiraWebhook, from string) *webhook {
+	wh := newWebhook(jwh, eventUpdatedReopened, "reopened")
+	wh.eventInfo = webhookEvent{"reopened", from, "Open"}
 	return wh
 }
 
-func parseWebhookUpdatedDescription(jwh *JiraWebhook) Webhook {
+func parseWebhookResolved(jwh *JiraWebhook, to string) *webhook {
+	wh := newWebhook(jwh, eventUpdatedResolved, "resolved")
+	wh.eventInfo = webhookEvent{"resolved", "Open", to}
+	return wh
+}
+
+func parseWebhookUpdatedField(jwh *JiraWebhook, eventMask uint64, field, from, to string) *webhook {
+	wh := newWebhook(jwh, eventMask, "updated %s from %q to %q on", field, from, to)
+	wh.eventInfo = webhookEvent{field, from, to}
+	return wh
+}
+
+func parseWebhookUpdatedDescription(jwh *JiraWebhook) *webhook {
 	wh := newWebhook(jwh, eventUpdatedDescription, "edited the description of")
 	wh.text = jwh.mdIssueDescription()
 	return wh
 }
 
-func parseWebhookUpdatedSprint(jwh *JiraWebhook, to string) Webhook {
-	return &webhook{
-		JiraWebhook: jwh,
-		eventMask:   eventUpdatedSprint,
-		headline:    fmt.Sprintf("%s moved %s to %s", jwh.mdUser(), jwh.mdKeySummaryLink(), to),
+func parseWebhookUpdatedAttachments(jwh *JiraWebhook, from, to string) *webhook {
+	wh := newWebhook(jwh, eventUpdatedAttachment, mdAddRemove(from, to, "attached", "removed attachments"))
+	wh.eventInfo = webhookEvent{field: "attachments"}
+	return wh
+}
+
+func parseWebhookUpdatedLabels(jwh *JiraWebhook, from, to string) *webhook {
+	wh := newWebhook(jwh, eventUpdatedLabels, mdAddRemove(from, to, "added labels", "removed labels"))
+	wh.eventInfo = webhookEvent{field: "labels"}
+	return wh
+}
+
+// mergeWebhookEvents assumes len(events) > 1
+func mergeWebhookEvents(events []*webhook) Webhook {
+	merged := &webhook{
+		headline: events[0].mdUser() + " updated " + events[0].mdKeySummaryLink(),
 	}
-}
 
-func parseWebhookUpdatedRank(jwh *JiraWebhook, to string) Webhook {
-	return newWebhook(jwh, eventUpdatedRank, to)
-}
+	for _, event := range events {
+		merged.eventMask = merged.eventMask | event.eventMask
+		msg := "**" + strings.Title(event.eventInfo.field) + ":** ~~" +
+			event.eventInfo.from + "~~ " + event.eventInfo.to
+		merged.fields = append(merged.fields, &model.SlackAttachmentField{
+			Value: msg,
+			Short: false,
+		})
+	}
 
-func parseWebhookUpdatedAttachments(jwh *JiraWebhook, from, to string) Webhook {
-	return newWebhook(jwh, eventUpdatedAttachment, mdAddRemove(from, to, "attached", "removed attachments"))
-}
-
-func parseWebhookUpdatedLabels(jwh *JiraWebhook, from, to string) Webhook {
-	return newWebhook(jwh, eventUpdatedLabels, mdAddRemove(from, to, "added labels", "removed labels"))
+	return merged
 }
