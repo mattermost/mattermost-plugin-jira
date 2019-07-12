@@ -89,6 +89,8 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 	}
 
 	posts := []*model.Post{}
+
+NextNotification:
 	for _, notification := range wh.notifications {
 		var mattermostUserId string
 		var err error
@@ -99,58 +101,50 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 			mattermostUserId, err = p.userStore.LoadMattermostUserId(ji, notification.jiraAccountID)
 		}
 		if err != nil {
-			continue
+			continue NextNotification
 		}
 
 		// Check if the user has permissions.
 		jiraUser, err2 := p.userStore.LoadJIRAUser(ji, mattermostUserId)
 		if err2 != nil {
 			// Not connected to Jira, so can't check permissions
-			continue
+			continue NextNotification
 		}
 		jiraClient, err2 := ji.GetJIRAClient(jiraUser)
 		if err2 != nil {
 			p.errorf("PostNotifications: error while getting jiraClient, err: %v", err2)
-			continue
+			continue NextNotification
 		}
 		// If this is a comment-related webhook, we need to check if they have permissions to read that.
 		// Otherwise, check if they can view the issue.
+		var checkUrl string
 		if wh.eventMask&maskComments != 0 {
-			req, err2 := jiraClient.NewRequest("GET", notification.commentSelf, nil)
-			if err2 != nil {
-				p.errorf("PostNotifications: error while creating NewRequest, err: %v", err2)
-				continue
-			}
-
-			resp, _ := jiraClient.Do(req, nil)
-			defer CloseJiraResponse(resp)
-			if resp.StatusCode != http.StatusOK {
-				// recipient does not have permissions to view the issue.
-				continue
-			}
+			checkUrl = notification.commentSelf
 		} else {
-			req, err2 := jiraClient.NewRequest("GET", wh.Issue.Self, nil)
-			if err2 != nil {
-				p.errorf("PostNotifications: error while creating NewRequest, err: %v", err2)
-				continue
-			}
+			checkUrl = wh.Issue.Self
+		}
 
-			resp, _ := jiraClient.Do(req, nil)
-			defer CloseJiraResponse(resp)
-			if resp.StatusCode != http.StatusOK {
-				// recipient does not have permissions to view the issue.
-				continue
-			}
+		req, err2 := jiraClient.NewRequest("GET", checkUrl, nil)
+		if err2 != nil {
+			p.errorf("PostNotifications: error while creating NewRequest, err: %v", err2)
+			continue NextNotification
+		}
 
+		resp, _ := jiraClient.Do(req, nil)
+		CloseJiraResponse(resp)
+		if resp.StatusCode != http.StatusOK {
+			// recipient does not have permissions to view the issue.
+			continue NextNotification
 		}
 
 		post, err := ji.GetPlugin().CreateBotDMPost(ji, mattermostUserId, notification.message, notification.postType)
 		if err != nil {
 			p.errorf("PostNotifications: failed to create notification post, err: %v", err)
-			continue
+			continue NextNotification
 		}
 		posts = append(posts, post)
 	}
+
 	return posts, http.StatusOK, nil
 }
 
