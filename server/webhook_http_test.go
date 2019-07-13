@@ -123,7 +123,7 @@ func TestWebhookHTTP(t *testing.T) {
 		},
 		"issue renamed": {
 			Request:          testWebhookRequest("webhook-issue-updated-renamed.json"),
-			ExpectedHeadline: "Test User renamed story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User updated summary from \"Unit test summary\" to \"Unit test summary 1\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			ExpectedText:     "",
 			CurrentInstance:  true,
 		},
@@ -164,22 +164,48 @@ func TestWebhookHTTP(t *testing.T) {
 		},
 		"issue rank": {
 			Request:          testWebhookRequest("webhook-issue-updated-rank.json"),
-			ExpectedHeadline: "Test User ranked higher story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User updated Rank from \"\" to \"ranked higher\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			CurrentInstance:  true,
 		},
 		"issue reopened": {
-			Request:          testWebhookRequest("webhook-issue-updated-reopened.json"),
-			ExpectedHeadline: "Test User reopened story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
-			CurrentInstance:  true,
+			Request:                 testWebhookRequest("webhook-issue-updated-reopened.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User updated story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedFields: []*model.SlackAttachmentField{
+				{
+					Title: "",
+					Value: "**Reopened:** ~~Done~~ Open",
+					Short: false,
+				},
+				{
+					Title: "",
+					Value: "**Status:** ~~Done~~ To Do",
+					Short: false,
+				},
+			},
+			CurrentInstance: true,
 		},
 		"issue resolved": {
-			Request:          testWebhookRequest("webhook-issue-updated-resolved.json"),
-			ExpectedHeadline: "Test User resolved story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
-			CurrentInstance:  true,
+			Request:                 testWebhookRequest("webhook-issue-updated-resolved.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User updated story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedFields: []*model.SlackAttachmentField{
+				{
+					Title: "",
+					Value: "**Resolved:** ~~Open~~ Done",
+					Short: false,
+				},
+				{
+					Title: "",
+					Value: "**Status:** ~~In Progress~~ Done",
+					Short: false,
+				},
+			},
+			CurrentInstance: true,
 		},
 		"issue sprint": {
 			Request:          testWebhookRequest("webhook-issue-updated-sprint.json"),
-			ExpectedHeadline: "Test User moved story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to Sprint 2",
+			ExpectedHeadline: "Test User updated Sprint from \"Sprint 1\" to \"Sprint 2\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			CurrentInstance:  true,
 		},
 		"issue started working": {
@@ -292,7 +318,7 @@ func TestWebhookHTTP(t *testing.T) {
 		},
 		"issue renamed - no Instance": {
 			Request:          testWebhookRequest("webhook-issue-updated-renamed.json"),
-			ExpectedHeadline: "Test User renamed story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User updated summary from \"Unit test summary\" to \"Unit test summary 1\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			ExpectedText:     "",
 			CurrentInstance:  false,
 		},
@@ -333,22 +359,48 @@ func TestWebhookHTTP(t *testing.T) {
 		},
 		"issue rank - no Instance": {
 			Request:          testWebhookRequest("webhook-issue-updated-rank.json"),
-			ExpectedHeadline: "Test User ranked higher story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User updated Rank from \"\" to \"ranked higher\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			CurrentInstance:  false,
 		},
 		"issue reopened - no Instance": {
-			Request:          testWebhookRequest("webhook-issue-updated-reopened.json"),
-			ExpectedHeadline: "Test User reopened story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
-			CurrentInstance:  false,
+			Request:                 testWebhookRequest("webhook-issue-updated-reopened.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User updated story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedFields: []*model.SlackAttachmentField{
+				{
+					Title: "",
+					Value: "**Reopened:** ~~Done~~ Open",
+					Short: false,
+				},
+				{
+					Title: "",
+					Value: "**Status:** ~~Done~~ To Do",
+					Short: false,
+				},
+			},
+			CurrentInstance: false,
 		},
 		"issue resolved - no Instance": {
-			Request:          testWebhookRequest("webhook-issue-updated-resolved.json"),
-			ExpectedHeadline: "Test User resolved story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
-			CurrentInstance:  false,
+			Request:                 testWebhookRequest("webhook-issue-updated-resolved.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User updated story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedFields: []*model.SlackAttachmentField{
+				{
+					Title: "",
+					Value: "**Resolved:** ~~Open~~ Done",
+					Short: false,
+				},
+				{
+					Title: "",
+					Value: "**Status:** ~~In Progress~~ Done",
+					Short: false,
+				},
+			},
+			CurrentInstance: false,
 		},
 		"issue sprint - no Instance": {
 			Request:          testWebhookRequest("webhook-issue-updated-sprint.json"),
-			ExpectedHeadline: "Test User moved story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41) to Sprint 2",
+			ExpectedHeadline: "Test User updated Sprint from \"Sprint 1\" to \"Sprint 2\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			CurrentInstance:  false,
 		},
 		"issue started working - no Instance": {
