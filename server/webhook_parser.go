@@ -284,19 +284,19 @@ func parseWebhookAssigned(jwh *JiraWebhook) *webhook {
 
 func parseWebhookReopened(jwh *JiraWebhook, from string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedReopened, "reopened")
-	wh.eventInfo = webhookEvent{"reopened", from, "Open"}
+	wh.fieldInfo = webhookField{"reopened", from, "Open"}
 	return wh
 }
 
 func parseWebhookResolved(jwh *JiraWebhook, to string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedResolved, "resolved")
-	wh.eventInfo = webhookEvent{"resolved", "Open", to}
+	wh.fieldInfo = webhookField{"resolved", "Open", to}
 	return wh
 }
 
 func parseWebhookUpdatedField(jwh *JiraWebhook, eventMask uint64, field, from, to string) *webhook {
 	wh := newWebhook(jwh, eventMask, "updated %s from %q to %q on", field, from, to)
-	wh.eventInfo = webhookEvent{field, from, to}
+	wh.fieldInfo = webhookField{field, from, to}
 	return wh
 }
 
@@ -308,13 +308,13 @@ func parseWebhookUpdatedDescription(jwh *JiraWebhook) *webhook {
 
 func parseWebhookUpdatedAttachments(jwh *JiraWebhook, from, to string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedAttachment, mdAddRemove(from, to, "attached", "removed attachments"))
-	wh.eventInfo = webhookEvent{field: "attachments"}
+	wh.fieldInfo = webhookField{name: "attachments"}
 	return wh
 }
 
 func parseWebhookUpdatedLabels(jwh *JiraWebhook, from, to string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedLabels, mdAddRemove(from, to, "added labels", "removed labels"))
-	wh.eventInfo = webhookEvent{field: "labels"}
+	wh.fieldInfo = webhookField{name: "labels"}
 	return wh
 }
 
@@ -326,8 +326,8 @@ func mergeWebhookEvents(events []*webhook) Webhook {
 
 	for _, event := range events {
 		merged.eventMask = merged.eventMask | event.eventMask
-		msg := "**" + strings.Title(event.eventInfo.field) + ":** ~~" +
-			event.eventInfo.from + "~~ " + event.eventInfo.to
+		msg := "**" + strings.Title(event.fieldInfo.name) + ":** ~~" +
+			event.fieldInfo.from + "~~ " + event.fieldInfo.to
 		merged.fields = append(merged.fields, &model.SlackAttachmentField{
 			Value: msg,
 			Short: false,

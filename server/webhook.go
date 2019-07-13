@@ -19,10 +19,10 @@ type Webhook interface {
 	PostNotifications(p *Plugin) ([]*model.Post, int, error)
 }
 
-type webhookEvent struct {
-	field string
-	from  string
-	to    string
+type webhookField struct {
+	name string
+	from string
+	to   string
 }
 
 type webhook struct {
@@ -32,7 +32,7 @@ type webhook struct {
 	text          string
 	fields        []*model.SlackAttachmentField
 	notifications []webhookNotification
-	eventInfo     webhookEvent
+	fieldInfo     webhookField
 }
 
 type webhookNotification struct {
