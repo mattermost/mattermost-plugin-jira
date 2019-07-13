@@ -43,4 +43,3 @@ export function getFieldValues(metadata, projectKey, issueTypeId) {
     const fieldIds = Object.keys(fieldsForIssue);
     return fieldIds.map((fieldId) => ({value: fieldId, label: fieldsForIssue[fieldId].name}));
 }
-

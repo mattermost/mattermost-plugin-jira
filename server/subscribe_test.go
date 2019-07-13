@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"testing"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -20,7 +21,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 	})
 
 	for name, tc := range map[string]struct {
-		TestWebhook *JiraWebhook
+		TestWebhook io.Reader
 		Subs        *Subscriptions
 		ChannelIds  []string
 	}{
@@ -30,25 +31,25 @@ func TestGetChannelsSubscribed(t *testing.T) {
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
-					Filters: map[string][]string{
-						"event":      []string{},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Event:     []string{},
+						Project:   []string{},
+						IssueType: []string{},
 					},
 				},
 			}),
-			ChannelIds: []string{"sampleChannelId"},
+			ChannelIds: []string{},
 		},
-		"project matches": {
+		"fields match": {
 			TestWebhook: getJiraTestData("webhook-issue-created.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
-					Filters: map[string][]string{
-						"event":      []string{},
-						"project":    []string{"TES"},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_created"},
+						Project:   []string{"TES"},
+						IssueType: []string{"10001"},
 					},
 				},
 			}),
@@ -60,29 +61,29 @@ func TestGetChannelsSubscribed(t *testing.T) {
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
-					Filters: map[string][]string{
-						"event":      []string{},
-						"project":    []string{"NOPE"},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_created"},
+						Project:   []string{"NOPE"},
+						IssueType: []string{"10001"},
 					},
 				},
 			}),
 			ChannelIds: []string{},
 		},
-		"issue type matches": {
+		"no project selected": {
 			TestWebhook: getJiraTestData("webhook-issue-created.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
-					Filters: map[string][]string{
-						"event":      []string{},
-						"project":    []string{},
-						"issue_type": []string{"10001"},
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_created"},
+						Project:   []string{},
+						IssueType: []string{"10001"},
 					},
 				},
 			}),
-			ChannelIds: []string{"sampleChannelId"},
+			ChannelIds: []string{},
 		},
 		"issue type does not match": {
 			TestWebhook: getJiraTestData("webhook-issue-created.json"),
@@ -90,29 +91,29 @@ func TestGetChannelsSubscribed(t *testing.T) {
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
-					Filters: map[string][]string{
-						"event":      []string{},
-						"project":    []string{},
-						"issue_type": []string{"10002"},
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_created"},
+						Project:   []string{"TES"},
+						IssueType: []string{"10002"},
 					},
 				},
 			}),
 			ChannelIds: []string{},
 		},
-		"event type matches": {
+		"no issue type selected": {
 			TestWebhook: getJiraTestData("webhook-issue-created.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
-					Filters: map[string][]string{
-						"event":      []string{"event_created"},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_created"},
+						Project:   []string{"TES"},
+						IssueType: []string{},
 					},
 				},
 			}),
-			ChannelIds: []string{"sampleChannelId"},
+			ChannelIds: []string{},
 		},
 		"event type does not match": {
 			TestWebhook: getJiraTestData("webhook-issue-deleted.json"),
@@ -120,10 +121,40 @@ func TestGetChannelsSubscribed(t *testing.T) {
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
-					Filters: map[string][]string{
-						"event":      []string{"event_created"},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_updated_summary"},
+						Project:   []string{"TES"},
+						IssueType: []string{"10001"},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"updated all selected": {
+			TestWebhook: getJiraTestData("webhook-issue-updated-labels.json"),
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_updated_all"},
+						Project:   []string{"TES"},
+						IssueType: []string{"10001"},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"updated all selected, wrong incoming event": {
+			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_updated_all"},
+						Project:   []string{"TES"},
+						IssueType: []string{"10001"},
 					},
 				},
 			}),
@@ -135,19 +166,19 @@ func TestGetChannelsSubscribed(t *testing.T) {
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId1",
-					Filters: map[string][]string{
-						"event":      []string{"event_created"},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_created"},
+						Project:   []string{"TES"},
+						IssueType: []string{"10001"},
 					},
 				},
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId2",
-					Filters: map[string][]string{
-						"event":      []string{},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_created"},
+						Project:   []string{"TES"},
+						IssueType: []string{"10001"},
 					},
 				},
 			}),
@@ -159,19 +190,19 @@ func TestGetChannelsSubscribed(t *testing.T) {
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId1",
-					Filters: map[string][]string{
-						"event":      []string{"event_created"},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_created"},
+						Project:   []string{"TES"},
+						IssueType: []string{"10001"},
 					},
 				},
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId2",
-					Filters: map[string][]string{
-						"event":      []string{"event_deleted"},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_deleted"},
+						Project:   []string{"TES"},
+						IssueType: []string{"10001"},
 					},
 				},
 			}),
@@ -183,19 +214,19 @@ func TestGetChannelsSubscribed(t *testing.T) {
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId1",
-					Filters: map[string][]string{
-						"event":      []string{"event_deleted"},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_deleted"},
+						Project:   []string{"TES"},
+						IssueType: []string{"10001"},
 					},
 				},
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId2",
-					Filters: map[string][]string{
-						"event":      []string{"event_deleted"},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_deleted"},
+						Project:   []string{"TES"},
+						IssueType: []string{"10001"},
 					},
 				},
 			}),
@@ -221,7 +252,10 @@ func TestGetChannelsSubscribed(t *testing.T) {
 				return true
 			})).Return(nil)
 
-			actual, err := p.getChannelsSubscribed(tc.TestWebhook)
+			wh, jwh, err := ParseWebhook(tc.TestWebhook)
+			assert.Nil(t, err)
+
+			actual, err := p.getChannelsSubscribed(wh, jwh)
 			assert.Nil(t, err)
 
 			assert.Equal(t, len(tc.ChannelIds), len(actual))

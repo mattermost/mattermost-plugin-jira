@@ -78,6 +78,7 @@ func ParseWebhook(in io.Reader) (wh Webhook, jwh *JiraWebhook, err error) {
 		wh = parseWebhookCommentUpdated(jwh)
 	case "comment_deleted":
 		wh, err = parseWebhookCommentDeleted(jwh)
+
 	}
 	if err != nil {
 		return nil, jwh, err
@@ -98,6 +99,7 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 	var events []*webhook
 	for _, item := range jwh.ChangeLog.Items {
 		field := item.Field
+		fieldId := item.FieldId
 		to := item.ToString
 		from := item.FromString
 		switch {
@@ -106,18 +108,18 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 		case field == "resolution" && to != "" && from == "":
 			events = append(events, parseWebhookResolved(jwh, to))
 		case field == "status":
-			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedStatus, field, from, to))
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedStatus, field, fieldId, from, to))
 		case field == "priority":
-			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedPriority, field, from, to))
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedPriority, field, fieldId, from, to))
 		case field == "summary":
-			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedSummary, field, from, to))
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedSummary, field, fieldId, from, to))
 		case field == "description":
 			// need to handle wh.text
 			events = append(events, parseWebhookUpdatedDescription(jwh))
 		case field == "Sprint" && len(to) > 0:
-			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedSprint, field, from, to))
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedSprint, field, fieldId, from, to))
 		case field == "Rank" && len(to) > 0:
-			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedRank, field, strings.ToLower(from), strings.ToLower(to)))
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedRank, field, fieldId, strings.ToLower(from), strings.ToLower(to)))
 		case field == "Attachment":
 			events = append(events, parseWebhookUpdatedAttachments(jwh, from, to))
 		case field == "labels":
@@ -125,7 +127,7 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 		case field == "assignee":
 			events = append(events, parseWebhookAssigned(jwh))
 		case field == "issuetype":
-			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedIssuetype, field, from, to))
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedIssuetype, field, fieldId, from, to))
 		}
 	}
 	if len(events) == 0 {
@@ -284,19 +286,19 @@ func parseWebhookAssigned(jwh *JiraWebhook) *webhook {
 
 func parseWebhookReopened(jwh *JiraWebhook, from string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedReopened, "reopened")
-	wh.fieldInfo = webhookField{"reopened", from, "Open"}
+	wh.fieldInfo = []webhookField{webhookField{"reopened", "resolution", from, "Open"}}
 	return wh
 }
 
 func parseWebhookResolved(jwh *JiraWebhook, to string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedResolved, "resolved")
-	wh.fieldInfo = webhookField{"resolved", "Open", to}
+	wh.fieldInfo = []webhookField{webhookField{"resolved", "resolution", "Open", to}}
 	return wh
 }
 
-func parseWebhookUpdatedField(jwh *JiraWebhook, eventMask uint64, field, from, to string) *webhook {
+func parseWebhookUpdatedField(jwh *JiraWebhook, eventMask uint64, field, fieldId, from, to string) *webhook {
 	wh := newWebhook(jwh, eventMask, "updated %s from %q to %q on", field, from, to)
-	wh.fieldInfo = webhookField{field, from, to}
+	wh.fieldInfo = []webhookField{webhookField{field, fieldId, from, to}}
 	return wh
 }
 
@@ -308,13 +310,13 @@ func parseWebhookUpdatedDescription(jwh *JiraWebhook) *webhook {
 
 func parseWebhookUpdatedAttachments(jwh *JiraWebhook, from, to string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedAttachment, mdAddRemove(from, to, "attached", "removed attachments"))
-	wh.fieldInfo = webhookField{name: "attachments"}
+	wh.fieldInfo = []webhookField{webhookField{name: "attachments"}}
 	return wh
 }
 
 func parseWebhookUpdatedLabels(jwh *JiraWebhook, from, to string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedLabels, mdAddRemove(from, to, "added labels", "removed labels"))
-	wh.fieldInfo = webhookField{name: "labels"}
+	wh.fieldInfo = []webhookField{webhookField{name: "labels"}}
 	return wh
 }
 
@@ -326,8 +328,9 @@ func mergeWebhookEvents(events []*webhook) Webhook {
 
 	for _, event := range events {
 		merged.eventMask = merged.eventMask | event.eventMask
-		msg := "**" + strings.Title(event.fieldInfo.name) + ":** ~~" +
-			event.fieldInfo.from + "~~ " + event.fieldInfo.to
+		fieldInfo := event.fieldInfo[0]
+		msg := "**" + strings.Title(fieldInfo.name) + ":** ~~" +
+			fieldInfo.from + "~~ " + fieldInfo.to
 		merged.fields = append(merged.fields, &model.SlackAttachmentField{
 			Value: msg,
 			Short: false,

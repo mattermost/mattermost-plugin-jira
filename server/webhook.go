@@ -17,10 +17,12 @@ type Webhook interface {
 	EventMask() uint64
 	PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error)
 	PostNotifications(p *Plugin) ([]*model.Post, int, error)
+	GetFieldInfo() []webhookField
 }
 
 type webhookField struct {
 	name string
+	id   string `omitempty`
 	from string
 	to   string
 }
@@ -32,7 +34,7 @@ type webhook struct {
 	text          string
 	fields        []*model.SlackAttachmentField
 	notifications []webhookNotification
-	fieldInfo     webhookField
+	fieldInfo     []webhookField
 }
 
 type webhookNotification struct {
@@ -45,6 +47,10 @@ type webhookNotification struct {
 
 func (wh *webhook) EventMask() uint64 {
 	return wh.eventMask
+}
+
+func (wh *webhook) GetFieldInfo() []webhookField {
+	return wh.fieldInfo
 }
 
 func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error) {

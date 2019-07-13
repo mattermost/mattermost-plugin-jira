@@ -22,10 +22,16 @@ const (
 	JIRA_SUBSCRIPTIONS_KEY = "jirasub"
 )
 
+type SubscriptionFilters struct {
+	Event     []string `json:"event"`
+	Project   []string `json:"project"`
+	IssueType []string `json:"issue_type"`
+}
+
 type ChannelSubscription struct {
 	Id        string              `json:"id"`
 	ChannelId string              `json:"channel_id"`
-	Filters   map[string][]string `json:"filters"`
+	Filters   SubscriptionFilters `json:"filters"`
 }
 
 type ChannelSubscriptions struct {
@@ -40,6 +46,15 @@ func NewChannelSubscriptions() *ChannelSubscriptions {
 		IdByChannelId: map[string][]string{},
 		IdByEvent:     map[string][]string{},
 	}
+}
+
+func (sub *ChannelSubscription) EventMask() uint64 {
+	var mask uint64 = 0
+	for _, enum := range sub.Filters.Event {
+		intMask := UI_ENUM_TO_MASK[enum]
+		mask = mask | intMask
+	}
+	return mask
 }
 
 func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
@@ -57,7 +72,7 @@ func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
 
 	s.IdByChannelId[sub.ChannelId] = remove(s.IdByChannelId[sub.ChannelId], sub.Id)
 
-	for _, event := range sub.Filters["events"] {
+	for _, event := range sub.Filters.Event {
 		s.IdByEvent[event] = remove(s.IdByEvent[event], sub.Id)
 	}
 }
@@ -65,7 +80,7 @@ func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
 func (s *ChannelSubscriptions) add(newSubscription *ChannelSubscription) {
 	s.ById[newSubscription.Id] = *newSubscription
 	s.IdByChannelId[newSubscription.ChannelId] = append(s.IdByChannelId[newSubscription.ChannelId], newSubscription.Id)
-	for _, event := range newSubscription.Filters["events"] {
+	for _, event := range newSubscription.Filters.Event {
 		s.IdByEvent[event] = append(s.IdByEvent[event], newSubscription.Id)
 	}
 }
@@ -98,71 +113,49 @@ func (p *Plugin) getUserID() string {
 	return p.getConfig().botUserID
 }
 
-func (p *Plugin) getChannelsSubscribed(jwh *JiraWebhook) ([]string, error) {
+func (p *Plugin) getChannelsSubscribed(wh Webhook, jwh *JiraWebhook) ([]string, error) {
 	subs, err := p.getSubscriptions()
 	if err != nil {
 		return nil, err
 	}
-	eventEnums := jwh.toEventEnums()
+	webhookMask := wh.EventMask()
 
 	subIds := subs.Channel.ById
 
 	channelIds := []string{}
+
 	for _, sub := range subIds {
-		acceptable := true
-		for field, acceptableValues := range sub.Filters {
-			// Blank in acceptable values means all values are acceptable
-			if len(acceptableValues) == 0 {
-				continue
-			}
-			switch field {
-			case "event":
-				found := false
-				for _, acceptableEvent := range acceptableValues {
-					for enum := range eventEnums {
-						if acceptableEvent == enum {
-							found = true
-							break
-						}
-					}
-					if found {
-						break
-					}
-				}
-				if !found {
-					acceptable = false
-					break
-				}
-			case "project":
-				found := false
-				for _, acceptableProject := range acceptableValues {
-					if acceptableProject == jwh.Issue.Fields.Project.Key {
-						found = true
-						break
-					}
-				}
-				if !found {
-					acceptable = false
-					break
-				}
-			case "issue_type":
-				found := false
-				for _, acceptableIssueType := range acceptableValues {
-					if acceptableIssueType == jwh.Issue.Fields.Type.ID {
-						found = true
-						break
-					}
-				}
-				if !found {
-					acceptable = false
-					break
-				}
-			}
+		foundEvent := false
+		if webhookMask&sub.EventMask() != 0 {
+			foundEvent = true
+		}
+		if !foundEvent {
+			continue
 		}
 
-		if acceptable {
-			channelIds = append(channelIds, sub.ChannelId)
+		foundProject := false
+		for _, acceptableProject := range sub.Filters.Project {
+			if acceptableProject == jwh.Issue.Fields.Project.Key {
+				foundProject = true
+				break
+			}
 		}
+		if !foundProject {
+			continue
+		}
+
+		foundIssueType := false
+		for _, acceptableIssueType := range sub.Filters.IssueType {
+			if acceptableIssueType == jwh.Issue.Fields.Type.ID {
+				foundIssueType = true
+				break
+			}
+		}
+		if !foundIssueType {
+			continue
+		}
+
+		channelIds = append(channelIds, sub.ChannelId)
 	}
 
 	return channelIds, nil
@@ -325,7 +318,7 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, err
 	}
 
-	channelIds, err := p.getChannelsSubscribed(jwh)
+	channelIds, err := p.getChannelsSubscribed(wh, jwh)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

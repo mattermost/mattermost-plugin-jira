@@ -6,7 +6,6 @@ package main
 import (
 	"crypto/subtle"
 	"fmt"
-	"math"
 	"net/http"
 	"net/url"
 
@@ -18,41 +17,6 @@ const (
 	PostTypeMention  = "custom_jira_mention"
 	PostTypeAssigned = "custom_jira_assigned"
 )
-
-const (
-	eventCreated = uint64(1 << iota)
-	eventCreatedComment
-	eventDeleted
-	eventDeletedComment
-	eventDeletedUnresolved
-	eventUpdatedAssignee
-	eventUpdatedAttachment
-	eventUpdatedComment
-	eventUpdatedDescription
-	eventUpdatedLabels
-	eventUpdatedPriority
-	eventUpdatedRank
-	eventUpdatedReopened
-	eventUpdatedResolved
-	eventUpdatedSprint
-	eventUpdatedStatus
-	eventUpdatedSummary
-	eventUpdatedIssuetype
-)
-
-const maskLegacy = eventCreated |
-	eventUpdatedReopened |
-	eventUpdatedResolved |
-	eventDeletedUnresolved
-
-const maskComments = eventCreatedComment |
-	eventDeletedComment |
-	eventUpdatedComment
-
-const maskDefault = maskLegacy |
-	eventUpdatedAssignee
-
-const maskAll = math.MaxUint64
 
 // The keys listed here can be used in the Jira webhook URL to control what events
 // are posted to Mattermost. A matching parameter with a non-empty value must
