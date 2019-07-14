@@ -21,6 +21,7 @@ const (
 	eventUpdatedStatus
 	eventUpdatedSummary
 	eventUpdatedIssuetype
+	eventUpdatedCustomField
 )
 
 const maskLegacy = eventCreated |
@@ -49,7 +50,8 @@ const maskUpdatedAll = eventUpdatedAssignee |
 	eventUpdatedSprint |
 	eventUpdatedStatus |
 	eventUpdatedSummary |
-	eventUpdatedIssuetype
+	eventUpdatedIssuetype |
+	eventUpdatedCustomField
 
 const (
 	eventCreatedStr            = "event_created"

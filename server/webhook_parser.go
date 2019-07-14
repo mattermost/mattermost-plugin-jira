@@ -128,6 +128,8 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 			events = append(events, parseWebhookAssigned(jwh))
 		case field == "issuetype":
 			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedIssuetype, field, fieldId, from, to))
+		case strings.HasPrefix(item.FieldId, "customfield_"):
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedCustomField, field, fieldId, from, to))
 		}
 	}
 	if len(events) == 0 {

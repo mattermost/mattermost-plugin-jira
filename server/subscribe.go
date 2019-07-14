@@ -128,6 +128,25 @@ func (p *Plugin) getChannelsSubscribed(wh Webhook, jwh *JiraWebhook) ([]string, 
 		foundEvent := false
 		if webhookMask&sub.EventMask() != 0 {
 			foundEvent = true
+		} else if webhookMask&eventUpdatedCustomField != 0 {
+			subCustomFields := []string{}
+			for _, subbedEvent := range sub.Filters.Event {
+				if strings.HasPrefix(subbedEvent, "event_updated_customfield_") {
+					field := subbedEvent[strings.Index(subbedEvent, "customfield"):]
+					subCustomFields = append(subCustomFields, field)
+				}
+			}
+			for _, fi := range wh.GetFieldInfo() {
+				for _, field := range subCustomFields {
+					if fi.id == field {
+						foundEvent = true
+						break
+					}
+				}
+				if foundEvent {
+					break
+				}
+			}
 		}
 		if !foundEvent {
 			continue

@@ -160,6 +160,51 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			}),
 			ChannelIds: []string{},
 		},
+		"custom field selected": {
+			TestWebhook: getJiraTestData("webhook-issue-updated-custom-field.json"),
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_updated_customfield_10001"},
+						Project:   []string{"TES"},
+						IssueType: []string{"10001"},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"custom field selected, wrong field": {
+			TestWebhook: getJiraTestData("webhook-issue-updated-custom-field.json"),
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_updated_customfield_10002"},
+						Project:   []string{"TES"},
+						IssueType: []string{"10001"},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"updated all selected, custom field": {
+			TestWebhook: getJiraTestData("webhook-issue-updated-custom-field.json"),
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Event:     []string{"event_updated_all"},
+						Project:   []string{"TES"},
+						IssueType: []string{"10001"},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
 		"multiple subscriptions, both acceptable": {
 			TestWebhook: getJiraTestData("webhook-issue-created.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
