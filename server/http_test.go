@@ -28,6 +28,7 @@ func checkNotSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 			assert.Nil(t, err)
 		}
 
+		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
 		api.On("KVGet", JIRA_SUBSCRIPTIONS_KEY).Return(existingBytes, nil)
 
 		// Temp changes to revert when we can use KVCompareAndSet
@@ -60,6 +61,8 @@ func checkHasSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 			existingBytes, err = json.Marshal(existing)
 			assert.Nil(t, err)
 		}
+
+		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
 
 		api.On("KVGet", JIRA_SUBSCRIPTIONS_KEY).Return(existingBytes, nil)
 
@@ -113,6 +116,7 @@ func hasSubscriptions(subscriptions []ChannelSubscription, t *testing.T) func(ap
 		existingBytes, err := json.Marshal(&subs)
 		assert.Nil(t, err)
 
+		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
 		api.On("KVGet", JIRA_SUBSCRIPTIONS_KEY).Return(existingBytes, nil)
 	}
 }
@@ -144,6 +148,13 @@ func TestSubscribe(t *testing.T) {
 		"Reject Ids": {
 			subscription:       `{"id": "iamtryingtodosendid", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaaa", "filters": {}}`,
 			expectedStatusCode: http.StatusBadRequest,
+		},
+		"No Permissions": {
+			subscription:       `{"channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "project": ["myproject"]}}`,
+			expectedStatusCode: http.StatusForbidden,
+			apiCalls: func(api *plugintest.API) {
+				api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(false)
+			},
 		},
 		"Initial Subscription": {
 			subscription:       `{"channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "project": ["myproject"]}}`,
@@ -303,6 +314,27 @@ func TestDeleteSubscription(t *testing.T) {
 			expectedStatusCode: http.StatusUnauthorized,
 			skipAuthorize:      true,
 		},
+		"No Permissions": {
+			subscriptionId:     "aaaaaaaaaaaaaaaaaaaaaaaaab",
+			expectedStatusCode: http.StatusForbidden,
+			apiCalls: func(api *plugintest.API) {
+				var existingBytes []byte
+				var err error
+				existingBytes, err = json.Marshal(withExistingChannelSubscriptions([]ChannelSubscription{
+					ChannelSubscription{
+						Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
+						ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
+						Filters: map[string][]string{
+							"events":  []string{"jira:issue_created"},
+							"project": []string{"myproject"},
+						},
+					},
+				}))
+				assert.Nil(t, err)
+				api.On("KVGet", JIRA_SUBSCRIPTIONS_KEY).Return(existingBytes, nil)
+				api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(false)
+			},
+		},
 		"Sucessfull delete": {
 			subscriptionId:     "aaaaaaaaaaaaaaaaaaaaaaaaab",
 			expectedStatusCode: http.StatusOK,
@@ -430,6 +462,13 @@ func TestEditSubscription(t *testing.T) {
 		"No Id": {
 			subscription:       `{"id": "badid", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "fields": {}}`,
 			expectedStatusCode: http.StatusBadRequest,
+		},
+		"No Permissions": {
+			subscription:       `{"id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "project": ["otherproject"]}}`,
+			expectedStatusCode: http.StatusForbidden,
+			apiCalls: func(api *plugintest.API) {
+				api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(false)
+			},
 		},
 		"Editing subscription": {
 			subscription:       `{"id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "project": ["otherproject"]}}`,

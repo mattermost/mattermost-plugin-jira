@@ -36,11 +36,19 @@ export default class ChannelSettingsModal extends PureComponent {
     render() {
         let inner = <Loading/>;
         if (this.props.channelSubscriptions && this.props.jiraProjectMetadata) {
-            inner = (
-                <ChannelSettingsModalInner
-                    {...this.props}
-                />
-            );
+            if (this.props.channelSubscriptions instanceof Error) {
+                inner = (
+                    <Modal.Body>
+                        {'You do not have permission to access Jira subscirptions in this channel.'}
+                    </Modal.Body>
+                );
+            } else {
+                inner = (
+                    <ChannelSettingsModalInner
+                        {...this.props}
+                    />
+                );
+            }
         }
 
         return (
