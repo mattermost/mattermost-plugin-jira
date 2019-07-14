@@ -35,8 +35,9 @@ type JIRAInstance struct {
 	*Plugin `json:"-"`
 	lock    *sync.RWMutex
 
-	Key  string
-	Type string
+	Key           string
+	Type          string
+	PluginVersion string
 }
 
 type InstanceStatus struct {
@@ -47,10 +48,11 @@ var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 func NewJIRAInstance(p *Plugin, typ, key string) *JIRAInstance {
 	return &JIRAInstance{
-		Plugin: p,
-		Type:   typ,
-		Key:    key,
-		lock:   &sync.RWMutex{},
+		Plugin:        p,
+		Type:          typ,
+		Key:           key,
+		PluginVersion: manifest.Version,
+		lock:          &sync.RWMutex{},
 	}
 }
 

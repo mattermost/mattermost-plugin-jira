@@ -20,6 +20,7 @@ const (
 
 type JIRAUser struct {
 	jira.User
+	PluginVersion      string
 	Oauth1AccessToken  string `json:",omitempty"`
 	Oauth1AccessSecret string `json:",omitempty"`
 	Settings           *UserSettings
