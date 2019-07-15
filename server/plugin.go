@@ -33,11 +33,11 @@ type externalConfig struct {
 	// Legacy 1.x Webhook secret
 	Secret string `json:"secret"`
 
-	// What MM users can create subscriptions
-	MattermostSubscriptionPermission string
+	// What MM roles that can create subscriptions
+	SubscriptionEditorsMattermostRoles string
 
 	// Comma separated list of jira groups with permission. Empty is all.
-	JiraGroupsPermission string
+	SubscriptionEditorsJiraGroups string
 }
 
 const currentInstanceTTL = 1 * time.Second

@@ -279,37 +279,40 @@ func inAllowedGroup(inGroups []*jira.UserGroup, allowedGroups []string) bool {
 }
 
 // hasPermissionToManageSubscription checks if MM user has permission to manage subscriptions in given channel.
-// returns nil if the user has permission and a discriptive error otherwise.
+// returns nil if the user has permission and a descriptive error otherwise.
 func (p *Plugin) hasPermissionToManageSubscription(userId, channelId string) error {
 	cfg := p.getConfig()
 
-	if cfg.MattermostSubscriptionPermission == "team_admin" {
+	switch cfg.SubscriptionEditorsMattermostRoles {
+	case "team_admin":
 		if !p.API.HasPermissionToChannel(userId, channelId, model.PERMISSION_MANAGE_TEAM) {
 			return errors.New("is not team admin")
 		}
-	} else if cfg.MattermostSubscriptionPermission == "channel_admin" {
+	case "channel_admin":
 		channel, appErr := p.API.GetChannel(channelId)
 		if appErr != nil {
 			return errors.Wrap(appErr, "unable to get channel to check permission")
 		}
-		if channel.Type == model.CHANNEL_OPEN {
+		switch channel.Type {
+		case model.CHANNEL_OPEN:
 			if !p.API.HasPermissionToChannel(userId, channelId, model.PERMISSION_MANAGE_PUBLIC_CHANNEL_PROPERTIES) {
 				return errors.New("is not channel admin")
 			}
-		} else if channel.Type == model.CHANNEL_PRIVATE {
+		case model.CHANNEL_PRIVATE:
 			if !p.API.HasPermissionToChannel(userId, channelId, model.PERMISSION_MANAGE_PRIVATE_CHANNEL_PROPERTIES) {
 				return errors.New("is not channel admin")
 			}
-		} else {
+		default:
 			return errors.New("can only subscribe in public and private channels")
 		}
-	} else if cfg.MattermostSubscriptionPermission != "users" {
+	case "users":
+	default:
 		if !p.API.HasPermissionTo(userId, model.PERMISSION_MANAGE_SYSTEM) {
 			return errors.New("is not system admin")
 		}
 	}
 
-	if cfg.JiraGroupsPermission != "" {
+	if cfg.SubscriptionEditorsJiraGroups != "" {
 		ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 		if err != nil {
 			return errors.Wrap(err, "could not load jira instance")
@@ -338,7 +341,7 @@ func (p *Plugin) hasPermissionToManageSubscription(userId, channelId string) err
 			return errors.Wrap(err, "error in request to get user groups, body:"+string(body))
 		}
 
-		allowedGroups := strings.Split(cfg.JiraGroupsPermission, ",")
+		allowedGroups := strings.Split(cfg.SubscriptionEditorsJiraGroups, ",")
 		if !inAllowedGroup(groups, allowedGroups) {
 			return errors.New("not in allowed jira user groups")
 		}
