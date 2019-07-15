@@ -24,6 +24,20 @@
         "default": true
       },
       {
+        "key": "WebhookMaxProcsPerServer",
+        "display_name": "Maximum # of Webhook Processors Per Server",
+        "type": "text",
+        "help_text": "The number of simultaneous go routines that will process webhooks. This is needed because to process a webhook the Jira plugin may have to request information from the Jira instance (such as permissions), and we may not want to overload Jira. \n \n Changes to this setting will take effect when the plugin is restarted.",
+        "default": "20"
+      },
+      {
+        "key": "WebhookBufferSize",
+        "display_name": "Size of the Webhook Processing Buffer",
+        "type": "text",
+        "help_text": "The buffer size for webhook events to be processed by the webhook processors. If the buffer is full, the Jira plugin will ignore new webhook events and return a `503 Service Unavailable` response to the Jira instance that sent the webhook. This can be a large value, since each webhook event will take between 5k and 50k of memory (on average) while it's waiting to be processed. \n \n Changes to this setting will take effect when the plugin is restarted.",
+        "default": "10000"
+      },
+      {
         "key": "Secret",
         "display_name": "Webhook Secret",
         "type": "generated",

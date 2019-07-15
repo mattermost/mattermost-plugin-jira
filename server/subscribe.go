@@ -7,6 +7,7 @@ import (
 	"crypto/subtle"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -320,29 +321,19 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusForbidden, fmt.Errorf("Request URL: secret did not match")
 	}
 
-	wh, jwh, err := ParseWebhook(r.Body)
+	bb, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	channelIds, err := p.getChannelsSubscribed(jwh)
-	if err != nil {
-		return http.StatusInternalServerError, err
+	// If there is space in the queue, immediately return a 200; we will process the webhook event async.
+	// If the queue is full, return a 503; we will not process that webhook event.
+	select {
+	case p.webhookQueue <- bb:
+		return http.StatusOK, nil
+	default:
+		return http.StatusServiceUnavailable, nil
 	}
-
-	botUserId := p.getUserID()
-
-	for _, channelId := range channelIds {
-		if _, status, err1 := wh.PostToChannel(p, channelId, botUserId); err1 != nil {
-			return status, err1
-		}
-	}
-
-	_, status, err := wh.PostNotifications(p)
-	if err != nil {
-		return status, err
-	}
-	return http.StatusOK, nil
 }
 
 func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {

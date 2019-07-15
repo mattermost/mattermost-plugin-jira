@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"text/template"
@@ -29,6 +30,12 @@ const (
 type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
 	EnableJiraUI bool `json:"enablejiraui"`
+
+	// Maximum # of Webhook Processors Per Server
+	WebhookMaxProcsPerServer string `json:"webhookmaxprocsperserver"`
+
+	// Size of the Webhook Processing Buffer
+	WebhookBufferSize string `json:"webhookbuffersize"`
 
 	// Legacy 1.x Webhook secret
 	Secret string `json:"secret"`
@@ -67,6 +74,9 @@ type Plugin struct {
 
 	// templates are loaded on startup
 	templates map[string]*template.Template
+
+	// channel to distribute work to the webhook processors
+	webhookQueue chan []byte
 }
 
 func (p *Plugin) getConfig() config {
@@ -143,6 +153,22 @@ func (p *Plugin) OnActivate() error {
 	err = p.API.RegisterCommand(getCommand())
 	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to register command")
+	}
+
+	// Create our queue of webhook events waiting to be processed.
+	bufSize, err := strconv.Atoi(p.getConfig().WebhookBufferSize)
+	if err != nil {
+		return errors.WithMessage(err, "OnActivate: error parsing config setting WebhookBufferSize")
+	}
+	p.webhookQueue = make(chan []byte, bufSize)
+
+	// Spin up our webhook workers.
+	maxProcs, err := strconv.Atoi(p.getConfig().WebhookMaxProcsPerServer)
+	if err != nil {
+		return errors.WithMessage(err, "OnActivate: error parsing config setting WebhookMaxProcsPerServer")
+	}
+	for i := 0; i < maxProcs; i++ {
+		go webhookWorker{i, p, p.webhookQueue}.work()
 	}
 
 	return nil
