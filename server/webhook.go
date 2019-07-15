@@ -14,10 +14,9 @@ import (
 )
 
 type Webhook interface {
-	EventMask() uint64
+	EventTypes() EventTypeSet
 	PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error)
 	PostNotifications(p *Plugin) ([]*model.Post, int, error)
-	GetFieldInfo() []webhookField
 	GetJiraWebhook() *JiraWebhook
 }
 
@@ -30,12 +29,12 @@ type webhookField struct {
 
 type webhook struct {
 	*JiraWebhook
-	eventMask     uint64
+	eventTypes    EventTypeSet
 	headline      string
 	text          string
 	fields        []*model.SlackAttachmentField
 	notifications []webhookNotification
-	fieldInfo     []webhookField
+	fieldInfo     webhookField
 }
 
 type webhookNotification struct {
@@ -46,12 +45,8 @@ type webhookNotification struct {
 	commentSelf   string
 }
 
-func (wh *webhook) EventMask() uint64 {
-	return wh.eventMask
-}
-
-func (wh *webhook) GetFieldInfo() []webhookField {
-	return wh.fieldInfo
+func (wh *webhook) EventTypes() EventTypeSet {
+	return wh.eventTypes
 }
 
 func (wh *webhook) GetJiraWebhook() *JiraWebhook {
@@ -133,7 +128,9 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 		}
 		// If this is a comment-related webhook, we need to check if they have permissions to read that.
 		// Otherwise, check if they can view the issue.
-		if wh.eventMask&maskComments != 0 {
+
+		isCommentEvent := wh.EventTypes().HasIntersection(maskComments)
+		if isCommentEvent {
 			req, err2 := jiraClient.NewRequest("GET", notification.commentSelf, nil)
 			if err2 != nil {
 				p.errorf("PostNotifications: error while creating NewRequest, err: %v", err2)
@@ -170,10 +167,10 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 	return posts, http.StatusOK, nil
 }
 
-func newWebhook(jwh *JiraWebhook, eventMask uint64, format string, args ...interface{}) *webhook {
+func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...interface{}) *webhook {
 	return &webhook{
 		JiraWebhook: jwh,
-		eventMask:   eventMask,
+		eventTypes:  EventTypeSet{eventType: true},
 		headline:    jwh.mdUser() + " " + fmt.Sprintf(format, args...) + " " + jwh.mdKeySummaryLink(),
 	}
 }

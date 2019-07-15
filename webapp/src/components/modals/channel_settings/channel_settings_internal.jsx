@@ -13,6 +13,7 @@ import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValue
 const JiraEventOptions = [
     {value: 'event_created', label: 'Issue Created'},
     {value: 'event_deleted', label: 'Issue Deleted'},
+    {value: 'event_deleted_unresolved', label: 'Issue Deleted, Unresolved'},
     {value: 'event_updated_reopened', label: 'Issue Reopened'},
     {value: 'event_updated_resolved', label: 'Issue Resolved'},
     {value: 'event_created_comment', label: 'Comment Created'},
@@ -23,6 +24,7 @@ const JiraEventOptions = [
     {value: 'event_updated_attachment', label: 'Issue Updated: Attachment'},
     {value: 'event_updated_description', label: 'Issue Updated: Description'},
     {value: 'event_updated_fix_version', label: 'Issue Updated: Fix Version'},
+    {value: 'event_updated_issue_type', label: 'Issue Updated: Issue Type'},
     {value: 'event_updated_labels', label: 'Issue Updated: Labels'},
     {value: 'event_updated_priority', label: 'Issue Updated: Priority'},
     {value: 'event_updated_rank', label: 'Issue Updated: Rank'},

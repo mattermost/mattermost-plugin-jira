@@ -48,13 +48,12 @@ func NewChannelSubscriptions() *ChannelSubscriptions {
 	}
 }
 
-func (sub *ChannelSubscription) EventMask() uint64 {
-	var mask uint64 = 0
+func (sub *ChannelSubscription) EventTypes() EventTypeSet {
+	eventTypes := EventTypeSet{}
 	for _, enum := range sub.Filters.Event {
-		intMask := UI_ENUM_TO_MASK[enum]
-		mask = mask | intMask
+		eventTypes.Add(enum)
 	}
-	return mask
+	return eventTypes
 }
 
 func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
@@ -119,7 +118,7 @@ func (p *Plugin) getChannelsSubscribed(wh Webhook) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	webhookMask := wh.EventMask()
+	webhookMask := wh.EventTypes()
 
 	subIds := subs.Channel.ById
 
@@ -137,30 +136,7 @@ func (p *Plugin) getChannelsSubscribed(wh Webhook) ([]string, error) {
 			continue
 		}
 
-		foundEvent := false
-		if webhookMask&sub.EventMask() != 0 {
-			foundEvent = true
-		} else if webhookMask&eventUpdatedCustomField != 0 {
-			subCustomFields := []string{}
-			for _, subbedEvent := range sub.Filters.Event {
-				if strings.HasPrefix(subbedEvent, "event_updated_customfield_") {
-					field := subbedEvent[strings.Index(subbedEvent, "customfield"):]
-					subCustomFields = append(subCustomFields, field)
-				}
-			}
-			for _, fi := range wh.GetFieldInfo() {
-				for _, field := range subCustomFields {
-					if fi.id == field {
-						foundEvent = true
-						break
-					}
-				}
-				if foundEvent {
-					break
-				}
-			}
-		}
-		if !foundEvent {
+		if !sub.EventTypes().HasIntersection(webhookMask) {
 			continue
 		}
 
