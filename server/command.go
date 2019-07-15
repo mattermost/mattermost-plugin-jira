@@ -96,13 +96,17 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 		return p.help(header)
 	}
 
-	_, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	instance, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
 		return p.responsef(header, "There is no Jira instance installed. Please contact your system administrator.")
 	}
 
-	return p.responsef(header, "[Click here to link your Jira account](%s%s)",
-		p.GetPluginURL(), routeUserConnect)
+	redirectURL, err := instance.GetUserConnectURL(header.UserId)
+	if err != nil {
+		return p.responsef(header, "Command failed, please contact your system administrator: %v", err)
+	}
+
+	return p.responseRedirect(redirectURL)
 }
 
 func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -573,6 +577,12 @@ func (p *Plugin) postCommandResponse(args *model.CommandArgs, text string) {
 func (p *Plugin) responsef(commandArgs *model.CommandArgs, format string, args ...interface{}) *model.CommandResponse {
 	p.postCommandResponse(commandArgs, fmt.Sprintf(format, args...))
 	return &model.CommandResponse{}
+}
+
+func (p *Plugin) responseRedirect(redirectURL string) *model.CommandResponse {
+	return &model.CommandResponse{
+		GotoLocation: redirectURL,
+	}
 }
 
 func executeInstanceSelect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
