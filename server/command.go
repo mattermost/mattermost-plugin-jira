@@ -57,9 +57,9 @@ var jiraCommandHandler = CommandHandler{
 		"webhook":          executeWebhookURL,
 		"info":             executeInfo,
 		"help":             commandHelp,
-		"list":             executeList,
-		"instance/select":  executeInstanceSelect,
-		"instance/delete":  executeInstanceDelete,
+		// "list":             executeList,
+		// "instance/select":  executeInstanceSelect,
+		// "instance/delete":  executeInstanceDelete,
 	},
 	defaultHandler: executeJiraDefault,
 }
