@@ -38,6 +38,36 @@ export function getFields(metadata, projectKey, issueTypeId) {
     return getIssueTypes(metadata, projectKey).find((issueType) => issueType.id === issueTypeId).fields;
 }
 
+export function getCustomFieldValuesForProject(metadata, projectKey) {
+    if (!metadata || !projectKey) {
+        return [];
+    }
+
+    const issueTypes = getIssueTypes(metadata, projectKey);
+
+    const customFieldHash = {};
+    const fields = issueTypes.map((it) => Object.values(it.fields)).flat();
+    fields.forEach((field) => {
+        const key = field.key;
+        if (key.startsWith('customfield_')) {
+            customFieldHash[key] = field;
+        }
+    });
+
+    return Object.values(customFieldHash).sort((a, b) => {
+        if (a.name < b.name) {
+            return -1;
+        }
+        if (a.name > b.name) {
+            return 1;
+        }
+        return 0;
+    }).map((field) => ({
+        label: `Issue Updated: Custom - ${field.name}`,
+        value: `event_updated_${field.key}`,
+    }));
+}
+
 export function getFieldValues(metadata, projectKey, issueTypeId) {
     const fieldsForIssue = getFields(metadata, projectKey, issueTypeId);
     const fieldIds = Object.keys(fieldsForIssue);

@@ -125,6 +125,17 @@ func (p *Plugin) getChannelsSubscribed(wh Webhook, jwh *JiraWebhook) ([]string, 
 	channelIds := []string{}
 
 	for _, sub := range subIds {
+		foundProject := false
+		for _, acceptableProject := range sub.Filters.Project {
+			if acceptableProject == jwh.Issue.Fields.Project.Key {
+				foundProject = true
+				break
+			}
+		}
+		if !foundProject {
+			continue
+		}
+
 		foundEvent := false
 		if webhookMask&sub.EventMask() != 0 {
 			foundEvent = true
@@ -149,17 +160,6 @@ func (p *Plugin) getChannelsSubscribed(wh Webhook, jwh *JiraWebhook) ([]string, 
 			}
 		}
 		if !foundEvent {
-			continue
-		}
-
-		foundProject := false
-		for _, acceptableProject := range sub.Filters.Project {
-			if acceptableProject == jwh.Issue.Fields.Project.Key {
-				foundProject = true
-				break
-			}
-		}
-		if !foundProject {
 			continue
 		}
 

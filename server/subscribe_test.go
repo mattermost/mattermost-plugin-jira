@@ -21,12 +21,12 @@ func TestGetChannelsSubscribed(t *testing.T) {
 	})
 
 	for name, tc := range map[string]struct {
-		TestWebhook io.Reader
-		Subs        *Subscriptions
-		ChannelIds  []string
+		WebhookTestData io.Reader
+		Subs            *Subscriptions
+		ChannelIds      []string
 	}{
 		"no filters selected": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: getJiraTestData("webhook-issue-created.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -41,7 +41,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			ChannelIds: []string{},
 		},
 		"fields match": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: getJiraTestData("webhook-issue-created.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -56,7 +56,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			ChannelIds: []string{"sampleChannelId"},
 		},
 		"project does not match": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: getJiraTestData("webhook-issue-created.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -71,7 +71,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			ChannelIds: []string{},
 		},
 		"no project selected": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: getJiraTestData("webhook-issue-created.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -86,7 +86,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			ChannelIds: []string{},
 		},
 		"issue type does not match": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: getJiraTestData("webhook-issue-created.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -101,7 +101,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			ChannelIds: []string{},
 		},
 		"no issue type selected": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: getJiraTestData("webhook-issue-created.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -116,7 +116,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			ChannelIds: []string{},
 		},
 		"event type does not match": {
-			TestWebhook: getJiraTestData("webhook-issue-deleted.json"),
+			WebhookTestData: getJiraTestData("webhook-issue-deleted.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -131,7 +131,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			ChannelIds: []string{},
 		},
 		"updated all selected": {
-			TestWebhook: getJiraTestData("webhook-issue-updated-labels.json"),
+			WebhookTestData: getJiraTestData("webhook-issue-updated-labels.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -146,7 +146,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			ChannelIds: []string{"sampleChannelId"},
 		},
 		"updated all selected, wrong incoming event": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: getJiraTestData("webhook-issue-created.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -161,7 +161,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			ChannelIds: []string{},
 		},
 		"custom field selected": {
-			TestWebhook: getJiraTestData("webhook-issue-updated-custom-field.json"),
+			WebhookTestData: getJiraTestData("webhook-issue-updated-custom-field.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -176,7 +176,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			ChannelIds: []string{"sampleChannelId"},
 		},
 		"custom field selected, wrong field": {
-			TestWebhook: getJiraTestData("webhook-issue-updated-custom-field.json"),
+			WebhookTestData: getJiraTestData("webhook-issue-updated-custom-field.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -191,7 +191,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			ChannelIds: []string{},
 		},
 		"updated all selected, custom field": {
-			TestWebhook: getJiraTestData("webhook-issue-updated-custom-field.json"),
+			WebhookTestData: getJiraTestData("webhook-issue-updated-custom-field.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -206,7 +206,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			ChannelIds: []string{"sampleChannelId"},
 		},
 		"multiple subscriptions, both acceptable": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: getJiraTestData("webhook-issue-created.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -230,7 +230,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			ChannelIds: []string{"sampleChannelId1", "sampleChannelId2"},
 		},
 		"multiple subscriptions, one acceptable": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: getJiraTestData("webhook-issue-created.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -254,7 +254,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			ChannelIds: []string{"sampleChannelId1"},
 		},
 		"multiple subscriptions, neither acceptable": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: getJiraTestData("webhook-issue-created.json"),
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -297,7 +297,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 				return true
 			})).Return(nil)
 
-			wh, jwh, err := ParseWebhook(tc.TestWebhook)
+			wh, jwh, err := ParseWebhook(tc.WebhookTestData)
 			assert.Nil(t, err)
 
 			actual, err := p.getChannelsSubscribed(wh, jwh)

@@ -345,7 +345,7 @@ export default class CreateIssueModal extends PureComponent {
                         required={true}
                         onChange={this.handleProjectChange}
                         options={projectOptions}
-                        isMuli={false}
+                        isMulti={false}
                         key={'LT'}
                         theme={theme}
                         value={projectOptions.find((option) => option.value === this.state.projectKey)}
@@ -357,7 +357,7 @@ export default class CreateIssueModal extends PureComponent {
                         required={true}
                         onChange={this.handleIssueTypeChange}
                         options={issueOptions}
-                        isMuli={false}
+                        isMulti={false}
                         theme={theme}
                         value={issueOptions.find((option) => option.value === this.state.issueType)}
                     />

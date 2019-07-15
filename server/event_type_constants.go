@@ -21,6 +21,7 @@ const (
 	eventUpdatedStatus
 	eventUpdatedSummary
 	eventUpdatedIssuetype
+	eventUpdatedFixVersion
 	eventUpdatedCustomField
 )
 
@@ -51,6 +52,7 @@ const maskUpdatedAll = eventUpdatedAssignee |
 	eventUpdatedStatus |
 	eventUpdatedSummary |
 	eventUpdatedIssuetype |
+	eventUpdatedFixVersion |
 	eventUpdatedCustomField
 
 const (
@@ -71,6 +73,7 @@ const (
 	eventUpdatedSprintStr      = "event_updated_sprint"
 	eventUpdatedStatusStr      = "event_updated_status"
 	eventUpdatedSummaryStr     = "event_updated_summary"
+	eventUpdatedFixVersionStr  = "event_updated_fix_version"
 )
 
 var UI_ENUM_TO_MASK = map[string]uint64{
@@ -91,4 +94,5 @@ var UI_ENUM_TO_MASK = map[string]uint64{
 	eventUpdatedSprintStr:      eventUpdatedSprint,
 	eventUpdatedStatusStr:      eventUpdatedStatus,
 	eventUpdatedSummaryStr:     eventUpdatedSummary,
+	eventUpdatedFixVersionStr:  eventUpdatedFixVersion,
 }
