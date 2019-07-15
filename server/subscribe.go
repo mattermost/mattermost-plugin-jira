@@ -71,12 +71,14 @@ func (s *ChannelSubscriptions) add(newSubscription *ChannelSubscription) {
 }
 
 type Subscriptions struct {
-	Channel *ChannelSubscriptions
+	PluginVersion string
+	Channel       *ChannelSubscriptions
 }
 
 func NewSubscriptions() *Subscriptions {
 	return &Subscriptions{
-		Channel: NewChannelSubscriptions(),
+		PluginVersion: manifest.Version,
+		Channel:       NewChannelSubscriptions(),
 	}
 }
 
@@ -87,6 +89,7 @@ func SubscriptionsFromJson(bytes []byte) (*Subscriptions, error) {
 		if unmarshalErr != nil {
 			return nil, unmarshalErr
 		}
+		subs.PluginVersion = manifest.Version
 	} else {
 		subs = NewSubscriptions()
 	}
