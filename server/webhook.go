@@ -22,7 +22,7 @@ type Webhook interface {
 
 type webhookField struct {
 	name string
-	id   string `omitempty`
+	id   string
 	from string
 	to   string
 }

@@ -290,19 +290,19 @@ func parseWebhookAssigned(jwh *JiraWebhook) *webhook {
 
 func parseWebhookReopened(jwh *JiraWebhook, from string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedReopened, "reopened")
-	wh.fieldInfo = []webhookField{webhookField{"reopened", "resolution", from, "Open"}}
+	wh.fieldInfo = []webhookField{{"reopened", "resolution", from, "Open"}}
 	return wh
 }
 
 func parseWebhookResolved(jwh *JiraWebhook, to string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedResolved, "resolved")
-	wh.fieldInfo = []webhookField{webhookField{"resolved", "resolution", "Open", to}}
+	wh.fieldInfo = []webhookField{{"resolved", "resolution", "Open", to}}
 	return wh
 }
 
 func parseWebhookUpdatedField(jwh *JiraWebhook, eventMask uint64, field, fieldId, from, to string) *webhook {
 	wh := newWebhook(jwh, eventMask, "updated %s from %q to %q on", field, from, to)
-	wh.fieldInfo = []webhookField{webhookField{field, fieldId, from, to}}
+	wh.fieldInfo = []webhookField{{field, fieldId, from, to}}
 	return wh
 }
 
@@ -314,13 +314,13 @@ func parseWebhookUpdatedDescription(jwh *JiraWebhook) *webhook {
 
 func parseWebhookUpdatedAttachments(jwh *JiraWebhook, from, to string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedAttachment, mdAddRemove(from, to, "attached", "removed attachments"))
-	wh.fieldInfo = []webhookField{webhookField{name: "attachments"}}
+	wh.fieldInfo = []webhookField{{name: "attachments"}}
 	return wh
 }
 
 func parseWebhookUpdatedLabels(jwh *JiraWebhook, from, to string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedLabels, mdAddRemove(from, to, "added labels", "removed labels"))
-	wh.fieldInfo = []webhookField{webhookField{name: "labels"}}
+	wh.fieldInfo = []webhookField{{name: "labels"}}
 	return wh
 }
 
