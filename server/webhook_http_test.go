@@ -164,7 +164,7 @@ func TestWebhookHTTP(t *testing.T) {
 		},
 		"issue rank": {
 			Request:          testWebhookRequest("webhook-issue-updated-rank.json"),
-			ExpectedHeadline: "Test User updated Rank from \"\" to \"ranked higher\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User updated Rank from \"none\" to \"ranked higher\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			CurrentInstance:  true,
 		},
 		"issue reopened": {
@@ -359,7 +359,7 @@ func TestWebhookHTTP(t *testing.T) {
 		},
 		"issue rank - no Instance": {
 			Request:          testWebhookRequest("webhook-issue-updated-rank.json"),
-			ExpectedHeadline: "Test User updated Rank from \"\" to \"ranked higher\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User updated Rank from \"none\" to \"ranked higher\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			CurrentInstance:  false,
 		},
 		"issue reopened - no Instance": {
