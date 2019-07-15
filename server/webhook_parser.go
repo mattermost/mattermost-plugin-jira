@@ -270,7 +270,7 @@ func parseWebhookAssigned(jwh *JiraWebhook) *webhook {
 
 	// Don't send a notification to the assignee if they are the one who made the change. (They probably know already.)
 	if (jwh.User.Name != "" && jwh.User.Name == jwh.Issue.Fields.Assignee.Name) ||
-		(jwh.User.AccountID != "" && jwh.Issue.Fields.Assignee.AccountID != "" && jwh.User.AccountID == jwh.Issue.Fields.Assignee.AccountID) {
+		(jwh.User.AccountID != "" && jwh.User.AccountID == jwh.Issue.Fields.Assignee.AccountID) {
 		return wh
 	}
 
