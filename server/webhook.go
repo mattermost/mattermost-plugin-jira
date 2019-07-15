@@ -18,6 +18,7 @@ type Webhook interface {
 	PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error)
 	PostNotifications(p *Plugin) ([]*model.Post, int, error)
 	GetFieldInfo() []webhookField
+	GetJiraWebhook() *JiraWebhook
 }
 
 type webhookField struct {
@@ -51,6 +52,10 @@ func (wh *webhook) EventMask() uint64 {
 
 func (wh *webhook) GetFieldInfo() []webhookField {
 	return wh.fieldInfo
+}
+
+func (wh *webhook) GetJiraWebhook() *JiraWebhook {
+	return wh.JiraWebhook
 }
 
 func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error) {

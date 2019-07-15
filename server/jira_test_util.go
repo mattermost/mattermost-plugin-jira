@@ -4,19 +4,20 @@
 package main
 
 import (
-	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 )
 
-func getJiraTestData(filename string) io.Reader {
+func getJiraTestData(filename string) ([]byte, error) {
 	f, err := os.Open(filepath.Join("testdata", filename))
 
 	if err != nil {
 		panic(err)
 	}
 
-	return f
+	defer f.Close()
+	return ioutil.ReadAll(f)
 }
 
 func withExistingChannelSubscriptions(subscriptions []ChannelSubscription) *Subscriptions {

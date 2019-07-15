@@ -327,12 +327,14 @@ func parseWebhookUpdatedLabels(jwh *JiraWebhook, from, to string) *webhook {
 // mergeWebhookEvents assumes len(events) > 1
 func mergeWebhookEvents(events []*webhook) Webhook {
 	merged := &webhook{
-		headline: events[0].mdUser() + " updated " + events[0].mdKeySummaryLink(),
+		JiraWebhook: events[0].JiraWebhook,
+		headline:    events[0].mdUser() + " updated " + events[0].mdKeySummaryLink(),
 	}
 
 	for _, event := range events {
 		merged.eventMask = merged.eventMask | event.eventMask
 		fieldInfo := event.fieldInfo[0]
+		merged.fieldInfo = append(merged.fieldInfo, fieldInfo)
 		msg := "**" + strings.Title(fieldInfo.name) + ":** ~~" +
 			fieldInfo.from + "~~ " + fieldInfo.to
 		merged.fields = append(merged.fields, &model.SlackAttachmentField{

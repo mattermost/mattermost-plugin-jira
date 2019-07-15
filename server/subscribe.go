@@ -113,7 +113,8 @@ func (p *Plugin) getUserID() string {
 	return p.getConfig().botUserID
 }
 
-func (p *Plugin) getChannelsSubscribed(wh Webhook, jwh *JiraWebhook) ([]string, error) {
+func (p *Plugin) getChannelsSubscribed(wh Webhook) ([]string, error) {
+	jwh := wh.GetJiraWebhook()
 	subs, err := p.getSubscriptions()
 	if err != nil {
 		return nil, err
@@ -332,12 +333,12 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusForbidden, fmt.Errorf("Request URL: secret did not match")
 	}
 
-	wh, jwh, err := ParseWebhook(r.Body)
+	wh, _, err := ParseWebhook(r.Body)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	channelIds, err := p.getChannelsSubscribed(wh, jwh)
+	channelIds, err := p.getChannelsSubscribed(wh)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
