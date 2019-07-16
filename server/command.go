@@ -617,7 +617,7 @@ func executeInstanceSelect(p *Plugin, c *plugin.Context, header *model.CommandAr
 		return p.responsef(header, err.Error())
 	}
 
-	return executeList(p, c, header)
+	return executeInfo(p, c, header)
 }
 
 func executeInstanceDelete(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
