@@ -24,11 +24,11 @@ func (set EventTypeSet) Add(eventType string) {
 func (set EventTypeSet) Union(set2 EventTypeSet) EventTypeSet {
 	result := EventTypeSet{}
 
-	for k, _ := range set {
+	for k := range set {
 		result[k] = true
 	}
 
-	for k, _ := range set2 {
+	for k := range set2 {
 		result[k] = true
 	}
 
@@ -37,7 +37,7 @@ func (set EventTypeSet) Union(set2 EventTypeSet) EventTypeSet {
 
 func (set EventTypeSet) Intersection(set2 EventTypeSet) EventTypeSet {
 	result := EventTypeSet{}
-	for k, _ := range set {
+	for k := range set {
 		if set2.Contains(k) {
 			result.Add(k)
 		}
@@ -47,7 +47,7 @@ func (set EventTypeSet) Intersection(set2 EventTypeSet) EventTypeSet {
 }
 
 func (set EventTypeSet) HasIntersection(set2 EventTypeSet) bool {
-	for k, _ := range set {
+	for k := range set {
 		if set2.Contains(k) {
 			return true
 		}
