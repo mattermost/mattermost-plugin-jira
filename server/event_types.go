@@ -77,6 +77,7 @@ const (
 	eventUpdatedSummary     = "event_updated_summary"
 	eventUpdatedIssuetype   = "event_updated_issue_type"
 	eventUpdatedFixVersion  = "event_updated_fix_version"
+	eventUpdatedReporter    = "event_updated_fix_versions"
 )
 
 var maskLegacy = EventTypeSet{
