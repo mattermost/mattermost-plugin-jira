@@ -285,10 +285,6 @@ func parseWebhookAssigned(jwh *JiraWebhook, from, to string) *webhook {
 	}
 	wh.fieldInfo = webhookField{"assignee", fromFixed, toFixed}
 
-	if jwh.Issue.Fields.Assignee == nil {
-		return wh
-	}
-
 	attachNotificationForAssignee(jwh, wh)
 
 	return wh
@@ -296,6 +292,10 @@ func parseWebhookAssigned(jwh *JiraWebhook, from, to string) *webhook {
 
 // attachNotificationForAssignee modifies wh
 func attachNotificationForAssignee(jwh *JiraWebhook, wh *webhook) {
+	if jwh.Issue.Fields.Assignee == nil {
+		return
+	}
+
 	// Don't send a notification to the assignee if they are the one who made the change. (They probably know already.)
 	if (jwh.User.Name != "" && jwh.User.Name == jwh.Issue.Fields.Assignee.Name) ||
 		(jwh.User.AccountID != "" && jwh.Issue.Fields.Assignee.AccountID != "" && jwh.User.AccountID == jwh.Issue.Fields.Assignee.AccountID) {
