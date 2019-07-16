@@ -28,13 +28,13 @@
         "display_name": "Webhook Secret",
         "type": "generated",
         "help_text": "The secret used to authenticate the webhook to Mattermost.",
-        "regenerate_help_text": "Regenerates the secret for the webhook URL endpoint. Regenerating the secret invalidates your existing JIRA integrations."
+        "regenerate_help_text": "Regenerates the secret for the webhook URL endpoint. Regenerating the secret invalidates your existing Jira integrations."
       },
       {
         "key": "SubscriptionEditorsMattermostRoles",
         "display_name": "Subscription Editors Mattermost Roles",
         "type": "radio",
-        "help_text": "Mattermost users that can subscribe channels to jira tickets.",
+        "help_text": "Mattermost users that can subscribe channels to Jira tickets.",
         "default": "system_admin",
         "options": [
             {
@@ -59,7 +59,7 @@
         "key": "SubscriptionEditorsJiraGroups",
         "display_name": "Subscription Editors Jira Groups",
         "type": "text",
-        "help_text": "Comma separated list of Group Names. List the JIRA user groups who can create subscriptions. If none are specified, any JIRA user can create a subscription.",
+        "help_text": "Comma separated list of Group Names. List the Jira user groups who can create subscriptions. If none are specified, any Jira user can create a subscription.",
         "default": ""
       }
     ],

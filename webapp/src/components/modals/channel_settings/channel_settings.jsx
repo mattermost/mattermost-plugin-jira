@@ -39,7 +39,7 @@ export default class ChannelSettingsModal extends PureComponent {
             if (this.props.channelSubscriptions instanceof Error) {
                 inner = (
                     <Modal.Body>
-                        {'You do not have permission to access Jira subscirptions in this channel.'}
+                        {'You do not have permission to access Jira subscriptions in this channel.'}
                     </Modal.Body>
                 );
             } else {
