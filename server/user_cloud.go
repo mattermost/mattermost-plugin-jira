@@ -68,6 +68,7 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 
 	mmToken := r.Form.Get(argMMToken)
 	uinfo := JIRAUser{
+		PluginVersion: manifest.Version,
 		User: jira.User{
 			AccountID:   accountId,
 			Key:         userKey,

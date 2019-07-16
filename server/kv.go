@@ -338,10 +338,12 @@ func (store store) loadJIRAInstance(fullkey string) (Instance, error) {
 				return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
 			}
 		}
+		jci.PluginVersion = manifest.Version
 		jci.Init(store.plugin)
 		return &jci, nil
 
 	case JIRATypeServer:
+		jsi.PluginVersion = manifest.Version
 		jsi.Init(store.plugin)
 		return &jsi, nil
 	}
@@ -415,6 +417,7 @@ func (store store) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser,
 	if len(jiraUser.Key) == 0 {
 		return JIRAUser{}, ErrUserNotFound
 	}
+	jiraUser.PluginVersion = manifest.Version
 	return jiraUser, nil
 }
 

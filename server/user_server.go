@@ -81,6 +81,7 @@ func httpOAuth1aComplete(jsi *jiraServerInstance, w http.ResponseWriter, r *http
 	}
 
 	jiraUser := JIRAUser{
+		PluginVersion:      manifest.Version,
 		Oauth1AccessToken:  accessToken,
 		Oauth1AccessSecret: accessSecret,
 	}
