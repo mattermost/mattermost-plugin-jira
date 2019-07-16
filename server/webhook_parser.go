@@ -62,7 +62,7 @@ func ParseWebhook(in io.Reader) (wh Webhook, jwh *JiraWebhook, err error) {
 	case "jira:issue_updated":
 		switch jwh.IssueEventTypeName {
 		case "issue_assigned":
-			wh = parseWebhookAssigned(jwh)
+			wh = parseWebhookAssigned(jwh, jwh.ChangeLog.Items[0].FromString, jwh.ChangeLog.Items[0].ToString)
 		case "issue_updated", "issue_generic":
 			wh = parseWebhookChangeLog(jwh)
 		case "issue_commented":
@@ -98,34 +98,43 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 	var events []*webhook
 	for _, item := range jwh.ChangeLog.Items {
 		field := item.Field
-		to := item.ToString
 		from := item.FromString
+		to := item.ToString
+		fromWithDefault := from
+		if fromWithDefault == "" {
+			fromWithDefault = "None"
+		}
+		toWithDefault := to
+		if toWithDefault == "" {
+			toWithDefault = "None"
+		}
 		switch {
 		case field == "resolution" && to == "" && from != "":
 			events = append(events, parseWebhookReopened(jwh, from))
 		case field == "resolution" && to != "" && from == "":
 			events = append(events, parseWebhookResolved(jwh, to))
 		case field == "status":
-			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedStatus, field, from, to))
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedStatus, field, fromWithDefault, toWithDefault))
 		case field == "priority":
-			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedPriority, field, from, to))
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedPriority, field, fromWithDefault, toWithDefault))
 		case field == "summary":
-			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedSummary, field, from, to))
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedSummary, field, fromWithDefault, toWithDefault))
 		case field == "description":
-			// need to handle wh.text
-			events = append(events, parseWebhookUpdatedDescription(jwh))
+			events = append(events, parseWebhookUpdatedDescription(jwh, from, to))
 		case field == "Sprint" && len(to) > 0:
-			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedSprint, field, from, to))
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedSprint, field, fromWithDefault, toWithDefault))
 		case field == "Rank" && len(to) > 0:
-			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedRank, field, strings.ToLower(from), strings.ToLower(to)))
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedRank, field, strings.ToLower(fromWithDefault), strings.ToLower(toWithDefault)))
 		case field == "Attachment":
 			events = append(events, parseWebhookUpdatedAttachments(jwh, from, to))
 		case field == "labels":
-			events = append(events, parseWebhookUpdatedLabels(jwh, from, to))
+			events = append(events, parseWebhookUpdatedLabels(jwh, from, to, fromWithDefault, toWithDefault))
 		case field == "assignee":
-			events = append(events, parseWebhookAssigned(jwh))
+			events = append(events, parseWebhookAssigned(jwh, from, to))
 		case field == "issuetype":
-			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedIssuetype, field, from, to))
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedIssuetype, field, fromWithDefault, toWithDefault))
+		case field == "reporter":
+			events = append(events, parseWebhookUpdatedField(jwh, eventUpdatedReporter, field, fromWithDefault, toWithDefault))
 		}
 	}
 	if len(events) == 0 {
@@ -262,8 +271,18 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) Webhook {
 	}
 }
 
-func parseWebhookAssigned(jwh *JiraWebhook) *webhook {
+func parseWebhookAssigned(jwh *JiraWebhook, from, to string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedAssignee, "assigned %s to", jwh.mdIssueAssignee())
+	fromFixed := from
+	if fromFixed == "" {
+		fromFixed = "_nobody_"
+	}
+	toFixed := to
+	if toFixed == "" {
+		toFixed = "_nobody_"
+	}
+	wh.fieldInfo = webhookField{"assignee", fromFixed, toFixed}
+
 	if jwh.Issue.Fields.Assignee == nil {
 		return wh
 	}
@@ -300,8 +319,11 @@ func parseWebhookUpdatedField(jwh *JiraWebhook, eventMask uint64, field, from, t
 	return wh
 }
 
-func parseWebhookUpdatedDescription(jwh *JiraWebhook) *webhook {
+func parseWebhookUpdatedDescription(jwh *JiraWebhook, from, to string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedDescription, "edited the description of")
+	fromFmttd := "\n**From:** " + truncate(from, 500)
+	toFmttd := "\n**To:** " + truncate(to, 500)
+	wh.fieldInfo = webhookField{"description", fromFmttd, toFmttd}
 	wh.text = jwh.mdIssueDescription()
 	return wh
 }
@@ -312,9 +334,9 @@ func parseWebhookUpdatedAttachments(jwh *JiraWebhook, from, to string) *webhook 
 	return wh
 }
 
-func parseWebhookUpdatedLabels(jwh *JiraWebhook, from, to string) *webhook {
+func parseWebhookUpdatedLabels(jwh *JiraWebhook, from, to, fromWithDefault, toWithDefault string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedLabels, mdAddRemove(from, to, "added labels", "removed labels"))
-	wh.fieldInfo = webhookField{name: "labels"}
+	wh.fieldInfo = webhookField{"labels", fromWithDefault, toWithDefault}
 	return wh
 }
 
@@ -325,9 +347,15 @@ func mergeWebhookEvents(events []*webhook) Webhook {
 	}
 
 	for _, event := range events {
+		strikePre := "~~"
+		strikePost := "~~"
+		if event.fieldInfo.name == "description" {
+			strikePre = ""
+			strikePost = ""
+		}
 		merged.eventMask = merged.eventMask | event.eventMask
-		msg := "**" + strings.Title(event.fieldInfo.name) + ":** ~~" +
-			event.fieldInfo.from + "~~ " + event.fieldInfo.to
+		msg := "**" + strings.Title(event.fieldInfo.name) + ":** " + strikePre +
+			event.fieldInfo.from + strikePost + " " + event.fieldInfo.to
 		merged.fields = append(merged.fields, &model.SlackAttachmentField{
 			Value: msg,
 			Short: false,

@@ -38,6 +38,7 @@ const (
 	eventUpdatedStatus
 	eventUpdatedSummary
 	eventUpdatedIssuetype
+	eventUpdatedReporter
 )
 
 const maskLegacy = eventCreated |
