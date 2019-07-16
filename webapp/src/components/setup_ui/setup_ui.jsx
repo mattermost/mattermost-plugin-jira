@@ -21,9 +21,9 @@ export default class SetupUI extends PureComponent {
         this.headerButtonId = this.props.registry.registerChannelHeaderButtonAction(
             <JiraIcon/>,
             (channel) => this.props.openChannelSettings(channel.id),
-            'JIRA',
+            'Jira',
         );
-    }
+    };
 
     componentDidMount() {
         if (this.props.instanceInstalled && this.props.userConnected) {
