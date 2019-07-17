@@ -6,7 +6,7 @@ const (
 	eventDeleted            = "event_deleted"
 	eventDeletedUnresolved  = "event_deleted_unresolved"
 	eventDeletedComment     = "event_deleted_comment"
-	eventUpdatedAll         = "event_updated_all"
+	eventUpdatedAny         = "event_updated_any"
 	eventUpdatedAssignee    = "event_updated_assignee"
 	eventUpdatedAttachment  = "event_updated_attachment"
 	eventUpdatedComment     = "event_updated_comment"
@@ -45,7 +45,7 @@ var allEvents = NewSet(
 	eventDeleted,
 	eventDeletedUnresolved,
 	eventDeletedComment,
-	eventUpdatedAll,
+	eventUpdatedAny,
 	eventUpdatedAssignee,
 	eventUpdatedAttachment,
 	eventUpdatedComment,

@@ -23,9 +23,9 @@ const (
 )
 
 type SubscriptionFilters struct {
-	Event     Set `json:"event"`
-	Project   Set `json:"project"`
-	IssueType Set `json:"issue_type"`
+	Events     StringSet `json:"events"`
+	Projects   StringSet `json:"projects"`
+	IssueTypes StringSet `json:"issue_types"`
 }
 
 type ChannelSubscription struct {
@@ -36,55 +36,45 @@ type ChannelSubscription struct {
 
 type ChannelSubscriptions struct {
 	ById          map[string]ChannelSubscription `json:"by_id"`
-	IdByChannelId map[string][]string            `json:"id_by_channel_id"`
-	IdByEvent     map[string][]string            `json:"id_by_event"`
+	IdByChannelId map[string]StringSet           `json:"id_by_channel_id"`
+	IdByEvent     map[string]StringSet           `json:"id_by_event"`
 }
 
 func NewChannelSubscriptions() *ChannelSubscriptions {
 	return &ChannelSubscriptions{
 		ById:          map[string]ChannelSubscription{},
-		IdByChannelId: map[string][]string{},
-		IdByEvent:     map[string][]string{},
+		IdByChannelId: map[string]StringSet{},
+		IdByEvent:     map[string]StringSet{},
 	}
 }
 
-func (sub *ChannelSubscription) EventTypes() Set {
-	return sub.Filters.Event
+func (sub *ChannelSubscription) Events() StringSet {
+	return sub.Filters.Events
 }
 
-func (sub *ChannelSubscription) Projects() Set {
-	return sub.Filters.Project
+func (sub *ChannelSubscription) Projects() StringSet {
+	return sub.Filters.Projects
 }
 
-func (sub *ChannelSubscription) IssueTypes() Set {
-	return sub.Filters.IssueType
+func (sub *ChannelSubscription) IssueTypes() StringSet {
+	return sub.Filters.IssueTypes
 }
 
 func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
 	delete(s.ById, sub.Id)
 
-	remove := func(ids []string, idToRemove string) []string {
-		for i, id := range ids {
-			if id == idToRemove {
-				ids[i] = ids[len(ids)-1]
-				return ids[:len(ids)-1]
-			}
-		}
-		return ids
-	}
+	s.IdByChannelId[sub.ChannelId] = s.IdByChannelId[sub.ChannelId].Subtract(sub.Id)
 
-	s.IdByChannelId[sub.ChannelId] = remove(s.IdByChannelId[sub.ChannelId], sub.Id)
-
-	for _, event := range sub.Filters.Event.Elems(false) {
-		s.IdByEvent[event] = remove(s.IdByEvent[event], sub.Id)
+	for _, event := range sub.Filters.Events.Elems(false) {
+		s.IdByEvent[event] = s.IdByEvent[event].Subtract(sub.Id)
 	}
 }
 
 func (s *ChannelSubscriptions) add(newSubscription *ChannelSubscription) {
 	s.ById[newSubscription.Id] = *newSubscription
-	s.IdByChannelId[newSubscription.ChannelId] = append(s.IdByChannelId[newSubscription.ChannelId], newSubscription.Id)
-	for _, event := range newSubscription.Filters.Event.Elems(false) {
-		s.IdByEvent[event] = append(s.IdByEvent[event], newSubscription.Id)
+	s.IdByChannelId[newSubscription.ChannelId] = s.IdByChannelId[newSubscription.ChannelId].Add(newSubscription.Id)
+	for _, event := range newSubscription.Filters.Events.Elems(false) {
+		s.IdByEvent[event] = s.IdByEvent[event].Add(newSubscription.Id)
 	}
 }
 
@@ -126,12 +116,28 @@ func (p *Plugin) getChannelsSubscribed(wh Webhook) ([]string, error) {
 		return nil, err
 	}
 
-	webhookEvents := wh.EventTypes()
+	webhookEvents := wh.Events()
 	subIds := subs.Channel.ById
 
 	channelIds := []string{}
 	for _, sub := range subIds {
-		if sub.EventTypes().Intersection(webhookEvents).Len() == 0 {
+		foundEvent := false
+		eventTypes := sub.Events()
+		if eventTypes.Intersection(webhookEvents).Len() > 0 {
+			foundEvent = true
+		} else if eventTypes.ContainsAny(eventUpdatedAny) {
+			if webhookEvents.Intersection(updateEvents).Len() > 0 {
+				foundEvent = true
+			} else {
+				for _, eventType := range webhookEvents.Elems(false) {
+					if strings.HasPrefix(eventType, "event_updated_customfield") {
+						foundEvent = true
+					}
+				}
+			}
+		}
+
+		if !foundEvent {
 			continue
 		}
 
@@ -164,7 +170,7 @@ func (p *Plugin) getSubscriptionsForChannel(channelId string) ([]ChannelSubscrip
 	}
 
 	channelSubscriptions := []ChannelSubscription{}
-	for _, channelSubscriptionId := range subs.Channel.IdByChannelId[channelId] {
+	for _, channelSubscriptionId := range subs.Channel.IdByChannelId[channelId].Elems(false) {
 		channelSubscriptions = append(channelSubscriptions, subs.Channel.ById[channelSubscriptionId])
 	}
 
@@ -301,7 +307,7 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusForbidden, fmt.Errorf("Request URL: secret did not match")
 	}
 
-	wh, _, err := ParseWebhook(r.Body)
+	wh, err := ParseWebhook(r.Body)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

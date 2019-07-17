@@ -5,9 +5,9 @@ import (
 	"sort"
 )
 
-type Set map[string]bool
+type StringSet map[string]bool
 
-func (a *Set) UnmarshalJSON(b []byte) error {
+func (a *StringSet) UnmarshalJSON(b []byte) error {
 	var elems []string
 	if err := json.Unmarshal(b, &elems); err != nil {
 		return err
@@ -18,12 +18,12 @@ func (a *Set) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (a Set) MarshalJSON() ([]byte, error) {
+func (a StringSet) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a.Elems(false))
 }
 
-func NewSet(elems ...string) Set {
-	result := Set{}
+func NewSet(elems ...string) StringSet {
+	result := StringSet{}
 
 	for _, elem := range elems {
 		result[elem] = true
@@ -32,7 +32,7 @@ func NewSet(elems ...string) Set {
 	return result
 }
 
-func (a Set) Elems(sorted bool) []string {
+func (a StringSet) Elems(sorted bool) []string {
 	result := make([]string, len(a))
 
 	i := 0
@@ -48,12 +48,12 @@ func (a Set) Elems(sorted bool) []string {
 	return result
 }
 
-func (a Set) Len() int {
+func (a StringSet) Len() int {
 	return len(a)
 }
 
-func (a Set) Add(elems ...string) Set {
-	result := Set{}
+func (a StringSet) Add(elems ...string) StringSet {
+	result := StringSet{}
 
 	for elem := range a {
 		result[elem] = true
@@ -65,8 +65,22 @@ func (a Set) Add(elems ...string) Set {
 	return result
 }
 
-func (a Set) Union(b Set) Set {
-	result := Set{}
+func (a StringSet) Subtract(elems ...string) StringSet {
+	result := StringSet{}
+
+	b := NewSet(elems...)
+
+	for elem := range a {
+		if !b.ContainsAny(elem) {
+			result[elem] = true
+		}
+	}
+
+	return result
+}
+
+func (a StringSet) Union(b StringSet) StringSet {
+	result := StringSet{}
 
 	for elem := range a {
 		result[elem] = true
@@ -78,8 +92,8 @@ func (a Set) Union(b Set) Set {
 	return result
 }
 
-func (a Set) Intersection(b Set) Set {
-	result := Set{}
+func (a StringSet) Intersection(b StringSet) StringSet {
+	result := StringSet{}
 
 	for elem := range a {
 		if b.ContainsAny(elem) {
@@ -90,7 +104,7 @@ func (a Set) Intersection(b Set) Set {
 	return result
 }
 
-func (a Set) ContainsAny(elems ...string) bool {
+func (a StringSet) ContainsAny(elems ...string) bool {
 	for _, elem := range elems {
 		if _, exists := a[elem]; exists {
 			return true
@@ -100,7 +114,7 @@ func (a Set) ContainsAny(elems ...string) bool {
 	return false
 }
 
-func (a Set) Equals(b Set) bool {
+func (a StringSet) Equals(b StringSet) bool {
 	if a.Len() != b.Len() {
 		return false
 	}

@@ -16,7 +16,7 @@ func TestMarkdown(t *testing.T) {
 	f, err := os.Open("testdata/webhook-issue-created.json")
 	require.NoError(t, err)
 	defer f.Close()
-	wh, _, err := ParseWebhook(f)
+	wh, err := ParseWebhook(f)
 	require.NoError(t, err)
 	w := wh.(*webhook)
 	require.NotNil(t, w)

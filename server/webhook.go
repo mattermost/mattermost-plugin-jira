@@ -14,7 +14,7 @@ import (
 )
 
 type Webhook interface {
-	EventTypes() Set
+	Events() StringSet
 	PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error)
 	PostNotifications(p *Plugin) ([]*model.Post, int, error)
 	GetJiraWebhook() *JiraWebhook
@@ -29,7 +29,7 @@ type webhookField struct {
 
 type webhook struct {
 	*JiraWebhook
-	eventTypes    Set
+	eventTypes    StringSet
 	headline      string
 	text          string
 	fields        []*model.SlackAttachmentField
@@ -45,7 +45,7 @@ type webhookNotification struct {
 	commentSelf   string
 }
 
-func (wh *webhook) EventTypes() Set {
+func (wh *webhook) Events() StringSet {
 	return wh.eventTypes
 }
 
@@ -129,7 +129,7 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 		// If this is a comment-related webhook, we need to check if they have permissions to read that.
 		// Otherwise, check if they can view the issue.
 
-		isCommentEvent := wh.EventTypes().Intersection(commentEvents).Len() > 0
+		isCommentEvent := wh.Events().Intersection(commentEvents).Len() > 0
 		if isCommentEvent {
 			req, err2 := jiraClient.NewRequest("GET", notification.commentSelf, nil)
 			if err2 != nil {

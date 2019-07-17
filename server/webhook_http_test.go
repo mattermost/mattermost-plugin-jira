@@ -35,8 +35,8 @@ type testWebhookWrapper struct {
 	postedNotifications []*model.Post
 }
 
-func (wh testWebhookWrapper) EventTypes() Set {
-	return wh.Webhook.EventTypes()
+func (wh testWebhookWrapper) Events() StringSet {
+	return wh.Webhook.Events()
 }
 func (wh *testWebhookWrapper) PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error) {
 	post, status, err := wh.Webhook.PostToChannel(p, channelId, fromUserId)

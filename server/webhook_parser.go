@@ -19,10 +19,10 @@ import (
 
 var webhookWrapperFunc func(wh Webhook) Webhook
 
-func ParseWebhook(in io.Reader) (wh Webhook, jwh *JiraWebhook, err error) {
+func ParseWebhook(in io.Reader) (wh Webhook, err error) {
 	bb, err := ioutil.ReadAll(in)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer func() {
 		if err == nil || err == ErrWebhookIgnored {
@@ -42,16 +42,16 @@ func ParseWebhook(in io.Reader) (wh Webhook, jwh *JiraWebhook, err error) {
 		err = errors.WithMessagef(err, "Failed to process webhook. Body stored in %s", f.Name())
 	}()
 
-	jwh = &JiraWebhook{}
+	jwh := &JiraWebhook{}
 	err = json.Unmarshal(bb, &jwh)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	if jwh.WebhookEvent == "" {
-		return nil, jwh, errors.New("No webhook event")
+		return nil, errors.New("No webhook event")
 	}
 	if jwh.Issue.Fields == nil {
-		return nil, jwh, ErrWebhookIgnored
+		return nil, ErrWebhookIgnored
 	}
 
 	switch jwh.WebhookEvent {
@@ -81,10 +81,10 @@ func ParseWebhook(in io.Reader) (wh Webhook, jwh *JiraWebhook, err error) {
 
 	}
 	if err != nil {
-		return nil, jwh, err
+		return nil, err
 	}
 	if wh == nil {
-		return nil, jwh, errors.Errorf("Unsupported webhook data: %v", jwh.WebhookEvent)
+		return nil, errors.Errorf("Unsupported webhook data: %v", jwh.WebhookEvent)
 	}
 
 	// For HTTP testing, so we can capture the output of the interface
@@ -92,7 +92,7 @@ func ParseWebhook(in io.Reader) (wh Webhook, jwh *JiraWebhook, err error) {
 		wh = webhookWrapperFunc(wh)
 	}
 
-	return wh, jwh, nil
+	return wh, nil
 }
 
 func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
@@ -148,7 +148,6 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 		}
 
 		if event != nil {
-			event.eventTypes = event.eventTypes.Add(eventUpdatedAll)
 			events = append(events, event)
 		}
 	}
@@ -288,7 +287,6 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) Webhook {
 
 func parseWebhookAssigned(jwh *JiraWebhook, from, to string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedAssignee, "assigned %s to", jwh.mdIssueAssignee())
-	wh.eventTypes.Add(eventUpdatedAll)
 	fromFixed := from
 	if fromFixed == "" {
 		fromFixed = "_nobody_"

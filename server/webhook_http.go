@@ -21,7 +21,7 @@ const (
 // The keys listed here can be used in the Jira webhook URL to control what events
 // are posted to Mattermost. A matching parameter with a non-empty value must
 // be added to turn on the event display.
-var eventParamMasks = map[string]Set{
+var eventParamMasks = map[string]StringSet{
 	"updated_attachment":  NewSet(eventUpdatedAttachment),  // updated attachments
 	"updated_description": NewSet(eventUpdatedDescription), // issue description edited
 	"updated_labels":      NewSet(eventUpdatedLabels),      // updated labels
@@ -85,7 +85,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		return appErr.StatusCode, appErr
 	}
 
-	wh, _, err := ParseWebhook(r.Body)
+	wh, err := ParseWebhook(r.Body)
 	if err == ErrWebhookIgnored {
 		return http.StatusOK, nil
 	}
@@ -101,7 +101,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 
 	// Send webhook events to subscribed channels. This will work even if there isn't an instance installed.
 	// Skip events we don't need to post
-	if selectedEvents.Intersection(wh.EventTypes()).Len() == 0 {
+	if selectedEvents.Intersection(wh.Events()).Len() == 0 {
 		return http.StatusOK, nil
 	}
 
