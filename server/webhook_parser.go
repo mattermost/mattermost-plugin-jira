@@ -214,7 +214,7 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 
 	wh := &webhook{
 		JiraWebhook: jwh,
-		eventTypes:  NewSet(eventCreatedComment),
+		eventTypes:  NewStringSet(eventCreatedComment),
 		headline:    fmt.Sprintf("%s commented on %s", commentAuthor, jwh.mdKeySummaryLink()),
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
@@ -271,7 +271,7 @@ func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
 
 	return &webhook{
 		JiraWebhook: jwh,
-		eventTypes:  NewSet(eventDeletedComment),
+		eventTypes:  NewStringSet(eventDeletedComment),
 		headline:    fmt.Sprintf("%s deleted comment in %s", user, jwh.mdKeySummaryLink()),
 	}, nil
 }
@@ -279,7 +279,7 @@ func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
 func parseWebhookCommentUpdated(jwh *JiraWebhook) Webhook {
 	return &webhook{
 		JiraWebhook: jwh,
-		eventTypes:  NewSet(eventUpdatedComment),
+		eventTypes:  NewStringSet(eventUpdatedComment),
 		headline:    fmt.Sprintf("%s edited comment in %s", mdUser(&jwh.Comment.UpdateAuthor), jwh.mdKeySummaryLink()),
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
@@ -359,7 +359,7 @@ func mergeWebhookEvents(events []*webhook) Webhook {
 	merged := &webhook{
 		JiraWebhook: events[0].JiraWebhook,
 		headline:    events[0].mdUser() + " updated " + events[0].mdKeySummaryLink(),
-		eventTypes:  NewSet(),
+		eventTypes:  NewStringSet(),
 	}
 
 	for _, event := range events {

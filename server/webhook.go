@@ -170,7 +170,7 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...interface{}) *webhook {
 	return &webhook{
 		JiraWebhook: jwh,
-		eventTypes:  NewSet(eventType),
+		eventTypes:  NewStringSet(eventType),
 		headline:    jwh.mdUser() + " " + fmt.Sprintf(format, args...) + " " + jwh.mdKeySummaryLink(),
 	}
 }

@@ -13,7 +13,7 @@ func (a *StringSet) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	*a = NewSet(elems...)
+	*a = NewStringSet(elems...)
 
 	return nil
 }
@@ -22,7 +22,7 @@ func (a StringSet) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a.Elems(false))
 }
 
-func NewSet(elems ...string) StringSet {
+func NewStringSet(elems ...string) StringSet {
 	result := StringSet{}
 
 	for _, elem := range elems {
@@ -68,7 +68,7 @@ func (a StringSet) Add(elems ...string) StringSet {
 func (a StringSet) Subtract(elems ...string) StringSet {
 	result := StringSet{}
 
-	b := NewSet(elems...)
+	b := NewStringSet(elems...)
 
 	for elem := range a {
 		if !b.ContainsAny(elem) {

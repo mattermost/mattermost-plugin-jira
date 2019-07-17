@@ -48,18 +48,6 @@ func NewChannelSubscriptions() *ChannelSubscriptions {
 	}
 }
 
-func (sub *ChannelSubscription) Events() StringSet {
-	return sub.Filters.Events
-}
-
-func (sub *ChannelSubscription) Projects() StringSet {
-	return sub.Filters.Projects
-}
-
-func (sub *ChannelSubscription) IssueTypes() StringSet {
-	return sub.Filters.IssueTypes
-}
-
 func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
 	delete(s.ById, sub.Id)
 
@@ -122,7 +110,7 @@ func (p *Plugin) getChannelsSubscribed(wh Webhook) ([]string, error) {
 	channelIds := []string{}
 	for _, sub := range subIds {
 		foundEvent := false
-		eventTypes := sub.Events()
+		eventTypes := sub.Filters.Events
 		if eventTypes.Intersection(webhookEvents).Len() > 0 {
 			foundEvent = true
 		} else if eventTypes.ContainsAny(eventUpdatedAny) {
@@ -141,11 +129,11 @@ func (p *Plugin) getChannelsSubscribed(wh Webhook) ([]string, error) {
 			continue
 		}
 
-		if !sub.IssueTypes().ContainsAny(jwh.Issue.Fields.Type.ID) {
+		if !sub.Filters.IssueTypes.ContainsAny(jwh.Issue.Fields.Type.ID) {
 			continue
 		}
 
-		if !sub.Projects().ContainsAny(jwh.Issue.Fields.Project.Key) {
+		if !sub.Filters.Projects.ContainsAny(jwh.Issue.Fields.Project.Key) {
 			continue
 		}
 

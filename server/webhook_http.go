@@ -22,14 +22,14 @@ const (
 // are posted to Mattermost. A matching parameter with a non-empty value must
 // be added to turn on the event display.
 var eventParamMasks = map[string]StringSet{
-	"updated_attachment":  NewSet(eventUpdatedAttachment),  // updated attachments
-	"updated_description": NewSet(eventUpdatedDescription), // issue description edited
-	"updated_labels":      NewSet(eventUpdatedLabels),      // updated labels
-	"updated_prioity":     NewSet(eventUpdatedPriority),    // changes in priority
-	"updated_rank":        NewSet(eventUpdatedRank),        // ranked higher or lower
-	"updated_sprint":      NewSet(eventUpdatedSprint),      // assigned to a different sprint
-	"updated_status":      NewSet(eventUpdatedStatus),      // transitions like Done, In Progress
-	"updated_summary":     NewSet(eventUpdatedSummary),     // issue renamed
+	"updated_attachment":  NewStringSet(eventUpdatedAttachment),  // updated attachments
+	"updated_description": NewStringSet(eventUpdatedDescription), // issue description edited
+	"updated_labels":      NewStringSet(eventUpdatedLabels),      // updated labels
+	"updated_prioity":     NewStringSet(eventUpdatedPriority),    // changes in priority
+	"updated_rank":        NewStringSet(eventUpdatedRank),        // ranked higher or lower
+	"updated_sprint":      NewStringSet(eventUpdatedSprint),      // assigned to a different sprint
+	"updated_status":      NewStringSet(eventUpdatedStatus),      // transitions like Done, In Progress
+	"updated_summary":     NewStringSet(eventUpdatedSummary),     // issue renamed
 	"updated_comments":    commentEvents,                   // comment events
 	"updated_all":         allEvents,                       // all events
 }

@@ -24,14 +24,14 @@ const (
 	eventUpdatedReporter    = "event_updated_fix_versions"
 )
 
-var legacyEvents = NewSet(
+var legacyEvents = NewStringSet(
 	eventCreated,
 	eventUpdatedReopened,
 	eventUpdatedResolved,
 	eventDeletedUnresolved,
 )
 
-var commentEvents = NewSet(
+var commentEvents = NewStringSet(
 	eventCreatedComment,
 	eventDeletedComment,
 	eventUpdatedComment,
@@ -39,7 +39,7 @@ var commentEvents = NewSet(
 
 var defaultEvents = legacyEvents.Add(eventUpdatedAssignee)
 
-var allEvents = NewSet(
+var allEvents = NewStringSet(
 	eventCreated,
 	eventCreatedComment,
 	eventDeleted,
@@ -62,7 +62,7 @@ var allEvents = NewSet(
 	eventUpdatedFixVersion,
 )
 
-var updateEvents = NewSet(
+var updateEvents = NewStringSet(
 	eventUpdatedAssignee,
 	eventUpdatedAttachment,
 	eventUpdatedComment,
