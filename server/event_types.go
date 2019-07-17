@@ -1,61 +1,5 @@
 package main
 
-type EventTypeSet map[string]bool
-
-func (set EventTypeSet) Copy() EventTypeSet {
-	result := EventTypeSet{}
-	for k, v := range set {
-		result[k] = v
-	}
-
-	return result
-}
-
-func (set EventTypeSet) Contains(eventType string) bool {
-	_, exists := set[eventType]
-
-	return exists
-}
-
-func (set EventTypeSet) Add(eventType string) {
-	set[eventType] = true
-}
-
-func (set EventTypeSet) Union(set2 EventTypeSet) EventTypeSet {
-	result := EventTypeSet{}
-
-	for k := range set {
-		result[k] = true
-	}
-
-	for k := range set2 {
-		result[k] = true
-	}
-
-	return result
-}
-
-func (set EventTypeSet) Intersection(set2 EventTypeSet) EventTypeSet {
-	result := EventTypeSet{}
-	for k := range set {
-		if set2.Contains(k) {
-			result.Add(k)
-		}
-	}
-
-	return result
-}
-
-func (set EventTypeSet) HasIntersection(set2 EventTypeSet) bool {
-	for k := range set {
-		if set2.Contains(k) {
-			return true
-		}
-	}
-
-	return false
-}
-
 const (
 	eventCreated            = "event_created"
 	eventCreatedComment     = "event_created_comment"
@@ -80,42 +24,57 @@ const (
 	eventUpdatedReporter    = "event_updated_fix_versions"
 )
 
-var maskLegacy = EventTypeSet{
-	eventCreated:           true,
-	eventUpdatedReopened:   true,
-	eventUpdatedResolved:   true,
-	eventDeletedUnresolved: true,
-}
+var legacyEvents = NewSet(
+	eventCreated,
+	eventUpdatedReopened,
+	eventUpdatedResolved,
+	eventDeletedUnresolved,
+)
 
-var maskComments = EventTypeSet{
-	eventCreatedComment: true,
-	eventDeletedComment: true,
-	eventUpdatedComment: true,
-}
+var commentEvents = NewSet(
+	eventCreatedComment,
+	eventDeletedComment,
+	eventUpdatedComment,
+)
 
-var maskDefault = EventTypeSet{
-	eventUpdatedAssignee: true,
-}.Union(maskLegacy)
+var defaultEvents = legacyEvents.Add(eventUpdatedAssignee)
 
-var maskAll = EventTypeSet{
-	eventCreated:            true,
-	eventCreatedComment:     true,
-	eventDeleted:            true,
-	eventDeletedUnresolved:  true,
-	eventDeletedComment:     true,
-	eventUpdatedAll:         true,
-	eventUpdatedAssignee:    true,
-	eventUpdatedAttachment:  true,
-	eventUpdatedComment:     true,
-	eventUpdatedDescription: true,
-	eventUpdatedLabels:      true,
-	eventUpdatedPriority:    true,
-	eventUpdatedRank:        true,
-	eventUpdatedReopened:    true,
-	eventUpdatedResolved:    true,
-	eventUpdatedSprint:      true,
-	eventUpdatedStatus:      true,
-	eventUpdatedSummary:     true,
-	eventUpdatedIssuetype:   true,
-	eventUpdatedFixVersion:  true,
-}
+var allEvents = NewSet(
+	eventCreated,
+	eventCreatedComment,
+	eventDeleted,
+	eventDeletedUnresolved,
+	eventDeletedComment,
+	eventUpdatedAll,
+	eventUpdatedAssignee,
+	eventUpdatedAttachment,
+	eventUpdatedComment,
+	eventUpdatedDescription,
+	eventUpdatedLabels,
+	eventUpdatedPriority,
+	eventUpdatedRank,
+	eventUpdatedReopened,
+	eventUpdatedResolved,
+	eventUpdatedSprint,
+	eventUpdatedStatus,
+	eventUpdatedSummary,
+	eventUpdatedIssuetype,
+	eventUpdatedFixVersion,
+)
+
+var updateEvents = NewSet(
+	eventUpdatedAssignee,
+	eventUpdatedAttachment,
+	eventUpdatedComment,
+	eventUpdatedDescription,
+	eventUpdatedLabels,
+	eventUpdatedPriority,
+	eventUpdatedRank,
+	eventUpdatedReopened,
+	eventUpdatedResolved,
+	eventUpdatedSprint,
+	eventUpdatedStatus,
+	eventUpdatedSummary,
+	eventUpdatedIssuetype,
+	eventUpdatedFixVersion,
+)

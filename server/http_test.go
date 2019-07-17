@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -74,7 +73,10 @@ func checkHasSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 			for _, subToCheck := range subsToCheck {
 				var foundSub *ChannelSubscription
 				for _, savedSub := range savedSubs.Channel.ById {
-					if subToCheck.ChannelId == savedSub.ChannelId && reflect.DeepEqual(subToCheck.Filters, savedSub.Filters) {
+					if subToCheck.ChannelId == savedSub.ChannelId &&
+						subToCheck.Projects().Equals(savedSub.Projects()) &&
+						subToCheck.IssueTypes().Equals(savedSub.IssueTypes()) &&
+						subToCheck.EventTypes().Equals(savedSub.EventTypes()) {
 						foundSub = &savedSub
 						break
 					}
@@ -87,7 +89,7 @@ func checkHasSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 
 				// Check it's properly attached
 				assert.Contains(t, savedSubs.Channel.IdByChannelId[foundSub.ChannelId], foundSub.Id)
-				for _, event := range foundSub.Filters.Event {
+				for _, event := range foundSub.Filters.Event.Elems(false) {
 					assert.Contains(t, savedSubs.Channel.IdByEvent[event], foundSub.Id)
 				}
 			}
@@ -144,8 +146,8 @@ func TestSubscribe(t *testing.T) {
 				ChannelSubscription{
 					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
 					Filters: SubscriptionFilters{
-						Event:   []string{"jira:issue_created"},
-						Project: []string{"myproject"},
+						Event:   NewSet("jira:issue_created"),
+						Project: NewSet("myproject"),
 					},
 				},
 			}, nil, t),
@@ -157,15 +159,15 @@ func TestSubscribe(t *testing.T) {
 				ChannelSubscription{
 					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
 					Filters: SubscriptionFilters{
-						Event:   []string{"jira:issue_created"},
-						Project: []string{"myproject"},
+						Event:   NewSet("jira:issue_created"),
+						Project: NewSet("myproject"),
 					},
 				},
 				ChannelSubscription{
 					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
 					Filters: SubscriptionFilters{
-						Event:   []string{"jira:issue_created"},
-						Project: []string{"myproject"},
+						Event:   NewSet("jira:issue_created"),
+						Project: NewSet("myproject"),
 					},
 				},
 			},
@@ -175,8 +177,8 @@ func TestSubscribe(t *testing.T) {
 							Id:        model.NewId(),
 							ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
 							Filters: SubscriptionFilters{
-								Event:   []string{"jira:issue_created"},
-								Project: []string{"myproject"},
+								Event:   NewSet("jira:issue_created"),
+								Project: NewSet("myproject"),
 							},
 						},
 					}), t),
@@ -188,15 +190,15 @@ func TestSubscribe(t *testing.T) {
 				ChannelSubscription{
 					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
 					Filters: SubscriptionFilters{
-						Event:   []string{"jira:issue_created"},
-						Project: []string{"myproject"},
+						Event:   NewSet("jira:issue_created"),
+						Project: NewSet("myproject"),
 					},
 				},
 				ChannelSubscription{
 					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
 					Filters: SubscriptionFilters{
-						Event:   []string{"jira:issue_updated"},
-						Project: []string{"myproject"},
+						Event:   NewSet("jira:issue_updated"),
+						Project: NewSet("myproject"),
 					},
 				},
 			},
@@ -206,8 +208,8 @@ func TestSubscribe(t *testing.T) {
 							Id:        model.NewId(),
 							ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
 							Filters: SubscriptionFilters{
-								Event:   []string{"jira:issue_updated"},
-								Project: []string{"myproject"},
+								Event:   NewSet("jira:issue_updated"),
+								Project: NewSet("myproject"),
 							},
 						},
 					}), t),
@@ -303,8 +305,8 @@ func TestDeleteSubscription(t *testing.T) {
 					Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
 					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
 					Filters: SubscriptionFilters{
-						Event:   []string{"jira:issue_created"},
-						Project: []string{"myproject"},
+						Event:   NewSet("jira:issue_created"),
+						Project: NewSet("myproject"),
 					},
 				},
 			},
@@ -314,16 +316,16 @@ func TestDeleteSubscription(t *testing.T) {
 							Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
 							ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
 							Filters: SubscriptionFilters{
-								Event:   []string{"jira:issue_created"},
-								Project: []string{"myproject"},
+								Event:   NewSet("jira:issue_created"),
+								Project: NewSet("myproject"),
 							},
 						},
 						ChannelSubscription{
 							Id:        "aaaaaaaaaaaaaaaaaaaaaaaaac",
 							ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
 							Filters: SubscriptionFilters{
-								Event:   []string{"jira:issue_created"},
-								Project: []string{"myproject"},
+								Event:   NewSet("jira:issue_created"),
+								Project: NewSet("myproject"),
 							},
 						},
 					}), t),
@@ -431,8 +433,8 @@ func TestEditSubscription(t *testing.T) {
 					Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
 					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
 					Filters: SubscriptionFilters{
-						Event:   []string{"jira:issue_created"},
-						Project: []string{"otherproject"},
+						Event:   NewSet("jira:issue_created"),
+						Project: NewSet("otherproject"),
 					},
 				},
 			},
@@ -442,8 +444,8 @@ func TestEditSubscription(t *testing.T) {
 							Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
 							ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
 							Filters: SubscriptionFilters{
-								Event:   []string{"jira:issue_created"},
-								Project: []string{"myproject"},
+								Event:   NewSet("jira:issue_created"),
+								Project: NewSet("myproject"),
 							},
 						},
 					}), t),
@@ -540,8 +542,8 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 					Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
 					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
 					Filters: SubscriptionFilters{
-						Event:   []string{"jira:issue_created"},
-						Project: []string{"myproject"},
+						Event:   NewSet("jira:issue_created"),
+						Project: NewSet("myproject"),
 					},
 				},
 			},
@@ -551,8 +553,8 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 						Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
 						ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
 						Filters: SubscriptionFilters{
-							Event:   []string{"jira:issue_created"},
-							Project: []string{"myproject"},
+							Event:   NewSet("jira:issue_created"),
+							Project: NewSet("myproject"),
 						},
 					},
 				}, t),
@@ -565,16 +567,16 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 					Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
 					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
 					Filters: SubscriptionFilters{
-						Event:   []string{"jira:issue_created"},
-						Project: []string{"myproject"},
+						Event:   NewSet("jira:issue_created"),
+						Project: NewSet("myproject"),
 					},
 				},
 				ChannelSubscription{
 					Id:        "aaaaaaaaaaaaaaaaaaaaaaaaac",
 					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
 					Filters: SubscriptionFilters{
-						Event:   []string{"jira:issue_created"},
-						Project: []string{"things"},
+						Event:   NewSet("jira:issue_created"),
+						Project: NewSet("things"),
 					},
 				},
 			},
@@ -584,16 +586,16 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 						Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
 						ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
 						Filters: SubscriptionFilters{
-							Event:   []string{"jira:issue_created"},
-							Project: []string{"myproject"},
+							Event:   NewSet("jira:issue_created"),
+							Project: NewSet("myproject"),
 						},
 					},
 					ChannelSubscription{
 						Id:        "aaaaaaaaaaaaaaaaaaaaaaaaac",
 						ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
 						Filters: SubscriptionFilters{
-							Event:   []string{"jira:issue_created"},
-							Project: []string{"things"},
+							Event:   NewSet("jira:issue_created"),
+							Project: NewSet("things"),
 						},
 					},
 				}, t),
@@ -606,8 +608,8 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 					Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
 					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
 					Filters: SubscriptionFilters{
-						Event:   []string{"jira:issue_created"},
-						Project: []string{"myproject"},
+						Event:   NewSet("jira:issue_created"),
+						Project: NewSet("myproject"),
 					},
 				},
 			},
@@ -617,16 +619,16 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 						Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
 						ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
 						Filters: SubscriptionFilters{
-							Event:   []string{"jira:issue_created"},
-							Project: []string{"myproject"},
+							Event:   NewSet("jira:issue_created"),
+							Project: NewSet("myproject"),
 						},
 					},
 					ChannelSubscription{
 						Id:        "aaaaaaaaaaaaaaaaaaaaaaaaac",
 						ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaad",
 						Filters: SubscriptionFilters{
-							Event:   []string{"jira:issue_created"},
-							Project: []string{"things"},
+							Event:   NewSet("jira:issue_created"),
+							Project: NewSet("things"),
 						},
 					},
 				}, t),
@@ -699,7 +701,17 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 				err := json.NewDecoder(bytes.NewReader(body)).Decode(&subscriptions)
 				assert.Nil(t, err)
 
-				assert.Equal(t, tc.returnedSubscriptions, subscriptions)
+				assert.Equal(t, len(tc.returnedSubscriptions), len(subscriptions))
+
+				for i, a := range tc.returnedSubscriptions {
+					b := subscriptions[i]
+
+					assert.True(t, (a.Id == b.Id &&
+						a.ChannelId == b.ChannelId &&
+						a.Projects().Equals(b.Projects()) &&
+						a.IssueTypes().Equals(b.IssueTypes()) &&
+						a.EventTypes().Equals(b.EventTypes())))
+				}
 			}
 		})
 	}

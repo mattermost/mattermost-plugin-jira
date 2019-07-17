@@ -23,9 +23,9 @@ const (
 )
 
 type SubscriptionFilters struct {
-	Event     []string `json:"event"`
-	Project   []string `json:"project"`
-	IssueType []string `json:"issue_type"`
+	Event     Set `json:"event"`
+	Project   Set `json:"project"`
+	IssueType Set `json:"issue_type"`
 }
 
 type ChannelSubscription struct {
@@ -48,12 +48,16 @@ func NewChannelSubscriptions() *ChannelSubscriptions {
 	}
 }
 
-func (sub *ChannelSubscription) EventTypes() EventTypeSet {
-	eventTypes := EventTypeSet{}
-	for _, enum := range sub.Filters.Event {
-		eventTypes.Add(enum)
-	}
-	return eventTypes
+func (sub *ChannelSubscription) EventTypes() Set {
+	return sub.Filters.Event
+}
+
+func (sub *ChannelSubscription) Projects() Set {
+	return sub.Filters.Project
+}
+
+func (sub *ChannelSubscription) IssueTypes() Set {
+	return sub.Filters.IssueType
 }
 
 func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
@@ -71,7 +75,7 @@ func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
 
 	s.IdByChannelId[sub.ChannelId] = remove(s.IdByChannelId[sub.ChannelId], sub.Id)
 
-	for _, event := range sub.Filters.Event {
+	for _, event := range sub.Filters.Event.Elems(false) {
 		s.IdByEvent[event] = remove(s.IdByEvent[event], sub.Id)
 	}
 }
@@ -79,7 +83,7 @@ func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
 func (s *ChannelSubscriptions) add(newSubscription *ChannelSubscription) {
 	s.ById[newSubscription.Id] = *newSubscription
 	s.IdByChannelId[newSubscription.ChannelId] = append(s.IdByChannelId[newSubscription.ChannelId], newSubscription.Id)
-	for _, event := range newSubscription.Filters.Event {
+	for _, event := range newSubscription.Filters.Event.Elems(false) {
 		s.IdByEvent[event] = append(s.IdByEvent[event], newSubscription.Id)
 	}
 }
@@ -121,36 +125,21 @@ func (p *Plugin) getChannelsSubscribed(wh Webhook) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	webhookMask := wh.EventTypes()
 
+	webhookEvents := wh.EventTypes()
 	subIds := subs.Channel.ById
 
 	channelIds := []string{}
-
 	for _, sub := range subIds {
-		foundProject := false
-		for _, acceptableProject := range sub.Filters.Project {
-			if acceptableProject == jwh.Issue.Fields.Project.Key {
-				foundProject = true
-				break
-			}
-		}
-		if !foundProject {
+		if sub.EventTypes().Intersection(webhookEvents).Len() == 0 {
 			continue
 		}
 
-		if !sub.EventTypes().HasIntersection(webhookMask) {
+		if !sub.IssueTypes().ContainsAny(jwh.Issue.Fields.Type.ID) {
 			continue
 		}
 
-		foundIssueType := false
-		for _, acceptableIssueType := range sub.Filters.IssueType {
-			if acceptableIssueType == jwh.Issue.Fields.Type.ID {
-				foundIssueType = true
-				break
-			}
-		}
-		if !foundIssueType {
+		if !sub.Projects().ContainsAny(jwh.Issue.Fields.Project.Key) {
 			continue
 		}
 

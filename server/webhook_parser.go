@@ -148,7 +148,7 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 		}
 
 		if event != nil {
-			event.eventTypes.Add(eventUpdatedAll)
+			event.eventTypes = event.eventTypes.Add(eventUpdatedAll)
 			events = append(events, event)
 		}
 	}
@@ -194,7 +194,7 @@ func parseWebhookCreated(jwh *JiraWebhook) Webhook {
 func parseWebhookDeleted(jwh *JiraWebhook) Webhook {
 	wh := newWebhook(jwh, eventDeleted, "deleted")
 	if jwh.Issue.Fields != nil && jwh.Issue.Fields.Resolution == nil {
-		wh.eventTypes.Add(eventDeletedUnresolved)
+		wh.eventTypes = wh.eventTypes.Add(eventDeletedUnresolved)
 	}
 	return wh
 }
@@ -215,7 +215,7 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 
 	wh := &webhook{
 		JiraWebhook: jwh,
-		eventTypes:  EventTypeSet{eventCreatedComment: true},
+		eventTypes:  NewSet(eventCreatedComment),
 		headline:    fmt.Sprintf("%s commented on %s", commentAuthor, jwh.mdKeySummaryLink()),
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
@@ -272,7 +272,7 @@ func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
 
 	return &webhook{
 		JiraWebhook: jwh,
-		eventTypes:  EventTypeSet{eventDeletedComment: true},
+		eventTypes:  NewSet(eventDeletedComment),
 		headline:    fmt.Sprintf("%s deleted comment in %s", user, jwh.mdKeySummaryLink()),
 	}, nil
 }
@@ -280,7 +280,7 @@ func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
 func parseWebhookCommentUpdated(jwh *JiraWebhook) Webhook {
 	return &webhook{
 		JiraWebhook: jwh,
-		eventTypes:  EventTypeSet{eventUpdatedComment: true},
+		eventTypes:  NewSet(eventUpdatedComment),
 		headline:    fmt.Sprintf("%s edited comment in %s", mdUser(&jwh.Comment.UpdateAuthor), jwh.mdKeySummaryLink()),
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
@@ -361,7 +361,7 @@ func mergeWebhookEvents(events []*webhook) Webhook {
 	merged := &webhook{
 		JiraWebhook: events[0].JiraWebhook,
 		headline:    events[0].mdUser() + " updated " + events[0].mdKeySummaryLink(),
-		eventTypes:  EventTypeSet{},
+		eventTypes:  NewSet(),
 	}
 
 	for _, event := range events {
