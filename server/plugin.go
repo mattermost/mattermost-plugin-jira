@@ -34,10 +34,10 @@ type externalConfig struct {
 	Secret string `json:"secret"`
 
 	// What MM roles that can create subscriptions
-	SubscriptionEditorsMattermostRoles string
+	RolesAllowedToEditJiraSubscriptions string
 
 	// Comma separated list of jira groups with permission. Empty is all.
-	SubscriptionEditorsJiraGroups string
+	GroupsAllowedToEditJiraSubscriptions string
 }
 
 const currentInstanceTTL = 1 * time.Second

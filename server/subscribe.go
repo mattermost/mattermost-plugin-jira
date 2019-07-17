@@ -283,7 +283,7 @@ func inAllowedGroup(inGroups []*jira.UserGroup, allowedGroups []string) bool {
 func (p *Plugin) hasPermissionToManageSubscription(userId, channelId string) error {
 	cfg := p.getConfig()
 
-	switch cfg.SubscriptionEditorsMattermostRoles {
+	switch cfg.RolesAllowedToEditJiraSubscriptions {
 	case "team_admin":
 		if !p.API.HasPermissionToChannel(userId, channelId, model.PERMISSION_MANAGE_TEAM) {
 			return errors.New("is not team admin")
@@ -312,7 +312,7 @@ func (p *Plugin) hasPermissionToManageSubscription(userId, channelId string) err
 		}
 	}
 
-	if cfg.SubscriptionEditorsJiraGroups != "" {
+	if cfg.GroupsAllowedToEditJiraSubscriptions != "" {
 		ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 		if err != nil {
 			return errors.Wrap(err, "could not load jira instance")
@@ -341,7 +341,7 @@ func (p *Plugin) hasPermissionToManageSubscription(userId, channelId string) err
 			return errors.Wrap(err, "error in request to get user groups, body:"+string(body))
 		}
 
-		allowedGroups := strings.Split(cfg.SubscriptionEditorsJiraGroups, ",")
+		allowedGroups := strings.Split(cfg.GroupsAllowedToEditJiraSubscriptions, ",")
 		if !inAllowedGroup(groups, allowedGroups) {
 			return errors.New("not in allowed jira user groups")
 		}

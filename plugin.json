@@ -31,8 +31,8 @@
         "regenerate_help_text": "Regenerates the secret for the webhook URL endpoint. Regenerating the secret invalidates your existing Jira integrations."
       },
       {
-        "key": "SubscriptionEditorsMattermostRoles",
-        "display_name": "Subscription Editors Mattermost Roles",
+        "key": "RolesAllowedToEditJiraSubscriptions",
+        "display_name": "Roles Allowed to Edit Jira Subscriptions",
         "type": "radio",
         "help_text": "Mattermost users that can subscribe channels to Jira tickets.",
         "default": "system_admin",
@@ -56,8 +56,8 @@
         ]
       },
       {
-        "key": "SubscriptionEditorsJiraGroups",
-        "display_name": "Subscription Editors Jira Groups",
+        "key": "GroupsAllowedToEditJiraSubscriptions",
+        "display_name": "Groups Allowed to Edit Jira Subscriptions",
         "type": "text",
         "help_text": "Comma separated list of Group Names. List the Jira user groups who can create subscriptions. If none are specified, any Jira user can create a subscription.",
         "default": ""
