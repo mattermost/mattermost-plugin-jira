@@ -97,8 +97,8 @@ func (p *Plugin) getUserID() string {
 	return p.getConfig().botUserID
 }
 
-func (p *Plugin) getChannelsSubscribed(wh Webhook) ([]string, error) {
-	jwh := wh.GetJiraWebhook()
+func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
+	jwh := wh.JiraWebhook
 	subs, err := p.getSubscriptions()
 	if err != nil {
 		return nil, err
@@ -300,7 +300,7 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, err
 	}
 
-	channelIds, err := p.getChannelsSubscribed(wh)
+	channelIds, err := p.getChannelsSubscribed(wh.(*webhook))
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

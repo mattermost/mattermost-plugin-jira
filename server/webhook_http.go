@@ -30,8 +30,8 @@ var eventParamMasks = map[string]StringSet{
 	"updated_sprint":      NewStringSet(eventUpdatedSprint),      // assigned to a different sprint
 	"updated_status":      NewStringSet(eventUpdatedStatus),      // transitions like Done, In Progress
 	"updated_summary":     NewStringSet(eventUpdatedSummary),     // issue renamed
-	"updated_comments":    commentEvents,                   // comment events
-	"updated_all":         allEvents,                       // all events
+	"updated_comments":    commentEvents,                         // comment events
+	"updated_all":         allEvents,                             // all events
 }
 
 var ErrWebhookIgnored = errors.New("Webhook purposely ignored")
