@@ -14,6 +14,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 	ajwt "github.com/rbriski/atlassian-jwt"
+	"golang.org/x/oauth2"
 	oauth2_jira "golang.org/x/oauth2/jira"
 )
 
@@ -123,7 +124,7 @@ func (jci jiraCloudInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, err
 	//TODO decide if we ever need this as the default client
 	// client, err = jci.getJIRAClientForServer()
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get Jira client for user "+jiraUser.Name)
+		return nil, errors.WithMessage(err, "failed to get Jira client for user "+jiraUser.DisplayName)
 	}
 
 	return client, nil
@@ -133,13 +134,16 @@ func (jci jiraCloudInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, err
 func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Client, *http.Client, error) {
 	oauth2Conf := oauth2_jira.Config{
 		BaseURL: jci.GetURL(),
-		Subject: jiraUser.Name,
+		Subject: jiraUser.AccountID,
+		Config: oauth2.Config{
+			ClientID:     jci.AtlassianSecurityContext.OAuthClientId,
+			ClientSecret: jci.AtlassianSecurityContext.SharedSecret,
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  "https://auth.atlassian.io",
+				TokenURL: "https://auth.atlassian.io/oauth2/token",
+			},
+		},
 	}
-
-	oauth2Conf.Config.ClientID = jci.AtlassianSecurityContext.OAuthClientId
-	oauth2Conf.Config.ClientSecret = jci.AtlassianSecurityContext.SharedSecret
-	oauth2Conf.Config.Endpoint.AuthURL = "https://auth.atlassian.io"
-	oauth2Conf.Config.Endpoint.TokenURL = "https://auth.atlassian.io/oauth2/token"
 
 	httpClient := oauth2Conf.Client(context.Background())
 
