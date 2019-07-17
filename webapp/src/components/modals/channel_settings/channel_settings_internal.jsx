@@ -84,6 +84,14 @@ export default class ChannelSettingsModalInner extends PureComponent {
         this.props.close();
     };
 
+    deleteChannelSubscription = (e) => {
+        if (this.props.channelSubscriptions && this.props.channelSubscriptions.length > 0) {
+            const sub = this.props.channelSubscriptions[0];
+            this.props.deleteChannelSubscription(sub);
+        }
+        this.handleClose(e);
+    }
+
     handleSettingChange = (id, value) => {
         let finalValue = value;
         if (!Array.isArray(finalValue)) {
@@ -245,6 +253,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
         }
 
         const enableSubmitButton = Boolean(this.state.filters.projects[0]);
+        const showDeleteButton = Boolean(this.props.channelSubscriptions && this.props.channelSubscriptions.length > 0);
 
         return (
             <form
@@ -258,14 +267,22 @@ export default class ChannelSettingsModalInner extends PureComponent {
                 <Modal.Footer>
                     <FormButton
                         type='button'
-                        btnClass='btn-default'
+                        btnClass='btn-link'
                         defaultMessage='Cancel'
                         onClick={this.handleClose}
                     />
+                    {showDeleteButton && (
+                        <FormButton
+                            type='button'
+                            btnClass='btn-danger'
+                            defaultMessage='Delete'
+                            onClick={this.deleteChannelSubscription}
+                        />
+                    )}
                     <FormButton
                         type='submit'
                         disabled={!enableSubmitButton}
-                        btnClass='btn btn-primary'
+                        btnClass='btn-primary'
                         saving={this.state.submitting}
                         defaultMessage='Set Subscription'
                         savingMessage='Setting'

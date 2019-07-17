@@ -157,15 +157,20 @@ export const editChannelSubscription = (subscription) => {
     };
 };
 
-export const deleteChannelSubscription = (subscriptionId) => {
+export const deleteChannelSubscription = (subscription) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            const data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel/${subscriptionId}`, {
+            await doFetch(`${baseUrl}/api/v2/subscriptions/channel/${subscription.id}`, {
                 method: 'delete',
             });
 
-            return {data};
+            dispatch({
+                type: ActionTypes.DELETED_CHANNEL_SUBSCRIPTION,
+                data: subscription,
+            });
+
+            return {data: subscription};
         } catch (error) {
             return {error};
         }
