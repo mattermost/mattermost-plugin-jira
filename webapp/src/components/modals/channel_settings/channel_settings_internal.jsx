@@ -65,7 +65,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
         let fetchingProject = false;
         if (filters.projects.length) {
             fetchingProject = true;
-            this.fetchProject(filters.project[0]);
+            this.fetchProject(filters.projects[0]);
         }
 
         this.state = {
