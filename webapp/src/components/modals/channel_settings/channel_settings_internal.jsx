@@ -115,22 +115,22 @@ export default class ChannelSettingsModalInner extends PureComponent {
     };
 
     handleProjectChange = (id, value) => {
-        let finalValue = value;
-        if (!finalValue) {
-            finalValue = [];
-        } else if (!Array.isArray(finalValue)) {
-            finalValue = [finalValue];
+        let projects = value;
+        if (!projects) {
+            projects = [];
+        } else if (!Array.isArray(projects)) {
+            projects = [projects];
         }
 
         let filters = {
             ...this.state.filters,
-            projects: finalValue,
+            projects,
         };
 
         // User has removed a project from selection. Remove any irrelevant selected choices from the events and issue types.
-        if (finalValue.length < this.state.filters.projects.length) {
-            const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, finalValue);
-            const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, finalValue);
+        if (projects.length < this.state.filters.projects.length) {
+            const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, projects);
+            const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, projects);
 
             const selectedIssueTypes = this.state.filters.issue_types.filter((issueType) => {
                 return Boolean(issueOptions.find((it) => it.value === issueType));
@@ -153,9 +153,9 @@ export default class ChannelSettingsModalInner extends PureComponent {
         let fetchingProjects = false;
 
         this.props.clearIssueMetadata();
-        if (finalValue && finalValue.length) {
+        if (projects && projects.length) {
             fetchingProjects = true;
-            this.fetchProjects(finalValue);
+            this.fetchProjects(projects);
         }
 
         this.setState({
