@@ -223,7 +223,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	return http.StatusOK, nil
 }
 
-func httpAPIGetCreateIssueMetadataForProject(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpAPIGetCreateIssueMetadataForProjects(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
 			errors.New("Request: " + r.Method + " is not allowed, must be GET")
@@ -234,9 +234,9 @@ func httpAPIGetCreateIssueMetadataForProject(ji Instance, w http.ResponseWriter,
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
-	projectKey := r.FormValue("project-key")
-	if projectKey == "" {
-		return http.StatusBadRequest, errors.New("project-key query param is required")
+	projectKeys := r.FormValue("project-keys")
+	if projectKeys == "" {
+		return http.StatusBadRequest, errors.New("project-keys query param is required")
 	}
 
 	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
@@ -251,7 +251,7 @@ func httpAPIGetCreateIssueMetadataForProject(ji Instance, w http.ResponseWriter,
 
 	cimd, resp, err := jiraClient.Issue.GetCreateMetaWithOptions(&jira.GetQueryOptions{
 		Expand:      "projects.issuetypes.fields",
-		ProjectKeys: projectKey,
+		ProjectKeys: projectKeys,
 	})
 	if err != nil {
 		err = userFriendlyJiraError(resp, err)

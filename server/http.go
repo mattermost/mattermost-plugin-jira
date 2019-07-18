@@ -65,7 +65,7 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	case routeAPICreateIssue:
 		return withInstance(p.currentInstanceStore, w, r, httpAPICreateIssue)
 	case routeAPIGetCreateIssueMetadata:
-		return withInstance(p.currentInstanceStore, w, r, httpAPIGetCreateIssueMetadataForProject)
+		return withInstance(p.currentInstanceStore, w, r, httpAPIGetCreateIssueMetadataForProjects)
 	case routeAPIGetJiraProjectMetadata:
 		return withInstance(p.currentInstanceStore, w, r, httpAPIGetJiraProjectMetadata)
 	case routeAPIGetSearchIssues:

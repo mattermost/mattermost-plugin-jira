@@ -85,6 +85,21 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			}),
 			ChannelIds: []string{},
 		},
+		"multiple projects selected": {
+			WebhookTestData: "webhook-issue-created.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES", "OTHER"),
+						IssueTypes: NewStringSet("10001"),
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
 		"issue type does not match": {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{

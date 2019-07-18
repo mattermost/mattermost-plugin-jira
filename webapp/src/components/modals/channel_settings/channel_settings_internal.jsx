@@ -8,7 +8,7 @@ import {Modal} from 'react-bootstrap';
 import ReactSelectSetting from 'components/react_select_setting';
 import FormButton from 'components/form_button';
 import Loading from 'components/loading';
-import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProject} from 'utils/jira_issue_metadata';
+import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProjects} from 'utils/jira_issue_metadata';
 
 const JiraEventOptions = [
     {value: 'event_created', label: 'Issue Created'},
@@ -45,7 +45,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
         deleteChannelSubscription: PropTypes.func.isRequired,
         editChannelSubscription: PropTypes.func.isRequired,
         fetchChannelSubscriptions: PropTypes.func.isRequired,
-        fetchJiraIssueMetadataForProject: PropTypes.func.isRequired,
+        fetchJiraIssueMetadataForProjects: PropTypes.func.isRequired,
         clearIssueMetadata: PropTypes.func.isRequired,
     };
 
@@ -62,10 +62,10 @@ export default class ChannelSettingsModalInner extends PureComponent {
             filters = Object.assign({}, filters, props.channelSubscriptions[0].filters);
         }
 
-        let fetchingProject = false;
+        let fetchingProjects = false;
         if (filters.projects.length) {
-            fetchingProject = true;
-            this.fetchProject(filters.project[0]);
+            fetchingProjects = true;
+            this.fetchProjects(filters.projects);
         }
 
         this.state = {
@@ -73,7 +73,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
             getMetaDataErr: null,
             submitting: false,
             filters,
-            fetchingProject,
+            fetchingProjects,
         };
     }
 
@@ -94,7 +94,9 @@ export default class ChannelSettingsModalInner extends PureComponent {
 
     handleSettingChange = (id, value) => {
         let finalValue = value;
-        if (!Array.isArray(finalValue)) {
+        if (!finalValue) {
+            finalValue = [];
+        } else if (!Array.isArray(finalValue)) {
             finalValue = [finalValue];
         }
         const filters = {...this.state.filters};
@@ -102,9 +104,9 @@ export default class ChannelSettingsModalInner extends PureComponent {
         this.setState({filters});
     };
 
-    fetchProject = (projectKey) => {
-        this.props.fetchJiraIssueMetadataForProject(projectKey).then((fetched) => {
-            const state = {fetchingProject: false};
+    fetchProjects = (projectKeys) => {
+        this.props.fetchJiraIssueMetadataForProjects(projectKeys).then((fetched) => {
+            const state = {fetchingProjects: false};
             if (fetched.error) {
                 state.getMetaDataErr = fetched.error.message;
             }
@@ -113,21 +115,54 @@ export default class ChannelSettingsModalInner extends PureComponent {
     };
 
     handleProjectChange = (id, value) => {
-        const projectKey = value;
+        let finalValue = value;
+        if (!finalValue) {
+            finalValue = [];
+        } else if (!Array.isArray(finalValue)) {
+            finalValue = [finalValue];
+        }
 
-        const filters = {
-            projects: [value],
-            events: [],
-            issue_types: [],
+        let filters = {
+            ...this.state.filters,
+            projects: finalValue,
         };
+
+        // User has removed a project from selection. Remove any irrelevant selected choices from the events and issue types.
+        if (finalValue.length < this.state.filters.projects.length) {
+            const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, finalValue);
+            const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, finalValue);
+
+            const selectedIssueTypes = this.state.filters.issue_types.filter((issueType) => {
+                return Boolean(issueOptions.find((it) => it.value === issueType));
+            });
+
+            const selectedEventTypes = this.state.filters.events.filter((eventType) => {
+                if (eventType.includes('customfield')) {
+                    return Boolean(customFields.find((et) => et.value === eventType));
+                }
+                return true;
+            });
+
+            filters = {
+                ...filters,
+                issue_types: selectedIssueTypes,
+                events: selectedEventTypes,
+            };
+        }
+
+        let fetchingProjects = false;
+
+        this.props.clearIssueMetadata();
+        if (finalValue && finalValue.length) {
+            fetchingProjects = true;
+            this.fetchProjects(finalValue);
+        }
+
         this.setState({
-            fetchingProject: true,
+            fetchingProjects,
             getMetaDataErr: null,
             filters,
         });
-
-        this.props.clearIssueMetadata();
-        this.fetchProject(projectKey);
     };
 
     handleCreate = (e) => {
@@ -187,14 +222,14 @@ export default class ChannelSettingsModalInner extends PureComponent {
 
         const projectOptions = getProjectValues(this.props.jiraProjectMetadata);
         const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, this.state.filters.projects);
-        const customFields = getCustomFieldValuesForProject(this.props.jiraIssueMetadata, this.state.filters.projects[0]);
+        const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
 
         const eventOptions = JiraEventOptions.concat(customFields);
 
         let component = null;
         if (this.props.channel && this.props.channelSubscriptions) {
             let innerComponent = null;
-            if (this.state.fetchingProject) {
+            if (this.state.fetchingProjects) {
                 innerComponent = <Loading/>;
             } else if (this.state.filters.projects[0] && !this.state.getMetaDataErr) {
                 innerComponent = (
@@ -231,7 +266,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
                         required={true}
                         onChange={this.handleProjectChange}
                         options={projectOptions}
-                        isMulti={false}
+                        isMulti={true}
                         theme={this.props.theme}
                         value={projectOptions.filter((option) => this.state.filters.projects.includes(option.value))}
                     />

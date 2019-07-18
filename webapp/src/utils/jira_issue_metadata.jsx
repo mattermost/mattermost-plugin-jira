@@ -26,8 +26,14 @@ export function getIssueValues(metadata, projectKey) {
 }
 
 export function getIssueValuesForMultipleProjects(metadata, projectKeys) {
-    return projectKeys.map((project) =>
-        getIssueValues(metadata, project)).flat().filter(Boolean).sort((a, b) => a.value - b.value).filter((ele, i, me) => i === 0 || ele.value !== me[i - 1].value);
+    const issueValues = projectKeys.map((project) => getIssueValues(metadata, project)).flat().filter(Boolean);
+
+    const issueTypeHash = {};
+    issueValues.forEach((issueType) => {
+        issueTypeHash[issueType.value] = issueType;
+    });
+
+    return Object.values(issueTypeHash);
 }
 
 export function getFields(metadata, projectKey, issueTypeId) {
@@ -38,12 +44,12 @@ export function getFields(metadata, projectKey, issueTypeId) {
     return getIssueTypes(metadata, projectKey).find((issueType) => issueType.id === issueTypeId).fields;
 }
 
-export function getCustomFieldValuesForProject(metadata, projectKey) {
-    if (!metadata || !projectKey) {
+export function getCustomFieldValuesForProjects(metadata, projectKeys) {
+    if (!metadata || !projectKeys || !projectKeys.length) {
         return [];
     }
 
-    const issueTypes = getIssueTypes(metadata, projectKey);
+    const issueTypes = projectKeys.map((key) => getIssueTypes(metadata, key)).flat();
 
     const customFieldHash = {};
     const fields = issueTypes.map((it) => Object.values(it.fields)).flat();
