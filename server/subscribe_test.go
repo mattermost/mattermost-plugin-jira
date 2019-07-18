@@ -6,7 +6,10 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin/plugintest"
@@ -331,7 +334,10 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			assert.Nil(t, err)
 
 			r := bytes.NewReader(data)
-			wh, err := ParseWebhook(r)
+			bb, err := ioutil.ReadAll(r)
+			require.Nil(t, err)
+
+			wh, err := ParseWebhook(bb)
 			assert.Nil(t, err)
 
 			actual, err := p.getChannelsSubscribed(wh.(*webhook))

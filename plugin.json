@@ -28,7 +28,39 @@
         "display_name": "Webhook Secret",
         "type": "generated",
         "help_text": "The secret used to authenticate the webhook to Mattermost.",
-        "regenerate_help_text": "Regenerates the secret for the webhook URL endpoint. Regenerating the secret invalidates your existing JIRA integrations."
+        "regenerate_help_text": "Regenerates the secret for the webhook URL endpoint. Regenerating the secret invalidates your existing Jira integrations."
+      },
+      {
+        "key": "RolesAllowedToEditJiraSubscriptions",
+        "display_name": "Mattermost Roles Allowed to Edit Jira Subscriptions",
+        "type": "radio",
+        "help_text": "Mattermost users that can subscribe channels to Jira tickets.",
+        "default": "system_admin",
+        "options": [
+            {
+                "display_name": "All Users",
+                "value": "users"
+            },
+            {
+                "display_name": "Channel Admins",
+                "value": "channel_admin"
+            },
+            {
+                "display_name": "Team Admins",
+                "value": "team_admin"
+            },
+            {
+                "display_name": "System Administrators",
+                "value": "system_admin"
+            }
+        ]
+      },
+      {
+        "key": "GroupsAllowedToEditJiraSubscriptions",
+        "display_name": "Jira Groups Allowed to Edit Jira Subscriptions",
+        "type": "text",
+        "help_text": "Comma separated list of Group Names. List the Jira user groups who can create subscriptions. If none are specified, any Jira user can create a subscription.",
+        "default": ""
       }
     ],
     "footer": "Use this webhook URL to set up the Jira integration. See [documentation](https://about.mattermost.com/default-jira-plugin) to learn more.\n\n`https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL`"

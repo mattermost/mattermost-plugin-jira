@@ -187,6 +187,11 @@ export const fetchChannelSubscriptions = (channelId) => {
                 method: 'get',
             });
         } catch (error) {
+            dispatch({
+                type: ActionTypes.RECEIVED_CHANNEL_SUBSCRIPTIONS,
+                channelId,
+                data: error,
+            });
             return {error};
         }
 

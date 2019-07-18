@@ -6,7 +6,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -19,11 +18,7 @@ import (
 
 var webhookWrapperFunc func(wh Webhook) Webhook
 
-func ParseWebhook(in io.Reader) (wh Webhook, err error) {
-	bb, err := ioutil.ReadAll(in)
-	if err != nil {
-		return nil, err
-	}
+func ParseWebhook(bb []byte) (wh Webhook, err error) {
 	defer func() {
 		if err == nil || err == ErrWebhookIgnored {
 			return
