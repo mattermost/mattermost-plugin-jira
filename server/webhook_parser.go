@@ -182,7 +182,7 @@ func parseWebhookCreated(jwh *JiraWebhook) Webhook {
 		wh.fields = fields
 	}
 
-	attachNotificationForAssignee(wh)
+	appendNotificationForAssignee(wh)
 
 	return wh
 }
@@ -216,12 +216,13 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
 
-	attachCommentNotifications(wh)
+	appendCommentNotifications(wh)
 
 	return wh, nil
 }
 
-func attachCommentNotifications(wh *webhook) {
+// appendCommentNotifications modifies wh
+func appendCommentNotifications(wh *webhook) {
 	jwh := wh.JiraWebhook
 	commentAuthor := mdUser(&jwh.Comment.UpdateAuthor)
 
@@ -288,7 +289,7 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) Webhook {
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
 
-	attachCommentNotifications(wh)
+	appendCommentNotifications(wh)
 	return wh
 }
 
@@ -304,13 +305,13 @@ func parseWebhookAssigned(jwh *JiraWebhook, from, to string) *webhook {
 	}
 	wh.fieldInfo = webhookField{"assignee", "assignee", fromFixed, toFixed}
 
-	attachNotificationForAssignee(wh)
+	appendNotificationForAssignee(wh)
 
 	return wh
 }
 
-// attachNotificationForAssignee modifies wh
-func attachNotificationForAssignee(wh *webhook) {
+// appendNotificationForAssignee modifies wh
+func appendNotificationForAssignee(wh *webhook) {
 	jwh := wh.JiraWebhook
 	if jwh.Issue.Fields.Assignee == nil {
 		return
