@@ -28,6 +28,7 @@ type Instance interface {
 	GetType() string
 	GetURL() string
 	GetUserConnectURL(mattermostUserId string) (string, error)
+	GetUserGroups(jiraUser JIRAUser) ([]*jira.UserGroup, error)
 	Init(p *Plugin)
 }
 
