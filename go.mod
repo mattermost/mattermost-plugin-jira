@@ -45,3 +45,6 @@ require (
 	google.golang.org/grpc v1.20.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20170531160350-a96e63847dc3 // indirect
 )
+
+// Workaround for Jira GDPR change. Remove this and update golang.org/x/oauth2 when it's fixed.
+replace golang.org/x/oauth2 => github.com/cpoile/oauth2 v0.0.0-20190717235208-10945bd
