@@ -20,9 +20,18 @@ const (
 
 type JIRAUser struct {
 	jira.User
+	PluginVersion      string
 	Oauth1AccessToken  string `json:",omitempty"`
 	Oauth1AccessSecret string `json:",omitempty"`
 	Settings           *UserSettings
+}
+
+func (u JIRAUser) Key() string {
+	if u.AccountID != "" {
+		return u.AccountID
+	} else {
+		return u.Name
+	}
 }
 
 type UserSettings struct {
@@ -49,7 +58,7 @@ func httpUserConnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, 
 	}
 
 	// Users shouldn't be able to make multiple connections.
-	if jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId); err == nil && len(jiraUser.Key) != 0 {
+	if jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId); err == nil && len(jiraUser.Key()) != 0 {
 		return http.StatusBadRequest, errors.New("Already connected to a JIRA account. Please use /jira disconnect to disconnect.")
 	}
 
@@ -131,9 +140,8 @@ func (p *Plugin) StoreUserInfoNotify(ji Instance, mattermostUserId string, jiraU
 	p.API.PublishWebSocketEvent(
 		WS_EVENT_CONNECT,
 		map[string]interface{}{
-			"is_connected":  true,
-			"jira_username": jiraUser.Name,
-			"jira_url":      ji.GetURL(),
+			"is_connected": true,
+			"jira_url":     ji.GetURL(),
 		},
 		&model.WebsocketBroadcast{UserId: mattermostUserId},
 	)
@@ -151,6 +159,7 @@ func (p *Plugin) DeleteUserInfoNotify(ji Instance, mattermostUserId string) erro
 		WS_EVENT_DISCONNECT,
 		map[string]interface{}{
 			"is_connected": false,
+			"jira_url":     ji.GetURL(),
 		},
 		&model.WebsocketBroadcast{UserId: mattermostUserId},
 	)

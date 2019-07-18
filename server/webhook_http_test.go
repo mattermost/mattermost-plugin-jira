@@ -35,8 +35,8 @@ type testWebhookWrapper struct {
 	postedNotifications []*model.Post
 }
 
-func (wh testWebhookWrapper) EventMask() uint64 {
-	return wh.Webhook.EventMask()
+func (wh testWebhookWrapper) Events() StringSet {
+	return wh.Webhook.Events()
 }
 func (wh *testWebhookWrapper) PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error) {
 	post, status, err := wh.Webhook.PostToChannel(p, channelId, fromUserId)
@@ -147,6 +147,16 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline: "Test User attached [test.gif] to, removed attachments [test.json] from story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			CurrentInstance:  true,
 		},
+		"issue fix version": {
+			Request:          testWebhookRequest("webhook-issue-updated-fix-version.json"),
+			ExpectedHeadline: `Test User updated Fix Version from "v1" to "v2" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			CurrentInstance:  true,
+		},
+		"issue issue type": {
+			Request:          testWebhookRequest("webhook-issue-updated-issue-type.json"),
+			ExpectedHeadline: `Test User updated issuetype from "Task" to "Bug" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			CurrentInstance:  true,
+		},
 		"issue labels": {
 			Request:          testWebhookRequest("webhook-issue-updated-labels.json"),
 			ExpectedHeadline: "Test User added labels [sad] to, removed labels [bad] from story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
@@ -164,7 +174,7 @@ func TestWebhookHTTP(t *testing.T) {
 		},
 		"issue rank": {
 			Request:          testWebhookRequest("webhook-issue-updated-rank.json"),
-			ExpectedHeadline: "Test User updated Rank from \"\" to \"ranked higher\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User updated Rank from \"none\" to \"ranked higher\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			CurrentInstance:  true,
 		},
 		"issue reopened": {
@@ -342,6 +352,16 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline: "Test User attached [test.gif] to, removed attachments [test.json] from story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			CurrentInstance:  false,
 		},
+		"issue fix version - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-updated-fix-version.json"),
+			ExpectedHeadline: `Test User updated Fix Version from "v1" to "v2" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			CurrentInstance:  false,
+		},
+		"issue issue type - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-updated-issue-type.json"),
+			ExpectedHeadline: `Test User updated issuetype from "Task" to "Bug" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			CurrentInstance:  false,
+		},
 		"issue labels - no Instance": {
 			Request:          testWebhookRequest("webhook-issue-updated-labels.json"),
 			ExpectedHeadline: "Test User added labels [sad] to, removed labels [bad] from story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
@@ -359,7 +379,7 @@ func TestWebhookHTTP(t *testing.T) {
 		},
 		"issue rank - no Instance": {
 			Request:          testWebhookRequest("webhook-issue-updated-rank.json"),
-			ExpectedHeadline: "Test User updated Rank from \"\" to \"ranked higher\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User updated Rank from \"none\" to \"ranked higher\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			CurrentInstance:  false,
 		},
 		"issue reopened - no Instance": {

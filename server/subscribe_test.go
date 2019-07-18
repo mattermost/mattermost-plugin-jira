@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 
@@ -20,182 +21,272 @@ func TestGetChannelsSubscribed(t *testing.T) {
 	})
 
 	for name, tc := range map[string]struct {
-		TestWebhook *JiraWebhook
-		Subs        *Subscriptions
-		ChannelIds  []string
+		WebhookTestData string
+		Subs            *Subscriptions
+		ChannelIds      []string
 	}{
 		"no filters selected": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
-					Filters: map[string][]string{
-						"event":      []string{},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet(),
+						Projects:   NewStringSet(),
+						IssueTypes: NewStringSet(),
 					},
 				},
 			}),
-			ChannelIds: []string{"sampleChannelId"},
+			ChannelIds: []string{},
 		},
-		"project matches": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+		"fields match": {
+			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
-					Filters: map[string][]string{
-						"event":      []string{},
-						"project":    []string{"TES"},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
 					},
 				},
 			}),
 			ChannelIds: []string{"sampleChannelId"},
 		},
 		"project does not match": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
-					Filters: map[string][]string{
-						"event":      []string{},
-						"project":    []string{"NOPE"},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("NOPE"),
+						IssueTypes: NewStringSet("10001"),
 					},
 				},
 			}),
 			ChannelIds: []string{},
 		},
-		"issue type matches": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+		"no project selected": {
+			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
-					Filters: map[string][]string{
-						"event":      []string{},
-						"project":    []string{},
-						"issue_type": []string{"10001"},
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet(),
+						IssueTypes: NewStringSet("10001"),
 					},
 				},
 			}),
-			ChannelIds: []string{"sampleChannelId"},
+			ChannelIds: []string{},
 		},
 		"issue type does not match": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
-					Filters: map[string][]string{
-						"event":      []string{},
-						"project":    []string{},
-						"issue_type": []string{"10002"},
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10002"),
 					},
 				},
 			}),
 			ChannelIds: []string{},
 		},
-		"event type matches": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+		"no issue type selected": {
+			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
-					Filters: map[string][]string{
-						"event":      []string{"event_created"},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet(),
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"event type does not match": {
+			WebhookTestData: "webhook-issue-deleted.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_updated_summary"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"updated all selected": {
+			WebhookTestData: "webhook-issue-updated-labels.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_updated_any"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
 					},
 				},
 			}),
 			ChannelIds: []string{"sampleChannelId"},
 		},
-		"event type does not match": {
-			TestWebhook: getJiraTestData("webhook-issue-deleted.json"),
+		"updated all selected, wrong incoming event": {
+			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
-					Filters: map[string][]string{
-						"event":      []string{"event_created"},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_updated_any"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
 					},
 				},
 			}),
 			ChannelIds: []string{},
 		},
+		"custom field selected": {
+			WebhookTestData: "webhook-issue-updated-custom-field.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_updated_customfield_10001"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"custom field selected, wrong field": {
+			WebhookTestData: "webhook-issue-updated-custom-field.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_updated_customfield_10002"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"custom field selected is the second of two custom fields in webhook": {
+			WebhookTestData: "webhook-issue-updated-multiple-custom-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_updated_customfield_10002"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"updated all selected, custom field": {
+			WebhookTestData: "webhook-issue-updated-custom-field.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_updated_any"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
 		"multiple subscriptions, both acceptable": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId1",
-					Filters: map[string][]string{
-						"event":      []string{"event_created"},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
 					},
 				},
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId2",
-					Filters: map[string][]string{
-						"event":      []string{},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
 					},
 				},
 			}),
 			ChannelIds: []string{"sampleChannelId1", "sampleChannelId2"},
 		},
 		"multiple subscriptions, one acceptable": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId1",
-					Filters: map[string][]string{
-						"event":      []string{"event_created"},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
 					},
 				},
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId2",
-					Filters: map[string][]string{
-						"event":      []string{"event_deleted"},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_deleted"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
 					},
 				},
 			}),
 			ChannelIds: []string{"sampleChannelId1"},
 		},
 		"multiple subscriptions, neither acceptable": {
-			TestWebhook: getJiraTestData("webhook-issue-created.json"),
+			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId1",
-					Filters: map[string][]string{
-						"event":      []string{"event_deleted"},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_deleted"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
 					},
 				},
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId2",
-					Filters: map[string][]string{
-						"event":      []string{"event_deleted"},
-						"project":    []string{},
-						"issue_type": []string{},
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_deleted"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
 					},
 				},
 			}),
@@ -221,7 +312,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 				return true
 			})).Return(nil)
 
-			actual, err := p.getChannelsSubscribed(tc.TestWebhook)
+			data, err := getJiraTestData(tc.WebhookTestData)
+			assert.Nil(t, err)
+
+			r := bytes.NewReader(data)
+			wh, err := ParseWebhook(r)
+			assert.Nil(t, err)
+
+			actual, err := p.getChannelsSubscribed(wh.(*webhook))
 			assert.Nil(t, err)
 
 			assert.Equal(t, len(tc.ChannelIds), len(actual))

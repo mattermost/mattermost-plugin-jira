@@ -20,55 +20,20 @@ const (
 	PostTypeAssigned = "custom_jira_assigned"
 )
 
-const (
-	eventCreated = uint64(1 << iota)
-	eventCreatedComment
-	eventDeleted
-	eventDeletedComment
-	eventDeletedUnresolved
-	eventUpdatedAssignee
-	eventUpdatedAttachment
-	eventUpdatedComment
-	eventUpdatedDescription
-	eventUpdatedLabels
-	eventUpdatedPriority
-	eventUpdatedRank
-	eventUpdatedReopened
-	eventUpdatedResolved
-	eventUpdatedSprint
-	eventUpdatedStatus
-	eventUpdatedSummary
-	eventUpdatedIssuetype
-)
-
-const maskLegacy = eventCreated |
-	eventUpdatedReopened |
-	eventUpdatedResolved |
-	eventDeletedUnresolved
-
-const maskComments = eventCreatedComment |
-	eventDeletedComment |
-	eventUpdatedComment
-
-const maskDefault = maskLegacy |
-	eventUpdatedAssignee
-
-const maskAll = math.MaxUint64
-
 // The keys listed here can be used in the Jira webhook URL to control what events
 // are posted to Mattermost. A matching parameter with a non-empty value must
 // be added to turn on the event display.
-var eventParamMasks = map[string]uint64{
-	"updated_attachment":  eventUpdatedAttachment,  // updated attachments
-	"updated_description": eventUpdatedDescription, // issue description edited
-	"updated_labels":      eventUpdatedLabels,      // updated labels
-	"updated_prioity":     eventUpdatedPriority,    // changes in priority
-	"updated_rank":        eventUpdatedRank,        // ranked higher or lower
-	"updated_sprint":      eventUpdatedSprint,      // assigned to a different sprint
-	"updated_status":      eventUpdatedStatus,      // transitions like Done, In Progress
-	"updated_summary":     eventUpdatedSummary,     // issue renamed
-	"updated_comments":    maskComments,            // comment events
-	"updated_all":         maskAll,                 // all events
+var eventParamMasks = map[string]StringSet{
+	"updated_attachment":  NewStringSet(eventUpdatedAttachment),  // updated attachments
+	"updated_description": NewStringSet(eventUpdatedDescription), // issue description edited
+	"updated_labels":      NewStringSet(eventUpdatedLabels),      // updated labels
+	"updated_prioity":     NewStringSet(eventUpdatedPriority),    // changes in priority
+	"updated_rank":        NewStringSet(eventUpdatedRank),        // ranked higher or lower
+	"updated_sprint":      NewStringSet(eventUpdatedSprint),      // assigned to a different sprint
+	"updated_status":      NewStringSet(eventUpdatedStatus),      // transitions like Done, In Progress
+	"updated_summary":     NewStringSet(eventUpdatedSummary),     // issue renamed
+	"updated_comments":    commentEvents,                         // comment events
+	"updated_all":         allEvents,                             // all events
 }
 
 var ErrWebhookIgnored = errors.New("Webhook purposely ignored")
@@ -108,12 +73,13 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		return http.StatusBadRequest,
 			errors.New("Request URL: no channel name found")
 	}
-	eventMask := maskDefault
+
+	selectedEvents := defaultEvents.Add()
 	for key, paramMask := range eventParamMasks {
 		if r.FormValue(key) == "" {
 			continue
 		}
-		eventMask = eventMask | paramMask
+		selectedEvents = selectedEvents.Union(paramMask)
 	}
 
 	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelName, false)
@@ -142,7 +108,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 
 	// Send webhook events to subscribed channels. This will work even if there isn't an instance installed.
 	// Skip events we don't need to post
-	if eventMask&wh.EventMask() == 0 {
+	if selectedEvents.Intersection(wh.Events()).Len() == 0 {
 		return http.StatusOK, nil
 	}
 

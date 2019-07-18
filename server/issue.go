@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -110,16 +109,11 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		}
 	}
 
-	project, resp, err := jiraClient.Project.Get(issue.Fields.Project.Key)
+	project, _, err := jiraClient.Project.Get(issue.Fields.Project.Key)
 	if err != nil {
-		message := "failed to get the project, postId: " + create.PostId
-		if resp != nil {
-			bb, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
-			message += ", details:" + string(bb)
-		}
-
-		return http.StatusInternalServerError, errors.WithMessage(err, message)
+		err = userFriendlyJiraError(nil, err)
+		return http.StatusInternalServerError, errors.WithMessagef(err,
+			"failed to get project %q", issue.Fields.Project.Key)
 	}
 
 	if len(create.RequiredFieldsNotCovered) > 0 {
@@ -150,44 +144,34 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 
 	created, resp, err := jiraClient.Issue.Create(issue)
 	if err != nil {
-		message := "failed to create the issue, postId: " + create.PostId + ", channelId: " + channelId
-		if resp != nil {
-			bb, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
-			message += ", details:" + string(bb)
-		}
-
+		err = userFriendlyJiraError(resp, err)
 		// if have an error and Jira tells us there are required fields send user
 		// link to jira with fields already filled in.  Note the user will also see
 		// these errors in Jira.
 		// Note that RequiredFieldsNotCovered is also empty
-		if strings.Contains(message, "is required.") {
-			req := buildCreateQuery(ji, project, issue)
+		if strings.Contains(err.Error(), "is required.") {
+			message := fmt.Sprintf("Failed to create issue. Your Jira project requires fields the plugin does not yet support. "+
+				"[Please create your Jira issue manually](%s) or contact your Jira administrator.\n%v",
+				buildCreateQuery(ji, project, issue).URL.String(),
+				err)
 
-			message = "This plugin did not receive all the required fields from your Jira project and could not complete the request. "
-			reply := &model.Post{
-				Message:   fmt.Sprintf("%v [Please create your Jira issue manually](%v) or contact your Jira administrator.", message, req.URL.String()),
+			_ = api.SendEphemeralPost(mattermostUserId, &model.Post{
+				Message:   message,
 				ChannelId: post.ChannelId,
 				RootId:    rootId,
 				ParentId:  parentId,
 				UserId:    ji.GetPlugin().getConfig().botUserID,
-			}
-
-			_ = api.SendEphemeralPost(mattermostUserId, reply)
-
+			})
 			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprintf(w, "{}")
 			return http.StatusOK, nil
 		}
 
-		// The error was not a fields required error; it was unanticipated. Return it to the client.
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, message)
+		return http.StatusInternalServerError, errors.Errorf("Failed to create issue. %s", err.Error())
 	}
 
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
-		// TODO: Why is this not created.Self?
 		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.GetURL(), created.Key),
 		ChannelId: post.ChannelId,
 		RootId:    rootId,
@@ -270,14 +254,9 @@ func httpAPIGetCreateIssueMetadataForProject(ji Instance, w http.ResponseWriter,
 		ProjectKeys: projectKey,
 	})
 	if err != nil {
-		message := "failed to get CreateIssue metadata"
-		if resp != nil {
-			bb, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
-			message += ", details:" + string(bb)
-		}
+		err = userFriendlyJiraError(resp, err)
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, message)
+			errors.WithMessage(err, "failed to GetCreateIssueMetadata")
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -325,13 +304,9 @@ func httpAPIGetJiraProjectMetadata(ji Instance, w http.ResponseWriter, r *http.R
 
 	cimd, resp, err := jiraClient.Issue.GetCreateMetaWithOptions(nil)
 	if err != nil {
-		message := "failed to get CreateIssue metadata"
-		if resp != nil {
-			bb, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
-			message += ", details:" + string(bb)
-		}
-		return http.StatusInternalServerError, errors.WithMessage(err, message)
+		err = userFriendlyJiraError(resp, err)
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to GetCreateIssueMetadata")
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -411,20 +386,14 @@ func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request)
 
 	jqlString := r.FormValue("jql")
 
-	searchRes, resp, err := jiraClient.Issue.Search(jqlString, &jira.SearchOptions{
+	searchRes, _, err := jiraClient.Issue.Search(jqlString, &jira.SearchOptions{
 		MaxResults: 50,
 		Fields:     []string{"key", "summary"},
 	})
-
 	if err != nil {
-		message := "failed to get search results"
-		if resp != nil {
-			bb, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
-			message += ", details: " + string(bb)
-		}
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, message)
+			errors.WithMessage(userFriendlyJiraError(nil, err),
+				"failed to get search results")
 	}
 
 	// We only need to send down a summary of the data
@@ -508,7 +477,7 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 
 	permalink := getPermaLink(ji, attach.PostId, attach.CurrentTeam)
 
-	permalinkMessage := fmt.Sprintf("*@%s attached a* [message|%s] *from @%s*\n", jiraUser.User.Name, permalink, commentUser.Username)
+	permalinkMessage := fmt.Sprintf("*@%s attached a* [message|%s] *from @%s*\n", jiraUser.User.DisplayName, permalink, commentUser.Username)
 
 	var jiraComment jira.Comment
 	jiraComment.Body = permalinkMessage
@@ -614,21 +583,17 @@ func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issue
 
 	issue, resp, err := jiraClient.Issue.Get(issueKey, nil)
 	if err != nil {
-		message := "request to Jira failed"
-		if resp != nil {
-			if resp.StatusCode == http.StatusNotFound {
-				return nil, errors.New("We couldn't find the issue key, or you do not have the appropriate permissions to view the issue. Please try again or contact your Jira administrator.")
-			}
-			if resp.StatusCode == http.StatusUnauthorized {
-				return nil, errors.New("You do not have the appropriate permissions to view the issue. Please contact your Jira administrator.")
-			}
+		switch {
+		case resp == nil:
+			return nil, errors.WithMessage(userFriendlyJiraError(nil, err),
+				"request to Jira failed")
 
-			// return more detail for an exceptional error case
-			bb, _ := ioutil.ReadAll(resp.Body)
-			_ = resp.Body.Close()
-			message += ", details: " + string(bb)
+		case resp.StatusCode == http.StatusNotFound:
+			return nil, errors.New("We couldn't find the issue key, or you do not have the appropriate permissions to view the issue. Please try again or contact your Jira administrator.")
+
+		case resp.StatusCode == http.StatusUnauthorized:
+			return nil, errors.New("You do not have the appropriate permissions to view the issue. Please contact your Jira administrator.")
 		}
-		return nil, errors.Wrap(err, message)
 	}
 
 	return parseIssue(issue), nil
@@ -775,4 +740,30 @@ func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string
 	msg := fmt.Sprintf("[%s](%v/browse/%v) transitioned to `%s`",
 		issueKey, ji.GetURL(), issueKey, transition.To.Name)
 	return msg, nil
+}
+
+func userFriendlyJiraError(resp *jira.Response, err error) error {
+	jerr, ok := err.(*jira.Error)
+	if !ok {
+		if resp == nil {
+			return err
+		}
+		err = jira.NewJiraError(resp, err)
+		jerr, ok = err.(*jira.Error)
+		if !ok {
+			return err
+		}
+	}
+	if len(jerr.Errors) == 0 && len(jerr.ErrorMessages) == 0 {
+		return err
+	}
+
+	message := ""
+	for k, v := range jerr.Errors {
+		message += fmt.Sprintf(" - %s: %s\n", k, v)
+	}
+	for _, m := range jerr.ErrorMessages {
+		message += fmt.Sprintf(" - %s\n", m)
+	}
+	return errors.New(message)
 }

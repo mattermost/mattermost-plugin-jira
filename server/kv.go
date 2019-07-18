@@ -338,10 +338,12 @@ func (store store) loadJIRAInstance(fullkey string) (Instance, error) {
 				return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
 			}
 		}
+		jci.PluginVersion = manifest.Version
 		jci.Init(store.plugin)
 		return &jci, nil
 
 	case JIRATypeServer:
+		jsi.PluginVersion = manifest.Version
 		jsi.Init(store.plugin)
 		return &jsi, nil
 	}
@@ -376,7 +378,7 @@ func (store store) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser 
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store user, mattermostUserId:%s, Jira user:%s", mattermostUserId, jiraUser.Name))
+			fmt.Sprintf("failed to store user, mattermostUserId:%s, Jira user:%s", mattermostUserId, jiraUser.DisplayName))
 	}()
 
 	err := store.set(keyWithInstance(ji, mattermostUserId), jiraUser)
@@ -384,7 +386,7 @@ func (store store) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser 
 		return err
 	}
 
-	err = store.set(keyWithInstance(ji, jiraUser.Name), mattermostUserId)
+	err = store.set(keyWithInstance(ji, jiraUser.Key()), mattermostUserId)
 	if err != nil {
 		return err
 	}
@@ -398,7 +400,7 @@ func (store store) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser 
 
 	store.plugin.debugf("Stored: Jira user, keys:\n\t%s (%s): %+v\n\t%s (%s): %s",
 		keyWithInstance(ji, mattermostUserId), mattermostUserId, jiraUser,
-		keyWithInstance(ji, jiraUser.Name), jiraUser.Name, mattermostUserId)
+		keyWithInstance(ji, jiraUser.Key()), jiraUser.Key(), mattermostUserId)
 
 	return nil
 }
@@ -412,9 +414,10 @@ func (store store) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser,
 		return JIRAUser{}, errors.WithMessage(err,
 			fmt.Sprintf("failed to load Jira user for mattermostUserId:%s", mattermostUserId))
 	}
-	if len(jiraUser.Key) == 0 {
+	if len(jiraUser.Key()) == 0 {
 		return JIRAUser{}, ErrUserNotFound
 	}
+	jiraUser.PluginVersion = manifest.Version
 	return jiraUser, nil
 }
 
@@ -450,14 +453,14 @@ func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnE
 		return appErr
 	}
 
-	appErr = store.plugin.API.KVDelete(keyWithInstance(ji, jiraUser.Name))
+	appErr = store.plugin.API.KVDelete(keyWithInstance(ji, jiraUser.Key()))
 	if appErr != nil {
 		return appErr
 	}
 
 	store.plugin.debugf("Deleted: user, keys: %s(%s), %s(%s)",
 		mattermostUserId, keyWithInstance(ji, mattermostUserId),
-		jiraUser.Name, keyWithInstance(ji, jiraUser.Name))
+		jiraUser.Key(), keyWithInstance(ji, jiraUser.Key()))
 	return nil
 }
 

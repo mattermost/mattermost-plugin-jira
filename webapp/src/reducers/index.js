@@ -116,6 +116,16 @@ const channelSubscripitons = (state = {}, action) => {
         nextState[action.channelId] = action.data;
         return nextState;
     }
+    case ActionTypes.DELETED_CHANNEL_SUBSCRIPTION: {
+        const sub = action.data;
+        const newSubs = state[sub.channel_id].concat([]);
+        newSubs.splice(newSubs.findIndex((s) => s.id === sub.id), 1);
+
+        return {
+            ...state,
+            [sub.channel_id]: newSubs,
+        };
+    }
     default:
         return state;
     }

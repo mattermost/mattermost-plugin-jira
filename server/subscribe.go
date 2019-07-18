@@ -23,61 +23,59 @@ const (
 	JIRA_SUBSCRIPTIONS_KEY = "jirasub"
 )
 
+type SubscriptionFilters struct {
+	Events     StringSet `json:"events"`
+	Projects   StringSet `json:"projects"`
+	IssueTypes StringSet `json:"issue_types"`
+}
+
 type ChannelSubscription struct {
 	Id        string              `json:"id"`
 	ChannelId string              `json:"channel_id"`
-	Filters   map[string][]string `json:"filters"`
+	Filters   SubscriptionFilters `json:"filters"`
 }
 
 type ChannelSubscriptions struct {
 	ById          map[string]ChannelSubscription `json:"by_id"`
-	IdByChannelId map[string][]string            `json:"id_by_channel_id"`
-	IdByEvent     map[string][]string            `json:"id_by_event"`
+	IdByChannelId map[string]StringSet           `json:"id_by_channel_id"`
+	IdByEvent     map[string]StringSet           `json:"id_by_event"`
 }
 
 func NewChannelSubscriptions() *ChannelSubscriptions {
 	return &ChannelSubscriptions{
 		ById:          map[string]ChannelSubscription{},
-		IdByChannelId: map[string][]string{},
-		IdByEvent:     map[string][]string{},
+		IdByChannelId: map[string]StringSet{},
+		IdByEvent:     map[string]StringSet{},
 	}
 }
 
 func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
 	delete(s.ById, sub.Id)
 
-	remove := func(ids []string, idToRemove string) []string {
-		for i, id := range ids {
-			if id == idToRemove {
-				ids[i] = ids[len(ids)-1]
-				return ids[:len(ids)-1]
-			}
-		}
-		return ids
-	}
+	s.IdByChannelId[sub.ChannelId] = s.IdByChannelId[sub.ChannelId].Subtract(sub.Id)
 
-	s.IdByChannelId[sub.ChannelId] = remove(s.IdByChannelId[sub.ChannelId], sub.Id)
-
-	for _, event := range sub.Filters["events"] {
-		s.IdByEvent[event] = remove(s.IdByEvent[event], sub.Id)
+	for _, event := range sub.Filters.Events.Elems(false) {
+		s.IdByEvent[event] = s.IdByEvent[event].Subtract(sub.Id)
 	}
 }
 
 func (s *ChannelSubscriptions) add(newSubscription *ChannelSubscription) {
 	s.ById[newSubscription.Id] = *newSubscription
-	s.IdByChannelId[newSubscription.ChannelId] = append(s.IdByChannelId[newSubscription.ChannelId], newSubscription.Id)
-	for _, event := range newSubscription.Filters["events"] {
-		s.IdByEvent[event] = append(s.IdByEvent[event], newSubscription.Id)
+	s.IdByChannelId[newSubscription.ChannelId] = s.IdByChannelId[newSubscription.ChannelId].Add(newSubscription.Id)
+	for _, event := range newSubscription.Filters.Events.Elems(false) {
+		s.IdByEvent[event] = s.IdByEvent[event].Add(newSubscription.Id)
 	}
 }
 
 type Subscriptions struct {
-	Channel *ChannelSubscriptions
+	PluginVersion string
+	Channel       *ChannelSubscriptions
 }
 
 func NewSubscriptions() *Subscriptions {
 	return &Subscriptions{
-		Channel: NewChannelSubscriptions(),
+		PluginVersion: manifest.Version,
+		Channel:       NewChannelSubscriptions(),
 	}
 }
 
@@ -88,6 +86,7 @@ func SubscriptionsFromJson(bytes []byte) (*Subscriptions, error) {
 		if unmarshalErr != nil {
 			return nil, unmarshalErr
 		}
+		subs.PluginVersion = manifest.Version
 	} else {
 		subs = NewSubscriptions()
 	}
@@ -99,71 +98,47 @@ func (p *Plugin) getUserID() string {
 	return p.getConfig().botUserID
 }
 
-func (p *Plugin) getChannelsSubscribed(jwh *JiraWebhook) ([]string, error) {
+func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
+	jwh := wh.JiraWebhook
 	subs, err := p.getSubscriptions()
 	if err != nil {
 		return nil, err
 	}
-	eventEnums := jwh.toEventEnums()
 
+	webhookEvents := wh.Events()
 	subIds := subs.Channel.ById
 
 	channelIds := []string{}
 	for _, sub := range subIds {
-		acceptable := true
-		for field, acceptableValues := range sub.Filters {
-			// Blank in acceptable values means all values are acceptable
-			if len(acceptableValues) == 0 {
-				continue
-			}
-			switch field {
-			case "event":
-				found := false
-				for _, acceptableEvent := range acceptableValues {
-					for enum := range eventEnums {
-						if acceptableEvent == enum {
-							found = true
-							break
-						}
+		foundEvent := false
+		eventTypes := sub.Filters.Events
+		if eventTypes.Intersection(webhookEvents).Len() > 0 {
+			foundEvent = true
+		} else if eventTypes.ContainsAny(eventUpdatedAny) {
+			if webhookEvents.Intersection(updateEvents).Len() > 0 {
+				foundEvent = true
+			} else {
+				for _, eventType := range webhookEvents.Elems(false) {
+					if strings.HasPrefix(eventType, "event_updated_customfield") {
+						foundEvent = true
 					}
-					if found {
-						break
-					}
-				}
-				if !found {
-					acceptable = false
-					break
-				}
-			case "project":
-				found := false
-				for _, acceptableProject := range acceptableValues {
-					if acceptableProject == jwh.Issue.Fields.Project.Key {
-						found = true
-						break
-					}
-				}
-				if !found {
-					acceptable = false
-					break
-				}
-			case "issue_type":
-				found := false
-				for _, acceptableIssueType := range acceptableValues {
-					if acceptableIssueType == jwh.Issue.Fields.Type.ID {
-						found = true
-						break
-					}
-				}
-				if !found {
-					acceptable = false
-					break
 				}
 			}
 		}
 
-		if acceptable {
-			channelIds = append(channelIds, sub.ChannelId)
+		if !foundEvent {
+			continue
 		}
+
+		if !sub.Filters.IssueTypes.ContainsAny(jwh.Issue.Fields.Type.ID) {
+			continue
+		}
+
+		if !sub.Filters.Projects.ContainsAny(jwh.Issue.Fields.Project.Key) {
+			continue
+		}
+
+		channelIds = append(channelIds, sub.ChannelId)
 	}
 
 	return channelIds, nil
@@ -184,7 +159,7 @@ func (p *Plugin) getSubscriptionsForChannel(channelId string) ([]ChannelSubscrip
 	}
 
 	channelSubscriptions := []ChannelSubscription{}
-	for _, channelSubscriptionId := range subs.Channel.IdByChannelId[channelId] {
+	for _, channelSubscriptionId := range subs.Channel.IdByChannelId[channelId].Elems(false) {
 		channelSubscriptions = append(channelSubscriptions, subs.Channel.ById[channelSubscriptionId])
 	}
 
