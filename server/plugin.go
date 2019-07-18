@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"text/template"
@@ -25,17 +24,15 @@ const (
 	botUserName    = "jira"
 	botDisplayName = "Jira"
 	botDescription = "Created by the Jira Plugin."
+
+	// Move these two to the plugin settings if admins need to adjust them.
+	WebhookMaxProcsPerServer = 20
+	WebhookBufferSize        = 10000
 )
 
 type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
 	EnableJiraUI bool `json:"enablejiraui"`
-
-	// Maximum # of Webhook Processors Per Server
-	WebhookMaxProcsPerServer string `json:"webhookmaxprocsperserver"`
-
-	// Size of the Webhook Processing Buffer
-	WebhookBufferSize string `json:"webhookbuffersize"`
 
 	// Legacy 1.x Webhook secret
 	Secret string `json:"secret"`
@@ -156,18 +153,10 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	// Create our queue of webhook events waiting to be processed.
-	bufSize, err := strconv.Atoi(p.getConfig().WebhookBufferSize)
-	if err != nil {
-		return errors.WithMessage(err, "OnActivate: error parsing config setting WebhookBufferSize")
-	}
-	p.webhookQueue = make(chan []byte, bufSize)
+	p.webhookQueue = make(chan []byte, WebhookBufferSize)
 
 	// Spin up our webhook workers.
-	maxProcs, err := strconv.Atoi(p.getConfig().WebhookMaxProcsPerServer)
-	if err != nil {
-		return errors.WithMessage(err, "OnActivate: error parsing config setting WebhookMaxProcsPerServer")
-	}
-	for i := 0; i < maxProcs; i++ {
+	for i := 0; i < WebhookMaxProcsPerServer; i++ {
 		go webhookWorker{i, p, p.webhookQueue}.work()
 	}
 
