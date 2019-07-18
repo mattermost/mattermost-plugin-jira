@@ -302,22 +302,9 @@ func (p *Plugin) hasPermissionToManageSubscription(userId, channelId string) err
 			return errors.Wrap(err, "could not load jira user")
 		}
 
-		jiraClient, err := ji.GetJIRAClient(jiraUser)
+		groups, err := ji.GetUserGroups(jiraUser)
 		if err != nil {
-			return errors.Wrap(err, "could not get jira client")
-		}
-
-		req, err := jiraClient.NewRequest("GET", fmt.Sprintf("rest/api/3/user/groups?key=%s", jiraUser.Key()), nil)
-		if err != nil {
-			return errors.Wrap(err, "error creating request")
-		}
-
-		var groups []*jira.UserGroup
-		resp, err := jiraClient.Do(req, &groups)
-		if err != nil {
-			body, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
-			return errors.Wrap(err, "error in request to get user groups, body:"+string(body))
+			return errors.Wrap(err, "could not get jira user groups")
 		}
 
 		allowedGroups := strings.Split(cfg.GroupsAllowedToEditJiraSubscriptions, ",")
