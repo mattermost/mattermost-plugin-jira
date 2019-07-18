@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"path"
 
-	"github.com/andygrunwald/go-jira"
-	"github.com/dgrijalva/jwt-go"
+	jira "github.com/andygrunwald/go-jira"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -52,28 +52,29 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 	if !ok {
 		return http.StatusBadRequest, errors.New("invalid JWT claims")
 	}
-	context, ok := claims["context"].(map[string]interface{})
+	accountId, ok := claims["sub"].(string)
 	if !ok {
-		return http.StatusBadRequest, errors.New("invalid JWT claim context")
-	}
-	user, ok := context["user"].(map[string]interface{})
-	if !ok {
-		return http.StatusBadRequest, errors.New("invalid JWT: no user data")
+		return http.StatusBadRequest, errors.New("invalid JWT claim sub")
 	}
 
-	accountId, _ := user["accountId"].(string)
-	displayName, _ := user["displayName"].(string)
-	userKey, _ := user["userKey"].(string)
-	username, _ := user["username"].(string)
+	jiraClient, _, err := jci.getJIRAClientForUser(JIRAUser{User: jira.User{AccountID: accountId}})
+	if err != nil {
+		return http.StatusBadRequest, errors.Errorf("could not get client for user, err: %v", err)
+	}
+
+	jUser, _, err := jiraClient.User.GetSelf()
+	if err != nil {
+		return http.StatusBadRequest, errors.Errorf("could not get user info for client, err: %v", err)
+	}
 
 	mmToken := r.Form.Get(argMMToken)
 	uinfo := JIRAUser{
 		UserKey: accountId,
 		User: jira.User{
 			AccountID:   accountId,
-			DisplayName: displayName,
-			Key:         userKey,
-			Name:        username,
+			Key:         jUser.Key,
+			Name:        jUser.Name,
+			DisplayName: jUser.DisplayName,
 		},
 	}
 	mattermostUserId := r.Header.Get("Mattermost-User-ID")
@@ -146,7 +147,7 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 		ArgJiraJWT:            argJiraJWT,
 		ArgMMToken:            argMMToken,
 		MMToken:               mmToken,
-		JiraDisplayName:       displayName + " (" + username + ")",
+		JiraDisplayName:       jUser.DisplayName + " (" + jUser.Name + ")",
 		MattermostDisplayName: mmDisplayName,
 	})
 }
