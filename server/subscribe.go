@@ -146,9 +146,15 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
 }
 
 func (p *Plugin) getSubscriptions() (*Subscriptions, error) {
-	data, err := p.API.KVGet(JIRA_SUBSCRIPTIONS_KEY)
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
 		return nil, err
+	}
+
+	subKey := keyWithInstance(ji, JIRA_SUBSCRIPTIONS_KEY)
+	data, appErr := p.API.KVGet(subKey)
+	if appErr != nil {
+		return nil, appErr
 	}
 	return SubscriptionsFromJson(data)
 }
@@ -182,7 +188,13 @@ func (p *Plugin) getChannelSubscription(subscriptionId string) (*ChannelSubscrip
 }
 
 func (p *Plugin) removeChannelSubscription(subscriptionId string) error {
-	return p.atomicModify(JIRA_SUBSCRIPTIONS_KEY, func(initialBytes []byte) ([]byte, error) {
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return err
+	}
+
+	subKey := keyWithInstance(ji, JIRA_SUBSCRIPTIONS_KEY)
+	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
 		subs, err := SubscriptionsFromJson(initialBytes)
 		if err != nil {
 			return nil, err
@@ -205,7 +217,13 @@ func (p *Plugin) removeChannelSubscription(subscriptionId string) error {
 }
 
 func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) error {
-	return p.atomicModify(JIRA_SUBSCRIPTIONS_KEY, func(initialBytes []byte) ([]byte, error) {
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return err
+	}
+
+	subKey := keyWithInstance(ji, JIRA_SUBSCRIPTIONS_KEY)
+	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
 		subs, err := SubscriptionsFromJson(initialBytes)
 		if err != nil {
 			return nil, err
@@ -224,7 +242,13 @@ func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) er
 }
 
 func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscription) error {
-	return p.atomicModify(JIRA_SUBSCRIPTIONS_KEY, func(initialBytes []byte) ([]byte, error) {
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return err
+	}
+
+	subKey := keyWithInstance(ji, JIRA_SUBSCRIPTIONS_KEY)
+	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
 		subs, err := SubscriptionsFromJson(initialBytes)
 		if err != nil {
 			return nil, err
@@ -307,7 +331,7 @@ func (p *Plugin) hasPermissionToManageSubscription(userId, channelId string) err
 			return errors.Wrap(err, "could not get jira client")
 		}
 
-		req, err := jiraClient.NewRequest("GET", "rest/api/3/user/groups?key="+jiraUser.Key, nil)
+		req, err := jiraClient.NewRequest("GET", fmt.Sprintf("rest/api/3/user/groups?key=%s", jiraUser.Key()), nil)
 		if err != nil {
 			return errors.Wrap(err, "error creating request")
 		}

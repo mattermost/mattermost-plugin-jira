@@ -48,12 +48,13 @@ func checkNotSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 			assert.Nil(t, err)
 		}
 
+		subKey := keyWithMockInstance(JIRA_SUBSCRIPTIONS_KEY)
 		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
-		api.On("KVGet", JIRA_SUBSCRIPTIONS_KEY).Return(existingBytes, nil)
+		api.On("KVGet", subKey).Return(existingBytes, nil)
 
 		// Temp changes to revert when we can use KVCompareAndSet
-		//api.On("KVCompareAndSet", JIRA_SUBSCRIPTIONS_KEY, existingBytes, mock.MatchedBy(func(data []byte) bool {
-		api.On("KVSet", JIRA_SUBSCRIPTIONS_KEY, mock.MatchedBy(func(data []byte) bool {
+		//api.On("KVCompareAndSet", subKey, existingBytes, mock.MatchedBy(func(data []byte) bool {
+		api.On("KVSet", subKey, mock.MatchedBy(func(data []byte) bool {
 			t.Log(string(data))
 			var savedSubs Subscriptions
 			err := json.Unmarshal(data, &savedSubs)
@@ -84,11 +85,12 @@ func checkHasSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 
 		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
 
-		api.On("KVGet", JIRA_SUBSCRIPTIONS_KEY).Return(existingBytes, nil)
+		subKey := keyWithMockInstance(JIRA_SUBSCRIPTIONS_KEY)
+		api.On("KVGet", subKey).Return(existingBytes, nil)
 
 		// Temp changes to revert when we can use KVCompareAndSet
-		//api.On("KVCompareAndSet", JIRA_SUBSCRIPTIONS_KEY, existingBytes, mock.MatchedBy(func(data []byte) bool {
-		api.On("KVSet", JIRA_SUBSCRIPTIONS_KEY, mock.MatchedBy(func(data []byte) bool {
+		//api.On("KVCompareAndSet", subKey, existingBytes, mock.MatchedBy(func(data []byte) bool {
+		api.On("KVSet", subKey, mock.MatchedBy(func(data []byte) bool {
 			t.Log(string(data))
 			var savedSubs Subscriptions
 			err := json.Unmarshal(data, &savedSubs)
@@ -132,7 +134,9 @@ func hasSubscriptions(subscriptions []ChannelSubscription, t *testing.T) func(ap
 		assert.Nil(t, err)
 
 		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
-		api.On("KVGet", JIRA_SUBSCRIPTIONS_KEY).Return(existingBytes, nil)
+
+		subKey := keyWithMockInstance(JIRA_SUBSCRIPTIONS_KEY)
+		api.On("KVGet", subKey).Return(existingBytes, nil)
 	}
 }
 
@@ -299,6 +303,7 @@ func TestSubscribe(t *testing.T) {
 				conf.Secret = "somesecret"
 			})
 			p.SetAPI(api)
+			p.currentInstanceStore = mockCurrentInstanceStore{&p}
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("POST", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
@@ -339,14 +344,16 @@ func TestDeleteSubscription(t *testing.T) {
 					ChannelSubscription{
 						Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
 						ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
-						Filters: map[string][]string{
-							"events":  []string{"jira:issue_created"},
-							"project": []string{"myproject"},
+						Filters: SubscriptionFilters{
+							Events:   NewStringSet("jira:issue_created"),
+							Projects: NewStringSet("myproject"),
 						},
 					},
 				}))
 				assert.Nil(t, err)
-				api.On("KVGet", JIRA_SUBSCRIPTIONS_KEY).Return(existingBytes, nil)
+
+				subKey := keyWithMockInstance(JIRA_SUBSCRIPTIONS_KEY)
+				api.On("KVGet", subKey).Return(existingBytes, nil)
 				api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(false)
 			},
 		},
@@ -436,6 +443,7 @@ func TestDeleteSubscription(t *testing.T) {
 				conf.Secret = "somesecret"
 			})
 			p.SetAPI(api)
+			p.currentInstanceStore = mockCurrentInstanceStore{&p}
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("DELETE", "/api/v2/subscriptions/channel/"+tc.subscriptionId, nil)
@@ -563,6 +571,7 @@ func TestEditSubscription(t *testing.T) {
 				conf.Secret = "somesecret"
 			})
 			p.SetAPI(api)
+			p.currentInstanceStore = mockCurrentInstanceStore{&p}
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("PUT", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
@@ -746,6 +755,7 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 				conf.Secret = "somesecret"
 			})
 			p.SetAPI(api)
+			p.currentInstanceStore = mockCurrentInstanceStore{&p}
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("GET", "/api/v2/subscriptions/channel/"+tc.channelId, nil)

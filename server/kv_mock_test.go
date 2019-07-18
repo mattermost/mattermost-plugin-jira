@@ -4,6 +4,9 @@
 package main
 
 import (
+	"crypto/md5"
+	"fmt"
+
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 )
@@ -14,8 +17,18 @@ type jiraTestInstance struct {
 
 var _ Instance = (*jiraTestInstance)(nil)
 
+const (
+	mockCurrentInstanceURL = "http://jiraTestInstanceURL.some"
+)
+
+func keyWithMockInstance(key string) string {
+	h := md5.New()
+	fmt.Fprintf(h, "%s/%s", mockCurrentInstanceURL, key)
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
 func (jti jiraTestInstance) GetURL() string {
-	return "http://jiraTestInstanceURL.some"
+	return mockCurrentInstanceURL
 }
 func (jti jiraTestInstance) GetMattermostKey() string {
 	return "jiraTestInstanceMattermostKey"

@@ -303,15 +303,15 @@ func TestGetChannelsSubscribed(t *testing.T) {
 				conf.Secret = "somesecret"
 			})
 			p.SetAPI(api)
+			p.currentInstanceStore = mockCurrentInstanceStore{p}
 
-			var existingBytes []byte
-			var err error
-			existingBytes, err = json.Marshal(tc.Subs)
+			subscriptionBytes, err := json.Marshal(tc.Subs)
 			assert.Nil(t, err)
 
-			api.On("KVGet", JIRA_SUBSCRIPTIONS_KEY).Return(existingBytes, nil)
+			subKey := keyWithMockInstance(JIRA_SUBSCRIPTIONS_KEY)
+			api.On("KVGet", subKey).Return(subscriptionBytes, nil)
 
-			api.On("KVSet", JIRA_SUBSCRIPTIONS_KEY, mock.MatchedBy(func(data []byte) bool {
+			api.On("KVSet", subKey, mock.MatchedBy(func(data []byte) bool {
 				return true
 			})).Return(nil)
 
