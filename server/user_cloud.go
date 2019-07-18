@@ -54,7 +54,7 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 	}
 	accountId, ok := claims["sub"].(string)
 	if !ok {
-		return http.StatusBadRequest, errors.New("invalid JWT sub")
+		return http.StatusBadRequest, errors.New("invalid JWT claim sub")
 	}
 
 	jiraClient, _, err := jci.getJIRAClientForUser(JIRAUser{User: jira.User{AccountID: accountId}})

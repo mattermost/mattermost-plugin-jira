@@ -33,4 +33,5 @@ require (
 // Workaround for https://github.com/golang/go/issues/30831 and fallout.
 replace github.com/golang/lint => github.com/golang/lint v0.0.0-20190227174305-8f45f776aaf1
 
+// Workaround for Jira GDPR change. Remove this and update golang.org/x/oauth2 when it's fixed.
 replace golang.org/x/oauth2 => github.com/cpoile/oauth2 v0.0.0-20190717235208-10945bd
