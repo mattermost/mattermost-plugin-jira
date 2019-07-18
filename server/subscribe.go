@@ -7,9 +7,11 @@ import (
 	"crypto/subtle"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
+	"github.com/andygrunwald/go-jira"
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/pkg/errors"
 )
@@ -244,6 +246,89 @@ func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscripti
 	})
 }
 
+func inAllowedGroup(inGroups []*jira.UserGroup, allowedGroups []string) bool {
+	for _, inGroup := range inGroups {
+		for _, allowedGroup := range allowedGroups {
+			if strings.TrimSpace(inGroup.Name) == strings.TrimSpace(allowedGroup) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// hasPermissionToManageSubscription checks if MM user has permission to manage subscriptions in given channel.
+// returns nil if the user has permission and a descriptive error otherwise.
+func (p *Plugin) hasPermissionToManageSubscription(userId, channelId string) error {
+	cfg := p.getConfig()
+
+	switch cfg.RolesAllowedToEditJiraSubscriptions {
+	case "team_admin":
+		if !p.API.HasPermissionToChannel(userId, channelId, model.PERMISSION_MANAGE_TEAM) {
+			return errors.New("is not team admin")
+		}
+	case "channel_admin":
+		channel, appErr := p.API.GetChannel(channelId)
+		if appErr != nil {
+			return errors.Wrap(appErr, "unable to get channel to check permission")
+		}
+		switch channel.Type {
+		case model.CHANNEL_OPEN:
+			if !p.API.HasPermissionToChannel(userId, channelId, model.PERMISSION_MANAGE_PUBLIC_CHANNEL_PROPERTIES) {
+				return errors.New("is not channel admin")
+			}
+		case model.CHANNEL_PRIVATE:
+			if !p.API.HasPermissionToChannel(userId, channelId, model.PERMISSION_MANAGE_PRIVATE_CHANNEL_PROPERTIES) {
+				return errors.New("is not channel admin")
+			}
+		default:
+			return errors.New("can only subscribe in public and private channels")
+		}
+	case "users":
+	default:
+		if !p.API.HasPermissionTo(userId, model.PERMISSION_MANAGE_SYSTEM) {
+			return errors.New("is not system admin")
+		}
+	}
+
+	if cfg.GroupsAllowedToEditJiraSubscriptions != "" {
+		ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+		if err != nil {
+			return errors.Wrap(err, "could not load jira instance")
+		}
+
+		jiraUser, err := p.userStore.LoadJIRAUser(ji, userId)
+		if err != nil {
+			return errors.Wrap(err, "could not load jira user")
+		}
+
+		jiraClient, err := ji.GetJIRAClient(jiraUser)
+		if err != nil {
+			return errors.Wrap(err, "could not get jira client")
+		}
+
+		req, err := jiraClient.NewRequest("GET", "rest/api/3/user/groups?key="+jiraUser.Key, nil)
+		if err != nil {
+			return errors.Wrap(err, "error creating request")
+		}
+
+		var groups []*jira.UserGroup
+		resp, err := jiraClient.Do(req, &groups)
+		if err != nil {
+			body, _ := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+			return errors.Wrap(err, "error in request to get user groups, body:"+string(body))
+		}
+
+		allowedGroups := strings.Split(cfg.GroupsAllowedToEditJiraSubscriptions, ",")
+		if !inAllowedGroup(groups, allowedGroups) {
+			return errors.New("not in allowed jira user groups")
+		}
+	}
+
+	return nil
+}
+
 func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]byte, error)) error {
 	readModify := func() ([]byte, []byte, error) {
 		initialBytes, appErr := p.API.KVGet(key)
@@ -320,12 +405,7 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 	return http.StatusOK, nil
 }
 
-func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
+func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
 	subscription := ChannelSubscription{}
 	err := json.NewDecoder(r.Body).Decode(&subscription)
 	if err != nil {
@@ -341,6 +421,10 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 		return http.StatusForbidden, errors.New("Not a member of the channel specified")
 	}
 
+	if err := p.hasPermissionToManageSubscription(mattermostUserId, subscription.ChannelId); err != nil {
+		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
+	}
+
 	if err := p.addChannelSubscription(&subscription); err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -351,12 +435,7 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 	return http.StatusOK, nil
 }
 
-func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
+func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
 	subscription := ChannelSubscription{}
 	err := json.NewDecoder(r.Body).Decode(&subscription)
 	if err != nil {
@@ -366,6 +445,10 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 	if len(subscription.ChannelId) != 26 ||
 		len(subscription.Id) != 26 {
 		return http.StatusBadRequest, fmt.Errorf("Channel subscription invalid")
+	}
+
+	if err := p.hasPermissionToManageSubscription(mattermostUserId, subscription.ChannelId); err != nil {
+		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
 	}
 
 	if _, err := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); err != nil {
@@ -382,12 +465,7 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 	return http.StatusOK, nil
 }
 
-func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
+func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
 	subscriptionId := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionsChannel+"/")
 	if len(subscriptionId) != 26 {
 		return http.StatusBadRequest, errors.New("bad subscription id")
@@ -396,6 +474,10 @@ func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 	subscription, err := p.getChannelSubscription(subscriptionId)
 	if err != nil {
 		return http.StatusBadRequest, errors.Wrap(err, "bad subscription id")
+	}
+
+	if err := p.hasPermissionToManageSubscription(mattermostUserId, subscription.ChannelId); err != nil {
+		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
 	}
 
 	if _, err := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); err != nil {
@@ -412,12 +494,7 @@ func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 	return http.StatusOK, nil
 }
 
-func httpChannelGetSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
+func httpChannelGetSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
 	channelId := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionsChannel+"/")
 	if len(channelId) != 26 {
 		return http.StatusBadRequest, errors.New("bad channel id")
@@ -425,6 +502,10 @@ func httpChannelGetSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Reque
 
 	if _, err := p.API.GetChannelMember(channelId, mattermostUserId); err != nil {
 		return http.StatusForbidden, errors.New("Not a member of the channel specified")
+	}
+
+	if err := p.hasPermissionToManageSubscription(mattermostUserId, channelId); err != nil {
+		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
 	}
 
 	subscriptions, err := p.getSubscriptionsForChannel(channelId)
@@ -444,15 +525,20 @@ func httpChannelGetSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Reque
 }
 
 func httpChannelSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
 	switch r.Method {
 	case http.MethodPost:
-		return httpChannelCreateSubscription(p, w, r)
+		return httpChannelCreateSubscription(p, w, r, mattermostUserId)
 	case http.MethodDelete:
-		return httpChannelDeleteSubscription(p, w, r)
+		return httpChannelDeleteSubscription(p, w, r, mattermostUserId)
 	case http.MethodGet:
-		return httpChannelGetSubscriptions(p, w, r)
+		return httpChannelGetSubscriptions(p, w, r, mattermostUserId)
 	case http.MethodPut:
-		return httpChannelEditSubscription(p, w, r)
+		return httpChannelEditSubscription(p, w, r, mattermostUserId)
 	default:
 		return http.StatusMethodNotAllowed, fmt.Errorf("Request: " + r.Method + " is not allowed.")
 	}
