@@ -24,6 +24,10 @@ const (
 	botUserName    = "jira"
 	botDisplayName = "Jira"
 	botDescription = "Created by the Jira Plugin."
+
+	// Move these two to the plugin settings if admins need to adjust them.
+	WebhookMaxProcsPerServer = 20
+	WebhookBufferSize        = 10000
 )
 
 type externalConfig struct {
@@ -73,6 +77,9 @@ type Plugin struct {
 
 	// templates are loaded on startup
 	templates map[string]*template.Template
+
+	// channel to distribute work to the webhook processors
+	webhookQueue chan []byte
 }
 
 func (p *Plugin) getConfig() config {
@@ -149,6 +156,14 @@ func (p *Plugin) OnActivate() error {
 	err = p.API.RegisterCommand(getCommand())
 	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to register command")
+	}
+
+	// Create our queue of webhook events waiting to be processed.
+	p.webhookQueue = make(chan []byte, WebhookBufferSize)
+
+	// Spin up our webhook workers.
+	for i := 0; i < WebhookMaxProcsPerServer; i++ {
+		go webhookWorker{i, p, p.webhookQueue}.work()
 	}
 
 	return nil

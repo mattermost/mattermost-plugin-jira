@@ -6,6 +6,7 @@ package main
 import (
 	"crypto/subtle"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -85,7 +86,12 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		return appErr.StatusCode, appErr
 	}
 
-	wh, err := ParseWebhook(r.Body)
+	bb, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	wh, err := ParseWebhook(bb)
 	if err == ErrWebhookIgnored {
 		return http.StatusOK, nil
 	}
