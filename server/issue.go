@@ -477,7 +477,7 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 
 	permalink := getPermaLink(ji, attach.PostId, attach.CurrentTeam)
 
-	permalinkMessage := fmt.Sprintf("*@%s attached a* [message|%s] *from @%s*\n", jiraUser.User.Name, permalink, commentUser.Username)
+	permalinkMessage := fmt.Sprintf("*@%s attached a* [message|%s] *from @%s*\n", jiraUser.User.DisplayName, permalink, commentUser.Username)
 
 	var jiraComment jira.Comment
 	jiraComment.Body = permalinkMessage

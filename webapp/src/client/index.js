@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {Client4} from 'mattermost-redux/client';
+import {ClientError} from 'mattermost-redux/client/client4';
 
 export const doFetch = async (url, options) => {
     const {data} = await doFetchWithResponse(url, options);
@@ -28,5 +29,9 @@ export const doFetchWithResponse = async (url, options = {}) => {
 
     data = await response.text();
 
-    throw new Error(data);
+    throw new ClientError(Client4.url, {
+        message: data || '',
+        status_code: response.status,
+        url,
+    });
 };

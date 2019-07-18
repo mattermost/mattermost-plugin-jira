@@ -130,7 +130,7 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 		return p.responsef(header, "Could not complete the **disconnection** request. Error: %v", err)
 	}
 
-	return p.responsef(header, "You have successfully disconnected your Jira account (**%s**).", jiraUser.Name)
+	return p.responsef(header, "You have successfully disconnected your Jira account (**%s**).", jiraUser.DisplayName)
 }
 
 func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -522,15 +522,16 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 			resp += fmt.Sprintf(" * OAuth1a access secret: XXX (%v bytes)\n", len(uinfo.JIRAUser.Oauth1AccessSecret))
 		}
 
-		resp += fmt.Sprintf("\nJira user: %s\n", uinfo.JIRAUser.DisplayName)
-		resp += fmt.Sprintf(" * Self: %s\n", uinfo.JIRAUser.Self)
-		resp += fmt.Sprintf(" * AccountID: %s\n", uinfo.JIRAUser.AccountID)
-		resp += fmt.Sprintf(" * Name (deprecated): %s\n", uinfo.JIRAUser.Name)
-		resp += fmt.Sprintf(" * Key (deprecated): %s\n", uinfo.JIRAUser.Key)
-		resp += fmt.Sprintf(" * EmailAddress: %s\n", uinfo.JIRAUser.EmailAddress)
-		resp += fmt.Sprintf(" * Active: %v\n", uinfo.JIRAUser.Active)
-		resp += fmt.Sprintf(" * TimeZone: %v\n", uinfo.JIRAUser.TimeZone)
-		resp += fmt.Sprintf(" * ApplicationKeys: %s\n", uinfo.JIRAUser.ApplicationKeys)
+		juser := uinfo.JIRAUser.User
+		resp += fmt.Sprintf("\nJira user: %s\n", juser.DisplayName)
+		resp += fmt.Sprintf(" * Self: %s\n", juser.Self)
+		resp += fmt.Sprintf(" * AccountID: %s\n", juser.AccountID)
+		resp += fmt.Sprintf(" * Name (deprecated): %s\n", juser.Name)
+		resp += fmt.Sprintf(" * Key (deprecated): %s\n", juser.Key)
+		resp += fmt.Sprintf(" * EmailAddress: %s\n", juser.EmailAddress)
+		resp += fmt.Sprintf(" * Active: %v\n", juser.Active)
+		resp += fmt.Sprintf(" * TimeZone: %v\n", juser.TimeZone)
+		resp += fmt.Sprintf(" * ApplicationKeys: %s\n", juser.ApplicationKeys)
 	}
 	return p.responsef(header, resp)
 }

@@ -14,20 +14,21 @@ import (
 )
 
 type Webhook interface {
-	EventMask() uint64
+	Events() StringSet
 	PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error)
 	PostNotifications(p *Plugin) ([]*model.Post, int, error)
 }
 
 type webhookField struct {
 	name string
+	id   string
 	from string
 	to   string
 }
 
 type webhook struct {
 	*JiraWebhook
-	eventMask     uint64
+	eventTypes    StringSet
 	headline      string
 	text          string
 	fields        []*model.SlackAttachmentField
@@ -43,8 +44,8 @@ type webhookNotification struct {
 	commentSelf   string
 }
 
-func (wh *webhook) EventMask() uint64 {
-	return wh.eventMask
+func (wh *webhook) Events() StringSet {
+	return wh.eventTypes
 }
 
 func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error) {
@@ -122,7 +123,9 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 		}
 		// If this is a comment-related webhook, we need to check if they have permissions to read that.
 		// Otherwise, check if they can view the issue.
-		if wh.eventMask&maskComments != 0 {
+
+		isCommentEvent := wh.Events().Intersection(commentEvents).Len() > 0
+		if isCommentEvent {
 			req, err2 := jiraClient.NewRequest("GET", notification.commentSelf, nil)
 			if err2 != nil {
 				p.errorf("PostNotifications: error while creating NewRequest, err: %v", err2)
@@ -159,10 +162,10 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 	return posts, http.StatusOK, nil
 }
 
-func newWebhook(jwh *JiraWebhook, eventMask uint64, format string, args ...interface{}) *webhook {
+func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...interface{}) *webhook {
 	return &webhook{
 		JiraWebhook: jwh,
-		eventMask:   eventMask,
+		eventTypes:  NewStringSet(eventType),
 		headline:    jwh.mdUser() + " " + fmt.Sprintf(format, args...) + " " + jwh.mdKeySummaryLink(),
 	}
 }
