@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/andygrunwald/go-jira"
-	"github.com/dgrijalva/jwt-go"
+	jira "github.com/andygrunwald/go-jira"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 	ajwt "github.com/rbriski/atlassian-jwt"
 	"golang.org/x/oauth2"

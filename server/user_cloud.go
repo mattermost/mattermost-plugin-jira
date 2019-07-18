@@ -52,28 +52,29 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 	if !ok {
 		return http.StatusBadRequest, errors.New("invalid JWT claims")
 	}
-	context, ok := claims["context"].(map[string]interface{})
+	accountId, ok := claims["sub"].(string)
 	if !ok {
-		return http.StatusBadRequest, errors.New("invalid JWT claim context")
-	}
-	user, ok := context["user"].(map[string]interface{})
-	if !ok {
-		return http.StatusBadRequest, errors.New("invalid JWT: no user data")
+		return http.StatusBadRequest, errors.New("invalid JWT sub")
 	}
 
-	accountId, _ := user["accountId"].(string)
-	userKey, _ := user["userKey"].(string)
-	username, _ := user["username"].(string)
-	displayName, _ := user["displayName"].(string)
+	jiraClient, _, err := jci.getJIRAClientForUser(JIRAUser{User: jira.User{AccountID: accountId}})
+	if err != nil {
+		return http.StatusBadRequest, errors.Errorf("could not get client for user, err: %v", err)
+	}
+
+	jUser, _, err := jiraClient.User.GetSelf()
+	if err != nil {
+		return http.StatusBadRequest, errors.Errorf("could not get user info for client, err: %v", err)
+	}
 
 	mmToken := r.Form.Get(argMMToken)
 	uinfo := JIRAUser{
 		PluginVersion: manifest.Version,
 		User: jira.User{
 			AccountID:   accountId,
-			Key:         userKey,
-			Name:        username,
-			DisplayName: displayName,
+			Key:         jUser.Key,
+			Name:        jUser.Name,
+			DisplayName: jUser.DisplayName,
 		},
 		// Set default settings the first time a user connects
 		Settings: &UserSettings{
@@ -150,7 +151,7 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 		ArgJiraJWT:            argJiraJWT,
 		ArgMMToken:            argMMToken,
 		MMToken:               mmToken,
-		JiraDisplayName:       displayName + " (" + username + ")",
+		JiraDisplayName:       jUser.DisplayName + " (" + jUser.Name + ")",
 		MattermostDisplayName: mmDisplayName,
 	})
 }
