@@ -19,7 +19,7 @@ func TestMarkdown(t *testing.T) {
 	defer f.Close()
 	bb, err := ioutil.ReadAll(f)
 	require.Nil(t, err)
-	wh, _, err := ParseWebhook(bb)
+	wh, err := ParseWebhook(bb)
 	require.NoError(t, err)
 	w := wh.(*webhook)
 	require.NotNil(t, w)

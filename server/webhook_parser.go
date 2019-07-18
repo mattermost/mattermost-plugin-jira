@@ -18,7 +18,7 @@ import (
 
 var webhookWrapperFunc func(wh Webhook) Webhook
 
-func ParseWebhook(bb []byte) (wh Webhook, jwh *JiraWebhook, err error) {
+func ParseWebhook(bb []byte) (wh Webhook, err error) {
 	defer func() {
 		if err == nil || err == ErrWebhookIgnored {
 			return

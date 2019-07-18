@@ -11,12 +11,12 @@ type webhookWorker struct {
 
 func (ww webhookWorker) work() {
 	for bb := range ww.workQueue {
-		wh, jwh, err := ParseWebhook(bb)
+		wh, err := ParseWebhook(bb)
 		if err != nil {
 			ww.p.errorf("webhookWorker id: %d, error parsing webhook, err: %v", ww.id, err)
 		}
 
-		channelIds, err := ww.p.getChannelsSubscribed(jwh)
+		channelIds, err := ww.p.getChannelsSubscribed(wh.(*webhook))
 		if err != nil {
 			ww.p.errorf("webhookWorker id: %d, error getting channel's subscribed, err: %v", ww.id, err)
 		}
