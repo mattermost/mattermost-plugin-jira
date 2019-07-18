@@ -214,8 +214,17 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
 
+	attachCommentNotifications(wh)
+
+	return wh, nil
+}
+
+func attachCommentNotifications(wh *webhook) {
+	jwh := wh.JiraWebhook
+	commentAuthor := mdUser(&jwh.Comment.UpdateAuthor)
+
 	message := fmt.Sprintf("%s mentioned you on %s:\n>%s",
-		jwh.mdUser(), jwh.mdKeySummaryLink(), jwh.Comment.Body)
+		commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body)
 	for _, u := range parseJIRAUsernamesFromText(wh.Comment.Body) {
 		// don't mention the author of the comment
 		if u == jwh.User.Name {
@@ -238,7 +247,7 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 	// Jira Server uses name field, Jira Cloud uses the AccountID field.
 	if jwh.Issue.Fields.Assignee == nil || jwh.Issue.Fields.Assignee.Name == jwh.User.Name ||
 		(jwh.Issue.Fields.Assignee.AccountID != "" && jwh.Comment.UpdateAuthor.AccountID != "" && jwh.Issue.Fields.Assignee.AccountID == jwh.Comment.UpdateAuthor.AccountID) {
-		return wh, nil
+		return
 	}
 
 	wh.notifications = append(wh.notifications, webhookNotification{
@@ -248,8 +257,6 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 		postType:      PostTypeComment,
 		commentSelf:   jwh.Comment.Self,
 	})
-
-	return wh, nil
 }
 
 func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
@@ -272,12 +279,15 @@ func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
 }
 
 func parseWebhookCommentUpdated(jwh *JiraWebhook) Webhook {
-	return &webhook{
+	wh := &webhook{
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventUpdatedComment),
 		headline:    fmt.Sprintf("%s edited comment in %s", mdUser(&jwh.Comment.UpdateAuthor), jwh.mdKeySummaryLink()),
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
+
+	attachCommentNotifications(wh)
+	return wh
 }
 
 func parseWebhookAssigned(jwh *JiraWebhook, from, to string) *webhook {
