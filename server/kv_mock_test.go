@@ -29,6 +29,9 @@ func (jti jiraTestInstance) GetUserConnectURL(mattermostUserId string) (string, 
 func (jti jiraTestInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error) {
 	return nil, errors.New("not implemented")
 }
+func (jti jiraTestInstance) GetUserGroups(jiraUser JIRAUser) ([]*jira.UserGroup, error) {
+	return nil, errors.New("not implemented")
+}
 
 type mockCurrentInstanceStore struct {
 	plugin *Plugin

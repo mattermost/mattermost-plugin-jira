@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -186,4 +187,26 @@ func (jci jiraCloudInstance) parseHTTPRequestJWT(r *http.Request) (*jwt.Token, s
 	}
 
 	return token, tokenString, nil
+}
+
+func (jci jiraCloudInstance) GetUserGroups(jiraUser JIRAUser) ([]*jira.UserGroup, error) {
+	jiraClient, err := jci.GetJIRAClient(jiraUser)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get jira client")
+	}
+
+	req, err := jiraClient.NewRequest("GET", "rest/api/3/user/groups?accountId="+jiraUser.AccountID, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "error creating request")
+	}
+
+	var groups []*jira.UserGroup
+	resp, err := jiraClient.Do(req, &groups)
+	if err != nil {
+		body, _ := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		return nil, errors.Wrap(err, "error in request to get user groups, body:"+string(body))
+	}
+
+	return groups, nil
 }

@@ -339,9 +339,9 @@ func TestDeleteSubscription(t *testing.T) {
 					ChannelSubscription{
 						Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
 						ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
-						Filters: map[string][]string{
-							"events":  []string{"jira:issue_created"},
-							"project": []string{"myproject"},
+						Filters: SubscriptionFilters{
+							Events:   NewStringSet("jira:issue_created"),
+							Projects: NewStringSet("myproject"),
 						},
 					},
 				}))
