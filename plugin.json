@@ -42,15 +42,15 @@
                 "value": "users"
             },
             {
-                "display_name": "Channel Admins",
+                "display_name": "Channel, Team and System Admins",
                 "value": "channel_admin"
             },
             {
-                "display_name": "Team Admins",
+                "display_name": "Team and System Admins",
                 "value": "team_admin"
             },
             {
-                "display_name": "System Administrators",
+                "display_name": "System Admins",
                 "value": "system_admin"
             }
         ]
