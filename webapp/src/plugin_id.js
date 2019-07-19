@@ -1,1 +1,2 @@
-export default 'jira';
+import {id} from './manifest';
+export default id;
