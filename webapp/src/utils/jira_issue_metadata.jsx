@@ -52,13 +52,15 @@ export function getCustomFieldValuesForProjects(metadata, projectKeys) {
     const issueTypes = projectKeys.map((key) => getIssueTypes(metadata, key)).flat();
 
     const customFieldHash = {};
-    const fields = issueTypes.map((it) => Object.values(it.fields)).flat();
-    fields.forEach((field) => {
-        const key = field.key;
-        if (key.startsWith('customfield_')) {
-            customFieldHash[key] = field;
+    const fields = issueTypes.map((issueType) =>
+        Object.keys(issueType.fields).map(key => ({...issueType.fields[key], key}))
+    ).flat().filter(Boolean);
+
+    for (const field of fields) {
+        if (field.key.startsWith('customfield')) {
+            customFieldHash[field.key] = field;
         }
-    });
+    }
 
     return Object.values(customFieldHash).sort((a, b) => {
         if (a.name < b.name) {
