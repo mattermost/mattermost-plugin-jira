@@ -43,7 +43,7 @@ export default class CreateIssueModal extends PureComponent {
         jiraIssueMetadata: PropTypes.object,
         clearIssueMetadata: PropTypes.func.isRequired,
         jiraProjectMetadata: PropTypes.object,
-        fetchJiraIssueMetadataForProject: PropTypes.func.isRequired,
+        fetchJiraIssueMetadataForProjects: PropTypes.func.isRequired,
         fetchJiraProjectMetadata: PropTypes.func.isRequired,
     };
 
@@ -188,7 +188,7 @@ export default class CreateIssueModal extends PureComponent {
 
         // Clear the current metadata so that we display a loading indicator while we fetch the new metadata
         this.props.clearIssueMetadata();
-        this.props.fetchJiraIssueMetadataForProject(projectKey).then((fetched) => {
+        this.props.fetchJiraIssueMetadataForProjects([projectKey]).then((fetched) => {
             if (fetched.error) {
                 this.setState({getMetaDataError: fetched.error.message, submitting: false});
             }

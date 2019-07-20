@@ -46,12 +46,13 @@ export const closeAttachCommentToIssueModal = () => {
     };
 };
 
-export const fetchJiraIssueMetadataForProject = (projectKey) => {
+export const fetchJiraIssueMetadataForProjects = (projectKeys) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
+        const projectKeysParam = projectKeys.join(',');
         let data = null;
         try {
-            data = await doFetch(`${baseUrl}/api/v2/get-create-issue-metadata-for-project?project-key=${projectKey}`, {
+            data = await doFetch(`${baseUrl}/api/v2/get-create-issue-metadata-for-project?project-keys=${projectKeysParam}`, {
                 method: 'get',
             });
         } catch (error) {

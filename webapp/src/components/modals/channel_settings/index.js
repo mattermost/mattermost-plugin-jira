@@ -13,7 +13,7 @@ import {
     editChannelSubscription,
     closeChannelSettings,
     fetchJiraProjectMetadata,
-    fetchJiraIssueMetadataForProject,
+    fetchJiraIssueMetadataForProjects,
     clearIssueMetadata,
 } from 'actions';
 
@@ -45,7 +45,7 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = (dispatch) => bindActionCreators({
     close: closeChannelSettings,
     fetchJiraProjectMetadata,
-    fetchJiraIssueMetadataForProject,
+    fetchJiraIssueMetadataForProjects,
     clearIssueMetadata,
     createChannelSubscription,
     fetchChannelSubscriptions,
