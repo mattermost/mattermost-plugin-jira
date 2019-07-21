@@ -53,7 +53,7 @@ export function getCustomFieldValuesForProjects(metadata, projectKeys) {
 
     const customFieldHash = {};
     const fields = issueTypes.map((issueType) =>
-        Object.keys(issueType.fields).map(key => ({...issueType.fields[key], key}))
+        Object.keys(issueType.fields).map((key) => ({...issueType.fields[key], key}))
     ).flat().filter(Boolean);
 
     for (const field of fields) {
