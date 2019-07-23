@@ -52,9 +52,7 @@ func checkNotSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
 		api.On("KVGet", subKey).Return(existingBytes, nil)
 
-		// Temp changes to revert when we can use KVCompareAndSet
-		//api.On("KVCompareAndSet", subKey, existingBytes, mock.MatchedBy(func(data []byte) bool {
-		api.On("KVSet", subKey, mock.MatchedBy(func(data []byte) bool {
+		api.On("KVCompareAndSet", subKey, existingBytes, mock.MatchedBy(func(data []byte) bool {
 			t.Log(string(data))
 			var savedSubs Subscriptions
 			err := json.Unmarshal(data, &savedSubs)
@@ -69,8 +67,7 @@ func checkNotSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 			}
 
 			return true
-			//})).Return(true, nil)
-		})).Return(nil)
+		})).Return(true, nil)
 	}
 }
 
@@ -88,9 +85,7 @@ func checkHasSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 		subKey := keyWithMockInstance(JIRA_SUBSCRIPTIONS_KEY)
 		api.On("KVGet", subKey).Return(existingBytes, nil)
 
-		// Temp changes to revert when we can use KVCompareAndSet
-		//api.On("KVCompareAndSet", subKey, existingBytes, mock.MatchedBy(func(data []byte) bool {
-		api.On("KVSet", subKey, mock.MatchedBy(func(data []byte) bool {
+		api.On("KVCompareAndSet", subKey, existingBytes, mock.MatchedBy(func(data []byte) bool {
 			t.Log(string(data))
 			var savedSubs Subscriptions
 			err := json.Unmarshal(data, &savedSubs)
@@ -121,8 +116,7 @@ func checkHasSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 			}
 
 			return true
-			//})).Return(true, nil)
-		})).Return(nil)
+		})).Return(true, nil)
 	}
 }
 

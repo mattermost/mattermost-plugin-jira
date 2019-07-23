@@ -326,7 +326,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			subKey := keyWithMockInstance(JIRA_SUBSCRIPTIONS_KEY)
 			api.On("KVGet", subKey).Return(subscriptionBytes, nil)
 
-			api.On("KVSet", subKey, mock.MatchedBy(func(data []byte) bool {
+			api.On("KVCompareAndSet", subKey, subscriptionBytes, mock.MatchedBy(func(data []byte) bool {
 				return true
 			})).Return(nil)
 

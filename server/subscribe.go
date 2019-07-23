@@ -357,16 +357,13 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 
 	success := false
 	for !success {
-		//initialBytes, newValue, err := readModify()
-		_, newValue, err := readModify()
+		initialBytes, newValue, err := readModify()
 		if err != nil {
 			return err
 		}
 
 		var setError *model.AppError
-		// Commenting this out so we can support < 5.12 for 2.0
-		//success, setError = p.API.KVCompareAndSet(key, initialBytes, newValue)
-		setError = p.API.KVSet(key, newValue)
+		success, setError = p.API.KVCompareAndSet(key, initialBytes, newValue)
 		success = true
 		if setError != nil {
 			return errors.Wrap(setError, "problem writing value")
