@@ -51,7 +51,11 @@ export default class Plugin {
 
         // Register the dummy component, which will call setupUI when it is activated (i.e., when the user logs in)
         registry.registerRootComponent(
-            () => <SetupUI registry={registry}/>
-        );
+            () => (
+                <SetupUI
+                    registry={registry}
+                    setupUI={setupUI}
+                />
+            ));
     }
 }

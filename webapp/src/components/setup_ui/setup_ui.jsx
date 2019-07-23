@@ -4,8 +4,6 @@
 import {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 
-import {setupUI} from 'plugin';
-
 import JiraIcon from 'components/icon';
 
 // SetupUI is a dummy Root component that we use to detect when the user has logged in
@@ -15,6 +13,7 @@ export default class SetupUI extends PureComponent {
         instanceInstalled: PropTypes.bool.isRequired,
         registry: PropTypes.object.isRequired,
         openChannelSettings: PropTypes.func.isRequired,
+        setupUI: PropTypes.func.isRequired,
     };
 
     registerHeaderButton = () => {
@@ -26,10 +25,7 @@ export default class SetupUI extends PureComponent {
     };
 
     componentDidMount() {
-        if (this.props.instanceInstalled && this.props.userConnected) {
-            this.registerHeaderButton();
-        }
-        setupUI();
+        this.props.setupUI();
     }
 
     componentDidUpdate() {
