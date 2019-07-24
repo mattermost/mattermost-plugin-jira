@@ -259,7 +259,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
             }
 
             component = (
-                <div style={style.modal}>
+                <div>
                     <ReactSelectSetting
                         name={'projects'}
                         label={'Project'}
@@ -271,7 +271,6 @@ export default class ChannelSettingsModalInner extends PureComponent {
                         value={projectOptions.filter((option) => this.state.filters.projects.includes(option.value))}
                     />
                     {innerComponent}
-                    <br/>
                 </div>
             );
         } else {
@@ -295,7 +294,10 @@ export default class ChannelSettingsModalInner extends PureComponent {
                 role='form'
                 onSubmit={this.handleCreate}
             >
-                <Modal.Body ref='modalBody'>
+                <Modal.Body
+                    style={style.modal}
+                    ref='modalBody'
+                >
                     {component}
                     {error}
                 </Modal.Body>
@@ -309,7 +311,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
                     {showDeleteButton && (
                         <FormButton
                             type='button'
-                            btnClass='btn-danger'
+                            btnClass='btn-danger pull-left'
                             defaultMessage='Delete'
                             onClick={this.deleteChannelSubscription}
                         />
@@ -330,7 +332,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
 
 const getStyle = (theme) => ({
     modal: {
-        padding: '1em',
+        padding: '2em 2em 3em',
         color: theme.centerChannelColor,
         backgroundColor: theme.centerChannelBg,
     },

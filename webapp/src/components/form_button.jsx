@@ -43,10 +43,7 @@ export default class FormButton extends PureComponent {
             contents = defaultMessage;
         }
 
-        let className = 'save-button btn';
-        if (!disabled || saving) {
-            className += ' ' + btnClass;
-        }
+        let className = 'save-button btn ' + btnClass;
 
         if (extraClasses) {
             className += ' ' + extraClasses;
