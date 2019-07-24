@@ -46,16 +46,25 @@ const setupUILater = (registry, store) => async () => {
 };
 
 export default class Plugin {
+    setHeaderButtonId = (id) => {
+        this.headerButtonId = id;
+    };
+
     async initialize(registry, store) {
         setupUI = setupUILater(registry, store);
+        this.headerButtonId = '';
 
         // Register the dummy component, which will call setupUI when it is activated (i.e., when the user logs in)
         registry.registerRootComponent(
-            () => (
-                <SetupUI
-                    registry={registry}
-                    setupUI={setupUI}
-                />
-            ));
+            () => {
+                return (
+                    <SetupUI
+                        registry={registry}
+                        setupUI={setupUI}
+                        headerButtonId={this.headerButtonId}
+                        setHeaderButtonId={this.setHeaderButtonId}
+                    />
+                );
+            });
     }
 }
