@@ -231,7 +231,7 @@ export default class CreateIssueModal extends PureComponent {
     };
 
     render() {
-        const {post, visible, theme, jiraIssueMetadata, jiraProjectMetadata} = this.props;
+        const {visible, theme, jiraIssueMetadata, jiraProjectMetadata} = this.props;
         const {error, getMetaDataError, submitting} = this.state;
         const style = getStyle(theme);
 
@@ -308,7 +308,7 @@ export default class CreateIssueModal extends PureComponent {
                 </div>
             );
             footer = footerClose;
-        } else if (!post || !jiraProjectMetadata || !jiraProjectMetadata.projects) {
+        } else if (!jiraProjectMetadata || !jiraProjectMetadata.projects) {
             component = <Loading/>;
         } else {
             const issueOptions = getIssueValues(jiraProjectMetadata, this.state.projectKey);
