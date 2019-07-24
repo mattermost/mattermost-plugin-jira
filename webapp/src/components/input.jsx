@@ -66,6 +66,7 @@ export default class Input extends PureComponent {
 
     render() {
         const requiredMsg = 'This field is required.';
+        const style = getStyle();
         let validationError = null;
         if (this.props.required && this.state.invalid) {
             validationError = (
@@ -109,7 +110,8 @@ export default class Input extends PureComponent {
         } else if (this.props.type === 'textarea') {
             input = (
                 <textarea
-                    ref={this.ref}
+                    style={style.textarea}
+                    resize='none'
                     id={this.props.id}
                     className='form-control'
                     rows='5'
@@ -136,3 +138,9 @@ export default class Input extends PureComponent {
         );
     }
 }
+
+const getStyle = () => ({
+    textarea: {
+        resize: 'none',
+    },
+});

@@ -303,7 +303,7 @@ export default class CreateIssueModal extends PureComponent {
             (jiraProjectMetadata && jiraProjectMetadata.error)) {
             const msg = (jiraIssueMetadata && jiraIssueMetadata.error) ? jiraIssueMetadata.error : jiraProjectMetadata.error;
             component = (
-                <div style={style.modal}>
+                <div>
                     {msg}
                 </div>
             );
@@ -336,7 +336,7 @@ export default class CreateIssueModal extends PureComponent {
             }
 
             component = (
-                <div style={style.modal}>
+                <div>
                     {issueError}
                     <ReactSelectSetting
                         ref={this.projectRef}
@@ -362,7 +362,6 @@ export default class CreateIssueModal extends PureComponent {
                         value={issueOptions.find((option) => option.value === this.state.issueType)}
                     />
                     {fieldsComponent}
-                    <br/>
                 </div>
             );
         }
@@ -375,7 +374,6 @@ export default class CreateIssueModal extends PureComponent {
                 onExited={this.handleClose}
                 bsSize='large'
                 backdrop='static'
-                keyboard={false}
             >
                 <Modal.Header closeButton={true}>
                     <Modal.Title>
@@ -386,7 +384,10 @@ export default class CreateIssueModal extends PureComponent {
                     role='form'
                     onSubmit={this.handleCreate}
                 >
-                    <Modal.Body ref='modalBody'>
+                    <Modal.Body
+                        style={style.modal}
+                        ref='modalBody'
+                    >
                         {component}
                     </Modal.Body>
                     <Modal.Footer>
@@ -400,7 +401,7 @@ export default class CreateIssueModal extends PureComponent {
 
 const getStyle = (theme) => ({
     modal: {
-        padding: '1em 1em 0',
+        padding: '2em 2em 3em',
         color: theme.centerChannelColor,
         backgroundColor: theme.centerChannelBg,
     },

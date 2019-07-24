@@ -95,7 +95,7 @@ export default class AttachIssueModal extends PureComponent {
         }
 
         const component = (
-            <div style={style.modal}>
+            <div>
                 <JiraIssueSelector
                     ref={this.issueRef}
                     onChange={this.handleIssueKeyChange}
@@ -112,7 +112,6 @@ export default class AttachIssueModal extends PureComponent {
                     disabled={false}
                     readOnly={true}
                 />
-                <br/>
             </div>
         );
 
@@ -124,7 +123,6 @@ export default class AttachIssueModal extends PureComponent {
                 onExited={this.handleClose}
                 bsSize='large'
                 backdrop='static'
-                keyboard={false}
             >
                 <Modal.Header closeButton={true}>
                     <Modal.Title>
@@ -135,7 +133,10 @@ export default class AttachIssueModal extends PureComponent {
                     role='form'
                     onSubmit={this.handleCreate}
                 >
-                    <Modal.Body ref='modalBody'>
+                    <Modal.Body
+                        style={style.modal}
+                        ref='modalBody'
+                    >
                         {component}
                     </Modal.Body>
                     <Modal.Footer>
@@ -163,7 +164,7 @@ export default class AttachIssueModal extends PureComponent {
 
 const getStyle = (theme) => ({
     modal: {
-        padding: '1em 1em 0',
+        padding: '2em 2em 3em',
         color: theme.centerChannelColor,
         backgroundColor: theme.centerChannelBg,
     },
