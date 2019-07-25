@@ -509,10 +509,10 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 					continue
 				}
 
-				attachments, _, err := jiraClient.Issue.PostAttachment(attach.IssueKey, bytes.NewReader(byteData), info.Name)
+				attachments, _, err2 := jiraClient.Issue.PostAttachment(attach.IssueKey, bytes.NewReader(byteData), info.Name)
 
-				if err != nil {
-					notifyOnFailedAttachment(ji, err.Error(), mattermostUserId, info.Path, attach.IssueKey)
+				if err2 != nil {
+					notifyOnFailedAttachment(ji, err2.Error(), mattermostUserId, info.Path, attach.IssueKey)
 					continue
 				}
 				if attachments != nil {
@@ -526,9 +526,9 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 			// Update the comment
 			if updated {
 				jiraComment.ID = commentAdded.ID
-				_, _, err := jiraClient.Issue.UpdateComment(attach.IssueKey, &jiraComment)
-				if err != nil {
-					ji.GetPlugin().API.LogError("failed to update comment: "+err.Error(), "issue", attach.IssueKey)
+				_, _, err2 := jiraClient.Issue.UpdateComment(attach.IssueKey, &jiraComment)
+				if err2 != nil {
+					ji.GetPlugin().API.LogError("failed to update comment: "+err2.Error(), "issue", attach.IssueKey)
 
 					// Report the error to the user so they know they have to update the comment on their own.
 					_, _ = ji.GetPlugin().CreateBotDMtoMMUserId(mattermostUserId, "Failed to update comment to issue %s with file attachments. Please notify your system administrator.", attach.IssueKey)
