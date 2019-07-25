@@ -249,7 +249,7 @@ func appendCommentNotifications(wh *webhook) {
 	// Don't send a notification to the assignee if they don't exist, or if are also the author.
 	// Jira Server uses name field, Jira Cloud uses the AccountID field.
 	if jwh.Issue.Fields.Assignee == nil || jwh.Issue.Fields.Assignee.Name == jwh.User.Name ||
-		(jwh.Issue.Fields.Assignee.AccountID != "" && jwh.Comment.UpdateAuthor.AccountID != "" && jwh.Issue.Fields.Assignee.AccountID == jwh.Comment.UpdateAuthor.AccountID) {
+		(jwh.Issue.Fields.Assignee.AccountID != "" && jwh.Issue.Fields.Assignee.AccountID == jwh.Comment.UpdateAuthor.AccountID) {
 		return
 	}
 
