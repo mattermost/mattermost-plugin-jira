@@ -310,6 +310,106 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			}),
 			ChannelIds: []string{},
 		},
+		"with custom field filter": {
+			WebhookTestData: "webhook-issue-created-custom-field.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId1",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+						Fields: []FieldFilter{
+							{
+								Id:    "customfield_10076",
+								Value: NewStringSet("10039"),
+							},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId1"},
+		},
+		"with custom field filter, no match": {
+			WebhookTestData: "webhook-issue-created-custom-field.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId1",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+						Fields: []FieldFilter{
+							{
+								Id:    "customfield_10076",
+								Value: NewStringSet("10040"),
+							},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"with security field filter": {
+			WebhookTestData: "webhook-issue-created-security.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId1",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+						Fields: []FieldFilter{
+							{
+								Id:    "security",
+								Value: NewStringSet("10000"),
+							},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId1"},
+		},
+		"with security field filter, no match": {
+			WebhookTestData: "webhook-issue-created-security.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId1",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+						Fields: []FieldFilter{
+							{
+								Id:    "security",
+								Value: NewStringSet("10001"),
+							},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"no selected security field filter, but exists in issue": {
+			WebhookTestData: "webhook-issue-created-security.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId1",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+						Fields:     []FieldFilter{},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}

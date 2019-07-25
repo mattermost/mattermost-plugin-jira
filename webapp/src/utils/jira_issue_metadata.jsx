@@ -36,12 +36,27 @@ export function getIssueValuesForMultipleProjects(metadata, projectKeys) {
     return Object.values(issueTypeHash);
 }
 
-export function getFields(metadata, projectKey, issueTypeId) {
-    if (!metadata || !projectKey || !issueTypeId) {
+export function getFields(metadata, projectKeys, issueTypeIds) {
+    if (!metadata || !projectKeys || !issueTypeIds) {
         return [];
     }
 
-    return getIssueTypes(metadata, projectKey).find((issueType) => issueType.id === issueTypeId).fields;
+    if ((Array.isArray(projectKeys) && !projectKeys.length) || (Array.isArray(issueTypeIds) && !issueTypeIds.length)) {
+        return [];
+    }
+
+    const issueTypes = projectKeys.map((key) => getIssueTypes(metadata, key)).flat().filter((issueType) => issueTypeIds.includes(issueType.id));
+
+    const fields = issueTypes.map((issueType) =>
+        Object.keys(issueType.fields).map((key) => ({...issueType.fields[key], key}))
+    ).flat().filter(Boolean);
+
+    const fieldHash = {};
+    for (const field of fields) {
+        fieldHash[field.key] = field;
+    }
+
+    return fieldHash;
 }
 
 export function getCustomFieldValuesForProjects(metadata, projectKeys) {
@@ -57,7 +72,7 @@ export function getCustomFieldValuesForProjects(metadata, projectKeys) {
     ).flat().filter(Boolean);
 
     for (const field of fields) {
-        if (field.key.startsWith('customfield')) {
+        if (field.schema.custom) {
             customFieldHash[field.key] = field;
         }
     }

@@ -6,9 +6,10 @@ import PropTypes from 'prop-types';
 import {Modal} from 'react-bootstrap';
 
 import ReactSelectSetting from 'components/react_select_setting';
+import JiraFields from 'components/jira_fields';
 import FormButton from 'components/form_button';
 import Loading from 'components/loading';
-import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProjects} from 'utils/jira_issue_metadata';
+import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProjects, getFields} from 'utils/jira_issue_metadata';
 
 const JiraEventOptions = [
     {value: 'event_created', label: 'Issue Created'},
@@ -31,6 +32,14 @@ const JiraEventOptions = [
     {value: 'event_updated_sprint', label: 'Issue Updated: Sprint'},
     {value: 'event_updated_status', label: 'Issue Updated: Status'},
     {value: 'event_updated_summary', label: 'Issue Updated: Summary'},
+];
+
+const allowedFields = [
+    'security',
+];
+
+const allowedSchemaCustom = [
+    'com.atlassian.jira.plugin.system.customfieldtypes:select',
 ];
 
 export default class ChannelSettingsModalInner extends PureComponent {
@@ -56,11 +65,14 @@ export default class ChannelSettingsModalInner extends PureComponent {
             events: [],
             projects: [],
             issue_types: [],
+            fields: [],
         };
 
         if (props.channelSubscriptions[0]) {
             filters = Object.assign({}, filters, props.channelSubscriptions[0].filters);
         }
+
+        filters.fields = filters.fields || [];
 
         let fetchingProjects = false;
         if (filters.projects.length) {
@@ -104,6 +116,27 @@ export default class ChannelSettingsModalInner extends PureComponent {
         this.setState({filters});
     };
 
+    handleFieldChange = (id, value) => {
+        const field = {id, value};
+
+        const {fields} = this.state.filters;
+        const index = fields.findIndex((f) => f.id === id);
+
+        const newFields = [...fields];
+        if (index > -1) {
+            newFields.splice(index, 1, field);
+        } else {
+            newFields.push(field);
+        }
+
+        this.setState({
+            filters: {
+                ...this.state.filters,
+                fields: newFields,
+            },
+        });
+    };
+
     fetchProjects = (projectKeys) => {
         this.props.fetchJiraIssueMetadataForProjects(projectKeys).then((fetched) => {
             const state = {fetchingProjects: false};
@@ -131,6 +164,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
         if (projects.length < this.state.filters.projects.length) {
             const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, projects);
             const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, projects);
+            const fields = getFields(this.props.jiraIssueMetadata, projects, this.state.filters.issue_types);
 
             const selectedIssueTypes = this.state.filters.issue_types.filter((issueType) => {
                 return Boolean(issueOptions.find((it) => it.value === issueType));
@@ -143,10 +177,15 @@ export default class ChannelSettingsModalInner extends PureComponent {
                 return true;
             });
 
+            const selectedFields = this.state.filters.fields.filter((field) => {
+                return Boolean(fields[field.id]);
+            });
+
             filters = {
                 ...filters,
                 issue_types: selectedIssueTypes,
                 events: selectedEventTypes,
+                fields: selectedFields,
             };
         }
 
@@ -223,6 +262,11 @@ export default class ChannelSettingsModalInner extends PureComponent {
         const projectOptions = getProjectValues(this.props.jiraProjectMetadata);
         const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, this.state.filters.projects);
         const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
+        const fields = getFields(this.props.jiraIssueMetadata, this.state.filters.projects, this.state.filters.issue_types);
+        const fieldValues = this.state.filters.fields.reduce((a, b) => {
+            a[b.id] = b.value;
+            return a;
+        }, {});
 
         const eventOptions = JiraEventOptions.concat(customFields);
 
@@ -253,6 +297,15 @@ export default class ChannelSettingsModalInner extends PureComponent {
                             isMulti={true}
                             theme={this.props.theme}
                             value={issueOptions.filter((option) => this.state.filters.issue_types.includes(option.value))}
+                        />
+                        <JiraFields
+                            fields={fields}
+                            onChange={this.handleFieldChange}
+                            values={fieldValues}
+                            allowedFields={allowedFields}
+                            allowedSchemaCustom={allowedSchemaCustom}
+                            theme={this.props.theme}
+                            isFilter={true}
                         />
                     </React.Fragment>
                 );

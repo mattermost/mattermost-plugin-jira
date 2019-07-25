@@ -54,11 +54,15 @@ export default class JiraField extends React.Component {
     }
 
     componentDidMount() {
-        this.props.addValidate(this.props.id, this.ref);
+        if (this.props.addValidate) {
+            this.props.addValidate(this.props.id, this.ref);
+        }
     }
 
     componentWillUnmount() {
-        this.props.removeValidate(this.props.id);
+        if (this.props.removeValidate) {
+            this.props.removeValidate(this.props.id);
+        }
     }
 
     makeReactSelectValue = (allowedValue) => {
@@ -146,21 +150,25 @@ export default class JiraField extends React.Component {
 
         if (field.allowedValues && field.allowedValues.length) {
             const options = field.allowedValues.map(this.makeReactSelectValue);
-            let value;
+            let value = [];
             if (this.props.value) {
                 value = options.filter((option) => this.props.value.includes(option.value));
             }
 
             return (
                 <ReactSelectSetting
-                    key={field.key}
+                    ref={this.ref}
+                    key={this.props.id}
                     name={field.key}
                     label={field.name}
                     options={options}
-                    required={this.props.obeyRequired && field.required}
-                    onChange={this.handleChange}
+                    required={false}
+                    onChange={this.props.onChange}
                     isMulti={true}
                     value={value}
+                    components={{Option: JiraField.IconOption}}
+                    theme={this.props.theme}
+                    isClearable={true}
                 />
             );
         }

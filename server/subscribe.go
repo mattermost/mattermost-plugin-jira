@@ -24,10 +24,16 @@ const (
 	JIRA_SUBSCRIPTIONS_KEY = "jirasub"
 )
 
+type FieldFilter struct {
+	Id    string    `json:"id"`
+	Value StringSet `json:"value"`
+}
+
 type SubscriptionFilters struct {
-	Events     StringSet `json:"events"`
-	Projects   StringSet `json:"projects"`
-	IssueTypes StringSet `json:"issue_types"`
+	Events     StringSet     `json:"events"`
+	Projects   StringSet     `json:"projects"`
+	IssueTypes StringSet     `json:"issue_types"`
+	Fields     []FieldFilter `json:"fields"`
 }
 
 type ChannelSubscription struct {
@@ -106,6 +112,18 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
 		return nil, err
 	}
 
+	issue := &jwh.Issue
+	if jwh.WebhookEvent == "comment_created" ||
+		jwh.WebhookEvent == "comment_updated" ||
+		jwh.WebhookEvent == "comment_deleted" {
+
+		// Jira Cloud comment event. We need to fetch issue data because it is not expanded in webhook payload.
+		issue, err = p.getIssueDataForCloudWebhook(issue.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	webhookEvents := wh.Events()
 	subIds := subs.Channel.ById
 
@@ -113,6 +131,7 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
 	for _, sub := range subIds {
 		foundEvent := false
 		eventTypes := sub.Filters.Events
+
 		if eventTypes.Intersection(webhookEvents).Len() > 0 {
 			foundEvent = true
 		} else if eventTypes.ContainsAny(eventUpdatedAny) {
@@ -129,6 +148,40 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
 
 		if !foundEvent {
 			continue
+		}
+
+		fieldsMatch := true
+
+		for _, field := range sub.Filters.Fields {
+			if field.Value.Len() == 0 {
+				continue
+			}
+
+			value := getIssueFieldValue(issue, field.Id)
+			if !field.Value.ContainsAny(value) {
+				fieldsMatch = false
+				break
+			}
+		}
+
+		if !fieldsMatch {
+			continue
+		}
+
+		// Security level is a special case.
+		// If the incoming issue has a certain level, and the user has not filtered on it, we need to block.
+		// If the issue has no security level, and the filter has one, the field check above will fail as intended.
+		issueSecurity := getIssueFieldValue(issue, "security")
+		if issueSecurity != "" {
+			securityMatch := false
+			for _, field := range sub.Filters.Fields {
+				if field.Id == "security" && field.Value.ContainsAny(issueSecurity) {
+					securityMatch = true
+				}
+			}
+			if !securityMatch {
+				continue
+			}
 		}
 
 		if !sub.Filters.IssueTypes.ContainsAny(jwh.Issue.Fields.Type.ID) {
