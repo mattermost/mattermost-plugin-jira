@@ -673,6 +673,11 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 	// user is array of one object
 	user := jiraUsers[0]
 
+	// From Jira error: query parameters 'accountId' and 'username' are mutually exclusive.
+	// Here, we must choose one and one only and nil the other user field.
+	// Choosing user.AccountID over user.Name.
+	user.Name = ""
+
 	if _, err := jiraClient.Issue.UpdateAssignee(issueKey, user); err != nil {
 		return "", err
 	}
