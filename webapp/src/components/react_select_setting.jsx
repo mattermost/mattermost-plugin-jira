@@ -5,6 +5,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import ReactSelect from 'react-select';
+import VirtualizedList from './virtualized_list'
 
 import Setting from 'components/setting';
 
@@ -73,6 +74,7 @@ export default class ReactSelectSetting extends React.PureComponent {
             >
                 <ReactSelect
                     {...this.props}
+                    components={this.props.virtualized && {MenuList: VirtualizedList}}
                     menuPortalTarget={document.body}
                     menuPlacement='auto'
                     onChange={this.handleChange}
