@@ -35,7 +35,7 @@
         "key": "RolesAllowedToEditJiraSubscriptions",
         "display_name": "Mattermost Roles Allowed to Edit Jira Subscriptions",
         "type": "radio",
-        "help_text": "Mattermost users that can subscribe channels to Jira tickets.",
+        "help_text": "Mattermost users who can subscribe channels to Jira tickets. \n**Note:** Channel Admins are those given the “Manage Channel Settings” permission in the active Permissions Scheme. They “can rename channels and edit channel header and purposes” (see [the documentation](https://docs.mattermost.com/deployment/advanced-permissions.html#public-and-private-channel-management) for more info).",
         "default": "system_admin",
         "options": [
             {
