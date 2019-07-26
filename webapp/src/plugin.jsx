@@ -46,12 +46,25 @@ const setupUILater = (registry, store) => async () => {
 };
 
 export default class Plugin {
+    finishedSetupUI = () => {
+        this.haveSetupUI = true;
+    };
+
     async initialize(registry, store) {
         setupUI = setupUILater(registry, store);
+        this.haveSetupUI = false;
 
         // Register the dummy component, which will call setupUI when it is activated (i.e., when the user logs in)
         registry.registerRootComponent(
-            () => <SetupUI registry={registry}/>
-        );
+            () => {
+                return (
+                    <SetupUI
+                        registry={registry}
+                        setupUI={setupUI}
+                        haveSetupUI={this.haveSetupUI}
+                        finishedSetupUI={this.finishedSetupUI}
+                    />
+                );
+            });
     }
 }
