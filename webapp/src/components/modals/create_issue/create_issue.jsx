@@ -112,7 +112,7 @@ export default class CreateIssueModal extends PureComponent {
 
     getFieldsNotCovered() {
         const {jiraIssueMetadata} = this.props;
-        const myfields = getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType);
+        const myfields = getFields(jiraIssueMetadata, [this.state.projectKey], [this.state.issueType]);
 
         const fieldsNotCovered = [];
 
@@ -320,7 +320,7 @@ export default class CreateIssueModal extends PureComponent {
             } else if (jiraIssueMetadata) {
                 fieldsComponent = (
                     <JiraFields
-                        fields={getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType)}
+                        fields={getFields(jiraIssueMetadata, [this.state.projectKey], [this.state.issueType])}
                         onChange={this.handleFieldChange}
                         values={this.state.fields}
                         allowedFields={this.allowedFields}

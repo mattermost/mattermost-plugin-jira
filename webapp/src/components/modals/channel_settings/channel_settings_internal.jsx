@@ -155,39 +155,32 @@ export default class ChannelSettingsModalInner extends PureComponent {
             projects = [projects];
         }
 
-        let filters = {
-            ...this.state.filters,
+        // Remove any irrelevant selected choices from other filters
+        const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, projects);
+        const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, projects);
+        const fields = getFields(this.props.jiraIssueMetadata, projects, this.state.filters.issue_types);
+
+        const selectedIssueTypes = this.state.filters.issue_types.filter((issueType) => {
+            return Boolean(issueOptions.find((it) => it.value === issueType));
+        });
+
+        const selectedEventTypes = this.state.filters.events.filter((eventType) => {
+            if (eventType.includes('customfield')) {
+                return Boolean(customFields.find((et) => et.value === eventType));
+            }
+            return true;
+        });
+
+        const selectedFields = this.state.filters.fields.filter((field) => {
+            return Boolean(fields[field.id]);
+        });
+
+        const filters = {
             projects,
+            issue_types: selectedIssueTypes,
+            events: selectedEventTypes,
+            fields: selectedFields,
         };
-
-        // User has removed a project from selection. Remove any irrelevant selected choices from the events and issue types.
-        if (projects.length < this.state.filters.projects.length) {
-            const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, projects);
-            const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, projects);
-            const fields = getFields(this.props.jiraIssueMetadata, projects, this.state.filters.issue_types);
-
-            const selectedIssueTypes = this.state.filters.issue_types.filter((issueType) => {
-                return Boolean(issueOptions.find((it) => it.value === issueType));
-            });
-
-            const selectedEventTypes = this.state.filters.events.filter((eventType) => {
-                if (eventType.includes('customfield')) {
-                    return Boolean(customFields.find((et) => et.value === eventType));
-                }
-                return true;
-            });
-
-            const selectedFields = this.state.filters.fields.filter((field) => {
-                return Boolean(fields[field.id]);
-            });
-
-            filters = {
-                ...filters,
-                issue_types: selectedIssueTypes,
-                events: selectedEventTypes,
-                fields: selectedFields,
-            };
-        }
 
         let fetchingProjects = false;
 

@@ -37,23 +37,35 @@ export function getIssueValuesForMultipleProjects(metadata, projectKeys) {
 }
 
 export function getFields(metadata, projectKeys, issueTypeIds) {
-    if (!metadata || !projectKeys || !issueTypeIds) {
+    if (!metadata || !projectKeys || !projectKeys.length || !issueTypeIds || !issueTypeIds.length) {
         return [];
     }
 
-    if ((Array.isArray(projectKeys) && !projectKeys.length) || (Array.isArray(issueTypeIds) && !issueTypeIds.length)) {
-        return [];
+    const issueTypesPerProject = projectKeys.map((key) => getIssueTypes(metadata, key).filter((issueType) => issueTypeIds.includes(issueType.id)));
+
+    const fieldsPerProject = [];
+    for (const issueTypes of issueTypesPerProject) {
+        const projectFields = issueTypes.map((issueType) =>
+            Object.keys(issueType.fields).map((key) => ({...issueType.fields[key], key}))
+        ).flat().filter(Boolean);
+        fieldsPerProject.push(projectFields);
     }
 
-    const issueTypes = projectKeys.map((key) => getIssueTypes(metadata, key)).flat().filter((issueType) => issueTypeIds.includes(issueType.id));
-
-    const fields = issueTypes.map((issueType) =>
-        Object.keys(issueType.fields).map((key) => ({...issueType.fields[key], key}))
-    ).flat().filter(Boolean);
-
+    // Gather fields
     const fieldHash = {};
-    for (const field of fields) {
-        fieldHash[field.key] = field;
+    for (const fields of fieldsPerProject) {
+        for (const field of fields) {
+            fieldHash[field.key] = field;
+        }
+    }
+
+    // Only keep fields that exist in all selected projects
+    for (const fields of fieldsPerProject) {
+        for (const fieldId of Object.keys(fieldHash)) {
+            if (!fields.find((f) => f.key === fieldId)) {
+                delete fieldHash[fieldId];
+            }
+        }
     }
 
     return fieldHash;
