@@ -11,7 +11,7 @@ import FormButton from 'components/form_button';
 import Loading from 'components/loading';
 import ReactSelectSetting from 'components/react_select_setting';
 
-import {getProjectValues, getIssueTypes, getIssueValues, getFields} from 'utils/jira_issue_metadata';
+import {getProjectValues, getIssueValues, getFields} from 'utils/jira_issue_metadata';
 
 const initialState = {
     submitting: false,
@@ -27,6 +27,7 @@ const initialState = {
         },
     },
     error: null,
+    getMetaDataError: null,
 };
 
 export default class CreateIssueModal extends PureComponent {
@@ -40,7 +41,10 @@ export default class CreateIssueModal extends PureComponent {
         theme: PropTypes.object.isRequired,
         visible: PropTypes.bool.isRequired,
         jiraIssueMetadata: PropTypes.object,
-        fetchJiraIssueMetadata: PropTypes.func.isRequired,
+        clearIssueMetadata: PropTypes.func.isRequired,
+        jiraProjectMetadata: PropTypes.object,
+        fetchJiraIssueMetadataForProjects: PropTypes.func.isRequired,
+        fetchJiraProjectMetadata: PropTypes.func.isRequired,
     };
 
     constructor(props) {
@@ -66,12 +70,20 @@ export default class CreateIssueModal extends PureComponent {
 
     componentDidUpdate(prevProps) {
         if (this.props.post && (!prevProps.post || this.props.post.id !== prevProps.post.id)) {
-            this.props.fetchJiraIssueMetadata();
+            this.props.fetchJiraProjectMetadata().then((fetched) => {
+                if (fetched.error) {
+                    this.setState({getMetaDataError: fetched.error.message, submitting: false});
+                }
+            });
             const fields = {...this.state.fields};
             fields.description = this.props.post.message;
             this.setState({fields}); //eslint-disable-line react/no-did-update-set-state
         } else if (this.props.channelId && (this.props.channelId !== prevProps.channelId || this.props.description !== prevProps.description)) {
-            this.props.fetchJiraIssueMetadata();
+            this.props.fetchJiraProjectMetadata().then((fetched) => {
+                if (fetched.error) {
+                    this.setState({getMetaDataError: fetched.error.message, submitting: false});
+                }
+            });
             const fields = {...this.state.fields};
             fields.description = this.props.description;
             this.setState({fields}); //eslint-disable-line react/no-did-update-set-state
@@ -110,8 +122,8 @@ export default class CreateIssueModal extends PureComponent {
                     (myfields[key].schema.custom && !this.allowedSchemaCustom.includes(myfields[key].schema.custom))
                 ) {
                     if (!fieldsNotCovered.includes(key)) {
-                        // fieldsNotCovered.push([key, myfields[key].name]);
-                        fieldsNotCovered.push(myfields[key].name);
+                        // Send down the key and the localized name.
+                        fieldsNotCovered.push([key, myfields[key].name]);
                     }
                 }
             }
@@ -172,10 +184,19 @@ export default class CreateIssueModal extends PureComponent {
     };
 
     handleProjectChange = (id, value) => {
-        const fields = {...this.state.fields};
-        const issueTypes = getIssueTypes(this.props.jiraIssueMetadata, value);
-        const issueType = issueTypes.length && issueTypes[0].id;
         const projectKey = value;
+
+        // Clear the current metadata so that we display a loading indicator while we fetch the new metadata
+        this.props.clearIssueMetadata();
+        this.props.fetchJiraIssueMetadataForProjects([projectKey]).then((fetched) => {
+            if (fetched.error) {
+                this.setState({getMetaDataError: fetched.error.message, submitting: false});
+            }
+        });
+
+        const fields = {...this.state.fields};
+        const issueTypes = getIssueValues(this.props.jiraProjectMetadata, value);
+        const issueType = issueTypes.length && issueTypes[0].value;
         fields.project = {
             key: value,
         };
@@ -210,29 +231,23 @@ export default class CreateIssueModal extends PureComponent {
     };
 
     render() {
-        const {post, visible, theme, jiraIssueMetadata} = this.props;
-        const {error, submitting} = this.state;
+        const {visible, theme, jiraIssueMetadata, jiraProjectMetadata} = this.props;
+        const {error, getMetaDataError, submitting} = this.state;
         const style = getStyle(theme);
 
         if (!visible) {
             return null;
         }
 
-        let issueError = null;
-        if (error) {
-            issueError = (
-                <React.Fragment>
-                    <p className='alert alert-danger'>
-                        <i
-                            className='fa fa-warning'
-                            title='Warning Icon'
-                        />
-                        <span> {error}</span>
-                    </p>
-                </React.Fragment>
-            );
-        }
-        let component;
+        const footerClose = (
+            <FormButton
+                type='submit'
+                btnClass='btn btn-primary'
+                defaultMessage='Close'
+                onClick={this.handleClose}
+            />
+        );
+
         let footer = (
             <React.Fragment>
                 <FormButton
@@ -251,54 +266,59 @@ export default class CreateIssueModal extends PureComponent {
             </React.Fragment>
         );
 
-        if (jiraIssueMetadata && jiraIssueMetadata.error) {
+        let issueError = null;
+        let component;
+
+        // if no getMetaDataError, show fields and allow user to input
+        // fields. An error at this point is from a server-side create
+        // issue submission and should be displayed (in addition to fields)
+        // to the user after clicking the create button.
+        if (error) {
+            issueError = (
+                <p className='alert alert-danger'>
+                    <i
+                        className='fa fa-warning'
+                        title='Warning Icon'
+                    />
+                    <span> {error}</span>
+                </p>
+            );
+        }
+
+        // if getmetadata fails, only display the error and a close button.
+        // user is not going to be able to create a ticket or even a partial
+        // ticket. likely a permissions error.
+        if (getMetaDataError) {
             component = (
-                <div style={style.modal}>
-                    {jiraIssueMetadata.error}
+                <p className='alert alert-danger'>
+                    <i
+                        className='fa fa-warning'
+                        title='Warning Icon'
+                    />
+                    <span> {getMetaDataError}</span>
+                </p>
+            );
+            footer = footerClose;
+        } else if ((jiraIssueMetadata && jiraIssueMetadata.error) ||
+            (jiraProjectMetadata && jiraProjectMetadata.error)) {
+            const msg = (jiraIssueMetadata && jiraIssueMetadata.error) ? jiraIssueMetadata.error : jiraProjectMetadata.error;
+            component = (
+                <div>
+                    {msg}
                 </div>
             );
-
-            footer = (
-                <React.Fragment>
-                    <FormButton
-                        type='submit'
-                        btnClass='btn btn-primary'
-                        defaultMessage='Close'
-                        onClick={this.handleClose}
-                    />
-                </React.Fragment>
-            );
-        } else if (!post || !jiraIssueMetadata || !jiraIssueMetadata.projects) {
+            footer = footerClose;
+        } else if (!jiraProjectMetadata || !jiraProjectMetadata.projects) {
             component = <Loading/>;
         } else {
-            const issueOptions = getIssueValues(jiraIssueMetadata, this.state.projectKey);
-            const projectOptions = getProjectValues(jiraIssueMetadata);
-            component = (
-                <div style={style.modal}>
-                    {issueError}
-                    <ReactSelectSetting
-                        ref={this.projectRef}
-                        name={'project'}
-                        label={'Project'}
-                        required={true}
-                        onChange={this.handleProjectChange}
-                        options={projectOptions}
-                        isMuli={false}
-                        key={'LT'}
-                        theme={theme}
-                        value={projectOptions.find((option) => option.value === this.state.projectKey)}
-                    />
-                    <ReactSelectSetting
-                        ref={this.issueRef}
-                        name={'issue_type'}
-                        label={'Issue Type'}
-                        required={true}
-                        onChange={this.handleIssueTypeChange}
-                        options={issueOptions}
-                        isMuli={false}
-                        theme={theme}
-                        value={issueOptions.find((option) => option.value === this.state.issueType)}
-                    />
+            const issueOptions = getIssueValues(jiraProjectMetadata, this.state.projectKey);
+            const projectOptions = getProjectValues(jiraProjectMetadata);
+
+            let fieldsComponent;
+            if (!this.state.projectKey) {
+                fieldsComponent = null;
+            } else if (jiraIssueMetadata) {
+                fieldsComponent = (
                     <JiraFields
                         fields={getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType)}
                         onChange={this.handleFieldChange}
@@ -310,7 +330,38 @@ export default class CreateIssueModal extends PureComponent {
                         addValidate={this.validator.addComponent}
                         removeValidate={this.validator.removeComponent}
                     />
-                    <br/>
+                );
+            } else {
+                fieldsComponent = <Loading/>;
+            }
+
+            component = (
+                <div>
+                    {issueError}
+                    <ReactSelectSetting
+                        ref={this.projectRef}
+                        name={'project'}
+                        label={'Project'}
+                        required={true}
+                        onChange={this.handleProjectChange}
+                        options={projectOptions}
+                        isMulti={false}
+                        key={'LT'}
+                        theme={theme}
+                        value={projectOptions.find((option) => option.value === this.state.projectKey)}
+                    />
+                    <ReactSelectSetting
+                        ref={this.issueRef}
+                        name={'issue_type'}
+                        label={'Issue Type'}
+                        required={true}
+                        onChange={this.handleIssueTypeChange}
+                        options={issueOptions}
+                        isMulti={false}
+                        theme={theme}
+                        value={issueOptions.find((option) => option.value === this.state.issueType)}
+                    />
+                    {fieldsComponent}
                 </div>
             );
         }
@@ -323,7 +374,6 @@ export default class CreateIssueModal extends PureComponent {
                 onExited={this.handleClose}
                 bsSize='large'
                 backdrop='static'
-                keyboard={false}
             >
                 <Modal.Header closeButton={true}>
                     <Modal.Title>
@@ -334,7 +384,10 @@ export default class CreateIssueModal extends PureComponent {
                     role='form'
                     onSubmit={this.handleCreate}
                 >
-                    <Modal.Body ref='modalBody'>
+                    <Modal.Body
+                        style={style.modal}
+                        ref='modalBody'
+                    >
                         {component}
                     </Modal.Body>
                     <Modal.Footer>
@@ -348,7 +401,7 @@ export default class CreateIssueModal extends PureComponent {
 
 const getStyle = (theme) => ({
     modal: {
-        padding: '1em 1em 0',
+        padding: '2em 2em 3em',
         color: theme.centerChannelColor,
         backgroundColor: theme.centerChannelBg,
     },

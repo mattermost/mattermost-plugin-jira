@@ -6,8 +6,18 @@ import {bindActionCreators} from 'redux';
 
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import {createChannelSubscription, fetchChannelSubscriptions, deleteChannelSubscription, editChannelSubscription, closeChannelSettings, fetchJiraIssueMetadata} from 'actions';
-import {getChannelSubscriptions, getChannelIdWithSettingsOpen, getJiraIssueMetadata} from 'selectors';
+import {
+    createChannelSubscription,
+    fetchChannelSubscriptions,
+    deleteChannelSubscription,
+    editChannelSubscription,
+    closeChannelSettings,
+    fetchJiraProjectMetadata,
+    fetchJiraIssueMetadataForProjects,
+    clearIssueMetadata,
+} from 'actions';
+
+import {getChannelSubscriptions, getChannelIdWithSettingsOpen, getJiraProjectMetadata, getJiraIssueMetadata} from 'selectors';
 
 import ChannelSettingsModal from './channel_settings';
 
@@ -20,6 +30,7 @@ const mapStateToProps = (state) => {
     }
 
     const jiraIssueMetadata = getJiraIssueMetadata(state);
+    const jiraProjectMetadata = getJiraProjectMetadata(state);
 
     const channelSubscriptions = getChannelSubscriptions(state)[channelId];
 
@@ -27,12 +38,15 @@ const mapStateToProps = (state) => {
         channelSubscriptions,
         channel,
         jiraIssueMetadata,
+        jiraProjectMetadata,
     };
 };
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
     close: closeChannelSettings,
-    fetchJiraIssueMetadata,
+    fetchJiraProjectMetadata,
+    fetchJiraIssueMetadataForProjects,
+    clearIssueMetadata,
     createChannelSubscription,
     fetchChannelSubscriptions,
     deleteChannelSubscription,

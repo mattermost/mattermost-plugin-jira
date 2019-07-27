@@ -15,9 +15,12 @@ export default {
     RECEIVED_INSTANCE_STATUS: `${PluginId}_instance_status`,
 
     RECEIVED_JIRA_ISSUE_METADATA: `${PluginId}_received_metadata`,
+    RECEIVED_JIRA_PROJECT_METADATA: `${PluginId}_received_projects`,
+    CLEAR_JIRA_ISSUE_METADATA: `${PluginId}_clear_metadata`,
 
     OPEN_CHANNEL_SETTINGS: `${PluginId}_open_channel_settings`,
     CLOSE_CHANNEL_SETTINGS: `${PluginId}_close_channel_settings`,
 
     RECEIVED_CHANNEL_SUBSCRIPTIONS: `${PluginId}_recevied_channel_subscriptions`,
+    DELETED_CHANNEL_SUBSCRIPTION: `${PluginId}_deleted_channel_subscription`,
 };

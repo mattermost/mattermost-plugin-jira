@@ -82,6 +82,17 @@ const jiraIssueMetadata = (state = null, action) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_JIRA_ISSUE_METADATA:
         return action.data;
+    case ActionTypes.CLEAR_JIRA_ISSUE_METADATA:
+        return null;
+    default:
+        return state;
+    }
+};
+
+const jiraProjectMetadata = (state = null, action) => {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_JIRA_PROJECT_METADATA:
+        return action.data;
     default:
         return state;
     }
@@ -105,6 +116,16 @@ const channelSubscripitons = (state = {}, action) => {
         nextState[action.channelId] = action.data;
         return nextState;
     }
+    case ActionTypes.DELETED_CHANNEL_SUBSCRIPTION: {
+        const sub = action.data;
+        const newSubs = state[sub.channel_id].concat([]);
+        newSubs.splice(newSubs.findIndex((s) => s.id === sub.id), 1);
+
+        return {
+            ...state,
+            [sub.channel_id]: newSubs,
+        };
+    }
     default:
         return state;
     }
@@ -118,6 +139,7 @@ export default combineReducers({
     attachCommentToIssueModalVisible,
     attachCommentToIssueModalForPostId,
     jiraIssueMetadata,
+    jiraProjectMetadata,
     channelIdWithSettingsOpen,
     channelSubscripitons,
 });

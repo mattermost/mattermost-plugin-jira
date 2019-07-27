@@ -7,8 +7,8 @@ import {bindActionCreators} from 'redux';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {closeCreateModal, createIssue, fetchJiraIssueMetadata} from 'actions';
-import {isCreateModalVisible, getCreateModal, getJiraIssueMetadata} from 'selectors';
+import {closeCreateModal, createIssue, fetchJiraIssueMetadataForProjects, fetchJiraProjectMetadata, clearIssueMetadata} from 'actions';
+import {isCreateModalVisible, getCreateModal, getJiraIssueMetadata, getJiraProjectMetadata} from 'selectors';
 
 import CreateIssue from './create_issue';
 
@@ -18,10 +18,12 @@ const mapStateToProps = (state) => {
     const currentTeam = getCurrentTeam(state);
 
     const jiraIssueMetadata = getJiraIssueMetadata(state);
+    const jiraProjectMetadata = getJiraProjectMetadata(state);
 
     return {
         visible: isCreateModalVisible(state),
         jiraIssueMetadata,
+        jiraProjectMetadata,
         post,
         description,
         channelId,
@@ -32,7 +34,9 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = (dispatch) => bindActionCreators({
     close: closeCreateModal,
     create: createIssue,
-    fetchJiraIssueMetadata,
+    fetchJiraIssueMetadataForProjects,
+    fetchJiraProjectMetadata,
+    clearIssueMetadata,
 }, dispatch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(CreateIssue);

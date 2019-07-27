@@ -46,12 +46,13 @@ export const closeAttachCommentToIssueModal = () => {
     };
 };
 
-export const fetchJiraIssueMetadata = () => {
+export const fetchJiraIssueMetadataForProjects = (projectKeys) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
+        const projectKeysParam = projectKeys.join(',');
         let data = null;
         try {
-            data = await doFetch(`${baseUrl}/api/v2/get-create-issue-metadata`, {
+            data = await doFetch(`${baseUrl}/api/v2/get-create-issue-metadata-for-project?project-keys=${projectKeysParam}`, {
                 method: 'get',
             });
         } catch (error) {
@@ -60,6 +61,33 @@ export const fetchJiraIssueMetadata = () => {
 
         dispatch({
             type: ActionTypes.RECEIVED_JIRA_ISSUE_METADATA,
+            data,
+        });
+
+        return {data};
+    };
+};
+
+export const clearIssueMetadata = () => {
+    return async (dispatch) => {
+        dispatch({type: ActionTypes.CLEAR_JIRA_ISSUE_METADATA});
+    };
+};
+
+export const fetchJiraProjectMetadata = () => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        let data = null;
+        try {
+            data = await doFetch(`${baseUrl}/api/v2/get-jira-project-metadata`, {
+                method: 'get',
+            });
+        } catch (error) {
+            return {error};
+        }
+
+        dispatch({
+            type: ActionTypes.RECEIVED_JIRA_PROJECT_METADATA,
             data,
         });
 
@@ -130,15 +158,20 @@ export const editChannelSubscription = (subscription) => {
     };
 };
 
-export const deleteChannelSubscription = (subscriptionId) => {
+export const deleteChannelSubscription = (subscription) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            const data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel/${subscriptionId}`, {
+            await doFetch(`${baseUrl}/api/v2/subscriptions/channel/${subscription.id}`, {
                 method: 'delete',
             });
 
-            return {data};
+            dispatch({
+                type: ActionTypes.DELETED_CHANNEL_SUBSCRIPTION,
+                data: subscription,
+            });
+
+            return {data: subscription};
         } catch (error) {
             return {error};
         }
@@ -154,6 +187,11 @@ export const fetchChannelSubscriptions = (channelId) => {
                 method: 'get',
             });
         } catch (error) {
+            dispatch({
+                type: ActionTypes.RECEIVED_CHANNEL_SUBSCRIPTIONS,
+                channelId,
+                data: error,
+            });
             return {error};
         }
 
@@ -166,6 +204,7 @@ export const fetchChannelSubscriptions = (channelId) => {
         return {data};
     };
 };
+
 export function getSettings(getState) {
     let data;
     const baseUrl = getPluginServerRoute(getState());
@@ -236,6 +275,9 @@ export const closeChannelSettings = () => {
 
 export function handleInstanceStatusChange(store) {
     return (msg) => {
+        // Update the user's UI state when the instance state changes
+        getConnected()(store.dispatch, store.getState);
+
         if (!msg.data) {
             return;
         }

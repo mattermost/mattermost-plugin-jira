@@ -44,10 +44,11 @@ export default class JiraIssueSelector extends Component {
         const textSearchTerm = (textEncoded.length > 0) ? 'text ~ "' + textEncoded + '*"' : '';
         const finalQuery = textSearchTerm + ' ' + searchDefaults;
 
-        return doFetchWithResponse(this.props.fetchIssuesEndpoint + `?jql=${finalQuery}`).then(
-            ({data}) => {
-                return data;
-            });
+        return doFetchWithResponse(this.props.fetchIssuesEndpoint + `?jql=${finalQuery}`).then(({data}) => {
+            return data;
+        }).catch((e) => {
+            this.setState({error: e});
+        });
     };
 
     debouncedSearchIssues = debounce(this.searchIssues, searchDebounceDelay);
@@ -64,7 +65,6 @@ export default class JiraIssueSelector extends Component {
 
     render = () => {
         const {error} = this.props;
-
         const requiredStar = (
             <span
                 className={'error-text'}
@@ -83,6 +83,20 @@ export default class JiraIssueSelector extends Component {
             );
         }
 
+        const serverError = this.state.error;
+        let errComponent;
+        if (this.state.error) {
+            errComponent = (
+                <p className='alert alert-danger'>
+                    <i
+                        className='fa fa-warning'
+                        title='Warning Icon'
+                    />
+                    <span> {serverError.toString()}</span>
+                </p>
+            );
+        }
+
         const requiredMsg = 'This field is required.';
         let validationError = null;
         if (this.props.required && this.state.invalid) {
@@ -95,6 +109,7 @@ export default class JiraIssueSelector extends Component {
 
         return (
             <div className={'form-group margin-bottom x3'}>
+                {errComponent}
                 <label
                     className={'control-label'}
                     htmlFor={'issue'}

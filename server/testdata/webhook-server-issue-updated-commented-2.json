@@ -1,0 +1,344 @@
+{
+  "timestamp": 1561757536066,
+  "webhookEvent": "jira:issue_updated",
+  "issue_event_type_name": "issue_commented",
+  "user": {
+    "self": "http://test-server.azure.com:8080/rest/api/2/user?username=TestUser",
+    "name": "TestUser",
+    "key": "testUser",
+    "emailAddress": "test.user@test.com",
+    "avatarUrls": {
+      "48x48": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=48",
+      "24x24": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=24",
+      "16x16": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=16",
+      "32x32": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=32"
+    },
+    "displayName": "Test User",
+    "active": true,
+    "timeZone": "Etc/UTC"
+  },
+  "issue": {
+    "id": "10231",
+    "self": "http://test-server.azure.com:8080/rest/api/2/issue/10231",
+    "key": "PRJA-42",
+    "fields": {
+      "issuetype": {
+        "self": "http://test-server.azure.com:8080/rest/api/2/issuetype/10005",
+        "id": "10005",
+        "description": "An improvement or enhancement to an existing feature or task.",
+        "iconUrl": "http://test-server.azure.com:8080/secure/viewavatar?size=xsmall&avatarId=10310&avatarType=issuetype",
+        "name": "Improvement",
+        "subtask": false,
+        "avatarId": 10310
+      },
+      "timespent": null,
+      "project": {
+        "self": "http://test-server.azure.com:8080/rest/api/2/project/10002",
+        "id": "10002",
+        "key": "PRJA",
+        "name": "ProjectA",
+        "avatarUrls": {
+          "48x48": "http://test-server.azure.com:8080/secure/projectavatar?avatarId=10324",
+          "24x24": "http://test-server.azure.com:8080/secure/projectavatar?size=small&avatarId=10324",
+          "16x16": "http://test-server.azure.com:8080/secure/projectavatar?size=xsmall&avatarId=10324",
+          "32x32": "http://test-server.azure.com:8080/secure/projectavatar?size=medium&avatarId=10324"
+        }
+      },
+      "fixVersions": [],
+      "customfield_10110": null,
+      "customfield_10111": null,
+      "aggregatetimespent": null,
+      "resolution": null,
+      "customfield_10112": null,
+      "customfield_10114": "0|i000rr:",
+      "customfield_10104": null,
+      "customfield_10105": "0|i001ef:",
+      "customfield_10107": null,
+      "customfield_10108": null,
+      "customfield_10109": null,
+      "resolutiondate": null,
+      "workratio": -1,
+      "lastViewed": "2019-06-28T21:31:59.605+0000",
+      "watches": {
+        "self": "http://test-server.azure.com:8080/rest/api/2/issue/PRJA-42/watchers",
+        "watchCount": 2,
+        "isWatching": true
+      },
+      "created": "2019-06-28T21:16:13.654+0000",
+      "priority": {
+        "self": "http://test-server.azure.com:8080/rest/api/2/priority/3",
+        "iconUrl": "http://test-server.azure.com:8080/images/icons/priorities/medium.svg",
+        "name": "Medium",
+        "id": "3"
+      },
+      "customfield_10100": null,
+      "labels": [],
+      "timeestimate": null,
+      "aggregatetimeoriginalestimate": null,
+      "versions": [],
+      "issuelinks": [],
+      "assignee": {
+        "self": "http://test-server.azure.com:8080/rest/api/2/user?username=dylan",
+        "name": "dylan",
+        "key": "dylan",
+        "emailAddress": "dylan@mattermost.com",
+        "avatarUrls": {
+          "48x48": "http://test-server.azure.com:8080/secure/useravatar?avatarId=10339",
+          "24x24": "http://test-server.azure.com:8080/secure/useravatar?size=small&avatarId=10339",
+          "16x16": "http://test-server.azure.com:8080/secure/useravatar?size=xsmall&avatarId=10339",
+          "32x32": "http://test-server.azure.com:8080/secure/useravatar?size=medium&avatarId=10339"
+        },
+        "displayName": "Dylan H",
+        "active": true,
+        "timeZone": "Etc/UTC"
+      },
+      "updated": "2019-06-28T21:31:58.040+0000",
+      "status": {
+        "self": "http://test-server.azure.com:8080/rest/api/2/status/10000",
+        "description": "",
+        "iconUrl": "http://test-server.azure.com:8080/",
+        "name": "To Do",
+        "id": "10000",
+        "statusCategory": {
+          "self": "http://test-server.azure.com:8080/rest/api/2/statuscategory/2",
+          "id": 2,
+          "key": "new",
+          "colorName": "blue-gray",
+          "name": "To Do"
+        }
+      },
+      "components": [],
+      "timeoriginalestimate": null,
+      "description": "test\n\n_Issue created from a [message in Mattermost|https://chrisp.ngrok.io/testteam/pl/449w553cajrbfewz581uoxmb8o]_.",
+      "customfield_10130": null,
+      "customfield_10131": null,
+      "customfield_10132": null,
+      "timetracking": {},
+      "customfield_10126": null,
+      "customfield_10127": null,
+      "customfield_10128": null,
+      "customfield_10129": null,
+      "attachment": [],
+      "aggregatetimeestimate": null,
+      "summary": "test for notifications",
+      "creator": {
+        "self": "http://test-server.azure.com:8080/rest/api/2/user?username=creator.user",
+        "name": "creator.user",
+        "key": "creator.user",
+        "emailAddress": "creator.user@mattermost.com",
+        "avatarUrls": {
+          "48x48": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=48",
+          "24x24": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=24",
+          "16x16": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=16",
+          "32x32": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=32"
+        },
+        "displayName": "Creator User",
+        "active": true,
+        "timeZone": "America/Toronto"
+      },
+      "subtasks": [],
+      "reporter": {
+        "self": "http://test-server.azure.com:8080/rest/api/2/user?username=creator.user",
+        "name": "creator.user",
+        "key": "creator.user",
+        "emailAddress": "creator.user@mattermost.com",
+        "avatarUrls": {
+          "48x48": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=48",
+          "24x24": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=24",
+          "16x16": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=16",
+          "32x32": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=32"
+        },
+        "displayName": "Creator User",
+        "active": true,
+        "timeZone": "America/Toronto"
+      },
+      "customfield_10120": null,
+      "customfield_10121": null,
+      "aggregateprogress": {
+        "progress": 0,
+        "total": 0
+      },
+      "customfield_10122": null,
+      "customfield_10123": null,
+      "customfield_10124": null,
+      "customfield_10125": null,
+      "customfield_10115": null,
+      "customfield_10116": null,
+      "environment": null,
+      "customfield_10117": "false",
+      "customfield_10118": null,
+      "customfield_10119": "false",
+      "duedate": null,
+      "progress": {
+        "progress": 0,
+        "total": 0
+      },
+      "comment": {
+        "comments": [
+          {
+            "self": "http://test-server.azure.com:8080/rest/api/2/issue/10231/comment/10116",
+            "id": "10116",
+            "author": {
+              "self": "http://test-server.azure.com:8080/rest/api/2/user?username=TestUser",
+              "name": "TestUser",
+              "key": "testUser",
+              "emailAddress": "test.user@test.com",
+              "avatarUrls": {
+                "48x48": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=48",
+                "24x24": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=24",
+                "16x16": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=16",
+                "32x32": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=32"
+              },
+              "displayName": "Test User",
+              "active": true,
+              "timeZone": "Etc/UTC"
+            },
+            "body": "test comment",
+            "updateAuthor": {
+              "self": "http://test-server.azure.com:8080/rest/api/2/user?username=TestUser",
+              "name": "TestUser",
+              "key": "testUser",
+              "emailAddress": "test.user@test.com",
+              "avatarUrls": {
+                "48x48": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=48",
+                "24x24": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=24",
+                "16x16": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=16",
+                "32x32": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=32"
+              },
+              "displayName": "Test User",
+              "active": true,
+              "timeZone": "Etc/UTC"
+            },
+            "created": "2019-06-28T21:20:34.131+0000",
+            "updated": "2019-06-28T21:20:34.131+0000"
+          },
+          {
+            "self": "http://test-server.azure.com:8080/rest/api/2/issue/10231/comment/10117",
+            "id": "10117",
+            "author": {
+              "self": "http://test-server.azure.com:8080/rest/api/2/user?username=creator.user",
+              "name": "creator.user",
+              "key": "creator.user",
+              "emailAddress": "creator.user@mattermost.com",
+              "avatarUrls": {
+                "48x48": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=48",
+                "24x24": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=24",
+                "16x16": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=16",
+                "32x32": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=32"
+              },
+              "displayName": "Creator User",
+              "active": true,
+              "timeZone": "America/Toronto"
+            },
+            "body": "another test comment",
+            "updateAuthor": {
+              "self": "http://test-server.azure.com:8080/rest/api/2/user?username=creator.user",
+              "name": "creator.user",
+              "key": "creator.user",
+              "emailAddress": "creator.user@mattermost.com",
+              "avatarUrls": {
+                "48x48": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=48",
+                "24x24": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=24",
+                "16x16": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=16",
+                "32x32": "https://www.gravatar.com/avatar/560996af2549a4e1727321247bbd4af9?d=mm&s=32"
+              },
+              "displayName": "Creator User",
+              "active": true,
+              "timeZone": "America/Toronto"
+            },
+            "created": "2019-06-28T21:26:42.288+0000",
+            "updated": "2019-06-28T21:26:42.288+0000"
+          },
+          {
+            "self": "http://test-server.azure.com:8080/rest/api/2/issue/10231/comment/10118",
+            "id": "10118",
+            "author": {
+              "self": "http://test-server.azure.com:8080/rest/api/2/user?username=TestUser",
+              "name": "TestUser",
+              "key": "testUser",
+              "emailAddress": "test.user@test.com",
+              "avatarUrls": {
+                "48x48": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=48",
+                "24x24": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=24",
+                "16x16": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=16",
+                "32x32": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=32"
+              },
+              "displayName": "Test User",
+              "active": true,
+              "timeZone": "Etc/UTC"
+            },
+            "body": "This is a test comment. We should act on it right away.",
+            "updateAuthor": {
+              "self": "http://test-server.azure.com:8080/rest/api/2/user?username=TestUser",
+              "name": "TestUser",
+              "key": "testUser",
+              "emailAddress": "test.user@test.com",
+              "avatarUrls": {
+                "48x48": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=48",
+                "24x24": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=24",
+                "16x16": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=16",
+                "32x32": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=32"
+              },
+              "displayName": "Test User",
+              "active": true,
+              "timeZone": "Etc/UTC"
+            },
+            "created": "2019-06-28T21:32:16.057+0000",
+            "updated": "2019-06-28T21:32:16.057+0000"
+          }
+        ],
+        "maxResults": 3,
+        "total": 3,
+        "startAt": 0
+      },
+      "votes": {
+        "self": "http://test-server.azure.com:8080/rest/api/2/issue/PRJA-42/votes",
+        "votes": 0,
+        "hasVoted": false
+      },
+      "worklog": {
+        "startAt": 0,
+        "maxResults": 20,
+        "total": 0,
+        "worklogs": []
+      }
+    }
+  },
+  "comment": {
+    "self": "http://test-server.azure.com:8080/rest/api/2/issue/10231/comment/10118",
+    "id": "10118",
+    "author": {
+      "self": "http://test-server.azure.com:8080/rest/api/2/user?username=TestUser",
+      "name": "TestUser",
+      "key": "testUser",
+      "emailAddress": "test.user@test.com",
+      "avatarUrls": {
+        "48x48": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=48",
+        "24x24": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=24",
+        "16x16": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=16",
+        "32x32": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=32"
+      },
+      "displayName": "Test User",
+      "active": true,
+      "timeZone": "Etc/UTC"
+    },
+    "body": "This is a test comment. We should act on it right away.",
+    "updateAuthor": {
+      "self": "http://test-server.azure.com:8080/rest/api/2/user?username=TestUser",
+      "name": "TestUser",
+      "key": "testUser",
+      "emailAddress": "test.user@test.com",
+      "avatarUrls": {
+        "48x48": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=48",
+        "24x24": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=24",
+        "16x16": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=16",
+        "32x32": "https://www.gravatar.com/avatar/517d2249c162fc5e14141d32c9088b31?d=mm&s=32"
+      },
+      "displayName": "Test User",
+      "active": true,
+      "timeZone": "Etc/UTC"
+    },
+    "created": "2019-06-28T21:32:16.057+0000",
+    "updated": "2019-06-28T21:32:16.057+0000"
+  }
+}

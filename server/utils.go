@@ -41,8 +41,7 @@ func normalizeInstallURL(jiraURL string) (string, error) {
 	return strings.TrimSuffix(u.String(), "/"), nil
 }
 
-func (p *Plugin) CreateBotDMPost(ji Instance, userId, message,
-	postType string) (post *model.Post, returnErr error) {
+func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) (post *model.Post, returnErr error) {
 	defer func() {
 		if returnErr != nil {
 			returnErr = errors.WithMessage(returnErr,
@@ -71,12 +70,6 @@ func (p *Plugin) CreateBotDMPost(ji Instance, userId, message,
 		ChannelId: channel.Id,
 		Message:   message,
 		Type:      postType,
-		Props: map[string]interface{}{
-			"from_webhook":      "true",
-			"override_username": botUserName,
-			// TODO: to be fixed in MM-16508
-			//"override_icon_url": pluginIconURL(),
-		},
 	}
 
 	_, appErr = p.API.CreatePost(post)

@@ -6,7 +6,7 @@ export function getProjectValues(metadata) {
         return [];
     }
 
-    return metadata.projects.map((p) => ({value: p.key, label: p.name}));
+    return metadata.projects;
 }
 
 export function getIssueTypes(metadata, projectKey) {
@@ -22,31 +22,18 @@ export function getIssueValues(metadata, projectKey) {
         return [];
     }
 
-    return getIssueTypes(metadata, projectKey).map((issueType) => ({value: issueType.id, label: issueType.name}));
+    return metadata.issues_per_project[projectKey];
 }
 
 export function getIssueValuesForMultipleProjects(metadata, projectKeys) {
-    return projectKeys.map((project) =>
-        getIssueValues(metadata, project)).
-        flat().
-        sort((a, b) => a.value - b.value).
-        filter((ele, i, me) => i === 0 || ele.value !== me[i - 1].value);
-}
+    const issueValues = projectKeys.map((project) => getIssueValues(metadata, project)).flat().filter(Boolean);
 
-export function getIssueTypesForMultipleProjects(metadata, projectKeys) {
-    return projectKeys.map((project) =>
-        getIssueTypes(metadata, project)).
-        flat().
-        sort((a, b) => a.id - b.id).
-        filter((ele, i, me) => i === 0 || ele.id !== me[i - 1].id);
-}
+    const issueTypeHash = {};
+    issueValues.forEach((issueType) => {
+        issueTypeHash[issueType.value] = issueType;
+    });
 
-export function getFieldsForMultipleProjects(metadata, projectKeys) {
-    if (!metadata || !projectKeys) {
-        return [];
-    }
-
-    return getIssueTypesForMultipleProjects(metadata, projectKeys).map((issue) => issue.fields).reduce((acc, cur) => Object.assign(acc, cur), {});
+    return Object.values(issueTypeHash);
 }
 
 export function getFields(metadata, projectKey, issueTypeId) {
@@ -57,9 +44,40 @@ export function getFields(metadata, projectKey, issueTypeId) {
     return getIssueTypes(metadata, projectKey).find((issueType) => issueType.id === issueTypeId).fields;
 }
 
+export function getCustomFieldValuesForProjects(metadata, projectKeys) {
+    if (!metadata || !projectKeys || !projectKeys.length) {
+        return [];
+    }
+
+    const issueTypes = projectKeys.map((key) => getIssueTypes(metadata, key)).flat();
+
+    const customFieldHash = {};
+    const fields = issueTypes.map((issueType) =>
+        Object.keys(issueType.fields).map((key) => ({...issueType.fields[key], key}))
+    ).flat().filter(Boolean);
+
+    for (const field of fields) {
+        if (field.key.startsWith('customfield')) {
+            customFieldHash[field.key] = field;
+        }
+    }
+
+    return Object.values(customFieldHash).sort((a, b) => {
+        if (a.name < b.name) {
+            return -1;
+        }
+        if (a.name > b.name) {
+            return 1;
+        }
+        return 0;
+    }).map((field) => ({
+        label: `Issue Updated: Custom - ${field.name}`,
+        value: `event_updated_${field.key}`,
+    }));
+}
+
 export function getFieldValues(metadata, projectKey, issueTypeId) {
     const fieldsForIssue = getFields(metadata, projectKey, issueTypeId);
     const fieldIds = Object.keys(fieldsForIssue);
     return fieldIds.map((fieldId) => ({value: fieldId, label: fieldsForIssue[fieldId].name}));
 }
-

@@ -35,8 +35,8 @@ type testWebhookWrapper struct {
 	postedNotifications []*model.Post
 }
 
-func (wh testWebhookWrapper) EventMask() uint64 {
-	return wh.Webhook.EventMask()
+func (wh testWebhookWrapper) Events() StringSet {
+	return wh.Webhook.Events()
 }
 func (wh *testWebhookWrapper) PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error) {
 	post, status, err := wh.Webhook.PostToChannel(p, channelId, fromUserId)
@@ -45,8 +45,8 @@ func (wh *testWebhookWrapper) PostToChannel(p *Plugin, channelId, fromUserId str
 	}
 	return post, status, err
 }
-func (wh *testWebhookWrapper) PostNotifications(p *Plugin, ji Instance) ([]*model.Post, int, error) {
-	posts, status, err := wh.Webhook.PostNotifications(p, ji)
+func (wh *testWebhookWrapper) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
+	posts, status, err := wh.Webhook.PostNotifications(p)
 	if len(posts) != 0 {
 		wh.postedNotifications = append(wh.postedNotifications, posts...)
 	}
@@ -65,12 +65,16 @@ func TestWebhookHTTP(t *testing.T) {
 		ExpectedSlackAttachment bool
 		ExpectedText            string
 		ExpectedFields          []*model.SlackAttachmentField
+		ExpectedStatus          int
+		ExpectedIgnored         bool
+		CurrentInstance         bool
 	}{
 		"issue created": {
 			Request:                 testWebhookRequest("webhook-issue-created.json"),
+			ExpectedStatus:          http.StatusOK,
 			ExpectedSlackAttachment: true,
-			ExpectedHeadline:        "Test User created story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
-			ExpectedText:            "story [Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)\n\nUnit test description, not that long\n",
+			ExpectedHeadline:        "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedText:            "Unit test description, not that long",
 			ExpectedFields: []*model.SlackAttachmentField{
 				&model.SlackAttachmentField{
 					Title: "Priority",
@@ -78,78 +82,402 @@ func TestWebhookHTTP(t *testing.T) {
 					Short: true,
 				},
 			},
+			CurrentInstance: true,
+		},
+		"issue created no fields": {
+			Request:                 testWebhookRequest("webhook-issue-created-no-relevant-fields.json"),
+			ExpectedStatus:          http.StatusOK,
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedText:            "Unit test description, not that long",
+			ExpectedFields:          []*model.SlackAttachmentField{},
+			CurrentInstance:         true,
+		},
+		"issue created no description": {
+			Request:                 testWebhookRequest("webhook-issue-created-no-description.json"),
+			ExpectedStatus:          http.StatusOK,
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
+			// ExpectedText:            "Unit test description, not that long",
+			ExpectedFields: []*model.SlackAttachmentField{
+				&model.SlackAttachmentField{
+					Title: "Priority",
+					Value: "High",
+					Short: true,
+				},
+			},
+			CurrentInstance: true,
+		},
+		"issue created no description nor fields": {
+			Request:          testWebhookRequest("webhook-issue-created-no-description-nor-relevant-fields.json"),
+			ExpectedStatus:   http.StatusOK,
+			ExpectedHeadline: "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  true,
 		},
 		"issue edited": {
 			Request:                 testWebhookRequest("webhook-issue-updated-edited.json"),
 			ExpectedSlackAttachment: true,
-			ExpectedHeadline:        "Test User edited the description of story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
-			ExpectedText:            "story [Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)\n\nUnit test description, not that long, a little longer now\n",
+			ExpectedHeadline:        "Test User edited the description of story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedText:            "Unit test description, not that long, a little longer now",
+			CurrentInstance:         true,
 		},
 		"issue renamed": {
-			Request:                 testWebhookRequest("webhook-issue-updated-renamed.json"),
-			ExpectedSlackAttachment: true,
-			ExpectedHeadline:        "Test User renamed story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
-			ExpectedText:            "story [Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
-		},
-		"comment created": {
-			Request:                 testWebhookRequest("webhook-comment-created.json"),
-			ExpectedSlackAttachment: true,
-			ExpectedHeadline:        "Test User commented on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
-			ExpectedText:            "Added a comment",
-		},
-		"comment updated": {
-			Request:                 testWebhookRequest("webhook-comment-updated.json"),
-			ExpectedSlackAttachment: true,
-			ExpectedHeadline:        "Test User edited comment in story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
-			ExpectedText:            "Added a comment, then edited it",
-		},
-		"comment deleted": {
-			Request:          testWebhookRequest("webhook-comment-deleted.json"),
-			ExpectedHeadline: "Test User deleted comment in story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
+			Request:          testWebhookRequest("webhook-issue-updated-renamed.json"),
+			ExpectedHeadline: "Test User updated summary from \"Unit test summary\" to \"Unit test summary 1\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedText:     "",
+			CurrentInstance:  true,
 		},
 		"issue assigned nobody": {
 			Request:          testWebhookRequest("webhook-issue-updated-assigned-nobody.json"),
-			ExpectedHeadline: "Test User assigned _nobody_ to story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User assigned _nobody_ to story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  true,
 		},
 		"issue assigned": {
 			Request:          testWebhookRequest("webhook-issue-updated-assigned.json"),
-			ExpectedHeadline: "Test User assigned Test User to story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User assigned Test User to story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  true,
+		},
+		"issue assigned on server": {
+			Request:          testWebhookRequest("webhook-issue-updated-assigned-on-server.json"),
+			ExpectedHeadline: "Test User assigned Test User to improvement [PRJA-37: test](http://some-instance-test.centralus.cloudapp.azure.com:8080/browse/PRJA-37)",
+			CurrentInstance:  true,
 		},
 		"issue attachments": {
 			Request:          testWebhookRequest("webhook-issue-updated-attachments.json"),
-			ExpectedHeadline: "Test User attached [test.gif] to, removed attachments [test.json] from story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User attached [test.gif] to, removed attachments [test.json] from story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  true,
+		},
+		"issue fix version": {
+			Request:          testWebhookRequest("webhook-issue-updated-fix-version.json"),
+			ExpectedHeadline: `Test User updated Fix Version from "v1" to "v2" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			CurrentInstance:  true,
+		},
+		"issue issue type": {
+			Request:          testWebhookRequest("webhook-issue-updated-issue-type.json"),
+			ExpectedHeadline: `Test User updated issuetype from "Task" to "Bug" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			CurrentInstance:  true,
 		},
 		"issue labels": {
 			Request:          testWebhookRequest("webhook-issue-updated-labels.json"),
-			ExpectedHeadline: "Test User added labels [sad] to, removed labels [bad] from story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User added labels [sad] to, removed labels [bad] from story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  true,
 		},
 		"issue lowered priority": {
 			Request:          testWebhookRequest("webhook-issue-updated-lowered-priority.json"),
-			ExpectedHeadline: `Test User updated priority from "Low" to "High" on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			ExpectedHeadline: `Test User updated priority from "High" to "Low" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			CurrentInstance:  true,
 		},
 		"issue raised priority": {
 			Request:          testWebhookRequest("webhook-issue-updated-raised-priority.json"),
-			ExpectedHeadline: `Test User updated priority from "High" to "Low" on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			ExpectedHeadline: `Test User updated priority from "Low" to "High" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			CurrentInstance:  true,
 		},
 		"issue rank": {
 			Request:          testWebhookRequest("webhook-issue-updated-rank.json"),
-			ExpectedHeadline: "Test User ranked higher story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User updated Rank from \"none\" to \"ranked higher\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  true,
 		},
 		"issue reopened": {
-			Request:          testWebhookRequest("webhook-issue-updated-reopened.json"),
-			ExpectedHeadline: "Test User reopened story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
+			Request:                 testWebhookRequest("webhook-issue-updated-reopened.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User updated story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedFields: []*model.SlackAttachmentField{
+				{
+					Title: "",
+					Value: "**Reopened:** ~~Done~~ Open",
+					Short: false,
+				},
+				{
+					Title: "",
+					Value: "**Status:** ~~Done~~ To Do",
+					Short: false,
+				},
+			},
+			CurrentInstance: true,
 		},
 		"issue resolved": {
-			Request:          testWebhookRequest("webhook-issue-updated-resolved.json"),
-			ExpectedHeadline: "Test User resolved story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
+			Request:                 testWebhookRequest("webhook-issue-updated-resolved.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User updated story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedFields: []*model.SlackAttachmentField{
+				{
+					Title: "",
+					Value: "**Resolved:** ~~Open~~ Done",
+					Short: false,
+				},
+				{
+					Title: "",
+					Value: "**Status:** ~~In Progress~~ Done",
+					Short: false,
+				},
+			},
+			CurrentInstance: true,
 		},
 		"issue sprint": {
 			Request:          testWebhookRequest("webhook-issue-updated-sprint.json"),
-			ExpectedHeadline: "Test User moved story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41) to Sprint 2",
+			ExpectedHeadline: "Test User updated Sprint from \"Sprint 1\" to \"Sprint 2\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  true,
 		},
 		"issue started working": {
 			Request:          testWebhookRequest("webhook-issue-updated-started-working.json"),
-			ExpectedHeadline: "Test User updated status from \"In Progress\" to \"To Do\" on story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User updated status from \"To Do\" to \"In Progress\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  true,
+		},
+		"CLOUD comment created": {
+			Request:                 testWebhookRequest("webhook-cloud-comment-created.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User commented on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedText:            "Added a comment",
+			CurrentInstance:         true,
+		},
+		"CLOUD comment updated": {
+			Request:                 testWebhookRequest("webhook-cloud-comment-updated.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User edited comment in story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedText:            "Added a comment, then edited it",
+			CurrentInstance:         true,
+		},
+		"CLOUD comment deleted": {
+			Request:          testWebhookRequest("webhook-cloud-comment-deleted.json"),
+			ExpectedHeadline: "Test User deleted comment in story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  true,
+		},
+		"SERVER issue commented": {
+			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-1.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Lev Brouk commented on story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
+			ExpectedText:            "unik",
+			CurrentInstance:         true,
+		},
+		"SERVER issue comment deleted": {
+			Request:          testWebhookRequest("webhook-server-issue-updated-comment-deleted.json"),
+			ExpectedHeadline: "Lev Brouk deleted comment in story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
+			ExpectedText:     "",
+			CurrentInstance:  true,
+		},
+		"SERVER issue comment edited": {
+			Request:                 testWebhookRequest("webhook-server-issue-updated-comment-edited.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Lev Brouk edited comment in story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
+			ExpectedText:            "and higher eeven higher",
+			CurrentInstance:         true,
+		},
+		"SERVER issue commented notify": {
+			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-2.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User commented on improvement [PRJA-42: test for notifications](http://test-server.azure.com:8080/browse/PRJA-42)",
+			ExpectedText:            "This is a test comment. We should act on it right away.",
+			CurrentInstance:         true,
+		},
+		"SERVER: ignored comment created": {
+			Request:         testWebhookRequest("webhook-server-comment-created.json"),
+			ExpectedIgnored: true,
+			CurrentInstance: true,
+		},
+		"issue created - no Instance": {
+			Request:                 testWebhookRequest("webhook-issue-created.json"),
+			ExpectedStatus:          http.StatusOK,
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedText:            "Unit test description, not that long",
+			ExpectedFields: []*model.SlackAttachmentField{
+				&model.SlackAttachmentField{
+					Title: "Priority",
+					Value: "High",
+					Short: true,
+				},
+			},
+			CurrentInstance: false,
+		},
+		"issue created no fields - no Instance": {
+			Request:                 testWebhookRequest("webhook-issue-created-no-relevant-fields.json"),
+			ExpectedStatus:          http.StatusOK,
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedText:            "Unit test description, not that long",
+			ExpectedFields:          []*model.SlackAttachmentField{},
+			CurrentInstance:         false,
+		},
+		"issue created no description - no Instance": {
+			Request:                 testWebhookRequest("webhook-issue-created-no-description.json"),
+			ExpectedStatus:          http.StatusOK,
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
+			// ExpectedText:            "Unit test description, not that long",
+			ExpectedFields: []*model.SlackAttachmentField{
+				&model.SlackAttachmentField{
+					Title: "Priority",
+					Value: "High",
+					Short: true,
+				},
+			},
+			CurrentInstance: false,
+		},
+		"issue created no description nor fields - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-created-no-description-nor-relevant-fields.json"),
+			ExpectedStatus:   http.StatusOK,
+			ExpectedHeadline: "Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  false,
+		},
+		"issue edited - no Instance": {
+			Request:                 testWebhookRequest("webhook-issue-updated-edited.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User edited the description of story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedText:            "Unit test description, not that long, a little longer now",
+			CurrentInstance:         false,
+		},
+		"issue renamed - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-updated-renamed.json"),
+			ExpectedHeadline: "Test User updated summary from \"Unit test summary\" to \"Unit test summary 1\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedText:     "",
+			CurrentInstance:  false,
+		},
+		"issue assigned nobody - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-updated-assigned-nobody.json"),
+			ExpectedHeadline: "Test User assigned _nobody_ to story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  false,
+		},
+		"issue assigned - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-updated-assigned.json"),
+			ExpectedHeadline: "Test User assigned Test User to story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  false,
+		},
+		"issue assigned on server - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-updated-assigned-on-server.json"),
+			ExpectedHeadline: "Test User assigned Test User to improvement [PRJA-37: test](http://some-instance-test.centralus.cloudapp.azure.com:8080/browse/PRJA-37)",
+			CurrentInstance:  false,
+		},
+		"issue attachments - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-updated-attachments.json"),
+			ExpectedHeadline: "Test User attached [test.gif] to, removed attachments [test.json] from story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  false,
+		},
+		"issue fix version - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-updated-fix-version.json"),
+			ExpectedHeadline: `Test User updated Fix Version from "v1" to "v2" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			CurrentInstance:  false,
+		},
+		"issue issue type - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-updated-issue-type.json"),
+			ExpectedHeadline: `Test User updated issuetype from "Task" to "Bug" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			CurrentInstance:  false,
+		},
+		"issue labels - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-updated-labels.json"),
+			ExpectedHeadline: "Test User added labels [sad] to, removed labels [bad] from story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  false,
+		},
+		"issue lowered priority - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-updated-lowered-priority.json"),
+			ExpectedHeadline: `Test User updated priority from "High" to "Low" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			CurrentInstance:  false,
+		},
+		"issue raised priority - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-updated-raised-priority.json"),
+			ExpectedHeadline: `Test User updated priority from "Low" to "High" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			CurrentInstance:  false,
+		},
+		"issue rank - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-updated-rank.json"),
+			ExpectedHeadline: "Test User updated Rank from \"none\" to \"ranked higher\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  false,
+		},
+		"issue reopened - no Instance": {
+			Request:                 testWebhookRequest("webhook-issue-updated-reopened.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User updated story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedFields: []*model.SlackAttachmentField{
+				{
+					Title: "",
+					Value: "**Reopened:** ~~Done~~ Open",
+					Short: false,
+				},
+				{
+					Title: "",
+					Value: "**Status:** ~~Done~~ To Do",
+					Short: false,
+				},
+			},
+			CurrentInstance: false,
+		},
+		"issue resolved - no Instance": {
+			Request:                 testWebhookRequest("webhook-issue-updated-resolved.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User updated story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedFields: []*model.SlackAttachmentField{
+				{
+					Title: "",
+					Value: "**Resolved:** ~~Open~~ Done",
+					Short: false,
+				},
+				{
+					Title: "",
+					Value: "**Status:** ~~In Progress~~ Done",
+					Short: false,
+				},
+			},
+			CurrentInstance: false,
+		},
+		"issue sprint - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-updated-sprint.json"),
+			ExpectedHeadline: "Test User updated Sprint from \"Sprint 1\" to \"Sprint 2\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  false,
+		},
+		"issue started working - no Instance": {
+			Request:          testWebhookRequest("webhook-issue-updated-started-working.json"),
+			ExpectedHeadline: "Test User updated status from \"To Do\" to \"In Progress\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  false,
+		},
+		"CLOUD comment created - no Instance": {
+			Request:                 testWebhookRequest("webhook-cloud-comment-created.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User commented on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedText:            "Added a comment",
+			CurrentInstance:         false,
+		},
+		"CLOUD comment updated - no Instance": {
+			Request:                 testWebhookRequest("webhook-cloud-comment-updated.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User edited comment in story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedText:            "Added a comment, then edited it",
+			CurrentInstance:         false,
+		},
+		"CLOUD comment deleted - no Instance": {
+			Request:          testWebhookRequest("webhook-cloud-comment-deleted.json"),
+			ExpectedHeadline: "Test User deleted comment in story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  false,
+		},
+		"SERVER issue commented - no Instance": {
+			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-1.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Lev Brouk commented on story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
+			ExpectedText:            "unik",
+			CurrentInstance:         false,
+		},
+		"SERVER issue comment deleted - no Instance": {
+			Request:          testWebhookRequest("webhook-server-issue-updated-comment-deleted.json"),
+			ExpectedHeadline: "Lev Brouk deleted comment in story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
+			ExpectedText:     "",
+			CurrentInstance:  false,
+		},
+		"SERVER issue comment edited - no Instance": {
+			Request:                 testWebhookRequest("webhook-server-issue-updated-comment-edited.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Lev Brouk edited comment in story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
+			ExpectedText:            "and higher eeven higher",
+			CurrentInstance:         false,
+		},
+		"SERVER issue commented notify - no Instance": {
+			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-2.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User commented on improvement [PRJA-42: test for notifications](http://test-server.azure.com:8080/browse/PRJA-42)",
+			ExpectedText:            "This is a test comment. We should act on it right away.",
+			CurrentInstance:         false,
+		},
+		"SERVER: ignored comment created - no Instance": {
+			Request:         testWebhookRequest("webhook-server-comment-created.json"),
+			ExpectedIgnored: true,
+			CurrentInstance: false,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -209,7 +537,13 @@ func TestWebhookHTTP(t *testing.T) {
 				conf.Secret = validConfiguration.Secret
 			})
 			p.SetAPI(api)
-			p.currentInstanceStore = mockCurrentInstanceStore{&p}
+
+			if tc.CurrentInstance {
+				p.currentInstanceStore = mockCurrentInstanceStore{&p}
+			} else {
+				p.currentInstanceStore = mockCurrentInstanceStoreNoInstance{&p}
+			}
+
 			p.userStore = mockUserStore{}
 
 			w := httptest.NewRecorder()
@@ -221,7 +555,17 @@ func TestWebhookHTTP(t *testing.T) {
 				return recorder
 			}
 			p.ServeHTTP(&plugin.Context{}, w, tc.Request)
-			// assert.Equal(t, 0, w.Result().StatusCode)
+			expectedStatus := http.StatusOK
+			if tc.ExpectedStatus != 0 {
+				expectedStatus = tc.ExpectedStatus
+			}
+			assert.Equal(t, expectedStatus, w.Result().StatusCode)
+
+			if tc.ExpectedIgnored {
+				require.Nil(t, recorder.postedToChannel)
+				return
+			}
+
 			require.NotNil(t, recorder.postedToChannel)
 			post := recorder.postedToChannel
 

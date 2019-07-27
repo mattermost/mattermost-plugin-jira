@@ -31,10 +31,39 @@ export const getStyleForReactSelect = (theme) => {
         }),
         option: (provided, state) => ({
             ...provided,
-            background: state.isSelected ? changeOpacity(theme.centerChannelColor, 0.12) : theme.centerChannelBg,
+            background: state.isFocused ? changeOpacity(theme.centerChannelColor, 0.12) : theme.centerChannelBg,
             color: theme.centerChannelColor,
             '&:hover': {
                 background: changeOpacity(theme.centerChannelColor, 0.12),
+            },
+        }),
+        clearIndicator: (provided) => ({
+            ...provided,
+            width: '34px',
+            color: changeOpacity(theme.centerChannelColor, 0.4),
+            transform: 'scaleX(1.15)',
+            marginRight: '-10px',
+            '&:hover': {
+                color: theme.centerChannelColor,
+            },
+        }),
+        multiValue: (provided) => ({
+            ...provided,
+            background: changeOpacity(theme.centerChannelColor, 0.15),
+        }),
+        multiValueLabel: (provided) => ({
+            ...provided,
+            color: theme.centerChannelColor,
+            paddingBottom: '4px',
+            paddingLeft: '8px',
+            fontSize: '90%',
+        }),
+        multiValueRemove: (provided) => ({
+            ...provided,
+            transform: 'translateX(-2px) scaleX(1.15)',
+            color: changeOpacity(theme.centerChannelColor, 0.4),
+            '&:hover': {
+                background: 'transparent',
             },
         }),
         menu: (provided) => ({
@@ -52,7 +81,6 @@ export const getStyleForReactSelect = (theme) => {
         }),
         dropdownIndicator: (provided) => ({
             ...provided,
-            color: changeOpacity(theme.centerChannelColor, 0.4),
         }),
         singleValue: (provided) => ({
             ...provided,

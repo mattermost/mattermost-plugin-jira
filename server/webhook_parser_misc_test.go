@@ -4,10 +4,11 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 
-	"github.com/andygrunwald/go-jira"
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,12 +17,14 @@ func TestMarkdown(t *testing.T) {
 	f, err := os.Open("testdata/webhook-issue-created.json")
 	require.NoError(t, err)
 	defer f.Close()
-	wh, _, err := ParseWebhook(f)
+	bb, err := ioutil.ReadAll(f)
+	require.Nil(t, err)
+	wh, err := ParseWebhook(bb)
 	require.NoError(t, err)
 	w := wh.(*webhook)
 	require.NotNil(t, w)
 	require.Equal(t,
-		"Test User created story [TES-41](https://some-instance-test.atlassian.net/browse/TES-41)",
+		"Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 		w.headline)
 }
 

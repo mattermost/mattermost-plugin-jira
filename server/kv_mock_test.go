@@ -4,7 +4,10 @@
 package main
 
 import (
-	"github.com/andygrunwald/go-jira"
+	"crypto/md5"
+	"fmt"
+
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 )
 
@@ -14,8 +17,18 @@ type jiraTestInstance struct {
 
 var _ Instance = (*jiraTestInstance)(nil)
 
+const (
+	mockCurrentInstanceURL = "http://jiraTestInstanceURL.some"
+)
+
+func keyWithMockInstance(key string) string {
+	h := md5.New()
+	fmt.Fprintf(h, "%s/%s", mockCurrentInstanceURL, key)
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
 func (jti jiraTestInstance) GetURL() string {
-	return "http://jiraTestInstanceURL.some"
+	return mockCurrentInstanceURL
 }
 func (jti jiraTestInstance) GetMattermostKey() string {
 	return "jiraTestInstanceMattermostKey"
@@ -27,6 +40,9 @@ func (jti jiraTestInstance) GetUserConnectURL(mattermostUserId string) (string, 
 	return "http://jiraTestInstanceUserConnectURL.some", nil
 }
 func (jti jiraTestInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error) {
+	return nil, errors.New("not implemented")
+}
+func (jti jiraTestInstance) GetUserGroups(jiraUser JIRAUser) ([]*jira.UserGroup, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -41,6 +57,17 @@ func (store mockCurrentInstanceStore) LoadCurrentJIRAInstance() (Instance, error
 	return &jiraTestInstance{
 		JIRAInstance: *NewJIRAInstance(store.plugin, "test", "jiraTestInstanceKey"),
 	}, nil
+}
+
+type mockCurrentInstanceStoreNoInstance struct {
+	plugin *Plugin
+}
+
+func (store mockCurrentInstanceStoreNoInstance) StoreCurrentJIRAInstance(ji Instance) error {
+	return nil
+}
+func (store mockCurrentInstanceStoreNoInstance) LoadCurrentJIRAInstance() (Instance, error) {
+	return nil, errors.New("failed to load current Jira instance: not found")
 }
 
 type mockUserStore struct{}

@@ -173,7 +173,7 @@ func (store store) CreateInactiveCloudInstance(jiraURL string) (returnErr error)
 	}()
 
 	ji := NewJIRACloudInstance(store.plugin, jiraURL, false,
-		fmt.Sprintf(`{"BaseURL": %s}`, jiraURL),
+		fmt.Sprintf(`{"BaseURL": "%s"}`, jiraURL),
 		&AtlassianSecurityContext{BaseURL: jiraURL})
 
 	data, err := json.Marshal(ji)
@@ -332,10 +332,18 @@ func (store store) loadJIRAInstance(fullkey string) (Instance, error) {
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
 		}
+		if len(jci.RawAtlassianSecurityContext) > 0 {
+			err = json.Unmarshal([]byte(jci.RawAtlassianSecurityContext), &jci.AtlassianSecurityContext)
+			if err != nil {
+				return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+			}
+		}
+		jci.PluginVersion = manifest.Version
 		jci.Init(store.plugin)
 		return &jci, nil
 
 	case JIRATypeServer:
+		jsi.PluginVersion = manifest.Version
 		jsi.Init(store.plugin)
 		return &jsi, nil
 	}
@@ -370,7 +378,7 @@ func (store store) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser 
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store user, mattermostUserId:%s, Jira user:%s", mattermostUserId, jiraUser.Name))
+			fmt.Sprintf("failed to store user, mattermostUserId:%s, Jira user:%s", mattermostUserId, jiraUser.DisplayName))
 	}()
 
 	err := store.set(keyWithInstance(ji, mattermostUserId), jiraUser)
@@ -378,14 +386,21 @@ func (store store) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser 
 		return err
 	}
 
-	err = store.set(keyWithInstance(ji, jiraUser.Name), mattermostUserId)
+	err = store.set(keyWithInstance(ji, jiraUser.Key()), mattermostUserId)
+	if err != nil {
+		return err
+	}
+
+	// Also store AccountID -> mattermostUserID because Jira Cloud is deprecating the name field
+	// https://developer.atlassian.com/cloud/jira/platform/api-changes-for-user-privacy-announcement/
+	err = store.set(keyWithInstance(ji, jiraUser.AccountID), mattermostUserId)
 	if err != nil {
 		return err
 	}
 
 	store.plugin.debugf("Stored: Jira user, keys:\n\t%s (%s): %+v\n\t%s (%s): %s",
 		keyWithInstance(ji, mattermostUserId), mattermostUserId, jiraUser,
-		keyWithInstance(ji, jiraUser.Name), jiraUser.Name, mattermostUserId)
+		keyWithInstance(ji, jiraUser.Key()), jiraUser.Key(), mattermostUserId)
 
 	return nil
 }
@@ -399,18 +414,19 @@ func (store store) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser,
 		return JIRAUser{}, errors.WithMessage(err,
 			fmt.Sprintf("failed to load Jira user for mattermostUserId:%s", mattermostUserId))
 	}
-	if len(jiraUser.Key) == 0 {
+	if len(jiraUser.Key()) == 0 {
 		return JIRAUser{}, ErrUserNotFound
 	}
+	jiraUser.PluginVersion = manifest.Version
 	return jiraUser, nil
 }
 
-func (store store) LoadMattermostUserId(ji Instance, jiraUserName string) (string, error) {
+func (store store) LoadMattermostUserId(ji Instance, jiraUserNameOrID string) (string, error) {
 	mattermostUserId := ""
-	err := store.get(keyWithInstance(ji, jiraUserName), &mattermostUserId)
+	err := store.get(keyWithInstance(ji, jiraUserNameOrID), &mattermostUserId)
 	if err != nil {
 		return "", errors.WithMessage(err,
-			"failed to load Mattermost user ID for Jira user: "+jiraUserName)
+			"failed to load Mattermost user ID for Jira user/ID: "+jiraUserNameOrID)
 	}
 	if len(mattermostUserId) == 0 {
 		return "", ErrUserNotFound
@@ -437,14 +453,14 @@ func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnE
 		return appErr
 	}
 
-	appErr = store.plugin.API.KVDelete(keyWithInstance(ji, jiraUser.Name))
+	appErr = store.plugin.API.KVDelete(keyWithInstance(ji, jiraUser.Key()))
 	if appErr != nil {
 		return appErr
 	}
 
 	store.plugin.debugf("Deleted: user, keys: %s(%s), %s(%s)",
 		mattermostUserId, keyWithInstance(ji, mattermostUserId),
-		jiraUser.Name, keyWithInstance(ji, jiraUser.Name))
+		jiraUser.Key(), keyWithInstance(ji, jiraUser.Key()))
 	return nil
 }
 
