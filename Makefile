@@ -230,10 +230,8 @@ ifneq ($(HAS_WEBAPP),)
 	mkdir -p ../mattermost-server/plugins/$(PLUGIN_ID)/webapp
 	ln -nfs $(PWD)/webapp/dist ../mattermost-server/plugins/$(PLUGIN_ID)/webapp/dist
 # start an npm watch
-	cd webapp && $(NPM) run run &
+	cd webapp && $(NPM) run run
 endif
-
-	@echo "\n\n*** Run 'make stop' to cancel the webpack watch process.\n\n"
 
 # Reset the plugin
 .PHONY: reset
@@ -260,19 +258,6 @@ else
 	$(error In order to use make reset, you need to have curl installed.)
 endif
 
-# Stop the webpack
-.PHONY: stop
-stop:
-	@echo Stopping changes watching
-
-ifeq ($(OS),Windows_NT)
-	wmic process where "Caption='node.exe' and CommandLine like '%webpack%'" call terminate
-else
-	@for PROCID in $$(ps -ef | grep "[n]ode.*[w]ebpack" | awk '{ print $$2 }'); do \
-		echo stopping webpack watch $$PROCID; \
-		kill $$PROCID; \
-	done
-endif
 
 .PHONY: debug-plugin
 debug-plugin:
