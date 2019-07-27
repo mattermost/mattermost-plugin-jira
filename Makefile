@@ -182,13 +182,17 @@ endif
 help:
 	@cat Makefile | grep -v '\.PHONY' |  grep -v '\help:' | grep -B1 -E '^[a-zA-Z0-9_.-]+:.*' | sed -e "s/:.*//" | sed -e "s/^## //" |  grep -v '\-\-' | sed '1!G;h;$$!d' | awk 'NR%2{printf "\033[36m%-30s\033[0m",$$0;next;}1' | sort
 
+# sd is an easier-to-type alias for server-debug
+.PHONY: sd
+sd: server-debug
+
 # server-debug builds and deploys a debug version of the plugin for your architecture.
 # Then resets the plugin to pick up the changes.
-.PHONY: debug
-debug: server-debug reset
-
 .PHONY: server-debug
-server-debug:
+server-debug: server-debug-deploy reset
+
+.PHONY: server-debug-deploy
+server-debug-deploy:
 
 	./build/bin/manifest apply
 	mkdir -p server/dist
@@ -211,7 +215,12 @@ endif
 	mkdir -p ../mattermost-server/plugins
 	cp -r dist/* ../mattermost-server/plugins/
 
-# webapp-debug builds and deploys a debug version of the plugin's webapp
+# wd is an easier-to-type alias for webapp-debug
+.PHONY: wd
+wd: webapp-debug
+
+# webapp-debug builds and deploys the plugin's webapp in watch mode with source-maps.
+# Webpack will run make-reset after detecting and compiling changes.
 .PHONY: webapp-debug
 webapp-debug:
 
@@ -224,7 +233,7 @@ ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run run &
 endif
 
-	@echo "\n\n*** After the frontend is compiled, run 'make reset' to reset the plugin. Run reset every time a change is made to force the server to serve the chages in your webapp portion of the plugin.\n\n"
+	@echo "\n\n*** Run 'make stop' to cancel the webpack watch process.\n\n"
 
 # Reset the plugin
 .PHONY: reset
@@ -264,3 +273,40 @@ else
 		kill $$PROCID; \
 	done
 endif
+
+.PHONY: debug-plugin
+debug-plugin:
+	$(eval PLUGIN_PID := $(shell ps aux | grep "plugins/${PLUGIN_ID}" | grep -v "grep" | awk -F " " '{print $$2}'))
+	$(eval NUM_PID := $(shell echo -n ${PLUGIN_PID} | wc -w))
+
+	@if [ ${NUM_PID} -gt 2 ]; then \
+		echo "** There is more than 1 plugin process running. Run 'make kill-plugin' to get rid of them."; \
+		echo "   Then run 'make reset' to start the plugin process again, and 'make debug-plugin' attach the dlv process."; \
+		exit 1; \
+	fi
+
+	@if [ -z ${PLUGIN_PID} ]; then \
+		echo "Could not find plugin PID; the plugin is not running. Exiting."; \
+		exit 1; \
+	fi
+
+	@echo "Located Plugin running with PID: ${PLUGIN_PID}"
+	dlv attach ${PLUGIN_PID} --listen :2346 --headless=true --api-version=2 --accept-multiclient &
+
+.PHONY: kill-plugin
+kill-plugin:
+# If we were debugging, we have to unattach the delve process or else we can't disable the plugin.
+# NOTE: we are assuming the dlv was listening on port 2346, as in the debug-plugin.sh script.
+	$(eval DELVE_PID := $(shell ps aux | grep "dlv attach.*2346" | grep -v "grep" | awk -F " " '{print $$2}'))
+
+	@if [ -n "${DELVE_PID}" ]; then \
+		echo "Located existing delve process running with PID: ${DELVE_PID}. Killing."; \
+		kill -9 ${DELVE_PID}; \
+	fi
+
+	$(eval PLUGIN_PID := $(shell ps aux | grep "plugins/${PLUGIN_ID}" | grep -v "grep" | awk -F " " '{print $$2}'))
+
+	@for PID in ${PLUGIN_PID}; do \
+		echo "Killing plugin pid $$PID"; \
+		kill -9 $$PID; \
+	done; \

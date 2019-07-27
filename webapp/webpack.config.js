@@ -1,3 +1,5 @@
+const exec = require('child_process').exec;
+
 var path = require('path');
 
 const NPM_TARGET = process.env.npm_lifecycle_event; //eslint-disable-line no-process-env
@@ -78,6 +80,22 @@ const config = {
         filename: 'main.js',
     },
     devtool: 'source-map',
+    plugins: [
+        {
+            apply: (compiler) => {
+                compiler.hooks.afterEmit.tap('AfterEmitPlugin', () => {
+                    exec('cd .. && make reset', (err, stdout, stderr) => {
+                        if (stdout) {
+                            process.stdout.write(stdout);
+                        }
+                        if (stderr) {
+                            process.stderr.write(stderr);
+                        }
+                    });
+                });
+            },
+        },
+    ],
 };
 
 // Development mode configuration
