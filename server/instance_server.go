@@ -110,6 +110,7 @@ func (jsi jiraServerInstance) GetJIRAClient(jiraUser JIRAUser) (returnClient *ji
 
 	token := oauth1.NewToken(jiraUser.Oauth1AccessToken, jiraUser.Oauth1AccessSecret)
 	httpClient := oauth1Config.Client(oauth1.NoContext, token)
+	httpClient = jsi.GetPlugin().limitResponseClient(httpClient)
 	jiraClient, err := jira.NewClient(httpClient, jsi.GetURL())
 	if err != nil {
 		return nil, err
