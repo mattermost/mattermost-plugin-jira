@@ -42,6 +42,10 @@ type externalConfig struct {
 
 	// Comma separated list of jira groups with permission. Empty is all.
 	GroupsAllowedToEditJiraSubscriptions string
+
+	// Maximum attachment size allowed to be uploaded to Jira, can be a
+	// number, optionally followed by one of [b, kb, mb, gb, tb]
+	MaxAttachmentSize string
 }
 
 const currentInstanceTTL = 1 * time.Second
@@ -57,6 +61,9 @@ type config struct {
 	// of a value. A nil value means there is no instance available.
 	currentInstance        Instance
 	currentInstanceExpires time.Time
+
+	// Maximum attachment size allowed to be uploaded to Jira
+	maxAttachmentSize ByteSize
 }
 
 type Plugin struct {
@@ -105,8 +112,14 @@ func (p *Plugin) OnConfigurationChange() error {
 		return errors.WithMessage(err, "failed to load plugin configuration")
 	}
 
+	maxAttachmentSize, err := ParseByteSize(ec.MaxAttachmentSize)
+	if err != nil {
+		return errors.WithMessage(err, "failed to load plugin configuration")
+	}
+
 	p.updateConfig(func(conf *config) {
 		conf.externalConfig = ec
+		conf.maxAttachmentSize = maxAttachmentSize
 	})
 
 	return nil

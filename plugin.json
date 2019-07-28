@@ -38,22 +38,22 @@
         "help_text": "Mattermost users that can subscribe channels to Jira tickets.",
         "default": "system_admin",
         "options": [
-            {
-                "display_name": "All Users",
-                "value": "users"
-            },
-            {
-                "display_name": "Channel, Team and System Admins",
-                "value": "channel_admin"
-            },
-            {
-                "display_name": "Team and System Admins",
-                "value": "team_admin"
-            },
-            {
-                "display_name": "System Admins",
-                "value": "system_admin"
-            }
+          {
+            "display_name": "All Users",
+            "value": "users"
+          },
+          {
+            "display_name": "Channel, Team and System Admins",
+            "value": "channel_admin"
+          },
+          {
+            "display_name": "Team and System Admins",
+            "value": "team_admin"
+          },
+          {
+            "display_name": "System Admins",
+            "value": "system_admin"
+          }
         ]
       },
       {
