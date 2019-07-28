@@ -4,8 +4,10 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -50,6 +52,8 @@ func TestParseByteSize(t *testing.T) {
 	}{
 		// Happy path
 		{"1234567890123456789", 1234567890123456789, false},
+		{",,,,1,2,3,4,5,6,,,7,8,9,0,1,2,3,4,5,6,7,8,9,,", 1234567890123456789, false},
+		{"1,234,567,890,123,456,789", 1234567890123456789, false},
 		{"1234567890123456789b", 1234567890123456789, false},
 		{"4", 4, false},
 		{"4B", 4, false},
@@ -79,13 +83,48 @@ func TestParseByteSize(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.str, func(t *testing.T) {
 			got, err := ParseByteSize(tt.str)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseByteSize() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.NotNil(t, err)
+			} else {
+				require.Nil(t, err)
 			}
-			if got != tt.want {
-				t.Errorf("ParseByteSize() = %d, want %d", got, tt.want)
-			}
+			assert.Equal(t, got, tt.want)
+		})
+	}
+}
+
+func TestByteSizeString(t *testing.T) {
+	tests := []struct {
+		n    ByteSize
+		want string
+	}{
+		{0, "0"},
+		{1, "1b"},
+		{999, "999b"},
+		{1000, "1,000b"},
+		{1023, "1,023b"},
+		{1024, "1Kb"},
+		{12345, "12.1Kb"},
+		{12851, "12.5Kb"}, // 12.54980
+		{12852, "12.6Kb"}, // 12.55078
+		{123456, "120.6Kb"},
+		{1234567, "1.2Mb"},
+		{12345678, "11.8Mb"},
+		{123456789, "117.7Mb"},
+		{1234567890, "1.1Gb"},
+		{12345678900, "11.5Gb"},
+		{123456789000, "115Gb"},
+		{1234567890000, "1.1Tb"},
+		{12345678900000, "11.2Tb"},
+		{123456789000000, "112.3Tb"},
+		{1234567890000000, "1,122.8Tb"},
+		{12345678900000000, "11,228.3Tb"},
+		{123456789000000000, "112,283.3Tb"},
+		{1234567890000000000, "n/a"},
+	}
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%d", tt.n), func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.n.String())
 		})
 	}
 }

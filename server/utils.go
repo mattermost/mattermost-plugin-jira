@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"net/url"
 	"path"
 	"regexp"
@@ -32,23 +33,38 @@ func (size ByteSize) String() string {
 	if size == 0 {
 		return "0"
 	}
+
+	withCommas := func(in string) string {
+		out := ""
+		for len(in) > 3 {
+			out = "," + in[len(in)-3:] + out
+			in = in[:len(in)-3]
+		}
+		out = in + out
+		return out
+	}
+
 	for i, u := range sizeUnits {
 		if size < u {
 			continue
 		}
 		if u == sizeB {
-			return strconv.FormatInt(int64(size), 10) + sizeSuffixes[i]
+			return withCommas(strconv.FormatUint(uint64(size), 10)) + sizeSuffixes[i]
 		}
 
-		s := strconv.FormatInt(int64((size*10+u/2)/u), 10)
+		if size > math.MaxInt64/10 {
+			return "n/a"
+		}
+
+		s := strconv.FormatUint(uint64((size*10+u/2)/u), 10)
 		l := len(s)
 		switch {
 		case l < 2:
 			return "n/a"
 		case s[l-1] == '0':
-			return s[:l-1] + sizeSuffixes[i]
+			return withCommas(s[:l-1]) + sizeSuffixes[i]
 		default:
-			return s[:l-1] + "." + s[l-1:] + sizeSuffixes[i]
+			return withCommas(s[:l-1]) + "." + s[l-1:] + sizeSuffixes[i]
 		}
 	}
 	return "n/a"
@@ -65,6 +81,7 @@ func ParseByteSize(str string) (ByteSize, error) {
 		}
 	}
 
+	str = strings.ReplaceAll(str, ",", "")
 	n, err := strconv.ParseInt(str, 10, 64)
 	if err == nil {
 		return ByteSize(n) * u, nil
