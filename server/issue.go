@@ -77,7 +77,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 
 	rootId := create.PostId
 	parentId := ""
-	if post.ParentId != "" {
+	if post != nil && post.ParentId != "" {
 		// the original post was a reply
 		rootId = post.RootId
 		parentId = create.PostId
@@ -173,7 +173,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
 		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.GetURL(), created.Key),
-		ChannelId: post.ChannelId,
+		ChannelId: channelId,
 		RootId:    rootId,
 		ParentId:  parentId,
 		UserId:    mattermostUserId,
