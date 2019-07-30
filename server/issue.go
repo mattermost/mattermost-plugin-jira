@@ -646,7 +646,7 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 	}
 
 	// Get list of assignable assignees
-	url := fmt.Sprintf("rest/api/3/user/assignable/search?issueKey=%s&query=%s", issueKey, assignee)
+	url := fmt.Sprintf("rest/api/2/user/assignable/search?issueKey=%s&username=%s", issueKey, assignee)
 	req, err := jiraClient.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", err
@@ -688,6 +688,14 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 
 	// user is array of one object
 	user := jiraUsers[0]
+
+	// From Jira error: query parameters 'accountId' and 'username' are mutually exclusive.
+	// Here, we must choose one and one only and nil the other user field.
+	// Choosing user.AccountID over user.Name, but check if AccountId is empty.
+	// For server instances, AccountID is empty
+	if user.AccountID != "" {
+		user.Name = ""
+	}
 
 	if _, err := jiraClient.Issue.UpdateAssignee(issueKey, user); err != nil {
 		return "", err
