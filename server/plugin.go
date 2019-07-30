@@ -50,6 +50,8 @@ type externalConfig struct {
 
 const currentInstanceTTL = 1 * time.Second
 
+const defaultMaxAttachmentSize = 10 * 1024 * 1024 // 10Mb
+
 type config struct {
 	// externalConfig caches values from the plugin's settings in the server's config.json
 	externalConfig
@@ -115,6 +117,9 @@ func (p *Plugin) OnConfigurationChange() error {
 	maxAttachmentSize, err := ParseByteSize(ec.MaxAttachmentSize)
 	if err != nil {
 		return errors.WithMessage(err, "failed to load plugin configuration")
+	}
+	if maxAttachmentSize <= 0 {
+		maxAttachmentSize = defaultMaxAttachmentSize
 	}
 
 	p.updateConfig(func(conf *config) {
