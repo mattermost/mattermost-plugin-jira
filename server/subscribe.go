@@ -129,6 +129,14 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
 
 	channelIds := []string{}
 	for _, sub := range subIds {
+		if !sub.Filters.Projects.ContainsAny(jwh.Issue.Fields.Project.Key) {
+			continue
+		}
+
+		if !sub.Filters.IssueTypes.ContainsAny(jwh.Issue.Fields.Type.ID) {
+			continue
+		}
+
 		foundEvent := false
 		eventTypes := sub.Filters.Events
 
@@ -169,8 +177,8 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
 		}
 
 		// Security level is a special case.
-		// If the incoming issue has a certain level, and the user has not filtered on it, we need to block.
-		// If the issue has no security level, and the filter has one, the field check above will fail as intended.
+		// if the incoming issue has a certain level, and the user has not filtered on it, we need to block.
+		// else if the issue has no security level, and the filter has one, the field check above will fail as intended.
 		issueSecurity := getIssueFieldValue(issue, "security")
 		if issueSecurity != "" {
 			securityMatch := false
@@ -182,14 +190,6 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
 			if !securityMatch {
 				continue
 			}
-		}
-
-		if !sub.Filters.IssueTypes.ContainsAny(jwh.Issue.Fields.Type.ID) {
-			continue
-		}
-
-		if !sub.Filters.Projects.ContainsAny(jwh.Issue.Fields.Project.Key) {
-			continue
 		}
 
 		channelIds = append(channelIds, sub.ChannelId)

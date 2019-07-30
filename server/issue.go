@@ -576,17 +576,7 @@ func getPermaLink(ji Instance, postId string, currentTeam string) string {
 }
 
 func (p *Plugin) getIssueDataForCloudWebhook(issueKey string) (*jira.Issue, error) {
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return nil, err
-	}
-
-	jci, ok := ji.(*jiraCloudInstance)
-	if !ok {
-		return nil, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
-	}
-
-	jiraClient, err := jci.getJIRAClientForServer()
+	jiraClient, err := p.currentInstanceStore.LoadCurrentJIRACloudClient()
 	if err != nil {
 		return nil, err
 	}

@@ -38,7 +38,7 @@ export function getIssueValuesForMultipleProjects(metadata, projectKeys) {
 
 export function getFields(metadata, projectKeys, issueTypeIds) {
     if (!metadata || !projectKeys || !projectKeys.length || !issueTypeIds || !issueTypeIds.length) {
-        return [];
+        return {};
     }
 
     const issueTypesPerProject = projectKeys.map((key) => getIssueTypes(metadata, key).filter((issueType) => issueTypeIds.includes(issueType.id)));
@@ -70,6 +70,10 @@ export function getFields(metadata, projectKeys, issueTypeIds) {
 
     return fieldHash;
 }
+
+// try debugging with node by writing code just under the function:
+// const data = getFields(x, y, z)
+// console.log(data)
 
 export function getCustomFieldValuesForProjects(metadata, projectKeys) {
     if (!metadata || !projectKeys || !projectKeys.length) {
