@@ -57,6 +57,7 @@ export default class ChannelSettingsModal extends PureComponent {
                 show={Boolean(this.props.channel)}
                 onHide={this.handleClose}
                 onExited={this.handleClose}
+                backdrop='static'
                 bsSize='large'
             >
                 <Modal.Header closeButton={true}>

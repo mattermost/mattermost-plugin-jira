@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/andygrunwald/go-jira"
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/pkg/errors"
 )
@@ -332,6 +332,7 @@ func (p *Plugin) hasPermissionToManageSubscription(userId, channelId string) err
 		}
 
 		allowedGroups := strings.Split(cfg.GroupsAllowedToEditJiraSubscriptions, ",")
+		allowedGroups = Map(allowedGroups, strings.TrimSpace)
 		if !inAllowedGroup(groups, allowedGroups) {
 			return errors.New("not in allowed jira user groups")
 		}
