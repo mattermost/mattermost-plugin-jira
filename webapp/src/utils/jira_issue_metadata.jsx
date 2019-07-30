@@ -1,6 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// This is a replacement for the Array.flat() function which will be polyfilled by Babel
+// in our 5.16 release. Remove this and replace with .flat() then.
+const flatten = (arr) => {
+    return arr.reduce((acc, val) => acc.concat(val), []);
+};
+
 export function getProjectValues(metadata) {
     if (!metadata) {
         return [];
@@ -26,7 +32,7 @@ export function getIssueValues(metadata, projectKey) {
 }
 
 export function getIssueValuesForMultipleProjects(metadata, projectKeys) {
-    const issueValues = projectKeys.map((project) => getIssueValues(metadata, project)).flat().filter(Boolean);
+    const issueValues = flatten(projectKeys.map((project) => getIssueValues(metadata, project))).filter(Boolean);
 
     const issueTypeHash = {};
     issueValues.forEach((issueType) => {
@@ -49,12 +55,12 @@ export function getCustomFieldValuesForProjects(metadata, projectKeys) {
         return [];
     }
 
-    const issueTypes = projectKeys.map((key) => getIssueTypes(metadata, key)).flat();
+    const issueTypes = flatten(projectKeys.map((key) => getIssueTypes(metadata, key)));
 
     const customFieldHash = {};
-    const fields = issueTypes.map((issueType) =>
+    const fields = flatten(issueTypes.map((issueType) =>
         Object.keys(issueType.fields).map((key) => ({...issueType.fields[key], key}))
-    ).flat().filter(Boolean);
+    )).filter(Boolean);
 
     for (const field of fields) {
         if (field.key.startsWith('customfield')) {

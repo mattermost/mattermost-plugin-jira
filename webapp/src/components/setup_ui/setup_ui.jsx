@@ -11,8 +11,8 @@ import JiraIcon from 'components/icon';
 // SetupUI is a dummy Root component that we use to detect when the user has logged in
 export default class SetupUI extends PureComponent {
     static propTypes = {
-        userConnected: PropTypes.bool.isRequired,
-        instanceInstalled: PropTypes.bool.isRequired,
+        userConnected: PropTypes.bool,
+        instanceInstalled: PropTypes.bool,
         registry: PropTypes.object.isRequired,
         openChannelSettings: PropTypes.func.isRequired,
     };
