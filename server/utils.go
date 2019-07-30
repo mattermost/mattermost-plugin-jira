@@ -80,6 +80,34 @@ func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) 
 	return post, nil
 }
 
+func (p *Plugin) CreateBotDMtoMMUserId(mattermostUserId, format string, args ...interface{}) (post *model.Post, returnErr error) {
+	defer func() {
+		if returnErr != nil {
+			returnErr = errors.WithMessage(returnErr,
+				fmt.Sprintf("failed to create DMError to user %v: ", mattermostUserId))
+		}
+	}()
+
+	conf := p.getConfig()
+	channel, appErr := p.API.GetDirectChannel(mattermostUserId, conf.botUserID)
+	if appErr != nil {
+		return nil, appErr
+	}
+
+	post = &model.Post{
+		UserId:    conf.botUserID,
+		ChannelId: channel.Id,
+		Message:   fmt.Sprintf(format, args...),
+	}
+
+	_, appErr = p.API.CreatePost(post)
+	if appErr != nil {
+		return nil, appErr
+	}
+
+	return post, nil
+}
+
 func (p *Plugin) StoreCurrentJIRAInstanceAndNotify(ji Instance) error {
 	appErr := p.currentInstanceStore.StoreCurrentJIRAInstance(ji)
 	if appErr != nil {
