@@ -13,6 +13,8 @@ export default class SetupUI extends PureComponent {
         instanceInstalled: PropTypes.bool,
         registry: PropTypes.object.isRequired,
         openChannelSettings: PropTypes.func.isRequired,
+        haveSetupUI: PropTypes.bool.isRequired,
+        finishedSetupUI: PropTypes.func.isRequired,
         setupUI: PropTypes.func.isRequired,
         setHeaderButtonId: PropTypes.func.isRequired,
         headerButtonId: PropTypes.string.isRequired,
@@ -31,7 +33,10 @@ export default class SetupUI extends PureComponent {
         if (this.props.instanceInstalled && this.props.userConnected && this.props.headerButtonId === '') {
             this.registerHeaderButton();
         }
-        this.props.setupUI();
+        if (!this.props.haveSetupUI) {
+            this.props.setupUI();
+            this.props.finishedSetupUI();
+        }
     }
 
     componentDidUpdate() {
