@@ -15,8 +15,6 @@ import reducers from './reducers';
 import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings} from './actions';
 import Hooks from './hooks/hooks';
 
-export let setupUI;
-
 const setupUILater = (registry, store) => async () => {
     const settings = await getSettings(store.getState);
     if (!settings.ui_enabled) {
@@ -46,12 +44,25 @@ const setupUILater = (registry, store) => async () => {
 };
 
 export default class Plugin {
+    setHeaderButtonId = (id) => {
+        this.headerButtonId = id;
+    };
+
     async initialize(registry, store) {
-        setupUI = setupUILater(registry, store);
+        this.setupUI = setupUILater(registry, store);
+        this.headerButtonId = '';
 
         // Register the dummy component, which will call setupUI when it is activated (i.e., when the user logs in)
         registry.registerRootComponent(
-            () => <SetupUI registry={registry}/>
-        );
+            () => {
+                return (
+                    <SetupUI
+                        registry={registry}
+                        setupUI={this.setupUI}
+                        headerButtonId={this.headerButtonId}
+                        setHeaderButtonId={this.setHeaderButtonId}
+                    />
+                );
+            });
     }
 }
