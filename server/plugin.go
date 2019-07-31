@@ -46,7 +46,7 @@ type externalConfig struct {
 }
 
 const currentInstanceTTL = 1 * time.Second
-const currentCloudClientTTL = 15 * time.Minute
+const currentCloudBotClientTTL = 15 * time.Minute
 
 type config struct {
 	// externalConfig caches values from the plugin's settings in the server's config.json

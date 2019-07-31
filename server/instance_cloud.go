@@ -118,7 +118,7 @@ func (jci jiraCloudInstance) GetURL() string {
 }
 
 func (jci jiraCloudInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error) {
-	client, err := jci.getJIRAClientForUser(jiraUser)
+	client, _, err := jci.getJIRAClientForUser(jiraUser)
 	if err == nil {
 		return client, nil
 	}
@@ -133,19 +133,7 @@ func (jci jiraCloudInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, err
 }
 
 // Creates a client for acting on behalf of a user
-func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Client, error) {
-	conf := jci.Plugin.getConfig()
-	now := time.Now()
-
-	if now.Before(conf.currentCloudBotClientExpires) {
-		// if conf.currentCloudClientExpires is set and there is no current
-		// cloud client, it's a cached "Not found"
-		if conf.currentCloudBotClient == nil {
-			return nil, errors.New("failed to load current Jira cloud client: not found")
-		}
-		return conf.currentCloudBotClient, nil
-	}
-
+func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Client, *http.Client, error) {
 	oauth2Conf := oauth2_jira.Config{
 		BaseURL: jci.GetURL(),
 		Subject: jiraUser.AccountID,
@@ -162,17 +150,23 @@ func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Clie
 	httpClient := oauth2Conf.Client(context.Background())
 
 	jiraClient, err := jira.NewClient(httpClient, oauth2Conf.BaseURL)
-
-	jci.Plugin.updateConfig(func(conf *config) {
-		conf.currentCloudBotClient = jiraClient
-		conf.currentCloudBotClientExpires = now.Add(currentCloudClientTTL)
-	})
-
-	return jiraClient, err
+	return jiraClient, httpClient, err
 }
 
 // Creates a "bot" client with a JWT
 func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
+	conf := jci.Plugin.getConfig()
+	now := time.Now()
+
+	if now.Before(conf.currentCloudBotClientExpires) {
+		// if conf.currentCloudBotClientExpires is set and there is no current
+		// cloud client, it's a cached "Not found"
+		if conf.currentCloudBotClient == nil {
+			return nil, errors.New("failed to load current Jira cloud client: not found")
+		}
+		return conf.currentCloudBotClient, nil
+	}
+
 	jwtConf := &ajwt.Config{
 		Key:          jci.AtlassianSecurityContext.Key,
 		ClientKey:    jci.AtlassianSecurityContext.ClientKey,
@@ -180,7 +174,17 @@ func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
 		BaseURL:      jci.AtlassianSecurityContext.BaseURL,
 	}
 
-	return jira.NewClient(jwtConf.Client(), jwtConf.BaseURL)
+	jiraClient, err := jira.NewClient(jwtConf.Client(), jwtConf.BaseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	jci.Plugin.updateConfig(func(conf *config) {
+		conf.currentCloudBotClient = jiraClient
+		conf.currentCloudBotClientExpires = now.Add(currentCloudBotClientTTL)
+	})
+
+	return jiraClient, nil
 }
 
 func (jci jiraCloudInstance) parseHTTPRequestJWT(r *http.Request) (*jwt.Token, string, error) {
