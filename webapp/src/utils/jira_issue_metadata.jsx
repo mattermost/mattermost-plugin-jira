@@ -51,9 +51,9 @@ export function getFields(metadata, projectKeys, issueTypeIds) {
 
     const fieldsPerProject = [];
     for (const issueTypes of issueTypesPerProject) {
-        const projectFields = issueTypes.map((issueType) =>
+        const projectFields = flatten(issueTypes.map((issueType) =>
             Object.keys(issueType.fields).map((key) => ({...issueType.fields[key], key}))
-        ).flat().filter(Boolean);
+        )).filter(Boolean);
         fieldsPerProject.push(projectFields);
     }
 
