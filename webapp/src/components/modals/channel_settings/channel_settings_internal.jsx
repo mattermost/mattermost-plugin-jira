@@ -48,7 +48,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
         channel: PropTypes.object.isRequired,
         theme: PropTypes.object.isRequired,
         jiraProjectMetadata: PropTypes.object.isRequired,
-        jiraIssueMetadata: PropTypes.object.isRequired,
+        jiraIssueMetadata: PropTypes.object,
         channelSubscriptions: PropTypes.array.isRequired,
         createChannelSubscription: PropTypes.func.isRequired,
         deleteChannelSubscription: PropTypes.func.isRequired,
