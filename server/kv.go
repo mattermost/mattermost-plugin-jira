@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
@@ -51,7 +50,6 @@ type InstanceStore interface {
 type CurrentInstanceStore interface {
 	StoreCurrentJIRAInstance(ji Instance) error
 	LoadCurrentJIRAInstance() (Instance, error)
-	LoadCurrentJIRACloudClient() (*jira.Client, error)
 }
 
 type UserStore interface {
@@ -210,8 +208,8 @@ func (store store) StoreCurrentJIRAInstance(ji Instance) (returnErr error) {
 		conf.currentInstanceExpires = time.Now().Add(currentInstanceTTL)
 
 		// Removing from cache since we are switching instances
-		conf.currentCloudClient = nil
-		conf.currentCloudClientExpires = time.Time{}
+		conf.currentCloudBotClient = nil
+		conf.currentCloudBotClientExpires = time.Time{}
 	})
 	store.plugin.debugf("Stored: current Jira instance: %s", ji.GetURL())
 
@@ -304,42 +302,6 @@ func (store store) LoadCurrentJIRAInstance() (Instance, error) {
 	})
 
 	return ji, nil
-}
-
-func (store store) LoadCurrentJIRACloudClient() (*jira.Client, error) {
-	conf := store.plugin.getConfig()
-	now := time.Now()
-
-	if now.Before(conf.currentCloudClientExpires) {
-		// if conf.currentCloudClientExpires is set and there is no current
-		// cloud client, it's a cached "Not found"
-		if conf.currentCloudClient == nil {
-			return nil, errors.New("failed to load current Jira cloud client: not found")
-		}
-		return conf.currentCloudClient, nil
-	}
-
-	ji, err := store.LoadCurrentJIRAInstance()
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to load current Jira instance")
-	}
-
-	jci, ok := ji.(*jiraCloudInstance)
-	if !ok {
-		return nil, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
-	}
-
-	jiraClient, err := jci.getJIRAClientForServer()
-	if err != nil {
-		return nil, err
-	}
-
-	store.plugin.updateConfig(func(conf *config) {
-		conf.currentCloudClient = jiraClient
-		conf.currentCloudClientExpires = now.Add(currentCloudClientTTL)
-	})
-
-	return jiraClient, nil
 }
 
 func (store store) LoadJIRAInstance(key string) (Instance, error) {

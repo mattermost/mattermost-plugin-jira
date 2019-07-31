@@ -9,7 +9,6 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
-	ajwt "github.com/rbriski/atlassian-jwt"
 )
 
 type jiraTestInstance struct {
@@ -54,18 +53,10 @@ type mockCurrentInstanceStore struct {
 func (store mockCurrentInstanceStore) StoreCurrentJIRAInstance(ji Instance) error {
 	return nil
 }
-func (store mockCurrentInstanceStore) StoreCurrentJIRACloudClient(ji Instance) error {
-	return nil
-}
 func (store mockCurrentInstanceStore) LoadCurrentJIRAInstance() (Instance, error) {
 	return &jiraTestInstance{
 		JIRAInstance: *NewJIRAInstance(store.plugin, "test", "jiraTestInstanceKey"),
 	}, nil
-}
-func (store mockCurrentInstanceStore) LoadCurrentJIRACloudClient() (*jira.Client, error) {
-	jwtConf := &ajwt.Config{}
-
-	return jira.NewClient(jwtConf.Client(), jwtConf.BaseURL)
 }
 
 type mockCurrentInstanceStoreNoInstance struct {
@@ -77,9 +68,6 @@ func (store mockCurrentInstanceStoreNoInstance) StoreCurrentJIRAInstance(ji Inst
 }
 func (store mockCurrentInstanceStoreNoInstance) LoadCurrentJIRAInstance() (Instance, error) {
 	return nil, errors.New("failed to load current Jira instance: not found")
-}
-func (store mockCurrentInstanceStoreNoInstance) LoadCurrentJIRACloudClient() (*jira.Client, error) {
-	return nil, errors.New("failed to load current Jira cloud client: not found")
 }
 
 type mockUserStore struct{}

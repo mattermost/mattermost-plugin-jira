@@ -46,7 +46,7 @@ type externalConfig struct {
 }
 
 const currentInstanceTTL = 1 * time.Second
-const currentCloudClientTTL = 1 * time.Second
+const currentCloudClientTTL = 15 * time.Minute
 
 type config struct {
 	// externalConfig caches values from the plugin's settings in the server's config.json
@@ -62,8 +62,8 @@ type config struct {
 
 	// Cached non-user Jira cloud client. A non-0 expires indicates the presence
 	// of a value. A nil value means there is no client available.
-	currentCloudClient        *jira.Client
-	currentCloudClientExpires time.Time
+	currentCloudBotClient        *jira.Client
+	currentCloudBotClientExpires time.Time
 }
 
 type Plugin struct {

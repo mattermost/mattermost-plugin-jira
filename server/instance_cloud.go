@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 
 	jira "github.com/andygrunwald/go-jira"
 	jwt "github.com/dgrijalva/jwt-go"
@@ -117,7 +118,7 @@ func (jci jiraCloudInstance) GetURL() string {
 }
 
 func (jci jiraCloudInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error) {
-	client, _, err := jci.getJIRAClientForUser(jiraUser)
+	client, err := jci.getJIRAClientForUser(jiraUser)
 	if err == nil {
 		return client, nil
 	}
@@ -132,7 +133,19 @@ func (jci jiraCloudInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, err
 }
 
 // Creates a client for acting on behalf of a user
-func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Client, *http.Client, error) {
+func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Client, error) {
+	conf := jci.Plugin.getConfig()
+	now := time.Now()
+
+	if now.Before(conf.currentCloudBotClientExpires) {
+		// if conf.currentCloudClientExpires is set and there is no current
+		// cloud client, it's a cached "Not found"
+		if conf.currentCloudBotClient == nil {
+			return nil, errors.New("failed to load current Jira cloud client: not found")
+		}
+		return conf.currentCloudBotClient, nil
+	}
+
 	oauth2Conf := oauth2_jira.Config{
 		BaseURL: jci.GetURL(),
 		Subject: jiraUser.AccountID,
@@ -149,7 +162,13 @@ func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Clie
 	httpClient := oauth2Conf.Client(context.Background())
 
 	jiraClient, err := jira.NewClient(httpClient, oauth2Conf.BaseURL)
-	return jiraClient, httpClient, err
+
+	jci.Plugin.updateConfig(func(conf *config) {
+		conf.currentCloudBotClient = jiraClient
+		conf.currentCloudBotClientExpires = now.Add(currentCloudClientTTL)
+	})
+
+	return jiraClient, err
 }
 
 // Creates a "bot" client with a JWT
