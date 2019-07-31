@@ -377,7 +377,11 @@ func executeUninstallCloud(p *Plugin, c *plugin.Context, header *model.CommandAr
 	if len(args) != 1 {
 		return p.help(header)
 	}
-	jiraURL := args[0]
+
+	jiraURL, err := normalizeInstallURL(args[0])
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
 
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
@@ -423,7 +427,11 @@ func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandA
 	if len(args) != 1 {
 		return p.help(header)
 	}
-	jiraURL := args[0]
+
+	jiraURL, err := normalizeInstallURL(args[0])
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
 
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
