@@ -39,7 +39,7 @@
         "default": "system_admin",
         "options": [
             {
-                "display_name": "All Users",
+                "display_name": "All users",
                 "value": "users"
             },
             {
