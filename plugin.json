@@ -64,6 +64,6 @@
         "default": ""
       }
     ],
-    "footer": "Use this webhook URL to set up the Jira integration. See [documentation](https://about.mattermost.com/default-jira-plugin) to learn more.\n\n`https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET`"
+    "footer": "Use this webhook URL format to set up the Jira integration. See [documentation](https://about.mattermost.com/default-jira-plugin) to learn more.\n\n Jira 2.1 use: `https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET` \n\n For Jira 2.0 configuration use this format: `https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL"
   }
 }
