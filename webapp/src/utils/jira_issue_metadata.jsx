@@ -77,10 +77,6 @@ export function getFields(metadata, projectKeys, issueTypeIds) {
     return fieldHash;
 }
 
-// try debugging with node by writing code just under the function:
-// const data = getFields(x, y, z)
-// console.log(data)
-
 export function getCustomFieldValuesForProjects(metadata, projectKeys) {
     if (!metadata || !projectKeys || !projectKeys.length) {
         return [];
