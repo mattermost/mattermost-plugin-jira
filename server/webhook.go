@@ -101,10 +101,11 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 		var mattermostUserId string
 		var err error
 
-		if notification.jiraUsername != "" {
-			mattermostUserId, err = p.userStore.LoadMattermostUserId(ji, notification.jiraUsername)
-		} else {
+		// prefer accountId to username when looking up UserIds
+		if notification.jiraAccountID != "" {
 			mattermostUserId, err = p.userStore.LoadMattermostUserId(ji, notification.jiraAccountID)
+		} else {
+			mattermostUserId, err = p.userStore.LoadMattermostUserId(ji, notification.jiraUsername)
 		}
 		if err != nil {
 			continue
