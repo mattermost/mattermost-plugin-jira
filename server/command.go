@@ -158,13 +158,9 @@ func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 	}
 }
 
-// executeJiraDefault is the default command if no other command fits. It defaults to view issue.
+// executeJiraDefault is the default command if no other command fits. It defaults to help.
 func executeJiraDefault(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	if len(args) != 1 {
-		return p.help(header)
-	}
-
-	return executeView(p, c, header, args...)
+	return p.help(header)
 }
 
 // executeView returns a Jira issue formatted as a slack attachment, or an error message.
