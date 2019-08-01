@@ -148,7 +148,7 @@ func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Clie
 	}
 
 	httpClient := oauth2Conf.Client(context.Background())
-
+	httpClient = jci.GetPlugin().limitResponseClient(httpClient)
 	jiraClient, err := jira.NewClient(httpClient, oauth2Conf.BaseURL)
 	return jiraClient, httpClient, err
 }
@@ -174,7 +174,9 @@ func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
 		BaseURL:      jci.AtlassianSecurityContext.BaseURL,
 	}
 
-	jiraClient, err := jira.NewClient(jwtConf.Client(), jwtConf.BaseURL)
+	httpClient := jci.GetPlugin().limitResponseClient(jwtConf.Client())
+
+	jiraClient, err := jira.NewClient(httpClient, jwtConf.BaseURL)
 	if err != nil {
 		return nil, err
 	}

@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
+	"github.com/mattermost/mattermost-server/plugin"
 )
 
 func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -77,7 +78,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 
 	rootId := create.PostId
 	parentId := ""
-	if post.ParentId != "" {
+	if post != nil && post.ParentId != "" {
 		// the original post was a reply
 		rootId = post.RootId
 		parentId = create.PostId
@@ -129,7 +130,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 
 		reply := &model.Post{
 			Message:   fmt.Sprintf("[Please create your Jira issue manually](%v). %v\n%v", req.URL.String(), message, fieldsString),
-			ChannelId: post.ChannelId,
+			ChannelId: channelId,
 			RootId:    rootId,
 			ParentId:  parentId,
 			UserId:    ji.GetPlugin().getConfig().botUserID,
@@ -156,7 +157,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 
 			_ = api.SendEphemeralPost(mattermostUserId, &model.Post{
 				Message:   message,
-				ChannelId: post.ChannelId,
+				ChannelId: channelId,
 				RootId:    rootId,
 				ParentId:  parentId,
 				UserId:    ji.GetPlugin().getConfig().botUserID,
@@ -172,7 +173,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
 		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.GetURL(), created.Key),
-		ChannelId: post.ChannelId,
+		ChannelId: channelId,
 		RootId:    rootId,
 		ParentId:  parentId,
 		UserId:    mattermostUserId,
@@ -183,28 +184,15 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 			errors.WithMessage(appErr, "failed to create notification post "+create.PostId)
 	}
 
-	// Upload file attachments in the background
-	if post != nil && len(post.FileIds) > 0 {
-		go func() {
-			for _, fileId := range post.FileIds {
-				info, ae := api.GetFileInfo(fileId)
-				if ae != nil {
-					continue
-				}
-				// TODO: large file support? Ignoring errors for now is good enough...
-				byteData, ae := api.ReadFile(info.Path)
-				if ae != nil {
-					notifyOnFailedAttachment(ji, ae.Error(), mattermostUserId, info.Path, created.Key)
-					return
-				}
-				_, _, e := jiraClient.Issue.PostAttachment(created.ID, bytes.NewReader(byteData), info.Name)
-				if e != nil {
-					notifyOnFailedAttachment(ji, e.Error(), mattermostUserId, info.Path, created.Key)
-					return
-				}
+	go func() {
+		conf := ji.GetPlugin().getConfig()
+		for _, fileId := range post.FileIds {
+			mattermostName, _, e := attachFileToIssue(api, jiraClient, created.ID, fileId, conf.maxAttachmentSize)
+			if e != nil {
+				notifyOnFailedAttachment(ji, mattermostUserId, created.Key, e, "file: %s", mattermostName)
 			}
-		}()
-	}
+		}
+	}()
 
 	userBytes, err := json.Marshal(created)
 	if err != nil {
@@ -492,50 +480,28 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 			errors.WithMessage(err, "failed to attach the comment, postId: "+attach.PostId)
 	}
 
-	if len(post.FileIds) > 0 {
-		go func() {
-			updated := false
-
-			// Upload the files
-			for _, fileId := range post.FileIds {
-				info, ae := api.GetFileInfo(fileId)
-				if ae != nil {
-					continue
-				}
-				// TODO: large file support? Ignoring errors for now is good enough...
-				byteData, ae := api.ReadFile(info.Path)
-				if ae != nil {
-					notifyOnFailedAttachment(ji, ae.Error(), mattermostUserId, info.Path, attach.IssueKey)
-					continue
-				}
-
-				attachments, _, err2 := jiraClient.Issue.PostAttachment(attach.IssueKey, bytes.NewReader(byteData), info.Name)
-
-				if err2 != nil {
-					notifyOnFailedAttachment(ji, err2.Error(), mattermostUserId, info.Path, attach.IssueKey)
-					continue
-				}
-				if attachments != nil {
-					// There will only ever be one attachment at a time.
-					attachment := (*attachments)[0]
-					jiraComment.Body += "\n\nAttachment: !" + attachment.Filename + "!"
-					updated = true
-				}
+	go func() {
+		conf := ji.GetPlugin().getConfig()
+		extraText := ""
+		for _, fileId := range post.FileIds {
+			mattermostName, jiraName, e := attachFileToIssue(api, jiraClient, attach.IssueKey, fileId, conf.maxAttachmentSize)
+			if e != nil {
+				notifyOnFailedAttachment(ji, mattermostUserId, attach.IssueKey, e, "file: %s", mattermostName)
 			}
 
-			// Update the comment
-			if updated {
-				jiraComment.ID = commentAdded.ID
-				_, _, err2 := jiraClient.Issue.UpdateComment(attach.IssueKey, &jiraComment)
-				if err2 != nil {
-					ji.GetPlugin().API.LogError("failed to update comment: "+err2.Error(), "issue", attach.IssueKey)
+			extraText += "\n\nAttachment: !" + jiraName + "!"
+		}
+		if extraText == "" {
+			return
+		}
 
-					// Report the error to the user so they know they have to update the comment on their own.
-					_, _ = ji.GetPlugin().CreateBotDMtoMMUserId(mattermostUserId, "Failed to update comment to issue %s with file attachments. Please notify your system administrator.", attach.IssueKey)
-				}
-			}
-		}()
-	}
+		jiraComment.ID = commentAdded.ID
+		jiraComment.Body += extraText
+		_, _, err = jiraClient.Issue.UpdateComment(attach.IssueKey, &jiraComment)
+		if err != nil {
+			notifyOnFailedAttachment(ji, mattermostUserId, attach.IssueKey, err, "failed to completely update comment with attachments")
+		}
+	}()
 
 	rootId := attach.PostId
 	parentId := ""
@@ -573,11 +539,12 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 	return http.StatusOK, nil
 }
 
-func notifyOnFailedAttachment(ji Instance, err, mattermostUserId, path, issueKey string) {
-	ji.GetPlugin().API.LogError("failed to attach file to issue: "+err, "file", path, "issue", issueKey)
+func notifyOnFailedAttachment(ji Instance, mattermostUserId, issueKey string, err error, format string, args ...interface{}) {
+	msg := "Failed to attach to issue: " + issueKey + ", " + fmt.Sprintf(format, args...)
 
-	// Report the error to the user so they know they have to upload the file on their own.
-	_, _ = ji.GetPlugin().CreateBotDMtoMMUserId(mattermostUserId, "Failed to attach file: %s, to issue: %s. Please notify your system administrator.", path, issueKey)
+	ji.GetPlugin().API.LogError(fmt.Sprintf("%s: %v", msg, err), "issue", issueKey)
+	_, _ = ji.GetPlugin().CreateBotDMtoMMUserId(mattermostUserId,
+		"%s. Please notify your system administrator.\n- Error: %v", msg, err)
 }
 
 func buildCreateQuery(ji Instance, project *jira.Project, issue *jira.Issue) *http.Request {
@@ -873,4 +840,30 @@ func userFriendlyJiraError(resp *jira.Response, err error) error {
 		message += fmt.Sprintf(" - %s\n", m)
 	}
 	return errors.New(message)
+}
+
+// Upload file attachments in the background
+func attachFileToIssue(api plugin.API, jiraClient *jira.Client, issueKey, fileId string, maxSize ByteSize) (mattermostName, jiraName string, err error) {
+	fileinfo, appErr := api.GetFileInfo(fileId)
+	if appErr != nil {
+		return "", "", appErr
+	}
+	if ByteSize(fileinfo.Size) > maxSize {
+		return fileinfo.Name, "", errors.Errorf("Maximum attachment size %v exceeded, file size %v", maxSize, ByteSize(fileinfo.Size))
+	}
+	fileBytes, appErr := api.ReadFile(fileinfo.Path)
+	if appErr != nil {
+		return fileinfo.Name, "", appErr
+	}
+
+	attachments, _, err := jiraClient.Issue.PostAttachment(issueKey, bytes.NewReader(fileBytes), fileinfo.Name)
+	if err != nil {
+		return fileinfo.Name, "", err
+	}
+	if attachments == nil || len(*attachments) == 0 {
+		return fileinfo.Name, "", errors.New("unreachable error, attaching file" + fileinfo.Name)
+	}
+	// There will only ever be one attachment at a time.
+	attachment := (*attachments)[0]
+	return fileinfo.Name, attachment.Filename, nil
 }
