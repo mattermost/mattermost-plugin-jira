@@ -122,33 +122,26 @@ export default class ChannelSettingsModalInner extends PureComponent {
             projects = [projects];
         }
 
-        let filters = {
-            ...this.state.filters,
+        // Remove any irrelevant selected choices from other filters
+        const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, projects);
+        const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, projects);
+
+        const selectedIssueTypes = this.state.filters.issue_types.filter((issueType) => {
+            return Boolean(issueOptions.find((it) => it.value === issueType));
+        });
+
+        const selectedEventTypes = this.state.filters.events.filter((eventType) => {
+            if (eventType.includes('customfield')) {
+                return Boolean(customFields.find((et) => et.value === eventType));
+            }
+            return true;
+        });
+
+        const filters = {
             projects,
+            issue_types: selectedIssueTypes,
+            events: selectedEventTypes,
         };
-
-        // User has removed a project from selection. Remove any irrelevant selected choices from the events and issue types.
-        if (projects.length < this.state.filters.projects.length) {
-            const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, projects);
-            const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, projects);
-
-            const selectedIssueTypes = this.state.filters.issue_types.filter((issueType) => {
-                return Boolean(issueOptions.find((it) => it.value === issueType));
-            });
-
-            const selectedEventTypes = this.state.filters.events.filter((eventType) => {
-                if (eventType.includes('customfield')) {
-                    return Boolean(customFields.find((et) => et.value === eventType));
-                }
-                return true;
-            });
-
-            filters = {
-                ...filters,
-                issue_types: selectedIssueTypes,
-                events: selectedEventTypes,
-            };
-        }
 
         let fetchingProjects = false;
 
@@ -266,7 +259,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
                         required={true}
                         onChange={this.handleProjectChange}
                         options={projectOptions}
-                        isMulti={true}
+                        isMulti={false}
                         theme={this.props.theme}
                         value={projectOptions.filter((option) => this.state.filters.projects.includes(option.value))}
                     />
