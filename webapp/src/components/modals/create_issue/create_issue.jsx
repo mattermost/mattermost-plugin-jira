@@ -346,7 +346,6 @@ export default class CreateIssueModal extends PureComponent {
                         onChange={this.handleProjectChange}
                         options={projectOptions}
                         isMulti={false}
-                        virtualized={true}
                         key={'LT'}
                         theme={theme}
                         value={projectOptions.find((option) => option.value === this.state.projectKey)}

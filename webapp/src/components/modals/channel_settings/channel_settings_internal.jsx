@@ -267,7 +267,6 @@ export default class ChannelSettingsModalInner extends PureComponent {
                         onChange={this.handleProjectChange}
                         options={projectOptions}
                         isMulti={true}
-                        virtualized={true}
                         theme={this.props.theme}
                         value={projectOptions.filter((option) => this.state.filters.projects.includes(option.value))}
                     />
