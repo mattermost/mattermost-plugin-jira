@@ -39,7 +39,7 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
     };
 
     connectClick = () => {
-        window.open('/plugins/' + PluginId + '/user/connect');
+        window.open('/plugins/' + PluginId + '/user/connect', '_blank');
     };
 
     render() {
