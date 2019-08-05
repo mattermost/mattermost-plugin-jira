@@ -166,7 +166,7 @@ func (p *Plugin) OnActivate() error {
 	p.secretsStore = store
 	p.otsStore = store
 
-	templates, err := p.loadTemplates(filepath.Join(bundlePath, "server", "dist", "templates"))
+	templates, err := p.loadTemplates(filepath.Join(bundlePath, "assets", "templates"))
 	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to load templates")
 	}
