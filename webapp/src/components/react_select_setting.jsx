@@ -3,11 +3,10 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-
 import ReactSelect from 'react-select';
 
 import Setting from 'components/setting';
-
+import VirtualizedList from 'components/virtualized_list';
 import {getStyleForReactSelect} from 'utils/styles';
 
 export default class ReactSelectSetting extends React.PureComponent {
@@ -16,6 +15,7 @@ export default class ReactSelectSetting extends React.PureComponent {
         onChange: PropTypes.func,
         theme: PropTypes.object.isRequired,
         isClearable: PropTypes.bool,
+        options: PropTypes.array.isRequired,
         value: PropTypes.oneOfType([
             PropTypes.object,
             PropTypes.array,
@@ -66,6 +66,8 @@ export default class ReactSelectSetting extends React.PureComponent {
             );
         }
 
+        const shouldVirtualize = this.props.options.length > 100;
+
         return (
             <Setting
                 inputId={this.props.name}
@@ -73,6 +75,7 @@ export default class ReactSelectSetting extends React.PureComponent {
             >
                 <ReactSelect
                     {...this.props}
+                    components={shouldVirtualize && {MenuList: VirtualizedList}}
                     menuPortalTarget={document.body}
                     menuPlacement='auto'
                     onChange={this.handleChange}
