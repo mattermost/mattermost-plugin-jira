@@ -101,7 +101,8 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 		return p.responsef(header, "There is no Jira instance installed. Please contact your system administrator.")
 	}
 
-	if jiraUser, err := p.userStore.LoadJIRAUser(instance, header.UserId); err == nil && len(jiraUser.Key()) != 0 {
+	jiraUser, err := p.userStore.LoadJIRAUser(instance, header.UserId)
+	if err == nil && len(jiraUser.Key()) != 0 {
 		return p.responsef(header, "You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.")
 	}
 
