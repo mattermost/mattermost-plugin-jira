@@ -58,7 +58,8 @@ func httpUserConnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, 
 	}
 
 	// Users shouldn't be able to make multiple connections.
-	if jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId); err == nil && len(jiraUser.Key()) != 0 {
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
+	if err == nil && len(jiraUser.Key()) != 0 {
 		return http.StatusBadRequest, errors.New("You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.")
 	}
 
