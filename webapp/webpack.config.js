@@ -98,16 +98,11 @@ const config = {
     ],
 };
 
-// Development mode configuration
-if (DEV) {
-    config.mode = 'development';
-    config.devtool = 'source-map';
-}
+config.mode = 'production';
 
-// Production mode configuration
-if (!DEV) {
-    config.mode = 'production';
-    config.devtool = 'source-map';
+if (DEV) {
+    // Development mode configuration
+    config.mode = 'development';
 }
 
 // Export PRODUCTION_PERF_DEBUG=1 when running webpack to enable support for the react profiler

@@ -193,7 +193,6 @@ server-debug: server-debug-deploy reset
 
 .PHONY: server-debug-deploy
 server-debug-deploy:
-
 	./build/bin/manifest apply
 	mkdir -p server/dist
 
@@ -223,7 +222,6 @@ wd: webapp-debug
 # Webpack will run make-reset after detecting and compiling changes.
 .PHONY: webapp-debug
 webapp-debug:
-
 ifneq ($(HAS_WEBAPP),)
 # link the webapp directory
 	rm -rf ../mattermost-server/plugins/$(PLUGIN_ID)/webapp
@@ -236,8 +234,8 @@ endif
 # Reset the plugin
 .PHONY: reset
 reset:
-ifeq ($(and $(MM_SERVICESETTINGS_SITEURL),$(MM_ADMIN_USERNAME),$(MM_ADMIN_PASSWORD)),)
-	$(error In order to use make reset, the following environment variables need to be defined: MM_SERVICESETTINGS_SITEURL, MM_ADMIN_USERNAME, MM_ADMIN_PASSWORD)
+ifeq ($(and $(MM_SERVICESETTINGS_SITEURL),$(MM_ADMIN_USERNAME),$(MM_ADMIN_PASSWORD),$(CURL)),)
+	$(error In order to use make reset, the following environment variables need to be defined: MM_SERVICESETTINGS_SITEURL, MM_ADMIN_USERNAME, MM_ADMIN_PASSWORD, and you need to have curl installed.)
 endif
 
 # If we were debugging, we have to unattach the delve process or else we can't disable the plugin.
@@ -248,15 +246,11 @@ endif
 		kill -9 $$DELVE_PID ; \
 	fi
 
-ifneq ($(CURL),)
 	@echo "\nRestarting plugin via API"
 	$(eval TOKEN := $(shell curl -i -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/login -d '{"login_id": "$(MM_ADMIN_USERNAME)", "password": "$(MM_ADMIN_PASSWORD)"}' | grep -o "Token: [0-9a-z]*" | cut -f2 -d' ' 2> /dev/null))
 	@curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/disable > /dev/null && \
 		curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/enable > /dev/null && \
 		echo "OK." || echo "Sorry, something went wrong. Check that MM_ADMIN_USERNAME and MM_ADMIN_PASSWORD env variables are set correctly."
-else
-	$(error In order to use make reset, you need to have curl installed.)
-endif
 
 
 .PHONY: debug-plugin
