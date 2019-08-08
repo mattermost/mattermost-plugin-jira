@@ -167,6 +167,29 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline: `Test User updated priority from "High" to "Low" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
 			CurrentInstance:  true,
 		},
+		"issue multiple values": {
+			Request:                 testWebhookRequest("webhook-issue-updated-multiple-values.json"),
+			ExpectedHeadline:        `Test User updated story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
+			ExpectedSlackAttachment: true,
+			ExpectedFields: []*model.SlackAttachmentField{
+				{
+					Title: "",
+					Value: "**Fix Version:** ~~v1~~ v2",
+					Short: false,
+				},
+				{
+					Title: "",
+					Value: "**Assignee:** ~~_nobody_~~ Test User",
+					Short: false,
+				},
+				{
+					Title: "",
+					Value: "**QA Steps:** ~~None~~ Make sure it does the thing.",
+					Short: false,
+				},
+			},
+			CurrentInstance: true,
+		},
 		"issue raised priority": {
 			Request:          testWebhookRequest("webhook-issue-updated-raised-priority.json"),
 			ExpectedHeadline: `Test User updated priority from "Low" to "High" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
