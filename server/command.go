@@ -16,6 +16,7 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira assign <issue-key> <assignee>` - Change the assignee of a Jira issue\n" +
 	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field\n" +
 	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
+	"* `/jira subscribe` - Configure the Jira notifications sent to this channel\n" +
 	"* `/jira view <issue-key>` - View the details of a specific Jira issue\n" +
 	"* `/jira settings [setting] [value]` - Update your user settings\n" +
 	"  * [setting] can be `notifications`\n" +
@@ -570,7 +571,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, create, transition, view, settings, install cloud/server, uninstall cloud/server, help",
+		AutoCompleteDesc: "Available commands: connect, disconnect, create, transition, view, subscribe, settings, install cloud/server, uninstall cloud/server, help",
 		AutoCompleteHint: "[command]",
 	}
 }
