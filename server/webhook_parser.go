@@ -394,6 +394,16 @@ func mergeWebhookEvents(events []*webhook) Webhook {
 
 	for _, event := range events {
 		merged.eventTypes = merged.eventTypes.Union(event.eventTypes)
+
+		fromWithDefault := event.fieldInfo.from
+		if fromWithDefault == "" {
+			fromWithDefault = "None"
+		}
+		toWithDefault := event.fieldInfo.to
+		if toWithDefault == "" {
+			toWithDefault = "None"
+		}
+
 		strikePre := "~~"
 		strikePost := "~~"
 		if event.fieldInfo.name == "description" {
@@ -401,7 +411,7 @@ func mergeWebhookEvents(events []*webhook) Webhook {
 			strikePost = ""
 		}
 		msg := "**" + strings.Title(event.fieldInfo.name) + ":** " + strikePre +
-			event.fieldInfo.from + strikePost + " " + event.fieldInfo.to
+			fromWithDefault + strikePost + " " + toWithDefault
 		merged.fields = append(merged.fields, &model.SlackAttachmentField{
 			Value: msg,
 			Short: false,
