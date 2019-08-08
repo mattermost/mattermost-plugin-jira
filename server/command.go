@@ -44,7 +44,6 @@ type CommandHandler struct {
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
-		"connect":          executeConnect,
 		"disconnect":       executeDisconnect,
 		"install/cloud":    executeInstallCloud,
 		"install/server":   executeInstallServer,
@@ -89,14 +88,6 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 		return p.help(commandArgs), nil
 	}
 	return jiraCommandHandler.Handle(p, c, commandArgs, args[1:]...), nil
-}
-
-func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	if len(args) != 0 {
-		return p.help(header)
-	}
-
-	return p.responsef(header, "Please connect your account using the desktop or browser client.")
 }
 
 func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
