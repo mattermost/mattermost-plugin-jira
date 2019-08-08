@@ -45,7 +45,6 @@ type CommandHandler struct {
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
-		"connect":          executeConnect,
 		"disconnect":       executeDisconnect,
 		"install/cloud":    executeInstallCloud,
 		"install/server":   executeInstallServer,
@@ -90,29 +89,6 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 		return p.help(commandArgs), nil
 	}
 	return jiraCommandHandler.Handle(p, c, commandArgs, args[1:]...), nil
-}
-
-func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	if len(args) != 0 {
-		return p.help(header)
-	}
-
-	instance, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return p.responsef(header, "There is no Jira instance installed. Please contact your system administrator.")
-	}
-
-	jiraUser, err := p.userStore.LoadJIRAUser(instance, header.UserId)
-	if err == nil && len(jiraUser.Key()) != 0 {
-		return p.responsef(header, "You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.")
-	}
-
-	redirectURL, err := instance.GetUserConnectURL(header.UserId)
-	if err != nil {
-		return p.responsef(header, "Command failed, please contact your system administrator: %v", err)
-	}
-
-	return p.responseRedirect(redirectURL)
 }
 
 func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
