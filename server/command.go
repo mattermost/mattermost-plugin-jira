@@ -17,6 +17,7 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field\n" +
 	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
 	"* `/jira view <issue-key>` or `/jira <issue-key>` - View a Jira issue\n" +
+	"* `/jira subscribe` - Create or edit a subscription for this channel\n" +
 	"* `/jira settings [setting] [value]` - Update your user settings\n" +
 	"  * [setting] can be `notifications`\n" +
 	"  * [value] can be `on` or `off`\n" +
