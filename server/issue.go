@@ -184,15 +184,17 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 			errors.WithMessage(appErr, "failed to create notification post "+create.PostId)
 	}
 
-	go func() {
-		conf := ji.GetPlugin().getConfig()
-		for _, fileId := range post.FileIds {
-			mattermostName, _, e := attachFileToIssue(api, jiraClient, created.ID, fileId, conf.maxAttachmentSize)
-			if e != nil {
-				notifyOnFailedAttachment(ji, mattermostUserId, created.Key, e, "file: %s", mattermostName)
+	if post != nil && len(post.FileIds) > 0 {
+		go func() {
+			conf := ji.GetPlugin().getConfig()
+			for _, fileId := range post.FileIds {
+				mattermostName, _, e := attachFileToIssue(api, jiraClient, created.ID, fileId, conf.maxAttachmentSize)
+				if e != nil {
+					notifyOnFailedAttachment(ji, mattermostUserId, created.Key, e, "file: %s", mattermostName)
+				}
 			}
-		}
-	}()
+		}()
+	}
 
 	userBytes, err := json.Marshal(created)
 	if err != nil {
