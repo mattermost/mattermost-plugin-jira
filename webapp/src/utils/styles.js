@@ -75,12 +75,20 @@ export const getStyleForReactSelect = (theme) => {
             boxShadow: changeOpacity(theme.centerChannelColor, 0.2) + ' 1px 3px 12px',
             marginTop: '4px',
         }),
+        input: (provided) => ({
+            ...provided,
+            color: theme.centerChannelColor,
+        }),
         placeholder: (provided) => ({
             ...provided,
             color: theme.centerChannelColor,
         }),
         dropdownIndicator: (provided) => ({
             ...provided,
+
+            '&:hover': {
+                color: theme.centerChannelColor,
+            },
         }),
         singleValue: (provided) => ({
             ...provided,
