@@ -45,7 +45,7 @@ workflows:
               only: /^v.*/
             branches:
               ignore: /.*/
-          context: plugin-ci
+          context: matterbuild-github-token
           requires:
             - plugin-ci/lint
             - plugin-ci/coverage
