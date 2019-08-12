@@ -59,7 +59,7 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		case "issue_assigned":
 			wh = parseWebhookAssigned(jwh, jwh.ChangeLog.Items[0].FromString, jwh.ChangeLog.Items[0].ToString)
 		case "issue_updated", "issue_generic":
-			wh = parseWebhookChangeLog(jwh)
+			wh, err = parseWebhookChangeLog(jwh)
 		case "issue_commented":
 			wh, err = parseWebhookCommentCreated(jwh)
 		case "issue_comment_edited":
@@ -90,8 +90,9 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 	return wh, nil
 }
 
-func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
+func parseWebhookChangeLog(jwh *JiraWebhook) (Webhook, error) {
 	var events []*webhook
+	var fieldsNotFound []string
 	for _, item := range jwh.ChangeLog.Items {
 		field := item.Field
 		fieldId := item.FieldId
@@ -144,14 +145,16 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 
 		if event != nil {
 			events = append(events, event)
+		} else {
+			fieldsNotFound = append(fieldsNotFound, field)
 		}
 	}
 	if len(events) == 0 {
-		return nil
+		return nil, fmt.Errorf("Error parsing webhook. Unsupported fields: %s", strings.Join(fieldsNotFound, ", "))
 	} else if len(events) == 1 {
-		return events[0]
+		return events[0], nil
 	} else {
-		return mergeWebhookEvents(events)
+		return mergeWebhookEvents(events), nil
 	}
 }
 
