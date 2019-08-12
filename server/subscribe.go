@@ -116,13 +116,9 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
 		if eventTypes.Intersection(webhookEvents).Len() > 0 {
 			foundEvent = true
 		} else if eventTypes.ContainsAny(eventUpdatedAny) {
-			if webhookEvents.Intersection(updateEvents).Len() > 0 {
-				foundEvent = true
-			} else {
-				for _, eventType := range webhookEvents.Elems(false) {
-					if strings.HasPrefix(eventType, "event_updated_customfield") {
-						foundEvent = true
-					}
+			for _, eventType := range webhookEvents.Elems(false) {
+				if strings.HasPrefix(eventType, "event_updated") {
+					foundEvent = true
 				}
 			}
 		}

@@ -191,7 +191,7 @@
     "items": [
       {
         "field": "Field Name",
-        "fieldtype": "jira",
+        "fieldtype": "custom",
         "fieldId": "customfield_10001",
         "from": null,
         "fromString": "Value 1",
@@ -200,7 +200,7 @@
       },
       {
         "field": "Field Name",
-        "fieldtype": "jira",
+        "fieldtype": "custom",
         "fieldId": "customfield_10002",
         "from": null,
         "fromString": "Value 1",
