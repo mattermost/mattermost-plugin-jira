@@ -236,6 +236,24 @@ func TestWebhookHTTP(t *testing.T) {
 			},
 			CurrentInstance: true,
 		},
+		"SERVER issue resolved": {
+			Request:                 testWebhookRequest("webhook-server-issue-updated-resolved.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User updated bug [TES-4: Unit test summary 1](http://some-instance-test.centralus.cloudapp.azure.com:8080/browse/TES-4)",
+			ExpectedFields: []*model.SlackAttachmentField{
+				{
+					Title: "",
+					Value: "**Status:** ~~In Progress~~ Resolved",
+					Short: false,
+				},
+				{
+					Title: "",
+					Value: "**Resolved:** ~~Open~~ Done",
+					Short: false,
+				},
+			},
+			CurrentInstance: true,
+		},
 		"issue sprint": {
 			Request:          testWebhookRequest("webhook-issue-updated-sprint.json"),
 			ExpectedHeadline: "Test User updated Sprint from \"Sprint 1\" to \"Sprint 2\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
