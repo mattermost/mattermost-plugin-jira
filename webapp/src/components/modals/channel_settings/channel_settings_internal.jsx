@@ -107,21 +107,18 @@ export default class ChannelSettingsModalInner extends PureComponent {
     fetchProjects = (projectKeys) => {
         this.props.fetchJiraIssueMetadataForProjects(projectKeys).then((fetched) => {
             const state = {fetchingProjects: false};
-            if (fetched.error) {
-                state.getMetaDataErr = fetched.error.message;
+            state.filters = this.updateFilters(projectKeys);
+
+            const error = fetched.error || (fetched.data && fetched.data.error);
+            if (error) {
+                const message = error.message ? error.message : error;
+                state.getMetaDataErr = message;
             }
             this.setState(state);
         });
     };
 
-    handleProjectChange = (id, value) => {
-        let projects = value;
-        if (!projects) {
-            projects = [];
-        } else if (!Array.isArray(projects)) {
-            projects = [projects];
-        }
-
+    updateFilters = (projects) => {
         // Remove any irrelevant selected choices from other filters
         const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, projects);
         const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, projects);
@@ -137,11 +134,22 @@ export default class ChannelSettingsModalInner extends PureComponent {
             return true;
         });
 
-        const filters = {
+        return {
             projects,
             issue_types: selectedIssueTypes,
             events: selectedEventTypes,
         };
+    }
+
+    handleProjectChange = (id, value) => {
+        let projects = value;
+        if (!projects) {
+            projects = [];
+        } else if (!Array.isArray(projects)) {
+            projects = [projects];
+        }
+
+        const filters = this.updateFilters(projects);
 
         let fetchingProjects = false;
 
