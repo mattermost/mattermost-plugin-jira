@@ -8,7 +8,7 @@ const flatten = (arr) => {
 };
 
 export function getProjectValues(metadata) {
-    if (!metadata) {
+    if (!metadata || !metadata.projects) {
         return [];
     }
 
@@ -16,6 +16,10 @@ export function getProjectValues(metadata) {
 }
 
 export function getIssueTypes(metadata, projectKey) {
+    if (!metadata || !metadata.projects) {
+        return [];
+    }
+
     const project = metadata.projects.find((proj) => proj.key === projectKey);
     if (!project) {
         return [];
@@ -24,7 +28,7 @@ export function getIssueTypes(metadata, projectKey) {
 }
 
 export function getIssueValues(metadata, projectKey) {
-    if (!metadata || !projectKey) {
+    if (!metadata || !metadata.issues_per_project || !projectKey) {
         return [];
     }
 
@@ -32,6 +36,10 @@ export function getIssueValues(metadata, projectKey) {
 }
 
 export function getIssueValuesForMultipleProjects(metadata, projectKeys) {
+    if (!metadata || !metadata.projects || !projectKeys) {
+        return [];
+    }
+
     const issueValues = flatten(projectKeys.map((project) => getIssueValues(metadata, project))).filter(Boolean);
 
     const issueTypeHash = {};
