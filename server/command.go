@@ -45,6 +45,7 @@ type CommandHandler struct {
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
+		"connect":          executeConnect,
 		"disconnect":       executeDisconnect,
 		"install/cloud":    executeInstallCloud,
 		"install/server":   executeInstallServer,
@@ -113,6 +114,25 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	}
 
 	return p.responsef(header, "You have successfully disconnected your Jira account (**%s**).", jiraUser.DisplayName)
+}
+
+func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) != 0 {
+		return p.help(header)
+	}
+
+	instance, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return p.responsef(header, "There is no Jira instance installed. Please contact your system administrator.")
+	}
+
+	jiraUser, err := p.userStore.LoadJIRAUser(instance, header.UserId)
+	if err == nil && len(jiraUser.Key()) != 0 {
+		return p.responsef(header, "You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.")
+	}
+
+	return p.responsef(header, "[Click here to link your Jira account](%s%s)",
+		p.GetPluginURL(), routeUserConnect)
 }
 
 func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -385,6 +405,7 @@ func executeUninstallCloud(p *Plugin, c *plugin.Context, header *model.CommandAr
 		wSEventInstanceStatus,
 		map[string]interface{}{
 			"instance_installed": false,
+			"instance_type":      "",
 		},
 		&model.WebsocketBroadcast{},
 	)
@@ -435,6 +456,7 @@ func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandA
 		wSEventInstanceStatus,
 		map[string]interface{}{
 			"instance_installed": false,
+			"instance_type":      "",
 		},
 		&model.WebsocketBroadcast{},
 	)

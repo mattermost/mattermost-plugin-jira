@@ -214,6 +214,7 @@ func (store store) StoreCurrentJIRAInstance(ji Instance) (returnErr error) {
 		wSEventInstanceStatus,
 		map[string]interface{}{
 			"instance_installed": true,
+			"instance_type":      ji.GetType(),
 		},
 		&model.WebsocketBroadcast{},
 	)

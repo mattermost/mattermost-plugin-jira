@@ -42,6 +42,7 @@ type UserInfo struct {
 	JIRAUser
 	IsConnected       bool              `json:"is_connected"`
 	InstanceInstalled bool              `json:"instance_installed"`
+	InstanceType      string            `json:"instance_type"`
 	JIRAURL           string            `json:"jira_url,omitempty"`
 	InstanceDetails   map[string]string `json:"instance_details,omitempty"`
 }
@@ -97,6 +98,7 @@ func getUserInfo(p *Plugin, mattermostUserId string) UserInfo {
 	resp := UserInfo{}
 	if ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance(); err == nil {
 		resp.InstanceInstalled = true
+		resp.InstanceType = ji.GetType()
 		resp.InstanceDetails = ji.GetDisplayDetails()
 		resp.JIRAURL = ji.GetURL()
 		if jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId); err == nil {

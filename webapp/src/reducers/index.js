@@ -27,6 +27,17 @@ function instanceInstalled(state = false, action) {
     }
 }
 
+function instanceType(state = '', action) {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_CONNECTED:
+        return action.data.instance_type ? action.data.instance_type : state;
+    case ActionTypes.RECEIVED_INSTANCE_STATUS:
+        return action.data.instance_type;
+    default:
+        return state;
+    }
+}
+
 const createModalVisible = (state = false, action) => {
     switch (action.type) {
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL:
@@ -134,6 +145,7 @@ const channelSubscripitons = (state = {}, action) => {
 export default combineReducers({
     userConnected,
     instanceInstalled,
+    instanceType,
     createModalVisible,
     createModal,
     attachCommentToIssueModalVisible,

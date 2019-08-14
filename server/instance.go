@@ -42,7 +42,8 @@ type JIRAInstance struct {
 }
 
 type InstanceStatus struct {
-	InstanceInstalled bool `json:"instance_installed"`
+	InstanceInstalled bool   `json:"instance_installed"`
+	InstanceType      string `json:"instance_type"`
 }
 
 var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
