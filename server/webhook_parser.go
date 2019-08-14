@@ -96,6 +96,9 @@ func parseWebhookChangeLog(jwh *JiraWebhook) (Webhook, error) {
 	for _, item := range jwh.ChangeLog.Items {
 		field := item.Field
 		fieldId := item.FieldId
+		if fieldId == "" {
+			fieldId = field
+		}
 
 		from := item.FromString
 		to := item.ToString
@@ -138,7 +141,7 @@ func parseWebhookChangeLog(jwh *JiraWebhook) (Webhook, error) {
 			event = parseWebhookUpdatedField(jwh, eventUpdatedFixVersion, field, fieldId, fromWithDefault, toWithDefault)
 		case field == "reporter":
 			event = parseWebhookUpdatedField(jwh, eventUpdatedReporter, field, fieldId, fromWithDefault, toWithDefault)
-		case strings.HasPrefix(fieldId, "customfield_"):
+		case item.FieldType == "custom":
 			eventType := fmt.Sprintf("event_updated_%s", fieldId)
 			event = parseWebhookUpdatedField(jwh, eventType, field, fieldId, fromWithDefault, toWithDefault)
 		}

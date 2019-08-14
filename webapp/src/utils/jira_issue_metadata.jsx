@@ -66,13 +66,14 @@ export function getCustomFieldValuesForProjects(metadata, projectKeys) {
     const issueTypes = flatten(projectKeys.map((key) => getIssueTypes(metadata, key)));
 
     const customFieldHash = {};
-    const fields = flatten(issueTypes.map((issueType) =>
-        Object.keys(issueType.fields).map((key) => ({...issueType.fields[key], key}))
-    )).filter(Boolean);
+    const fields = flatten(issueTypes.map((issueType) => Object.values(issueType.fields))).filter(Boolean);
 
     for (const field of fields) {
-        if (field.key.startsWith('customfield')) {
-            customFieldHash[field.key] = field;
+        if (field.schema.custom) {
+            // Jira server webhook fields don't have keys
+            // name is the most unique property available in that case
+            const id = field.key || field.name;
+            customFieldHash[id] = {...field, id};
         }
     }
 
@@ -86,7 +87,7 @@ export function getCustomFieldValuesForProjects(metadata, projectKeys) {
         return 0;
     }).map((field) => ({
         label: `Issue Updated: Custom - ${field.name}`,
-        value: `event_updated_${field.key}`,
+        value: `event_updated_${field.id}`,
     }));
 }
 

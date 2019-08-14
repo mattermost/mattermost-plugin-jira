@@ -24,6 +24,7 @@ type JiraWebhook struct {
 			ToString   string
 			Field      string
 			FieldId    string
+			FieldType  string `json:"fieldtype"`
 		}
 	} `json:"changelog,omitempty"`
 	IssueEventTypeName string `json:"issue_event_type_name"`

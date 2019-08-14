@@ -127,11 +127,19 @@ export default class ChannelSettingsModalInner extends PureComponent {
             return Boolean(issueOptions.find((it) => it.value === issueType));
         });
 
+        const eventUpdatedPrefix = 'event_updated_';
+        const defaultEvents = JiraEventOptions.map((opt) => opt.value);
         const selectedEventTypes = this.state.filters.events.filter((eventType) => {
-            if (eventType.includes('customfield')) {
-                return Boolean(customFields.find((et) => et.value === eventType));
+            if (defaultEvents.includes(eventType)) {
+                return true;
             }
-            return true;
+            if (eventType.startsWith(eventUpdatedPrefix)) {
+                const field = eventType.substring(eventUpdatedPrefix);
+                if (customFields.find((customField) => field === customField.value)) {
+                    return true;
+                }
+            }
+            return false;
         });
 
         return {

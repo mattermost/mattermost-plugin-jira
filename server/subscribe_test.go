@@ -178,14 +178,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			}),
 			ChannelIds: []string{},
 		},
-		"custom field selected": {
-			WebhookTestData: "webhook-issue-updated-custom-field.json",
+		"CLOUD - custom field selected": {
+			WebhookTestData: "webhook-cloud-issue-updated-custom-field.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
-						Events:     NewStringSet("event_updated_customfield_10001"),
+						Events:     NewStringSet("event_updated_customfield_10072"),
 						Projects:   NewStringSet("TES"),
 						IssueTypes: NewStringSet("10001"),
 					},
@@ -193,14 +193,44 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			}),
 			ChannelIds: []string{"sampleChannelId"},
 		},
-		"custom field selected, wrong field": {
-			WebhookTestData: "webhook-issue-updated-custom-field.json",
+		"SERVER - custom field selected": {
+			WebhookTestData: "webhook-server-updated-custom-field.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_updated_numfield"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"CLOUD - custom field selected, wrong field": {
+			WebhookTestData: "webhook-cloud-issue-updated-custom-field.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_customfield_10002"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"SERVER - custom field selected, wrong field": {
+			WebhookTestData: "webhook-server-updated-custom-field.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_updated_numfield2"),
 						Projects:   NewStringSet("TES"),
 						IssueTypes: NewStringSet("10001"),
 					},
@@ -224,7 +254,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			ChannelIds: []string{"sampleChannelId"},
 		},
 		"updated all selected, custom field": {
-			WebhookTestData: "webhook-issue-updated-custom-field.json",
+			WebhookTestData: "webhook-cloud-issue-updated-custom-field.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
