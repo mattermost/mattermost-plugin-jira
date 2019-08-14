@@ -483,12 +483,12 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 
 	uinfo := getUserInfo(p, header.UserId)
 
-	resp := ""
+	resp := fmt.Sprintf("Jira plugin version: %s\nJira plugin hash: %s\n\n", manifest.Version, manifest.Hash)
 	switch {
 	case uinfo.IsConnected:
-		resp = fmt.Sprintf("Connected to Jira %s as %s.\n", uinfo.JIRAURL, uinfo.JIRAUser.DisplayName)
+		resp += fmt.Sprintf("Connected to Jira %s as %s.\n", uinfo.JIRAURL, uinfo.JIRAUser.DisplayName)
 	case uinfo.InstanceInstalled:
-		resp = fmt.Sprintf("Jira %s is installed, but you are not connected. Please use `/jira connect`.\n", uinfo.JIRAURL)
+		resp += fmt.Sprintf("Jira %s is installed, but you are not connected. Please use `/jira connect`.\n", uinfo.JIRAURL)
 	default:
 		return p.responsef(header, "No Jira instance installed, please contact your system administrator.")
 	}
