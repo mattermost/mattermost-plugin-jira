@@ -14,11 +14,11 @@ export default class Hooks {
     slashCommandWillBePostedHook = (message, contextArgs) => {
         if (message && (message.startsWith('/jira create ') || message === '/jira create')) {
             if (!isInstanceInstalled(this.store.getState())) {
-                sendEphemeralPost(this.store, 'There is no Jira instance installed. Please contact your system administrator.');
+                this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
                 return Promise.resolve({});
             }
             if (!isUserConnected(this.store.getState())) {
-                sendEphemeralPost(this.store, 'Your Mattermost account is not connected to Jira. Please use `/jira connect` to connect your account, then try again.');
+                this.store.dispatch(sendEphemeralPost('Your Mattermost account is not connected to Jira. Please use `/jira connect` to connect your account, then try again.'));
                 return Promise.resolve({});
             }
             const description = message.slice(12).trim();
@@ -29,15 +29,15 @@ export default class Hooks {
         if (message && (message.startsWith('/jira connect') || message === '/jira connect')) {
             const instance = getInstanceInstalled(this.store.getState());
             if (!instance) {
-                sendEphemeralPost(this.store, 'There is no Jira instance installed. Please contact your system administrator.');
+                this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
                 return Promise.resolve({});
             }
             if (isUserConnected(this.store.getState())) {
-                sendEphemeralPost(this.store, 'You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.');
+                this.store.dispatch(sendEphemeralPost('You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.'));
                 return Promise.resolve({});
             }
             if (instance === 'server' && isDesktopApp()) {
-                sendEphemeralPost(this.store, 'Please use your browser to connect to Jira.');
+                this.store.dispatch(sendEphemeralPost('Please use your browser to connect to Jira.'));
                 return Promise.resolve({});
             }
 
@@ -47,11 +47,11 @@ export default class Hooks {
 
         if (message && (message.startsWith('/jira subscribe ') || message === '/jira subscribe')) {
             if (!isInstanceInstalled(this.store.getState())) {
-                sendEphemeralPost(this.store, 'There is no Jira instance installed. Please contact your system administrator.');
+                this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
                 return Promise.resolve({});
             }
             if (!isUserConnected(this.store.getState())) {
-                sendEphemeralPost(this.store, 'Your Mattermost account is not connected to Jira. Please use `/jira connect` to connect your account, then try again.');
+                this.store.dispatch(sendEphemeralPost('Your Mattermost account is not connected to Jira. Please use `/jira connect` to connect your account, then try again.'));
                 return Promise.resolve({});
             }
             this.store.dispatch(openChannelSettings(contextArgs.channel_id));

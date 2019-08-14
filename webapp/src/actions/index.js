@@ -289,24 +289,26 @@ export function handleInstanceStatusChange(store) {
     };
 }
 
-export function sendEphemeralPost(store, message, channelId) {
-    const timestamp = Date.now();
-    const post = {
-        id: 'jiraPlugin' + Date.now(),
-        user_id: store.getState().entities.users.currentUserId,
-        channel_id: channelId || getCurrentChannelId(store.getState()),
-        message,
-        type: 'system_ephemeral',
-        create_at: timestamp,
-        update_at: timestamp,
-        root_id: '',
-        parent_id: '',
-        props: {},
-    };
+export function sendEphemeralPost(message, channelId) {
+    return (dispatch, getState) => {
+        const timestamp = Date.now();
+        const post = {
+            id: 'jiraPlugin' + Date.now(),
+            user_id: getState().entities.users.currentUserId,
+            channel_id: channelId || getCurrentChannelId(getState()),
+            message,
+            type: 'system_ephemeral',
+            create_at: timestamp,
+            update_at: timestamp,
+            root_id: '',
+            parent_id: '',
+            props: {},
+        };
 
-    store.dispatch({
-        type: PostTypes.RECEIVED_NEW_POST,
-        data: post,
-        channelId,
-    });
+        dispatch({
+            type: PostTypes.RECEIVED_NEW_POST,
+            data: post,
+            channelId,
+        });
+    };
 }

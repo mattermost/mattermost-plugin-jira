@@ -7,9 +7,9 @@ import {bindActionCreators} from 'redux';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
 
-import {openAttachCommentToIssueModal} from 'actions';
+import {openAttachCommentToIssueModal, sendEphemeralPost} from 'actions';
 
-import {getCurrentUserLocale, isUserConnected, isInstanceInstalled} from 'selectors';
+import {getCurrentUserLocale, isUserConnected, getInstanceInstalled} from 'selectors';
 import {isCombinedUserActivityPost} from 'utils/posts';
 
 import AttachCommentToIssuePostMenuAction from './attach_comment_to_issue';
@@ -23,12 +23,13 @@ const mapStateToProps = (state, ownProps) => {
         locale: getCurrentUserLocale(state),
         isSystemMessage: systemMessage,
         userConnected: isUserConnected(state),
-        instanceInstalled: isInstanceInstalled(state),
+        instanceInstalled: getInstanceInstalled(state),
     };
 };
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
     open: openAttachCommentToIssueModal,
+    sendEphemeralPost,
 }, dispatch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(AttachCommentToIssuePostMenuAction);
