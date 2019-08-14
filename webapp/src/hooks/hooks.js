@@ -1,8 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {isDesktopApp} from '../utils/user_agent';
 import {openCreateModalWithoutPost, openChannelSettings, sendEphemeralPost} from '../actions';
-import {isUserConnected, isInstanceInstalled} from '../selectors';
+import {isUserConnected, getInstanceInstalled, isInstanceInstalled} from '../selectors';
 import PluginId from 'plugin_id';
 
 export default class Hooks {
@@ -26,7 +27,8 @@ export default class Hooks {
         }
 
         if (message && (message.startsWith('/jira connect') || message === '/jira connect')) {
-            if (!isInstanceInstalled(this.store.getState())) {
+            const instance = getInstanceInstalled(this.store.getState());
+            if (!instance) {
                 sendEphemeralPost(this.store, 'There is no Jira instance installed. Please contact your system administrator.');
                 return Promise.resolve({});
             }
@@ -34,6 +36,11 @@ export default class Hooks {
                 sendEphemeralPost(this.store, 'You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.');
                 return Promise.resolve({});
             }
+            if (instance === 'server' && isDesktopApp()) {
+                sendEphemeralPost(this.store, 'Please use your browser to connect to Jira.');
+                return Promise.resolve({});
+            }
+
             window.open('/plugins/' + PluginId + '/user/connect', '_blank');
             return Promise.resolve({});
         }

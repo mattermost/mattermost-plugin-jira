@@ -198,7 +198,7 @@ func (p *Plugin) StoreCurrentJIRAInstanceAndNotify(ji Instance) error {
 	p.API.PublishWebSocketEvent(
 		wSEventInstanceStatus,
 		map[string]interface{}{
-			"instance_installed": true,
+			"instance_installed": ji.GetType(),
 		},
 		&model.WebsocketBroadcast{},
 	)

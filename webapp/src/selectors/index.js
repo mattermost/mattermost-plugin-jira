@@ -55,4 +55,6 @@ export const getChannelSubscriptions = (state) => getPluginState(state).channelS
 
 export const isUserConnected = (state) => getPluginState(state).userConnected;
 
-export const isInstanceInstalled = (state) => getPluginState(state).instanceInstalled;
+export const getInstanceInstalled = (state) => getPluginState(state).instanceInstalled;
+
+export const isInstanceInstalled = (state) => Boolean(getPluginState(state).instanceInstalled);

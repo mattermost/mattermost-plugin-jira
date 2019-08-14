@@ -384,7 +384,7 @@ func executeUninstallCloud(p *Plugin, c *plugin.Context, header *model.CommandAr
 	p.API.PublishWebSocketEvent(
 		wSEventInstanceStatus,
 		map[string]interface{}{
-			"instance_installed": false,
+			"instance_installed": "",
 		},
 		&model.WebsocketBroadcast{},
 	)
@@ -434,7 +434,7 @@ func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandA
 	p.API.PublishWebSocketEvent(
 		wSEventInstanceStatus,
 		map[string]interface{}{
-			"instance_installed": false,
+			"instance_installed": "",
 		},
 		&model.WebsocketBroadcast{},
 	)
@@ -487,7 +487,7 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	switch {
 	case uinfo.IsConnected:
 		resp = fmt.Sprintf("Connected to Jira %s as %s.\n", uinfo.JIRAURL, uinfo.JIRAUser.DisplayName)
-	case uinfo.InstanceInstalled:
+	case uinfo.InstanceInstalled != "":
 		resp = fmt.Sprintf("Jira %s is installed, but you are not connected. Please use `/jira connect`.\n", uinfo.JIRAURL)
 	default:
 		return p.responsef(header, "No Jira instance installed, please contact your system administrator.")
