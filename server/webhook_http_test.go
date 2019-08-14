@@ -254,6 +254,34 @@ func TestWebhookHTTP(t *testing.T) {
 			},
 			CurrentInstance: true,
 		},
+		"SERVER issue reopened": {
+			Request:                 testWebhookRequest("webhook-server-issue-updated-reopened.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User updated bug [TES-4: Unit test summary 1](http://some-instance-test.centralus.cloudapp.azure.com:8080/browse/TES-4)",
+			ExpectedFields: []*model.SlackAttachmentField{
+				{
+					Title: "",
+					Value: "**Reopened:** ~~Done~~ Open",
+					Short: false,
+				},
+				{
+					Title: "",
+					Value: "**Status:** ~~Resolved~~ Reopened",
+					Short: false,
+				},
+			},
+			CurrentInstance: true,
+		},
+		"SERVER issue in progress": {
+			Request:          testWebhookRequest("webhook-server-issue-updated-in-progress.json"),
+			ExpectedHeadline: "Test User updated status from \"Reopened\" to \"In Progress\" on bug [TES-4: Unit test summary 1](http://some-instance-test.centralus.cloudapp.azure.com:8080/browse/TES-4)",
+		},
+		"SERVER issue closed": {
+			Request:          testWebhookRequest("webhook-server-issue-updated-closed.json"),
+			ExpectedHeadline: "Test User updated status from \"Resolved\" to \"Closed\" on bug [TES-4: Unit test summary 1](http://some-instance-test.centralus.cloudapp.azure.com:8080/browse/TES-4)",
+
+			CurrentInstance: true,
+		},
 		"issue sprint": {
 			Request:          testWebhookRequest("webhook-issue-updated-sprint.json"),
 			ExpectedHeadline: "Test User updated Sprint from \"Sprint 1\" to \"Sprint 2\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",

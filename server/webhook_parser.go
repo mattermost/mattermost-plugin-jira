@@ -58,7 +58,7 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		switch jwh.IssueEventTypeName {
 		case "issue_assigned":
 			wh = parseWebhookAssigned(jwh, jwh.ChangeLog.Items[0].FromString, jwh.ChangeLog.Items[0].ToString)
-		case "issue_updated", "issue_generic", "issue_resolved":
+		case "issue_updated", "issue_generic", "issue_resolved", "issue_closed", "issue_work_started", "issue_reopened":
 			wh = parseWebhookChangeLog(jwh)
 		case "issue_commented":
 			wh, err = parseWebhookCommentCreated(jwh)

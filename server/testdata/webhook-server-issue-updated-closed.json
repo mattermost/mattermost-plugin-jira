@@ -1,0 +1,320 @@
+{
+    "timestamp": 1565752078358,
+    "webhookEvent": "jira:issue_updated",
+    "issue_event_type_name": "issue_closed",
+    "user": {
+        "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=admin",
+        "name": "admin",
+        "key": "admin",
+        "emailAddress": "test@example.com",
+        "avatarUrls": {
+            "48x48": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=48",
+            "24x24": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=24",
+            "16x16": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=16",
+            "32x32": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=32"
+        },
+        "displayName": "Test User",
+        "active": true,
+        "timeZone": "Asia/Kuala_Lumpur"
+    },
+    "issue": {
+        "id": "10300",
+        "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10300",
+        "key": "TES-4",
+        "fields": {
+            "issuetype": {
+                "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/issuetype/10004",
+                "id": "10004",
+                "description": "A problem which impairs or prevents the functions of the product.",
+                "iconUrl": "http://some-instance-test.centralus.cloudapp.azure.com:8080/secure/viewavatar?size=xsmall&avatarId=10303&avatarType=issuetype",
+                "name": "Bug",
+                "subtask": false,
+                "avatarId": 10303
+            },
+            "components": [],
+            "timespent": 180,
+            "timeoriginalestimate": null,
+            "description": "Unit test summary 1",
+            "project": {
+                "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/project/10100",
+                "id": "10100",
+                "key": "TES",
+                "name": "Mattermost TEST",
+                "avatarUrls": {
+                    "48x48": "http://some-instance-test.centralus.cloudapp.azure.com:8080/secure/projectavatar?avatarId=10324",
+                    "24x24": "http://some-instance-test.centralus.cloudapp.azure.com:8080/secure/projectavatar?size=small&avatarId=10324",
+                    "16x16": "http://some-instance-test.centralus.cloudapp.azure.com:8080/secure/projectavatar?size=xsmall&avatarId=10324",
+                    "32x32": "http://some-instance-test.centralus.cloudapp.azure.com:8080/secure/projectavatar?size=medium&avatarId=10324"
+                }
+            },
+            "fixVersions": [],
+            "aggregatetimespent": 180,
+            "resolution": {
+                "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/resolution/10000",
+                "id": "10000",
+                "description": "Work has been completed on this issue.",
+                "name": "Done"
+            },
+            "timetracking": {
+                "remainingEstimate": "0m",
+                "timeSpent": "3m",
+                "remainingEstimateSeconds": 0,
+                "timeSpentSeconds": 180
+            },
+            "customfield_10105": "0|i0001b:",
+            "attachment": [],
+            "aggregatetimeestimate": 0,
+            "resolutiondate": "2019-08-14T11:03:02.179+0800",
+            "workratio": -1,
+            "summary": "Unit test summary 1",
+            "lastViewed": "2019-08-14T11:07:58.286+0800",
+            "watches": {
+                "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/issue/TES-4/watchers",
+                "watchCount": 1,
+                "isWatching": true
+            },
+            "creator": {
+                "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=admin",
+                "name": "admin",
+                "key": "admin",
+                "emailAddress": "test@example.com",
+                "avatarUrls": {
+                    "48x48": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=48",
+                    "24x24": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=24",
+                    "16x16": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=16",
+                    "32x32": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=32"
+                },
+                "displayName": "admin",
+                "active": true,
+                "timeZone": "Asia/Kuala_Lumpur"
+            },
+            "subtasks": [],
+            "created": "2019-08-13T06:14:23.580+0800",
+            "reporter": {
+                "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=admin",
+                "name": "admin",
+                "key": "admin",
+                "emailAddress": "test@example.com",
+                "avatarUrls": {
+                    "48x48": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=48",
+                    "24x24": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=24",
+                    "16x16": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=16",
+                    "32x32": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=32"
+                },
+                "displayName": "admin",
+                "active": true,
+                "timeZone": "Asia/Kuala_Lumpur"
+            },
+            "customfield_10000": "{summaryBean=com.atlassian.jira.plugin.devstatus.rest.SummaryBean@55978f01[summary={pullrequest=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@20c026a3[overall=PullRequestOverallBean{stateCount=0, state='OPEN', details=PullRequestOverallDetails{openCount=0, mergedCount=0, declinedCount=0}},byInstanceType={}], build=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@15881981[overall=com.atlassian.jira.plugin.devstatus.summary.beans.BuildOverallBean@34dcc0ad[failedBuildCount=0,successfulBuildCount=0,unknownBuildCount=0,count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], review=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@1f64727[overall=com.atlassian.jira.plugin.devstatus.summary.beans.ReviewsOverallBean@e83e341[stateCount=0,state=<null>,dueDate=<null>,overDue=false,count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], deployment-environment=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@5b12a701[overall=com.atlassian.jira.plugin.devstatus.summary.beans.DeploymentOverallBean@919dd66[topEnvironments=[],showProjects=false,successfulCount=0,count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], repository=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@3ae57c1d[overall=com.atlassian.jira.plugin.devstatus.summary.beans.CommitOverallBean@2bed19eb[count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], branch=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@65099938[overall=com.atlassian.jira.plugin.devstatus.summary.beans.BranchOverallBean@22bc9a12[count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}]},errors=[],configErrors=[]], devSummaryJson={\"cachedValue\":{\"errors\":[],\"configErrors\":[],\"summary\":{\"pullrequest\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"stateCount\":0,\"state\":\"OPEN\",\"details\":{\"openCount\":0,\"mergedCount\":0,\"declinedCount\":0,\"total\":0},\"open\":true},\"byInstanceType\":{}},\"build\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"failedBuildCount\":0,\"successfulBuildCount\":0,\"unknownBuildCount\":0},\"byInstanceType\":{}},\"review\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"stateCount\":0,\"state\":null,\"dueDate\":null,\"overDue\":false,\"completed\":false},\"byInstanceType\":{}},\"deployment-environment\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"topEnvironments\":[],\"showProjects\":false,\"successfulCount\":0},\"byInstanceType\":{}},\"repository\":{\"overall\":{\"count\":0,\"lastUpdated\":null},\"byInstanceType\":{}},\"branch\":{\"overall\":{\"count\":0,\"lastUpdated\":null},\"byInstanceType\":{}}}},\"isStale\":false}}",
+            "aggregateprogress": {
+                "progress": 180,
+                "total": 180,
+                "percent": 100
+            },
+            "priority": {
+                "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/priority/3",
+                "iconUrl": "http://some-instance-test.centralus.cloudapp.azure.com:8080/images/icons/priorities/medium.svg",
+                "name": "Medium",
+                "id": "3"
+            },
+            "customfield_10100": null,
+            "customfield_10101": null,
+            "labels": [],
+            "environment": null,
+            "timeestimate": 0,
+            "aggregatetimeoriginalestimate": null,
+            "versions": [],
+            "duedate": null,
+            "progress": {
+                "progress": 180,
+                "total": 180,
+                "percent": 100
+            },
+            "comment": {
+                "comments": [],
+                "maxResults": 0,
+                "total": 0,
+                "startAt": 0
+            },
+            "issuelinks": [],
+            "votes": {
+                "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/issue/TES-4/votes",
+                "votes": 0,
+                "hasVoted": false
+            },
+            "worklog": {
+                "startAt": 0,
+                "maxResults": 20,
+                "total": 3,
+                "worklogs": [
+                    {
+                        "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10300/worklog/10100",
+                        "author": {
+                            "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=admin",
+                            "name": "admin",
+                            "key": "admin",
+                            "emailAddress": "test@example.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=32"
+                            },
+                            "displayName": "admin",
+                            "active": true,
+                            "timeZone": "Asia/Kuala_Lumpur"
+                        },
+                        "updateAuthor": {
+                            "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=admin",
+                            "name": "admin",
+                            "key": "admin",
+                            "emailAddress": "test@example.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=32"
+                            },
+                            "displayName": "admin",
+                            "active": true,
+                            "timeZone": "Asia/Kuala_Lumpur"
+                        },
+                        "comment": "",
+                        "created": "2019-08-13T06:33:40.431+0800",
+                        "updated": "2019-08-13T06:33:40.431+0800",
+                        "started": "2019-08-13T06:33:00.000+0800",
+                        "timeSpent": "1m",
+                        "timeSpentSeconds": 60,
+                        "id": "10100",
+                        "issueId": "10300"
+                    },
+                    {
+                        "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10300/worklog/10200",
+                        "author": {
+                            "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=admin",
+                            "name": "admin",
+                            "key": "admin",
+                            "emailAddress": "test@example.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=32"
+                            },
+                            "displayName": "admin",
+                            "active": true,
+                            "timeZone": "Asia/Kuala_Lumpur"
+                        },
+                        "updateAuthor": {
+                            "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=admin",
+                            "name": "admin",
+                            "key": "admin",
+                            "emailAddress": "test@example.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=32"
+                            },
+                            "displayName": "admin",
+                            "active": true,
+                            "timeZone": "Asia/Kuala_Lumpur"
+                        },
+                        "comment": "",
+                        "created": "2019-08-14T10:55:11.917+0800",
+                        "updated": "2019-08-14T10:55:11.917+0800",
+                        "started": "2019-08-14T10:55:00.000+0800",
+                        "timeSpent": "1m",
+                        "timeSpentSeconds": 60,
+                        "id": "10200",
+                        "issueId": "10300"
+                    },
+                    {
+                        "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10300/worklog/10201",
+                        "author": {
+                            "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=admin",
+                            "name": "admin",
+                            "key": "admin",
+                            "emailAddress": "test@example.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=32"
+                            },
+                            "displayName": "admin",
+                            "active": true,
+                            "timeZone": "Asia/Kuala_Lumpur"
+                        },
+                        "updateAuthor": {
+                            "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=admin",
+                            "name": "admin",
+                            "key": "admin",
+                            "emailAddress": "test@example.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=32"
+                            },
+                            "displayName": "admin",
+                            "active": true,
+                            "timeZone": "Asia/Kuala_Lumpur"
+                        },
+                        "comment": "",
+                        "created": "2019-08-14T11:03:02.179+0800",
+                        "updated": "2019-08-14T11:03:02.179+0800",
+                        "started": "2019-08-14T11:02:00.000+0800",
+                        "timeSpent": "1m",
+                        "timeSpentSeconds": 60,
+                        "id": "10201",
+                        "issueId": "10300"
+                    }
+                ]
+            },
+            "assignee": {
+                "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=admin",
+                "name": "admin",
+                "key": "admin",
+                "emailAddress": "test@example.com",
+                "avatarUrls": {
+                    "48x48": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=48",
+                    "24x24": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=24",
+                    "16x16": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=16",
+                    "32x32": "https://www.gravatar.com/avatar/64e1b8d34f425d19e1ee2ea7236d3028?d=mm&s=32"
+                },
+                "displayName": "admin",
+                "active": true,
+                "timeZone": "Asia/Kuala_Lumpur"
+            },
+            "updated": "2019-08-14T11:07:58.354+0800",
+            "status": {
+                "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/status/6",
+                "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+                "iconUrl": "http://some-instance-test.centralus.cloudapp.azure.com:8080/images/icons/statuses/closed.png",
+                "name": "Closed",
+                "id": "6",
+                "statusCategory": {
+                    "self": "http://some-instance-test.centralus.cloudapp.azure.com:8080/rest/api/2/statuscategory/3",
+                    "id": 3,
+                    "key": "done",
+                    "colorName": "green",
+                    "name": "Done"
+                }
+            }
+        }
+    },
+    "changelog": {
+        "id": "10511",
+        "items": [
+            {
+                "field": "status",
+                "fieldtype": "jira",
+                "from": "5",
+                "fromString": "Resolved",
+                "to": "6",
+                "toString": "Closed"
+            }
+        ]
+    }
+}
