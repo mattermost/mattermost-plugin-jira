@@ -213,7 +213,8 @@ func (store store) StoreCurrentJIRAInstance(ji Instance) (returnErr error) {
 	store.plugin.API.PublishWebSocketEvent(
 		wSEventInstanceStatus,
 		map[string]interface{}{
-			"instance_installed": ji.GetType(),
+			"instance_installed": true,
+			"instance_type":      ji.GetType(),
 		},
 		&model.WebsocketBroadcast{},
 	)

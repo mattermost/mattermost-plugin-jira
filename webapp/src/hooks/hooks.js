@@ -3,7 +3,7 @@
 
 import {isDesktopApp} from '../utils/user_agent';
 import {openCreateModalWithoutPost, openChannelSettings, sendEphemeralPost} from '../actions';
-import {isUserConnected, getInstanceInstalled, isInstanceInstalled} from '../selectors';
+import {isUserConnected, getInstalledInstanceType, isInstanceInstalled} from '../selectors';
 import PluginId from 'plugin_id';
 
 export default class Hooks {
@@ -27,8 +27,7 @@ export default class Hooks {
         }
 
         if (message && (message.startsWith('/jira connect') || message === '/jira connect')) {
-            const instance = getInstanceInstalled(this.store.getState());
-            if (!instance) {
+            if (!isInstanceInstalled(this.store.getState())) {
                 this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
                 return Promise.resolve({});
             }
@@ -36,7 +35,7 @@ export default class Hooks {
                 this.store.dispatch(sendEphemeralPost('You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.'));
                 return Promise.resolve({});
             }
-            if (instance === 'server' && isDesktopApp()) {
+            if (getInstalledInstanceType(this.store.getState()) === 'server' && isDesktopApp()) {
                 this.store.dispatch(sendEphemeralPost('Please use your browser to connect to Jira.'));
                 return Promise.resolve({});
             }

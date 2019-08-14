@@ -16,7 +16,8 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
         open: PropTypes.func.isRequired,
         postId: PropTypes.string,
         userConnected: PropTypes.bool.isRequired,
-        instanceInstalled: PropTypes.bool.isRequired,
+        isInstanceInstalled: PropTypes.bool.isRequired,
+        installedInstanceType: PropTypes.bool.isRequired,
         sendEphemeralPost: PropTypes.func.isRequired,
     };
 
@@ -41,7 +42,7 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
     };
 
     connectClick = () => {
-        if (this.props.instanceInstalled === 'server' && isDesktopApp()) {
+        if (this.props.isInstanceInstalled && this.props.installedInstanceType === 'server' && isDesktopApp()) {
             this.props.sendEphemeralPost('Please use your browser to connect to Jira.');
             return;
         }
@@ -49,7 +50,7 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
     };
 
     render() {
-        if (this.props.isSystemMessage || !this.props.instanceInstalled || !this.props.userConnected) {
+        if (this.props.isSystemMessage || !this.props.isInstanceInstalled || !this.props.userConnected) {
             return null;
         }
 

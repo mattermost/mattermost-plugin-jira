@@ -14,7 +14,7 @@ function userConnected(state = false, action) {
     }
 }
 
-function instanceInstalled(state = '', action) {
+function instanceInstalled(state = false, action) {
     // We're notified of the instance status at startup (through getConnected)
     // and when we get a websocket instance_status event
     switch (action.type) {
@@ -22,6 +22,17 @@ function instanceInstalled(state = '', action) {
         return action.data.instance_installed ? action.data.instance_installed : state;
     case ActionTypes.RECEIVED_INSTANCE_STATUS:
         return action.data.instance_installed;
+    default:
+        return state;
+    }
+}
+
+function instanceType(state = '', action) {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_CONNECTED:
+        return action.data.instance_type ? action.data.instance_type : state;
+    case ActionTypes.RECEIVED_INSTANCE_STATUS:
+        return action.data.instance_type;
     default:
         return state;
     }
@@ -134,6 +145,7 @@ const channelSubscripitons = (state = {}, action) => {
 export default combineReducers({
     userConnected,
     instanceInstalled,
+    instanceType,
     createModalVisible,
     createModal,
     attachCommentToIssueModalVisible,
