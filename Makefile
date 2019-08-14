@@ -205,7 +205,6 @@ else
 	$(error make debug depends on uname to return your OS. If it does not return 'Darwin' (meaning OSX), 'Linux', or 'Windows_NT' (all recent versions of Windows), you will need to edit the Makefile for your own OS.)
 endif
 
-	cd server && cp -r templates dist/templates
 	rm -rf dist/
 	mkdir -p dist/$(PLUGIN_ID)/server/dist
 	cp $(MANIFEST_FILE) dist/$(PLUGIN_ID)/
