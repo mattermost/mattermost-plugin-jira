@@ -4,8 +4,10 @@ ifeq ($(GO),)
     $(error "go is not available: see https://golang.org/doc/install")
 endif
 
+BUILD_HASH = $(shell git rev-parse HEAD)
+
 # Ensure that the build tools are compiled. Go's caching makes this quick.
-$(shell cd build/manifest && $(GO) build -o ../bin/manifest)
+$(shell cd build/manifest && $(GO) build -ldflags "-X main.buildHash=$(BUILD_HASH)" -o ../bin/manifest)
 
 # Extract the plugin id from the manifest.
 PLUGIN_ID ?= $(shell build/bin/manifest id)
