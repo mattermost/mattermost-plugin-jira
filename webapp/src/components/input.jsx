@@ -15,7 +15,9 @@ export default class Input extends PureComponent {
         value: PropTypes.oneOfType([
             PropTypes.string,
             PropTypes.number,
-        ]).isRequired,
+        ]),
+        addValidate: PropTypes.func.isRequired,
+        removeValidate: PropTypes.func.isRequired,
         maxLength: PropTypes.number,
         onChange: PropTypes.func,
         disabled: PropTypes.bool,
@@ -39,6 +41,18 @@ export default class Input extends PureComponent {
         super(props);
 
         this.state = {invalid: false};
+    }
+
+    componentDidMount() {
+        if (this.props.addValidate && this.props.id) {
+            this.props.addValidate(this.props.id, this.isValid);
+        }
+    }
+
+    componentWillUnmount() {
+        if (this.props.removeValidate && this.props.id) {
+            this.props.removeValidate(this.props.id);
+        }
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -67,6 +81,8 @@ export default class Input extends PureComponent {
     render() {
         const requiredMsg = 'This field is required.';
         const style = getStyle();
+        const value = this.props.value || '';
+
         let validationError = null;
         if (this.props.required && this.state.invalid) {
             validationError = (
@@ -80,12 +96,11 @@ export default class Input extends PureComponent {
         if (this.props.type === 'input') {
             input = (
                 <input
-                    ref={this.ref}
                     id={this.props.id}
                     className='form-control'
                     type='text'
                     placeholder={this.props.placeholder}
-                    value={this.props.value}
+                    value={value}
                     maxLength={this.props.maxLength}
                     onChange={this.handleChange}
                     disabled={this.props.disabled}
@@ -95,12 +110,11 @@ export default class Input extends PureComponent {
         } else if (this.props.type === 'number') {
             input = (
                 <input
-                    ref={this.ref}
                     id={this.props.id}
                     className='form-control'
                     type='number'
                     placeholder={this.props.placeholder}
-                    value={this.props.value}
+                    value={value}
                     maxLength={this.props.maxLength}
                     onChange={this.handleChange}
                     disabled={this.props.disabled}
@@ -116,7 +130,7 @@ export default class Input extends PureComponent {
                     className='form-control'
                     rows='5'
                     placeholder={this.props.placeholder}
-                    value={this.props.value}
+                    value={value}
                     maxLength={this.props.maxLength}
                     onChange={this.handleChange}
                     disabled={this.props.disabled}

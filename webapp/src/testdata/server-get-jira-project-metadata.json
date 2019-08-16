@@ -1,0 +1,12 @@
+{
+  "projects": [{
+    "value": "HEY",
+    "label": "hey"
+  }],
+  "issues_per_project": {
+    "HEY": [{
+      "value": "10001",
+      "label": "Task"
+    }]
+  }
+}

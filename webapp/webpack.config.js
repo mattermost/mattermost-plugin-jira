@@ -28,29 +28,9 @@ const config = {
                 use: {
                     loader: 'babel-loader',
                     options: {
-                        plugins: [
-                            '@babel/plugin-proposal-class-properties',
-                            '@babel/plugin-syntax-dynamic-import',
-                        ],
-                        presets: [
-                            ['@babel/preset-env', {
-                                targets: {
-                                    chrome: 66,
-                                    firefox: 60,
-                                    edge: 42,
-                                    ie: 11,
-                                    safari: 12,
-                                },
-                                modules: false,
-                                corejs: 2,
-                                debug: false,
-                                useBuiltIns: 'usage',
-                                shippedProposals: true,
-                            }],
-                            ['@babel/preset-react', {
-                                useBuiltIns: true,
-                            }],
-                        ],
+                        cacheDirectory: true,
+
+                        // Babel configuration is in .babelrc because jest requires it to be there.
                     },
                 },
             },

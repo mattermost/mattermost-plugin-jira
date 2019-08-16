@@ -52,20 +52,7 @@ export default class CreateIssueModal extends PureComponent {
 
         this.state = initialState;
 
-        this.projectRef = React.createRef();
-        this.issueRef = React.createRef();
-
         this.validator = new Validator();
-    }
-
-    componentDidMount() {
-        this.validator.addComponent('project', this.projectRef);
-        this.validator.addComponent('issue', this.issueRef);
-    }
-
-    componentWillUnmount() {
-        this.validator.removeComponent('project');
-        this.validator.removeComponent('issue');
     }
 
     componentDidUpdate(prevProps) {
@@ -110,7 +97,7 @@ export default class CreateIssueModal extends PureComponent {
         'com.pyxis.greenhopper.jira:gh-epic-label',
     ];
 
-    getFieldsNotCovered() {
+    getFieldsNotCovered = () => {
         const {jiraIssueMetadata} = this.props;
         const myfields = getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType);
 
@@ -257,6 +244,7 @@ export default class CreateIssueModal extends PureComponent {
                     onClick={this.handleClose}
                 />
                 <FormButton
+                    id='submit-button'
                     type='submit'
                     btnClass='btn btn-primary'
                     saving={submitting}
@@ -339,7 +327,6 @@ export default class CreateIssueModal extends PureComponent {
                 <div>
                     {issueError}
                     <ReactSelectSetting
-                        ref={this.projectRef}
                         name={'project'}
                         label={'Project'}
                         required={true}
@@ -349,9 +336,10 @@ export default class CreateIssueModal extends PureComponent {
                         key={'LT'}
                         theme={theme}
                         value={projectOptions.find((option) => option.value === this.state.projectKey)}
+                        addValidate={this.validator.addComponent}
+                        removeValidate={this.validator.removeComponent}
                     />
                     <ReactSelectSetting
-                        ref={this.issueRef}
                         name={'issue_type'}
                         label={'Issue Type'}
                         required={true}
@@ -360,6 +348,8 @@ export default class CreateIssueModal extends PureComponent {
                         isMulti={false}
                         theme={theme}
                         value={issueOptions.find((option) => option.value === this.state.issueType)}
+                        addValidate={this.validator.addComponent}
+                        removeValidate={this.validator.removeComponent}
                     />
                     {fieldsComponent}
                 </div>

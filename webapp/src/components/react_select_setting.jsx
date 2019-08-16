@@ -11,7 +11,7 @@ import {getStyleForReactSelect} from 'utils/styles';
 
 export default class ReactSelectSetting extends React.PureComponent {
     static propTypes = {
-        name: PropTypes.string.isRequired,
+        name: PropTypes.string,
         onChange: PropTypes.func,
         theme: PropTypes.object.isRequired,
         isClearable: PropTypes.bool,
@@ -20,6 +20,8 @@ export default class ReactSelectSetting extends React.PureComponent {
             PropTypes.object,
             PropTypes.array,
         ]),
+        addValidate: PropTypes.func,
+        removeValidate: PropTypes.func,
         required: PropTypes.bool,
     };
 
@@ -27,6 +29,18 @@ export default class ReactSelectSetting extends React.PureComponent {
         super(props);
 
         this.state = {invalid: false};
+    }
+
+    componentDidMount() {
+        if (this.props.addValidate && this.props.name) {
+            this.props.addValidate(this.props.name, this.isValid);
+        }
+    }
+
+    componentWillUnmount() {
+        if (this.props.removeValidate && this.props.name) {
+            this.props.removeValidate(this.props.name);
+        }
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -50,7 +64,11 @@ export default class ReactSelectSetting extends React.PureComponent {
         if (!this.props.required) {
             return true;
         }
-        const valid = Boolean(this.props.value);
+        let valid = Boolean(this.props.value);
+        if (this.props.value && Array.isArray(this.props.value)) {
+            valid = Boolean(this.props.value.length);
+        }
+
         this.setState({invalid: !valid});
         return valid;
     };
@@ -75,6 +93,7 @@ export default class ReactSelectSetting extends React.PureComponent {
             >
                 <ReactSelect
                     {...this.props}
+                    name={this.props.name}
                     components={shouldVirtualize && {MenuList: VirtualizedList}}
                     menuPortalTarget={document.body}
                     menuPlacement='auto'
