@@ -122,7 +122,8 @@ If you want to allow users to [create and manage Jira issues across Mattermost c
 
 If you face issues installing the plugin, see our [Frequently Asked Questions](#5-frequently-asked-questions-faq) for troubleshooting help, or open an issue in the [Mattermost Forum](http://forum.mattermost.org).
 
-**Note**: If you experience problems with Jira-related user interactions in Mattermost such as creating issues, disable these features by setting **Allow users to connect their Mattermost accounts to Jira** to false in **System Console > Plugins > Jira**. This setting does not affect Jira webhook notifications. After changing this setting to false, disable, then re-enable this plugin in **System Console > Plugins > Plugin Management** to reset the plugin state for all users.
+
+
 
 ## 3. Jira v2 Roadmap
 
@@ -266,4 +267,18 @@ https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3
 
 This sends all comment notifications to a Mattermost channel, including public and private comments, so be cautious of which channel you send these notifications to.
 
+## .6 Troubleshooting
 
+**Note**: If you experience problems with Jira-related user interactions in Mattermost such as creating issues, disable these features by setting **Allow users to connect their Mattermost accounts to Jira** to false in **System Console > Plugins > Jira**. This setting does not affect Jira webhook notifications. After changing this setting to false, disable, then re-enable this plugin in **System Console > Plugins > Plugin Management** to reset the plugin state for all users.
+
+### Jira/Mattermost user connections
+You must be signed into MM on the same browser you are using to sign into Jira during `connect`
+
+The domain you are signed into MM with on that browser must match the SiteURL in config.json
+
+
+## 7. Help
+
+For Mattermost customers - please open a support case.
+For Questions, Suggestions and Help - please find us on our forum at https://forum.mattermost.org/c/plugins
+To Contribute to the project see https://www.mattermost.org/contribute-to-mattermost/
