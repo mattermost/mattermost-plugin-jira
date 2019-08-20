@@ -67,7 +67,7 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		case "issue_comment_deleted":
 			wh, err = parseWebhookCommentDeleted(jwh)
 		default:
-			err = errors.Errorf("Unsupported webhook event: %v %v", jwh.WebhookEvent, jwh.IssueEventTypeName)
+			wh, err = parseWebhookUnspecified(jwh)
 		}
 	case "comment_created":
 		wh, err = parseWebhookCommentCreated(jwh)
@@ -92,6 +92,21 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 	}
 
 	return wh, nil
+}
+
+func parseWebhookUnspecified(jwh *JiraWebhook) (Webhook, error) {
+	if len(jwh.ChangeLog.Items) > 0 {
+		return parseWebhookChangeLog(jwh), nil
+	}
+
+	if jwh.Comment.ID != "" {
+		if jwh.Comment.Updated == jwh.Comment.Created {
+			return parseWebhookCommentCreated(jwh)
+		}
+		return parseWebhookCommentUpdated(jwh)
+	}
+
+	return nil, errors.Errorf("Unsupported webhook event: %v", jwh.WebhookEvent)
 }
 
 func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {

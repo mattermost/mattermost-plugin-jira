@@ -66,7 +66,7 @@ func TestWebhookHTTP(t *testing.T) {
 		ExpectedText            string
 		ExpectedFields          []*model.SlackAttachmentField
 		ExpectedStatus          int
-		ExpectedIgnored         bool
+		ExpectedIgnored         bool // Indicates that no post was made as a result of the webhook request
 		CurrentInstance         bool
 	}{
 		"issue created": {
@@ -121,6 +121,13 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedText:            "Unit test description, not that long, a little longer now",
 			CurrentInstance:         true,
 		},
+		"SERVER (old version) issue edited (no issue_event_type_name)": {
+			Request:                 testWebhookRequest("webhook-server-old-issue-updated-no-event-type-edited.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User edited the description of story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedText:            "Unit test description, not that long, a little longer now",
+			CurrentInstance:         true,
+		},
 		"issue renamed": {
 			Request:          testWebhookRequest("webhook-issue-updated-renamed.json"),
 			ExpectedHeadline: "Test User updated summary from \"Unit test summary\" to \"Unit test summary 1\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
@@ -134,6 +141,11 @@ func TestWebhookHTTP(t *testing.T) {
 		},
 		"issue assigned": {
 			Request:          testWebhookRequest("webhook-issue-updated-assigned.json"),
+			ExpectedHeadline: "Test User assigned Test User to story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			CurrentInstance:  true,
+		},
+		"SERVER (old version) issue assigned (no issue_event_type_name)": {
+			Request:          testWebhookRequest("webhook-server-old-issue-updated-no-event-type-assigned.json"),
 			ExpectedHeadline: "Test User assigned Test User to story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			CurrentInstance:  true,
 		},
@@ -318,14 +330,34 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedText:            "unik",
 			CurrentInstance:         true,
 		},
+		"SERVER (old version) issue commented (no issue_event_type_name)": {
+			Request:                 testWebhookRequest("webhook-server-old-issue-updated-no-event-type-commented.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Lev Brouk commented on story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
+			ExpectedText:            "unik",
+			CurrentInstance:         true,
+		},
 		"SERVER issue comment deleted": {
 			Request:          testWebhookRequest("webhook-server-issue-updated-comment-deleted.json"),
 			ExpectedHeadline: "Lev Brouk deleted comment in story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
 			ExpectedText:     "",
 			CurrentInstance:  true,
 		},
+		"SERVER (old version) issue comment deleted (no issue_event_type_name)": {
+			Request:         testWebhookRequest("webhook-server-old-issue-updated-no-event-type-comment-deleted.json"),
+			ExpectedIgnored: true,
+			ExpectedStatus:  http.StatusBadRequest,
+			CurrentInstance: true,
+		},
 		"SERVER issue comment edited": {
 			Request:                 testWebhookRequest("webhook-server-issue-updated-comment-edited.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Lev Brouk edited comment in story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
+			ExpectedText:            "and higher eeven higher",
+			CurrentInstance:         true,
+		},
+		"SERVER (old version) issue comment edited (no issue_event_type_name)": {
+			Request:                 testWebhookRequest("webhook-server-old-issue-updated-no-event-type-comment-edited.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Lev Brouk edited comment in story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
 			ExpectedText:            "and higher eeven higher",
