@@ -343,6 +343,16 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedIgnored: true,
 			CurrentInstance: true,
 		},
+		"SERVER: ignored comment updated": {
+			Request:         testWebhookRequest("webhook-server-comment-updated.json"),
+			ExpectedIgnored: true,
+			CurrentInstance: true,
+		},
+		"SERVER: ignored comment deleted": {
+			Request:         testWebhookRequest("webhook-server-comment-deleted.json"),
+			ExpectedIgnored: true,
+			CurrentInstance: true,
+		},
 		"issue created - no Instance": {
 			Request:                 testWebhookRequest("webhook-issue-created.json"),
 			ExpectedStatus:          http.StatusOK,
