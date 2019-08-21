@@ -81,7 +81,19 @@ For instance, `/jira transition EXT-20 done` transitions the issue key **EXT-20*
 
 ![image](https://user-images.githubusercontent.com/13119842/59113377-dfe11e80-8912-11e9-8971-f869fa123366.png)
 
-Note that states and issue transitions are based on your Jira project workflow configuration. If an invalid state is entered, an ephemeral message is returned mentioning that the state couldn't be found.
+Note
+- States and issue transitions are based on your Jira project workflow configuration. If an invalid state is entered, an ephemeral message is returned mentioning that the state couldn't be found.
+- Partial Matches work.  For example, typing `/jira transition EXT-20 in`  will transition to "In Progress".  However, if there are states of "In Review, In Progress", the plugin bot will ask you to be more specific and display the partial matches.
+
+#### 1.2.4 Assign Jira issues
+
+Assign issues to other Jira users without the need to switch to your Jira project. To assign an issue, use the /jira assign <issue-key> <assignee>.
+
+For instance, `/jira assign EXT-20 john` transitions the issue key **EXT-20** to **John**.
+
+Note
+- Partial Matches work with Usernames and Firstname/Lastname
+
 
 ## 2. Configuration
 
@@ -287,14 +299,16 @@ https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3
 
 This sends all comment notifications to a Mattermost channel, including public and private comments, so be cautious of which channel you send these notifications to.
 
-## .6 Troubleshooting
+## 6. Troubleshooting
 
 **Note**: If you experience problems with Jira-related user interactions in Mattermost such as creating issues, disable these features by setting **Allow users to connect their Mattermost accounts to Jira** to false in **System Console > Plugins > Jira**. This setting does not affect Jira webhook notifications. After changing this setting to false, disable, then re-enable this plugin in **System Console > Plugins > Plugin Management** to reset the plugin state for all users.
 
 ### Jira/Mattermost user connections
-You must be signed into MM on the same browser you are using to sign into Jira during `connect`
+Connecting an account between Mattermost and Jira is a key part of the installation process.
 
-The domain you are signed into MM with on that browser must match the SiteURL in config.json
+You must be signed into Mattermost on the same browser you are using to sign into Jira during `connect`
+
+The domain you are signed into Mattermost with on that browser must match the SiteURL in config.json
 
 
 ## 7. Help
