@@ -93,9 +93,11 @@ Note that states and issue transitions are based on your Jira project workflow c
 
 #### Step 2: Configure webhooks in Jira
 
-As of Jira 2.1, the plugin gets sent a firehose of events from the server via the webhook below.  Previously configured webhooks that point to specific channels are still supported and will continue to work. 
+As of Jira 2.1, you need to configure a single webhook for all possible event triggers that you would like to be pushed into Mattermost.  This is called a firehose, and the plugin gets sent a stream of events from the jira server via the webhook configured below.  The plugin's new Channel Subscription feature processes the firehose of data and then routes the events to particular channels based on your subscriptions. 
 
-To control Mattermost channel subscriptions use the command `/jira subscribe` in the channel where you want to receive subscriptions.  It will open a new modal window to select the project and event triggers that will post to the channel. 
+Previously configured webhooks that point to specific channels are still supported and will continue to work. 
+
+To control Mattermost channel subscriptions, use the command `/jira subscribe` in the channel in which you want to receive subscriptions.  It will open a new modal window to select the project and event triggers that will post to the channel. 
 
 1. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
   - For older versions of Jira, click the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
@@ -109,11 +111,29 @@ To control Mattermost channel subscriptions use the command `/jira subscribe` in
   https://community.mattermost.com/plugins/jira/api/v2/webhook?secret=5JlVk56KPxX629ujeU3MOuxaiwsPzLwh
   ```
 
-3. (Optional) Set a description and a custom JQL query to determine which tickets trigger events. For more information on JQL queries, refer to the [Atlassian help documentation](https://confluence.atlassian.com/jirasoftwarecloud/advanced-searching-764478330.html).
+3. Finally, set which issue events send messages to Mattermost channels - select all of the following:
 
-4. Finally, set which issue events send messages to Mattermost channels, then hit **Save**. The following issue events are supported:
-     - Issue Created; Issue Deleted
-     - Issue Updated, including when an issue is reopened or resolved, or when the assignee is changed. Optionally send notifications for comments, see below.
+* Worklog
+    * created
+    * updated
+    * deleted
+* Comment
+    * created
+    * updated
+    * deleted
+* Issue
+    * created
+    * updated
+    * deleted
+* Issue link
+    * created
+    * deleted
+* Attachment
+    * created
+    * deleted
+
+then hit **Save**.
+     
 
 
 #### Step 3: Install the plugin as an application in Jira
@@ -121,7 +141,6 @@ To control Mattermost channel subscriptions use the command `/jira subscribe` in
 If you want to allow users to [create and manage Jira issues across Mattermost channels](#11-create-and-manage-jira-issues-in-mattermost), install the plugin as an application in your Jira instance. For Jira Server or Data Center instances, post `/jira install server <your-jira-url>` to a Mattermost channel as a Mattermost System Admin, and follow the steps posted to the channel. For Jira Cloud, post `/jira install cloud <your-jira-url>`.
 
 If you face issues installing the plugin, see our [Frequently Asked Questions](#5-frequently-asked-questions-faq) for troubleshooting help, or open an issue in the [Mattermost Forum](http://forum.mattermost.org).
-
 
 
 
@@ -135,6 +154,7 @@ The ship target dates are included below. These are subject to change:
        - Deployed to community.mattermost.com for wider testing
        - Shared with customers for early feedback
   - August 16th: Jira 2.1 released as part of Mattermost Server v5.14
+  - Next Ship Date TBD.  Jira 2.2 Themes and Features are being determined the week of Aug 23.
 
 ### Jira 2.0 Features
 
@@ -238,7 +258,7 @@ Earlier versions of the Jira plugin (2.0) used a manual webhook configuration th
 
 #### How do I manually Configure webhooks notifications to be sent to a Mattermost Channel?
 
-If you want to [send notifications from Jira to Mattermost](#11-send-notifications-from-Jira-to-Mattermost), link a Jira project to a Mattermost channel via webhooks.
+If you want to send notifications from Jira to Mattermost, link a Jira project to a Mattermost channel via webhooks.
 
 1. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
   - For older versions of Jira, click the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
