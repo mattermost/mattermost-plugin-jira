@@ -3,11 +3,13 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import ReactSelect from 'react-select';
+
+import AsyncSelect from 'react-select/async';
 
 import Setting from 'components/setting';
-import VirtualizedList from 'components/virtualized_list';
 import {getStyleForReactSelect} from 'utils/styles';
+
+const MAX_NUM_OPTIONS = 100;
 
 export default class ReactSelectSetting extends React.PureComponent {
     static propTypes = {
@@ -44,7 +46,16 @@ export default class ReactSelectSetting extends React.PureComponent {
                 this.props.onChange(this.props.name, newValue);
             }
         }
-    };
+    }
+
+    // Standard search term matching plus reducing to < 100 items
+    filterOptions = (input) => {
+        let options = this.props.options;
+        if (input) {
+            options = options.filter((x) => x.label.toUpperCase().includes(input.toUpperCase()));
+        }
+        return Promise.resolve(options.slice(0, MAX_NUM_OPTIONS));
+    }
 
     isValid = () => {
         if (!this.props.required) {
@@ -53,7 +64,7 @@ export default class ReactSelectSetting extends React.PureComponent {
         const valid = Boolean(this.props.value);
         this.setState({invalid: !valid});
         return valid;
-    };
+    }
 
     render() {
         const requiredMsg = 'This field is required.';
@@ -66,16 +77,25 @@ export default class ReactSelectSetting extends React.PureComponent {
             );
         }
 
-        const shouldVirtualize = this.props.options.length > 100;
+        let shortenedListWarning = null;
+        if (this.props.options.length > MAX_NUM_OPTIONS) {
+            shortenedListWarning = (
+                <label className='help-text'>
+                    {`There are more than ${MAX_NUM_OPTIONS} items in your search. Please begin typing to see more.`}
+                </label>
+            );
+        }
 
         return (
             <Setting
                 inputId={this.props.name}
                 {...this.props}
             >
-                <ReactSelect
+                {shortenedListWarning}
+                <AsyncSelect
                     {...this.props}
-                    components={shouldVirtualize && {MenuList: VirtualizedList}}
+                    loadOptions={this.filterOptions}
+                    defaultOptions={true}
                     menuPortalTarget={document.body}
                     menuPlacement='auto'
                     onChange={this.handleChange}
