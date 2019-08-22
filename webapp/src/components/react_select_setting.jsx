@@ -77,21 +77,11 @@ export default class ReactSelectSetting extends React.PureComponent {
             );
         }
 
-        let shortenedListWarning = null;
-        if (this.props.options.length > MAX_NUM_OPTIONS) {
-            shortenedListWarning = (
-                <label className='help-text'>
-                    {`There are more than ${MAX_NUM_OPTIONS} items in your search. Please begin typing to see more.`}
-                </label>
-            );
-        }
-
         return (
             <Setting
                 inputId={this.props.name}
                 {...this.props}
             >
-                {shortenedListWarning}
                 <AsyncSelect
                     {...this.props}
                     loadOptions={this.filterOptions}
