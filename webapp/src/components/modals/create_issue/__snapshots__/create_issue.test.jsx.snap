@@ -426,7 +426,6 @@ exports[`components/CreateIssue should match snapshot with error 1`] = `
               "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
               "com.atlassian.jira.plugin.system.customfieldtypes:select",
               "com.atlassian.jira.plugin.system.customfieldtypes:project",
-              "com.pyxis.greenhopper.jira:gh-epic-link",
               "com.pyxis.greenhopper.jira:gh-epic-label",
             ]
           }
@@ -1257,7 +1256,6 @@ exports[`components/CreateIssue should match snapshot with form filled 1`] = `
               "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
               "com.atlassian.jira.plugin.system.customfieldtypes:select",
               "com.atlassian.jira.plugin.system.customfieldtypes:project",
-              "com.pyxis.greenhopper.jira:gh-epic-link",
               "com.pyxis.greenhopper.jira:gh-epic-label",
             ]
           }
