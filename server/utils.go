@@ -206,6 +206,34 @@ func (p *Plugin) StoreCurrentJIRAInstanceAndNotify(ji Instance) error {
 	return nil
 }
 
+func interpolateUsernames(ji Instance, body string) string {
+	result := body
+
+	for _, uname := range parseJIRAUsernamesFromText(body) {
+		if !strings.HasPrefix(uname, "accountid:") {
+			continue
+		}
+
+		jiraUserID := uname[len("accountid:"):]
+
+		mmUserID, err := ji.GetPlugin().userStore.LoadMattermostUserId(ji, jiraUserID)
+		if err != nil {
+			continue
+		}
+
+		jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mmUserID)
+		if err != nil {
+			continue
+		}
+
+		if jiraUser.DisplayName != "" {
+			result = strings.ReplaceAll(result, uname, jiraUser.DisplayName)
+		}
+	}
+
+	return result
+}
+
 func (p *Plugin) loadJIRAProjectKeys(jiraClient *jira.Client) ([]string, error) {
 	list, _, err := jiraClient.Project.GetList()
 	if err != nil {

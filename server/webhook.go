@@ -53,6 +53,11 @@ func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model
 		return nil, http.StatusBadRequest, errors.Errorf("unsupported webhook")
 	}
 
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return nil, http.StatusOK, nil
+	}
+
 	post := &model.Post{
 		ChannelId: channelId,
 		UserId:    fromUserId,
@@ -62,13 +67,15 @@ func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model
 		// },
 	}
 	if wh.text != "" || len(wh.fields) != 0 {
+		text := interpolateUsernames(ji, wh.text)
+
 		model.ParseSlackAttachment(post, []*model.SlackAttachment{
 			{
 				// TODO is this supposed to be themed?
 				Color:    "#95b7d0",
 				Fallback: wh.headline,
 				Pretext:  wh.headline,
-				Text:     wh.text,
+				Text:     text,
 				Fields:   wh.fields,
 			},
 		})
@@ -152,6 +159,8 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 			}
 
 		}
+
+		notification.message = interpolateUsernames(ji, notification.message)
 
 		post, err := ji.GetPlugin().CreateBotDMPost(ji, mattermostUserId, notification.message, notification.postType)
 		if err != nil {
