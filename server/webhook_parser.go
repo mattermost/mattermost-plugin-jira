@@ -108,7 +108,7 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 		to := item.ToString
 		fromWithDefault := from
 		if fromWithDefault == "" {
-			fromWithDefault = "None"
+			fromWithDefault = "~~None~~"
 		}
 		toWithDefault := to
 		if toWithDefault == "" {
@@ -406,7 +406,7 @@ func mergeWebhookEvents(events []*webhook) Webhook {
 		merged.eventTypes = merged.eventTypes.Union(event.eventTypes)
 		strikePre := "~~"
 		strikePost := "~~"
-		if event.fieldInfo.name == "description" {
+		if event.fieldInfo.name == "description" || strings.HasPrefix(event.fieldInfo.from, "~~") {
 			strikePre = ""
 			strikePost = ""
 		}
