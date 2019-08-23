@@ -46,7 +46,7 @@ export default class ReactSelectSetting extends React.PureComponent {
                 this.props.onChange(this.props.name, newValue);
             }
         }
-    }
+    };
 
     // Standard search term matching plus reducing to < 100 items
     filterOptions = (input) => {
@@ -55,7 +55,7 @@ export default class ReactSelectSetting extends React.PureComponent {
             options = options.filter((x) => x.label.toUpperCase().includes(input.toUpperCase()));
         }
         return Promise.resolve(options.slice(0, MAX_NUM_OPTIONS));
-    }
+    };
 
     isValid = () => {
         if (!this.props.required) {
@@ -64,7 +64,7 @@ export default class ReactSelectSetting extends React.PureComponent {
         const valid = Boolean(this.props.value);
         this.setState({invalid: !valid});
         return valid;
-    }
+    };
 
     render() {
         const requiredMsg = 'This field is required.';
