@@ -90,7 +90,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
             this.props.deleteChannelSubscription(sub);
         }
         this.handleClose(e);
-    }
+    };
 
     handleSettingChange = (id, value) => {
         let finalValue = value;
@@ -111,8 +111,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
 
             const error = fetched.error || (fetched.data && fetched.data.error);
             if (error) {
-                const message = error.message ? error.message : error;
-                state.getMetaDataErr = message;
+                state.getMetaDataErr = `The project ${projectKeys} is unavailable. Please contact your system administrator.`;
             }
             this.setState(state);
         });
@@ -147,7 +146,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
             issue_types: selectedIssueTypes,
             events: selectedEventTypes,
         };
-    }
+    };
 
     handleProjectChange = (id, value) => {
         let projects = value;
