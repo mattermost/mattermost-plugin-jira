@@ -1,4 +1,4 @@
-module github.com/mattermost/mattermost-plugin-jira/
+module mattermost-plugin-jira
 
 go 1.12
 
