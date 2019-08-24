@@ -58,9 +58,9 @@ var jiraCommandHandler = CommandHandler{
 		"webhook":          executeWebhookURL,
 		"info":             executeInfo,
 		"help":             commandHelp,
-		// "list":             executeList,
-		// "instance/select":  executeInstanceSelect,
-		// "instance/delete":  executeInstanceDelete,
+		"list":             executeList,
+		"instance/select":  executeInstanceSelect,
+		"instance/delete":  executeInstanceDelete,
 	},
 	defaultHandler: executeJiraDefault,
 }
@@ -277,7 +277,7 @@ func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs
 	if len(args) != 1 {
 		return p.help(header)
 	}
-	jiraURL, err := normalizeInstallURL(args[0])
+	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -320,7 +320,7 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 	if len(args) != 1 {
 		return p.help(header)
 	}
-	jiraURL, err := normalizeInstallURL(args[0])
+	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -376,7 +376,7 @@ func executeUninstallCloud(p *Plugin, c *plugin.Context, header *model.CommandAr
 		return p.help(header)
 	}
 
-	jiraURL, err := normalizeInstallURL(args[0])
+	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -427,7 +427,7 @@ func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandA
 		return p.help(header)
 	}
 
-	jiraURL, err := normalizeInstallURL(args[0])
+	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}

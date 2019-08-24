@@ -97,7 +97,7 @@ func ParseByteSize(str string) (ByteSize, error) {
 	return ByteSize(fl * float64(u)), nil
 }
 
-func normalizeInstallURL(jiraURL string) (string, error) {
+func normalizeInstallURL(mattermostSiteURL, jiraURL string) (string, error) {
 	u, err := url.Parse(jiraURL)
 	if err != nil {
 		return "", err
@@ -119,7 +119,13 @@ func normalizeInstallURL(jiraURL string) (string, error) {
 	if u.Scheme == "" {
 		u.Scheme = "https"
 	}
-	return strings.TrimSuffix(u.String(), "/"), nil
+
+	jiraURL = strings.TrimSuffix(u.String(), "/")
+	if jiraURL == strings.TrimSuffix(mattermostSiteURL, "/") {
+		return "", errors.Errorf("%s is the Mattermost site URL. Please use your Jira URL with `/jira install`.", jiraURL)
+	}
+
+	return jiraURL, nil
 }
 
 func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) (post *model.Post, returnErr error) {
