@@ -4,11 +4,12 @@
 import React from 'react';
 import {shallow, mount} from 'enzyme';
 
+import Preferences from 'mattermost-redux/constants/preferences';
+
 import projectMetadata from 'testdata/cloud-get-jira-project-metadata.json';
 import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.json';
 import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project.json';
-import theme from 'testdata/theme.json';
 
 import CreateIssue from './create_issue';
 
@@ -22,7 +23,7 @@ describe('components/CreateIssue', () => {
 
     const baseProps = {
         ...baseActions,
-        theme,
+        theme: Preferences.THEMES.default,
         jiraProjectMetadata: projectMetadata,
         jiraIssueMetadata: issueMetadata,
         currentTeam: {},

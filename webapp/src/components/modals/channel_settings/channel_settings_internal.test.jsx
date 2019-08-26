@@ -4,12 +4,13 @@
 import React from 'react';
 import {shallow, mount} from 'enzyme';
 
+import Preferences from 'mattermost-redux/constants/preferences';
+
 import projectMetadata from 'testdata/cloud-get-jira-project-metadata.json';
 import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.json';
 import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project.json';
 import testChannel from 'testdata/channel.json';
-import theme from 'testdata/theme.json';
 
 import ChannelSettingsInner from './channel_settings_internal';
 
@@ -36,7 +37,7 @@ describe('components/ChannelSettingsInner', () => {
     const baseProps = {
         ...baseActions,
         channel: testChannel,
-        theme,
+        theme: Preferences.THEMES.default,
         jiraProjectMetadata: projectMetadata,
         jiraIssueMetadata: issueMetadata,
         channelSubscriptions: [channelSubscription],
