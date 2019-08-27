@@ -67,7 +67,7 @@ func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model
 		// },
 	}
 	if wh.text != "" || len(wh.fields) != 0 {
-		text := interpolateUsernames(ji, wh.text)
+		text := replaceJiraAccountIds(ji, wh.text)
 
 		model.ParseSlackAttachment(post, []*model.SlackAttachment{
 			{
@@ -160,7 +160,7 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 
 		}
 
-		notification.message = interpolateUsernames(ji, notification.message)
+		notification.message = replaceJiraAccountIds(ji, notification.message)
 
 		post, err := ji.GetPlugin().CreateBotDMPost(ji, mattermostUserId, notification.message, notification.postType)
 		if err != nil {

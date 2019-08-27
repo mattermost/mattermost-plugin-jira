@@ -206,7 +206,7 @@ func (p *Plugin) StoreCurrentJIRAInstanceAndNotify(ji Instance) error {
 	return nil
 }
 
-func interpolateUsernames(ji Instance, body string) string {
+func replaceJiraAccountIds(ji Instance, body string) string {
 	result := body
 
 	for _, uname := range parseJIRAUsernamesFromText(body) {
@@ -215,13 +215,7 @@ func interpolateUsernames(ji Instance, body string) string {
 		}
 
 		jiraUserID := uname[len("accountid:"):]
-
-		mmUserID, err := ji.GetPlugin().userStore.LoadMattermostUserId(ji, jiraUserID)
-		if err != nil {
-			continue
-		}
-
-		jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mmUserID)
+		jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUserByAccountId(ji, jiraUserID)
 		if err != nil {
 			continue
 		}

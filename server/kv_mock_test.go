@@ -81,6 +81,9 @@ func (store mockUserStore) LoadJIRAUser(ji Instance, mattermostUserId string) (J
 func (store mockUserStore) LoadMattermostUserId(ji Instance, jiraUserName string) (string, error) {
 	return "testMattermostUserId012345", nil
 }
+func (store mockUserStore) LoadJIRAUserByAccountId(ji Instance, accoundId string) (JIRAUser, error) {
+	return JIRAUser{}, nil
+}
 func (store mockUserStore) DeleteUserInfo(ji Instance, mattermostUserId string) error {
 	return nil
 }
