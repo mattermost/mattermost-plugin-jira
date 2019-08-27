@@ -556,7 +556,7 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 
 		if uinfo.JIRAUser.Oauth1AccessToken != "" {
 			resp += sbullet("OAuth1a access token", uinfo.JIRAUser.Oauth1AccessToken)
-			resp += bullet(true, "OAuth1a access secret (length)", len(uinfo.JIRAUser.Oauth1AccessSecret))
+			resp += sbullet("OAuth1a access secret (length)", strconv.itoa(len(uinfo.JIRAUser.Oauth1AccessSecret)))
 		}
 	}
 	return p.responsef(header, resp)
