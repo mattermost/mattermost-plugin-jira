@@ -16,6 +16,12 @@ Support for multiple Jira instances is considered, but not yet supported.
  - [3. Jira v2 Roadmap](#3-jira-v2-roadmap)
  - [4. Development](#4-development)
  - [5. Frequently Asked Questions (FAQ)](#5-frequently-asked-questions-faq)
+ - [6. Troubleshooting](#6-Troubleshooting)
+ - [7. Help](#7-Help)
+ 
+### Requirements
+- For Jira 2.1 Mattermost server v5.14+ is required (Certain plugin APIs became available)
+- For Jira 2.0, Mattermost Server v5.12+ is required
 
 ## 1. Features
 
@@ -168,20 +174,8 @@ The ship target dates are included below. These are subject to change:
   - August 16th: Jira 2.1 released as part of Mattermost Server v5.14
   - Next Ship Date TBD.  Jira 2.2 Themes and Features are being determined the week of Aug 23.
 
-### Jira 2.0 Features
-
-Below is a full list of features scheduled for v2.0.
-
-- Send notifications for issue events from Jira to Mattermost with full JQL support, using webhooks. Restricted to Jira System Admins only.
-   - This includes notifications for the following events: issue created; issue transitioned to “Reopened”, “In Progress”, "Submitted" or “Resolved”; issue deleted or closed; comments created, updated or deleted; assignee updated
-- Create Jira issues via Mattermost UI (Desktop App and browser only)
-- Attach Mattermost messages to Jira issues via Mattermost UI (Desktop App and browser only)
-- Slash commands for
-  - `/jira connect` - Connect your Mattermost account to Jira. Enables you to create issues, attach messages to Jira and transition issues in Mattermost.
-  - `/jira disconnect` - Disconnect your Mattermost account from Jira.
-  - `/jira transition <issue-key> <state>` - Transition a Jira issue specified by `issue-key`. `state` must be a valid Jira state such as "Done".
-
 ### Jira 2.1 Features
+(Shipped with Mattermost Server v5.14)
 
 Below is a full list of features scheduled for v2.1.
 
