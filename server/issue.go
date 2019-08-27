@@ -617,7 +617,9 @@ func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issue
 	return parseIssue(issue), nil
 }
 
-func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, error) {
+const MinUserSearchQueryLength = 3
+
+func (p *Plugin) assignJiraIssue(mmUserId, issueKey, userSearch string) (string, error) {
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
 		return "", err
@@ -634,9 +636,8 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 	}
 
 	// required minimum of three letters in assignee value
-	minChars := 3
-	if len(assignee) < minChars {
-		errorMsg := fmt.Sprintf("`%s` contains less than %v characters.", assignee, minChars)
+	if len(userSearch) < MinUserSearchQueryLength {
+		errorMsg := fmt.Sprintf("`%s` contains less than %v characters.", userSearch, MinUserSearchQueryLength)
 		return errorMsg, nil
 	}
 
@@ -647,19 +648,18 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 		return errorMsg, nil
 	}
 
-	// Get list of assignable assignees
-	url := fmt.Sprintf("rest/api/2/user/assignable/search?issueKey=%s&username=%s", issueKey, assignee)
-	req, err := jiraClient.NewRequest("GET", url, nil)
-	if err != nil {
-		return "", err
+	// Get list of assignable users
+	var jiraUsers []jira.User
+	status, err := JiraGet(jiraClient, "user/assignable/search",
+		map[string]string{
+			"issueKey":   issueKey,
+			"username":   userSearch,
+			"maxResults": "10",
+		}, &jiraUsers)
+	if status == 401 {
+		return "You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.", nil
 	}
-
-	var jiraUsers []*jira.User
-	resp, err := jiraClient.Do(req, &jiraUsers)
 	if err != nil {
-		if resp.Response.StatusCode == 401 {
-			return "You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.", nil
-		}
 		return "", err
 	}
 
@@ -669,22 +669,22 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 		return "", fmt.Errorf(errorMsg)
 	}
 
-	maxDisplayedUsers := 10
 	if len(jiraUsers) > 1 {
-
-		errorMsg := fmt.Sprintf("`%s` matches %d users.  Please specify a unique assignee.\n", assignee, len(jiraUsers))
-
-		if len(jiraUsers) > maxDisplayedUsers {
-			errorMsg += fmt.Sprintf("\nFirst %+v users listed:\n", maxDisplayedUsers)
-		}
-
+		errorMsg := fmt.Sprintf("`%s` matches %d or more users.  Please specify a unique assignee.\n", userSearch, len(jiraUsers))
 		for i := range jiraUsers {
-			if i == maxDisplayedUsers {
-				break
+			name := jiraUsers[i].DisplayName
+			extra := jiraUsers[i].Name
+			if jiraUsers[i].EmailAddress != "" {
+				if extra != "" {
+					extra += ", "
+				}
+				extra += jiraUsers[i].EmailAddress
 			}
-			errorMsg += fmt.Sprintf("* %+v\n", jiraUsers[i].DisplayName)
+			if extra != "" {
+				name += " (" + extra + ")"
+			}
+			errorMsg += fmt.Sprintf("* %+v\n", name)
 		}
-
 		return "", fmt.Errorf(errorMsg)
 	}
 
@@ -699,7 +699,7 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 		user.Name = ""
 	}
 
-	if _, err := jiraClient.Issue.UpdateAssignee(issueKey, user); err != nil {
+	if _, err := jiraClient.Issue.UpdateAssignee(issueKey, &user); err != nil {
 		return "", err
 	}
 
@@ -707,7 +707,6 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, assignee string) (string, e
 
 	msg := fmt.Sprintf("`%s` assigned to Jira issue [%s](%s)", user.DisplayName, issueKey, permalink)
 	return msg, nil
-
 }
 
 func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string, error) {
@@ -774,6 +773,7 @@ func userFriendlyJiraError(resp *jira.Response, err error) error {
 		if resp == nil {
 			return err
 		}
+		// Closes resp.Body()
 		err = jira.NewJiraError(resp, err)
 		jerr, ok = err.(*jira.Error)
 		if !ok {
@@ -818,4 +818,33 @@ func attachFileToIssue(api plugin.API, jiraClient *jira.Client, issueKey, fileId
 	// There will only ever be one attachment at a time.
 	attachment := (*attachments)[0]
 	return fileinfo.Name, attachment.Filename, nil
+}
+
+func JiraGet(jiraClient *jira.Client, api string, params map[string]string, dest interface{}) (int, error) {
+	return jiraGet(jiraClient, 2, api, params, dest)
+}
+
+func JiraGet2(jiraClient *jira.Client, api string, params map[string]string, dest interface{}) (int, error) {
+	return jiraGet(jiraClient, 2, api, params, dest)
+}
+
+func jiraGet(jiraClient *jira.Client, version int, api string, params map[string]string, dest interface{}) (int, error) {
+	apiEndpoint := fmt.Sprintf("/rest/api/%v/%s", version, api)
+	req, err := jiraClient.NewRequest("GET", apiEndpoint, nil)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	q := req.URL.Query()
+	for k, v := range params {
+		q.Add(k, v)
+	}
+	req.URL.RawQuery = q.Encode()
+
+	fmt.Println("<><> request:", req.URL.String())
+	resp, err := jiraClient.Do(req, dest)
+	if err != nil {
+		err = userFriendlyJiraError(resp, err)
+	}
+	return resp.StatusCode, err
 }
