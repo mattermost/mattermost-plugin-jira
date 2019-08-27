@@ -151,7 +151,7 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 		ArgJiraJWT:            argJiraJWT,
 		ArgMMToken:            argMMToken,
 		MMToken:               mmToken,
-		JiraDisplayName:       jUser.DisplayName + " (" + jUser.Name + ")",
+		JiraDisplayName:       jUser.DisplayName,
 		MattermostDisplayName: mmDisplayName,
 	})
 }
