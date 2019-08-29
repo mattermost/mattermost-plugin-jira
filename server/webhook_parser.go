@@ -63,16 +63,16 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		case "issue_commented":
 			wh, err = parseWebhookCommentCreated(jwh)
 		case "issue_comment_edited":
-			wh = parseWebhookCommentUpdated(jwh)
+			wh, err = parseWebhookCommentUpdated(jwh)
 		case "issue_comment_deleted":
 			wh, err = parseWebhookCommentDeleted(jwh)
 		default:
-			err = errors.Errorf("Unsupported webhook event: %v %v", jwh.WebhookEvent, jwh.IssueEventTypeName)
+			wh, err = parseWebhookUnspecified(jwh)
 		}
 	case "comment_created":
 		wh, err = parseWebhookCommentCreated(jwh)
 	case "comment_updated":
-		wh = parseWebhookCommentUpdated(jwh)
+		wh, err = parseWebhookCommentUpdated(jwh)
 	case "comment_deleted":
 		wh, err = parseWebhookCommentDeleted(jwh)
 	default:
@@ -92,6 +92,21 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 	}
 
 	return wh, nil
+}
+
+func parseWebhookUnspecified(jwh *JiraWebhook) (Webhook, error) {
+	if len(jwh.ChangeLog.Items) > 0 {
+		return parseWebhookChangeLog(jwh), nil
+	}
+
+	if jwh.Comment.ID != "" {
+		if jwh.Comment.Updated == jwh.Comment.Created {
+			return parseWebhookCommentCreated(jwh)
+		}
+		return parseWebhookCommentUpdated(jwh)
+	}
+
+	return nil, errors.Errorf("Unsupported webhook event: %v", jwh.WebhookEvent)
 }
 
 func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
@@ -288,6 +303,10 @@ func appendCommentNotifications(wh *webhook) {
 }
 
 func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
+	if jwh.Issue.ID == "" {
+		return nil, ErrWebhookIgnored
+	}
+
 	// Jira server vs Jira cloud pass the user info differently
 	user := ""
 	if jwh.User.Key != "" {
@@ -306,7 +325,11 @@ func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
 	}, nil
 }
 
-func parseWebhookCommentUpdated(jwh *JiraWebhook) Webhook {
+func parseWebhookCommentUpdated(jwh *JiraWebhook) (Webhook, error) {
+	if jwh.Issue.ID == "" {
+		return nil, ErrWebhookIgnored
+	}
+
 	wh := &webhook{
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventUpdatedComment),
@@ -315,7 +338,7 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) Webhook {
 	}
 
 	appendCommentNotifications(wh)
-	return wh
+	return wh, nil
 }
 
 func parseWebhookAssigned(jwh *JiraWebhook, from, to string) *webhook {
