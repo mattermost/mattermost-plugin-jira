@@ -841,7 +841,6 @@ func jiraGet(jiraClient *jira.Client, version int, api string, params map[string
 	}
 	req.URL.RawQuery = q.Encode()
 
-	fmt.Println("<><> request:", req.URL.String())
 	resp, err := jiraClient.Do(req, dest)
 	if err != nil {
 		err = userFriendlyJiraError(resp, err)
