@@ -472,7 +472,7 @@ func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args
 		return p.responsef(header, "Please specify both an issue key and assignee in the form `/jira assign <issue-key> <assignee>`.")
 	}
 
-	issueKey := args[0]
+	issueKey := strings.ToUpper(args[0])
 	assignee := args[1]
 
 	msg, err := p.assignJiraIssue(header.UserId, issueKey, assignee)
@@ -487,7 +487,7 @@ func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	if len(args) < 2 {
 		return p.help(header)
 	}
-	issueKey := args[0]
+	issueKey := strings.ToUpper(args[0])
 	toState := strings.Join(args[1:], " ")
 
 	msg, err := p.transitionJiraIssue(header.UserId, issueKey, toState)
@@ -534,8 +534,8 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 		resp += fmt.Sprintf("\nJira user: %s\n", juser.DisplayName)
 		resp += fmt.Sprintf(" * Self: %s\n", juser.Self)
 		resp += fmt.Sprintf(" * AccountID: %s\n", juser.AccountID)
-		resp += fmt.Sprintf(" * Name (deprecated): %s\n", juser.Name)
-		resp += fmt.Sprintf(" * Key (deprecated): %s\n", juser.Key)
+		resp += fmt.Sprintf(" * Name: %s\n", juser.Name)
+		resp += fmt.Sprintf(" * Key: %s\n", juser.Key)
 		resp += fmt.Sprintf(" * EmailAddress: %s\n", juser.EmailAddress)
 		resp += fmt.Sprintf(" * Active: %v\n", juser.Active)
 		resp += fmt.Sprintf(" * TimeZone: %v\n", juser.TimeZone)
@@ -569,7 +569,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, create, transition, view, subscribe, settings, install cloud/server, uninstall cloud/server, help",
+		AutoCompleteDesc: "Available commands: connect, assign, disconnect, create, transition, view, subscribe, settings, install cloud/server, uninstall cloud/server, help",
 		AutoCompleteHint: "[command]",
 	}
 }

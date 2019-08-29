@@ -3,11 +3,13 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import ReactSelect from 'react-select';
+
+import AsyncSelect from 'react-select/async';
 
 import Setting from 'components/setting';
-import VirtualizedList from 'components/virtualized_list';
 import {getStyleForReactSelect} from 'utils/styles';
+
+const MAX_NUM_OPTIONS = 100;
 
 export default class ReactSelectSetting extends React.PureComponent {
     static propTypes = {
@@ -46,6 +48,15 @@ export default class ReactSelectSetting extends React.PureComponent {
         }
     };
 
+    // Standard search term matching plus reducing to < 100 items
+    filterOptions = (input) => {
+        let options = this.props.options;
+        if (input) {
+            options = options.filter((x) => x.label.toUpperCase().includes(input.toUpperCase()));
+        }
+        return Promise.resolve(options.slice(0, MAX_NUM_OPTIONS));
+    };
+
     isValid = () => {
         if (!this.props.required) {
             return true;
@@ -66,16 +77,15 @@ export default class ReactSelectSetting extends React.PureComponent {
             );
         }
 
-        const shouldVirtualize = this.props.options.length > 100;
-
         return (
             <Setting
                 inputId={this.props.name}
                 {...this.props}
             >
-                <ReactSelect
+                <AsyncSelect
                     {...this.props}
-                    components={shouldVirtualize && {MenuList: VirtualizedList}}
+                    loadOptions={this.filterOptions}
+                    defaultOptions={true}
                     menuPortalTarget={document.body}
                     menuPlacement='auto'
                     onChange={this.handleChange}
