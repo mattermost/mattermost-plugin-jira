@@ -53,11 +53,6 @@ func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model
 		return nil, http.StatusBadRequest, errors.Errorf("unsupported webhook")
 	}
 
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return nil, http.StatusOK, nil
-	}
-
 	post := &model.Post{
 		ChannelId: channelId,
 		UserId:    fromUserId,
@@ -67,7 +62,11 @@ func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model
 		// },
 	}
 	if wh.text != "" || len(wh.fields) != 0 {
-		text := replaceJiraAccountIds(ji, wh.text)
+		// Get instance for replacing accountids in text. If no instance is available, just skip it.
+		ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+		if err == nil {
+			wh.text = replaceJiraAccountIds(ji, wh.text)
+		}
 
 		model.ParseSlackAttachment(post, []*model.SlackAttachment{
 			{
@@ -75,7 +74,7 @@ func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model
 				Color:    "#95b7d0",
 				Fallback: wh.headline,
 				Pretext:  wh.headline,
-				Text:     text,
+				Text:     wh.text,
 				Fields:   wh.fields,
 			},
 		})
