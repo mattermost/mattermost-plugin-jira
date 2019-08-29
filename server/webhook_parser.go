@@ -254,6 +254,8 @@ func appendCommentNotifications(wh *webhook) {
 	message := fmt.Sprintf("%s mentioned you on %s:\n>%s",
 		commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body)
 
+	assigneeMentioned := false
+
 	for _, u := range parseJIRAUsernamesFromText(wh.Comment.Body) {
 		isAccountId := false
 		if strings.HasPrefix(u, "accountid:") {
@@ -266,9 +268,9 @@ func appendCommentNotifications(wh *webhook) {
 			continue
 		}
 
-		// don't mention the Issue assignee, will get a special notice
+		// Avoid duplicated mention for assignee. Boolean value is checked after the loop.
 		if jwh.Issue.Fields.Assignee != nil && (u == jwh.Issue.Fields.Assignee.Name || u == jwh.Issue.Fields.Assignee.AccountID) {
-			continue
+			assigneeMentioned = true
 		}
 
 		notification := webhookNotification{
@@ -287,8 +289,9 @@ func appendCommentNotifications(wh *webhook) {
 	}
 
 	// Don't send a notification to the assignee if they don't exist, or if are also the author.
+	// Also, if the assignee was mentioned above, avoid sending a duplicate notification here.
 	// Jira Server uses name field, Jira Cloud uses the AccountID field.
-	if jwh.Issue.Fields.Assignee == nil || jwh.Issue.Fields.Assignee.Name == jwh.User.Name ||
+	if assigneeMentioned || jwh.Issue.Fields.Assignee == nil || jwh.Issue.Fields.Assignee.Name == jwh.User.Name ||
 		(jwh.Issue.Fields.Assignee.AccountID != "" && jwh.Issue.Fields.Assignee.AccountID == jwh.Comment.UpdateAuthor.AccountID) {
 		return
 	}
