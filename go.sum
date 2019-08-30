@@ -188,6 +188,8 @@ github.com/mattermost/go-i18n v1.11.0 h1:1hLKqn/ZvhZ80OekjVPGYcCrBfMz+YxNNgqS+be
 github.com/mattermost/go-i18n v1.11.0/go.mod h1:RyS7FDNQlzF1PsjbJWHRI35exqaKGSO9qD4iv8QjE34=
 github.com/mattermost/gorp v2.0.1-0.20190301154413-3b31e9a39d05+incompatible h1:FN4zK2wNig7MVVsOsGEZ+LeIq0gUcudn3LEGgbodMq8=
 github.com/mattermost/gorp v2.0.1-0.20190301154413-3b31e9a39d05+incompatible/go.mod h1:0kX1qa3DOpaPJyOdMLeo7TcBN0QmUszj9a/VygOhDe0=
+github.com/mattermost/mattermost-plugin-jira v1.1.1 h1:9zjahC1pjCsPVccxpvPgEPsJ+jjwY3qZ1kGg1A8/ZKc=
+github.com/mattermost/mattermost-plugin-jira v1.1.1/go.mod h1:6azAcyJsFIYhxM4gxeD/THZdlRzzc1pkNOQS8lVvvSc=
 github.com/mattermost/mattermost-server v5.12.0+incompatible h1:Glsf3vGsceqzaDa9BQfO5Wsj0cNxagwuBhy3pCN/AT0=
 github.com/mattermost/mattermost-server v5.12.0+incompatible/go.mod h1:O3Tfw/SymCK+cYdFSMjQZyP4VndjcfVeT6ZoJjglByw=
 github.com/mattermost/rsc v0.0.0-20160330161541-bbaefb05eaa0/go.mod h1:nV5bfVpT//+B1RPD2JvRnxbkLmJEYXmRaaVl15fsXjs=

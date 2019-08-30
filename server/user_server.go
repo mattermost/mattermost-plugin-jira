@@ -86,12 +86,12 @@ func httpOAuth1aComplete(jsi *jiraServerInstance, w http.ResponseWriter, r *http
 		Oauth1AccessSecret: accessSecret,
 	}
 
-	jiraClient, err := jsi.GetJIRAClient(jiraUser)
+	client, err := jsi.GetClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	juser, _, err := jiraClient.User.GetSelf()
+	juser, err := client.GetSelf()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

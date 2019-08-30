@@ -12,6 +12,7 @@ require (
 	github.com/hashicorp/go-plugin v1.0.1 // indirect
 	github.com/lib/pq v1.1.1 // indirect
 	github.com/mattermost/go-i18n v1.11.0 // indirect
+	github.com/mattermost/mattermost-plugin-jira v1.1.1 // indirect
 	github.com/mattermost/mattermost-server v5.12.0+incompatible
 	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/pkg/errors v0.8.1

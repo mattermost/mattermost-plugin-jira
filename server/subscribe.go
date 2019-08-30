@@ -322,7 +322,12 @@ func (p *Plugin) hasPermissionToManageSubscription(userId, channelId string) err
 			return errors.Wrap(err, "could not load jira user")
 		}
 
-		groups, err := ji.GetUserGroups(jiraUser)
+		client, err := ji.GetClient(jiraUser)
+		if err != nil {
+			return errors.Wrap(err, "could not get an authenticated Jira client")
+		}
+
+		groups, err := client.GetUserGroups(jiraUser)
 		if err != nil {
 			return errors.Wrap(err, "could not get jira user groups")
 		}
