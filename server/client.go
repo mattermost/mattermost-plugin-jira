@@ -98,7 +98,13 @@ func (client JiraClient) RESTGet(endpoint string, params map[string]string, dest
 	return err
 }
 
-// RESTPostAttachment uploads an attachment to an issue
+// RESTPostAttachment uploads an attachment to an issue. The reason for the custom implementation,
+// as opposed to using the Issue.PostAttachment() API is that between Jira and the API
+// implementation, the error handling is broken.
+//
+// `issue/%s/attachments` endpoint returns some errors as JSON ("You do not have permission to
+// create attachments for this issue"), and some as plain text ("The field file exceeds its maximum
+// permitted size of 1024 bytes"). This implementation handles both.
 func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name string) (*jira.Attachment, error) {
 	endpointURL, err := restURL(fmt.Sprintf("2/issue/%s/attachments", issueID))
 	if err != nil {
@@ -131,9 +137,6 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 			return nil, err
 		}
 
-		// For attachments, the error response body may be JSON ("You do not have permission to
-		// create attachments for this issue"), or plain text ("The field file exceeds its maximum
-		// permitted size of 1024 bytes"). Make sure we handle both.
 		bb, _ := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
 
