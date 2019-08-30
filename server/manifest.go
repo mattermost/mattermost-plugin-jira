@@ -5,7 +5,7 @@ var manifest = struct {
 	Version string
 	Hash    string
 }{
-	Id:      "jira",
-	Version: "2.1.0",
-	Hash:    "cda4cdc",
+	Id:      "generated",
+	Version: "generated",
+	Hash:    "generated",
 }
