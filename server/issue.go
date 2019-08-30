@@ -824,10 +824,6 @@ func JiraGet(jiraClient *jira.Client, api string, params map[string]string, dest
 	return jiraGet(jiraClient, 2, api, params, dest)
 }
 
-func JiraGet2(jiraClient *jira.Client, api string, params map[string]string, dest interface{}) (int, error) {
-	return jiraGet(jiraClient, 2, api, params, dest)
-}
-
 func jiraGet(jiraClient *jira.Client, version int, api string, params map[string]string, dest interface{}) (int, error) {
 	apiEndpoint := fmt.Sprintf("/rest/api/%v/%s", version, api)
 	req, err := jiraClient.NewRequest("GET", apiEndpoint, nil)
