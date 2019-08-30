@@ -130,9 +130,10 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 		if resp == nil {
 			return nil, err
 		}
+
 		// For attachments, the error response body may be JSON ("You do not have permission to
-		// create attachments for this issue"), or plain text, .
-		// Make sure we handle both.
+		// create attachments for this issue"), or plain text ("The field file exceeds its maximum
+		// permitted size of 1024 bytes"). Make sure we handle both.
 		bb, _ := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
 
