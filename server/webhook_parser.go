@@ -241,18 +241,18 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
 
-	appendCommentNotifications(wh)
+	appendCommentNotifications(wh, "mentioned you in a new comment on")
 
 	return wh, nil
 }
 
 // appendCommentNotifications modifies wh
-func appendCommentNotifications(wh *webhook) {
+func appendCommentNotifications(wh *webhook, verb string) {
 	jwh := wh.JiraWebhook
 	commentAuthor := mdUser(&jwh.Comment.UpdateAuthor)
 
-	message := fmt.Sprintf("%s mentioned you on %s:\n>%s",
-		commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body)
+	message := fmt.Sprintf("%s %s %s:\n>%s",
+		commentAuthor, verb, jwh.mdKeySummaryLink(), jwh.Comment.Body)
 
 	assigneeMentioned := false
 
@@ -340,7 +340,7 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) (Webhook, error) {
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
 
-	appendCommentNotifications(wh)
+	appendCommentNotifications(wh, "mentioned you in an update on")
 	return wh, nil
 }
 

@@ -156,7 +156,6 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 				// recipient does not have permissions to view the issue.
 				continue
 			}
-
 		}
 
 		notification.message = replaceJiraAccountIds(ji, notification.message)
