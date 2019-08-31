@@ -55,7 +55,7 @@ func (jsi jiraServerInstance) GetMattermostKey() string {
 
 func (jsi jiraServerInstance) GetDisplayDetails() map[string]string {
 	return map[string]string{
-		"MattermostKey": jsi.MattermostKey,
+		"Jira Server Mattermost Key": jsi.MattermostKey,
 	}
 }
 
