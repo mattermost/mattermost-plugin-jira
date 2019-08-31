@@ -30,6 +30,10 @@ const (
 	WebhookBufferSize        = 10000
 )
 
+var BuildHash = ""
+var BuildHashShort = ""
+var BuildDate = ""
+
 type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
 	EnableJiraUI bool `json:"enablejiraui"`
