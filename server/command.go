@@ -467,15 +467,13 @@ func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandA
 }
 
 func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-
-	if len(args) != 2 {
-		return p.responsef(header, "Please specify both an issue key and assignee in the form `/jira assign <issue-key> <assignee>`.")
+	if len(args) < 2 {
+		return p.responsef(header, "Please specify an issue key and an assignee search string, in the form `/jira assign <issue-key> <assignee>`.")
 	}
+	issueKey := strings.ToUpper(args[0])
+	userSearch := strings.Join(args[1:], " ")
 
-	issueKey := args[0]
-	assignee := args[1]
-
-	msg, err := p.assignJiraIssue(header.UserId, issueKey, assignee)
+	msg, err := p.assignJiraIssue(header.UserId, issueKey, userSearch)
 	if err != nil {
 		return p.responsef(header, "%v", err)
 	}
@@ -487,7 +485,7 @@ func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	if len(args) < 2 {
 		return p.help(header)
 	}
-	issueKey := args[0]
+	issueKey := strings.ToUpper(args[0])
 	toState := strings.Join(args[1:], " ")
 
 	msg, err := p.transitionJiraIssue(header.UserId, issueKey, toState)
@@ -587,7 +585,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, create, transition, view, subscribe, settings, install cloud/server, uninstall cloud/server, help",
+		AutoCompleteDesc: "Available commands: connect, assign, disconnect, create, transition, view, subscribe, settings, install cloud/server, uninstall cloud/server, help",
 		AutoCompleteHint: "[command]",
 	}
 }

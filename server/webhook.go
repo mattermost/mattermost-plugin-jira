@@ -62,6 +62,12 @@ func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model
 		// },
 	}
 	if wh.text != "" || len(wh.fields) != 0 {
+		// Get instance for replacing accountids in text. If no instance is available, just skip it.
+		ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+		if err == nil {
+			wh.text = replaceJiraAccountIds(ji, wh.text)
+		}
+
 		model.ParseSlackAttachment(post, []*model.SlackAttachment{
 			{
 				// TODO is this supposed to be themed?
@@ -152,6 +158,8 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 			}
 
 		}
+
+		notification.message = replaceJiraAccountIds(ji, notification.message)
 
 		post, err := ji.GetPlugin().CreateBotDMPost(ji, mattermostUserId, notification.message, notification.postType)
 		if err != nil {

@@ -206,6 +206,28 @@ func (p *Plugin) StoreCurrentJIRAInstanceAndNotify(ji Instance) error {
 	return nil
 }
 
+func replaceJiraAccountIds(ji Instance, body string) string {
+	result := body
+
+	for _, uname := range parseJIRAUsernamesFromText(body) {
+		if !strings.HasPrefix(uname, "accountid:") {
+			continue
+		}
+
+		jiraUserID := uname[len("accountid:"):]
+		jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUserByAccountId(ji, jiraUserID)
+		if err != nil {
+			continue
+		}
+
+		if jiraUser.DisplayName != "" {
+			result = strings.ReplaceAll(result, uname, jiraUser.DisplayName)
+		}
+	}
+
+	return result
+}
+
 func (p *Plugin) loadJIRAProjectKeys(jiraClient *jira.Client) ([]string, error) {
 	list, _, err := jiraClient.Project.GetList()
 	if err != nil {
