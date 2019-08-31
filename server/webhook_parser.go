@@ -63,16 +63,16 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		case "issue_commented":
 			wh, err = parseWebhookCommentCreated(jwh)
 		case "issue_comment_edited":
-			wh = parseWebhookCommentUpdated(jwh)
+			wh, err = parseWebhookCommentUpdated(jwh)
 		case "issue_comment_deleted":
 			wh, err = parseWebhookCommentDeleted(jwh)
 		default:
-			err = errors.Errorf("Unsupported webhook event: %v %v", jwh.WebhookEvent, jwh.IssueEventTypeName)
+			wh, err = parseWebhookUnspecified(jwh)
 		}
 	case "comment_created":
 		wh, err = parseWebhookCommentCreated(jwh)
 	case "comment_updated":
-		wh = parseWebhookCommentUpdated(jwh)
+		wh, err = parseWebhookCommentUpdated(jwh)
 	case "comment_deleted":
 		wh, err = parseWebhookCommentDeleted(jwh)
 	default:
@@ -92,6 +92,21 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 	}
 
 	return wh, nil
+}
+
+func parseWebhookUnspecified(jwh *JiraWebhook) (Webhook, error) {
+	if len(jwh.ChangeLog.Items) > 0 {
+		return parseWebhookChangeLog(jwh), nil
+	}
+
+	if jwh.Comment.ID != "" {
+		if jwh.Comment.Updated == jwh.Comment.Created {
+			return parseWebhookCommentCreated(jwh)
+		}
+		return parseWebhookCommentUpdated(jwh)
+	}
+
+	return nil, errors.Errorf("Unsupported webhook event: %v", jwh.WebhookEvent)
 }
 
 func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
@@ -239,6 +254,8 @@ func appendCommentNotifications(wh *webhook) {
 	message := fmt.Sprintf("%s mentioned you on %s:\n>%s",
 		commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body)
 
+	assigneeMentioned := false
+
 	for _, u := range parseJIRAUsernamesFromText(wh.Comment.Body) {
 		isAccountId := false
 		if strings.HasPrefix(u, "accountid:") {
@@ -251,9 +268,9 @@ func appendCommentNotifications(wh *webhook) {
 			continue
 		}
 
-		// don't mention the Issue assignee, will get a special notice
+		// Avoid duplicated mention for assignee. Boolean value is checked after the loop.
 		if jwh.Issue.Fields.Assignee != nil && (u == jwh.Issue.Fields.Assignee.Name || u == jwh.Issue.Fields.Assignee.AccountID) {
-			continue
+			assigneeMentioned = true
 		}
 
 		notification := webhookNotification{
@@ -272,8 +289,9 @@ func appendCommentNotifications(wh *webhook) {
 	}
 
 	// Don't send a notification to the assignee if they don't exist, or if are also the author.
+	// Also, if the assignee was mentioned above, avoid sending a duplicate notification here.
 	// Jira Server uses name field, Jira Cloud uses the AccountID field.
-	if jwh.Issue.Fields.Assignee == nil || jwh.Issue.Fields.Assignee.Name == jwh.User.Name ||
+	if assigneeMentioned || jwh.Issue.Fields.Assignee == nil || jwh.Issue.Fields.Assignee.Name == jwh.User.Name ||
 		(jwh.Issue.Fields.Assignee.AccountID != "" && jwh.Issue.Fields.Assignee.AccountID == jwh.Comment.UpdateAuthor.AccountID) {
 		return
 	}
@@ -288,6 +306,10 @@ func appendCommentNotifications(wh *webhook) {
 }
 
 func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
+	if jwh.Issue.ID == "" {
+		return nil, ErrWebhookIgnored
+	}
+
 	// Jira server vs Jira cloud pass the user info differently
 	user := ""
 	if jwh.User.Key != "" {
@@ -306,7 +328,11 @@ func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
 	}, nil
 }
 
-func parseWebhookCommentUpdated(jwh *JiraWebhook) Webhook {
+func parseWebhookCommentUpdated(jwh *JiraWebhook) (Webhook, error) {
+	if jwh.Issue.ID == "" {
+		return nil, ErrWebhookIgnored
+	}
+
 	wh := &webhook{
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventUpdatedComment),
@@ -315,7 +341,7 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) Webhook {
 	}
 
 	appendCommentNotifications(wh)
-	return wh
+	return wh, nil
 }
 
 func parseWebhookAssigned(jwh *JiraWebhook, from, to string) *webhook {
