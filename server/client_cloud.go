@@ -4,9 +4,11 @@
 package main
 
 import (
+	"encoding/json"
 	"strconv"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/pkg/errors"
 )
 
 type jiraCloudClient struct {
@@ -19,6 +21,28 @@ func newCloudClient(jiraClient *jira.Client) Client {
 			Jira: jiraClient,
 		},
 	}
+}
+
+// GetCreateMeta returns the metadata needed to implement the UI and validation of
+// creating new Jira issues.
+func (client jiraCloudClient) GetCreateMeta(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
+	cimd, resp, err := client.Jira.Issue.GetCreateMetaWithOptions(options)
+	if err != nil {
+		if resp == nil {
+			return nil, err
+		}
+
+		// returns a different JSON from all other APIs
+		result := map[string]string{}
+		jsonerr := json.NewDecoder(resp.Body).Decode(&result)
+		resp.Body.Close()
+		if jsonerr == nil {
+			err = errors.New(result["error"])
+		}
+		return nil, RESTError{err, resp.StatusCode}
+	}
+
+	return cimd, nil
 }
 
 // SearchUsersAssignableToIssue finds all users that can be assigned to an issue.

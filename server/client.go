@@ -186,16 +186,6 @@ func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (*j
 	return issue, nil
 }
 
-// GetCreateMeta returns the metadata needed to implement the UI and validation of
-// creating new Jira issues.
-func (client JiraClient) GetCreateMeta(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
-	cimd, resp, err := client.Jira.Issue.GetCreateMetaWithOptions(options)
-	if err != nil {
-		return nil, userFriendlyJiraError(resp, err)
-	}
-	return cimd, err
-}
-
 // GetTransitions returns transitions for an issue with issueKey.
 func (client JiraClient) GetTransitions(issueKey string) ([]jira.Transition, error) {
 	transitions, resp, err := client.Jira.Issue.GetTransitions(issueKey)

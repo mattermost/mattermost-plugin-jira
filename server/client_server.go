@@ -4,9 +4,11 @@
 package main
 
 import (
+	"net/http"
 	"strconv"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/pkg/errors"
 )
 
 type jiraServerClient struct {
@@ -19,6 +21,23 @@ func newServerClient(jiraClient *jira.Client) Client {
 			Jira: jiraClient,
 		},
 	}
+}
+
+// GetCreateMeta returns the metadata needed to implement the UI and validation of
+// creating new Jira issues.
+func (client jiraServerClient) GetCreateMeta(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
+	cimd, resp, err := client.Jira.Issue.GetCreateMetaWithOptions(options)
+	if err != nil {
+		if resp == nil {
+			return nil, err
+		}
+		resp.Body.Close()
+		if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized {
+			err = errors.New("not authorized to create issues")
+		}
+		return nil, RESTError{err, resp.StatusCode}
+	}
+	return cimd, nil
 }
 
 // SearchUsersAssignableToIssue finds all users that can be assigned to an issue.
