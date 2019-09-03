@@ -12,6 +12,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
@@ -315,6 +316,25 @@ func MakeCreateIssueURL(ji Instance, project *jira.Project, issue *jira.Issue) s
 
 	u.RawQuery = q.Encode()
 	return u.String()
+}
+
+// SearchUsersAssignableToIssue finds all users that can be assigned to an issue.
+// This is the shared implementation between the Server and the Cloud versions
+// which use different queryKey's.
+func SearchUsersAssignableToIssue(client Client, issueKey, queryKey, queryValue string, maxResults int) ([]jira.User, error) {
+	users := []jira.User{}
+	params := map[string]string{
+		"issueKey": issueKey,
+		queryKey:   queryValue,
+	}
+	if maxResults > 0 {
+		params["maxResults"] = strconv.Itoa(maxResults)
+	}
+	err := client.RESTGet("2/user/assignable/search", params, &users)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 // RESTError is an error type that embeds the http response status code, and implements a

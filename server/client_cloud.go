@@ -5,7 +5,6 @@ package main
 
 import (
 	"encoding/json"
-	"strconv"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
@@ -47,19 +46,7 @@ func (client jiraCloudClient) GetCreateMeta(options *jira.GetQueryOptions) (*jir
 
 // SearchUsersAssignableToIssue finds all users that can be assigned to an issue.
 func (client jiraCloudClient) SearchUsersAssignableToIssue(issueKey, query string, maxResults int) ([]jira.User, error) {
-	users := []jira.User{}
-	params := map[string]string{
-		"issueKey": issueKey,
-		"query":    query,
-	}
-	if maxResults > 0 {
-		params["maxResults"] = strconv.Itoa(maxResults)
-	}
-	err := client.RESTGet("2/user/assignable/search", params, &users)
-	if err != nil {
-		return nil, err
-	}
-	return users, nil
+	return SearchUsersAssignableToIssue(client, issueKey, "query", query, maxResults)
 }
 
 // GetUserGroups returns the list of groups that a user belongs to.
