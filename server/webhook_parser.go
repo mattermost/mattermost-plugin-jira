@@ -340,7 +340,7 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) (Webhook, error) {
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
 
-	appendCommentNotifications(wh, "mentioned you in an update on")
+	appendCommentNotifications(wh, "mentioned you in a comment update on")
 	return wh, nil
 }
 
