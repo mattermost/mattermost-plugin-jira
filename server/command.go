@@ -503,8 +503,9 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 
 	uinfo := getUserInfo(p, header.UserId)
 
-	resp := fmt.Sprintf("Mattermost Jira plugin version: %s [%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s)\n",
-		manifest.Version, manifest.Hash, manifest.Hash)
+	resp := fmt.Sprintf("Mattermost Jira plugin version: %s, "+
+		"[%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s), built %s\n",
+		manifest.Version, BuildHashShort, BuildHash, BuildDate)
 
 	switch {
 	case uinfo.IsConnected:
