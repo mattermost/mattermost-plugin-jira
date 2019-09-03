@@ -277,7 +277,7 @@ func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs
 	if len(args) != 1 {
 		return p.help(header)
 	}
-	jiraURL, err := normalizeInstallURL(args[0])
+	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -320,7 +320,7 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 	if len(args) != 1 {
 		return p.help(header)
 	}
-	jiraURL, err := normalizeInstallURL(args[0])
+	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -376,7 +376,7 @@ func executeUninstallCloud(p *Plugin, c *plugin.Context, header *model.CommandAr
 		return p.help(header)
 	}
 
-	jiraURL, err := normalizeInstallURL(args[0])
+	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -427,7 +427,7 @@ func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandA
 		return p.help(header)
 	}
 
-	jiraURL, err := normalizeInstallURL(args[0])
+	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -467,15 +467,13 @@ func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandA
 }
 
 func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-
-	if len(args) != 2 {
-		return p.responsef(header, "Please specify both an issue key and assignee in the form `/jira assign <issue-key> <assignee>`.")
+	if len(args) < 2 {
+		return p.responsef(header, "Please specify an issue key and an assignee search string, in the form `/jira assign <issue-key> <assignee>`.")
 	}
+	issueKey := strings.ToUpper(args[0])
+	userSearch := strings.Join(args[1:], " ")
 
-	issueKey := args[0]
-	assignee := args[1]
-
-	msg, err := p.assignJiraIssue(header.UserId, issueKey, assignee)
+	msg, err := p.assignJiraIssue(header.UserId, issueKey, userSearch)
 	if err != nil {
 		return p.responsef(header, "%v", err)
 	}
@@ -487,7 +485,7 @@ func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	if len(args) < 2 {
 		return p.help(header)
 	}
-	issueKey := args[0]
+	issueKey := strings.ToUpper(args[0])
 	toState := strings.Join(args[1:], " ")
 
 	msg, err := p.transitionJiraIssue(header.UserId, issueKey, toState)
@@ -505,41 +503,59 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 
 	uinfo := getUserInfo(p, header.UserId)
 
-	resp := fmt.Sprintf("Jira plugin version: %s\nJira plugin hash: %s\n\n", manifest.Version, manifest.Hash)
+	resp := fmt.Sprintf("Mattermost Jira plugin version: %s [%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s)\n",
+		manifest.Version, manifest.Hash, manifest.Hash)
+
 	switch {
 	case uinfo.IsConnected:
 		resp += fmt.Sprintf("Connected to Jira %s as %s.\n", uinfo.JIRAURL, uinfo.JIRAUser.DisplayName)
 	case uinfo.InstanceInstalled:
-		resp += fmt.Sprintf("Jira %s is installed, but you are not connected. Please use `/jira connect`.\n", uinfo.JIRAURL)
+		resp += fmt.Sprintf("Jira %s is installed, but you are not connected. Please [connect](%s/%s).\n",
+			uinfo.JIRAURL, p.GetPluginURL(), routeUserConnect)
 	default:
 		return p.responsef(header, "No Jira instance installed, please contact your system administrator.")
 	}
 
-	resp += fmt.Sprintf("\nJira instance: %q\n", uinfo.JIRAURL)
+	resp += fmt.Sprintf("\nJira:\n")
+
 	for k, v := range uinfo.InstanceDetails {
 		resp += fmt.Sprintf(" * %s: %s\n", k, v)
 	}
 
+	bullet := func(cond bool, k string, v interface{}) string {
+		if !cond {
+			return ""
+		}
+		return fmt.Sprintf(" * %s: %v\n", k, v)
+	}
+
+	sbullet := func(k, v string) string {
+		return bullet(v != "", k, v)
+	}
+
 	if uinfo.IsConnected {
+		juser := uinfo.JIRAUser.User
+		resp += sbullet("User", juser.DisplayName)
+		resp += sbullet("Self", juser.Self)
+		resp += sbullet("AccountID", juser.AccountID)
+		resp += sbullet("Name", juser.Name)
+		resp += sbullet("Key", juser.Key)
+		resp += sbullet("EmailAddress", juser.EmailAddress)
+		resp += bullet(juser.Active, "Active", juser.Active)
+		resp += sbullet("TimeZone", juser.TimeZone)
+		resp += bullet(len(juser.ApplicationKeys) > 0, "ApplicationKeys", juser.ApplicationKeys)
+
 		resp += fmt.Sprintf("\nMattermost:\n")
-		resp += fmt.Sprintf(" * User ID: %s\n", header.UserId)
-		resp += fmt.Sprintf(" * Settings: %+v\n", uinfo.JIRAUser.Settings)
+
+		resp += sbullet("Site URL", p.GetSiteURL())
+		resp += sbullet("User ID", header.UserId)
+
+		resp += fmt.Sprintf(" * Settings: %+v", uinfo.JIRAUser.Settings)
 
 		if uinfo.JIRAUser.Oauth1AccessToken != "" {
-			resp += fmt.Sprintf(" * OAuth1a access token: %s\n", uinfo.JIRAUser.Oauth1AccessToken)
-			resp += fmt.Sprintf(" * OAuth1a access secret: XXX (%v bytes)\n", len(uinfo.JIRAUser.Oauth1AccessSecret))
+			resp += sbullet("OAuth1a access token", uinfo.JIRAUser.Oauth1AccessToken)
+			resp += sbullet("OAuth1a access secret (length)", strconv.Itoa(len(uinfo.JIRAUser.Oauth1AccessSecret)))
 		}
-
-		juser := uinfo.JIRAUser.User
-		resp += fmt.Sprintf("\nJira user: %s\n", juser.DisplayName)
-		resp += fmt.Sprintf(" * Self: %s\n", juser.Self)
-		resp += fmt.Sprintf(" * AccountID: %s\n", juser.AccountID)
-		resp += fmt.Sprintf(" * Name (deprecated): %s\n", juser.Name)
-		resp += fmt.Sprintf(" * Key (deprecated): %s\n", juser.Key)
-		resp += fmt.Sprintf(" * EmailAddress: %s\n", juser.EmailAddress)
-		resp += fmt.Sprintf(" * Active: %v\n", juser.Active)
-		resp += fmt.Sprintf(" * TimeZone: %v\n", juser.TimeZone)
-		resp += fmt.Sprintf(" * ApplicationKeys: %s\n", juser.ApplicationKeys)
 	}
 	return p.responsef(header, resp)
 }
@@ -569,7 +585,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Jira",
 		Description:      "Integration with Jira.",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: connect, disconnect, create, transition, view, subscribe, settings, install cloud/server, uninstall cloud/server, help",
+		AutoCompleteDesc: "Available commands: connect, assign, disconnect, create, transition, view, subscribe, settings, install cloud/server, uninstall cloud/server, help",
 		AutoCompleteHint: "[command]",
 	}
 }

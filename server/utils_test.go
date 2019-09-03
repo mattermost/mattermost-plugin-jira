@@ -13,27 +13,37 @@ import (
 
 func TestNormalizeInstallURL(t *testing.T) {
 	for _, tc := range []struct {
-		in, out, err string
+		in, siteURL, out, err string
 	}{
-		{"http://mmtest.atlassian.net", "http://mmtest.atlassian.net", ""},
-		{"https://mmtest.atlassian.net", "https://mmtest.atlassian.net", ""},
-		{"some://mmtest.atlassian.net", "some://mmtest.atlassian.net", ""},
-		{"mmtest.atlassian.net", "https://mmtest.atlassian.net", ""},
-		{"mmtest.atlassian.net/", "https://mmtest.atlassian.net", ""},
-		{"mmtest.atlassian.net/abc", "https://mmtest.atlassian.net/abc", ""},
-		{"mmtest.atlassian.net/abc/", "https://mmtest.atlassian.net/abc", ""},
-		{"[jdsh", "", `parse //[jdsh: missing ']' in host`},
-		{"mmtest", "https://mmtest", ""},
-		{"mmtest/", "https://mmtest", ""},
-		{"/mmtest", "", `Invalid URL, no hostname: "/mmtest"`},
-		{"/mmtest/", "", `Invalid URL, no hostname: "/mmtest/"`},
-		{"http:/mmtest/", "", `Invalid URL, no hostname: "http:/mmtest/"`},
-		{"hƒƒp://xyz.com", "", `parse hƒƒp://xyz.com: first path segment in URL cannot contain colon`},
-		{"//xyz.com", "https://xyz.com", ""},
-		{"//xyz.com/", "https://xyz.com", ""},
+		// Happy
+		{"http://mmtest.atlassian.net", "", "http://mmtest.atlassian.net", ""},
+		{"https://mmtest.atlassian.net", "", "https://mmtest.atlassian.net", ""},
+		{"some://mmtest.atlassian.net", "", "some://mmtest.atlassian.net", ""},
+		{"mmtest.atlassian.net", "", "https://mmtest.atlassian.net", ""},
+		{"mmtest.atlassian.net/", "", "https://mmtest.atlassian.net", ""},
+		{"mmtest.atlassian.net/abc", "", "https://mmtest.atlassian.net/abc", ""},
+		{"mmtest.atlassian.net/abc/", "", "https://mmtest.atlassian.net/abc", ""},
+		{"mmtest", "", "https://mmtest", ""},
+		{"mmtest/", "", "https://mmtest", ""},
+		{"//xyz.com", "", "https://xyz.com", ""},
+		{"//xyz.com/", "", "https://xyz.com", ""},
+
+		// Errors
+		{"[jdsh", "", "",
+			`parse //[jdsh: missing ']' in host`},
+		{"/mmtest", "", "",
+			`Invalid URL, no hostname: "/mmtest"`},
+		{"/mmtest/", "", "",
+			`Invalid URL, no hostname: "/mmtest/"`},
+		{"http:/mmtest/", "", "",
+			`Invalid URL, no hostname: "http:/mmtest/"`},
+		{"hƒƒp://xyz.com", "", "",
+			`parse hƒƒp://xyz.com: first path segment in URL cannot contain colon`},
+		{"https://mattermost.site.url", "https://mattermost.site.url/", "",
+			"https://mattermost.site.url is the Mattermost site URL. Please use your Jira URL with `/jira install`."},
 	} {
 		t.Run(tc.in, func(t *testing.T) {
-			out, err := normalizeInstallURL(tc.in)
+			out, err := normalizeInstallURL(tc.siteURL, tc.in)
 			require.Equal(t, tc.out, out)
 			errTxt := ""
 			if err != nil {
