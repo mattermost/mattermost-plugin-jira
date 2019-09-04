@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import AsyncSelect from 'react-select/async';
 
@@ -10,37 +11,33 @@ import {getStyleForReactSelect} from 'utils/styles';
 
 const MAX_NUM_OPTIONS = 100;
 
-type Props = {
-    name: string;
-    onChange?: (name: string, value: any) => void;
-    theme: object;
-    isClearable?: boolean;
-    options: any[];
-    value?: any;
-    required?: boolean;
-    isMulti?: boolean;
-    label?: string;
-    components?: any;
-};
+export default class ReactSelectSetting extends React.PureComponent {
+    static propTypes = {
+        name: PropTypes.string.isRequired,
+        onChange: PropTypes.func,
+        theme: PropTypes.object.isRequired,
+        isClearable: PropTypes.bool,
+        options: PropTypes.array.isRequired,
+        value: PropTypes.oneOfType([
+            PropTypes.object,
+            PropTypes.array,
+        ]),
+        required: PropTypes.bool,
+    };
 
-type State = {
-    invalid: boolean;
-};
-
-export default class ReactSelectSetting extends React.PureComponent<Props, State> {
-    constructor(props: Props) {
+    constructor(props) {
         super(props);
 
         this.state = {invalid: false};
     }
 
-    componentDidUpdate(prevProps: Props, prevState: State) {
+    componentDidUpdate(prevProps, prevState) {
         if (prevState.invalid && (this.props.value && this.props.value.value) !== (prevProps.value && prevProps.value.value)) {
             this.setState({invalid: false}); //eslint-disable-line react/no-did-update-set-state
         }
     }
 
-    handleChange = (value: any) => {
+    handleChange = (value) => {
         if (this.props.onChange) {
             if (Array.isArray(value)) {
                 this.props.onChange(this.props.name, value.map((x) => x.value));
@@ -52,10 +49,10 @@ export default class ReactSelectSetting extends React.PureComponent<Props, State
     };
 
     // Standard search term matching plus reducing to < 100 items
-    filterOptions = (input: string): Promise<any[]> => {
+    filterOptions = (input) => {
         let options = this.props.options;
         if (input) {
-            options = options.filter((x: any) => x.label.toUpperCase().includes(input.toUpperCase()));
+            options = options.filter((x) => x.label.toUpperCase().includes(input.toUpperCase()));
         }
         return Promise.resolve(options.slice(0, MAX_NUM_OPTIONS));
     };
@@ -86,14 +83,7 @@ export default class ReactSelectSetting extends React.PureComponent<Props, State
                 {...this.props}
             >
                 <AsyncSelect
-                    name={this.props.name}
-                    isClearable={this.props.isClearable}
-                    options={this.props.options}
-                    value={this.props.value}
-                    required={this.props.required}
-                    isMulti={this.props.isMulti}
-                    label={this.props.label}
-                    components={this.props.components}
+                    {...this.props}
                     loadOptions={this.filterOptions}
                     defaultOptions={true}
                     menuPortalTarget={document.body}
