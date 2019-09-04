@@ -81,10 +81,10 @@ func (jci jiraCloudInstance) GetDisplayDetails() map[string]string {
 	}
 
 	return map[string]string{
-		"Key":            jci.AtlassianSecurityContext.Key,
-		"ClientKey":      jci.AtlassianSecurityContext.ClientKey,
-		"ServerVersion":  jci.AtlassianSecurityContext.ServerVersion,
-		"PluginsVersion": jci.AtlassianSecurityContext.PluginsVersion,
+		"Atlassian Connect Key":        jci.AtlassianSecurityContext.Key,
+		"Atlassian Connect Client Key": jci.AtlassianSecurityContext.ClientKey,
+		"Jira Cloud Version":           jci.AtlassianSecurityContext.ServerVersion,
+		"Jira Cloud Plugins Version":   jci.AtlassianSecurityContext.PluginsVersion,
 	}
 }
 
