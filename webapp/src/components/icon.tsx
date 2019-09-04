@@ -1,15 +1,14 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
-import PropTypes from 'prop-types';
 import React from 'react';
 
-export default class JiraIcon extends React.PureComponent {
-    static propTypes = {
-        type: PropTypes.string,
-    }
+type Props = {
+    type?: string;
+};
 
-    render() {
+export default class JiraIcon extends React.PureComponent<Props> {
+    public render() {
         let iconStyle = {};
         if (this.props.type === 'menu') {
             iconStyle = {flex: '0 0 auto', width: '20px', height: '20px', fill: '#0052CC', marginRight: '8px', background: 'white', borderRadius: '50px', padding: '2px'};
