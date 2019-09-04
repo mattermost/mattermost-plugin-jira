@@ -1,0 +1,56 @@
+{
+    "timestamp": 1559609613673,
+    "webhookEvent": "comment_updated",
+    "user": {
+        "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+        "name": "levbrouk",
+        "key": "levbrouk",
+        "emailAddress": "lev@mattermost.com",
+        "avatarUrls": {
+            "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+            "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+            "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+            "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+        },
+        "displayName": "Lev Brouk",
+        "active": true,
+        "timeZone": "Etc/UTC"
+    },
+    "comment": {
+        "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10013/comment/10084",
+        "id": "10084",
+        "author": {
+            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+            "name": "levbrouk",
+            "key": "levbrouk",
+            "emailAddress": "lev@mattermost.com",
+            "avatarUrls": {
+                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+            },
+            "displayName": "Lev Brouk",
+            "active": true,
+            "timeZone": "Etc/UTC"
+        },
+        "body": "and higher eeven higher",
+        "updateAuthor": {
+            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+            "name": "levbrouk",
+            "key": "levbrouk",
+            "emailAddress": "lev@mattermost.com",
+            "avatarUrls": {
+                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+            },
+            "displayName": "Lev Brouk",
+            "active": true,
+            "timeZone": "Etc/UTC"
+        },
+        "created": "2019-06-04T00:50:04.873+0000",
+        "updated": "2019-06-04T00:53:33.665+0000"
+    }
+}
