@@ -18,6 +18,9 @@ type Props = {
     options: any[];
     value?: any;
     required?: boolean;
+    isMulti?: boolean;
+    label?: string;
+    components?: any;
 };
 
 type State = {
@@ -88,6 +91,9 @@ export default class ReactSelectSetting extends React.PureComponent<Props, State
                     options={this.props.options}
                     value={this.props.value}
                     required={this.props.required}
+                    isMulti={this.props.isMulti}
+                    label={this.props.label}
+                    components={this.props.components}
                     loadOptions={this.filterOptions}
                     defaultOptions={true}
                     menuPortalTarget={document.body}
