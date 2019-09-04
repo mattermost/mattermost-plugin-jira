@@ -310,3 +310,4 @@ The domain you are signed into Mattermost with on that browser must match the Si
 For Mattermost customers - please open a support case.
 For Questions, Suggestions and Help - please find us on our forum at https://forum.mattermost.org/c/plugins
 To Contribute to the project see https://www.mattermost.org/contribute-to-mattermost/
+
