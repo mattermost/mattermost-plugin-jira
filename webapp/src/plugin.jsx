@@ -34,8 +34,6 @@ const setupUILater = (registry, store) => async () => {
 
         const hooks = new Hooks(store);
         registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);
-    } catch (err) {
-        throw err;
     } finally {
         registry.registerWebSocketEventHandler(`custom_${PluginId}_connect`, handleConnectChange(store));
         registry.registerWebSocketEventHandler(`custom_${PluginId}_disconnect`, handleConnectChange(store));
