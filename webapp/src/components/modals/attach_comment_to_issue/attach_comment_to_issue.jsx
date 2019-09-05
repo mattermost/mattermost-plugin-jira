@@ -32,17 +32,7 @@ export default class AttachIssueModal extends PureComponent {
         super(props);
         this.state = initialState;
 
-        this.issueRef = React.createRef();
-
         this.validator = new Validator();
-    }
-
-    componentDidMount() {
-        this.validator.addComponent('issue', this.issueRef);
-    }
-
-    componentWillUnmount() {
-        this.validator.removeComponent('issue');
     }
 
     handleCreate = (e) => {
@@ -97,7 +87,9 @@ export default class AttachIssueModal extends PureComponent {
         const component = (
             <div>
                 <JiraIssueSelector
-                    ref={this.issueRef}
+                    id={'issue'}
+                    addValidate={this.validator.addComponent}
+                    removeValidate={this.validator.removeComponent}
                     onChange={this.handleIssueKeyChange}
                     required={true}
                     theme={theme}

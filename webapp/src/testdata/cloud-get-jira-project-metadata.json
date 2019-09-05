@@ -1,0 +1,160 @@
+{
+  "projects": [
+    {
+      "value": "DP",
+      "label": "DKH-Project"
+    },
+    {
+      "value": "IDT",
+      "label": "Issue Dialog Testing"
+    },
+    {
+      "value": "KT",
+      "label": "Koch Testing"
+    },
+    {
+      "value": "LT",
+      "label": "LEV-test"
+    },
+    {
+      "value": "RES",
+      "label": "restricted"
+    },
+    {
+      "value": "SCRUM1",
+      "label": "scrum1"
+    },
+    {
+      "value": "EXT",
+      "label": "Testing Extensions"
+    }
+  ],
+  "issues_per_project": {
+    "DP": [
+      {
+        "value": "10002",
+        "label": "Task"
+      },
+      {
+        "value": "10001",
+        "label": "Story"
+      },
+      {
+        "value": "10004",
+        "label": "Bug"
+      },
+      {
+        "value": "10000",
+        "label": "Epic"
+      },
+      {
+        "value": "10007",
+        "label": "Custom Type DKH"
+      },
+      {
+        "value": "10008",
+        "label": " DKH 2"
+      }
+    ],
+    "EXT": [
+      {
+        "value": "10002",
+        "label": "Task"
+      },
+      {
+        "value": "10001",
+        "label": "Story"
+      },
+      {
+        "value": "10004",
+        "label": "Bug"
+      },
+      {
+        "value": "10000",
+        "label": "Epic"
+      }
+    ],
+    "IDT": [
+      {
+        "value": "10002",
+        "label": "Task"
+      },
+      {
+        "value": "10001",
+        "label": "Story"
+      },
+      {
+        "value": "10004",
+        "label": "Bug"
+      },
+      {
+        "value": "10000",
+        "label": "Epic"
+      }
+    ],
+    "KT": [
+      {
+        "value": "10002",
+        "label": "Task"
+      },
+      {
+        "value": "10001",
+        "label": "Story"
+      },
+      {
+        "value": "10004",
+        "label": "Bug"
+      },
+      {
+        "value": "10000",
+        "label": "Epic"
+      }
+    ],
+    "LT": [
+      {
+        "value": "10005",
+        "label": "Task"
+      },
+      {
+        "value": "10006",
+        "label": "Epic"
+      }
+    ],
+    "RES": [
+      {
+        "value": "10002",
+        "label": "Task"
+      },
+      {
+        "value": "10001",
+        "label": "Story"
+      },
+      {
+        "value": "10004",
+        "label": "Bug"
+      },
+      {
+        "value": "10000",
+        "label": "Epic"
+      }
+    ],
+    "SCRUM1": [
+      {
+        "value": "10002",
+        "label": "Task"
+      },
+      {
+        "value": "10001",
+        "label": "Story"
+      },
+      {
+        "value": "10004",
+        "label": "Bug"
+      },
+      {
+        "value": "10000",
+        "label": "Epic"
+      }
+    ]
+  }
+}

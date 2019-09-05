@@ -17,7 +17,7 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
         postId: PropTypes.string,
         userConnected: PropTypes.bool.isRequired,
         isInstanceInstalled: PropTypes.bool.isRequired,
-        installedInstanceType: PropTypes.bool.isRequired,
+        installedInstanceType: PropTypes.string.isRequired,
         sendEphemeralPost: PropTypes.func.isRequired,
     };
 

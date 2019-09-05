@@ -8,6 +8,7 @@ import {Modal} from 'react-bootstrap';
 import ReactSelectSetting from 'components/react_select_setting';
 import FormButton from 'components/form_button';
 import Loading from 'components/loading';
+import Validator from 'components/validator';
 import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProjects} from 'utils/jira_issue_metadata';
 
 const JiraEventOptions = [
@@ -62,10 +63,10 @@ export default class ChannelSettingsModalInner extends PureComponent {
             filters = Object.assign({}, filters, props.channelSubscriptions[0].filters);
         }
 
-        let fetchingProjects = false;
+        let fetchingIssueMetadata = false;
         if (filters.projects.length) {
-            fetchingProjects = true;
-            this.fetchProjects(filters.projects);
+            fetchingIssueMetadata = true;
+            this.fetchIssueMetadata(filters.projects);
         }
 
         this.state = {
@@ -73,8 +74,10 @@ export default class ChannelSettingsModalInner extends PureComponent {
             getMetaDataErr: null,
             submitting: false,
             filters,
-            fetchingProjects,
+            fetchingIssueMetadata,
         };
+
+        this.validator = new Validator();
     }
 
     handleClose = (e) => {
@@ -87,9 +90,14 @@ export default class ChannelSettingsModalInner extends PureComponent {
     deleteChannelSubscription = (e) => {
         if (this.props.channelSubscriptions && this.props.channelSubscriptions.length > 0) {
             const sub = this.props.channelSubscriptions[0];
-            this.props.deleteChannelSubscription(sub);
+            this.props.deleteChannelSubscription(sub).then((res) => {
+                if (res.error) {
+                    this.setState({error: res.error.message});
+                } else {
+                    this.handleClose(e);
+                }
+            });
         }
-        this.handleClose(e);
     };
 
     handleSettingChange = (id, value) => {
@@ -104,9 +112,9 @@ export default class ChannelSettingsModalInner extends PureComponent {
         this.setState({filters});
     };
 
-    fetchProjects = (projectKeys) => {
+    fetchIssueMetadata = (projectKeys) => {
         this.props.fetchJiraIssueMetadataForProjects(projectKeys).then((fetched) => {
-            const state = {fetchingProjects: false};
+            const state = {fetchingIssueMetadata: false};
             state.filters = this.updateFilters(projectKeys);
 
             const error = fetched.error || (fetched.data && fetched.data.error);
@@ -158,16 +166,16 @@ export default class ChannelSettingsModalInner extends PureComponent {
 
         const filters = this.updateFilters(projects);
 
-        let fetchingProjects = false;
+        let fetchingIssueMetadata = false;
 
         this.props.clearIssueMetadata();
         if (projects && projects.length) {
-            fetchingProjects = true;
-            this.fetchProjects(projects);
+            fetchingIssueMetadata = true;
+            this.fetchIssueMetadata(projects);
         }
 
         this.setState({
-            fetchingProjects,
+            fetchingIssueMetadata,
             getMetaDataErr: null,
             filters,
         });
@@ -178,21 +186,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
             e.preventDefault();
         }
 
-        const projects = this.state.filters.projects;
-        if (!projects.length) {
-            this.setState({error: 'Please select a project.'});
-            return;
-        }
-
-        const events = this.state.filters.events;
-        if (!events.length) {
-            this.setState({error: 'Please select an event type.'});
-            return;
-        }
-
-        const issueTypes = this.state.filters.issue_types;
-        if (!issueTypes.length) {
-            this.setState({error: 'Please select an issue type.'});
+        if (!this.validator.validate()) {
             return;
         }
 
@@ -237,7 +231,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
         let component = null;
         if (this.props.channel && this.props.channelSubscriptions) {
             let innerComponent = null;
-            if (this.state.fetchingProjects) {
+            if (this.state.fetchingIssueMetadata) {
                 innerComponent = <Loading/>;
             } else if (this.state.filters.projects[0] && !this.state.getMetaDataErr) {
                 innerComponent = (
@@ -251,6 +245,8 @@ export default class ChannelSettingsModalInner extends PureComponent {
                             isMulti={true}
                             theme={this.props.theme}
                             value={eventOptions.filter((option) => this.state.filters.events.includes(option.value))}
+                            addValidate={this.validator.addComponent}
+                            removeValidate={this.validator.removeComponent}
                         />
                         <ReactSelectSetting
                             name={'issue_types'}
@@ -261,6 +257,8 @@ export default class ChannelSettingsModalInner extends PureComponent {
                             isMulti={true}
                             theme={this.props.theme}
                             value={issueOptions.filter((option) => this.state.filters.issue_types.includes(option.value))}
+                            addValidate={this.validator.addComponent}
+                            removeValidate={this.validator.removeComponent}
                         />
                     </React.Fragment>
                 );
@@ -277,6 +275,8 @@ export default class ChannelSettingsModalInner extends PureComponent {
                         isMulti={false}
                         theme={this.props.theme}
                         value={projectOptions.filter((option) => this.state.filters.projects.includes(option.value))}
+                        addValidate={this.validator.addComponent}
+                        removeValidate={this.validator.removeComponent}
                     />
                     {innerComponent}
                 </div>
@@ -318,6 +318,7 @@ export default class ChannelSettingsModalInner extends PureComponent {
                     />
                     {showDeleteButton && (
                         <FormButton
+                            id='jira-delete-subscription'
                             type='button'
                             btnClass='btn-danger pull-left'
                             defaultMessage='Delete'

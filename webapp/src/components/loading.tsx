@@ -2,20 +2,19 @@
 // See LICENSE.txt for license information.
 
 import React, {PureComponent} from 'react';
-import PropTypes from 'prop-types';
 
-export default class Loading extends PureComponent {
-    static propTypes = {
-        position: PropTypes.oneOf(['absolute', 'fixed', 'relative', 'static', 'inherit']),
-        style: PropTypes.object,
-    };
+type Props = {
+    position?: 'absolute' | 'fixed' | 'relative' | 'static' | 'inherit';
+    style?: object;
+};
 
+export default class Loading extends PureComponent<Props> {
     static defaultProps = {
         position: 'relative',
         style: {},
     };
 
-    render() {
+    public render() {
         return (
             <div
                 className='loading-screen'

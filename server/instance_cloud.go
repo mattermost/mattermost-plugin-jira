@@ -7,7 +7,6 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -82,10 +81,10 @@ func (jci jiraCloudInstance) GetDisplayDetails() map[string]string {
 	}
 
 	return map[string]string{
-		"Key":            jci.AtlassianSecurityContext.Key,
-		"ClientKey":      jci.AtlassianSecurityContext.ClientKey,
-		"ServerVersion":  jci.AtlassianSecurityContext.ServerVersion,
-		"PluginsVersion": jci.AtlassianSecurityContext.PluginsVersion,
+		"Atlassian Connect Key":        jci.AtlassianSecurityContext.Key,
+		"Atlassian Connect Client Key": jci.AtlassianSecurityContext.ClientKey,
+		"Jira Cloud Version":           jci.AtlassianSecurityContext.ServerVersion,
+		"Jira Cloud Plugins Version":   jci.AtlassianSecurityContext.PluginsVersion,
 	}
 }
 
@@ -116,19 +115,12 @@ func (jci jiraCloudInstance) GetURL() string {
 	return jci.AtlassianSecurityContext.BaseURL
 }
 
-func (jci jiraCloudInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error) {
+func (jci jiraCloudInstance) GetClient(jiraUser JIRAUser) (Client, error) {
 	client, _, err := jci.getJIRAClientForUser(jiraUser)
-	if err == nil {
-		return client, nil
-	}
-
-	//TODO decide if we ever need this as the default client
-	// client, err = jci.getJIRAClientForServer()
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get Jira client for user "+jiraUser.DisplayName)
 	}
-
-	return client, nil
+	return newCloudClient(client), nil
 }
 
 // Creates a client for acting on behalf of a user
@@ -188,26 +180,4 @@ func (jci jiraCloudInstance) parseHTTPRequestJWT(r *http.Request) (*jwt.Token, s
 	}
 
 	return token, tokenString, nil
-}
-
-func (jci jiraCloudInstance) GetUserGroups(jiraUser JIRAUser) ([]*jira.UserGroup, error) {
-	jiraClient, err := jci.GetJIRAClient(jiraUser)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not get jira client")
-	}
-
-	req, err := jiraClient.NewRequest("GET", "rest/api/3/user/groups?accountId="+jiraUser.AccountID, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "error creating request")
-	}
-
-	var groups []*jira.UserGroup
-	resp, err := jiraClient.Do(req, &groups)
-	if err != nil {
-		body, _ := ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-		return nil, errors.Wrap(err, "error in request to get user groups, body:"+string(body))
-	}
-
-	return groups, nil
 }

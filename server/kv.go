@@ -56,6 +56,7 @@ type UserStore interface {
 	StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JIRAUser) error
 	LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, error)
 	LoadMattermostUserId(ji Instance, jiraUserName string) (string, error)
+	LoadJIRAUserByAccountId(ji Instance, accountId string) (JIRAUser, error)
 	DeleteUserInfo(ji Instance, mattermostUserId string) error
 }
 
@@ -435,6 +436,14 @@ func (store store) LoadMattermostUserId(ji Instance, jiraUserNameOrID string) (s
 	return mattermostUserId, nil
 }
 
+func (store store) LoadJIRAUserByAccountId(ji Instance, accountId string) (JIRAUser, error) {
+	mmUserID, err := ji.GetPlugin().userStore.LoadMattermostUserId(ji, accountId)
+	if err != nil {
+		return JIRAUser{}, err
+	}
+
+	return ji.GetPlugin().userStore.LoadJIRAUser(ji, mmUserID)
+}
 func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnErr error) {
 	defer func() {
 		if returnErr == nil {

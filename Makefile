@@ -1,10 +1,27 @@
-GO ?= $(shell command -v go 2> /dev/null)
 NPM ?= $(shell command -v npm 2> /dev/null)
 CURL ?= $(shell command -v curl 2> /dev/null)
 MANIFEST_FILE ?= plugin.json
 MM_UTILITIES_DIR ?= ../mattermost-utilities
 
+MINIMUM_SUPPORTED_GO_MAJOR_VERSION = 1
+MINIMUM_SUPPORTED_GO_MINOR_VERSION = 12
 export GO111MODULE=on
+GO ?= $(shell command -v go 2> /dev/null)
+GOFLAGS ?= $(GOFLAGS:)
+BUILD_DATE = $(shell date -u)
+BUILD_HASH = $(shell git rev-parse HEAD)
+BUILD_HASH_SHORT = $(shell git rev-parse --short HEAD)
+LDFLAGS += -X "main.BuildDate=$(BUILD_DATE)"
+LDFLAGS += -X "main.BuildHash=$(BUILD_HASH)"
+LDFLAGS += -X "main.BuildHashShort=$(BUILD_HASH_SHORT)"
+GO_MAJOR_VERSION = $(shell $(GO) version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f1)
+GO_MINOR_VERSION = $(shell $(GO) version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f2)
+GO_VERSION_VALIDATION_ERR_MSG = Golang version is not supported, please update to at least $(MINIMUM_SUPPORTED_GO_MAJOR_VERSION).$(MINIMUM_SUPPORTED_GO_MINOR_VERSION)
+
+GOVET = $(GO) vet $(GOFLAGS)
+GOTOOL = $(GO) tool $(GOFLAGS)
+GOBUILD = $(GO) build $(GOFLAGS) -ldflags '$(LDFLAGS)'
+GOTEST = $(GO) test $(GOFLAGS) -ldflags '$(LDFLAGS)'
 
 # You can include assets this directory into the bundle. This can be e.g. used to include profile pictures.
 ASSETS_DIR ?= assets
@@ -26,7 +43,7 @@ apply:
 
 ## Runs govet and gofmt against all packages.
 .PHONY: check-style
-check-style: webapp/.npminstall gofmt govet
+check-style: .npminstall gofmt govet
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -55,29 +72,29 @@ endif
 
 ## Runs govet against all packages.
 .PHONY: govet
-govet:
+govet: validate-go-version
 ifneq ($(HAS_SERVER),)
 	@echo Running govet
 	@# Workaroung because you can't install binaries without adding them to go.mod
 	env GO111MODULE=off $(GO) get golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
-	$(GO) vet ./server/...
-	$(GO) vet -vettool=$(GOPATH)/bin/shadow ./server/...
+	$(GOVET) ./server/...
+	$(GO) vet -vettool=$(GOPATH)/bin/shadow $(GOFLAGS) ./server/...
 	@echo Govet success
 endif
 
 ## Builds the server, if it exists, including support for multiple architectures.
 .PHONY: server
-server:
+server: validate-go-version
 ifneq ($(HAS_SERVER),)
 	rm -rf server/dist;
 	mkdir -p server/dist;
-	cd server && env GOOS=linux GOARCH=amd64 $(GO) build -o dist/plugin-linux-amd64;
-	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build -o dist/plugin-darwin-amd64;
-	cd server && env GOOS=windows GOARCH=amd64 $(GO) build -o dist/plugin-windows-amd64.exe;
+	cd server && env GOOS=linux GOARCH=amd64 $(GOBUILD) -o dist/plugin-linux-amd64;
+	cd server && env GOOS=darwin GOARCH=amd64 $(GOBUILD) -o dist/plugin-darwin-amd64;
+	cd server && env GOOS=windows GOARCH=amd64 $(GOBUILD) -o dist/plugin-windows-amd64.exe;
 endif
 
 ## Ensures NPM dependencies are installed without having to run this all the time.
-webapp/.npminstall:
+.npminstall:
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) install
 	touch $@
@@ -85,7 +102,7 @@ endif
 
 ## Builds the webapp, if it exists.
 .PHONY: webapp
-webapp: webapp/.npminstall
+webapp: .npminstall
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run build;
 endif
@@ -139,20 +156,23 @@ endif
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
-test: webapp/.npminstall
+test: .npminstall validate-go-version
 ifneq ($(HAS_SERVER),)
-	$(GO) test -race -v ./server/...
+	$(GOTEST) -race -v ./server/...
 endif
 ifneq ($(HAS_WEBAPP),)
-	cd webapp && $(NPM) run fix;
+	cd webapp && $(NPM) run fix && $(NPM) run test;
 endif
 
 ## Creates a coverage report for the server code.
 .PHONY: coverage
-coverage:
+coverage: .npminstall validate-go-version
 ifneq ($(HAS_SERVER),)
-	$(GO) test -race -coverprofile=server/coverage.txt ./server/...
-	$(GO) tool cover -html=server/coverage.txt
+	$(GOTEST) -race -coverprofile=server/coverage.txt ./server/...
+	$(GOTOOL) cover -html=server/coverage.txt
+endif
+ifneq ($(HAS_WEBAPP),)
+	cd webapp && $(NPM) run fix && $(NPM) run test-ci;
 endif
 
 ## Extract strings for translation from the source code.
@@ -171,7 +191,7 @@ ifneq ($(HAS_SERVER),)
 	rm -fr server/dist
 endif
 ifneq ($(HAS_WEBAPP),)
-	rm -fr webapp/.npminstall
+	rm -fr .npminstall
 	rm -fr webapp/dist
 	rm -fr webapp/node_modules
 endif
@@ -191,16 +211,16 @@ sd: server-debug
 server-debug: server-debug-deploy reset
 
 .PHONY: server-debug-deploy
-server-debug-deploy:
+server-debug-deploy: validate-go-version
 	./build/bin/manifest apply
 	mkdir -p server/dist
 
 ifeq ($(OS),Darwin)
-	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-darwin-amd64;
+	cd server && env GOOS=darwin GOARCH=amd64 $(GOBUILD) -gcflags "all=-N -l" -o dist/plugin-darwin-amd64;
 else ifeq ($(OS),Linux)
-	cd server && env GOOS=linux GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-linux-amd64;
+	cd server && env GOOS=linux GOARCH=amd64 $(GOBUILD) -gcflags "all=-N -l" -o dist/plugin-linux-amd64;
 else ifeq ($(OS),Windows_NT)
-	cd server && env GOOS=windows GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-windows-amd64.exe;
+	cd server && env GOOS=windows GOARCH=amd64 $(GOBUILD) -gcflags "all=-N -l" -o dist/plugin-windows-amd64.exe;
 else
 	$(error make debug depends on uname to return your OS. If it does not return 'Darwin' (meaning OSX), 'Linux', or 'Windows_NT' (all recent versions of Windows), you will need to edit the Makefile for your own OS.)
 endif
@@ -287,3 +307,15 @@ kill-plugin:
 		echo "Killing plugin pid $$PID"; \
 		kill -9 $$PID; \
 	done; \
+
+.PHONY: validate-go-version
+validate-go-version: ## Validates the installed version of go against Mattermost's minimum requirement.
+	@if [ $(GO_MAJOR_VERSION) -gt $(MINIMUM_SUPPORTED_GO_MAJOR_VERSION) ]; then \
+		exit 0 ;\
+	elif [ $(GO_MAJOR_VERSION) -lt $(MINIMUM_SUPPORTED_GO_MAJOR_VERSION) ]; then \
+		echo '$(GO_VERSION_VALIDATION_ERR_MSG)';\
+		exit 1; \
+	elif [ $(GO_MINOR_VERSION) -lt $(MINIMUM_SUPPORTED_GO_MINOR_VERSION) ] ; then \
+		echo '$(GO_VERSION_VALIDATION_ERR_MSG)';\
+		exit 1; \
+	fi

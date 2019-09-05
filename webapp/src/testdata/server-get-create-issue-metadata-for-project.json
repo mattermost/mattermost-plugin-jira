@@ -1,0 +1,355 @@
+{
+  "expand": "projects",
+  "projects": [{
+    "expand": "issuetypes",
+    "self": "http://localhost:8080/rest/api/2/project/10000",
+    "id": "10000",
+    "key": "HEY",
+    "name": "hey",
+    "issuetypes": [{
+      "self": "http://localhost:8080/rest/api/2/issuetype/10001",
+      "id": "10001",
+      "description": "A task that needs to be done.",
+      "iconurl": "http://localhost:8080/secure/viewavatar?size=xsmall\u0026avatarId=10318\u0026avatarType=issuetype",
+      "name": "Task",
+      "expand": "fields",
+      "fields": {
+        "assignee": {
+          "autoCompleteUrl": "http://localhost:8080/rest/api/latest/user/assignable/search?issueKey=null\u0026username=",
+          "hasDefaultValue": false,
+          "name": "Assignee",
+          "operations": ["set"],
+          "required": false,
+          "schema": {
+            "system": "assignee",
+            "type": "user"
+          }
+        },
+        "description": {
+          "hasDefaultValue": false,
+          "name": "Description",
+          "operations": ["set"],
+          "required": false,
+          "schema": {
+            "system": "description",
+            "type": "string"
+          }
+        },
+        "duedate": {
+          "hasDefaultValue": false,
+          "name": "Due Date",
+          "operations": ["set"],
+          "required": false,
+          "schema": {
+            "system": "duedate",
+            "type": "date"
+          }
+        },
+        "issuetype": {
+          "allowedValues": [{
+            "avatarId": 10318,
+            "description": "A task that needs to be done.",
+            "iconUrl": "http://localhost:8080/secure/viewavatar?size=xsmall\u0026avatarId=10318\u0026avatarType=issuetype",
+            "id": "10001",
+            "name": "Task",
+            "self": "http://localhost:8080/rest/api/2/issuetype/10001",
+            "subtask": false
+          }],
+          "hasDefaultValue": false,
+          "name": "Issue Type",
+          "operations": [],
+          "required": true,
+          "schema": {
+            "system": "issuetype",
+            "type": "issuetype"
+          }
+        },
+        "labels": {
+          "autoCompleteUrl": "http://localhost:8080/rest/api/1.0/labels/suggest?query=",
+          "hasDefaultValue": false,
+          "name": "Labels",
+          "operations": ["add", "set", "remove"],
+          "required": false,
+          "schema": {
+            "items": "string",
+            "system": "labels",
+            "type": "array"
+          }
+        },
+        "priority": {
+          "allowedValues": [{
+            "iconUrl": "http://localhost:8080/images/icons/priorities/highest.svg",
+            "id": "1",
+            "name": "Highest",
+            "self": "http://localhost:8080/rest/api/2/priority/1"
+          }, {
+            "iconUrl": "http://localhost:8080/images/icons/priorities/high.svg",
+            "id": "2",
+            "name": "High",
+            "self": "http://localhost:8080/rest/api/2/priority/2"
+          }, {
+            "iconUrl": "http://localhost:8080/images/icons/priorities/medium.svg",
+            "id": "3",
+            "name": "Medium",
+            "self": "http://localhost:8080/rest/api/2/priority/3"
+          }, {
+            "iconUrl": "http://localhost:8080/images/icons/priorities/low.svg",
+            "id": "4",
+            "name": "Low",
+            "self": "http://localhost:8080/rest/api/2/priority/4"
+          }, {
+            "iconUrl": "http://localhost:8080/images/icons/priorities/lowest.svg",
+            "id": "5",
+            "name": "Lowest",
+            "self": "http://localhost:8080/rest/api/2/priority/5"
+          }],
+          "defaultValue": {
+            "iconUrl": "http://localhost:8080/images/icons/priorities/medium.svg",
+            "id": "3",
+            "name": "Medium",
+            "self": "http://localhost:8080/rest/api/2/priority/3"
+          },
+          "hasDefaultValue": true,
+          "name": "Priority",
+          "operations": ["set"],
+          "required": false,
+          "schema": {
+            "system": "priority",
+            "type": "priority"
+          }
+        },
+        "project": {
+          "allowedValues": [{
+            "avatarUrls": {
+              "16x16": "http://localhost:8080/secure/projectavatar?size=xsmall\u0026avatarId=10324",
+              "24x24": "http://localhost:8080/secure/projectavatar?size=small\u0026avatarId=10324",
+              "32x32": "http://localhost:8080/secure/projectavatar?size=medium\u0026avatarId=10324",
+              "48x48": "http://localhost:8080/secure/projectavatar?avatarId=10324"
+            },
+            "id": "10000",
+            "key": "HEY",
+            "name": "hey",
+            "projectTypeKey": "business",
+            "self": "http://localhost:8080/rest/api/2/project/10000"
+          }],
+          "hasDefaultValue": false,
+          "name": "Project",
+          "operations": ["set"],
+          "required": true,
+          "schema": {
+            "system": "project",
+            "type": "project"
+          }
+        },
+        "reporter": {
+          "autoCompleteUrl": "http://localhost:8080/rest/api/latest/user/search?username=",
+          "hasDefaultValue": false,
+          "name": "Reporter",
+          "operations": ["set"],
+          "required": true,
+          "schema": {
+            "system": "reporter",
+            "type": "user"
+          }
+        },
+        "summary": {
+          "hasDefaultValue": false,
+          "name": "Summary",
+          "operations": ["set"],
+          "required": true,
+          "schema": {
+            "system": "summary",
+            "type": "string"
+          }
+        },
+        "timetracking": {
+          "hasDefaultValue": false,
+          "name": "Time Tracking",
+          "operations": ["set", "edit"],
+          "required": false,
+          "schema": {
+            "system": "timetracking",
+            "type": "timetracking"
+          }
+        }
+      }
+    }, {
+      "self": "http://localhost:8080/rest/api/2/issuetype/10000",
+      "id": "10000",
+      "description": "The sub-task of the issue",
+      "iconurl": "http://localhost:8080/images/icons/issuetypes/subtask_alternate.png",
+      "name": "Sub-task",
+      "subtask": true,
+      "expand": "fields",
+      "fields": {
+        "assignee": {
+          "autoCompleteUrl": "http://localhost:8080/rest/api/latest/user/assignable/search?issueKey=null\u0026username=",
+          "hasDefaultValue": false,
+          "name": "Assignee",
+          "operations": ["set"],
+          "required": false,
+          "schema": {
+            "system": "assignee",
+            "type": "user"
+          }
+        },
+        "description": {
+          "hasDefaultValue": false,
+          "name": "Description",
+          "operations": ["set"],
+          "required": false,
+          "schema": {
+            "system": "description",
+            "type": "string"
+          }
+        },
+        "duedate": {
+          "hasDefaultValue": false,
+          "name": "Due Date",
+          "operations": ["set"],
+          "required": false,
+          "schema": {
+            "system": "duedate",
+            "type": "date"
+          }
+        },
+        "issuetype": {
+          "allowedValues": [{
+            "description": "The sub-task of the issue",
+            "iconUrl": "http://localhost:8080/images/icons/issuetypes/subtask_alternate.png",
+            "id": "10000",
+            "name": "Sub-task",
+            "self": "http://localhost:8080/rest/api/2/issuetype/10000",
+            "subtask": true
+          }],
+          "hasDefaultValue": false,
+          "name": "Issue Type",
+          "operations": [],
+          "required": true,
+          "schema": {
+            "system": "issuetype",
+            "type": "issuetype"
+          }
+        },
+        "labels": {
+          "autoCompleteUrl": "http://localhost:8080/rest/api/1.0/labels/suggest?query=",
+          "hasDefaultValue": false,
+          "name": "Labels",
+          "operations": ["add", "set", "remove"],
+          "required": false,
+          "schema": {
+            "items": "string",
+            "system": "labels",
+            "type": "array"
+          }
+        },
+        "parent": {
+          "hasDefaultValue": false,
+          "name": "Parent",
+          "operations": ["set"],
+          "required": true,
+          "schema": {
+            "system": "parent",
+            "type": "issuelink"
+          }
+        },
+        "priority": {
+          "allowedValues": [{
+            "iconUrl": "http://localhost:8080/images/icons/priorities/highest.svg",
+            "id": "1",
+            "name": "Highest",
+            "self": "http://localhost:8080/rest/api/2/priority/1"
+          }, {
+            "iconUrl": "http://localhost:8080/images/icons/priorities/high.svg",
+            "id": "2",
+            "name": "High",
+            "self": "http://localhost:8080/rest/api/2/priority/2"
+          }, {
+            "iconUrl": "http://localhost:8080/images/icons/priorities/medium.svg",
+            "id": "3",
+            "name": "Medium",
+            "self": "http://localhost:8080/rest/api/2/priority/3"
+          }, {
+            "iconUrl": "http://localhost:8080/images/icons/priorities/low.svg",
+            "id": "4",
+            "name": "Low",
+            "self": "http://localhost:8080/rest/api/2/priority/4"
+          }, {
+            "iconUrl": "http://localhost:8080/images/icons/priorities/lowest.svg",
+            "id": "5",
+            "name": "Lowest",
+            "self": "http://localhost:8080/rest/api/2/priority/5"
+          }],
+          "defaultValue": {
+            "iconUrl": "http://localhost:8080/images/icons/priorities/medium.svg",
+            "id": "3",
+            "name": "Medium",
+            "self": "http://localhost:8080/rest/api/2/priority/3"
+          },
+          "hasDefaultValue": true,
+          "name": "Priority",
+          "operations": ["set"],
+          "required": false,
+          "schema": {
+            "system": "priority",
+            "type": "priority"
+          }
+        },
+        "project": {
+          "allowedValues": [{
+            "avatarUrls": {
+              "16x16": "http://localhost:8080/secure/projectavatar?size=xsmall\u0026avatarId=10324",
+              "24x24": "http://localhost:8080/secure/projectavatar?size=small\u0026avatarId=10324",
+              "32x32": "http://localhost:8080/secure/projectavatar?size=medium\u0026avatarId=10324",
+              "48x48": "http://localhost:8080/secure/projectavatar?avatarId=10324"
+            },
+            "id": "10000",
+            "key": "HEY",
+            "name": "hey",
+            "projectTypeKey": "business",
+            "self": "http://localhost:8080/rest/api/2/project/10000"
+          }],
+          "hasDefaultValue": false,
+          "name": "Project",
+          "operations": ["set"],
+          "required": true,
+          "schema": {
+            "system": "project",
+            "type": "project"
+          }
+        },
+        "reporter": {
+          "autoCompleteUrl": "http://localhost:8080/rest/api/latest/user/search?username=",
+          "hasDefaultValue": false,
+          "name": "Reporter",
+          "operations": ["set"],
+          "required": true,
+          "schema": {
+            "system": "reporter",
+            "type": "user"
+          }
+        },
+        "summary": {
+          "hasDefaultValue": false,
+          "name": "Summary",
+          "operations": ["set"],
+          "required": true,
+          "schema": {
+            "system": "summary",
+            "type": "string"
+          }
+        },
+        "timetracking": {
+          "hasDefaultValue": false,
+          "name": "Time Tracking",
+          "operations": ["set", "edit"],
+          "required": false,
+          "schema": {
+            "system": "timetracking",
+            "type": "timetracking"
+          }
+        }
+      }
+    }]
+  }]
+}

@@ -97,7 +97,7 @@ func ParseByteSize(str string) (ByteSize, error) {
 	return ByteSize(fl * float64(u)), nil
 }
 
-func normalizeInstallURL(jiraURL string) (string, error) {
+func normalizeInstallURL(mattermostSiteURL, jiraURL string) (string, error) {
 	u, err := url.Parse(jiraURL)
 	if err != nil {
 		return "", err
@@ -119,7 +119,13 @@ func normalizeInstallURL(jiraURL string) (string, error) {
 	if u.Scheme == "" {
 		u.Scheme = "https"
 	}
-	return strings.TrimSuffix(u.String(), "/"), nil
+
+	jiraURL = strings.TrimSuffix(u.String(), "/")
+	if jiraURL == strings.TrimSuffix(mattermostSiteURL, "/") {
+		return "", errors.Errorf("%s is the Mattermost site URL. Please use your Jira URL with `/jira install`.", jiraURL)
+	}
+
+	return jiraURL, nil
 }
 
 func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) (post *model.Post, returnErr error) {
@@ -204,6 +210,28 @@ func (p *Plugin) StoreCurrentJIRAInstanceAndNotify(ji Instance) error {
 		&model.WebsocketBroadcast{},
 	)
 	return nil
+}
+
+func replaceJiraAccountIds(ji Instance, body string) string {
+	result := body
+
+	for _, uname := range parseJIRAUsernamesFromText(body) {
+		if !strings.HasPrefix(uname, "accountid:") {
+			continue
+		}
+
+		jiraUserID := uname[len("accountid:"):]
+		jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUserByAccountId(ji, jiraUserID)
+		if err != nil {
+			continue
+		}
+
+		if jiraUser.DisplayName != "" {
+			result = strings.ReplaceAll(result, uname, jiraUser.DisplayName)
+		}
+	}
+
+	return result
 }
 
 func (p *Plugin) loadJIRAProjectKeys(jiraClient *jira.Client) ([]string, error) {

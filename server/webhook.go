@@ -62,6 +62,12 @@ func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model
 		// },
 	}
 	if wh.text != "" || len(wh.fields) != 0 {
+		// Get instance for replacing accountids in text. If no instance is available, just skip it.
+		ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+		if err == nil {
+			wh.text = replaceJiraAccountIds(ji, wh.text)
+		}
+
 		model.ParseSlackAttachment(post, []*model.SlackAttachment{
 			{
 				// TODO is this supposed to be themed?
@@ -117,7 +123,7 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 			// Not connected to Jira, so can't check permissions
 			continue
 		}
-		jiraClient, err2 := ji.GetJIRAClient(jiraUser)
+		client, err2 := ji.GetClient(jiraUser)
 		if err2 != nil {
 			p.errorf("PostNotifications: error while getting jiraClient, err: %v", err2)
 			continue
@@ -126,32 +132,17 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 		// Otherwise, check if they can view the issue.
 
 		isCommentEvent := wh.Events().Intersection(commentEvents).Len() > 0
+		selfURL := wh.Issue.Self
 		if isCommentEvent {
-			req, err2 := jiraClient.NewRequest("GET", notification.commentSelf, nil)
-			if err2 != nil {
-				p.errorf("PostNotifications: error while creating NewRequest, err: %v", err2)
-				continue
-			}
-
-			resp, _ := jiraClient.Do(req, nil)
-			if resp.StatusCode != http.StatusOK {
-				// recipient does not have permissions to view the issue.
-				continue
-			}
-		} else {
-			req, err2 := jiraClient.NewRequest("GET", wh.Issue.Self, nil)
-			if err2 != nil {
-				p.errorf("PostNotifications: error while creating NewRequest, err: %v", err2)
-				continue
-			}
-
-			resp, _ := jiraClient.Do(req, nil)
-			if resp.StatusCode != http.StatusOK {
-				// recipient does not have permissions to view the issue.
-				continue
-			}
-
+			selfURL = notification.commentSelf
 		}
+		err = client.RESTGet(selfURL, nil, &struct{}{})
+		if err != nil {
+			p.errorf("PostNotifications: failed to get self: %v", err)
+			continue
+		}
+
+		notification.message = replaceJiraAccountIds(ji, notification.message)
 
 		post, err := ji.GetPlugin().CreateBotDMPost(ji, mattermostUserId, notification.message, notification.postType)
 		if err != nil {
