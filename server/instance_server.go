@@ -4,7 +4,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"net/http"
 
 	"github.com/andygrunwald/go-jira"
@@ -91,7 +90,7 @@ func (jsi jiraServerInstance) GetUserConnectURL(mattermostUserId string) (return
 	return authURL.String(), nil
 }
 
-func (jsi jiraServerInstance) GetJIRAClient(jiraUser JIRAUser) (returnClient *jira.Client, returnErr error) {
+func (jsi jiraServerInstance) GetClient(jiraUser JIRAUser) (client Client, returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -116,7 +115,7 @@ func (jsi jiraServerInstance) GetJIRAClient(jiraUser JIRAUser) (returnClient *ji
 		return nil, err
 	}
 
-	return jiraClient, nil
+	return newServerClient(jiraClient), nil
 }
 
 func (jsi jiraServerInstance) getOAuth1Config() *oauth1.Config {
@@ -159,30 +158,4 @@ func (jsi *jiraServerInstance) GetOAuth1Config() (returnConfig *oauth1.Config, r
 	}
 
 	return jsi.oauth1Config, nil
-}
-
-func (jsi jiraServerInstance) GetUserGroups(jiraUser JIRAUser) ([]*jira.UserGroup, error) {
-	jiraClient, err := jsi.GetJIRAClient(jiraUser)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not get jira client")
-	}
-
-	req, err := jiraClient.NewRequest("GET", "rest/api/2/myself?expand=groups", nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "error creating request")
-	}
-
-	var groupsStruct struct {
-		Groups struct {
-			Items []*jira.UserGroup
-		}
-	}
-	resp, err := jiraClient.Do(req, &groupsStruct)
-	if err != nil {
-		body, _ := ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-		return nil, errors.Wrap(err, "error in request to get user groups, body:"+string(body))
-	}
-
-	return groupsStruct.Groups.Items, nil
 }

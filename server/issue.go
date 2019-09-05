@@ -4,7 +4,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
-	"github.com/mattermost/mattermost-server/plugin"
 )
 
 func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -48,7 +46,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, err
 	}
 
-	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -110,15 +108,14 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		}
 	}
 
-	project, _, err := jiraClient.Project.Get(issue.Fields.Project.Key)
+	project, err := client.GetProject(issue.Fields.Project.Key)
 	if err != nil {
-		err = userFriendlyJiraError(nil, err)
 		return http.StatusInternalServerError, errors.WithMessagef(err,
 			"failed to get project %q", issue.Fields.Project.Key)
 	}
 
 	if len(create.RequiredFieldsNotCovered) > 0 {
-		req := buildCreateQuery(ji, project, issue)
+		createURL := MakeCreateIssueURL(ji, project, issue)
 
 		message := "The project you tried to create an issue for has **required fields** this plugin does not yet support:"
 
@@ -129,7 +126,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		}
 
 		reply := &model.Post{
-			Message:   fmt.Sprintf("[Please create your Jira issue manually](%v). %v\n%v", req.URL.String(), message, fieldsString),
+			Message:   fmt.Sprintf("[Please create your Jira issue manually](%v). %v\n%v", createURL, message, fieldsString),
 			ChannelId: channelId,
 			RootId:    rootId,
 			ParentId:  parentId,
@@ -142,9 +139,8 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusOK, nil
 	}
 
-	created, resp, err := jiraClient.Issue.Create(issue)
+	created, err := client.CreateIssue(issue)
 	if err != nil {
-		err = userFriendlyJiraError(resp, err)
 		// if have an error and Jira tells us there are required fields send user
 		// link to jira with fields already filled in.  Note the user will also see
 		// these errors in Jira.
@@ -152,7 +148,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		if strings.Contains(err.Error(), "is required.") {
 			message := fmt.Sprintf("Failed to create issue. Your Jira project requires fields the plugin does not yet support. "+
 				"[Please create your Jira issue manually](%s) or contact your Jira administrator.\n%v",
-				buildCreateQuery(ji, project, issue).URL.String(),
+				MakeCreateIssueURL(ji, project, issue),
 				err)
 
 			_ = api.SendEphemeralPost(mattermostUserId, &model.Post{
@@ -188,7 +184,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		go func() {
 			conf := ji.GetPlugin().getConfig()
 			for _, fileId := range post.FileIds {
-				mattermostName, _, e := attachFileToIssue(api, jiraClient, created.ID, fileId, conf.maxAttachmentSize)
+				mattermostName, _, e := client.AddAttachment(api, created.ID, fileId, conf.maxAttachmentSize)
 				if e != nil {
 					notifyOnFailedAttachment(ji, mattermostUserId, created.Key, e, "file: %s", mattermostName)
 				}
@@ -231,17 +227,16 @@ func httpAPIGetCreateIssueMetadataForProjects(ji Instance, w http.ResponseWriter
 		return http.StatusInternalServerError, err
 	}
 
-	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	cimd, resp, err := jiraClient.Issue.GetCreateMetaWithOptions(&jira.GetQueryOptions{
+	cimd, err := client.GetCreateMeta(&jira.GetQueryOptions{
 		Expand:      "projects.issuetypes.fields",
 		ProjectKeys: projectKeys,
 	})
 	if err != nil {
-		err = userFriendlyJiraError(resp, err)
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to GetCreateIssueMetadata")
 	}
@@ -284,14 +279,13 @@ func httpAPIGetJiraProjectMetadata(ji Instance, w http.ResponseWriter, r *http.R
 		return http.StatusInternalServerError, err
 	}
 
-	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	cimd, resp, err := jiraClient.Issue.GetCreateMetaWithOptions(nil)
+	cimd, err := client.GetCreateMeta(nil)
 	if err != nil {
-		err = userFriendlyJiraError(resp, err)
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to GetCreateIssueMetadata")
 	}
@@ -366,21 +360,20 @@ func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request)
 		return http.StatusInternalServerError, err
 	}
 
-	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
 	jqlString := r.FormValue("jql")
 
-	searchRes, _, err := jiraClient.Issue.Search(jqlString, &jira.SearchOptions{
+	searchRes, err := client.SearchIssues(jqlString, &jira.SearchOptions{
 		MaxResults: 50,
 		Fields:     []string{"key", "summary"},
 	})
 	if err != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(userFriendlyJiraError(nil, err),
-				"failed to get search results")
+			errors.WithMessage(err, "failed to get search results")
 	}
 
 	// We only need to send down a summary of the data
@@ -440,7 +433,7 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 		return http.StatusInternalServerError, err
 	}
 
-	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -470,7 +463,7 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 	jiraComment.Body = permalinkMessage
 	jiraComment.Body += post.Message
 
-	commentAdded, _, err := jiraClient.Issue.AddComment(attach.IssueKey, &jiraComment)
+	commentAdded, err := client.AddComment(attach.IssueKey, &jiraComment)
 	if err != nil {
 		if strings.Contains(err.Error(), "you do not have the permission to comment on this issue") {
 			return http.StatusNotFound,
@@ -486,7 +479,7 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 		conf := ji.GetPlugin().getConfig()
 		extraText := ""
 		for _, fileId := range post.FileIds {
-			mattermostName, jiraName, e := attachFileToIssue(api, jiraClient, attach.IssueKey, fileId, conf.maxAttachmentSize)
+			mattermostName, jiraName, e := client.AddAttachment(api, attach.IssueKey, fileId, conf.maxAttachmentSize)
 			if e != nil {
 				notifyOnFailedAttachment(ji, mattermostUserId, attach.IssueKey, e, "file: %s", mattermostName)
 			}
@@ -499,7 +492,7 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 
 		jiraComment.ID = commentAdded.ID
 		jiraComment.Body += extraText
-		_, _, err = jiraClient.Issue.UpdateComment(attach.IssueKey, &jiraComment)
+		_, err = client.UpdateComment(attach.IssueKey, &jiraComment)
 		if err != nil {
 			notifyOnFailedAttachment(ji, mattermostUserId, attach.IssueKey, err, "failed to completely update comment with attachments")
 		}
@@ -545,48 +538,12 @@ func notifyOnFailedAttachment(ji Instance, mattermostUserId, issueKey string, er
 	msg := "Failed to attach to issue: " + issueKey + ", " + fmt.Sprintf(format, args...)
 
 	ji.GetPlugin().API.LogError(fmt.Sprintf("%s: %v", msg, err), "issue", issueKey)
+	errMsg := err.Error()
+	if len(errMsg) > 2048 {
+		errMsg = errMsg[:2048]
+	}
 	_, _ = ji.GetPlugin().CreateBotDMtoMMUserId(mattermostUserId,
-		"%s. Please notify your system administrator.\n- Error: %v", msg, err)
-}
-
-func buildCreateQuery(ji Instance, project *jira.Project, issue *jira.Issue) *http.Request {
-
-	url := fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", ji.GetURL())
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		fmt.Printf("we've found the errro = %+v\n", err)
-	}
-
-	q := req.URL.Query()
-	q.Add("pid", project.ID)
-	q.Add("issuetype", issue.Fields.Type.ID)
-	q.Add("summary", issue.Fields.Summary)
-	q.Add("description", issue.Fields.Description)
-
-	// if no priority, ID field does not exist
-	if issue.Fields.Priority != nil {
-		q.Add("priority", issue.Fields.Priority.ID)
-	}
-
-	// add custom fields
-	for k, v := range issue.Fields.Unknowns {
-
-		strV, ok := v.(string)
-		if ok {
-			q.Add(k, strV)
-		}
-
-		if mapV, ok := v.(map[string]interface{}); ok {
-			if id, ok := mapV["id"].(string); ok {
-				q.Add(k, id)
-			}
-		}
-
-	}
-
-	req.URL.RawQuery = q.Encode()
-
-	return req
+		"%s. Please notify your system administrator.\n%s", msg, errMsg)
 }
 
 func getPermaLink(ji Instance, postId string, currentTeam string) string {
@@ -594,23 +551,23 @@ func getPermaLink(ji Instance, postId string, currentTeam string) string {
 }
 
 func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issueKey string) ([]*model.SlackAttachment, error) {
-	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return nil, err
 	}
 
-	issue, resp, err := jiraClient.Issue.Get(issueKey, nil)
+	issue, err := client.GetIssue(issueKey, nil)
 	if err != nil {
-		switch {
-		case resp == nil:
-			return nil, errors.WithMessage(userFriendlyJiraError(nil, err),
-				"request to Jira failed")
-
-		case resp.StatusCode == http.StatusNotFound:
+		switch StatusCode(err) {
+		case http.StatusNotFound:
 			return nil, errors.New("We couldn't find the issue key, or you do not have the appropriate permissions to view the issue. Please try again or contact your Jira administrator.")
 
-		case resp.StatusCode == http.StatusUnauthorized:
+		case http.StatusUnauthorized:
 			return nil, errors.New("You do not have the appropriate permissions to view the issue. Please contact your Jira administrator.")
+
+		default:
+			return nil, errors.WithMessage(err, "request to Jira failed")
+
 		}
 	}
 
@@ -630,7 +587,7 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, userSearch string) (string,
 		return "", err
 	}
 
-	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return "", err
 	}
@@ -642,21 +599,15 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, userSearch string) (string,
 	}
 
 	// check for valid issue key
-	_, _, err = jiraClient.Issue.Get(issueKey, nil)
+	_, err = client.GetIssue(issueKey, nil)
 	if err != nil {
 		errorMsg := fmt.Sprintf("We couldn't find the issue key `%s`.  Please confirm the issue key and try again.", issueKey)
 		return errorMsg, nil
 	}
 
 	// Get list of assignable users
-	var jiraUsers []jira.User
-	status, err := JiraGet(jiraClient, "user/assignable/search",
-		map[string]string{
-			"issueKey":   issueKey,
-			"username":   userSearch,
-			"maxResults": "10",
-		}, &jiraUsers)
-	if status == 401 {
+	jiraUsers, err := client.SearchUsersAssignableToIssue(issueKey, userSearch, 10)
+	if StatusCode(err) == 401 {
 		return "You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.", nil
 	}
 	if err != nil {
@@ -699,7 +650,7 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, userSearch string) (string,
 		user.Name = ""
 	}
 
-	if _, err := jiraClient.Issue.UpdateAssignee(issueKey, &user); err != nil {
+	if err := client.UpdateAssignee(issueKey, &user); err != nil {
 		return "", err
 	}
 
@@ -721,12 +672,12 @@ func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string
 		return "", err
 	}
 
-	jiraClient, err := ji.GetJIRAClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return "", err
 	}
 
-	transitions, _, err := jiraClient.Issue.GetTransitions(issueKey)
+	transitions, err := client.GetTransitions(issueKey)
 	if err != nil {
 		return "", errors.New("We couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue.")
 	}
@@ -758,88 +709,11 @@ func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string
 			toState, strings.Join(matchingStates, ", "))
 	}
 
-	if _, err := jiraClient.Issue.DoTransition(issueKey, transition.ID); err != nil {
+	if err := client.DoTransition(issueKey, transition.ID); err != nil {
 		return "", err
 	}
 
 	msg := fmt.Sprintf("[%s](%v/browse/%v) transitioned to `%s`",
 		issueKey, ji.GetURL(), issueKey, transition.To.Name)
 	return msg, nil
-}
-
-func userFriendlyJiraError(resp *jira.Response, err error) error {
-	jerr, ok := err.(*jira.Error)
-	if !ok {
-		if resp == nil {
-			return err
-		}
-		// Closes resp.Body()
-		err = jira.NewJiraError(resp, err)
-		jerr, ok = err.(*jira.Error)
-		if !ok {
-			return err
-		}
-	}
-	if len(jerr.Errors) == 0 && len(jerr.ErrorMessages) == 0 {
-		return err
-	}
-
-	message := ""
-	for k, v := range jerr.Errors {
-		message += fmt.Sprintf(" - %s: %s\n", k, v)
-	}
-	for _, m := range jerr.ErrorMessages {
-		message += fmt.Sprintf(" - %s\n", m)
-	}
-	return errors.New(message)
-}
-
-// Upload file attachments in the background
-func attachFileToIssue(api plugin.API, jiraClient *jira.Client, issueKey, fileId string, maxSize ByteSize) (mattermostName, jiraName string, err error) {
-	fileinfo, appErr := api.GetFileInfo(fileId)
-	if appErr != nil {
-		return "", "", appErr
-	}
-	if ByteSize(fileinfo.Size) > maxSize {
-		return fileinfo.Name, "", errors.Errorf("Maximum attachment size %v exceeded, file size %v", maxSize, ByteSize(fileinfo.Size))
-	}
-	fileBytes, appErr := api.ReadFile(fileinfo.Path)
-	if appErr != nil {
-		return fileinfo.Name, "", appErr
-	}
-
-	attachments, _, err := jiraClient.Issue.PostAttachment(issueKey, bytes.NewReader(fileBytes), fileinfo.Name)
-	if err != nil {
-		return fileinfo.Name, "", err
-	}
-	if attachments == nil || len(*attachments) == 0 {
-		return fileinfo.Name, "", errors.New("unreachable error, attaching file" + fileinfo.Name)
-	}
-	// There will only ever be one attachment at a time.
-	attachment := (*attachments)[0]
-	return fileinfo.Name, attachment.Filename, nil
-}
-
-func JiraGet(jiraClient *jira.Client, api string, params map[string]string, dest interface{}) (int, error) {
-	return jiraGet(jiraClient, 2, api, params, dest)
-}
-
-func jiraGet(jiraClient *jira.Client, version int, api string, params map[string]string, dest interface{}) (int, error) {
-	apiEndpoint := fmt.Sprintf("/rest/api/%v/%s", version, api)
-	req, err := jiraClient.NewRequest("GET", apiEndpoint, nil)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	q := req.URL.Query()
-	for k, v := range params {
-		q.Add(k, v)
-	}
-	req.URL.RawQuery = q.Encode()
-
-	resp, err := jiraClient.Do(req, dest)
-	if err != nil {
-		err = userFriendlyJiraError(resp, err)
-	}
-	return resp.StatusCode, err
 }

@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"regexp"
 	"sync"
-
-	"github.com/andygrunwald/go-jira"
 )
 
 const (
@@ -21,14 +19,13 @@ const prefixForInstance = true
 const wSEventInstanceStatus = "instance_status"
 
 type Instance interface {
-	GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error)
+	GetClient(jiraUser JIRAUser) (Client, error)
 	GetDisplayDetails() map[string]string
 	GetMattermostKey() string
 	GetPlugin() *Plugin
 	GetType() string
 	GetURL() string
 	GetUserConnectURL(mattermostUserId string) (string, error)
-	GetUserGroups(jiraUser JIRAUser) ([]*jira.UserGroup, error)
 	Init(p *Plugin)
 }
 
