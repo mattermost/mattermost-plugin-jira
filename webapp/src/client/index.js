@@ -15,11 +15,7 @@ export const doFetchWithResponse = async (url, options = {}) => {
 
     let data;
     if (response.ok) {
-        try {
-            data = await response.json();
-        } catch (err) {
-            throw err;
-        }
+        data = await response.json();
 
         return {
             response,

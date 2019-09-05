@@ -19,10 +19,16 @@ const config = {
         ['@babel/preset-react', {
             useBuiltIns: true,
         }],
+        ['@babel/typescript', {
+            allExtensions: true,
+            isTSX: true,
+        }],
     ],
     plugins: [
         '@babel/plugin-proposal-class-properties',
         '@babel/plugin-syntax-dynamic-import',
+        '@babel/proposal-object-rest-spread',
+        'babel-plugin-typescript-to-proptypes',
     ],
 };
 

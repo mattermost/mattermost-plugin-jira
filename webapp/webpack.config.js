@@ -18,12 +18,12 @@ const config = {
             'src',
             'node_modules',
         ],
-        extensions: ['*', '.js', '.jsx'],
+        extensions: ['*', '.js', '.jsx', '.ts', '.tsx'],
     },
     module: {
         rules: [
             {
-                test: /\.(js|jsx)$/,
+                test: /\.(js|jsx|ts|tsx)$/,
                 exclude: /node_modules/,
                 use: {
                     loader: 'babel-loader',
