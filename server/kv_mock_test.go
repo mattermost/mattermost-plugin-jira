@@ -39,7 +39,7 @@ func (jti jiraTestInstance) GetDisplayDetails() map[string]string {
 func (jti jiraTestInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
 	return "http://jiraTestInstanceUserConnectURL.some", nil
 }
-func (jti jiraTestInstance) GetJIRAClient(jiraUser JIRAUser) (*jira.Client, error) {
+func (jti jiraTestInstance) GetClient(jiraUser JIRAUser) (Client, error) {
 	return nil, errors.New("not implemented")
 }
 func (jti jiraTestInstance) GetUserGroups(jiraUser JIRAUser) ([]*jira.UserGroup, error) {
