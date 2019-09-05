@@ -15,7 +15,7 @@
     "bundle_path": "webapp/dist/main.js"
   },
   "settings_schema": {
-    "header": "",
+    "header": "", 
     "settings": [
       {
         "key": "EnableJiraUI",
