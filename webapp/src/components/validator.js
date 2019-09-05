@@ -7,8 +7,8 @@ export default class Validator {
         this.components = new Map();
     }
 
-    addComponent = (key, ref) => {
-        this.components.set(key, ref);
+    addComponent = (key, validateField) => {
+        this.components.set(key, validateField);
     };
 
     removeComponent = (key) => {
@@ -16,17 +16,8 @@ export default class Validator {
     };
 
     validate = () => {
-        const validator = (accum, ref) => {
-            let currentRef = ref.current;
-
-            // If the ref was wrapped by react-redux connect, unwrap it
-            if (typeof currentRef.getWrappedInstance === 'function') {
-                currentRef = currentRef.getWrappedInstance();
-            }
-
-            // Check every field, but only return true if every field is valid.
-            return currentRef.isValid() && accum;
-        };
-        return Array.from(this.components.values()).reduce(validator, true);
+        return Array.from(this.components.values()).reduce((accum, validateField) => {
+            return validateField() && accum;
+        }, true);
     };
 }

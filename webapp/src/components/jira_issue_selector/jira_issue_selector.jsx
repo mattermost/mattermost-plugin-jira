@@ -15,18 +15,33 @@ const searchDebounceDelay = 400;
 
 export default class JiraIssueSelector extends Component {
     static propTypes = {
+        id: PropTypes.string,
         required: PropTypes.bool,
         theme: PropTypes.object.isRequired,
         onChange: PropTypes.func.isRequired,
         fetchIssuesEndpoint: PropTypes.string.isRequired,
         error: PropTypes.string,
         value: PropTypes.object,
+        addValidate: PropTypes.func.isRequired,
+        removeValidate: PropTypes.func.isRequired,
     };
 
     constructor(props) {
         super(props);
 
         this.state = {invalid: false};
+    }
+
+    componentDidMount() {
+        if (this.props.addValidate && this.props.id) {
+            this.props.addValidate(this.props.id, this.isValid);
+        }
+    }
+
+    componentWillUnmount() {
+        if (this.props.removeValidate && this.props.id) {
+            this.props.removeValidate(this.props.id);
+        }
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -52,6 +67,11 @@ export default class JiraIssueSelector extends Component {
     };
 
     debouncedSearchIssues = debounce(this.searchIssues, searchDebounceDelay);
+
+    onChange = (e) => {
+        const value = e ? e.value : '';
+        this.props.onChange(value);
+    }
 
     isValid = () => {
         if (!this.props.required) {
@@ -120,7 +140,7 @@ export default class JiraIssueSelector extends Component {
                 <AsyncSelect
                     name={'issue'}
                     placeholder={'Search for issues containing text...'}
-                    onChange={(e) => this.props.onChange(e ? e.value : '')}
+                    onChange={this.onChange}
                     required={true}
                     disabled={false}
                     isMulti={false}

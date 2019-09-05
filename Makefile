@@ -43,7 +43,7 @@ apply:
 
 ## Runs govet and gofmt against all packages.
 .PHONY: check-style
-check-style: webapp/.npminstall gofmt govet
+check-style: .npminstall gofmt govet
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -94,7 +94,7 @@ ifneq ($(HAS_SERVER),)
 endif
 
 ## Ensures NPM dependencies are installed without having to run this all the time.
-webapp/.npminstall:
+.npminstall:
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) install
 	touch $@
@@ -102,7 +102,7 @@ endif
 
 ## Builds the webapp, if it exists.
 .PHONY: webapp
-webapp: webapp/.npminstall
+webapp: .npminstall
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run build;
 endif
@@ -156,20 +156,23 @@ endif
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
-test: webapp/.npminstall validate-go-version
+test: .npminstall validate-go-version
 ifneq ($(HAS_SERVER),)
 	$(GOTEST) -race -v ./server/...
 endif
 ifneq ($(HAS_WEBAPP),)
-	cd webapp && $(NPM) run fix;
+	cd webapp && $(NPM) run fix && $(NPM) run test;
 endif
 
 ## Creates a coverage report for the server code.
 .PHONY: coverage
-coverage: validate-go-version
+coverage: .npminstall validate-go-version
 ifneq ($(HAS_SERVER),)
 	$(GOTEST) -race -coverprofile=server/coverage.txt ./server/...
 	$(GOTOOL) cover -html=server/coverage.txt
+endif
+ifneq ($(HAS_WEBAPP),)
+	cd webapp && $(NPM) run fix && $(NPM) run test-ci;
 endif
 
 ## Extract strings for translation from the source code.
@@ -188,7 +191,7 @@ ifneq ($(HAS_SERVER),)
 	rm -fr server/dist
 endif
 ifneq ($(HAS_WEBAPP),)
-	rm -fr webapp/.npminstall
+	rm -fr .npminstall
 	rm -fr webapp/dist
 	rm -fr webapp/node_modules
 endif

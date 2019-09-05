@@ -47,20 +47,6 @@ export default class JiraField extends React.Component {
         );
     };
 
-    constructor(props) {
-        super(props);
-
-        this.ref = React.createRef();
-    }
-
-    componentDidMount() {
-        this.props.addValidate(this.props.id, this.ref);
-    }
-
-    componentWillUnmount() {
-        this.props.removeValidate(this.props.id);
-    }
-
     makeReactSelectValue = (allowedValue) => {
         const label = allowedValue.name ? allowedValue.name : allowedValue.value;
         return (
@@ -74,7 +60,6 @@ export default class JiraField extends React.Component {
         if (field.schema.system === 'description') {
             return (
                 <Input
-                    ref={this.ref}
                     key={this.props.id}
                     id={this.props.id}
                     label={field.name}
@@ -82,6 +67,8 @@ export default class JiraField extends React.Component {
                     onChange={this.props.onChange}
                     required={this.props.obeyRequired && field.required}
                     value={this.props.value}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
                 />
             );
         }
@@ -90,7 +77,6 @@ export default class JiraField extends React.Component {
         if (field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:textarea') {
             return (
                 <Input
-                    ref={this.ref}
                     key={this.props.id}
                     id={this.props.id}
                     label={field.name}
@@ -98,6 +84,8 @@ export default class JiraField extends React.Component {
                     onChange={this.props.onChange}
                     required={this.props.obeyRequired && field.required}
                     value={this.props.value}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
                 />
             );
         }
@@ -105,7 +93,6 @@ export default class JiraField extends React.Component {
         if (field.schema.type === 'string') {
             return (
                 <Input
-                    ref={this.ref}
                     key={this.props.id}
                     id={this.props.id}
                     label={field.name}
@@ -113,6 +100,8 @@ export default class JiraField extends React.Component {
                     onChange={this.props.onChange}
                     required={this.props.obeyRequired && field.required}
                     value={this.props.value}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
                 />
             );
         }
@@ -123,7 +112,6 @@ export default class JiraField extends React.Component {
 
             return (
                 <ReactSelectSetting
-                    ref={this.ref}
                     key={this.props.id}
                     name={this.props.id}
                     label={field.name}
@@ -135,6 +123,8 @@ export default class JiraField extends React.Component {
                     theme={this.props.theme}
                     isClearable={true}
                     components={{Option: JiraField.IconOption}}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
                 />
             );
         }
@@ -158,9 +148,11 @@ export default class JiraField extends React.Component {
                     label={field.name}
                     options={options}
                     required={this.props.obeyRequired && field.required}
-                    onChange={this.handleChange}
+                    onChange={(id, val) => this.props.onChange(id, {id: val})}
                     isMulti={true}
                     value={value}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
                 />
             );
         }
