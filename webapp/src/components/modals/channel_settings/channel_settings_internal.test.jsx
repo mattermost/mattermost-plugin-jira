@@ -127,7 +127,7 @@ describe('components/ChannelSettingsInner', () => {
 
         await Promise.resolve();
         expect(wrapper.state().fetchingIssueMetadata).toBe(false);
-        expect(wrapper.state().getMetaDataErr).toEqual('Failure');
+        expect(wrapper.state().getMetaDataErr).toEqual('The project TES is unavailable. Please contact your system administrator.');
     });
 
     test('should create a subscription', async () => {
