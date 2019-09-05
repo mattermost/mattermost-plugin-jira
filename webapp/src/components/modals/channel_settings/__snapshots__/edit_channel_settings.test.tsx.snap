@@ -319,44 +319,32 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
               "value": "event_updated_summary",
             },
             Object {
+              "label": "Issue Updated: Custom - Affects versions",
+              "value": "event_updated_versions",
+            },
+            Object {
               "label": "Issue Updated: Custom - Epic Link",
               "value": "event_updated_customfield_10014",
             },
             Object {
-              "label": "Issue Updated: Custom - Epic Name",
-              "value": "event_updated_customfield_10011",
+              "label": "Issue Updated: Custom - Fix versions",
+              "value": "event_updated_fixVersions",
             },
             Object {
-              "label": "Issue Updated: Custom - Favorite Food",
-              "value": "event_updated_customfield_10067",
+              "label": "Issue Updated: Custom - Labels",
+              "value": "event_updated_labels",
             },
             Object {
               "label": "Issue Updated: Custom - MJK - Checkbox",
               "value": "event_updated_customfield_10068",
             },
             Object {
-              "label": "Issue Updated: Custom - MJK - Date Picker",
-              "value": "event_updated_customfield_10069",
-            },
-            Object {
-              "label": "Issue Updated: Custom - MJK - Date Time Picker",
-              "value": "event_updated_customfield_10070",
-            },
-            Object {
               "label": "Issue Updated: Custom - MJK - Labels",
               "value": "event_updated_customfield_10071",
             },
             Object {
-              "label": "Issue Updated: Custom - MJK - Number Field",
-              "value": "event_updated_customfield_10072",
-            },
-            Object {
               "label": "Issue Updated: Custom - MJK - Radio Buttons",
               "value": "event_updated_customfield_10073",
-            },
-            Object {
-              "label": "Issue Updated: Custom - MJK - Select List 1",
-              "value": "event_updated_customfield_10074",
             },
             Object {
               "label": "Issue Updated: Custom - MJK - Select List 2",
@@ -367,24 +355,8 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
               "value": "event_updated_customfield_10076",
             },
             Object {
-              "label": "Issue Updated: Custom - MJK - URL Field",
-              "value": "event_updated_customfield_10079",
-            },
-            Object {
-              "label": "Issue Updated: Custom - MJK - User Picker",
-              "value": "event_updated_customfield_10080",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Sprint",
-              "value": "event_updated_customfield_10021",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Text Field 1",
-              "value": "event_updated_customfield_10077",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Text Field 2",
-              "value": "event_updated_customfield_10078",
+              "label": "Issue Updated: Custom - Priority",
+              "value": "event_updated_priority",
             },
           ]
         }
@@ -491,6 +463,156 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
             },
           ]
         }
+      />
+      <ChannelSettingsFilters
+        addValidate={[Function]}
+        fields={
+          Array [
+            Object {
+              "key": "versions",
+              "name": "Affects versions",
+              "values": Array [
+                Object {
+                  "label": "d",
+                  "value": "10000",
+                },
+              ],
+            },
+            Object {
+              "key": "fixVersions",
+              "name": "Fix versions",
+              "values": Array [
+                Object {
+                  "label": "d",
+                  "value": "10000",
+                },
+              ],
+            },
+            Object {
+              "key": "customfield_10068",
+              "name": "MJK - Checkbox",
+              "values": Array [
+                Object {
+                  "label": "1",
+                  "value": "10033",
+                },
+                Object {
+                  "label": "2",
+                  "value": "10034",
+                },
+              ],
+            },
+            Object {
+              "key": "customfield_10073",
+              "name": "MJK - Radio Buttons",
+              "values": Array [
+                Object {
+                  "label": "1",
+                  "value": "10035",
+                },
+                Object {
+                  "label": "2",
+                  "value": "10036",
+                },
+              ],
+            },
+            Object {
+              "key": "customfield_10075",
+              "name": "MJK - Select List 2",
+              "values": Array [
+                Object {
+                  "label": "1",
+                  "value": "10037",
+                },
+                Object {
+                  "label": "2",
+                  "value": "10038",
+                },
+              ],
+            },
+            Object {
+              "key": "customfield_10076",
+              "name": "MJK - Select List 3",
+              "values": Array [
+                Object {
+                  "label": "1",
+                  "value": "10039",
+                },
+                Object {
+                  "label": "2",
+                  "value": "10040",
+                },
+              ],
+            },
+            Object {
+              "key": "priority",
+              "name": "Priority",
+              "values": Array [
+                Object {
+                  "label": "Highest",
+                  "value": "1",
+                },
+                Object {
+                  "label": "High",
+                  "value": "2",
+                },
+                Object {
+                  "label": "Medium",
+                  "value": "3",
+                },
+                Object {
+                  "label": "Low",
+                  "value": "4",
+                },
+                Object {
+                  "label": "Lowest",
+                  "value": "5",
+                },
+              ],
+            },
+            Object {
+              "key": "labels",
+              "name": "Labels",
+              "userDefined": true,
+            },
+            Object {
+              "key": "customfield_10071",
+              "name": "MJK - Labels",
+              "userDefined": true,
+            },
+          ]
+        }
+        onChange={[Function]}
+        removeValidate={[Function]}
+        theme={
+          Object {
+            "awayIndicator": "#ffbc42",
+            "buttonBg": "#166de0",
+            "buttonColor": "#ffffff",
+            "centerChannelBg": "#ffffff",
+            "centerChannelColor": "#3d3c40",
+            "codeTheme": "github",
+            "dndIndicator": "#f74343",
+            "errorTextColor": "#fd5960",
+            "linkColor": "#2389d7",
+            "mentionBj": "#ffffff",
+            "mentionColor": "#145dbf",
+            "mentionHighlightBg": "#ffe577",
+            "mentionHighlightLink": "#166de0",
+            "newMessageSeparator": "#ff8800",
+            "onlineIndicator": "#06d6a0",
+            "sidebarBg": "#145dbf",
+            "sidebarHeaderBg": "#1153ab",
+            "sidebarHeaderTextColor": "#ffffff",
+            "sidebarText": "#ffffff",
+            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveColor": "#ffffff",
+            "sidebarTextHoverBg": "#4578bf",
+            "sidebarUnreadText": "#ffffff",
+            "type": "Mattermost",
+          }
+        }
+        values={Array []}
       />
     </div>
   </ModalBody>

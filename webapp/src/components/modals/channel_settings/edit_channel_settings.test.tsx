@@ -31,6 +31,7 @@ describe('components/EditChannelSettings', () => {
             events: ['event_updated_reopened'],
             projects: ['KT'],
             issue_types: ['10001'],
+            fields: [],
         },
     };
 

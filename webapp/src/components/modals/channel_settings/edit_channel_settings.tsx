@@ -9,7 +9,9 @@ import ReactSelectSetting from 'components/react_select_setting';
 import FormButton from 'components/form_button';
 import Loading from 'components/loading';
 import Validator from 'components/validator';
-import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProjects} from 'utils/jira_issue_metadata';
+import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProjects, getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
+
+import ChannelSettingsFilters from './channel_settings_filters';
 
 const JiraEventOptions = [
     {value: 'event_created', label: 'Issue Created'},
@@ -57,11 +59,14 @@ export default class EditChannelSettings extends PureComponent {
             events: [],
             projects: [],
             issue_types: [],
+            fields: [],
         };
 
         if (props.channelSubscriptions[0]) {
             filters = Object.assign({}, filters, props.channelSubscriptions[0].filters);
         }
+
+        filters.fields = filters.fields || [];
 
         let fetchingIssueMetadata = false;
         if (filters.projects.length) {
@@ -153,6 +158,7 @@ export default class EditChannelSettings extends PureComponent {
             projects,
             issue_types: selectedIssueTypes,
             events: selectedEventTypes,
+            fields: this.state.filters.fields,
         };
     };
 
@@ -179,6 +185,10 @@ export default class EditChannelSettings extends PureComponent {
             getMetaDataErr: null,
             filters,
         });
+    };
+
+    handleFilterFieldChange = (fields) => {
+        this.setState({filters: {...this.state.filters, fields}});
     };
 
     handleCreate = (e) => {
@@ -225,6 +235,7 @@ export default class EditChannelSettings extends PureComponent {
         const projectOptions = getProjectValues(this.props.jiraProjectMetadata);
         const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, this.state.filters.projects);
         const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
+        const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
 
         const eventOptions = JiraEventOptions.concat(customFields);
 
@@ -257,6 +268,14 @@ export default class EditChannelSettings extends PureComponent {
                             isMulti={true}
                             theme={this.props.theme}
                             value={issueOptions.filter((option) => this.state.filters.issue_types.includes(option.value))}
+                            addValidate={this.validator.addComponent}
+                            removeValidate={this.validator.removeComponent}
+                        />
+                        <ChannelSettingsFilters
+                            theme={this.props.theme}
+                            fields={filterFields}
+                            values={this.state.filters.fields}
+                            onChange={this.handleFilterFieldChange}
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
                         />

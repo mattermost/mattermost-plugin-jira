@@ -17,17 +17,20 @@ import (
 )
 
 const (
-	JIRA_WEBHOOK_EVENT_ISSUE_CREATED = "jira:issue_created"
-	JIRA_WEBHOOK_EVENT_ISSUE_UPDATED = "jira:issue_updated"
-	JIRA_WEBHOOK_EVENT_ISSUE_DELETED = "jira:issue_deleted"
-
 	JIRA_SUBSCRIPTIONS_KEY = "jirasub"
 )
 
+type FieldFilter struct {
+	Key     string    `json:"key"`
+	Exclude bool      `json:"exclude"`
+	Values  StringSet `json:"values"`
+}
+
 type SubscriptionFilters struct {
-	Events     StringSet `json:"events"`
-	Projects   StringSet `json:"projects"`
-	IssueTypes StringSet `json:"issue_types"`
+	Events     StringSet     `json:"events"`
+	Projects   StringSet     `json:"projects"`
+	IssueTypes StringSet     `json:"issue_types"`
+	Fields     []FieldFilter `json:"fields"`
 }
 
 type ChannelSubscription struct {
@@ -132,6 +135,25 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
 		}
 
 		if !sub.Filters.Projects.ContainsAny(jwh.Issue.Fields.Project.Key) {
+			continue
+		}
+
+		fieldsMatch := true
+
+		for _, field := range sub.Filters.Fields {
+			if field.Values.Len() == 0 {
+				continue
+			}
+
+			value := getIssueFieldValue(&jwh.Issue, field.Key)
+			contains := field.Values.ContainsAny(value...)
+			if (!contains && field.Exclude == false) || (contains && field.Exclude == true) {
+				fieldsMatch = false
+				break
+			}
+		}
+
+		if !fieldsMatch {
 			continue
 		}
 

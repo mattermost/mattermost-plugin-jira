@@ -4,6 +4,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import ReactSelect from 'react-select';
 import AsyncSelect from 'react-select/async';
 
 import Setting from 'components/setting';
@@ -25,6 +26,7 @@ export default class ReactSelectSetting extends React.PureComponent {
         addValidate: PropTypes.func,
         removeValidate: PropTypes.func,
         required: PropTypes.bool,
+        allowUserDefinedValue: PropTypes.bool,
     };
 
     constructor(props) {
@@ -34,14 +36,14 @@ export default class ReactSelectSetting extends React.PureComponent {
     }
 
     componentDidMount() {
-        if (this.props.addValidate && this.props.name) {
+        if (this.props.addValidate) {
             this.props.addValidate(this.props.name, this.isValid);
         }
     }
 
     componentWillUnmount() {
-        if (this.props.removeValidate && this.props.name) {
-            this.props.removeValidate(this.props.name);
+        if (this.props.removeValidate) {
+            this.props.removeValidate(this.props.name, this.isValid);
         }
     }
 
@@ -67,6 +69,9 @@ export default class ReactSelectSetting extends React.PureComponent {
         let options = this.props.options;
         if (input) {
             options = options.filter((x) => x.label.toUpperCase().includes(input.toUpperCase()));
+            if (this.props.allowUserDefinedValue) {
+                options.unshift({label: input, value: input});
+            }
         }
         return Promise.resolve(options.slice(0, MAX_NUM_OPTIONS));
     };
@@ -95,12 +100,14 @@ export default class ReactSelectSetting extends React.PureComponent {
             );
         }
 
+        const Select = this.props.options.length > MAX_NUM_OPTIONS ? AsyncSelect : ReactSelect;
+
         return (
             <Setting
                 inputId={this.props.name}
                 {...this.props}
             >
-                <AsyncSelect
+                <Select
                     {...this.props}
                     loadOptions={this.filterOptions}
                     defaultOptions={true}
