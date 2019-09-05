@@ -6,19 +6,21 @@
   "scripts": {
     "run": "webpack --progress --watch",
     "build": "webpack --mode=production",
-    "lint": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js --ext .jsx --ext .ts --ext .tsx . --quiet",
-    "fix": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js --ext .jsx --ext .ts --ext .tsx . --quiet --fix"
+    "lint": "eslint --ignore-pattern node_modules --ignore-pattern dist --ignore-pattern tests --ext .js --ext .jsx --ext .ts --ext .tsx . --quiet",
+    "fix": "eslint --ignore-pattern node_modules --ignore-pattern dist --ignore-pattern tests --ext .js --ext .jsx --ext .ts --ext .tsx . --quiet --fix",
+    "test": "jest --forceExit --detectOpenHandles",
+    "test-ci": "jest --forceExit --detectOpenHandles --maxWorkers=2"
   },
   "author": "",
   "license": "",
   "devDependencies": {
-    "@babel/cli": "7.4.4",
-    "@babel/core": "7.4.5",
-    "@babel/plugin-proposal-class-properties": "7.4.4",
+    "@babel/cli": "7.5.5",
+    "@babel/core": "7.5.5",
+    "@babel/plugin-proposal-class-properties": "7.5.5",
     "@babel/plugin-proposal-object-rest-spread": "7.5.5",
     "@babel/plugin-syntax-dynamic-import": "7.2.0",
     "@babel/polyfill": "7.4.4",
-    "@babel/preset-env": "7.4.5",
+    "@babel/preset-env": "7.5.5",
     "@babel/preset-react": "7.0.0",
     "@babel/preset-typescript": "7.3.3",
     "@babel/runtime": "7.4.5",
@@ -34,18 +36,27 @@
     "@typescript-eslint/eslint-plugin": "2.1.0",
     "@typescript-eslint/parser": "1.13.0",
     "babel-eslint": "10.0.2",
+    "babel-jest": "24.8.0",
     "babel-loader": "8.0.6",
+    "enzyme": "3.10.0",
+    "enzyme-adapter-react-16": "1.14.0",
+    "enzyme-to-json": "3.3.5",
     "babel-plugin-typescript-to-proptypes": "0.17.1",
     "eslint": "6.0.1",
     "eslint-import-resolver-webpack": "0.11.1",
     "eslint-plugin-import": "2.18.0",
     "eslint-plugin-react": "7.14.2",
+    "jest": "24.8.0",
+    "jest-canvas-mock": "2.1.0",
+    "jest-junit": "6.4.0",
     "webpack": "4.35.0",
     "webpack-cli": "3.3.5"
   },
   "dependencies": {
+    "core-js": "3.1.4",
     "debounce-promise": "3.1.2",
-    "mattermost-redux": "5.12.0",
+    "mattermost-redux": "github:mattermost/mattermost-redux#40e5bd5a18daa919c62a06b360aa27f2e6ed3e13",
+    "mattermost-webapp": "github:mattermost/mattermost-webapp#23f5f93d9f12a7e2b5623e5cee6814366abd9a0f",
     "react": "16.8.6",
     "react-bootstrap": "0.32.4",
     "react-dom": "16.8.6",
@@ -55,5 +66,50 @@
     "redux": "4.0.1",
     "reselect": "4.0.0",
     "typescript": "3.5.3"
+  },
+  "jest": {
+    "snapshotSerializers": [
+      "<rootDir>/node_modules/enzyme-to-json/serializer"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/non_npm_dependencies/"
+    ],
+    "clearMocks": true,
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx}"
+    ],
+    "coverageReporters": [
+      "lcov",
+      "text-summary"
+    ],
+    "moduleNameMapper": {
+      "^.+\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "identity-obj-proxy",
+      "^.+\\.(css|less|scss)$": "identity-obj-proxy",
+      "^.*i18n.*\\.(json)$": "<rootDir>/tests/i18n_mock.json",
+      "^bundle-loader\\?lazy\\!(.*)$": "$1"
+    },
+    "moduleDirectories": [
+      "",
+      "node_modules",
+      "non_npm_dependencies"
+    ],
+    "reporters": [
+      "default",
+      "jest-junit"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!react-native|react-router|mattermost-webapp)"
+    ],
+    "setupFiles": [
+      "jest-canvas-mock"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.js"
+    ],
+    "testURL": "http://localhost:8065"
+  },
+  "jest-junit": {
+    "output": "build/test-results.xml"
   }
 }

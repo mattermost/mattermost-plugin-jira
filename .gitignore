@@ -3,6 +3,7 @@
 dist
 bin
 vendor
+.npminstall
 
 # Dev
 *.code-workspace
