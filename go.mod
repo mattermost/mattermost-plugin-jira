@@ -1,9 +1,10 @@
-module github.com/mattermost/mattermost-plugin-jira/server
+module github.com/mattermost/mattermost-plugin-jira
 
 go 1.12
 
 require (
 	github.com/andygrunwald/go-jira v1.10.0
+	github.com/circonus-labs/circonusllhist v0.1.3
 	github.com/dghubble/oauth1 v0.5.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fatih/structs v1.1.0 // indirect

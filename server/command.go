@@ -1,6 +1,7 @@
 package main
 
 import (
+	"expvar"
 	"fmt"
 	"sort"
 	"strconv"
@@ -56,6 +57,7 @@ var jiraCommandHandler = CommandHandler{
 		"uninstall/cloud":  executeUninstallCloud,
 		"uninstall/server": executeUninstallServer,
 		"webhook":          executeWebhookURL,
+		"stats":            executeStats,
 		"info":             executeInfo,
 		"help":             commandHelp,
 		// "list":             executeList,
@@ -558,6 +560,32 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 			resp += sbullet("OAuth1a access secret (length)", strconv.Itoa(len(uinfo.JIRAUser.Oauth1AccessSecret)))
 		}
 	}
+	return p.responsef(header, resp)
+}
+
+func executeStats(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) != 0 {
+		return p.help(header)
+	}
+
+	resp := fmt.Sprintf("Mattermost Jira plugin version: %s, "+
+		"[%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s), built %s\n",
+		manifest.Version, BuildHashShort, BuildHash, BuildDate)
+
+	bullet := func(cond bool, k string, v interface{}) string {
+		if !cond {
+			return ""
+		}
+		return fmt.Sprintf(" * %s: %v\n", k, v)
+	}
+
+	sbullet := func(k, v string) string {
+		return bullet(v != "", k, v)
+	}
+
+	expvar.Do(func(kv expvar.KeyValue) {
+		resp += sbullet(kv.Key, kv.Value.String())
+	})
 	return p.responsef(header, resp)
 }
 
