@@ -12,7 +12,7 @@ import (
 // map of *circonusllhist.Histogram by API name
 var clientHistograms sync.Map
 
-var totalAPI = expvar.NewInt("/api/_/total")
+var totalAPI = expvar.NewInt("api/_/total")
 var totalAPIErrors = expvar.NewInt("api/_/errors")
 
 func RecordAPI(api string, isError bool, elapsed time.Duration) {

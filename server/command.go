@@ -3,6 +3,7 @@ package main
 import (
 	"expvar"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -564,8 +565,15 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 }
 
 func executeStats(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	if len(args) != 0 {
-		return p.help(header)
+	var re *regexp.Regexp
+	var err error
+
+	if len(args) > 0 {
+		pattern := strings.Join(args, " ")
+		re, err = regexp.Compile(pattern)
+		if err != nil {
+			return p.responsef(header, "%v", err)
+		}
 	}
 
 	resp := fmt.Sprintf("Mattermost Jira plugin version: %s, "+
@@ -584,7 +592,9 @@ func executeStats(p *Plugin, c *plugin.Context, header *model.CommandArgs, args 
 	}
 
 	expvar.Do(func(kv expvar.KeyValue) {
-		resp += sbullet(kv.Key, kv.Value.String())
+		if re == nil || re.MatchString(kv.Key) {
+			resp += sbullet(kv.Key, kv.Value.String())
+		}
 	})
 	return p.responsef(header, resp)
 }
