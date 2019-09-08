@@ -17,11 +17,7 @@ import (
 
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
-
-	"github.com/mattermost/mattermost-plugin-jira/server/stats"
 )
-
-var _ stats.Stats
 
 const (
 	botUserName    = "jira"

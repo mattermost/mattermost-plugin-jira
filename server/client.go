@@ -13,11 +13,14 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/plugin"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/stats"
 )
 
 // Client is the combined interface for all upstream APIs and convenience methods.
@@ -76,11 +79,16 @@ type JiraClient struct {
 
 // RESTGet calls a specified HTTP point with a GET method. endpoint must be an absolute URL, or a
 // relative URL starting with a version, like "2/user".
-func (client JiraClient) RESTGet(endpoint string, params map[string]string, dest interface{}) error {
-	endpointURL, err := restURL(endpoint)
+func (client JiraClient) RESTGet(endpoint string, params map[string]string, dest interface{}) (err error) {
+	endpointURL, endpointPath, err := restURL(endpoint)
 	if err != nil {
 		return err
 	}
+	startTime := time.Now()
+	defer func() {
+		stats.RecordAPI(endpointPath, err != nil, time.Since(startTime))
+	}()
+
 	req, err := client.Jira.NewRequest("GET", endpointURL, nil)
 	if err != nil {
 		return err
@@ -107,10 +115,14 @@ func (client JiraClient) RESTGet(endpoint string, params map[string]string, dest
 // create attachments for this issue"), and some as plain text ("The field file exceeds its maximum
 // permitted size of 1024 bytes"). This implementation handles both.
 func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name string) (*jira.Attachment, error) {
-	endpointURL, err := restURL(fmt.Sprintf("2/issue/%s/attachments", issueID))
+	endpointURL, endpointPath, err := restURL(fmt.Sprintf("2/issue/%s/attachments", issueID))
 	if err != nil {
 		return nil, err
 	}
+	startTime := time.Now()
+	defer func() {
+		stats.RecordAPI(endpointPath, err != nil, time.Since(startTime))
+	}()
 
 	b := new(bytes.Buffer)
 	writer := multipart.NewWriter(b)
@@ -157,20 +169,24 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 	return attachments[0], nil
 }
 
-func restURL(endpoint string) (string, error) {
+func restURL(endpoint string) (string, string, error) {
 	parsedURL, err := url.Parse(endpoint)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if parsedURL.Scheme == "" {
 		// relative path
 		endpoint = fmt.Sprintf("/rest/api/%s", endpoint)
 	}
-	return endpoint, nil
+	return endpoint, parsedURL.Path, nil
 }
 
 // GetProject returns a Project by key.
-func (client JiraClient) GetProject(key string) (*jira.Project, error) {
+func (client JiraClient) GetProject(key string) (project *jira.Project, err error) {
+	startTime := time.Now()
+	defer func() {
+		stats.RecordAPI("GetProject", err != nil, time.Since(startTime))
+	}()
 	project, resp, err := client.Jira.Project.Get(key)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
@@ -179,7 +195,11 @@ func (client JiraClient) GetProject(key string) (*jira.Project, error) {
 }
 
 // GetIssue returns an Issue by key (with options).
-func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (*jira.Issue, error) {
+func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (issue *jira.Issue, err error) {
+	startTime := time.Now()
+	defer func() {
+		stats.RecordAPI("GetIssue", err != nil, time.Since(startTime))
+	}()
 	issue, resp, err := client.Jira.Issue.Get(key, options)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
@@ -188,7 +208,11 @@ func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (*j
 }
 
 // GetTransitions returns transitions for an issue with issueKey.
-func (client JiraClient) GetTransitions(issueKey string) ([]jira.Transition, error) {
+func (client JiraClient) GetTransitions(issueKey string) (transitions []jira.Transition, err error) {
+	startTime := time.Now()
+	defer func() {
+		stats.RecordAPI("GetTransitions", err != nil, time.Since(startTime))
+	}()
 	transitions, resp, err := client.Jira.Issue.GetTransitions(issueKey)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
@@ -197,7 +221,11 @@ func (client JiraClient) GetTransitions(issueKey string) ([]jira.Transition, err
 }
 
 // CreateIssue creates and returns a new issue.
-func (client JiraClient) CreateIssue(issue *jira.Issue) (*jira.Issue, error) {
+func (client JiraClient) CreateIssue(issue *jira.Issue) (created *jira.Issue, err error) {
+	startTime := time.Now()
+	defer func() {
+		stats.RecordAPI("CreateIssue", err != nil, time.Since(startTime))
+	}()
 	created, resp, err := client.Jira.Issue.Create(issue)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
@@ -206,7 +234,11 @@ func (client JiraClient) CreateIssue(issue *jira.Issue) (*jira.Issue, error) {
 }
 
 // UpdateAssignee changes the user assigned to an issue.
-func (client JiraClient) UpdateAssignee(issueKey string, user *jira.User) error {
+func (client JiraClient) UpdateAssignee(issueKey string, user *jira.User) (err error) {
+	startTime := time.Now()
+	defer func() {
+		stats.RecordAPI("UpdateAssignee", err != nil, time.Since(startTime))
+	}()
 	resp, err := client.Jira.Issue.UpdateAssignee(issueKey, user)
 	if err != nil {
 		return userFriendlyJiraError(resp, err)
@@ -215,7 +247,11 @@ func (client JiraClient) UpdateAssignee(issueKey string, user *jira.User) error 
 }
 
 // AddComment adds a comment to an issue.
-func (client JiraClient) AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error) {
+func (client JiraClient) AddComment(issueKey string, comment *jira.Comment) (added *jira.Comment, err error) {
+	startTime := time.Now()
+	defer func() {
+		stats.RecordAPI("AddComment", err != nil, time.Since(startTime))
+	}()
 	added, resp, err := client.Jira.Issue.AddComment(issueKey, comment)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
@@ -224,7 +260,11 @@ func (client JiraClient) AddComment(issueKey string, comment *jira.Comment) (*ji
 }
 
 // UpdateComment changes a comment of an issue.
-func (client JiraClient) UpdateComment(issueKey string, comment *jira.Comment) (*jira.Comment, error) {
+func (client JiraClient) UpdateComment(issueKey string, comment *jira.Comment) (updated *jira.Comment, err error) {
+	startTime := time.Now()
+	defer func() {
+		stats.RecordAPI("UpdateComment", err != nil, time.Since(startTime))
+	}()
 	updated, resp, err := client.Jira.Issue.AddComment(issueKey, comment)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
@@ -233,7 +273,11 @@ func (client JiraClient) UpdateComment(issueKey string, comment *jira.Comment) (
 }
 
 // SearchIssues searches issues as specified by jql and options.
-func (client JiraClient) SearchIssues(jql string, options *jira.SearchOptions) ([]jira.Issue, error) {
+func (client JiraClient) SearchIssues(jql string, options *jira.SearchOptions) (found []jira.Issue, err error) {
+	startTime := time.Now()
+	defer func() {
+		stats.RecordAPI("SearchIssues", err != nil, time.Since(startTime))
+	}()
 	found, resp, err := client.Jira.Issue.Search(jql, options)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
@@ -242,7 +286,11 @@ func (client JiraClient) SearchIssues(jql string, options *jira.SearchOptions) (
 }
 
 // DoTransition executes a transition on an issue.
-func (client JiraClient) DoTransition(issueKey, transitionID string) error {
+func (client JiraClient) DoTransition(issueKey, transitionID string) (err error) {
+	startTime := time.Now()
+	defer func() {
+		stats.RecordAPI("DoTransition", err != nil, time.Since(startTime))
+	}()
 	resp, err := client.Jira.Issue.DoTransition(issueKey, transitionID)
 	if err != nil {
 		return userFriendlyJiraError(resp, err)
@@ -274,7 +322,11 @@ func (client JiraClient) AddAttachment(api plugin.API, issueKey, fileID string, 
 }
 
 // GetSelf returns a user associated with this Jira client
-func (client JiraClient) GetSelf() (*jira.User, error) {
+func (client JiraClient) GetSelf() (self *jira.User, err error) {
+	startTime := time.Now()
+	defer func() {
+		stats.RecordAPI("getSelf", err != nil, time.Since(startTime))
+	}()
 	self, resp, err := client.Jira.User.GetSelf()
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
