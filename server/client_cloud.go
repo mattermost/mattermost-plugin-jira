@@ -30,7 +30,7 @@ func newCloudClient(jiraClient *jira.Client) Client {
 func (client jiraCloudClient) GetCreateMeta(options *jira.GetQueryOptions) (cimd *jira.CreateMetaInfo, err error) {
 	startTime := time.Now()
 	defer func() {
-		stats.RecordAPI("GetCreateMeta", err != nil, time.Since(startTime))
+		stats.RecordClientAPI("GetCreateMeta", err != nil, time.Since(startTime))
 	}()
 
 	cimd, resp, err := client.Jira.Issue.GetCreateMetaWithOptions(options)

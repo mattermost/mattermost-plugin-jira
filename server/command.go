@@ -584,7 +584,7 @@ func executeStats(p *Plugin, c *plugin.Context, header *model.CommandArgs, args 
 		if !cond {
 			return ""
 		}
-		return fmt.Sprintf(" * %s: %v\n", k, v)
+		return fmt.Sprintf(" * %s: `%v`\n", k, v)
 	}
 
 	sbullet := func(k, v string) string {

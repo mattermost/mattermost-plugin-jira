@@ -4,16 +4,19 @@
 package main
 
 import (
-	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/mattermost/mattermost-server/model"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-server/model"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/stats"
 )
 
 const (
@@ -376,7 +379,12 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 	return nil
 }
 
-func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int, err error) {
+	startTime := time.Now()
+	defer func() {
+		stats.RecordWebhookResponse(stats.WebhookSubscribe, err != nil, time.Since(startTime))
+	}()
+
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
@@ -386,8 +394,9 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret")
 	}
 
-	if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(cfg.Secret)) != 1 {
-		return http.StatusForbidden, fmt.Errorf("Request URL: secret did not match")
+	status, err = verifyWebhookRequestSecret(p.getConfig(), r)
+	if err != nil {
+		return status, err
 	}
 
 	bb, err := ioutil.ReadAll(r.Body)

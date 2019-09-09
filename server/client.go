@@ -86,7 +86,7 @@ func (client JiraClient) RESTGet(endpoint string, params map[string]string, dest
 	}
 	startTime := time.Now()
 	defer func() {
-		stats.RecordAPI(endpointPath, err != nil, time.Since(startTime))
+		stats.RecordClientAPI(endpointPath, err != nil, time.Since(startTime))
 	}()
 
 	req, err := client.Jira.NewRequest("GET", endpointURL, nil)
@@ -121,7 +121,7 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 	}
 	startTime := time.Now()
 	defer func() {
-		stats.RecordAPI(endpointPath, err != nil, time.Since(startTime))
+		stats.RecordClientAPI(endpointPath, err != nil, time.Since(startTime))
 	}()
 
 	b := new(bytes.Buffer)
@@ -185,7 +185,7 @@ func restURL(endpoint string) (string, string, error) {
 func (client JiraClient) GetProject(key string) (project *jira.Project, err error) {
 	startTime := time.Now()
 	defer func() {
-		stats.RecordAPI("GetProject", err != nil, time.Since(startTime))
+		stats.RecordClientAPI("GetProject", err != nil, time.Since(startTime))
 	}()
 	project, resp, err := client.Jira.Project.Get(key)
 	if err != nil {
@@ -198,7 +198,7 @@ func (client JiraClient) GetProject(key string) (project *jira.Project, err erro
 func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (issue *jira.Issue, err error) {
 	startTime := time.Now()
 	defer func() {
-		stats.RecordAPI("GetIssue", err != nil, time.Since(startTime))
+		stats.RecordClientAPI("GetIssue", err != nil, time.Since(startTime))
 	}()
 	issue, resp, err := client.Jira.Issue.Get(key, options)
 	if err != nil {
@@ -211,7 +211,7 @@ func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (is
 func (client JiraClient) GetTransitions(issueKey string) (transitions []jira.Transition, err error) {
 	startTime := time.Now()
 	defer func() {
-		stats.RecordAPI("GetTransitions", err != nil, time.Since(startTime))
+		stats.RecordClientAPI("GetTransitions", err != nil, time.Since(startTime))
 	}()
 	transitions, resp, err := client.Jira.Issue.GetTransitions(issueKey)
 	if err != nil {
@@ -224,7 +224,7 @@ func (client JiraClient) GetTransitions(issueKey string) (transitions []jira.Tra
 func (client JiraClient) CreateIssue(issue *jira.Issue) (created *jira.Issue, err error) {
 	startTime := time.Now()
 	defer func() {
-		stats.RecordAPI("CreateIssue", err != nil, time.Since(startTime))
+		stats.RecordClientAPI("CreateIssue", err != nil, time.Since(startTime))
 	}()
 	created, resp, err := client.Jira.Issue.Create(issue)
 	if err != nil {
@@ -237,7 +237,7 @@ func (client JiraClient) CreateIssue(issue *jira.Issue) (created *jira.Issue, er
 func (client JiraClient) UpdateAssignee(issueKey string, user *jira.User) (err error) {
 	startTime := time.Now()
 	defer func() {
-		stats.RecordAPI("UpdateAssignee", err != nil, time.Since(startTime))
+		stats.RecordClientAPI("UpdateAssignee", err != nil, time.Since(startTime))
 	}()
 	resp, err := client.Jira.Issue.UpdateAssignee(issueKey, user)
 	if err != nil {
@@ -250,7 +250,7 @@ func (client JiraClient) UpdateAssignee(issueKey string, user *jira.User) (err e
 func (client JiraClient) AddComment(issueKey string, comment *jira.Comment) (added *jira.Comment, err error) {
 	startTime := time.Now()
 	defer func() {
-		stats.RecordAPI("AddComment", err != nil, time.Since(startTime))
+		stats.RecordClientAPI("AddComment", err != nil, time.Since(startTime))
 	}()
 	added, resp, err := client.Jira.Issue.AddComment(issueKey, comment)
 	if err != nil {
@@ -263,7 +263,7 @@ func (client JiraClient) AddComment(issueKey string, comment *jira.Comment) (add
 func (client JiraClient) UpdateComment(issueKey string, comment *jira.Comment) (updated *jira.Comment, err error) {
 	startTime := time.Now()
 	defer func() {
-		stats.RecordAPI("UpdateComment", err != nil, time.Since(startTime))
+		stats.RecordClientAPI("UpdateComment", err != nil, time.Since(startTime))
 	}()
 	updated, resp, err := client.Jira.Issue.AddComment(issueKey, comment)
 	if err != nil {
@@ -276,7 +276,7 @@ func (client JiraClient) UpdateComment(issueKey string, comment *jira.Comment) (
 func (client JiraClient) SearchIssues(jql string, options *jira.SearchOptions) (found []jira.Issue, err error) {
 	startTime := time.Now()
 	defer func() {
-		stats.RecordAPI("SearchIssues", err != nil, time.Since(startTime))
+		stats.RecordClientAPI("SearchIssues", err != nil, time.Since(startTime))
 	}()
 	found, resp, err := client.Jira.Issue.Search(jql, options)
 	if err != nil {
@@ -289,7 +289,7 @@ func (client JiraClient) SearchIssues(jql string, options *jira.SearchOptions) (
 func (client JiraClient) DoTransition(issueKey, transitionID string) (err error) {
 	startTime := time.Now()
 	defer func() {
-		stats.RecordAPI("DoTransition", err != nil, time.Since(startTime))
+		stats.RecordClientAPI("DoTransition", err != nil, time.Since(startTime))
 	}()
 	resp, err := client.Jira.Issue.DoTransition(issueKey, transitionID)
 	if err != nil {
@@ -325,7 +325,7 @@ func (client JiraClient) AddAttachment(api plugin.API, issueKey, fileID string, 
 func (client JiraClient) GetSelf() (self *jira.User, err error) {
 	startTime := time.Now()
 	defer func() {
-		stats.RecordAPI("getSelf", err != nil, time.Since(startTime))
+		stats.RecordClientAPI("getSelf", err != nil, time.Since(startTime))
 	}()
 	self, resp, err := client.Jira.User.GetSelf()
 	if err != nil {
