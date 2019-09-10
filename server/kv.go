@@ -58,6 +58,7 @@ type UserStore interface {
 	LoadMattermostUserId(ji Instance, jiraUserName string) (string, error)
 	LoadJIRAUserByAccountId(ji Instance, accountId string) (JIRAUser, error)
 	DeleteUserInfo(ji Instance, mattermostUserId string) error
+	CountUsers(ji Instance) (int, error)
 }
 
 type OTSStore interface {
@@ -444,6 +445,7 @@ func (store store) LoadJIRAUserByAccountId(ji Instance, accountId string) (JIRAU
 
 	return ji.GetPlugin().userStore.LoadJIRAUser(ji, mmUserID)
 }
+
 func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
@@ -472,6 +474,27 @@ func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnE
 		mattermostUserId, keyWithInstance(ji, mattermostUserId),
 		jiraUser.Key(), keyWithInstance(ji, jiraUser.Key()))
 	return nil
+}
+
+func (store store) CountUsers(ji Instance) (int, error) {
+	const perPage = 100
+	count := 0
+	for i := 0; ; i++ {
+		keys, err := store.plugin.API.KVList(0, perPage)
+		if err != nil {
+			return 0, err
+		}
+
+		for _, key := range keys {
+			fmt.Printf("<><> key:%q\n", key)
+			count++
+		}
+
+		if len(keys) < perPage {
+			break
+		}
+	}
+	return count, nil
 }
 
 func (store store) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr error) {
