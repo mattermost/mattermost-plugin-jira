@@ -1,4 +1,4 @@
-# Mattermost Jira Plugin 
+# Mattermost Jira Plugin
 
 [![Build Status](https://img.shields.io/circleci/project/github/mattermost/mattermost-plugin-jira/master.svg)](https://circleci.com/gh/mattermost/mattermost-plugin-jira)
 [![Code Coverage](https://img.shields.io/codecov/c/github/mattermost/mattermost-plugin-jira/master.svg)](https://codecov.io/gh/mattermost/mattermost-plugin-jira)
