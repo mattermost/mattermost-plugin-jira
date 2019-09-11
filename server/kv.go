@@ -9,6 +9,7 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/pkg/errors"
@@ -476,6 +477,8 @@ func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnE
 	return nil
 }
 
+var reHexKeyFormat = regexp.MustCompile("^[[:xdigit:]]{32}$")
+
 func (store store) CountUsers(ji Instance) (int, error) {
 	const perPage = 100
 	count := 0
@@ -486,8 +489,27 @@ func (store store) CountUsers(ji Instance) (int, error) {
 		}
 
 		for _, key := range keys {
-			fmt.Printf("<><> key:%q\n", key)
-			count++
+			// User records are not currently prefixed. Consider any 32-hex key.
+			if !reHexKeyFormat.MatchString(key) {
+				continue
+			}
+
+			var data []byte
+			data, appErr = store.plugin.API.KVGet(key)
+			if appErr != nil {
+				return 0, appErr
+			}
+			v := map[string]interface{}{}
+			err := json.Unmarshal(data, &v)
+			if err != nil {
+				// Skip non-JSON values.
+				continue
+			}
+
+			// A valid user record?
+			if v["Settings"] != nil && (v["accountId"] != nil || v["name"] != nil && v["key"] != nil) {
+				count++
+			}
 		}
 
 		if len(keys) < perPage {

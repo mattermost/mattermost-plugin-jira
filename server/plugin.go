@@ -17,6 +17,8 @@ import (
 
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/stats"
 )
 
 const (
@@ -175,8 +177,20 @@ func (p *Plugin) OnActivate() error {
 	}
 	p.templates = templates
 
-	err = p.API.RegisterCommand(getCommand())
-	if err != nil {
+	stats.WithCallback("counters/mapped_users", func() interface{} {
+		ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+		if err != nil {
+			return err.Error()
+		}
+		count, err := p.userStore.CountUsers(ji)
+		if err != nil {
+			return err.Error()
+		}
+		return count
+	})
+
+	appErr := p.API.RegisterCommand(getCommand())
+	if appErr != nil {
 		return errors.WithMessage(err, "OnActivate: failed to register command")
 	}
 
