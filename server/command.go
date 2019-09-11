@@ -259,9 +259,9 @@ func executeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 }
 
 func authorizedSysAdmin(p *Plugin, userId string) (bool, error) {
-	user, err := p.API.GetUser(userId)
-	if err != nil {
-		return false, err
+	user, appErr := p.API.GetUser(userId)
+	if appErr != nil {
+		return false, appErr
 	}
 	if !strings.Contains(user.Roles, "system_admin") {
 		return false, nil

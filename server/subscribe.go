@@ -426,7 +426,7 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 		return http.StatusBadRequest, fmt.Errorf("Channel subscription invalid")
 	}
 
-	if _, err := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); err != nil {
+	if _, appErr := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); appErr != nil {
 		return http.StatusForbidden, errors.New("Not a member of the channel specified")
 	}
 
@@ -460,7 +460,7 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
 	}
 
-	if _, err := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); err != nil {
+	if _, appErr := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); appErr != nil {
 		return http.StatusForbidden, errors.New("Not a member of the channel specified")
 	}
 
@@ -489,7 +489,7 @@ func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
 	}
 
-	if _, err := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); err != nil {
+	if _, appErr := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); appErr != nil {
 		return http.StatusForbidden, errors.New("Not a member of the channel specified")
 	}
 
@@ -509,7 +509,7 @@ func httpChannelGetSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Reque
 		return http.StatusBadRequest, errors.New("bad channel id")
 	}
 
-	if _, err := p.API.GetChannelMember(channelId, mattermostUserId); err != nil {
+	if _, appErr := p.API.GetChannelMember(channelId, mattermostUserId); appErr != nil {
 		return http.StatusForbidden, errors.New("Not a member of the channel specified")
 	}
 

@@ -480,9 +480,9 @@ func (store store) CountUsers(ji Instance) (int, error) {
 	const perPage = 100
 	count := 0
 	for i := 0; ; i++ {
-		keys, err := store.plugin.API.KVList(0, perPage)
-		if err != nil {
-			return 0, err
+		keys, appErr := store.plugin.API.KVList(0, perPage)
+		if appErr != nil {
+			return 0, appErr
 		}
 
 		for _, key := range keys {
