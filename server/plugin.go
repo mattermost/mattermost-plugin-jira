@@ -7,6 +7,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -204,7 +205,11 @@ func (p *Plugin) GetPluginURL() string {
 }
 
 func (p *Plugin) GetSiteURL() string {
-	return *p.API.GetConfig().ServiceSettings.SiteURL
+	ptr := p.API.GetConfig().ServiceSettings.SiteURL
+	if ptr == nil {
+		return ""
+	}
+	return *ptr
 }
 
 func (p *Plugin) debugf(f string, args ...interface{}) {
@@ -217,4 +222,19 @@ func (p *Plugin) infof(f string, args ...interface{}) {
 
 func (p *Plugin) errorf(f string, args ...interface{}) {
 	p.API.LogError(fmt.Sprintf(f, args...))
+}
+
+func (p *Plugin) CheckSiteURL() error {
+	ustr := p.GetSiteURL()
+	if ustr == "" {
+		return errors.Errorf("Mattermost SITEURL must not be empty.")
+	}
+	u, err := url.Parse(ustr)
+	if err != nil {
+		return errors.WithMessage(err, "invalid SITEURL")
+	}
+	if u.Hostname() == "localhost" {
+		return errors.Errorf("%s is not a valid Mattermost SITEURL.", ustr)
+	}
+	return nil
 }
