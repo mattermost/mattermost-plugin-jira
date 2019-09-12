@@ -564,21 +564,47 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	return p.responsef(header, resp)
 }
 
-func executeStats(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	var re *regexp.Regexp
-	var err error
 
-	if len(args) > 0 {
-		pattern := strings.Join(args, " ")
-		re, err = regexp.Compile(pattern)
-		if err != nil {
-			return p.responsef(header, "%v", err)
-		}
+func() {
+	
+
+	for 
+}
+
+
+func executeStats(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) < 1 {
+		return p.help(header)
+	}
+	opt := args[0]
+
+	switch opt {
+	case "now":
 	}
 
 	resp := fmt.Sprintf("Mattermost Jira plugin version: %s, "+
 		"[%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s), built %s\n",
 		manifest.Version, BuildHashShort, BuildHash, BuildDate)
+
+	pattern := strings.Join(args, " ")
+	rstats, err := outputStats(pattern)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+
+	return p.responsef(header, resp+rstats)
+}
+
+func outputStats(pattern string) (string, error) {
+	var re *regexp.Regexp
+	var err error
+
+	if pattern != "" {
+		re, err = regexp.Compile(pattern)
+		if err != nil {
+			return "", err
+		}
+	}
 
 	bullet := func(cond bool, k string, v interface{}) string {
 		if !cond {
@@ -591,12 +617,13 @@ func executeStats(p *Plugin, c *plugin.Context, header *model.CommandArgs, args 
 		return bullet(v != "", k, v)
 	}
 
+	resp := ""
 	expvar.Do(func(kv expvar.KeyValue) {
 		if re == nil || re.MatchString(kv.Key) {
 			resp += sbullet(kv.Key, kv.Value.String())
 		}
 	})
-	return p.responsef(header, resp)
+	return resp, nil
 }
 
 func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

@@ -1,9 +1,7 @@
 package stats
 
 import (
-	"expvar"
-	"fmt"
-	"time"
+	"sync"
 )
 
 const (
@@ -11,38 +9,16 @@ const (
 	WebhookSubscribe = "subscribe"
 )
 
-func init() {
-	initWebhook := func(version string) {
-		prefix := fmt.Sprintf("webhook/%s/", version)
-		initHistogram(prefix+"response", nil)
-		initHistogram(prefix+"processed", nil)
-		expvar.NewInt(prefix + "total")
-		expvar.NewInt(prefix + "ignored")
-		expvar.NewInt(prefix + "errors")
-	}
-
-	initWebhook(WebhookLegacy)
-	initWebhook(WebhookSubscribe)
+type Webhook struct {
+	HTTP      *Endpoint
+	Processed *Endpoint
 }
 
-func RecordWebhookResponse(version string, isError bool, elapsed time.Duration) {
-	prefix := fmt.Sprintf("webhook/%s/", version)
-
-	recordHistogramValue(prefix+"response", float64(elapsed), nil)
-	if isError {
-		incrementCounter(prefix + "errors")
-	}
-	incrementCounter(prefix + "total")
-}
-
-func RecordWebhookProcessed(version string, isError, isIgnored bool, elapsed time.Duration) {
-	prefix := fmt.Sprintf("webhook/%s/", version)
-
-	recordHistogramValue(prefix+"processed", float64(elapsed), nil)
-	if isError {
-		incrementCounter(prefix + "errors")
-	}
-	if isIgnored {
-		incrementCounter(prefix + "ignored")
+func NewWebhook(kind string) *Webhook {
+	prefix := "webhook/" + kind + "/"
+	return &Webhook{
+		lock:      &sync.RWMutex{},
+		HTTP:      EnsureEndpoint(prefix + "http"),
+		Processed: EnsureEndpoint(prefix + "processed"),
 	}
 }

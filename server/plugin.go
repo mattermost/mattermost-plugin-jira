@@ -51,6 +51,11 @@ type externalConfig struct {
 	// Maximum attachment size allowed to be uploaded to Jira, can be a
 	// number, optionally followed by one of [b, kb, mb, gb, tb]
 	MaxAttachmentSize string
+
+	// Not exposed in the UI, used by `/jira stats` command
+	StatsUserId       string
+	StatsInterval     string
+	StatsMatchPattern string
 }
 
 const currentInstanceTTL = 1 * time.Second
@@ -71,6 +76,9 @@ type config struct {
 
 	// Maximum attachment size allowed to be uploaded to Jira
 	maxAttachmentSize ByteSize
+
+	// Ticker to send the stats to StatsUserId
+	statsTicker *time.Ticker
 }
 
 type Plugin struct {
