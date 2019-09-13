@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`components/ChannelSettingsInner should match snapshot 1`] = `
+exports[`components/EditChannelSettings should match snapshot 1`] = `
 <form
   onSubmit={[Function]}
   role="form"
@@ -136,7 +136,7 @@ exports[`components/ChannelSettingsInner should match snapshot 1`] = `
 </form>
 `;
 
-exports[`components/ChannelSettingsInner should match snapshot after fetching issue metadata 1`] = `
+exports[`components/EditChannelSettings should match snapshot after fetching issue metadata 1`] = `
 <form
   onSubmit={[Function]}
   role="form"
@@ -530,7 +530,7 @@ exports[`components/ChannelSettingsInner should match snapshot after fetching is
 </form>
 `;
 
-exports[`components/ChannelSettingsInner should match snapshot with no filters 1`] = `
+exports[`components/EditChannelSettings should match snapshot with no filters 1`] = `
 <form
   onSubmit={[Function]}
   role="form"
@@ -655,7 +655,7 @@ exports[`components/ChannelSettingsInner should match snapshot with no filters 1
 </form>
 `;
 
-exports[`components/ChannelSettingsInner should match snapshot with no issue metadata 1`] = `
+exports[`components/EditChannelSettings should match snapshot with no issue metadata 1`] = `
 <form
   onSubmit={[Function]}
   role="form"
@@ -791,7 +791,7 @@ exports[`components/ChannelSettingsInner should match snapshot with no issue met
 </form>
 `;
 
-exports[`components/ChannelSettingsInner should match snapshot with no subscriptions 1`] = `
+exports[`components/EditChannelSettings should match snapshot with no subscriptions 1`] = `
 <form
   onSubmit={[Function]}
   role="form"
