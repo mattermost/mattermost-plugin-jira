@@ -16,7 +16,7 @@ type ChannelSettingsFilterProps = {
 };
 
 export default class ChannelSettingsFilter extends React.PureComponent<ChannelSettingsFilterProps> {
-    handleExcludeChange = (name: string, choice: string) => {
+    handleExcludeChange = (name: string, choice: string): void => {
         const {onChange, value} = this.props;
         if (!value) {
             return;
@@ -26,13 +26,13 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         onChange(value, {...value, exclude: newValue});
     };
 
-    handleFieldTypeChange = (name: string, choice: string) => {
+    handleFieldTypeChange = (name: string, choice: string): void => {
         const {onChange, value} = this.props;
 
         onChange(value, {...value, values: [], key: choice, exclude: false});
     };
 
-    handleFieldValueChange = (name: string, values: string[]) => {
+    handleFieldValueChange = (name: string, values: string[]): void => {
         const {onChange, value} = this.props;
         if (!value) {
             return;
@@ -42,11 +42,11 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         onChange(value, {...value, values: newValues});
     };
 
-    removeFilter = () => {
+    removeFilter = (): void => {
         this.props.removeFilter(this.props.value);
     };
 
-    render() {
+    render(): JSX.Element {
         const {field, fields, value, theme} = this.props;
         let chosenFieldValues: ReactSelectOption[] = [];
 
@@ -77,6 +77,27 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                     value.values.includes(option.value),
                 );
             }
+        }
+
+        let deleteButton;
+        if (field) {
+            deleteButton = (
+                <button
+                    onClick={this.removeFilter}
+                    className='btn btn-danger'
+                >
+                    {'Remove'}
+                </button>
+            );
+        } else {
+            deleteButton = (
+                <button
+                    onClick={this.removeFilter}
+                    className='btn btn-info'
+                >
+                    {'Cancel'}
+                </button>
+            );
         }
 
         return (
@@ -124,22 +145,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                         allowUserDefinedValue={Boolean(field && field.userDefined)}
                     />
                 </div>
-
-                {field ? (
-                    <button
-                        onClick={this.removeFilter}
-                        className='btn btn-danger'
-                    >
-                        {'Remove'}
-                    </button>
-                ) : (
-                    <button
-                        onClick={this.removeFilter}
-                        className='btn btn-info'
-                    >
-                        {'Cancel'}
-                    </button>
-                )}
+                {deleteButton}
             </div>
         );
     }

@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React, {PureComponent} from 'react';
-import PropTypes from 'prop-types';
 import {Modal} from 'react-bootstrap';
 
 import ReactSelectSetting from 'components/react_select_setting';
@@ -11,7 +10,10 @@ import Loading from 'components/loading';
 import Validator from 'components/validator';
 import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProjects, getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
 
+import {ChannelSubscription, ChannelSubscriptionFilters} from 'types/model';
+
 import ChannelSettingsFilters from './channel_settings_filters';
+import {SharedProps} from './shared_props';
 
 const JiraEventOptions = [
     {value: 'event_created', label: 'Issue Created'},
@@ -36,34 +38,34 @@ const JiraEventOptions = [
     {value: 'event_updated_summary', label: 'Issue Updated: Summary'},
 ];
 
-export default class EditChannelSettings extends PureComponent {
-    static propTypes = {
-        close: PropTypes.func.isRequired,
-        channel: PropTypes.object.isRequired,
-        theme: PropTypes.object.isRequired,
-        jiraProjectMetadata: PropTypes.object.isRequired,
-        jiraIssueMetadata: PropTypes.object,
-        channelSubscriptions: PropTypes.array.isRequired,
-        createChannelSubscription: PropTypes.func.isRequired,
-        deleteChannelSubscription: PropTypes.func.isRequired,
-        editChannelSubscription: PropTypes.func.isRequired,
-        fetchChannelSubscriptions: PropTypes.func.isRequired,
-        fetchJiraIssueMetadataForProjects: PropTypes.func.isRequired,
-        clearIssueMetadata: PropTypes.func.isRequired,
-    };
+export type Props = SharedProps & {
+    close: () => void;
+    selectedSubscription: ChannelSubscription | null;
+};
 
-    constructor(props) {
+export type State = {
+    filters: ChannelSubscriptionFilters;
+    fetchingIssueMetadata: boolean;
+    error: string | null;
+    getMetaDataErr: string | null;
+    submitting: boolean;
+};
+
+export default class EditChannelSettings extends PureComponent<Props, State> {
+    private validator: Validator;
+
+    constructor(props: Props) {
         super(props);
 
-        let filters = {
+        let filters: ChannelSubscriptionFilters = {
             events: [],
             projects: [],
             issue_types: [],
             fields: [],
         };
 
-        if (props.channelSubscriptions[0]) {
-            filters = Object.assign({}, filters, props.channelSubscriptions[0].filters);
+        if (props.selectedSubscription) {
+            filters = Object.assign({}, filters, props.selectedSubscription.filters);
         }
 
         filters.fields = filters.fields || [];
@@ -93,9 +95,8 @@ export default class EditChannelSettings extends PureComponent {
     };
 
     deleteChannelSubscription = (e) => {
-        if (this.props.channelSubscriptions && this.props.channelSubscriptions.length > 0) {
-            const sub = this.props.channelSubscriptions[0];
-            this.props.deleteChannelSubscription(sub).then((res) => {
+        if (this.props.selectedSubscription) {
+            this.props.deleteChannelSubscription(this.props.selectedSubscription).then((res) => {
                 if (res.error) {
                     this.setState({error: res.error.message});
                 } else {
@@ -119,12 +120,12 @@ export default class EditChannelSettings extends PureComponent {
 
     fetchIssueMetadata = (projectKeys) => {
         this.props.fetchJiraIssueMetadataForProjects(projectKeys).then((fetched) => {
-            const state = {fetchingIssueMetadata: false};
+            const state = {fetchingIssueMetadata: false} as State;
             state.filters = this.updateFilters(projectKeys);
 
             const error = fetched.error || (fetched.data && fetched.data.error);
             if (error) {
-                state.getMetaDataErr = `The project ${projectKeys} is unavailable. Please contact your system administrator.`;
+                state.getMetaDataErr = `The project ${projectKeys[0]} is unavailable. Please contact your system administrator.`;
             }
             this.setState(state);
         });
@@ -146,7 +147,7 @@ export default class EditChannelSettings extends PureComponent {
                 return true;
             }
             if (eventType.startsWith(eventUpdatedPrefix)) {
-                const field = eventType.substring(eventUpdatedPrefix);
+                const field = eventType.substring(eventUpdatedPrefix.length);
                 if (customFields.find((customField) => field === customField.value)) {
                     return true;
                 }
@@ -203,18 +204,17 @@ export default class EditChannelSettings extends PureComponent {
         const subscription = {
             channel_id: this.props.channel.id,
             filters: this.state.filters,
-        };
+        } as ChannelSubscription;
 
         this.setState({submitting: true, error: null});
 
-        if (this.props.channelSubscriptions && this.props.channelSubscriptions.length > 0) {
-            subscription.id = this.props.channelSubscriptions[0].id;
+        if (this.props.selectedSubscription) {
+            subscription.id = this.props.selectedSubscription.id;
             this.props.editChannelSubscription(subscription).then((edited) => {
                 if (edited.error) {
                     this.setState({error: edited.error.message, submitting: false});
                     return;
                 }
-                this.props.fetchChannelSubscriptions(this.props.channel.id);
                 this.handleClose(e);
             });
         } else {
@@ -223,13 +223,12 @@ export default class EditChannelSettings extends PureComponent {
                     this.setState({error: created.error.message, submitting: false});
                     return;
                 }
-                this.props.fetchChannelSubscriptions(this.props.channel.id);
                 this.handleClose(e);
             });
         }
     };
 
-    render() {
+    render(): JSX.Element {
         const style = getStyle(this.props.theme);
 
         const projectOptions = getProjectValues(this.props.jiraProjectMetadata);
@@ -314,7 +313,7 @@ export default class EditChannelSettings extends PureComponent {
         }
 
         const enableSubmitButton = Boolean(this.state.filters.projects[0]);
-        const showDeleteButton = Boolean(this.props.channelSubscriptions && this.props.channelSubscriptions.length > 0);
+        const showDeleteButton = Boolean(this.props.selectedSubscription);
 
         return (
             <form
@@ -358,7 +357,7 @@ export default class EditChannelSettings extends PureComponent {
     }
 }
 
-const getStyle = (theme) => ({
+const getStyle = (theme: any): any => ({
     modal: {
         padding: '2em 2em 3em',
         color: theme.centerChannelColor,

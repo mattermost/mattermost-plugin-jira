@@ -69,7 +69,7 @@ export function getFields(metadata: IssueMetadata, projectKey: string, issueType
     return {};
 }
 
-export function getCustomFieldsForProjects(metadata: IssueMetadata, projectKeys: string[]): FieldWithInfo[] {
+export function getCustomFieldsForProjects(metadata: IssueMetadata | null, projectKeys: string[]): FieldWithInfo[] {
     if (!metadata || !projectKeys || !projectKeys.length) {
         return [];
     }
@@ -127,7 +127,7 @@ function isValidFieldForFilter(field: JiraField) {
     (type === 'array' && items === 'string');
 }
 
-export function getCustomFieldFiltersForProjects(metadata: IssueMetadata, projectKeys: string[]): FilterField[] {
+export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null, projectKeys: string[]): FilterField[] {
     const fields = getCustomFieldsForProjects(metadata, projectKeys);
     const selectFields = fields.filter((field) => Boolean(field.allowedValues && field.allowedValues.length)) as SelectField[];
     const populatedFields = selectFields.map((field) => {
@@ -153,7 +153,7 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata, projec
     return populatedFields.concat(userDefinedFields);
 }
 
-export function getCustomFieldValuesForProjects(metadata: IssueMetadata, projectKeys: string[]) {
+export function getCustomFieldValuesForProjects(metadata: IssueMetadata | null, projectKeys: string[]) {
     return getCustomFieldsForProjects(metadata, projectKeys).map((field) => ({
         label: `Issue Updated: Custom - ${field.name}`,
         value: `event_updated_${field.changeLogID}`,

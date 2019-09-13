@@ -3,12 +3,49 @@
 
 import React from 'react';
 
-import EditChannelSettings from './edit_channel_settings';
+import {ChannelSubscription} from 'types/model';
 
-export default class ChannelSettingsModalInner extends React.PureComponent {
+import EditChannelSettings from './edit_channel_settings';
+import SelectChannelSubscription from './select_channel_subscription';
+import {SharedProps} from './shared_props';
+
+export default class ChannelSettingsModalInner extends React.PureComponent<SharedProps> {
+    state = {
+        creatingSubscription: false,
+        selectedSubscription: null,
+    };
+
+    showEditChannelSubscription = (subscription: ChannelSubscription): void => {
+        this.setState({selectedSubscription: subscription, creatingSubscription: false});
+    };
+
+    showCreateChannelSubscription = (): void => {
+        this.setState({selectedSubscription: null, creatingSubscription: true});
+    };
+
+    finishEditSubscription = (): void => {
+        this.setState({selectedSubscription: null, creatingSubscription: false});
+    };
+
     render(): JSX.Element {
+        const {selectedSubscription, creatingSubscription} = this.state;
+
+        if (selectedSubscription || creatingSubscription) {
+            return (
+                <EditChannelSettings
+                    {...this.props}
+                    close={this.finishEditSubscription}
+                    selectedSubscription={selectedSubscription}
+                />
+            );
+        }
+
         return (
-            <EditChannelSettings {...this.props}/>
+            <SelectChannelSubscription
+                {...this.props}
+                showEditChannelSubscription={this.showEditChannelSubscription}
+                showCreateChannelSubscription={this.showCreateChannelSubscription}
+            />
         );
     }
 }

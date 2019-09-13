@@ -497,6 +497,7 @@ func TestEditSubscription(t *testing.T) {
 					Filters: SubscriptionFilters{
 						Events:   NewStringSet("jira:issue_created"),
 						Projects: NewStringSet("otherproject"),
+						Fields:   []FieldFilter{},
 					},
 				},
 			},
@@ -508,6 +509,7 @@ func TestEditSubscription(t *testing.T) {
 							Filters: SubscriptionFilters{
 								Events:   NewStringSet("jira:issue_created"),
 								Projects: NewStringSet("myproject"),
+								Fields:   []FieldFilter{},
 							},
 						},
 					}), t),

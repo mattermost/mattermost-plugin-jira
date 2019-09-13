@@ -429,8 +429,7 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 
 func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
 	subscription := ChannelSubscription{}
-	err := json.NewDecoder(r.Body).Decode(&subscription)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&subscription); err != nil {
 		return http.StatusBadRequest, errors.WithMessage(err, "failed to decode incoming request")
 	}
 
@@ -452,15 +451,17 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("{\"status\": \"OK\"}"))
+	b, _ := json.Marshal(&subscription)
+	if _, err := w.Write(b); err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+	}
 
 	return http.StatusOK, nil
 }
 
 func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
 	subscription := ChannelSubscription{}
-	err := json.NewDecoder(r.Body).Decode(&subscription)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&subscription); err != nil {
 		return http.StatusBadRequest, errors.WithMessage(err, "failed to decode incoming request")
 	}
 
@@ -482,7 +483,10 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("{\"status\": \"OK\"}"))
+	b, _ := json.Marshal(&subscription)
+	if _, err := w.Write(b); err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+	}
 
 	return http.StatusOK, nil
 }

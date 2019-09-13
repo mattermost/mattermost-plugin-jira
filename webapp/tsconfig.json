@@ -24,11 +24,11 @@
     "types": ["jest", "node"]
   },
   "include": [
-    "src",
-    "node_modules"
+    "src"
   ],
   "exclude": [
     "dist",
+    "node_modules",
     "!node_modules/@types"
   ]
 }

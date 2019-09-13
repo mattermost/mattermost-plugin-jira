@@ -67,3 +67,16 @@ export type FilterValue = {
     values: string[];
     exclude: boolean;
 }
+
+export type ChannelSubscriptionFilters = {
+    projects: string[];
+    events: string[];
+    issue_types: string[];
+    fields: FilterValue[];
+};
+
+export type ChannelSubscription = {
+    id: string;
+    channel_id: string;
+    filters: ChannelSubscriptionFilters;
+}
