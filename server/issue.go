@@ -247,6 +247,7 @@ func httpAPIGetCreateIssueMetadataForProjects(ji Instance, w http.ResponseWriter
 	if len(cimd.Projects) == 0 {
 		bb = []byte(`{"error": "You do not have permission to create issues in that project. Please contact your Jira admin."}`)
 	} else {
+		fetchAndPopulateEpics(client, cimd)
 		bb, err = json.Marshal(cimd)
 		if err != nil {
 			return http.StatusInternalServerError,
@@ -261,6 +262,67 @@ func httpAPIGetCreateIssueMetadataForProjects(ji Instance, w http.ResponseWriter
 	}
 
 	return http.StatusOK, nil
+}
+
+func fetchAndPopulateEpics(jc Client, cimd *jira.CreateMetaInfo) {
+	proj := cimd.Projects[0]
+
+	var epicIssueType *jira.MetaIssueType
+	for _, issueType := range proj.IssueTypes {
+		if issueType.Name == "Epic" {
+			epicIssueType = issueType
+		}
+	}
+	if epicIssueType == nil {
+		return
+	}
+
+	var epicNameTypeID string
+	var epicLinkTypeID string
+
+	fields, _ := epicIssueType.GetAllFields()
+	epicNameTypeID = fields["Epic Name"]
+	epicLinkTypeID = fields["Epic Link"]
+	if epicNameTypeID == "" || epicLinkTypeID == "" {
+		return
+	}
+
+	jqlString := fmt.Sprintf("project=%s and issuetype=%s order by created desc", proj.Key, epicIssueType.Id)
+	epics, err := jc.SearchIssues(jqlString, &jira.SearchOptions{
+		MaxResults: 50,
+		Fields:     []string{epicNameTypeID},
+	})
+	if err != nil {
+		return
+	}
+
+	type AllowedValue struct {
+		ID    string `json:"id"`
+		Value string `json:"value"`
+		Name  string `json:"name"`
+	}
+
+	epicValues := []AllowedValue{}
+	for _, epic := range epics {
+		eName, exists := epic.Fields.Unknowns.Value(epicNameTypeID)
+		if !exists {
+			continue
+		}
+
+		epicValues = append(epicValues, AllowedValue{
+			ID:    epic.Key,
+			Value: eName.(string),
+			Name:  eName.(string),
+		})
+	}
+
+	for _, it := range proj.IssueTypes {
+		f, exists := it.Fields.Value(epicLinkTypeID)
+		if exists {
+			f2 := f.(map[string]interface{})
+			f2["allowedValues"] = epicValues
+		}
+	}
 }
 
 func httpAPIGetJiraProjectMetadata(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
