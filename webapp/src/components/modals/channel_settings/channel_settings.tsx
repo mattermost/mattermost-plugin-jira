@@ -7,7 +7,7 @@ import {Modal} from 'react-bootstrap';
 
 import Loading from 'components/loading';
 
-import ChannelSettingsModalInner from './channel_settings_internal.jsx';
+import ChannelSettingsModalInner from './channel_settings_internal';
 
 export default class ChannelSettingsModal extends PureComponent {
     static propTypes = {
