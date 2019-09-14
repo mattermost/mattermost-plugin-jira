@@ -90,6 +90,10 @@ func (p *Plugin) help(args *model.CommandArgs) *model.CommandResponse {
 }
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
+	err := p.CheckSiteURL()
+	if err != nil {
+		return p.responsef(commandArgs, err.Error()), nil
+	}
 	args := strings.Fields(commandArgs.Command)
 	if len(args) == 0 || args[0] != "/jira" {
 		return p.help(commandArgs), nil
@@ -333,7 +337,7 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 	const addResponseFormat = `` +
 		`Server instance has been installed. To finish the configuration, add an Application Link in your Jira instance following these steps:
 
-1. Navigate to **Settings > Applications > Application Links**
+1. Navigate to [**Settings > Applications > Application Links**](%s/plugins/servlet/applinks/listApplicationLinks)
 2. Enter %s as the application link, then click **Create new link**.
 3. In **Configure Application URL** screen, confirm your Mattermost URL is entered as the "New URL". Ignore any displayed errors and click **Continue**.
 4. In **Link Applications** screen, set the following values:
@@ -364,7 +368,7 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	if err != nil {
 		return p.responsef(header, "Failed to load public key: %v", err)
 	}
-	return p.responsef(header, addResponseFormat, p.GetSiteURL(), ji.GetMattermostKey(), pkey)
+	return p.responsef(header, addResponseFormat, jiraURL, p.GetSiteURL(), ji.GetMattermostKey(), pkey)
 }
 
 // executeUninstallCloud will uninstall the jira cloud instance if the url matches, and then update all connected

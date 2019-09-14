@@ -172,30 +172,9 @@ The ship target dates are included below. These are subject to change:
        - Deployed to community.mattermost.com for wider testing
        - Shared with customers for early feedback
   - August 16th: Jira 2.1 released as part of Mattermost Server v5.14
-  - Next Ship Date TBD.  Jira 2.2 Themes and Features are being determined the week of Aug 23.
+  - Oct 16th: Jira 2.2 - bug fixes and some extra troubleshooting functions  
+  - End of October: Jira 2.3 - Improved notification subscription functionality 
 
-### Jira 2.1 Features
-(Shipped with Mattermost Server v5.14)
-
-Below is a full list of features scheduled for v2.1.
-
-- Subscribe Jira projects to Mattermost channels through the Mattermost user interface. Available to any users with appropriate permissions.
-   - Subscribed notifications include the following events: issue created; issue transitioned to “Reopened”, “In Progress”, "Submitted" or “Resolved”; issue deleted or closed; comments created, updated or deleted; assignee, title, description, priority, sprint or rank updated; attachments or labels added; attachments or labels removed
-- Send notifications for issue events from Jira to Mattermost with full JQL support, using webhooks. Restricted to Jira System Admins only.
-   - This includes notifications for the following events: issue created; issue transitioned to “Reopened”, “In Progress”, "Submitted" or “Resolved”; issue deleted or closed; comments created, updated or deleted; assignee updated
-- Create Jira issues via Mattermost UI (Desktop App and browser only)
-- Attach Mattermost messages to Jira issues via Mattermost UI (Desktop App and browser only)
-- Receive direct messages for Jira at-mentions and issue assignments
-- Slash commands for
-  - `/jira connect` - Connect your Mattermost account to Jira. Enables you to create issues, attach messages to Jira and take other quick actions in Mattermost.
-  - `/jira disconnect` - Disconnect your Mattermost account from Jira.
-  - `/jira assign <issue-key> <assignee>` - Assign a Jira issue specified by `issue-key`. `assignee` must be a member of the Jira project.
-  - `/jira create [description]` - Create a Jira ticket.
-  - `/jira settings notifications [on/off]` - Set whether Direct Message notifications are sent for assignments and comments in assigned issues.
-  - `/jira transition <issue-key> <state>` - Transition a Jira issue specified by `issue-key`. `state` must be a valid Jira state such as "Done".
-  - `/jira view <issue-key>` - View a Jira issue specified by `issue-key`.  
-
-If you're interested to add improvements or bug fixes, review [open Help Wanted issues](https://github.com/mattermost/mattermost-plugin-jira/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) to get started.
 
 ## 4. Development
 
