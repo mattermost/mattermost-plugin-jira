@@ -14,9 +14,8 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-server/model"
-
-	"github.com/mattermost/mattermost-plugin-jira/server/stats"
 )
 
 const (
@@ -336,7 +335,7 @@ func (p *Plugin) hasPermissionToManageSubscription(userId, channelId string) err
 		}
 
 		allowedGroups := strings.Split(cfg.GroupsAllowedToEditJiraSubscriptions, ",")
-		allowedGroups = Map(allowedGroups, strings.TrimSpace)
+		allowedGroups = utils.Map(allowedGroups, strings.TrimSpace)
 		if !inAllowedGroup(groups, allowedGroups) {
 			return errors.New("not in allowed jira user groups")
 		}
@@ -380,9 +379,13 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 }
 
 func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int, err error) {
-	startTime := time.Now()
+	size := utils.ByteSize(0)
+	start := time.Now()
 	defer func() {
-		stats.RecordWebhookResponse(stats.WebhookSubscribe, err != nil, time.Since(startTime))
+		if p.Stats != nil {
+			p.Stats.SubscribeWebhook.Response("",
+				utils.ByteSize(size), time.Since(start), err != nil, false)
+		}
 	}()
 
 	if r.Method != http.MethodPost {
@@ -400,6 +403,7 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (st
 	}
 
 	bb, err := ioutil.ReadAll(r.Body)
+	size = utils.ByteSize(len(bb))
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

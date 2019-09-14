@@ -87,3 +87,6 @@ func (store mockUserStore) LoadJIRAUserByAccountId(ji Instance, accoundId string
 func (store mockUserStore) DeleteUserInfo(ji Instance, mattermostUserId string) error {
 	return nil
 }
+func (store mockUserStore) CountUsers(ji Instance) (int, error) {
+	return 0, nil
+}

@@ -18,7 +18,7 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/stats"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
 const (
@@ -60,7 +60,7 @@ type externalConfig struct {
 
 const currentInstanceTTL = 1 * time.Second
 
-const defaultMaxAttachmentSize = ByteSize(10 * 1024 * 1024) // 10Mb
+const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb
 
 type config struct {
 	// externalConfig caches values from the plugin's settings in the server's config.json
@@ -75,10 +75,7 @@ type config struct {
 	currentInstanceExpires time.Time
 
 	// Maximum attachment size allowed to be uploaded to Jira
-	maxAttachmentSize ByteSize
-
-	// Ticker to send the stats to StatsUserId
-	statsTicker *time.Ticker
+	maxAttachmentSize utils.ByteSize
 }
 
 type Plugin struct {
@@ -102,6 +99,8 @@ type Plugin struct {
 
 	// channel to distribute work to the webhook processors
 	webhookQueue chan []byte
+
+	*Stats
 }
 
 func (p *Plugin) getConfig() config {
@@ -130,7 +129,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	ec.MaxAttachmentSize = strings.TrimSpace(ec.MaxAttachmentSize)
 	maxAttachmentSize := defaultMaxAttachmentSize
 	if len(ec.MaxAttachmentSize) > 0 {
-		maxAttachmentSize, err = ParseByteSize(ec.MaxAttachmentSize)
+		maxAttachmentSize, err = utils.ParseByteSize(ec.MaxAttachmentSize)
 		if err != nil {
 			return errors.WithMessage(err, "failed to load plugin configuration")
 		}
@@ -185,18 +184,6 @@ func (p *Plugin) OnActivate() error {
 	}
 	p.templates = templates
 
-	stats.WithCallback("counters/mapped_users", func() interface{} {
-		ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-		if err != nil {
-			return err.Error()
-		}
-		count, err := p.userStore.CountUsers(ji)
-		if err != nil {
-			return err.Error()
-		}
-		return count
-	})
-
 	appErr := p.API.RegisterCommand(getCommand())
 	if appErr != nil {
 		return errors.WithMessage(err, "OnActivate: failed to register command")
@@ -210,6 +197,7 @@ func (p *Plugin) OnActivate() error {
 		go webhookWorker{i, p, p.webhookQueue}.work()
 	}
 
+	p.Stats = NewStats(p.currentInstanceStore, p.userStore)
 	return nil
 }
 

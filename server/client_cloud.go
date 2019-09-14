@@ -5,12 +5,9 @@ package main
 
 import (
 	"encoding/json"
-	"time"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
-
-	"github.com/mattermost/mattermost-plugin-jira/server/stats"
 )
 
 type jiraCloudClient struct {
@@ -28,11 +25,6 @@ func newCloudClient(jiraClient *jira.Client) Client {
 // GetCreateMeta returns the metadata needed to implement the UI and validation of
 // creating new Jira issues.
 func (client jiraCloudClient) GetCreateMeta(options *jira.GetQueryOptions) (cimd *jira.CreateMetaInfo, err error) {
-	startTime := time.Now()
-	defer func() {
-		stats.RecordClientAPI("GetCreateMeta", err != nil, time.Since(startTime))
-	}()
-
 	cimd, resp, err := client.Jira.Issue.GetCreateMetaWithOptions(options)
 	if err != nil {
 		if resp == nil {

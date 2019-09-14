@@ -16,6 +16,8 @@ import (
 	ajwt "github.com/rbriski/atlassian-jwt"
 	"golang.org/x/oauth2"
 	oauth2_jira "golang.org/x/oauth2/jira"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 )
 
 type jiraCloudInstance struct {
@@ -138,8 +140,12 @@ func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Clie
 		},
 	}
 
-	httpClient := oauth2Conf.Client(context.Background())
-	httpClient = jci.GetPlugin().limitResponseClient(httpClient)
+	httpClient := expvar.WrapClient(
+		oauth2Conf.Client(context.Background()),
+		jci.GetPlugin().getConfig().maxAttachmentSize,
+		jci.GetPlugin().Stats.Jira,
+		endpointFromRequest)
+
 	jiraClient, err := jira.NewClient(httpClient, oauth2Conf.BaseURL)
 	return jiraClient, httpClient, err
 }
@@ -153,7 +159,12 @@ func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
 		BaseURL:      jci.AtlassianSecurityContext.BaseURL,
 	}
 
-	httpClient := jci.GetPlugin().limitResponseClient(jwtConf.Client())
+	httpClient := expvar.WrapClient(
+		jwtConf.Client(),
+		jci.GetPlugin().getConfig().maxAttachmentSize,
+		jci.GetPlugin().Stats.Jira,
+		endpointFromRequest)
+
 	return jira.NewClient(httpClient, jwtConf.BaseURL)
 }
 

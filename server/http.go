@@ -4,7 +4,6 @@
 package main
 
 import (
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -176,35 +175,4 @@ func (p *Plugin) respondSpecialTemplate(w http.ResponseWriter, key string, statu
 			errors.WithMessage(err, "failed to write response")
 	}
 	return status, nil
-}
-
-type roundtripper struct {
-	http.RoundTripper
-	limit ByteSize
-}
-
-func (rt roundtripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	resp, err := rt.RoundTripper.RoundTrip(r)
-	if err != nil || resp == nil || resp.Body == nil {
-		return resp, err
-	}
-	resp.Body = struct {
-		io.Reader
-		io.Closer
-	}{
-		Reader: io.LimitReader(resp.Body, int64(rt.limit)),
-		Closer: resp.Body,
-	}
-
-	return resp, err
-}
-
-func (p *Plugin) limitResponseClient(c *http.Client) *http.Client {
-	client := *c
-	rt := c.Transport
-	if rt == nil {
-		rt = http.DefaultTransport
-	}
-	client.Transport = roundtripper{rt, p.getConfig().maxAttachmentSize}
-	return &client
 }

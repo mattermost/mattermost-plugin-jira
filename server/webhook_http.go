@@ -13,7 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/stats"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
 const (
@@ -41,21 +41,28 @@ var eventParamMasks = map[string]StringSet{
 var ErrWebhookIgnored = errors.New("Webhook purposely ignored")
 
 func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int, err error) {
-	startTime := time.Now()
+	start := time.Now()
+	size := utils.ByteSize(0)
 	defer func() {
 		isError, isIgnored := false, false
-		if err != nil {
-			if err == ErrWebhookIgnored {
-				// ignore ErrWebhookIgnored - from here up it's a success
-				isIgnored = true
-				err = nil
-			} else {
-				// TODO save the payload here
-				isError = true
-			}
+		switch err {
+		case nil:
+			break
+		case ErrWebhookIgnored:
+			// ignore ErrWebhookIgnored - from here up it's a success
+			isIgnored = true
+			err = nil
+		default:
+			// TODO save the payload here
+			isError = true
 		}
-		stats.RecordWebhookProcessed(stats.WebhookLegacy, isError, isIgnored, time.Since(startTime))
-		stats.RecordWebhookResponse(stats.WebhookLegacy, isError, time.Since(startTime))
+
+		if p.Stats != nil {
+			p.Stats.LegacyWebhook.Processing("",
+				time.Since(start), isError, isIgnored)
+			p.Stats.LegacyWebhook.Response("",
+				utils.ByteSize(size), time.Since(start), isError, isIgnored)
+		}
 	}()
 
 	// Validate the request and extract params
@@ -86,14 +93,15 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int,
 		selectedEvents = selectedEvents.Union(paramMask)
 	}
 
+	bb, err := ioutil.ReadAll(r.Body)
+	size = utils.ByteSize(len(bb))
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
 	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelName, false)
 	if appErr != nil {
 		return appErr.StatusCode, appErr
-	}
-
-	bb, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return http.StatusInternalServerError, err
 	}
 
 	wh, err := ParseWebhook(bb)

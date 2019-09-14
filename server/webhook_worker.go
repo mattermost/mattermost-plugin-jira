@@ -5,8 +5,6 @@ package main
 
 import (
 	"time"
-
-	"github.com/mattermost/mattermost-plugin-jira/server/stats"
 )
 
 type webhookWorker struct {
@@ -16,18 +14,25 @@ type webhookWorker struct {
 }
 
 func (ww webhookWorker) process(rawData []byte) (err error) {
-	startTime := time.Now()
+	start := time.Now()
 	defer func() {
 		isError, isIgnored := false, false
-		if err != nil {
-			if err == ErrWebhookIgnored {
-				isIgnored = true
-			} else {
-				// TODO save the payload here
-				isError = true
-			}
+		switch err {
+		case nil:
+			break
+		case ErrWebhookIgnored:
+			// ignore ErrWebhookIgnored - from here up it's a success
+			isIgnored = true
+			err = nil
+		default:
+			// TODO save the payload here
+			isError = true
 		}
-		stats.RecordWebhookProcessed(stats.WebhookSubscribe, isError, isIgnored, time.Since(startTime))
+
+		if ww.p.Stats != nil {
+			ww.p.Stats.SubscribeWebhook.Processing("",
+				time.Since(start), isError, isIgnored)
+		}
 	}()
 
 	wh, err := ParseWebhook(rawData)
