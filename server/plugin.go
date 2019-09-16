@@ -53,10 +53,15 @@ type externalConfig struct {
 	// number, optionally followed by one of [b, kb, mb, gb, tb]
 	MaxAttachmentSize string
 
+	// Disable statistics gathering
+	DisableStats bool `json:"disable_stats"`
+
 	// Not exposed in the UI, used by `/jira stats` command
-	StatsUserId       string
-	StatsInterval     string
-	StatsMatchPattern string
+	DebugUserId          string
+	DebugLogErrors       bool
+	DebugUnknownWebhooks string
+	DebugStatsInterval   string
+	DebugStatsPattern    string
 }
 
 const currentInstanceTTL = 1 * time.Second
@@ -77,6 +82,8 @@ type config struct {
 
 	// Maximum attachment size allowed to be uploaded to Jira
 	maxAttachmentSize utils.ByteSize
+
+	stats *stats
 }
 
 type Plugin struct {
@@ -100,8 +107,6 @@ type Plugin struct {
 
 	// channel to distribute work to the webhook processors
 	webhookQueue chan []byte
-
-	*Stats
 }
 
 func (p *Plugin) getConfig() config {
@@ -140,7 +145,6 @@ func (p *Plugin) OnConfigurationChange() error {
 		conf.externalConfig = ec
 		conf.maxAttachmentSize = maxAttachmentSize
 	})
-
 	return nil
 }
 
@@ -198,13 +202,15 @@ func (p *Plugin) OnActivate() error {
 		go webhookWorker{i, p, p.webhookQueue}.work()
 	}
 
-	p.Stats = NewStats(p.currentInstanceStore, p.userStore)
+	fmt.Println("<><> OnActivate: go loadStats")
+	go p.loadStats()
 	return nil
 }
 
 func (p *Plugin) GetPluginKey() string {
 	return "mattermost_" + regexpNonAlnum.ReplaceAllString(p.GetSiteURL(), "_")
 }
+
 func (p *Plugin) GetPluginURLPath() string {
 	return "/plugins/" + manifest.Id
 }

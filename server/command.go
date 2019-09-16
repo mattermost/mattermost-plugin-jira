@@ -1,9 +1,7 @@
 package main
 
 import (
-	"expvar"
 	"fmt"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -11,6 +9,7 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
@@ -61,6 +60,7 @@ var jiraCommandHandler = CommandHandler{
 		"uninstall/server": executeUninstallServer,
 		"webhook":          executeWebhookURL,
 		"stats":            executeStats,
+		"stats/reset":      executeStatsReset,
 		"info":             executeInfo,
 		"help":             commandHelp,
 		"list":             executeList,
@@ -574,18 +574,13 @@ func executeStats(p *Plugin, c *plugin.Context, header *model.CommandArgs, args 
 	if len(args) < 1 {
 		return p.help(header)
 	}
-	opt := args[0]
-
-	switch opt {
-	case "now":
-	}
 
 	resp := fmt.Sprintf("Mattermost Jira plugin version: %s, "+
 		"[%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s), built %s\n",
 		manifest.Version, BuildHashShort, BuildHash, BuildDate)
 
 	pattern := strings.Join(args, " ")
-	rstats, err := outputStats(pattern)
+	rstats, err := expvar.PrintStats(pattern)
 	if err != nil {
 		return p.responsef(header, "%v", err)
 	}
@@ -593,35 +588,16 @@ func executeStats(p *Plugin, c *plugin.Context, header *model.CommandArgs, args 
 	return p.responsef(header, resp+rstats)
 }
 
-func outputStats(pattern string) (string, error) {
-	var re *regexp.Regexp
-	var err error
-
-	if pattern != "" {
-		re, err = regexp.Compile(pattern)
-		if err != nil {
-			return "", err
-		}
+func executeStatsReset(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) != 0 {
+		return p.help(header)
 	}
 
-	bullet := func(cond bool, k string, v interface{}) string {
-		if !cond {
-			return ""
-		}
-		return fmt.Sprintf(" * %s: `%v`\n", k, v)
+	err := p.resetStats()
+	if err != nil {
+		return p.responsef(header, err.Error())
 	}
-
-	sbullet := func(k, v string) string {
-		return bullet(v != "", k, v)
-	}
-
-	resp := ""
-	expvar.Do(func(kv expvar.KeyValue) {
-		if re == nil || re.MatchString(kv.Key) {
-			resp += sbullet(kv.Key, kv.Value.String())
-		}
-	})
-	return resp, nil
+	return p.responsef(header, "Reset stats")
 }
 
 func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

@@ -140,10 +140,15 @@ func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Clie
 		},
 	}
 
+	var jiraStats *expvar.Service
+	conf := jci.GetPlugin().getConfig()
+	if conf.stats != nil {
+		jiraStats = conf.stats.jira
+	}
 	httpClient := expvar.WrapClient(
 		oauth2Conf.Client(context.Background()),
 		jci.GetPlugin().getConfig().maxAttachmentSize,
-		jci.GetPlugin().Stats.Jira,
+		jiraStats,
 		endpointFromRequest)
 
 	jiraClient, err := jira.NewClient(httpClient, oauth2Conf.BaseURL)
@@ -159,10 +164,15 @@ func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
 		BaseURL:      jci.AtlassianSecurityContext.BaseURL,
 	}
 
+	var jiraStats *expvar.Service
+	conf := jci.GetPlugin().getConfig()
+	if conf.stats != nil {
+		jiraStats = conf.stats.jira
+	}
 	httpClient := expvar.WrapClient(
 		jwtConf.Client(),
 		jci.GetPlugin().getConfig().maxAttachmentSize,
-		jci.GetPlugin().Stats.Jira,
+		jiraStats,
 		endpointFromRequest)
 
 	return jira.NewClient(httpClient, jwtConf.BaseURL)

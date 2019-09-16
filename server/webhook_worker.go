@@ -14,6 +14,7 @@ type webhookWorker struct {
 }
 
 func (ww webhookWorker) process(rawData []byte) (err error) {
+	conf := ww.p.getConfig()
 	start := time.Now()
 	defer func() {
 		isError, isIgnored := false, false
@@ -29,8 +30,8 @@ func (ww webhookWorker) process(rawData []byte) (err error) {
 			isError = true
 		}
 
-		if ww.p.Stats != nil {
-			ww.p.Stats.SubscribeWebhook.Processing("",
+		if conf.stats != nil {
+			conf.stats.subscribeWebhook.Processing("",
 				time.Since(start), isError, isIgnored)
 		}
 	}()

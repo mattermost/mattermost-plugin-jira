@@ -1,6 +1,7 @@
 package expvar
 
 import (
+	"bytes"
 	"encoding/json"
 	"expvar"
 	"fmt"
@@ -15,92 +16,104 @@ const response = "response"
 const allResponse = all + "/" + response
 const allProcessing = all + "/" + processing
 
-// Service exposes `<name>/Response` expvar
-type Service interface {
-	Response(name string, size utils.ByteSize, elapsed time.Duration, isError, isIgnored bool)
-}
+type Service struct {
+	Name    string
+	IsAsync bool
 
-// AsyncService exposes `<name>/Response` and `<name>/Processing`Endpoint expvars
-type AsyncService interface {
-	Service
-	Processing(name string, elapsed time.Duration, isError, isIgnored bool)
-}
+	// A map of all endpoints, plus 2 for "_allResponse" and "_allProcessing".
+	endpoints expvar.Map // *Endpoint
 
-type service struct {
-	Name string
-
-	// A map of all sndpoints, plus one for "_all"
-	endpoints expvar.Map
-
-	// A cached pointer to the _all Endpoints
+	// Cached pointers to the _all Endpoints.
 	allResponse   *Endpoint
 	allProcessing *Endpoint
 }
 
-// NewService creates a new Service and registers its expvars
-func NewService(name string) Service {
-	return newService(name, false)
-}
+var _ json.Marshaler = (*Service)(nil)
+var _ json.Unmarshaler = (*Service)(nil)
 
-// NewAsyncService creates a new AsyncService and registers its expvars
-func NewAsyncService(name string) AsyncService {
-	return newService(name, true)
-}
-
-func newService(name string, async bool) *service {
-	s := &service{
-		Name: name,
+// NewService creates a new Service and registers its expvars.
+func NewService(name string, isAsync bool) *Service {
+	fmt.Println("<><> expvar.NewService: ", name, isAsync)
+	s := &Service{
+		Name:    name,
+		IsAsync: isAsync,
 	}
-	s.allResponse = s.useAPI(allResponse)
-	if async {
-		s.allProcessing = s.useAPI(allProcessing)
-	}
+	s.Init()
 	return s
 }
 
-// MarshalJSON implements json.Marshaller
-func (s *service) MarshalJSON() ([]byte, error) {
-	return []byte(s.endpoints.String()), nil
+func (s *Service) Init() {
+	fmt.Println("<><> expvar.Service.Init: ", s.Name, s.IsAsync)
+	s.allResponse = s.initEndpointVar(allResponse)
+	if s.IsAsync {
+		s.allProcessing = s.initEndpointVar(allProcessing)
+	}
 }
 
-// UnmarshalJSON implements json.Unmarshaller
-func (s *service) UnmarshalJSON(data []byte) error {
-	m := map[string]*Endpoint{}
-	err := json.Unmarshal(data, &m)
-	if err != nil {
-		return err
-	}
-	for k, v := range m {
-		switch k {
-		case allResponse:
-			s.allResponse = v
-		case allProcessing:
-			s.allProcessing = v
-		}
-		s.endpoints.Set(k, v)
-	}
-	return nil
+func (s *Service) Reset() {
+	endpoints.Range(func(key, value interface{}) bool {
+		v := value.(*Endpoint)
+		v.Reset()
+		return true
+	})
 }
 
-func (s *service) useAPI(name string) *Endpoint {
+func (s *Service) initEndpointVar(name string) *Endpoint {
+	fmt.Println("<><> expvar.Service.initEndpointVar: ", s.Name, name, s.IsAsync)
 	e := NewEndpoint(s.Name + "/" + name)
 	s.endpoints.Set(name, e)
 	return e
 }
 
-// Response records a response event
-func (s *service) Response(endpointName string, size utils.ByteSize, dur time.Duration, isError, isIgnored bool) {
-	fmt.Println("<><> expvar service.Response: ", endpointName)
+// Response records a response event.
+func (s *Service) Response(eventName string, size utils.ByteSize, dur time.Duration, isError, isIgnored bool) {
 	s.allResponse.Record(size, dur, isError, isIgnored)
-	if endpointName != "" {
-		s.useAPI(endpointName+"/"+response).Record(size, dur, isError, false)
+	if eventName != "" {
+		s.initEndpointVar(eventName+"/"+response).Record(size, dur, isError, false)
 	}
 }
 
-// Response records a response event
-func (s *service) Processing(endpointName string, dur time.Duration, isError, isIgnored bool) {
-	s.allProcessing.Record(0, dur, isError, isIgnored)
-	if endpointName != "" {
-		s.useAPI(endpointName+"/"+processing).Record(0, dur, isError, false)
+// Response records a response event.
+func (s *Service) Processing(eventName string, dur time.Duration, isError, isIgnored bool) {
+	if !s.IsAsync {
+		return
 	}
+	s.allProcessing.Record(0, dur, isError, isIgnored)
+	if eventName != "" {
+		s.initEndpointVar(eventName+"/"+processing).Record(0, dur, isError, false)
+	}
+}
+
+// MarshalJSON implements json.Marshaller.
+func (s *Service) MarshalJSON() ([]byte, error) {
+	b := &bytes.Buffer{}
+	fmt.Fprintf(b, `{"Name":%q,"IsAsync":%v,"Endpoints":%s}`,
+		s.Name, s.IsAsync, s.endpoints.String())
+	return b.Bytes(), nil
+}
+
+// UnmarshalJSON implements json.Unmarshaller.
+func (s *Service) UnmarshalJSON(data []byte) error {
+	fmt.Println("<><> Service.UnmarshalJSON: ", string(data))
+	v := struct {
+		Name      string
+		IsAsync   bool
+		Endpoints map[string]*Endpoint
+	}{}
+	err := json.Unmarshal(data, &v)
+	if err != nil {
+		return err
+	}
+	s.Name = v.Name
+	s.IsAsync = v.IsAsync
+	for k, e := range v.Endpoints {
+		switch k {
+		case allResponse:
+			s.allResponse = e
+		case allProcessing:
+			s.allProcessing = e
+		}
+		s.endpoints.Set(k, e)
+	}
+	return nil
 }

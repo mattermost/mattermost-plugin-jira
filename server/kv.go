@@ -24,6 +24,7 @@ const (
 	keyTokenSecret         = "token_secret"
 	prefixJIRAInstance     = "jira_instance_"
 	prefixOneTimeSecret    = "ots_" // + unique key that will be deleted after the first verification
+	prefixStats            = "stats_"
 )
 
 type Store interface {

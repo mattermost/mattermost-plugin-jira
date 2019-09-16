@@ -79,7 +79,7 @@ type JiraClient struct {
 
 // RESTGet calls a specified HTTP point with a GET method. endpoint must be an absolute URL, or a
 // relative URL starting with a version, like "2/user".
-func (client JiraClient) RESTGet(endpoint string, params map[string]string, dest interface{}) (err error) {
+func (client JiraClient) RESTGet(endpoint string, params map[string]string, dest interface{}) error {
 	endpointURL, err := endpointURL(endpoint)
 	if err != nil {
 		return err
@@ -160,7 +160,7 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 }
 
 // GetProject returns a Project by key.
-func (client JiraClient) GetProject(key string) (project *jira.Project, err error) {
+func (client JiraClient) GetProject(key string) (*jira.Project, error) {
 	project, resp, err := client.Jira.Project.Get(key)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
@@ -169,7 +169,7 @@ func (client JiraClient) GetProject(key string) (project *jira.Project, err erro
 }
 
 // GetIssue returns an Issue by key (with options).
-func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (issue *jira.Issue, err error) {
+func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (*jira.Issue, error) {
 	issue, resp, err := client.Jira.Issue.Get(key, options)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
@@ -178,7 +178,7 @@ func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (is
 }
 
 // GetTransitions returns transitions for an issue with issueKey.
-func (client JiraClient) GetTransitions(issueKey string) (transitions []jira.Transition, err error) {
+func (client JiraClient) GetTransitions(issueKey string) ([]jira.Transition, error) {
 	transitions, resp, err := client.Jira.Issue.GetTransitions(issueKey)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
@@ -187,7 +187,7 @@ func (client JiraClient) GetTransitions(issueKey string) (transitions []jira.Tra
 }
 
 // CreateIssue creates and returns a new issue.
-func (client JiraClient) CreateIssue(issue *jira.Issue) (created *jira.Issue, err error) {
+func (client JiraClient) CreateIssue(issue *jira.Issue) (*jira.Issue, error) {
 	created, resp, err := client.Jira.Issue.Create(issue)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
@@ -196,7 +196,7 @@ func (client JiraClient) CreateIssue(issue *jira.Issue) (created *jira.Issue, er
 }
 
 // UpdateAssignee changes the user assigned to an issue.
-func (client JiraClient) UpdateAssignee(issueKey string, user *jira.User) (err error) {
+func (client JiraClient) UpdateAssignee(issueKey string, user *jira.User) error {
 	resp, err := client.Jira.Issue.UpdateAssignee(issueKey, user)
 	if err != nil {
 		return userFriendlyJiraError(resp, err)
@@ -205,7 +205,7 @@ func (client JiraClient) UpdateAssignee(issueKey string, user *jira.User) (err e
 }
 
 // AddComment adds a comment to an issue.
-func (client JiraClient) AddComment(issueKey string, comment *jira.Comment) (added *jira.Comment, err error) {
+func (client JiraClient) AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error) {
 	added, resp, err := client.Jira.Issue.AddComment(issueKey, comment)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
@@ -214,7 +214,7 @@ func (client JiraClient) AddComment(issueKey string, comment *jira.Comment) (add
 }
 
 // UpdateComment changes a comment of an issue.
-func (client JiraClient) UpdateComment(issueKey string, comment *jira.Comment) (updated *jira.Comment, err error) {
+func (client JiraClient) UpdateComment(issueKey string, comment *jira.Comment) (*jira.Comment, error) {
 	updated, resp, err := client.Jira.Issue.UpdateComment(issueKey, comment)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
@@ -223,7 +223,7 @@ func (client JiraClient) UpdateComment(issueKey string, comment *jira.Comment) (
 }
 
 // SearchIssues searches issues as specified by jql and options.
-func (client JiraClient) SearchIssues(jql string, options *jira.SearchOptions) (found []jira.Issue, err error) {
+func (client JiraClient) SearchIssues(jql string, options *jira.SearchOptions) ([]jira.Issue, error) {
 	found, resp, err := client.Jira.Issue.Search(jql, options)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
@@ -232,7 +232,7 @@ func (client JiraClient) SearchIssues(jql string, options *jira.SearchOptions) (
 }
 
 // DoTransition executes a transition on an issue.
-func (client JiraClient) DoTransition(issueKey, transitionID string) (err error) {
+func (client JiraClient) DoTransition(issueKey, transitionID string) error {
 	resp, err := client.Jira.Issue.DoTransition(issueKey, transitionID)
 	if err != nil {
 		return userFriendlyJiraError(resp, err)
@@ -266,7 +266,7 @@ func (client JiraClient) AddAttachment(api plugin.API, issueKey, fileID string, 
 }
 
 // GetSelf returns a user associated with this Jira client
-func (client JiraClient) GetSelf() (self *jira.User, err error) {
+func (client JiraClient) GetSelf() (*jira.User, error) {
 	self, resp, err := client.Jira.User.GetSelf()
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)

@@ -41,6 +41,7 @@ var eventParamMasks = map[string]StringSet{
 var ErrWebhookIgnored = errors.New("Webhook purposely ignored")
 
 func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int, err error) {
+	conf := p.getConfig()
 	start := time.Now()
 	size := utils.ByteSize(0)
 	defer func() {
@@ -57,10 +58,10 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int,
 			isError = true
 		}
 
-		if p.Stats != nil {
-			p.Stats.LegacyWebhook.Processing("",
+		if conf.stats != nil {
+			conf.stats.legacyWebhook.Processing("",
 				time.Since(start), isError, isIgnored)
-			p.Stats.LegacyWebhook.Response("",
+			conf.stats.legacyWebhook.Response("",
 				utils.ByteSize(size), time.Since(start), isError, isIgnored)
 		}
 	}()
@@ -70,7 +71,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int,
 		return http.StatusMethodNotAllowed,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
 	}
-	status, err = verifyWebhookRequestSecret(p.getConfig(), r)
+	status, err = verifyWebhookRequestSecret(conf, r)
 	if err != nil {
 		return status, err
 	}

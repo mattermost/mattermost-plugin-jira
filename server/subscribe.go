@@ -379,11 +379,12 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 }
 
 func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int, err error) {
+	conf := p.getConfig()
 	size := utils.ByteSize(0)
 	start := time.Now()
 	defer func() {
-		if p.Stats != nil {
-			p.Stats.SubscribeWebhook.Response("",
+		if conf.stats != nil {
+			conf.stats.subscribeWebhook.Response("",
 				utils.ByteSize(size), time.Since(start), err != nil, false)
 		}
 	}()
@@ -392,8 +393,7 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (st
 		return http.StatusMethodNotAllowed,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
 	}
-	cfg := p.getConfig()
-	if cfg.Secret == "" {
+	if conf.Secret == "" {
 		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret")
 	}
 

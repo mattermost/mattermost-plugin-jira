@@ -110,10 +110,15 @@ func (jsi jiraServerInstance) GetClient(jiraUser JIRAUser) (client Client, retur
 	}
 
 	token := oauth1.NewToken(jiraUser.Oauth1AccessToken, jiraUser.Oauth1AccessSecret)
+	var jiraStats *expvar.Service
+	conf := jsi.GetPlugin().getConfig()
+	if conf.stats != nil {
+		jiraStats = conf.stats.jira
+	}
 	httpClient := expvar.WrapClient(
 		oauth1Config.Client(oauth1.NoContext, token),
 		jsi.GetPlugin().getConfig().maxAttachmentSize,
-		jsi.GetPlugin().Stats.Jira,
+		jiraStats,
 		endpointFromRequest)
 
 	jiraClient, err := jira.NewClient(httpClient, jsi.GetURL())

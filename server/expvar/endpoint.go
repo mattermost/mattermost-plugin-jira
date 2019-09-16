@@ -1,6 +1,8 @@
 package expvar
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"expvar"
 	"fmt"
@@ -20,7 +22,10 @@ var endpoints = sync.Map{} // *Var
 // data in goroutines.
 type Endpoint struct {
 	lock *sync.RWMutex
+	endpoint
+}
 
+type endpoint struct {
 	Name    string
 	Total   int64
 	Errors  int64
@@ -33,23 +38,45 @@ type Endpoint struct {
 // rest of the expvar.New functions, this can be called repeteadly for the same
 // name and will return the same Var pointer for it.
 func NewEndpoint(name string) *Endpoint {
+	fmt.Println("<><> expvar.NewEndPoint: ", name)
 	e := &Endpoint{
-		lock:    &sync.RWMutex{},
-		Name:    name,
-		Elapsed: circonusllhist.NewNoLocks(),
-		Size:    circonusllhist.NewNoLocks(),
+		lock: &sync.RWMutex{},
+		endpoint: endpoint{
+			Name:    name,
+			Elapsed: circonusllhist.NewNoLocks(),
+			Size:    circonusllhist.NewNoLocks(),
+		},
 	}
 	ifc, loaded := endpoints.LoadOrStore(name, e)
 	if !loaded {
 		expvar.Publish(name, e)
-		fmt.Printf("<><> EndpointExpvar: published %q\n", name)
 	}
 	e = ifc.(*Endpoint)
 	return e
 }
 
+// Reset clears all values in the endpoint
+func (e *Endpoint) Reset() {
+	if e == nil {
+		return
+	}
+	if e.lock != nil {
+		e.lock.Lock()
+		defer e.lock.Unlock()
+	}
+
+	e.Total = 0
+	e.Errors = 0
+	e.Ignored = 0
+	e.Elapsed.Reset()
+	e.Size.Reset()
+}
+
 // Record records a single event
 func (e *Endpoint) Record(size utils.ByteSize, dur time.Duration, isError, isIgnored bool) {
+	if e == nil {
+		return
+	}
 	if e.lock != nil {
 		e.lock.Lock()
 		defer e.lock.Unlock()
@@ -65,11 +92,14 @@ func (e *Endpoint) Record(size utils.ByteSize, dur time.Duration, isError, isIgn
 		e.Ignored++
 	}
 	e.Total++
-	fmt.Printf("<><> expvar Endpoint.Record: recorded %v %v into %q (%p)\n", size, dur, e.Name, e)
 }
 
 // Get returns a copy of the Endpoint that is safe to read from in goroutines.
 func (e *Endpoint) Get() Endpoint {
+	if e == nil {
+		fmt.Println("<><> Get NIL Endpoint")
+		return Endpoint{}
+	}
 	if e.lock != nil {
 		e.lock.RLock()
 		defer e.lock.RUnlock()
@@ -77,19 +107,6 @@ func (e *Endpoint) Get() Endpoint {
 	ep := *e
 	ep.lock = nil
 	return ep
-}
-
-// Update updates all values from another Endpoint, leaves the lock untouched. It
-// is safe to use from goroutines.
-func (e *Endpoint) Update(ep Endpoint) {
-	if e.lock != nil {
-		e.lock.Lock()
-		defer e.lock.Unlock()
-	}
-	lock := e.lock
-	*e = ep
-	fmt.Printf("<><> Endpoint.Set: %+v\n", e)
-	e.lock = lock
 }
 
 // String implements expvar.Var interface
@@ -122,14 +139,47 @@ func (e *Endpoint) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements json.Unarshaler interface
 func (e *Endpoint) UnmarshalJSON(data []byte) error {
-	err := json.Unmarshal(data, &e)
+	if e.lock != nil {
+		e.lock.Lock()
+		defer e.lock.Unlock()
+	}
+
+	ee := struct {
+		Name                   string
+		Total, Errors, Ignored int64
+		Elapsed, Size          string
+	}{}
+	err := json.Unmarshal(data, &ee)
 	if err != nil {
 		return err
 	}
+
+	unmarshalHistogram := func(s string) (*circonusllhist.Histogram, error) {
+		hdata, err := base64.StdEncoding.DecodeString(s)
+		if err != nil {
+			return nil, err
+		}
+		return circonusllhist.Deserialize(bytes.NewBuffer(hdata))
+	}
+
+	elapsed, err := unmarshalHistogram(ee.Elapsed)
+	if err != nil {
+		return err
+	}
+	size, err := unmarshalHistogram(ee.Size)
+	if err != nil {
+		return err
+	}
+	e.Name = ee.Name
+	e.Total = ee.Total
+	e.Errors = ee.Errors
+	e.Ignored = ee.Ignored
+	e.Elapsed = elapsed
+	e.Size = size
+
 	if e.lock == nil {
 		e.lock = &sync.RWMutex{}
 	}
-	fmt.Printf("<><> Endpoint.UnmarshalJSON: %+v \n", e)
 	return nil
 }
 

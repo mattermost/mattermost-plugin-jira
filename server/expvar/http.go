@@ -11,7 +11,7 @@ import (
 type roundtripper struct {
 	http.RoundTripper
 	limit               utils.ByteSize
-	stats               Service
+	stats               *Service
 	endpointFromRequest func(*http.Request) string
 }
 
@@ -21,10 +21,10 @@ type readCloser struct {
 	remaining utils.ByteSize
 	start     time.Time
 	name      string
-	stats     Service
+	stats     *Service
 }
 
-func WrapClient(c *http.Client, limit utils.ByteSize, stats Service, endpointFromRequest func(*http.Request) string) *http.Client {
+func WrapClient(c *http.Client, limit utils.ByteSize, stats *Service, endpointFromRequest func(*http.Request) string) *http.Client {
 	client := *c
 	rt := c.Transport
 	if rt == nil {
