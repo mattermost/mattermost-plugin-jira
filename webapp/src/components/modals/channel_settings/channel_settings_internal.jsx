@@ -269,7 +269,6 @@ export default class ChannelSettingsModalInner extends PureComponent {
                     <ReactSelectSetting
                         name={'projects'}
                         label={'Project'}
-                        limitOptions={true}
                         required={true}
                         onChange={this.handleProjectChange}
                         options={projectOptions}

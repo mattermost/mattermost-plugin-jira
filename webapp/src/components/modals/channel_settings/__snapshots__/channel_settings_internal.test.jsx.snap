@@ -21,7 +21,6 @@ exports[`components/ChannelSettingsInner should match snapshot 1`] = `
         addValidate={[Function]}
         isMulti={false}
         label="Project"
-        limitOptions={true}
         name="projects"
         onChange={[Function]}
         options={
@@ -158,7 +157,6 @@ exports[`components/ChannelSettingsInner should match snapshot after fetching is
         addValidate={[Function]}
         isMulti={false}
         label="Project"
-        limitOptions={true}
         name="projects"
         onChange={[Function]}
         options={
@@ -553,7 +551,6 @@ exports[`components/ChannelSettingsInner should match snapshot with no filters 1
         addValidate={[Function]}
         isMulti={false}
         label="Project"
-        limitOptions={true}
         name="projects"
         onChange={[Function]}
         options={
@@ -679,7 +676,6 @@ exports[`components/ChannelSettingsInner should match snapshot with no issue met
         addValidate={[Function]}
         isMulti={false}
         label="Project"
-        limitOptions={true}
         name="projects"
         onChange={[Function]}
         options={
@@ -816,7 +812,6 @@ exports[`components/ChannelSettingsInner should match snapshot with no subscript
         addValidate={[Function]}
         isMulti={false}
         label="Project"
-        limitOptions={true}
         name="projects"
         onChange={[Function]}
         options={
