@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/andygrunwald/go-jira v1.10.0
+	github.com/apache/thrift v0.12.0
 	github.com/circonus-labs/circonusllhist v0.1.3
 	github.com/dghubble/oauth1 v0.5.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -37,3 +38,5 @@ replace github.com/golang/lint => github.com/golang/lint v0.0.0-20190227174305-8
 
 // Workaround for Jira GDPR change. Remove this and update golang.org/x/oauth2 when it's fixed.
 replace golang.org/x/oauth2 => github.com/cpoile/oauth2 v0.0.0-20190717235208-10945bd
+
+replace git.apache.org/thrift.git => github.com/apache/thrift v0.12.0

@@ -1,10 +1,8 @@
 package expvar
 
 import (
-	"bytes"
 	"encoding/json"
 	"expvar"
-	"fmt"
 	"time"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -26,6 +24,9 @@ type Service struct {
 	// Cached pointers to the _all Endpoints.
 	allResponse   *Endpoint
 	allProcessing *Endpoint
+
+	// set to false for testing to avoid publishing the expvars
+	disablePublish bool
 }
 
 var _ json.Marshaler = (*Service)(nil)
@@ -33,34 +34,39 @@ var _ json.Unmarshaler = (*Service)(nil)
 
 // NewService creates a new Service and registers its expvars.
 func NewService(name string, isAsync bool) *Service {
-	fmt.Println("<><> expvar.NewService: ", name, isAsync)
+	return newService(name, isAsync, false)
+}
+
+func newService(name string, isAsync bool, disablePublish bool) *Service {
 	s := &Service{
-		Name:    name,
-		IsAsync: isAsync,
+		Name:           name,
+		IsAsync:        isAsync,
+		disablePublish: disablePublish,
 	}
 	s.Init()
 	return s
 }
 
 func (s *Service) Init() {
-	fmt.Println("<><> expvar.Service.Init: ", s.Name, s.IsAsync)
-	s.allResponse = s.initEndpointVar(allResponse)
+	s.allResponse = s.initEndpointVar(allResponse, s.allResponse)
 	if s.IsAsync {
-		s.allProcessing = s.initEndpointVar(allProcessing)
+		s.allProcessing = s.initEndpointVar(allProcessing, s.allProcessing)
 	}
-}
-
-func (s *Service) Reset() {
-	endpoints.Range(func(key, value interface{}) bool {
-		v := value.(*Endpoint)
-		v.Reset()
-		return true
+	s.endpoints.Do(func(kv expvar.KeyValue) {
+		e := kv.Value.(*Endpoint)
+		s.initEndpointVar(kv.Key, e)
 	})
 }
 
-func (s *Service) initEndpointVar(name string) *Endpoint {
-	fmt.Println("<><> expvar.Service.initEndpointVar: ", s.Name, name, s.IsAsync)
-	e := NewEndpoint(s.Name + "/" + name)
+func (s *Service) Reset() {
+	s.endpoints.Do(func(kv expvar.KeyValue) {
+		v := kv.Value.(*Endpoint)
+		v.Reset()
+	})
+}
+
+func (s *Service) initEndpointVar(name string, e *Endpoint) *Endpoint {
+	e = initEndpoint(s.Name+"/"+name, e, s.disablePublish)
 	s.endpoints.Set(name, e)
 	return e
 }
@@ -69,7 +75,7 @@ func (s *Service) initEndpointVar(name string) *Endpoint {
 func (s *Service) Response(eventName string, size utils.ByteSize, dur time.Duration, isError, isIgnored bool) {
 	s.allResponse.Record(size, dur, isError, isIgnored)
 	if eventName != "" {
-		s.initEndpointVar(eventName+"/"+response).Record(size, dur, isError, false)
+		s.initEndpointVar(eventName+"/"+response, nil).Record(size, dur, isError, isIgnored)
 	}
 }
 
@@ -80,21 +86,29 @@ func (s *Service) Processing(eventName string, dur time.Duration, isError, isIgn
 	}
 	s.allProcessing.Record(0, dur, isError, isIgnored)
 	if eventName != "" {
-		s.initEndpointVar(eventName+"/"+processing).Record(0, dur, isError, false)
+		s.initEndpointVar(eventName+"/"+processing, nil).Record(0, dur, isError, isIgnored)
 	}
 }
 
 // MarshalJSON implements json.Marshaller.
 func (s *Service) MarshalJSON() ([]byte, error) {
-	b := &bytes.Buffer{}
-	fmt.Fprintf(b, `{"Name":%q,"IsAsync":%v,"Endpoints":%s}`,
-		s.Name, s.IsAsync, s.endpoints.String())
-	return b.Bytes(), nil
+	v := struct {
+		Name      string
+		IsAsync   bool
+		Endpoints map[string]*Endpoint
+	}{
+		Name:      s.Name,
+		IsAsync:   s.IsAsync,
+		Endpoints: map[string]*Endpoint{},
+	}
+	s.endpoints.Do(func(kv expvar.KeyValue) {
+		v.Endpoints[kv.Key] = kv.Value.(*Endpoint)
+	})
+	return json.Marshal(v)
 }
 
 // UnmarshalJSON implements json.Unmarshaller.
 func (s *Service) UnmarshalJSON(data []byte) error {
-	fmt.Println("<><> Service.UnmarshalJSON: ", string(data))
 	v := struct {
 		Name      string
 		IsAsync   bool
@@ -106,6 +120,7 @@ func (s *Service) UnmarshalJSON(data []byte) error {
 	}
 	s.Name = v.Name
 	s.IsAsync = v.IsAsync
+
 	for k, e := range v.Endpoints {
 		switch k {
 		case allResponse:

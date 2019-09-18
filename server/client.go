@@ -358,7 +358,14 @@ func endpointFromRequest(r *http.Request) string {
 	entity := parts[1]
 	for _, p := range parts[2:] {
 		switch entity {
-		case "issue", "project", "comment":
+		case "issue":
+			if p == "createmeta" {
+				out = append(out, p)
+			} else {
+				// skip the issue key
+			}
+
+		case "project", "comment":
 		// skip the key
 
 		default:

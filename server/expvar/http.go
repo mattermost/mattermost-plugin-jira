@@ -24,7 +24,7 @@ type readCloser struct {
 	stats     *Service
 }
 
-func WrapClient(c *http.Client, limit utils.ByteSize, stats *Service, endpointFromRequest func(*http.Request) string) *http.Client {
+func WrapHTTPClient(c *http.Client, limit utils.ByteSize, stats *Service, endpointFromRequest func(*http.Request) string) *http.Client {
 	client := *c
 	rt := c.Transport
 	if rt == nil {

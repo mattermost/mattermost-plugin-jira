@@ -202,8 +202,7 @@ func (p *Plugin) OnActivate() error {
 		go webhookWorker{i, p, p.webhookQueue}.work()
 	}
 
-	fmt.Println("<><> OnActivate: go loadStats")
-	go p.loadStats()
+	go p.initStats()
 	return nil
 }
 

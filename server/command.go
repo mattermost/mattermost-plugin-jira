@@ -63,9 +63,10 @@ var jiraCommandHandler = CommandHandler{
 		"stats/reset":      executeStatsReset,
 		"info":             executeInfo,
 		"help":             commandHelp,
-		"list":             executeList,
-		"instance/select":  executeInstanceSelect,
-		"instance/delete":  executeInstanceDelete,
+		// "stats/save":       executeStatsSave,
+		// "list":             executeList,
+		// "instance/select":  executeInstanceSelect,
+		// "instance/delete":  executeInstanceDelete,
 	},
 	defaultHandler: executeJiraDefault,
 }
@@ -598,6 +599,18 @@ func executeStatsReset(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 		return p.responsef(header, err.Error())
 	}
 	return p.responsef(header, "Reset stats")
+}
+
+func executeStatsSave(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) != 0 {
+		return p.help(header)
+	}
+	stats := p.getConfig().stats
+	if stats == nil {
+		return p.responsef(header, "No stats to save")
+	}
+	stats.Save(p.saveStatsF)
+	return p.responsef(header, "Saved stats")
 }
 
 func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

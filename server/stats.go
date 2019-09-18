@@ -2,27 +2,27 @@ package main
 
 import (
 	goexpvar "expvar"
-	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 )
 
+const statsAutosaveInterval = 1 * time.Hour
+
+var initStatsOnce sync.Once
+
 type stats struct {
 	*expvar.Stats
-
 	jira             *expvar.Service
 	legacyWebhook    *expvar.Service
 	subscribeWebhook *expvar.Service
 }
 
-var initStatsOnce sync.Once
-
-func (p *Plugin) loadStats() {
+func (p *Plugin) initStats() {
 	conf := p.getConfig()
 	if conf.DisableStats || conf.stats != nil {
-		fmt.Println("<><> loadStats: no need to load")
 		return
 	}
 
@@ -30,79 +30,67 @@ func (p *Plugin) loadStats() {
 	key := prefixStats + hostname
 	data, appErr := p.API.KVGet(key)
 	if appErr != nil {
-		fmt.Println("<><> loadStats: error loading", key, appErr.Error())
 		return
 	}
 
-	fmt.Println("<><> loadStats: loaded from KV", key, string(data))
-	p.updateConfig(func(conf *config) {
-		if conf.DisableStats || conf.stats != nil {
-			fmt.Println("<><> loadStats: already loaded in between")
-			return
-		}
+	expstats := expvar.NewStatsFromData(data, p.saveStatsF)
 
+	stats := stats{
+		jira:             expstats.EnsureService("api/jira", false),
+		legacyWebhook:    expstats.EnsureService("webhook/jira/legacy", false),
+		subscribeWebhook: expstats.EnsureService("webhook/jira/subscribe", true),
+		Stats:            expstats,
+	}
+
+	p.updateConfig(func(conf *config) {
 		initStatsOnce.Do(func() {
-			stats, err := newStatsFromData(data, p.currentInstanceStore, p.userStore, p.saveStats)
-			if err != nil {
-				p.errorf("Ignored invalid previous stats data: %v", err)
+			if conf.DisableStats || conf.stats != nil {
 				return
 			}
-			conf.stats = stats
-
-			fmt.Printf("<><> loadStats: loaded\nJira: %v\nLegacy: %v, Subscribe: %v",
-				stats.jira,
-				stats.legacyWebhook,
-				stats.subscribeWebhook)
+			conf.stats = &stats
 		})
 	})
+
 }
 
-func (p *Plugin) saveStats(data []byte) {
+func (p *Plugin) saveStatsF(data []byte) {
 	hostname, _ := os.Hostname()
 	appErr := p.API.KVSet(prefixStats+hostname, data)
 	if appErr != nil {
-		fmt.Println("<><> saveStats: error savining", appErr.Error())
 		return
 	}
-	fmt.Println("<><> saveStats: saved", string(data))
 }
 
 func (p *Plugin) resetStats() error {
+	stats := p.getConfig().stats
+	if stats == nil {
+		return nil
+	}
+	stats.Reset()
+
 	hostname, _ := os.Hostname()
 	appErr := p.API.KVDelete(prefixStats + hostname)
 	if appErr != nil {
 		return appErr
 	}
 
-	fmt.Println("<><> !!!!!!!!!!!!!!!!!!!!!!!!", p.getConfig().stats)
+	stats.jira = stats.EnsureService("api/jira", false)
+	stats.legacyWebhook = stats.EnsureService("webhook/jira/legacy", false)
+	stats.subscribeWebhook = stats.EnsureService("webhook/jira/subscribe", true)
+
 	return nil
 }
 
-func newStatsFromData(data []byte, currentInstanceStore CurrentInstanceStore,
-	userStore UserStore, savef func([]byte)) (*stats, error) {
-
+func (p *Plugin) initUserCounter() {
 	goexpvar.Publish("counters/mapped_users", goexpvar.Func(func() interface{} {
-		ji, err := currentInstanceStore.LoadCurrentJIRAInstance()
+		ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 		if err != nil {
 			return err.Error()
 		}
-		c, err := userStore.CountUsers(ji)
+		c, err := p.userStore.CountUsers(ji)
 		if err != nil {
 			return err.Error()
 		}
 		return c
 	}))
-
-	// NewStatsFromData always returns a stats pointer. If the data intitalization
-	// failed, err is set.
-	expstats, err := expvar.NewStatsFromData(data)
-	stats := &stats{
-		Stats:            expstats,
-		jira:             expstats.EnsureService("api/jira", false),
-		legacyWebhook:    expstats.EnsureService("webhook/jira/legacy", true),
-		subscribeWebhook: expstats.EnsureService("webhook/jira/subscribe", true),
-	}
-
-	stats.Init(savef)
-	return stats, err
 }

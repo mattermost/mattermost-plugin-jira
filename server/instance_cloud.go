@@ -145,7 +145,7 @@ func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Clie
 	if conf.stats != nil {
 		jiraStats = conf.stats.jira
 	}
-	httpClient := expvar.WrapClient(
+	httpClient := expvar.WrapHTTPClient(
 		oauth2Conf.Client(context.Background()),
 		jci.GetPlugin().getConfig().maxAttachmentSize,
 		jiraStats,
@@ -169,7 +169,7 @@ func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
 	if conf.stats != nil {
 		jiraStats = conf.stats.jira
 	}
-	httpClient := expvar.WrapClient(
+	httpClient := expvar.WrapHTTPClient(
 		jwtConf.Client(),
 		jci.GetPlugin().getConfig().maxAttachmentSize,
 		jiraStats,

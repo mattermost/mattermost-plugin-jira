@@ -9,9 +9,6 @@ import (
 	"time"
 )
 
-// StatsSaveInterval specifies how often the stats are auto-saved.
-const StatsSaveInterval = 1 * time.Minute
-
 const statsSaveMaxDither = 10 // seconds
 
 // Stats is a collection of Service metrics that can be persisted to/loaded
@@ -22,53 +19,54 @@ type Stats struct {
 
 // NewStatsFromData creates and initializes a new Stats, from previously
 // serialized data. If it fails to unmarshal the data, it returns an empty Stats.
-func NewStatsFromData(data []byte) (*Stats, error) {
-	stats := &Stats{
-		Services: map[string]*Service{},
+// If saveInterval and savef are provided, it starts the autosave goroutine for
+// the stats.
+func NewStatsFromData(data []byte, saveInterval time.Duration, savef func([]byte)) *Stats {
+	// ignore the error - just return an empty set if failed to unmarshal
+	stats := Stats{}
+	json.Unmarshal(data, &stats)
+	if stats.Services == nil {
+		stats.Services = map[string]*Service{}
 	}
-	err := json.Unmarshal(data, stats)
-	fmt.Println("<><> expvar.NewStatsFromData: err:", err, stats)
-	return stats, err
-}
-
-func (stats *Stats) Init(savef func([]byte)) {
 	for _, service := range stats.Services {
 		service.Init()
 	}
 
+	// autosave
 	go func() {
 		r := rand.New(rand.NewSource(time.Now().UnixNano()))
 		dither := time.Duration(r.Intn(statsSaveMaxDither)) * time.Second
 		time.Sleep(dither)
 
-		ticker := time.NewTicker(StatsSaveInterval)
-
-		for now := range ticker.C {
-			fmt.Println("<><> TIME TO SAVE!", now)
-			data, err := json.Marshal(stats)
-			if err != nil {
-				fmt.Println("<><> failed to marshal", err)
-				continue
-			}
-			savef(data)
-			fmt.Println("<><> SAVED")
+		ticker := time.NewTicker(saveInterval)
+		for range ticker.C {
+			stats.Save(savef)
 		}
 	}()
+
+	return &stats
+}
+
+func (stats *Stats) Save(savef func([]byte)) {
+	data, err := json.Marshal(stats)
+	if err != nil {
+		return
+	}
+	savef(data)
 }
 
 func (stats *Stats) Reset() {
 	for _, service := range stats.Services {
 		service.Reset()
 	}
+	stats.Services = map[string]*Service{}
 }
 
 // EnsureService makes sure that a service is registered in Stats in case it
 // was not present in the initial configuration.
 func (stats *Stats) EnsureService(name string, isAsync bool) *Service {
-	fmt.Println("<><> expvar.Stats.EnsureService: ", name)
 	service := stats.Services[name]
 	if service == nil {
-		fmt.Println("<><> expvar.Stats.EnsureService: not found")
 		service = NewService(name, isAsync)
 		stats.Services[name] = service
 	}

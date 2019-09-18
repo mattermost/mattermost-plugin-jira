@@ -31,10 +31,10 @@ func TestEndpointNilString(t *testing.T) {
 
 func TestEndpointRecord(t *testing.T) {
 	name := fmt.Sprintf("test_%v", uuid.New().String())
-	e := NewEndpoint(name)
+	e := initEndpoint(name, nil, true)
 	require.NotNil(t, e)
 
-	recordTestSample(t, e)
+	recordSampleToEndpoint(t, e)
 	checkSample(t, e)
 }
 
@@ -89,7 +89,7 @@ const sampleElapsed = `"AGQKCAADCwgAAQ0IAAEOCAABEwgAARUIAAEbCAABIAgAASUIAAEAAAAA
 const sampleSize = `"AGQKAgABDAIAAQoDAAEMAwACIAMAATIDAAE8AwABIQQAASIFAAEtBwABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"`
 const sampleJSON = `{"Elapsed":{"P10":"103.666666ms","P50":"145ms","P85":"323.5ms","P95":"374.5ms","P98":"377.8ms","P99":"378.9ms"},"Errors":1,"Ignored":3,"Size":{"P10":"121b","P50":"3.2Kb","P85":"335.4Kb","P95":"43.3Mb","P98":"43.7Mb","P99":"43.8Mb"},"Total":11}`
 
-func recordTestSample(t testing.TB, e *Endpoint) {
+func recordSampleToEndpoint(t testing.TB, e *Endpoint) {
 	for _, s := range sample {
 		e.Record(utils.ByteSize(s.size), time.Duration(s.elapsed)*time.Millisecond, s.isError, s.isIgnored)
 	}

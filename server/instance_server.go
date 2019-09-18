@@ -115,7 +115,7 @@ func (jsi jiraServerInstance) GetClient(jiraUser JIRAUser) (client Client, retur
 	if conf.stats != nil {
 		jiraStats = conf.stats.jira
 	}
-	httpClient := expvar.WrapClient(
+	httpClient := expvar.WrapHTTPClient(
 		oauth1Config.Client(oauth1.NoContext, token),
 		jsi.GetPlugin().getConfig().maxAttachmentSize,
 		jiraStats,

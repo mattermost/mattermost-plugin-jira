@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"expvar"
-	"fmt"
 	"sync"
 	"time"
 
@@ -38,20 +37,25 @@ type endpoint struct {
 // rest of the expvar.New functions, this can be called repeteadly for the same
 // name and will return the same Var pointer for it.
 func NewEndpoint(name string) *Endpoint {
-	fmt.Println("<><> expvar.NewEndPoint: ", name)
-	e := &Endpoint{
-		lock: &sync.RWMutex{},
-		endpoint: endpoint{
-			Name:    name,
-			Elapsed: circonusllhist.NewNoLocks(),
-			Size:    circonusllhist.NewNoLocks(),
-		},
+	return initEndpoint(name, nil, false)
+}
+
+func initEndpoint(name string, e *Endpoint, disablePublish bool) *Endpoint {
+	if e == nil {
+		e = &Endpoint{
+			lock: &sync.RWMutex{},
+			endpoint: endpoint{
+				Name:    name,
+				Elapsed: circonusllhist.NewNoLocks(),
+				Size:    circonusllhist.NewNoLocks(),
+			},
+		}
 	}
 	ifc, loaded := endpoints.LoadOrStore(name, e)
-	if !loaded {
+	e = ifc.(*Endpoint)
+	if !loaded && !disablePublish {
 		expvar.Publish(name, e)
 	}
-	e = ifc.(*Endpoint)
 	return e
 }
 
@@ -97,7 +101,6 @@ func (e *Endpoint) Record(size utils.ByteSize, dur time.Duration, isError, isIgn
 // Get returns a copy of the Endpoint that is safe to read from in goroutines.
 func (e *Endpoint) Get() Endpoint {
 	if e == nil {
-		fmt.Println("<><> Get NIL Endpoint")
 		return Endpoint{}
 	}
 	if e.lock != nil {
