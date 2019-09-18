@@ -4,6 +4,7 @@
 package main
 
 import (
+	goexpvar "expvar"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -113,12 +114,16 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:
 		return httpSubscribeWebhook(p, w, r)
+
+	// expvar
+	case "/debug/vars":
+		goexpvar.Handler().ServeHTTP(w, r)
+		return 0, nil
 	}
 
 	if strings.HasPrefix(r.URL.Path, routeAPISubscriptionsChannel) {
 		return httpChannelSubscriptions(p, w, r)
 	}
-
 	return http.StatusNotFound, errors.New("not found")
 }
 

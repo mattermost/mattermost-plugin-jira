@@ -43,7 +43,8 @@ func (rt roundtripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	start := time.Now()
 	resp, err := rt.RoundTripper.RoundTrip(r)
 	if err != nil || resp == nil || resp.Body == nil {
-		// TODO report stats
+		rt.stats.Response(
+			rt.endpointFromRequest(r), 0, time.Since(start), true, false)
 		return resp, err
 	}
 	resp.Body = &readCloser{
@@ -70,7 +71,6 @@ func (r *readCloser) Read(data []byte) (int, error) {
 }
 
 func (r *readCloser) Close() error {
-
 	err := r.inner.Close()
 	if r.stats != nil {
 		r.stats.Response(r.name, r.read, time.Since(r.start), err != nil, false)
