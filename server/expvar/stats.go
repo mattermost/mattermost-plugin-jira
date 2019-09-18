@@ -33,16 +33,18 @@ func NewStatsFromData(data []byte, saveInterval time.Duration, savef func([]byte
 	}
 
 	// autosave
-	go func() {
-		r := rand.New(rand.NewSource(time.Now().UnixNano()))
-		dither := time.Duration(r.Intn(statsSaveMaxDither)) * time.Second
-		time.Sleep(dither)
+	if saveInterval > 0 && savef != nil {
+		go func() {
+			r := rand.New(rand.NewSource(time.Now().UnixNano()))
+			dither := time.Duration(r.Intn(statsSaveMaxDither)) * time.Second
+			time.Sleep(dither)
 
-		ticker := time.NewTicker(saveInterval)
-		for range ticker.C {
-			stats.Save(savef)
-		}
-	}()
+			ticker := time.NewTicker(saveInterval)
+			for range ticker.C {
+				stats.Save(savef)
+			}
+		}()
+	}
 
 	return &stats
 }

@@ -33,7 +33,7 @@ func (p *Plugin) initStats() {
 		return
 	}
 
-	expstats := expvar.NewStatsFromData(data, p.saveStatsF)
+	expstats := expvar.NewStatsFromData(data, statsAutosaveInterval, p.saveStatsF)
 
 	stats := stats{
 		jira:             expstats.EnsureService("api/jira", false),
@@ -51,6 +51,7 @@ func (p *Plugin) initStats() {
 		})
 	})
 
+	p.initUserCounter()
 }
 
 func (p *Plugin) saveStatsF(data []byte) {

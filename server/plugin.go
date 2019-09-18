@@ -189,8 +189,8 @@ func (p *Plugin) OnActivate() error {
 	}
 	p.templates = templates
 
-	appErr := p.API.RegisterCommand(getCommand())
-	if appErr != nil {
+	err = p.API.RegisterCommand(getCommand())
+	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to register command")
 	}
 
