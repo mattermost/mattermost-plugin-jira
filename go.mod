@@ -35,3 +35,5 @@ replace github.com/golang/lint => github.com/golang/lint v0.0.0-20190227174305-8
 
 // Workaround for Jira GDPR change. Remove this and update golang.org/x/oauth2 when it's fixed.
 replace golang.org/x/oauth2 => github.com/cpoile/oauth2 v0.0.0-20190717235208-10945bd
+
+replace git.apache.org/thrift.git => github.com/apache/thrift v0.0.0-20180902110319-2566ecd5d999
