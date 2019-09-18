@@ -1,13 +1,15 @@
 import React from 'react';
 
-import {FilterField, FilterValue} from 'types/model';
+import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType} from 'types/model';
 
-import ChannelSettingsFilter from './channel_settings_filter';
+import ChannelSettingsFilter, {EmptyChannelSettingsFilter} from './channel_settings_filter';
 
 type ChannelSettingsFiltersProps = {
     fields: FilterField[];
     values: FilterValue[];
     theme: object;
+    chosenIssueTypes: string[];
+    issueMetadata: IssueMetadata;
     addValidate: () => void;
     removeValidate: () => void;
     onChange: (f: FilterValue[]) => void;
@@ -58,52 +60,93 @@ export default class ChannelSettingsFilters extends React.PureComponent<ChannelS
         this.props.onChange(newValues);
     };
 
+    getConflictingFields = (): {field: FilterField; issueTypes: IssueType[]}[] => {
+        const conflictingFields = [];
+        for (const field of this.props.fields) {
+            const conflictingIssueTypes = [];
+            for (const issueTypeId of this.props.chosenIssueTypes) {
+                const issueTypes = field.issueTypes;
+                if (!issueTypes.find((it) => it.id === issueTypeId)) {
+                    const issueType = this.props.issueMetadata.projects[0].issuetypes.find((i) => i.id === issueTypeId) as IssueType;
+                    conflictingIssueTypes.push(issueType);
+                }
+            }
+            if (conflictingIssueTypes.length) {
+                conflictingFields.push({field, issueTypes: conflictingIssueTypes});
+            }
+        }
+        return conflictingFields;
+    };
+
     render() {
         const {fields, values} = this.props;
         const {showCreateRow} = this.state;
 
+        let error = null;
+        const conflictingFields = this.getConflictingFields();
+        if (conflictingFields.length) {
+            error = (
+                <div>
+                    {conflictingFields.map((f) => {
+                        const issueTypeNames = f.issueTypes.map((i) => i.name).join(', ');
+                        const errorMsg = `${f.field.name} is not shown because it does not apply to issue type(s): ${issueTypeNames}.`;
+                        return (
+                            <p key={f.field.key}>
+                                {errorMsg}
+                            </p>
+                        );
+                    })}
+                </div>
+            );
+        }
+
         return (
-            <ul style={{listStyleType: 'none'}}>
-                {values.map((v, i) => {
-                    const field = fields.find((f) => f.key === v.key);
-                    if (!field) {
-                        return null;
-                    }
-                    return (
-                        <li key={i}>
-                            <ChannelSettingsFilter
+            <div>
+                {error}
+                <ul style={{listStyleType: 'none'}}>
+                    {values.map((v, i) => {
+                        const field = fields.find((f) => f.key === v.key);
+                        if (!field) {
+                            return null;
+                        }
+                        return (
+                            <li key={i}>
+                                <ChannelSettingsFilter
+                                    fields={fields}
+                                    field={field}
+                                    value={v}
+                                    chosenIssueTypes={this.props.chosenIssueTypes}
+                                    issueMetadata={this.props.issueMetadata}
+                                    onChange={this.onConfiguredValueChange}
+                                    removeFilter={this.removeFilter}
+                                    theme={this.props.theme}
+                                    addValidate={this.props.addValidate}
+                                    removeValidate={this.props.removeValidate}
+                                />
+                            </li>
+                        );
+                    })}
+                    {showCreateRow && (
+                        <li>
+                            <EmptyChannelSettingsFilter
                                 fields={fields}
-                                field={field}
-                                value={v}
+                                chosenIssueTypes={this.props.chosenIssueTypes}
+                                issueMetadata={this.props.issueMetadata}
                                 onChange={this.onConfiguredValueChange}
-                                removeFilter={this.removeFilter}
                                 theme={this.props.theme}
-                                addValidate={this.props.addValidate}
-                                removeValidate={this.props.removeValidate}
+                                cancelAdd={this.hideNewFilter}
                             />
                         </li>
-                    );
-                })}
-                {showCreateRow && (
-                    <li>
-                        <ChannelSettingsFilter
-                            fields={fields}
-                            field={null}
-                            value={null}
-                            onChange={this.onConfiguredValueChange}
-                            theme={this.props.theme}
-                            removeFilter={this.hideNewFilter}
-                        />
-                    </li>
-                )}
-                <button
-                    onClick={this.addNewFilter}
-                    disabled={showCreateRow}
-                    className='btn btn-info'
-                >
-                    {'Add Filter'}
-                </button>
-            </ul>
+                    )}
+                    <button
+                        onClick={this.addNewFilter}
+                        disabled={showCreateRow}
+                        className='btn btn-info'
+                    >
+                        {'Add Filter'}
+                    </button>
+                </ul>
+            </div>
         );
     }
 }

@@ -106,7 +106,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         }
     };
 
-    handleSettingChange = (id, value) => {
+    handleSettingChange = (id: keyof ChannelSubscriptionFilters, value: string[]) => {
         let finalValue = value;
         if (!finalValue) {
             finalValue = [];
@@ -121,7 +121,6 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
     fetchIssueMetadata = (projectKeys) => {
         this.props.fetchJiraIssueMetadataForProjects(projectKeys).then((fetched) => {
             const state = {fetchingIssueMetadata: false} as State;
-            state.filters = this.updateFilters(projectKeys);
 
             const error = fetched.error || (fetched.data && fetched.data.error);
             if (error) {
@@ -129,38 +128,6 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             }
             this.setState(state);
         });
-    };
-
-    updateFilters = (projects) => {
-        // Remove any irrelevant selected choices from other filters
-        const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, projects);
-        const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, projects);
-
-        const selectedIssueTypes = this.state.filters.issue_types.filter((issueType) => {
-            return Boolean(issueOptions.find((it) => it.value === issueType));
-        });
-
-        const eventUpdatedPrefix = 'event_updated_';
-        const defaultEvents = JiraEventOptions.map((opt) => opt.value);
-        const selectedEventTypes = this.state.filters.events.filter((eventType) => {
-            if (defaultEvents.includes(eventType)) {
-                return true;
-            }
-            if (eventType.startsWith(eventUpdatedPrefix)) {
-                const field = eventType.substring(eventUpdatedPrefix.length);
-                if (customFields.find((customField) => field === customField.value)) {
-                    return true;
-                }
-            }
-            return false;
-        });
-
-        return {
-            projects,
-            issue_types: selectedIssueTypes,
-            events: selectedEventTypes,
-            fields: this.state.filters.fields,
-        };
     };
 
     handleProjectChange = (id, value) => {
@@ -171,7 +138,12 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             projects = [projects];
         }
 
-        const filters = this.updateFilters(projects);
+        const filters = {
+            projects,
+            issue_types: [],
+            events: [],
+            fields: [],
+        };
 
         let fetchingIssueMetadata = false;
 
@@ -235,7 +207,6 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, this.state.filters.projects);
         const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
         const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
-
         const eventOptions = JiraEventOptions.concat(customFields);
 
         let component = null;
@@ -243,7 +214,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             let innerComponent = null;
             if (this.state.fetchingIssueMetadata) {
                 innerComponent = <Loading/>;
-            } else if (this.state.filters.projects[0] && !this.state.getMetaDataErr) {
+            } else if (this.state.filters.projects[0] && !this.state.getMetaDataErr && this.props.jiraIssueMetadata) {
                 innerComponent = (
                     <React.Fragment>
                         <ReactSelectSetting
@@ -271,9 +242,11 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             removeValidate={this.validator.removeComponent}
                         />
                         <ChannelSettingsFilters
-                            theme={this.props.theme}
                             fields={filterFields}
                             values={this.state.filters.fields}
+                            chosenIssueTypes={this.state.filters.issue_types}
+                            issueMetadata={this.props.jiraIssueMetadata}
+                            theme={this.props.theme}
                             onChange={this.handleFilterFieldChange}
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}

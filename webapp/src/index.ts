@@ -1,4 +1,8 @@
 import PluginId from './plugin_id';
 import Plugin from './plugin';
 
-window.registerPlugin(PluginId, new Plugin());
+type WithRegisterPlugin = Window & {
+    registerPlugin: (pluginId: string, plugin: Plugin) => void;
+};
+
+(window as WithRegisterPlugin).registerPlugin(PluginId, new Plugin());

@@ -34,11 +34,14 @@ export type StringField = BaseField;
 
 export type JiraField = SelectField | StringArrayField | StringField;
 
+export type IssueTypeIdentifier = {id: string; name: string};
+
 export type FilterField = {
     key: string;
     name: string;
     values?: ReactSelectOption[];
     userDefined?: boolean;
+    issueTypes: IssueTypeIdentifier[];
 };
 
 export type IssueType = {

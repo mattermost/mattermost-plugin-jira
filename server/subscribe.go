@@ -102,7 +102,7 @@ func (p *Plugin) getUserID() string {
 	return p.getConfig().botUserID
 }
 
-func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
+func (p *Plugin) getChannelsSubscribed(wh *webhook) (StringSet, error) {
 	jwh := wh.JiraWebhook
 	subs, err := p.getSubscriptions()
 	if err != nil {
@@ -112,7 +112,7 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
 	webhookEvents := wh.Events()
 	subIds := subs.Channel.ById
 
-	channelIds := []string{}
+	channelIds := NewStringSet()
 	for _, sub := range subIds {
 		foundEvent := false
 		eventTypes := sub.Filters.Events
@@ -157,7 +157,7 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
 			continue
 		}
 
-		channelIds = append(channelIds, sub.ChannelId)
+		channelIds = channelIds.Add(sub.ChannelId)
 	}
 
 	return channelIds, nil
