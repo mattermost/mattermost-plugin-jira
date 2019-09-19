@@ -55,13 +55,6 @@ type externalConfig struct {
 
 	// Disable statistics gathering
 	DisableStats bool `json:"disable_stats"`
-
-	// Not exposed in the UI, used by `/jira stats` command
-	DebugUserId          string
-	DebugLogErrors       bool
-	DebugUnknownWebhooks string
-	DebugStatsInterval   string
-	DebugStatsPattern    string
 }
 
 const currentInstanceTTL = 1 * time.Second
