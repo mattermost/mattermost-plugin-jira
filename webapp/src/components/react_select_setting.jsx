@@ -27,6 +27,7 @@ export default class ReactSelectSetting extends React.PureComponent {
         removeValidate: PropTypes.func,
         required: PropTypes.bool,
         allowUserDefinedValue: PropTypes.bool,
+        limitOptions: PropTypes.bool,
     };
 
     constructor(props) {
@@ -100,14 +101,10 @@ export default class ReactSelectSetting extends React.PureComponent {
             );
         }
 
-        const Select = this.props.options.length > MAX_NUM_OPTIONS ? AsyncSelect : ReactSelect;
-
-        return (
-            <Setting
-                inputId={this.props.name}
-                {...this.props}
-            >
-                <Select
+        let selectComponent = null;
+        if (this.props.limitOptions) {
+            selectComponent = (
+                <AsyncSelect
                     {...this.props}
                     loadOptions={this.filterOptions}
                     defaultOptions={true}
@@ -116,6 +113,25 @@ export default class ReactSelectSetting extends React.PureComponent {
                     onChange={this.handleChange}
                     styles={getStyleForReactSelect(this.props.theme)}
                 />
+            );
+        } else {
+            selectComponent = (
+                <ReactSelect
+                    {...this.props}
+                    menuPortalTarget={document.body}
+                    menuPlacement='auto'
+                    onChange={this.handleChange}
+                    styles={getStyleForReactSelect(this.props.theme)}
+                />
+            );
+        }
+
+        return (
+            <Setting
+                inputId={this.props.name}
+                {...this.props}
+            >
+                {selectComponent}
                 {validationError}
             </Setting>
         );

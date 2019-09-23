@@ -338,6 +338,7 @@ export default class CreateIssueModal extends PureComponent {
                         value={projectOptions.find((option) => option.value === this.state.projectKey)}
                         addValidate={this.validator.addComponent}
                         removeValidate={this.validator.removeComponent}
+                        limitOptions={true}
                     />
                     <ReactSelectSetting
                         name={'issue_type'}

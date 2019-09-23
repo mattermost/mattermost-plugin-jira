@@ -268,6 +268,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                         value={projectOptions.filter((option) => this.state.filters.projects.includes(option.value))}
                         addValidate={this.validator.addComponent}
                         removeValidate={this.validator.removeComponent}
+                        limitOptions={true}
                     />
                     {innerComponent}
                 </div>
