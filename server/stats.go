@@ -9,16 +9,11 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 )
 
-const statsAutosaveInterval = 1 * time.Hour
+const statsAutosaveInterval = 1 * time.Minute
+
+// const statsAutosaveInterval = 1 * time.Hour
 
 var initStatsOnce sync.Once
-
-type stats struct {
-	*expvar.Stats
-	jira             *expvar.Service
-	legacyWebhook    *expvar.Service
-	subscribeWebhook *expvar.Service
-}
 
 func (p *Plugin) initStats() {
 	conf := p.getConfig()
@@ -32,26 +27,23 @@ func (p *Plugin) initStats() {
 	if appErr != nil {
 		return
 	}
-
-	expstats := expvar.NewStatsFromData(data, statsAutosaveInterval, p.saveStatsF)
-
-	stats := stats{
-		jira:             expstats.EnsureService("api/jira", false),
-		legacyWebhook:    expstats.EnsureService("webhook/jira/legacy", false),
-		subscribeWebhook: expstats.EnsureService("webhook/jira/subscribe", true),
-		Stats:            expstats,
-	}
+	stats := expvar.NewStatsFromData(data)
 
 	p.updateConfig(func(conf *config) {
 		initStatsOnce.Do(func() {
-			if conf.DisableStats || conf.stats != nil {
-				return
+			if !conf.DisableStats {
+				conf.stats = stats
+				conf.webhookResponseStats = stats.Endpoint("jira/webhook")
+				conf.subscribeResponseStats = stats.Endpoint("jira/subscribe/response")
+				conf.subscribeProcessingStats = stats.Endpoint("jira/subscribe/processing")
 			}
-			conf.stats = &stats
 		})
 	})
 
-	p.initUserCounter()
+	initUserCounter(p.currentInstanceStore, p.userStore)
+	initUptime()
+
+	go stats.Autosave(statsAutosaveInterval, p.saveStatsF)
 }
 
 func (p *Plugin) saveStatsF(data []byte) {
@@ -75,23 +67,37 @@ func (p *Plugin) resetStats() error {
 		return appErr
 	}
 
-	stats.jira = stats.EnsureService("api/jira", false)
-	stats.legacyWebhook = stats.EnsureService("webhook/jira/legacy", false)
-	stats.subscribeWebhook = stats.EnsureService("webhook/jira/subscribe", true)
+	p.updateConfig(func(conf *config) {
+		if conf.stats != nil {
+			conf.webhookResponseStats = stats.Endpoint("jira/webhook")
+			conf.subscribeResponseStats = stats.Endpoint("jira/subscribe/response")
+			conf.subscribeProcessingStats = stats.Endpoint("jira/subscribe/processing")
+		}
+	})
 
 	return nil
 }
 
-func (p *Plugin) initUserCounter() {
-	goexpvar.Publish("counters/mapped_users", goexpvar.Func(func() interface{} {
-		ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+func initUserCounter(currentInstanceStore CurrentInstanceStore, userStore UserStore) {
+	goexpvar.Publish("jira/mapped_users", goexpvar.Func(func() interface{} {
+		ji, err := currentInstanceStore.LoadCurrentJIRAInstance()
 		if err != nil {
 			return err.Error()
 		}
-		c, err := p.userStore.CountUsers(ji)
+		c, err := userStore.CountUsers(ji)
 		if err != nil {
 			return err.Error()
 		}
 		return c
+	}))
+}
+
+var startedAt = time.Now()
+
+// EnsureUptime adds an "uptime" expvar
+func initUptime() {
+	goexpvar.Publish("uptime", goexpvar.Func(func() interface{} {
+		up := (time.Since(startedAt) + time.Second/2) / time.Second * time.Second
+		return up.String()
 	}))
 }

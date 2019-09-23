@@ -6,47 +6,88 @@ import (
 	"fmt"
 	"math/rand"
 	"regexp"
+	"sync"
 	"time"
 )
 
 const statsSaveMaxDither = 10 // seconds
 
-// Stats is a collection of Service metrics that can be persisted to/loaded
-// from a store.
 type Stats struct {
-	Services map[string]*Service
+	disableExpvars bool
+	endpoints      sync.Map // *Endpoint
 }
 
 // NewStatsFromData creates and initializes a new Stats, from previously
 // serialized data. If it fails to unmarshal the data, it returns an empty Stats.
 // If saveInterval and savef are provided, it starts the autosave goroutine for
 // the stats.
-func NewStatsFromData(data []byte, saveInterval time.Duration, savef func([]byte)) *Stats {
-	// ignore the error - just return an empty set if failed to unmarshal
+func NewStatsFromData(data []byte) *Stats {
 	stats := Stats{}
 	json.Unmarshal(data, &stats)
-	if stats.Services == nil {
-		stats.Services = map[string]*Service{}
-	}
-	for _, service := range stats.Services {
-		service.Init()
-	}
-
-	// autosave
-	if saveInterval > 0 && savef != nil {
-		go func() {
-			r := rand.New(rand.NewSource(time.Now().UnixNano()))
-			dither := time.Duration(r.Intn(statsSaveMaxDither)) * time.Second
-			time.Sleep(dither)
-
-			ticker := time.NewTicker(saveInterval)
-			for range ticker.C {
-				stats.Save(savef)
-			}
-		}()
-	}
-
+	stats.Do(func(name string, e *Endpoint) {
+		e = stats.ensureEndpoint(name, e, false)
+		e.publishExpvar()
+	})
 	return &stats
+}
+
+func newUnpublishedStats(data []byte, disableExpvars bool) *Stats {
+	// ignore the error - just return an empty set if failed to unmarshal
+	stats := Stats{
+		disableExpvars: disableExpvars,
+	}
+	json.Unmarshal(data, &stats)
+	stats.Do(func(name string, e *Endpoint) {
+		stats.ensureEndpoint(name, e, disableExpvars)
+	})
+	return &stats
+}
+
+func (stats *Stats) ensureEndpoint(name string, initialValue *Endpoint, disableExpvar bool) *Endpoint {
+	if initialValue == nil {
+		// Make an Endpoint, but don't publish to expvar just yet
+		initialValue = newEndpoint(name)
+	}
+	ifc, loaded := stats.endpoints.LoadOrStore(name, initialValue)
+	e := ifc.(*Endpoint)
+
+	fmt.Printf("<><> ensureEndpoint %q, %v %v\n", name, loaded, disableExpvar)
+
+	// Publish the expvar 1-time only,
+	if !loaded && !disableExpvar {
+		e.publishExpvar()
+	}
+	return e
+}
+
+func (stats *Stats) Do(f func(name string, e *Endpoint)) {
+	stats.endpoints.Range(func(key, value interface{}) bool {
+		name := key.(string)
+		e := value.(*Endpoint)
+		f(name, e)
+		return true
+	})
+}
+
+func (stats *Stats) Endpoint(name string) *Endpoint {
+	e := stats.ensureEndpoint(name, nil, stats.disableExpvars)
+	return e
+}
+
+// To save the stats periodically, use `go Autosave(...)``
+func (stats *Stats) Autosave(saveInterval time.Duration, savef func([]byte)) {
+	if saveInterval <= 0 || savef == nil {
+		return
+	}
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	dither := time.Duration(r.Intn(statsSaveMaxDither)) * time.Second
+	time.Sleep(dither)
+
+	ticker := time.NewTicker(saveInterval)
+	for range ticker.C {
+		stats.Save(savef)
+	}
 }
 
 func (stats *Stats) Save(savef func([]byte)) {
@@ -58,25 +99,35 @@ func (stats *Stats) Save(savef func([]byte)) {
 }
 
 func (stats *Stats) Reset() {
-	for _, service := range stats.Services {
-		service.Reset()
-	}
-	stats.Services = map[string]*Service{}
+	stats.Do(func(name string, e *Endpoint) {
+		e.Reset()
+	})
 }
 
-// EnsureService makes sure that a service is registered in Stats in case it
-// was not present in the initial configuration.
-func (stats *Stats) EnsureService(name string, isAsync bool) *Service {
-	service := stats.Services[name]
-	if service == nil {
-		service = NewService(name, isAsync)
-		stats.Services[name] = service
-	}
-	return service
+// MarshalJSON implements json.Marshaller.
+func (stats *Stats) MarshalJSON() ([]byte, error) {
+	v := map[string]*Endpoint{}
+	stats.Do(func(name string, e *Endpoint) {
+		v[name] = e
+	})
+	return json.Marshal(v)
 }
 
-// PrintStats outputs all expvars that match pattern, as markdown
-func PrintStats(pattern string) (string, error) {
+// UnmarshalJSON implements json.Unmarshaller.
+// func (stats *Stats) UnmarshalJSON(data []byte) error {
+// 	v := map[string]*Endpoint{}
+// 	err := json.Unmarshal(data, &v)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	for k, e := range v {
+// 		stats.endpoints.Store(k, e)
+// 	}
+// 	return nil
+// }
+
+// PrintExpvars outputs all expvars that match pattern, as markdown
+func PrintExpvars(pattern string) (string, error) {
 	var re *regexp.Regexp
 	var err error
 

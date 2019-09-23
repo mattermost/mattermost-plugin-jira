@@ -1,49 +1,31 @@
 package expvar
 
 import (
-	"expvar"
-	"fmt"
+	"encoding/json"
 	"testing"
+	"time"
 
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/stretchr/testify/require"
 )
 
 func TestStats(t *testing.T) {
-	name := fmt.Sprintf("test_%v", uuid.New().String())
-	e := NewService(name, true)
-	require.NotNil(t, e)
-	require.NotNil(t, expvar.Get(name+"/_all/response"))
-	require.NotNil(t, expvar.Get(name+"/_all/processing"))
-
-	name = fmt.Sprintf("test_%v", uuid.New().String())
-	e = NewService(name, false)
-	require.NotNil(t, e)
-	require.NotNil(t, expvar.Get(name+"/_all/response"))
-	require.Nil(t, expvar.Get(name+"/_all/processing"))
-}
-
-func TestInitEndpointVar(t *testing.T) {
-	for _, isAsync := range []bool{true, false} {
-		t.Run(fmt.Sprint(isAsync),
-			func(t *testing.T) {
-				name := fmt.Sprintf("test_%v", uuid.New().String())
-				e := NewService(name, isAsync)
-				require.NotNil(t, e)
-				require.Equal(t, e.IsAsync, isAsync)
-				e.Response("myapi", 100, 100, false, false)
-				e.Processing("myapi", 100, false, false)
-				require.NotNil(t, expvar.Get(name+"/myapi/response"))
-				require.Equal(t, isAsync, expvar.Get(name+"/myapi/processing") != nil)
-				assert.Nil(t, expvar.Get(name+"/myapi"))
-				assert.Nil(t, expvar.Get(name+"/response"))
-				assert.Nil(t, expvar.Get(name+"/processing"))
-
-				assert.NotEqual(t, "{}", expvar.Get(name+"/myapi/response").String())
-				if isAsync {
-					assert.NotEqual(t, "{}", expvar.Get(name+"/myapi/processing").String())
-				}
-			})
+	stats := newStatsFromData(nil, true)
+	for _, s := range sample {
+		stats.Endpoint("myapi1").Record(utils.ByteSize(s.size), time.Duration(s.elapsed)*time.Millisecond, s.isError, s.isIgnored)
+		stats.Endpoint("myapi2").Record(utils.ByteSize(s.size), time.Duration(s.elapsed)*time.Millisecond, s.isError, s.isIgnored)
+		stats.Endpoint("myapi3").Record(utils.ByteSize(s.size), time.Duration(s.elapsed)*time.Millisecond, s.isError, s.isIgnored)
 	}
+	checkSample(t, stats.Endpoint("myapi1"))
+	checkSample(t, stats.Endpoint("myapi2"))
+	checkSample(t, stats.Endpoint("myapi3"))
+
+	data, err := json.Marshal(stats)
+	require.NoError(t, err)
+	require.NotEmpty(t, data)
+
+	stats = newStatsFromData(data, true)
+	checkSample(t, stats.Endpoint("myapi1"))
+	checkSample(t, stats.Endpoint("myapi2"))
+	checkSample(t, stats.Endpoint("myapi3"))
 }

@@ -341,8 +341,9 @@ func endpointURL(endpoint string) (string, error) {
 	return endpoint, nil
 }
 
-func endpointFromRequest(r *http.Request) string {
+func endpointNameFromRequest(r *http.Request) string {
 	l := strings.ToLower(r.URL.Path)
+	fmt.Println("<><> ", l)
 	s := strings.TrimLeft(l, "/rest/api")
 	if s == l {
 		return "_unrecognized"
@@ -350,11 +351,11 @@ func endpointFromRequest(r *http.Request) string {
 	parts := strings.Split(s, "/")
 	n := len(parts)
 
-	// the first 2 parts must be /<version>/<service>
+	// prefix with  api/<version>/<service>
 	if n < 2 {
 		return "_unrecognized"
 	}
-	var out = parts[0:2]
+	var out = []string{"api/jira", parts[0], parts[1]}
 	entity := parts[1]
 	for _, p := range parts[2:] {
 		switch entity {

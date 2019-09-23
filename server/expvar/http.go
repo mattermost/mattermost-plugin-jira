@@ -10,9 +10,9 @@ import (
 
 type roundtripper struct {
 	http.RoundTripper
-	limit               utils.ByteSize
-	stats               *Service
-	endpointFromRequest func(*http.Request) string
+	limit                   utils.ByteSize
+	endpointNameFromRequest func(*http.Request) string
+	stats                   *Stats
 }
 
 type readCloser struct {
@@ -20,41 +20,59 @@ type readCloser struct {
 	read      utils.ByteSize
 	remaining utils.ByteSize
 	start     time.Time
-	name      string
-	stats     *Service
+	endpoint  *Endpoint
 }
 
-func WrapHTTPClient(c *http.Client, limit utils.ByteSize, stats *Service, endpointFromRequest func(*http.Request) string) *http.Client {
+func WrapHTTPClient(c *http.Client, limit utils.ByteSize, stats *Stats, endpointNameFromRequest func(*http.Request) string) *http.Client {
+	return wrapHTTPClient(c, limit, stats, endpointNameFromRequest, false)
+}
+
+func wrapHTTPClient(c *http.Client, limit utils.ByteSize, stats *Stats, endpointNameFromRequest func(*http.Request) string, disableExpvars bool) *http.Client {
 	client := *c
 	rt := c.Transport
 	if rt == nil {
 		rt = http.DefaultTransport
 	}
 	client.Transport = roundtripper{
-		RoundTripper:        rt,
-		limit:               limit,
-		stats:               stats,
-		endpointFromRequest: endpointFromRequest,
+		RoundTripper:            rt,
+		limit:                   limit,
+		stats:                   stats,
+		endpointNameFromRequest: endpointNameFromRequest,
 	}
 	return &client
 }
 
 func (rt roundtripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	start := time.Now()
+	var endpoint *Endpoint
+	endpointName := ""
+
+	if rt.stats != nil && rt.endpointNameFromRequest != nil {
+		endpointName = rt.endpointNameFromRequest(r)
+		endpoint = rt.stats.Endpoint(endpointName)
+	}
+
 	resp, err := rt.RoundTripper.RoundTrip(r)
 	if err != nil || resp == nil || resp.Body == nil {
-		rt.stats.Response(
-			rt.endpointFromRequest(r), 0, time.Since(start), true, false)
+		endpoint.Record(0, time.Since(start), true, false)
 		return resp, err
 	}
+
 	resp.Body = &readCloser{
 		inner:     resp.Body,
 		remaining: rt.limit,
 		start:     start,
-		name:      rt.endpointFromRequest(r),
-		stats:     rt.stats,
+		endpoint:  endpoint,
 	}
 	return resp, err
+}
+
+func (r *readCloser) Close() error {
+	err := r.inner.Close()
+	if r.endpoint != nil {
+		r.endpoint.Record(r.read, time.Since(r.start), err != nil, false)
+	}
+	return err
 }
 
 func (r *readCloser) Read(data []byte) (int, error) {
@@ -68,12 +86,4 @@ func (r *readCloser) Read(data []byte) (int, error) {
 	r.remaining -= utils.ByteSize(n)
 	r.read += utils.ByteSize(n)
 	return n, err
-}
-
-func (r *readCloser) Close() error {
-	err := r.inner.Close()
-	if r.stats != nil {
-		r.stats.Response(r.name, r.read, time.Since(r.start), err != nil, false)
-	}
-	return err
 }

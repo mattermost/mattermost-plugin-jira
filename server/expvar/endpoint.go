@@ -5,14 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"expvar"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/circonus-labs/circonusllhist"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
-
-var endpoints = sync.Map{} // *Var
 
 // Endpoint implements a expvar.Var and json.[Un-]Marshaller interfaces.
 // Its String() method returns aggregated values, the JSON methods serialize
@@ -21,10 +20,7 @@ var endpoints = sync.Map{} // *Var
 // data in goroutines.
 type Endpoint struct {
 	lock *sync.RWMutex
-	endpoint
-}
 
-type endpoint struct {
 	Name    string
 	Total   int64
 	Errors  int64
@@ -33,30 +29,25 @@ type endpoint struct {
 	Size    *circonusllhist.Histogram // byte sizes
 }
 
-// NewEndpoint creates and publishes a new expvar for the endpoint. Unlike the
-// rest of the expvar.New functions, this can be called repeteadly for the same
-// name and will return the same Var pointer for it.
 func NewEndpoint(name string) *Endpoint {
-	return initEndpoint(name, nil, false)
+	e := newEndpoint(name)
+	e.publishExpvar()
+	return e
 }
 
-func initEndpoint(name string, e *Endpoint, disablePublish bool) *Endpoint {
-	if e == nil {
-		e = &Endpoint{
-			lock: &sync.RWMutex{},
-			endpoint: endpoint{
-				Name:    name,
-				Elapsed: circonusllhist.NewNoLocks(),
-				Size:    circonusllhist.NewNoLocks(),
-			},
-		}
-	}
-	ifc, loaded := endpoints.LoadOrStore(name, e)
-	e = ifc.(*Endpoint)
-	if !loaded && !disablePublish {
-		expvar.Publish(name, e)
+func newEndpoint(name string) *Endpoint {
+	e := &Endpoint{
+		lock:    &sync.RWMutex{},
+		Name:    name,
+		Elapsed: circonusllhist.NewNoLocks(),
+		Size:    circonusllhist.NewNoLocks(),
 	}
 	return e
+}
+
+func (e *Endpoint) publishExpvar() {
+	fmt.Printf("<><> publishExpvar %q, %v\n", e.Name, e)
+	expvar.Publish(e.Name, e)
 }
 
 // Reset clears all values in the endpoint

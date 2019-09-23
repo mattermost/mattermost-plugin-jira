@@ -19,6 +19,7 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
@@ -76,7 +77,10 @@ type config struct {
 	// Maximum attachment size allowed to be uploaded to Jira
 	maxAttachmentSize utils.ByteSize
 
-	stats *stats
+	stats                    *expvar.Stats
+	webhookResponseStats     *expvar.Endpoint
+	subscribeResponseStats   *expvar.Endpoint
+	subscribeProcessingStats *expvar.Endpoint
 }
 
 type Plugin struct {

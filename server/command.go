@@ -581,7 +581,7 @@ func executeStats(p *Plugin, c *plugin.Context, header *model.CommandArgs, args 
 		manifest.Version, BuildHashShort, BuildHash, BuildDate)
 
 	pattern := strings.Join(args, " ")
-	rstats, err := expvar.PrintStats(pattern)
+	rstats, err := expvar.PrintExpvars(pattern)
 	if err != nil {
 		return p.responsef(header, "%v", err)
 	}

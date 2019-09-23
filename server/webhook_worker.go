@@ -5,6 +5,8 @@ package main
 
 import (
 	"time"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
 type webhookWorker struct {
@@ -30,9 +32,8 @@ func (ww webhookWorker) process(rawData []byte) (err error) {
 			isError = true
 		}
 
-		if conf.stats != nil {
-			conf.stats.subscribeWebhook.Processing("",
-				time.Since(start), isError, isIgnored)
+		if conf.subscribeProcessingStats != nil {
+			conf.subscribeProcessingStats.Record(utils.ByteSize(len(rawData)), time.Since(start), isError, isIgnored)
 		}
 	}()
 

@@ -15,11 +15,16 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
-func TestNewEndpoint(t *testing.T) {
+func newTestEndpoint(t testing.TB) *Endpoint {
 	name := fmt.Sprintf("test_%v", uuid.New().String())
 	e := NewEndpoint(name)
 	require.NotNil(t, e)
-	p := expvar.Get(name)
+	return e
+}
+
+func TestNewEndpoint(t *testing.T) {
+	e := newTestEndpoint(t)
+	p := expvar.Get(e.Name)
 	require.Equal(t, e, p)
 	require.Equal(t, `{}`, e.String())
 }
@@ -30,18 +35,13 @@ func TestEndpointNilString(t *testing.T) {
 }
 
 func TestEndpointRecord(t *testing.T) {
-	name := fmt.Sprintf("test_%v", uuid.New().String())
-	e := initEndpoint(name, nil, true)
-	require.NotNil(t, e)
-
+	e := newTestEndpoint(t)
 	recordSampleToEndpoint(t, e)
-	checkSample(t, e)
+	checkSampleRecorded(t, e)
 }
 
 func TestEndpointUnmarshal(t *testing.T) {
-	name := fmt.Sprintf("test_%v", uuid.New().String())
-	e := NewEndpoint(name)
-	require.NotNil(t, e)
+	e := newTestEndpoint(t)
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < 10; i++ {
@@ -100,6 +100,10 @@ func checkSample(t testing.TB, e *Endpoint) {
 	require.Equal(t, sampleErrors, e.Errors)
 	require.Equal(t, sampleIgnored, e.Ignored)
 	require.Equal(t, sampleTotal, e.Total)
+}
+
+func checkSampleRecorded(t testing.TB, e *Endpoint) {
+	checkSample(t, e)
 	require.Equal(t, sampleElapsed, jsonString(t, e.Elapsed))
 	require.Equal(t, sampleSize, jsonString(t, e.Size))
 }
