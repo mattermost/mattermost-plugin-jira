@@ -50,8 +50,13 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                 </button>
                 {errorDisplay}
                 {this.props.channelSubscriptions.map((sub) => (
-                    <div key={sub.id}>
-                        <span>{sub.id}</span>
+                    <div
+                        key={sub.id}
+                        className='select-channel-subscriptions-row'
+                    >
+                        <div className='channel-subscription-id-container'>
+                            <span>{sub.id}</span>
+                        </div>
                         <button
                             className='btn btn-info'
                             onClick={(): void => this.props.showEditChannelSubscription(sub)}

@@ -612,70 +612,59 @@ func getPermaLink(ji Instance, postId string, currentTeam string) string {
 	return fmt.Sprintf("%v/%v/pl/%v", ji.GetPlugin().GetSiteURL(), currentTeam, postId)
 }
 
-func getIssueCustomFieldValue(issue *jira.Issue, key string) []string {
+func getIssueCustomFieldValue(issue *jira.Issue, key string) StringSet {
 	m, exists := issue.Fields.Unknowns.Value(key)
 	if !exists || m == nil {
 		return nil
 	}
 
-	// string value
-	value, ok := m.(string)
-	if ok {
-		return []string{value}
-	}
-
-	// array of strings
-	arr, ok := m.([]string)
-	if ok {
-		return arr
-	}
-
-	// multi-select value
-	// Checkboxes, multi-select
-	multi, ok := m.([]interface{})
-	if ok {
-		result := []string{}
-		for _, v := range multi {
-			obj, ok2 := v.(map[string]interface{})
-			if !ok2 {
+	switch value := m.(type) {
+	case string:
+		return NewStringSet(value)
+	case []string:
+		return NewStringSet(value...)
+	case []interface{}:
+		// multi-select value
+		// Checkboxes, multi-select dropdown
+		result := NewStringSet()
+		for _, v := range value {
+			obj, ok := v.(map[string]interface{})
+			if !ok {
 				return nil
 			}
-			id, ok3 := obj["id"].(string)
-			if !ok3 {
+			id, ok := obj["id"].(string)
+			if !ok {
 				return nil
 			}
-			result = append(result, id)
+			result = result.Add(id)
 		}
 		return result
-	}
-
-	// single-select value
-	// Radio buttons, single-select
-	single, ok := m.(map[string]interface{})
-	if ok {
-		id, ok2 := single["id"].(string)
-		if !ok2 {
+	case map[string]interface{}:
+		// single-select value
+		// Radio buttons, single-select dropdown
+		id, ok := value["id"].(string)
+		if !ok {
 			return nil
 		}
-		return []string{id}
+		return NewStringSet(id)
 	}
 
 	return nil
 }
 
-func getIssueFieldValue(issue *jira.Issue, key string) []string {
+func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 	key = strings.ToLower(key)
 	switch key {
 	case "status":
-		return []string{issue.Fields.Status.ID}
+		return NewStringSet(issue.Fields.Status.ID)
 	case "labels":
-		return issue.Fields.Labels
+		return NewStringSet(issue.Fields.Labels...)
 	case "priority":
-		return []string{issue.Fields.Priority.ID}
+		return NewStringSet(issue.Fields.Priority.ID)
 	case "fixversions":
-		result := []string{}
+		result := NewStringSet()
 		for _, v := range issue.Fields.FixVersions {
-			result = append(result, v.ID)
+			result = result.Add(v.ID)
 		}
 		return result
 	default:

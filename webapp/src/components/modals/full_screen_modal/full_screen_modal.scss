@@ -1,3 +1,5 @@
+$full-screen-modal-transition: 100ms;
+
 .FullScreenModal {
     position: fixed;
     top: 0;
@@ -31,13 +33,13 @@
     }
     &-enter-active, &-appear-active {
         opacity: 1;
-        transition: opacity 100ms;
+        transition: opacity $full-screen-modal-transition;
     }
     &-exit {
         opacity: 1;
     }
     &-exit-active {
         opacity: 0;
-        transition: opacity 100ms;
+        transition: opacity $full-screen-modal-transition;
     }
 }

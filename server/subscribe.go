@@ -18,12 +18,16 @@ import (
 
 const (
 	JIRA_SUBSCRIPTIONS_KEY = "jirasub"
+
+	FILTER_INCLUDE_ANY = "include_any"
+	FILTER_INCLUDE_ALL = "include_all"
+	FILTER_EXCLUDE_ANY = "exclude_any"
 )
 
 type FieldFilter struct {
-	Key     string    `json:"key"`
-	Exclude bool      `json:"exclude"`
-	Values  StringSet `json:"values"`
+	Key       string    `json:"key"`
+	Inclusion string    `json:"inclusion"`
+	Values    StringSet `json:"values"`
 }
 
 type SubscriptionFilters struct {
@@ -58,7 +62,7 @@ func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
 
 	s.IdByChannelId[sub.ChannelId] = s.IdByChannelId[sub.ChannelId].Subtract(sub.Id)
 
-	for _, event := range sub.Filters.Events.Elems(false) {
+	for _, event := range sub.Filters.Events.Elems() {
 		s.IdByEvent[event] = s.IdByEvent[event].Subtract(sub.Id)
 	}
 }
@@ -66,7 +70,7 @@ func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
 func (s *ChannelSubscriptions) add(newSubscription *ChannelSubscription) {
 	s.ById[newSubscription.Id] = *newSubscription
 	s.IdByChannelId[newSubscription.ChannelId] = s.IdByChannelId[newSubscription.ChannelId].Add(newSubscription.Id)
-	for _, event := range newSubscription.Filters.Events.Elems(false) {
+	for _, event := range newSubscription.Filters.Events.Elems() {
 		s.IdByEvent[event] = s.IdByEvent[event].Add(newSubscription.Id)
 	}
 }
@@ -119,7 +123,7 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) (StringSet, error) {
 		if eventTypes.Intersection(webhookEvents).Len() > 0 {
 			foundEvent = true
 		} else if eventTypes.ContainsAny(eventUpdatedAny) {
-			for _, eventType := range webhookEvents.Elems(false) {
+			for _, eventType := range webhookEvents.Elems() {
 				if strings.HasPrefix(eventType, "event_updated") {
 					foundEvent = true
 				}
@@ -138,22 +142,28 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) (StringSet, error) {
 			continue
 		}
 
-		fieldsMatch := true
+		validFilter := true
 
 		for _, field := range sub.Filters.Fields {
-			if field.Values.Len() == 0 {
-				continue
+			// Broken filter, values must be provided
+			if field.Values.Len() == 0 || field.Inclusion == "" {
+				validFilter = false
+				break
 			}
 
 			value := getIssueFieldValue(&jwh.Issue, field.Key)
-			contains := field.Values.ContainsAny(value...)
-			if (!contains && field.Exclude == false) || (contains && field.Exclude == true) {
-				fieldsMatch = false
+			containsAny := value.ContainsAny(field.Values.Elems()...)
+			containsAll := value.ContainsAll(field.Values.Elems()...)
+
+			if (field.Inclusion == FILTER_INCLUDE_ANY && !containsAny) ||
+				(field.Inclusion == FILTER_INCLUDE_ALL && !containsAll) ||
+				(field.Inclusion == FILTER_EXCLUDE_ANY && containsAny) {
+				validFilter = false
 				break
 			}
 		}
 
-		if !fieldsMatch {
+		if !validFilter {
 			continue
 		}
 
@@ -184,7 +194,7 @@ func (p *Plugin) getSubscriptionsForChannel(channelId string) ([]ChannelSubscrip
 	}
 
 	channelSubscriptions := []ChannelSubscription{}
-	for _, channelSubscriptionId := range subs.Channel.IdByChannelId[channelId].Elems(false) {
+	for _, channelSubscriptionId := range subs.Channel.IdByChannelId[channelId].Elems() {
 		channelSubscriptions = append(channelSubscriptions, subs.Channel.ById[channelSubscriptionId])
 	}
 

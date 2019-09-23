@@ -65,10 +65,16 @@ export type ProjectMetadata = {
     issues_per_project: {[key: string]: ReactSelectOption[]};
 }
 
+export enum FilterFieldInclusion {
+    INCLUDE_ANY = 'include_any',
+    INCLUDE_ALL = 'include_all',
+    EXCLUDE_ANY = 'exclude_any',
+}
+
 export type FilterValue = {
     key: string;
     values: string[];
-    exclude: boolean;
+    inclusion: FilterFieldInclusion;
 }
 
 export type ChannelSubscriptionFilters = {

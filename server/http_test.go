@@ -110,7 +110,7 @@ func checkHasSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 
 				// Check it's properly attached
 				assert.Contains(t, savedSubs.Channel.IdByChannelId[foundSub.ChannelId], foundSub.Id)
-				for _, event := range foundSub.Filters.Events.Elems(false) {
+				for _, event := range foundSub.Filters.Events.Elems() {
 					assert.Contains(t, savedSubs.Channel.IdByEvent[event], foundSub.Id)
 				}
 			}

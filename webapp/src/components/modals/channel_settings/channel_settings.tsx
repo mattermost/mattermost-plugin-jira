@@ -11,6 +11,8 @@ import FullScreenModal from '../full_screen_modal/full_screen_modal';
 
 import ChannelSettingsModalInner from './channel_settings_internal';
 
+import './channel_settings_modal.scss';
+
 export default class ChannelSettingsModal extends PureComponent {
     static propTypes = {
         close: PropTypes.func.isRequired,
@@ -58,7 +60,11 @@ export default class ChannelSettingsModal extends PureComponent {
                 show={Boolean(this.props.channel)}
                 onClose={this.handleClose}
             >
-                {inner}
+                <div className='channel-subscriptions-modal'>
+                    <div className='channel-subscriptions-modal-body'>
+                        {inner}
+                    </div>
+                </div>
             </FullScreenModal>
         );
     }

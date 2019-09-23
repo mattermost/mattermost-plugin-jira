@@ -2,7 +2,7 @@ import React from 'react';
 
 import ReactSelectSetting from 'components/react_select_setting';
 
-import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType} from 'types/model';
+import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 
 type ChannelSettingsFilterProps = {
     fields: FilterField[];
@@ -26,20 +26,19 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         this.props.removeValidate(null, this.isValid);
     }
 
-    handleExcludeChange = (name: string, choice: string): void => {
+    handleInclusionChange = (name: string, choice: FilterFieldInclusion): void => {
         const {onChange, value} = this.props;
 
-        const newValue = choice === '1';
-        onChange(value, {...value, exclude: newValue});
+        onChange(value, {...value, inclusion: choice});
     };
 
     handleFieldTypeChange = (name: string, choice: string): void => {
         const {onChange, value} = this.props;
 
-        onChange(value, {...value, values: [], key: choice, exclude: false});
+        onChange(value, {...value, values: [], key: choice, inclusion: FilterFieldInclusion.INCLUDE_ANY});
     };
 
-    handleFieldValueChange = (name: string, values: string[]): void => {
+    handleFieldValuesChange = (name: string, values: string[]): void => {
         const {onChange, value} = this.props;
 
         const newValues = values || [];
@@ -64,7 +63,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         return conflictingIssueTypes;
     };
 
-    isOptionDisabled = (option: ReactSelectOption) => {
+    isOptionDisabled = (option: ReactSelectOption): boolean => {
         return false;
     }
 
@@ -96,16 +95,17 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         }));
         let chosenFieldType = null;
 
-        const excludeSelectOptions = [
-            {label: 'Include', value: '0'},
-            {label: 'Exclude', value: '1'},
+        const inclusionSelectOptions: ReactSelectOption[] = [
+            {label: 'Include', value: FilterFieldInclusion.INCLUDE_ANY},
+            {label: 'Include All', value: FilterFieldInclusion.INCLUDE_ALL},
+            {label: 'Exclude', value: FilterFieldInclusion.EXCLUDE_ANY},
         ];
-        let chosenExcludeValue = excludeSelectOptions[0];
+        let chosenInclusionOption = inclusionSelectOptions[0];
 
         const fieldValueOptions = (field && field.values) || [];
 
         if (field && value) {
-            chosenExcludeValue = value.exclude ? excludeSelectOptions[1] : excludeSelectOptions[0];
+            chosenInclusionOption = inclusionSelectOptions.find((opt) => opt.value === value.inclusion) as ReactSelectOption;
             chosenFieldType = fieldTypeOptions.find((option) => option.value === value.key);
             if (field.userDefined) {
                 chosenFieldValues = value.values.map((option) => ({
@@ -166,9 +166,9 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                         name={'exclude'}
                         required={true}
                         hideRequiredStar={true}
-                        options={excludeSelectOptions}
-                        onChange={this.handleExcludeChange}
-                        value={chosenExcludeValue}
+                        options={inclusionSelectOptions}
+                        onChange={this.handleInclusionChange}
+                        value={chosenInclusionOption}
                         theme={theme}
                         addValidate={this.props.addValidate}
                         removeValidate={this.props.removeValidate}
@@ -181,7 +181,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                         hideRequiredStar={true}
                         options={fieldValueOptions}
                         theme={theme}
-                        onChange={this.handleFieldValueChange}
+                        onChange={this.handleFieldValuesChange}
                         value={chosenFieldValues}
                         isMulti={true}
                         addValidate={this.props.addValidate}
@@ -204,11 +204,11 @@ type EmptyChannelSettingsFilterProps = {
     cancelAdd: () => void;
 };
 
-export function EmptyChannelSettingsFilter(props: EmptyChannelSettingsFilterProps) {
+export function EmptyChannelSettingsFilter(props: EmptyChannelSettingsFilterProps): JSX.Element {
     const handleFieldTypeChange = (name: string, choice: string): void => {
         const {onChange} = props;
 
-        onChange(null, {values: [], key: choice, exclude: false});
+        onChange(null, {values: [], key: choice, inclusion: FilterFieldInclusion.INCLUDE_ANY});
     };
 
     const {fields, theme} = props;

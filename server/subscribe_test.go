@@ -351,7 +351,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "status", Values: NewStringSet("10004")},
+							{Key: "status", Values: NewStringSet("10004"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -369,14 +369,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "status", Values: NewStringSet("10005")},
+							{Key: "status", Values: NewStringSet("10005"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
 			}),
 			ChannelIds: []string{},
 		},
-		"status field filter configured to exclude, matches": {
+		"status field filter configured to include all values, all are present": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
@@ -387,14 +387,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "status", Values: NewStringSet("10004"), Exclude: true},
+							{Key: "customfield_10068", Values: NewStringSet("10033", "10034"), Inclusion: FILTER_INCLUDE_ALL},
 						},
 					},
 				},
 			}),
-			ChannelIds: []string{},
+			ChannelIds: []string{"sampleChannelId"},
 		},
-		"status field filter configured to exclude, does not match": {
+		"field filter configured to include all values, one is missing": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
@@ -405,7 +405,43 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "status", Values: NewStringSet("10005"), Exclude: true},
+							{Key: "customfield_10068", Values: NewStringSet("10033", "10035"), Inclusion: FILTER_INCLUDE_ALL},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"field filter configured to exclude, field is present": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "status", Values: NewStringSet("10004"), Inclusion: FILTER_EXCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"status field filter configured to exclude, field is not present": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "status", Values: NewStringSet("10005"), Inclusion: FILTER_EXCLUDE_ANY},
 						},
 					},
 				},
@@ -423,7 +459,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10068", Values: NewStringSet("10033")},
+							{Key: "customfield_10068", Values: NewStringSet("10033"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -441,7 +477,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10068", Values: NewStringSet("10001")},
+							{Key: "customfield_10068", Values: NewStringSet("10001"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -459,7 +495,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10076", Values: NewStringSet("10039")},
+							{Key: "customfield_10076", Values: NewStringSet("10039"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -477,7 +513,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10076", Values: NewStringSet("10001")},
+							{Key: "customfield_10076", Values: NewStringSet("10001"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -495,7 +531,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10078", Values: NewStringSet("some value")},
+							{Key: "customfield_10078", Values: NewStringSet("some value"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -513,7 +549,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10078", Values: NewStringSet("wrong value")},
+							{Key: "customfield_10078", Values: NewStringSet("wrong value"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -531,14 +567,13 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "labels", Values: NewStringSet("Label1")},
+							{Key: "labels", Values: NewStringSet("Label1"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
 			}),
 			ChannelIds: []string{"sampleChannelId"},
 		},
-		// we need to explain to the user that if they want to "and" the labels, they need two separate filter rows
 		"two filters, custom string array field filter with multiple values configured, one matches": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
@@ -550,8 +585,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "labels", Values: NewStringSet("Label1", "Label3")},
-							{Key: "labels", Values: NewStringSet("Label4")},
+							{Key: "labels", Values: NewStringSet("Label1", "Label3"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "labels", Values: NewStringSet("Label4"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -569,7 +604,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "labels", Values: NewStringSet("Label1", "Label3")},
+							{Key: "labels", Values: NewStringSet("Label1", "Label3"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -587,7 +622,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "labels", Values: NewStringSet("wrong value")},
+							{Key: "labels", Values: NewStringSet("wrong value"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -605,7 +640,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "fixVersions", Values: NewStringSet("10000")},
+							{Key: "fixVersions", Values: NewStringSet("10000"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -623,7 +658,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("HEY"),
 						IssueTypes: NewStringSet("10001"),
 						Fields: []FieldFilter{
-							{Key: "Priority", Values: NewStringSet("1")},
+							{Key: "Priority", Values: NewStringSet("1"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -641,7 +676,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "labels2", Values: NewStringSet("some value")},
+							{Key: "labels2", Values: NewStringSet("some value"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -659,7 +694,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10026", Values: NewStringSet("some value")},
+							{Key: "customfield_10026", Values: NewStringSet("some value"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},

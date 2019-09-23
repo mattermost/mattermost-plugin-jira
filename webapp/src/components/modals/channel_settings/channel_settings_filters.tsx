@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType} from 'types/model';
+import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 
 import ChannelSettingsFilter, {EmptyChannelSettingsFilter} from './channel_settings_filter';
 
@@ -10,8 +10,8 @@ type ChannelSettingsFiltersProps = {
     theme: object;
     chosenIssueTypes: string[];
     issueMetadata: IssueMetadata;
-    addValidate: () => void;
-    removeValidate: () => void;
+    addValidate: (name: string | null, isValid: () => boolean) => void;
+    removeValidate: (name: string | null, isValid: () => boolean) => void;
     onChange: (f: FilterValue[]) => void;
 };
 
@@ -24,12 +24,12 @@ export default class ChannelSettingsFilters extends React.PureComponent<ChannelS
         showCreateRow: false,
     };
 
-    onConfiguredValueChange = (oldValue: FilterValue | null, newValue: FilterValue) => {
+    onConfiguredValueChange = (oldValue: FilterValue | null, newValue: FilterValue): void => {
         const newValues = this.props.values.concat([]);
         const index = newValues.findIndex((f) => f === oldValue);
 
         if (index === -1) {
-            newValues.push({exclude: false, values: [], ...newValue});
+            newValues.push({inclusion: FilterFieldInclusion.INCLUDE_ANY, values: [], ...newValue});
             this.setState({showCreateRow: false});
         } else {
             newValues.splice(index, 1, newValue);
@@ -38,15 +38,15 @@ export default class ChannelSettingsFilters extends React.PureComponent<ChannelS
         this.props.onChange(newValues);
     };
 
-    addNewFilter = () => {
+    addNewFilter = (): void => {
         this.setState({showCreateRow: true});
     };
 
-    hideNewFilter = () => {
+    hideNewFilter = (): void => {
         this.setState({showCreateRow: false});
     };
 
-    removeFilter = (value: FilterValue | null) => {
+    removeFilter = (value: FilterValue | null): void => {
         if (!value) {
             return;
         }
