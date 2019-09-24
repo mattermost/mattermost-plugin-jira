@@ -4,6 +4,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import ReactSelect from 'react-select';
 import AsyncSelect from 'react-select/async';
 
 import Setting from 'components/setting';
@@ -25,6 +26,7 @@ export default class ReactSelectSetting extends React.PureComponent {
         addValidate: PropTypes.func,
         removeValidate: PropTypes.func,
         required: PropTypes.bool,
+        limitOptions: PropTypes.bool,
     };
 
     constructor(props) {
@@ -95,11 +97,9 @@ export default class ReactSelectSetting extends React.PureComponent {
             );
         }
 
-        return (
-            <Setting
-                inputId={this.props.name}
-                {...this.props}
-            >
+        let selectComponent = null;
+        if (this.props.limitOptions) {
+            selectComponent = (
                 <AsyncSelect
                     {...this.props}
                     loadOptions={this.filterOptions}
@@ -109,6 +109,25 @@ export default class ReactSelectSetting extends React.PureComponent {
                     onChange={this.handleChange}
                     styles={getStyleForReactSelect(this.props.theme)}
                 />
+            );
+        } else {
+            selectComponent = (
+                <ReactSelect
+                    {...this.props}
+                    menuPortalTarget={document.body}
+                    menuPlacement='auto'
+                    onChange={this.handleChange}
+                    styles={getStyleForReactSelect(this.props.theme)}
+                />
+            );
+        }
+
+        return (
+            <Setting
+                inputId={this.props.name}
+                {...this.props}
+            >
+                {selectComponent}
                 {validationError}
             </Setting>
         );
