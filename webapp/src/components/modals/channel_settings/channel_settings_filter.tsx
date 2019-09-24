@@ -13,17 +13,17 @@ type ChannelSettingsFilterProps = {
     issueMetadata: IssueMetadata;
     onChange: (f1: FilterValue, f2: FilterValue) => void;
     removeFilter: (f1: FilterValue) => void;
-    addValidate: (name: string | null, isValid: () => boolean) => void;
-    removeValidate: (name: string | null, isValid: () => boolean) => void;
+    addValidate: (isValid: () => boolean) => void;
+    removeValidate: (isValid: () => boolean) => void;
 };
 
 export default class ChannelSettingsFilter extends React.PureComponent<ChannelSettingsFilterProps> {
     componentDidMount() {
-        this.props.addValidate(null, this.isValid);
+        this.props.addValidate(this.isValid);
     }
 
     componentWillUnmount() {
-        this.props.removeValidate(null, this.isValid);
+        this.props.removeValidate(this.isValid);
     }
 
     handleInclusionChange = (name: string, choice: FilterFieldInclusion): void => {

@@ -38,13 +38,13 @@ export default class ReactSelectSetting extends React.PureComponent {
 
     componentDidMount() {
         if (this.props.addValidate) {
-            this.props.addValidate(this.props.name, this.isValid);
+            this.props.addValidate(this.isValid);
         }
     }
 
     componentWillUnmount() {
         if (this.props.removeValidate) {
-            this.props.removeValidate(this.props.name, this.isValid);
+            this.props.removeValidate(this.isValid);
         }
     }
 
@@ -103,6 +103,9 @@ export default class ReactSelectSetting extends React.PureComponent {
 
         let selectComponent = null;
         if (this.props.limitOptions) {
+            // The parent component has let us know that we may have a large number of options, and that
+            // the dataset is static. In this case, we use the AsyncSelect component and synchronous func
+            // this.filterOptions() to limit the number of options being rendered at a given time.
             selectComponent = (
                 <AsyncSelect
                     {...this.props}

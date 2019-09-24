@@ -44,14 +44,14 @@ export default class Input extends PureComponent {
     }
 
     componentDidMount() {
-        if (this.props.addValidate && this.props.id) {
-            this.props.addValidate(this.props.id, this.isValid);
+        if (this.props.addValidate) {
+            this.props.addValidate(this.isValid);
         }
     }
 
     componentWillUnmount() {
-        if (this.props.removeValidate && this.props.id) {
-            this.props.removeValidate(this.props.id);
+        if (this.props.removeValidate) {
+            this.props.removeValidate(this.isValid);
         }
     }
 

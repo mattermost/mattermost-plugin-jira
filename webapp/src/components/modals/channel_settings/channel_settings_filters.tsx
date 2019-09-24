@@ -10,8 +10,8 @@ type ChannelSettingsFiltersProps = {
     theme: object;
     chosenIssueTypes: string[];
     issueMetadata: IssueMetadata;
-    addValidate: (name: string | null, isValid: () => boolean) => void;
-    removeValidate: (name: string | null, isValid: () => boolean) => void;
+    addValidate: (isValid: () => boolean) => void;
+    removeValidate: (isValid: () => boolean) => void;
     onChange: (f: FilterValue[]) => void;
 };
 

@@ -87,7 +87,6 @@ export default class AttachIssueModal extends PureComponent {
         const component = (
             <div>
                 <JiraIssueSelector
-                    id={'issue'}
                     addValidate={this.validator.addComponent}
                     removeValidate={this.validator.removeComponent}
                     onChange={this.handleIssueKeyChange}
