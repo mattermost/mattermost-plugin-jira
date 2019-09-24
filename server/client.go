@@ -12,6 +12,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -341,9 +342,10 @@ func endpointURL(endpoint string) (string, error) {
 	return endpoint, nil
 }
 
+var keyOrIDRegex = regexp.MustCompile("(^[[:alpha:]]+-)?[[:digit:]]+$")
+
 func endpointNameFromRequest(r *http.Request) string {
 	l := strings.ToLower(r.URL.Path)
-	fmt.Println("<><> ", l)
 	s := strings.TrimLeft(l, "/rest/api")
 	if s == l {
 		return "_unrecognized"
@@ -351,29 +353,31 @@ func endpointNameFromRequest(r *http.Request) string {
 	parts := strings.Split(s, "/")
 	n := len(parts)
 
-	// prefix with  api/<version>/<service>
 	if n < 2 {
 		return "_unrecognized"
 	}
 	var out = []string{"api/jira", parts[0], parts[1]}
-	entity := parts[1]
+	context := parts[1]
 	for _, p := range parts[2:] {
-		switch entity {
+		switch context {
 		case "issue":
-			if p == "createmeta" {
-				out = append(out, p)
-			} else {
-				// skip the issue key
+			if keyOrIDRegex.MatchString(p) {
+				continue
+			}
+
+		case "user":
+			if p != "groups" && p != "assignable" {
+				continue
 			}
 
 		case "project", "comment":
-		// skip the key
-
-		default:
-			out = append(out, p)
-			entity = p
+			continue
 		}
+		out = append(out, p)
+		context = p
+
 	}
+
 	out = append(out, r.Method)
 	return strings.Join(out, "/")
 }

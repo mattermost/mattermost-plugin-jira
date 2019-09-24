@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"expvar"
-	"fmt"
 	"sync"
 	"time"
 
@@ -36,17 +35,15 @@ func NewEndpoint(name string) *Endpoint {
 }
 
 func newEndpoint(name string) *Endpoint {
-	e := &Endpoint{
+	return &Endpoint{
 		lock:    &sync.RWMutex{},
 		Name:    name,
 		Elapsed: circonusllhist.NewNoLocks(),
 		Size:    circonusllhist.NewNoLocks(),
 	}
-	return e
 }
 
 func (e *Endpoint) publishExpvar() {
-	fmt.Printf("<><> publishExpvar %q, %v\n", e.Name, e)
 	expvar.Publish(e.Name, e)
 }
 

@@ -17,7 +17,7 @@ type Stats struct {
 	endpoints      sync.Map // *Endpoint
 }
 
-// NewStatsFromData creates and initializes a new Stats, from previously
+// NewStatsFromData creates and publishes a new Stats, from previously
 // serialized data. If it fails to unmarshal the data, it returns an empty Stats.
 // If saveInterval and savef are provided, it starts the autosave goroutine for
 // the stats.
@@ -31,7 +31,7 @@ func NewStatsFromData(data []byte) *Stats {
 	return &stats
 }
 
-func newUnpublishedStats(data []byte, disableExpvars bool) *Stats {
+func newStats(data []byte, disableExpvars bool) *Stats {
 	// ignore the error - just return an empty set if failed to unmarshal
 	stats := Stats{
 		disableExpvars: disableExpvars,
@@ -50,8 +50,6 @@ func (stats *Stats) ensureEndpoint(name string, initialValue *Endpoint, disableE
 	}
 	ifc, loaded := stats.endpoints.LoadOrStore(name, initialValue)
 	e := ifc.(*Endpoint)
-
-	fmt.Printf("<><> ensureEndpoint %q, %v %v\n", name, loaded, disableExpvar)
 
 	// Publish the expvar 1-time only,
 	if !loaded && !disableExpvar {
@@ -114,17 +112,17 @@ func (stats *Stats) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements json.Unmarshaller.
-// func (stats *Stats) UnmarshalJSON(data []byte) error {
-// 	v := map[string]*Endpoint{}
-// 	err := json.Unmarshal(data, &v)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	for k, e := range v {
-// 		stats.endpoints.Store(k, e)
-// 	}
-// 	return nil
-// }
+func (stats *Stats) UnmarshalJSON(data []byte) error {
+	v := map[string]*Endpoint{}
+	err := json.Unmarshal(data, &v)
+	if err != nil {
+		return err
+	}
+	for k, e := range v {
+		stats.endpoints.Store(k, e)
+	}
+	return nil
+}
 
 // PrintExpvars outputs all expvars that match pattern, as markdown
 func PrintExpvars(pattern string) (string, error) {
