@@ -1,7 +1,6 @@
 package expvar
 
 import (
-	"io"
 	"net/http"
 	"time"
 
@@ -10,24 +9,34 @@ import (
 
 type roundtripper struct {
 	http.RoundTripper
-	limit                   utils.ByteSize
-	endpointNameFromRequest func(*http.Request) string
+	requestLimit  int64
+	responseLimit int64
+
 	stats                   *Stats
+	endpointNameFromRequest func(*http.Request) string
 }
 
-type readCloser struct {
-	inner     io.ReadCloser
-	read      utils.ByteSize
-	remaining utils.ByteSize
-	start     time.Time
-	endpoint  *Endpoint
+type recorder struct {
+	*utils.LimitReadCloser
+	requestStarted time.Time
+	requestSize    utils.ByteSize
+	endpoint       *Endpoint
 }
 
-func WrapHTTPClient(c *http.Client, limit utils.ByteSize, stats *Stats, endpointNameFromRequest func(*http.Request) string) *http.Client {
-	return wrapHTTPClient(c, limit, stats, endpointNameFromRequest, false)
+// WrapHTTPClient wraps an http  client, establishing limits for request and response sizes,
+// and automating recording the stats. The metric name  is derived from the request by the
+// endpointNameFromRequest function.
+func WrapHTTPClient(c *http.Client,
+	requestLimit, responseLimit int64, stats *Stats, endpointNameFromRequest func(*http.Request) string) *http.Client {
+	return wrapHTTPClient(c, requestLimit, responseLimit, stats, endpointNameFromRequest, false)
 }
 
-func wrapHTTPClient(c *http.Client, limit utils.ByteSize, stats *Stats, endpointNameFromRequest func(*http.Request) string, disableExpvars bool) *http.Client {
+func wrapHTTPClient(c *http.Client,
+	requestLimit, responseLimit int64,
+	stats *Stats,
+	endpointNameFromRequest func(*http.Request) string,
+	disableExpvars bool) *http.Client {
+
 	client := *c
 	rt := c.Transport
 	if rt == nil {
@@ -35,7 +44,8 @@ func wrapHTTPClient(c *http.Client, limit utils.ByteSize, stats *Stats, endpoint
 	}
 	client.Transport = roundtripper{
 		RoundTripper:            rt,
-		limit:                   limit,
+		requestLimit:            requestLimit,
+		responseLimit:           responseLimit,
 		stats:                   stats,
 		endpointNameFromRequest: endpointNameFromRequest,
 	}
@@ -52,38 +62,27 @@ func (rt roundtripper) RoundTrip(r *http.Request) (*http.Response, error) {
 		endpoint = rt.stats.Endpoint(endpointName)
 	}
 
+	r.Body = utils.NewLimitReadCloser(r.Body, rt.requestLimit)
+
 	resp, err := rt.RoundTripper.RoundTrip(r)
 	if err != nil || resp == nil || resp.Body == nil {
-		endpoint.Record(0, time.Since(start), true, false)
+		rr := r.Body.(*utils.LimitReadCloser)
+		endpoint.Record(rr.TotalRead, 0, time.Since(start), true, false)
 		return resp, err
 	}
 
-	resp.Body = &readCloser{
-		inner:     resp.Body,
-		remaining: rt.limit,
-		start:     start,
-		endpoint:  endpoint,
+	resp.Body = &recorder{
+		LimitReadCloser: utils.NewLimitReadCloser(resp.Body, rt.responseLimit),
+		requestStarted:  start,
+		endpoint:        endpoint,
 	}
 	return resp, err
 }
 
-func (r *readCloser) Close() error {
-	err := r.inner.Close()
+func (r *recorder) Close() error {
+	err := r.LimitReadCloser.Close()
 	if r.endpoint != nil {
-		r.endpoint.Record(r.read, time.Since(r.start), err != nil, false)
+		r.endpoint.Record(r.requestSize, r.LimitReadCloser.TotalRead, time.Since(r.requestStarted), err != nil, false)
 	}
 	return err
-}
-
-func (r *readCloser) Read(data []byte) (int, error) {
-	if r.remaining <= 0 {
-		return 0, io.EOF
-	}
-	if len(data) > int(r.remaining) {
-		data = data[0:r.remaining]
-	}
-	n, err := r.inner.Read(data)
-	r.remaining -= utils.ByteSize(n)
-	r.read += utils.ByteSize(n)
-	return n, err
 }

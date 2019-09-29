@@ -15,19 +15,20 @@ import (
 // Endpoint implements a expvar.Var and json.[Un-]Marshaller interfaces.
 // Its String() method returns aggregated values, the JSON methods serialize
 // and deserialize complete data and can be used to persist/restore.
-// Note that Get and Update methods should be used to safely access Endpoint
-// data in goroutines.
+// Note that Get should be used to safely access Endpoint data in goroutines.
 type Endpoint struct {
 	lock *sync.RWMutex
 
-	Name    string
-	Total   int64
-	Errors  int64
-	Ignored int64
-	Elapsed *circonusllhist.Histogram // time.Durations
-	Size    *circonusllhist.Histogram // byte sizes
+	Name         string
+	Total        int64
+	Errors       int64
+	Ignored      int64
+	Elapsed      *circonusllhist.Histogram // time.Durations
+	RequestSize  *circonusllhist.Histogram // byte sizes
+	ResponseSize *circonusllhist.Histogram // byte sizes
 }
 
+// NewEndpoint creates and publishes a new Endpoint expvar
 func NewEndpoint(name string) *Endpoint {
 	e := newEndpoint(name)
 	e.publishExpvar()
@@ -36,10 +37,11 @@ func NewEndpoint(name string) *Endpoint {
 
 func newEndpoint(name string) *Endpoint {
 	return &Endpoint{
-		lock:    &sync.RWMutex{},
-		Name:    name,
-		Elapsed: circonusllhist.NewNoLocks(),
-		Size:    circonusllhist.NewNoLocks(),
+		lock:         &sync.RWMutex{},
+		Name:         name,
+		Elapsed:      circonusllhist.NewNoLocks(),
+		RequestSize:  circonusllhist.NewNoLocks(),
+		ResponseSize: circonusllhist.NewNoLocks(),
 	}
 }
 
@@ -61,11 +63,12 @@ func (e *Endpoint) Reset() {
 	e.Errors = 0
 	e.Ignored = 0
 	e.Elapsed.Reset()
-	e.Size.Reset()
+	e.RequestSize.Reset()
+	e.ResponseSize.Reset()
 }
 
 // Record records a single event
-func (e *Endpoint) Record(size utils.ByteSize, dur time.Duration, isError, isIgnored bool) {
+func (e *Endpoint) Record(reqSize, respSize utils.ByteSize, dur time.Duration, isError, isIgnored bool) {
 	if e == nil {
 		return
 	}
@@ -74,7 +77,8 @@ func (e *Endpoint) Record(size utils.ByteSize, dur time.Duration, isError, isIgn
 		defer e.lock.Unlock()
 	}
 
-	e.Size.RecordValue(float64(size))
+	e.RequestSize.RecordValue(float64(reqSize))
+	e.ResponseSize.RecordValue(float64(respSize))
 	e.Elapsed.RecordValue(float64(dur))
 
 	if isError {
@@ -112,7 +116,10 @@ func (e *Endpoint) String() string {
 		"Elapsed": mapPercentiles(ep.Elapsed, func(f float64) string {
 			return time.Duration(f).String()
 		}),
-		"Size": mapPercentiles(ep.Size, func(f float64) string {
+		"RequestSize": mapPercentiles(ep.RequestSize, func(f float64) string {
+			return utils.ByteSize(f).String()
+		}),
+		"ResponseSize": mapPercentiles(ep.ResponseSize, func(f float64) string {
 			return utils.ByteSize(f).String()
 		}),
 	}
@@ -157,7 +164,11 @@ func (e *Endpoint) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	size, err := unmarshalHistogram(ee.Size)
+	reqSize, err := unmarshalHistogram(ee.Size)
+	if err != nil {
+		return err
+	}
+	respSize, err := unmarshalHistogram(ee.Size)
 	if err != nil {
 		return err
 	}
@@ -166,7 +177,8 @@ func (e *Endpoint) UnmarshalJSON(data []byte) error {
 	e.Errors = ee.Errors
 	e.Ignored = ee.Ignored
 	e.Elapsed = elapsed
-	e.Size = size
+	e.RequestSize = reqSize
+	e.ResponseSize = respSize
 
 	if e.lock == nil {
 		e.lock = &sync.RWMutex{}
