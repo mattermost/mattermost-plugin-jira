@@ -7,7 +7,11 @@ import {Modal} from 'react-bootstrap';
 
 import Loading from 'components/loading';
 
+import FullScreenModal from '../full_screen_modal/full_screen_modal';
+
 import ChannelSettingsModalInner from './channel_settings_internal';
+
+import './channel_settings_modal.scss';
 
 export default class ChannelSettingsModal extends PureComponent {
     static propTypes = {
@@ -52,21 +56,16 @@ export default class ChannelSettingsModal extends PureComponent {
         }
 
         return (
-            <Modal
-                dialogClassName='modal--scroll'
+            <FullScreenModal
                 show={Boolean(this.props.channel)}
-                onHide={this.handleClose}
-                onExited={this.handleClose}
-                backdrop='static'
-                bsSize='large'
+                onClose={this.handleClose}
             >
-                <Modal.Header closeButton={true}>
-                    <Modal.Title>
-                        {'Channel Jira Settings'}
-                    </Modal.Title>
-                </Modal.Header>
-                {inner}
-            </Modal>
+                <div className='channel-subscriptions-modal'>
+                    <div className='channel-subscriptions-modal-body'>
+                        {inner}
+                    </div>
+                </div>
+            </FullScreenModal>
         );
     }
 }

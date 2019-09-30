@@ -110,7 +110,7 @@ func checkHasSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 
 				// Check it's properly attached
 				assert.Contains(t, savedSubs.Channel.IdByChannelId[foundSub.ChannelId], foundSub.Id)
-				for _, event := range foundSub.Filters.Events.Elems(false) {
+				for _, event := range foundSub.Filters.Events.Elems() {
 					assert.Contains(t, savedSubs.Channel.IdByEvent[event], foundSub.Id)
 				}
 			}
@@ -497,6 +497,7 @@ func TestEditSubscription(t *testing.T) {
 					Filters: SubscriptionFilters{
 						Events:   NewStringSet("jira:issue_created"),
 						Projects: NewStringSet("otherproject"),
+						Fields:   []FieldFilter{},
 					},
 				},
 			},
@@ -508,6 +509,7 @@ func TestEditSubscription(t *testing.T) {
 							Filters: SubscriptionFilters{
 								Events:   NewStringSet("jira:issue_created"),
 								Projects: NewStringSet("myproject"),
+								Fields:   []FieldFilter{},
 							},
 						},
 					}), t),

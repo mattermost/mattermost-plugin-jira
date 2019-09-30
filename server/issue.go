@@ -247,6 +247,7 @@ func httpAPIGetCreateIssueMetadataForProjects(ji Instance, w http.ResponseWriter
 	if len(cimd.Projects) == 0 {
 		bb = []byte(`{"error": "You do not have permission to create issues in that project. Please contact your Jira admin."}`)
 	} else {
+		fetchAndPopulateEpics(client, cimd)
 		bb, err = json.Marshal(cimd)
 		if err != nil {
 			return http.StatusInternalServerError,
@@ -261,6 +262,67 @@ func httpAPIGetCreateIssueMetadataForProjects(ji Instance, w http.ResponseWriter
 	}
 
 	return http.StatusOK, nil
+}
+
+func fetchAndPopulateEpics(jc Client, cimd *jira.CreateMetaInfo) {
+	proj := cimd.Projects[0]
+
+	var epicIssueType *jira.MetaIssueType
+	for _, issueType := range proj.IssueTypes {
+		if issueType.Name == "Epic" {
+			epicIssueType = issueType
+		}
+	}
+	if epicIssueType == nil {
+		return
+	}
+
+	var epicNameTypeID string
+	var epicLinkTypeID string
+
+	fields, _ := epicIssueType.GetAllFields()
+	epicNameTypeID = fields["Epic Name"]
+	epicLinkTypeID = fields["Epic Link"]
+	if epicNameTypeID == "" || epicLinkTypeID == "" {
+		return
+	}
+
+	jqlString := fmt.Sprintf("project=%s and issuetype=%s order by created desc", proj.Key, epicIssueType.Id)
+	epics, err := jc.SearchIssues(jqlString, &jira.SearchOptions{
+		MaxResults: 50,
+		Fields:     []string{epicNameTypeID},
+	})
+	if err != nil {
+		return
+	}
+
+	type AllowedValue struct {
+		ID    string `json:"id"`
+		Value string `json:"value"`
+		Name  string `json:"name"`
+	}
+
+	epicValues := []AllowedValue{}
+	for _, epic := range epics {
+		eName, exists := epic.Fields.Unknowns.Value(epicNameTypeID)
+		if !exists {
+			continue
+		}
+
+		epicValues = append(epicValues, AllowedValue{
+			ID:    epic.Key,
+			Value: eName.(string),
+			Name:  eName.(string),
+		})
+	}
+
+	for _, it := range proj.IssueTypes {
+		f, exists := it.Fields.Value(epicLinkTypeID)
+		if exists {
+			f2 := f.(map[string]interface{})
+			f2["allowedValues"] = epicValues
+		}
+	}
 }
 
 func httpAPIGetJiraProjectMetadata(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -548,6 +610,66 @@ func notifyOnFailedAttachment(ji Instance, mattermostUserId, issueKey string, er
 
 func getPermaLink(ji Instance, postId string, currentTeam string) string {
 	return fmt.Sprintf("%v/%v/pl/%v", ji.GetPlugin().GetSiteURL(), currentTeam, postId)
+}
+
+func getIssueCustomFieldValue(issue *jira.Issue, key string) StringSet {
+	m, exists := issue.Fields.Unknowns.Value(key)
+	if !exists || m == nil {
+		return nil
+	}
+
+	switch value := m.(type) {
+	case string:
+		return NewStringSet(value)
+	case []string:
+		return NewStringSet(value...)
+	case []interface{}:
+		// multi-select value
+		// Checkboxes, multi-select dropdown
+		result := NewStringSet()
+		for _, v := range value {
+			obj, ok := v.(map[string]interface{})
+			if !ok {
+				return nil
+			}
+			id, ok := obj["id"].(string)
+			if !ok {
+				return nil
+			}
+			result = result.Add(id)
+		}
+		return result
+	case map[string]interface{}:
+		// single-select value
+		// Radio buttons, single-select dropdown
+		id, ok := value["id"].(string)
+		if !ok {
+			return nil
+		}
+		return NewStringSet(id)
+	}
+
+	return nil
+}
+
+func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
+	key = strings.ToLower(key)
+	switch key {
+	case "status":
+		return NewStringSet(issue.Fields.Status.ID)
+	case "labels":
+		return NewStringSet(issue.Fields.Labels...)
+	case "priority":
+		return NewStringSet(issue.Fields.Priority.ID)
+	case "fixversions":
+		result := NewStringSet()
+		for _, v := range issue.Fields.FixVersions {
+			result = result.Add(v.ID)
+		}
+		return result
+	default:
+		return getIssueCustomFieldValue(issue, key)
+	}
 }
 
 func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issueKey string) ([]*model.SlackAttachment, error) {

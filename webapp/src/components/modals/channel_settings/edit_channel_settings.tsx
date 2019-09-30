@@ -2,14 +2,18 @@
 // See LICENSE.txt for license information.
 
 import React, {PureComponent} from 'react';
-import PropTypes from 'prop-types';
 import {Modal} from 'react-bootstrap';
 
 import ReactSelectSetting from 'components/react_select_setting';
 import FormButton from 'components/form_button';
 import Loading from 'components/loading';
 import Validator from 'components/validator';
-import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProjects} from 'utils/jira_issue_metadata';
+import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProjects, getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
+
+import {ChannelSubscription, ChannelSubscriptionFilters} from 'types/model';
+
+import ChannelSettingsFilters from './channel_settings_filters';
+import {SharedProps} from './shared_props';
 
 const JiraEventOptions = [
     {value: 'event_created', label: 'Issue Created'},
@@ -34,34 +38,37 @@ const JiraEventOptions = [
     {value: 'event_updated_summary', label: 'Issue Updated: Summary'},
 ];
 
-export default class EditChannelSettings extends PureComponent {
-    static propTypes = {
-        close: PropTypes.func.isRequired,
-        channel: PropTypes.object.isRequired,
-        theme: PropTypes.object.isRequired,
-        jiraProjectMetadata: PropTypes.object.isRequired,
-        jiraIssueMetadata: PropTypes.object,
-        channelSubscriptions: PropTypes.array.isRequired,
-        createChannelSubscription: PropTypes.func.isRequired,
-        deleteChannelSubscription: PropTypes.func.isRequired,
-        editChannelSubscription: PropTypes.func.isRequired,
-        fetchChannelSubscriptions: PropTypes.func.isRequired,
-        fetchJiraIssueMetadataForProjects: PropTypes.func.isRequired,
-        clearIssueMetadata: PropTypes.func.isRequired,
-    };
+export type Props = SharedProps & {
+    close: () => void;
+    selectedSubscription: ChannelSubscription | null;
+};
 
-    constructor(props) {
+export type State = {
+    filters: ChannelSubscriptionFilters;
+    fetchingIssueMetadata: boolean;
+    error: string | null;
+    getMetaDataErr: string | null;
+    submitting: boolean;
+};
+
+export default class EditChannelSettings extends PureComponent<Props, State> {
+    private validator: Validator;
+
+    constructor(props: Props) {
         super(props);
 
-        let filters = {
+        let filters: ChannelSubscriptionFilters = {
             events: [],
             projects: [],
             issue_types: [],
+            fields: [],
         };
 
-        if (props.channelSubscriptions[0]) {
-            filters = Object.assign({}, filters, props.channelSubscriptions[0].filters);
+        if (props.selectedSubscription) {
+            filters = Object.assign({}, filters, props.selectedSubscription.filters);
         }
+
+        filters.fields = filters.fields || [];
 
         let fetchingIssueMetadata = false;
         if (filters.projects.length) {
@@ -88,9 +95,8 @@ export default class EditChannelSettings extends PureComponent {
     };
 
     deleteChannelSubscription = (e) => {
-        if (this.props.channelSubscriptions && this.props.channelSubscriptions.length > 0) {
-            const sub = this.props.channelSubscriptions[0];
-            this.props.deleteChannelSubscription(sub).then((res) => {
+        if (this.props.selectedSubscription) {
+            this.props.deleteChannelSubscription(this.props.selectedSubscription).then((res) => {
                 if (res.error) {
                     this.setState({error: res.error.message});
                 } else {
@@ -100,7 +106,7 @@ export default class EditChannelSettings extends PureComponent {
         }
     };
 
-    handleSettingChange = (id, value) => {
+    handleSettingChange = (id: keyof ChannelSubscriptionFilters, value: string[]) => {
         let finalValue = value;
         if (!finalValue) {
             finalValue = [];
@@ -114,46 +120,14 @@ export default class EditChannelSettings extends PureComponent {
 
     fetchIssueMetadata = (projectKeys) => {
         this.props.fetchJiraIssueMetadataForProjects(projectKeys).then((fetched) => {
-            const state = {fetchingIssueMetadata: false};
-            state.filters = this.updateFilters(projectKeys);
+            const state = {fetchingIssueMetadata: false} as State;
 
             const error = fetched.error || (fetched.data && fetched.data.error);
             if (error) {
-                state.getMetaDataErr = `The project ${projectKeys} is unavailable. Please contact your system administrator.`;
+                state.getMetaDataErr = `The project ${projectKeys[0]} is unavailable. Please contact your system administrator.`;
             }
             this.setState(state);
         });
-    };
-
-    updateFilters = (projects) => {
-        // Remove any irrelevant selected choices from other filters
-        const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, projects);
-        const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, projects);
-
-        const selectedIssueTypes = this.state.filters.issue_types.filter((issueType) => {
-            return Boolean(issueOptions.find((it) => it.value === issueType));
-        });
-
-        const eventUpdatedPrefix = 'event_updated_';
-        const defaultEvents = JiraEventOptions.map((opt) => opt.value);
-        const selectedEventTypes = this.state.filters.events.filter((eventType) => {
-            if (defaultEvents.includes(eventType)) {
-                return true;
-            }
-            if (eventType.startsWith(eventUpdatedPrefix)) {
-                const field = eventType.substring(eventUpdatedPrefix);
-                if (customFields.find((customField) => field === customField.value)) {
-                    return true;
-                }
-            }
-            return false;
-        });
-
-        return {
-            projects,
-            issue_types: selectedIssueTypes,
-            events: selectedEventTypes,
-        };
     };
 
     handleProjectChange = (id, value) => {
@@ -164,7 +138,12 @@ export default class EditChannelSettings extends PureComponent {
             projects = [projects];
         }
 
-        const filters = this.updateFilters(projects);
+        const filters = {
+            projects,
+            issue_types: [],
+            events: [],
+            fields: [],
+        };
 
         let fetchingIssueMetadata = false;
 
@@ -181,6 +160,10 @@ export default class EditChannelSettings extends PureComponent {
         });
     };
 
+    handleFilterFieldChange = (fields) => {
+        this.setState({filters: {...this.state.filters, fields}});
+    };
+
     handleCreate = (e) => {
         if (e && e.preventDefault) {
             e.preventDefault();
@@ -193,18 +176,17 @@ export default class EditChannelSettings extends PureComponent {
         const subscription = {
             channel_id: this.props.channel.id,
             filters: this.state.filters,
-        };
+        } as ChannelSubscription;
 
         this.setState({submitting: true, error: null});
 
-        if (this.props.channelSubscriptions && this.props.channelSubscriptions.length > 0) {
-            subscription.id = this.props.channelSubscriptions[0].id;
+        if (this.props.selectedSubscription) {
+            subscription.id = this.props.selectedSubscription.id;
             this.props.editChannelSubscription(subscription).then((edited) => {
                 if (edited.error) {
                     this.setState({error: edited.error.message, submitting: false});
                     return;
                 }
-                this.props.fetchChannelSubscriptions(this.props.channel.id);
                 this.handleClose(e);
             });
         } else {
@@ -213,19 +195,18 @@ export default class EditChannelSettings extends PureComponent {
                     this.setState({error: created.error.message, submitting: false});
                     return;
                 }
-                this.props.fetchChannelSubscriptions(this.props.channel.id);
                 this.handleClose(e);
             });
         }
     };
 
-    render() {
+    render(): JSX.Element {
         const style = getStyle(this.props.theme);
 
         const projectOptions = getProjectValues(this.props.jiraProjectMetadata);
         const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, this.state.filters.projects);
         const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
-
+        const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
         const eventOptions = JiraEventOptions.concat(customFields);
 
         let component = null;
@@ -233,7 +214,7 @@ export default class EditChannelSettings extends PureComponent {
             let innerComponent = null;
             if (this.state.fetchingIssueMetadata) {
                 innerComponent = <Loading/>;
-            } else if (this.state.filters.projects[0] && !this.state.getMetaDataErr) {
+            } else if (this.state.filters.projects[0] && !this.state.getMetaDataErr && this.props.jiraIssueMetadata) {
                 innerComponent = (
                     <React.Fragment>
                         <ReactSelectSetting
@@ -260,6 +241,16 @@ export default class EditChannelSettings extends PureComponent {
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
                         />
+                        <ChannelSettingsFilters
+                            fields={filterFields}
+                            values={this.state.filters.fields}
+                            chosenIssueTypes={this.state.filters.issue_types}
+                            issueMetadata={this.props.jiraIssueMetadata}
+                            theme={this.props.theme}
+                            onChange={this.handleFilterFieldChange}
+                            addValidate={this.validator.addComponent}
+                            removeValidate={this.validator.removeComponent}
+                        />
                     </React.Fragment>
                 );
             }
@@ -277,6 +268,7 @@ export default class EditChannelSettings extends PureComponent {
                         value={projectOptions.filter((option) => this.state.filters.projects.includes(option.value))}
                         addValidate={this.validator.addComponent}
                         removeValidate={this.validator.removeComponent}
+                        limitOptions={true}
                     />
                     {innerComponent}
                 </div>
@@ -295,7 +287,7 @@ export default class EditChannelSettings extends PureComponent {
         }
 
         const enableSubmitButton = Boolean(this.state.filters.projects[0]);
-        const showDeleteButton = Boolean(this.props.channelSubscriptions && this.props.channelSubscriptions.length > 0);
+        const showDeleteButton = Boolean(this.props.selectedSubscription);
 
         return (
             <form
@@ -339,7 +331,7 @@ export default class EditChannelSettings extends PureComponent {
     }
 }
 
-const getStyle = (theme) => ({
+const getStyle = (theme: any): any => ({
     modal: {
         padding: '2em 2em 3em',
         color: theme.centerChannelColor,

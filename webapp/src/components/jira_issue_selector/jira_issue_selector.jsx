@@ -15,7 +15,6 @@ const searchDebounceDelay = 400;
 
 export default class JiraIssueSelector extends Component {
     static propTypes = {
-        id: PropTypes.string,
         required: PropTypes.bool,
         theme: PropTypes.object.isRequired,
         onChange: PropTypes.func.isRequired,
@@ -33,14 +32,14 @@ export default class JiraIssueSelector extends Component {
     }
 
     componentDidMount() {
-        if (this.props.addValidate && this.props.id) {
-            this.props.addValidate(this.props.id, this.isValid);
+        if (this.props.addValidate) {
+            this.props.addValidate(this.isValid);
         }
     }
 
     componentWillUnmount() {
-        if (this.props.removeValidate && this.props.id) {
-            this.props.removeValidate(this.props.id);
+        if (this.props.removeValidate) {
+            this.props.removeValidate(this.isValid);
         }
     }
 

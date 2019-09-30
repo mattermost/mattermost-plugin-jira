@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"sort"
 )
 
 type StringSet map[string]bool
@@ -19,7 +18,7 @@ func (a *StringSet) UnmarshalJSON(b []byte) error {
 }
 
 func (a StringSet) MarshalJSON() ([]byte, error) {
-	return json.Marshal(a.Elems(false))
+	return json.Marshal(a.Elems())
 }
 
 func NewStringSet(elems ...string) StringSet {
@@ -32,17 +31,13 @@ func NewStringSet(elems ...string) StringSet {
 	return result
 }
 
-func (a StringSet) Elems(sorted bool) []string {
+func (a StringSet) Elems() []string {
 	result := make([]string, len(a))
 
 	i := 0
 	for key := range a {
 		result[i] = key
 		i++
-	}
-
-	if sorted {
-		sort.Strings(result)
 	}
 
 	return result
@@ -112,6 +107,16 @@ func (a StringSet) ContainsAny(elems ...string) bool {
 	}
 
 	return false
+}
+
+func (a StringSet) ContainsAll(elems ...string) bool {
+	for _, elem := range elems {
+		if _, exists := a[elem]; !exists {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (a StringSet) Equals(b StringSet) bool {

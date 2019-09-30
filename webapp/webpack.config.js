@@ -11,7 +11,7 @@ if (NPM_TARGET === 'run') {
 
 const config = {
     entry: [
-        './src/index.js',
+        './src/index.ts',
     ],
     resolve: {
         modules: [
@@ -41,6 +41,21 @@ const config = {
                         loader: 'url-loader',
                         options: {
                             limit: 8192,
+                        },
+                    },
+                ],
+            },
+            {
+                test: /\.scss$/,
+                use: [
+                    'style-loader',
+                    {
+                        loader: 'css-loader',
+                    },
+                    {
+                        loader: 'sass-loader',
+                        options: {
+                            includePaths: ['node_modules/compass-mixins/lib', 'sass'],
                         },
                     },
                 ],

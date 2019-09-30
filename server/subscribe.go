@@ -17,17 +17,24 @@ import (
 )
 
 const (
-	JIRA_WEBHOOK_EVENT_ISSUE_CREATED = "jira:issue_created"
-	JIRA_WEBHOOK_EVENT_ISSUE_UPDATED = "jira:issue_updated"
-	JIRA_WEBHOOK_EVENT_ISSUE_DELETED = "jira:issue_deleted"
-
 	JIRA_SUBSCRIPTIONS_KEY = "jirasub"
+
+	FILTER_INCLUDE_ANY = "include_any"
+	FILTER_INCLUDE_ALL = "include_all"
+	FILTER_EXCLUDE_ANY = "exclude_any"
 )
 
+type FieldFilter struct {
+	Key       string    `json:"key"`
+	Inclusion string    `json:"inclusion"`
+	Values    StringSet `json:"values"`
+}
+
 type SubscriptionFilters struct {
-	Events     StringSet `json:"events"`
-	Projects   StringSet `json:"projects"`
-	IssueTypes StringSet `json:"issue_types"`
+	Events     StringSet     `json:"events"`
+	Projects   StringSet     `json:"projects"`
+	IssueTypes StringSet     `json:"issue_types"`
+	Fields     []FieldFilter `json:"fields"`
 }
 
 type ChannelSubscription struct {
@@ -55,7 +62,7 @@ func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
 
 	s.IdByChannelId[sub.ChannelId] = s.IdByChannelId[sub.ChannelId].Subtract(sub.Id)
 
-	for _, event := range sub.Filters.Events.Elems(false) {
+	for _, event := range sub.Filters.Events.Elems() {
 		s.IdByEvent[event] = s.IdByEvent[event].Subtract(sub.Id)
 	}
 }
@@ -63,7 +70,7 @@ func (s *ChannelSubscriptions) remove(sub *ChannelSubscription) {
 func (s *ChannelSubscriptions) add(newSubscription *ChannelSubscription) {
 	s.ById[newSubscription.Id] = *newSubscription
 	s.IdByChannelId[newSubscription.ChannelId] = s.IdByChannelId[newSubscription.ChannelId].Add(newSubscription.Id)
-	for _, event := range newSubscription.Filters.Events.Elems(false) {
+	for _, event := range newSubscription.Filters.Events.Elems() {
 		s.IdByEvent[event] = s.IdByEvent[event].Add(newSubscription.Id)
 	}
 }
@@ -99,7 +106,7 @@ func (p *Plugin) getUserID() string {
 	return p.getConfig().botUserID
 }
 
-func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
+func (p *Plugin) getChannelsSubscribed(wh *webhook) (StringSet, error) {
 	jwh := wh.JiraWebhook
 	subs, err := p.getSubscriptions()
 	if err != nil {
@@ -109,14 +116,14 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
 	webhookEvents := wh.Events()
 	subIds := subs.Channel.ById
 
-	channelIds := []string{}
+	channelIds := NewStringSet()
 	for _, sub := range subIds {
 		foundEvent := false
 		eventTypes := sub.Filters.Events
 		if eventTypes.Intersection(webhookEvents).Len() > 0 {
 			foundEvent = true
 		} else if eventTypes.ContainsAny(eventUpdatedAny) {
-			for _, eventType := range webhookEvents.Elems(false) {
+			for _, eventType := range webhookEvents.Elems() {
 				if strings.HasPrefix(eventType, "event_updated") {
 					foundEvent = true
 				}
@@ -135,7 +142,32 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) ([]string, error) {
 			continue
 		}
 
-		channelIds = append(channelIds, sub.ChannelId)
+		validFilter := true
+
+		for _, field := range sub.Filters.Fields {
+			// Broken filter, values must be provided
+			if field.Values.Len() == 0 || field.Inclusion == "" {
+				validFilter = false
+				break
+			}
+
+			value := getIssueFieldValue(&jwh.Issue, field.Key)
+			containsAny := value.ContainsAny(field.Values.Elems()...)
+			containsAll := value.ContainsAll(field.Values.Elems()...)
+
+			if (field.Inclusion == FILTER_INCLUDE_ANY && !containsAny) ||
+				(field.Inclusion == FILTER_INCLUDE_ALL && !containsAll) ||
+				(field.Inclusion == FILTER_EXCLUDE_ANY && containsAny) {
+				validFilter = false
+				break
+			}
+		}
+
+		if !validFilter {
+			continue
+		}
+
+		channelIds = channelIds.Add(sub.ChannelId)
 	}
 
 	return channelIds, nil
@@ -162,7 +194,7 @@ func (p *Plugin) getSubscriptionsForChannel(channelId string) ([]ChannelSubscrip
 	}
 
 	channelSubscriptions := []ChannelSubscription{}
-	for _, channelSubscriptionId := range subs.Channel.IdByChannelId[channelId].Elems(false) {
+	for _, channelSubscriptionId := range subs.Channel.IdByChannelId[channelId].Elems() {
 		channelSubscriptions = append(channelSubscriptions, subs.Channel.ById[channelSubscriptionId])
 	}
 
@@ -407,8 +439,7 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 
 func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
 	subscription := ChannelSubscription{}
-	err := json.NewDecoder(r.Body).Decode(&subscription)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&subscription); err != nil {
 		return http.StatusBadRequest, errors.WithMessage(err, "failed to decode incoming request")
 	}
 
@@ -430,15 +461,17 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("{\"status\": \"OK\"}"))
+	b, _ := json.Marshal(&subscription)
+	if _, err := w.Write(b); err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+	}
 
 	return http.StatusOK, nil
 }
 
 func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
 	subscription := ChannelSubscription{}
-	err := json.NewDecoder(r.Body).Decode(&subscription)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&subscription); err != nil {
 		return http.StatusBadRequest, errors.WithMessage(err, "failed to decode incoming request")
 	}
 
@@ -460,7 +493,10 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("{\"status\": \"OK\"}"))
+	b, _ := json.Marshal(&subscription)
+	if _, err := w.Write(b); err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+	}
 
 	return http.StatusOK, nil
 }

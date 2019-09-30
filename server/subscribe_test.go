@@ -340,6 +340,367 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			}),
 			ChannelIds: []string{},
 		},
+		"status field filter configured, matches": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "status", Values: NewStringSet("10004"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"status field filter configured, does not match": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "status", Values: NewStringSet("10005"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"status field filter configured to include all values, all are present": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "customfield_10068", Values: NewStringSet("10033", "10034"), Inclusion: FILTER_INCLUDE_ALL},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"field filter configured to include all values, one is missing": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "customfield_10068", Values: NewStringSet("10033", "10035"), Inclusion: FILTER_INCLUDE_ALL},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"field filter configured to exclude, field is present": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "status", Values: NewStringSet("10004"), Inclusion: FILTER_EXCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"status field filter configured to exclude, field is not present": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "status", Values: NewStringSet("10005"), Inclusion: FILTER_EXCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"custom multi-select field filter configured, matches": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "customfield_10068", Values: NewStringSet("10033"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"custom multi-select field filter configured, does not match": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "customfield_10068", Values: NewStringSet("10001"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"custom single-select field filter configured, matches": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "customfield_10076", Values: NewStringSet("10039"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"custom single-select field filter configured, does not match": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "customfield_10076", Values: NewStringSet("10001"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"custom string field filter configured, matches": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "customfield_10078", Values: NewStringSet("some value"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"custom string field filter configured, does not match": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "customfield_10078", Values: NewStringSet("wrong value"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"custom string array field filter configured, matches": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "labels", Values: NewStringSet("Label1"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"two filters, custom string array field filter with multiple values configured, one matches": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "labels", Values: NewStringSet("Label1", "Label3"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "labels", Values: NewStringSet("Label4"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"custom string array field filter with multiple values configured, one matches": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "labels", Values: NewStringSet("Label1", "Label3"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"custom string array field filter configured, does not match": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "labels", Values: NewStringSet("wrong value"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"fixVersions filter configured, matches": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "fixVersions", Values: NewStringSet("10000"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"priority filter configured, matches": {
+			WebhookTestData: "webhook-server-issue-updated-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_updated_any"),
+						Projects:   NewStringSet("HEY"),
+						IssueTypes: NewStringSet("10001"),
+						Fields: []FieldFilter{
+							{Key: "Priority", Values: NewStringSet("1"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"custom string field filter configured, field is not present in issue metadata": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "labels2", Values: NewStringSet("some value"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
+		"custom string field filter configured, field is null in issue metadata": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "customfield_10026", Values: NewStringSet("some value"), Inclusion: FILTER_INCLUDE_ANY},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}

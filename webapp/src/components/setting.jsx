@@ -11,6 +11,7 @@ export default class Setting extends React.PureComponent {
         children: PropTypes.node.isRequired,
         helpText: PropTypes.node,
         required: PropTypes.bool,
+        hideRequiredStar: PropTypes.bool,
     };
 
     render() {
@@ -20,6 +21,7 @@ export default class Setting extends React.PureComponent {
             inputId,
             label,
             required,
+            hideRequiredStar,
         } = this.props;
 
         return (
@@ -30,7 +32,7 @@ export default class Setting extends React.PureComponent {
                 >
                     {label}
                 </label>
-                {required &&
+                {required && !hideRequiredStar &&
                 <span
                     className='error-text'
                     style={{marginLeft: '3px'}}

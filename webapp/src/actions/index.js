@@ -135,6 +135,11 @@ export const createChannelSubscription = (subscription) => {
                 body: JSON.stringify(subscription),
             });
 
+            dispatch({
+                type: ActionTypes.CREATED_CHANNEL_SUBSCRIPTION,
+                data,
+            });
+
             return {data};
         } catch (error) {
             return {error};
@@ -149,6 +154,11 @@ export const editChannelSubscription = (subscription) => {
             const data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel`, {
                 method: 'put',
                 body: JSON.stringify(subscription),
+            });
+
+            dispatch({
+                type: ActionTypes.EDITED_CHANNEL_SUBSCRIPTION,
+                data,
             });
 
             return {data};
