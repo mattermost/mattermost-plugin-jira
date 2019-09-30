@@ -54,10 +54,10 @@ export default class JiraIssueSelector extends Component {
         return this.debouncedSearchIssues(inputValue);
     };
 
-    searchIssues = (text) => {
+    searchIssues = async (text) => {
         const trimmed = text.trim();
         if (trimmed === '') {
-            return {};
+            return [];
         }
         const textEncoded = encodeURIComponent(trimmed.replace(/"/g, '\\"'));
         const textSearchTerm = 'text ~ "' + textEncoded + '*"';
