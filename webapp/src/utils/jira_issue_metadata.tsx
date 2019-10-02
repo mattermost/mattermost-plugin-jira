@@ -91,18 +91,16 @@ export function getCustomFieldsForProjects(metadata: IssueMetadata | null, proje
     )).filter(Boolean) as FieldWithInfo[];
 
     for (const field of fields) {
-        if (isValidFieldForFilter(field)) {
-            // Jira server webhook fields don't have keys
-            // name is the most unique property available in that case
-            const changeLogID = field.key || field.name;
-            let current = customFieldHash[field.topLevelKey];
-            if (!current) {
-                current = {...field, changeLogID, key: field.key || field.topLevelKey, validIssueTypes: []};
-            }
-            current.validIssueTypes.push(field.issueTypeMeta);
-
-            customFieldHash[field.topLevelKey] = current;
+        // Jira server webhook fields don't have keys
+        // name is the most unique property available in that case
+        const changeLogID = field.key || field.name;
+        let current = customFieldHash[field.topLevelKey];
+        if (!current) {
+            current = {...field, changeLogID, key: field.key || field.topLevelKey, validIssueTypes: []};
         }
+        current.validIssueTypes.push(field.issueTypeMeta);
+
+        customFieldHash[field.topLevelKey] = current;
     }
 
     return Object.values(customFieldHash).sort((a, b) => {
@@ -129,7 +127,7 @@ const acceptedCustomTypes = [
     'com.pyxis.greenhopper.jira:gh-epic-link',
 ];
 
-function isValidFieldForFilter(field: JiraField) {
+function isValidFieldForFilter(field: JiraField): boolean {
     const {custom, type, items} = field.schema;
     if (custom && avoidedCustomTypes.includes(custom)) {
         return false;
@@ -143,7 +141,7 @@ function isValidFieldForFilter(field: JiraField) {
 }
 
 export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null, projectKeys: string[]): FilterField[] {
-    const fields = getCustomFieldsForProjects(metadata, projectKeys);
+    const fields = getCustomFieldsForProjects(metadata, projectKeys).filter(isValidFieldForFilter);
     const selectFields = fields.filter((field) => Boolean(field.allowedValues && field.allowedValues.length)) as (SelectField & FieldWithInfo)[];
     const populatedFields = selectFields.map((field) => {
         return {
