@@ -237,7 +237,7 @@ This might result in downtime of the JIRA plugin, but it should only be a few mi
 
 ### What changed in the Jira 2.1 Webhook configuration?
 
-In Jira 2.1 there is a modal window for a "Channel Subscription" to Jira issues.  This requires a firehose of events to be sent from Jira to Mattermost, and the Jira plugin then "routes" or "drops" the events to particular channels.  The Channel Subscription modal (which you can access by going to a particular channel, then typing `jira /subscribe`) provides easy access for Mattermost Channel Admins to setup which notifications they want to receive per channel.
+In Jira 2.1 there is a modal window for a "Channel Subscription" to Jira issues.  This requires a firehose of events to be sent from Jira to Mattermost, and the Jira plugin then "routes" or "drops" the events to particular channels.  The Channel Subscription modal (which you can access by going to a particular channel, then typing `/jira subscribe`) provides easy access for Mattermost Channel Admins to setup which notifications they want to receive per channel.
 
 Earlier versions of the Jira plugin (2.0) used a manual webhook configuration that pointed to specific channels and teams.  The webhook configuration was  `https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL`.  This method can still be used to setup notifications from Jira to Mattermost channels if the new Channel Subscription modal can't support a particular channel subscription yet.  
 
