@@ -125,6 +125,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                 <button
                     onClick={this.removeFilter}
                     className='btn btn-danger'
+                    type='button'
                 >
                     {'Remove'}
                 </button>
@@ -134,6 +135,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                 <button
                     onClick={this.removeFilter}
                     className='btn btn-info'
+                    type='button'
                 >
                     {'Cancel'}
                 </button>

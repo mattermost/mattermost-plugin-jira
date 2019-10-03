@@ -142,6 +142,7 @@ export default class ChannelSettingsFilters extends React.PureComponent<ChannelS
                         onClick={this.addNewFilter}
                         disabled={showCreateRow}
                         className='btn btn-info'
+                        type='button'
                     >
                         {'Add Filter'}
                     </button>
