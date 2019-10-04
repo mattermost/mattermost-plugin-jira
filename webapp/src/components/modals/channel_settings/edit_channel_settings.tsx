@@ -5,6 +5,7 @@ import React, {PureComponent} from 'react';
 import {Modal} from 'react-bootstrap';
 
 import ReactSelectSetting from 'components/react_select_setting';
+import ConfirmModal from 'components/confirm_modal';
 import FormButton from 'components/form_button';
 import Loading from 'components/loading';
 import Validator from 'components/validator';
@@ -49,6 +50,7 @@ export type State = {
     error: string | null;
     getMetaDataErr: string | null;
     submitting: boolean;
+    showConfirmModal: boolean | false;
 };
 
 export default class EditChannelSettings extends PureComponent<Props, State> {
@@ -82,6 +84,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             submitting: false,
             filters,
             fetchingIssueMetadata,
+            showConfirmModal: false,
         };
 
         this.validator = new Validator();
@@ -94,16 +97,29 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         this.props.close();
     };
 
-    deleteChannelSubscription = (e) => {
+    deleteChannelSubscription = () => {
         if (this.props.selectedSubscription) {
             this.props.deleteChannelSubscription(this.props.selectedSubscription).then((res) => {
                 if (res.error) {
                     this.setState({error: res.error.message});
                 } else {
-                    this.handleClose(e);
+                    this.handleClose();
                 }
             });
         }
+    };
+
+    handleDeactivateCancel = () => {
+        this.setState({showConfirmModal: false});
+    }
+
+    handleConfirmDelete = () => {
+        this.setState({showConfirmModal: false});
+        this.deleteChannelSubscription();
+    }
+
+    handleDeleteChannelSubscription = (): void => {
+        this.setState({showConfirmModal: true});
     };
 
     handleSettingChange = (id: keyof ChannelSubscriptionFilters, value: string[]) => {
@@ -277,6 +293,21 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             component = <Loading/>;
         }
 
+        const {showConfirmModal} = this.state;
+        const confirmComponent = (
+            <ConfirmModal
+                cancelButtonText={'Cancel'}
+                confirmButtonText={'Confirm'}
+                confirmButtonClass={'btn btn-danger'}
+                hideCancel={false}
+                message={'Delete Subscription ?'}
+                onCancel={this.handleDeactivateCancel}
+                onConfirm={this.handleConfirmDelete}
+                show={showConfirmModal}
+                title={'Subscription'}
+            />
+        );
+
         let error = null;
         if (this.state.error || this.state.getMetaDataErr) {
             error = (
@@ -300,6 +331,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                 >
                     {component}
                     {error}
+                    {confirmComponent}
                 </Modal.Body>
                 <Modal.Footer>
                     <FormButton
@@ -314,7 +346,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             type='button'
                             btnClass='btn-danger pull-left'
                             defaultMessage='Delete'
-                            onClick={this.deleteChannelSubscription}
+                            onClick={this.handleDeleteChannelSubscription}
                         />
                     )}
                     <FormButton

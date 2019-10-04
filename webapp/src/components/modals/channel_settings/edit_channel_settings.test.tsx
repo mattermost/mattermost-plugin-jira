@@ -324,7 +324,6 @@ describe('components/EditChannelSettings', () => {
         let close = jest.fn();
         const props = {
             ...baseProps,
-            deleteChannelSubscription,
             close,
         };
         const wrapper = shallow<EditChannelSettings>(
@@ -332,9 +331,10 @@ describe('components/EditChannelSettings', () => {
         );
 
         expect(wrapper.exists('#jira-delete-subscription')).toBe(true);
-
         wrapper.find('#jira-delete-subscription').simulate('click');
-        expect(deleteChannelSubscription).toHaveBeenCalled();
+
+        expect(wrapper.state().showConfirmModal).toBe(true);
+        wrapper.instance().handleConfirmDelete();
 
         await Promise.resolve();
         expect(wrapper.state().error).toBe(null);
@@ -344,8 +344,7 @@ describe('components/EditChannelSettings', () => {
         close = jest.fn();
         wrapper.setProps({deleteChannelSubscription, close});
 
-        wrapper.find('#jira-delete-subscription').simulate('click');
-        expect(deleteChannelSubscription).toHaveBeenCalled();
+        wrapper.instance().handleConfirmDelete();
 
         await Promise.resolve();
         expect(wrapper.state().error).toEqual('Failure');
@@ -366,6 +365,9 @@ describe('components/EditChannelSettings', () => {
 
         expect(wrapper.exists('#jira-delete-subscription')).toBe(true);
         wrapper.find('#jira-delete-subscription').simulate('click');
+
+        expect(wrapper.state().showConfirmModal).toBe(true);
+        wrapper.instance().handleConfirmDelete();
 
         expect(deleteChannelSubscription).toHaveBeenCalled();
 
