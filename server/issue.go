@@ -75,11 +75,9 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	}
 
 	rootId := create.PostId
-	parentId := ""
-	if post != nil && post.ParentId != "" {
+	if post != nil && post.RootId != "" {
 		// the original post was a reply
 		rootId = post.RootId
-		parentId = create.PostId
 	}
 
 	issue := &jira.Issue{
@@ -129,7 +127,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 			Message:   fmt.Sprintf("[Please create your Jira issue manually](%v). %v\n%v", createURL, message, fieldsString),
 			ChannelId: channelId,
 			RootId:    rootId,
-			ParentId:  parentId,
+			ParentId:  rootId,
 			UserId:    ji.GetPlugin().getConfig().botUserID,
 		}
 		_ = api.SendEphemeralPost(mattermostUserId, reply)
@@ -155,7 +153,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 				Message:   message,
 				ChannelId: channelId,
 				RootId:    rootId,
-				ParentId:  parentId,
+				ParentId:  rootId,
 				UserId:    ji.GetPlugin().getConfig().botUserID,
 			})
 			w.Header().Set("Content-Type", "application/json")
@@ -171,7 +169,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.GetURL(), created.Key),
 		ChannelId: channelId,
 		RootId:    rootId,
-		ParentId:  parentId,
+		ParentId:  rootId,
 		UserId:    mattermostUserId,
 	}
 	_, appErr = api.CreatePost(reply)
@@ -499,11 +497,9 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 	}()
 
 	rootId := attach.PostId
-	parentId := ""
-	if post.ParentId != "" {
+	if post.RootId != "" {
 		// the original post was a reply
 		rootId = post.RootId
-		parentId = attach.PostId
 	}
 
 	// Reply to the post with the issue link that was created
@@ -511,7 +507,7 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 		Message:   fmt.Sprintf("Message attached to [%v](%v/browse/%v)", attach.IssueKey, ji.GetURL(), attach.IssueKey),
 		ChannelId: post.ChannelId,
 		RootId:    rootId,
-		ParentId:  parentId,
+		ParentId:  rootId,
 		UserId:    mattermostUserId,
 	}
 	_, appErr = api.CreatePost(reply)
