@@ -31,6 +31,7 @@ type JiraWebhook struct {
 }
 
 func (jwh *JiraWebhook) mdJiraLink(title, suffix string) string {
+	// Use Self URL only to extract the full hostname from it
 	pos := strings.LastIndex(jwh.Issue.Self, "/rest/api")
 	if pos < 0 {
 		return ""
