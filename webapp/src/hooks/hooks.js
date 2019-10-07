@@ -3,7 +3,7 @@
 
 import {isDesktopApp} from '../utils/user_agent';
 import {openCreateModalWithoutPost, openChannelSettings, sendEphemeralPost} from '../actions';
-import {isUserConnected, getInstalledInstanceType, isInstanceInstalled} from '../selectors';
+import {isUserConnected, isInstanceInstalled} from '../selectors';
 import PluginId from 'plugin_id';
 
 export default class Hooks {
