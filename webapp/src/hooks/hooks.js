@@ -35,7 +35,7 @@ export default class Hooks {
                 this.store.dispatch(sendEphemeralPost('You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.'));
                 return Promise.resolve({});
             }
-            if (getInstalledInstanceType(this.store.getState()) === 'server' && isDesktopApp()) {
+            if (isDesktopApp()) {
                 this.store.dispatch(sendEphemeralPost('Please use your browser to connect to Jira.'));
                 return Promise.resolve({});
             }
