@@ -1,2 +1,2 @@
 export const id = 'jira';
-export const version = '2.2.0';
+export const version = '2.2.1';
