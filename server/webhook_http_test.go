@@ -320,7 +320,7 @@ func TestWebhookHTTP(t *testing.T) {
 		},
 		"CLOUD comment deleted": {
 			Request:          testWebhookRequest("webhook-cloud-comment-deleted.json"),
-			ExpectedHeadline: "Test User deleted comment in story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User deleted comment in task [KT-7: s](https://mmtest.atlassian.net/browse/KT-7)",
 			CurrentInstance:  true,
 		},
 		"SERVER issue commented": {
@@ -555,7 +555,7 @@ func TestWebhookHTTP(t *testing.T) {
 		},
 		"CLOUD comment deleted - no Instance": {
 			Request:          testWebhookRequest("webhook-cloud-comment-deleted.json"),
-			ExpectedHeadline: "Test User deleted comment in story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedHeadline: "Test User deleted comment in task [KT-7: s](https://mmtest.atlassian.net/browse/KT-7)",
 			CurrentInstance:  false,
 		},
 		"SERVER issue commented - no Instance": {
