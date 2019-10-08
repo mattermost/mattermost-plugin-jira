@@ -10,7 +10,6 @@ import AsyncSelect from 'react-select/async';
 import {getStyleForReactSelect} from 'utils/styles';
 import {doFetchWithResponse} from 'client';
 
-const searchDefaults = 'ORDER BY updated DESC';
 const searchDebounceDelay = 400;
 
 export default class JiraIssueSelector extends Component {
