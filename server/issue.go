@@ -7,7 +7,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
+	"sync"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
@@ -342,6 +344,8 @@ func httpAPIGetJiraProjectMetadata(ji Instance, w http.ResponseWriter, r *http.R
 	return http.StatusOK, nil
 }
 
+var reJiraIssueKey = regexp.MustCompile(`^([[:alpha:]]+)-([[:digit:]]+)$`)
+
 func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
@@ -363,32 +367,51 @@ func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request)
 		return http.StatusInternalServerError, err
 	}
 
-	jqlString := r.FormValue("jql")
-
-	searchRes, err := client.SearchIssues(jqlString, &jira.SearchOptions{
-		MaxResults: 50,
-		Fields:     []string{"key", "summary"},
-	})
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to get search results")
+	q := r.FormValue("q")
+	var exact *jira.Issue
+	var wg sync.WaitGroup
+	if reJiraIssueKey.MatchString(q) {
+		wg.Add(1)
+		go func() {
+			exact, _ = client.GetIssue(q, nil)
+			wg.Done()
+		}()
 	}
+
+	jqlString := `text ~ "` + strings.ReplaceAll(q, `"`, `\"`) + `"`
+	var found []jira.Issue
+	wg.Add(1)
+	go func() {
+		found, _ = client.SearchIssues(jqlString, &jira.SearchOptions{
+			MaxResults: 50,
+			Fields:     []string{"key", "summary"},
+		})
+		wg.Done()
+	}()
+
+	wg.Wait()
 
 	// We only need to send down a summary of the data
 	type issueSummary struct {
 		Value string `json:"value"`
 		Label string `json:"label"`
 	}
-	resSummary := make([]issueSummary, 0, len(searchRes))
-	for _, res := range searchRes {
-		resSummary = append(resSummary, issueSummary{
-			Value: res.Key,
-			Label: res.Key + ": " + res.Fields.Summary,
+	var result []issueSummary
+	if exact != nil {
+		result = append(result, issueSummary{
+			Value: exact.Key,
+			Label: exact.Key + ": " + exact.Fields.Summary,
+		})
+	}
+	for _, issue := range found {
+		result = append(result, issueSummary{
+			Value: issue.Key,
+			Label: issue.Key + ": " + issue.Fields.Summary,
 		})
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	b, err := json.Marshal(resSummary)
+	b, err := json.Marshal(result)
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to marshal response")
