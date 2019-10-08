@@ -98,7 +98,7 @@ export default class ReactSelectSetting extends React.PureComponent {
         }
 
         let selectComponent = null;
-        if (this.props.limitOptions) {
+        if (this.props.limitOptions && this.props.options.length > MAX_NUM_OPTIONS) {
             selectComponent = (
                 <AsyncSelect
                     {...this.props}
