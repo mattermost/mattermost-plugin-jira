@@ -1,93 +1,110 @@
 {
-  "timestamp": 1550286759394,
+  "timestamp": 1570513345538,
   "webhookEvent": "comment_deleted",
   "comment": {
-    "self": "https://some-instance-test.atlassian.net/rest/api/2/issue/10040/comment/10019",
-    "id": "10019",
-    "author": {
-      "self": "https://some-instance-test.atlassian.net/rest/api/2/user?accountId=5c5f880629be9642ba529340",
-      "name": "admin",
-      "key": "admin",
-      "accountId": "5c5f880629be9642ba529340",
-      "avatarUrls": {
-        "48x48": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=48&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D48%26noRedirect%3Dtrue",
-        "24x24": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=24&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D24%26noRedirect%3Dtrue",
-        "16x16": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=16&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D16%26noRedirect%3Dtrue",
-        "32x32": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=32&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D32%26noRedirect%3Dtrue"
+      "self": "https://mmtest.atlassian.net/rest/api/2/issue/10357/comment/10757",
+      "id": "10757",
+      "author": {
+          "self": "https://mmtest.atlassian.net/rest/api/2/user?accountId=5cedcb4355a88a0fc86388ba",
+          "accountId": "5cedcb4355a88a0fc86388ba",
+          "emailAddress": "\"?\"",
+          "avatarUrls": {
+              "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=48&s=48",
+              "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=24&s=24",
+              "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=16&s=16",
+              "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=32&s=32"
+          },
+          "displayName": "Test User",
+          "active": true,
+          "timeZone": "America/Vancouver",
+          "accountType": "atlassian"
       },
-      "displayName": "Test User",
-      "active": true,
-      "timeZone": "America/Los_Angeles"
-    },
-    "body": "Added a comment, then edited it",
-    "updateAuthor": {
-      "self": "https://some-instance-test.atlassian.net/rest/api/2/user?accountId=5c5f880629be9642ba529340",
-      "name": "admin",
-      "key": "admin",
-      "accountId": "5c5f880629be9642ba529340",
-      "avatarUrls": {
-        "48x48": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=48&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D48%26noRedirect%3Dtrue",
-        "24x24": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=24&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D24%26noRedirect%3Dtrue",
-        "16x16": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=16&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D16%26noRedirect%3Dtrue",
-        "32x32": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=32&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D32%26noRedirect%3Dtrue"
+      "body": "wd\n\ndwd",
+      "updateAuthor": {
+          "self": "https://mmtest.atlassian.net/rest/api/2/user?accountId=5cedcb4355a88a0fc86388ba",
+          "accountId": "5cedcb4355a88a0fc86388ba",
+          "emailAddress": "\"?\"",
+          "avatarUrls": {
+              "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=48&s=48",
+              "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=24&s=24",
+              "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=16&s=16",
+              "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=32&s=32"
+          },
+          "displayName": "Test User",
+          "active": true,
+          "timeZone": "America/Vancouver",
+          "accountType": "atlassian"
       },
-      "displayName": "Test User",
-      "active": true,
-      "timeZone": "America/Los_Angeles"
-    },
-    "created": "2019-02-15T19:11:18.321-0800",
-    "updated": "2019-02-15T19:12:08.432-0800",
-    "jsdPublic": true
+      "created": "2019-10-07T22:42:01.801-0700",
+      "updated": "2019-10-07T22:42:01.801-0700",
+      "jsdPublic": true
   },
   "issue": {
-    "id": "10040",
-    "self": "https://some-instance-test.atlassian.net/rest/api/2/issue/10040",
-    "key": "TES-41",
-    "fields": {
-      "summary": "Unit test summary 1",
-      "issuetype": {
-        "self": "https://some-instance-test.atlassian.net/rest/api/2/issuetype/10001",
-        "id": "10001",
-        "description": "Stories track functionality or features expressed as user goals.",
-        "iconUrl": "https://some-instance-test.atlassian.net/secure/viewavatar?size=xsmall&avatarId=10315&avatarType=issuetype",
-        "name": "Story",
-        "subtask": false,
-        "avatarId": 10315
-      },
-      "project": {
-        "self": "https://some-instance-test.atlassian.net/rest/api/2/project/10000",
-        "id": "10000",
-        "key": "TES",
-        "name": "test1",
-        "projectTypeKey": "software",
-        "avatarUrls": {
-          "48x48": "https://some-instance-test.atlassian.net/secure/projectavatar?avatarId=10324",
-          "24x24": "https://some-instance-test.atlassian.net/secure/projectavatar?size=small&avatarId=10324",
-          "16x16": "https://some-instance-test.atlassian.net/secure/projectavatar?size=xsmall&avatarId=10324",
-          "32x32": "https://some-instance-test.atlassian.net/secure/projectavatar?size=medium&avatarId=10324"
-        }
-      },
-      "assignee": null,
-      "priority": {
-        "self": "https://some-instance-test.atlassian.net/rest/api/2/priority/2",
-        "iconUrl": "https://some-instance-test.atlassian.net/images/icons/priorities/high.svg",
-        "name": "High",
-        "id": "2"
-      },
-      "status": {
-        "self": "https://some-instance-test.atlassian.net/rest/api/2/status/10001",
-        "description": "",
-        "iconUrl": "https://some-instance-test.atlassian.net/",
-        "name": "To Do",
-        "id": "10001",
-        "statusCategory": {
-          "self": "https://some-instance-test.atlassian.net/rest/api/2/statuscategory/2",
-          "id": 2,
-          "key": "new",
-          "colorName": "blue-gray",
-          "name": "To Do"
-        }
+      "id": "10357",
+      "self": "https://mmtest.atlassian.net/rest/api/2/10357",
+      "key": "KT-7",
+      "fields": {
+          "summary": "s",
+          "issuetype": {
+              "self": "https://mmtest.atlassian.net/rest/api/2/issuetype/10002",
+              "id": "10002",
+              "description": "A task that needs to be done.",
+              "iconUrl": "https://mmtest.atlassian.net/secure/viewavatar?size=medium&avatarId=10318&avatarType=issuetype",
+              "name": "Task",
+              "subtask": false,
+              "avatarId": 10318
+          },
+          "project": {
+              "self": "https://mmtest.atlassian.net/rest/api/2/project/10008",
+              "id": "10008",
+              "key": "KT",
+              "name": "Koch Testing",
+              "projectTypeKey": "software",
+              "simplified": false,
+              "avatarUrls": {
+                  "48x48": "https://mmtest.atlassian.net/secure/projectavatar?pid=10008&avatarId=10417",
+                  "24x24": "https://mmtest.atlassian.net/secure/projectavatar?size=small&s=small&pid=10008&avatarId=10417",
+                  "16x16": "https://mmtest.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10008&avatarId=10417",
+                  "32x32": "https://mmtest.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10008&avatarId=10417"
+              }
+          },
+          "assignee": {
+              "self": "https://mmtest.atlassian.net/rest/api/2/user?accountId=5cedcb4355a88a0fc86388ba",
+              "name": "test.user",
+              "key": "test.user",
+              "accountId": "5cedcb4355a88a0fc86388ba",
+              "emailAddress": "test.user@example.com",
+              "avatarUrls": {
+                  "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=48&s=48",
+                  "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=24&s=24",
+                  "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=16&s=16",
+                  "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=32&s=32"
+              },
+              "displayName": "Test User",
+              "active": true,
+              "timeZone": "America/Vancouver",
+              "accountType": "atlassian"
+          },
+          "priority": {
+              "self": "https://mmtest.atlassian.net/rest/api/2/priority/2",
+              "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/high.svg",
+              "name": "High",
+              "id": "2"
+          },
+          "status": {
+              "self": "https://mmtest.atlassian.net/rest/api/2/status/10004",
+              "description": "",
+              "iconUrl": "https://mmtest.atlassian.net/",
+              "name": "To Do",
+              "id": "10004",
+              "statusCategory": {
+                  "self": "https://mmtest.atlassian.net/rest/api/2/statuscategory/2",
+                  "id": 2,
+                  "key": "new",
+                  "colorName": "blue-gray",
+                  "name": "To Do"
+              }
+          }
       }
-    }
   }
 }
