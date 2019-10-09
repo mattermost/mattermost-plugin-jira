@@ -92,8 +92,7 @@ export default class ConfirmModal extends PureComponent<Props, State> {
         return nextProps.show !== this.props.show;
     }
 
-    // UNSAFE_componentWillReceiveProps(nextProps) { // eslint-disable-line camelcase
-    componentDidUpdate(prevProps) { // eslint-disable-line camelcase
+    componentDidUpdate(prevProps) { 
         if (prevProps.show && !this.props.show) {
             document.removeEventListener('keydown', this.handleKeypress);
         } else if (!prevProps.show && this.props.show) {
