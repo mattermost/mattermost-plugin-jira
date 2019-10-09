@@ -63,7 +63,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
             >
                 <ConfirmModal
                     cancelButtonText={'Cancel'}
-                    confirmButtonText={'Confirm'}
+                    confirmButtonText={'Delete'}
                     confirmButtonClass={'btn btn-danger'}
                     hideCancel={false}
                     message={'Delete Subscription "' + sub.id + '"?'}

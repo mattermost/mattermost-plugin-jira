@@ -103,7 +103,7 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
     <ConfirmModal
       cancelButtonText="Cancel"
       confirmButtonClass="btn btn-danger"
-      confirmButtonText="Confirm"
+      confirmButtonText="Delete"
       hideCancel={false}
       message="Delete Subscription ?"
       onCancel={[Function]}
@@ -3488,7 +3488,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
     <ConfirmModal
       cancelButtonText="Cancel"
       confirmButtonClass="btn btn-danger"
-      confirmButtonText="Confirm"
+      confirmButtonText="Delete"
       hideCancel={false}
       message="Delete Subscription ?"
       onCancel={[Function]}
@@ -3625,7 +3625,7 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
     <ConfirmModal
       cancelButtonText="Cancel"
       confirmButtonClass="btn btn-danger"
-      confirmButtonText="Confirm"
+      confirmButtonText="Delete"
       hideCancel={false}
       message="Delete Subscription ?"
       onCancel={[Function]}
@@ -3773,7 +3773,7 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
     <ConfirmModal
       cancelButtonText="Cancel"
       confirmButtonClass="btn btn-danger"
-      confirmButtonText="Confirm"
+      confirmButtonText="Delete"
       hideCancel={false}
       message="Delete Subscription ?"
       onCancel={[Function]}
@@ -3910,7 +3910,7 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
     <ConfirmModal
       cancelButtonText="Cancel"
       confirmButtonClass="btn btn-danger"
-      confirmButtonText="Confirm"
+      confirmButtonText="Delete"
       hideCancel={false}
       message="Delete Subscription ?"
       onCancel={[Function]}

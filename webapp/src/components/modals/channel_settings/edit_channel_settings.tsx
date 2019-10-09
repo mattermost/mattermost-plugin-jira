@@ -297,7 +297,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         const confirmComponent = (
             <ConfirmModal
                 cancelButtonText={'Cancel'}
-                confirmButtonText={'Confirm'}
+                confirmButtonText={'Delete'}
                 confirmButtonClass={'btn btn-danger'}
                 hideCancel={false}
                 message={'Delete Subscription ?'}
