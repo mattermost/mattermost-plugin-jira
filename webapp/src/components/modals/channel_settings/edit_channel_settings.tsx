@@ -287,7 +287,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         }
 
         const enableSubmitButton = Boolean(this.state.filters.projects[0]);
-        const showDeleteButton = Boolean(this.props.selectedSubscription);
+        const enableDeleteButton = Boolean(this.props.selectedSubscription);
 
         return (
             <form
@@ -308,15 +308,14 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                         defaultMessage='Cancel'
                         onClick={this.handleClose}
                     />
-                    {showDeleteButton && (
-                        <FormButton
-                            id='jira-delete-subscription'
-                            type='button'
-                            btnClass='btn-danger pull-left'
-                            defaultMessage='Delete'
-                            onClick={this.deleteChannelSubscription}
-                        />
-                    )}
+                    <FormButton
+                        id='jira-delete-subscription'
+                        type='button'
+                        btnClass='btn-danger pull-left'
+                        defaultMessage='Delete'
+                        disabled={!enableDeleteButton}
+                        onClick={this.deleteChannelSubscription}
+                    />
                     <FormButton
                         type='submit'
                         disabled={!enableSubmitButton}
