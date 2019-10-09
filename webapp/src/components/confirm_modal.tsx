@@ -92,10 +92,11 @@ export default class ConfirmModal extends PureComponent<Props, State> {
         return nextProps.show !== this.props.show;
     }
 
-    UNSAFE_componentWillReceiveProps(nextProps) { // eslint-disable-line camelcase
-        if (this.props.show && !nextProps.show) {
+    // UNSAFE_componentWillReceiveProps(nextProps) { // eslint-disable-line camelcase
+    componentDidUpdate(prevProps) { // eslint-disable-line camelcase
+        if (prevProps.show && !this.props.show) {
             document.removeEventListener('keydown', this.handleKeypress);
-        } else if (!this.props.show && nextProps.show) {
+        } else if (!prevProps.show && this.props.show) {
             document.addEventListener('keydown', this.handleKeypress);
         }
     }
@@ -107,14 +108,12 @@ export default class ConfirmModal extends PureComponent<Props, State> {
     }
 
     handleConfirm = () => {
-        // const checked = this.refs.checkbox ? this.refs.checkbox.checked : false;
-        const checked = false;
+        const checked = this.refs.checkbox ? this.refs.checkbox.checked : false;
         this.props.onConfirm(checked);
     }
 
     handleCancel = () => {
-        // const checked = this.refs.checkbox ? this.refs.checkbox.checked : false;
-        const checked = false;
+        const checked = this.refs.checkbox ? this.refs.checkbox.checked : false;
         this.props.onCancel(checked);
     }
 

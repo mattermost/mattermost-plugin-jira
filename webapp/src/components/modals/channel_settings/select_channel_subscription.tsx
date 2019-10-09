@@ -13,7 +13,7 @@ type Props = SharedProps & {
 
 type State = {
     error: string | null;
-    showConfirmModal: boolean | false;
+    showConfirmModal: boolean;
 }
 
 export default class SelectChannelSubscriptionInternal extends React.PureComponent<Props, State> {

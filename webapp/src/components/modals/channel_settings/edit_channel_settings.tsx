@@ -50,7 +50,7 @@ export type State = {
     error: string | null;
     getMetaDataErr: string | null;
     submitting: boolean;
-    showConfirmModal: boolean | false;
+    showConfirmModal: boolean;
 };
 
 export default class EditChannelSettings extends PureComponent<Props, State> {
@@ -294,19 +294,22 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         }
 
         const {showConfirmModal} = this.state;
-        const confirmComponent = (
-            <ConfirmModal
-                cancelButtonText={'Cancel'}
-                confirmButtonText={'Delete'}
-                confirmButtonClass={'btn btn-danger'}
-                hideCancel={false}
-                message={'Delete Subscription ?'}
-                onCancel={this.handleDeactivateCancel}
-                onConfirm={this.handleConfirmDelete}
-                show={showConfirmModal}
-                title={'Subscription'}
-            />
-        );
+        let confirmComponent;
+        if (this.props.selectedSubscription) {
+            confirmComponent = (
+                <ConfirmModal
+                    cancelButtonText={'Cancel'}
+                    confirmButtonText={'Delete'}
+                    confirmButtonClass={'btn btn-danger'}
+                    hideCancel={false}
+                    message={`Delete Subscription ${this.props.selectedSubscription.id}}?`}
+                    onCancel={this.handleDeactivateCancel}
+                    onConfirm={this.handleConfirmDelete}
+                    show={showConfirmModal}
+                    title={'Subscription'}
+                />
+            );
+        }
 
         let error = null;
         if (this.state.error || this.state.getMetaDataErr) {
