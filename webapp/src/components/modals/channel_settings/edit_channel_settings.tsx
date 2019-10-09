@@ -349,7 +349,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                         btnClass='btn-danger pull-left'
                         defaultMessage='Delete'
                         disabled={!enableDeleteButton}
-                        onClick={this.deleteChannelSubscription}
+                        onClick={this.handleDeleteChannelSubscription}
                     />
                     <FormButton
                         type='submit'

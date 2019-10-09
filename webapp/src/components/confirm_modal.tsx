@@ -92,7 +92,7 @@ export default class ConfirmModal extends PureComponent<Props, State> {
         return nextProps.show !== this.props.show;
     }
 
-    componentDidUpdate(prevProps) { 
+    componentDidUpdate(prevProps) {
         if (prevProps.show && !this.props.show) {
             document.removeEventListener('keydown', this.handleKeypress);
         } else if (!prevProps.show && this.props.show) {
