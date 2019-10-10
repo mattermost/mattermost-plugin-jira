@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -36,6 +37,14 @@ func (u JIRAUser) Key() string {
 
 type UserSettings struct {
 	Notifications bool `json:"notifications"`
+}
+
+func (us UserSettings) String() string {
+	notifications := "off"
+	if us.Notifications {
+		notifications = "on"
+	}
+	return fmt.Sprintf("Notifications: %s", notifications)
 }
 
 type UserInfo struct {
