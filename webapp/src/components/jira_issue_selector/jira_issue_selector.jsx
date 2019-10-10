@@ -10,7 +10,6 @@ import AsyncSelect from 'react-select/async';
 import {getStyleForReactSelect} from 'utils/styles';
 import {doFetchWithResponse} from 'client';
 
-const searchDefaults = 'ORDER BY updated DESC';
 const searchDebounceDelay = 400;
 
 export default class JiraIssueSelector extends Component {
@@ -55,11 +54,7 @@ export default class JiraIssueSelector extends Component {
     };
 
     searchIssues = (text) => {
-        const textEncoded = encodeURIComponent(text.trim().replace(/"/g, '\\"'));
-        const textSearchTerm = (textEncoded.length > 0) ? 'text ~ "' + textEncoded + '*"' : '';
-        const finalQuery = textSearchTerm + ' ' + searchDefaults;
-
-        return doFetchWithResponse(this.props.fetchIssuesEndpoint + `?jql=${finalQuery}`).then(({data}) => {
+        return doFetchWithResponse(this.props.fetchIssuesEndpoint + `?q=${encodeURIComponent(text.trim())}`).then(({data}) => {
             return data;
         }).catch((e) => {
             this.setState({error: e});
