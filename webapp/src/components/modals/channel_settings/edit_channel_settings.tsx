@@ -94,6 +94,19 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         this.props.close();
     };
 
+    arrayUnique(array) {
+        const a = array.concat();
+        for (let i = 0; i < a.length; ++i) {
+            for (let j = i + 1; j < a.length; ++j) {
+                if (a[i].value === a[j].value) {
+                    a.splice(i--, 1);
+                }
+            }
+        }
+
+        return a;
+    }
+
     deleteChannelSubscription = (e) => {
         if (this.props.selectedSubscription) {
             this.props.deleteChannelSubscription(this.props.selectedSubscription).then((res) => {
@@ -207,7 +220,10 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, this.state.filters.projects);
         const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
         const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
-        const eventOptions = JiraEventOptions.concat(customFields);
+
+        // uniquification of duplicates requires that contcatenation appends customfields to JiraEventOptions array
+        let eventOptions = JiraEventOptions.concat(customFields);
+        eventOptions = this.arrayUnique(eventOptions);
 
         let component = null;
         if (this.props.channel && this.props.channelSubscriptions) {
@@ -256,7 +272,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             }
 
             component = (
-                <div>
+                <div className='container-fluid'>
                     <ReactSelectSetting
                         name={'projects'}
                         label={'Project'}
@@ -294,14 +310,14 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                 role='form'
                 onSubmit={this.handleCreate}
             >
-                <Modal.Body
-                    style={style.modal}
-                    ref='modalBody'
-                >
+                <div className='margin-bottom x3 text-center'>
+                    <h2>{'Add Jira Subscription'}</h2>
+                </div>
+                <div style={style.modalBody}>
                     {component}
                     {error}
-                </Modal.Body>
-                <Modal.Footer>
+                </div>
+                <Modal.Footer style={style.modalFooter}>
                     <FormButton
                         type='button'
                         btnClass='btn-link'
@@ -331,10 +347,13 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
 }
 
 const getStyle = (theme: any): any => ({
-    modal: {
-        padding: '2em 2em 3em',
+    modalBody: {
+        padding: '2em 0',
         color: theme.centerChannelColor,
         backgroundColor: theme.centerChannelBg,
+    },
+    modalFooter: {
+        padding: '2rem 15px',
     },
     descriptionArea: {
         height: 'auto',
