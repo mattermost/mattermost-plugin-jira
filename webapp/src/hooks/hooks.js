@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {isDesktopApp} from '../utils/user_agent';
+import {isDesktopApp, isMinimumDesktopAppVersion} from '../utils/user_agent';
 import {openCreateModalWithoutPost, openChannelSettings, sendEphemeralPost} from '../actions';
 import {isUserConnected, getInstalledInstanceType, isInstanceInstalled} from '../selectors';
 import PluginId from 'plugin_id';
@@ -36,6 +36,11 @@ export default class Hooks {
                 return Promise.resolve({});
             }
             if (getInstalledInstanceType(this.store.getState()) === 'server' && isDesktopApp()) {
+                this.store.dispatch(sendEphemeralPost('Please use your browser to connect to Jira.'));
+                return Promise.resolve({});
+            }
+
+            if (getInstalledInstanceType(this.store.getState()) === 'server' && isDesktopApp() && !isMinimumDesktopAppVersion(4, 3, 0)) {
                 this.store.dispatch(sendEphemeralPost('Please use your browser to connect to Jira.'));
                 return Promise.resolve({});
             }
