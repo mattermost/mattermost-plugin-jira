@@ -55,7 +55,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                         className='select-channel-subscriptions-row'
                     >
                         <div className='channel-subscription-id-container'>
-                            <span>{sub.id}</span>
+                            <span>{sub.name || '(no name)'}</span>
                         </div>
                         <button
                             className='btn btn-info'

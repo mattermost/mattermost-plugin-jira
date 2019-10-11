@@ -6,6 +6,7 @@ import {Modal} from 'react-bootstrap';
 
 import ReactSelectSetting from 'components/react_select_setting';
 import FormButton from 'components/form_button';
+import Input from 'components/input';
 import Loading from 'components/loading';
 import Validator from 'components/validator';
 import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProjects, getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
@@ -49,6 +50,7 @@ export type State = {
     error: string | null;
     getMetaDataErr: string | null;
     submitting: boolean;
+    subscriptionName: string | null;
 };
 
 export default class EditChannelSettings extends PureComponent<Props, State> {
@@ -64,8 +66,10 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             fields: [],
         };
 
+        let subscriptionName = null;
         if (props.selectedSubscription) {
             filters = Object.assign({}, filters, props.selectedSubscription.filters);
+            subscriptionName = props.selectedSubscription.name;
         }
 
         filters.fields = filters.fields || [];
@@ -82,6 +86,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             submitting: false,
             filters,
             fetchingIssueMetadata,
+            subscriptionName,
         };
 
         this.validator = new Validator();
@@ -92,6 +97,10 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             e.preventDefault();
         }
         this.props.close();
+    };
+
+    handleNameChange = (id, value) => {
+        this.setState({subscriptionName: value});
     };
 
     deleteChannelSubscription = (e) => {
@@ -176,6 +185,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         const subscription = {
             channel_id: this.props.channel.id,
             filters: this.state.filters,
+            name: this.state.subscriptionName,
         } as ChannelSubscription;
 
         this.setState({submitting: true, error: null});
@@ -257,6 +267,17 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
 
             component = (
                 <div>
+                    <Input
+                        label={'Subscription Name'}
+                        placeholder={'Name'}
+                        type={'input'}
+                        required={true}
+                        onChange={this.handleNameChange}
+                        value={this.state.subscriptionName}
+                        readOnly={false}
+                        addValidate={this.validator.addComponent}
+                        removeValidate={this.validator.removeComponent}
+                    />
                     <ReactSelectSetting
                         name={'projects'}
                         label={'Project'}

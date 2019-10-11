@@ -17,6 +17,18 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
     }
   >
     <div>
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={null}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value="SubTestName"
+      />
       <ReactSelectSetting
         addValidate={[Function]}
         isMulti={false}
@@ -154,6 +166,18 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
     }
   >
     <div>
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={null}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value="SubTestName"
+      />
       <ReactSelectSetting
         addValidate={[Function]}
         isMulti={false}
@@ -3528,6 +3552,18 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
     }
   >
     <div>
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={null}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value="SubTestName"
+      />
       <ReactSelectSetting
         addValidate={[Function]}
         isMulti={false}
@@ -3654,6 +3690,18 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
     }
   >
     <div>
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={null}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value="SubTestName"
+      />
       <ReactSelectSetting
         addValidate={[Function]}
         isMulti={false}
@@ -3791,6 +3839,18 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
     }
   >
     <div>
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={null}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value={null}
+      />
       <ReactSelectSetting
         addValidate={[Function]}
         isMulti={false}

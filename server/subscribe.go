@@ -41,6 +41,7 @@ type ChannelSubscription struct {
 	Id        string              `json:"id"`
 	ChannelId string              `json:"channel_id"`
 	Filters   SubscriptionFilters `json:"filters"`
+	Name      string              `json:"name"`
 }
 
 type ChannelSubscriptions struct {
