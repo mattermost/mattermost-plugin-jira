@@ -12,11 +12,11 @@ func TestUserSettings_String(t *testing.T) {
 	}{
 		"notifications on": {
 			settings:       UserSettings{Notifications: false},
-			expectedOutput: "Notifications: off",
+			expectedOutput: "\tNotifications: off",
 		},
 		"notifications off": {
 			settings:       UserSettings{Notifications: true},
-			expectedOutput: "Notifications: on",
+			expectedOutput: "\tNotifications: on",
 		},
 	}
 	for name, tt := range tests {

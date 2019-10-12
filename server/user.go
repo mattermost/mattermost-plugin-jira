@@ -44,7 +44,7 @@ func (us UserSettings) String() string {
 	if us.Notifications {
 		notifications = "on"
 	}
-	return fmt.Sprintf("Notifications: %s", notifications)
+	return fmt.Sprintf("\tNotifications: %s", notifications)
 }
 
 type UserInfo struct {
