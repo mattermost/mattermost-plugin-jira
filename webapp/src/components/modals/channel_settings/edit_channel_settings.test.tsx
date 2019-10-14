@@ -316,7 +316,8 @@ describe('components/EditChannelSettings', () => {
             <EditChannelSettings {...props}/>
         );
 
-        expect(wrapper.exists('#jira-delete-subscription')).toBe(false);
+        expect(wrapper.exists('#jira-delete-subscription')).toBe(true);
+        expect(wrapper.find('#jira-delete-subscription').prop('disabled')).toBe(true);
     });
 
     test('should delete subscription', async () => {

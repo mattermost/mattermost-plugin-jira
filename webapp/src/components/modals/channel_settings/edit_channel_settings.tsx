@@ -256,7 +256,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             }
 
             component = (
-                <div>
+                <div className='container-fluid'>
                     <ReactSelectSetting
                         name={'projects'}
                         label={'Project'}
@@ -287,36 +287,35 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         }
 
         const enableSubmitButton = Boolean(this.state.filters.projects[0]);
-        const showDeleteButton = Boolean(this.props.selectedSubscription);
+        const enableDeleteButton = Boolean(this.props.selectedSubscription);
 
         return (
             <form
                 role='form'
                 onSubmit={this.handleCreate}
             >
-                <Modal.Body
-                    style={style.modal}
-                    ref='modalBody'
-                >
+                <div className='margin-bottom x3 text-center'>
+                    <h2>{'Add Jira Subscription'}</h2>
+                </div>
+                <div style={style.modalBody}>
                     {component}
                     {error}
-                </Modal.Body>
-                <Modal.Footer>
+                </div>
+                <Modal.Footer style={style.modalFooter}>
                     <FormButton
                         type='button'
                         btnClass='btn-link'
                         defaultMessage='Cancel'
                         onClick={this.handleClose}
                     />
-                    {showDeleteButton && (
-                        <FormButton
-                            id='jira-delete-subscription'
-                            type='button'
-                            btnClass='btn-danger pull-left'
-                            defaultMessage='Delete'
-                            onClick={this.deleteChannelSubscription}
-                        />
-                    )}
+                    <FormButton
+                        id='jira-delete-subscription'
+                        type='button'
+                        btnClass='btn-danger pull-left'
+                        defaultMessage='Delete'
+                        disabled={!enableDeleteButton}
+                        onClick={this.deleteChannelSubscription}
+                    />
                     <FormButton
                         type='submit'
                         disabled={!enableSubmitButton}
@@ -332,10 +331,13 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
 }
 
 const getStyle = (theme: any): any => ({
-    modal: {
-        padding: '2em 2em 3em',
+    modalBody: {
+        padding: '2em 0',
         color: theme.centerChannelColor,
         backgroundColor: theme.centerChannelBg,
+    },
+    modalFooter: {
+        padding: '2rem 15px',
     },
     descriptionArea: {
         height: 'auto',

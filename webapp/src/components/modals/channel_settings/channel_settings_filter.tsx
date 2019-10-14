@@ -88,6 +88,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
     render(): JSX.Element {
         const {field, fields, value, theme} = this.props;
         let chosenFieldValues: ReactSelectOption[] = [];
+        const style = getStyle(theme);
 
         const fieldTypeOptions = fields.map((f) => ({
             value: f.key,
@@ -124,10 +125,10 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
             deleteButton = (
                 <button
                     onClick={this.removeFilter}
-                    className='btn btn-danger'
-                    type='button'
+                    className='style--none'
+                    style={style.trashIcon}
                 >
-                    {'Remove'}
+                    <i className="fa fa-trash" />
                 </button>
             );
         } else {
@@ -143,55 +144,61 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         }
 
         return (
-            <div>
-                <div>
-                    <span>
-                        {this.checkFieldConflictError()}
-                    </span>
+            <div className='row'>
+                <div className='col-md-11 col-sm-12'>
+                    <div className='row'>
+                        <div>
+                            <span>
+                                {this.checkFieldConflictError()}
+                            </span>
+                        </div>
+                        <div className='col-md-4 col-sm-12'>
+                            <ReactSelectSetting
+                                name={'fieldtype'}
+                                required={true}
+                                hideRequiredStar={true}
+                                options={fieldTypeOptions}
+                                isOptionDisabled={this.isOptionDisabled}
+                                value={chosenFieldType}
+                                onChange={this.handleFieldTypeChange}
+                                theme={theme}
+                                addValidate={this.props.addValidate}
+                                removeValidate={this.props.removeValidate}
+                            />
+                        </div>
+                        <div className='col-md-4 col-sm-12'>
+                            <ReactSelectSetting
+                                name={'exclude'}
+                                required={true}
+                                hideRequiredStar={true}
+                                options={inclusionSelectOptions}
+                                onChange={this.handleInclusionChange}
+                                value={chosenInclusionOption}
+                                theme={theme}
+                                addValidate={this.props.addValidate}
+                                removeValidate={this.props.removeValidate}
+                            />
+                        </div>
+                        <div className='col-md-4 col-sm-12'>
+                            <ReactSelectSetting
+                                name={'values'}
+                                required={true}
+                                hideRequiredStar={true}
+                                options={fieldValueOptions}
+                                theme={theme}
+                                onChange={this.handleFieldValuesChange}
+                                value={chosenFieldValues}
+                                isMulti={true}
+                                addValidate={this.props.addValidate}
+                                removeValidate={this.props.removeValidate}
+                                allowUserDefinedValue={Boolean(field && field.userDefined)}
+                            />
+                        </div>
+                    </div>
                 </div>
-                <div style={{width: '30%', display: 'inline-block'}}>
-                    <ReactSelectSetting
-                        name={'fieldtype'}
-                        required={true}
-                        hideRequiredStar={true}
-                        options={fieldTypeOptions}
-                        isOptionDisabled={this.isOptionDisabled}
-                        value={chosenFieldType}
-                        onChange={this.handleFieldTypeChange}
-                        theme={theme}
-                        addValidate={this.props.addValidate}
-                        removeValidate={this.props.removeValidate}
-                    />
+                <div className='col-md-1 col-sm-12 text-center'>
+                    {deleteButton}
                 </div>
-                <div style={{width: '30%', display: 'inline-block'}}>
-                    <ReactSelectSetting
-                        name={'exclude'}
-                        required={true}
-                        hideRequiredStar={true}
-                        options={inclusionSelectOptions}
-                        onChange={this.handleInclusionChange}
-                        value={chosenInclusionOption}
-                        theme={theme}
-                        addValidate={this.props.addValidate}
-                        removeValidate={this.props.removeValidate}
-                    />
-                </div>
-                <div style={{width: '30%', display: 'inline-block'}}>
-                    <ReactSelectSetting
-                        name={'values'}
-                        required={true}
-                        hideRequiredStar={true}
-                        options={fieldValueOptions}
-                        theme={theme}
-                        onChange={this.handleFieldValuesChange}
-                        value={chosenFieldValues}
-                        isMulti={true}
-                        addValidate={this.props.addValidate}
-                        removeValidate={this.props.removeValidate}
-                        allowUserDefinedValue={Boolean(field && field.userDefined)}
-                    />
-                </div>
-                {deleteButton}
             </div>
         );
     }
@@ -214,6 +221,7 @@ export function EmptyChannelSettingsFilter(props: EmptyChannelSettingsFilterProp
     };
 
     const {fields, theme} = props;
+    const style = getStyle(theme);
 
     const fieldTypeOptions = fields.map((f) => ({
         value: f.key,
@@ -221,37 +229,53 @@ export function EmptyChannelSettingsFilter(props: EmptyChannelSettingsFilterProp
     }));
 
     return (
-        <div>
-            <div style={{width: '30%', display: 'inline-block'}}>
-                <ReactSelectSetting
-                    name={'fieldtype'}
-                    options={fieldTypeOptions}
-                    onChange={handleFieldTypeChange}
-                    theme={theme}
-                />
+        <div className='row'>
+            <div className='col-md-11 col-sm-12'>
+                <div className='row'>
+                    <div className='col-md-4 col-sm-12'>
+                        <ReactSelectSetting
+                            name={'fieldtype'}
+                            options={fieldTypeOptions}
+                            onChange={handleFieldTypeChange}
+                            theme={theme}
+                        />
+                    </div>
+                    <div className='col-md-4 col-sm-12'>
+                        <ReactSelectSetting
+                            name={'exclude'}
+                            options={[]}
+                            isDisabled={true}
+                            theme={theme}
+                        />
+                    </div>
+                    <div className='col-md-4 col-sm-12'>
+                        <ReactSelectSetting
+                            name={'values'}
+                            options={[]}
+                            isDisabled={true}
+                            theme={theme}
+                        />
+                    </div>
+                </div>
             </div>
-            <div style={{width: '30%', display: 'inline-block'}}>
-                <ReactSelectSetting
-                    name={'exclude'}
-                    options={[]}
-                    isDisabled={true}
-                    theme={theme}
-                />
+            <div className='col-md-1 col-sm-12 text-center'>
+                <button
+                    onClick={props.cancelAdd}
+                    className='style--none'
+                    style={style.trashIcon}
+                >
+                    <i className="fa fa-trash"/>
+                </button>
             </div>
-            <div style={{width: '30%', display: 'inline-block'}}>
-                <ReactSelectSetting
-                    name={'values'}
-                    options={[]}
-                    isDisabled={true}
-                    theme={theme}
-                />
-            </div>
-            <button
-                onClick={props.cancelAdd}
-                className='btn btn-info'
-            >
-                {'Cancel'}
-            </button>
         </div>
     );
 }
+
+const getStyle = (theme: any): any => ({
+    trashIcon: {
+        color: theme.errorTextColor,
+        fontSize: '20px',
+        margin: '2.5rem 0 0',
+    },
+});
+

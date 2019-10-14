@@ -81,6 +81,7 @@ export default class ChannelSettingsFilters extends React.PureComponent<ChannelS
     render() {
         const {fields, values} = this.props;
         const {showCreateRow} = this.state;
+        const style = getStyle();
 
         let error = null;
         const conflictingFields = this.getConflictingFields();
@@ -103,14 +104,14 @@ export default class ChannelSettingsFilters extends React.PureComponent<ChannelS
         return (
             <div>
                 {error}
-                <ul style={{listStyleType: 'none'}}>
+                <div>
                     {values.map((v, i) => {
                         const field = fields.find((f) => f.key === v.key);
                         if (!field) {
                             return null;
                         }
                         return (
-                            <li key={i}>
+                            <div key={i}>
                                 <ChannelSettingsFilter
                                     fields={fields}
                                     field={field}
@@ -123,11 +124,11 @@ export default class ChannelSettingsFilters extends React.PureComponent<ChannelS
                                     addValidate={this.props.addValidate}
                                     removeValidate={this.props.removeValidate}
                                 />
-                            </li>
+                            </div>
                         );
                     })}
                     {showCreateRow && (
-                        <li>
+                        <div>
                             <EmptyChannelSettingsFilter
                                 fields={fields}
                                 chosenIssueTypes={this.props.chosenIssueTypes}
@@ -136,18 +137,25 @@ export default class ChannelSettingsFilters extends React.PureComponent<ChannelS
                                 theme={this.props.theme}
                                 cancelAdd={this.hideNewFilter}
                             />
-                        </li>
+                        </div>
                     )}
                     <button
                         onClick={this.addNewFilter}
                         disabled={showCreateRow}
-                        className='btn btn-info'
-                        type='button'
+                        className='btn style--none d-flex align-items-center'
                     >
+                        <span style={style.plusIcon}>+</span>
                         {'Add Filter'}
                     </button>
-                </ul>
+                </div>
             </div>
         );
     }
 }
+
+const getStyle = () => ({
+    plusIcon: {
+        fontSize: '24px',
+        margin: '-1px 4px 0 0',
+    },
+});

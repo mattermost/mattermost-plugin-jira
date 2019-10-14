@@ -25,9 +25,9 @@ export default class Setting extends React.PureComponent {
         } = this.props;
 
         return (
-            <div className='form-group'>
+            <div className='form-group less'>
                 <label
-                    className='control-label'
+                    className='control-label margin-bottom x2'
                     htmlFor={inputId}
                 >
                     {label}

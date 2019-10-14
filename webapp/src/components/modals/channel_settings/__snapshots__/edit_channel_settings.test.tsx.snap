@@ -3878,6 +3878,16 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
       type="button"
     />
     <FormButton
+      btnClass="btn-danger pull-left"
+      defaultMessage="Delete"
+      disabled={true}
+      extraClasses=""
+      id="jira-delete-subscription"
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
       btnClass="btn-primary"
       defaultMessage="Set Subscription"
       disabled={true}
