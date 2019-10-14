@@ -266,33 +266,37 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             }
 
             component = (
-                <div>
-                    <Input
-                        label={'Subscription Name'}
-                        placeholder={'Name'}
-                        type={'input'}
-                        required={true}
-                        onChange={this.handleNameChange}
-                        value={this.state.subscriptionName}
-                        readOnly={false}
-                        addValidate={this.validator.addComponent}
-                        removeValidate={this.validator.removeComponent}
-                    />
-                    <ReactSelectSetting
-                        name={'projects'}
-                        label={'Project'}
-                        required={true}
-                        onChange={this.handleProjectChange}
-                        options={projectOptions}
-                        isMulti={false}
-                        theme={this.props.theme}
-                        value={projectOptions.filter((option) => this.state.filters.projects.includes(option.value))}
-                        addValidate={this.validator.addComponent}
-                        removeValidate={this.validator.removeComponent}
-                        limitOptions={true}
-                    />
-                    {innerComponent}
-                </div>
+                <React.Fragment>
+                    <div className='container-fluid'>
+                        <Input
+                            label={'Subscription Name'}
+                            placeholder={'Name'}
+                            type={'input'}
+                            required={true}
+                            onChange={this.handleNameChange}
+                            value={this.state.subscriptionName}
+                            readOnly={false}
+                            addValidate={this.validator.addComponent}
+                            removeValidate={this.validator.removeComponent}
+                        />
+                    </div>
+                    <div className='container-fluid'>
+                        <ReactSelectSetting
+                            name={'projects'}
+                            label={'Project'}
+                            required={true}
+                            onChange={this.handleProjectChange}
+                            options={projectOptions}
+                            isMulti={false}
+                            theme={this.props.theme}
+                            value={projectOptions.filter((option) => this.state.filters.projects.includes(option.value))}
+                            addValidate={this.validator.addComponent}
+                            removeValidate={this.validator.removeComponent}
+                            limitOptions={true}
+                        />
+                        {innerComponent}
+                    </div>
+                </React.Fragment>
             );
         } else {
             component = <Loading/>;
@@ -315,14 +319,14 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                 role='form'
                 onSubmit={this.handleCreate}
             >
-                <Modal.Body
-                    style={style.modal}
-                    ref='modalBody'
-                >
+                <div className='margin-bottom x3 text-center'>
+                    <h2>{'Add Jira Subscription'}</h2>
+                </div>
+                <div style={style.modalBody}>
                     {component}
                     {error}
-                </Modal.Body>
-                <Modal.Footer>
+                </div>
+                <Modal.Footer style={style.modalFooter}>
                     <FormButton
                         type='button'
                         btnClass='btn-link'
@@ -352,10 +356,13 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
 }
 
 const getStyle = (theme: any): any => ({
-    modal: {
-        padding: '2em 2em 3em',
+    modalBody: {
+        padding: '2em 0',
         color: theme.centerChannelColor,
         backgroundColor: theme.centerChannelBg,
+    },
+    modalFooter: {
+        padding: '2rem 15px',
     },
     descriptionArea: {
         height: 'auto',

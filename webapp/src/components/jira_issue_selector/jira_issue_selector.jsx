@@ -127,7 +127,7 @@ export default class JiraIssueSelector extends Component {
         }
 
         return (
-            <div className={'form-group margin-bottom x3'}>
+            <div className={'form-group less'}>
                 {errComponent}
                 <label
                     className={'control-label'}
