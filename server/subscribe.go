@@ -258,6 +258,11 @@ func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) er
 			return nil, err
 		}
 
+		err = p.isChannelSubscriptionNameUnique(newSubscription.ChannelId, newSubscription)
+		if err != nil {
+			return nil, err
+		}
+
 		newSubscription.Id = model.NewId()
 		subs.Channel.add(newSubscription)
 
@@ -268,6 +273,20 @@ func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) er
 
 		return modifiedBytes, nil
 	})
+}
+
+func (p *Plugin) isChannelSubscriptionNameUnique(channelId string, subscription *ChannelSubscription) error {
+	subs, err := p.getSubscriptionsForChannel(channelId)
+	if err != nil {
+		return err
+	}
+
+	for sub := range subs {
+		if subs[sub].Name == subscription.Name && subs[sub].Id != subscription.Id {
+			return errors.New("Subscription name, \"" + subs[sub].Name + "\", already exists. Please choose another name.")
+		}
+	}
+	return nil
 }
 
 func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscription) error {
@@ -287,6 +306,12 @@ func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscripti
 		if !ok {
 			return nil, errors.New("Existing subscription does not exist.")
 		}
+
+		err = p.isChannelSubscriptionNameUnique(oldSub.ChannelId, modifiedSubscription)
+		if err != nil {
+			return nil, err
+		}
+
 		subs.Channel.remove(&oldSub)
 		subs.Channel.add(modifiedSubscription)
 
