@@ -38,7 +38,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
     deleteChannelSubscription = (sub: ChannelSubscription): void => {
         this.props.deleteChannelSubscription(sub).then((res: { error?: { message: string } }) => {
             if (res.error) {
-                this.setState({ error: res.error.message });
+                this.setState({error: res.error.message});
             }
         });
     };
@@ -54,17 +54,16 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
             );
         }
 
-
         const subscriptionRows = (
             <table className='table'>
                 <thead>
                     <tr>
-                        <th scope='col'>ID</th>
-                        <th scope='col'>Actions</th>
+                        <th scope='col'>{'Name'}</th>
+                        <th scope='col'>{'Actions'}</th>
                     </tr>
                 </thead>
-                {this.props.channelSubscriptions.map((sub) => (
-                    <tbody>
+                {this.props.channelSubscriptions.map((sub, i) => (
+                    <tbody key={i}>
                         <td
                             key={sub.id}
                             className='select-channel-subscriptions-row'
@@ -100,7 +99,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                     </tbody>
                 ))}
             </table>
-        )
+        );
 
         return (
             <div>
