@@ -5,18 +5,25 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
   onSubmit={[Function]}
   role="form"
 >
-  <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
+  <div
+    className="margin-bottom x3 text-center"
+  >
+    <h2>
+      Add Jira Subscription
+    </h2>
+  </div>
+  <div
     style={
       Object {
         "backgroundColor": "#ffffff",
         "color": "#3d3c40",
-        "padding": "2em 2em 3em",
+        "padding": "2em 0",
       }
     }
   >
-    <div>
+    <div
+      className="container-fluid"
+    >
       <Input
         addValidate={[Function]}
         label="Subscription Name"
@@ -29,6 +36,10 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
         type="input"
         value="SubTestName"
       />
+    </div>
+    <div
+      className="container-fluid"
+    >
       <ReactSelectSetting
         addValidate={[Function]}
         isMulti={false}
@@ -112,10 +123,15 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
         style={Object {}}
       />
     </div>
-  </ModalBody>
+  </div>
   <ModalFooter
     bsClass="modal-footer"
     componentClass="div"
+    style={
+      Object {
+        "padding": "2rem 15px",
+      }
+    }
   >
     <FormButton
       btnClass="btn-link"
@@ -154,18 +170,25 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
   onSubmit={[Function]}
   role="form"
 >
-  <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
+  <div
+    className="margin-bottom x3 text-center"
+  >
+    <h2>
+      Add Jira Subscription
+    </h2>
+  </div>
+  <div
     style={
       Object {
         "backgroundColor": "#ffffff",
         "color": "#3d3c40",
-        "padding": "2em 2em 3em",
+        "padding": "2em 0",
       }
     }
   >
-    <div>
+    <div
+      className="container-fluid"
+    >
       <Input
         addValidate={[Function]}
         label="Subscription Name"
@@ -178,6 +201,10 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
         type="input"
         value="SubTestName"
       />
+    </div>
+    <div
+      className="container-fluid"
+    >
       <ReactSelectSetting
         addValidate={[Function]}
         isMulti={false}
@@ -3498,10 +3525,15 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
         values={Array []}
       />
     </div>
-  </ModalBody>
+  </div>
   <ModalFooter
     bsClass="modal-footer"
     componentClass="div"
+    style={
+      Object {
+        "padding": "2rem 15px",
+      }
+    }
   >
     <FormButton
       btnClass="btn-link"
@@ -3540,18 +3572,25 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
   onSubmit={[Function]}
   role="form"
 >
-  <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
+  <div
+    className="margin-bottom x3 text-center"
+  >
+    <h2>
+      Add Jira Subscription
+    </h2>
+  </div>
+  <div
     style={
       Object {
         "backgroundColor": "#ffffff",
         "color": "#3d3c40",
-        "padding": "2em 2em 3em",
+        "padding": "2em 0",
       }
     }
   >
-    <div>
+    <div
+      className="container-fluid"
+    >
       <Input
         addValidate={[Function]}
         label="Subscription Name"
@@ -3564,6 +3603,10 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
         type="input"
         value="SubTestName"
       />
+    </div>
+    <div
+      className="container-fluid"
+    >
       <ReactSelectSetting
         addValidate={[Function]}
         isMulti={false}
@@ -3636,10 +3679,15 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
         value={Array []}
       />
     </div>
-  </ModalBody>
+  </div>
   <ModalFooter
     bsClass="modal-footer"
     componentClass="div"
+    style={
+      Object {
+        "padding": "2rem 15px",
+      }
+    }
   >
     <FormButton
       btnClass="btn-link"
@@ -3678,18 +3726,25 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
   onSubmit={[Function]}
   role="form"
 >
-  <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
+  <div
+    className="margin-bottom x3 text-center"
+  >
+    <h2>
+      Add Jira Subscription
+    </h2>
+  </div>
+  <div
     style={
       Object {
         "backgroundColor": "#ffffff",
         "color": "#3d3c40",
-        "padding": "2em 2em 3em",
+        "padding": "2em 0",
       }
     }
   >
-    <div>
+    <div
+      className="container-fluid"
+    >
       <Input
         addValidate={[Function]}
         label="Subscription Name"
@@ -3702,6 +3757,10 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
         type="input"
         value="SubTestName"
       />
+    </div>
+    <div
+      className="container-fluid"
+    >
       <ReactSelectSetting
         addValidate={[Function]}
         isMulti={false}
@@ -3785,10 +3844,15 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
         style={Object {}}
       />
     </div>
-  </ModalBody>
+  </div>
   <ModalFooter
     bsClass="modal-footer"
     componentClass="div"
+    style={
+      Object {
+        "padding": "2rem 15px",
+      }
+    }
   >
     <FormButton
       btnClass="btn-link"
@@ -3827,18 +3891,25 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
   onSubmit={[Function]}
   role="form"
 >
-  <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
+  <div
+    className="margin-bottom x3 text-center"
+  >
+    <h2>
+      Add Jira Subscription
+    </h2>
+  </div>
+  <div
     style={
       Object {
         "backgroundColor": "#ffffff",
         "color": "#3d3c40",
-        "padding": "2em 2em 3em",
+        "padding": "2em 0",
       }
     }
   >
-    <div>
+    <div
+      className="container-fluid"
+    >
       <Input
         addValidate={[Function]}
         label="Subscription Name"
@@ -3851,6 +3922,10 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
         type="input"
         value={null}
       />
+    </div>
+    <div
+      className="container-fluid"
+    >
       <ReactSelectSetting
         addValidate={[Function]}
         isMulti={false}
@@ -3923,10 +3998,15 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
         value={Array []}
       />
     </div>
-  </ModalBody>
+  </div>
   <ModalFooter
     bsClass="modal-footer"
     componentClass="div"
+    style={
+      Object {
+        "padding": "2rem 15px",
+      }
+    }
   >
     <FormButton
       btnClass="btn-link"
