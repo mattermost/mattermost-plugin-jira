@@ -125,12 +125,12 @@ export default class AttachIssueModal extends PureComponent {
                     onSubmit={this.handleCreate}
                 >
                     <Modal.Body
-                        style={style.modal}
+                        style={style.modalBody}
                         ref='modalBody'
                     >
                         {component}
                     </Modal.Body>
-                    <Modal.Footer>
+                    <Modal.Footer style={style.modalFooter}>
                         <FormButton
                             type='button'
                             btnClass='btn-link'
@@ -154,10 +154,13 @@ export default class AttachIssueModal extends PureComponent {
 }
 
 const getStyle = (theme) => ({
-    modal: {
+    modalBody: {
         padding: '2em 2em 3em',
         color: theme.centerChannelColor,
         backgroundColor: theme.centerChannelBg,
+    },
+    modalFooter: {
+        padding: '2rem 15px',
     },
     descriptionArea: {
         height: 'auto',

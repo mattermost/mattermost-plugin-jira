@@ -376,12 +376,12 @@ export default class CreateIssueModal extends PureComponent {
                     onSubmit={this.handleCreate}
                 >
                     <Modal.Body
-                        style={style.modal}
+                        style={style.modalBody}
                         ref='modalBody'
                     >
                         {component}
                     </Modal.Body>
-                    <Modal.Footer>
+                    <Modal.Footer style={style.modalFooter}>
                         {footer}
                     </Modal.Footer>
                 </form>
@@ -391,10 +391,13 @@ export default class CreateIssueModal extends PureComponent {
 }
 
 const getStyle = (theme) => ({
-    modal: {
+    modalBody: {
         padding: '2em 2em 3em',
         color: theme.centerChannelColor,
         backgroundColor: theme.centerChannelBg,
+    },
+    modalFooter: {
+        padding: '2rem 15px',
     },
     descriptionArea: {
         height: 'auto',

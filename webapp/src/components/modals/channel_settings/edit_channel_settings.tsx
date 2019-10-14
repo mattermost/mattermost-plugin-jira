@@ -256,7 +256,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             }
 
             component = (
-                <div>
+                <div className='container-fluid'>
                     <ReactSelectSetting
                         name={'projects'}
                         label={'Project'}
@@ -294,14 +294,14 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                 role='form'
                 onSubmit={this.handleCreate}
             >
-                <Modal.Body
-                    style={style.modal}
-                    ref='modalBody'
-                >
+                <div className='margin-bottom x3 text-center'>
+                    <h2>{'Add Jira Subscription'}</h2>
+                </div>
+                <div style={style.modalBody}>
                     {component}
                     {error}
-                </Modal.Body>
-                <Modal.Footer>
+                </div>
+                <Modal.Footer style={style.modalFooter}>
                     <FormButton
                         type='button'
                         btnClass='btn-link'
@@ -331,10 +331,13 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
 }
 
 const getStyle = (theme: any): any => ({
-    modal: {
-        padding: '2em 2em 3em',
+    modalBody: {
+        padding: '2em 0',
         color: theme.centerChannelColor,
         backgroundColor: theme.centerChannelBg,
+    },
+    modalFooter: {
+        padding: '2rem 15px',
     },
     descriptionArea: {
         height: 'auto',

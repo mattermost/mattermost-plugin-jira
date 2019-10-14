@@ -19,18 +19,16 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
     };
 
     deleteChannelSubscription = (sub: ChannelSubscription): void => {
-        this.props.deleteChannelSubscription(sub).then((res: {error?: {message: string}}) => {
+        this.props.deleteChannelSubscription(sub).then((res: { error?: { message: string } }) => {
             if (res.error) {
-                this.setState({error: res.error.message});
+                this.setState({ error: res.error.message });
             }
         });
     };
 
     render(): React.ReactElement {
-        const {channel} = this.props;
-        const {error} = this.state;
-
-        const headerText = `Jira Subscriptions in "${channel.name}"`;
+        const { channel } = this.props;
+        const { error } = this.state;
 
         let errorDisplay = null;
         if (error) {
@@ -41,35 +39,48 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
 
         return (
             <div>
-                <h1>{headerText}</h1>
-                <button
-                    className='btn btn-info'
-                    onClick={this.props.showCreateChannelSubscription}
-                >
-                    {'Create Subscription'}
-                </button>
+                <div className='d-flex justify-content-between align-items-center margin-bottom x3'>
+                    <h2 className='text-center'>{'Jira Subscriptions in'} <strong>{channel.name}</strong></h2>
+                    <button
+                        className='btn btn-primary'
+                        onClick={this.props.showCreateChannelSubscription}
+                    >
+                        {'Create Subscription'}
+                    </button>
+                </div>
                 {errorDisplay}
                 {this.props.channelSubscriptions.map((sub) => (
-                    <div
-                        key={sub.id}
-                        className='select-channel-subscriptions-row'
-                    >
-                        <div className='channel-subscription-id-container'>
-                            <span>{sub.id}</span>
-                        </div>
-                        <button
-                            className='btn btn-info'
-                            onClick={(): void => this.props.showEditChannelSubscription(sub)}
-                        >
-                            {'Edit'}
-                        </button>
-                        <button
-                            className='btn btn-danger'
-                            onClick={(): void => this.deleteChannelSubscription(sub)}
-                        >
-                            {'Delete'}
-                        </button>
-                    </div>
+                    <table className='table'>
+                        <thead>
+                            <tr>
+                                <th scope='col'>ID</th>
+                                <th scope='col'>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <td
+                                key={sub.id}
+                                className='select-channel-subscriptions-row'
+                            >
+                                <span>{sub.id}</span>
+                            </td>
+                            <td>
+                                <button
+                                    className='style--none color--link'
+                                    onClick={(): void => this.props.showEditChannelSubscription(sub)}
+                                >
+                                    {'Edit'}
+                                </button>
+                                {' - '}
+                                <button
+                                    className='style--none color--link'
+                                    onClick={(): void => this.deleteChannelSubscription(sub)}
+                                >
+                                    {'Delete'}
+                                </button>
+                            </td>
+                        </tbody>
+                    </table>
                 ))}
             </div>
         );
