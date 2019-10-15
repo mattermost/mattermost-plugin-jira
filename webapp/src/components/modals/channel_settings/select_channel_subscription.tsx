@@ -56,31 +56,33 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                             <th scope='col'>{'Actions'}</th>
                         </tr>
                     </thead>
-                    {this.props.channelSubscriptions.map((sub, i) => (
-                        <tbody key={i}>
-                            <td
-                                key={sub.id}
-                                className='select-channel-subscriptions-row'
-                            >
-                                <span>{sub.name || '(no name)'}</span>
-                            </td>
-                            <td>
-                                <button
-                                    className='style--none color--link'
-                                    onClick={(): void => this.props.showEditChannelSubscription(sub)}
+                    <tbody>
+                        {this.props.channelSubscriptions.map((sub, i) => (
+                            <tr key={i}>
+                                <td
+                                    key={sub.id}
+                                    className='select-channel-subscriptions-row'
                                 >
-                                    {'Edit'}
-                                </button>
-                                {' - '}
-                                <button
-                                    className='style--none color--link'
-                                    onClick={(): void => this.deleteChannelSubscription(sub)}
-                                >
-                                    {'Delete'}
-                                </button>
-                            </td>
-                        </tbody>
-                    ))}
+                                    <span>{sub.name || '(no name)'}</span>
+                                </td>
+                                <td>
+                                    <button
+                                        className='style--none color--link'
+                                        onClick={(): void => this.props.showEditChannelSubscription(sub)}
+                                    >
+                                        {'Edit'}
+                                    </button>
+                                    {' - '}
+                                    <button
+                                        className='style--none color--link'
+                                        onClick={(): void => this.deleteChannelSubscription(sub)}
+                                    >
+                                        {'Delete'}
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
                 </table>
             </div>
         );
