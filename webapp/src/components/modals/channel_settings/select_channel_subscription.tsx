@@ -69,7 +69,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                                 key={sub.id}
                                 className='select-channel-subscriptions-row'
                             >
-                                <span>{sub.id}</span>
+                                <span>{sub.name || '(no name)'}</span>
                             </td>
                             <ConfirmModal
                                 cancelButtonText={'Cancel'}

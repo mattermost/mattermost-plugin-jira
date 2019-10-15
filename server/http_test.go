@@ -214,7 +214,7 @@ func TestSubscribe(t *testing.T) {
 					}), t),
 		},
 		"Adding to existing in same channel": {
-			subscription:       `{"channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"]}}`,
+			subscription:       `{"name": "subscription name", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"]}}`,
 			expectedStatusCode: http.StatusOK,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
@@ -235,6 +235,31 @@ func TestSubscribe(t *testing.T) {
 				withExistingChannelSubscriptions(
 					[]ChannelSubscription{
 						ChannelSubscription{
+							Id:        model.NewId(),
+							ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
+							Filters: SubscriptionFilters{
+								Events:   NewStringSet("jira:issue_updated"),
+								Projects: NewStringSet("myproject"),
+							},
+						},
+					}), t),
+		},
+		"Adding to existing with same name in same channel": {
+			subscription:       `{"name": "SubscriptionName", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"]}}`,
+			expectedStatusCode: http.StatusInternalServerError,
+			apiCalls: checkHasSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
+					Filters: SubscriptionFilters{
+						Events:   NewStringSet("jira:issue_created"),
+						Projects: NewStringSet("myproject"),
+					},
+				},
+			},
+				withExistingChannelSubscriptions(
+					[]ChannelSubscription{
+						ChannelSubscription{
+							Name:      "SubscriptionName",
 							Id:        model.NewId(),
 							ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
 							Filters: SubscriptionFilters{

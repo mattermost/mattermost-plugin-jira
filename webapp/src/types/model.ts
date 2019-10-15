@@ -88,4 +88,5 @@ export type ChannelSubscription = {
     id: string;
     channel_id: string;
     filters: ChannelSubscriptionFilters;
+    name: string;
 }

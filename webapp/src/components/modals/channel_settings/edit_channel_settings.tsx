@@ -7,6 +7,7 @@ import {Modal} from 'react-bootstrap';
 import ReactSelectSetting from 'components/react_select_setting';
 import ConfirmModal from 'components/confirm_modal';
 import FormButton from 'components/form_button';
+import Input from 'components/input';
 import Loading from 'components/loading';
 import Validator from 'components/validator';
 import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProjects, getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
@@ -50,6 +51,7 @@ export type State = {
     error: string | null;
     getMetaDataErr: string | null;
     submitting: boolean;
+    subscriptionName: string | null;
     showConfirmModal: boolean;
 };
 
@@ -66,8 +68,10 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             fields: [],
         };
 
+        let subscriptionName = null;
         if (props.selectedSubscription) {
             filters = Object.assign({}, filters, props.selectedSubscription.filters);
+            subscriptionName = props.selectedSubscription.name;
         }
 
         filters.fields = filters.fields || [];
@@ -84,6 +88,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             submitting: false,
             filters,
             fetchingIssueMetadata,
+            subscriptionName,
             showConfirmModal: false,
         };
 
@@ -95,6 +100,10 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             e.preventDefault();
         }
         this.props.close();
+    };
+
+    handleNameChange = (id, value) => {
+        this.setState({subscriptionName: value});
     };
 
     deleteChannelSubscription = () => {
@@ -192,6 +201,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         const subscription = {
             channel_id: this.props.channel.id,
             filters: this.state.filters,
+            name: this.state.subscriptionName,
         } as ChannelSubscription;
 
         this.setState({submitting: true, error: null});
@@ -272,22 +282,37 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             }
 
             component = (
-                <div className='container-fluid'>
-                    <ReactSelectSetting
-                        name={'projects'}
-                        label={'Project'}
-                        required={true}
-                        onChange={this.handleProjectChange}
-                        options={projectOptions}
-                        isMulti={false}
-                        theme={this.props.theme}
-                        value={projectOptions.filter((option) => this.state.filters.projects.includes(option.value))}
-                        addValidate={this.validator.addComponent}
-                        removeValidate={this.validator.removeComponent}
-                        limitOptions={true}
-                    />
-                    {innerComponent}
-                </div>
+                <React.Fragment>
+                    <div className='container-fluid'>
+                        <Input
+                            label={'Subscription Name'}
+                            placeholder={'Name'}
+                            type={'input'}
+                            required={true}
+                            onChange={this.handleNameChange}
+                            value={this.state.subscriptionName}
+                            readOnly={false}
+                            addValidate={this.validator.addComponent}
+                            removeValidate={this.validator.removeComponent}
+                        />
+                    </div>
+                    <div className='container-fluid'>
+                        <ReactSelectSetting
+                            name={'projects'}
+                            label={'Project'}
+                            required={true}
+                            onChange={this.handleProjectChange}
+                            options={projectOptions}
+                            isMulti={false}
+                            theme={this.props.theme}
+                            value={projectOptions.filter((option) => this.state.filters.projects.includes(option.value))}
+                            addValidate={this.validator.addComponent}
+                            removeValidate={this.validator.removeComponent}
+                            limitOptions={true}
+                        />
+                        {innerComponent}
+                    </div>
+                </React.Fragment>
             );
         } else {
             component = <Loading/>;

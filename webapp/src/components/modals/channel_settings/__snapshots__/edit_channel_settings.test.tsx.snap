@@ -24,6 +24,22 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
     <div
       className="container-fluid"
     >
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={null}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value="SubTestName"
+      />
+    </div>
+    <div
+      className="container-fluid"
+    >
       <ReactSelectSetting
         addValidate={[Function]}
         isMulti={false}
@@ -181,6 +197,22 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
       }
     }
   >
+    <div
+      className="container-fluid"
+    >
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={null}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value="SubTestName"
+      />
+    </div>
     <div
       className="container-fluid"
     >
@@ -3581,6 +3613,22 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
     <div
       className="container-fluid"
     >
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={null}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value="SubTestName"
+      />
+    </div>
+    <div
+      className="container-fluid"
+    >
       <ReactSelectSetting
         addValidate={[Function]}
         isMulti={false}
@@ -3727,6 +3775,22 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
       }
     }
   >
+    <div
+      className="container-fluid"
+    >
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={null}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value="SubTestName"
+      />
+    </div>
     <div
       className="container-fluid"
     >
@@ -3887,6 +3951,22 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
       }
     }
   >
+    <div
+      className="container-fluid"
+    >
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={null}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value={null}
+      />
+    </div>
     <div
       className="container-fluid"
     >
