@@ -321,8 +321,8 @@ describe('components/EditChannelSettings', () => {
     });
 
     test('should delete subscription', async () => {
-        let deleteChannelSubscription = jest.fn().mockResolvedValue({});
-        let close = jest.fn();
+        const deleteChannelSubscription = jest.fn().mockResolvedValue({});
+        const close = jest.fn();
         const props = {
             ...baseProps,
             deleteChannelSubscription,
@@ -333,24 +333,16 @@ describe('components/EditChannelSettings', () => {
         );
 
         expect(wrapper.exists('#jira-delete-subscription')).toBe(true);
-
         wrapper.find('#jira-delete-subscription').simulate('click');
+
+        expect(wrapper.state().showConfirmModal).toBe(true);
+        wrapper.instance().handleConfirmDelete();
+
         expect(deleteChannelSubscription).toHaveBeenCalled();
 
         await Promise.resolve();
         expect(wrapper.state().error).toBe(null);
         expect(close).toHaveBeenCalled();
-
-        deleteChannelSubscription = jest.fn().mockResolvedValue({error: {message: 'Failure'}});
-        close = jest.fn();
-        wrapper.setProps({deleteChannelSubscription, close});
-
-        wrapper.find('#jira-delete-subscription').simulate('click');
-        expect(deleteChannelSubscription).toHaveBeenCalled();
-
-        await Promise.resolve();
-        expect(wrapper.state().error).toEqual('Failure');
-        expect(close).not.toHaveBeenCalled();
     });
 
     test('should show error if delete fails', async () => {
@@ -367,6 +359,9 @@ describe('components/EditChannelSettings', () => {
 
         expect(wrapper.exists('#jira-delete-subscription')).toBe(true);
         wrapper.find('#jira-delete-subscription').simulate('click');
+
+        expect(wrapper.state().showConfirmModal).toBe(true);
+        wrapper.instance().handleConfirmDelete();
 
         expect(deleteChannelSubscription).toHaveBeenCalled();
 
