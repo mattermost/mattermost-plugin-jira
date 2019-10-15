@@ -359,6 +359,14 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
               "value": "event_updated_issue_type",
             },
             Object {
+              "label": "Issue Updated: Labels",
+              "value": "event_updated_labels",
+            },
+            Object {
+              "label": "Issue Updated: Priority",
+              "value": "event_updated_priority",
+            },
+            Object {
               "label": "Issue Updated: Rank",
               "value": "event_updated_rank",
             },
@@ -387,10 +395,6 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
               "value": "event_updated_fixVersions",
             },
             Object {
-              "label": "Issue Updated: Custom - Labels",
-              "value": "event_updated_labels",
-            },
-            Object {
               "label": "Issue Updated: Custom - MJK - Checkbox",
               "value": "event_updated_customfield_10068",
             },
@@ -409,10 +413,6 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
             Object {
               "label": "Issue Updated: Custom - MJK - Select List 3",
               "value": "event_updated_customfield_10076",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Priority",
-              "value": "event_updated_priority",
             },
           ]
         }

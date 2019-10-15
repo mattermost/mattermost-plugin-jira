@@ -17,7 +17,12 @@ import {ChannelSubscription, ChannelSubscriptionFilters} from 'types/model';
 import ChannelSettingsFilters from './channel_settings_filters';
 import {SharedProps} from './shared_props';
 
-const JiraEventOptions = [
+type JiraEventOption = {
+    value: string;
+    label: string;
+}
+
+const JiraEventOptions: JiraEventOption[] = [
     {value: 'event_created', label: 'Issue Created'},
     {value: 'event_deleted', label: 'Issue Deleted'},
     {value: 'event_deleted_unresolved', label: 'Issue Deleted, Unresolved'},
@@ -53,6 +58,16 @@ export type State = {
     submitting: boolean;
     subscriptionName: string | null;
     showConfirmModal: boolean;
+};
+
+const removeDuplicateEvents = (array: JiraEventOption[]) => {
+    const result = {} as any;
+    for (const event of array) {
+        if (!result[event.value]) {
+            result[event.value] = event;
+        }
+    }
+    return Object.values(result);
 };
 
 export default class EditChannelSettings extends PureComponent<Props, State> {
@@ -101,19 +116,6 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         }
         this.props.close();
     };
-
-    arrayUnique(array) {
-        const a = array.concat();
-        for (let i = 0; i < a.length; ++i) {
-            for (let j = i + 1; j < a.length; ++j) {
-                if (a[i].value === a[j].value) {
-                    a.splice(i--, 1);
-                }
-            }
-        }
-
-        return a;
-    }
 
     handleNameChange = (id, value) => {
         this.setState({subscriptionName: value});
@@ -249,7 +251,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
 
         // uniquification of duplicates requires that contcatenation appends customfields to JiraEventOptions array
         let eventOptions = JiraEventOptions.concat(customFields);
-        eventOptions = this.arrayUnique(eventOptions);
+        eventOptions = removeDuplicateEvents(eventOptions);
 
         let component = null;
         if (this.props.channel && this.props.channelSubscriptions) {
