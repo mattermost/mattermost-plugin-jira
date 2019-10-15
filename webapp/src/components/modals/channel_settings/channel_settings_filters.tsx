@@ -144,7 +144,7 @@ export default class ChannelSettingsFilters extends React.PureComponent<ChannelS
                         disabled={showCreateRow}
                         className='btn style--none d-flex align-items-center'
                     >
-                        <span style={style.plusIcon}>+</span>
+                        <span style={style.plusIcon}>{'+'}</span>
                         {'Add Filter'}
                     </button>
                 </div>
