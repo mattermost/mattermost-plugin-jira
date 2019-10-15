@@ -21,14 +21,14 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
     deleteChannelSubscription = (sub: ChannelSubscription): void => {
         this.props.deleteChannelSubscription(sub).then((res: { error?: { message: string } }) => {
             if (res.error) {
-                this.setState({ error: res.error.message });
+                this.setState({error: res.error.message});
             }
         });
     };
 
     render(): React.ReactElement {
-        const { channel } = this.props;
-        const { error } = this.state;
+        const {channel} = this.props;
+        const {error} = this.state;
 
         let errorDisplay = null;
         if (error) {
@@ -49,15 +49,15 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                     </button>
                 </div>
                 {errorDisplay}
-                {this.props.channelSubscriptions.map((sub) => (
-                    <table className='table'>
-                        <thead>
-                            <tr>
-                                <th scope='col'>ID</th>
-                                <th scope='col'>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <table className='table'>
+                    <thead>
+                        <tr>
+                            <th scope='col'>{'Name'}</th>
+                            <th scope='col'>{'Actions'}</th>
+                        </tr>
+                    </thead>
+                    {this.props.channelSubscriptions.map((sub, i) => (
+                        <tbody key={i}>
                             <td
                                 key={sub.id}
                                 className='select-channel-subscriptions-row'
@@ -80,8 +80,8 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                                 </button>
                             </td>
                         </tbody>
-                    </table>
-                ))}
+                    ))}
+                </table>
             </div>
         );
     }
