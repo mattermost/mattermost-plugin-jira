@@ -74,10 +74,7 @@ export type Props = {
 
 }
 
-export type State = {
-}
-
-export default class ConfirmModal extends PureComponent<Props, State> {
+export default class ConfirmModal extends PureComponent<Props> {
     componentDidMount() {
         if (this.props.show) {
             document.addEventListener('keydown', this.handleKeypress);
