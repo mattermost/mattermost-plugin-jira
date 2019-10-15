@@ -171,6 +171,11 @@ exports[`components/CreateIssue should match snapshot 1`] = `
     <ModalFooter
       bsClass="modal-footer"
       componentClass="div"
+      style={
+        Object {
+          "padding": "2rem 15px",
+        }
+      }
     >
       <FormButton
         btnClass="btn-link"
@@ -1011,6 +1016,11 @@ exports[`components/CreateIssue should match snapshot with error 1`] = `
     <ModalFooter
       bsClass="modal-footer"
       componentClass="div"
+      style={
+        Object {
+          "padding": "2rem 15px",
+        }
+      }
     >
       <FormButton
         btnClass="btn-link"
@@ -1839,6 +1849,11 @@ exports[`components/CreateIssue should match snapshot with form filled 1`] = `
     <ModalFooter
       bsClass="modal-footer"
       componentClass="div"
+      style={
+        Object {
+          "padding": "2rem 15px",
+        }
+      }
     >
       <FormButton
         btnClass="btn-link"
@@ -1938,6 +1953,11 @@ exports[`components/CreateIssue should match snapshot with getMetadataError 1`] 
     <ModalFooter
       bsClass="modal-footer"
       componentClass="div"
+      style={
+        Object {
+          "padding": "2rem 15px",
+        }
+      }
     >
       <FormButton
         btnClass="btn btn-primary"
@@ -2124,6 +2144,11 @@ exports[`components/CreateIssue should match snapshot with no issue metadata 1`]
     <ModalFooter
       bsClass="modal-footer"
       componentClass="div"
+      style={
+        Object {
+          "padding": "2rem 15px",
+        }
+      }
     >
       <FormButton
         btnClass="btn-link"
@@ -2215,6 +2240,11 @@ exports[`components/CreateIssue should match snapshot with no project or issue m
     <ModalFooter
       bsClass="modal-footer"
       componentClass="div"
+      style={
+        Object {
+          "padding": "2rem 15px",
+        }
+      }
     >
       <FormButton
         btnClass="btn-link"

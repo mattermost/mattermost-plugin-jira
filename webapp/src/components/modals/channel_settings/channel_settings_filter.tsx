@@ -128,7 +128,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                     className='style--none'
                     style={style.trashIcon}
                 >
-                    <i className="fa fa-trash" />
+                    <i className='fa fa-trash'/>
                 </button>
             );
         } else {
@@ -263,7 +263,7 @@ export function EmptyChannelSettingsFilter(props: EmptyChannelSettingsFilterProp
                     className='style--none'
                     style={style.trashIcon}
                 >
-                    <i className="fa fa-trash"/>
+                    <i className='fa fa-trash'/>
                 </button>
             </div>
         </div>
