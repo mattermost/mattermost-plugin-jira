@@ -2,6 +2,8 @@ import React from 'react';
 
 import {ChannelSubscription} from 'types/model';
 
+import ConfirmModal from 'components/confirm_modal';
+
 import {SharedProps} from './shared_props';
 
 type Props = SharedProps & {
@@ -11,11 +13,26 @@ type Props = SharedProps & {
 
 type State = {
     error: string | null;
+    showConfirmModal: boolean;
 }
 
 export default class SelectChannelSubscriptionInternal extends React.PureComponent<Props, State> {
     state = {
         error: null,
+        showConfirmModal: false,
+    };
+
+    handleDeactivateCancel = () => {
+        this.setState({showConfirmModal: false});
+    }
+
+    handleConfirmDelete = (sub: ChannelSubscription) => {
+        this.setState({showConfirmModal: false});
+        this.deleteChannelSubscription(sub);
+    }
+
+    handleDeleteChannelSubscription = (): void => {
+        this.setState({showConfirmModal: true});
     };
 
     deleteChannelSubscription = (sub: ChannelSubscription): void => {
@@ -28,7 +45,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
 
     render(): React.ReactElement {
         const {channel} = this.props;
-        const {error} = this.state;
+        const {error, showConfirmModal} = this.state;
 
         let errorDisplay = null;
         if (error) {
@@ -36,6 +53,55 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                 <span className='error'>{error}</span>
             );
         }
+
+        const subscriptionRows = (
+            <table className='table'>
+                <thead>
+                    <tr>
+                        <th scope='col'>{'Name'}</th>
+                        <th scope='col'>{'Actions'}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {this.props.channelSubscriptions.map((sub, i) => (
+                        <tr key={i}>
+                            <td
+                                key={sub.id}
+                                className='select-channel-subscriptions-row'
+                            >
+                                <span>{sub.id}</span>
+                            </td>
+                            <ConfirmModal
+                                cancelButtonText={'Cancel'}
+                                confirmButtonText={'Delete'}
+                                confirmButtonClass={'btn btn-danger'}
+                                hideCancel={false}
+                                message={'Delete Subscription "' + sub.id + '"?'}
+                                onCancel={this.handleDeactivateCancel}
+                                onConfirm={(): void => this.handleConfirmDelete(sub)}
+                                show={showConfirmModal}
+                                title={'Subscription'}
+                            />
+                            <td>
+                                <button
+                                    className='style--none color--link'
+                                    onClick={(): void => this.props.showEditChannelSubscription(sub)}
+                                >
+                                    {'Edit'}
+                                </button>
+                                {' - '}
+                                <button
+                                    className='style--none color--link'
+                                    onClick={this.handleDeleteChannelSubscription}
+                                >
+                                    {'Delete'}
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        );
 
         return (
             <div>
@@ -49,41 +115,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                     </button>
                 </div>
                 {errorDisplay}
-                <table className='table'>
-                    <thead>
-                        <tr>
-                            <th scope='col'>{'Name'}</th>
-                            <th scope='col'>{'Actions'}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {this.props.channelSubscriptions.map((sub, i) => (
-                            <tr key={i}>
-                                <td
-                                    key={sub.id}
-                                    className='select-channel-subscriptions-row'
-                                >
-                                    <span>{sub.id}</span>
-                                </td>
-                                <td>
-                                    <button
-                                        className='style--none color--link'
-                                        onClick={(): void => this.props.showEditChannelSubscription(sub)}
-                                    >
-                                        {'Edit'}
-                                    </button>
-                                    {' - '}
-                                    <button
-                                        className='style--none color--link'
-                                        onClick={(): void => this.deleteChannelSubscription(sub)}
-                                    >
-                                        {'Delete'}
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                {subscriptionRows}
             </div>
         );
     }
