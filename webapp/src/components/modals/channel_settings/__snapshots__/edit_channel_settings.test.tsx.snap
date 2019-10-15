@@ -24,6 +24,22 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
     <div
       className="container-fluid"
     >
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={null}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value="SubTestName"
+      />
+    </div>
+    <div
+      className="container-fluid"
+    >
       <ReactSelectSetting
         addValidate={[Function]}
         isMulti={false}
@@ -107,6 +123,17 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
         style={Object {}}
       />
     </div>
+    <ConfirmModal
+      cancelButtonText="Cancel"
+      confirmButtonClass="btn btn-danger"
+      confirmButtonText="Delete"
+      hideCancel={false}
+      message="Delete Subscription asxtifxe8jyi9y81htww6ixkiy?"
+      onCancel={[Function]}
+      onConfirm={[Function]}
+      show={false}
+      title="Subscription"
+    />
   </div>
   <ModalFooter
     bsClass="modal-footer"
@@ -170,6 +197,22 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
       }
     }
   >
+    <div
+      className="container-fluid"
+    >
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={null}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value="SubTestName"
+      />
+    </div>
     <div
       className="container-fluid"
     >
@@ -3485,6 +3528,17 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
         values={Array []}
       />
     </div>
+    <ConfirmModal
+      cancelButtonText="Cancel"
+      confirmButtonClass="btn btn-danger"
+      confirmButtonText="Delete"
+      hideCancel={false}
+      message="Delete Subscription asxtifxe8jyi9y81htww6ixkiy?"
+      onCancel={[Function]}
+      onConfirm={[Function]}
+      show={false}
+      title="Subscription"
+    />
   </div>
   <ModalFooter
     bsClass="modal-footer"
@@ -3548,6 +3602,22 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
       }
     }
   >
+    <div
+      className="container-fluid"
+    >
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={null}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value="SubTestName"
+      />
+    </div>
     <div
       className="container-fluid"
     >
@@ -3623,6 +3693,17 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
         value={Array []}
       />
     </div>
+    <ConfirmModal
+      cancelButtonText="Cancel"
+      confirmButtonClass="btn btn-danger"
+      confirmButtonText="Delete"
+      hideCancel={false}
+      message="Delete Subscription asxtifxe8jyi9y81htww6ixkiy?"
+      onCancel={[Function]}
+      onConfirm={[Function]}
+      show={false}
+      title="Subscription"
+    />
   </div>
   <ModalFooter
     bsClass="modal-footer"
@@ -3686,6 +3767,22 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
       }
     }
   >
+    <div
+      className="container-fluid"
+    >
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={null}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value="SubTestName"
+      />
+    </div>
     <div
       className="container-fluid"
     >
@@ -3772,6 +3869,17 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
         style={Object {}}
       />
     </div>
+    <ConfirmModal
+      cancelButtonText="Cancel"
+      confirmButtonClass="btn btn-danger"
+      confirmButtonText="Delete"
+      hideCancel={false}
+      message="Delete Subscription asxtifxe8jyi9y81htww6ixkiy?"
+      onCancel={[Function]}
+      onConfirm={[Function]}
+      show={false}
+      title="Subscription"
+    />
   </div>
   <ModalFooter
     bsClass="modal-footer"
@@ -3835,6 +3943,22 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
       }
     }
   >
+    <div
+      className="container-fluid"
+    >
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={null}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value={null}
+      />
+    </div>
     <div
       className="container-fluid"
     >

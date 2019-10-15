@@ -35,6 +35,7 @@ describe('components/EditChannelSettings', () => {
             issue_types: ['10001'],
             fields: [],
         },
+        name: 'SubTestName',
     };
 
     const baseProps = {
@@ -136,7 +137,7 @@ describe('components/EditChannelSettings', () => {
         expect(wrapper.state().getMetaDataErr).toEqual('The project TES is unavailable. Please contact your system administrator.');
     });
 
-    test('should create a subscription', async () => {
+    test('should create a named subscription', async () => {
         const createChannelSubscription = jest.fn().mockResolvedValue({});
         const editChannelSubscription = jest.fn().mockResolvedValue({});
         let close = jest.fn();
@@ -154,10 +155,17 @@ describe('components/EditChannelSettings', () => {
 
         wrapper.setState({
             filters: channelSubscription.filters,
+            subscriptionName: channelSubscription.name,
         });
         wrapper.instance().handleCreate({preventDefault: jest.fn()});
         expect(wrapper.state().error).toBe(null);
-        expect(createChannelSubscription).toHaveBeenCalledWith({channel_id: testChannel.id, filters: channelSubscription.filters});
+        expect(createChannelSubscription).toHaveBeenCalledWith(
+            {
+                channel_id: testChannel.id,
+                filters: channelSubscription.filters,
+                name: channelSubscription.name,
+            }
+        );
         expect(editChannelSubscription).not.toHaveBeenCalled();
         expect(close).not.toHaveBeenCalled();
 
@@ -202,7 +210,13 @@ describe('components/EditChannelSettings', () => {
         });
         wrapper.instance().handleCreate({preventDefault: jest.fn()});
         expect(wrapper.state().error).toBe(null);
-        expect(createChannelSubscription).toHaveBeenCalledWith({channel_id: testChannel.id, filters: channelSubscription.filters});
+        expect(createChannelSubscription).toHaveBeenCalledWith(
+            {
+                channel_id: testChannel.id,
+                filters: channelSubscription.filters,
+                name: null,
+            }
+        );
         expect(editChannelSubscription).not.toHaveBeenCalled();
         expect(close).not.toHaveBeenCalled();
 
@@ -243,7 +257,14 @@ describe('components/EditChannelSettings', () => {
 
         wrapper.instance().handleCreate({preventDefault: jest.fn()});
         expect(wrapper.state().error).toBe(null);
-        expect(editChannelSubscription).toHaveBeenCalledWith({id: channelSubscription.id, channel_id: testChannel.id, filters: channelSubscription.filters});
+        expect(editChannelSubscription).toHaveBeenCalledWith(
+            {
+                id: channelSubscription.id,
+                channel_id: testChannel.id,
+                filters: channelSubscription.filters,
+                name: channelSubscription.name,
+            }
+        );
         expect(createChannelSubscription).not.toHaveBeenCalled();
         expect(close).not.toHaveBeenCalled();
 
@@ -321,8 +342,8 @@ describe('components/EditChannelSettings', () => {
     });
 
     test('should delete subscription', async () => {
-        let deleteChannelSubscription = jest.fn().mockResolvedValue({});
-        let close = jest.fn();
+        const deleteChannelSubscription = jest.fn().mockResolvedValue({});
+        const close = jest.fn();
         const props = {
             ...baseProps,
             deleteChannelSubscription,
@@ -333,24 +354,16 @@ describe('components/EditChannelSettings', () => {
         );
 
         expect(wrapper.exists('#jira-delete-subscription')).toBe(true);
-
         wrapper.find('#jira-delete-subscription').simulate('click');
+
+        expect(wrapper.state().showConfirmModal).toBe(true);
+        wrapper.instance().handleConfirmDelete();
+
         expect(deleteChannelSubscription).toHaveBeenCalled();
 
         await Promise.resolve();
         expect(wrapper.state().error).toBe(null);
         expect(close).toHaveBeenCalled();
-
-        deleteChannelSubscription = jest.fn().mockResolvedValue({error: {message: 'Failure'}});
-        close = jest.fn();
-        wrapper.setProps({deleteChannelSubscription, close});
-
-        wrapper.find('#jira-delete-subscription').simulate('click');
-        expect(deleteChannelSubscription).toHaveBeenCalled();
-
-        await Promise.resolve();
-        expect(wrapper.state().error).toEqual('Failure');
-        expect(close).not.toHaveBeenCalled();
     });
 
     test('should show error if delete fails', async () => {
@@ -367,6 +380,9 @@ describe('components/EditChannelSettings', () => {
 
         expect(wrapper.exists('#jira-delete-subscription')).toBe(true);
         wrapper.find('#jira-delete-subscription').simulate('click');
+
+        expect(wrapper.state().showConfirmModal).toBe(true);
+        wrapper.instance().handleConfirmDelete();
 
         expect(deleteChannelSubscription).toHaveBeenCalled();
 

@@ -41,6 +41,7 @@ type ChannelSubscription struct {
 	Id        string              `json:"id"`
 	ChannelId string              `json:"channel_id"`
 	Filters   SubscriptionFilters `json:"filters"`
+	Name      string              `json:"name"`
 }
 
 type ChannelSubscriptions struct {
@@ -257,6 +258,11 @@ func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) er
 			return nil, err
 		}
 
+		err = p.checkChannelSubscriptionNameUnique(newSubscription.ChannelId, newSubscription)
+		if err != nil {
+			return nil, err
+		}
+
 		newSubscription.Id = model.NewId()
 		subs.Channel.add(newSubscription)
 
@@ -267,6 +273,20 @@ func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) er
 
 		return modifiedBytes, nil
 	})
+}
+
+func (p *Plugin) checkChannelSubscriptionNameUnique(channelId string, subscription *ChannelSubscription) error {
+	subs, err := p.getSubscriptionsForChannel(channelId)
+	if err != nil {
+		return err
+	}
+
+	for subID := range subs {
+		if subs[subID].Name == subscription.Name && subs[subID].Id != subscription.Id {
+			return fmt.Errorf("Subscription name, '%s', already exists. Please choose another name.", subs[subID].Name)
+		}
+	}
+	return nil
 }
 
 func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscription) error {
@@ -286,6 +306,12 @@ func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscripti
 		if !ok {
 			return nil, errors.New("Existing subscription does not exist.")
 		}
+
+		err = p.checkChannelSubscriptionNameUnique(oldSub.ChannelId, modifiedSubscription)
+		if err != nil {
+			return nil, err
+		}
+
 		subs.Channel.remove(&oldSub)
 		subs.Channel.add(modifiedSubscription)
 
