@@ -62,42 +62,44 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                         <th scope='col'>{'Actions'}</th>
                     </tr>
                 </thead>
-                {this.props.channelSubscriptions.map((sub, i) => (
-                    <tbody key={i}>
-                        <td
-                            key={sub.id}
-                            className='select-channel-subscriptions-row'
-                        >
-                            <span>{sub.id}</span>
-                        </td>
-                        <ConfirmModal
-                            cancelButtonText={'Cancel'}
-                            confirmButtonText={'Delete'}
-                            confirmButtonClass={'btn btn-danger'}
-                            hideCancel={false}
-                            message={'Delete Subscription "' + sub.id + '"?'}
-                            onCancel={this.handleDeactivateCancel}
-                            onConfirm={(): void => this.handleConfirmDelete(sub)}
-                            show={showConfirmModal}
-                            title={'Subscription'}
-                        />
-                        <td>
-                            <button
-                                className='style--none color--link'
-                                onClick={(): void => this.props.showEditChannelSubscription(sub)}
+                <tbody>
+                    {this.props.channelSubscriptions.map((sub, i) => (
+                        <tr key={i}>
+                            <td
+                                key={sub.id}
+                                className='select-channel-subscriptions-row'
                             >
-                                {'Edit'}
-                            </button>
-                            {' - '}
-                            <button
-                                className='style--none color--link'
-                                onClick={this.handleDeleteChannelSubscription}
-                            >
-                                {'Delete'}
-                            </button>
-                        </td>
-                    </tbody>
-                ))}
+                                <span>{sub.id}</span>
+                            </td>
+                            <ConfirmModal
+                                cancelButtonText={'Cancel'}
+                                confirmButtonText={'Delete'}
+                                confirmButtonClass={'btn btn-danger'}
+                                hideCancel={false}
+                                message={'Delete Subscription "' + sub.id + '"?'}
+                                onCancel={this.handleDeactivateCancel}
+                                onConfirm={(): void => this.handleConfirmDelete(sub)}
+                                show={showConfirmModal}
+                                title={'Subscription'}
+                            />
+                            <td>
+                                <button
+                                    className='style--none color--link'
+                                    onClick={(): void => this.props.showEditChannelSubscription(sub)}
+                                >
+                                    {'Edit'}
+                                </button>
+                                {' - '}
+                                <button
+                                    className='style--none color--link'
+                                    onClick={this.handleDeleteChannelSubscription}
+                                >
+                                    {'Delete'}
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
             </table>
         );
 
