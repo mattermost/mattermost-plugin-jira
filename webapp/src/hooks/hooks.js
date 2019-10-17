@@ -35,13 +35,9 @@ export default class Hooks {
                 this.store.dispatch(sendEphemeralPost('You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.'));
                 return Promise.resolve({});
             }
-            if (getInstalledInstanceType(this.store.getState()) === 'server' && isDesktopApp()) {
-                this.store.dispatch(sendEphemeralPost('Please use your browser to connect to Jira.'));
-                return Promise.resolve({});
-            }
 
             if (getInstalledInstanceType(this.store.getState()) === 'server' && isDesktopApp() && !isMinimumDesktopAppVersion(4, 3, 0)) {
-                this.store.dispatch(sendEphemeralPost('Please use your browser to connect to Jira.'));
+                this.store.dispatch(sendEphemeralPost('Please upgrade your desktop app to 4.3.0, or log into Mattermost with your browser and run `/jira connect`'));
                 return Promise.resolve({});
             }
 
