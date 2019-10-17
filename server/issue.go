@@ -7,7 +7,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
+	"sync"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
@@ -75,11 +77,9 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	}
 
 	rootId := create.PostId
-	parentId := ""
-	if post != nil && post.ParentId != "" {
+	if post != nil && post.RootId != "" {
 		// the original post was a reply
 		rootId = post.RootId
-		parentId = create.PostId
 	}
 
 	issue := &jira.Issue{
@@ -129,7 +129,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 			Message:   fmt.Sprintf("[Please create your Jira issue manually](%v). %v\n%v", createURL, message, fieldsString),
 			ChannelId: channelId,
 			RootId:    rootId,
-			ParentId:  parentId,
+			ParentId:  rootId,
 			UserId:    ji.GetPlugin().getConfig().botUserID,
 		}
 		_ = api.SendEphemeralPost(mattermostUserId, reply)
@@ -155,7 +155,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 				Message:   message,
 				ChannelId: channelId,
 				RootId:    rootId,
-				ParentId:  parentId,
+				ParentId:  rootId,
 				UserId:    ji.GetPlugin().getConfig().botUserID,
 			})
 			w.Header().Set("Content-Type", "application/json")
@@ -171,7 +171,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.GetURL(), created.Key),
 		ChannelId: channelId,
 		RootId:    rootId,
-		ParentId:  parentId,
+		ParentId:  rootId,
 		UserId:    mattermostUserId,
 	}
 	_, appErr = api.CreatePost(reply)
@@ -344,6 +344,8 @@ func httpAPIGetJiraProjectMetadata(ji Instance, w http.ResponseWriter, r *http.R
 	return http.StatusOK, nil
 }
 
+var reJiraIssueKey = regexp.MustCompile(`^([[:alpha:]]+)-([[:digit:]]+)$`)
+
 func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
@@ -365,32 +367,51 @@ func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request)
 		return http.StatusInternalServerError, err
 	}
 
-	jqlString := r.FormValue("jql")
-
-	searchRes, err := client.SearchIssues(jqlString, &jira.SearchOptions{
-		MaxResults: 50,
-		Fields:     []string{"key", "summary"},
-	})
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to get search results")
+	q := r.FormValue("q")
+	var exact *jira.Issue
+	var wg sync.WaitGroup
+	if reJiraIssueKey.MatchString(q) {
+		wg.Add(1)
+		go func() {
+			exact, _ = client.GetIssue(q, nil)
+			wg.Done()
+		}()
 	}
+
+	jqlString := `text ~ "` + strings.ReplaceAll(q, `"`, `\"`) + `"`
+	var found []jira.Issue
+	wg.Add(1)
+	go func() {
+		found, _ = client.SearchIssues(jqlString, &jira.SearchOptions{
+			MaxResults: 50,
+			Fields:     []string{"key", "summary"},
+		})
+		wg.Done()
+	}()
+
+	wg.Wait()
 
 	// We only need to send down a summary of the data
 	type issueSummary struct {
 		Value string `json:"value"`
 		Label string `json:"label"`
 	}
-	resSummary := make([]issueSummary, 0, len(searchRes))
-	for _, res := range searchRes {
-		resSummary = append(resSummary, issueSummary{
-			Value: res.Key,
-			Label: res.Key + ": " + res.Fields.Summary,
+	var result []issueSummary
+	if exact != nil {
+		result = append(result, issueSummary{
+			Value: exact.Key,
+			Label: exact.Key + ": " + exact.Fields.Summary,
+		})
+	}
+	for _, issue := range found {
+		result = append(result, issueSummary{
+			Value: issue.Key,
+			Label: issue.Key + ": " + issue.Fields.Summary,
 		})
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	b, err := json.Marshal(resSummary)
+	b, err := json.Marshal(result)
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to marshal response")
@@ -499,11 +520,9 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 	}()
 
 	rootId := attach.PostId
-	parentId := ""
-	if post.ParentId != "" {
+	if post.RootId != "" {
 		// the original post was a reply
 		rootId = post.RootId
-		parentId = attach.PostId
 	}
 
 	// Reply to the post with the issue link that was created
@@ -511,7 +530,7 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 		Message:   fmt.Sprintf("Message attached to [%v](%v/browse/%v)", attach.IssueKey, ji.GetURL(), attach.IssueKey),
 		ChannelId: post.ChannelId,
 		RootId:    rootId,
-		ParentId:  parentId,
+		ParentId:  rootId,
 		UserId:    mattermostUserId,
 	}
 	_, appErr = api.CreatePost(reply)

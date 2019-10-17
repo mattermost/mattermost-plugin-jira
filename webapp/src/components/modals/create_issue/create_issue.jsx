@@ -329,6 +329,7 @@ export default class CreateIssueModal extends PureComponent {
                     <ReactSelectSetting
                         name={'project'}
                         label={'Project'}
+                        limitOptions={true}
                         required={true}
                         onChange={this.handleProjectChange}
                         options={projectOptions}
