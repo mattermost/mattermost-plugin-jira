@@ -12,9 +12,12 @@ import (
 func TestStats(t *testing.T) {
 	stats := newStats(nil, true)
 	for _, s := range sample {
-		stats.Endpoint("myapi1").Record(utils.ByteSize(s.size), time.Duration(s.elapsed)*time.Millisecond, s.isError, s.isIgnored)
-		stats.Endpoint("myapi2").Record(utils.ByteSize(s.size), time.Duration(s.elapsed)*time.Millisecond, s.isError, s.isIgnored)
-		stats.Endpoint("myapi3").Record(utils.ByteSize(s.size), time.Duration(s.elapsed)*time.Millisecond, s.isError, s.isIgnored)
+		stats.Endpoint("myapi1").Record(utils.ByteSize(s.requestSize), utils.ByteSize(s.responseSize),
+			time.Duration(s.elapsed)*time.Millisecond, s.isError, s.isIgnored)
+		stats.Endpoint("myapi2").Record(utils.ByteSize(s.requestSize), utils.ByteSize(s.responseSize),
+			time.Duration(s.elapsed)*time.Millisecond, s.isError, s.isIgnored)
+		stats.Endpoint("myapi3").Record(utils.ByteSize(s.requestSize), utils.ByteSize(s.responseSize),
+			time.Duration(s.elapsed)*time.Millisecond, s.isError, s.isIgnored)
 	}
 	checkSample(t, stats.Endpoint("myapi1"))
 	checkSample(t, stats.Endpoint("myapi2"))

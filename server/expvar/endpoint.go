@@ -143,9 +143,9 @@ func (e *Endpoint) UnmarshalJSON(data []byte) error {
 	}
 
 	ee := struct {
-		Name                   string
-		Total, Errors, Ignored int64
-		Elapsed, Size          string
+		Name                               string
+		Total, Errors, Ignored             int64
+		Elapsed, RequestSize, ResponseSize string
 	}{}
 	err := json.Unmarshal(data, &ee)
 	if err != nil {
@@ -164,11 +164,11 @@ func (e *Endpoint) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	reqSize, err := unmarshalHistogram(ee.Size)
+	reqSize, err := unmarshalHistogram(ee.RequestSize)
 	if err != nil {
 		return err
 	}
-	respSize, err := unmarshalHistogram(ee.Size)
+	respSize, err := unmarshalHistogram(ee.ResponseSize)
 	if err != nil {
 		return err
 	}
