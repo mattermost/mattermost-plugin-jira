@@ -244,7 +244,6 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
         const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
 
-        // uniquification of duplicates requires that contcatenation appends customfields to JiraEventOptions array
         let eventOptions = JiraEventOptions.concat(customFields);
         eventOptions = removeDuplicateEvents(eventOptions);
 
