@@ -12,17 +12,12 @@ import Loading from 'components/loading';
 import Validator from 'components/validator';
 import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProjects, getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
 
-import {ChannelSubscription, ChannelSubscriptionFilters} from 'types/model';
+import {ChannelSubscription, ChannelSubscriptionFilters, ReactSelectOption} from 'types/model';
 
 import ChannelSettingsFilters from './channel_settings_filters';
 import {SharedProps} from './shared_props';
 
-type JiraEventOption = {
-    value: string;
-    label: string;
-}
-
-const JiraEventOptions: JiraEventOption[] = [
+const JiraEventOptions: ReactSelectOption[] = [
     {value: 'event_created', label: 'Issue Created'},
     {value: 'event_deleted', label: 'Issue Deleted'},
     {value: 'event_deleted_unresolved', label: 'Issue Deleted, Unresolved'},
@@ -60,7 +55,7 @@ export type State = {
     showConfirmModal: boolean;
 };
 
-const removeDuplicateEvents = (array: JiraEventOption[]) => {
+const removeDuplicateEvents = (array: ReactSelectOption[]): ReactSelectOption[] => {
     const result = {} as any;
     for (const event of array) {
         if (!result[event.value]) {
