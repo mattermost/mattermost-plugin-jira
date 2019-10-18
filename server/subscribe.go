@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/mattermost/mattermost-plugin-jira/server/server/utils"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/pkg/errors"
 )
