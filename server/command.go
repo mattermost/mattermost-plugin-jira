@@ -6,9 +6,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
 const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
@@ -57,11 +59,14 @@ var jiraCommandHandler = CommandHandler{
 		"uninstall/cloud":  executeUninstallCloud,
 		"uninstall/server": executeUninstallServer,
 		"webhook":          executeWebhookURL,
+		"stats":            executeStats,
+		"stats/reset":      executeStatsReset,
 		"info":             executeInfo,
 		"help":             commandHelp,
-		// "list":             executeList,
-		// "instance/select":  executeInstanceSelect,
-		// "instance/delete":  executeInstanceDelete,
+		"stats/save":       executeStatsSave,
+		"list":             executeList,
+		"instance/select":  executeInstanceSelect,
+		"instance/delete":  executeInstanceDelete,
 	},
 	defaultHandler: executeJiraDefault,
 }
@@ -261,9 +266,9 @@ func executeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 }
 
 func authorizedSysAdmin(p *Plugin, userId string) (bool, error) {
-	user, err := p.API.GetUser(userId)
-	if err != nil {
-		return false, err
+	user, appErr := p.API.GetUser(userId)
+	if appErr != nil {
+		return false, appErr
 	}
 	if !strings.Contains(user.Roles, "system_admin") {
 		return false, nil
@@ -519,7 +524,7 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 		resp += fmt.Sprintf("Jira %s is installed, but you are not connected. Please [connect](%s/%s).\n",
 			uinfo.JIRAURL, p.GetPluginURL(), routeUserConnect)
 	default:
-		return p.responsef(header, "No Jira instance installed, please contact your system administrator.")
+		return p.responsef(header, resp+"\nNo Jira instance installed, please contact your system administrator.")
 	}
 
 	resp += fmt.Sprintf("\nJira:\n")
@@ -564,6 +569,48 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 		}
 	}
 	return p.responsef(header, resp)
+}
+
+func executeStats(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) < 1 {
+		return p.help(header)
+	}
+
+	resp := fmt.Sprintf("Mattermost Jira plugin version: %s, "+
+		"[%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s), built %s\n",
+		manifest.Version, BuildHashShort, BuildHash, BuildDate)
+
+	pattern := strings.Join(args, " ")
+	rstats, err := expvar.PrintExpvars(pattern)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+
+	return p.responsef(header, resp+rstats)
+}
+
+func executeStatsReset(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) != 0 {
+		return p.help(header)
+	}
+
+	err := p.resetStats()
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
+	return p.responsef(header, "Reset stats")
+}
+
+func executeStatsSave(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) != 0 {
+		return p.help(header)
+	}
+	stats := p.getConfig().stats
+	if stats == nil {
+		return p.responsef(header, "No stats to save")
+	}
+	stats.Save(p.saveStatsF)
+	return p.responsef(header, "Saved stats")
 }
 
 func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
