@@ -9,6 +9,8 @@ import (
 	"github.com/andygrunwald/go-jira"
 	"github.com/dghubble/oauth1"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 )
 
 type jiraServerInstance struct {
@@ -108,8 +110,11 @@ func (jsi jiraServerInstance) GetClient(jiraUser JIRAUser) (client Client, retur
 	}
 
 	token := oauth1.NewToken(jiraUser.Oauth1AccessToken, jiraUser.Oauth1AccessSecret)
-	httpClient := oauth1Config.Client(oauth1.NoContext, token)
-	httpClient = jsi.GetPlugin().limitResponseClient(httpClient)
+
+	conf := jsi.GetPlugin().getConfig()
+	httpClient := expvar.WrapHTTPClient(oauth1Config.Client(oauth1.NoContext, token),
+		conf.maxAttachmentSize, conf.stats, endpointNameFromRequest)
+
 	jiraClient, err := jira.NewClient(httpClient, jsi.GetURL())
 	if err != nil {
 		return nil, err

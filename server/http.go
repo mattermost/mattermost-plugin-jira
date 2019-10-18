@@ -4,7 +4,7 @@
 package main
 
 import (
-	"io"
+	goexpvar "expvar"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,7 +14,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-server/plugin"
 )
 
@@ -115,12 +114,16 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:
 		return httpSubscribeWebhook(p, w, r)
+
+	// expvar
+	case "/debug/vars":
+		goexpvar.Handler().ServeHTTP(w, r)
+		return 0, nil
 	}
 
 	if strings.HasPrefix(r.URL.Path, routeAPISubscriptionsChannel) {
 		return httpChannelSubscriptions(p, w, r)
 	}
-
 	return http.StatusNotFound, errors.New("not found")
 }
 
@@ -177,35 +180,4 @@ func (p *Plugin) respondSpecialTemplate(w http.ResponseWriter, key string, statu
 			errors.WithMessage(err, "failed to write response")
 	}
 	return status, nil
-}
-
-type roundtripper struct {
-	http.RoundTripper
-	limit utils.ByteSize
-}
-
-func (rt roundtripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	resp, err := rt.RoundTripper.RoundTrip(r)
-	if err != nil || resp == nil || resp.Body == nil {
-		return resp, err
-	}
-	resp.Body = struct {
-		io.Reader
-		io.Closer
-	}{
-		Reader: io.LimitReader(resp.Body, int64(rt.limit)),
-		Closer: resp.Body,
-	}
-
-	return resp, err
-}
-
-func (p *Plugin) limitResponseClient(c *http.Client) *http.Client {
-	client := *c
-	rt := c.Transport
-	if rt == nil {
-		rt = http.DefaultTransport
-	}
-	client.Transport = roundtripper{rt, p.getConfig().maxAttachmentSize}
-	return &client
 }

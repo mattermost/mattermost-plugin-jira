@@ -14,12 +14,13 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/utils"
-	"github.com/mattermost/mattermost-server/model"
-
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
 const (
@@ -52,6 +53,9 @@ type externalConfig struct {
 	// Maximum attachment size allowed to be uploaded to Jira, can be a
 	// number, optionally followed by one of [b, kb, mb, gb, tb]
 	MaxAttachmentSize string
+
+	// Disable statistics gathering
+	DisableStats bool `json:"disable_stats"`
 }
 
 const currentInstanceTTL = 1 * time.Second
@@ -72,6 +76,11 @@ type config struct {
 
 	// Maximum attachment size allowed to be uploaded to Jira
 	maxAttachmentSize utils.ByteSize
+
+	stats                    *expvar.Stats
+	webhookResponseStats     *expvar.Endpoint
+	subscribeResponseStats   *expvar.Endpoint
+	subscribeProcessingStats *expvar.Endpoint
 }
 
 type Plugin struct {
@@ -133,7 +142,6 @@ func (p *Plugin) OnConfigurationChange() error {
 		conf.externalConfig = ec
 		conf.maxAttachmentSize = maxAttachmentSize
 	})
-
 	return nil
 }
 
@@ -191,12 +199,14 @@ func (p *Plugin) OnActivate() error {
 		go webhookWorker{i, p, p.webhookQueue}.work()
 	}
 
+	go p.initStats()
 	return nil
 }
 
 func (p *Plugin) GetPluginKey() string {
 	return "mattermost_" + regexpNonAlnum.ReplaceAllString(p.GetSiteURL(), "_")
 }
+
 func (p *Plugin) GetPluginURLPath() string {
 	return "/plugins/" + manifest.Id
 }
