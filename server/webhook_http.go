@@ -57,7 +57,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int,
 			isError = true
 		}
 		if conf.webhookResponseStats != nil {
-			conf.webhookResponseStats.Record(utils.ByteSize(size), time.Since(start), isError, isIgnored)
+			conf.webhookResponseStats.Record(utils.ByteSize(size), 0, time.Since(start), isError, isIgnored)
 		}
 	}()
 

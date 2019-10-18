@@ -141,7 +141,8 @@ func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Clie
 	}
 
 	conf := jci.GetPlugin().getConfig()
-	httpClient := expvar.WrapHTTPClient(oauth2Conf.Client(context.Background()), conf.maxAttachmentSize,
+	httpClient := oauth2Conf.Client(context.Background())
+	httpClient = expvar.WrapHTTPClient(httpClient, conf.maxAttachmentSize,
 		conf.stats, endpointNameFromRequest)
 
 	jiraClient, err := jira.NewClient(httpClient, oauth2Conf.BaseURL)

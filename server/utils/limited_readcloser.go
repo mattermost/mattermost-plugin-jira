@@ -3,27 +3,31 @@
 
 package utils
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 type LimitReadCloser struct {
-	TotalRead ByteSize
-
 	inner io.ReadCloser
-	limit ByteSize
+
+	TotalRead ByteSize
+	limit     ByteSize
 }
 
 func NewLimitReadCloser(inner io.ReadCloser, limit int64) *LimitReadCloser {
+	fmt.Println("<><> 1: inner:", inner)
 	return &LimitReadCloser{
 		inner: inner,
 		limit: ByteSize(limit),
 	}
 }
 
-func (r *LimitReadCloser) Close() error {
-	return r.inner.Close()
-}
-
 func (r *LimitReadCloser) Read(data []byte) (int, error) {
+	if r.inner == nil {
+		fmt.Println("<><> 2")
+		return 0, io.EOF
+	}
 	if r.limit <= 0 {
 		return 0, io.EOF
 	}
@@ -34,4 +38,11 @@ func (r *LimitReadCloser) Read(data []byte) (int, error) {
 	r.limit -= ByteSize(n)
 	r.TotalRead += ByteSize(n)
 	return n, err
+}
+
+func (r *LimitReadCloser) Close() error {
+	if r.inner == nil {
+		return nil
+	}
+	return r.inner.Close()
 }

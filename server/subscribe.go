@@ -384,7 +384,7 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (st
 	start := time.Now()
 	defer func() {
 		if conf.subscribeResponseStats != nil {
-			conf.subscribeResponseStats.Record(utils.ByteSize(size), time.Since(start), err != nil, false)
+			conf.subscribeResponseStats.Record(utils.ByteSize(size), 0, time.Since(start), err != nil, false)
 		}
 	}()
 

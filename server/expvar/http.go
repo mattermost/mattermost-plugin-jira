@@ -26,16 +26,12 @@ type recorder struct {
 // WrapHTTPClient wraps an http  client, establishing limits for request and response sizes,
 // and automating recording the stats. The metric name  is derived from the request by the
 // endpointNameFromRequest function.
-func WrapHTTPClient(c *http.Client,
-	requestLimit, responseLimit int64, stats *Stats, endpointNameFromRequest func(*http.Request) string) *http.Client {
-	return wrapHTTPClient(c, requestLimit, responseLimit, stats, endpointNameFromRequest, false)
+func WrapHTTPClient(c *http.Client, maxSize utils.ByteSize, stats *Stats, endpointNameFromRequest func(*http.Request) string) *http.Client {
+	return wrapHTTPClient(c, maxSize, stats, endpointNameFromRequest, false)
 }
 
-func wrapHTTPClient(c *http.Client,
-	requestLimit, responseLimit int64,
-	stats *Stats,
-	endpointNameFromRequest func(*http.Request) string,
-	disableExpvars bool) *http.Client {
+func wrapHTTPClient(c *http.Client, maxSize utils.ByteSize, stats *Stats,
+	endpointNameFromRequest func(*http.Request) string, disableExpvars bool) *http.Client {
 
 	client := *c
 	rt := c.Transport
@@ -44,8 +40,8 @@ func wrapHTTPClient(c *http.Client,
 	}
 	client.Transport = roundtripper{
 		RoundTripper:            rt,
-		requestLimit:            requestLimit,
-		responseLimit:           responseLimit,
+		requestLimit:            int64(maxSize),
+		responseLimit:           int64(maxSize),
 		stats:                   stats,
 		endpointNameFromRequest: endpointNameFromRequest,
 	}
@@ -61,8 +57,6 @@ func (rt roundtripper) RoundTrip(r *http.Request) (*http.Response, error) {
 		endpointName = rt.endpointNameFromRequest(r)
 		endpoint = rt.stats.Endpoint(endpointName)
 	}
-
-	r.Body = utils.NewLimitReadCloser(r.Body, rt.requestLimit)
 
 	resp, err := rt.RoundTripper.RoundTrip(r)
 	if err != nil || resp == nil || resp.Body == nil {

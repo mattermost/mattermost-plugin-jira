@@ -33,7 +33,7 @@ func (ww webhookWorker) process(rawData []byte) (err error) {
 		}
 
 		if conf.subscribeProcessingStats != nil {
-			conf.subscribeProcessingStats.Record(utils.ByteSize(len(rawData)), time.Since(start), isError, isIgnored)
+			conf.subscribeProcessingStats.Record(utils.ByteSize(len(rawData)), 0, time.Since(start), isError, isIgnored)
 		}
 	}()
 
