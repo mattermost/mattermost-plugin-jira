@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/server/utils"
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
 )
@@ -281,7 +282,7 @@ func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs
 	if len(args) != 1 {
 		return p.help(header)
 	}
-	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
+	jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -324,7 +325,7 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 	if len(args) != 1 {
 		return p.help(header)
 	}
-	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
+	jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -380,7 +381,7 @@ func executeUninstallCloud(p *Plugin, c *plugin.Context, header *model.CommandAr
 		return p.help(header)
 	}
 
-	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
+	jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -431,7 +432,7 @@ func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandA
 		return p.help(header)
 	}
 
-	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
+	jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}

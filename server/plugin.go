@@ -14,6 +14,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/server/utils"
 	"github.com/mattermost/mattermost-server/model"
 
 	"github.com/pkg/errors"
@@ -55,7 +56,7 @@ type externalConfig struct {
 
 const currentInstanceTTL = 1 * time.Second
 
-const defaultMaxAttachmentSize = ByteSize(10 * 1024 * 1024) // 10Mb
+const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb
 
 type config struct {
 	// externalConfig caches values from the plugin's settings in the server's config.json
@@ -70,7 +71,7 @@ type config struct {
 	currentInstanceExpires time.Time
 
 	// Maximum attachment size allowed to be uploaded to Jira
-	maxAttachmentSize ByteSize
+	maxAttachmentSize utils.ByteSize
 }
 
 type Plugin struct {
@@ -122,7 +123,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	ec.MaxAttachmentSize = strings.TrimSpace(ec.MaxAttachmentSize)
 	maxAttachmentSize := defaultMaxAttachmentSize
 	if len(ec.MaxAttachmentSize) > 0 {
-		maxAttachmentSize, err = ParseByteSize(ec.MaxAttachmentSize)
+		maxAttachmentSize, err = utils.ParseByteSize(ec.MaxAttachmentSize)
 		if err != nil {
 			return errors.WithMessage(err, "failed to load plugin configuration")
 		}

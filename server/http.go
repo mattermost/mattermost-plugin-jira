@@ -14,6 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/server/utils"
 	"github.com/mattermost/mattermost-server/plugin"
 )
 
@@ -180,7 +181,7 @@ func (p *Plugin) respondSpecialTemplate(w http.ResponseWriter, key string, statu
 
 type roundtripper struct {
 	http.RoundTripper
-	limit ByteSize
+	limit utils.ByteSize
 }
 
 func (rt roundtripper) RoundTrip(r *http.Request) (*http.Response, error) {

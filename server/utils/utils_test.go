@@ -1,7 +1,7 @@
 // Copyright (c) 2019-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
-package main
+package utils
 
 import (
 	"fmt"
@@ -43,7 +43,7 @@ func TestNormalizeInstallURL(t *testing.T) {
 			"https://mattermost.site.url is the Mattermost site URL. Please use your Jira URL with `/jira install`."},
 	} {
 		t.Run(tc.in, func(t *testing.T) {
-			out, err := normalizeInstallURL(tc.siteURL, tc.in)
+			out, err := NormalizeInstallURL(tc.siteURL, tc.in)
 			require.Equal(t, tc.out, out)
 			errTxt := ""
 			if err != nil {

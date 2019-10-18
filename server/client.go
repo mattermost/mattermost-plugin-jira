@@ -17,6 +17,7 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/server/utils"
 	"github.com/mattermost/mattermost-server/plugin"
 )
 
@@ -59,7 +60,7 @@ type IssueService interface {
 	GetIssue(key string, options *jira.GetQueryOptions) (*jira.Issue, error)
 	CreateIssue(issue *jira.Issue) (*jira.Issue, error)
 
-	AddAttachment(api plugin.API, issueKey, fileID string, maxSize ByteSize) (mattermostName, jiraName string, err error)
+	AddAttachment(api plugin.API, issueKey, fileID string, maxSize utils.ByteSize) (mattermostName, jiraName string, err error)
 	AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
 	DoTransition(issueKey, transitionID string) error
 	GetCreateMeta(*jira.GetQueryOptions) (*jira.CreateMetaInfo, error)
@@ -254,14 +255,14 @@ func (client JiraClient) DoTransition(issueKey, transitionID string) error {
 }
 
 // AddAttachment uploads a file attachment
-func (client JiraClient) AddAttachment(api plugin.API, issueKey, fileID string, maxSize ByteSize) (mattermostName, jiraName string, err error) {
+func (client JiraClient) AddAttachment(api plugin.API, issueKey, fileID string, maxSize utils.ByteSize) (mattermostName, jiraName string, err error) {
 	fileinfo, appErr := api.GetFileInfo(fileID)
 	if appErr != nil {
 		return "", "", appErr
 	}
-	if ByteSize(fileinfo.Size) > maxSize {
+	if utils.ByteSize(fileinfo.Size) > maxSize {
 		return fileinfo.Name, "",
-			errors.Errorf("Maximum attachment size %v exceeded, file size %v", maxSize, ByteSize(fileinfo.Size))
+			errors.Errorf("Maximum attachment size %v exceeded, file size %v", maxSize, utils.ByteSize(fileinfo.Size))
 	}
 
 	fileBytes, appErr := api.ReadFile(fileinfo.Path)
