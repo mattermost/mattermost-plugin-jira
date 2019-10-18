@@ -1,7 +1,6 @@
 package expvar
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -51,7 +50,6 @@ func wrapHTTPClient(c *http.Client, maxSize utils.ByteSize, stats *Stats,
 }
 
 func (roundtripper *roundtripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	fmt.Println("<><> roundtripper 0")
 	rt := &roundtrip{
 		roundtripper: roundtripper,
 		started:      time.Now(),
@@ -64,7 +62,6 @@ func (roundtripper *roundtripper) RoundTrip(req *http.Request) (*http.Response, 
 
 	// Wrap the request body, **only** if it's there
 	if req.Body != nil {
-		fmt.Println("<><> roundtripper 1 - req.Body not nil")
 		req.Body = &utils.LimitReadCloser{
 			ReadCloser: req.Body,
 			Limit:      roundtripper.requestMaxSize,

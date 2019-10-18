@@ -4,7 +4,6 @@
 package utils
 
 import (
-	"fmt"
 	"io"
 )
 
@@ -16,14 +15,16 @@ type LimitReadCloser struct {
 }
 
 func (r *LimitReadCloser) Read(data []byte) (int, error) {
-	if r.Limit <= 0 {
-		return 0, io.EOF
-	}
-	if len(data) > int(r.Limit) {
-		data = data[0:r.Limit]
+	if r.Limit >= 0 {
+		remain := r.Limit - r.TotalRead
+		if remain <= 0 {
+			return 0, io.EOF
+		}
+		if len(data) > int(remain) {
+			data = data[0:remain]
+		}
 	}
 	n, err := r.ReadCloser.Read(data)
-	r.Limit -= ByteSize(n)
 	r.TotalRead += ByteSize(n)
 	return n, err
 }
@@ -35,6 +36,5 @@ func (r *LimitReadCloser) Close() error {
 			return err
 		}
 	}
-	fmt.Println("<><> LimitReadCloser.Close: 1:", r.ReadCloser)
 	return r.ReadCloser.Close()
 }
