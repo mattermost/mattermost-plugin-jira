@@ -1,6 +1,7 @@
 package expvar
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -9,18 +10,18 @@ import (
 
 type roundtripper struct {
 	http.RoundTripper
-	requestLimit  int64
-	responseLimit int64
+	requestMaxSize  utils.ByteSize
+	responseMaxSize utils.ByteSize
 
 	stats                   *Stats
 	endpointNameFromRequest func(*http.Request) string
 }
 
-type recorder struct {
-	*utils.LimitReadCloser
-	requestStarted time.Time
-	requestSize    utils.ByteSize
-	endpoint       *Endpoint
+type roundtrip struct {
+	roundtripper *roundtripper
+	started      time.Time
+	requestSize  utils.ByteSize
+	endpoint     *Endpoint
 }
 
 // WrapHTTPClient wraps an http  client, establishing limits for request and response sizes,
@@ -34,49 +35,68 @@ func wrapHTTPClient(c *http.Client, maxSize utils.ByteSize, stats *Stats,
 	endpointNameFromRequest func(*http.Request) string, disableExpvars bool) *http.Client {
 
 	client := *c
-	rt := c.Transport
-	if rt == nil {
-		rt = http.DefaultTransport
+	transport := c.Transport
+	if transport == nil {
+		transport = http.DefaultTransport
 	}
-	client.Transport = roundtripper{
-		RoundTripper:            rt,
-		requestLimit:            int64(maxSize),
-		responseLimit:           int64(maxSize),
+
+	client.Transport = &roundtripper{
+		RoundTripper:            transport,
+		requestMaxSize:          maxSize,
+		responseMaxSize:         maxSize,
 		stats:                   stats,
 		endpointNameFromRequest: endpointNameFromRequest,
 	}
 	return &client
 }
 
-func (rt roundtripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	start := time.Now()
-	var endpoint *Endpoint
-	endpointName := ""
-
-	if rt.stats != nil && rt.endpointNameFromRequest != nil {
-		endpointName = rt.endpointNameFromRequest(r)
-		endpoint = rt.stats.Endpoint(endpointName)
+func (roundtripper *roundtripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	fmt.Println("<><> roundtripper 0")
+	rt := &roundtrip{
+		roundtripper: roundtripper,
+		started:      time.Now(),
 	}
 
-	resp, err := rt.RoundTripper.RoundTrip(r)
+	if roundtripper.stats != nil && roundtripper.endpointNameFromRequest != nil {
+		endpointName := roundtripper.endpointNameFromRequest(req)
+		rt.endpoint = roundtripper.stats.EnsureEndpoint(endpointName)
+	}
+
+	// Wrap the request body, **only** if it's there
+	if req.Body != nil {
+		fmt.Println("<><> roundtripper 1 - req.Body not nil")
+		req.Body = &utils.LimitReadCloser{
+			ReadCloser: req.Body,
+			Limit:      roundtripper.requestMaxSize,
+			OnClose:    rt.OnCloseRequest,
+		}
+	}
+
+	resp, err := roundtripper.RoundTripper.RoundTrip(req)
 	if err != nil || resp == nil || resp.Body == nil {
-		rr := r.Body.(*utils.LimitReadCloser)
-		endpoint.Record(rr.TotalRead, 0, time.Since(start), true, false)
+		if rt.endpoint != nil {
+			rt.endpoint.Record(rt.requestSize, 0, time.Since(rt.started), true, false)
+		}
 		return resp, err
 	}
 
-	resp.Body = &recorder{
-		LimitReadCloser: utils.NewLimitReadCloser(resp.Body, rt.responseLimit),
-		requestStarted:  start,
-		endpoint:        endpoint,
+	resp.Body = &utils.LimitReadCloser{
+		ReadCloser: resp.Body,
+		Limit:      roundtripper.requestMaxSize,
+		OnClose:    rt.OnCloseResponse,
 	}
+
 	return resp, err
 }
 
-func (r *recorder) Close() error {
-	err := r.LimitReadCloser.Close()
-	if r.endpoint != nil {
-		r.endpoint.Record(r.requestSize, r.LimitReadCloser.TotalRead, time.Since(r.requestStarted), err != nil, false)
+func (rt *roundtrip) OnCloseRequest(lr *utils.LimitReadCloser) error {
+	rt.requestSize = lr.TotalRead
+	return nil
+}
+
+func (rt *roundtrip) OnCloseResponse(lr *utils.LimitReadCloser) error {
+	if rt.endpoint != nil {
+		rt.endpoint.Record(rt.requestSize, lr.TotalRead, time.Since(rt.started), false, false)
 	}
-	return err
+	return nil
 }

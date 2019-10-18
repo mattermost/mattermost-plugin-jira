@@ -12,23 +12,23 @@ import (
 func TestStats(t *testing.T) {
 	stats := newStats(nil, true)
 	for _, s := range sample {
-		stats.Endpoint("myapi1").Record(utils.ByteSize(s.requestSize), utils.ByteSize(s.responseSize),
+		stats.EnsureEndpoint("myapi1").Record(utils.ByteSize(s.requestSize), utils.ByteSize(s.responseSize),
 			time.Duration(s.elapsed)*time.Millisecond, s.isError, s.isIgnored)
-		stats.Endpoint("myapi2").Record(utils.ByteSize(s.requestSize), utils.ByteSize(s.responseSize),
+		stats.EnsureEndpoint("myapi2").Record(utils.ByteSize(s.requestSize), utils.ByteSize(s.responseSize),
 			time.Duration(s.elapsed)*time.Millisecond, s.isError, s.isIgnored)
-		stats.Endpoint("myapi3").Record(utils.ByteSize(s.requestSize), utils.ByteSize(s.responseSize),
+		stats.EnsureEndpoint("myapi3").Record(utils.ByteSize(s.requestSize), utils.ByteSize(s.responseSize),
 			time.Duration(s.elapsed)*time.Millisecond, s.isError, s.isIgnored)
 	}
-	checkSample(t, stats.Endpoint("myapi1"))
-	checkSample(t, stats.Endpoint("myapi2"))
-	checkSample(t, stats.Endpoint("myapi3"))
+	checkSample(t, stats.EnsureEndpoint("myapi1"))
+	checkSample(t, stats.EnsureEndpoint("myapi2"))
+	checkSample(t, stats.EnsureEndpoint("myapi3"))
 
 	data, err := json.Marshal(stats)
 	require.NoError(t, err)
 	require.NotEmpty(t, data)
 
 	stats = newStats(data, true)
-	checkSample(t, stats.Endpoint("myapi1"))
-	checkSample(t, stats.Endpoint("myapi2"))
-	checkSample(t, stats.Endpoint("myapi3"))
+	checkSample(t, stats.EnsureEndpoint("myapi1"))
+	checkSample(t, stats.EnsureEndpoint("myapi2"))
+	checkSample(t, stats.EnsureEndpoint("myapi3"))
 }

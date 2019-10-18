@@ -33,9 +33,9 @@ func (p *Plugin) initStats() {
 		initStatsOnce.Do(func() {
 			if !conf.DisableStats {
 				conf.stats = stats
-				conf.webhookResponseStats = stats.Endpoint("jira/webhook")
-				conf.subscribeResponseStats = stats.Endpoint("jira/subscribe/response")
-				conf.subscribeProcessingStats = stats.Endpoint("jira/subscribe/processing")
+				conf.webhookResponseStats = stats.EnsureEndpoint("jira/webhook")
+				conf.subscribeResponseStats = stats.EnsureEndpoint("jira/subscribe/response")
+				conf.subscribeProcessingStats = stats.EnsureEndpoint("jira/subscribe/processing")
 			}
 		})
 	})
@@ -69,9 +69,9 @@ func (p *Plugin) resetStats() error {
 
 	p.updateConfig(func(conf *config) {
 		if conf.stats != nil {
-			conf.webhookResponseStats = stats.Endpoint("jira/webhook")
-			conf.subscribeResponseStats = stats.Endpoint("jira/subscribe/response")
-			conf.subscribeProcessingStats = stats.Endpoint("jira/subscribe/processing")
+			conf.webhookResponseStats = stats.EnsureEndpoint("jira/webhook")
+			conf.subscribeResponseStats = stats.EnsureEndpoint("jira/subscribe/response")
+			conf.subscribeProcessingStats = stats.EnsureEndpoint("jira/subscribe/processing")
 		}
 	})
 

@@ -15,6 +15,16 @@ type webhookWorker struct {
 	workQueue <-chan []byte
 }
 
+func (ww webhookWorker) work() {
+	for rawData := range ww.workQueue {
+		err := ww.process(rawData)
+		if err != nil {
+			ww.p.errorf("WebhookWorker id: %d, error processing, err: %v", ww.id, err)
+		}
+
+	}
+}
+
 func (ww webhookWorker) process(rawData []byte) (err error) {
 	conf := ww.p.getConfig()
 	start := time.Now()
@@ -59,14 +69,4 @@ func (ww webhookWorker) process(rawData []byte) (err error) {
 	}
 
 	return nil
-}
-
-func (ww webhookWorker) work() {
-	for rawData := range ww.workQueue {
-		err := ww.process(rawData)
-		if err != nil {
-			ww.p.errorf("WebhookWorker id: %d, error processing, err: %v", ww.id, err)
-		}
-
-	}
 }

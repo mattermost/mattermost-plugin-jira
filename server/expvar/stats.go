@@ -67,7 +67,7 @@ func (stats *Stats) Do(f func(name string, e *Endpoint)) {
 	})
 }
 
-func (stats *Stats) Endpoint(name string) *Endpoint {
+func (stats *Stats) EnsureEndpoint(name string) *Endpoint {
 	e := stats.ensureEndpoint(name, nil, stats.disableExpvars)
 	return e
 }
