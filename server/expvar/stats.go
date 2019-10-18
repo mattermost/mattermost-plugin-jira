@@ -4,13 +4,9 @@ import (
 	"encoding/json"
 	goexpvar "expvar"
 	"fmt"
-	"math/rand"
 	"regexp"
 	"sync"
-	"time"
 )
-
-const statsSaveMaxDither = 10 // seconds
 
 type Stats struct {
 	disableExpvars bool
@@ -70,30 +66,6 @@ func (stats *Stats) Do(f func(name string, e *Endpoint)) {
 func (stats *Stats) EnsureEndpoint(name string) *Endpoint {
 	e := stats.ensureEndpoint(name, nil, stats.disableExpvars)
 	return e
-}
-
-// To save the stats periodically, use `go Autosave(...)``
-func (stats *Stats) Autosave(saveInterval time.Duration, savef func([]byte)) {
-	if saveInterval <= 0 || savef == nil {
-		return
-	}
-
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	dither := time.Duration(r.Intn(statsSaveMaxDither)) * time.Second
-	time.Sleep(dither)
-
-	ticker := time.NewTicker(saveInterval)
-	for range ticker.C {
-		stats.Save(savef)
-	}
-}
-
-func (stats *Stats) Save(savef func([]byte)) {
-	data, err := json.Marshal(stats)
-	if err != nil {
-		return
-	}
-	savef(data)
 }
 
 func (stats *Stats) Reset() {

@@ -81,6 +81,7 @@ type config struct {
 	webhookResponseStats     *expvar.Endpoint
 	subscribeResponseStats   *expvar.Endpoint
 	subscribeProcessingStats *expvar.Endpoint
+	statsStopAutosave        chan bool
 }
 
 type Plugin struct {

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	goexpvar "expvar"
+	"math/rand"
 	"os"
 	"sync"
 	"time"
@@ -10,8 +12,7 @@ import (
 )
 
 const statsAutosaveInterval = 1 * time.Minute
-
-// const statsAutosaveInterval = 1 * time.Hour
+const statsAutosaveMaxDither = 10 // seconds
 
 var initStatsOnce sync.Once
 
@@ -29,13 +30,13 @@ func (p *Plugin) initStats() {
 	}
 	stats := expvar.NewStatsFromData(data)
 
-	p.updateConfig(func(conf *config) {
+	p.updateConfig(func(c *config) {
 		initStatsOnce.Do(func() {
-			if !conf.DisableStats {
-				conf.stats = stats
-				conf.webhookResponseStats = stats.EnsureEndpoint("jira/webhook")
-				conf.subscribeResponseStats = stats.EnsureEndpoint("jira/subscribe/response")
-				conf.subscribeProcessingStats = stats.EnsureEndpoint("jira/subscribe/processing")
+			if !c.DisableStats {
+				c.stats = stats
+				c.webhookResponseStats = stats.EnsureEndpoint("jira/webhook")
+				c.subscribeResponseStats = stats.EnsureEndpoint("jira/subscribe/response")
+				c.subscribeProcessingStats = stats.EnsureEndpoint("jira/subscribe/processing")
 			}
 		})
 	})
@@ -43,19 +44,71 @@ func (p *Plugin) initStats() {
 	initUserCounter(p.currentInstanceStore, p.userStore)
 	initUptime()
 
-	go stats.Autosave(statsAutosaveInterval, p.saveStatsF)
+	p.startAutosaveStats()
 }
 
-func (p *Plugin) saveStatsF(data []byte) {
+// To save the stats periodically, use `go Autosave(...)``
+func (p *Plugin) startAutosaveStats() {
+	stop := make(chan bool)
+	go func() {
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		dither := time.Duration(r.Intn(statsAutosaveMaxDither)) * time.Second
+		time.Sleep(dither)
+
+		ticker := time.NewTicker(statsAutosaveInterval)
+		for {
+			select {
+			case _ = <-stop:
+				return
+			case _ = <-ticker.C:
+				p.saveStats()
+			}
+		}
+	}()
+
+	p.updateConfig(func(c *config) {
+		c.statsStopAutosave = stop
+	})
+}
+
+// To save the stats periodically, use `go Autosave(...)``
+func (p *Plugin) stopAutosaveStats(conf config) {
+	stop := conf.statsStopAutosave
+	if stop == nil {
+		return
+	}
+	p.updateConfig(func(c *config) {
+		c.statsStopAutosave = nil
+	})
+	stop <- true
+}
+
+func (p *Plugin) saveStats() error {
+	stats := p.getConfig().stats
+	if stats == nil {
+		return nil
+	}
+	data, err := json.Marshal(stats)
+	if err != nil {
+		return err
+	}
 	hostname, _ := os.Hostname()
 	appErr := p.API.KVSet(prefixStats+hostname, data)
 	if appErr != nil {
-		return
+		return appErr
 	}
+	p.debugf("Saved stats, %q", prefixStats+hostname)
+	return nil
 }
 
-func (p *Plugin) resetStats() error {
-	stats := p.getConfig().stats
+// This is only useful in a single-server context, so can not be used in production
+// TODO: Need a way to reset all stats in production?
+func (p *Plugin) debugResetStats() error {
+	conf := p.getConfig()
+	p.stopAutosaveStats(conf)
+	defer p.startAutosaveStats()
+
+	stats := conf.stats
 	if stats == nil {
 		return nil
 	}
@@ -68,11 +121,9 @@ func (p *Plugin) resetStats() error {
 	}
 
 	p.updateConfig(func(conf *config) {
-		if conf.stats != nil {
-			conf.webhookResponseStats = stats.EnsureEndpoint("jira/webhook")
-			conf.subscribeResponseStats = stats.EnsureEndpoint("jira/subscribe/response")
-			conf.subscribeProcessingStats = stats.EnsureEndpoint("jira/subscribe/processing")
-		}
+		conf.webhookResponseStats = stats.EnsureEndpoint("jira/webhook")
+		conf.subscribeResponseStats = stats.EnsureEndpoint("jira/subscribe/response")
+		conf.subscribeProcessingStats = stats.EnsureEndpoint("jira/subscribe/processing")
 	})
 
 	return nil

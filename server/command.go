@@ -48,25 +48,25 @@ type CommandHandler struct {
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
-		"connect":          executeConnect,
-		"disconnect":       executeDisconnect,
-		"install/cloud":    executeInstallCloud,
-		"install/server":   executeInstallServer,
-		"view":             executeView,
-		"settings":         executeSettings,
-		"transition":       executeTransition,
-		"assign":           executeAssign,
-		"uninstall/cloud":  executeUninstallCloud,
-		"uninstall/server": executeUninstallServer,
-		"webhook":          executeWebhookURL,
-		"stats":            executeStats,
-		"stats/reset":      executeStatsReset,
-		"info":             executeInfo,
-		"help":             commandHelp,
-		"stats/save":       executeStatsSave,
-		"list":             executeList,
-		"instance/select":  executeInstanceSelect,
-		"instance/delete":  executeInstanceDelete,
+		"connect":           executeConnect,
+		"disconnect":        executeDisconnect,
+		"install/cloud":     executeInstallCloud,
+		"install/server":    executeInstallServer,
+		"view":              executeView,
+		"settings":          executeSettings,
+		"transition":        executeTransition,
+		"assign":            executeAssign,
+		"uninstall/cloud":   executeUninstallCloud,
+		"uninstall/server":  executeUninstallServer,
+		"webhook":           executeWebhookURL,
+		"stats":             executeStats,
+		"info":              executeInfo,
+		"help":              commandHelp,
+		"list":              executeList,
+		"instance/select":   executeInstanceSelect,
+		"instance/delete":   executeInstanceDelete,
+		"debug/stats/reset": executeDebugStatsReset,
+		"debug/stats/save":  executeDebugStatsSave,
 	},
 	defaultHandler: executeJiraDefault,
 }
@@ -589,19 +589,19 @@ func executeStats(p *Plugin, c *plugin.Context, header *model.CommandArgs, args 
 	return p.responsef(header, resp+rstats)
 }
 
-func executeStatsReset(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeDebugStatsReset(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 0 {
 		return p.help(header)
 	}
 
-	err := p.resetStats()
+	err := p.debugResetStats()
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
 	return p.responsef(header, "Reset stats")
 }
 
-func executeStatsSave(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeDebugStatsSave(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 0 {
 		return p.help(header)
 	}
@@ -609,7 +609,7 @@ func executeStatsSave(p *Plugin, c *plugin.Context, header *model.CommandArgs, a
 	if stats == nil {
 		return p.responsef(header, "No stats to save")
 	}
-	stats.Save(p.saveStatsF)
+	p.saveStats()
 	return p.responsef(header, "Saved stats")
 }
 

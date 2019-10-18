@@ -153,7 +153,8 @@ func (e *Endpoint) UnmarshalJSON(data []byte) error {
 	}
 
 	unmarshalHistogram := func(s string) (*circonusllhist.Histogram, error) {
-		hdata, err := base64.StdEncoding.DecodeString(s)
+		var hdata []byte
+		hdata, err = base64.StdEncoding.DecodeString(s)
 		if err != nil {
 			return nil, err
 		}
