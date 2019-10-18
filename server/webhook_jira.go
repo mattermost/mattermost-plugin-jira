@@ -15,8 +15,7 @@ type JiraWebhook struct {
 	Issue        jira.Issue   `json:"issue,omitempty"`
 	User         jira.User    `json:"user,omitempty"`
 	Comment      jira.Comment `json:"comment,omitempty"`
-	// TODO figure out why jira.Changelog didn't work
-	ChangeLog struct {
+	ChangeLog    struct {
 		Items []struct {
 			From       string
 			FromString string

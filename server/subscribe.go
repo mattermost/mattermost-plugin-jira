@@ -4,17 +4,18 @@
 package main
 
 import (
-	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/pkg/errors"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-server/model"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -377,21 +378,31 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 	return nil
 }
 
-func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int, err error) {
+	conf := p.getConfig()
+	size := utils.ByteSize(0)
+	start := time.Now()
+	defer func() {
+		if conf.subscribeResponseStats != nil {
+			conf.subscribeResponseStats.Record(size, 0, time.Since(start), err != nil, false)
+		}
+	}()
+
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
 	}
-	cfg := p.getConfig()
-	if cfg.Secret == "" {
+	if conf.Secret == "" {
 		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret")
 	}
 
-	if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("secret")), []byte(cfg.Secret)) != 1 {
-		return http.StatusForbidden, fmt.Errorf("Request URL: secret did not match")
+	status, err = verifyWebhookRequestSecret(p.getConfig(), r)
+	if err != nil {
+		return status, err
 	}
 
 	bb, err := ioutil.ReadAll(r.Body)
+	size = utils.ByteSize(len(bb))
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -418,7 +429,7 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 		return http.StatusBadRequest, fmt.Errorf("Channel subscription invalid")
 	}
 
-	if _, err := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); err != nil {
+	if _, appErr := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); appErr != nil {
 		return http.StatusForbidden, errors.New("Not a member of the channel specified")
 	}
 
@@ -452,7 +463,7 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
 	}
 
-	if _, err := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); err != nil {
+	if _, appErr := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); appErr != nil {
 		return http.StatusForbidden, errors.New("Not a member of the channel specified")
 	}
 
@@ -481,7 +492,7 @@ func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
 	}
 
-	if _, err := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); err != nil {
+	if _, appErr := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId); appErr != nil {
 		return http.StatusForbidden, errors.New("Not a member of the channel specified")
 	}
 
@@ -501,7 +512,7 @@ func httpChannelGetSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Reque
 		return http.StatusBadRequest, errors.New("bad channel id")
 	}
 
-	if _, err := p.API.GetChannelMember(channelId, mattermostUserId); err != nil {
+	if _, appErr := p.API.GetChannelMember(channelId, mattermostUserId); appErr != nil {
 		return http.StatusForbidden, errors.New("Not a member of the channel specified")
 	}
 

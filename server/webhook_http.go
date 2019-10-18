@@ -9,8 +9,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
 const (
@@ -37,30 +40,35 @@ var eventParamMasks = map[string]StringSet{
 
 var ErrWebhookIgnored = errors.New("Webhook purposely ignored")
 
-func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int, err error) {
+	conf := p.getConfig()
+	start := time.Now()
+	size := utils.ByteSize(0)
+	defer func() {
+		isError, isIgnored := false, false
+		switch err {
+		case nil:
+			break
+		case ErrWebhookIgnored:
+			// ignore ErrWebhookIgnored - from here up it's a success
+			isIgnored = true
+			err = nil
+		default:
+			isError = true
+		}
+		if conf.webhookResponseStats != nil {
+			conf.webhookResponseStats.Record(utils.ByteSize(size), 0, time.Since(start), isError, isIgnored)
+		}
+	}()
+
 	// Validate the request and extract params
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
 	}
-	cfg := p.getConfig()
-	if cfg.Secret == "" {
-		return http.StatusForbidden, fmt.Errorf("Jira plugin not configured correctly; must provide Secret")
-	}
-	secret := r.FormValue("secret")
-	// secret may be URL-escaped, potentially mroe than once. Loop until there
-	// are no % escapes left.
-	for {
-		if subtle.ConstantTimeCompare([]byte(secret), []byte(cfg.Secret)) == 1 {
-			break
-		}
-
-		unescaped, _ := url.QueryUnescape(secret)
-		if unescaped == secret {
-			return http.StatusForbidden,
-				errors.New("Request URL: secret did not match")
-		}
-		secret = unescaped
+	status, err = verifyWebhookRequestSecret(conf, r)
+	if err != nil {
+		return status, err
 	}
 	teamName := r.FormValue("team")
 	if teamName == "" {
@@ -81,19 +89,20 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		selectedEvents = selectedEvents.Union(paramMask)
 	}
 
+	bb, err := ioutil.ReadAll(r.Body)
+	size = utils.ByteSize(len(bb))
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
 	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelName, false)
 	if appErr != nil {
 		return appErr.StatusCode, appErr
 	}
 
-	bb, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
 	wh, err := ParseWebhook(bb)
 	if err == ErrWebhookIgnored {
-		return http.StatusOK, nil
+		return http.StatusOK, err
 	}
 	if err != nil {
 		return http.StatusBadRequest, err
@@ -111,4 +120,27 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 	}
 
 	return http.StatusOK, nil
+}
+
+func verifyWebhookRequestSecret(cfg config, r *http.Request) (status int, err error) {
+	if cfg.Secret == "" {
+		return http.StatusForbidden, fmt.Errorf("Jira plugin not configured correctly; must provide Secret")
+	}
+	secret := r.FormValue("secret")
+	// secret may be URL-escaped, potentially mroe than once. Loop until there
+	// are no % escapes left.
+	for {
+		if subtle.ConstantTimeCompare([]byte(secret), []byte(cfg.Secret)) == 1 {
+			break
+		}
+
+		unescaped, _ := url.QueryUnescape(secret)
+		if unescaped == secret {
+			return http.StatusForbidden,
+				errors.New("Request URL: secret did not match")
+		}
+		secret = unescaped
+	}
+
+	return 0, nil
 }
