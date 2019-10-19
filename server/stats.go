@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	goexpvar "expvar"
 	"math/rand"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
+	"github.com/pkg/errors"
 )
 
 const statsAutosaveInterval = 10 * time.Minute
@@ -41,6 +43,42 @@ func (p *Plugin) initStats() {
 	initUptime()
 
 	p.startAutosaveStats()
+}
+
+func httpAPIStats(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed,
+			errors.New("method " + r.Method + " is not allowed, must be GET")
+	}
+
+	conf := p.getConfig()
+
+	//TODO protect from unauthorized access?
+	// status, err := verifyWebhookRequestSecret(conf, r)
+	// if err != nil {
+	// 	return status, err
+	// }
+
+	if conf.stats == nil {
+		return http.StatusNotFound, errors.New("No stats available")
+	}
+
+	out := "{"
+	first := true
+	conf.stats.Do(func(name string, e *expvar.Endpoint) {
+		if first {
+			first = false
+		} else {
+			out += ","
+		}
+		out += `"` + name + `":` + e.String()
+	})
+	out += "}"
+	_, err := w.Write([]byte(out))
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+	}
+	return http.StatusOK, nil
 }
 
 // To save the stats periodically, use `go Autosave(...)``

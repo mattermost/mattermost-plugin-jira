@@ -573,6 +573,7 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 }
 
 func executeStats(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
+	// TODO sysadmin only?
 	return executeStatsImpl(p, c, commandArgs, false, args...)
 }
 

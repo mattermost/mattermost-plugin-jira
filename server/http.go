@@ -27,6 +27,7 @@ const (
 	routeAPISubscribeWebhook       = "/api/v2/webhook"
 	routeAPISubscriptionsChannel   = "/api/v2/subscriptions/channel"
 	routeAPISettingsInfo           = "/api/v2/settingsinfo"
+	routeAPIStats                  = "/api/v2/stats"
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"
 	routeACUninstalled             = "/ac/uninstalled"
@@ -79,6 +80,10 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 		return httpAPIGetUserInfo(p, w, r)
 	case routeAPISettingsInfo:
 		return httpAPIGetSettingsInfo(p, w, r)
+
+	// Stats
+	case routeAPIStats:
+		return httpAPIStats(p, w, r)
 
 	// Atlassian Connect application
 	case routeACInstalled:
