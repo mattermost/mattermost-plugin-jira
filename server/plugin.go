@@ -77,11 +77,8 @@ type config struct {
 	// Maximum attachment size allowed to be uploaded to Jira
 	maxAttachmentSize utils.ByteSize
 
-	stats                    *expvar.Stats
-	webhookResponseStats     *expvar.Endpoint
-	subscribeResponseStats   *expvar.Endpoint
-	subscribeProcessingStats *expvar.Endpoint
-	statsStopAutosave        chan bool
+	stats             *expvar.Stats
+	statsStopAutosave chan bool
 }
 
 type Plugin struct {

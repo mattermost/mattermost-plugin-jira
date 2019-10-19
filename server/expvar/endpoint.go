@@ -5,10 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"expvar"
+	"regexp"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/circonus-labs/circonusllhist"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
@@ -28,14 +31,13 @@ type Endpoint struct {
 	ResponseSize *circonusllhist.Histogram // byte sizes
 }
 
-// NewEndpoint creates and publishes a new Endpoint expvar
 func NewEndpoint(name string) *Endpoint {
-	e := newEndpoint(name)
+	e := NewUnpublishedEndpoint(name)
 	e.publishExpvar()
 	return e
 }
 
-func newEndpoint(name string) *Endpoint {
+func NewUnpublishedEndpoint(name string) *Endpoint {
 	return &Endpoint{
 		lock:         &sync.RWMutex{},
 		Name:         name,
@@ -204,4 +206,42 @@ func mapPercentiles(h *circonusllhist.Histogram, toString func(f float64) string
 		out[p] = toString(quantiles[i])
 	}
 	return out
+}
+
+var decStringsRegexp = regexp.MustCompile(`^H\[(.+)\]=([0-9]+)$`)
+
+// UnmarshalJSON implements json.Unarshaler interface
+func (e *Endpoint) Merge(multi ...*Endpoint) {
+	mergeHistogram := func(to, from *circonusllhist.Histogram) {
+		if from == nil {
+			return
+		}
+		decStrings := from.DecStrings()
+
+		for _, s := range decStrings {
+			// Parse the strings as `H[1.0e+09]=4`
+			found := decStringsRegexp.FindStringSubmatch(s)
+			if len(found) != 3 {
+				continue
+			}
+			value, err := strconv.ParseFloat(found[1], 64)
+			if err != nil {
+				continue
+			}
+			count, err := strconv.ParseInt(found[2], 10, 64)
+			if err != nil {
+				continue
+			}
+			to.RecordValues(value, count)
+		}
+	}
+
+	for _, from := range multi {
+		e.Total += from.Total
+		e.Errors += from.Errors
+		e.Ignored += from.Ignored
+		mergeHistogram(e.Elapsed, from.Elapsed)
+		mergeHistogram(e.RequestSize, from.RequestSize)
+		mergeHistogram(e.ResponseSize, from.ResponseSize)
+	}
 }

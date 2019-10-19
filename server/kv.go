@@ -70,6 +70,10 @@ type OTSStore interface {
 	OneTimeLoadOauth1aTemporaryCredentials(mmUserId string) (*OAuth1aTemporaryCredentials, error)
 }
 
+// Number of items to retrieve in KVList operations, made a variable so
+// that tests can manipulate
+var listPerPage = 100
+
 type store struct {
 	plugin *Plugin
 }
@@ -481,10 +485,9 @@ func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnE
 var reHexKeyFormat = regexp.MustCompile("^[[:xdigit:]]{32}$")
 
 func (store store) CountUsers(ji Instance) (int, error) {
-	const perPage = 100
 	count := 0
 	for i := 0; ; i++ {
-		keys, appErr := store.plugin.API.KVList(0, perPage)
+		keys, appErr := store.plugin.API.KVList(i, listPerPage)
 		if appErr != nil {
 			return 0, appErr
 		}
@@ -513,7 +516,7 @@ func (store store) CountUsers(ji Instance) (int, error) {
 			}
 		}
 
-		if len(keys) < perPage {
+		if len(keys) < listPerPage {
 			break
 		}
 	}

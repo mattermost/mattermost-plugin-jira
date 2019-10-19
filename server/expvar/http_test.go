@@ -60,7 +60,7 @@ func TestWrapHTTPClient(t *testing.T) {
 	})
 
 	t.Run("stats", func(t *testing.T) {
-		stats := newStats(nil, true)
+		stats := NewUnpublishedStats(nil)
 
 		client := WrapHTTPClient(http.DefaultClient, -1, stats,
 			func(r *http.Request) string {

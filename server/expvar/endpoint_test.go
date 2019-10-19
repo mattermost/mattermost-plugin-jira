@@ -15,6 +15,28 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
+func TestEndpointMerge(t *testing.T) {
+	e1 := NewUnpublishedEndpoint("e1")
+	e1.Record(100, 10, 1*time.Second, false, false)
+	e1.Record(100, 10, 1*time.Second, false, false)
+	e1.Record(100, 10, 1*time.Second, false, false)
+	e1.Record(10, 100, 10*time.Second, true, false)
+	e1.Record(1, 1, 5*time.Second, false, true)
+
+	e2 := NewUnpublishedEndpoint("e2")
+	e2.Record(200, 20, 20*time.Second, false, false)
+	e2.Record(220, 22, 21*time.Second, false, false)
+	e2.Record(230, 23, 22*time.Second, false, false)
+	e2.Record(21, 201, 30*time.Second, true, false)
+	e2.Record(2, 2, 40*time.Second, false, false)
+
+	e := NewUnpublishedEndpoint("e")
+	require.Equal(t, `{}`, e.String())
+
+	e.Merge(e1, e2)
+	require.Equal(t, `{"Elapsed":{"P10":"1.033333333s","P50":"11s","P85":"30.5s","P95":"40.5s","P98":"40.8s","P99":"40.9s"},"Errors":2,"Ignored":1,"RequestSize":{"P10":"1b","P50":"103b","P85":"225b","P95":"234b","P98":"237b","P99":"238b"},"ResponseSize":{"P10":"1b","P50":"11b","P85":"105b","P95":"205b","P98":"208b","P99":"209b"},"Total":10}`, e.String())
+}
+
 func newTestEndpoint(t testing.TB) *Endpoint {
 	name := fmt.Sprintf("test_%v", uuid.New().String())
 	e := NewEndpoint(name)

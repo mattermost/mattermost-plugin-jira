@@ -48,25 +48,26 @@ type CommandHandler struct {
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
-		"connect":           executeConnect,
-		"disconnect":        executeDisconnect,
-		"install/cloud":     executeInstallCloud,
-		"install/server":    executeInstallServer,
-		"view":              executeView,
-		"settings":          executeSettings,
-		"transition":        executeTransition,
-		"assign":            executeAssign,
-		"uninstall/cloud":   executeUninstallCloud,
-		"uninstall/server":  executeUninstallServer,
-		"webhook":           executeWebhookURL,
-		"stats":             executeStats,
-		"info":              executeInfo,
-		"help":              commandHelp,
-		"list":              executeList,
-		"instance/select":   executeInstanceSelect,
-		"instance/delete":   executeInstanceDelete,
-		"debug/stats/reset": executeDebugStatsReset,
-		"debug/stats/save":  executeDebugStatsSave,
+		"connect":            executeConnect,
+		"disconnect":         executeDisconnect,
+		"install/cloud":      executeInstallCloud,
+		"install/server":     executeInstallServer,
+		"view":               executeView,
+		"settings":           executeSettings,
+		"transition":         executeTransition,
+		"assign":             executeAssign,
+		"uninstall/cloud":    executeUninstallCloud,
+		"uninstall/server":   executeUninstallServer,
+		"webhook":            executeWebhookURL,
+		"stats":              executeStats,
+		"info":               executeInfo,
+		"help":               commandHelp,
+		"list":               executeList,
+		"instance/select":    executeInstanceSelect,
+		"instance/delete":    executeInstanceDelete,
+		"debug/stats/reset":  executeDebugStatsReset,
+		"debug/stats/save":   executeDebugStatsSave,
+		"debug/stats/expvar": executeDebugStatsExpvar,
 	},
 	defaultHandler: executeJiraDefault,
 }
@@ -571,22 +572,39 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	return p.responsef(header, resp)
 }
 
-func executeStats(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	if len(args) < 1 {
-		return p.help(header)
-	}
+func executeStats(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
+	return executeStatsImpl(p, c, commandArgs, false, args...)
+}
 
+func executeDebugStatsExpvar(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
+	return executeStatsImpl(p, c, commandArgs, true, args...)
+}
+
+func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, useExpvar bool, args ...string) *model.CommandResponse {
+	if len(args) < 1 {
+		return p.help(commandArgs)
+	}
 	resp := fmt.Sprintf("Mattermost Jira plugin version: %s, "+
 		"[%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s), built %s\n",
 		manifest.Version, BuildHashShort, BuildHash, BuildDate)
 
 	pattern := strings.Join(args, " ")
-	rstats, err := expvar.PrintExpvars(pattern)
-	if err != nil {
-		return p.responsef(header, "%v", err)
+	print := expvar.PrintExpvars
+	if !useExpvar {
+		stats, keys, err := p.consolidatedStoredStats()
+		if err != nil {
+			return p.responsef(commandArgs, "%v", err)
+		}
+		resp += fmt.Sprintf("Consolidated from stored keys `%s`\n", keys)
+		print = stats.PrintConsolidated
 	}
 
-	return p.responsef(header, resp+rstats)
+	rstats, err := print(pattern)
+	if err != nil {
+		return p.responsef(commandArgs, "%v", err)
+	}
+
+	return p.responsef(commandArgs, resp+rstats)
 }
 
 func executeDebugStatsReset(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

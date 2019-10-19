@@ -41,9 +41,8 @@ func (ww webhookWorker) process(rawData []byte) (err error) {
 			// TODO save the payload here
 			isError = true
 		}
-
-		if conf.subscribeProcessingStats != nil {
-			conf.subscribeProcessingStats.Record(utils.ByteSize(len(rawData)), 0, time.Since(start), isError, isIgnored)
+		if conf.stats != nil {
+			conf.stats.EnsureEndpoint("jira/subscribe/processing").Record(utils.ByteSize(len(rawData)), 0, time.Since(start), isError, isIgnored)
 		}
 	}()
 

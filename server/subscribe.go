@@ -383,8 +383,8 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (st
 	size := utils.ByteSize(0)
 	start := time.Now()
 	defer func() {
-		if conf.subscribeResponseStats != nil {
-			conf.subscribeResponseStats.Record(size, 0, time.Since(start), err != nil, false)
+		if conf.stats != nil {
+			conf.stats.EnsureEndpoint("jira/subscribe/response").Record(size, 0, time.Since(start), err != nil, false)
 		}
 	}()
 

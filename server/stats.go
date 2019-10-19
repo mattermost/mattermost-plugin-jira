@@ -5,14 +5,15 @@ import (
 	goexpvar "expvar"
 	"math/rand"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 )
 
-const statsAutosaveInterval = 1 * time.Minute
-const statsAutosaveMaxDither = 10 // seconds
+const statsAutosaveInterval = 10 * time.Minute
+const statsAutosaveMaxDither = 60 // seconds
 
 var initStatsOnce sync.Once
 
@@ -22,21 +23,16 @@ func (p *Plugin) initStats() {
 		return
 	}
 
-	hostname, _ := os.Hostname()
-	key := prefixStats + hostname
-	data, appErr := p.API.KVGet(key)
+	data, appErr := p.API.KVGet(statsKeyName())
 	if appErr != nil {
 		return
 	}
-	stats := expvar.NewStatsFromData(data)
+	stats := expvar.NewStats(data)
 
 	p.updateConfig(func(c *config) {
 		initStatsOnce.Do(func() {
 			if !c.DisableStats {
 				c.stats = stats
-				c.webhookResponseStats = stats.EnsureEndpoint("jira/webhook")
-				c.subscribeResponseStats = stats.EnsureEndpoint("jira/subscribe/response")
-				c.subscribeProcessingStats = stats.EnsureEndpoint("jira/subscribe/processing")
 			}
 		})
 	})
@@ -92,12 +88,10 @@ func (p *Plugin) saveStats() error {
 	if err != nil {
 		return err
 	}
-	hostname, _ := os.Hostname()
-	appErr := p.API.KVSet(prefixStats+hostname, data)
+	appErr := p.API.KVSet(statsKeyName(), data)
 	if appErr != nil {
 		return appErr
 	}
-	p.debugf("Saved stats, %q", prefixStats+hostname)
 	return nil
 }
 
@@ -114,17 +108,24 @@ func (p *Plugin) debugResetStats() error {
 	}
 	stats.Reset()
 
-	hostname, _ := os.Hostname()
-	appErr := p.API.KVDelete(prefixStats + hostname)
-	if appErr != nil {
-		return appErr
+	for i := 0; ; i++ {
+		keys, appErr := p.API.KVList(i, listPerPage)
+		if appErr != nil {
+			return appErr
+		}
+		for _, key := range keys {
+			if !strings.HasPrefix(key, prefixStats) {
+				continue
+			}
+			appErr := p.API.KVDelete(key)
+			if appErr != nil {
+				return appErr
+			}
+		}
+		if len(keys) < listPerPage {
+			break
+		}
 	}
-
-	p.updateConfig(func(conf *config) {
-		conf.webhookResponseStats = stats.EnsureEndpoint("jira/webhook")
-		conf.subscribeResponseStats = stats.EnsureEndpoint("jira/subscribe/response")
-		conf.subscribeProcessingStats = stats.EnsureEndpoint("jira/subscribe/processing")
-	})
 
 	return nil
 }
@@ -151,4 +152,39 @@ func initUptime() {
 		up := (time.Since(startedAt) + time.Second/2) / time.Second * time.Second
 		return up.String()
 	}))
+}
+
+func (p *Plugin) consolidatedStoredStats() (*expvar.Stats, []string, error) {
+	stats := expvar.NewUnpublishedStats(nil)
+	var statsKeys []string
+	for i := 0; ; i++ {
+		keys, appErr := p.API.KVList(i, listPerPage)
+		if appErr != nil {
+			return nil, nil, appErr
+		}
+
+		for _, key := range keys {
+			if !strings.HasPrefix(key, prefixStats) {
+				continue
+			}
+			var data []byte
+			data, appErr = p.API.KVGet(key)
+			if appErr != nil {
+				return nil, nil, appErr
+			}
+			from := expvar.NewUnpublishedStats(data)
+			stats.Merge(from)
+			statsKeys = append(statsKeys, key)
+		}
+
+		if len(keys) < listPerPage {
+			break
+		}
+	}
+	return stats, statsKeys, nil
+}
+
+func statsKeyName() string {
+	hostname, _ := os.Hostname()
+	return prefixStats + hostname
 }

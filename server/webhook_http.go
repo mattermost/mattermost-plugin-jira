@@ -56,8 +56,8 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int,
 		default:
 			isError = true
 		}
-		if conf.webhookResponseStats != nil {
-			conf.webhookResponseStats.Record(utils.ByteSize(size), 0, time.Since(start), isError, isIgnored)
+		if conf.stats != nil {
+			conf.stats.EnsureEndpoint("jira/webhook/response").Record(size, 0, time.Since(start), isError, isIgnored)
 		}
 	}()
 
