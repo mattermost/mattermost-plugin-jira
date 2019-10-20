@@ -546,12 +546,45 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
               ],
               "key": "versions",
               "name": "Affects versions",
+              "schema": Object {
+                "items": "version",
+                "system": "versions",
+                "type": "array",
+              },
               "values": Array [
                 Object {
                   "label": "d",
                   "value": "10000",
                 },
               ],
+            },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10002",
+                  "name": "Task",
+                },
+                Object {
+                  "id": "10001",
+                  "name": "Story",
+                },
+                Object {
+                  "id": "10004",
+                  "name": "Bug",
+                },
+                Object {
+                  "id": "10000",
+                  "name": "Epic",
+                },
+              ],
+              "key": "customfield_10014",
+              "name": "Epic Link",
+              "schema": Object {
+                "custom": "com.pyxis.greenhopper.jira:gh-epic-link",
+                "customId": 10014,
+                "type": "any",
+              },
+              "values": Array [],
             },
             Object {
               "issueTypes": Array [
@@ -574,6 +607,11 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
               ],
               "key": "fixVersions",
               "name": "Fix versions",
+              "schema": Object {
+                "items": "version",
+                "system": "fixVersions",
+                "type": "array",
+              },
               "values": Array [
                 Object {
                   "label": "d",
@@ -600,8 +638,42 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
                   "name": "Epic",
                 },
               ],
+              "key": "labels",
+              "name": "Labels",
+              "schema": Object {
+                "items": "string",
+                "system": "labels",
+                "type": "array",
+              },
+              "userDefined": true,
+            },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10002",
+                  "name": "Task",
+                },
+                Object {
+                  "id": "10001",
+                  "name": "Story",
+                },
+                Object {
+                  "id": "10004",
+                  "name": "Bug",
+                },
+                Object {
+                  "id": "10000",
+                  "name": "Epic",
+                },
+              ],
               "key": "customfield_10068",
               "name": "MJK - Checkbox",
+              "schema": Object {
+                "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
+                "customId": 10068,
+                "items": "option",
+                "type": "array",
+              },
               "values": Array [
                 Object {
                   "label": "1",
@@ -632,8 +704,42 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
                   "name": "Epic",
                 },
               ],
+              "key": "customfield_10071",
+              "name": "MJK - Labels",
+              "schema": Object {
+                "custom": "com.atlassian.jira.plugin.system.customfieldtypes:labels",
+                "customId": 10071,
+                "items": "string",
+                "type": "array",
+              },
+              "userDefined": true,
+            },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10002",
+                  "name": "Task",
+                },
+                Object {
+                  "id": "10001",
+                  "name": "Story",
+                },
+                Object {
+                  "id": "10004",
+                  "name": "Bug",
+                },
+                Object {
+                  "id": "10000",
+                  "name": "Epic",
+                },
+              ],
               "key": "customfield_10073",
               "name": "MJK - Radio Buttons",
+              "schema": Object {
+                "custom": "com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons",
+                "customId": 10073,
+                "type": "option",
+              },
               "values": Array [
                 Object {
                   "label": "1",
@@ -666,6 +772,12 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
               ],
               "key": "customfield_10075",
               "name": "MJK - Select List 2",
+              "schema": Object {
+                "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multiselect",
+                "customId": 10075,
+                "items": "option",
+                "type": "array",
+              },
               "values": Array [
                 Object {
                   "label": "1",
@@ -698,6 +810,11 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
               ],
               "key": "customfield_10076",
               "name": "MJK - Select List 3",
+              "schema": Object {
+                "custom": "com.atlassian.jira.plugin.system.customfieldtypes:select",
+                "customId": 10076,
+                "type": "option",
+              },
               "values": Array [
                 Object {
                   "label": "1",
@@ -730,6 +847,10 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
               ],
               "key": "priority",
               "name": "Priority",
+              "schema": Object {
+                "system": "priority",
+                "type": "priority",
+              },
               "values": Array [
                 Object {
                   "label": "Highest",
@@ -752,52 +873,6 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
                   "value": "5",
                 },
               ],
-            },
-            Object {
-              "issueTypes": Array [
-                Object {
-                  "id": "10002",
-                  "name": "Task",
-                },
-                Object {
-                  "id": "10001",
-                  "name": "Story",
-                },
-                Object {
-                  "id": "10004",
-                  "name": "Bug",
-                },
-                Object {
-                  "id": "10000",
-                  "name": "Epic",
-                },
-              ],
-              "key": "labels",
-              "name": "Labels",
-              "userDefined": true,
-            },
-            Object {
-              "issueTypes": Array [
-                Object {
-                  "id": "10002",
-                  "name": "Task",
-                },
-                Object {
-                  "id": "10001",
-                  "name": "Story",
-                },
-                Object {
-                  "id": "10004",
-                  "name": "Bug",
-                },
-                Object {
-                  "id": "10000",
-                  "name": "Epic",
-                },
-              ],
-              "key": "customfield_10071",
-              "name": "MJK - Labels",
-              "userDefined": true,
             },
           ]
         }

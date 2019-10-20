@@ -1,7 +1,9 @@
 import React from 'react';
 
 import ReactSelectSetting from 'components/react_select_setting';
+import JiraEpicSelector from 'components/jira_epic_selector';
 
+import {isEpicLinkField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 
 type ChannelSettingsFilterProps = {
@@ -45,6 +47,13 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         onChange(value, {...value, values: newValues});
     };
 
+    handleEpicLinkChange = (values: string[]): void => {
+        const {onChange, value} = this.props;
+
+        const newValues = values || [];
+        onChange(value, {...value, values: newValues});
+    };
+
     removeFilter = (): void => {
         this.props.removeFilter(this.props.value);
     };
@@ -62,10 +71,6 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         }
         return conflictingIssueTypes;
     };
-
-    isOptionDisabled = (option: ReactSelectOption): boolean => {
-        return false;
-    }
 
     isValid = (): boolean => {
         const error = this.checkFieldConflictError();
@@ -143,6 +148,39 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
             );
         }
 
+        let valueSelector;
+        if (isEpicLinkField(this.props.field)) {
+            valueSelector = (
+                <JiraEpicSelector
+                    issueMetadata={this.props.issueMetadata}
+                    theme={theme}
+                    value={value.values}
+                    onChange={this.handleEpicLinkChange}
+                    required={true}
+                    hideRequiredStar={true}
+                    isMulti={true}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
+                />
+            );
+        } else {
+            valueSelector = (
+                <ReactSelectSetting
+                    name={'values'}
+                    required={true}
+                    hideRequiredStar={true}
+                    options={fieldValueOptions}
+                    theme={theme}
+                    onChange={this.handleFieldValuesChange}
+                    value={chosenFieldValues}
+                    isMulti={true}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
+                    allowUserDefinedValue={Boolean(field && field.userDefined)}
+                />
+            );
+        }
+
         return (
             <div className='row'>
                 <div className='col-md-11 col-sm-12'>
@@ -158,7 +196,6 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                                 required={true}
                                 hideRequiredStar={true}
                                 options={fieldTypeOptions}
-                                isOptionDisabled={this.isOptionDisabled}
                                 value={chosenFieldType}
                                 onChange={this.handleFieldTypeChange}
                                 theme={theme}
@@ -180,19 +217,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                             />
                         </div>
                         <div className='col-md-4 col-sm-12'>
-                            <ReactSelectSetting
-                                name={'values'}
-                                required={true}
-                                hideRequiredStar={true}
-                                options={fieldValueOptions}
-                                theme={theme}
-                                onChange={this.handleFieldValuesChange}
-                                value={chosenFieldValues}
-                                isMulti={true}
-                                addValidate={this.props.addValidate}
-                                removeValidate={this.props.removeValidate}
-                                allowUserDefinedValue={Boolean(field && field.userDefined)}
-                            />
+                            {valueSelector}
                         </div>
                     </div>
                 </div>
@@ -278,4 +303,3 @@ const getStyle = (theme: any): any => ({
         margin: '2.5rem 0 0',
     },
 });
-

@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {PureComponent} from 'react';
+import React, {Component} from 'react';
 import {Modal} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
@@ -74,7 +74,7 @@ export type Props = {
 
 }
 
-export default class ConfirmModal extends PureComponent<Props> {
+export default class ConfirmModal extends Component<Props> {
     componentDidMount() {
         if (this.props.show) {
             document.addEventListener('keydown', this.handleKeypress);
