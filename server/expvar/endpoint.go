@@ -210,7 +210,7 @@ func mapPercentiles(h *circonusllhist.Histogram, toString func(f float64) string
 
 var decStringsRegexp = regexp.MustCompile(`^H\[(.+)\]=([0-9]+)$`)
 
-// UnmarshalJSON implements json.Unarshaler interface
+// UnmarshalJSON implements json.Unmarshaler interface
 func (e *Endpoint) Merge(multi ...*Endpoint) {
 	mergeHistogram := func(to, from *circonusllhist.Histogram) {
 		if from == nil {
