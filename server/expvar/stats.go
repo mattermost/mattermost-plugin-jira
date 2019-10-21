@@ -69,7 +69,7 @@ func (stats *Stats) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v)
 }
 
-// UnmarshalJSON implements json.Unmarshaller.
+// UnmarshalJSON implements json.Unmarshaler.
 func (stats *Stats) UnmarshalJSON(data []byte) error {
 	v := map[string]*Endpoint{}
 	err := json.Unmarshal(data, &v)
