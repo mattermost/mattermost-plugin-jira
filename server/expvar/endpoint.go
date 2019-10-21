@@ -137,7 +137,7 @@ func (e *Endpoint) MarshalJSON() ([]byte, error) {
 	return json.Marshal(e.Get())
 }
 
-// UnmarshalJSON implements json.Unarshaler interface
+// UnmarshalJSON implements json.Unmarshaler interface
 func (e *Endpoint) UnmarshalJSON(data []byte) error {
 	if e.lock != nil {
 		e.lock.Lock()
