@@ -12,7 +12,7 @@ export default class Hooks {
     }
 
     slashCommandWillBePostedHook = (message, contextArgs) => {
-        if (message && (message.startsWith('/jira create ') || message === '/jira create')) {
+        if (message && message.startsWith('/jira create')) {
             if (!isInstanceInstalled(this.store.getState())) {
                 this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
                 return Promise.resolve({});
@@ -26,7 +26,7 @@ export default class Hooks {
             return Promise.resolve({});
         }
 
-        if (message && (message.startsWith('/jira connect') || message === '/jira connect')) {
+        if (message && message.startsWith('/jira connect')) {
             if (!isInstanceInstalled(this.store.getState())) {
                 this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
                 return Promise.resolve({});
@@ -44,7 +44,7 @@ export default class Hooks {
             return Promise.resolve({});
         }
 
-        if (message && (message.startsWith('/jira subscribe ') || message === '/jira subscribe')) {
+        if (message && message.startsWith('/jira subscribe') && !message.startsWith('/jira subscribe list')) {
             if (!isInstanceInstalled(this.store.getState())) {
                 this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
                 return Promise.resolve({});

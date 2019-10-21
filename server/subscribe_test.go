@@ -17,6 +17,74 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestListChannelSubscriptions(t *testing.T) {
+	p := &Plugin{}
+	p.updateConfig(func(conf *config) {
+		conf.Secret = "somesecret"
+	})
+
+	for name, tc := range map[string]struct {
+		Subs            *Subscriptions
+		Expected string
+	}{
+		"test 1": {
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "channel1",
+					Name: "Sub Name X",
+					Filters: SubscriptionFilters{
+						Projects: NewStringSet("PROJ"),
+					},
+				},
+			}),
+			Expected: `~channel-1-name (1):
+* PROJ - Sub Name X`,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+
+			p.updateConfig(func(conf *config) {
+				conf.Secret = "somesecret"
+			})
+			p.SetAPI(api)
+			p.currentInstanceStore = mockCurrentInstanceStore{p}
+
+			subscriptionBytes, err := json.Marshal(tc.Subs)
+			assert.Nil(t, err)
+
+			subKey := keyWithMockInstance(JIRA_SUBSCRIPTIONS_KEY)
+			api.On("KVGet", subKey).Return(subscriptionBytes, nil)
+
+			channel1 := &model.Channel{
+				Id: "channel1",
+				Name: "channel-1-name",
+				DisplayName: "Channel 1 Display Name",
+			}
+			api.On("GetChannel", "channel1").Return(channel1, nil)
+
+			channel2 := &model.Channel{
+				Id: "channel2",
+				Name: "channel-2-name",
+				DisplayName: "Channel 2 Display Name",
+			}
+			api.On("GetChannel", "channel2").Return(channel2, nil)
+
+			api.On("KVCompareAndSet", subKey, subscriptionBytes, mock.MatchedBy(func(data []byte) bool {
+				return true
+			})).Return(nil)
+
+			actual, err := p.listChannelSubscriptions()
+			assert.Nil(t, err)
+			assert.NotNil(t, actual)
+
+			assert.Equal(t, tc.Expected, actual)
+		})
+	}
+}
+
+
 func TestGetChannelsSubscribed(t *testing.T) {
 	p := &Plugin{}
 	p.updateConfig(func(conf *config) {
