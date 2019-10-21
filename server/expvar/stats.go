@@ -60,7 +60,7 @@ func (stats *Stats) Reset() {
 	})
 }
 
-// MarshalJSON implements json.Marshaller.
+// MarshalJSON implements json.Marshaler.
 func (stats *Stats) MarshalJSON() ([]byte, error) {
 	v := map[string]*Endpoint{}
 	stats.Do(func(name string, e *Endpoint) {
