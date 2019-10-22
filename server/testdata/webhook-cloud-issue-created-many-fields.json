@@ -27,7 +27,8 @@
           "statuscategorychangedate": "2019-08-27T12:43:24.674-0700",
           "customfield_10070": "2019-08-29T12:40:00.000-0700",
           "customfield_10071": [
-              "a"
+              "value1",
+              "value2"
           ],
           "customfield_10072": 23,
           "customfield_10073": {

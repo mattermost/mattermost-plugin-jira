@@ -628,6 +628,12 @@ func getIssueCustomFieldValue(issue *jira.Issue, key string) StringSet {
 		// Checkboxes, multi-select dropdown
 		result := NewStringSet()
 		for _, v := range value {
+			s, ok := v.(string)
+			if ok {
+				result = result.Add(s)
+				continue
+			}
+
 			obj, ok := v.(map[string]interface{})
 			if !ok {
 				return nil
@@ -668,8 +674,13 @@ func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 		}
 		return result
 	default:
-		return getIssueCustomFieldValue(issue, key)
+		value := getIssueCustomFieldValue(issue, key)
+		if value != nil {
+			return value
+		}
 	}
+
+	return NewStringSet()
 }
 
 func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issueKey string) ([]*model.SlackAttachment, error) {
