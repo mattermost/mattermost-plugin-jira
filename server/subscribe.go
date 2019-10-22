@@ -330,22 +330,18 @@ func (p *Plugin) listChannelSubscriptions() (string, error) {
 		return "", err
 	}
 
-	rows := make([]string, len(subs.Channel.ById)+len(subs.Channel.IdByChannelId))
-	index := 0
-
+	rows := []string{}
 	for channelID, subIDs := range subs.Channel.IdByChannelId {
 		channel, appErr := p.API.GetChannel(channelID)
 		if appErr != nil {
 			return "", errors.New("Failed to get channel")
 		}
 
-		rows[index] = fmt.Sprintf("~%s (%d):", channel.Name, len(subIDs))
-		index++
+		rows = append(rows, fmt.Sprintf("~%s (%d):", channel.Name, len(subIDs)))
 
 		for subID := range subIDs {
 			sub := subs.Channel.ById[subID]
-			rows[index] = fmt.Sprintf("* %s - %s", sub.Filters.Projects.Elems()[0], sub.Name)
-			index++
+			rows = append(rows, fmt.Sprintf("* %s - %s", sub.Filters.Projects.Elems()[0], sub.Name))
 		}
 	}
 
