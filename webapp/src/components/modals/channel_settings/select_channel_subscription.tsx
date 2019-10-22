@@ -14,12 +14,14 @@ type Props = SharedProps & {
 type State = {
     error: string | null;
     showConfirmModal: boolean;
+    subscriptionToDelete: ChannelSubscription | null;
 }
 
 export default class SelectChannelSubscriptionInternal extends React.PureComponent<Props, State> {
     state = {
         error: null,
         showConfirmModal: false,
+        subscriptionToDelete: null,
     };
 
     handleDeactivateCancel = () => {
@@ -31,8 +33,9 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         this.deleteChannelSubscription(sub);
     }
 
-    handleDeleteChannelSubscription = (): void => {
+    handleDeleteChannelSubscription = (sub: ChannelSubscription): void => {
         this.setState({showConfirmModal: true});
+        this.setState({subscriptionToDelete: sub});
     };
 
     deleteChannelSubscription = (sub: ChannelSubscription): void => {
@@ -45,12 +48,34 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
 
     render(): React.ReactElement {
         const {channel} = this.props;
-        const {error, showConfirmModal} = this.state;
+        const {error, showConfirmModal, subscriptionToDelete} = this.state;
 
         let errorDisplay = null;
         if (error) {
             errorDisplay = (
                 <span className='error'>{error}</span>
+            );
+        }
+
+        let subName = '';
+        if (subscriptionToDelete && subscriptionToDelete.name) {
+            subName = ` "${subscriptionToDelete.name}"`;
+        }
+
+        let confirmModal = null;
+        if (showConfirmModal) {
+            confirmModal = (
+                <ConfirmModal
+                    cancelButtonText={'Cancel'}
+                    confirmButtonText={'Delete'}
+                    confirmButtonClass={'btn btn-danger'}
+                    hideCancel={false}
+                    message={`Delete Subscription${subName}?`}
+                    onCancel={this.handleDeactivateCancel}
+                    onConfirm={(): void => this.handleConfirmDelete(subscriptionToDelete)}
+                    show={true}
+                    title={'Subscription'}
+                />
             );
         }
 
@@ -71,17 +96,6 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                             >
                                 <span>{sub.name || '(no name)'}</span>
                             </td>
-                            <ConfirmModal
-                                cancelButtonText={'Cancel'}
-                                confirmButtonText={'Delete'}
-                                confirmButtonClass={'btn btn-danger'}
-                                hideCancel={false}
-                                message={'Delete Subscription "' + sub.id + '"?'}
-                                onCancel={this.handleDeactivateCancel}
-                                onConfirm={(): void => this.handleConfirmDelete(sub)}
-                                show={showConfirmModal}
-                                title={'Subscription'}
-                            />
                             <td>
                                 <button
                                     className='style--none color--link'
@@ -92,7 +106,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                                 {' - '}
                                 <button
                                     className='style--none color--link'
-                                    onClick={this.handleDeleteChannelSubscription}
+                                    onClick={(): void => this.handleDeleteChannelSubscription(sub)}
                                 >
                                     {'Delete'}
                                 </button>
@@ -114,6 +128,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                         {'Create Subscription'}
                     </button>
                 </div>
+                {confirmModal}
                 {errorDisplay}
                 {subscriptionRows}
             </div>

@@ -128,7 +128,7 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
       confirmButtonClass="btn btn-danger"
       confirmButtonText="Delete"
       hideCancel={false}
-      message="Delete Subscription asxtifxe8jyi9y81htww6ixkiy?"
+      message="Delete Subscription \\"SubTestName\\"?"
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
@@ -3541,7 +3541,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
       confirmButtonClass="btn btn-danger"
       confirmButtonText="Delete"
       hideCancel={false}
-      message="Delete Subscription asxtifxe8jyi9y81htww6ixkiy?"
+      message="Delete Subscription \\"SubTestName\\"?"
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
@@ -3706,7 +3706,7 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
       confirmButtonClass="btn btn-danger"
       confirmButtonText="Delete"
       hideCancel={false}
-      message="Delete Subscription asxtifxe8jyi9y81htww6ixkiy?"
+      message="Delete Subscription \\"SubTestName\\"?"
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
@@ -3882,7 +3882,7 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
       confirmButtonClass="btn btn-danger"
       confirmButtonText="Delete"
       hideCancel={false}
-      message="Delete Subscription asxtifxe8jyi9y81htww6ixkiy?"
+      message="Delete Subscription \\"SubTestName\\"?"
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
