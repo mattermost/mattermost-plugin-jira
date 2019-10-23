@@ -24,22 +24,24 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         subscriptionToDelete: null,
     };
 
-    handleDeactivateCancel = () => {
+    handleCancelDelete = () => {
         this.setState({showConfirmModal: false});
     }
 
-    handleConfirmDelete = (sub: ChannelSubscription) => {
+    handleConfirmDelete = () => {
         this.setState({showConfirmModal: false});
-        this.deleteChannelSubscription(sub);
+        this.deleteChannelSubscription();
     }
 
     handleDeleteChannelSubscription = (sub: ChannelSubscription): void => {
-        this.setState({showConfirmModal: true});
-        this.setState({subscriptionToDelete: sub});
+        this.setState({
+            showConfirmModal: true,
+            subscriptionToDelete: sub,
+        });
     };
 
-    deleteChannelSubscription = (sub: ChannelSubscription): void => {
-        this.props.deleteChannelSubscription(sub).then((res: { error?: { message: string } }) => {
+    deleteChannelSubscription = (): void => {
+        this.props.deleteChannelSubscription(this.state.subscriptionToDelete).then((res: { error?: { message: string } }) => {
             if (res.error) {
                 this.setState({error: res.error.message});
             }
@@ -71,8 +73,8 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                     confirmButtonClass={'btn btn-danger'}
                     hideCancel={false}
                     message={`Delete Subscription${subName}?`}
-                    onCancel={this.handleDeactivateCancel}
-                    onConfirm={(): void => this.handleConfirmDelete(subscriptionToDelete)}
+                    onCancel={this.handleCancelDelete}
+                    onConfirm={this.handleConfirmDelete}
                     show={true}
                     title={'Subscription'}
                 />
