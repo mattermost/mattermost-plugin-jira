@@ -320,9 +320,9 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
 
         const {showConfirmModal} = this.state;
 
-        let subName = '';
+        let confirmDeleteMessage = 'Delete Subscription?';
         if (this.props.selectedSubscription && this.props.selectedSubscription.name) {
-            subName = ` "${this.props.selectedSubscription.name}"`;
+            confirmDeleteMessage = `Delete Subscription "${this.props.selectedSubscription.name}"?`;
         }
 
         let confirmComponent;
@@ -333,7 +333,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                     confirmButtonText={'Delete'}
                     confirmButtonClass={'btn btn-danger'}
                     hideCancel={false}
-                    message={`Delete Subscription${subName}?`}
+                    message={confirmDeleteMessage}
                     onCancel={this.handleCancelDelete}
                     onConfirm={this.handleConfirmDelete}
                     show={showConfirmModal}

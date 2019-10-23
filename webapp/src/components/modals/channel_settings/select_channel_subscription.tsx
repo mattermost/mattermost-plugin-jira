@@ -59,9 +59,9 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
             );
         }
 
-        let subName = '';
+        let confirmDeleteMessage = 'Delete Subscription?';
         if (subscriptionToDelete && subscriptionToDelete.name) {
-            subName = ` "${subscriptionToDelete.name}"`;
+            confirmDeleteMessage = `Delete Subscription "${subscriptionToDelete.name}"?`;
         }
 
         let confirmModal = null;
@@ -72,7 +72,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                     confirmButtonText={'Delete'}
                     confirmButtonClass={'btn btn-danger'}
                     hideCancel={false}
-                    message={`Delete Subscription${subName}?`}
+                    message={confirmDeleteMessage}
                     onCancel={this.handleCancelDelete}
                     onConfirm={this.handleConfirmDelete}
                     show={true}
