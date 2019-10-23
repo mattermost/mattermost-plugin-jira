@@ -1,7 +1,7 @@
 import {ProjectMetadata, IssueMetadata, ChannelSubscription} from 'types/model';
 
 export type SharedProps = {
-    channel: {id: string; display_name: string};
+    channel: {id: string; name: string; display_name: string};
     theme: any;
     jiraProjectMetadata: ProjectMetadata;
     jiraIssueMetadata: IssueMetadata | null;
