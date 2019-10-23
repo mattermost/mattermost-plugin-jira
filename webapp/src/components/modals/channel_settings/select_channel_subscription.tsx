@@ -44,7 +44,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
     };
 
     render(): React.ReactElement {
-        const {channel, isChannelDmOrGm} = this.props;
+        const {channel, omitDisplayName} = this.props;
         const {error, showConfirmModal} = this.state;
 
         let errorDisplay = null;
@@ -55,7 +55,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         }
 
         let titleMessage = <h2 className='text-center'>{'Jira Subscriptions in'} <strong>{channel.display_name}</strong></h2>;
-        if (isChannelDmOrGm) {
+        if (omitDisplayName) {
             titleMessage = <h2 className='text-center'>{'Jira Subscriptions'}</h2>;
         }
 

@@ -25,11 +25,11 @@ import ChannelSettingsModal from './channel_settings';
 const mapStateToProps = (state) => {
     const channelId = getChannelIdWithSettingsOpen(state);
     let channel = null;
-    let isChannelDmOrGm = false;
+    let omitDisplayName = false;
 
     if (channelId !== '') {
         channel = getChannel(state, channelId);
-        isChannelDmOrGm = isDirectChannel(channel) || isGroupChannel(channel);
+        omitDisplayName = isDirectChannel(channel) || isGroupChannel(channel);
     }
 
     const jiraIssueMetadata = getJiraIssueMetadata(state);
@@ -38,7 +38,7 @@ const mapStateToProps = (state) => {
     const channelSubscriptions = getChannelSubscriptions(state)[channelId];
 
     return {
-        isChannelDmOrGm,
+        omitDisplayName,
         channelSubscriptions,
         channel,
         jiraIssueMetadata,
