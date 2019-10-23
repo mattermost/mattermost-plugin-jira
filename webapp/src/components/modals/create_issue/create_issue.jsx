@@ -329,6 +329,7 @@ export default class CreateIssueModal extends PureComponent {
                     <ReactSelectSetting
                         name={'project'}
                         label={'Project'}
+                        limitOptions={true}
                         required={true}
                         onChange={this.handleProjectChange}
                         options={projectOptions}
@@ -338,7 +339,6 @@ export default class CreateIssueModal extends PureComponent {
                         value={projectOptions.find((option) => option.value === this.state.projectKey)}
                         addValidate={this.validator.addComponent}
                         removeValidate={this.validator.removeComponent}
-                        limitOptions={true}
                     />
                     <ReactSelectSetting
                         name={'issue_type'}

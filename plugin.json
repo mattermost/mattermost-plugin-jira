@@ -2,7 +2,7 @@
   "id": "jira",
   "name": "Jira",
   "description": "Atlassian Jira plugin for Mattermost.",
-  "version": "2.1.0",
+  "version": "2.2.2",
   "min_server_version": "5.14.0",
   "server": {
     "executables": {

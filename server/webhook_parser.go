@@ -314,7 +314,7 @@ func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
 	user := ""
 	if jwh.User.Key != "" {
 		user = mdUser(&jwh.User)
-	} else if jwh.Comment.UpdateAuthor.Key != "" {
+	} else if jwh.Comment.UpdateAuthor.Key != "" || jwh.Comment.UpdateAuthor.AccountID != "" {
 		user = mdUser(&jwh.Comment.UpdateAuthor)
 	}
 	if user == "" {

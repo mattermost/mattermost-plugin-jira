@@ -1,6 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {Store, Action} from 'redux';
+import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
+
 import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue';
 import CreateIssueModal from 'components/modals/create_issue';
 import ChannelSettingsModal from 'components/modals/channel_settings';
@@ -15,7 +18,7 @@ import reducers from './reducers';
 import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings} from './actions';
 import Hooks from './hooks/hooks';
 
-const setupUILater = (registry, store) => async () => {
+const setupUILater = (registry: PluginRegistry, store: Store<object, Action<object>>): () => Promise<void> => async () => {
     const settings = await getSettings(store.getState);
     if (!settings.ui_enabled) {
         return;
@@ -42,15 +45,19 @@ const setupUILater = (registry, store) => async () => {
 };
 
 export default class Plugin {
-    finishedSetupUI = () => {
+    private haveSetupUI = false;
+    private headerButtonId = '';
+    private setupUI?: () => Promise<void>;
+
+    private finishedSetupUI = () => {
         this.haveSetupUI = true;
     };
 
-    setHeaderButtonId = (id) => {
+    private setHeaderButtonId = (id: string) => {
         this.headerButtonId = id;
     };
 
-    async initialize(registry, store) {
+    public async initialize(registry: PluginRegistry, store: Store<object, Action<object>>) {
         this.setupUI = setupUILater(registry, store);
         this.haveSetupUI = false;
         this.headerButtonId = '';
