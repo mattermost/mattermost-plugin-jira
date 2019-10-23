@@ -20,6 +20,7 @@ func parseJiraLinksToMarkdown(text string) string {
 }
 
 func mdKeySummaryLink(issue *jira.Issue) string {
+	// Use Self URL only to extract the full hostname from it
 	pos := strings.LastIndex(issue.Self, "/rest/api")
 	if pos < 0 {
 		return ""

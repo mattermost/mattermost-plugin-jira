@@ -140,10 +140,6 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 }
 
 func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	if len(args) < 1 {
-		return p.help(header)
-	}
-
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
 		p.errorf("executeSettings: failed to load current Jira instance: %v", err)
@@ -154,6 +150,10 @@ func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 	jiraUser, err := p.userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
 		return p.responsef(header, "Your username is not connected to Jira. Please type `jira connect`. %v", err)
+	}
+
+	if len(args) == 0 {
+		return p.responsef(header, "Current settings:\n%s", jiraUser.Settings.String())
 	}
 
 	switch args[0] {

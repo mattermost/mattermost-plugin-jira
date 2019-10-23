@@ -236,6 +236,9 @@ func (client JiraClient) UpdateComment(issueKey string, comment *jira.Comment) (
 func (client JiraClient) SearchIssues(jql string, options *jira.SearchOptions) ([]jira.Issue, error) {
 	found, resp, err := client.Jira.Issue.Search(jql, options)
 	if err != nil {
+		if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized {
+			return nil, errors.New("not authorized to search issues")
+		}
 		return nil, userFriendlyJiraError(resp, err)
 	}
 	return found, nil
