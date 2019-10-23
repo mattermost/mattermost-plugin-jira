@@ -44,7 +44,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
     };
 
     render(): React.ReactElement {
-        const {channel} = this.props;
+        const {channel, isChannelDmOrGm} = this.props;
         const {error, showConfirmModal} = this.state;
 
         let errorDisplay = null;
@@ -52,6 +52,11 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
             errorDisplay = (
                 <span className='error'>{error}</span>
             );
+        }
+
+        let titleMessage = <h2 className='text-center'>{'Jira Subscriptions in'} <strong>{channel.display_name}</strong></h2>;
+        if (isChannelDmOrGm) {
+            titleMessage = <h2 className='text-center'>{'Jira Subscriptions'}</h2>;
         }
 
         const subscriptionRows = (
@@ -106,7 +111,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         return (
             <div>
                 <div className='d-flex justify-content-between align-items-center margin-bottom x3'>
-                    <h2 className='text-center'>{'Jira Subscriptions in'} <strong>{channel.name}</strong></h2>
+                    {titleMessage}
                     <button
                         className='btn btn-primary'
                         onClick={this.props.showCreateChannelSubscription}
