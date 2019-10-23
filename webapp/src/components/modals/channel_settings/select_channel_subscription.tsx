@@ -30,7 +30,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
 
     handleConfirmDelete = () => {
         this.setState({showConfirmModal: false});
-        this.deleteChannelSubscription();
+        this.deleteChannelSubscription(this.state.subscriptionToDelete);
     }
 
     handleDeleteChannelSubscription = (sub: ChannelSubscription): void => {
@@ -40,8 +40,8 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         });
     };
 
-    deleteChannelSubscription = (): void => {
-        this.props.deleteChannelSubscription(this.state.subscriptionToDelete).then((res: { error?: { message: string } }) => {
+    deleteChannelSubscription = (sub: ChannelSubscription): void => {
+        this.props.deleteChannelSubscription(sub).then((res: { error?: { message: string } }) => {
             if (res.error) {
                 this.setState({error: res.error.message});
             }
