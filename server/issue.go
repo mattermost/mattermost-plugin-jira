@@ -320,19 +320,23 @@ func httpAPIGetSearchEpics(ji Instance, w http.ResponseWriter, r *http.Request) 
 	var result []ReactSelectOption
 	if exact != nil {
 		name, _ := exact.Fields.Unknowns.String(epicNameTypeID)
-		label := fmt.Sprintf("%s: %s", exact.Key, name)
-		result = append(result, ReactSelectOption{
-			Label: label,
-			Value: exact.Key,
-		})
+		if name != "" {
+			label := fmt.Sprintf("%s: %s", exact.Key, name)
+			result = append(result, ReactSelectOption{
+				Label: label,
+				Value: exact.Key,
+			})
+		}
 	}
 	for _, epic := range found {
 		name, _ := epic.Fields.Unknowns.String(epicNameTypeID)
-		label := fmt.Sprintf("%s: %s", epic.Key, name)
-		result = append(result, ReactSelectOption{
-			Label: label,
-			Value: epic.Key,
-		})
+		if name != "" {
+			label := fmt.Sprintf("%s: %s", epic.Key, name)
+			result = append(result, ReactSelectOption{
+				Label: label,
+				Value: epic.Key,
+			})
+		}
 	}
 
 	bb, err := json.Marshal(result)
