@@ -119,6 +119,8 @@ export default class ReactSelectSetting extends React.PureComponent {
             selectComponent = (
                 <CreatableSelect
                     {...this.props}
+                    noOptionsMessage={() => 'Start typing...'}
+                    formatCreateLabel={(value) => `Add "${value}"`}
                     menuPortalTarget={document.body}
                     menuPlacement='auto'
                     onChange={this.handleChange}
