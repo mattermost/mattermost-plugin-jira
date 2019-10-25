@@ -29,7 +29,9 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
     handleInclusionChange = (name: string, choice: FilterFieldInclusion): void => {
         const {onChange, value} = this.props;
 
-        onChange(value, {...value, inclusion: choice});
+        const newValues = choice === FilterFieldInclusion.BLANK ? [] : value.values;
+
+        onChange(value, {...value, inclusion: choice, values: newValues});
     };
 
     handleFieldTypeChange = (name: string, choice: string): void => {
@@ -100,6 +102,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
             {label: 'Include', value: FilterFieldInclusion.INCLUDE_ANY},
             {label: 'Include All', value: FilterFieldInclusion.INCLUDE_ALL},
             {label: 'Exclude', value: FilterFieldInclusion.EXCLUDE_ANY},
+            {label: 'Blank', value: FilterFieldInclusion.BLANK},
         ];
         let chosenInclusionOption = inclusionSelectOptions[0];
 
@@ -143,6 +146,14 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
             );
         }
 
+        let disableLastSelect = false;
+        let lastSelectPlaceholder;
+        if (value.inclusion === FilterFieldInclusion.BLANK) {
+            lastSelectPlaceholder = '';
+            disableLastSelect = true;
+        }
+
+
         return (
             <div className='row'>
                 <div className='col-md-11 col-sm-12'>
@@ -182,7 +193,9 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                         <div className='col-md-4 col-sm-12'>
                             <ReactSelectSetting
                                 name={'values'}
-                                required={true}
+                                required={!disableLastSelect}
+                                isDisabled={disableLastSelect}
+                                placeholder={lastSelectPlaceholder}
                                 hideRequiredStar={true}
                                 options={fieldValueOptions}
                                 theme={theme}
@@ -278,4 +291,3 @@ const getStyle = (theme: any): any => ({
         margin: '2.5rem 0 0',
     },
 });
-

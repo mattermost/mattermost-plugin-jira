@@ -448,6 +448,42 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			}),
 			ChannelIds: []string{"sampleChannelId"},
 		},
+		"filter configured to blank, field is not present": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "customfield_10060", Values: NewStringSet(), Inclusion: FILTER_BLANK},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"filter configured to blank, field is present": {
+			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{
+							{Key: "status", Values: NewStringSet(), Inclusion: FILTER_BLANK},
+						},
+					},
+				},
+			}),
+			ChannelIds: []string{},
+		},
 		"custom multi-select field filter configured, matches": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
