@@ -111,7 +111,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         return (
             <div>
                 <div>{label}</div>
-                <div style={{marginLeft: '10px', color: '#ccc'}}>
+                <div style={{opacity: 0.6}}>
                     {subtext}
                 </div>
             </div>
