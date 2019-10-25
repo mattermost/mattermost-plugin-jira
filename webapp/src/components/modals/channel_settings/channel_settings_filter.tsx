@@ -153,7 +153,6 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
             disableLastSelect = true;
         }
 
-
         return (
             <div className='row'>
                 <div className='col-md-11 col-sm-12'>
