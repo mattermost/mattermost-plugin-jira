@@ -6,10 +6,9 @@ import React from 'react';
 import debounce from 'debounce-promise';
 import AsyncSelect from 'react-select/async';
 
-import {doFetchWithResponse} from 'client';
 import {getStyleForReactSelect} from 'utils/styles';
 import {isEpicNameField, isEpicIssueType} from 'utils/jira_issue_metadata';
-import {IssueMetadata, ReactSelectOption, JiraIssue} from 'types/model';
+import {IssueMetadata, ReactSelectOption} from 'types/model';
 
 import Setting from 'components/setting';
 
@@ -19,10 +18,10 @@ const searchDebounceDelay = 400;
 type Props = {
     required?: boolean;
     hideRequiredStar?: boolean;
+    fetchEpicsWithParams: (params: object) => Promise<{data: ReactSelectOption[]}>;
     theme: object;
     isMulti?: boolean;
     onChange: (values: string[]) => void;
-    fetchEpicsEndpoint: string;
     value: string[];
     addValidate: (isValid: () => boolean) => void;
     removeValidate: (isValid: () => boolean) => void;
@@ -122,10 +121,17 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
         const projectKey = this.props.issueMetadata.projects[0].key;
         const fullJql = `project=${projectKey} and issuetype=${epicIssueType.id} ${jqlSearch} ${searchDefaults}`;
 
-        return doFetchWithResponse(`${this.props.fetchEpicsEndpoint}?jql=${fullJql}&epic_name_type_id=${epicNameTypeId}&q=${userInput}`).then(({data}) => {
+        const params = {
+            jql: fullJql,
+            epic_name_type_id: epicNameTypeId,
+            q: userInput,
+        };
+
+        return this.props.fetchEpicsWithParams(params).then(({data}) => {
             return data;
         }).catch((e) => {
             this.setState({error: e});
+            return [];
         });
     };
 
