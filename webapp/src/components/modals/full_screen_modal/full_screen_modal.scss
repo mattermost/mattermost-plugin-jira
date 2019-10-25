@@ -10,6 +10,10 @@ $full-screen-modal-transition: 100ms;
     z-index: 2000;
     overflow: auto;
 
+    .full-screen-modal-header {
+        height: 50px;
+    }
+
     .close-x {
         position: fixed;
         top: 48px;
