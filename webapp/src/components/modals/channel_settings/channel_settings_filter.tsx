@@ -29,7 +29,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
     handleInclusionChange = (name: string, choice: FilterFieldInclusion): void => {
         const {onChange, value} = this.props;
 
-        const newValues = choice === FilterFieldInclusion.BLANK ? [] : value.values;
+        const newValues = choice === FilterFieldInclusion.EMPTY ? [] : value.values;
 
         onChange(value, {...value, inclusion: choice, values: newValues});
     };
@@ -102,7 +102,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
             {label: 'Include', value: FilterFieldInclusion.INCLUDE_ANY},
             {label: 'Include All', value: FilterFieldInclusion.INCLUDE_ALL},
             {label: 'Exclude', value: FilterFieldInclusion.EXCLUDE_ANY},
-            {label: 'Blank', value: FilterFieldInclusion.BLANK},
+            {label: 'Empty', value: FilterFieldInclusion.EMPTY},
         ];
         let chosenInclusionOption = inclusionSelectOptions[0];
 
@@ -148,7 +148,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
 
         let disableLastSelect = false;
         let lastSelectPlaceholder;
-        if (value.inclusion === FilterFieldInclusion.BLANK) {
+        if (value.inclusion === FilterFieldInclusion.EMPTY) {
             lastSelectPlaceholder = '';
             disableLastSelect = true;
         }

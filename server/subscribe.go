@@ -22,7 +22,7 @@ const (
 	FILTER_INCLUDE_ANY = "include_any"
 	FILTER_INCLUDE_ALL = "include_all"
 	FILTER_EXCLUDE_ANY = "exclude_any"
-	FILTER_BLANK       = "blank"
+	FILTER_EMPTY       = "empty"
 )
 
 type FieldFilter struct {
@@ -148,7 +148,7 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) (StringSet, error) {
 
 		for _, field := range sub.Filters.Fields {
 			// Broken filter, values must be provided
-			if field.Inclusion == "" || (field.Values.Len() == 0 && field.Inclusion != FILTER_BLANK) {
+			if field.Inclusion == "" || (field.Values.Len() == 0 && field.Inclusion != FILTER_EMPTY) {
 				validFilter = false
 				break
 			}
@@ -160,7 +160,7 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) (StringSet, error) {
 			if (field.Inclusion == FILTER_INCLUDE_ANY && !containsAny) ||
 				(field.Inclusion == FILTER_INCLUDE_ALL && !containsAll) ||
 				(field.Inclusion == FILTER_EXCLUDE_ANY && containsAny) ||
-				(field.Inclusion == FILTER_BLANK && value.Len() > 0) {
+				(field.Inclusion == FILTER_EMPTY && value.Len() > 0) {
 				validFilter = false
 				break
 			}

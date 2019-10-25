@@ -448,7 +448,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			}),
 			ChannelIds: []string{"sampleChannelId"},
 		},
-		"filter configured to blank, field is not present": {
+		"filter configured to empty, field is not present": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
@@ -459,14 +459,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10060", Values: NewStringSet(), Inclusion: FILTER_BLANK},
+							{Key: "customfield_10060", Values: NewStringSet(), Inclusion: FILTER_EMPTY},
 						},
 					},
 				},
 			}),
 			ChannelIds: []string{"sampleChannelId"},
 		},
-		"filter configured to blank, field is present": {
+		"filter configured to empty, field is present": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
@@ -477,7 +477,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "status", Values: NewStringSet(), Inclusion: FILTER_BLANK},
+							{Key: "status", Values: NewStringSet(), Inclusion: FILTER_EMPTY},
 						},
 					},
 				},
