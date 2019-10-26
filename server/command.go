@@ -573,7 +573,6 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 }
 
 func executeStats(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
-	// TODO sysadmin only?
 	return executeStatsImpl(p, c, commandArgs, false, args...)
 }
 
@@ -582,6 +581,13 @@ func executeDebugStatsExpvar(p *Plugin, c *plugin.Context, commandArgs *model.Co
 }
 
 func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, useExpvar bool, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, commandArgs.UserId)
+	if err != nil {
+		return p.responsef(commandArgs, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(commandArgs, "`/jira stats` can only be run by a system administrator.")
+	}
 	if len(args) < 1 {
 		return p.help(commandArgs)
 	}
@@ -592,7 +598,9 @@ func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandAr
 	pattern := strings.Join(args, " ")
 	print := expvar.PrintExpvars
 	if !useExpvar {
-		stats, keys, err := p.consolidatedStoredStats()
+		var stats *expvar.Stats
+		var keys []string
+		stats, keys, err = p.consolidatedStoredStats()
 		if err != nil {
 			return p.responsef(commandArgs, "%v", err)
 		}
@@ -608,28 +616,42 @@ func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandAr
 	return p.responsef(commandArgs, resp+rstats)
 }
 
-func executeDebugStatsReset(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeDebugStatsReset(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, commandArgs.UserId)
+	if err != nil {
+		return p.responsef(commandArgs, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(commandArgs, "`/jira stats` can only be run by a system administrator.")
+	}
 	if len(args) != 0 {
-		return p.help(header)
+		return p.help(commandArgs)
 	}
 
-	err := p.debugResetStats()
+	err = p.debugResetStats()
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.responsef(commandArgs, err.Error())
 	}
-	return p.responsef(header, "Reset stats")
+	return p.responsef(commandArgs, "Reset stats")
 }
 
-func executeDebugStatsSave(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeDebugStatsSave(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, commandArgs.UserId)
+	if err != nil {
+		return p.responsef(commandArgs, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(commandArgs, "`/jira stats` can only be run by a system administrator.")
+	}
 	if len(args) != 0 {
-		return p.help(header)
+		return p.help(commandArgs)
 	}
 	stats := p.getConfig().stats
 	if stats == nil {
-		return p.responsef(header, "No stats to save")
+		return p.responsef(commandArgs, "No stats to save")
 	}
 	p.saveStats()
-	return p.responsef(header, "Saved stats")
+	return p.responsef(commandArgs, "Saved stats")
 }
 
 func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

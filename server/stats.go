@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+const statsKeyExpiration = 30 * 24 * time.Hour // 30 days
 const statsAutosaveInterval = 10 * time.Minute
 const statsAutosaveMaxDither = 60 // seconds
 
@@ -81,7 +82,6 @@ func httpAPIStats(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error
 	return http.StatusOK, nil
 }
 
-// To save the stats periodically, use `go Autosave(...)``
 func (p *Plugin) startAutosaveStats() {
 	stop := make(chan bool)
 	go func() {
@@ -126,7 +126,7 @@ func (p *Plugin) saveStats() error {
 	if err != nil {
 		return err
 	}
-	appErr := p.API.KVSet(statsKeyName(), data)
+	appErr := p.API.KVSetWithExpiry(statsKeyName(), data, int64(statsKeyExpiration.Seconds()))
 	if appErr != nil {
 		return appErr
 	}

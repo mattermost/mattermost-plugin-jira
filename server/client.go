@@ -378,7 +378,6 @@ func endpointNameFromRequest(r *http.Request) string {
 		}
 		out = append(out, p)
 		context = p
-
 	}
 
 	out = append(out, r.Method)

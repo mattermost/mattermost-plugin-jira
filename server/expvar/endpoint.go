@@ -236,6 +236,11 @@ func (e *Endpoint) Merge(multi ...*Endpoint) {
 		}
 	}
 
+	if e.lock != nil {
+		e.lock.Lock()
+		defer e.lock.Unlock()
+	}
+
 	for _, from := range multi {
 		e.Total += from.Total
 		e.Errors += from.Errors
