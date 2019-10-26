@@ -184,10 +184,10 @@ func initUserCounter(currentInstanceStore CurrentInstanceStore, userStore UserSt
 
 var startedAt = time.Now()
 
-// EnsureUptime adds an "uptime" expvar
+// initUptime adds an "uptime" expvar
 func initUptime() {
 	goexpvar.Publish("uptime", goexpvar.Func(func() interface{} {
-		up := (time.Since(startedAt) + time.Second/2) / time.Second * time.Second
+		up := time.Since(startedAt).Round(time.Second)
 		return up.String()
 	}))
 }
