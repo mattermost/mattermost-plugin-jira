@@ -10,14 +10,10 @@ $full-screen-modal-transition: 100ms;
     z-index: 2000;
     overflow: auto;
 
-    .full-screen-modal-header {
-        height: 50px;
-    }
-
     .close-x {
         position: fixed;
-        top: 48px;
-        right: 48px;
+        top: 8px;
+        right: 16px;
         cursor: pointer;
         svg {
             fill: var(--center-channel-color-90);

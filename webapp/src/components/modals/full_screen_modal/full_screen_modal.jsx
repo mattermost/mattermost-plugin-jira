@@ -48,12 +48,10 @@ export default class FullScreenModal extends React.Component {
                 appear={true}
             >
                 <div className='FullScreenModal'>
-                    <div className='full-screen-modal-header'>
-                        <CloseIcon
-                            className='close-x'
-                            onClick={this.close}
-                        />
-                    </div>
+                    <CloseIcon
+                        className='close-x'
+                        onClick={this.close}
+                    />
                     {this.props.children}
                 </div>
             </CSSTransition>
