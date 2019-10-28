@@ -288,6 +288,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             label={'Subscription Name'}
                             placeholder={'Name'}
                             type={'input'}
+                            maxLength={100}
                             required={true}
                             onChange={this.handleNameChange}
                             value={this.state.subscriptionName}
