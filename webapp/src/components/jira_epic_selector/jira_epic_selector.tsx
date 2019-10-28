@@ -68,6 +68,10 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
     }
 
     fetchInitialSelectedValues = (): void => {
+        if (!this.props.value.length) {
+            return;
+        }
+
         const epicIds = this.props.value.join(', ');
         const searchStr = `and id IN (${epicIds})`;
         const userInput = ''; // Fetching by saved ids, no user input to process

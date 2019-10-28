@@ -32,7 +32,7 @@ describe('components/JiraEpicSelector', () => {
         expect(wrapper).toMatchSnapshot();
     });
 
-    test('should call fetchEpicsWithParams on mount', () => {
+    test('should call fetchEpicsWithParams on mount if values are present', () => {
         const props = {...baseProps};
         const wrapper = shallow<JiraEpicSelector>(
             <JiraEpicSelector {...props}/>
@@ -44,17 +44,35 @@ describe('components/JiraEpicSelector', () => {
         });
     });
 
+    test('should not call fetchEpicsWithParams on mount if no values are present', () => {
+        const props = {...baseProps, value: []};
+        const wrapper = shallow<JiraEpicSelector>(
+            <JiraEpicSelector {...props}/>
+        );
+        expect(props.fetchEpicsWithParams).not.toHaveBeenCalled();
+    });
+
     test('#searchIssues should call fetchEpicsWithParams', () => {
         const props = {...baseProps};
         const wrapper = shallow<JiraEpicSelector>(
             <JiraEpicSelector {...props}/>
         );
 
+        wrapper.instance().searchIssues('');
+
+        let args = props.fetchEpicsWithParams.mock.calls[1][0];
+        expect(args).toEqual({
+            epic_name_type_id: 'customfield_10011',
+            jql: 'project=KT and issuetype=10000  ORDER BY updated DESC',
+            q: '',
+        });
+
         wrapper.instance().searchIssues('some input');
 
-        expect(props.fetchEpicsWithParams).toHaveBeenCalledWith({
+        args = props.fetchEpicsWithParams.mock.calls[2][0];
+        expect(args).toEqual({
             epic_name_type_id: 'customfield_10011',
-            jql: 'project=KT and issuetype=10000 and "Epic Name"~"some%20input*" ORDER BY updated DESC',
+            jql: 'project=KT and issuetype=10000  and "Epic Name"~"some input"  ORDER BY updated DESC',
             q: 'some input',
         });
     });
