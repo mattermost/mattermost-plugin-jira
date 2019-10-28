@@ -132,11 +132,11 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 		// Otherwise, check if they can view the issue.
 
 		isCommentEvent := wh.Events().Intersection(commentEvents).Len() > 0
-		selfURL := wh.Issue.Self
 		if isCommentEvent {
-			selfURL = notification.commentSelf
+			err = client.RESTGet(notification.commentSelf, nil, &struct{}{})
+		} else {
+			_, err = client.GetIssue(wh.Issue.ID, nil)
 		}
-		err = client.RESTGet(selfURL, nil, &struct{}{})
 		if err != nil {
 			p.errorf("PostNotifications: failed to get self: %v", err)
 			continue

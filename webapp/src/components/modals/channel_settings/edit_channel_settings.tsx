@@ -300,6 +300,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                         <ReactSelectSetting
                             name={'projects'}
                             label={'Project'}
+                            limitOptions={true}
                             required={true}
                             onChange={this.handleProjectChange}
                             options={projectOptions}
@@ -308,7 +309,6 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             value={projectOptions.filter((option) => this.state.filters.projects.includes(option.value))}
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
-                            limitOptions={true}
                         />
                         {innerComponent}
                     </div>
