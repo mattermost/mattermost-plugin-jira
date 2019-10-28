@@ -14,8 +14,10 @@
 
     .channel-subscriptions-modal-body {
         max-width: 960px;
-        width: 90%;
+        width: 100%;
         margin-bottom: 28px;
+        padding-right: 20px;
+        padding-left: 20px;
 
         table {
             margin: 2rem 0;
