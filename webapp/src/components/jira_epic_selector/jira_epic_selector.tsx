@@ -98,8 +98,8 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
 
         let searchStr = '';
         if (userInput) {
-            const userInputEncoded = encodeURIComponent(userInput.trim().replace(/"/g, '\\"'));
-            searchStr = `and "${epicNameTypeName}"~"${userInputEncoded}*"`;
+            const cleanedInput = userInput.trim().replace(/"/g, '\\"');
+            searchStr = ` and "${epicNameTypeName}"~"${cleanedInput}" `;
         }
 
         return this.fetchEpicsFromJql(searchStr, userInput);
