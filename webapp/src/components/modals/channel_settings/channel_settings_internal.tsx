@@ -5,6 +5,8 @@ import React from 'react';
 
 import {ChannelSubscription} from 'types/model';
 
+import BackIcon from '../full_screen_modal/back_icon';
+
 import EditChannelSettings from './edit_channel_settings';
 import SelectChannelSubscription from './select_channel_subscription';
 import {SharedProps} from './shared_props';
@@ -27,25 +29,50 @@ export default class ChannelSettingsModalInner extends React.PureComponent<Share
         this.setState({selectedSubscription: null, creatingSubscription: false});
     };
 
+    handleBack = (): void => {
+        this.setState({
+            creatingSubscription: false,
+            selectedSubscription: null,
+        });
+    };
+
     render(): JSX.Element {
         const {selectedSubscription, creatingSubscription} = this.state;
 
+        let form;
         if (selectedSubscription || creatingSubscription) {
-            return (
+            form = (
                 <EditChannelSettings
                     {...this.props}
-                    close={this.finishEditSubscription}
+                    finishEditSubscription={this.finishEditSubscription}
                     selectedSubscription={selectedSubscription}
+                />
+            );
+        } else {
+            form = (
+                <SelectChannelSubscription
+                    {...this.props}
+                    showEditChannelSubscription={this.showEditChannelSubscription}
+                    showCreateChannelSubscription={this.showCreateChannelSubscription}
+                />
+            );
+        }
+
+        let backIcon;
+        if (this.state.creatingSubscription || this.state.selectedSubscription) {
+            backIcon = (
+                <BackIcon
+                    className='back'
+                    onClick={this.handleBack}
                 />
             );
         }
 
         return (
-            <SelectChannelSubscription
-                {...this.props}
-                showEditChannelSubscription={this.showEditChannelSubscription}
-                showCreateChannelSubscription={this.showCreateChannelSubscription}
-            />
+            <React.Fragment>
+                {backIcon}
+                {form}
+            </React.Fragment>
         );
     }
 }

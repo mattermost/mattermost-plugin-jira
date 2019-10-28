@@ -10,6 +10,23 @@ $full-screen-modal-transition: 100ms;
     z-index: 2000;
     overflow: auto;
 
+    .back {
+        position: fixed;
+        top: 8px;
+        left: 16px;
+        cursor: pointer;
+        svg {
+            fill: var(--center-channel-color-90);
+            padding: 4px;
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            &:hover {
+                background: var(--button-bg-10);
+            }
+        }
+    }
+
     .close-x {
         position: fixed;
         top: 48px;

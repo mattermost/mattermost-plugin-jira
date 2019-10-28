@@ -41,7 +41,7 @@ const JiraEventOptions = [
 ];
 
 export type Props = SharedProps & {
-    close: () => void;
+    finishEditSubscription: () => void;
     selectedSubscription: ChannelSubscription | null;
 };
 
@@ -99,7 +99,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         if (e && e.preventDefault) {
             e.preventDefault();
         }
-        this.props.close();
+        this.props.finishEditSubscription();
     };
 
     handleNameChange = (id, value) => {
