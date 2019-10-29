@@ -71,6 +71,25 @@ export function getFields(metadata: IssueMetadata, projectKey: string, issueType
     return {};
 }
 
+export function getConflictingFields(fields: FilterField[], chosenIssueTypes: string[], issueMetadata: IssueMetadata): {field: FilterField; issueTypes: IssueType[]}[] {
+    const conflictingFields = [];
+
+    for (const field of fields) {
+        const conflictingIssueTypes = [];
+        for (const issueTypeId of chosenIssueTypes) {
+            const issueTypes = field.issueTypes;
+            if (!issueTypes.find((it) => it.id === issueTypeId)) {
+                const issueType = issueMetadata.projects[0].issuetypes.find((i) => i.id === issueTypeId) as IssueType;
+                conflictingIssueTypes.push(issueType);
+            }
+        }
+        if (conflictingIssueTypes.length) {
+            conflictingFields.push({field, issueTypes: conflictingIssueTypes});
+        }
+    }
+    return conflictingFields;
+}
+
 export function getCustomFieldsForProjects(metadata: IssueMetadata | null, projectKeys: string[]): FieldWithInfo[] {
     if (!metadata || !projectKeys || !projectKeys.length) {
         return [];
