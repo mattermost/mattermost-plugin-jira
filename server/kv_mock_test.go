@@ -42,7 +42,10 @@ func (jti jiraTestInstance) GetUserConnectURL(mattermostUserId string) (string, 
 }
 
 func (jti jiraTestInstance) GetClient(jiraUser JIRAUser) (Client, error) {
-	client, _ := jira.NewClient(&http.Client{}, "testClient")
+	client, err := jira.NewClient(&http.Client{}, "testClient")
+	if err != nil {
+		return nil, err
+	}
 	return newCloudClient(client), nil
 }
 
