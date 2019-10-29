@@ -492,6 +492,24 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
 	}
 
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	post := &model.Post{
+		UserId:    p.getConfig().botUserID,
+		ChannelId: subscription.ChannelId,
+		Message:   fmt.Sprintf("Jira subscription, \"%v\", was added to this channel by %v", subscription.Name, jiraUser.DisplayName),
+	}
+
+	p.API.CreatePost(post)
+
 	return http.StatusOK, nil
 }
 
@@ -523,6 +541,24 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 	if _, err := w.Write(b); err != nil {
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
 	}
+
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	post := &model.Post{
+		UserId:    p.getConfig().botUserID,
+		ChannelId: subscription.ChannelId,
+		Message:   fmt.Sprintf("Jira subscription, \"%v\", was updated by %v", subscription.Name, jiraUser.DisplayName),
+	}
+
+	p.API.CreatePost(post)
 
 	return http.StatusOK, nil
 }
