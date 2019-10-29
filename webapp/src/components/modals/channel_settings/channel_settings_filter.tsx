@@ -85,6 +85,39 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         return null;
     };
 
+    renderInclusionDropdownOption = (data: {value: string; label: string}, meta: {context: string}): JSX.Element | string => {
+        const {value, label} = data;
+        const {context} = meta;
+
+        // context === value means it is rendering the selected value
+        if (context === 'value') {
+            return label;
+        }
+
+        // otherwise it is rendering an option in the open dropdown
+        let subtext = '';
+        switch (value) {
+        case FilterFieldInclusion.INCLUDE_ANY:
+            subtext = 'Includes either of the values (or)';
+            break;
+        case FilterFieldInclusion.INCLUDE_ALL:
+            subtext = 'Includes all of the values (and)';
+            break;
+        case FilterFieldInclusion.EXCLUDE_ANY:
+            subtext = 'Excludes all of the values';
+            break;
+        }
+
+        return (
+            <div>
+                <div>{label}</div>
+                <div style={{opacity: 0.6}}>
+                    {subtext}
+                </div>
+            </div>
+        );
+    }
+
     render(): JSX.Element {
         const {field, fields, value, theme} = this.props;
         let chosenFieldValues: ReactSelectOption[] = [];
@@ -168,7 +201,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                         </div>
                         <div className='col-md-4 col-sm-12'>
                             <ReactSelectSetting
-                                name={'exclude'}
+                                name={'inclusion'}
                                 required={true}
                                 hideRequiredStar={true}
                                 options={inclusionSelectOptions}
@@ -177,6 +210,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                                 theme={theme}
                                 addValidate={this.props.addValidate}
                                 removeValidate={this.props.removeValidate}
+                                formatOptionLabel={this.renderInclusionDropdownOption}
                             />
                         </div>
                         <div className='col-md-4 col-sm-12'>
@@ -278,4 +312,3 @@ const getStyle = (theme: any): any => ({
         margin: '2.5rem 0 0',
     },
 });
-
