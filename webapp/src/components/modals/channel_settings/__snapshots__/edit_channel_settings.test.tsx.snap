@@ -608,11 +608,6 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
           ]
         }
       />
-      <p
-        className="help-text error-text"
-      >
-        <span />
-      </p>
       <ChannelSettingsFilters
         addValidate={[Function]}
         chosenIssueTypes={
