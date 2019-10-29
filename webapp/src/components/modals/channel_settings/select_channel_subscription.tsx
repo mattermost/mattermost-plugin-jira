@@ -79,7 +79,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                     title={'Subscription'}
                 />
             );
-        };
+        }
 
         let titleMessage = <h2 className='text-center'>{'Jira Subscriptions in'} <strong>{channel.display_name}</strong></h2>;
         if (omitDisplayName) {
