@@ -6,6 +6,7 @@ package main
 import (
 	"crypto/md5"
 	"fmt"
+	"net/http"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
@@ -39,9 +40,12 @@ func (jti jiraTestInstance) GetDisplayDetails() map[string]string {
 func (jti jiraTestInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
 	return "http://jiraTestInstanceUserConnectURL.some", nil
 }
+
 func (jti jiraTestInstance) GetClient(jiraUser JIRAUser) (Client, error) {
-	return nil, errors.New("not implemented")
+	client, _ := jira.NewClient(&http.Client{}, "testClient")
+	return newCloudClient(client), nil
 }
+
 func (jti jiraTestInstance) GetUserGroups(jiraUser JIRAUser) ([]*jira.UserGroup, error) {
 	return nil, errors.New("not implemented")
 }
@@ -70,13 +74,15 @@ func (store mockCurrentInstanceStoreNoInstance) LoadCurrentJIRAInstance() (Insta
 	return nil, errors.New("failed to load current Jira instance: not found")
 }
 
-type mockUserStore struct{}
+type mockUserStore struct {
+	loadJiraUserResp JIRAUser
+}
 
 func (store mockUserStore) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JIRAUser) error {
 	return nil
 }
 func (store mockUserStore) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, error) {
-	return JIRAUser{}, nil
+	return store.loadJiraUserResp, nil
 }
 func (store mockUserStore) LoadMattermostUserId(ji Instance, jiraUserName string) (string, error) {
 	return "testMattermostUserId012345", nil

@@ -4,6 +4,7 @@
 package main
 
 import (
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -18,6 +19,20 @@ import (
 	"github.com/mattermost/mattermost-server/plugin/plugintest"
 	"github.com/mattermost/mattermost-server/plugin/plugintest/mock"
 )
+
+func startServer(t *testing.T) *httptest.Server {
+	ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte{})
+	}))
+	l, err := net.Listen("tcp", "localhost:1111")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ts.Listener = l
+	return ts
+}
 
 func testWebhookRequest(filename string) *http.Request {
 	if f, err := os.Open(filepath.Join("testdata", filename)); err != nil {
@@ -60,14 +75,15 @@ func TestWebhookHTTP(t *testing.T) {
 	}
 
 	for name, tc := range map[string]struct {
-		Request                 *http.Request
-		ExpectedHeadline        string
-		ExpectedSlackAttachment bool
-		ExpectedText            string
-		ExpectedFields          []*model.SlackAttachmentField
-		ExpectedStatus          int
-		ExpectedIgnored         bool // Indicates that no post was made as a result of the webhook request
-		CurrentInstance         bool
+		Request                         *http.Request
+		ExpectedHeadline                string
+		ExpectedSlackAttachment         bool
+		ExpectedText                    string
+		ExpectedFields                  []*model.SlackAttachmentField
+		ExpectedPostNotificationsCalled int
+		ExpectedStatus                  int
+		ExpectedIgnored                 bool // Indicates that no post was made as a result of the webhook request
+		CurrentInstance                 bool
 	}{
 		"issue created": {
 			Request:                 testWebhookRequest("webhook-issue-created.json"),
@@ -364,11 +380,12 @@ func TestWebhookHTTP(t *testing.T) {
 			CurrentInstance:         true,
 		},
 		"SERVER issue commented notify": {
-			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-2.json"),
-			ExpectedSlackAttachment: true,
-			ExpectedHeadline:        "Test User commented on improvement [PRJA-42: test for notifications](http://test-server.azure.com:8080/browse/PRJA-42)",
-			ExpectedText:            "This is a test comment. We should act on it right away.",
-			CurrentInstance:         true,
+			Request:                         testWebhookRequest("webhook-server-issue-updated-commented-2.json"),
+			ExpectedSlackAttachment:         true,
+			ExpectedHeadline:                "Test User commented on improvement [PRJA-42: test for notifications](http://localhost:1111/browse/PRJA-42)",
+			ExpectedText:                    "This is a test comment. We should act on it right away.",
+			CurrentInstance:                 true,
+			ExpectedPostNotificationsCalled: 1,
 		},
 		"SERVER: ignored comment created": {
 			Request:         testWebhookRequest("webhook-server-comment-created.json"),
@@ -579,11 +596,12 @@ func TestWebhookHTTP(t *testing.T) {
 			CurrentInstance:         false,
 		},
 		"SERVER issue commented notify - no Instance": {
-			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-2.json"),
-			ExpectedSlackAttachment: true,
-			ExpectedHeadline:        "Test User commented on improvement [PRJA-42: test for notifications](http://test-server.azure.com:8080/browse/PRJA-42)",
-			ExpectedText:            "This is a test comment. We should act on it right away.",
-			CurrentInstance:         false,
+			Request:                         testWebhookRequest("webhook-server-issue-updated-commented-2.json"),
+			ExpectedSlackAttachment:         true,
+			ExpectedHeadline:                "Test User commented on improvement [PRJA-42: test for notifications](http://localhost:1111/browse/PRJA-42)",
+			ExpectedText:                    "This is a test comment. We should act on it right away.",
+			CurrentInstance:                 false,
+			ExpectedPostNotificationsCalled: 0,
 		},
 		"SERVER: ignored comment created - no Instance": {
 			Request:         testWebhookRequest("webhook-server-comment-created.json"),
@@ -635,6 +653,7 @@ func TestWebhookHTTP(t *testing.T) {
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
 				Id: "theuserid",
 			}, (*model.AppError)(nil))
+
 			api.On("GetChannelByNameForTeamName", "theteam", "thechannel",
 				false).Run(func(args mock.Arguments) {
 				api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, (*model.AppError)(nil))
@@ -643,19 +662,35 @@ func TestWebhookHTTP(t *testing.T) {
 				TeamId: "theteamid",
 			}, (*model.AppError)(nil))
 
+			api.On("GetDirectChannel",
+				mock.AnythingOfType("string"),
+				mock.AnythingOfType("string")).
+				Return(&model.Channel{}, (*model.AppError)(nil))
+
 			p := Plugin{}
+
 			p.updateConfig(func(conf *config) {
 				conf.Secret = validConfiguration.Secret
 			})
 			p.SetAPI(api)
 
 			if tc.CurrentInstance {
-				p.currentInstanceStore = mockCurrentInstanceStore{&p}
+				p.currentInstanceStore = mockCurrentInstanceStore{plugin: &p}
 			} else {
 				p.currentInstanceStore = mockCurrentInstanceStoreNoInstance{&p}
 			}
+			s := startServer(t)
+			s.Start()
 
-			p.userStore = mockUserStore{}
+			defer s.Close()
+
+			p.userStore = mockUserStore{
+				loadJiraUserResp: JIRAUser{
+					Settings: &UserSettings{
+						Notifications: true,
+					},
+				},
+			}
 
 			w := httptest.NewRecorder()
 			recorder := &testWebhookWrapper{}
@@ -684,6 +719,8 @@ func TestWebhookHTTP(t *testing.T) {
 				assert.Equal(t, tc.ExpectedHeadline, post.Message)
 				return
 			}
+
+			assert.Equal(t, tc.ExpectedPostNotificationsCalled, len(recorder.postedNotifications))
 
 			require.NotNil(t, post.Props)
 			require.NotNil(t, post.Props["attachments"])

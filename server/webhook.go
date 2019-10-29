@@ -133,7 +133,7 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 
 		isCommentEvent := wh.Events().Intersection(commentEvents).Len() > 0
 		if isCommentEvent {
-			err = client.RESTGet(notification.commentSelf, nil, &struct{}{})
+			err = client.RESTGet(notification.commentSelf, nil, nil)
 		} else {
 			_, err = client.GetIssue(wh.Issue.ID, nil)
 		}
@@ -151,6 +151,7 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 		}
 		posts = append(posts, post)
 	}
+
 	return posts, http.StatusOK, nil
 }
 

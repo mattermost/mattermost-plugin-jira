@@ -110,5 +110,10 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error)
 		return statusCode, err
 	}
 
+	_, statusCode, err = wh.PostNotifications(p)
+	if err != nil {
+		return statusCode, err
+	}
+
 	return http.StatusOK, nil
 }

@@ -3,7 +3,7 @@
   "webhookEvent": "jira:issue_updated",
   "issue_event_type_name": "issue_commented",
   "user": {
-    "self": "http://test-server.azure.com:8080/rest/api/2/user?username=TestUser",
+    "self": "http://localhost:1111/rest/api/2/user?username=TestUser",
     "name": "TestUser",
     "key": "testUser",
     "emailAddress": "test.user@test.com",
@@ -19,29 +19,29 @@
   },
   "issue": {
     "id": "10231",
-    "self": "http://test-server.azure.com:8080/rest/api/2/issue/10231",
+    "self": "http://localhost:1111/rest/api/2/issue/10231",
     "key": "PRJA-42",
     "fields": {
       "issuetype": {
-        "self": "http://test-server.azure.com:8080/rest/api/2/issuetype/10005",
+        "self": "http://localhost:1111/rest/api/2/issuetype/10005",
         "id": "10005",
         "description": "An improvement or enhancement to an existing feature or task.",
-        "iconUrl": "http://test-server.azure.com:8080/secure/viewavatar?size=xsmall&avatarId=10310&avatarType=issuetype",
+        "iconUrl": "http://localhost:1111/secure/viewavatar?size=xsmall&avatarId=10310&avatarType=issuetype",
         "name": "Improvement",
         "subtask": false,
         "avatarId": 10310
       },
       "timespent": null,
       "project": {
-        "self": "http://test-server.azure.com:8080/rest/api/2/project/10002",
+        "self": "http://localhost:1111/rest/api/2/project/10002",
         "id": "10002",
         "key": "PRJA",
         "name": "ProjectA",
         "avatarUrls": {
-          "48x48": "http://test-server.azure.com:8080/secure/projectavatar?avatarId=10324",
-          "24x24": "http://test-server.azure.com:8080/secure/projectavatar?size=small&avatarId=10324",
-          "16x16": "http://test-server.azure.com:8080/secure/projectavatar?size=xsmall&avatarId=10324",
-          "32x32": "http://test-server.azure.com:8080/secure/projectavatar?size=medium&avatarId=10324"
+          "48x48": "http://localhost:1111/secure/projectavatar?avatarId=10324",
+          "24x24": "http://localhost:1111/secure/projectavatar?size=small&avatarId=10324",
+          "16x16": "http://localhost:1111/secure/projectavatar?size=xsmall&avatarId=10324",
+          "32x32": "http://localhost:1111/secure/projectavatar?size=medium&avatarId=10324"
         }
       },
       "fixVersions": [],
@@ -60,14 +60,14 @@
       "workratio": -1,
       "lastViewed": "2019-06-28T21:31:59.605+0000",
       "watches": {
-        "self": "http://test-server.azure.com:8080/rest/api/2/issue/PRJA-42/watchers",
+        "self": "http://localhost:1111/rest/api/2/issue/PRJA-42/watchers",
         "watchCount": 2,
         "isWatching": true
       },
       "created": "2019-06-28T21:16:13.654+0000",
       "priority": {
-        "self": "http://test-server.azure.com:8080/rest/api/2/priority/3",
-        "iconUrl": "http://test-server.azure.com:8080/images/icons/priorities/medium.svg",
+        "self": "http://localhost:1111/rest/api/2/priority/3",
+        "iconUrl": "http://localhost:1111/images/icons/priorities/medium.svg",
         "name": "Medium",
         "id": "3"
       },
@@ -78,15 +78,15 @@
       "versions": [],
       "issuelinks": [],
       "assignee": {
-        "self": "http://test-server.azure.com:8080/rest/api/2/user?username=dylan",
+        "self": "http://localhost:1111/rest/api/2/user?username=dylan",
         "name": "dylan",
         "key": "dylan",
         "emailAddress": "dylan@mattermost.com",
         "avatarUrls": {
-          "48x48": "http://test-server.azure.com:8080/secure/useravatar?avatarId=10339",
-          "24x24": "http://test-server.azure.com:8080/secure/useravatar?size=small&avatarId=10339",
-          "16x16": "http://test-server.azure.com:8080/secure/useravatar?size=xsmall&avatarId=10339",
-          "32x32": "http://test-server.azure.com:8080/secure/useravatar?size=medium&avatarId=10339"
+          "48x48": "http://localhost:1111/secure/useravatar?avatarId=10339",
+          "24x24": "http://localhost:1111/secure/useravatar?size=small&avatarId=10339",
+          "16x16": "http://localhost:1111/secure/useravatar?size=xsmall&avatarId=10339",
+          "32x32": "http://localhost:1111/secure/useravatar?size=medium&avatarId=10339"
         },
         "displayName": "Dylan H",
         "active": true,
@@ -94,13 +94,13 @@
       },
       "updated": "2019-06-28T21:31:58.040+0000",
       "status": {
-        "self": "http://test-server.azure.com:8080/rest/api/2/status/10000",
+        "self": "http://localhost:1111/rest/api/2/status/10000",
         "description": "",
-        "iconUrl": "http://test-server.azure.com:8080/",
+        "iconUrl": "http://localhost:1111/",
         "name": "To Do",
         "id": "10000",
         "statusCategory": {
-          "self": "http://test-server.azure.com:8080/rest/api/2/statuscategory/2",
+          "self": "http://localhost:1111/rest/api/2/statuscategory/2",
           "id": 2,
           "key": "new",
           "colorName": "blue-gray",
@@ -122,7 +122,7 @@
       "aggregatetimeestimate": null,
       "summary": "test for notifications",
       "creator": {
-        "self": "http://test-server.azure.com:8080/rest/api/2/user?username=creator.user",
+        "self": "http://localhost:1111/rest/api/2/user?username=creator.user",
         "name": "creator.user",
         "key": "creator.user",
         "emailAddress": "creator.user@mattermost.com",
@@ -138,7 +138,7 @@
       },
       "subtasks": [],
       "reporter": {
-        "self": "http://test-server.azure.com:8080/rest/api/2/user?username=creator.user",
+        "self": "http://localhost:1111/rest/api/2/user?username=creator.user",
         "name": "creator.user",
         "key": "creator.user",
         "emailAddress": "creator.user@mattermost.com",
@@ -176,10 +176,10 @@
       "comment": {
         "comments": [
           {
-            "self": "http://test-server.azure.com:8080/rest/api/2/issue/10231/comment/10116",
+            "self": "http://localhost:1111/rest/api/2/issue/10231/comment/10116",
             "id": "10116",
             "author": {
-              "self": "http://test-server.azure.com:8080/rest/api/2/user?username=TestUser",
+              "self": "http://localhost:1111/rest/api/2/user?username=TestUser",
               "name": "TestUser",
               "key": "testUser",
               "emailAddress": "test.user@test.com",
@@ -195,7 +195,7 @@
             },
             "body": "test comment",
             "updateAuthor": {
-              "self": "http://test-server.azure.com:8080/rest/api/2/user?username=TestUser",
+              "self": "http://localhost:1111/rest/api/2/user?username=TestUser",
               "name": "TestUser",
               "key": "testUser",
               "emailAddress": "test.user@test.com",
@@ -213,10 +213,10 @@
             "updated": "2019-06-28T21:20:34.131+0000"
           },
           {
-            "self": "http://test-server.azure.com:8080/rest/api/2/issue/10231/comment/10117",
+            "self": "http://localhost:1111/rest/api/2/issue/10231/comment/10117",
             "id": "10117",
             "author": {
-              "self": "http://test-server.azure.com:8080/rest/api/2/user?username=creator.user",
+              "self": "http://localhost:1111/rest/api/2/user?username=creator.user",
               "name": "creator.user",
               "key": "creator.user",
               "emailAddress": "creator.user@mattermost.com",
@@ -232,7 +232,7 @@
             },
             "body": "another test comment",
             "updateAuthor": {
-              "self": "http://test-server.azure.com:8080/rest/api/2/user?username=creator.user",
+              "self": "http://localhost:1111/rest/api/2/user?username=creator.user",
               "name": "creator.user",
               "key": "creator.user",
               "emailAddress": "creator.user@mattermost.com",
@@ -250,10 +250,10 @@
             "updated": "2019-06-28T21:26:42.288+0000"
           },
           {
-            "self": "http://test-server.azure.com:8080/rest/api/2/issue/10231/comment/10118",
+            "self": "http://localhost:1111/rest/api/2/issue/10231/comment/10118",
             "id": "10118",
             "author": {
-              "self": "http://test-server.azure.com:8080/rest/api/2/user?username=TestUser",
+              "self": "http://localhost:1111/rest/api/2/user?username=TestUser",
               "name": "TestUser",
               "key": "testUser",
               "emailAddress": "test.user@test.com",
@@ -269,7 +269,7 @@
             },
             "body": "This is a test comment. We should act on it right away.",
             "updateAuthor": {
-              "self": "http://test-server.azure.com:8080/rest/api/2/user?username=TestUser",
+              "self": "http://localhost:1111/rest/api/2/user?username=TestUser",
               "name": "TestUser",
               "key": "testUser",
               "emailAddress": "test.user@test.com",
@@ -292,7 +292,7 @@
         "startAt": 0
       },
       "votes": {
-        "self": "http://test-server.azure.com:8080/rest/api/2/issue/PRJA-42/votes",
+        "self": "http://localhost:1111/rest/api/2/issue/PRJA-42/votes",
         "votes": 0,
         "hasVoted": false
       },
@@ -305,10 +305,10 @@
     }
   },
   "comment": {
-    "self": "http://test-server.azure.com:8080/rest/api/2/issue/10231/comment/10118",
+    "self": "http://localhost:1111/rest/api/2/issue/10231/comment/10118",
     "id": "10118",
     "author": {
-      "self": "http://test-server.azure.com:8080/rest/api/2/user?username=TestUser",
+      "self": "http://localhost:1111/rest/api/2/user?username=TestUser",
       "name": "TestUser",
       "key": "testUser",
       "emailAddress": "test.user@test.com",
@@ -324,7 +324,7 @@
     },
     "body": "This is a test comment. We should act on it right away.",
     "updateAuthor": {
-      "self": "http://test-server.azure.com:8080/rest/api/2/user?username=TestUser",
+      "self": "http://localhost:1111/rest/api/2/user?username=TestUser",
       "name": "TestUser",
       "key": "testUser",
       "emailAddress": "test.user@test.com",
