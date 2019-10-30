@@ -156,27 +156,22 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         this.setState({conflictingError: null});
     }
 
-    handleIssueChange = (id: keyof ChannelSubscriptionFilters, value: string[]) => {
-        let finalValue = value;
-        if (!finalValue) {
-            finalValue = [];
-        } else if (!Array.isArray(finalValue)) {
-            finalValue = [finalValue];
-        }
-        const filters = {...this.state.filters};
+    handleIssueChange = (id: keyof ChannelSubscriptionFilters, value: string[] | null) => {
+        const finalValue = value || [];
+        const filters = {...this.state.filters, issue_types: finalValue};
         filters[id] = finalValue;
 
         let conflictingFields = null;
-        if (value) {
+        if (finalValue.length) {
             const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
             conflictingFields = getConflictingFields(
                 filterFields,
-                value,
+                finalValue,
                 this.props.jiraIssueMetadata
             );
         }
 
-        if (conflictingFields && conflictingFields.length !== 0) {
+        if (conflictingFields && conflictingFields.length) {
             const selectedConflictingFields = conflictingFields.filter((f1) => {
                 return this.state.filters.fields.find((f2) => f1.field.key === f2.key);
             });
@@ -287,7 +282,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         const eventOptions = JiraEventOptions.concat(customFields);
 
         let conflictingErrorComponent = null;
-        if (this.state.conflictingError !== null) {
+        if (this.state.conflictingError) {
             conflictingErrorComponent = (
                 <p className='help-text error-text'>
                     <span>{this.state.conflictingError}</span>

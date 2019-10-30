@@ -303,8 +303,7 @@ describe('components/EditChannelSettings', () => {
     test('should produce subscription error when add conflicting issue type', async () => {
         // This test checks that adding an issue type with confilcting fields
         // will trigger an error message that lists the conflicting filter
-        // fields.  Additionally, check that the error message disappears with
-        // each change of a filter field, project, or event
+        // fields.
 
         const props = {
             ...baseProps,
@@ -313,10 +312,6 @@ describe('components/EditChannelSettings', () => {
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
-
-        expect(wrapper.state().fetchingIssueMetadata).toBe(true);
-        await Promise.resolve();
-        expect(wrapper.state().fetchingIssueMetadata).toBe(false);
 
         // initially, there are no errors
         expect(wrapper.state().conflictingError).toBe(null);
@@ -327,6 +322,22 @@ describe('components/EditChannelSettings', () => {
 
         // save snapshot showing error message
         expect(wrapper).toMatchSnapshot();
+    });
+
+    test('conflicting subscription error should get cleared', async () => {
+        // Check that the conflicting error message disappears with
+        // each change of a filter field, project, or event
+
+        const props = {
+            ...baseProps,
+        };
+
+        const wrapper = shallow<EditChannelSettings>(
+            <EditChannelSettings {...props}/>
+        );
+
+        // Add issue type with conflicting filter fields 
+        wrapper.instance().handleIssueChange('issue_types', ['10004', '10000']);
 
         // save errorState for later usage and testing error disappears with changing fields
         const errorState = wrapper.state();
@@ -335,14 +346,14 @@ describe('components/EditChannelSettings', () => {
         wrapper.instance().handleSettingChange('issue_types', ['10004', '10000']);
         expect(wrapper.state().conflictingError).toBe(null);
 
-        // reset error message state
+        // reset error message state to include error message
         wrapper.setState({...errorState});
 
         // change project - error should disappear
         wrapper.instance().handleProjectChange(['KT']);
         expect(wrapper.state().conflictingError).toBe(null);
 
-        // reset error message state
+        // reset error message state to include error message
         wrapper.setState({...errorState});
 
         // change one of the filter fields - error should disappear
