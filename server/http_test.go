@@ -313,6 +313,7 @@ func TestSubscribe(t *testing.T) {
 				mock.AnythingOfTypeArgument("string")).Return(nil)
 
 			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
@@ -323,6 +324,7 @@ func TestSubscribe(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.currentInstanceStore = mockCurrentInstanceStore{&p}
+			p.userStore = mockUserStore{}
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("POST", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
@@ -583,6 +585,7 @@ func TestEditSubscription(t *testing.T) {
 				mock.AnythingOfTypeArgument("string")).Return(nil)
 
 			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
@@ -593,6 +596,7 @@ func TestEditSubscription(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.currentInstanceStore = mockCurrentInstanceStore{&p}
+			p.userStore = mockUserStore{}
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("PUT", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
