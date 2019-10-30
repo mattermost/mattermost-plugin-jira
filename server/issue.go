@@ -653,12 +653,7 @@ func getPermaLink(ji Instance, postId string, currentTeam string) string {
 	return fmt.Sprintf("%v/%v/pl/%v", ji.GetPlugin().GetSiteURL(), currentTeam, postId)
 }
 
-func (p *Plugin) getIssueDataForCloudWebhook(issueKey string) (*jira.Issue, error) {
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return nil, err
-	}
-
+func (p *Plugin) getIssueDataForCloudWebhook(ji Instance, issueKey string) (*jira.Issue, error) {
 	jci, ok := ji.(*jiraCloudInstance)
 	if !ok {
 		return nil, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
