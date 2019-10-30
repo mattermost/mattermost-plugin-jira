@@ -336,7 +336,7 @@ describe('components/EditChannelSettings', () => {
             <EditChannelSettings {...props}/>
         );
 
-        // Add issue type with conflicting filter fields 
+        // Add issue type with conflicting filter fields
         wrapper.instance().handleIssueChange('issue_types', ['10004', '10000']);
 
         // save errorState for later usage and testing error disappears with changing fields
