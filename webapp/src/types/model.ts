@@ -97,4 +97,10 @@ export type ChannelSubscription = {
     channel_id: string;
     filters: ChannelSubscriptionFilters;
     name: string;
-}
+};
+
+export type Channel = {
+    id: string;
+    name: string;
+    display_name: string;
+};
