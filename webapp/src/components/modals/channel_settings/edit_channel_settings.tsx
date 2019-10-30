@@ -12,12 +12,12 @@ import Loading from 'components/loading';
 import Validator from 'components/validator';
 import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProjects, getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
 
-import {ChannelSubscription, ChannelSubscriptionFilters} from 'types/model';
+import {ChannelSubscription, ChannelSubscriptionFilters, ReactSelectOption} from 'types/model';
 
 import ChannelSettingsFilters from './channel_settings_filters';
 import {SharedProps} from './shared_props';
 
-const JiraEventOptions = [
+const JiraEventOptions: ReactSelectOption[] = [
     {value: 'event_created', label: 'Issue Created'},
     {value: 'event_deleted', label: 'Issue Deleted'},
     {value: 'event_deleted_unresolved', label: 'Issue Deleted, Unresolved'},
@@ -53,6 +53,20 @@ export type State = {
     submitting: boolean;
     subscriptionName: string | null;
     showConfirmModal: boolean;
+};
+
+const removeDuplicateEvents = (array: ReactSelectOption[]): ReactSelectOption[] => {
+    const result = {} as any;
+    for (const event of array) {
+        let value = event.value;
+        if (value === 'event_updated_Fix Version/s' || value === 'event_updated_fixVersions') {
+            value = 'event_updated_fix_version';
+        }
+        if (!result[value.toLowerCase()]) {
+            result[value] = event;
+        }
+    }
+    return Object.values(result);
 };
 
 export default class EditChannelSettings extends PureComponent<Props, State> {
@@ -233,7 +247,9 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, this.state.filters.projects);
         const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
         const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
-        const eventOptions = JiraEventOptions.concat(customFields);
+
+        let eventOptions = JiraEventOptions.concat(customFields);
+        eventOptions = removeDuplicateEvents(eventOptions);
 
         let component = null;
         if (this.props.channel && this.props.channelSubscriptions) {
