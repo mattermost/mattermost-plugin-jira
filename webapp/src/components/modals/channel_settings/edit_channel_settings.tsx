@@ -58,8 +58,12 @@ export type State = {
 const removeDuplicateEvents = (array: ReactSelectOption[]): ReactSelectOption[] => {
     const result = {} as any;
     for (const event of array) {
-        if (!result[event.value]) {
-            result[event.value] = event;
+        let value = event.value;
+        if (value === 'event_updated_Fix Version/s' || value === 'event_updated_fixVersions') {
+            value = 'event_updated_fix_version';
+        }
+        if (!result[value.toLowerCase()]) {
+            result[value] = event;
         }
     }
     return Object.values(result);
