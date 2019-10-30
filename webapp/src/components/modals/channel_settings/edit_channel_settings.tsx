@@ -159,10 +159,9 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
     handleIssueChange = (id: keyof ChannelSubscriptionFilters, value: string[] | null) => {
         const finalValue = value || [];
         const filters = {...this.state.filters, issue_types: finalValue};
-        filters[id] = finalValue;
 
         let conflictingFields = null;
-        if (finalValue.length) {
+        if (finalValue.length > this.state.filters.issue_types.length) {
             const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
             conflictingFields = getConflictingFields(
                 filterFields,
@@ -175,15 +174,19 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             const selectedConflictingFields = conflictingFields.filter((f1) => {
                 return this.state.filters.fields.find((f2) => f1.field.key === f2.key);
             });
-            const fieldsStr = selectedConflictingFields.map((cf) => cf.field.name).join(', ');
-            const conflictingIssueType = conflictingFields[0].issueTypes[0];
 
-            let errorStr = `Issue Type(s) "${conflictingIssueType.name}" does not have filter field(s): "${fieldsStr}".  `;
-            errorStr += 'Please update the conflicting fields or create a separate subscription.';
-            this.setState({conflictingError: errorStr});
-        } else {
-            this.setState({filters});
+            if (selectedConflictingFields.length) {
+                const fieldsStr = selectedConflictingFields.map((cf) => cf.field.name).join(', ');
+                const conflictingIssueType = conflictingFields[0].issueTypes[0];
+
+                let errorStr = `Issue Type(s) "${conflictingIssueType.name}" does not have filter field(s): "${fieldsStr}".  `;
+                errorStr += 'Please update the conflicting fields or create a separate subscription.';
+                this.setState({conflictingError: errorStr});
+                return;
+            }
         }
+
+        this.setState({filters, conflictingError: null});
     };
 
     fetchIssueMetadata = (projectKeys) => {
