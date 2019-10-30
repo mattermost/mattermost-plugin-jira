@@ -567,7 +567,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "labels", Values: NewStringSet("Label1"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10071", Values: NewStringSet("value1"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -585,8 +585,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "labels", Values: NewStringSet("Label1", "Label3"), Inclusion: FILTER_INCLUDE_ANY},
-							{Key: "labels", Values: NewStringSet("Label4"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10071", Values: NewStringSet("value1", "value3"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10071", Values: NewStringSet("value4"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -604,7 +604,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "labels", Values: NewStringSet("Label1", "Label3"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10071", Values: NewStringSet("value1", "value3"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -622,7 +622,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "labels", Values: NewStringSet("wrong value"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10071", Values: NewStringSet("wrong value"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},

@@ -16,7 +16,19 @@ const flatten = (arr: any[]) => {
     return arr.reduce((acc, val) => acc.concat(val), []);
 };
 
-export function getProjectValues(metadata: ProjectMetadata) {
+function sortByName<T>(arr: (T & {name: string})[]): T[] {
+    return arr.sort((a, b) => {
+        if (a.name < b.name) {
+            return -1;
+        }
+        if (a.name > b.name) {
+            return 1;
+        }
+        return 0;
+    });
+}
+
+export function getProjectValues(metadata: ProjectMetadata): ReactSelectOption[] {
     if (!metadata || !metadata.projects) {
         return [];
     }
@@ -36,7 +48,7 @@ export function getIssueTypes(metadata: IssueMetadata, projectKey: string): Issu
     return project.issuetypes.filter((i) => !i.subtask);
 }
 
-export function getIssueValues(metadata: ProjectMetadata, projectKey: string) {
+export function getIssueValues(metadata: ProjectMetadata, projectKey: string): ReactSelectOption[] {
     if (!metadata || !metadata.issues_per_project || !projectKey) {
         return [];
     }
@@ -44,7 +56,7 @@ export function getIssueValues(metadata: ProjectMetadata, projectKey: string) {
     return metadata.issues_per_project[projectKey];
 }
 
-export function getIssueValuesForMultipleProjects(metadata: ProjectMetadata, projectKeys: string[]) {
+export function getIssueValuesForMultipleProjects(metadata: ProjectMetadata, projectKeys: string[]): ReactSelectOption[] {
     if (!metadata || !metadata.projects || !projectKeys) {
         return [];
     }
@@ -122,15 +134,7 @@ export function getCustomFieldsForProjects(metadata: IssueMetadata | null, proje
         customFieldHash[field.topLevelKey] = current;
     }
 
-    return Object.values(customFieldHash).sort((a, b) => {
-        if (a.name < b.name) {
-            return -1;
-        }
-        if (a.name > b.name) {
-            return 1;
-        }
-        return 0;
-    });
+    return sortByName(Object.values(customFieldHash));
 }
 
 const allowedTypes = [
@@ -166,6 +170,7 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
         return {
             key: field.key,
             name: field.name,
+            schema: field.schema,
             values: field.allowedValues.map((value) => ({
                 label: value.name || value.value,
                 value: value.id,
@@ -179,23 +184,48 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
         return {
             key: field.key,
             name: field.name,
+            schema: field.schema,
             userDefined: true,
             issueTypes: field.validIssueTypes,
         } as FilterField;
     });
 
-    return populatedFields.concat(userDefinedFields);
+    const result = populatedFields.concat(userDefinedFields);
+    const epicLinkField = fields.find(isEpicLinkField);
+    if (epicLinkField) {
+        result.unshift({
+            key: epicLinkField.key,
+            name: epicLinkField.name,
+            schema: epicLinkField.schema,
+            values: [],
+            issueTypes: epicLinkField.validIssueTypes,
+        } as FilterField);
+    }
+
+    return sortByName(result);
 }
 
-export function getCustomFieldValuesForProjects(metadata: IssueMetadata | null, projectKeys: string[]) {
+export function getCustomFieldValuesForProjects(metadata: IssueMetadata | null, projectKeys: string[]): ReactSelectOption[] {
     return getCustomFieldsForProjects(metadata, projectKeys).map((field) => ({
         label: `Issue Updated: Custom - ${field.name}`,
         value: `event_updated_${field.changeLogID}`,
     }));
 }
 
-export function getFieldValues(metadata: IssueMetadata, projectKey: string, issueTypeId: string) {
+export function getFieldValues(metadata: IssueMetadata, projectKey: string, issueTypeId: string): ReactSelectOption[] {
     const fieldsForIssue = getFields(metadata, projectKey, issueTypeId);
     const fieldIds = Object.keys(fieldsForIssue);
     return fieldIds.map((fieldId) => ({value: fieldId, label: fieldsForIssue[fieldId].name}));
+}
+
+export function isEpicNameField(field: JiraField | FilterField): boolean {
+    return field.schema && field.schema.custom === 'com.pyxis.greenhopper.jira:gh-epic-label';
+}
+
+export function isEpicLinkField(field: JiraField | FilterField): boolean {
+    return field.schema && field.schema.custom === 'com.pyxis.greenhopper.jira:gh-epic-link';
+}
+
+export function isEpicIssueType(issueType: IssueType): boolean {
+    return issueType.name === 'Epic';
 }
