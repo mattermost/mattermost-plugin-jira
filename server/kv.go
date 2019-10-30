@@ -207,6 +207,10 @@ func (store store) StoreCurrentJIRAInstance(ji Instance) (returnErr error) {
 	store.plugin.updateConfig(func(conf *config) {
 		conf.currentInstance = ji
 		conf.currentInstanceExpires = time.Now().Add(currentInstanceTTL)
+
+		// Removing from cache since we are switching instances
+		conf.currentCloudBotClient = nil
+		conf.currentCloudBotClientExpires = time.Time{}
 	})
 	store.plugin.debugf("Stored: current Jira instance: %s", ji.GetURL())
 

@@ -653,6 +653,37 @@ func getPermaLink(ji Instance, postId string, currentTeam string) string {
 	return fmt.Sprintf("%v/%v/pl/%v", ji.GetPlugin().GetSiteURL(), currentTeam, postId)
 }
 
+func (p *Plugin) getIssueDataForCloudWebhook(issueKey string) (*jira.Issue, error) {
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return nil, err
+	}
+
+	jci, ok := ji.(*jiraCloudInstance)
+	if !ok {
+		return nil, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
+	}
+
+	jiraClient, err := jci.getJIRAClientForServer()
+	if err != nil {
+		return nil, err
+	}
+
+	issue, resp, err := jiraClient.Issue.Get(issueKey, nil)
+	if err != nil {
+		switch {
+		case resp == nil:
+			return nil, errors.WithMessage(userFriendlyJiraError(nil, err),
+				"request to Jira failed")
+
+		case resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusUnauthorized:
+			return nil, errors.New(`We couldn't find the issue key, or the cloud "bot" client does not have the appropriate permissions to view the issue.`)
+		}
+	}
+
+	return issue, nil
+}
+
 func getIssueCustomFieldValue(issue *jira.Issue, key string) StringSet {
 	m, exists := issue.Fields.Unknowns.Value(key)
 	if !exists || m == nil {

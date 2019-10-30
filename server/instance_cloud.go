@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	jira "github.com/andygrunwald/go-jira"
 	jwt "github.com/dgrijalva/jwt-go"
@@ -146,6 +147,18 @@ func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Clie
 
 // Creates a "bot" client with a JWT
 func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
+	conf := jci.Plugin.getConfig()
+	now := time.Now()
+
+	if now.Before(conf.currentCloudBotClientExpires) {
+		// if conf.currentCloudBotClientExpires is set and there is no current
+		// cloud client, it's a cached "Not found"
+		if conf.currentCloudBotClient == nil {
+			return nil, errors.New("failed to load current Jira cloud client: not found")
+		}
+		return conf.currentCloudBotClient, nil
+	}
+
 	jwtConf := &ajwt.Config{
 		Key:          jci.AtlassianSecurityContext.Key,
 		ClientKey:    jci.AtlassianSecurityContext.ClientKey,
@@ -154,7 +167,18 @@ func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
 	}
 
 	httpClient := jci.GetPlugin().limitResponseClient(jwtConf.Client())
-	return jira.NewClient(httpClient, jwtConf.BaseURL)
+
+	jiraClient, err := jira.NewClient(httpClient, jwtConf.BaseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	jci.Plugin.updateConfig(func(conf *config) {
+		conf.currentCloudBotClient = jiraClient
+		conf.currentCloudBotClientExpires = now.Add(currentCloudBotClientTTL)
+	})
+
+	return jiraClient, nil
 }
 
 func (jci jiraCloudInstance) parseHTTPRequestJWT(r *http.Request) (*jwt.Token, string, error) {
