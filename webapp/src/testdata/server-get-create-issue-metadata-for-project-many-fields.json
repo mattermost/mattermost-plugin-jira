@@ -50,15 +50,6 @@
             }
           },
           "customfield_10201": {
-            "allowedValues": [{
-              "id": "HEY-3",
-              "value": "ww",
-              "name": "ww"
-            }, {
-              "id": "HEY-1",
-              "value": "jw",
-              "name": "jw"
-            }],
             "hasDefaultValue": false,
             "name": "Epic Link",
             "operations": ["set"],
@@ -266,15 +257,6 @@
             }
           },
           "customfield_10201": {
-            "allowedValues": [{
-              "id": "HEY-3",
-              "value": "ww",
-              "name": "ww"
-            }, {
-              "id": "HEY-1",
-              "value": "jw",
-              "name": "jw"
-            }],
             "hasDefaultValue": false,
             "name": "Epic Link",
             "operations": ["set"],
@@ -490,15 +472,6 @@
             }
           },
           "customfield_10201": {
-            "allowedValues": [{
-              "id": "HEY-3",
-              "value": "ww",
-              "name": "ww"
-            }, {
-              "id": "HEY-1",
-              "value": "jw",
-              "name": "jw"
-            }],
             "hasDefaultValue": false,
             "name": "Epic Link",
             "operations": ["set"],
@@ -705,15 +678,6 @@
             }
           },
           "customfield_10201": {
-            "allowedValues": [{
-              "id": "HEY-3",
-              "value": "ww",
-              "name": "ww"
-            }, {
-              "id": "HEY-1",
-              "value": "jw",
-              "name": "jw"
-            }],
             "hasDefaultValue": false,
             "name": "Epic Link",
             "operations": ["set"],
@@ -942,15 +906,6 @@
             }
           },
           "customfield_10201": {
-            "allowedValues": [{
-              "id": "HEY-3",
-              "value": "ww",
-              "name": "ww"
-            }, {
-              "id": "HEY-1",
-              "value": "jw",
-              "name": "jw"
-            }],
             "hasDefaultValue": false,
             "name": "Epic Link",
             "operations": ["set"],

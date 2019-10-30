@@ -314,60 +314,12 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
               ],
               "key": "customfield_10201",
               "name": "Epic Link",
-              "values": Array [
-                Object {
-                  "label": "ww",
-                  "value": "HEY-3",
-                },
-                Object {
-                  "label": "jw",
-                  "value": "HEY-1",
-                },
-              ],
-            },
-            Object {
-              "issueTypes": Array [
-                Object {
-                  "id": "10001",
-                  "name": "Task",
-                },
-                Object {
-                  "id": "10300",
-                  "name": "Story",
-                },
-                Object {
-                  "id": "10301",
-                  "name": "Bug",
-                },
-                Object {
-                  "id": "10200",
-                  "name": "Epic",
-                },
-              ],
-              "key": "priority",
-              "name": "Priority",
-              "values": Array [
-                Object {
-                  "label": "Highest",
-                  "value": "1",
-                },
-                Object {
-                  "label": "High",
-                  "value": "2",
-                },
-                Object {
-                  "label": "Medium",
-                  "value": "3",
-                },
-                Object {
-                  "label": "Low",
-                  "value": "4",
-                },
-                Object {
-                  "label": "Lowest",
-                  "value": "5",
-                },
-              ],
+              "schema": Object {
+                "custom": "com.pyxis.greenhopper.jira:gh-epic-link",
+                "customId": 10201,
+                "type": "any",
+              },
+              "values": Array [],
             },
             Object {
               "issueTypes": Array [
@@ -390,7 +342,60 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
               ],
               "key": "labels",
               "name": "Labels",
+              "schema": Object {
+                "items": "string",
+                "system": "labels",
+                "type": "array",
+              },
               "userDefined": true,
+            },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10001",
+                  "name": "Task",
+                },
+                Object {
+                  "id": "10300",
+                  "name": "Story",
+                },
+                Object {
+                  "id": "10301",
+                  "name": "Bug",
+                },
+                Object {
+                  "id": "10200",
+                  "name": "Epic",
+                },
+              ],
+              "key": "priority",
+              "name": "Priority",
+              "schema": Object {
+                "system": "priority",
+                "type": "priority",
+              },
+              "values": Array [
+                Object {
+                  "label": "Highest",
+                  "value": "1",
+                },
+                Object {
+                  "label": "High",
+                  "value": "2",
+                },
+                Object {
+                  "label": "Medium",
+                  "value": "3",
+                },
+                Object {
+                  "label": "Low",
+                  "value": "4",
+                },
+                Object {
+                  "label": "Lowest",
+                  "value": "5",
+                },
+              ],
             },
           ]
         }
@@ -450,18 +455,6 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
                         },
                       },
                       "customfield_10201": Object {
-                        "allowedValues": Array [
-                          Object {
-                            "id": "HEY-3",
-                            "name": "ww",
-                            "value": "ww",
-                          },
-                          Object {
-                            "id": "HEY-1",
-                            "name": "jw",
-                            "value": "jw",
-                          },
-                        ],
                         "hasDefaultValue": false,
                         "name": "Epic Link",
                         "operations": Array [
@@ -709,18 +702,6 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
                         },
                       },
                       "customfield_10201": Object {
-                        "allowedValues": Array [
-                          Object {
-                            "id": "HEY-3",
-                            "name": "ww",
-                            "value": "ww",
-                          },
-                          Object {
-                            "id": "HEY-1",
-                            "name": "jw",
-                            "value": "jw",
-                          },
-                        ],
                         "hasDefaultValue": false,
                         "name": "Epic Link",
                         "operations": Array [
@@ -980,18 +961,6 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
                         },
                       },
                       "customfield_10201": Object {
-                        "allowedValues": Array [
-                          Object {
-                            "id": "HEY-3",
-                            "name": "ww",
-                            "value": "ww",
-                          },
-                          Object {
-                            "id": "HEY-1",
-                            "name": "jw",
-                            "value": "jw",
-                          },
-                        ],
                         "hasDefaultValue": false,
                         "name": "Epic Link",
                         "operations": Array [
@@ -1239,18 +1208,6 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
                         },
                       },
                       "customfield_10201": Object {
-                        "allowedValues": Array [
-                          Object {
-                            "id": "HEY-3",
-                            "name": "ww",
-                            "value": "ww",
-                          },
-                          Object {
-                            "id": "HEY-1",
-                            "name": "jw",
-                            "value": "jw",
-                          },
-                        ],
                         "hasDefaultValue": false,
                         "name": "Epic Link",
                         "operations": Array [
@@ -1526,18 +1483,6 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
                         },
                       },
                       "customfield_10201": Object {
-                        "allowedValues": Array [
-                          Object {
-                            "id": "HEY-3",
-                            "name": "ww",
-                            "value": "ww",
-                          },
-                          Object {
-                            "id": "HEY-1",
-                            "name": "jw",
-                            "value": "jw",
-                          },
-                        ],
                         "hasDefaultValue": false,
                         "name": "Epic Link",
                         "operations": Array [
@@ -1795,7 +1740,7 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
       confirmButtonClass="btn btn-danger"
       confirmButtonText="Delete"
       hideCancel={false}
-      message="Delete Subscription asxtifxe8jyi9y81htww6ixkiy?"
+      message="Delete Subscription \\"SubTestName\\"?"
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
