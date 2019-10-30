@@ -14,7 +14,6 @@ import (
 	"text/template"
 	"time"
 
-	jira "github.com/andygrunwald/go-jira"
 	"github.com/mattermost/mattermost-server/model"
 
 	"github.com/pkg/errors"
@@ -55,7 +54,6 @@ type externalConfig struct {
 }
 
 const currentInstanceTTL = 1 * time.Second
-const currentCloudBotClientTTL = 15 * time.Minute
 
 const defaultMaxAttachmentSize = ByteSize(10 * 1024 * 1024) // 10Mb
 
@@ -70,11 +68,6 @@ type config struct {
 	// of a value. A nil value means there is no instance available.
 	currentInstance        Instance
 	currentInstanceExpires time.Time
-
-	// Cached non-user Jira cloud client. A non-0 expires indicates the presence
-	// of a value. A nil value means there is no client available.
-	currentCloudBotClient        *jira.Client
-	currentCloudBotClientExpires time.Time
 
 	// Maximum attachment size allowed to be uploaded to Jira
 	maxAttachmentSize ByteSize
