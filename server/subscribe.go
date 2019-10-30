@@ -574,7 +574,7 @@ func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 		return http.StatusBadRequest, errors.Wrap(err, "bad subscription id")
 	}
 
-	if err := p.hasPermissionToManageSubscription(mattermostUserId, subscription.ChannelId); err != nil {
+	if err = p.hasPermissionToManageSubscription(mattermostUserId, subscription.ChannelId); err != nil {
 		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
 	}
 
@@ -582,7 +582,7 @@ func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 		return http.StatusForbidden, errors.New("Not a member of the channel specified")
 	}
 
-	if err := p.removeChannelSubscription(subscriptionId); err != nil {
+	if err = p.removeChannelSubscription(subscriptionId); err != nil {
 		return http.StatusInternalServerError, errors.Wrap(err, "unable to remove channel subscription")
 	}
 
