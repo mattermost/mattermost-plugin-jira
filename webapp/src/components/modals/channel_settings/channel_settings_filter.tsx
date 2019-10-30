@@ -85,7 +85,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
     checkFieldConflictError = (): string | null => {
         const conflictIssueTypes = this.getConflictingIssueTypes().map((it) => it.name);
         if (conflictIssueTypes.length) {
-            return `Error: ${this.props.field.name} does not exist for issue type(s): ${conflictIssueTypes.join(', ')}.`;
+            return `${this.props.field.name} does not exist for issue type(s): ${conflictIssueTypes.join(', ')}.`;
         }
         return null;
     };
@@ -216,13 +216,16 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
 
         return (
             <div className='row'>
+                <div className='col-md-12 col-sm-12'>
+                    <div
+                        className='help-text error-text'
+                        style={style.conflictingError}
+                    >
+                        {this.checkFieldConflictError()}
+                    </div>
+                </div>
                 <div className='col-md-11 col-sm-12'>
                     <div className='row'>
-                        <div>
-                            <span>
-                                {this.checkFieldConflictError()}
-                            </span>
-                        </div>
                         <div className='col-md-4 col-sm-12'>
                             <ReactSelectSetting
                                 name={'fieldtype'}
@@ -334,6 +337,9 @@ const getStyle = (theme: any): any => ({
     trashIcon: {
         color: theme.errorTextColor,
         fontSize: '20px',
-        margin: '2.5rem 0 0',
+        margin: '0.5rem 0 0',
+    },
+    conflictingError: {
+        margin: '0 0 10px',
     },
 });
