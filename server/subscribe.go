@@ -589,6 +589,24 @@ func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte("{\"status\": \"OK\"}"))
 
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	post := &model.Post{
+		UserId:    p.getConfig().botUserID,
+		ChannelId: subscription.ChannelId,
+		Message:   fmt.Sprintf("Jira subscription, \"%v\", was removed from this channel by %v", subscription.Name, jiraUser.DisplayName),
+	}
+
+	p.API.CreatePost(post)
+
 	return http.StatusOK, nil
 }
 

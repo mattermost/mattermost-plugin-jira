@@ -455,6 +455,7 @@ func TestDeleteSubscription(t *testing.T) {
 				mock.AnythingOfTypeArgument("string")).Return(nil)
 
 			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
@@ -465,6 +466,7 @@ func TestDeleteSubscription(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.currentInstanceStore = mockCurrentInstanceStore{&p}
+			p.userStore = mockUserStore{}
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("DELETE", "/api/v2/subscriptions/channel/"+tc.subscriptionId, nil)
