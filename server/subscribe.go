@@ -324,6 +324,30 @@ func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscripti
 	})
 }
 
+func (p *Plugin) listChannelSubscriptions() (string, error) {
+	subs, err := p.getSubscriptions()
+	if err != nil {
+		return "", err
+	}
+
+	rows := []string{}
+	for channelID, subIDs := range subs.Channel.IdByChannelId {
+		channel, appErr := p.API.GetChannel(channelID)
+		if appErr != nil {
+			return "", errors.New("Failed to get channel")
+		}
+
+		rows = append(rows, fmt.Sprintf("~%s (%d):", channel.Name, len(subIDs)))
+
+		for subID := range subIDs {
+			sub := subs.Channel.ById[subID]
+			rows = append(rows, fmt.Sprintf("* %s - %s", sub.Filters.Projects.Elems()[0], sub.Name))
+		}
+	}
+
+	return strings.Join(rows, "\n"), nil
+}
+
 func inAllowedGroup(inGroups []*jira.UserGroup, allowedGroups []string) bool {
 	for _, inGroup := range inGroups {
 		for _, allowedGroup := range allowedGroups {
