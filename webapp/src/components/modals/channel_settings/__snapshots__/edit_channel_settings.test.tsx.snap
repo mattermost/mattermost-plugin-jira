@@ -27,7 +27,7 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
       <Input
         addValidate={[Function]}
         label="Subscription Name"
-        maxLength={null}
+        maxLength={100}
         onChange={[Function]}
         placeholder="Name"
         readOnly={false}
