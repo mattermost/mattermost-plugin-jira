@@ -1815,7 +1815,7 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
       <Input
         addValidate={[Function]}
         label="Subscription Name"
-        maxLength={null}
+        maxLength={100}
         onChange={[Function]}
         placeholder="Name"
         readOnly={false}
@@ -1991,7 +1991,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
       <Input
         addValidate={[Function]}
         label="Subscription Name"
-        maxLength={null}
+        maxLength={100}
         onChange={[Function]}
         placeholder="Name"
         readOnly={false}
@@ -5467,7 +5467,7 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
       <Input
         addValidate={[Function]}
         label="Subscription Name"
-        maxLength={null}
+        maxLength={100}
         onChange={[Function]}
         placeholder="Name"
         readOnly={false}
@@ -5632,7 +5632,7 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
       <Input
         addValidate={[Function]}
         label="Subscription Name"
-        maxLength={null}
+        maxLength={100}
         onChange={[Function]}
         placeholder="Name"
         readOnly={false}
@@ -5808,7 +5808,7 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
       <Input
         addValidate={[Function]}
         label="Subscription Name"
-        maxLength={null}
+        maxLength={100}
         onChange={[Function]}
         placeholder="Name"
         readOnly={false}

@@ -22,6 +22,8 @@ const (
 	FILTER_INCLUDE_ANY = "include_any"
 	FILTER_INCLUDE_ALL = "include_all"
 	FILTER_EXCLUDE_ANY = "exclude_any"
+
+	MAX_SUBSCRIPTION_NAME_LENGTH = 100
 )
 
 type FieldFilter struct {
@@ -275,7 +277,7 @@ func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) er
 			return nil, err
 		}
 
-		err = p.checkChannelSubscriptionNameUnique(newSubscription.ChannelId, newSubscription)
+		err = p.validateSubscription(newSubscription)
 		if err != nil {
 			return nil, err
 		}
@@ -292,7 +294,16 @@ func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) er
 	})
 }
 
-func (p *Plugin) checkChannelSubscriptionNameUnique(channelId string, subscription *ChannelSubscription) error {
+func (p *Plugin) validateSubscription(subscription *ChannelSubscription) error {
+	if len(subscription.Name) == 0 {
+		return errors.New("Please provide a name for the subscription.")
+	}
+
+	if len(subscription.Name) > MAX_SUBSCRIPTION_NAME_LENGTH {
+		return fmt.Errorf("Please provide a name less than %d characters.", MAX_SUBSCRIPTION_NAME_LENGTH)
+	}
+
+	channelId := subscription.ChannelId
 	subs, err := p.getSubscriptionsForChannel(channelId)
 	if err != nil {
 		return err
@@ -324,7 +335,7 @@ func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscripti
 			return nil, errors.New("Existing subscription does not exist.")
 		}
 
-		err = p.checkChannelSubscriptionNameUnique(oldSub.ChannelId, modifiedSubscription)
+		err = p.validateSubscription(modifiedSubscription)
 		if err != nil {
 			return nil, err
 		}
