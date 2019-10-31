@@ -11,7 +11,7 @@ $full-screen-modal-transition: 100ms;
     overflow: auto;
 
     .back {
-        position: fixed;
+        position: absolute;
         top: 8px;
         left: 16px;
         cursor: pointer;
@@ -28,7 +28,7 @@ $full-screen-modal-transition: 100ms;
     }
 
     .close-x {
-        position: fixed;
+        position: absolute;
         top: 48px;
         right: 48px;
         cursor: pointer;

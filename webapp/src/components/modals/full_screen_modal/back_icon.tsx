@@ -4,15 +4,25 @@
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
-export default class BackIcon extends React.PureComponent {
-    render() {
+type Props = {
+    className?: string;
+}
+
+export default class BackIcon extends React.PureComponent<Props> {
+    render(): JSX.Element {
+        let className = this.props.className || '';
+        className += ' btn btn-transparent';
+
         return (
-            <span {...this.props}>
+            <button
+                {...this.props}
+                className={className}
+            >
                 <FormattedMessage
                     id='generic_icons.back'
                     defaultMessage='Back Icon'
                 >
-                    {(ariaLabel) => (
+                    {(ariaLabel: string): JSX.Element => (
                         <svg
                             width='24px'
                             height='24px'
@@ -24,7 +34,7 @@ export default class BackIcon extends React.PureComponent {
                         </svg>
                     )}
                 </FormattedMessage>
-            </span>
+            </button>
         );
     }
 }
