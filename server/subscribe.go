@@ -114,8 +114,25 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) (StringSet, error) {
 		return nil, err
 	}
 
-	webhookEvents := wh.Events()
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return nil, err
+	}
+
 	subIds := subs.Channel.ById
+	instType := ji.GetType()
+
+	issue := &jwh.Issue
+	webhookEvents := wh.Events()
+	isCommentEvent := jwh.WebhookEvent == "comment_created" || jwh.WebhookEvent == "comment_updated" || jwh.WebhookEvent == "comment_deleted"
+
+	if isCommentEvent && instType == "cloud" {
+		// Jira Cloud comment event. We need to fetch issue data because it is not expanded in webhook payload.
+		issue, err = p.getIssueDataForCloudWebhook(ji, issue.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	channelIds := NewStringSet()
 	for _, sub := range subIds {
@@ -135,11 +152,11 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) (StringSet, error) {
 			continue
 		}
 
-		if !sub.Filters.IssueTypes.ContainsAny(jwh.Issue.Fields.Type.ID) {
+		if !sub.Filters.IssueTypes.ContainsAny(issue.Fields.Type.ID) {
 			continue
 		}
 
-		if !sub.Filters.Projects.ContainsAny(jwh.Issue.Fields.Project.Key) {
+		if !sub.Filters.Projects.ContainsAny(issue.Fields.Project.Key) {
 			continue
 		}
 
@@ -152,7 +169,7 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) (StringSet, error) {
 				break
 			}
 
-			value := getIssueFieldValue(&jwh.Issue, field.Key)
+			value := getIssueFieldValue(issue, field.Key)
 			containsAny := value.ContainsAny(field.Values.Elems()...)
 			containsAll := value.ContainsAll(field.Values.Elems()...)
 
