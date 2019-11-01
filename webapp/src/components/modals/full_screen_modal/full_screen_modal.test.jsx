@@ -4,7 +4,7 @@
 import React from 'react';
 import {shallow} from 'enzyme';
 
-import CloseIcon from './close_icon.jsx';
+import CloseIcon from './close_icon';
 
 import FullScreenModal from './full_screen_modal.jsx';
 
