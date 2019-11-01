@@ -359,11 +359,6 @@
           }
         },
         "labels": {
-          "COMMENT": "allowedValues would not normally be here",
-          "allowedValues": [
-            "Pickles",
-            "Some Label"
-          ],
           "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?query=",
           "hasDefaultValue": false,
           "key": "labels",
