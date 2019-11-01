@@ -9,7 +9,7 @@ import Preferences from 'mattermost-redux/constants/preferences';
 import projectMetadata from 'testdata/cloud-get-jira-project-metadata.json';
 import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.json';
-import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project.json';
+import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project-many-fields.json';
 import testChannel from 'testdata/channel.json';
 
 import {IssueMetadata, ProjectMetadata} from 'types/model';
@@ -82,6 +82,34 @@ describe('components/EditChannelSettings', () => {
         expect(wrapper.state().fetchingIssueMetadata).toBe(true);
         await Promise.resolve();
         expect(wrapper.state().fetchingIssueMetadata).toBe(false);
+        expect(wrapper).toMatchSnapshot();
+    });
+
+    test('SERVER - should match snapshot after fetching issue metadata', async () => {
+        const sub = {
+            id: 'asxtifxe8jyi9y81htww6ixkiy',
+            channel_id: '9f8em5tjjirnpretkzywiqtnur',
+            filters: {
+                events: ['event_updated_reopened'],
+                projects: ['HEY'],
+                issue_types: ['10001'],
+                fields: [],
+            },
+            name: 'SubTestName',
+        };
+
+        const props = {
+            ...baseProps,
+            jiraProjectMetadata: serverProjectMetadata as ProjectMetadata,
+            jiraIssueMetadata: serverIssueMetadata as IssueMetadata,
+            channelSubscriptions: [sub],
+            selectedSubscription: sub,
+        };
+        const wrapper = shallow<EditChannelSettings>(
+            <EditChannelSettings {...props}/>
+        );
+
+        await Promise.resolve();
         expect(wrapper).toMatchSnapshot();
     });
 

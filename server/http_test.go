@@ -18,6 +18,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const TEST_DATA_LONG_SUBSCRIPTION_NAME = `aaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccdddddddddd`
+
 func checkSubscriptionsEqual(t *testing.T, ls1 []ChannelSubscription, ls2 []ChannelSubscription) {
 	assert.Equal(t, len(ls1), len(ls2))
 
@@ -170,7 +172,7 @@ func TestSubscribe(t *testing.T) {
 			},
 		},
 		"Initial Subscription": {
-			subscription:       `{"channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"]}}`,
+			subscription:       `{"name": "some name", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"]}}`,
 			expectedStatusCode: http.StatusOK,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
@@ -182,8 +184,34 @@ func TestSubscribe(t *testing.T) {
 				},
 			}, nil, t),
 		},
+		"Initial Subscription, empty name provided": {
+			subscription:       `{"name": "", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"]}}`,
+			expectedStatusCode: http.StatusInternalServerError,
+			apiCalls: checkHasSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
+					Filters: SubscriptionFilters{
+						Events:   NewStringSet("jira:issue_created"),
+						Projects: NewStringSet("myproject"),
+					},
+				},
+			}, nil, t),
+		},
+		"Initial Subscription, long name provided": {
+			subscription:       `{"name": "` + TEST_DATA_LONG_SUBSCRIPTION_NAME + `", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"]}}`,
+			expectedStatusCode: http.StatusInternalServerError,
+			apiCalls: checkHasSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaab",
+					Filters: SubscriptionFilters{
+						Events:   NewStringSet("jira:issue_created"),
+						Projects: NewStringSet("myproject"),
+					},
+				},
+			}, nil, t),
+		},
 		"Adding to existing with other channel": {
-			subscription:       `{"channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"]}}`,
+			subscription:       `{"name": "some name", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"]}}`,
 			expectedStatusCode: http.StatusOK,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
@@ -313,6 +341,7 @@ func TestSubscribe(t *testing.T) {
 				mock.AnythingOfTypeArgument("string")).Return(nil)
 
 			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
@@ -323,6 +352,7 @@ func TestSubscribe(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.currentInstanceStore = mockCurrentInstanceStore{&p}
+			p.userStore = mockUserStore{}
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("POST", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
@@ -453,6 +483,7 @@ func TestDeleteSubscription(t *testing.T) {
 				mock.AnythingOfTypeArgument("string")).Return(nil)
 
 			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
@@ -463,6 +494,7 @@ func TestDeleteSubscription(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.currentInstanceStore = mockCurrentInstanceStore{&p}
+			p.userStore = mockUserStore{}
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("DELETE", "/api/v2/subscriptions/channel/"+tc.subscriptionId, nil)
@@ -513,8 +545,62 @@ func TestEditSubscription(t *testing.T) {
 			},
 		},
 		"Editing subscription": {
-			subscription:       `{"id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"]}}`,
+			subscription:       `{"name": "some name", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"]}}`,
 			expectedStatusCode: http.StatusOK,
+			apiCalls: checkHasSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
+					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
+					Filters: SubscriptionFilters{
+						Events:   NewStringSet("jira:issue_created"),
+						Projects: NewStringSet("otherproject"),
+						Fields:   []FieldFilter{},
+					},
+				},
+			},
+				withExistingChannelSubscriptions(
+					[]ChannelSubscription{
+						ChannelSubscription{
+							Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
+							ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
+							Filters: SubscriptionFilters{
+								Events:   NewStringSet("jira:issue_created"),
+								Projects: NewStringSet("myproject"),
+								Fields:   []FieldFilter{},
+							},
+						},
+					}), t),
+		},
+		"Editing subscription, no name provided": {
+			subscription:       `{"name": "", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"]}}`,
+			expectedStatusCode: http.StatusInternalServerError,
+			apiCalls: checkHasSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
+					ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
+					Filters: SubscriptionFilters{
+						Events:   NewStringSet("jira:issue_created"),
+						Projects: NewStringSet("otherproject"),
+						Fields:   []FieldFilter{},
+					},
+				},
+			},
+				withExistingChannelSubscriptions(
+					[]ChannelSubscription{
+						ChannelSubscription{
+							Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
+							ChannelId: "aaaaaaaaaaaaaaaaaaaaaaaaac",
+							Filters: SubscriptionFilters{
+								Events:   NewStringSet("jira:issue_created"),
+								Projects: NewStringSet("myproject"),
+								Fields:   []FieldFilter{},
+							},
+						},
+					}), t),
+		},
+		"Editing subscription, name too long": {
+			subscription:       `{"name": "` + TEST_DATA_LONG_SUBSCRIPTION_NAME + `", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"]}}`,
+			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
@@ -583,6 +669,7 @@ func TestEditSubscription(t *testing.T) {
 				mock.AnythingOfTypeArgument("string")).Return(nil)
 
 			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
@@ -593,6 +680,7 @@ func TestEditSubscription(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.currentInstanceStore = mockCurrentInstanceStore{&p}
+			p.userStore = mockUserStore{}
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("PUT", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
