@@ -26,6 +26,7 @@ type Props = {
     addValidate: (isValid: () => boolean) => void;
     removeValidate: (isValid: () => boolean) => void;
     issueMetadata: IssueMetadata;
+    resetInvalidOnChange?: boolean;
 };
 
 type State = {
@@ -146,6 +147,10 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
         }
         this.setState({cachedSelectedOptions: this.state.cachedSelectedOptions.concat(options)});
         this.props.onChange(options.map((v) => v.value));
+
+        if (this.props.resetInvalidOnChange) {
+            this.setState({invalid: false});
+        }
     }
 
     isValid = (): boolean => {
