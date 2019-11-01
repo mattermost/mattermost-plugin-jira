@@ -183,40 +183,12 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
               "value": "event_updated_summary",
             },
             Object {
-              "label": "Issue Updated: Custom - Affects Version/s",
-              "value": "event_updated_Affects Version/s",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Component/s",
-              "value": "event_updated_Component/s",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Environment",
-              "value": "event_updated_Environment",
-            },
-            Object {
               "label": "Issue Updated: Custom - Epic Link",
               "value": "event_updated_Epic Link",
             },
             Object {
               "label": "Issue Updated: Custom - Epic Name",
               "value": "event_updated_Epic Name",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Issue Type",
-              "value": "event_updated_Issue Type",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Linked Issues",
-              "value": "event_updated_Linked Issues",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Project",
-              "value": "event_updated_Project",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Reporter",
-              "value": "event_updated_Reporter",
             },
           ]
         }
@@ -2199,18 +2171,6 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
               "value": "event_updated_summary",
             },
             Object {
-              "label": "Issue Updated: Custom - Affects versions",
-              "value": "event_updated_versions",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Components",
-              "value": "event_updated_components",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Environment",
-              "value": "event_updated_environment",
-            },
-            Object {
               "label": "Issue Updated: Custom - Epic Link",
               "value": "event_updated_customfield_10014",
             },
@@ -2221,14 +2181,6 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
             Object {
               "label": "Issue Updated: Custom - Favorite Food",
               "value": "event_updated_customfield_10067",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Issue Type",
-              "value": "event_updated_issuetype",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Linked Issues",
-              "value": "event_updated_issuelinks",
             },
             Object {
               "label": "Issue Updated: Custom - MJK - Checkbox",
@@ -2273,14 +2225,6 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
             Object {
               "label": "Issue Updated: Custom - MJK - User Picker",
               "value": "event_updated_customfield_10080",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Project",
-              "value": "event_updated_project",
-            },
-            Object {
-              "label": "Issue Updated: Custom - Sprint",
-              "value": "event_updated_customfield_10021",
             },
             Object {
               "label": "Issue Updated: Custom - Text Field 1",

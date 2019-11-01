@@ -13,7 +13,7 @@ import Validator from 'components/validator';
 import {
     getProjectValues,
     getIssueValuesForMultipleProjects,
-    getCustomFieldValuesForProjects,
+    getCustomFieldValuesForEvents,
     getCustomFieldFiltersForProjects,
     getConflictingFields,
 } from 'utils/jira_issue_metadata';
@@ -60,20 +60,6 @@ export type State = {
     subscriptionName: string | null;
     showConfirmModal: boolean;
     conflictingError: string | null;
-};
-
-const removeDuplicateEvents = (array: ReactSelectOption[]): ReactSelectOption[] => {
-    const result = {} as any;
-    for (const event of array) {
-        let value = event.value;
-        if (value === 'event_updated_Fix Version/s' || value === 'event_updated_fixVersions') {
-            value = 'event_updated_fix_version';
-        }
-        if (!result[value.toLowerCase()]) {
-            result[value] = event;
-        }
-    }
-    return Object.values(result);
 };
 
 export default class EditChannelSettings extends PureComponent<Props, State> {
@@ -294,11 +280,10 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
 
         const projectOptions = getProjectValues(this.props.jiraProjectMetadata);
         const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, this.state.filters.projects);
-        const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
+        const customFields = getCustomFieldValuesForEvents(this.props.jiraIssueMetadata, this.state.filters.projects);
         const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
 
-        let eventOptions = JiraEventOptions.concat(customFields);
-        eventOptions = removeDuplicateEvents(eventOptions);
+        const eventOptions = JiraEventOptions.concat(customFields);
 
         let conflictingErrorComponent = null;
         if (this.state.conflictingError) {
