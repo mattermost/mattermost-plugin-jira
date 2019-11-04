@@ -62,12 +62,12 @@ var jiraCommandHandler = CommandHandler{
 		"stats":              executeStats,
 		"info":               executeInfo,
 		"help":               commandHelp,
-		"list":               executeList,
-		"instance/select":    executeInstanceSelect,
-		"instance/delete":    executeInstanceDelete,
 		"debug/stats/reset":  executeDebugStatsReset,
 		"debug/stats/save":   executeDebugStatsSave,
 		"debug/stats/expvar": executeDebugStatsExpvar,
+		// "debug/instance/list":   executeDebugInstanceList,
+		// "debug/instance/select": executeDebugInstanceSelect,
+		// "debug/instance/delete": executeDebugInstanceDelete,
 	},
 	defaultHandler: executeJiraDefault,
 }
@@ -211,7 +211,7 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	return &model.CommandResponse{}
 }
 
-func executeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeDebugInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
@@ -704,7 +704,7 @@ func (p *Plugin) responseRedirect(redirectURL string) *model.CommandResponse {
 	}
 }
 
-func executeInstanceSelect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeDebugInstanceSelect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 1 {
 		return p.help(header)
 	}
@@ -739,7 +739,7 @@ func executeInstanceSelect(p *Plugin, c *plugin.Context, header *model.CommandAr
 	return executeInfo(p, c, header)
 }
 
-func executeInstanceDelete(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeDebugInstanceDelete(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 1 {
 		return p.help(header)
 	}
@@ -775,7 +775,7 @@ func executeInstanceDelete(p *Plugin, c *plugin.Context, header *model.CommandAr
 
 	// if that was our only instance, just respond with an empty list.
 	if len(known) == 1 {
-		return executeList(p, c, header)
+		return executeDebugInstanceList(p, c, header)
 	}
-	return executeInstanceSelect(p, c, header, "1")
+	return executeDebugInstanceSelect(p, c, header, "1")
 }
