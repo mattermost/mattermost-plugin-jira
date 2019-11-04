@@ -6,6 +6,7 @@ export type SharedProps = {
     jiraProjectMetadata: ProjectMetadata;
     jiraIssueMetadata: IssueMetadata | null;
     channelSubscriptions: ChannelSubscription[];
+    omitDisplayName: boolean;
     createChannelSubscription: (sub: ChannelSubscription) => Promise<any>;
     deleteChannelSubscription: (sub: ChannelSubscription) => Promise<any>;
     editChannelSubscription: (sub: ChannelSubscription) => Promise<any>;

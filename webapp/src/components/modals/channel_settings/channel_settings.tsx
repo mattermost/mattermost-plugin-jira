@@ -2,42 +2,40 @@
 // See LICENSE.txt for license information.
 
 import React, {PureComponent} from 'react';
-import PropTypes from 'prop-types';
 import {Modal} from 'react-bootstrap';
 
 import Loading from 'components/loading';
+import {ProjectMetadata, ChannelSubscription} from 'types/model';
 
 import FullScreenModal from '../full_screen_modal/full_screen_modal';
 
 import ChannelSettingsModalInner from './channel_settings_internal';
+import {SharedProps} from './shared_props';
 
 import './channel_settings_modal.scss';
 
-export default class ChannelSettingsModal extends PureComponent {
-    static propTypes = {
-        close: PropTypes.func.isRequired,
-        channel: PropTypes.object,
-        channelSubscriptions: PropTypes.array,
-        jiraProjectMetadata: PropTypes.object,
-        fetchJiraProjectMetadata: PropTypes.func.isRequired,
-        fetchChannelSubscriptions: PropTypes.func.isRequired,
-    };
+type Props = SharedProps & {
+    fetchJiraProjectMetadata: () => Promise<{data: ProjectMetadata}>;
+    fetchChannelSubscriptions: (channelId: string) => Promise<{data: ChannelSubscription[]}>;
+    close: () => void;
+}
 
-    componentDidUpdate(prevProps) {
+export default class ChannelSettingsModal extends PureComponent<Props> {
+    componentDidUpdate(prevProps: Props): void {
         if (this.props.channel && (!prevProps.channel || this.props.channel.id !== prevProps.channel.id)) {
             this.props.fetchJiraProjectMetadata();
             this.props.fetchChannelSubscriptions(this.props.channel.id);
         }
     }
 
-    handleClose = (e) => {
+    handleClose = (e: Event): void => {
         if (e && e.preventDefault) {
             e.preventDefault();
         }
         this.props.close();
     };
 
-    render() {
+    render(): JSX.Element {
         let inner = <Loading/>;
         if (this.props.channelSubscriptions && this.props.jiraProjectMetadata) {
             if (this.props.channelSubscriptions instanceof Error) {
