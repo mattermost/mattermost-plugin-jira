@@ -6060,7 +6060,6 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
 
 exports[`components/EditChannelSettings should produce subscription error when add conflicting issue type 1`] = `
 <form
-  onSubmit={[Function]}
   role="form"
 >
   <div
@@ -6085,7 +6084,7 @@ exports[`components/EditChannelSettings should produce subscription error when a
       <Input
         addValidate={[Function]}
         label="Subscription Name"
-        maxLength={null}
+        maxLength={100}
         onChange={[Function]}
         placeholder="Name"
         readOnly={false}
@@ -6203,15 +6202,6 @@ exports[`components/EditChannelSettings should produce subscription error when a
     }
   >
     <FormButton
-      btnClass="btn-link"
-      defaultMessage="Cancel"
-      disabled={false}
-      extraClasses=""
-      onClick={[Function]}
-      savingMessage="Creating"
-      type="button"
-    />
-    <FormButton
       btnClass="btn-danger pull-left"
       defaultMessage="Delete"
       disabled={false}
@@ -6222,13 +6212,23 @@ exports[`components/EditChannelSettings should produce subscription error when a
       type="button"
     />
     <FormButton
+      btnClass="btn-link"
+      defaultMessage="Cancel"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
       btnClass="btn-primary"
       defaultMessage="Set Subscription"
       disabled={false}
       extraClasses=""
+      onClick={[Function]}
       saving={false}
       savingMessage="Setting"
-      type="submit"
+      type="button"
     />
   </ModalFooter>
 </form>
