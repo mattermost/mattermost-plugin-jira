@@ -10,7 +10,13 @@ import FormButton from 'components/form_button';
 import Input from 'components/input';
 import Loading from 'components/loading';
 import Validator from 'components/validator';
-import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProjects, getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
+import {
+    getProjectValues,
+    getIssueValuesForMultipleProjects,
+    getCustomFieldValuesForProjects,
+    getCustomFieldFiltersForProjects,
+    getConflictingFields,
+} from 'utils/jira_issue_metadata';
 
 import {ChannelSubscription, ChannelSubscriptionFilters, ReactSelectOption} from 'types/model';
 
@@ -53,6 +59,7 @@ export type State = {
     submitting: boolean;
     subscriptionName: string | null;
     showConfirmModal: boolean;
+    conflictingError: string | null;
 };
 
 const removeDuplicateEvents = (array: ReactSelectOption[]): ReactSelectOption[] => {
@@ -104,6 +111,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             fetchingIssueMetadata,
             subscriptionName,
             showConfirmModal: false,
+            conflictingError: null,
         };
 
         this.validator = new Validator();
@@ -155,6 +163,44 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         const filters = {...this.state.filters};
         filters[id] = finalValue;
         this.setState({filters});
+        this.clearConflictingErrorMessage();
+    };
+
+    clearConflictingErrorMessage = () => {
+        this.setState({conflictingError: null});
+    }
+
+    handleIssueChange = (id: keyof ChannelSubscriptionFilters, value: string[] | null) => {
+        const finalValue = value || [];
+        const filters = {...this.state.filters, issue_types: finalValue};
+
+        let conflictingFields = null;
+        if (finalValue.length > this.state.filters.issue_types.length) {
+            const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
+            conflictingFields = getConflictingFields(
+                filterFields,
+                finalValue,
+                this.props.jiraIssueMetadata
+            );
+        }
+
+        if (conflictingFields && conflictingFields.length) {
+            const selectedConflictingFields = conflictingFields.filter((f1) => {
+                return this.state.filters.fields.find((f2) => f1.field.key === f2.key);
+            });
+
+            if (selectedConflictingFields.length) {
+                const fieldsStr = selectedConflictingFields.map((cf) => cf.field.name).join(', ');
+                const conflictingIssueType = conflictingFields[0].issueTypes[0];
+
+                let errorStr = `Issue Type(s) "${conflictingIssueType.name}" does not have filter field(s): "${fieldsStr}".  `;
+                errorStr += 'Please update the conflicting fields or create a separate subscription.';
+                this.setState({conflictingError: errorStr});
+                return;
+            }
+        }
+
+        this.setState({filters, conflictingError: null});
     };
 
     fetchIssueMetadata = (projectKeys) => {
@@ -170,6 +216,8 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
     };
 
     handleProjectChange = (id, value) => {
+        this.clearConflictingErrorMessage();
+
         let projects = value;
         if (!projects) {
             projects = [];
@@ -201,6 +249,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
 
     handleFilterFieldChange = (fields) => {
         this.setState({filters: {...this.state.filters, fields}});
+        this.clearConflictingErrorMessage();
     };
 
     handleCreate = (e) => {
@@ -251,6 +300,15 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         let eventOptions = JiraEventOptions.concat(customFields);
         eventOptions = removeDuplicateEvents(eventOptions);
 
+        let conflictingErrorComponent = null;
+        if (this.state.conflictingError) {
+            conflictingErrorComponent = (
+                <p className='help-text error-text'>
+                    <span>{this.state.conflictingError}</span>
+                </p>
+            );
+        }
+
         let component = null;
         if (this.props.channel && this.props.channelSubscriptions) {
             let innerComponent = null;
@@ -275,7 +333,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             name={'issue_types'}
                             label={'Issue Type'}
                             required={true}
-                            onChange={this.handleSettingChange}
+                            onChange={this.handleIssueChange}
                             options={issueOptions}
                             isMulti={true}
                             theme={this.props.theme}
@@ -283,6 +341,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
                         />
+                        {conflictingErrorComponent}
                         <ChannelSettingsFilters
                             fields={filterFields}
                             values={this.state.filters.fields}

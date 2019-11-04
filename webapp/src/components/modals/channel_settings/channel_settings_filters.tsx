@@ -2,6 +2,8 @@ import React from 'react';
 
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 
+import {getConflictingFields} from 'utils/jira_issue_metadata';
+
 import ChannelSettingsFilter, {EmptyChannelSettingsFilter} from './channel_settings_filter';
 
 type ChannelSettingsFiltersProps = {
@@ -60,50 +62,22 @@ export default class ChannelSettingsFilters extends React.PureComponent<ChannelS
         this.props.onChange(newValues);
     };
 
-    getConflictingFields = (): {field: FilterField; issueTypes: IssueType[]}[] => {
-        const conflictingFields = [];
-        for (const field of this.props.fields) {
-            const conflictingIssueTypes = [];
-            for (const issueTypeId of this.props.chosenIssueTypes) {
-                const issueTypes = field.issueTypes;
-                if (!issueTypes.find((it) => it.id === issueTypeId)) {
-                    const issueType = this.props.issueMetadata.projects[0].issuetypes.find((i) => i.id === issueTypeId) as IssueType;
-                    conflictingIssueTypes.push(issueType);
-                }
-            }
-            if (conflictingIssueTypes.length) {
-                conflictingFields.push({field, issueTypes: conflictingIssueTypes});
-            }
-        }
-        return conflictingFields;
-    };
-
     render() {
         const {fields, values} = this.props;
         const {showCreateRow} = this.state;
         const style = getStyle();
 
-        let error = null;
-        const conflictingFields = this.getConflictingFields();
-        if (conflictingFields.length) {
-            error = (
-                <div>
-                    {conflictingFields.map((f) => {
-                        const issueTypeNames = f.issueTypes.map((i) => i.name).join(', ');
-                        const errorMsg = `${f.field.name} is not shown because it does not apply to issue type(s): ${issueTypeNames}.`;
-                        return (
-                            <p key={f.field.key}>
-                                {errorMsg}
-                            </p>
-                        );
-                    })}
-                </div>
-            );
-        }
+        const conflictingFields = getConflictingFields(
+            this.props.fields,
+            this.props.chosenIssueTypes,
+            this.props.issueMetadata
+        );
+        const nonConflictingFields = fields.filter((f) => {
+            return !conflictingFields.find((conf) => conf.field.key === f.key);
+        });
 
         return (
             <div>
-                {error}
                 <div>
                     {values.map((v, i) => {
                         const field = fields.find((f) => f.key === v.key);
@@ -113,7 +87,7 @@ export default class ChannelSettingsFilters extends React.PureComponent<ChannelS
                         return (
                             <div key={i}>
                                 <ChannelSettingsFilter
-                                    fields={fields}
+                                    fields={nonConflictingFields}
                                     field={field}
                                     value={v}
                                     chosenIssueTypes={this.props.chosenIssueTypes}
@@ -130,7 +104,7 @@ export default class ChannelSettingsFilters extends React.PureComponent<ChannelS
                     {showCreateRow && (
                         <div>
                             <EmptyChannelSettingsFilter
-                                fields={fields}
+                                fields={nonConflictingFields}
                                 chosenIssueTypes={this.props.chosenIssueTypes}
                                 issueMetadata={this.props.issueMetadata}
                                 onChange={this.onConfiguredValueChange}
