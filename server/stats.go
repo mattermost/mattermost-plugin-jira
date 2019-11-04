@@ -59,7 +59,7 @@ func httpAPIStats(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error
 			return http.StatusForbidden, errors.New("Access forbidden: must be authenticated as an admin, or provide the stats API secret.")
 		}
 		var status int
-		status, err = verifyHTTPSecret(conf.StatsSecret, r.Form.Get("secret"))
+		status, err = verifyHTTPSecret(conf.StatsSecret, r.FormValue("secret"))
 		if err != nil {
 			return status, err
 		}

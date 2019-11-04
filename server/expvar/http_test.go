@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,9 +24,6 @@ func TestWrapHTTPClient(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := &http.Client{}
-	client = WrapHTTPClient(client, utils.ByteSize(2), nil, nil)
-
 	newRequest := func(path, body string) *http.Request {
 		var reader io.Reader
 		if body != "" {
@@ -37,32 +33,10 @@ func TestWrapHTTPClient(t *testing.T) {
 		return req
 	}
 
-	t.Run("response size limit", func(t *testing.T) {
-		res, err := client.Do(newRequest("/hello", ""))
-		require.Nil(t, err)
-		got, err := ioutil.ReadAll(res.Body)
-		res.Body.Close()
-		require.Nil(t, err)
-		require.Equal(t, 2, len(got))
-		require.Equal(t, "12", string(got))
-	})
-
-	t.Run("request size limit", func(t *testing.T) {
-		req := newRequest("/echo", "6789")
-		req.ContentLength = 2
-		res, err := client.Do(req)
-		require.Nil(t, err)
-		got, err := ioutil.ReadAll(res.Body)
-		res.Body.Close()
-		require.Nil(t, err)
-		require.Equal(t, 2, len(got))
-		require.Equal(t, "67", string(got))
-	})
-
 	t.Run("stats", func(t *testing.T) {
 		stats := NewUnpublishedStats(nil)
 
-		client := WrapHTTPClient(http.DefaultClient, -1, stats,
+		client := WrapHTTPClient(http.DefaultClient, stats,
 			func(r *http.Request) string {
 				return "/echo"
 			})

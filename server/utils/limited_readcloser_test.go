@@ -16,14 +16,10 @@ func TestLimitReadCloser(t *testing.T) {
 	inner := ioutil.NopCloser(strings.NewReader("01234567890"))
 
 	totalRead := ByteSize(0)
-	r := &LimitReadCloser{
-		ReadCloser: inner,
-		Limit:      8,
-		OnClose: func(rr *LimitReadCloser) error {
-			totalRead = rr.TotalRead
-			return io.EOF
-		},
-	}
+	r := NewLimitedReadCloser(inner, 8, func(lrc *LimitedReadCloser) error {
+		totalRead = lrc.TotalRead
+		return io.EOF
+	})
 	data := make([]byte, 10)
 
 	n, err := r.Read(data[0:4])

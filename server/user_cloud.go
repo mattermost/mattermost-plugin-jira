@@ -67,7 +67,7 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 		return http.StatusBadRequest, errors.Errorf("could not get user info for client, err: %v", err)
 	}
 
-	mmToken := r.Form.Get(argMMToken)
+	mmToken := r.FormValue(argMMToken)
 	uinfo := JIRAUser{
 		PluginVersion: manifest.Version,
 		User: jira.User{

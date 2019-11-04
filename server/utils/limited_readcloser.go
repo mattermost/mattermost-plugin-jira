@@ -7,34 +7,38 @@ import (
 	"io"
 )
 
-type LimitReadCloser struct {
-	ReadCloser io.ReadCloser
-	TotalRead  ByteSize
-	Limit      ByteSize
-	OnClose    func(*LimitReadCloser) error
+type LimitedReadCloser struct {
+	TotalRead ByteSize
+
+	reader   io.Reader
+	closer   io.Closer
+	preClose func(*LimitedReadCloser) error
 }
 
-func (r *LimitReadCloser) Read(data []byte) (int, error) {
-	if r.Limit >= 0 {
-		remain := r.Limit - r.TotalRead
-		if remain <= 0 {
-			return 0, io.EOF
-		}
-		if len(data) > int(remain) {
-			data = data[0:remain]
-		}
+func NewLimitedReadCloser(rc io.ReadCloser, limit ByteSize, preClose func(*LimitedReadCloser) error) io.ReadCloser {
+	lrc := &LimitedReadCloser{
+		reader:   rc,
+		closer:   rc,
+		preClose: preClose,
 	}
-	n, err := r.ReadCloser.Read(data)
-	r.TotalRead += ByteSize(n)
+	if limit >= 0 {
+		lrc.reader = io.LimitReader(rc, int64(limit))
+	}
+	return lrc
+}
+
+func (lrc *LimitedReadCloser) Read(data []byte) (int, error) {
+	n, err := lrc.reader.Read(data)
+	lrc.TotalRead += ByteSize(n)
 	return n, err
 }
 
-func (r *LimitReadCloser) Close() error {
-	if r.OnClose != nil {
-		err := r.OnClose(r)
+func (lrc *LimitedReadCloser) Close() error {
+	if lrc.preClose != nil {
+		err := lrc.preClose(lrc)
 		if err != nil {
 			return err
 		}
 	}
-	return r.ReadCloser.Close()
+	return lrc.closer.Close()
 }
