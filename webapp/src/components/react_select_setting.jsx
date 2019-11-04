@@ -29,6 +29,7 @@ export default class ReactSelectSetting extends React.PureComponent {
         required: PropTypes.bool,
         allowUserDefinedValue: PropTypes.bool,
         limitOptions: PropTypes.bool,
+        resetInvalidOnChange: PropTypes.func,
     };
 
     constructor(props) {
@@ -63,6 +64,10 @@ export default class ReactSelectSetting extends React.PureComponent {
                 const newValue = value ? value.value : null;
                 this.props.onChange(this.props.name, newValue);
             }
+        }
+
+        if (this.props.resetInvalidOnChange) {
+            this.setState({invalid: false});
         }
     };
 

@@ -107,6 +107,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                                 <button
                                     className='style--none color--link'
                                     onClick={(): void => this.props.showEditChannelSubscription(sub)}
+                                    type='button'
                                 >
                                     {'Edit'}
                                 </button>
@@ -114,6 +115,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                                 <button
                                     className='style--none color--link'
                                     onClick={(): void => this.handleDeleteChannelSubscription(sub)}
+                                    type='button'
                                 >
                                     {'Delete'}
                                 </button>
@@ -131,6 +133,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                     <button
                         className='btn btn-primary'
                         onClick={this.props.showCreateChannelSubscription}
+                        type='button'
                     >
                         {'Create Subscription'}
                     </button>

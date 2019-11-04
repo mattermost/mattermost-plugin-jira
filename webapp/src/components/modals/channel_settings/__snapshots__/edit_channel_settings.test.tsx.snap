@@ -2,7 +2,6 @@
 
 exports[`components/EditChannelSettings SERVER - should match snapshot after fetching issue metadata 1`] = `
 <form
-  onSubmit={[Function]}
   role="form"
 >
   <div
@@ -27,7 +26,7 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
       <Input
         addValidate={[Function]}
         label="Subscription Name"
-        maxLength={null}
+        maxLength={100}
         onChange={[Function]}
         placeholder="Name"
         readOnly={false}
@@ -1785,15 +1784,6 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
     }
   >
     <FormButton
-      btnClass="btn-link"
-      defaultMessage="Cancel"
-      disabled={false}
-      extraClasses=""
-      onClick={[Function]}
-      savingMessage="Creating"
-      type="button"
-    />
-    <FormButton
       btnClass="btn-danger pull-left"
       defaultMessage="Delete"
       disabled={false}
@@ -1804,13 +1794,23 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
       type="button"
     />
     <FormButton
+      btnClass="btn-link"
+      defaultMessage="Cancel"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
       btnClass="btn-primary"
       defaultMessage="Set Subscription"
       disabled={false}
       extraClasses=""
+      onClick={[Function]}
       saving={false}
       savingMessage="Setting"
-      type="submit"
+      type="button"
     />
   </ModalFooter>
 </form>
@@ -1818,7 +1818,6 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
 
 exports[`components/EditChannelSettings should match snapshot 1`] = `
 <form
-  onSubmit={[Function]}
   role="form"
 >
   <div
@@ -1843,7 +1842,7 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
       <Input
         addValidate={[Function]}
         label="Subscription Name"
-        maxLength={null}
+        maxLength={100}
         onChange={[Function]}
         placeholder="Name"
         readOnly={false}
@@ -1961,15 +1960,6 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
     }
   >
     <FormButton
-      btnClass="btn-link"
-      defaultMessage="Cancel"
-      disabled={false}
-      extraClasses=""
-      onClick={[Function]}
-      savingMessage="Creating"
-      type="button"
-    />
-    <FormButton
       btnClass="btn-danger pull-left"
       defaultMessage="Delete"
       disabled={false}
@@ -1980,13 +1970,23 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
       type="button"
     />
     <FormButton
+      btnClass="btn-link"
+      defaultMessage="Cancel"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
       btnClass="btn-primary"
       defaultMessage="Set Subscription"
       disabled={false}
       extraClasses=""
+      onClick={[Function]}
       saving={false}
       savingMessage="Setting"
-      type="submit"
+      type="button"
     />
   </ModalFooter>
 </form>
@@ -1994,7 +1994,6 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
 
 exports[`components/EditChannelSettings should match snapshot after fetching issue metadata 1`] = `
 <form
-  onSubmit={[Function]}
   role="form"
 >
   <div
@@ -2019,7 +2018,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
       <Input
         addValidate={[Function]}
         label="Subscription Name"
-        maxLength={null}
+        maxLength={100}
         onChange={[Function]}
         placeholder="Name"
         readOnly={false}
@@ -5532,15 +5531,6 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
     }
   >
     <FormButton
-      btnClass="btn-link"
-      defaultMessage="Cancel"
-      disabled={false}
-      extraClasses=""
-      onClick={[Function]}
-      savingMessage="Creating"
-      type="button"
-    />
-    <FormButton
       btnClass="btn-danger pull-left"
       defaultMessage="Delete"
       disabled={false}
@@ -5551,13 +5541,23 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
       type="button"
     />
     <FormButton
+      btnClass="btn-link"
+      defaultMessage="Cancel"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
       btnClass="btn-primary"
       defaultMessage="Set Subscription"
       disabled={false}
       extraClasses=""
+      onClick={[Function]}
       saving={false}
       savingMessage="Setting"
-      type="submit"
+      type="button"
     />
   </ModalFooter>
 </form>
@@ -5565,7 +5565,6 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
 
 exports[`components/EditChannelSettings should match snapshot with no filters 1`] = `
 <form
-  onSubmit={[Function]}
   role="form"
 >
   <div
@@ -5590,7 +5589,7 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
       <Input
         addValidate={[Function]}
         label="Subscription Name"
-        maxLength={null}
+        maxLength={100}
         onChange={[Function]}
         placeholder="Name"
         readOnly={false}
@@ -5697,15 +5696,6 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
     }
   >
     <FormButton
-      btnClass="btn-link"
-      defaultMessage="Cancel"
-      disabled={false}
-      extraClasses=""
-      onClick={[Function]}
-      savingMessage="Creating"
-      type="button"
-    />
-    <FormButton
       btnClass="btn-danger pull-left"
       defaultMessage="Delete"
       disabled={false}
@@ -5716,13 +5706,23 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
       type="button"
     />
     <FormButton
+      btnClass="btn-link"
+      defaultMessage="Cancel"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
       btnClass="btn-primary"
       defaultMessage="Set Subscription"
       disabled={true}
       extraClasses=""
+      onClick={[Function]}
       saving={false}
       savingMessage="Setting"
-      type="submit"
+      type="button"
     />
   </ModalFooter>
 </form>
@@ -5730,7 +5730,6 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
 
 exports[`components/EditChannelSettings should match snapshot with no issue metadata 1`] = `
 <form
-  onSubmit={[Function]}
   role="form"
 >
   <div
@@ -5755,7 +5754,7 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
       <Input
         addValidate={[Function]}
         label="Subscription Name"
-        maxLength={null}
+        maxLength={100}
         onChange={[Function]}
         placeholder="Name"
         readOnly={false}
@@ -5873,15 +5872,6 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
     }
   >
     <FormButton
-      btnClass="btn-link"
-      defaultMessage="Cancel"
-      disabled={false}
-      extraClasses=""
-      onClick={[Function]}
-      savingMessage="Creating"
-      type="button"
-    />
-    <FormButton
       btnClass="btn-danger pull-left"
       defaultMessage="Delete"
       disabled={false}
@@ -5892,13 +5882,23 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
       type="button"
     />
     <FormButton
+      btnClass="btn-link"
+      defaultMessage="Cancel"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
       btnClass="btn-primary"
       defaultMessage="Set Subscription"
       disabled={false}
       extraClasses=""
+      onClick={[Function]}
       saving={false}
       savingMessage="Setting"
-      type="submit"
+      type="button"
     />
   </ModalFooter>
 </form>
@@ -5906,7 +5906,6 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
 
 exports[`components/EditChannelSettings should match snapshot with no subscriptions 1`] = `
 <form
-  onSubmit={[Function]}
   role="form"
 >
   <div
@@ -5931,7 +5930,7 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
       <Input
         addValidate={[Function]}
         label="Subscription Name"
-        maxLength={null}
+        maxLength={100}
         onChange={[Function]}
         placeholder="Name"
         readOnly={false}
@@ -6027,15 +6026,6 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
     }
   >
     <FormButton
-      btnClass="btn-link"
-      defaultMessage="Cancel"
-      disabled={false}
-      extraClasses=""
-      onClick={[Function]}
-      savingMessage="Creating"
-      type="button"
-    />
-    <FormButton
       btnClass="btn-danger pull-left"
       defaultMessage="Delete"
       disabled={true}
@@ -6046,13 +6036,23 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
       type="button"
     />
     <FormButton
+      btnClass="btn-link"
+      defaultMessage="Cancel"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
       btnClass="btn-primary"
       defaultMessage="Set Subscription"
       disabled={true}
       extraClasses=""
+      onClick={[Function]}
       saving={false}
       savingMessage="Setting"
-      type="submit"
+      type="button"
     />
   </ModalFooter>
 </form>

@@ -5,8 +5,9 @@ import JiraEpicSelector from 'components/jira_epic_selector';
 
 import {isEpicLinkField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
+import ConfirmModal from 'components/confirm_modal';
 
-type ChannelSettingsFilterProps = {
+type Props = {
     fields: FilterField[];
     field: FilterField;
     value: FilterValue;
@@ -19,7 +20,16 @@ type ChannelSettingsFilterProps = {
     removeValidate: (isValid: () => boolean) => void;
 };
 
-export default class ChannelSettingsFilter extends React.PureComponent<ChannelSettingsFilterProps> {
+type State = {
+    showConfirmDeleteModal: boolean;
+    error: string | null;
+}
+
+export default class ChannelSettingsFilter extends React.PureComponent<Props, State> {
+    state = {
+        showConfirmDeleteModal: false,
+    };
+
     componentDidMount() {
         this.props.addValidate(this.isValid);
     }
@@ -52,6 +62,19 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
 
         const newValues = values || [];
         onChange(value, {...value, values: newValues});
+    };
+
+    openDeleteModal = (): void => {
+        this.setState({showConfirmDeleteModal: true});
+    };
+
+    handleCancelDelete = (): void => {
+        this.setState({showConfirmDeleteModal: false});
+    };
+
+    handleConfirmDelete = (): void => {
+        this.setState({showConfirmDeleteModal: false});
+        this.removeFilter();
     };
 
     removeFilter = (): void => {
@@ -162,9 +185,10 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         if (field) {
             deleteButton = (
                 <button
-                    onClick={this.removeFilter}
+                    onClick={this.openDeleteModal}
                     className='style--none'
                     style={style.trashIcon}
+                    type='button'
                 >
                     <i className='fa fa-trash'/>
                 </button>
@@ -172,7 +196,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         } else {
             deleteButton = (
                 <button
-                    onClick={this.removeFilter}
+                    onClick={this.openDeleteModal}
                     className='btn btn-info'
                     type='button'
                 >
@@ -190,6 +214,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                     value={value.values}
                     onChange={this.handleEpicLinkChange}
                     required={true}
+                    resetInvalidOnChange={true}
                     hideRequiredStar={true}
                     isMulti={true}
                     addValidate={this.props.addValidate}
@@ -205,6 +230,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                     options={fieldValueOptions}
                     theme={theme}
                     onChange={this.handleFieldValuesChange}
+                    resetInvalidOnChange={true}
                     value={chosenFieldValues}
                     isMulti={true}
                     addValidate={this.props.addValidate}
@@ -213,6 +239,20 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                 />
             );
         }
+
+        const confirmDeleteModal = (
+            <ConfirmModal
+                cancelButtonText={'Cancel'}
+                confirmButtonText={'Delete'}
+                confirmButtonClass={'btn btn-danger'}
+                hideCancel={false}
+                message={'Are you sure you want to delete this filter?'}
+                onCancel={this.handleCancelDelete}
+                onConfirm={this.handleConfirmDelete}
+                show={this.state.showConfirmDeleteModal}
+                title={'Field Filter'}
+            />
+        );
 
         return (
             <div className='row'>
@@ -261,6 +301,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                 <div className='col-md-1 col-sm-12 text-center'>
                     {deleteButton}
                 </div>
+                {confirmDeleteModal}
             </div>
         );
     }
@@ -325,6 +366,7 @@ export function EmptyChannelSettingsFilter(props: EmptyChannelSettingsFilterProp
                     onClick={props.cancelAdd}
                     className='style--none'
                     style={style.trashIcon}
+                    type='button'
                 >
                     <i className='fa fa-trash'/>
                 </button>

@@ -363,6 +363,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             label={'Subscription Name'}
                             placeholder={'Name'}
                             type={'input'}
+                            maxLength={100}
                             required={true}
                             onChange={this.handleNameChange}
                             value={this.state.subscriptionName}
@@ -432,7 +433,6 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         return (
             <form
                 role='form'
-                onSubmit={this.handleCreate}
             >
                 <div className='margin-bottom x3 text-center'>
                     <h2>{'Add Jira Subscription'}</h2>
@@ -444,12 +444,6 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                 </div>
                 <Modal.Footer style={style.modalFooter}>
                     <FormButton
-                        type='button'
-                        btnClass='btn-link'
-                        defaultMessage='Cancel'
-                        onClick={this.handleClose}
-                    />
-                    <FormButton
                         id='jira-delete-subscription'
                         type='button'
                         btnClass='btn-danger pull-left'
@@ -458,7 +452,14 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                         onClick={this.handleDeleteChannelSubscription}
                     />
                     <FormButton
-                        type='submit'
+                        type='button'
+                        btnClass='btn-link'
+                        defaultMessage='Cancel'
+                        onClick={this.handleClose}
+                    />
+                    <FormButton
+                        type='button'
+                        onClick={this.handleCreate}
                         disabled={!enableSubmitButton}
                         btnClass='btn-primary'
                         saving={this.state.submitting}
