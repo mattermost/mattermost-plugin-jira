@@ -66,7 +66,10 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int,
 		return http.StatusMethodNotAllowed,
 			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
 	}
-	status, err = verifyWebhookRequestSecret(conf, r)
+	if conf.Secret == "" {
+		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret")
+	}
+	status, err = verifyHTTPSecret(conf.Secret, r.Form.Get("secret"))
 	if err != nil {
 		return status, err
 	}
@@ -122,24 +125,18 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int,
 	return http.StatusOK, nil
 }
 
-func verifyWebhookRequestSecret(cfg config, r *http.Request) (status int, err error) {
-	if cfg.Secret == "" {
-		return http.StatusForbidden, fmt.Errorf("Jira plugin not configured correctly; must provide Secret")
-	}
-	secret := r.FormValue("secret")
-	// secret may be URL-escaped, potentially mroe than once. Loop until there
-	// are no % escapes left.
+func verifyHTTPSecret(expected, got string) (status int, err error) {
 	for {
-		if subtle.ConstantTimeCompare([]byte(secret), []byte(cfg.Secret)) == 1 {
+		if subtle.ConstantTimeCompare([]byte(got), []byte(expected)) == 1 {
 			break
 		}
 
-		unescaped, _ := url.QueryUnescape(secret)
-		if unescaped == secret {
+		unescaped, _ := url.QueryUnescape(got)
+		if unescaped == got {
 			return http.StatusForbidden,
 				errors.New("Request URL: secret did not match")
 		}
-		secret = unescaped
+		got = unescaped
 	}
 
 	return 0, nil

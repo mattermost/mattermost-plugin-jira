@@ -395,8 +395,7 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (st
 	if conf.Secret == "" {
 		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret")
 	}
-
-	status, err = verifyWebhookRequestSecret(p.getConfig(), r)
+	status, err = verifyHTTPSecret(conf.Secret, r.Form.Get("secret"))
 	if err != nil {
 		return status, err
 	}

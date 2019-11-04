@@ -44,6 +44,9 @@ type externalConfig struct {
 	// Legacy 1.x Webhook secret
 	Secret string `json:"secret"`
 
+	// Stats API secret
+	StatsSecret string `json:"stats_secret"`
+
 	// What MM roles that can create subscriptions
 	RolesAllowedToEditJiraSubscriptions string
 

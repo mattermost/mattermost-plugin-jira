@@ -16,9 +16,6 @@ import (
 func TestConsolidatedStoredStats(t *testing.T) {
 	p := &Plugin{}
 	api := &plugintest.API{}
-	p.updateConfig(func(conf *config) {
-		// conf.Secret = "somesecret"
-	})
 
 	stats1 := expvar.NewUnpublishedStats(nil)
 	e1 := stats1.EnsureEndpoint("e1")

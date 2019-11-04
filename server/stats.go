@@ -51,15 +51,19 @@ func httpAPIStats(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error
 		return http.StatusMethodNotAllowed,
 			errors.New("method " + r.Method + " is not allowed, must be GET")
 	}
-
 	conf := p.getConfig()
 
-	//TODO protect from unauthorized access?
-	// status, err := verifyWebhookRequestSecret(conf, r)
-	// if err != nil {
-	// 	return status, err
-	// }
-
+	isAdmin, err := authorizedSysAdmin(p, r.Header.Get("Mattermost-User-Id"))
+	if !isAdmin {
+		if conf.StatsSecret == "" {
+			return http.StatusForbidden, errors.New("Access forbidden: must be authenticated as an admin, or provide the stats API secret.")
+		}
+		var status int
+		status, err = verifyHTTPSecret(conf.StatsSecret, r.Form.Get("secret"))
+		if err != nil {
+			return status, err
+		}
+	}
 	if conf.stats == nil {
 		return http.StatusNotFound, errors.New("No stats available")
 	}
@@ -75,7 +79,7 @@ func httpAPIStats(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error
 		out += `"` + name + `":` + e.String()
 	})
 	out += "}"
-	_, err := w.Write([]byte(out))
+	_, err = w.Write([]byte(out))
 	if err != nil {
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
 	}
