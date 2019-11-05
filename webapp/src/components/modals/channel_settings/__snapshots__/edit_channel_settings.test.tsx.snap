@@ -5615,7 +5615,18 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
             "type": "Mattermost",
           }
         }
-        value={Array []}
+        value={
+          Array [
+            Object {
+              "label": "Koch Testing",
+              "value": "KT",
+            },
+          ]
+        }
+      />
+      <Loading
+        position="relative"
+        style={Object {}}
       />
     </div>
     <ConfirmModal
@@ -5661,7 +5672,7 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
     <FormButton
       btnClass="btn-primary"
       defaultMessage="Set Subscription"
-      disabled={true}
+      disabled={false}
       extraClasses=""
       onClick={[Function]}
       saving={false}
