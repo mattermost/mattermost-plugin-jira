@@ -115,6 +115,7 @@ describe('components/EditChannelSettings', () => {
         expect(wrapper.state().fetchingIssueMetadata).toBe(true);
         await Promise.resolve();
         expect(wrapper.state().fetchingIssueMetadata).toBe(false);
+        expect(wrapper).toMatchSnapshot();
     });
 
     test('should change project filter when chosen', async () => {
