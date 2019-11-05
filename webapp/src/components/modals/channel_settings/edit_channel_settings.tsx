@@ -427,7 +427,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         let error = null;
         if (this.state.error || this.state.getMetaDataErr) {
             error = (
-                <p className='col-md-12 help-text error-text'>
+                <p className='help-text error-text'>
                     <span>{this.state.error || this.state.getMetaDataErr}</span>
                 </p>
             );
