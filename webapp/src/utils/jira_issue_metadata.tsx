@@ -83,6 +83,25 @@ export function getFields(metadata: IssueMetadata, projectKey: string, issueType
     return {};
 }
 
+export function getConflictingFields(fields: FilterField[], chosenIssueTypes: string[], issueMetadata: IssueMetadata): {field: FilterField; issueTypes: IssueType[]}[] {
+    const conflictingFields = [];
+
+    for (const field of fields) {
+        const conflictingIssueTypes = [];
+        for (const issueTypeId of chosenIssueTypes) {
+            const issueTypes = field.issueTypes;
+            if (!issueTypes.find((it) => it.id === issueTypeId)) {
+                const issueType = issueMetadata.projects[0].issuetypes.find((i) => i.id === issueTypeId) as IssueType;
+                conflictingIssueTypes.push(issueType);
+            }
+        }
+        if (conflictingIssueTypes.length) {
+            conflictingFields.push({field, issueTypes: conflictingIssueTypes});
+        }
+    }
+    return conflictingFields;
+}
+
 export function getCustomFieldsForProjects(metadata: IssueMetadata | null, projectKeys: string[]): FieldWithInfo[] {
     if (!metadata || !projectKeys || !projectKeys.length) {
         return [];
@@ -103,18 +122,16 @@ export function getCustomFieldsForProjects(metadata: IssueMetadata | null, proje
     )).filter(Boolean) as FieldWithInfo[];
 
     for (const field of fields) {
-        if (isValidFieldForFilter(field)) {
-            // Jira server webhook fields don't have keys
-            // name is the most unique property available in that case
-            const changeLogID = field.key || field.name;
-            let current = customFieldHash[field.topLevelKey];
-            if (!current) {
-                current = {...field, changeLogID, key: field.key || field.topLevelKey, validIssueTypes: []};
-            }
-            current.validIssueTypes.push(field.issueTypeMeta);
-
-            customFieldHash[field.topLevelKey] = current;
+        // Jira server webhook fields don't have keys
+        // name is the most unique property available in that case
+        const changeLogID = field.key || field.name;
+        let current = customFieldHash[field.topLevelKey];
+        if (!current) {
+            current = {...field, changeLogID, key: field.key || field.topLevelKey, validIssueTypes: []};
         }
+        current.validIssueTypes.push(field.issueTypeMeta);
+
+        customFieldHash[field.topLevelKey] = current;
     }
 
     return sortByName(Object.values(customFieldHash));
@@ -147,7 +164,7 @@ function isValidFieldForFilter(field: JiraField): boolean {
 }
 
 export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null, projectKeys: string[]): FilterField[] {
-    const fields = getCustomFieldsForProjects(metadata, projectKeys);
+    const fields = getCustomFieldsForProjects(metadata, projectKeys).filter(isValidFieldForFilter);
     const selectFields = fields.filter((field) => Boolean(field.allowedValues && field.allowedValues.length)) as (SelectField & FieldWithInfo)[];
     const populatedFields = selectFields.map((field) => {
         return {
