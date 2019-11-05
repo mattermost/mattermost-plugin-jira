@@ -14,25 +14,30 @@ type Props = SharedProps & {
 type State = {
     error: string | null;
     showConfirmModal: boolean;
+    subscriptionToDelete: ChannelSubscription | null;
 }
 
 export default class SelectChannelSubscriptionInternal extends React.PureComponent<Props, State> {
     state = {
         error: null,
         showConfirmModal: false,
+        subscriptionToDelete: null,
     };
 
-    handleDeactivateCancel = () => {
+    handleCancelDelete = () => {
         this.setState({showConfirmModal: false});
     }
 
-    handleConfirmDelete = (sub: ChannelSubscription) => {
+    handleConfirmDelete = () => {
         this.setState({showConfirmModal: false});
-        this.deleteChannelSubscription(sub);
+        this.deleteChannelSubscription(this.state.subscriptionToDelete);
     }
 
-    handleDeleteChannelSubscription = (): void => {
-        this.setState({showConfirmModal: true});
+    handleDeleteChannelSubscription = (sub: ChannelSubscription): void => {
+        this.setState({
+            showConfirmModal: true,
+            subscriptionToDelete: sub,
+        });
     };
 
     deleteChannelSubscription = (sub: ChannelSubscription): void => {
@@ -45,12 +50,34 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
 
     render(): React.ReactElement {
         const {channel, omitDisplayName} = this.props;
-        const {error, showConfirmModal} = this.state;
+        const {error, showConfirmModal, subscriptionToDelete} = this.state;
 
         let errorDisplay = null;
         if (error) {
             errorDisplay = (
                 <span className='error'>{error}</span>
+            );
+        }
+
+        let confirmDeleteMessage = 'Delete Subscription?';
+        if (subscriptionToDelete && subscriptionToDelete.name) {
+            confirmDeleteMessage = `Delete Subscription "${subscriptionToDelete.name}"?`;
+        }
+
+        let confirmModal = null;
+        if (showConfirmModal) {
+            confirmModal = (
+                <ConfirmModal
+                    cancelButtonText={'Cancel'}
+                    confirmButtonText={'Delete'}
+                    confirmButtonClass={'btn btn-danger'}
+                    hideCancel={false}
+                    message={confirmDeleteMessage}
+                    onCancel={this.handleCancelDelete}
+                    onConfirm={this.handleConfirmDelete}
+                    show={true}
+                    title={'Subscription'}
+                />
             );
         }
 
@@ -76,28 +103,19 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                             >
                                 <span>{sub.name || '(no name)'}</span>
                             </td>
-                            <ConfirmModal
-                                cancelButtonText={'Cancel'}
-                                confirmButtonText={'Delete'}
-                                confirmButtonClass={'btn btn-danger'}
-                                hideCancel={false}
-                                message={'Delete Subscription "' + sub.id + '"?'}
-                                onCancel={this.handleDeactivateCancel}
-                                onConfirm={(): void => this.handleConfirmDelete(sub)}
-                                show={showConfirmModal}
-                                title={'Subscription'}
-                            />
                             <td>
                                 <button
                                     className='style--none color--link'
                                     onClick={(): void => this.props.showEditChannelSubscription(sub)}
+                                    type='button'
                                 >
                                     {'Edit'}
                                 </button>
                                 {' - '}
                                 <button
                                     className='style--none color--link'
-                                    onClick={this.handleDeleteChannelSubscription}
+                                    onClick={(): void => this.handleDeleteChannelSubscription(sub)}
+                                    type='button'
                                 >
                                     {'Delete'}
                                 </button>
@@ -115,10 +133,12 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                     <button
                         className='btn btn-primary'
                         onClick={this.props.showCreateChannelSubscription}
+                        type='button'
                     >
                         {'Create Subscription'}
                     </button>
                 </div>
+                {confirmModal}
                 {errorDisplay}
                 {subscriptionRows}
             </div>

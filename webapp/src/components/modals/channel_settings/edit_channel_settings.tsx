@@ -10,14 +10,20 @@ import FormButton from 'components/form_button';
 import Input from 'components/input';
 import Loading from 'components/loading';
 import Validator from 'components/validator';
-import {getProjectValues, getIssueValuesForMultipleProjects, getCustomFieldValuesForProjects, getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
+import {
+    getProjectValues,
+    getIssueValuesForMultipleProjects,
+    getCustomFieldValuesForProjects,
+    getCustomFieldFiltersForProjects,
+    getConflictingFields,
+} from 'utils/jira_issue_metadata';
 
-import {ChannelSubscription, ChannelSubscriptionFilters} from 'types/model';
+import {ChannelSubscription, ChannelSubscriptionFilters, ReactSelectOption} from 'types/model';
 
 import ChannelSettingsFilters from './channel_settings_filters';
 import {SharedProps} from './shared_props';
 
-const JiraEventOptions = [
+const JiraEventOptions: ReactSelectOption[] = [
     {value: 'event_created', label: 'Issue Created'},
     {value: 'event_deleted', label: 'Issue Deleted'},
     {value: 'event_deleted_unresolved', label: 'Issue Deleted, Unresolved'},
@@ -53,6 +59,21 @@ export type State = {
     submitting: boolean;
     subscriptionName: string | null;
     showConfirmModal: boolean;
+    conflictingError: string | null;
+};
+
+const removeDuplicateEvents = (array: ReactSelectOption[]): ReactSelectOption[] => {
+    const result = {} as any;
+    for (const event of array) {
+        let value = event.value;
+        if (value === 'event_updated_Fix Version/s' || value === 'event_updated_fixVersions') {
+            value = 'event_updated_fix_version';
+        }
+        if (!result[value.toLowerCase()]) {
+            result[value] = event;
+        }
+    }
+    return Object.values(result);
 };
 
 export default class EditChannelSettings extends PureComponent<Props, State> {
@@ -90,6 +111,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             fetchingIssueMetadata,
             subscriptionName,
             showConfirmModal: false,
+            conflictingError: null,
         };
 
         this.validator = new Validator();
@@ -141,6 +163,44 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         const filters = {...this.state.filters};
         filters[id] = finalValue;
         this.setState({filters});
+        this.clearConflictingErrorMessage();
+    };
+
+    clearConflictingErrorMessage = () => {
+        this.setState({conflictingError: null});
+    }
+
+    handleIssueChange = (id: keyof ChannelSubscriptionFilters, value: string[] | null) => {
+        const finalValue = value || [];
+        const filters = {...this.state.filters, issue_types: finalValue};
+
+        let conflictingFields = null;
+        if (finalValue.length > this.state.filters.issue_types.length) {
+            const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
+            conflictingFields = getConflictingFields(
+                filterFields,
+                finalValue,
+                this.props.jiraIssueMetadata
+            );
+        }
+
+        if (conflictingFields && conflictingFields.length) {
+            const selectedConflictingFields = conflictingFields.filter((f1) => {
+                return this.state.filters.fields.find((f2) => f1.field.key === f2.key);
+            });
+
+            if (selectedConflictingFields.length) {
+                const fieldsStr = selectedConflictingFields.map((cf) => cf.field.name).join(', ');
+                const conflictingIssueType = conflictingFields[0].issueTypes[0];
+
+                let errorStr = `Issue Type(s) "${conflictingIssueType.name}" does not have filter field(s): "${fieldsStr}".  `;
+                errorStr += 'Please update the conflicting fields or create a separate subscription.';
+                this.setState({conflictingError: errorStr});
+                return;
+            }
+        }
+
+        this.setState({filters, conflictingError: null});
     };
 
     fetchIssueMetadata = (projectKeys) => {
@@ -156,6 +216,8 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
     };
 
     handleProjectChange = (id, value) => {
+        this.clearConflictingErrorMessage();
+
         let projects = value;
         if (!projects) {
             projects = [];
@@ -187,6 +249,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
 
     handleFilterFieldChange = (fields) => {
         this.setState({filters: {...this.state.filters, fields}});
+        this.clearConflictingErrorMessage();
     };
 
     handleCreate = (e) => {
@@ -233,7 +296,18 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, this.state.filters.projects);
         const customFields = getCustomFieldValuesForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
         const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
-        const eventOptions = JiraEventOptions.concat(customFields);
+
+        let eventOptions = JiraEventOptions.concat(customFields);
+        eventOptions = removeDuplicateEvents(eventOptions);
+
+        let conflictingErrorComponent = null;
+        if (this.state.conflictingError) {
+            conflictingErrorComponent = (
+                <p className='help-text error-text'>
+                    <span>{this.state.conflictingError}</span>
+                </p>
+            );
+        }
 
         let component = null;
         if (this.props.channel && this.props.channelSubscriptions) {
@@ -259,7 +333,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             name={'issue_types'}
                             label={'Issue Type'}
                             required={true}
-                            onChange={this.handleSettingChange}
+                            onChange={this.handleIssueChange}
                             options={issueOptions}
                             isMulti={true}
                             theme={this.props.theme}
@@ -267,6 +341,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
                         />
+                        {conflictingErrorComponent}
                         <ChannelSettingsFilters
                             fields={filterFields}
                             values={this.state.filters.fields}
@@ -288,6 +363,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             label={'Subscription Name'}
                             placeholder={'Name'}
                             type={'input'}
+                            maxLength={100}
                             required={true}
                             onChange={this.handleNameChange}
                             value={this.state.subscriptionName}
@@ -319,6 +395,12 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         }
 
         const {showConfirmModal} = this.state;
+
+        let confirmDeleteMessage = 'Delete Subscription?';
+        if (this.props.selectedSubscription && this.props.selectedSubscription.name) {
+            confirmDeleteMessage = `Delete Subscription "${this.props.selectedSubscription.name}"?`;
+        }
+
         let confirmComponent;
         if (this.props.selectedSubscription) {
             confirmComponent = (
@@ -327,7 +409,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                     confirmButtonText={'Delete'}
                     confirmButtonClass={'btn btn-danger'}
                     hideCancel={false}
-                    message={`Delete Subscription ${this.props.selectedSubscription.id}?`}
+                    message={confirmDeleteMessage}
                     onCancel={this.handleCancelDelete}
                     onConfirm={this.handleConfirmDelete}
                     show={showConfirmModal}
@@ -351,7 +433,6 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         return (
             <form
                 role='form'
-                onSubmit={this.handleCreate}
             >
                 <div className='margin-bottom x3 text-center'>
                     <h2>{'Add Jira Subscription'}</h2>
@@ -363,12 +444,6 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                 </div>
                 <Modal.Footer style={style.modalFooter}>
                     <FormButton
-                        type='button'
-                        btnClass='btn-link'
-                        defaultMessage='Cancel'
-                        onClick={this.handleClose}
-                    />
-                    <FormButton
                         id='jira-delete-subscription'
                         type='button'
                         btnClass='btn-danger pull-left'
@@ -377,7 +452,14 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                         onClick={this.handleDeleteChannelSubscription}
                     />
                     <FormButton
-                        type='submit'
+                        type='button'
+                        btnClass='btn-link'
+                        defaultMessage='Cancel'
+                        onClick={this.handleClose}
+                    />
+                    <FormButton
+                        type='button'
+                        onClick={this.handleCreate}
                         disabled={!enableSubmitButton}
                         btnClass='btn-primary'
                         saving={this.state.submitting}

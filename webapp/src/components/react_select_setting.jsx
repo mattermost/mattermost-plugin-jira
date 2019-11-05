@@ -6,6 +6,7 @@ import PropTypes from 'prop-types';
 
 import ReactSelect from 'react-select';
 import AsyncSelect from 'react-select/async';
+import CreatableSelect from 'react-select/creatable';
 
 import Setting from 'components/setting';
 import {getStyleForReactSelect} from 'utils/styles';
@@ -28,6 +29,7 @@ export default class ReactSelectSetting extends React.PureComponent {
         required: PropTypes.bool,
         allowUserDefinedValue: PropTypes.bool,
         limitOptions: PropTypes.bool,
+        resetInvalidOnChange: PropTypes.func,
     };
 
     constructor(props) {
@@ -63,6 +65,10 @@ export default class ReactSelectSetting extends React.PureComponent {
                 this.props.onChange(this.props.name, newValue);
             }
         }
+
+        if (this.props.resetInvalidOnChange) {
+            this.setState({invalid: false});
+        }
     };
 
     // Standard search term matching plus reducing to < 100 items
@@ -70,9 +76,6 @@ export default class ReactSelectSetting extends React.PureComponent {
         let options = this.props.options;
         if (input) {
             options = options.filter((x) => x.label.toUpperCase().includes(input.toUpperCase()));
-            if (this.props.allowUserDefinedValue) {
-                options.unshift({label: input, value: input});
-            }
         }
         return Promise.resolve(options.slice(0, MAX_NUM_OPTIONS));
     };
@@ -111,6 +114,19 @@ export default class ReactSelectSetting extends React.PureComponent {
                     {...this.props}
                     loadOptions={this.filterOptions}
                     defaultOptions={true}
+                    menuPortalTarget={document.body}
+                    menuPlacement='auto'
+                    onChange={this.handleChange}
+                    styles={getStyleForReactSelect(this.props.theme)}
+                />
+            );
+        } else if (this.props.allowUserDefinedValue) {
+            selectComponent = (
+                <CreatableSelect
+                    {...this.props}
+                    noOptionsMessage={() => 'Start typing...'}
+                    formatCreateLabel={(value) => `Add "${value}"`}
+                    placeholder=''
                     menuPortalTarget={document.body}
                     menuPlacement='auto'
                     onChange={this.handleChange}

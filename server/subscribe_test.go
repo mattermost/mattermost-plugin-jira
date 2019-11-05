@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -16,6 +17,140 @@ import (
 	"github.com/mattermost/mattermost-server/plugin/plugintest/mock"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestListChannelSubscriptions(t *testing.T) {
+	p := &Plugin{}
+	p.updateConfig(func(conf *config) {
+		conf.Secret = "somesecret"
+	})
+
+	for name, tc := range map[string]struct {
+		Subs          *Subscriptions
+		RunAssertions func(t *testing.T, actual string)
+	}{
+		"one subscription": {
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "channel1",
+					Name:      "Sub Name X",
+					Filters: SubscriptionFilters{
+						Projects: NewStringSet("PROJ"),
+					},
+				},
+			}),
+			RunAssertions: func(t *testing.T, actual string) {
+				expected := `~channel-1-name (1):
+* PROJ - Sub Name X`
+				assert.Equal(t, expected, actual)
+			},
+		},
+		"one channel with two subscriptions": {
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "channel1",
+					Name:      "Sub Name X",
+					Filters: SubscriptionFilters{
+						Projects: NewStringSet("PROJ"),
+					},
+				},
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "channel1",
+					Name:      "Sub Name Y",
+					Filters: SubscriptionFilters{
+						Projects: NewStringSet("EXT"),
+					},
+				},
+			}),
+			RunAssertions: func(t *testing.T, actual string) {
+				numlines := strings.Count(actual, "\n") + 1
+				assert.Equal(t, 3, numlines)
+				assert.Contains(t, actual, `~channel-1-name (2):`)
+				assert.Contains(t, actual, `* PROJ - Sub Name X`)
+				assert.Contains(t, actual, `* EXT - Sub Name Y`)
+			},
+		},
+		"two channels with multiple subscriptions": {
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "channel1",
+					Name:      "Sub Name X",
+					Filters: SubscriptionFilters{
+						Projects: NewStringSet("PROJ"),
+					},
+				},
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "channel1",
+					Name:      "Sub Name Y",
+					Filters: SubscriptionFilters{
+						Projects: NewStringSet("EXT"),
+					},
+				},
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "channel2",
+					Name:      "Sub Name Z",
+					Filters: SubscriptionFilters{
+						Projects: NewStringSet("EXT"),
+					},
+				},
+			}),
+			RunAssertions: func(t *testing.T, actual string) {
+				numlines := strings.Count(actual, "\n") + 1
+				assert.Equal(t, 5, numlines)
+				assert.Contains(t, actual, `~channel-1-name (2):`)
+				assert.Contains(t, actual, `* PROJ - Sub Name X`)
+				assert.Contains(t, actual, `* EXT - Sub Name Y`)
+				assert.Contains(t, actual, `~channel-2-name (1):`)
+				assert.Contains(t, actual, `* EXT - Sub Name Z`)
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+
+			p.updateConfig(func(conf *config) {
+				conf.Secret = "somesecret"
+			})
+			p.SetAPI(api)
+			p.currentInstanceStore = mockCurrentInstanceStore{p}
+
+			subscriptionBytes, err := json.Marshal(tc.Subs)
+			assert.Nil(t, err)
+
+			subKey := keyWithMockInstance(JIRA_SUBSCRIPTIONS_KEY)
+			api.On("KVGet", subKey).Return(subscriptionBytes, nil)
+
+			channel1 := &model.Channel{
+				Id:          "channel1",
+				Name:        "channel-1-name",
+				DisplayName: "Channel 1 Display Name",
+			}
+			api.On("GetChannel", "channel1").Return(channel1, nil)
+
+			channel2 := &model.Channel{
+				Id:          "channel2",
+				Name:        "channel-2-name",
+				DisplayName: "Channel 2 Display Name",
+			}
+			api.On("GetChannel", "channel2").Return(channel2, nil)
+
+			api.On("KVCompareAndSet", subKey, subscriptionBytes, mock.MatchedBy(func(data []byte) bool {
+				return true
+			})).Return(nil)
+
+			actual, err := p.listChannelSubscriptions()
+			assert.Nil(t, err)
+			assert.NotNil(t, actual)
+
+			tc.RunAssertions(t, actual)
+		})
+	}
+}
 
 func TestGetChannelsSubscribed(t *testing.T) {
 	p := &Plugin{}
@@ -603,7 +738,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "labels", Values: NewStringSet("Label1"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10071", Values: NewStringSet("value1"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -621,8 +756,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "labels", Values: NewStringSet("Label1", "Label3"), Inclusion: FILTER_INCLUDE_ANY},
-							{Key: "labels", Values: NewStringSet("Label4"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10071", Values: NewStringSet("value1", "value3"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10071", Values: NewStringSet("value4"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -640,7 +775,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "labels", Values: NewStringSet("Label1", "Label3"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10071", Values: NewStringSet("value1", "value3"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},
@@ -658,7 +793,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "labels", Values: NewStringSet("wrong value"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10071", Values: NewStringSet("wrong value"), Inclusion: FILTER_INCLUDE_ANY},
 						},
 					},
 				},

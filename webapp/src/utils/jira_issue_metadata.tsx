@@ -16,7 +16,19 @@ const flatten = (arr: any[]) => {
     return arr.reduce((acc, val) => acc.concat(val), []);
 };
 
-export function getProjectValues(metadata: ProjectMetadata) {
+function sortByName<T>(arr: (T & {name: string})[]): T[] {
+    return arr.sort((a, b) => {
+        if (a.name < b.name) {
+            return -1;
+        }
+        if (a.name > b.name) {
+            return 1;
+        }
+        return 0;
+    });
+}
+
+export function getProjectValues(metadata: ProjectMetadata): ReactSelectOption[] {
     if (!metadata || !metadata.projects) {
         return [];
     }
@@ -36,7 +48,7 @@ export function getIssueTypes(metadata: IssueMetadata, projectKey: string): Issu
     return project.issuetypes.filter((i) => !i.subtask);
 }
 
-export function getIssueValues(metadata: ProjectMetadata, projectKey: string) {
+export function getIssueValues(metadata: ProjectMetadata, projectKey: string): ReactSelectOption[] {
     if (!metadata || !metadata.issues_per_project || !projectKey) {
         return [];
     }
@@ -44,7 +56,7 @@ export function getIssueValues(metadata: ProjectMetadata, projectKey: string) {
     return metadata.issues_per_project[projectKey];
 }
 
-export function getIssueValuesForMultipleProjects(metadata: ProjectMetadata, projectKeys: string[]) {
+export function getIssueValuesForMultipleProjects(metadata: ProjectMetadata, projectKeys: string[]): ReactSelectOption[] {
     if (!metadata || !metadata.projects || !projectKeys) {
         return [];
     }
@@ -71,6 +83,25 @@ export function getFields(metadata: IssueMetadata, projectKey: string, issueType
     return {};
 }
 
+export function getConflictingFields(fields: FilterField[], chosenIssueTypes: string[], issueMetadata: IssueMetadata): {field: FilterField; issueTypes: IssueType[]}[] {
+    const conflictingFields = [];
+
+    for (const field of fields) {
+        const conflictingIssueTypes = [];
+        for (const issueTypeId of chosenIssueTypes) {
+            const issueTypes = field.issueTypes;
+            if (!issueTypes.find((it) => it.id === issueTypeId)) {
+                const issueType = issueMetadata.projects[0].issuetypes.find((i) => i.id === issueTypeId) as IssueType;
+                conflictingIssueTypes.push(issueType);
+            }
+        }
+        if (conflictingIssueTypes.length) {
+            conflictingFields.push({field, issueTypes: conflictingIssueTypes});
+        }
+    }
+    return conflictingFields;
+}
+
 export function getCustomFieldsForProjects(metadata: IssueMetadata | null, projectKeys: string[]): FieldWithInfo[] {
     if (!metadata || !projectKeys || !projectKeys.length) {
         return [];
@@ -91,29 +122,19 @@ export function getCustomFieldsForProjects(metadata: IssueMetadata | null, proje
     )).filter(Boolean) as FieldWithInfo[];
 
     for (const field of fields) {
-        if (isValidFieldForFilter(field)) {
-            // Jira server webhook fields don't have keys
-            // name is the most unique property available in that case
-            const changeLogID = field.key || field.name;
-            let current = customFieldHash[field.topLevelKey];
-            if (!current) {
-                current = {...field, changeLogID, key: field.key || field.topLevelKey, validIssueTypes: []};
-            }
-            current.validIssueTypes.push(field.issueTypeMeta);
-
-            customFieldHash[field.topLevelKey] = current;
+        // Jira server webhook fields don't have keys
+        // name is the most unique property available in that case
+        const changeLogID = field.key || field.name;
+        let current = customFieldHash[field.topLevelKey];
+        if (!current) {
+            current = {...field, changeLogID, key: field.key || field.topLevelKey, validIssueTypes: []};
         }
+        current.validIssueTypes.push(field.issueTypeMeta);
+
+        customFieldHash[field.topLevelKey] = current;
     }
 
-    return Object.values(customFieldHash).sort((a, b) => {
-        if (a.name < b.name) {
-            return -1;
-        }
-        if (a.name > b.name) {
-            return 1;
-        }
-        return 0;
-    });
+    return sortByName(Object.values(customFieldHash));
 }
 
 const allowedTypes = [
@@ -129,7 +150,7 @@ const acceptedCustomTypes = [
     'com.pyxis.greenhopper.jira:gh-epic-link',
 ];
 
-function isValidFieldForFilter(field: JiraField) {
+function isValidFieldForFilter(field: JiraField): boolean {
     const {custom, type, items} = field.schema;
     if (custom && avoidedCustomTypes.includes(custom)) {
         return false;
@@ -143,12 +164,13 @@ function isValidFieldForFilter(field: JiraField) {
 }
 
 export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null, projectKeys: string[]): FilterField[] {
-    const fields = getCustomFieldsForProjects(metadata, projectKeys);
+    const fields = getCustomFieldsForProjects(metadata, projectKeys).filter(isValidFieldForFilter);
     const selectFields = fields.filter((field) => Boolean(field.allowedValues && field.allowedValues.length)) as (SelectField & FieldWithInfo)[];
     const populatedFields = selectFields.map((field) => {
         return {
             key: field.key,
             name: field.name,
+            schema: field.schema,
             values: field.allowedValues.map((value) => ({
                 label: value.name || value.value,
                 value: value.id,
@@ -162,23 +184,48 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
         return {
             key: field.key,
             name: field.name,
+            schema: field.schema,
             userDefined: true,
             issueTypes: field.validIssueTypes,
         } as FilterField;
     });
 
-    return populatedFields.concat(userDefinedFields);
+    const result = populatedFields.concat(userDefinedFields);
+    const epicLinkField = fields.find(isEpicLinkField);
+    if (epicLinkField) {
+        result.unshift({
+            key: epicLinkField.key,
+            name: epicLinkField.name,
+            schema: epicLinkField.schema,
+            values: [],
+            issueTypes: epicLinkField.validIssueTypes,
+        } as FilterField);
+    }
+
+    return sortByName(result);
 }
 
-export function getCustomFieldValuesForProjects(metadata: IssueMetadata | null, projectKeys: string[]) {
+export function getCustomFieldValuesForProjects(metadata: IssueMetadata | null, projectKeys: string[]): ReactSelectOption[] {
     return getCustomFieldsForProjects(metadata, projectKeys).map((field) => ({
         label: `Issue Updated: Custom - ${field.name}`,
         value: `event_updated_${field.changeLogID}`,
     }));
 }
 
-export function getFieldValues(metadata: IssueMetadata, projectKey: string, issueTypeId: string) {
+export function getFieldValues(metadata: IssueMetadata, projectKey: string, issueTypeId: string): ReactSelectOption[] {
     const fieldsForIssue = getFields(metadata, projectKey, issueTypeId);
     const fieldIds = Object.keys(fieldsForIssue);
     return fieldIds.map((fieldId) => ({value: fieldId, label: fieldsForIssue[fieldId].name}));
+}
+
+export function isEpicNameField(field: JiraField | FilterField): boolean {
+    return field.schema && field.schema.custom === 'com.pyxis.greenhopper.jira:gh-epic-label';
+}
+
+export function isEpicLinkField(field: JiraField | FilterField): boolean {
+    return field.schema && field.schema.custom === 'com.pyxis.greenhopper.jira:gh-epic-link';
+}
+
+export function isEpicIssueType(issueType: IssueType): boolean {
+    return issueType.name === 'Epic';
 }

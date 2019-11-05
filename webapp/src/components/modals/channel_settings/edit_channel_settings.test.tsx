@@ -9,7 +9,7 @@ import Preferences from 'mattermost-redux/constants/preferences';
 import projectMetadata from 'testdata/cloud-get-jira-project-metadata.json';
 import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.json';
-import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project.json';
+import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project-many-fields.json';
 import testChannel from 'testdata/channel.json';
 
 import {IssueMetadata, ProjectMetadata} from 'types/model';
@@ -32,8 +32,24 @@ describe('components/EditChannelSettings', () => {
         filters: {
             events: ['event_updated_reopened'],
             projects: ['KT'],
-            issue_types: ['10001'],
-            fields: [],
+            issue_types: ['10004'],
+            fields: [{
+                key: 'customfield_10005',
+                inclusion: 'include_any',
+                values: ['10000'],
+            }, {
+                key: 'customfield_10006',
+                inclusion: 'include_any',
+                values: ['10007'],
+            }, {
+                key: 'versions',
+                inclusion: 'include_any',
+                values: ['10000'],
+            }, {
+                key: 'customfield_10014',
+                inclusion: 'include_any',
+                values: ['IDT-24'],
+            }],
         },
         name: 'SubTestName',
     };
@@ -82,6 +98,34 @@ describe('components/EditChannelSettings', () => {
         expect(wrapper.state().fetchingIssueMetadata).toBe(true);
         await Promise.resolve();
         expect(wrapper.state().fetchingIssueMetadata).toBe(false);
+        expect(wrapper).toMatchSnapshot();
+    });
+
+    test('SERVER - should match snapshot after fetching issue metadata', async () => {
+        const sub = {
+            id: 'asxtifxe8jyi9y81htww6ixkiy',
+            channel_id: '9f8em5tjjirnpretkzywiqtnur',
+            filters: {
+                events: ['event_updated_reopened'],
+                projects: ['HEY'],
+                issue_types: ['10001'],
+                fields: [],
+            },
+            name: 'SubTestName',
+        };
+
+        const props = {
+            ...baseProps,
+            jiraProjectMetadata: serverProjectMetadata as ProjectMetadata,
+            jiraIssueMetadata: serverIssueMetadata as IssueMetadata,
+            channelSubscriptions: [sub],
+            selectedSubscription: sub,
+        };
+        const wrapper = shallow<EditChannelSettings>(
+            <EditChannelSettings {...props}/>
+        );
+
+        await Promise.resolve();
         expect(wrapper).toMatchSnapshot();
     });
 
@@ -282,6 +326,67 @@ describe('components/EditChannelSettings', () => {
         await Promise.resolve();
         expect(close).not.toHaveBeenCalled();
         expect(wrapper.state().error).toEqual('Failure');
+    });
+
+    test('should produce subscription error when add conflicting issue type', async () => {
+        // This test checks that adding an issue type with confilcting fields
+        // will trigger an error message that lists the conflicting filter
+        // fields.
+
+        const props = {
+            ...baseProps,
+        };
+
+        const wrapper = shallow<EditChannelSettings>(
+            <EditChannelSettings {...props}/>
+        );
+
+        // initially, there are no errors
+        expect(wrapper.state().conflictingError).toBe(null);
+
+        // Add issue type with conflicting filter fields and observe error
+        wrapper.instance().handleIssueChange('issue_types', ['10004', '10000']);
+        expect(wrapper.state().conflictingError).toEqual('Issue Type(s) "Epic" does not have filter field(s): "Affects versions".  Please update the conflicting fields or create a separate subscription.');
+
+        // save snapshot showing error message
+        expect(wrapper).toMatchSnapshot();
+    });
+
+    test('conflicting subscription error should get cleared', async () => {
+        // Check that the conflicting error message disappears with
+        // each change of a filter field, project, or event
+
+        const props = {
+            ...baseProps,
+        };
+
+        const wrapper = shallow<EditChannelSettings>(
+            <EditChannelSettings {...props}/>
+        );
+
+        // Add issue type with conflicting filter fields
+        wrapper.instance().handleIssueChange('issue_types', ['10004', '10000']);
+
+        // save errorState for later usage and testing error disappears with changing fields
+        const errorState = wrapper.state();
+
+        // change the Event Types - error should disappear
+        wrapper.instance().handleSettingChange('issue_types', ['10004', '10000']);
+        expect(wrapper.state().conflictingError).toBe(null);
+
+        // reset error message state to include error message
+        wrapper.setState({...errorState});
+
+        // change project - error should disappear
+        wrapper.instance().handleProjectChange(['KT']);
+        expect(wrapper.state().conflictingError).toBe(null);
+
+        // reset error message state to include error message
+        wrapper.setState({...errorState});
+
+        // change one of the filter fields - error should disappear
+        wrapper.instance().handleFilterFieldChange(['']);
+        expect(wrapper.state().conflictingError).toBe(null);
     });
 
     test('should not create when choices are blank', () => {

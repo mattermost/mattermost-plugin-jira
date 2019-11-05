@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {PureComponent} from 'react';
+import React, {Component} from 'react';
 import {Modal} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
@@ -55,12 +55,12 @@ export type Props = {
     /*
      * Function called when the confirm button or ENTER is pressed. Passes `true` if the checkbox is checked
      */
-    onConfirm?: (arg0: boolean) => void;
+    onConfirm: (arg0: boolean) => void;
 
     /*
      * Function called when the cancel button is pressed or the modal is hidden. Passes `true` if the checkbox is checked
      */
-    onCancel?: (arg0: boolean) => void;
+    onCancel: (arg0: boolean) => void;
 
     /**
      * Function called when modal is dismissed
@@ -74,22 +74,22 @@ export type Props = {
 
 }
 
-export default class ConfirmModal extends PureComponent<Props> {
-    componentDidMount() {
+export default class ConfirmModal extends Component<Props> {
+    componentDidMount(): void {
         if (this.props.show) {
             document.addEventListener('keydown', this.handleKeypress);
         }
     }
 
-    componentWillUnmount() {
+    componentWillUnmount(): void {
         document.removeEventListener('keydown', this.handleKeypress);
     }
 
-    shouldComponentUpdate(nextProps) {
+    shouldComponentUpdate(nextProps: Props): boolean {
         return nextProps.show !== this.props.show;
     }
 
-    componentDidUpdate(prevProps) {
+    componentDidUpdate(prevProps: Props): void {
         if (prevProps.show && !this.props.show) {
             document.removeEventListener('keydown', this.handleKeypress);
         } else if (!prevProps.show && this.props.show) {
@@ -97,23 +97,28 @@ export default class ConfirmModal extends PureComponent<Props> {
         }
     }
 
-    handleKeypress = (e) => {
+    handleKeypress = (e: KeyboardEvent): void => {
         if (e.key === 'Enter' && this.props.show) {
-            this.handleConfirm();
+            const cancelButton = document.getElementById('cancelModalButton');
+            if (cancelButton && cancelButton === document.activeElement) {
+                this.handleCancel();
+            } else {
+                this.handleConfirm();
+            }
         }
     }
 
-    handleConfirm = () => {
+    handleConfirm = (): void => {
         const checked = this.refs.checkbox ? this.refs.checkbox.checked : false;
         this.props.onConfirm(checked);
     }
 
-    handleCancel = () => {
+    handleCancel = (): void => {
         const checked = this.refs.checkbox ? this.refs.checkbox.checked : false;
         this.props.onCancel(checked);
     }
 
-    render() {
+    render(): JSX.Element {
         let checkbox;
         if (this.props.showCheckbox) {
             checkbox = (

@@ -1,10 +1,13 @@
 import React from 'react';
 
 import ReactSelectSetting from 'components/react_select_setting';
+import JiraEpicSelector from 'components/jira_epic_selector';
 
+import {isEpicLinkField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
+import ConfirmModal from 'components/confirm_modal';
 
-type ChannelSettingsFilterProps = {
+type Props = {
     fields: FilterField[];
     field: FilterField;
     value: FilterValue;
@@ -17,7 +20,16 @@ type ChannelSettingsFilterProps = {
     removeValidate: (isValid: () => boolean) => void;
 };
 
-export default class ChannelSettingsFilter extends React.PureComponent<ChannelSettingsFilterProps> {
+type State = {
+    showConfirmDeleteModal: boolean;
+    error: string | null;
+}
+
+export default class ChannelSettingsFilter extends React.PureComponent<Props, State> {
+    state = {
+        showConfirmDeleteModal: false,
+    };
+
     componentDidMount() {
         this.props.addValidate(this.isValid);
     }
@@ -47,6 +59,26 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         onChange(value, {...value, values: newValues});
     };
 
+    handleEpicLinkChange = (values: string[]): void => {
+        const {onChange, value} = this.props;
+
+        const newValues = values || [];
+        onChange(value, {...value, values: newValues});
+    };
+
+    openDeleteModal = (): void => {
+        this.setState({showConfirmDeleteModal: true});
+    };
+
+    handleCancelDelete = (): void => {
+        this.setState({showConfirmDeleteModal: false});
+    };
+
+    handleConfirmDelete = (): void => {
+        this.setState({showConfirmDeleteModal: false});
+        this.removeFilter();
+    };
+
     removeFilter = (): void => {
         this.props.removeFilter(this.props.value);
     };
@@ -65,10 +97,6 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         return conflictingIssueTypes;
     };
 
-    isOptionDisabled = (option: ReactSelectOption): boolean => {
-        return false;
-    }
-
     isValid = (): boolean => {
         const error = this.checkFieldConflictError();
         if (error) {
@@ -82,10 +110,43 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
     checkFieldConflictError = (): string | null => {
         const conflictIssueTypes = this.getConflictingIssueTypes().map((it) => it.name);
         if (conflictIssueTypes.length) {
-            return `Error: ${this.props.field.name} does not exist for issue type(s): ${conflictIssueTypes.join(', ')}.`;
+            return `${this.props.field.name} does not exist for issue type(s): ${conflictIssueTypes.join(', ')}.`;
         }
         return null;
     };
+
+    renderInclusionDropdownOption = (data: {value: string; label: string}, meta: {context: string}): JSX.Element | string => {
+        const {value, label} = data;
+        const {context} = meta;
+
+        // context === value means it is rendering the selected value
+        if (context === 'value') {
+            return label;
+        }
+
+        // otherwise it is rendering an option in the open dropdown
+        let subtext = '';
+        switch (value) {
+        case FilterFieldInclusion.INCLUDE_ANY:
+            subtext = 'Includes either of the values (or)';
+            break;
+        case FilterFieldInclusion.INCLUDE_ALL:
+            subtext = 'Includes all of the values (and)';
+            break;
+        case FilterFieldInclusion.EXCLUDE_ANY:
+            subtext = 'Excludes all of the values';
+            break;
+        }
+
+        return (
+            <div>
+                <div>{label}</div>
+                <div style={{opacity: 0.6}}>
+                    {subtext}
+                </div>
+            </div>
+        );
+    }
 
     render(): JSX.Element {
         const {field, fields, value, theme} = this.props;
@@ -127,9 +188,10 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         if (field) {
             deleteButton = (
                 <button
-                    onClick={this.removeFilter}
+                    onClick={this.openDeleteModal}
                     className='style--none'
                     style={style.trashIcon}
+                    type='button'
                 >
                     <i className='fa fa-trash'/>
                 </button>
@@ -137,7 +199,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
         } else {
             deleteButton = (
                 <button
-                    onClick={this.removeFilter}
+                    onClick={this.openDeleteModal}
                     className='btn btn-info'
                     type='button'
                 >
@@ -153,22 +215,77 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
             disableLastSelect = true;
         }
 
+        let valueSelector;
+        if (isEpicLinkField(this.props.field)) {
+            valueSelector = (
+                <JiraEpicSelector
+                    required={!disableLastSelect}
+                    isDisabled={disableLastSelect}
+                    placeholder={lastSelectPlaceholder}
+                    issueMetadata={this.props.issueMetadata}
+                    theme={theme}
+                    value={value.values}
+                    onChange={this.handleEpicLinkChange}
+                    resetInvalidOnChange={true}
+                    hideRequiredStar={true}
+                    isMulti={true}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
+                />
+            );
+        } else {
+            valueSelector = (
+                <ReactSelectSetting
+                    name={'values'}
+                    required={!disableLastSelect}
+                    isDisabled={disableLastSelect}
+                    placeholder={lastSelectPlaceholder}
+                    hideRequiredStar={true}
+                    options={fieldValueOptions}
+                    theme={theme}
+                    onChange={this.handleFieldValuesChange}
+                    resetInvalidOnChange={true}
+                    value={chosenFieldValues}
+                    isMulti={true}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
+                    allowUserDefinedValue={Boolean(field && field.userDefined)}
+                />
+            );
+        }
+
+        const confirmDeleteModal = (
+            <ConfirmModal
+                cancelButtonText={'Cancel'}
+                confirmButtonText={'Delete'}
+                confirmButtonClass={'btn btn-danger'}
+                hideCancel={false}
+                message={'Are you sure you want to delete this filter?'}
+                onCancel={this.handleCancelDelete}
+                onConfirm={this.handleConfirmDelete}
+                show={this.state.showConfirmDeleteModal}
+                title={'Field Filter'}
+            />
+        );
+
         return (
             <div className='row'>
+                <div className='col-md-12 col-sm-12'>
+                    <div
+                        className='help-text error-text'
+                        style={style.conflictingError}
+                    >
+                        {this.checkFieldConflictError()}
+                    </div>
+                </div>
                 <div className='col-md-11 col-sm-12'>
                     <div className='row'>
-                        <div>
-                            <span>
-                                {this.checkFieldConflictError()}
-                            </span>
-                        </div>
                         <div className='col-md-4 col-sm-12'>
                             <ReactSelectSetting
                                 name={'fieldtype'}
                                 required={true}
                                 hideRequiredStar={true}
                                 options={fieldTypeOptions}
-                                isOptionDisabled={this.isOptionDisabled}
                                 value={chosenFieldType}
                                 onChange={this.handleFieldTypeChange}
                                 theme={theme}
@@ -178,7 +295,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                         </div>
                         <div className='col-md-4 col-sm-12'>
                             <ReactSelectSetting
-                                name={'exclude'}
+                                name={'inclusion'}
                                 required={true}
                                 hideRequiredStar={true}
                                 options={inclusionSelectOptions}
@@ -187,30 +304,18 @@ export default class ChannelSettingsFilter extends React.PureComponent<ChannelSe
                                 theme={theme}
                                 addValidate={this.props.addValidate}
                                 removeValidate={this.props.removeValidate}
+                                formatOptionLabel={this.renderInclusionDropdownOption}
                             />
                         </div>
                         <div className='col-md-4 col-sm-12'>
-                            <ReactSelectSetting
-                                name={'values'}
-                                required={!disableLastSelect}
-                                isDisabled={disableLastSelect}
-                                placeholder={lastSelectPlaceholder}
-                                hideRequiredStar={true}
-                                options={fieldValueOptions}
-                                theme={theme}
-                                onChange={this.handleFieldValuesChange}
-                                value={chosenFieldValues}
-                                isMulti={true}
-                                addValidate={this.props.addValidate}
-                                removeValidate={this.props.removeValidate}
-                                allowUserDefinedValue={Boolean(field && field.userDefined)}
-                            />
+                            {valueSelector}
                         </div>
                     </div>
                 </div>
                 <div className='col-md-1 col-sm-12 text-center'>
                     {deleteButton}
                 </div>
+                {confirmDeleteModal}
             </div>
         );
     }
@@ -275,6 +380,7 @@ export function EmptyChannelSettingsFilter(props: EmptyChannelSettingsFilterProp
                     onClick={props.cancelAdd}
                     className='style--none'
                     style={style.trashIcon}
+                    type='button'
                 >
                     <i className='fa fa-trash'/>
                 </button>
@@ -287,6 +393,9 @@ const getStyle = (theme: any): any => ({
     trashIcon: {
         color: theme.errorTextColor,
         fontSize: '20px',
-        margin: '2.5rem 0 0',
+        margin: '0.5rem 0 0',
+    },
+    conflictingError: {
+        margin: '0 0 10px',
     },
 });

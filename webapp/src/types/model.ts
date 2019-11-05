@@ -39,6 +39,7 @@ export type IssueTypeIdentifier = {id: string; name: string};
 export type FilterField = {
     key: string;
     name: string;
+    schema: FieldSchema;
     values?: ReactSelectOption[];
     userDefined?: boolean;
     issueTypes: IssueTypeIdentifier[];
@@ -49,6 +50,13 @@ export type IssueType = {
     name: string;
     fields: {[key: string]: JiraField};
     subtask: boolean;
+}
+
+export type JiraIssue = {
+    id: string;
+    key: string;
+    name: string;
+    fields: {[key: string]: JiraField};
 }
 
 export type Project = {
