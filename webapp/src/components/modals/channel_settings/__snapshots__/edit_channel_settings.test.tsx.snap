@@ -2,7 +2,6 @@
 
 exports[`components/EditChannelSettings SERVER - should match snapshot after fetching issue metadata 1`] = `
 <form
-  onSubmit={[Function]}
   role="form"
 >
   <div
@@ -187,8 +186,36 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
               "value": "event_updated_Affects Version/s",
             },
             Object {
+              "label": "Issue Updated: Custom - Component/s",
+              "value": "event_updated_Component/s",
+            },
+            Object {
+              "label": "Issue Updated: Custom - Environment",
+              "value": "event_updated_Environment",
+            },
+            Object {
               "label": "Issue Updated: Custom - Epic Link",
               "value": "event_updated_Epic Link",
+            },
+            Object {
+              "label": "Issue Updated: Custom - Epic Name",
+              "value": "event_updated_Epic Name",
+            },
+            Object {
+              "label": "Issue Updated: Custom - Issue Type",
+              "value": "event_updated_Issue Type",
+            },
+            Object {
+              "label": "Issue Updated: Custom - Linked Issues",
+              "value": "event_updated_Linked Issues",
+            },
+            Object {
+              "label": "Issue Updated: Custom - Project",
+              "value": "event_updated_Project",
+            },
+            Object {
+              "label": "Issue Updated: Custom - Reporter",
+              "value": "event_updated_Reporter",
             },
           ]
         }
@@ -1757,15 +1784,6 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
     }
   >
     <FormButton
-      btnClass="btn-link"
-      defaultMessage="Cancel"
-      disabled={false}
-      extraClasses=""
-      onClick={[Function]}
-      savingMessage="Creating"
-      type="button"
-    />
-    <FormButton
       btnClass="btn-danger pull-left"
       defaultMessage="Delete"
       disabled={false}
@@ -1776,13 +1794,23 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
       type="button"
     />
     <FormButton
+      btnClass="btn-link"
+      defaultMessage="Cancel"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
       btnClass="btn-primary"
       defaultMessage="Set Subscription"
       disabled={false}
       extraClasses=""
+      onClick={[Function]}
       saving={false}
       savingMessage="Setting"
-      type="submit"
+      type="button"
     />
   </ModalFooter>
 </form>
@@ -1790,7 +1818,6 @@ exports[`components/EditChannelSettings SERVER - should match snapshot after fet
 
 exports[`components/EditChannelSettings should match snapshot 1`] = `
 <form
-  onSubmit={[Function]}
   role="form"
 >
   <div
@@ -1933,15 +1960,6 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
     }
   >
     <FormButton
-      btnClass="btn-link"
-      defaultMessage="Cancel"
-      disabled={false}
-      extraClasses=""
-      onClick={[Function]}
-      savingMessage="Creating"
-      type="button"
-    />
-    <FormButton
       btnClass="btn-danger pull-left"
       defaultMessage="Delete"
       disabled={false}
@@ -1952,13 +1970,23 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
       type="button"
     />
     <FormButton
+      btnClass="btn-link"
+      defaultMessage="Cancel"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
       btnClass="btn-primary"
       defaultMessage="Set Subscription"
       disabled={false}
       extraClasses=""
+      onClick={[Function]}
       saving={false}
       savingMessage="Setting"
-      type="submit"
+      type="button"
     />
   </ModalFooter>
 </form>
@@ -1966,7 +1994,6 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
 
 exports[`components/EditChannelSettings should match snapshot after fetching issue metadata 1`] = `
 <form
-  onSubmit={[Function]}
   role="form"
 >
   <div
@@ -2175,20 +2202,60 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
               "value": "event_updated_versions",
             },
             Object {
+              "label": "Issue Updated: Custom - Components",
+              "value": "event_updated_components",
+            },
+            Object {
+              "label": "Issue Updated: Custom - Environment",
+              "value": "event_updated_environment",
+            },
+            Object {
               "label": "Issue Updated: Custom - Epic Link",
               "value": "event_updated_customfield_10014",
+            },
+            Object {
+              "label": "Issue Updated: Custom - Epic Name",
+              "value": "event_updated_customfield_10011",
+            },
+            Object {
+              "label": "Issue Updated: Custom - Favorite Food",
+              "value": "event_updated_customfield_10067",
+            },
+            Object {
+              "label": "Issue Updated: Custom - Issue Type",
+              "value": "event_updated_issuetype",
+            },
+            Object {
+              "label": "Issue Updated: Custom - Linked Issues",
+              "value": "event_updated_issuelinks",
             },
             Object {
               "label": "Issue Updated: Custom - MJK - Checkbox",
               "value": "event_updated_customfield_10068",
             },
             Object {
+              "label": "Issue Updated: Custom - MJK - Date Picker",
+              "value": "event_updated_customfield_10069",
+            },
+            Object {
+              "label": "Issue Updated: Custom - MJK - Date Time Picker",
+              "value": "event_updated_customfield_10070",
+            },
+            Object {
               "label": "Issue Updated: Custom - MJK - Labels",
               "value": "event_updated_customfield_10071",
             },
             Object {
+              "label": "Issue Updated: Custom - MJK - Number Field",
+              "value": "event_updated_customfield_10072",
+            },
+            Object {
               "label": "Issue Updated: Custom - MJK - Radio Buttons",
               "value": "event_updated_customfield_10073",
+            },
+            Object {
+              "label": "Issue Updated: Custom - MJK - Select List 1",
+              "value": "event_updated_customfield_10074",
             },
             Object {
               "label": "Issue Updated: Custom - MJK - Select List 2",
@@ -2197,6 +2264,30 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
             Object {
               "label": "Issue Updated: Custom - MJK - Select List 3",
               "value": "event_updated_customfield_10076",
+            },
+            Object {
+              "label": "Issue Updated: Custom - MJK - URL Field",
+              "value": "event_updated_customfield_10079",
+            },
+            Object {
+              "label": "Issue Updated: Custom - MJK - User Picker",
+              "value": "event_updated_customfield_10080",
+            },
+            Object {
+              "label": "Issue Updated: Custom - Project",
+              "value": "event_updated_project",
+            },
+            Object {
+              "label": "Issue Updated: Custom - Sprint",
+              "value": "event_updated_customfield_10021",
+            },
+            Object {
+              "label": "Issue Updated: Custom - Text Field 1",
+              "value": "event_updated_customfield_10077",
+            },
+            Object {
+              "label": "Issue Updated: Custom - Text Field 2",
+              "value": "event_updated_customfield_10078",
             },
           ]
         }
@@ -2298,8 +2389,8 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
         value={
           Array [
             Object {
-              "label": "Story",
-              "value": "10001",
+              "label": "Bug",
+              "value": "10004",
             },
           ]
         }
@@ -2308,7 +2399,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
         addValidate={[Function]}
         chosenIssueTypes={
           Array [
-            "10001",
+            "10004",
           ]
         }
         fields={
@@ -5384,7 +5475,38 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
             "type": "Mattermost",
           }
         }
-        values={Array []}
+        values={
+          Array [
+            Object {
+              "inclusion": "include_any",
+              "key": "customfield_10005",
+              "values": Array [
+                "10000",
+              ],
+            },
+            Object {
+              "inclusion": "include_any",
+              "key": "customfield_10006",
+              "values": Array [
+                "10007",
+              ],
+            },
+            Object {
+              "inclusion": "include_any",
+              "key": "versions",
+              "values": Array [
+                "10000",
+              ],
+            },
+            Object {
+              "inclusion": "include_any",
+              "key": "customfield_10014",
+              "values": Array [
+                "IDT-24",
+              ],
+            },
+          ]
+        }
       />
     </div>
     <ConfirmModal
@@ -5409,15 +5531,6 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
     }
   >
     <FormButton
-      btnClass="btn-link"
-      defaultMessage="Cancel"
-      disabled={false}
-      extraClasses=""
-      onClick={[Function]}
-      savingMessage="Creating"
-      type="button"
-    />
-    <FormButton
       btnClass="btn-danger pull-left"
       defaultMessage="Delete"
       disabled={false}
@@ -5428,13 +5541,23 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
       type="button"
     />
     <FormButton
+      btnClass="btn-link"
+      defaultMessage="Cancel"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
       btnClass="btn-primary"
       defaultMessage="Set Subscription"
       disabled={false}
       extraClasses=""
+      onClick={[Function]}
       saving={false}
       savingMessage="Setting"
-      type="submit"
+      type="button"
     />
   </ModalFooter>
 </form>
@@ -5442,7 +5565,6 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
 
 exports[`components/EditChannelSettings should match snapshot with no filters 1`] = `
 <form
-  onSubmit={[Function]}
   role="form"
 >
   <div
@@ -5574,15 +5696,6 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
     }
   >
     <FormButton
-      btnClass="btn-link"
-      defaultMessage="Cancel"
-      disabled={false}
-      extraClasses=""
-      onClick={[Function]}
-      savingMessage="Creating"
-      type="button"
-    />
-    <FormButton
       btnClass="btn-danger pull-left"
       defaultMessage="Delete"
       disabled={false}
@@ -5593,13 +5706,23 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
       type="button"
     />
     <FormButton
+      btnClass="btn-link"
+      defaultMessage="Cancel"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
       btnClass="btn-primary"
       defaultMessage="Set Subscription"
       disabled={true}
       extraClasses=""
+      onClick={[Function]}
       saving={false}
       savingMessage="Setting"
-      type="submit"
+      type="button"
     />
   </ModalFooter>
 </form>
@@ -5607,7 +5730,6 @@ exports[`components/EditChannelSettings should match snapshot with no filters 1`
 
 exports[`components/EditChannelSettings should match snapshot with no issue metadata 1`] = `
 <form
-  onSubmit={[Function]}
   role="form"
 >
   <div
@@ -5750,15 +5872,6 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
     }
   >
     <FormButton
-      btnClass="btn-link"
-      defaultMessage="Cancel"
-      disabled={false}
-      extraClasses=""
-      onClick={[Function]}
-      savingMessage="Creating"
-      type="button"
-    />
-    <FormButton
       btnClass="btn-danger pull-left"
       defaultMessage="Delete"
       disabled={false}
@@ -5769,13 +5882,23 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
       type="button"
     />
     <FormButton
+      btnClass="btn-link"
+      defaultMessage="Cancel"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
       btnClass="btn-primary"
       defaultMessage="Set Subscription"
       disabled={false}
       extraClasses=""
+      onClick={[Function]}
       saving={false}
       savingMessage="Setting"
-      type="submit"
+      type="button"
     />
   </ModalFooter>
 </form>
@@ -5783,7 +5906,6 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
 
 exports[`components/EditChannelSettings should match snapshot with no subscriptions 1`] = `
 <form
-  onSubmit={[Function]}
   role="form"
 >
   <div
@@ -5904,15 +6026,6 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
     }
   >
     <FormButton
-      btnClass="btn-link"
-      defaultMessage="Cancel"
-      disabled={false}
-      extraClasses=""
-      onClick={[Function]}
-      savingMessage="Creating"
-      type="button"
-    />
-    <FormButton
       btnClass="btn-danger pull-left"
       defaultMessage="Delete"
       disabled={true}
@@ -5923,13 +6036,199 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
       type="button"
     />
     <FormButton
+      btnClass="btn-link"
+      defaultMessage="Cancel"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
       btnClass="btn-primary"
       defaultMessage="Set Subscription"
       disabled={true}
       extraClasses=""
+      onClick={[Function]}
       saving={false}
       savingMessage="Setting"
-      type="submit"
+      type="button"
+    />
+  </ModalFooter>
+</form>
+`;
+
+exports[`components/EditChannelSettings should produce subscription error when add conflicting issue type 1`] = `
+<form
+  role="form"
+>
+  <div
+    className="margin-bottom x3 text-center"
+  >
+    <h2>
+      Add Jira Subscription
+    </h2>
+  </div>
+  <div
+    style={
+      Object {
+        "backgroundColor": "#ffffff",
+        "color": "#3d3c40",
+        "padding": "2em 0",
+      }
+    }
+  >
+    <div
+      className="container-fluid"
+    >
+      <Input
+        addValidate={[Function]}
+        label="Subscription Name"
+        maxLength={100}
+        onChange={[Function]}
+        placeholder="Name"
+        readOnly={false}
+        removeValidate={[Function]}
+        required={true}
+        type="input"
+        value="SubTestName"
+      />
+    </div>
+    <div
+      className="container-fluid"
+    >
+      <ReactSelectSetting
+        addValidate={[Function]}
+        isMulti={false}
+        label="Project"
+        limitOptions={true}
+        name="projects"
+        onChange={[Function]}
+        options={
+          Array [
+            Object {
+              "label": "DKH-Project",
+              "value": "DP",
+            },
+            Object {
+              "label": "Issue Dialog Testing",
+              "value": "IDT",
+            },
+            Object {
+              "label": "Koch Testing",
+              "value": "KT",
+            },
+            Object {
+              "label": "LEV-test",
+              "value": "LT",
+            },
+            Object {
+              "label": "restricted",
+              "value": "RES",
+            },
+            Object {
+              "label": "scrum1",
+              "value": "SCRUM1",
+            },
+            Object {
+              "label": "Testing Extensions",
+              "value": "EXT",
+            },
+          ]
+        }
+        removeValidate={[Function]}
+        required={true}
+        theme={
+          Object {
+            "awayIndicator": "#ffbc42",
+            "buttonBg": "#166de0",
+            "buttonColor": "#ffffff",
+            "centerChannelBg": "#ffffff",
+            "centerChannelColor": "#3d3c40",
+            "codeTheme": "github",
+            "dndIndicator": "#f74343",
+            "errorTextColor": "#fd5960",
+            "linkColor": "#2389d7",
+            "mentionBj": "#ffffff",
+            "mentionColor": "#145dbf",
+            "mentionHighlightBg": "#ffe577",
+            "mentionHighlightLink": "#166de0",
+            "newMessageSeparator": "#ff8800",
+            "onlineIndicator": "#06d6a0",
+            "sidebarBg": "#145dbf",
+            "sidebarHeaderBg": "#1153ab",
+            "sidebarHeaderTextColor": "#ffffff",
+            "sidebarText": "#ffffff",
+            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveColor": "#ffffff",
+            "sidebarTextHoverBg": "#4578bf",
+            "sidebarUnreadText": "#ffffff",
+            "type": "Mattermost",
+          }
+        }
+        value={
+          Array [
+            Object {
+              "label": "Koch Testing",
+              "value": "KT",
+            },
+          ]
+        }
+      />
+      <Loading
+        position="relative"
+        style={Object {}}
+      />
+    </div>
+    <ConfirmModal
+      cancelButtonText="Cancel"
+      confirmButtonClass="btn btn-danger"
+      confirmButtonText="Delete"
+      hideCancel={false}
+      message="Delete Subscription \\"SubTestName\\"?"
+      onCancel={[Function]}
+      onConfirm={[Function]}
+      show={false}
+      title="Subscription"
+    />
+  </div>
+  <ModalFooter
+    bsClass="modal-footer"
+    componentClass="div"
+    style={
+      Object {
+        "padding": "2rem 15px",
+      }
+    }
+  >
+    <FormButton
+      btnClass="btn-danger pull-left"
+      defaultMessage="Delete"
+      disabled={false}
+      extraClasses=""
+      id="jira-delete-subscription"
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
+      btnClass="btn-link"
+      defaultMessage="Cancel"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
+      btnClass="btn-primary"
+      defaultMessage="Set Subscription"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      saving={false}
+      savingMessage="Setting"
+      type="button"
     />
   </ModalFooter>
 </form>

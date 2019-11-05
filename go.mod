@@ -30,10 +30,8 @@ require (
 	google.golang.org/grpc v1.21.1 // indirect
 )
 
-// Workaround for https://github.com/golang/go/issues/30831 and fallout.
-replace github.com/golang/lint => github.com/golang/lint v0.0.0-20190227174305-8f45f776aaf1
-
 // Workaround for Jira GDPR change. Remove this and update golang.org/x/oauth2 when it's fixed.
-replace golang.org/x/oauth2 => github.com/cpoile/oauth2 v0.0.0-20190717235208-10945bd
+// See: https://github.com/golang/oauth2/issues/312
+replace golang.org/x/oauth2 => github.com/cpoile/oauth2 v0.0.0-20190717234427-10945bd219c7
 
-replace git.apache.org/thrift.git => github.com/apache/thrift v0.0.0-20180902110319-2566ecd5d999
+replace willnorris.com/go/imageproxy => willnorris.com/go/imageproxy v0.8.1-0.20190422234945-d4246a08fdec
