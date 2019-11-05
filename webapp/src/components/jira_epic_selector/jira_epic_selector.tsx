@@ -203,8 +203,14 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
             };
         });
 
+        const {
+            issueMetadata, // eslint-disable-line @typescript-eslint/no-unused-vars
+            ...props
+        } = this.props;
+
         const selectComponent = (
             <AsyncSelect
+                {...props}
                 name={'epic'}
                 value={values}
                 onChange={this.onChange}
@@ -216,14 +222,13 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
                 menuPortalTarget={document.body}
                 menuPlacement='auto'
                 styles={getStyleForReactSelect(this.props.theme)}
-                {...this.props}
             />
         );
 
         return (
             <Setting
+                {...props}
                 inputId={'epic'}
-                {...this.props}
             >
                 {selectComponent}
                 {errComponent}
