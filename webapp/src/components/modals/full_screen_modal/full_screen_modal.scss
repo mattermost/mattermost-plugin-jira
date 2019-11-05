@@ -11,27 +11,21 @@ $full-screen-modal-transition: 100ms;
     overflow: auto;
 
     .back {
-        position: absolute;
         top: 8px;
         left: 16px;
-        cursor: pointer;
-        svg {
-            fill: var(--center-channel-color-90);
-            padding: 4px;
-            width: 40px;
-            height: 40px;
-            border-radius: 4px;
-            &:hover {
-                background: var(--button-bg-10);
-            }
-        }
     }
 
     .close-x {
-        position: absolute;
         top: 8px;
         right: 16px;
+    }
+
+    .close-x, .back {
+        position: absolute;
         cursor: pointer;
+        background-color: transparent;
+        outline: none;
+        border: none;
         svg {
             fill: var(--center-channel-color-90);
             padding: 4px;

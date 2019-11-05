@@ -10,13 +10,9 @@ type Props = {
 
 export default class BackIcon extends React.PureComponent<Props> {
     render(): JSX.Element {
-        let className = this.props.className || '';
-        className += ' btn btn-transparent';
-
         return (
             <button
                 {...this.props}
-                className={className}
             >
                 <FormattedMessage
                     id='generic_icons.back'
