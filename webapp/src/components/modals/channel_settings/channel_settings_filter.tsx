@@ -136,6 +136,9 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
         case FilterFieldInclusion.EXCLUDE_ANY:
             subtext = 'Excludes all of the values';
             break;
+        case FilterFieldInclusion.EMPTY:
+            subtext = 'Includes when the value is empty';
+            break;
         }
 
         return (

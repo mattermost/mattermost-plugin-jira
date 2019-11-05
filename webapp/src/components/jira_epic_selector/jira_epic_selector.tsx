@@ -209,7 +209,6 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
                 value={values}
                 onChange={this.onChange}
                 required={this.props.required}
-                disabled={false}
                 isMulti={this.props.isMulti}
                 isClearable={true}
                 defaultOptions={true}
@@ -217,6 +216,7 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
                 menuPortalTarget={document.body}
                 menuPlacement='auto'
                 styles={getStyleForReactSelect(this.props.theme)}
+                {...this.props}
             />
         );
 
