@@ -61,7 +61,7 @@ describe('components/EditChannelSettings', () => {
         jiraProjectMetadata: projectMetadata as ProjectMetadata,
         jiraIssueMetadata: issueMetadata as IssueMetadata,
         channelSubscriptions: [channelSubscription],
-        close: jest.fn(),
+        finishEditSubscription: jest.fn(),
         selectedSubscription: channelSubscription,
     };
 
@@ -184,14 +184,14 @@ describe('components/EditChannelSettings', () => {
     test('should create a named subscription', async () => {
         const createChannelSubscription = jest.fn().mockResolvedValue({});
         const editChannelSubscription = jest.fn().mockResolvedValue({});
-        let close = jest.fn();
+        let finishEditSubscription = jest.fn();
         const props = {
             ...baseProps,
             createChannelSubscription,
             editChannelSubscription,
             channelSubscriptions: [],
             selectedSubscription: null,
-            close,
+            finishEditSubscription,
         };
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
@@ -211,14 +211,14 @@ describe('components/EditChannelSettings', () => {
             }
         );
         expect(editChannelSubscription).not.toHaveBeenCalled();
-        expect(close).not.toHaveBeenCalled();
+        expect(finishEditSubscription).not.toHaveBeenCalled();
 
         await Promise.resolve();
-        expect(close).toHaveBeenCalled();
+        expect(finishEditSubscription).toHaveBeenCalled();
 
-        close = jest.fn();
+        finishEditSubscription = jest.fn();
         wrapper.setProps({
-            close,
+            finishEditSubscription,
             createChannelSubscription: jest.fn().mockResolvedValue({error: {message: 'Failure'}}),
         });
 
@@ -226,14 +226,14 @@ describe('components/EditChannelSettings', () => {
         expect(wrapper.state().error).toEqual(null);
 
         await Promise.resolve();
-        expect(close).not.toHaveBeenCalled();
+        expect(finishEditSubscription).not.toHaveBeenCalled();
         expect(wrapper.state().error).toEqual('Failure');
     });
 
     test('SERVER - should create a subscription', async () => {
         const createChannelSubscription = jest.fn().mockResolvedValue({});
         const editChannelSubscription = jest.fn().mockResolvedValue({});
-        let close = jest.fn();
+        let finishEditSubscription = jest.fn();
         const props = {
             ...baseProps,
             createChannelSubscription,
@@ -242,7 +242,7 @@ describe('components/EditChannelSettings', () => {
             selectedSubscription: null,
             jiraIssueMetadata: serverIssueMetadata as IssueMetadata,
             jiraProjectMetadata: serverProjectMetadata as ProjectMetadata,
-            close,
+            finishEditSubscription,
         };
 
         const wrapper = shallow<EditChannelSettings>(
@@ -262,14 +262,14 @@ describe('components/EditChannelSettings', () => {
             }
         );
         expect(editChannelSubscription).not.toHaveBeenCalled();
-        expect(close).not.toHaveBeenCalled();
+        expect(finishEditSubscription).not.toHaveBeenCalled();
 
         await Promise.resolve();
-        expect(close).toHaveBeenCalled();
+        expect(finishEditSubscription).toHaveBeenCalled();
 
-        close = jest.fn();
+        finishEditSubscription = jest.fn();
         wrapper.setProps({
-            close,
+            finishEditSubscription,
             createChannelSubscription: jest.fn().mockResolvedValue({error: {message: 'Failure'}}),
         });
 
@@ -277,19 +277,19 @@ describe('components/EditChannelSettings', () => {
         expect(wrapper.state().error).toEqual(null);
 
         await Promise.resolve();
-        expect(close).not.toHaveBeenCalled();
+        expect(finishEditSubscription).not.toHaveBeenCalled();
         expect(wrapper.state().error).toEqual('Failure');
     });
 
     test('should edit a subscription', async () => {
         const createChannelSubscription = jest.fn().mockResolvedValue({});
         const editChannelSubscription = jest.fn().mockResolvedValue({});
-        let close = jest.fn();
+        let finishEditSubscription = jest.fn();
         const props = {
             ...baseProps,
             createChannelSubscription,
             editChannelSubscription,
-            close,
+            finishEditSubscription,
         };
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
@@ -310,21 +310,21 @@ describe('components/EditChannelSettings', () => {
             }
         );
         expect(createChannelSubscription).not.toHaveBeenCalled();
-        expect(close).not.toHaveBeenCalled();
+        expect(finishEditSubscription).not.toHaveBeenCalled();
 
         await Promise.resolve();
-        expect(close).toHaveBeenCalled();
+        expect(finishEditSubscription).toHaveBeenCalled();
 
-        close = jest.fn();
+        finishEditSubscription = jest.fn();
         wrapper.setProps({
-            close,
+            finishEditSubscription,
             editChannelSubscription: jest.fn().mockResolvedValue({error: {message: 'Failure'}}),
         });
 
         wrapper.instance().handleCreate({preventDefault: jest.fn()});
 
         await Promise.resolve();
-        expect(close).not.toHaveBeenCalled();
+        expect(finishEditSubscription).not.toHaveBeenCalled();
         expect(wrapper.state().error).toEqual('Failure');
     });
 
@@ -448,11 +448,11 @@ describe('components/EditChannelSettings', () => {
 
     test('should delete subscription', async () => {
         const deleteChannelSubscription = jest.fn().mockResolvedValue({});
-        const close = jest.fn();
+        const finishEditSubscription = jest.fn();
         const props = {
             ...baseProps,
             deleteChannelSubscription,
-            close,
+            finishEditSubscription,
         };
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
@@ -468,16 +468,16 @@ describe('components/EditChannelSettings', () => {
 
         await Promise.resolve();
         expect(wrapper.state().error).toBe(null);
-        expect(close).toHaveBeenCalled();
+        expect(finishEditSubscription).toHaveBeenCalled();
     });
 
     test('should show error if delete fails', async () => {
         const deleteChannelSubscription = jest.fn().mockResolvedValue({error: {message: 'Failure'}});
-        const close = jest.fn();
+        const finishEditSubscription = jest.fn();
         const props = {
             ...baseProps,
             deleteChannelSubscription,
-            close,
+            finishEditSubscription,
         };
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
@@ -493,6 +493,6 @@ describe('components/EditChannelSettings', () => {
 
         await Promise.resolve();
         expect(wrapper.state().error).toEqual('Failure');
-        expect(close).not.toHaveBeenCalled();
+        expect(finishEditSubscription).not.toHaveBeenCalled();
     });
 });

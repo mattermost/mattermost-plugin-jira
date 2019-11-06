@@ -11,4 +11,5 @@ export type SharedProps = {
     editChannelSubscription: (sub: ChannelSubscription) => Promise<any>;
     fetchJiraIssueMetadataForProjects: (projectKeys: string[]) => Promise<any>;
     clearIssueMetadata: () => void;
+    close: () => void;
 };
