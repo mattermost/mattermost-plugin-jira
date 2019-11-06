@@ -41,7 +41,9 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
     handleInclusionChange = (name: string, choice: FilterFieldInclusion): void => {
         const {onChange, value} = this.props;
 
-        onChange(value, {...value, inclusion: choice});
+        const newValues = choice === FilterFieldInclusion.EMPTY ? [] : value.values;
+
+        onChange(value, {...value, inclusion: choice, values: newValues});
     };
 
     handleFieldTypeChange = (name: string, choice: string): void => {
@@ -134,6 +136,9 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
         case FilterFieldInclusion.EXCLUDE_ANY:
             subtext = 'Excludes all of the values';
             break;
+        case FilterFieldInclusion.EMPTY:
+            subtext = 'Includes when the value is empty';
+            break;
         }
 
         return (
@@ -161,6 +166,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
             {label: 'Include', value: FilterFieldInclusion.INCLUDE_ANY},
             {label: 'Include All', value: FilterFieldInclusion.INCLUDE_ALL},
             {label: 'Exclude', value: FilterFieldInclusion.EXCLUDE_ANY},
+            {label: 'Empty', value: FilterFieldInclusion.EMPTY},
         ];
         let chosenInclusionOption = inclusionSelectOptions[0];
 
@@ -205,15 +211,24 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
             );
         }
 
+        let disableLastSelect = false;
+        let lastSelectPlaceholder;
+        if (value.inclusion === FilterFieldInclusion.EMPTY) {
+            lastSelectPlaceholder = '';
+            disableLastSelect = true;
+        }
+
         let valueSelector;
         if (isEpicLinkField(this.props.field)) {
             valueSelector = (
                 <JiraEpicSelector
+                    required={!disableLastSelect}
+                    isDisabled={disableLastSelect}
+                    placeholder={lastSelectPlaceholder}
                     issueMetadata={this.props.issueMetadata}
                     theme={theme}
                     value={value.values}
                     onChange={this.handleEpicLinkChange}
-                    required={true}
                     resetInvalidOnChange={true}
                     hideRequiredStar={true}
                     isMulti={true}
@@ -225,7 +240,9 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
             valueSelector = (
                 <ReactSelectSetting
                     name={'values'}
-                    required={true}
+                    required={!disableLastSelect}
+                    isDisabled={disableLastSelect}
+                    placeholder={lastSelectPlaceholder}
                     hideRequiredStar={true}
                     options={fieldValueOptions}
                     theme={theme}

@@ -203,13 +203,18 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
             };
         });
 
+        const {
+            issueMetadata, // eslint-disable-line @typescript-eslint/no-unused-vars
+            ...props
+        } = this.props;
+
         const selectComponent = (
             <AsyncSelect
+                {...props}
                 name={'epic'}
                 value={values}
                 onChange={this.onChange}
                 required={this.props.required}
-                disabled={false}
                 isMulti={this.props.isMulti}
                 isClearable={true}
                 defaultOptions={true}
@@ -222,8 +227,8 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
 
         return (
             <Setting
+                {...props}
                 inputId={'epic'}
-                {...this.props}
             >
                 {selectComponent}
                 {errComponent}
