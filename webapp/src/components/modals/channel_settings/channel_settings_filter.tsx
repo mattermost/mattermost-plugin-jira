@@ -3,7 +3,7 @@ import React from 'react';
 import ReactSelectSetting from 'components/react_select_setting';
 import JiraEpicSelector from 'components/jira_epic_selector';
 
-import {isEpicLinkField} from 'utils/jira_issue_metadata';
+import {isEpicLinkField, isMultiSelectField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
 
@@ -168,6 +168,12 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
             {label: 'Exclude', value: FilterFieldInclusion.EXCLUDE_ANY},
             {label: 'Empty', value: FilterFieldInclusion.EMPTY},
         ];
+
+        if (!isMultiSelectField(field)) {
+            const includeAllIndex = inclusionSelectOptions.findIndex((opt) => opt.value === FilterFieldInclusion.INCLUDE_ALL);
+            inclusionSelectOptions.splice(includeAllIndex, 1);
+        }
+
         let chosenInclusionOption = inclusionSelectOptions[0];
 
         const fieldValueOptions = (field && field.values) || [];

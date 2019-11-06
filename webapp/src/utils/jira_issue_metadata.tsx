@@ -229,3 +229,7 @@ export function isEpicLinkField(field: JiraField | FilterField): boolean {
 export function isEpicIssueType(issueType: IssueType): boolean {
     return issueType.name === 'Epic';
 }
+
+export function isMultiSelectField(field: FilterField): boolean {
+    return field.schema.type === 'array';
+}
