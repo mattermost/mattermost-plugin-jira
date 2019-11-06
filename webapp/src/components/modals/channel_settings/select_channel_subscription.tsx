@@ -24,11 +24,11 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         subscriptionToDelete: null,
     };
 
-    handleCancelDelete = () => {
+    handleCancelDelete = (): void => {
         this.setState({showConfirmModal: false});
     }
 
-    handleConfirmDelete = () => {
+    handleConfirmDelete = (): void => {
         this.setState({showConfirmModal: false});
         this.deleteChannelSubscription(this.state.subscriptionToDelete);
     }
@@ -47,6 +47,47 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
             }
         });
     };
+
+    renderRow = (sub: ChannelSubscription): JSX.Element => {
+        const projectKey = sub.filters.projects[0];
+        let projectName = projectKey;
+
+        const project = this.props.jiraProjectMetadata.projects.find((opt) => opt.value === projectKey);
+        if (project) {
+            projectName = project.label;
+        }
+
+        return (
+            <tr
+                key={sub.id}
+                className='select-channel-subscriptions-row'
+            >
+                <td>
+                    <span>{sub.name || '(no name)'}</span>
+                </td>
+                <td>
+                    <span>{projectName}</span>
+                </td>
+                <td>
+                    <button
+                        className='style--none color--link'
+                        onClick={(): void => this.props.showEditChannelSubscription(sub)}
+                        type='button'
+                    >
+                        {'Edit'}
+                    </button>
+                    {' - '}
+                    <button
+                        className='style--none color--link'
+                        onClick={(): void => this.handleDeleteChannelSubscription(sub)}
+                        type='button'
+                    >
+                        {'Delete'}
+                    </button>
+                </td>
+            </tr>
+        );
+    }
 
     render(): React.ReactElement {
         const {channel, omitDisplayName} = this.props;
@@ -91,37 +132,12 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                 <thead>
                     <tr>
                         <th scope='col'>{'Name'}</th>
+                        <th scope='col'>{'Project'}</th>
                         <th scope='col'>{'Actions'}</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {this.props.channelSubscriptions.map((sub, i) => (
-                        <tr key={i}>
-                            <td
-                                key={sub.id}
-                                className='select-channel-subscriptions-row'
-                            >
-                                <span>{sub.name || '(no name)'}</span>
-                            </td>
-                            <td>
-                                <button
-                                    className='style--none color--link'
-                                    onClick={(): void => this.props.showEditChannelSubscription(sub)}
-                                    type='button'
-                                >
-                                    {'Edit'}
-                                </button>
-                                {' - '}
-                                <button
-                                    className='style--none color--link'
-                                    onClick={(): void => this.handleDeleteChannelSubscription(sub)}
-                                    type='button'
-                                >
-                                    {'Delete'}
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
+                    {this.props.channelSubscriptions.map(this.renderRow)}
                 </tbody>
             </table>
         );
