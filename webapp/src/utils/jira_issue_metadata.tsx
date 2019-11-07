@@ -140,27 +140,28 @@ export function getCustomFieldsForProjects(metadata: IssueMetadata | null, proje
 const allowedTypes = [
     'priority',
     'securitylevel',
+    'security',
 ];
 
-const avoidedCustomTypes = [
+const avoidedCustomTypesForFilters = [
     'com.pyxis.greenhopper.jira:gh-sprint',
 ];
 
-const acceptedCustomTypes = [
+const acceptedCustomTypesForFilters = [
     'com.pyxis.greenhopper.jira:gh-epic-link',
 ];
 
 function isValidFieldForFilter(field: JiraField): boolean {
     const {custom, type, items} = field.schema;
-    if (custom && avoidedCustomTypes.includes(custom)) {
+    if (custom && avoidedCustomTypesForFilters.includes(custom)) {
         return false;
     }
 
-    return allowedTypes.includes(type) || (custom && acceptedCustomTypes.includes(custom)) ||
-    type === 'option' ||
-    (type === 'array' && items === 'option') ||
-    (type === 'array' && items === 'version') ||
-    (type === 'array' && items === 'string');
+    return allowedTypes.includes(type) || (custom && acceptedCustomTypesForFilters.includes(custom)) ||
+    type === 'option' || // single select
+    (type === 'array' && items === 'option') || // multiselect
+    (type === 'array' && items === 'version') || // fix and affects versions
+    (type === 'array' && items === 'string'); // labels
 }
 
 export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null, projectKeys: string[]): FilterField[] {
@@ -205,8 +206,22 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
     return sortByName(result);
 }
 
-export function getCustomFieldValuesForProjects(metadata: IssueMetadata | null, projectKeys: string[]): ReactSelectOption[] {
-    return getCustomFieldsForProjects(metadata, projectKeys).map((field) => ({
+const avoidedCustomTypesForEvents = [
+    'com.pyxis.greenhopper.jira:gh-sprint',
+    'com.pyxis.greenhopper.jira:gh-lexo-rank',
+];
+
+function isValidFieldForEvents(field: JiraField): boolean {
+    const {custom} = field.schema;
+    if (!custom) {
+        return false;
+    }
+
+    return !avoidedCustomTypesForEvents.includes(custom);
+}
+
+export function getCustomFieldValuesForEvents(metadata: IssueMetadata | null, projectKeys: string[]): ReactSelectOption[] {
+    return getCustomFieldsForProjects(metadata, projectKeys).filter(isValidFieldForEvents).map((field) => ({
         label: `Issue Updated: Custom - ${field.name}`,
         value: `event_updated_${field.changeLogID}`,
     }));
