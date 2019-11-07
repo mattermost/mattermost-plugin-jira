@@ -208,6 +208,7 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
 
 const avoidedCustomTypesForEvents = [
     'com.pyxis.greenhopper.jira:gh-sprint',
+    'com.pyxis.greenhopper.jira:gh-lexo-rank',
 ];
 
 function isValidFieldForEvents(field: JiraField): boolean {
