@@ -37,7 +37,7 @@ export default class Hooks {
             }
 
             if (getInstalledInstanceType(this.store.getState()) === 'server' && isDesktopApp() && !isMinimumDesktopAppVersion(4, 3, 0)) { // eslint-disable-line no-magic-numbers
-                const errMsg = 'The current version of your desktop app does not support connecting to Jira directly. Please connect through your browser or [see here](https://github.com/mattermost/mattermost-plugin-jira) for details on upgrading.';
+                const errMsg = 'Your version of the Mattermost desktop client does not support authenticating between Jira and Mattermost directly. To connect your Jira account with Mattermost, please go to Mattermost via your web browser and type `/jira connect`, or [check the Mattermost download page](https://mattermost.com/download/#mattermostApps) to get the latest version of the desktop client.';
                 this.store.dispatch(sendEphemeralPost(errMsg));
                 return Promise.resolve({});
             }
