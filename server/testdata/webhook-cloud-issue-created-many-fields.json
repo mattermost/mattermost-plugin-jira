@@ -4,17 +4,17 @@
   "issue_event_type_name": "issue_created",
   "user": {
       "self": "https://mmtest.atlassian.net/rest/api/2/user?accountId=5cedcb4355a88a0fc86388ba",
-      "name": "michael.kochell",
-      "key": "michael.kochell",
+      "name": "sample.user",
+      "key": "sample.user",
       "accountId": "5cedcb4355a88a0fc86388ba",
-      "emailAddress": "michael.kochell@mattermost.com",
+      "emailAddress": "user@example.com",
       "avatarUrls": {
           "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=48&s=48",
           "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=24&s=24",
           "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=16&s=16",
           "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=32&s=32"
       },
-      "displayName": "Michael Kochell",
+      "displayName": "Sample User",
       "active": true,
       "timeZone": "America/Vancouver",
       "accountType": "atlassian"
@@ -117,17 +117,17 @@
           "issuelinks": [],
           "assignee": {
               "self": "https://mmtest.atlassian.net/rest/api/2/user?accountId=5cedcb4355a88a0fc86388ba",
-              "name": "michael.kochell",
-              "key": "michael.kochell",
+              "name": "sample.user",
+              "key": "sample.user",
               "accountId": "5cedcb4355a88a0fc86388ba",
-              "emailAddress": "michael.kochell@mattermost.com",
+              "emailAddress": "user@example.com",
               "avatarUrls": {
                   "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=48&s=48",
                   "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=24&s=24",
                   "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=16&s=16",
                   "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=32&s=32"
               },
-              "displayName": "Michael Kochell",
+              "displayName": "Sample User",
               "active": true,
               "timeZone": "America/Vancouver",
               "accountType": "atlassian"
@@ -161,46 +161,46 @@
           "aggregatetimeestimate": null,
           "creator": {
               "self": "https://mmtest.atlassian.net/rest/api/2/user?accountId=5cedcb4355a88a0fc86388ba",
-              "name": "michael.kochell",
-              "key": "michael.kochell",
+              "name": "sample.user",
+              "key": "sample.user",
               "accountId": "5cedcb4355a88a0fc86388ba",
-              "emailAddress": "michael.kochell@mattermost.com",
+              "emailAddress": "user@example.com",
               "avatarUrls": {
                   "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=48&s=48",
                   "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=24&s=24",
                   "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=16&s=16",
                   "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=32&s=32"
               },
-              "displayName": "Michael Kochell",
+              "displayName": "Sample User",
               "active": true,
               "timeZone": "America/Vancouver",
               "accountType": "atlassian"
           },
           "subtasks": [],
           "customfield_10040": [
-              "michael.kochell(michael.kochell)"
+              "sample.user(sample.user)"
           ],
           "customfield_10041": null,
           "customfield_10042": null,
           "reporter": {
               "self": "https://mmtest.atlassian.net/rest/api/2/user?accountId=5cedcb4355a88a0fc86388ba",
-              "name": "michael.kochell",
-              "key": "michael.kochell",
+              "name": "sample.user",
+              "key": "sample.user",
               "accountId": "5cedcb4355a88a0fc86388ba",
-              "emailAddress": "michael.kochell@mattermost.com",
+              "emailAddress": "user@example.com",
               "avatarUrls": {
                   "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=48&s=48",
                   "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=24&s=24",
                   "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=16&s=16",
                   "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=32&s=32"
               },
-              "displayName": "Michael Kochell",
+              "displayName": "Sample User",
               "active": true,
               "timeZone": "America/Vancouver",
               "accountType": "atlassian"
           },
           "customfield_10043": "",
-          "customfield_10044": "michael.kochell(michael.kochell)",
+          "customfield_10044": "sample.user(sample.user)",
           "aggregateprogress": {
               "progress": 0,
               "total": 0
@@ -305,17 +305,17 @@
           "summary": "Lots of fields selected",
           "customfield_10080": {
               "self": "https://mmtest.atlassian.net/rest/api/2/user?accountId=5cedcb4355a88a0fc86388ba",
-              "name": "michael.kochell",
-              "key": "michael.kochell",
+              "name": "sample.user",
+              "key": "sample.user",
               "accountId": "5cedcb4355a88a0fc86388ba",
-              "emailAddress": "michael.kochell@mattermost.com",
+              "emailAddress": "user@example.com",
               "avatarUrls": {
                   "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=48&s=48",
                   "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=24&s=24",
                   "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=16&s=16",
                   "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/5cedcb4355a88a0fc86388ba/0d974d79-626d-481b-bd5e-5631399158a7/128?size=32&s=32"
               },
-              "displayName": "Michael Kochell",
+              "displayName": "Sample User",
               "active": true,
               "timeZone": "America/Vancouver",
               "accountType": "atlassian"
@@ -338,8 +338,8 @@
               "fieldId": "assignee",
               "from": null,
               "fromString": null,
-              "to": "michael.kochell",
-              "toString": "Michael Kochell",
+              "to": "sample.user",
+              "toString": "Sample User",
               "tmpFromAccountId": null,
               "tmpToAccountId": "5cedcb4355a88a0fc86388ba"
           },
@@ -394,8 +394,8 @@
               "fieldId": "reporter",
               "from": null,
               "fromString": null,
-              "to": "michael.kochell",
-              "toString": "Michael Kochell",
+              "to": "sample.user",
+              "toString": "Sample User",
               "tmpFromAccountId": null,
               "tmpToAccountId": "5cedcb4355a88a0fc86388ba"
           },
