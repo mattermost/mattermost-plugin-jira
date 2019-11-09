@@ -5,7 +5,7 @@ import {PostTypes} from 'mattermost-redux/action_types';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
 import ActionTypes from 'action_types';
-import {doFetch} from 'client';
+import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
 import {getPluginServerRoute} from 'selectors';
 
 export const openCreateModal = (postId) => {
@@ -92,6 +92,13 @@ export const fetchJiraProjectMetadata = () => {
         });
 
         return {data};
+    };
+};
+
+export const fetchEpicsWithParams = (params) => {
+    return async (dispatch, getState) => {
+        const url = getPluginServerRoute(getState()) + '/api/v2/get-search-epics';
+        return doFetchWithResponse(`${url}${buildQueryString(params)}`);
     };
 };
 

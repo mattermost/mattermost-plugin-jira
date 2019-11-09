@@ -132,12 +132,13 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
             q: userInput,
         };
 
-        return this.props.fetchEpicsWithParams(params).then(({data}) => {
+        try {
+            const {data} = await this.props.fetchEpicsWithParams(params);
             return data;
-        }).catch((e) => {
+        } catch (e) {
             this.setState({error: e});
             return [];
-        });
+        }
     };
 
     onChange = (options: ReactSelectOption[]): void => {

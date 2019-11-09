@@ -2,20 +2,14 @@
 // See LICENSE.txt for license information.
 
 import {connect} from 'react-redux';
+import {bindActionCreators} from 'redux';
 
-import {doFetchWithResponse, buildQueryString} from 'client';
-import {getPluginServerRoute} from 'selectors';
-import {ReactSelectOption} from 'types/model';
+import {fetchEpicsWithParams} from 'actions';
 
 import JiraEpicSelector from './jira_epic_selector';
 
-const mapStateToProps = (state) => {
-    return {
-        fetchEpicsWithParams: (params: object): Promise<{data: ReactSelectOption[]}> => {
-            const url = getPluginServerRoute(state) + '/api/v2/get-search-epics';
-            return doFetchWithResponse(`${url}${buildQueryString(params)}`);
-        },
-    };
-};
+const mapDispatchToProps = (dispatch) => bindActionCreators({
+    fetchEpicsWithParams,
+}, dispatch);
 
-export default connect(mapStateToProps)(JiraEpicSelector);
+export default connect(null, mapDispatchToProps)(JiraEpicSelector);
