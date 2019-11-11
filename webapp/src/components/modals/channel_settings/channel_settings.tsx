@@ -14,11 +14,11 @@ import {SharedProps} from './shared_props';
 
 import './channel_settings_modal.scss';
 
-type Props = SharedProps & {
+export type Props = SharedProps & {
     fetchJiraProjectMetadata: () => Promise<{data?: ProjectMetadata; error: Error}>;
     fetchChannelSubscriptions: (channelId: string) => Promise<{data: ChannelSubscription[]}>;
     close: () => void;
-    sendEphemeralPost: (msg: string) => void;
+    sendEphemeralPost: (message: string) => void;
 }
 
 type State = {
