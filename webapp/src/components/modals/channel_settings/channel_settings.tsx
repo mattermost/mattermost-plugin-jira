@@ -18,6 +18,7 @@ type Props = SharedProps & {
     fetchJiraProjectMetadata: () => Promise<{data?: ProjectMetadata; error: Error}>;
     fetchChannelSubscriptions: (channelId: string) => Promise<{data: ChannelSubscription[]}>;
     close: () => void;
+    sendEphemeralPost: (msg: string) => void;
 }
 
 type State = {
@@ -36,10 +37,11 @@ export default class ChannelSettingsModal extends PureComponent<Props, State> {
         }
     }
 
-    fetchProjectMetadata = () => {
+    fetchProjectMetadata = (): void => {
         this.props.fetchJiraProjectMetadata().then(({error}) => {
             if (error) {
-                this.setState({error: 'Failed to get Jira project information. Please contact your Mattermost administrator.'});
+                this.props.sendEphemeralPost('Failed to get Jira project information. Please contact your Mattermost administrator.');
+                this.props.close();
             }
         });
     };
@@ -53,13 +55,7 @@ export default class ChannelSettingsModal extends PureComponent<Props, State> {
 
     render(): JSX.Element {
         let inner = <Loading/>;
-        if (this.state.error) {
-            inner = (
-                <Modal.Body>
-                    {this.state.error}
-                </Modal.Body>
-            );
-        } else if (this.props.channelSubscriptions && this.props.jiraProjectMetadata) {
+        if (this.props.channelSubscriptions && this.props.jiraProjectMetadata) {
             if (this.props.channelSubscriptions instanceof Error) {
                 inner = (
                     <Modal.Body>

@@ -16,6 +16,7 @@ import {
     fetchJiraProjectMetadata,
     fetchJiraIssueMetadataForProjects,
     clearIssueMetadata,
+    sendEphemeralPost,
 } from 'actions';
 
 import {getChannelSubscriptions, getChannelIdWithSettingsOpen, getJiraProjectMetadata, getJiraIssueMetadata} from 'selectors';
@@ -55,6 +56,7 @@ const mapDispatchToProps = (dispatch) => bindActionCreators({
     fetchChannelSubscriptions,
     deleteChannelSubscription,
     editChannelSubscription,
+    sendEphemeralPost,
 }, dispatch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(ChannelSettingsModal);
