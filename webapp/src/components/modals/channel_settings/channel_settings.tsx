@@ -15,18 +15,34 @@ import {SharedProps} from './shared_props';
 import './channel_settings_modal.scss';
 
 type Props = SharedProps & {
-    fetchJiraProjectMetadata: () => Promise<{data: ProjectMetadata}>;
+    fetchJiraProjectMetadata: () => Promise<{data?: ProjectMetadata; error: Error}>;
     fetchChannelSubscriptions: (channelId: string) => Promise<{data: ChannelSubscription[]}>;
     close: () => void;
 }
 
-export default class ChannelSettingsModal extends PureComponent<Props> {
+type State = {
+    error: string | null;
+};
+
+export default class ChannelSettingsModal extends PureComponent<Props, State> {
+    state = {
+        error: null,
+    };
+
     componentDidUpdate(prevProps: Props): void {
         if (this.props.channel && (!prevProps.channel || this.props.channel.id !== prevProps.channel.id)) {
-            this.props.fetchJiraProjectMetadata();
+            this.fetchProjectMetadata();
             this.props.fetchChannelSubscriptions(this.props.channel.id);
         }
     }
+
+    fetchProjectMetadata = () => {
+        this.props.fetchJiraProjectMetadata().then(({error}) => {
+            if (error) {
+                this.setState({error: 'Failed to get Jira project information. Please contact your Mattermost administrator.'});
+            }
+        });
+    };
 
     handleClose = (e: Event): void => {
         if (e && e.preventDefault) {
@@ -37,7 +53,13 @@ export default class ChannelSettingsModal extends PureComponent<Props> {
 
     render(): JSX.Element {
         let inner = <Loading/>;
-        if (this.props.channelSubscriptions && this.props.jiraProjectMetadata) {
+        if (this.state.error) {
+            inner = (
+                <Modal.Body>
+                    {this.state.error}
+                </Modal.Body>
+            );
+        } else if (this.props.channelSubscriptions && this.props.jiraProjectMetadata) {
             if (this.props.channelSubscriptions instanceof Error) {
                 inner = (
                     <Modal.Body>
