@@ -317,7 +317,7 @@ func httpAPIGetSearchEpics(ji Instance, w http.ResponseWriter, r *http.Request) 
 
 	wg.Wait()
 
-	var result []ReactSelectOption
+	result := []ReactSelectOption{}
 	if exact != nil {
 		name, _ := exact.Fields.Unknowns.String(epicNameTypeID)
 		if name != "" {
