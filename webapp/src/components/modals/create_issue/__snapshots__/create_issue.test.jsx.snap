@@ -171,6 +171,11 @@ exports[`components/CreateIssue should match snapshot 1`] = `
     <ModalFooter
       bsClass="modal-footer"
       componentClass="div"
+      style={
+        Object {
+          "padding": "2rem 15px",
+        }
+      }
     >
       <FormButton
         btnClass="btn-link"
@@ -1011,6 +1016,11 @@ exports[`components/CreateIssue should match snapshot with error 1`] = `
     <ModalFooter
       bsClass="modal-footer"
       componentClass="div"
+      style={
+        Object {
+          "padding": "2rem 15px",
+        }
+      }
     >
       <FormButton
         btnClass="btn-link"
@@ -1839,6 +1849,11 @@ exports[`components/CreateIssue should match snapshot with form filled 1`] = `
     <ModalFooter
       bsClass="modal-footer"
       componentClass="div"
+      style={
+        Object {
+          "padding": "2rem 15px",
+        }
+      }
     >
       <FormButton
         btnClass="btn-link"
@@ -1938,6 +1953,11 @@ exports[`components/CreateIssue should match snapshot with getMetadataError 1`] 
     <ModalFooter
       bsClass="modal-footer"
       componentClass="div"
+      style={
+        Object {
+          "padding": "2rem 15px",
+        }
+      }
     >
       <FormButton
         btnClass="btn btn-primary"
@@ -2124,6 +2144,11 @@ exports[`components/CreateIssue should match snapshot with no issue metadata 1`]
     <ModalFooter
       bsClass="modal-footer"
       componentClass="div"
+      style={
+        Object {
+          "padding": "2rem 15px",
+        }
+      }
     >
       <FormButton
         btnClass="btn-link"
@@ -2215,97 +2240,11 @@ exports[`components/CreateIssue should match snapshot with no project or issue m
     <ModalFooter
       bsClass="modal-footer"
       componentClass="div"
-    >
-      <FormButton
-        btnClass="btn-link"
-        defaultMessage="Cancel"
-        disabled={false}
-        extraClasses=""
-        onClick={[Function]}
-        savingMessage="Creating"
-        type="button"
-      />
-      <FormButton
-        btnClass="btn btn-primary"
-        defaultMessage="Create"
-        disabled={false}
-        extraClasses=""
-        id="submit-button"
-        saving={false}
-        savingMessage="Creating"
-        type="submit"
-      >
-        Create
-      </FormButton>
-    </ModalFooter>
-  </form>
-</Modal>
-`;
-
-exports[`components/CreateIssue should match snapshot with no project or issue metadata 2`] = `
-<Modal
-  animation={true}
-  autoFocus={true}
-  backdrop="static"
-  bsClass="modal"
-  bsSize="large"
-  dialogClassName="modal--scroll"
-  dialogComponentClass={[Function]}
-  enforceFocus={true}
-  keyboard={true}
-  manager={
-    ModalManager {
-      "add": [Function],
-      "containers": Array [],
-      "data": Array [],
-      "handleContainerOverflow": true,
-      "hideSiblingNodes": true,
-      "isTopModal": [Function],
-      "modals": Array [],
-      "remove": [Function],
-    }
-  }
-  onExited={[Function]}
-  onHide={[Function]}
-  renderBackdrop={[Function]}
-  restoreFocus={true}
-  show={true}
->
-  <ModalHeader
-    bsClass="modal-header"
-    closeButton={true}
-    closeLabel="Close"
-  >
-    <ModalTitle
-      bsClass="modal-title"
-      componentClass="h4"
-    >
-      Create Jira Issue
-    </ModalTitle>
-  </ModalHeader>
-  <form
-    onSubmit={[Function]}
-    role="form"
-  >
-    <ModalBody
-      bsClass="modal-body"
-      componentClass="div"
       style={
         Object {
-          "backgroundColor": "#ffffff",
-          "color": "#3d3c40",
-          "padding": "2em 2em 3em",
+          "padding": "2rem 15px",
         }
       }
-    >
-      <Loading
-        position="relative"
-        style={Object {}}
-      />
-    </ModalBody>
-    <ModalFooter
-      bsClass="modal-footer"
-      componentClass="div"
     >
       <FormButton
         btnClass="btn-link"

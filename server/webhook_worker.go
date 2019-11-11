@@ -33,7 +33,7 @@ func (ww webhookWorker) work() {
 
 		botUserId := ww.p.getUserID()
 
-		for _, channelId := range channelIds {
+		for _, channelId := range channelIds.Elems() {
 			if _, _, err1 := wh.PostToChannel(ww.p, channelId, botUserId); err1 != nil {
 				ww.p.errorf("WebhookWorker id: %d, error posting to channel, err: %v", ww.id, err)
 			}

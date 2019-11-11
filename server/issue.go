@@ -263,6 +263,98 @@ func httpAPIGetCreateIssueMetadataForProjects(ji Instance, w http.ResponseWriter
 	return http.StatusOK, nil
 }
 
+func httpAPIGetSearchEpics(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed,
+			errors.New("Request: " + r.Method + " is not allowed, must be GET")
+	}
+
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	client, err := ji.GetClient(jiraUser)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	epicNameTypeID := r.FormValue("epic_name_type_id")
+	jqlString := r.FormValue("jql")
+	q := r.FormValue("q")
+
+	if len(epicNameTypeID) == 0 {
+		return http.StatusBadRequest, errors.New("epic_name_type_id query param is required")
+	}
+	if len(jqlString) == 0 {
+		return http.StatusBadRequest, errors.New("jql query param is required")
+	}
+
+	var exact *jira.Issue
+	var wg sync.WaitGroup
+	if reJiraIssueKey.MatchString(q) {
+		wg.Add(1)
+		go func() {
+			exact, _ = client.GetIssue(q, nil)
+			wg.Done()
+		}()
+	}
+
+	var found []jira.Issue
+	wg.Add(1)
+	go func() {
+		found, _ = client.SearchIssues(jqlString, &jira.SearchOptions{
+			MaxResults: 50,
+			Fields:     []string{epicNameTypeID},
+		})
+		wg.Done()
+	}()
+
+	wg.Wait()
+
+	var result []ReactSelectOption
+	if exact != nil {
+		name, _ := exact.Fields.Unknowns.String(epicNameTypeID)
+		if name != "" {
+			label := fmt.Sprintf("%s: %s", exact.Key, name)
+			result = append(result, ReactSelectOption{
+				Label: label,
+				Value: exact.Key,
+			})
+		}
+	}
+	for _, epic := range found {
+		name, _ := epic.Fields.Unknowns.String(epicNameTypeID)
+		if name != "" {
+			label := fmt.Sprintf("%s: %s", epic.Key, name)
+			result = append(result, ReactSelectOption{
+				Label: label,
+				Value: epic.Key,
+			})
+		}
+	}
+
+	bb, err := json.Marshal(result)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to marshal response")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(bb)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to write response")
+	}
+
+	return http.StatusOK, nil
+}
+
 func httpAPIGetJiraProjectMetadata(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
@@ -292,11 +384,8 @@ func httpAPIGetJiraProjectMetadata(ji Instance, w http.ResponseWriter, r *http.R
 
 	w.Header().Set("Content-Type", "application/json")
 
-	// Generic option, used in the options list in react-select
-	type option struct {
-		Value string `json:"value"`
-		Label string `json:"label"`
-	}
+	type option = ReactSelectOption
+
 	type projectMetadata struct {
 		Projects          []option            `json:"projects"`
 		IssuesPerProjects map[string][]option `json:"issues_per_project"`
@@ -391,20 +480,15 @@ func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request)
 
 	wg.Wait()
 
-	// We only need to send down a summary of the data
-	type issueSummary struct {
-		Value string `json:"value"`
-		Label string `json:"label"`
-	}
-	var result []issueSummary
+	var result []ReactSelectOption
 	if exact != nil {
-		result = append(result, issueSummary{
+		result = append(result, ReactSelectOption{
 			Value: exact.Key,
 			Label: exact.Key + ": " + exact.Fields.Summary,
 		})
 	}
 	for _, issue := range found {
-		result = append(result, issueSummary{
+		result = append(result, ReactSelectOption{
 			Value: issue.Key,
 			Label: issue.Key + ": " + issue.Fields.Summary,
 		})
@@ -567,6 +651,103 @@ func notifyOnFailedAttachment(ji Instance, mattermostUserId, issueKey string, er
 
 func getPermaLink(ji Instance, postId string, currentTeam string) string {
 	return fmt.Sprintf("%v/%v/pl/%v", ji.GetPlugin().GetSiteURL(), currentTeam, postId)
+}
+
+func (p *Plugin) getIssueDataForCloudWebhook(ji Instance, issueKey string) (*jira.Issue, error) {
+	jci, ok := ji.(*jiraCloudInstance)
+	if !ok {
+		return nil, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
+	}
+
+	jiraClient, err := jci.getJIRAClientForServer()
+	if err != nil {
+		return nil, err
+	}
+
+	issue, resp, err := jiraClient.Issue.Get(issueKey, nil)
+	if err != nil {
+		switch {
+		case resp == nil:
+			return nil, errors.WithMessage(userFriendlyJiraError(nil, err),
+				"request to Jira failed")
+
+		case resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusUnauthorized:
+			return nil, errors.New(`We couldn't find the issue key, or the cloud "bot" client does not have the appropriate permissions to view the issue.`)
+		}
+	}
+
+	return issue, nil
+}
+
+func getIssueCustomFieldValue(issue *jira.Issue, key string) StringSet {
+	m, exists := issue.Fields.Unknowns.Value(key)
+	if !exists || m == nil {
+		return nil
+	}
+
+	switch value := m.(type) {
+	case string:
+		return NewStringSet(value)
+	case []string:
+		return NewStringSet(value...)
+	case []interface{}:
+		// multi-select value
+		// Checkboxes, multi-select dropdown
+		result := NewStringSet()
+		for _, v := range value {
+			s, ok := v.(string)
+			if ok {
+				result = result.Add(s)
+				continue
+			}
+
+			obj, ok := v.(map[string]interface{})
+			if !ok {
+				return nil
+			}
+			id, ok := obj["id"].(string)
+			if !ok {
+				return nil
+			}
+			result = result.Add(id)
+		}
+		return result
+	case map[string]interface{}:
+		// single-select value
+		// Radio buttons, single-select dropdown
+		id, ok := value["id"].(string)
+		if !ok {
+			return nil
+		}
+		return NewStringSet(id)
+	}
+
+	return nil
+}
+
+func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
+	key = strings.ToLower(key)
+	switch key {
+	case "status":
+		return NewStringSet(issue.Fields.Status.ID)
+	case "labels":
+		return NewStringSet(issue.Fields.Labels...)
+	case "priority":
+		return NewStringSet(issue.Fields.Priority.ID)
+	case "fixversions":
+		result := NewStringSet()
+		for _, v := range issue.Fields.FixVersions {
+			result = result.Add(v.ID)
+		}
+		return result
+	default:
+		value := getIssueCustomFieldValue(issue, key)
+		if value != nil {
+			return value
+		}
+	}
+
+	return NewStringSet()
 }
 
 func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issueKey string) ([]*model.SlackAttachment, error) {

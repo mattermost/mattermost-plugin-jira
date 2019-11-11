@@ -6,6 +6,7 @@ import PropTypes from 'prop-types';
 
 import ReactSelect from 'react-select';
 import AsyncSelect from 'react-select/async';
+import CreatableSelect from 'react-select/creatable';
 
 import Setting from 'components/setting';
 import {getStyleForReactSelect} from 'utils/styles';
@@ -26,7 +27,9 @@ export default class ReactSelectSetting extends React.PureComponent {
         addValidate: PropTypes.func,
         removeValidate: PropTypes.func,
         required: PropTypes.bool,
+        allowUserDefinedValue: PropTypes.bool,
         limitOptions: PropTypes.bool,
+        resetInvalidOnChange: PropTypes.func,
     };
 
     constructor(props) {
@@ -36,14 +39,14 @@ export default class ReactSelectSetting extends React.PureComponent {
     }
 
     componentDidMount() {
-        if (this.props.addValidate && this.props.name) {
-            this.props.addValidate(this.props.name, this.isValid);
+        if (this.props.addValidate) {
+            this.props.addValidate(this.isValid);
         }
     }
 
     componentWillUnmount() {
-        if (this.props.removeValidate && this.props.name) {
-            this.props.removeValidate(this.props.name);
+        if (this.props.removeValidate) {
+            this.props.removeValidate(this.isValid);
         }
     }
 
@@ -61,6 +64,10 @@ export default class ReactSelectSetting extends React.PureComponent {
                 const newValue = value ? value.value : null;
                 this.props.onChange(this.props.name, newValue);
             }
+        }
+
+        if (this.props.resetInvalidOnChange) {
+            this.setState({invalid: false});
         }
     };
 
@@ -99,11 +106,27 @@ export default class ReactSelectSetting extends React.PureComponent {
 
         let selectComponent = null;
         if (this.props.limitOptions && this.props.options.length > MAX_NUM_OPTIONS) {
+            // The parent component has let us know that we may have a large number of options, and that
+            // the dataset is static. In this case, we use the AsyncSelect component and synchronous func
+            // this.filterOptions() to limit the number of options being rendered at a given time.
             selectComponent = (
                 <AsyncSelect
                     {...this.props}
                     loadOptions={this.filterOptions}
                     defaultOptions={true}
+                    menuPortalTarget={document.body}
+                    menuPlacement='auto'
+                    onChange={this.handleChange}
+                    styles={getStyleForReactSelect(this.props.theme)}
+                />
+            );
+        } else if (this.props.allowUserDefinedValue) {
+            selectComponent = (
+                <CreatableSelect
+                    {...this.props}
+                    noOptionsMessage={() => 'Start typing...'}
+                    formatCreateLabel={(value) => `Add "${value}"`}
+                    placeholder=''
                     menuPortalTarget={document.body}
                     menuPlacement='auto'
                     onChange={this.handleChange}
