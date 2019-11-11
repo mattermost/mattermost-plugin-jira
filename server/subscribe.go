@@ -53,6 +53,11 @@ type ChannelSubscriptions struct {
 	IdByEvent     map[string]StringSet           `json:"id_by_event"`
 }
 
+type TeamSubscriptions struct {
+	TeamId string
+	SubIds []string
+}
+
 func NewChannelSubscriptions() *ChannelSubscriptions {
 	return &ChannelSubscriptions{
 		ById:          map[string]ChannelSubscription{},
@@ -360,22 +365,95 @@ func (p *Plugin) listChannelSubscriptions() (string, error) {
 		return "", err
 	}
 
+	teamDMGMSubs, err := p.getSubscriptionsOrderedByTeamDMandGM()
+	if err != nil {
+		return "", err
+	}
+
 	rows := []string{}
-	for channelID, subIDs := range subs.Channel.IdByChannelId {
-		channel, appErr := p.API.GetChannel(channelID)
-		if appErr != nil {
-			return "", errors.New("Failed to get channel")
+	printDMGMHeader := true
+
+	for _, teamSubs := range teamDMGMSubs {
+
+		// create team header for channels.  Only print header for DMs and GMs channels once.
+		if teamSubs.TeamId != "" {
+			channelTeam, appErr := p.API.GetTeam(teamSubs.TeamId)
+			if appErr != nil {
+				return "", appErr
+			}
+			rows = append(rows, fmt.Sprintf("\n### %s", channelTeam.DisplayName))
+		} else {
+			if printDMGMHeader {
+				rows = append(rows, fmt.Sprintf("\n### %s", "Group and Direct Messages"))
+				printDMGMHeader = false
+			}
 		}
 
-		rows = append(rows, fmt.Sprintf("~%s (%d):", channel.Name, len(subIDs)))
+		var printChannelName = true
+		for _, subId := range teamSubs.SubIds {
+			sub := subs.Channel.ById[subId]
 
-		for subID := range subIDs {
-			sub := subs.Channel.ById[subID]
-			rows = append(rows, fmt.Sprintf("* %s - %s", sub.Filters.Projects.Elems()[0], sub.Name))
+			channel, appErr := p.API.GetChannel(sub.ChannelId)
+			if appErr != nil {
+				return "", errors.New("Failed to get channel")
+			}
+
+			// only print channel name once for all subscriptions
+			if printChannelName {
+				rows = append(rows, fmt.Sprintf("* **~%s** (%d):", channel.Name, len(teamSubs.SubIds)))
+				printChannelName = false
+			}
+
+			subName := "(No Name)"
+			if sub.Name != "" {
+				subName = sub.Name
+			}
+			rows = append(rows, fmt.Sprintf("  * %s - %s", sub.Filters.Projects.Elems()[0], subName))
 		}
 	}
 
 	return strings.Join(rows, "\n"), nil
+}
+
+func (p *Plugin) getSubscriptionsOrderedByTeamDMandGM() ([]TeamSubscriptions, error) {
+	subs, err := p.getSubscriptions()
+	if err != nil {
+		return nil, err
+	}
+
+	var teamSubs []TeamSubscriptions
+	var dmgmSubs []TeamSubscriptions
+
+	// get teams from subscriptions
+	for channelID, subIDs := range subs.Channel.IdByChannelId {
+
+		// channel does not have any subIDs.
+		if len(subIDs) == 0 {
+			continue
+		}
+
+		channel, appErr := p.API.GetChannel(channelID)
+		if appErr != nil {
+			return nil, errors.New("Failed to get channel")
+		}
+
+		var teamData TeamSubscriptions
+
+		for subID := range subIDs {
+			teamData.SubIds = append(teamData.SubIds, subID)
+		}
+		teamData.TeamId = channel.TeamId
+
+		if !channel.IsGroupOrDirect() {
+			teamSubs = append(teamSubs, teamData)
+		} else {
+			dmgmSubs = append(dmgmSubs, teamData)
+		}
+	}
+
+	var teamDMGMSubs []TeamSubscriptions
+	teamDMGMSubs = append(teamSubs, dmgmSubs...)
+	return teamDMGMSubs, nil
 }
 
 func inAllowedGroup(inGroups []*jira.UserGroup, allowedGroups []string) bool {
