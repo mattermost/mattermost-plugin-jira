@@ -2,30 +2,11 @@
 // See LICENSE.txt for license information.
 
 import createMeta from 'testdata/cloud-get-create-issue-metadata-for-project-many-fields.json';
+import {useFieldForIssueMetadata} from 'testdata/jira-issue-metadata-helpers';
 
-import {IssueMetadata, JiraField} from 'types/model';
-
-import {getCustomFieldFiltersForProjects} from './jira_issue_metadata';
+import {getCustomFieldFiltersForProjects, getConflictingFields} from './jira_issue_metadata';
 
 describe('components/ChannelSettingsInner', () => {
-    const useField = (field: JiraField, key: string): IssueMetadata => {
-        return {
-            projects: [
-                {
-                    key: 'TEST',
-                    issuetypes: [{
-                        id: '10001',
-                        subtask: false,
-                        name: 'Bug',
-                        fields: {
-                            [key]: field,
-                        },
-                    }],
-                },
-            ],
-        };
-    };
-
     test('should return a list of fields', () => {
         const projectKey = createMeta.projects[0].key;
 
@@ -51,7 +32,7 @@ describe('components/ChannelSettingsInner', () => {
             },
         };
 
-        const metadata = useField(field, 'customfield_10021');
+        const metadata = useFieldForIssueMetadata(field, 'customfield_10021');
         const projectKey = metadata.projects[0].key;
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
@@ -86,7 +67,7 @@ describe('components/ChannelSettingsInner', () => {
             },
         };
 
-        const metadata = useField(field, 'custom1');
+        const metadata = useFieldForIssueMetadata(field, 'custom1');
         const projectKey = metadata.projects[0].key;
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
@@ -126,7 +107,7 @@ describe('components/ChannelSettingsInner', () => {
             },
         };
 
-        const metadata = useField(field, 'custom1');
+        const metadata = useFieldForIssueMetadata(field, 'custom1');
         const projectKey = metadata.projects[0].key;
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
@@ -191,7 +172,7 @@ describe('components/ChannelSettingsInner', () => {
             },
         };
 
-        const metadata = useField(field, 'priority');
+        const metadata = useFieldForIssueMetadata(field, 'priority');
         const projectKey = metadata.projects[0].key;
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
@@ -225,7 +206,7 @@ describe('components/ChannelSettingsInner', () => {
             },
         };
 
-        const metadata = useField(field, 'fixVersions');
+        const metadata = useFieldForIssueMetadata(field, 'fixVersions');
         const projectKey = metadata.projects[0].key;
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
@@ -278,7 +259,7 @@ describe('components/ChannelSettingsInner', () => {
             },
         };
 
-        const metadata = useField(field, 'security');
+        const metadata = useFieldForIssueMetadata(field, 'security');
         const projectKey = metadata.projects[0].key;
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
@@ -310,7 +291,7 @@ describe('components/ChannelSettingsInner', () => {
             },
         };
 
-        const metadata = useField(field, 'custom1');
+        const metadata = useFieldForIssueMetadata(field, 'custom1');
         const projectKey = metadata.projects[0].key;
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
@@ -320,5 +301,44 @@ describe('components/ChannelSettingsInner', () => {
         expect(actual[0].key).toEqual('custom1');
         expect(actual[0].name).toEqual('MJK - Labels');
         expect(actual[0].userDefined).toEqual(true);
+    });
+
+    test('getConflictingFields should return a list of fields with conflicts', () => {
+        let field;
+        field = {
+            autoCompleteUrl: 'https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?customFieldId=10071&query=',
+            hasDefaultValue: false,
+            key: 'custom1',
+            name: 'MJK - Labels',
+            operations: [
+                'add',
+                'set',
+                'remove',
+            ],
+            required: false,
+            schema: {
+                custom: 'com.atlassian.jira.plugin.system.customfieldtypes:labels',
+                customId: 10071,
+                items: 'string',
+                type: 'array',
+            },
+            issueTypes: [{id: '10001', name: 'Bug'}],
+        };
+
+        const metadata = useFieldForIssueMetadata(field, 'custom1');
+
+        let actual;
+        actual = getConflictingFields([field], ['10001'], metadata);
+        expect(actual.length).toBe(0);
+
+        field = {
+            ...field,
+            issueTypes: [{id: '10002', name: 'Task'}],
+        };
+
+        actual = getConflictingFields([field], ['10001'], metadata);
+        expect(actual.length).toBe(1);
+        expect(actual[0].field.key).toEqual('custom1');
+        expect(actual[0].issueTypes[0].id).toEqual('10001');
     });
 });

@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ProjectMetadata, ReactSelectOption, IssueMetadata, IssueType, JiraField, FilterField, SelectField, StringArrayField, IssueTypeIdentifier} from 'types/model';
+import {ProjectMetadata, ReactSelectOption, IssueMetadata, IssueType, JiraField, FilterField, SelectField, StringArrayField, IssueTypeIdentifier, JiraFieldCustomTypeEnums} from 'types/model';
 
 type FieldWithInfo = JiraField & {
     changeLogID: string;
@@ -143,12 +143,12 @@ const allowedTypes = [
     'security',
 ];
 
-const avoidedCustomTypesForFilters = [
-    'com.pyxis.greenhopper.jira:gh-sprint',
+const avoidedCustomTypesForFilters: string[] = [
+    JiraFieldCustomTypeEnums.SPRINT,
 ];
 
-const acceptedCustomTypesForFilters = [
-    'com.pyxis.greenhopper.jira:gh-epic-link',
+const acceptedCustomTypesForFilters: string[] = [
+    JiraFieldCustomTypeEnums.EPIC_LINK,
 ];
 
 function isValidFieldForFilter(field: JiraField): boolean {
@@ -206,9 +206,9 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
     return sortByName(result);
 }
 
-const avoidedCustomTypesForEvents = [
-    'com.pyxis.greenhopper.jira:gh-sprint',
-    'com.pyxis.greenhopper.jira:gh-lexo-rank',
+const avoidedCustomTypesForEvents: string[] = [
+    JiraFieldCustomTypeEnums.SPRINT,
+    JiraFieldCustomTypeEnums.RANK,
 ];
 
 function isValidFieldForEvents(field: JiraField): boolean {
@@ -234,11 +234,11 @@ export function getFieldValues(metadata: IssueMetadata, projectKey: string, issu
 }
 
 export function isEpicNameField(field: JiraField | FilterField): boolean {
-    return field.schema && field.schema.custom === 'com.pyxis.greenhopper.jira:gh-epic-label';
+    return field.schema && field.schema.custom === JiraFieldCustomTypeEnums.EPIC_NAME;
 }
 
 export function isEpicLinkField(field: JiraField | FilterField): boolean {
-    return field.schema && field.schema.custom === 'com.pyxis.greenhopper.jira:gh-epic-link';
+    return field.schema && field.schema.custom === JiraFieldCustomTypeEnums.EPIC_LINK;
 }
 
 export function isEpicIssueType(issueType: IssueType): boolean {

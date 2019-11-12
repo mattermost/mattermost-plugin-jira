@@ -7,7 +7,7 @@ import {isEpicLinkField, isMultiSelectField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
 
-type Props = {
+export type Props = {
     fields: FilterField[];
     field: FilterField;
     value: FilterValue;
@@ -20,7 +20,7 @@ type Props = {
     removeValidate: (isValid: () => boolean) => void;
 };
 
-type State = {
+export type State = {
     showConfirmDeleteModal: boolean;
     error: string | null;
 }
@@ -28,6 +28,7 @@ type State = {
 export default class ChannelSettingsFilter extends React.PureComponent<Props, State> {
     state = {
         showConfirmDeleteModal: false,
+        error: null,
     };
 
     componentDidMount() {
@@ -115,7 +116,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
         return null;
     };
 
-    renderInclusionDropdownOption = (data: {value: string; label: string}, meta: {context: string}): JSX.Element | string => {
+    renderInclusionDropdownOption = (data: ReactSelectOption, meta: {context: string}): JSX.Element | string => {
         const {value, label} = data;
         const {context} = meta;
 
