@@ -41,7 +41,7 @@ export default class ChannelSettingsModal extends PureComponent<Props> {
             if (this.props.channelSubscriptions instanceof Error) {
                 inner = (
                     <Modal.Body>
-                        {'You do not have permission to edit the subscriptions for this channel. Configuring a Jira subscription will create notifications in this channel when certain events happen in Jira, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.'}
+                        {'You do not have permission to edit subscriptions for this channel. Subscribing to Jira events will create notifications in this channel when certain events occur, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.'}
                     </Modal.Body>
                 );
             } else {
