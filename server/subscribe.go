@@ -377,11 +377,11 @@ func (p *Plugin) listChannelSubscriptions() (string, error) {
 
 		// create team header for channels.  Only print header for DMs and GMs channels once.
 		if teamSubs.TeamId != "" {
-			channelTeam, appErr := p.API.GetTeam(teamSubs.TeamId)
+			team, appErr := p.API.GetTeam(teamSubs.TeamId)
 			if appErr != nil {
 				return "", appErr
 			}
-			rows = append(rows, fmt.Sprintf("\n### %s", channelTeam.DisplayName))
+			rows = append(rows, fmt.Sprintf("\n### %s", team.DisplayName))
 		} else {
 			if printDMGMHeader {
 				rows = append(rows, fmt.Sprintf("\n### %s", "Group and Direct Messages"))
