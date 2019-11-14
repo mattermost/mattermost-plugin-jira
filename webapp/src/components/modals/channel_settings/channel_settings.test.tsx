@@ -32,7 +32,7 @@ describe('components/ChannelSettingsModal', () => {
         close: () => jest.fn(),
     } as Props;
 
-    test('modal only shows when appropriate props are present', async () => {
+    test('modal only shows when channel, channelSubscriptions, and jiraProjectMetadata props are present', async () => {
         const props = {
             ...baseProps,
             channel: null,
