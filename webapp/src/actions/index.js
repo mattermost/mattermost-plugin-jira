@@ -95,30 +95,6 @@ export const fetchJiraProjectMetadata = () => {
     };
 };
 
-// Fetch channel subscriptions and project metadata, then open modal
-export const fetchChannelSettingsDataAndOpenModal = (channelId) => {
-    return async (dispatch) => {
-        dispatch(sendEphemeralPost('Retrieving Subscriptions'));
-
-        const projectsPromise = dispatch(fetchJiraProjectMetadata());
-        const subscriptionsPromise = dispatch(fetchChannelSubscriptions(channelId));
-
-        const subscriptionsResponse = await subscriptionsPromise;
-        if (subscriptionsResponse.error) {
-            dispatch(sendEphemeralPost('You do not have permission to edit subscriptions for this channel. Subscribing to Jira events will create notifications in this channel when certain events occur, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.'));
-            return {error: subscriptionsResponse.error};
-        }
-
-        const projectsResponse = await projectsPromise;
-        if (projectsResponse.error) {
-            dispatch(sendEphemeralPost('Failed to get Jira project information. Please contact your Mattermost administrator.'));
-            return {error: projectsResponse.error};
-        }
-
-        return dispatch(openChannelSettings(channelId));
-    };
-};
-
 export const fetchEpicsWithParams = (params) => {
     return async (dispatch, getState) => {
         const url = getPluginServerRoute(getState()) + '/api/v2/get-search-epics';
@@ -228,11 +204,6 @@ export const fetchChannelSubscriptions = (channelId) => {
                 method: 'get',
             });
         } catch (error) {
-            dispatch({
-                type: ActionTypes.RECEIVED_CHANNEL_SUBSCRIPTIONS,
-                channelId,
-                data: error,
-            });
             return {error};
         }
 
