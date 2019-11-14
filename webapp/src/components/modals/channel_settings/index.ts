@@ -9,14 +9,11 @@ import {isDirectChannel, isGroupChannel} from 'mattermost-redux/utils/channel_ut
 
 import {
     createChannelSubscription,
-    fetchChannelSubscriptions,
     deleteChannelSubscription,
     editChannelSubscription,
     closeChannelSettings,
-    fetchJiraProjectMetadata,
     fetchJiraIssueMetadataForProjects,
     clearIssueMetadata,
-    sendEphemeralPost,
 } from 'actions';
 
 import {getChannelSubscriptions, getChannelIdWithSettingsOpen, getJiraProjectMetadata, getJiraIssueMetadata} from 'selectors';
@@ -49,14 +46,11 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
     close: closeChannelSettings,
-    fetchJiraProjectMetadata,
     fetchJiraIssueMetadataForProjects,
     clearIssueMetadata,
     createChannelSubscription,
-    fetchChannelSubscriptions,
     deleteChannelSubscription,
     editChannelSubscription,
-    sendEphemeralPost,
 }, dispatch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(ChannelSettingsModal);

@@ -6,35 +6,44 @@ import {shallow} from 'enzyme';
 
 import testChannel from 'testdata/channel.json';
 
+import {IssueMetadata, ProjectMetadata} from 'types/model';
+
+import FullScreenModal from '../full_screen_modal/full_screen_modal';
+
 import ChannelSettingsModal, {Props} from './channel_settings';
+import ChannelSettingsModalInner from './channel_settings_internal';
 
 describe('components/ChannelSettingsModal', () => {
     const baseProps = {
-        sendEphemeralPost: jest.fn(),
-        close: jest.fn(),
-        fetchJiraProjectMetadata: jest.fn(),
-        fetchChannelSubscriptions: jest.fn(),
+        theme: {},
+        jiraIssueMetadata: {} as IssueMetadata,
+        fetchJiraIssueMetadataForProjects: jest.fn(),
+        jiraProjectMetadata: {} as ProjectMetadata,
+        channel: testChannel,
+        channelSubscriptions: [],
+        omitDisplayName: false,
+        createChannelSubscription: jest.fn(),
+        deleteChannelSubscription: jest.fn(),
+        editChannelSubscription: jest.fn(),
+        clearIssueMetadata: jest.fn(),
+        close: () => jest.fn(),
     } as Props;
 
-    test('error fetching project metadata, should close modal and show ephemeral message', async () => {
+    test('modal only shows when channel is passed in', async () => {
         const props = {
             ...baseProps,
-            fetchJiraProjectMetadata: jest.fn().mockImplementation(() => Promise.resolve({error: 'Failed to fetch'})),
-            sendEphemeralPost: jest.fn(),
-            close: jest.fn(),
+            channel: null,
         };
 
         const wrapper = shallow<ChannelSettingsModal>(
             <ChannelSettingsModal {...props}/>
         );
 
+        expect(wrapper.find(ChannelSettingsModalInner).length).toEqual(0);
+        expect(wrapper.find(FullScreenModal).props().show).toBe(false);
+
         wrapper.setProps({...props, channel: testChannel});
-
-        expect(props.fetchJiraProjectMetadata).toHaveBeenCalled();
-
-        await Promise.resolve();
-
-        expect(props.close).toHaveBeenCalled();
-        expect(props.sendEphemeralPost).toHaveBeenCalledWith('Failed to get Jira project information. Please contact your Mattermost administrator.');
+        expect(wrapper.find(ChannelSettingsModalInner).length).toEqual(1);
+        expect(wrapper.find(FullScreenModal).props().show).toBe(true);
     });
 });

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {isDesktopApp} from '../utils/user_agent';
-import {openCreateModalWithoutPost, openChannelSettings, sendEphemeralPost} from '../actions';
+import {openCreateModalWithoutPost, fetchChannelSettingsDataAndOpenModal, sendEphemeralPost} from '../actions';
 import {isUserConnected, getInstalledInstanceType, isInstanceInstalled} from '../selectors';
 import PluginId from 'plugin_id';
 
@@ -58,7 +58,7 @@ export default class Hooks {
                 this.store.dispatch(sendEphemeralPost('Your Mattermost account is not connected to Jira. Please use `/jira connect` to connect your account, then try again.'));
                 return Promise.resolve({});
             }
-            this.store.dispatch(openChannelSettings(contextArgs.channel_id));
+            this.store.dispatch(fetchChannelSettingsDataAndOpenModal(contextArgs.channel_id));
             return Promise.resolve({});
         }
 
