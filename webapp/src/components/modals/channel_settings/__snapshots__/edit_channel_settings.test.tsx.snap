@@ -3659,7 +3659,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
       />
       <div>
         <span>
-          "Project" = "KT" AND "IssueType" IN ("Bug") AND "MJK - Radio Buttons" IN ("1") AND "affectedVersion" IN ("d") AND "Epic Link" IN ("IDT-24")
+          Project = KT AND IssueType IN (Bug) AND "MJK - Radio Buttons" IN (1) AND affectedVersion IN (d) AND "Epic Link" IN (IDT-24)
         </span>
       </div>
     </div>
