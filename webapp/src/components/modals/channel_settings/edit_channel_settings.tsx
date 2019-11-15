@@ -16,6 +16,7 @@ import {
     getCustomFieldValuesForEvents,
     getCustomFieldFiltersForProjects,
     getConflictingFields,
+    generateJQLStringFromSubscriptionFilters,
 } from 'utils/jira_issue_metadata';
 
 import {ChannelSubscription, ChannelSubscriptionFilters, ReactSelectOption} from 'types/model';
@@ -358,6 +359,9 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
                         />
+                        <div>
+                            <span>{generateJQLStringFromSubscriptionFilters(this.props.jiraIssueMetadata, filterFields, this.state.filters)}</span>
+                        </div>
                     </React.Fragment>
                 );
             }

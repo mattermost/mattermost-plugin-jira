@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
+import {FilterField, FilterValue, IssueMetadata, FilterFieldInclusion} from 'types/model';
 
 import {getConflictingFields} from 'utils/jira_issue_metadata';
 
@@ -9,7 +9,7 @@ import ChannelSettingsFilter, {EmptyChannelSettingsFilter} from './channel_setti
 type ChannelSettingsFiltersProps = {
     fields: FilterField[];
     values: FilterValue[];
-    theme: object;
+    theme: {};
     chosenIssueTypes: string[];
     issueMetadata: IssueMetadata;
     addValidate: (isValid: () => boolean) => void;
@@ -62,7 +62,7 @@ export default class ChannelSettingsFilters extends React.PureComponent<ChannelS
         this.props.onChange(newValues);
     };
 
-    render() {
+    render(): JSX.Element {
         const {fields, values} = this.props;
         const {showCreateRow} = this.state;
         const style = getStyle();

@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ProjectMetadata, ReactSelectOption, IssueMetadata, IssueType, JiraField, FilterField, SelectField, StringArrayField, IssueTypeIdentifier} from 'types/model';
+import {ProjectMetadata, ReactSelectOption, IssueMetadata, IssueType, JiraField, FilterField, SelectField, StringArrayField, IssueTypeIdentifier, ChannelSubscriptionFilters, FilterFieldInclusion} from 'types/model';
 
 type FieldWithInfo = JiraField & {
     changeLogID: string;
@@ -247,4 +247,85 @@ export function isEpicIssueType(issueType: IssueType): boolean {
 
 export function isMultiSelectField(field: FilterField): boolean {
     return field.schema.type === 'array';
+}
+
+// Some Jira fields have special names for JQL
+function getFieldNameForJQL(field: FilterField) {
+    switch (field.key) {
+    case 'fixVersions':
+        return 'fixVersion';
+    case 'versions':
+        return 'affectedVersion';
+    default:
+        return field.name;
+    }
+}
+
+function quoteGuard(s: string) {
+    if (s && s.includes(' ')) {
+        return `"${s}"`;
+    }
+
+    return s;
+}
+
+export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMetadata, fields: FilterField[], filters: ChannelSubscriptionFilters) {
+    const projectJQL = `Project = ${quoteGuard(filters.projects[0]) || '?'}`;
+
+    let issueTypeValueString = '?';
+    if (filters.issue_types.length) {
+        const issueTypeNames = filters.issue_types.map((issueTypeId) => {
+            const issueType = issueMetadata.projects[0].issuetypes.find((it) => it.id === issueTypeId);
+            if (!issueType) {
+                return issueTypeId;
+            }
+
+            return `${quoteGuard(issueType.name)}`;
+        });
+        issueTypeValueString = `(${issueTypeNames.join(', ')})`;
+    }
+    const issueTypesJQL = `IssueType IN ${issueTypeValueString}`;
+
+    const filterFieldsJQL = filters.fields.map(({key, inclusion, values}): string => {
+        const field = fields.find((f) => f.key === key);
+        if (!field) {
+            // broken filter
+            return `(cannot find field ${key})`;
+        }
+
+        const fieldName = getFieldNameForJQL(field);
+
+        if (inclusion === FilterFieldInclusion.EMPTY) {
+            return `${quoteGuard(fieldName)} IS EMPTY`;
+        }
+
+        const inclusionString = inclusion === FilterFieldInclusion.EXCLUDE_ANY ? 'NOT IN' : 'IN';
+        if (!values.length) {
+            return `${quoteGuard(fieldName)} ${inclusionString} ?`;
+        }
+
+        const chosenValueLabels = values.map((value) => {
+            if (!(field.values && field.values.length)) {
+                return value;
+            }
+
+            const found = field.values.find((v) => v.value === value);
+            if (!found) {
+                return value;
+            }
+
+            return found.label;
+        });
+
+        if (inclusion === FilterFieldInclusion.INCLUDE_ALL && values.length > 1) {
+            const clauses = chosenValueLabels.map((v) => `${quoteGuard(fieldName)} IN (${quoteGuard(v)})`);
+            return `(${clauses.join(' AND ')})`;
+        }
+
+        const joinedValues = chosenValueLabels.map((v) => `${quoteGuard(v)}`).join(', ');
+        const valueString = `(${joinedValues})`;
+        return `${quoteGuard(fieldName)} ${inclusionString} ${valueString}`;
+    }).join(' AND ');
+
+    return [projectJQL, issueTypesJQL, filterFieldsJQL].filter(Boolean).join(' AND ');
 }

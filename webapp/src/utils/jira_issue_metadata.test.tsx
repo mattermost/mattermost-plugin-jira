@@ -3,11 +3,11 @@
 
 import createMeta from 'testdata/cloud-get-create-issue-metadata-for-project-many-fields.json';
 
-import {IssueMetadata, JiraField} from 'types/model';
+import {IssueMetadata, JiraField, FilterField, ChannelSubscriptionFilters, FilterFieldInclusion, IssueType, Project} from 'types/model';
 
-import {getCustomFieldFiltersForProjects} from './jira_issue_metadata';
+import {getCustomFieldFiltersForProjects, generateJQLStringFromSubscriptionFilters} from './jira_issue_metadata';
 
-describe('components/ChannelSettingsInner', () => {
+describe('utils/jira_issue_metadata', () => {
     const useField = (field: JiraField, key: string): IssueMetadata => {
         return {
             projects: [
@@ -320,5 +320,234 @@ describe('components/ChannelSettingsInner', () => {
         expect(actual[0].key).toEqual('custom1');
         expect(actual[0].name).toEqual('MJK - Labels');
         expect(actual[0].userDefined).toEqual(true);
+    });
+
+    describe('generateJQLFromSubscriptionFilters', () => {
+        const priorityField: FilterField & JiraField = {
+            key: 'priority',
+            name: 'Priority',
+            values: [{value: '10001', label: 'High'}, {value: '10002', label: 'Medium'}, {value: '10003', label: 'Low'}],
+            issueTypes: [{id: '10001', name: 'Bug'}],
+            schema: {
+                type: 'priority',
+            },
+            required: false,
+        };
+
+        const labelsField: FilterField & JiraField = {
+            key: 'labels',
+            name: 'Labels',
+            issueTypes: [{id: '10001', name: 'Bug'}],
+            schema: {
+                type: 'array',
+                items: 'string',
+            },
+            required: false,
+        };
+
+        const issueMetadata: IssueMetadata = {
+            projects: [{
+                key: 'KT',
+                issuetypes: [
+                    {
+                        id: '10001',
+                        name: 'Bug',
+                        fields: {priority: priorityField, labels: labelsField},
+                        subtask: false,
+                    },
+                    {
+                        id: '10002',
+                        name: 'Task',
+                        fields: {priority: priorityField, labels: labelsField},
+                        subtask: false,
+                    },
+                ],
+            }],
+        };
+
+        it('no values selected', () => {
+            const fields: FilterField[] = [
+                priorityField,
+                labelsField,
+            ];
+
+            const filters: ChannelSubscriptionFilters = {
+                projects: [],
+                issue_types: [],
+                events: [],
+                fields: [],
+            };
+
+            const actual = generateJQLStringFromSubscriptionFilters(issueMetadata, fields, filters);
+            expect(actual).toEqual('Project = ? AND IssueType IN ?');
+        });
+
+        it('project and issue types are selected', () => {
+            const fields: FilterField[] = [
+                priorityField,
+                labelsField,
+            ];
+
+            const filters: ChannelSubscriptionFilters = {
+                projects: ['KT'],
+                issue_types: ['10001'],
+                events: [],
+                fields: [],
+            };
+
+            const actual = generateJQLStringFromSubscriptionFilters(issueMetadata, fields, filters);
+            expect(actual).toEqual('Project = KT AND IssueType IN (Bug)');
+        });
+
+        it('multiple issue types selected', () => {
+            const fields: FilterField[] = [
+                priorityField,
+                labelsField,
+            ];
+
+            const filters: ChannelSubscriptionFilters = {
+                projects: ['KT'],
+                issue_types: ['10001', '10002'],
+                events: [],
+                fields: [],
+            };
+
+            const actual = generateJQLStringFromSubscriptionFilters(issueMetadata, fields, filters);
+            expect(actual).toEqual('Project = KT AND IssueType IN (Bug, Task)');
+        });
+
+        it('INCLUDE ANY selected, no values chosen', () => {
+            const fields: FilterField[] = [
+                priorityField,
+                labelsField,
+            ];
+
+            const filters: ChannelSubscriptionFilters = {
+                projects: ['KT'],
+                issue_types: ['10001'],
+                events: [],
+                fields: [
+                    {key: 'priority', values: [], inclusion: FilterFieldInclusion.INCLUDE_ANY},
+                ],
+            };
+
+            const actual = generateJQLStringFromSubscriptionFilters(issueMetadata, fields, filters);
+            expect(actual).toEqual('Project = KT AND IssueType IN (Bug) AND Priority IN ?');
+        });
+
+        it('INCLUDE ANY selected, one value chosen', () => {
+            const fields: FilterField[] = [
+                priorityField,
+                labelsField,
+            ];
+
+            const filters: ChannelSubscriptionFilters = {
+                projects: ['KT'],
+                issue_types: ['10001'],
+                events: [],
+                fields: [
+                    {key: 'priority', values: ['10001'], inclusion: FilterFieldInclusion.INCLUDE_ANY},
+                ],
+            };
+
+            const actual = generateJQLStringFromSubscriptionFilters(issueMetadata, fields, filters);
+            expect(actual).toEqual('Project = KT AND IssueType IN (Bug) AND Priority IN (High)');
+        });
+
+        it('INCLUDE ANY selected, two values chosen', () => {
+            const fields: FilterField[] = [
+                priorityField,
+                labelsField,
+            ];
+
+            const filters: ChannelSubscriptionFilters = {
+                projects: ['KT'],
+                issue_types: ['10001'],
+                events: [],
+                fields: [
+                    {key: 'priority', values: ['10001', '10002'], inclusion: FilterFieldInclusion.INCLUDE_ANY},
+                ],
+            };
+
+            const actual = generateJQLStringFromSubscriptionFilters(issueMetadata, fields, filters);
+            expect(actual).toEqual('Project = KT AND IssueType IN (Bug) AND Priority IN (High, Medium)');
+        });
+
+        it('INCLUDE ANY selected, values for multiple fields', () => {
+            const fields: FilterField[] = [
+                priorityField,
+                labelsField,
+            ];
+
+            const filters: ChannelSubscriptionFilters = {
+                projects: ['KT'],
+                issue_types: ['10001'],
+                events: [],
+                fields: [
+                    {key: 'priority', values: ['10001'], inclusion: FilterFieldInclusion.INCLUDE_ANY},
+                    {key: 'labels', values: ['Some Label'], inclusion: FilterFieldInclusion.INCLUDE_ANY},
+                ],
+            };
+
+            const actual = generateJQLStringFromSubscriptionFilters(issueMetadata, fields, filters);
+            expect(actual).toEqual('Project = KT AND IssueType IN (Bug) AND Priority IN (High) AND Labels IN ("Some Label")');
+        });
+
+        it('EXCLUDE ANY selected, two values chosen', () => {
+            const fields: FilterField[] = [
+                priorityField,
+                labelsField,
+            ];
+
+            const filters: ChannelSubscriptionFilters = {
+                projects: ['KT'],
+                issue_types: ['10001'],
+                events: [],
+                fields: [
+                    {key: 'priority', values: ['10001', '10002'], inclusion: FilterFieldInclusion.EXCLUDE_ANY},
+                ],
+            };
+
+            const actual = generateJQLStringFromSubscriptionFilters(issueMetadata, fields, filters);
+            expect(actual).toEqual('Project = KT AND IssueType IN (Bug) AND Priority NOT IN (High, Medium)');
+        });
+
+        it('INCLUDE ALL selected, two values chosen', () => {
+            const fields: FilterField[] = [
+                priorityField,
+                labelsField,
+            ];
+
+            const filters: ChannelSubscriptionFilters = {
+                projects: ['KT'],
+                issue_types: ['10001'],
+                events: [],
+                fields: [
+                    {key: 'priority', values: ['10001', '10002'], inclusion: FilterFieldInclusion.INCLUDE_ALL},
+                ],
+            };
+
+            const actual = generateJQLStringFromSubscriptionFilters(issueMetadata, fields, filters);
+            expect(actual).toEqual('Project = KT AND IssueType IN (Bug) AND (Priority IN (High) AND Priority IN (Medium))');
+        });
+
+        it('EMPTY inclusion chosen', () => {
+            const fields: FilterField[] = [
+                priorityField,
+                labelsField,
+            ];
+
+            const filters: ChannelSubscriptionFilters = {
+                projects: ['KT'],
+                issue_types: ['10001'],
+                events: [],
+                fields: [
+                    {key: 'priority', values: ['10001'], inclusion: FilterFieldInclusion.EMPTY},
+                ],
+            };
+
+            const actual = generateJQLStringFromSubscriptionFilters(issueMetadata, fields, filters);
+            expect(actual).toEqual('Project = KT AND IssueType IN (Bug) AND Priority IS EMPTY');
+        });
     });
 });
