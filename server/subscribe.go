@@ -378,7 +378,7 @@ func (p *Plugin) listChannelSubscriptions() (string, error) {
 		rows = append(rows, fmt.Sprintf("There are currently no channels subcriptions to Jira notifications. To add a subscription, navigate to a channel and type `/jira subscribe`\n"))
 		return strings.Join(rows, "\n"), nil
 	}
-	rows = append(rows, fmt.Sprintf("The following channels have subcribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`"))
+	rows = append(rows, fmt.Sprintf("The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`"))
 
 	for _, teamSubs := range sortedSubs {
 
