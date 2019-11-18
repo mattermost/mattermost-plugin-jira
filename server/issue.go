@@ -740,6 +740,12 @@ func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 			result = result.Add(v.ID)
 		}
 		return result
+	case "versions":
+		result := NewStringSet()
+		for _, v := range issue.Fields.AffectsVersions {
+			result = result.Add(v.ID)
+		}
+		return result
 	default:
 		value := getIssueCustomFieldValue(issue, key)
 		if value != nil {

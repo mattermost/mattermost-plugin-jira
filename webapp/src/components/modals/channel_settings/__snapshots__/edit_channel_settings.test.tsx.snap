@@ -338,6 +338,10 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
               "value": "event_updated_any",
             },
             Object {
+              "label": "Issue Updated: Affects Version",
+              "value": "event_updated_affects_version",
+            },
+            Object {
               "label": "Issue Updated: Assignee",
               "value": "event_updated_assignee",
             },
@@ -368,6 +372,10 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
             Object {
               "label": "Issue Updated: Rank",
               "value": "event_updated_rank",
+            },
+            Object {
+              "label": "Issue Updated: Reporter",
+              "value": "event_updated_reporter",
             },
             Object {
               "label": "Issue Updated: Sprint",
