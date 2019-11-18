@@ -199,6 +199,14 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             if (error) {
                 state.getMetaDataErr = `The project ${projectKeys[0]} is unavailable. Please contact your system administrator.`;
             }
+
+            const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
+            for (const v of this.state.filters.fields) {
+                if (!filterFields.find((f) => f.key === v.key)) {
+                    state.error = 'A field in this subscription has been removed from Jira, so the subscription is invalid. When this form is submitted, the configured field will be removed from the subscription to make the subscription valid again.';
+                }
+            }
+
             this.setState(state);
         });
     };
@@ -249,9 +257,22 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             return;
         }
 
+        const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
+        const configuredFields = this.state.filters.fields.concat([]);
+        for (const v of this.state.filters.fields) {
+            if (!filterFields.find((f) => f.key === v.key)) {
+                configuredFields.splice(configuredFields.indexOf(v), 1);
+            }
+        }
+
+        const filters = {
+            ...this.state.filters,
+            fields: configuredFields,
+        };
+
         const subscription = {
             channel_id: this.props.channel.id,
-            filters: this.state.filters,
+            filters,
             name: this.state.subscriptionName,
         } as ChannelSubscription;
 

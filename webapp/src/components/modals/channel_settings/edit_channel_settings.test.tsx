@@ -6,13 +6,13 @@ import {shallow} from 'enzyme';
 
 import Preferences from 'mattermost-redux/constants/preferences';
 
-import projectMetadata from 'testdata/cloud-get-jira-project-metadata.json';
-import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
+import cloudProjectMetadata from 'testdata/cloud-get-jira-project-metadata.json';
+import cloudIssueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.json';
 import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project-many-fields.json';
 import testChannel from 'testdata/channel.json';
 
-import {IssueMetadata, ProjectMetadata} from 'types/model';
+import {IssueMetadata, ProjectMetadata, FilterFieldInclusion} from 'types/model';
 
 import EditChannelSettings from './edit_channel_settings';
 
@@ -26,29 +26,45 @@ describe('components/EditChannelSettings', () => {
         fetchJiraIssueMetadataForProjects: jest.fn().mockResolvedValue({}),
     };
 
-    const channelSubscription = {
+    const channelSubscriptionForCloud = {
         id: 'asxtifxe8jyi9y81htww6ixkiy',
-        channel_id: '9f8em5tjjirnpretkzywiqtnur',
+        channel_id: testChannel.id,
         filters: {
             events: ['event_updated_reopened'],
             projects: ['KT'],
             issue_types: ['10004'],
             fields: [{
-                key: 'customfield_10005',
-                inclusion: 'include_any',
-                values: ['10000'],
-            }, {
-                key: 'customfield_10006',
-                inclusion: 'include_any',
-                values: ['10007'],
+                key: 'customfield_10073',
+                inclusion: 'include_any' as FilterFieldInclusion,
+                values: ['10035'],
             }, {
                 key: 'versions',
-                inclusion: 'include_any',
+                inclusion: 'include_any' as FilterFieldInclusion,
                 values: ['10000'],
             }, {
                 key: 'customfield_10014',
-                inclusion: 'include_any',
+                inclusion: 'include_any' as FilterFieldInclusion,
                 values: ['IDT-24'],
+            }],
+        },
+        name: 'SubTestName',
+    };
+
+    const channelSubscriptionForServer = {
+        id: 'fjwifuxe8jyi9y81htww6ifeydh',
+        channel_id: testChannel.id,
+        filters: {
+            events: ['event_updated_reopened'],
+            projects: ['HEY'],
+            issue_types: ['10004'],
+            fields: [{
+                key: 'customfield_10201',
+                inclusion: 'include_any' as FilterFieldInclusion,
+                values: ['10035'],
+            }, {
+                key: 'fixVersions',
+                inclusion: 'include_any' as FilterFieldInclusion,
+                values: ['10000'],
             }],
         },
         name: 'SubTestName',
@@ -58,11 +74,12 @@ describe('components/EditChannelSettings', () => {
         ...baseActions,
         channel: testChannel,
         theme: Preferences.THEMES.default,
-        jiraProjectMetadata: projectMetadata as ProjectMetadata,
-        jiraIssueMetadata: issueMetadata as IssueMetadata,
-        channelSubscriptions: [channelSubscription],
         finishEditSubscription: jest.fn(),
-        selectedSubscription: channelSubscription,
+        jiraProjectMetadata: cloudProjectMetadata as ProjectMetadata,
+        jiraIssueMetadata: cloudIssueMetadata as IssueMetadata,
+        channelSubscriptions: [channelSubscriptionForCloud],
+        close: jest.fn(),
+        selectedSubscription: channelSubscriptionForCloud,
     };
 
     test('should match snapshot', () => {
@@ -101,52 +118,6 @@ describe('components/EditChannelSettings', () => {
         expect(wrapper).toMatchSnapshot();
     });
 
-    test('SERVER - should match snapshot after fetching issue metadata', async () => {
-        const sub = {
-            id: 'asxtifxe8jyi9y81htww6ixkiy',
-            channel_id: '9f8em5tjjirnpretkzywiqtnur',
-            filters: {
-                events: ['event_updated_reopened'],
-                projects: ['HEY'],
-                issue_types: ['10001'],
-                fields: [],
-            },
-            name: 'SubTestName',
-        };
-
-        const props = {
-            ...baseProps,
-            jiraProjectMetadata: serverProjectMetadata as ProjectMetadata,
-            jiraIssueMetadata: serverIssueMetadata as IssueMetadata,
-            channelSubscriptions: [sub],
-            selectedSubscription: sub,
-        };
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
-        );
-
-        await Promise.resolve();
-        expect(wrapper).toMatchSnapshot();
-    });
-
-    test('should match snapshot with no filters', async () => {
-        const sub = {
-            ...baseProps.channelSubscriptions[0],
-            filters: {events: [], projects: [], issue_types: [], fields: []},
-        };
-        const props = {
-            ...baseProps,
-            channelSubscriptions: [sub],
-            selectedSubscription: sub,
-        };
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
-        );
-
-        expect(wrapper.state().fetchingIssueMetadata).toBe(false);
-        expect(wrapper).toMatchSnapshot();
-    });
-
     test('should change project filter when chosen', async () => {
         const clearIssueMetadata = jest.fn().mockResolvedValue({});
         let fetchJiraIssueMetadataForProjects = jest.fn().mockResolvedValue({});
@@ -181,6 +152,44 @@ describe('components/EditChannelSettings', () => {
         expect(wrapper.state().getMetaDataErr).toEqual('The project TES is unavailable. Please contact your system administrator.');
     });
 
+    test('should show an error when a previously configured field is not in the issue metadata', async () => {
+        const subscription = {
+            id: 'asxtifxe8jyi9y81htww6ixkiy',
+            channel_id: testChannel.id,
+            filters: {
+                events: ['event_updated_reopened'],
+                projects: ['KT'],
+                issue_types: ['10004'],
+                fields: [{
+                    key: 'customfield_10099',
+                    inclusion: 'include_any' as FilterFieldInclusion,
+                    values: ['10035'],
+                }, {
+                    key: 'versions',
+                    inclusion: 'include_any' as FilterFieldInclusion,
+                    values: ['10000'],
+                }],
+            },
+            name: 'SubTestName',
+        };
+
+        const props = {
+            ...baseProps,
+            channelSubscriptions: [subscription],
+            selectedSubscription: subscription,
+        };
+        const wrapper = shallow<EditChannelSettings>(
+            <EditChannelSettings {...props}/>
+        );
+
+        await Promise.resolve();
+        expect(wrapper.state().fetchingIssueMetadata).toBe(false);
+        expect(wrapper.state().getMetaDataErr).toBe(null);
+
+        const expected = 'A field in this subscription has been removed from Jira, so the subscription is invalid. When this form is submitted, the configured field will be removed from the subscription to make the subscription valid again.';
+        expect(wrapper.state().error).toEqual(expected);
+    });
+
     test('should create a named subscription', async () => {
         const createChannelSubscription = jest.fn().mockResolvedValue({});
         const editChannelSubscription = jest.fn().mockResolvedValue({});
@@ -198,16 +207,16 @@ describe('components/EditChannelSettings', () => {
         );
 
         wrapper.setState({
-            filters: channelSubscription.filters,
-            subscriptionName: channelSubscription.name,
+            filters: channelSubscriptionForCloud.filters,
+            subscriptionName: channelSubscriptionForCloud.name,
         });
         wrapper.instance().handleCreate({preventDefault: jest.fn()});
         expect(wrapper.state().error).toBe(null);
         expect(createChannelSubscription).toHaveBeenCalledWith(
             {
                 channel_id: testChannel.id,
-                filters: channelSubscription.filters,
-                name: channelSubscription.name,
+                filters: channelSubscriptionForCloud.filters,
+                name: channelSubscriptionForCloud.name,
             }
         );
         expect(editChannelSubscription).not.toHaveBeenCalled();
@@ -250,14 +259,14 @@ describe('components/EditChannelSettings', () => {
         );
 
         wrapper.setState({
-            filters: channelSubscription.filters,
+            filters: channelSubscriptionForServer.filters,
         });
         wrapper.instance().handleCreate({preventDefault: jest.fn()});
         expect(wrapper.state().error).toBe(null);
         expect(createChannelSubscription).toHaveBeenCalledWith(
             {
                 channel_id: testChannel.id,
-                filters: channelSubscription.filters,
+                filters: channelSubscriptionForServer.filters,
                 name: null,
             }
         );
@@ -281,6 +290,57 @@ describe('components/EditChannelSettings', () => {
         expect(wrapper.state().error).toEqual('Failure');
     });
 
+    test('should on submit, remove filters for configured fields that are not in the issue metadata', async () => {
+        const subscription = {
+            id: 'asxtifxe8jyi9y81htww6ixkiy',
+            channel_id: testChannel.id,
+            filters: {
+                events: ['event_updated_reopened'],
+                projects: ['KT'],
+                issue_types: ['10004'],
+                fields: [{
+                    key: 'customfield_10099',
+                    inclusion: 'include_any' as FilterFieldInclusion,
+                    values: ['10035'],
+                }, {
+                    key: 'versions',
+                    inclusion: 'include_any' as FilterFieldInclusion,
+                    values: ['10000'],
+                }],
+            },
+            name: 'SubTestName',
+        };
+
+        const editChannelSubscription = jest.fn().mockResolvedValue({});
+        const props = {
+            ...baseProps,
+            editChannelSubscription,
+            channelSubscriptions: [subscription],
+            selectedSubscription: subscription,
+        };
+        const wrapper = shallow<EditChannelSettings>(
+            <EditChannelSettings {...props}/>
+        );
+
+        wrapper.instance().handleCreate({preventDefault: jest.fn()});
+        expect(wrapper.state().error).toBe(null);
+        expect(editChannelSubscription).toHaveBeenCalledWith(
+            {
+                id: 'asxtifxe8jyi9y81htww6ixkiy',
+                channel_id: testChannel.id,
+                filters: {
+                    ...subscription.filters,
+                    fields: [{
+                        key: 'versions',
+                        inclusion: 'include_any' as FilterFieldInclusion,
+                        values: ['10000'],
+                    }],
+                },
+                name: 'SubTestName',
+            }
+        );
+    });
+
     test('should edit a subscription', async () => {
         const createChannelSubscription = jest.fn().mockResolvedValue({});
         const editChannelSubscription = jest.fn().mockResolvedValue({});
@@ -296,17 +356,17 @@ describe('components/EditChannelSettings', () => {
         );
 
         wrapper.setState({
-            filters: channelSubscription.filters,
+            filters: channelSubscriptionForCloud.filters,
         });
 
         wrapper.instance().handleCreate({preventDefault: jest.fn()});
         expect(wrapper.state().error).toBe(null);
         expect(editChannelSubscription).toHaveBeenCalledWith(
             {
-                id: channelSubscription.id,
+                id: channelSubscriptionForCloud.id,
                 channel_id: testChannel.id,
-                filters: channelSubscription.filters,
-                name: channelSubscription.name,
+                filters: channelSubscriptionForCloud.filters,
+                name: channelSubscriptionForCloud.name,
             }
         );
         expect(createChannelSubscription).not.toHaveBeenCalled();
@@ -378,7 +438,7 @@ describe('components/EditChannelSettings', () => {
         wrapper.setState({...errorState});
 
         // change project - error should disappear
-        wrapper.instance().handleProjectChange(['KT']);
+        wrapper.instance().handleProjectChange('project', 'KT');
         expect(wrapper.state().conflictingError).toBe(null);
 
         // reset error message state to include error message
@@ -400,7 +460,7 @@ describe('components/EditChannelSettings', () => {
             <EditChannelSettings {...props}/>
         );
 
-        const filters = channelSubscription.filters;
+        const filters = channelSubscriptionForCloud.filters;
 
         wrapper.setState({
             filters: {

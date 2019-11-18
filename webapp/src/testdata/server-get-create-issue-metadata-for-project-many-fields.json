@@ -71,7 +71,14 @@
             }
           },
           "fixVersions": {
-            "allowedValues": [],
+            "allowedValues": [{
+                  "archived": false,
+                  "id": "10000",
+                  "name": "d",
+                  "projectId": 10008,
+                  "released": false,
+                  "self": "https://mmtest.atlassian.net/rest/api/2/version/10000"
+            }],
             "hasDefaultValue": false,
             "name": "Fix Version/s",
             "operations": ["set", "add", "remove"],
@@ -278,7 +285,14 @@
             }
           },
           "fixVersions": {
-            "allowedValues": [],
+            "allowedValues": [{
+                  "archived": false,
+                  "id": "10000",
+                  "name": "d",
+                  "projectId": 10008,
+                  "released": false,
+                  "self": "https://mmtest.atlassian.net/rest/api/2/version/10000"
+            }],
             "hasDefaultValue": false,
             "name": "Fix Version/s",
             "operations": ["set", "add", "remove"],
@@ -493,7 +507,14 @@
             }
           },
           "fixVersions": {
-            "allowedValues": [],
+            "allowedValues": [{
+                  "archived": false,
+                  "id": "10000",
+                  "name": "d",
+                  "projectId": 10008,
+                  "released": false,
+                  "self": "https://mmtest.atlassian.net/rest/api/2/version/10000"
+            }],
             "hasDefaultValue": false,
             "name": "Fix Version/s",
             "operations": ["set", "add", "remove"],
@@ -709,7 +730,14 @@
             }
           },
           "fixVersions": {
-            "allowedValues": [],
+            "allowedValues": [{
+                  "archived": false,
+                  "id": "10000",
+                  "name": "d",
+                  "projectId": 10008,
+                  "released": false,
+                  "self": "https://mmtest.atlassian.net/rest/api/2/version/10000"
+            }],
             "hasDefaultValue": false,
             "name": "Fix Version/s",
             "operations": ["set", "add", "remove"],
@@ -938,7 +966,14 @@
             }
           },
           "fixVersions": {
-            "allowedValues": [],
+            "allowedValues": [{
+                  "archived": false,
+                  "id": "10000",
+                  "name": "d",
+                  "projectId": 10008,
+                  "released": false,
+                  "self": "https://mmtest.atlassian.net/rest/api/2/version/10000"
+            }],
             "hasDefaultValue": false,
             "name": "Fix Version/s",
             "operations": ["set", "add", "remove"],
