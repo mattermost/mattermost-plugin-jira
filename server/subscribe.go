@@ -374,7 +374,7 @@ func (p *Plugin) listChannelSubscriptions() (string, error) {
 
 	rows := []string{}
 
-	if len(sortedSubs) == 0 {
+	if sortedSubs == nil {
 		rows = append(rows, fmt.Sprintf("There are currently no channels subcriptions to Jira notifications. To add a subscription, navigate to a channel and type `/jira subscribe`\n"))
 		return strings.Join(rows, "\n"), nil
 	}
@@ -424,9 +424,7 @@ func (p *Plugin) getSubscriptionsSorted() ([]TeamSubscriptions, error) {
 	subsMap := make(map[string][][]string)
 	teamMap := make(map[string]string)
 
-	var nameIdArray []string
-
-	separator := "__subseparator__"
+	var teams []model.Team
 	var DmSubsIds [][]string
 
 	// get teams from subscriptions
@@ -453,14 +451,12 @@ func (p *Plugin) getSubscriptionsSorted() ([]TeamSubscriptions, error) {
 			continue
 		}
 
-		// get need team.DisplayName for sorting
 		team, _ := p.API.GetTeam(channel.TeamId)
 
-		// teamMap used to determine if already have the team saved in nameIdArray
+		// teamMap used to determine if already have the team saved
 		_, ok := teamMap[channel.TeamId]
 		if !ok {
-			teamNameId := team.DisplayName + separator + channel.TeamId
-			nameIdArray = append(nameIdArray, teamNameId)
+			teams = append(teams, *team)
 		}
 		teamMap[channel.TeamId] = team.DisplayName
 
@@ -481,19 +477,19 @@ func (p *Plugin) getSubscriptionsSorted() ([]TeamSubscriptions, error) {
 		dmSubs = append(dmSubs, teamData)
 	}
 
-	// sort by combined team name/id values
-	sort.Strings(nameIdArray)
+	// Closures that order the Teams structure.
+	displayName := func(p1, p2 *model.Team) bool {
+		return p1.DisplayName < p2.DisplayName
+	}
 
-	// save array of subs, sorted by team and grouped by channel
-	for _, teamId := range nameIdArray {
+	// Sort the teams by the various criteria.
+	By(displayName).Sort(teams)
 
-		teamName := strings.Split(teamId, separator)[0]
-		teamId = strings.Split(teamId, separator)[1]
-
+	for _, teamId := range teams {
 		teamData := TeamSubscriptions{
-			TeamId:   teamId,
-			TeamName: teamName,
-			SubIds:   subsMap[teamId],
+			TeamId:   teamId.Id,
+			TeamName: teamId.DisplayName,
+			SubIds:   subsMap[teamId.Id],
 		}
 		teamSubs = append(teamSubs, teamData)
 	}
@@ -501,6 +497,37 @@ func (p *Plugin) getSubscriptionsSorted() ([]TeamSubscriptions, error) {
 	teamSubs = append(teamSubs, dmSubs...)
 
 	return teamSubs, nil
+}
+
+type By func(p1, p2 *model.Team) bool
+
+// Sort is a method on the function type, By, that sorts the argument slice according to the function.
+func (by By) Sort(teams []model.Team) {
+	ps := &teamSorter{
+		teams: teams,
+		by:    by,
+	}
+	sort.Sort(ps)
+}
+
+type teamSorter struct {
+	teams []model.Team
+	by    func(p1, p2 *model.Team) bool // Closure used in the Less method.
+}
+
+// Len is part of sort.Interface.
+func (s *teamSorter) Len() int {
+	return len(s.teams)
+}
+
+// Swap is part of sort.Interface.
+func (s *teamSorter) Swap(i, j int) {
+	s.teams[i], s.teams[j] = s.teams[j], s.teams[i]
+}
+
+// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
+func (s *teamSorter) Less(i, j int) bool {
+	return s.by(&s.teams[i], &s.teams[j])
 }
 
 func inAllowedGroup(inGroups []*jira.UserGroup, allowedGroups []string) bool {
