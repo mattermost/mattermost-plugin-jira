@@ -40,7 +40,14 @@ func TestListChannelSubscriptions(t *testing.T) {
 				},
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
-				expected := "\n### Team 1 Display Name\n* **~channel-1-name** (1):\n  * PROJ - Sub Name X"
+				expected := "The following channels have subcribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`\n\n#### Team 1 Display Name\n* **~channel-1-name** (1):\n  * PROJ - Sub Name X"
+				assert.Equal(t, expected, actual)
+			},
+		},
+		"zero subscriptions": {
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{}),
+			RunAssertions: func(t *testing.T, actual string) {
+				expected := "There are currently no channels subcriptions to Jira notifications. To add a subscription, navigate to a channel and type `/jira subscribe`\n"
 				assert.Equal(t, expected, actual)
 			},
 		},
@@ -56,7 +63,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 				},
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
-				expected := "\n### Group and Direct Messages\n* **~channel-2-name-DM** (1):\n  * PROJ - Sub Name X"
+				expected := "The following channels have subcribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`\n\n#### Group and Direct Messages\n* **~channel-2-name-DM** (1):\n  * PROJ - Sub Name X"
 				assert.Equal(t, expected, actual)
 			},
 		},
@@ -88,9 +95,9 @@ func TestListChannelSubscriptions(t *testing.T) {
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
 				numlines := strings.Count(actual, "\n") + 1
-				assert.Equal(t, 6, numlines)
-				assert.NotContains(t, actual, "\n### Group and Direct Messages")
-				assert.Contains(t, actual, "\n### Team 1 Display Name")
+				assert.Equal(t, 7, numlines)
+				assert.NotContains(t, actual, "\n#### Group and Direct Messages")
+				assert.Contains(t, actual, "\n#### Team 1 Display Name")
 				assert.Contains(t, actual, `**~channel-1-name** (3):`)
 				assert.Contains(t, actual, `* PROJ - Sub Name X`)
 				assert.Contains(t, actual, `* EXT - Sub Name Y`)
@@ -126,9 +133,9 @@ func TestListChannelSubscriptions(t *testing.T) {
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
 				numlines := strings.Count(actual, "\n") + 1
-				assert.Equal(t, 9, numlines)
-				assert.Contains(t, actual, "\n### Group and Direct Messages")
-				assert.Contains(t, actual, "\n### Team 1 Display Name")
+				assert.Equal(t, 10, numlines)
+				assert.Contains(t, actual, "\n#### Group and Direct Messages")
+				assert.Contains(t, actual, "\n#### Team 1 Display Name")
 				assert.Contains(t, actual, `Group and Direct Messages`)
 				assert.Contains(t, actual, `**~channel-1-name** (2):`)
 				assert.Contains(t, actual, `* PROJ - Sub Name X`)
@@ -165,6 +172,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 				Id:          "channel2",
 				Name:        "channel-2-name-DM",
 				DisplayName: "Channel 2 Display Name",
+				Type:        "D",
 			}
 
 			api.On("GetChannel", "channel2").Return(channel2, nil)
