@@ -5,7 +5,7 @@ import {PostTypes} from 'mattermost-redux/action_types';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
 import ActionTypes from 'action_types';
-import {doFetch} from 'client';
+import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
 import {getPluginServerRoute} from 'selectors';
 
 export const openCreateModal = (postId) => {
@@ -95,6 +95,13 @@ export const fetchJiraProjectMetadata = () => {
     };
 };
 
+export const fetchEpicsWithParams = (params) => {
+    return async (dispatch, getState) => {
+        const url = getPluginServerRoute(getState()) + '/api/v2/get-search-epics';
+        return doFetchWithResponse(`${url}${buildQueryString(params)}`);
+    };
+};
+
 export const createIssue = (payload) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
@@ -135,6 +142,11 @@ export const createChannelSubscription = (subscription) => {
                 body: JSON.stringify(subscription),
             });
 
+            dispatch({
+                type: ActionTypes.CREATED_CHANNEL_SUBSCRIPTION,
+                data,
+            });
+
             return {data};
         } catch (error) {
             return {error};
@@ -149,6 +161,11 @@ export const editChannelSubscription = (subscription) => {
             const data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel`, {
                 method: 'put',
                 body: JSON.stringify(subscription),
+            });
+
+            dispatch({
+                type: ActionTypes.EDITED_CHANNEL_SUBSCRIPTION,
+                data,
             });
 
             return {data};

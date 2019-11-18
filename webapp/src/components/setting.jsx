@@ -7,10 +7,11 @@ import PropTypes from 'prop-types';
 export default class Setting extends React.PureComponent {
     static propTypes = {
         inputId: PropTypes.string,
-        label: PropTypes.node.isRequired,
+        label: PropTypes.node,
         children: PropTypes.node.isRequired,
         helpText: PropTypes.node,
         required: PropTypes.bool,
+        hideRequiredStar: PropTypes.bool,
     };
 
     render() {
@@ -20,17 +21,20 @@ export default class Setting extends React.PureComponent {
             inputId,
             label,
             required,
+            hideRequiredStar,
         } = this.props;
 
         return (
-            <div className='form-group'>
+            <div className='form-group less'>
+                {label &&
                 <label
-                    className='control-label'
+                    className='control-label margin-bottom x2'
                     htmlFor={inputId}
                 >
                     {label}
                 </label>
-                {required &&
+                }
+                {required && !hideRequiredStar &&
                 <span
                     className='error-text'
                     style={{marginLeft: '3px'}}

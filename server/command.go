@@ -58,6 +58,7 @@ var jiraCommandHandler = CommandHandler{
 		"webhook":          executeWebhookURL,
 		"info":             executeInfo,
 		"help":             commandHelp,
+		"subscribe/list":   executeSubscribeList,
 		// "list":             executeList,
 		// "instance/select":  executeInstanceSelect,
 		// "instance/delete":  executeInstanceDelete,
@@ -140,10 +141,6 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 }
 
 func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	if len(args) < 1 {
-		return p.help(header)
-	}
-
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
 		p.errorf("executeSettings: failed to load current Jira instance: %v", err)
@@ -154,6 +151,10 @@ func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 	jiraUser, err := p.userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
 		return p.responsef(header, "Your username is not connected to Jira. Please type `jira connect`. %v", err)
+	}
+
+	if len(args) == 0 {
+		return p.responsef(header, "Current settings:\n%s", jiraUser.Settings.String())
 	}
 
 	switch args[0] {
@@ -257,6 +258,23 @@ func executeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 		text += fmt.Sprintf(format, i+1, key, details)
 	}
 	return p.responsef(header, text)
+}
+
+func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(header, "`/jira subscribe list` can only be run by a system administrator.")
+	}
+
+	msg, err := p.listChannelSubscriptions()
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+
+	return p.responsef(header, msg)
 }
 
 func authorizedSysAdmin(p *Plugin, userId string) (bool, error) {

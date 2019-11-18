@@ -5,6 +5,7 @@ import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
+import {isDirectChannel, isGroupChannel} from 'mattermost-redux/utils/channel_utils';
 
 import {
     createChannelSubscription,
@@ -24,9 +25,11 @@ import ChannelSettingsModal from './channel_settings';
 const mapStateToProps = (state) => {
     const channelId = getChannelIdWithSettingsOpen(state);
     let channel = null;
+    let omitDisplayName = false;
 
     if (channelId !== '') {
         channel = getChannel(state, channelId);
+        omitDisplayName = isDirectChannel(channel) || isGroupChannel(channel);
     }
 
     const jiraIssueMetadata = getJiraIssueMetadata(state);
@@ -35,6 +38,7 @@ const mapStateToProps = (state) => {
     const channelSubscriptions = getChannelSubscriptions(state)[channelId];
 
     return {
+        omitDisplayName,
         channelSubscriptions,
         channel,
         jiraIssueMetadata,

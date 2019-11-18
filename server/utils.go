@@ -18,6 +18,11 @@ import (
 	"github.com/mattermost/mattermost-server/model"
 )
 
+type ReactSelectOption struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
 type ByteSize int64
 
 const sizeB = ByteSize(1)

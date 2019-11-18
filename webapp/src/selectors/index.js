@@ -51,7 +51,7 @@ export const getJiraProjectMetadata = (state) => getPluginState(state).jiraProje
 
 export const getChannelIdWithSettingsOpen = (state) => getPluginState(state).channelIdWithSettingsOpen;
 
-export const getChannelSubscriptions = (state) => getPluginState(state).channelSubscripitons;
+export const getChannelSubscriptions = (state) => getPluginState(state).channelSubscriptions;
 
 export const isUserConnected = (state) => getPluginState(state).userConnected;
 

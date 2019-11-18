@@ -19,11 +19,12 @@ export const getStyleForReactSelect = (theme) => {
             background: theme.centerChannelBg,
 
             // Overwrittes the different states of border
-            borderColor: state.isFocused ? changeOpacity(theme.centerChannelColor, 0.25) : changeOpacity(theme.centerChannelColor, 0.12),
+            borderColor: state.isFocused ? changeOpacity(theme.centerChannelColor, 0.25) : changeOpacity(theme.centerChannelColor, 0.2),
+            padding: '2px 4px 2px 6px',
 
             // Removes weird border around container
             boxShadow: 'inset 0 1px 1px ' + changeOpacity(theme.centerChannelColor, 0.075),
-            borderRadius: '2px',
+            borderRadius: '4px',
 
             '&:hover': {
                 borderColor: changeOpacity(theme.centerChannelColor, 0.25),
