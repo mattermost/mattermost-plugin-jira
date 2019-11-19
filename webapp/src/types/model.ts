@@ -73,6 +73,13 @@ export type ProjectMetadata = {
     issues_per_project: {[key: string]: ReactSelectOption[]};
 }
 
+export enum JiraFieldCustomTypeEnums {
+    SPRINT = 'com.pyxis.greenhopper.jira:gh-sprint',
+    EPIC_LINK = 'com.pyxis.greenhopper.jira:gh-epic-link',
+    EPIC_NAME = 'com.pyxis.greenhopper.jira:gh-epic-label',
+    RANK = 'com.pyxis.greenhopper.jira:gh-lexo-rank',
+}
+
 export enum FilterFieldInclusion {
     INCLUDE_ANY = 'include_any',
     INCLUDE_ALL = 'include_all',
