@@ -10,6 +10,7 @@ import FormButton from 'components/form_button';
 import Input from 'components/input';
 import Loading from 'components/loading';
 import Validator from 'components/validator';
+import {getBaseStyles} from 'utils/styles';
 import {
     getProjectValues,
     getIssueValuesForMultipleProjects,
@@ -359,7 +360,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
                         />
-                        <div>
+                        <div style={getBaseStyles(this.props.theme).codeBlock}>
                             <span>{generateJQLStringFromSubscriptionFilters(this.props.jiraIssueMetadata, filterFields, this.state.filters)}</span>
                         </div>
                     </React.Fragment>
