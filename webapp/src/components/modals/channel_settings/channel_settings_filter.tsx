@@ -231,6 +231,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
                 <JiraEpicSelector
                     required={!disableLastSelect}
                     isDisabled={disableLastSelect}
+                    isClearable={false}
                     placeholder={lastSelectPlaceholder}
                     issueMetadata={this.props.issueMetadata}
                     theme={theme}
@@ -249,6 +250,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
                     name={'values'}
                     required={!disableLastSelect}
                     isDisabled={disableLastSelect}
+                    isClearable={false}
                     placeholder={lastSelectPlaceholder}
                     hideRequiredStar={true}
                     options={fieldValueOptions}

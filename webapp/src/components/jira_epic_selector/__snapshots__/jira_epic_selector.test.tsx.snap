@@ -113,7 +113,6 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
       }
     }
     filterOption={null}
-    isClearable={true}
     isMulti={true}
     loadOptions={[Function]}
     menuPlacement="auto"
