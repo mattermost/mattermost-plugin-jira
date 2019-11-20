@@ -149,17 +149,9 @@ func TestListChannelSubscriptions(t *testing.T) {
 				ChannelSubscription{
 					Id:        "SubID1a",
 					ChannelId: "channel1",
-					Name:      "Sub Name 1a",
+					Name:      "Sub Name 1",
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("PROJ"),
-					},
-				},
-				ChannelSubscription{
-					Id:        "SubID1b",
-					ChannelId: "channel1",
-					Name:      "Sub Name 1b",
-					Filters: SubscriptionFilters{
-						Projects: NewStringSet("EXT"),
 					},
 				},
 				ChannelSubscription{
@@ -190,7 +182,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 			RunAssertions: func(t *testing.T, actual string) {
 				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`\n\n"
 				expected += "#### Team 1 Display Name\n"
-				expected += "* **~channel-1-name** (2):\n  * PROJ - Sub Name 1a\n  * EXT - Sub Name 1b\n\n"
+				expected += "* **~channel-1-name** (1):\n  * PROJ - Sub Name 1\n\n"
 				expected += "#### Team 2 Display Name\n"
 				expected += "* **~channel-3-name** (1):\n  * EXT - Sub Name 3\n"
 				expected += "* **~channel-4** (1):\n  * EXT - Sub Name 4\n\n"
