@@ -12,8 +12,8 @@ export const getBaseStyles = (theme) => {
             marginTop: '8px',
             fontSize: '13px',
         }),
-    }
-}
+    };
+};
 
 export const getStyleForReactSelect = (theme) => {
     if (!theme) {
