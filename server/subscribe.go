@@ -367,7 +367,7 @@ func (p *Plugin) listChannelSubscriptions() (string, error) {
 		return "", err
 	}
 
-	sortedSubs, err := p.getSubscriptionsSorted()
+	sortedSubs, err := p.getSortedSubscriptions()
 	if err != nil {
 		return "", err
 	}
@@ -415,7 +415,7 @@ func (p *Plugin) listChannelSubscriptions() (string, error) {
 	return strings.Join(rows, "\n"), nil
 }
 
-func (p *Plugin) getSubscriptionsSorted() ([]TeamSubscriptions, error) {
+func (p *Plugin) getSortedSubscriptions() ([]TeamSubscriptions, error) {
 	subs, err := p.getSubscriptions()
 	if err != nil {
 		return nil, err
