@@ -338,6 +338,10 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
               "value": "event_updated_any",
             },
             Object {
+              "label": "Issue Updated: Affects Version",
+              "value": "event_updated_affects_version",
+            },
+            Object {
               "label": "Issue Updated: Assignee",
               "value": "event_updated_assignee",
             },
@@ -368,6 +372,10 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
             Object {
               "label": "Issue Updated: Rank",
               "value": "event_updated_rank",
+            },
+            Object {
+              "label": "Issue Updated: Reporter",
+              "value": "event_updated_reporter",
             },
             Object {
               "label": "Issue Updated: Sprint",
@@ -3657,7 +3665,17 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
           ]
         }
       />
-      <div>
+      <div
+        style={
+          Object {
+            "background": "rgba(61,60,64,0.08)",
+            "borderRadius": "4px",
+            "fontSize": "13px",
+            "marginTop": "8px",
+            "padding": "10px 12px",
+          }
+        }
+      >
         <span>
           Project = KT AND IssueType IN (Bug) AND "MJK - Radio Buttons" IN (1) AND affectedVersion IN (d) AND "Epic Link" IN (IDT-24)
         </span>

@@ -317,7 +317,7 @@ func httpAPIGetSearchEpics(ji Instance, w http.ResponseWriter, r *http.Request) 
 
 	wg.Wait()
 
-	var result []ReactSelectOption
+	result := []ReactSelectOption{}
 	if exact != nil {
 		name, _ := exact.Fields.Unknowns.String(epicNameTypeID)
 		if name != "" {
@@ -737,6 +737,12 @@ func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 	case "fixversions":
 		result := NewStringSet()
 		for _, v := range issue.Fields.FixVersions {
+			result = result.Add(v.ID)
+		}
+		return result
+	case "versions":
+		result := NewStringSet()
+		for _, v := range issue.Fields.AffectsVersions {
 			result = result.Add(v.ID)
 		}
 		return result

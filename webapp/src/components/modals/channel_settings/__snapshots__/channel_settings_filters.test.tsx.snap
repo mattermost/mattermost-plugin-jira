@@ -1,0 +1,287 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`components/ChannelSettingsFilters should match snapshot 1`] = `
+<div>
+  <div>
+    <div
+      key="0"
+    >
+      <ChannelSettingsFilter
+        addValidate={[MockFunction]}
+        chosenIssueTypes={
+          Array [
+            "10001",
+          ]
+        }
+        field={
+          Object {
+            "issueTypes": Array [
+              Object {
+                "id": "10001",
+                "name": "Bug",
+              },
+            ],
+            "key": "priority",
+            "name": "Priority",
+            "schema": Object {
+              "system": "priority",
+              "type": "priority",
+            },
+            "values": Array [
+              Object {
+                "label": "Highest",
+                "value": "1",
+              },
+              Object {
+                "label": "High",
+                "value": "2",
+              },
+              Object {
+                "label": "Medium",
+                "value": "3",
+              },
+              Object {
+                "label": "Low",
+                "value": "4",
+              },
+              Object {
+                "label": "Lowest",
+                "value": "5",
+              },
+            ],
+          }
+        }
+        fields={
+          Array [
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10001",
+                  "name": "Bug",
+                },
+              ],
+              "key": "priority",
+              "name": "Priority",
+              "schema": Object {
+                "system": "priority",
+                "type": "priority",
+              },
+              "values": Array [
+                Object {
+                  "label": "Highest",
+                  "value": "1",
+                },
+                Object {
+                  "label": "High",
+                  "value": "2",
+                },
+                Object {
+                  "label": "Medium",
+                  "value": "3",
+                },
+                Object {
+                  "label": "Low",
+                  "value": "4",
+                },
+                Object {
+                  "label": "Lowest",
+                  "value": "5",
+                },
+              ],
+            },
+          ]
+        }
+        issueMetadata={
+          Object {
+            "projects": Array [
+              Object {
+                "issuetypes": Array [
+                  Object {
+                    "fields": Object {
+                      "priority": Object {
+                        "allowedValues": Array [
+                          Object {
+                            "id": "1",
+                            "name": "Highest",
+                          },
+                          Object {
+                            "id": "2",
+                            "name": "High",
+                          },
+                          Object {
+                            "id": "3",
+                            "name": "Medium",
+                          },
+                          Object {
+                            "id": "4",
+                            "name": "Low",
+                          },
+                          Object {
+                            "id": "5",
+                            "name": "Lowest",
+                          },
+                        ],
+                        "hasDefaultValue": false,
+                        "key": "priority",
+                        "name": "Priority",
+                        "operations": Array [
+                          "set",
+                        ],
+                        "required": false,
+                        "schema": Object {
+                          "system": "priority",
+                          "type": "priority",
+                        },
+                      },
+                    },
+                    "id": "10001",
+                    "name": "Bug",
+                    "subtask": false,
+                  },
+                ],
+                "key": "TEST",
+              },
+            ],
+          }
+        }
+        onChange={[Function]}
+        removeFilter={[Function]}
+        removeValidate={[MockFunction]}
+        theme={Object {}}
+        value={
+          Object {
+            "inclusion": "include_any",
+            "key": "priority",
+            "values": Array [
+              "1",
+            ],
+          }
+        }
+      />
+    </div>
+    <div>
+      <EmptyChannelSettingsFilter
+        cancelAdd={[Function]}
+        chosenIssueTypes={
+          Array [
+            "10001",
+          ]
+        }
+        fields={
+          Array [
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10001",
+                  "name": "Bug",
+                },
+              ],
+              "key": "priority",
+              "name": "Priority",
+              "schema": Object {
+                "system": "priority",
+                "type": "priority",
+              },
+              "values": Array [
+                Object {
+                  "label": "Highest",
+                  "value": "1",
+                },
+                Object {
+                  "label": "High",
+                  "value": "2",
+                },
+                Object {
+                  "label": "Medium",
+                  "value": "3",
+                },
+                Object {
+                  "label": "Low",
+                  "value": "4",
+                },
+                Object {
+                  "label": "Lowest",
+                  "value": "5",
+                },
+              ],
+            },
+          ]
+        }
+        issueMetadata={
+          Object {
+            "projects": Array [
+              Object {
+                "issuetypes": Array [
+                  Object {
+                    "fields": Object {
+                      "priority": Object {
+                        "allowedValues": Array [
+                          Object {
+                            "id": "1",
+                            "name": "Highest",
+                          },
+                          Object {
+                            "id": "2",
+                            "name": "High",
+                          },
+                          Object {
+                            "id": "3",
+                            "name": "Medium",
+                          },
+                          Object {
+                            "id": "4",
+                            "name": "Low",
+                          },
+                          Object {
+                            "id": "5",
+                            "name": "Lowest",
+                          },
+                        ],
+                        "hasDefaultValue": false,
+                        "key": "priority",
+                        "name": "Priority",
+                        "operations": Array [
+                          "set",
+                        ],
+                        "required": false,
+                        "schema": Object {
+                          "system": "priority",
+                          "type": "priority",
+                        },
+                      },
+                    },
+                    "id": "10001",
+                    "name": "Bug",
+                    "subtask": false,
+                  },
+                ],
+                "key": "TEST",
+              },
+            ],
+          }
+        }
+        onChange={[Function]}
+        theme={Object {}}
+      />
+    </div>
+    <button
+      className="btn style--none d-flex align-items-center"
+      disabled={true}
+      onClick={[Function]}
+      type="button"
+    >
+      <span
+        style={
+          Object {
+            "fontSize": "24px",
+            "margin": "-1px 4px 0 0",
+          }
+        }
+      >
+        +
+      </span>
+      Add Filter
+    </button>
+  </div>
+</div>
+`;

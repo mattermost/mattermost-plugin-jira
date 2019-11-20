@@ -72,7 +72,7 @@ describe('components/JiraEpicSelector', () => {
         args = props.fetchEpicsWithParams.mock.calls[2][0];
         expect(args).toEqual({
             epic_name_type_id: 'customfield_10011',
-            jql: 'project=KT and issuetype=10000  and "Epic Name"~"some input"  ORDER BY updated DESC',
+            jql: 'project=KT and issuetype=10000  and ("Epic Name"~"some input" or "Epic Name"~"some input*") ORDER BY updated DESC',
             q: 'some input',
         });
     });

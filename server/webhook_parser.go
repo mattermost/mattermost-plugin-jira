@@ -158,6 +158,8 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 			event = parseWebhookUpdatedField(jwh, eventUpdatedIssuetype, field, fieldId, fromWithDefault, toWithDefault)
 		case field == "Fix Version":
 			event = parseWebhookUpdatedField(jwh, eventUpdatedFixVersion, field, fieldId, fromWithDefault, toWithDefault)
+		case field == "Version":
+			event = parseWebhookUpdatedField(jwh, eventUpdatedAffectsVersion, field, fieldId, fromWithDefault, toWithDefault)
 		case field == "reporter":
 			event = parseWebhookUpdatedField(jwh, eventUpdatedReporter, field, fieldId, fromWithDefault, toWithDefault)
 		case item.FieldType == "custom":

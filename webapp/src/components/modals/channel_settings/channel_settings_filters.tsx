@@ -6,7 +6,7 @@ import {getConflictingFields} from 'utils/jira_issue_metadata';
 
 import ChannelSettingsFilter, {EmptyChannelSettingsFilter} from './channel_settings_filter';
 
-type ChannelSettingsFiltersProps = {
+export type Props = {
     fields: FilterField[];
     values: FilterValue[];
     theme: {};
@@ -17,11 +17,11 @@ type ChannelSettingsFiltersProps = {
     onChange: (f: FilterValue[]) => void;
 };
 
-type ChannelSettingsFiltersState = {
+type State = {
     showCreateRow: boolean;
 };
 
-export default class ChannelSettingsFilters extends React.PureComponent<ChannelSettingsFiltersProps, ChannelSettingsFiltersState> {
+export default class ChannelSettingsFilters extends React.PureComponent<Props, State> {
     state = {
         showCreateRow: false,
     };

@@ -104,7 +104,7 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
         let searchStr = '';
         if (userInput) {
             const cleanedInput = userInput.trim().replace(/"/g, '\\"');
-            searchStr = ` and "${epicNameTypeName}"~"${cleanedInput}" `;
+            searchStr = ` and ("${epicNameTypeName}"~"${cleanedInput}" or "${epicNameTypeName}"~"${cleanedInput}*")`;
         }
 
         return this.fetchEpicsFromJql(searchStr, userInput);
@@ -216,7 +216,6 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
                 onChange={this.onChange}
                 required={this.props.required}
                 isMulti={this.props.isMulti}
-                isClearable={true}
                 defaultOptions={true}
                 loadOptions={this.handleIssueSearchTermChange}
                 menuPortalTarget={document.body}
