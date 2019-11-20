@@ -147,7 +147,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 		"two teams with two channels with multiple subscriptions": {
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
-					Id:        model.NewId(),
+					Id:        "SubID1a",
 					ChannelId: "channel1",
 					Name:      "Sub Name 1a",
 					Filters: SubscriptionFilters{
@@ -155,7 +155,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 					},
 				},
 				ChannelSubscription{
-					Id:        model.NewId(),
+					Id:        "SubID1b",
 					ChannelId: "channel1",
 					Name:      "Sub Name 1b",
 					Filters: SubscriptionFilters{
@@ -163,7 +163,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 					},
 				},
 				ChannelSubscription{
-					Id:        model.NewId(),
+					Id:        "SubID2",
 					ChannelId: "channel2",
 					Name:      "Sub Name 2",
 					Filters: SubscriptionFilters{
@@ -171,7 +171,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 					},
 				},
 				ChannelSubscription{
-					Id:        model.NewId(),
+					Id:        "SubID3",
 					ChannelId: "channel3",
 					Name:      "Sub Name 3",
 					Filters: SubscriptionFilters{
@@ -179,7 +179,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 					},
 				},
 				ChannelSubscription{
-					Id:        model.NewId(),
+					Id:        "SubID4",
 					ChannelId: "channel4",
 					Name:      "Sub Name 4",
 					Filters: SubscriptionFilters{
