@@ -95,6 +95,8 @@ const jiraIssueMetadata = (state = null, action) => {
         return action.data;
     case ActionTypes.CLEAR_JIRA_ISSUE_METADATA:
         return null;
+    case ActionTypes.CLOSE_CHANNEL_SETTINGS:
+        return null;
     default:
         return state;
     }
@@ -104,6 +106,8 @@ const jiraProjectMetadata = (state = null, action) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_JIRA_PROJECT_METADATA:
         return action.data;
+    case ActionTypes.CLOSE_CHANNEL_SETTINGS:
+        return null;
     default:
         return state;
     }
