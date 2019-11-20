@@ -170,6 +170,7 @@ exports[`components/ChannelSettingsFilter should match snapshot 1`] = `
           }
           allowUserDefinedValue={false}
           hideRequiredStar={true}
+          isClearable={false}
           isDisabled={false}
           isMulti={true}
           name="values"
