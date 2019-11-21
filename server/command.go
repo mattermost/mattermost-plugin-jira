@@ -62,6 +62,7 @@ var jiraCommandHandler = CommandHandler{
 		"stats":              executeStats,
 		"info":               executeInfo,
 		"help":               commandHelp,
+		"subscribe/list":     executeSubscribeList,
 		"debug/stats/reset":  executeDebugStatsReset,
 		"debug/stats/save":   executeDebugStatsSave,
 		"debug/stats/expvar": executeDebugStatsExpvar,
@@ -264,6 +265,23 @@ func executeDebugInstanceList(p *Plugin, c *plugin.Context, header *model.Comman
 		text += fmt.Sprintf(format, i+1, key, details)
 	}
 	return p.responsef(header, text)
+}
+
+func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(header, "`/jira subscribe list` can only be run by a system administrator.")
+	}
+
+	msg, err := p.listChannelSubscriptions()
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+
+	return p.responsef(header, msg)
 }
 
 func authorizedSysAdmin(p *Plugin, userId string) (bool, error) {

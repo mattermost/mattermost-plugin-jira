@@ -1,0 +1,250 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`components/ChannelSettingsFilter should match snapshot 1`] = `
+<div
+  className="row"
+>
+  <div
+    className="col-md-12 col-sm-12"
+  >
+    <div
+      className="help-text error-text"
+      style={
+        Object {
+          "margin": "0 0 10px",
+        }
+      }
+    />
+  </div>
+  <div
+    className="col-md-11 col-sm-12"
+  >
+    <div
+      className="row"
+    >
+      <div
+        className="col-md-4 col-sm-12"
+      >
+        <ReactSelectSetting
+          addValidate={
+            [MockFunction] {
+              "calls": Array [
+                Array [
+                  [Function],
+                ],
+              ],
+              "results": Array [
+                Object {
+                  "type": "return",
+                  "value": undefined,
+                },
+              ],
+            }
+          }
+          hideRequiredStar={true}
+          name="fieldtype"
+          onChange={[Function]}
+          options={
+            Array [
+              Object {
+                "label": "Affects versions",
+                "value": "versions",
+              },
+              Object {
+                "label": "Epic Link",
+                "value": "customfield_10014",
+              },
+              Object {
+                "label": "Fix versions",
+                "value": "fixVersions",
+              },
+              Object {
+                "label": "Labels",
+                "value": "labels",
+              },
+              Object {
+                "label": "MJK - Checkbox",
+                "value": "customfield_10068",
+              },
+              Object {
+                "label": "MJK - Labels",
+                "value": "customfield_10071",
+              },
+              Object {
+                "label": "MJK - Radio Buttons",
+                "value": "customfield_10073",
+              },
+              Object {
+                "label": "MJK - Select List 2",
+                "value": "customfield_10075",
+              },
+              Object {
+                "label": "MJK - Select List 3",
+                "value": "customfield_10076",
+              },
+              Object {
+                "label": "Priority",
+                "value": "priority",
+              },
+            ]
+          }
+          removeValidate={[MockFunction]}
+          required={true}
+          theme={Object {}}
+          value={
+            Object {
+              "label": "Priority",
+              "value": "priority",
+            }
+          }
+        />
+      </div>
+      <div
+        className="col-md-4 col-sm-12"
+      >
+        <ReactSelectSetting
+          addValidate={
+            [MockFunction] {
+              "calls": Array [
+                Array [
+                  [Function],
+                ],
+              ],
+              "results": Array [
+                Object {
+                  "type": "return",
+                  "value": undefined,
+                },
+              ],
+            }
+          }
+          formatOptionLabel={[Function]}
+          hideRequiredStar={true}
+          name="inclusion"
+          onChange={[Function]}
+          options={
+            Array [
+              Object {
+                "label": "Include",
+                "value": "include_any",
+              },
+              Object {
+                "label": "Exclude",
+                "value": "exclude_any",
+              },
+              Object {
+                "label": "Empty",
+                "value": "empty",
+              },
+            ]
+          }
+          removeValidate={[MockFunction]}
+          required={true}
+          theme={Object {}}
+          value={
+            Object {
+              "label": "Include",
+              "value": "include_any",
+            }
+          }
+        />
+      </div>
+      <div
+        className="col-md-4 col-sm-12"
+      >
+        <ReactSelectSetting
+          addValidate={
+            [MockFunction] {
+              "calls": Array [
+                Array [
+                  [Function],
+                ],
+              ],
+              "results": Array [
+                Object {
+                  "type": "return",
+                  "value": undefined,
+                },
+              ],
+            }
+          }
+          allowUserDefinedValue={false}
+          hideRequiredStar={true}
+          isClearable={false}
+          isDisabled={false}
+          isMulti={true}
+          name="values"
+          onChange={[Function]}
+          options={
+            Array [
+              Object {
+                "label": "Highest",
+                "value": "1",
+              },
+              Object {
+                "label": "High",
+                "value": "2",
+              },
+              Object {
+                "label": "Medium",
+                "value": "3",
+              },
+              Object {
+                "label": "Low",
+                "value": "4",
+              },
+              Object {
+                "label": "Lowest",
+                "value": "5",
+              },
+            ]
+          }
+          removeValidate={[MockFunction]}
+          required={true}
+          resetInvalidOnChange={true}
+          theme={Object {}}
+          value={
+            Array [
+              Object {
+                "label": "Highest",
+                "value": "1",
+              },
+            ]
+          }
+        />
+      </div>
+    </div>
+  </div>
+  <div
+    className="col-md-1 col-sm-12 text-center"
+  >
+    <button
+      className="style--none"
+      onClick={[Function]}
+      style={
+        Object {
+          "color": undefined,
+          "fontSize": "20px",
+          "margin": "0.5rem 0 0",
+        }
+      }
+      type="button"
+    >
+      <i
+        className="fa fa-trash"
+      />
+    </button>
+  </div>
+  <ConfirmModal
+    cancelButtonText="Cancel"
+    confirmButtonClass="btn btn-danger"
+    confirmButtonText="Delete"
+    hideCancel={false}
+    message="Are you sure you want to delete this filter?"
+    onCancel={[Function]}
+    onConfirm={[Function]}
+    show={false}
+    title="Field Filter"
+  />
+</div>
+`;

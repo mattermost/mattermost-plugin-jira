@@ -95,6 +95,8 @@ const jiraIssueMetadata = (state = null, action) => {
         return action.data;
     case ActionTypes.CLEAR_JIRA_ISSUE_METADATA:
         return null;
+    case ActionTypes.CLOSE_CHANNEL_SETTINGS:
+        return null;
     default:
         return state;
     }
@@ -104,6 +106,8 @@ const jiraProjectMetadata = (state = null, action) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_JIRA_PROJECT_METADATA:
         return action.data;
+    case ActionTypes.CLOSE_CHANNEL_SETTINGS:
+        return null;
     default:
         return state;
     }
@@ -120,7 +124,7 @@ const channelIdWithSettingsOpen = (state = '', action) => {
     }
 };
 
-const channelSubscripitons = (state = {}, action) => {
+const channelSubscriptions = (state = {}, action) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_CHANNEL_SUBSCRIPTIONS: {
         const nextState = {...state};
@@ -131,6 +135,26 @@ const channelSubscripitons = (state = {}, action) => {
         const sub = action.data;
         const newSubs = state[sub.channel_id].concat([]);
         newSubs.splice(newSubs.findIndex((s) => s.id === sub.id), 1);
+
+        return {
+            ...state,
+            [sub.channel_id]: newSubs,
+        };
+    }
+    case ActionTypes.CREATED_CHANNEL_SUBSCRIPTION: {
+        const sub = action.data;
+        const newSubs = state[sub.channel_id].concat([]);
+        newSubs.push(sub);
+
+        return {
+            ...state,
+            [sub.channel_id]: newSubs,
+        };
+    }
+    case ActionTypes.EDITED_CHANNEL_SUBSCRIPTION: {
+        const sub = action.data;
+        const newSubs = state[sub.channel_id].concat([]);
+        newSubs.splice(newSubs.findIndex((s) => s.id === sub.id), 1, sub);
 
         return {
             ...state,
@@ -153,5 +177,5 @@ export default combineReducers({
     jiraIssueMetadata,
     jiraProjectMetadata,
     channelIdWithSettingsOpen,
-    channelSubscripitons,
+    channelSubscriptions,
 });

@@ -21,6 +21,9 @@ export default {
     OPEN_CHANNEL_SETTINGS: `${PluginId}_open_channel_settings`,
     CLOSE_CHANNEL_SETTINGS: `${PluginId}_close_channel_settings`,
 
+    CREATED_CHANNEL_SUBSCRIPTION: `${PluginId}_created_channel_subscription`,
+    EDITED_CHANNEL_SUBSCRIPTION: `${PluginId}_edited_channel_subscription`,
+
     RECEIVED_CHANNEL_SUBSCRIPTIONS: `${PluginId}_recevied_channel_subscriptions`,
     DELETED_CHANNEL_SUBSCRIPTION: `${PluginId}_deleted_channel_subscription`,
 };

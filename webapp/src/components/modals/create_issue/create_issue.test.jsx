@@ -55,14 +55,6 @@ describe('components/CreateIssue', () => {
         expect(wrapper).toMatchSnapshot();
     });
 
-    test('should match snapshot with no project or issue metadata', () => {
-        const props = {...baseProps, jiraIssueMetadata: null, jiraProjectMetadata: null};
-        const wrapper = shallow(
-            <CreateIssue {...props}/>
-        );
-        expect(wrapper).toMatchSnapshot();
-    });
-
     test('should match snapshot with form filled', async () => {
         const create = jest.fn().mockResolvedValue({});
         const props = {...baseProps, create};

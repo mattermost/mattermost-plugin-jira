@@ -1,0 +1,182 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`components/JiraEpicSelector should match snapshot 1`] = `
+<Setting
+  addValidate={
+    [MockFunction] {
+      "calls": Array [
+        Array [
+          [Function],
+        ],
+      ],
+      "results": Array [
+        Object {
+          "type": "return",
+          "value": undefined,
+        },
+      ],
+    }
+  }
+  fetchEpicsWithParams={
+    [MockFunction] {
+      "calls": Array [
+        Array [
+          Object {
+            "epic_name_type_id": "customfield_10011",
+            "jql": "project=KT and issuetype=10000 and id IN (KT-17, KT-20) ORDER BY updated DESC",
+            "q": "",
+          },
+        ],
+      ],
+      "results": Array [
+        Object {
+          "type": "return",
+          "value": undefined,
+        },
+      ],
+    }
+  }
+  inputId="epic"
+  isMulti={true}
+  onChange={[MockFunction]}
+  removeValidate={[MockFunction]}
+  theme={
+    Object {
+      "awayIndicator": "#ffbc42",
+      "buttonBg": "#166de0",
+      "buttonColor": "#ffffff",
+      "centerChannelBg": "#ffffff",
+      "centerChannelColor": "#3d3c40",
+      "codeTheme": "github",
+      "dndIndicator": "#f74343",
+      "errorTextColor": "#fd5960",
+      "linkColor": "#2389d7",
+      "mentionBj": "#ffffff",
+      "mentionColor": "#145dbf",
+      "mentionHighlightBg": "#ffe577",
+      "mentionHighlightLink": "#166de0",
+      "newMessageSeparator": "#ff8800",
+      "onlineIndicator": "#06d6a0",
+      "sidebarBg": "#145dbf",
+      "sidebarHeaderBg": "#1153ab",
+      "sidebarHeaderTextColor": "#ffffff",
+      "sidebarText": "#ffffff",
+      "sidebarTextActiveBorder": "#579eff",
+      "sidebarTextActiveColor": "#ffffff",
+      "sidebarTextHoverBg": "#4578bf",
+      "sidebarUnreadText": "#ffffff",
+      "type": "Mattermost",
+    }
+  }
+  value={
+    Array [
+      "KT-17",
+      "KT-20",
+    ]
+  }
+>
+  <Async
+    addValidate={
+      [MockFunction] {
+        "calls": Array [
+          Array [
+            [Function],
+          ],
+        ],
+        "results": Array [
+          Object {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    }
+    cacheOptions={false}
+    defaultOptions={true}
+    fetchEpicsWithParams={
+      [MockFunction] {
+        "calls": Array [
+          Array [
+            Object {
+              "epic_name_type_id": "customfield_10011",
+              "jql": "project=KT and issuetype=10000 and id IN (KT-17, KT-20) ORDER BY updated DESC",
+              "q": "",
+            },
+          ],
+        ],
+        "results": Array [
+          Object {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    }
+    filterOption={null}
+    isMulti={true}
+    loadOptions={[Function]}
+    menuPlacement="auto"
+    menuPortalTarget={<body />}
+    name="epic"
+    onChange={[Function]}
+    removeValidate={[MockFunction]}
+    styles={
+      Object {
+        "clearIndicator": [Function],
+        "control": [Function],
+        "dropdownIndicator": [Function],
+        "indicatorSeparator": [Function],
+        "input": [Function],
+        "menu": [Function],
+        "menuPortal": [Function],
+        "multiValue": [Function],
+        "multiValueLabel": [Function],
+        "multiValueRemove": [Function],
+        "option": [Function],
+        "placeholder": [Function],
+        "singleValue": [Function],
+      }
+    }
+    theme={
+      Object {
+        "awayIndicator": "#ffbc42",
+        "buttonBg": "#166de0",
+        "buttonColor": "#ffffff",
+        "centerChannelBg": "#ffffff",
+        "centerChannelColor": "#3d3c40",
+        "codeTheme": "github",
+        "dndIndicator": "#f74343",
+        "errorTextColor": "#fd5960",
+        "linkColor": "#2389d7",
+        "mentionBj": "#ffffff",
+        "mentionColor": "#145dbf",
+        "mentionHighlightBg": "#ffe577",
+        "mentionHighlightLink": "#166de0",
+        "newMessageSeparator": "#ff8800",
+        "onlineIndicator": "#06d6a0",
+        "sidebarBg": "#145dbf",
+        "sidebarHeaderBg": "#1153ab",
+        "sidebarHeaderTextColor": "#ffffff",
+        "sidebarText": "#ffffff",
+        "sidebarTextActiveBorder": "#579eff",
+        "sidebarTextActiveColor": "#ffffff",
+        "sidebarTextHoverBg": "#4578bf",
+        "sidebarUnreadText": "#ffffff",
+        "type": "Mattermost",
+      }
+    }
+    value={
+      Array [
+        Object {
+          "label": "KT-17",
+          "value": "KT-17",
+        },
+        Object {
+          "label": "KT-20",
+          "value": "KT-20",
+        },
+      ]
+    }
+  />
+</Setting>
+`;

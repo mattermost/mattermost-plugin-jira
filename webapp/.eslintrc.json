@@ -199,7 +199,7 @@
     "max-nested-callbacks": [
       2,
       {
-        "max": 2
+        "max": 3
       }
     ],
     "max-statements-per-line": [
@@ -636,6 +636,8 @@
   "overrides": [
     {
       "files": ["**/*.tsx", "**/*.ts"],
+      "parser": "@typescript-eslint/parser",
+      "plugins": ["@typescript-eslint"],
       "extends": "plugin:@typescript-eslint/recommended",
       "rules": {
         "@typescript-eslint/no-var-requires": 0,

@@ -11,6 +11,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+type ReactSelectOption struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
 func NormalizeInstallURL(mattermostSiteURL, jiraURL string) (string, error) {
 	u, err := url.Parse(jiraURL)
 	if err != nil {
