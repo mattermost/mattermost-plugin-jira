@@ -54,12 +54,6 @@ type ChannelSubscriptions struct {
 	IdByEvent     map[string]StringSet           `json:"id_by_event"`
 }
 
-type TeamSubscriptions struct {
-	TeamId   string
-	TeamName string
-	SubIds   [][]string
-}
-
 func NewChannelSubscriptions() *ChannelSubscriptions {
 	return &ChannelSubscriptions{
 		ById:          map[string]ChannelSubscription{},
@@ -361,6 +355,17 @@ func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscripti
 	})
 }
 
+type SubsGroupedByTeam struct {
+	TeamId               string
+	TeamName             string
+	SubsGroupedByChannel []SubsGroupedByChannel
+}
+
+type SubsGroupedByChannel struct {
+	ChannelId string
+	SubIds    []string
+}
+
 func (p *Plugin) listChannelSubscriptions() (string, error) {
 	subs, err := p.getSubscriptions()
 	if err != nil {
@@ -385,22 +390,18 @@ func (p *Plugin) listChannelSubscriptions() (string, error) {
 		// create header for each Team, DM and GM channels
 		rows = append(rows, fmt.Sprintf("\n#### %s", teamSubs.TeamName))
 
-		for _, subIds := range teamSubs.SubIds {
+		for _, grouped := range teamSubs.SubsGroupedByChannel {
 
-			var printChannelName = true
-			for _, subId := range subIds {
+			channel, appErr := p.API.GetChannel(grouped.ChannelId)
+			if appErr != nil {
+				return "", errors.New("Failed to get channel")
+			}
+
+			// only print channel name once for all subscriptions
+			rows = append(rows, fmt.Sprintf("* **~%s** (%d):", channel.Name, len(grouped.SubIds)))
+
+			for _, subId := range grouped.SubIds {
 				sub := subs.Channel.ById[subId]
-
-				channel, appErr := p.API.GetChannel(sub.ChannelId)
-				if appErr != nil {
-					return "", errors.New("Failed to get channel")
-				}
-
-				// only print channel name once for all subscriptions
-				if printChannelName {
-					rows = append(rows, fmt.Sprintf("* **~%s** (%d):", channel.Name, len(subIds)))
-					printChannelName = false
-				}
 
 				subName := "(No Name)"
 				if sub.Name != "" {
@@ -415,17 +416,17 @@ func (p *Plugin) listChannelSubscriptions() (string, error) {
 	return strings.Join(rows, "\n"), nil
 }
 
-func (p *Plugin) getSortedSubscriptions() ([]TeamSubscriptions, error) {
+func (p *Plugin) getSortedSubscriptions() ([]SubsGroupedByTeam, error) {
 	subs, err := p.getSubscriptions()
 	if err != nil {
 		return nil, err
 	}
 
-	subsMap := make(map[string][][]string)
+	subsMap := make(map[string][]SubsGroupedByChannel)
 	teamMap := make(map[string]string)
 
 	var teams []model.Team
-	var DmSubsIds [][]string
+	var dmSubsIds []SubsGroupedByChannel
 
 	// get teams from subscriptions
 	for channelID, subIDs := range subs.Channel.IdByChannelId {
@@ -445,37 +446,30 @@ func (p *Plugin) getSortedSubscriptions() ([]TeamSubscriptions, error) {
 			channelSubIds = append(channelSubIds, subID)
 		}
 
+		grouped := SubsGroupedByChannel{
+			ChannelId: channelID,
+			SubIds:    channelSubIds,
+		}
 		// for DMs and GMs, save to array and go to next team
 		if channel.TeamId == "" {
-			DmSubsIds = append(DmSubsIds, channelSubIds)
+			dmSubsIds = append(dmSubsIds, grouped)
 			continue
 		}
-
-		team, _ := p.API.GetTeam(channel.TeamId)
 
 		// teamMap used to determine if already have the team saved
 		_, ok := teamMap[channel.TeamId]
 		if !ok {
+			team, _ := p.API.GetTeam(channel.TeamId)
 			teams = append(teams, *team)
+			teamMap[channel.TeamId] = team.DisplayName
 		}
-		teamMap[channel.TeamId] = team.DisplayName
 
 		// only save non-DM and non-GM subs to the map
-		subsMap[channel.TeamId] = append(subsMap[channel.TeamId], channelSubIds)
+		subsMap[channel.TeamId] = append(subsMap[channel.TeamId], grouped)
 
 	}
 
-	var teamSubs, dmSubs []TeamSubscriptions
-
-	// save all DM and GM channels under a generic teamName
-	if len(DmSubsIds) != 0 {
-		teamData := TeamSubscriptions{
-			TeamId:   "",
-			TeamName: "Group and Direct Messages",
-			SubIds:   DmSubsIds,
-		}
-		dmSubs = append(dmSubs, teamData)
-	}
+	var teamSubs []SubsGroupedByTeam
 
 	// Closures that order the Teams structure.
 	displayName := func(p1, p2 *model.Team) bool {
@@ -486,15 +480,23 @@ func (p *Plugin) getSortedSubscriptions() ([]TeamSubscriptions, error) {
 	By(displayName).Sort(teams)
 
 	for _, teamId := range teams {
-		teamData := TeamSubscriptions{
-			TeamId:   teamId.Id,
-			TeamName: teamId.DisplayName,
-			SubIds:   subsMap[teamId.Id],
+		teamData := SubsGroupedByTeam{
+			TeamId:               teamId.Id,
+			TeamName:             teamId.DisplayName,
+			SubsGroupedByChannel: subsMap[teamId.Id],
 		}
 		teamSubs = append(teamSubs, teamData)
 	}
 
-	teamSubs = append(teamSubs, dmSubs...)
+	// save all DM and GM channels under a generic teamName
+	if len(dmSubsIds) != 0 {
+		teamData := SubsGroupedByTeam{
+			TeamId:               "",
+			TeamName:             "Group and Direct Messages",
+			SubsGroupedByChannel: dmSubsIds,
+		}
+		teamSubs = append(teamSubs, teamData)
+	}
 
 	return teamSubs, nil
 }
