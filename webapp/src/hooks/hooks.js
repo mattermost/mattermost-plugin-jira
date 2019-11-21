@@ -60,6 +60,7 @@ export default class Hooks {
                 this.store.dispatch(sendEphemeralPost('Your Mattermost account is not connected to Jira. Please use `/jira connect` to connect your account, then try again.'));
                 return Promise.resolve({});
             }
+
             this.store.dispatch(openChannelSettings(contextArgs.channel_id));
             return Promise.resolve({});
         }
