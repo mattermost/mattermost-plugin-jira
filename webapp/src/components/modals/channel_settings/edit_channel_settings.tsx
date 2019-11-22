@@ -362,8 +362,13 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
                         />
-                        <div style={getBaseStyles(this.props.theme).codeBlock}>
-                            <span>{generateJQLStringFromSubscriptionFilters(this.props.jiraIssueMetadata, filterFields, this.state.filters)}</span>
+                        <div>
+                            <label className='control-label margin-bottom'>
+                                {'Summary'}
+                            </label>
+                            <div style={getBaseStyles(this.props.theme).codeBlock}>
+                                <span>{generateJQLStringFromSubscriptionFilters(this.props.jiraIssueMetadata, filterFields, this.state.filters)}</span>
+                            </div>
                         </div>
                     </React.Fragment>
                 );

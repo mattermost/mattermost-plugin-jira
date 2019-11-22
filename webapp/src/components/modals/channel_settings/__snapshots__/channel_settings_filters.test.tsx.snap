@@ -1,7 +1,14 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`components/ChannelSettingsFilters should match snapshot 1`] = `
-<div>
+<div
+  className="margin-bottom"
+>
+  <label
+    className="control-label margin-bottom"
+  >
+    Filters
+  </label>
   <div>
     <div
       key="0"

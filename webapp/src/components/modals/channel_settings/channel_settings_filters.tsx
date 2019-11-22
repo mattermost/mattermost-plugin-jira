@@ -77,7 +77,12 @@ export default class ChannelSettingsFilters extends React.PureComponent<Props, S
         });
 
         return (
-            <div>
+            <div className='margin-bottom'>
+                <label
+                    className='control-label margin-bottom'
+                >
+                    {'Filters'}
+                </label>
                 <div>
                     {values.map((v, i) => {
                         const field = fields.find((f) => f.key === v.key);
