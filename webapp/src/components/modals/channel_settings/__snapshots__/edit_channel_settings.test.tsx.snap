@@ -3669,7 +3669,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
         <label
           className="control-label margin-bottom"
         >
-          Summary
+          Approximate JQL Output
         </label>
         <div
           style={
