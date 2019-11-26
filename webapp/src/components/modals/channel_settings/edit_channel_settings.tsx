@@ -364,7 +364,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                         />
                         <div>
                             <label className='control-label margin-bottom'>
-                                {'Summary'}
+                                {'Approximate JQL Output'}
                             </label>
                             <div style={getBaseStyles(this.props.theme).codeBlock}>
                                 <span>{generateJQLStringFromSubscriptionFilters(this.props.jiraIssueMetadata, filterFields, this.state.filters)}</span>
