@@ -12,12 +12,16 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
+	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/plugin"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
 // Client is the combined interface for all upstream APIs and convenience methods.
@@ -59,7 +63,7 @@ type IssueService interface {
 	GetIssue(key string, options *jira.GetQueryOptions) (*jira.Issue, error)
 	CreateIssue(issue *jira.Issue) (*jira.Issue, error)
 
-	AddAttachment(api plugin.API, issueKey, fileID string, maxSize ByteSize) (mattermostName, jiraName string, err error)
+	AddAttachment(api plugin.API, issueKey, fileID string, maxSize utils.ByteSize) (mattermostName, jiraName string, err error)
 	AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
 	DoTransition(issueKey, transitionID string) error
 	GetCreateMeta(*jira.GetQueryOptions) (*jira.CreateMetaInfo, error)
@@ -77,7 +81,7 @@ type JiraClient struct {
 // RESTGet calls a specified HTTP point with a GET method. endpoint must be an absolute URL, or a
 // relative URL starting with a version, like "2/user".
 func (client JiraClient) RESTGet(endpoint string, params map[string]string, dest interface{}) error {
-	endpointURL, err := restURL(endpoint)
+	endpointURL, err := endpointURL(endpoint)
 	if err != nil {
 		return err
 	}
@@ -85,7 +89,6 @@ func (client JiraClient) RESTGet(endpoint string, params map[string]string, dest
 	if err != nil {
 		return err
 	}
-
 	q := req.URL.Query()
 	for k, v := range params {
 		q.Add(k, v)
@@ -107,7 +110,7 @@ func (client JiraClient) RESTGet(endpoint string, params map[string]string, dest
 // create attachments for this issue"), and some as plain text ("The field file exceeds its maximum
 // permitted size of 1024 bytes"). This implementation handles both.
 func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name string) (*jira.Attachment, error) {
-	endpointURL, err := restURL(fmt.Sprintf("2/issue/%s/attachments", issueID))
+	endpointURL, err := endpointURL(fmt.Sprintf("2/issue/%s/attachments", issueID))
 	if err != nil {
 		return nil, err
 	}
@@ -155,18 +158,6 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 	}
 
 	return attachments[0], nil
-}
-
-func restURL(endpoint string) (string, error) {
-	parsedURL, err := url.Parse(endpoint)
-	if err != nil {
-		return "", err
-	}
-	if parsedURL.Scheme == "" {
-		// relative path
-		endpoint = fmt.Sprintf("/rest/api/%s", endpoint)
-	}
-	return endpoint, nil
 }
 
 // GetProject returns a Project by key.
@@ -225,7 +216,7 @@ func (client JiraClient) AddComment(issueKey string, comment *jira.Comment) (*ji
 
 // UpdateComment changes a comment of an issue.
 func (client JiraClient) UpdateComment(issueKey string, comment *jira.Comment) (*jira.Comment, error) {
-	updated, resp, err := client.Jira.Issue.AddComment(issueKey, comment)
+	updated, resp, err := client.Jira.Issue.UpdateComment(issueKey, comment)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
 	}
@@ -254,14 +245,16 @@ func (client JiraClient) DoTransition(issueKey, transitionID string) error {
 }
 
 // AddAttachment uploads a file attachment
-func (client JiraClient) AddAttachment(api plugin.API, issueKey, fileID string, maxSize ByteSize) (mattermostName, jiraName string, err error) {
+func (client JiraClient) AddAttachment(api plugin.API, issueKey, fileID string, maxSize utils.ByteSize) (
+	mattermostName, jiraName string, err error) {
+
 	fileinfo, appErr := api.GetFileInfo(fileID)
 	if appErr != nil {
 		return "", "", appErr
 	}
-	if ByteSize(fileinfo.Size) > maxSize {
+	if utils.ByteSize(fileinfo.Size) > maxSize {
 		return fileinfo.Name, "",
-			errors.Errorf("Maximum attachment size %v exceeded, file size %v", maxSize, ByteSize(fileinfo.Size))
+			errors.Errorf("Maximum attachment size %v exceeded, file size %v", maxSize, utils.ByteSize(fileinfo.Size))
 	}
 
 	fileBytes, appErr := api.ReadFile(fileinfo.Path)
@@ -338,6 +331,57 @@ func SearchUsersAssignableToIssue(client Client, issueKey, queryKey, queryValue 
 		return nil, err
 	}
 	return users, nil
+}
+
+func endpointURL(endpoint string) (string, error) {
+	parsedURL, err := url.Parse(endpoint)
+	if err != nil {
+		return "", err
+	}
+	if parsedURL.Scheme == "" {
+		// relative path
+		endpoint = fmt.Sprintf("/rest/api/%s", endpoint)
+	}
+	return endpoint, nil
+}
+
+var keyOrIDRegex = regexp.MustCompile("(^[[:alpha:]]+-)?[[:digit:]]+$")
+
+func endpointNameFromRequest(r *http.Request) string {
+	l := strings.ToLower(r.URL.Path)
+	s := strings.TrimLeft(l, "/rest/api")
+	if s == l {
+		return "_unrecognized"
+	}
+	parts := strings.Split(s, "/")
+	n := len(parts)
+
+	if n < 2 {
+		return "_unrecognized"
+	}
+	var out = []string{"api/jira", parts[0], parts[1]}
+	context := parts[1]
+	for _, p := range parts[2:] {
+		switch context {
+		case "issue":
+			if keyOrIDRegex.MatchString(p) {
+				continue
+			}
+
+		case "user":
+			if p != "groups" && p != "assignable" {
+				continue
+			}
+
+		case "project", "comment":
+			continue
+		}
+		out = append(out, p)
+		context = p
+	}
+
+	out = append(out, r.Method)
+	return strings.Join(out, "/")
 }
 
 // RESTError is an error type that embeds the http response status code, and implements a

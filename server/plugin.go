@@ -14,11 +14,13 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/mattermost/mattermost-server/model"
-
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
 const (
@@ -42,6 +44,9 @@ type externalConfig struct {
 	// Legacy 1.x Webhook secret
 	Secret string `json:"secret"`
 
+	// Stats API secret
+	StatsSecret string `json:"stats_secret"`
+
 	// What MM roles that can create subscriptions
 	RolesAllowedToEditJiraSubscriptions string
 
@@ -51,11 +56,14 @@ type externalConfig struct {
 	// Maximum attachment size allowed to be uploaded to Jira, can be a
 	// number, optionally followed by one of [b, kb, mb, gb, tb]
 	MaxAttachmentSize string
+
+	// Disable statistics gathering
+	DisableStats bool `json:"disable_stats"`
 }
 
 const currentInstanceTTL = 1 * time.Second
 
-const defaultMaxAttachmentSize = ByteSize(10 * 1024 * 1024) // 10Mb
+const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb
 
 type config struct {
 	// externalConfig caches values from the plugin's settings in the server's config.json
@@ -70,7 +78,10 @@ type config struct {
 	currentInstanceExpires time.Time
 
 	// Maximum attachment size allowed to be uploaded to Jira
-	maxAttachmentSize ByteSize
+	maxAttachmentSize utils.ByteSize
+
+	stats             *expvar.Stats
+	statsStopAutosave chan bool
 }
 
 type Plugin struct {
@@ -122,7 +133,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	ec.MaxAttachmentSize = strings.TrimSpace(ec.MaxAttachmentSize)
 	maxAttachmentSize := defaultMaxAttachmentSize
 	if len(ec.MaxAttachmentSize) > 0 {
-		maxAttachmentSize, err = ParseByteSize(ec.MaxAttachmentSize)
+		maxAttachmentSize, err = utils.ParseByteSize(ec.MaxAttachmentSize)
 		if err != nil {
 			return errors.WithMessage(err, "failed to load plugin configuration")
 		}
@@ -132,7 +143,6 @@ func (p *Plugin) OnConfigurationChange() error {
 		conf.externalConfig = ec
 		conf.maxAttachmentSize = maxAttachmentSize
 	})
-
 	return nil
 }
 
@@ -190,12 +200,14 @@ func (p *Plugin) OnActivate() error {
 		go webhookWorker{i, p, p.webhookQueue}.work()
 	}
 
+	go p.initStats()
 	return nil
 }
 
 func (p *Plugin) GetPluginKey() string {
 	return "mattermost_" + regexpNonAlnum.ReplaceAllString(p.GetSiteURL(), "_")
 }
+
 func (p *Plugin) GetPluginURLPath() string {
 	return "/plugins/" + manifest.Id
 }

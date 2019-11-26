@@ -8,6 +8,9 @@ import (
 
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
 const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
@@ -45,23 +48,27 @@ type CommandHandler struct {
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
-		"connect":          executeConnect,
-		"disconnect":       executeDisconnect,
-		"install/cloud":    executeInstallCloud,
-		"install/server":   executeInstallServer,
-		"view":             executeView,
-		"settings":         executeSettings,
-		"transition":       executeTransition,
-		"assign":           executeAssign,
-		"uninstall/cloud":  executeUninstallCloud,
-		"uninstall/server": executeUninstallServer,
-		"webhook":          executeWebhookURL,
-		"info":             executeInfo,
-		"help":             commandHelp,
-		"subscribe/list":   executeSubscribeList,
-		// "list":             executeList,
-		// "instance/select":  executeInstanceSelect,
-		// "instance/delete":  executeInstanceDelete,
+		"connect":            executeConnect,
+		"disconnect":         executeDisconnect,
+		"install/cloud":      executeInstallCloud,
+		"install/server":     executeInstallServer,
+		"view":               executeView,
+		"settings":           executeSettings,
+		"transition":         executeTransition,
+		"assign":             executeAssign,
+		"uninstall/cloud":    executeUninstallCloud,
+		"uninstall/server":   executeUninstallServer,
+		"webhook":            executeWebhookURL,
+		"stats":              executeStats,
+		"info":               executeInfo,
+		"help":               commandHelp,
+		"subscribe/list":     executeSubscribeList,
+		"debug/stats/reset":  executeDebugStatsReset,
+		"debug/stats/save":   executeDebugStatsSave,
+		"debug/stats/expvar": executeDebugStatsExpvar,
+		// "debug/instance/list":   executeDebugInstanceList,
+		// "debug/instance/select": executeDebugInstanceSelect,
+		// "debug/instance/delete": executeDebugInstanceDelete,
 	},
 	defaultHandler: executeJiraDefault,
 }
@@ -205,7 +212,7 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	return &model.CommandResponse{}
 }
 
-func executeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeDebugInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
@@ -278,9 +285,9 @@ func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArg
 }
 
 func authorizedSysAdmin(p *Plugin, userId string) (bool, error) {
-	user, err := p.API.GetUser(userId)
-	if err != nil {
-		return false, err
+	user, appErr := p.API.GetUser(userId)
+	if appErr != nil {
+		return false, appErr
 	}
 	if !strings.Contains(user.Roles, "system_admin") {
 		return false, nil
@@ -299,7 +306,7 @@ func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs
 	if len(args) != 1 {
 		return p.help(header)
 	}
-	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
+	jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -342,7 +349,7 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 	if len(args) != 1 {
 		return p.help(header)
 	}
-	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
+	jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -398,7 +405,7 @@ func executeUninstallCloud(p *Plugin, c *plugin.Context, header *model.CommandAr
 		return p.help(header)
 	}
 
-	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
+	jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -449,7 +456,7 @@ func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandA
 		return p.help(header)
 	}
 
-	jiraURL, err := normalizeInstallURL(p.GetSiteURL(), args[0])
+	jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -536,7 +543,7 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 		resp += fmt.Sprintf("Jira %s is installed, but you are not connected. Please [connect](%s/%s).\n",
 			uinfo.JIRAURL, p.GetPluginURL(), routeUserConnect)
 	default:
-		return p.responsef(header, "No Jira instance installed, please contact your system administrator.")
+		return p.responsef(header, resp+"\nNo Jira instance installed, please contact your system administrator.")
 	}
 
 	resp += fmt.Sprintf("\nJira:\n")
@@ -581,6 +588,88 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 		}
 	}
 	return p.responsef(header, resp)
+}
+
+func executeStats(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
+	return executeStatsImpl(p, c, commandArgs, false, args...)
+}
+
+func executeDebugStatsExpvar(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
+	return executeStatsImpl(p, c, commandArgs, true, args...)
+}
+
+func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, useExpvar bool, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, commandArgs.UserId)
+	if err != nil {
+		return p.responsef(commandArgs, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(commandArgs, "`/jira stats` can only be run by a system administrator.")
+	}
+	if len(args) < 1 {
+		return p.help(commandArgs)
+	}
+	resp := fmt.Sprintf("Mattermost Jira plugin version: %s, "+
+		"[%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s), built %s\n",
+		manifest.Version, BuildHashShort, BuildHash, BuildDate)
+
+	pattern := strings.Join(args, " ")
+	print := expvar.PrintExpvars
+	if !useExpvar {
+		var stats *expvar.Stats
+		var keys []string
+		stats, keys, err = p.consolidatedStoredStats()
+		if err != nil {
+			return p.responsef(commandArgs, "%v", err)
+		}
+		resp += fmt.Sprintf("Consolidated from stored keys `%s`\n", keys)
+		print = stats.PrintConsolidated
+	}
+
+	rstats, err := print(pattern)
+	if err != nil {
+		return p.responsef(commandArgs, "%v", err)
+	}
+
+	return p.responsef(commandArgs, resp+rstats)
+}
+
+func executeDebugStatsReset(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, commandArgs.UserId)
+	if err != nil {
+		return p.responsef(commandArgs, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(commandArgs, "`/jira stats` can only be run by a system administrator.")
+	}
+	if len(args) != 0 {
+		return p.help(commandArgs)
+	}
+
+	err = p.debugResetStats()
+	if err != nil {
+		return p.responsef(commandArgs, err.Error())
+	}
+	return p.responsef(commandArgs, "Reset stats")
+}
+
+func executeDebugStatsSave(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, commandArgs.UserId)
+	if err != nil {
+		return p.responsef(commandArgs, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(commandArgs, "`/jira stats` can only be run by a system administrator.")
+	}
+	if len(args) != 0 {
+		return p.help(commandArgs)
+	}
+	stats := p.getConfig().stats
+	if stats == nil {
+		return p.responsef(commandArgs, "No stats to save")
+	}
+	p.saveStats()
+	return p.responsef(commandArgs, "Saved stats")
 }
 
 func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -633,7 +722,7 @@ func (p *Plugin) responseRedirect(redirectURL string) *model.CommandResponse {
 	}
 }
 
-func executeInstanceSelect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeDebugInstanceSelect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 1 {
 		return p.help(header)
 	}
@@ -668,7 +757,7 @@ func executeInstanceSelect(p *Plugin, c *plugin.Context, header *model.CommandAr
 	return executeInfo(p, c, header)
 }
 
-func executeInstanceDelete(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeDebugInstanceDelete(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 1 {
 		return p.help(header)
 	}
@@ -704,7 +793,7 @@ func executeInstanceDelete(p *Plugin, c *plugin.Context, header *model.CommandAr
 
 	// if that was our only instance, just respond with an empty list.
 	if len(known) == 1 {
-		return executeList(p, c, header)
+		return executeDebugInstanceList(p, c, header)
 	}
-	return executeInstanceSelect(p, c, header, "1")
+	return executeDebugInstanceSelect(p, c, header, "1")
 }

@@ -9,6 +9,7 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/pkg/errors"
@@ -23,6 +24,7 @@ const (
 	keyTokenSecret         = "token_secret"
 	prefixJIRAInstance     = "jira_instance_"
 	prefixOneTimeSecret    = "ots_" // + unique key that will be deleted after the first verification
+	prefixStats            = "stats_"
 )
 
 type Store interface {
@@ -58,6 +60,7 @@ type UserStore interface {
 	LoadMattermostUserId(ji Instance, jiraUserName string) (string, error)
 	LoadJIRAUserByAccountId(ji Instance, accountId string) (JIRAUser, error)
 	DeleteUserInfo(ji Instance, mattermostUserId string) error
+	CountUsers(ji Instance) (int, error)
 }
 
 type OTSStore interface {
@@ -66,6 +69,10 @@ type OTSStore interface {
 	StoreOauth1aTemporaryCredentials(mmUserId string, credentials *OAuth1aTemporaryCredentials) error
 	OneTimeLoadOauth1aTemporaryCredentials(mmUserId string) (*OAuth1aTemporaryCredentials, error)
 }
+
+// Number of items to retrieve in KVList operations, made a variable so
+// that tests can manipulate
+var listPerPage = 100
 
 type store struct {
 	plugin *Plugin
@@ -444,6 +451,7 @@ func (store store) LoadJIRAUserByAccountId(ji Instance, accountId string) (JIRAU
 
 	return ji.GetPlugin().userStore.LoadJIRAUser(ji, mmUserID)
 }
+
 func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
@@ -472,6 +480,47 @@ func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnE
 		mattermostUserId, keyWithInstance(ji, mattermostUserId),
 		jiraUser.Key(), keyWithInstance(ji, jiraUser.Key()))
 	return nil
+}
+
+var reHexKeyFormat = regexp.MustCompile("^[[:xdigit:]]{32}$")
+
+func (store store) CountUsers(ji Instance) (int, error) {
+	count := 0
+	for i := 0; ; i++ {
+		keys, appErr := store.plugin.API.KVList(i, listPerPage)
+		if appErr != nil {
+			return 0, appErr
+		}
+
+		for _, key := range keys {
+			// User records are not currently prefixed. Consider any 32-hex key.
+			if !reHexKeyFormat.MatchString(key) {
+				continue
+			}
+
+			var data []byte
+			data, appErr = store.plugin.API.KVGet(key)
+			if appErr != nil {
+				return 0, appErr
+			}
+			v := map[string]interface{}{}
+			err := json.Unmarshal(data, &v)
+			if err != nil {
+				// Skip non-JSON values.
+				continue
+			}
+
+			// A valid user record?
+			if v["Settings"] != nil && (v["accountId"] != nil || v["name"] != nil && v["key"] != nil) {
+				count++
+			}
+		}
+
+		if len(keys) < listPerPage {
+			break
+		}
+	}
+	return count, nil
 }
 
 func (store store) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr error) {

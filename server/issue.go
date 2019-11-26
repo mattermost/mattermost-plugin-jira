@@ -15,6 +15,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/model"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
 func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -317,12 +319,12 @@ func httpAPIGetSearchEpics(ji Instance, w http.ResponseWriter, r *http.Request) 
 
 	wg.Wait()
 
-	result := []ReactSelectOption{}
+	result := []utils.ReactSelectOption{}
 	if exact != nil {
 		name, _ := exact.Fields.Unknowns.String(epicNameTypeID)
 		if name != "" {
 			label := fmt.Sprintf("%s: %s", exact.Key, name)
-			result = append(result, ReactSelectOption{
+			result = append(result, utils.ReactSelectOption{
 				Label: label,
 				Value: exact.Key,
 			})
@@ -332,7 +334,7 @@ func httpAPIGetSearchEpics(ji Instance, w http.ResponseWriter, r *http.Request) 
 		name, _ := epic.Fields.Unknowns.String(epicNameTypeID)
 		if name != "" {
 			label := fmt.Sprintf("%s: %s", epic.Key, name)
-			result = append(result, ReactSelectOption{
+			result = append(result, utils.ReactSelectOption{
 				Label: label,
 				Value: epic.Key,
 			})
@@ -384,7 +386,7 @@ func httpAPIGetJiraProjectMetadata(ji Instance, w http.ResponseWriter, r *http.R
 
 	w.Header().Set("Content-Type", "application/json")
 
-	type option = ReactSelectOption
+	type option = utils.ReactSelectOption
 
 	type projectMetadata struct {
 		Projects          []option            `json:"projects"`
@@ -480,15 +482,15 @@ func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request)
 
 	wg.Wait()
 
-	var result []ReactSelectOption
+	var result []utils.ReactSelectOption
 	if exact != nil {
-		result = append(result, ReactSelectOption{
+		result = append(result, utils.ReactSelectOption{
 			Value: exact.Key,
 			Label: exact.Key + ": " + exact.Fields.Summary,
 		})
 	}
 	for _, issue := range found {
-		result = append(result, ReactSelectOption{
+		result = append(result, utils.ReactSelectOption{
 			Value: issue.Key,
 			Label: issue.Key + ": " + issue.Fields.Summary,
 		})

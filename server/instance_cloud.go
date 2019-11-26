@@ -16,6 +16,9 @@ import (
 	ajwt "github.com/rbriski/atlassian-jwt"
 	"golang.org/x/oauth2"
 	oauth2_jira "golang.org/x/oauth2/jira"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
 type jiraCloudInstance struct {
@@ -138,14 +141,21 @@ func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Clie
 		},
 	}
 
+	conf := jci.GetPlugin().getConfig()
 	httpClient := oauth2Conf.Client(context.Background())
-	httpClient = jci.GetPlugin().limitResponseClient(httpClient)
+	httpClient = utils.WrapHTTPClient(httpClient,
+		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
+		utils.WithResponseSizeLimit(conf.maxAttachmentSize))
+	httpClient = expvar.WrapHTTPClient(httpClient,
+		conf.stats, endpointNameFromRequest)
+
 	jiraClient, err := jira.NewClient(httpClient, oauth2Conf.BaseURL)
 	return jiraClient, httpClient, err
 }
 
 // Creates a "bot" client with a JWT
 func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
+	conf := jci.GetPlugin().getConfig()
 	jwtConf := &ajwt.Config{
 		Key:          jci.AtlassianSecurityContext.Key,
 		ClientKey:    jci.AtlassianSecurityContext.ClientKey,
@@ -153,7 +163,13 @@ func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
 		BaseURL:      jci.AtlassianSecurityContext.BaseURL,
 	}
 
-	httpClient := jci.GetPlugin().limitResponseClient(jwtConf.Client())
+	httpClient := jwtConf.Client()
+	httpClient = utils.WrapHTTPClient(httpClient,
+		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
+		utils.WithResponseSizeLimit(conf.maxAttachmentSize))
+	httpClient = expvar.WrapHTTPClient(httpClient,
+		conf.stats, endpointNameFromRequest)
+
 	return jira.NewClient(httpClient, jwtConf.BaseURL)
 }
 
@@ -162,7 +178,7 @@ func (jci jiraCloudInstance) parseHTTPRequestJWT(r *http.Request) (*jwt.Token, s
 	if err != nil {
 		return nil, "", errors.WithMessage(err, "failed to parse request")
 	}
-	tokenString := r.Form.Get("jwt")
+	tokenString := r.FormValue("jwt")
 	if tokenString == "" {
 		return nil, "", errors.New("no jwt in the request")
 	}

@@ -5,11 +5,7 @@ package main
 
 import (
 	"fmt"
-	"math"
-	"net/url"
-	"path"
 	"regexp"
-	"strconv"
 	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -17,121 +13,6 @@ import (
 
 	"github.com/mattermost/mattermost-server/model"
 )
-
-type ReactSelectOption struct {
-	Label string `json:"label"`
-	Value string `json:"value"`
-}
-
-type ByteSize int64
-
-const sizeB = ByteSize(1)
-const sizeKb = 1024 * sizeB
-const sizeMb = 1024 * sizeKb
-const sizeGb = 1024 * sizeMb
-const sizeTb = 1024 * sizeGb
-
-var sizeUnits = []ByteSize{sizeTb, sizeGb, sizeMb, sizeKb, sizeB}
-var sizeSuffixes = []string{"Tb", "Gb", "Mb", "Kb", "b"}
-
-func (size ByteSize) String() string {
-	if size == 0 {
-		return "0"
-	}
-
-	withCommas := func(in string) string {
-		out := ""
-		for len(in) > 3 {
-			out = "," + in[len(in)-3:] + out
-			in = in[:len(in)-3]
-		}
-		out = in + out
-		return out
-	}
-
-	for i, u := range sizeUnits {
-		if size < u {
-			continue
-		}
-		if u == sizeB {
-			return withCommas(strconv.FormatUint(uint64(size), 10)) + sizeSuffixes[i]
-		}
-
-		if size > math.MaxInt64/10 {
-			return "n/a"
-		}
-
-		s := strconv.FormatUint(uint64((size*10+u/2)/u), 10)
-		l := len(s)
-		switch {
-		case l < 2:
-			return "n/a"
-		case s[l-1] == '0':
-			return withCommas(s[:l-1]) + sizeSuffixes[i]
-		default:
-			return withCommas(s[:l-1]) + "." + s[l-1:] + sizeSuffixes[i]
-		}
-	}
-	return "n/a"
-}
-
-func ParseByteSize(str string) (ByteSize, error) {
-	u := sizeB
-	str = strings.ToLower(str)
-	for i, s := range sizeSuffixes {
-		if strings.HasSuffix(str, strings.ToLower(s)) {
-			str = str[:len(str)-len(s)]
-			u = sizeUnits[i]
-			break
-		}
-	}
-
-	str = strings.ReplaceAll(str, ",", "")
-	n, err := strconv.ParseInt(str, 10, 64)
-	if err == nil {
-		return ByteSize(n) * u, nil
-	}
-	numerr := err.(*strconv.NumError)
-	if numerr.Err != strconv.ErrSyntax {
-		return 0, err
-	}
-	fl, err := strconv.ParseFloat(str, 64)
-	if err != nil {
-		return 0, err
-	}
-	return ByteSize(fl * float64(u)), nil
-}
-
-func normalizeInstallURL(mattermostSiteURL, jiraURL string) (string, error) {
-	u, err := url.Parse(jiraURL)
-	if err != nil {
-		return "", err
-	}
-	if u.Host == "" {
-		ss := strings.Split(u.Path, "/")
-		if len(ss) > 0 && ss[0] != "" {
-			u.Host = ss[0]
-			u.Path = path.Join(ss[1:]...)
-		}
-		u, err = url.Parse(u.String())
-		if err != nil {
-			return "", err
-		}
-	}
-	if u.Host == "" {
-		return "", errors.Errorf("Invalid URL, no hostname: %q", jiraURL)
-	}
-	if u.Scheme == "" {
-		u.Scheme = "https"
-	}
-
-	jiraURL = strings.TrimSuffix(u.String(), "/")
-	if jiraURL == strings.TrimSuffix(mattermostSiteURL, "/") {
-		return "", errors.Errorf("%s is the Mattermost site URL. Please use your Jira URL with `/jira install`.", jiraURL)
-	}
-
-	return jiraURL, nil
-}
 
 func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) (post *model.Post, returnErr error) {
 	defer func() {
@@ -284,13 +165,4 @@ func parseJIRAIssuesFromText(text string, keys []string) []string {
 	}
 
 	return issues
-}
-
-// Reference: https://gobyexample.com/collection-functions
-func Map(vs []string, f func(string) string) []string {
-	vsm := make([]string, len(vs))
-	for i, v := range vs {
-		vsm[i] = f(v)
-	}
-	return vsm
 }
