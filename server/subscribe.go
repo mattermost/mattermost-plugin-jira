@@ -398,12 +398,12 @@ func (p *Plugin) listChannelSubscriptions(teamId string) (string, error) {
 			}
 
 			// only print channel name once for all subscriptions
-			channelPrint := fmt.Sprintf("* **%s** (%d):", channel.Name, len(grouped.SubIds))
+			channelRow := fmt.Sprintf("* **%s** (%d):", channel.Name, len(grouped.SubIds))
 			if teamId == teamSubs.TeamId {
 				// only link the channels on the current team
-				channelPrint = fmt.Sprintf("* **~%s** (%d):", channel.Name, len(grouped.SubIds))
+				channelRow = fmt.Sprintf("* **~%s** (%d):", channel.Name, len(grouped.SubIds))
 			}
-			rows = append(rows, channelPrint)
+			rows = append(rows, channelRow)
 
 			for _, subId := range grouped.SubIds {
 				sub := subs.Channel.ById[subId]
