@@ -366,7 +366,7 @@ type SubsGroupedByChannel struct {
 	SubIds    []string
 }
 
-func (p *Plugin) listChannelSubscriptions() (string, error) {
+func (p *Plugin) listChannelSubscriptions(teamId string) (string, error) {
 	subs, err := p.getSubscriptions()
 	if err != nil {
 		return "", err
@@ -398,7 +398,12 @@ func (p *Plugin) listChannelSubscriptions() (string, error) {
 			}
 
 			// only print channel name once for all subscriptions
-			rows = append(rows, fmt.Sprintf("* **~%s** (%d):", channel.Name, len(grouped.SubIds)))
+			channelPrint := fmt.Sprintf("* **%s** (%d):", channel.Name, len(grouped.SubIds))
+			if teamId == teamSubs.TeamId {
+				// only link the channels on the current team
+				channelPrint = fmt.Sprintf("* **~%s** (%d):", channel.Name, len(grouped.SubIds))
+			}
+			rows = append(rows, channelPrint)
 
 			for _, subId := range grouped.SubIds {
 				sub := subs.Channel.ById[subId]

@@ -63,7 +63,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 				},
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
-				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`\n\n#### Group and Direct Messages\n* **~channel-2-name-DM** (1):\n  * PROJ - Sub Name X"
+				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`\n\n#### Group and Direct Messages\n* **channel-2-name-DM** (1):\n  * PROJ - Sub Name X"
 				assert.Equal(t, expected, actual)
 			},
 		},
@@ -140,7 +140,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 				assert.Contains(t, actual, `**~channel-1-name** (2):`)
 				assert.Contains(t, actual, `* PROJ - Sub Name X`)
 				assert.Contains(t, actual, `* EXT - Sub Name Y`)
-				assert.Contains(t, actual, `**~channel-2-name-DM** (1):`)
+				assert.Contains(t, actual, `**channel-2-name-DM** (1):`)
 				assert.Contains(t, actual, `* EXT - Sub Name Z`)
 			},
 		},
@@ -184,10 +184,10 @@ func TestListChannelSubscriptions(t *testing.T) {
 				expected += "#### Team 1 Display Name\n"
 				expected += "* **~channel-1-name** (1):\n  * PROJ - Sub Name 1\n\n"
 				expected += "#### Team 2 Display Name\n"
-				expected += "* **~channel-3-name** (1):\n  * EXT - Sub Name 3\n"
-				expected += "* **~channel-4** (1):\n  * EXT - Sub Name 4\n\n"
+				expected += "* **channel-3-name** (1):\n  * EXT - Sub Name 3\n"
+				expected += "* **channel-4** (1):\n  * EXT - Sub Name 4\n\n"
 				expected += "#### Group and Direct Messages\n"
-				expected += "* **~channel-2-name-DM** (1):\n  * EXT - Sub Name 2"
+				expected += "* **channel-2-name-DM** (1):\n  * EXT - Sub Name 2"
 				assert.Equal(t, expected, actual)
 			},
 		},
@@ -259,7 +259,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 				return true
 			})).Return(nil)
 
-			actual, err := p.listChannelSubscriptions()
+			actual, err := p.listChannelSubscriptions(team1.Id)
 			assert.Nil(t, err)
 			assert.NotNil(t, actual)
 
