@@ -3665,6 +3665,28 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
           ]
         }
       />
+      <div>
+        <label
+          className="control-label margin-bottom"
+        >
+          Approximate JQL Output
+        </label>
+        <div
+          style={
+            Object {
+              "background": "rgba(61,60,64,0.08)",
+              "borderRadius": "4px",
+              "fontSize": "13px",
+              "marginTop": "8px",
+              "padding": "10px 12px",
+            }
+          }
+        >
+          <span>
+            Project = KT AND IssueType IN (Bug) AND "MJK - Radio Buttons" IN (1) AND affectedVersion IN (d) AND "Epic Link" IN (IDT-24)
+          </span>
+        </div>
+      </div>
     </div>
     <ConfirmModal
       cancelButtonText="Cancel"

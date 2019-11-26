@@ -10,12 +10,14 @@ import FormButton from 'components/form_button';
 import Input from 'components/input';
 import Loading from 'components/loading';
 import Validator from 'components/validator';
+import {getBaseStyles} from 'utils/styles';
 import {
     getProjectValues,
     getIssueValuesForMultipleProjects,
     getCustomFieldValuesForEvents,
     getCustomFieldFiltersForProjects,
     getConflictingFields,
+    generateJQLStringFromSubscriptionFilters,
 } from 'utils/jira_issue_metadata';
 
 import {ChannelSubscription, ChannelSubscriptionFilters, ReactSelectOption} from 'types/model';
@@ -360,6 +362,14 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
                         />
+                        <div>
+                            <label className='control-label margin-bottom'>
+                                {'Approximate JQL Output'}
+                            </label>
+                            <div style={getBaseStyles(this.props.theme).codeBlock}>
+                                <span>{generateJQLStringFromSubscriptionFilters(this.props.jiraIssueMetadata, filterFields, this.state.filters)}</span>
+                            </div>
+                        </div>
                     </React.Fragment>
                 );
             }

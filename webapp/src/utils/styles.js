@@ -3,6 +3,18 @@
 
 import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
 
+export const getBaseStyles = (theme) => {
+    return {
+        codeBlock: ({
+            padding: '10px 12px',
+            background: changeOpacity(theme.centerChannelColor, 0.08),
+            borderRadius: '4px',
+            marginTop: '8px',
+            fontSize: '13px',
+        }),
+    };
+};
+
 export const getStyleForReactSelect = (theme) => {
     if (!theme) {
         return null;

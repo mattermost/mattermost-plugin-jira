@@ -62,7 +62,7 @@ export default class ChannelSettingsFilters extends React.PureComponent<Props, S
         this.props.onChange(newValues);
     };
 
-    render() {
+    render(): JSX.Element {
         const {fields, values} = this.props;
         const {showCreateRow} = this.state;
         const style = getStyle();
@@ -77,7 +77,12 @@ export default class ChannelSettingsFilters extends React.PureComponent<Props, S
         });
 
         return (
-            <div>
+            <div className='margin-bottom'>
+                <label
+                    className='control-label margin-bottom'
+                >
+                    {'Filters'}
+                </label>
                 <div>
                     {values.map((v, i) => {
                         const field = fields.find((f) => f.key === v.key);
