@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -356,28 +357,186 @@ func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscripti
 	})
 }
 
-func (p *Plugin) listChannelSubscriptions() (string, error) {
+type SubsGroupedByTeam struct {
+	TeamId               string
+	TeamName             string
+	SubsGroupedByChannel []SubsGroupedByChannel
+}
+
+type SubsGroupedByChannel struct {
+	ChannelId string
+	SubIds    []string
+}
+
+func (p *Plugin) listChannelSubscriptions(teamId string) (string, error) {
 	subs, err := p.getSubscriptions()
 	if err != nil {
 		return "", err
 	}
 
+	sortedSubs, err := p.getSortedSubscriptions()
+	if err != nil {
+		return "", err
+	}
+
 	rows := []string{}
-	for channelID, subIDs := range subs.Channel.IdByChannelId {
-		channel, appErr := p.API.GetChannel(channelID)
-		if appErr != nil {
-			return "", errors.New("Failed to get channel")
-		}
 
-		rows = append(rows, fmt.Sprintf("~%s (%d):", channel.Name, len(subIDs)))
+	if sortedSubs == nil {
+		rows = append(rows, fmt.Sprintf("There are currently no channels subcriptions to Jira notifications. To add a subscription, navigate to a channel and type `/jira subscribe`\n"))
+		return strings.Join(rows, "\n"), nil
+	}
+	rows = append(rows, fmt.Sprintf("The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`"))
 
-		for subID := range subIDs {
-			sub := subs.Channel.ById[subID]
-			rows = append(rows, fmt.Sprintf("* %s - %s", sub.Filters.Projects.Elems()[0], sub.Name))
+	for _, teamSubs := range sortedSubs {
+
+		// create header for each Team, DM and GM channels
+		rows = append(rows, fmt.Sprintf("\n#### %s", teamSubs.TeamName))
+
+		for _, grouped := range teamSubs.SubsGroupedByChannel {
+
+			channel, appErr := p.API.GetChannel(grouped.ChannelId)
+			if appErr != nil {
+				return "", errors.New("Failed to get channel")
+			}
+
+			// only print channel name once for all subscriptions
+			channelRow := fmt.Sprintf("* **%s** (%d):", channel.Name, len(grouped.SubIds))
+			if teamId == teamSubs.TeamId {
+				// only link the channels on the current team
+				channelRow = fmt.Sprintf("* **~%s** (%d):", channel.Name, len(grouped.SubIds))
+			}
+			rows = append(rows, channelRow)
+
+			for _, subId := range grouped.SubIds {
+				sub := subs.Channel.ById[subId]
+
+				subName := "(No Name)"
+				if sub.Name != "" {
+					subName = sub.Name
+				}
+				rows = append(rows, fmt.Sprintf("  * %s - %s", sub.Filters.Projects.Elems()[0], subName))
+
+			}
 		}
 	}
 
 	return strings.Join(rows, "\n"), nil
+}
+
+func (p *Plugin) getSortedSubscriptions() ([]SubsGroupedByTeam, error) {
+	subs, err := p.getSubscriptions()
+	if err != nil {
+		return nil, err
+	}
+
+	subsMap := make(map[string][]SubsGroupedByChannel)
+	teamMap := make(map[string]string)
+
+	var teams []model.Team
+	var dmSubsIds []SubsGroupedByChannel
+
+	// get teams from subscriptions
+	for channelID, subIDs := range subs.Channel.IdByChannelId {
+
+		// channel does not have any subIDs.
+		if len(subIDs) == 0 {
+			continue
+		}
+
+		channel, appErr := p.API.GetChannel(channelID)
+		if appErr != nil {
+			return nil, errors.New("Failed to get channel")
+		}
+
+		var channelSubIds []string
+		for subID := range subIDs {
+			channelSubIds = append(channelSubIds, subID)
+		}
+
+		grouped := SubsGroupedByChannel{
+			ChannelId: channelID,
+			SubIds:    channelSubIds,
+		}
+		// for DMs and GMs, save to array and go to next team
+		if channel.TeamId == "" {
+			dmSubsIds = append(dmSubsIds, grouped)
+			continue
+		}
+
+		// teamMap used to determine if already have the team saved
+		_, ok := teamMap[channel.TeamId]
+		if !ok {
+			team, _ := p.API.GetTeam(channel.TeamId)
+			teams = append(teams, *team)
+			teamMap[channel.TeamId] = team.DisplayName
+		}
+
+		// only save non-DM and non-GM subs to the map
+		subsMap[channel.TeamId] = append(subsMap[channel.TeamId], grouped)
+
+	}
+
+	var teamSubs []SubsGroupedByTeam
+
+	// Closures that order the Teams structure.
+	displayName := func(p1, p2 *model.Team) bool {
+		return p1.DisplayName < p2.DisplayName
+	}
+
+	// Sort the teams by the various criteria.
+	By(displayName).Sort(teams)
+
+	for _, teamId := range teams {
+		teamData := SubsGroupedByTeam{
+			TeamId:               teamId.Id,
+			TeamName:             teamId.DisplayName,
+			SubsGroupedByChannel: subsMap[teamId.Id],
+		}
+		teamSubs = append(teamSubs, teamData)
+	}
+
+	// save all DM and GM channels under a generic teamName
+	if len(dmSubsIds) != 0 {
+		teamData := SubsGroupedByTeam{
+			TeamId:               "",
+			TeamName:             "Group and Direct Messages",
+			SubsGroupedByChannel: dmSubsIds,
+		}
+		teamSubs = append(teamSubs, teamData)
+	}
+
+	return teamSubs, nil
+}
+
+type By func(p1, p2 *model.Team) bool
+
+// Sort is a method on the function type, By, that sorts the argument slice according to the function.
+func (by By) Sort(teams []model.Team) {
+	ps := &teamSorter{
+		teams: teams,
+		by:    by,
+	}
+	sort.Sort(ps)
+}
+
+type teamSorter struct {
+	teams []model.Team
+	by    func(p1, p2 *model.Team) bool // Closure used in the Less method.
+}
+
+// Len is part of sort.Interface.
+func (s *teamSorter) Len() int {
+	return len(s.teams)
+}
+
+// Swap is part of sort.Interface.
+func (s *teamSorter) Swap(i, j int) {
+	s.teams[i], s.teams[j] = s.teams[j], s.teams[i]
+}
+
+// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
+func (s *teamSorter) Less(i, j int) bool {
+	return s.by(&s.teams[i], &s.teams[j])
 }
 
 func inAllowedGroup(inGroups []*jira.UserGroup, allowedGroups []string) bool {

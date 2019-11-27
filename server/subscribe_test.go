@@ -40,12 +40,34 @@ func TestListChannelSubscriptions(t *testing.T) {
 				},
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
-				expected := `~channel-1-name (1):
-* PROJ - Sub Name X`
+				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`\n\n#### Team 1 Display Name\n* **~channel-1-name** (1):\n  * PROJ - Sub Name X"
 				assert.Equal(t, expected, actual)
 			},
 		},
-		"one channel with two subscriptions": {
+		"zero subscriptions": {
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{}),
+			RunAssertions: func(t *testing.T, actual string) {
+				expected := "There are currently no channels subcriptions to Jira notifications. To add a subscription, navigate to a channel and type `/jira subscribe`\n"
+				assert.Equal(t, expected, actual)
+			},
+		},
+		"one subscription in DM channel": {
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "channel2",
+					Name:      "Sub Name X",
+					Filters: SubscriptionFilters{
+						Projects: NewStringSet("PROJ"),
+					},
+				},
+			}),
+			RunAssertions: func(t *testing.T, actual string) {
+				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`\n\n#### Group and Direct Messages\n* **channel-2-name-DM** (1):\n  * PROJ - Sub Name X"
+				assert.Equal(t, expected, actual)
+			},
+		},
+		"one channel with three subscriptions": {
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -63,13 +85,23 @@ func TestListChannelSubscriptions(t *testing.T) {
 						Projects: NewStringSet("EXT"),
 					},
 				},
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "channel1",
+					Filters: SubscriptionFilters{
+						Projects: NewStringSet("EXT"),
+					},
+				},
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
 				numlines := strings.Count(actual, "\n") + 1
-				assert.Equal(t, 3, numlines)
-				assert.Contains(t, actual, `~channel-1-name (2):`)
+				assert.Equal(t, 7, numlines)
+				assert.NotContains(t, actual, "\n#### Group and Direct Messages")
+				assert.Contains(t, actual, "\n#### Team 1 Display Name")
+				assert.Contains(t, actual, `**~channel-1-name** (3):`)
 				assert.Contains(t, actual, `* PROJ - Sub Name X`)
 				assert.Contains(t, actual, `* EXT - Sub Name Y`)
+				assert.Contains(t, actual, `* EXT - (No Name)`)
 			},
 		},
 		"two channels with multiple subscriptions": {
@@ -101,12 +133,62 @@ func TestListChannelSubscriptions(t *testing.T) {
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
 				numlines := strings.Count(actual, "\n") + 1
-				assert.Equal(t, 5, numlines)
-				assert.Contains(t, actual, `~channel-1-name (2):`)
+				assert.Equal(t, 10, numlines)
+				assert.Contains(t, actual, "\n#### Group and Direct Messages")
+				assert.Contains(t, actual, "\n#### Team 1 Display Name")
+				assert.Contains(t, actual, `Group and Direct Messages`)
+				assert.Contains(t, actual, `**~channel-1-name** (2):`)
 				assert.Contains(t, actual, `* PROJ - Sub Name X`)
 				assert.Contains(t, actual, `* EXT - Sub Name Y`)
-				assert.Contains(t, actual, `~channel-2-name (1):`)
+				assert.Contains(t, actual, `**channel-2-name-DM** (1):`)
 				assert.Contains(t, actual, `* EXT - Sub Name Z`)
+			},
+		},
+		"two teams with two channels with multiple subscriptions": {
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        "SubID1a",
+					ChannelId: "channel1",
+					Name:      "Sub Name 1",
+					Filters: SubscriptionFilters{
+						Projects: NewStringSet("PROJ"),
+					},
+				},
+				ChannelSubscription{
+					Id:        "SubID2",
+					ChannelId: "channel2",
+					Name:      "Sub Name 2",
+					Filters: SubscriptionFilters{
+						Projects: NewStringSet("EXT"),
+					},
+				},
+				ChannelSubscription{
+					Id:        "SubID3",
+					ChannelId: "channel3",
+					Name:      "Sub Name 3",
+					Filters: SubscriptionFilters{
+						Projects: NewStringSet("EXT"),
+					},
+				},
+				ChannelSubscription{
+					Id:        "SubID4",
+					ChannelId: "channel4",
+					Name:      "Sub Name 4",
+					Filters: SubscriptionFilters{
+						Projects: NewStringSet("EXT"),
+					},
+				},
+			}),
+			RunAssertions: func(t *testing.T, actual string) {
+				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`\n\n"
+				expected += "#### Team 1 Display Name\n"
+				expected += "* **~channel-1-name** (1):\n  * PROJ - Sub Name 1\n\n"
+				expected += "#### Team 2 Display Name\n"
+				expected += "* **channel-3-name** (1):\n  * EXT - Sub Name 3\n"
+				expected += "* **channel-4** (1):\n  * EXT - Sub Name 4\n\n"
+				expected += "#### Group and Direct Messages\n"
+				expected += "* **channel-2-name-DM** (1):\n  * EXT - Sub Name 2"
+				assert.Equal(t, expected, actual)
 			},
 		},
 	} {
@@ -127,6 +209,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 
 			channel1 := &model.Channel{
 				Id:          "channel1",
+				TeamId:      "team1Id",
 				Name:        "channel-1-name",
 				DisplayName: "Channel 1 Display Name",
 			}
@@ -134,16 +217,49 @@ func TestListChannelSubscriptions(t *testing.T) {
 
 			channel2 := &model.Channel{
 				Id:          "channel2",
-				Name:        "channel-2-name",
+				TeamId:      "",
+				Name:        "channel-2-name-DM",
 				DisplayName: "Channel 2 Display Name",
 			}
+
+			channel3 := &model.Channel{
+				Id:          "channel3",
+				TeamId:      "team2Id",
+				Name:        "channel-3-name",
+				DisplayName: "Channel 3 Display Name",
+			}
+
+			channel4 := &model.Channel{
+				Id:          "channel4",
+				TeamId:      "team2Id",
+				Name:        "channel-4",
+				DisplayName: "Channel 4 Display Name",
+			}
+
+			api.On("GetChannel", "channel1").Return(channel1, nil)
 			api.On("GetChannel", "channel2").Return(channel2, nil)
+			api.On("GetChannel", "channel3").Return(channel3, nil)
+			api.On("GetChannel", "channel4").Return(channel4, nil)
+
+			team1 := &model.Team{
+				Id:          "team1Id",
+				Name:        "team-1-name",
+				DisplayName: "Team 1 Display Name",
+			}
+			api.On("GetTeam", "team1Id").Return(team1, nil)
+
+			team2 := &model.Team{
+				Id:          "team2Id",
+				Name:        "team-2-name",
+				DisplayName: "Team 2 Display Name",
+			}
+			api.On("GetTeam", "team2Id").Return(team2, nil)
 
 			api.On("KVCompareAndSet", subKey, subscriptionBytes, mock.MatchedBy(func(data []byte) bool {
 				return true
 			})).Return(nil)
 
-			actual, err := p.listChannelSubscriptions()
+			actual, err := p.listChannelSubscriptions(team1.Id)
 			assert.Nil(t, err)
 			assert.NotNil(t, actual)
 

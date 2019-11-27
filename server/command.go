@@ -276,7 +276,7 @@ func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArg
 		return p.responsef(header, "`/jira subscribe list` can only be run by a system administrator.")
 	}
 
-	msg, err := p.listChannelSubscriptions()
+	msg, err := p.listChannelSubscriptions(header.TeamId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
 	}
