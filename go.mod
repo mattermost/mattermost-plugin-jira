@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/go-plugin v1.0.1 // indirect
 	github.com/lib/pq v1.1.1 // indirect
 	github.com/mattermost/go-i18n v1.11.0 // indirect
-	github.com/mattermost/mattermost-server v5.12.0+incompatible
+	github.com/mattermost/mattermost-server v1.4.1-0.20191019085930-e13dad9fd4b6
 	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/rbriski/atlassian-jwt v0.0.0-20180307182949-7bb4ae273058
