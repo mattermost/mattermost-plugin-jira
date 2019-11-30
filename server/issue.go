@@ -896,8 +896,11 @@ func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string
 	var transition jira.Transition
 	matchingStates := []string{}
 	availableStates := []string{}
+
+	potentialState := strings.ToLower(strings.Join(strings.Fields(toState), ""))
 	for _, t := range transitions {
-		if strings.Contains(strings.ToLower(t.To.Name), strings.ToLower(toState)) {
+		validState := strings.ToLower(strings.Join(strings.Fields(t.To.Name), ""))
+		if strings.Contains(validState, potentialState) {
 			matchingStates = append(matchingStates, t.To.Name)
 			transition = t
 		}
