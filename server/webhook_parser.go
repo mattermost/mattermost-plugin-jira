@@ -183,7 +183,7 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 }
 
 func parseWebhookCreated(jwh *JiraWebhook) Webhook {
-	wh := newWebhook(jwh, eventCreated, "created")
+	wh := newWebhook(jwh, eventCreated, "**created**")
 	wh.text = jwh.mdIssueDescription()
 
 	if jwh.Issue.Fields == nil {
@@ -215,7 +215,7 @@ func parseWebhookCreated(jwh *JiraWebhook) Webhook {
 }
 
 func parseWebhookDeleted(jwh *JiraWebhook) Webhook {
-	wh := newWebhook(jwh, eventDeleted, "deleted")
+	wh := newWebhook(jwh, eventDeleted, "**deleted**")
 	if jwh.Issue.Fields != nil && jwh.Issue.Fields.Resolution == nil {
 		wh.eventTypes = wh.eventTypes.Add(eventDeletedUnresolved)
 	}
@@ -239,7 +239,7 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 	wh := &webhook{
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventCreatedComment),
-		headline:    fmt.Sprintf("%s commented on %s", commentAuthor, jwh.mdKeySummaryLink()),
+		headline:    fmt.Sprintf("%s **commented** on %s", commentAuthor, jwh.mdKeySummaryLink()),
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
 
@@ -326,7 +326,7 @@ func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
 	return &webhook{
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventDeletedComment),
-		headline:    fmt.Sprintf("%s deleted comment in %s", user, jwh.mdKeySummaryLink()),
+		headline:    fmt.Sprintf("%s **deleted comment** in %s", user, jwh.mdKeySummaryLink()),
 	}, nil
 }
 
@@ -338,7 +338,7 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) (Webhook, error) {
 	wh := &webhook{
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventUpdatedComment),
-		headline:    fmt.Sprintf("%s edited comment in %s", mdUser(&jwh.Comment.UpdateAuthor), jwh.mdKeySummaryLink()),
+		headline:    fmt.Sprintf("%s **edited comment** in %s", mdUser(&jwh.Comment.UpdateAuthor), jwh.mdKeySummaryLink()),
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
 
@@ -347,7 +347,7 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) (Webhook, error) {
 }
 
 func parseWebhookAssigned(jwh *JiraWebhook, from, to string) *webhook {
-	wh := newWebhook(jwh, eventUpdatedAssignee, "assigned %s to", jwh.mdIssueAssignee())
+	wh := newWebhook(jwh, eventUpdatedAssignee, "**assigned** %s to", jwh.mdIssueAssignee())
 	fromFixed := from
 	if fromFixed == "" {
 		fromFixed = "_nobody_"
@@ -384,13 +384,13 @@ func appendNotificationForAssignee(wh *webhook) {
 }
 
 func parseWebhookReopened(jwh *JiraWebhook, from string) *webhook {
-	wh := newWebhook(jwh, eventUpdatedReopened, "reopened")
+	wh := newWebhook(jwh, eventUpdatedReopened, "**reopened**")
 	wh.fieldInfo = webhookField{"reopened", "resolution", from, "Open"}
 	return wh
 }
 
 func parseWebhookResolved(jwh *JiraWebhook, to string) *webhook {
-	wh := newWebhook(jwh, eventUpdatedResolved, "resolved")
+	wh := newWebhook(jwh, eventUpdatedResolved, "**resolved**")
 	wh.fieldInfo = webhookField{"resolved", "resolution", "Open", to}
 	return wh
 }
