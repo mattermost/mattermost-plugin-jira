@@ -42,6 +42,7 @@ const (
 	routeOAuth1PublicKey           = "/oauth1/public_key.html" // TODO remove, debugging?
 	routeUserConnect               = "/user/connect"
 	routeUserDisconnect            = "/user/disconnect"
+	routeGithubEvent               = "/event/github"
 )
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
@@ -122,6 +123,9 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:
 		return httpSubscribeWebhook(p, w, r)
+
+	case routeGithubEvent:
+		return withInstance(p.currentInstanceStore, w, r, httpGithubEvent)
 
 	// expvar
 	case "/debug/vars":

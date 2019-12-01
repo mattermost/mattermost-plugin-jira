@@ -166,3 +166,24 @@ func parseJIRAIssuesFromText(text string, keys []string) []string {
 
 	return issues
 }
+
+func formatMarkdownLink(text string, link string) string {
+	return fmt.Sprintf("[%s](%s)", text, link)
+}
+
+func findIssuesInLinks(text string, instanceUrl string) []string {
+	issues := []string{}
+
+	regexExpression := fmt.Sprintf(`\[([^\]]+)\]\(%s/browse/([^)]+)\)`, instanceUrl)
+	regex, error := regexp.Compile(regexExpression)
+	if error != nil {
+		return issues
+	}
+
+	links := regex.FindAllSubmatch([]byte(text), -1)
+	for _, link := range links {
+		issues = append(issues, string(link[2]))
+	}
+
+	return issues
+}
