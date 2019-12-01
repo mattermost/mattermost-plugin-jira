@@ -45,22 +45,46 @@ func (client testClient) DoTransition(issueKey string, transitionID string) erro
 
 func TestTransitionJiraIssue(t *testing.T) {
 	p := Plugin{currentInstanceStore: mockCurrentInstanceStore{}}
-	tests := []struct {
-		name        string
+	tests := map[string]struct {
 		issueKey    string
 		toState     string
 		expectedMsg string
 		expectedErr error
 	}{
-		{"Transitioning a non existant issue", nonExistantIssueKey, "To Do", "", errors.Errorf(noIssueFoundError)},
-		{"Transitioning an issue where user does not have access", noPermissionsIssueKey, "To Do", "", errors.Errorf(noPermissionsError)},
-		{"Looking for an invalid state", existingIssueKey, "tofu", "", errors.Errorf("\"tofu\" is not a valid state. Please use one of: \"To Do, In Progress, In Testing\"")},
-		{"Matching multiple available states", existingIssueKey, "in", "", errors.Errorf("please be more specific, \"in\" matched several states: \"In Progress, In Testing\"")},
-		{"Successfully transitioning to new state", existingIssueKey, "inprog", fmt.Sprintf("[%s](%s/browse/%s) transitioned to `In Progress`", existingIssueKey, mockCurrentInstanceURL, existingIssueKey), nil},
+		"Transitioning a non existant issue": {
+			issueKey:    nonExistantIssueKey,
+			toState:     "To Do",
+			expectedMsg: "",
+			expectedErr: errors.New(noIssueFoundError),
+		},
+		"Transitioning an issue where user does not have access": {
+			issueKey:    noPermissionsIssueKey,
+			toState:     "To Do",
+			expectedMsg: "",
+			expectedErr: errors.New(noPermissionsError),
+		},
+		"Looking for an invalid state": {
+			issueKey:    existingIssueKey,
+			toState:     "tofu",
+			expectedMsg: "",
+			expectedErr: errors.New("\"tofu\" is not a valid state. Please use one of: \"To Do, In Progress, In Testing\""),
+		},
+		"Matching multiple available states": {
+			issueKey:    existingIssueKey,
+			toState:     "in",
+			expectedMsg: "",
+			expectedErr: errors.New("please be more specific, \"in\" matched several states: \"In Progress, In Testing\""),
+		},
+		"Successfully transitioning to new state": {
+			issueKey:    existingIssueKey,
+			toState:     "inprog",
+			expectedMsg: fmt.Sprintf("[%s](%s/browse/%s) transitioned to `In Progress`", existingIssueKey, mockCurrentInstanceURL, existingIssueKey),
+			expectedErr: nil,
+		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			actual, err := p.transitionJiraIssue("user", tt.issueKey, tt.toState)
 			assert.Equal(t, tt.expectedMsg, actual)
 			if tt.expectedErr != nil {
