@@ -30,6 +30,9 @@ func keyWithMockInstance(key string) string {
 func (jti jiraTestInstance) GetURL() string {
 	return mockCurrentInstanceURL
 }
+func (jti jiraTestInstance) GetPlugin() *Plugin {
+	return &Plugin{userStore: mockUserStore{}}
+}
 func (jti jiraTestInstance) GetMattermostKey() string {
 	return "jiraTestInstanceMattermostKey"
 }
@@ -40,7 +43,7 @@ func (jti jiraTestInstance) GetUserConnectURL(mattermostUserId string) (string, 
 	return "http://jiraTestInstanceUserConnectURL.some", nil
 }
 func (jti jiraTestInstance) GetClient(jiraUser JIRAUser) (Client, error) {
-	return nil, errors.New("not implemented")
+	return testClient{}, nil
 }
 func (jti jiraTestInstance) GetUserGroups(jiraUser JIRAUser) ([]*jira.UserGroup, error) {
 	return nil, errors.New("not implemented")
