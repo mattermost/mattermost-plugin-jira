@@ -1,3 +1,7 @@
+# Mattermost/Jira Integration
+
+Documentation is being moved to a new location on an experimental basis - please visit: https://mattermost.gitbook.io/jira-plugin/ - let us know your thoughts on the new format!
+
 # Mattermost Jira Plugin
 
 [![Build Status](https://img.shields.io/circleci/project/github/mattermost/mattermost-plugin-jira/master.svg)](https://circleci.com/gh/mattermost/mattermost-plugin-jira)
@@ -18,7 +22,7 @@ Support for multiple Jira instances is considered, but not yet supported.
  - [5. Frequently Asked Questions (FAQ)](#5-frequently-asked-questions-faq)
  - [6. Troubleshooting](#6-Troubleshooting)
  - [7. Help](#7-Help)
- 
+
 ### Requirements
 - For Jira 2.1 Mattermost server v5.14+ is required (Certain plugin APIs became available)
 - For Jira 2.0, Mattermost Server v5.12+ is required
@@ -151,7 +155,7 @@ To control Mattermost channel subscriptions, use the command `/jira subscribe` i
     * deleted
 
 then hit **Save**.
-     
+
 
 
 #### Step 3: Install the plugin as an application in Jira
@@ -208,7 +212,7 @@ Try the following troubleshooting steps:
    ```
 
    where `<your-mattermost-url>`, `<your-secret>`, `<your-team-url>` and `<your-channel-url>` depend on your setup when configuring the Jira plugin.
-   
+
    Note that the curl command won't result in an actual post in your channel.
 
 If you are still having trouble with configuration, please to post in our [Troubleshooting forum](https://forum.mattermost.org/t/how-to-use-the-troubleshooting-forum/150) and we'll be happy to help with issues during setup.
@@ -226,7 +230,7 @@ Jira only allows webhooks to connect to the standard ports 80 and 443. If you ar
 ```
 https://32zanxm6u6.execute-api.us-east-1.amazonaws.com/dev/proxy?url=https%3A%2F%2F<your-mattermost-url>%3A<your-port>%2Fplugins%2Fjira%2Fwebhook%3Fsecret%<your-secret>%26team%3D<your-team-url>%26channel%3D<your-channel-url>
 ```
-    
+
 where `<your-mattermost-url>`, `<your-port>`, `<your-secret>`, `<your-team-url>` and `<your-channel-url>` depend on your setup from the above steps.
 
 ### How do I handle credential rotation for the Jira webhook?
