@@ -3,7 +3,7 @@
 
 import {isDesktopApp, isMinimumDesktopAppVersion} from '../utils/user_agent';
 import {openCreateModalWithoutPost, openChannelSettings, sendEphemeralPost} from '../actions';
-import {isUserConnected, getInstalledInstanceType, isInstanceInstalled} from '../selectors';
+import {isUserConnected, getInstalledInstanceType, isInstanceInstalled, getPluginSettings} from '../selectors';
 import PluginId from 'plugin_id';
 
 export default class Hooks {
@@ -17,7 +17,10 @@ export default class Hooks {
             messageTrimmed = message.trim();
         }
 
-        if (messageTrimmed && messageTrimmed.startsWith('/jira create')) {
+        const pluginSettings = getPluginSettings(this.store.getState());
+        const shouldEnableCreate = pluginSettings && pluginSettings.ui_enabled;
+
+        if (messageTrimmed && messageTrimmed.startsWith('/jira create') && shouldEnableCreate) {
             if (!isInstanceInstalled(this.store.getState())) {
                 this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
                 return Promise.resolve({});
