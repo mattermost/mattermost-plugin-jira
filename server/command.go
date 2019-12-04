@@ -13,7 +13,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
-const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
+const commonHelpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
 	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
 	"* `/jira assign <issue-key> <assignee>` - Change the assignee of a Jira issue\n" +
@@ -23,16 +23,16 @@ const helpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
 	"* `/jira view <issue-key>` - View the details of a specific Jira issue\n" +
 	"* `/jira settings [setting] [value]` - Update your user settings\n" +
 	"  * [setting] can be `notifications`\n" +
-	"  * [value] can be `on` or `off`\n" +
+	"  * [value] can be `on` or `off`\n"
 
-	"\n###### For System Administrators:\n" +
+const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"Install:\n" +
 	"* `/jira install cloud <URL>` - Connect Mattermost to a Jira Cloud instance located at <URL>\n" +
 	"* `/jira install server <URL>` - Connect Mattermost to a Jira Server or Data Center instance located at <URL>\n" +
 	"Uninstall:\n" +
 	"* `/jira uninstall cloud <URL>` - Disconnect Mattermost from a Jira Cloud instance located at <URL>\n" +
 	"* `/jira uninstall server <URL>` - Disconnect Mattermost from a Jira Server or Data Center instance located at <URL>\n" +
-	""
+	"* `/jira subscribe list` - List of Jira Notification subscription rules across all channels\n"
 
 // Available settings
 const (
@@ -88,6 +88,13 @@ func commandHelp(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 }
 
 func (p *Plugin) help(args *model.CommandArgs) *model.CommandResponse {
+	authorized, _ := authorizedSysAdmin(p, args.UserId)
+
+	helpText := commonHelpText
+	if authorized {
+		helpText += sysAdminHelpText
+	}
+
 	p.postCommandResponse(args, helpText)
 	return &model.CommandResponse{}
 }
