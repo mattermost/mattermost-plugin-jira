@@ -38,6 +38,15 @@ function instanceType(state = '', action) {
     }
 }
 
+function pluginSettings(state = null, action) {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_PLUGIN_SETTINGS:
+        return action.data;
+    default:
+        return state;
+    }
+}
+
 const createModalVisible = (state = false, action) => {
     switch (action.type) {
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL:
@@ -170,6 +179,7 @@ export default combineReducers({
     userConnected,
     instanceInstalled,
     instanceType,
+    pluginSettings,
     createModalVisible,
     createModal,
     attachCommentToIssueModalVisible,

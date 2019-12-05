@@ -57,4 +57,6 @@ export const isUserConnected = (state) => getPluginState(state).userConnected;
 
 export const isInstanceInstalled = (state) => getPluginState(state).instanceInstalled;
 
+export const getPluginSettings = (state) => getPluginState(state).pluginSettings;
+
 export const getInstalledInstanceType = (state) => getPluginState(state).instanceType;
