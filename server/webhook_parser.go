@@ -243,7 +243,7 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
 
-	appendCommentNotifications(wh, "mentioned you in a new comment on")
+	appendCommentNotifications(wh, "**mentioned** you in a new comment on")
 
 	return wh, nil
 }
@@ -342,7 +342,7 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) (Webhook, error) {
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
 
-	appendCommentNotifications(wh, "mentioned you in a comment update on")
+	appendCommentNotifications(wh, "**mentioned** you in a comment update on")
 	return wh, nil
 }
 
@@ -379,7 +379,7 @@ func appendNotificationForAssignee(wh *webhook) {
 	wh.notifications = append(wh.notifications, webhookNotification{
 		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
 		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
-		message:       fmt.Sprintf("%s assigned you to %s", jwh.mdUser(), jwh.mdKeySummaryLink()),
+		message:       fmt.Sprintf("%s **assigned** you to %s", jwh.mdUser(), jwh.mdKeySummaryLink()),
 	})
 }
 
@@ -396,13 +396,13 @@ func parseWebhookResolved(jwh *JiraWebhook, to string) *webhook {
 }
 
 func parseWebhookUpdatedField(jwh *JiraWebhook, eventType string, field, fieldId, from, to string) *webhook {
-	wh := newWebhook(jwh, eventType, "updated %s from %q to %q on", field, from, to)
+	wh := newWebhook(jwh, eventType, "**updated** %s from %q to %q on", field, from, to)
 	wh.fieldInfo = webhookField{field, fieldId, from, to}
 	return wh
 }
 
 func parseWebhookUpdatedDescription(jwh *JiraWebhook, from, to string) *webhook {
-	wh := newWebhook(jwh, eventUpdatedDescription, "edited the description of")
+	wh := newWebhook(jwh, eventUpdatedDescription, "**edited** the description of")
 	fromFmttd := "\n**From:** " + truncate(from, 500)
 	toFmttd := "\n**To:** " + truncate(to, 500)
 	wh.fieldInfo = webhookField{"description", "description", fromFmttd, toFmttd}
@@ -411,13 +411,13 @@ func parseWebhookUpdatedDescription(jwh *JiraWebhook, from, to string) *webhook 
 }
 
 func parseWebhookUpdatedAttachments(jwh *JiraWebhook, from, to string) *webhook {
-	wh := newWebhook(jwh, eventUpdatedAttachment, mdAddRemove(from, to, "attached", "removed attachments"))
+	wh := newWebhook(jwh, eventUpdatedAttachment, mdAddRemove(from, to, "**attached**", "**removed** attachments"))
 	wh.fieldInfo = webhookField{name: "attachments"}
 	return wh
 }
 
 func parseWebhookUpdatedLabels(jwh *JiraWebhook, from, to, fromWithDefault, toWithDefault string) *webhook {
-	wh := newWebhook(jwh, eventUpdatedLabels, mdAddRemove(from, to, "added labels", "removed labels"))
+	wh := newWebhook(jwh, eventUpdatedLabels, mdAddRemove(from, to, "**added** labels", "**removed** labels"))
 	wh.fieldInfo = webhookField{"labels", "labels", fromWithDefault, toWithDefault}
 	return wh
 }
@@ -426,7 +426,7 @@ func parseWebhookUpdatedLabels(jwh *JiraWebhook, from, to, fromWithDefault, toWi
 func mergeWebhookEvents(events []*webhook) Webhook {
 	merged := &webhook{
 		JiraWebhook: events[0].JiraWebhook,
-		headline:    events[0].mdUser() + " updated " + events[0].mdKeySummaryLink(),
+		headline:    events[0].mdUser() + " **updated** " + events[0].mdKeySummaryLink(),
 		eventTypes:  NewStringSet(),
 	}
 
