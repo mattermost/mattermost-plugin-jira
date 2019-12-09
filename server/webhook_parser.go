@@ -301,7 +301,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 	wh.notifications = append(wh.notifications, webhookNotification{
 		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
 		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
-		message:       fmt.Sprintf("%s commented on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
+		message:       fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
 		postType:      PostTypeComment,
 		commentSelf:   jwh.Comment.Self,
 	})
