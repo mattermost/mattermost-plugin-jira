@@ -47,7 +47,7 @@ export default class FullScreenModal extends React.Component {
                 timeout={ANIMATION_DURATION}
                 appear={true}
             >
-                <div className='FullScreenModal'>
+                <div className='FullScreenModal JiraFullScreenModal'>
                     <CloseIcon
                         className='close-x'
                         onClick={this.close}
