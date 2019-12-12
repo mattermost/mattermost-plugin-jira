@@ -429,6 +429,26 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			}),
 			ChannelIds: []string{},
 		},
+		"CLOUD - components selected": {
+			WebhookTestData: "webhook-issue-updated-components.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_updated_any"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10002"),
+						Fields: []FieldFilter{{
+							Key:       "components",
+							Values:    NewStringSet("10000"),
+							Inclusion: "include_any",
+						}},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
 		"CLOUD - custom field selected": {
 			WebhookTestData: "webhook-cloud-issue-updated-custom-field.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{

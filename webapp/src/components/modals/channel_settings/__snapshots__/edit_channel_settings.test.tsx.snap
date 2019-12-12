@@ -390,6 +390,10 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
               "value": "event_updated_summary",
             },
             Object {
+              "label": "Issue Updated: Components",
+              "value": "event_updated_components",
+            },
+            Object {
               "label": "Issue Updated: Custom - Epic Link",
               "value": "event_updated_customfield_10014",
             },

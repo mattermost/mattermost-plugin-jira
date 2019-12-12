@@ -156,6 +156,13 @@ const allowedTypes = [
     'security',
 ];
 
+const allowedArrayTypes = [
+    'component',
+    'option', // multiselect
+    'string', // labels
+    'version', // fix and affects versions
+];
+
 const avoidedCustomTypesForFilters: string[] = [
     JiraFieldCustomTypeEnums.SPRINT,
 ];
@@ -172,9 +179,7 @@ function isValidFieldForFilter(field: JiraField): boolean {
 
     return allowedTypes.includes(type) || (custom && acceptedCustomTypesForFilters.includes(custom)) ||
     type === 'option' || // single select
-    (type === 'array' && items === 'option') || // multiselect
-    (type === 'array' && items === 'version') || // fix and affects versions
-    (type === 'array' && items === 'string'); // labels
+    (type === 'array' && allowedArrayTypes.includes(items));
 }
 
 export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null, projectKeys: string[]): FilterField[] {

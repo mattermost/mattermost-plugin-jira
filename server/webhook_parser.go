@@ -162,6 +162,8 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 			event = parseWebhookUpdatedField(jwh, eventUpdatedAffectsVersion, field, fieldId, fromWithDefault, toWithDefault)
 		case field == "reporter":
 			event = parseWebhookUpdatedField(jwh, eventUpdatedReporter, field, fieldId, fromWithDefault, toWithDefault)
+		case field == "Component":
+			event = parseWebhookUpdatedField(jwh, eventUpdatedComponents, field, fieldId, fromWithDefault, toWithDefault)
 		case item.FieldType == "custom":
 			eventType := fmt.Sprintf("event_updated_%s", fieldId)
 			event = parseWebhookUpdatedField(jwh, eventType, field, fieldId, fromWithDefault, toWithDefault)
