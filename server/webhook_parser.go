@@ -183,7 +183,7 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 }
 
 func parseWebhookCreated(jwh *JiraWebhook) Webhook {
-	wh := newWebhook(jwh, eventCreated, "created")
+	wh := newWebhook(jwh, eventCreated, "**created**")
 	wh.text = jwh.mdIssueDescription()
 
 	if jwh.Issue.Fields == nil {
@@ -215,7 +215,7 @@ func parseWebhookCreated(jwh *JiraWebhook) Webhook {
 }
 
 func parseWebhookDeleted(jwh *JiraWebhook) Webhook {
-	wh := newWebhook(jwh, eventDeleted, "deleted")
+	wh := newWebhook(jwh, eventDeleted, "**deleted**")
 	if jwh.Issue.Fields != nil && jwh.Issue.Fields.Resolution == nil {
 		wh.eventTypes = wh.eventTypes.Add(eventDeletedUnresolved)
 	}
@@ -239,11 +239,11 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 	wh := &webhook{
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventCreatedComment),
-		headline:    fmt.Sprintf("%s commented on %s", commentAuthor, jwh.mdKeySummaryLink()),
+		headline:    fmt.Sprintf("%s **commented** on %s", commentAuthor, jwh.mdKeySummaryLink()),
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
 
-	appendCommentNotifications(wh, "mentioned you in a new comment on")
+	appendCommentNotifications(wh, "**mentioned** you in a new comment on")
 
 	return wh, nil
 }
@@ -301,7 +301,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 	wh.notifications = append(wh.notifications, webhookNotification{
 		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
 		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
-		message:       fmt.Sprintf("%s commented on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
+		message:       fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
 		postType:      PostTypeComment,
 		commentSelf:   jwh.Comment.Self,
 	})
@@ -326,7 +326,7 @@ func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
 	return &webhook{
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventDeletedComment),
-		headline:    fmt.Sprintf("%s deleted comment in %s", user, jwh.mdKeySummaryLink()),
+		headline:    fmt.Sprintf("%s **deleted comment** in %s", user, jwh.mdKeySummaryLink()),
 	}, nil
 }
 
@@ -338,16 +338,16 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) (Webhook, error) {
 	wh := &webhook{
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventUpdatedComment),
-		headline:    fmt.Sprintf("%s edited comment in %s", mdUser(&jwh.Comment.UpdateAuthor), jwh.mdKeySummaryLink()),
+		headline:    fmt.Sprintf("%s **edited comment** in %s", mdUser(&jwh.Comment.UpdateAuthor), jwh.mdKeySummaryLink()),
 		text:        truncate(jwh.Comment.Body, 3000),
 	}
 
-	appendCommentNotifications(wh, "mentioned you in a comment update on")
+	appendCommentNotifications(wh, "**mentioned** you in a comment update on")
 	return wh, nil
 }
 
 func parseWebhookAssigned(jwh *JiraWebhook, from, to string) *webhook {
-	wh := newWebhook(jwh, eventUpdatedAssignee, "assigned %s to", jwh.mdIssueAssignee())
+	wh := newWebhook(jwh, eventUpdatedAssignee, "**assigned** %s to", jwh.mdIssueAssignee())
 	fromFixed := from
 	if fromFixed == "" {
 		fromFixed = "_nobody_"
@@ -379,30 +379,30 @@ func appendNotificationForAssignee(wh *webhook) {
 	wh.notifications = append(wh.notifications, webhookNotification{
 		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
 		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
-		message:       fmt.Sprintf("%s assigned you to %s", jwh.mdUser(), jwh.mdKeySummaryLink()),
+		message:       fmt.Sprintf("%s **assigned** you to %s", jwh.mdUser(), jwh.mdKeySummaryLink()),
 	})
 }
 
 func parseWebhookReopened(jwh *JiraWebhook, from string) *webhook {
-	wh := newWebhook(jwh, eventUpdatedReopened, "reopened")
+	wh := newWebhook(jwh, eventUpdatedReopened, "**reopened**")
 	wh.fieldInfo = webhookField{"reopened", "resolution", from, "Open"}
 	return wh
 }
 
 func parseWebhookResolved(jwh *JiraWebhook, to string) *webhook {
-	wh := newWebhook(jwh, eventUpdatedResolved, "resolved")
+	wh := newWebhook(jwh, eventUpdatedResolved, "**resolved**")
 	wh.fieldInfo = webhookField{"resolved", "resolution", "Open", to}
 	return wh
 }
 
 func parseWebhookUpdatedField(jwh *JiraWebhook, eventType string, field, fieldId, from, to string) *webhook {
-	wh := newWebhook(jwh, eventType, "updated %s from %q to %q on", field, from, to)
+	wh := newWebhook(jwh, eventType, "**updated** %s from %q to %q on", field, from, to)
 	wh.fieldInfo = webhookField{field, fieldId, from, to}
 	return wh
 }
 
 func parseWebhookUpdatedDescription(jwh *JiraWebhook, from, to string) *webhook {
-	wh := newWebhook(jwh, eventUpdatedDescription, "edited the description of")
+	wh := newWebhook(jwh, eventUpdatedDescription, "**edited** the description of")
 	fromFmttd := "\n**From:** " + truncate(from, 500)
 	toFmttd := "\n**To:** " + truncate(to, 500)
 	wh.fieldInfo = webhookField{"description", "description", fromFmttd, toFmttd}
@@ -411,13 +411,13 @@ func parseWebhookUpdatedDescription(jwh *JiraWebhook, from, to string) *webhook 
 }
 
 func parseWebhookUpdatedAttachments(jwh *JiraWebhook, from, to string) *webhook {
-	wh := newWebhook(jwh, eventUpdatedAttachment, mdAddRemove(from, to, "attached", "removed attachments"))
+	wh := newWebhook(jwh, eventUpdatedAttachment, mdAddRemove(from, to, "**attached**", "**removed** attachments"))
 	wh.fieldInfo = webhookField{name: "attachments"}
 	return wh
 }
 
 func parseWebhookUpdatedLabels(jwh *JiraWebhook, from, to, fromWithDefault, toWithDefault string) *webhook {
-	wh := newWebhook(jwh, eventUpdatedLabels, mdAddRemove(from, to, "added labels", "removed labels"))
+	wh := newWebhook(jwh, eventUpdatedLabels, mdAddRemove(from, to, "**added** labels", "**removed** labels"))
 	wh.fieldInfo = webhookField{"labels", "labels", fromWithDefault, toWithDefault}
 	return wh
 }
@@ -426,7 +426,7 @@ func parseWebhookUpdatedLabels(jwh *JiraWebhook, from, to, fromWithDefault, toWi
 func mergeWebhookEvents(events []*webhook) Webhook {
 	merged := &webhook{
 		JiraWebhook: events[0].JiraWebhook,
-		headline:    events[0].mdUser() + " updated " + events[0].mdKeySummaryLink(),
+		headline:    events[0].mdUser() + " **updated** " + events[0].mdKeySummaryLink(),
 		eventTypes:  NewStringSet(),
 	}
 

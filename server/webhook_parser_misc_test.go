@@ -24,8 +24,58 @@ func TestMarkdown(t *testing.T) {
 	w := wh.(*webhook)
 	require.NotNil(t, w)
 	require.Equal(t,
-		"Test User created story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
+		"Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 		w.headline)
+}
+
+func TestEventTypeFormat(t *testing.T) {
+	for _, value := range map[string]struct {
+		filename string
+		expected string
+	}{
+		"issue created format":                        {"testdata/webhook-issue-created.json", "Test User **created** story"},
+		"issue updated assigned format":               {"testdata/webhook-issue-updated-assigned.json", "Test User **assigned** Test User to story"},
+		"issue updated reopened format":               {"testdata/webhook-issue-updated-reopened.json", "Test User **updated** story"},
+		"issue updated reopened format one changelog": {"testdata/webhook-issue-updated-reopened-one-changelog.json", "Test User **reopened** story"},
+		"issue updated resolved format":               {"testdata/webhook-issue-updated-resolved.json", "Test User **updated** story"},
+		"issue updated resolved format one changelog": {"testdata/webhook-issue-updated-resolved-one-changelog.json", "Test User **resolved** story"},
+		"issue deleted":                               {"testdata/webhook-issue-deleted.json", "Test User **deleted** task"},
+		"issue updated commented created":             {"testdata/webhook-server-issue-updated-commented-3.json", "Test User **commented** on improvement"},
+		"issue updated comment edited":                {"testdata/webhook-server-issue-updated-comment-edited.json", "Lev Brouk **edited comment** in story"},
+		"issue updated comment deleted":               {"testdata/webhook-server-issue-updated-comment-deleted.json", "Lev Brouk **deleted comment** in story"},
+	} {
+		f, err := os.Open(value.filename)
+		require.NoError(t, err)
+		defer f.Close()
+		bb, err := ioutil.ReadAll(f)
+		require.Nil(t, err)
+		wh, err := ParseWebhook(bb)
+		require.NoError(t, err)
+		w := wh.(*webhook)
+		require.NotNil(t, w)
+		require.Contains(t, w.headline, value.expected)
+	}
+}
+
+func TestNotificationsFormat(t *testing.T) {
+	for _, value := range map[string]struct {
+		filename string
+		expected string
+	}{
+		"issue updated commented created": {"testdata/webhook-server-issue-updated-commented-3.json", "Test User **mentioned** you in a new comment on improvement"},
+	} {
+		f, err := os.Open(value.filename)
+		require.NoError(t, err)
+		defer f.Close()
+		bb, err := ioutil.ReadAll(f)
+		require.Nil(t, err)
+		wh, err := ParseWebhook(bb)
+		require.NoError(t, err)
+		w := wh.(*webhook)
+		require.NotNil(t, w)
+		require.NotNil(t, w.notifications)
+		require.Contains(t, w.notifications[0].message, value.expected)
+	}
 }
 
 func TestWebhookVariousErrors(t *testing.T) {
