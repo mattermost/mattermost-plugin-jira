@@ -28,7 +28,7 @@ describe('components/widgets/modals/FullScreenModal', () => {
   unmountOnExit={true}
 >
   <div
-    className="FullScreenModal"
+    className="FullScreenModal JiraFullScreenModal"
   >
     <CloseIcon
       className="close-x"
@@ -58,7 +58,7 @@ describe('components/widgets/modals/FullScreenModal', () => {
   unmountOnExit={true}
 >
   <div
-    className="FullScreenModal"
+    className="FullScreenModal JiraFullScreenModal"
   >
     <CloseIcon
       className="close-x"
