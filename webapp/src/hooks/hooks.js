@@ -7,8 +7,9 @@ import {isUserConnected, getInstalledInstanceType, isInstanceInstalled, getPlugi
 import PluginId from 'plugin_id';
 
 export default class Hooks {
-    constructor(store) {
+    constructor(store, settings) {
         this.store = store;
+        this.settings = settings;
     }
 
     slashCommandWillBePostedHook = (message, contextArgs) => {
@@ -18,7 +19,13 @@ export default class Hooks {
         }
 
         const pluginSettings = getPluginSettings(this.store.getState());
-        const shouldEnableCreate = pluginSettings && pluginSettings.ui_enabled;
+
+        let shouldEnableCreate = false;
+        if (pluginSettings) {
+            shouldEnableCreate = pluginSettings.ui_enabled;
+        } else if (this.settings) {
+            shouldEnableCreate = this.settings.ui_enabled;
+        }
 
         if (messageTrimmed && messageTrimmed.startsWith('/jira create') && shouldEnableCreate) {
             if (!isInstanceInstalled(this.store.getState())) {
