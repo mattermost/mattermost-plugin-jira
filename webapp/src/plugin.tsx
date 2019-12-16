@@ -19,9 +19,9 @@ import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettin
 import Hooks from './hooks/hooks';
 
 const setupUILater = (registry: PluginRegistry, store: Store<object, Action<object>>): () => Promise<void> => async () => {
-    const settings = await store.dispatch(getSettings());
-
     registry.registerReducer(reducers);
+
+    const settings = await store.dispatch(getSettings());
 
     try {
         await getConnected()(store.dispatch, store.getState);
@@ -35,7 +35,7 @@ const setupUILater = (registry: PluginRegistry, store: Store<object, Action<obje
 
         registry.registerRootComponent(ChannelSettingsModal);
 
-        const hooks = new Hooks(store);
+        const hooks = new Hooks(store, settings);
         registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);
     } finally {
         registry.registerWebSocketEventHandler(`custom_${PluginId}_connect`, handleConnectChange(store));
