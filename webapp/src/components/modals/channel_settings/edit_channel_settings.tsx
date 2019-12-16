@@ -48,6 +48,7 @@ const JiraEventOptions: ReactSelectOption[] = [
     {value: 'event_updated_sprint', label: 'Issue Updated: Sprint'},
     {value: 'event_updated_status', label: 'Issue Updated: Status'},
     {value: 'event_updated_summary', label: 'Issue Updated: Summary'},
+    {value: 'event_updated_components', label: 'Issue Updated: Components'},
 ];
 
 export type Props = SharedProps & {
