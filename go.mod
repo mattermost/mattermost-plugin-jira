@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/go-plugin v1.0.1 // indirect
 	github.com/lib/pq v1.1.1 // indirect
 	github.com/mattermost/go-i18n v1.11.0 // indirect
-	github.com/mattermost/mattermost-server v5.12.0+incompatible
+	github.com/mattermost/mattermost-server v1.4.1-0.20190814175728-96e36f73b25d // v5.12.6
 	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/rbriski/atlassian-jwt v0.0.0-20180307182949-7bb4ae273058
@@ -25,15 +25,11 @@ require (
 	go.uber.org/zap v1.10.0 // indirect
 	golang.org/x/crypto v0.0.0-20190621222207-cc06ce4a13d4 // indirect
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859 // indirect
-	golang.org/x/oauth2 v0.0.0-20190319182350-c85d3e98c914
+	golang.org/x/oauth2 v0.0.0-20191202225959-858c2ad4c8b6
 	golang.org/x/sys v0.0.0-20190626221950-04f50cda93cb // indirect
 	google.golang.org/appengine v1.6.1 // indirect
 	google.golang.org/genproto v0.0.0-20190626174449-989357319d63 // indirect
 	google.golang.org/grpc v1.21.1 // indirect
 )
-
-// Workaround for Jira GDPR change. Remove this and update golang.org/x/oauth2 when it's fixed.
-// See: https://github.com/golang/oauth2/issues/312
-replace golang.org/x/oauth2 => github.com/cpoile/oauth2 v0.0.0-20190717234427-10945bd219c7
 
 replace willnorris.com/go/imageproxy => willnorris.com/go/imageproxy v0.8.1-0.20190422234945-d4246a08fdec
