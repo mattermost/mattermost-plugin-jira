@@ -13,6 +13,7 @@ export default {
 
     RECEIVED_CONNECTED: `${PluginId}_connected`,
     RECEIVED_INSTANCE_STATUS: `${PluginId}_instance_status`,
+    RECEIVED_PLUGIN_SETTINGS: `${PluginId}_plugin_settings`,
 
     RECEIVED_JIRA_ISSUE_METADATA: `${PluginId}_received_metadata`,
     RECEIVED_JIRA_PROJECT_METADATA: `${PluginId}_received_projects`,

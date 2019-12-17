@@ -23,6 +23,7 @@ const (
 	eventUpdatedFixVersion     = "event_updated_fix_version"
 	eventUpdatedAffectsVersion = "event_updated_affects_version"
 	eventUpdatedReporter       = "event_updated_reporter"
+	eventUpdatedComponents     = "event_updated_components"
 )
 
 var legacyEvents = NewStringSet(

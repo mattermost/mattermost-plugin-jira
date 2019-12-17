@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/md5"
 	"encoding/json"
 	goexpvar "expvar"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
@@ -228,5 +230,7 @@ func (p *Plugin) consolidatedStoredStats() (*expvar.Stats, []string, error) {
 
 func statsKeyName() string {
 	hostname, _ := os.Hostname()
-	return prefixStats + hostname
+	h := md5.New()
+	_, _ = h.Write([]byte(hostname))
+	return fmt.Sprintf("%s%x", prefixStats, h.Sum(nil))
 }

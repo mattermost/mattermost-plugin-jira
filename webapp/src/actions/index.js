@@ -217,18 +217,25 @@ export const fetchChannelSubscriptions = (channelId) => {
     };
 };
 
-export function getSettings(getState) {
-    let data;
-    const baseUrl = getPluginServerRoute(getState());
-    try {
-        data = doFetch(`${baseUrl}/api/v2/settingsinfo`, {
-            method: 'get',
-        });
-    } catch (error) {
-        return {error};
-    }
+export function getSettings() {
+    return async (dispatch, getState) => {
+        let data;
+        const baseUrl = getPluginServerRoute(getState());
+        try {
+            data = await doFetch(`${baseUrl}/api/v2/settingsinfo`, {
+                method: 'get',
+            });
 
-    return data;
+            dispatch({
+                type: ActionTypes.RECEIVED_PLUGIN_SETTINGS,
+                data,
+            });
+        } catch (error) {
+            return {error};
+        }
+
+        return data;
+    };
 }
 
 export function getConnected() {
