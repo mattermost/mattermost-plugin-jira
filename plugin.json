@@ -69,6 +69,13 @@
         "type": "text",
         "help_text": "Comma separated list of Group Names. List the Jira user groups who can create subscriptions. If none are specified, any Jira user can create a subscription.",
         "default": ""
+      },
+      {
+        "key": "JiraAdminAdditionalHelpText",
+        "display_name": "Additional Help Text to be shown with Jira Help",
+        "type": "text",
+        "help_text": "Additional Help Text to be shown to the user along with the output of `/jira help` command",
+        "default": ""
       }
     ],
     "footer": "Use this webhook URL format to [configure the Jira integration.](https://about.mattermost.com/default-jira-plugin)  `https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET`"

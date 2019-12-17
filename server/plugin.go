@@ -59,6 +59,9 @@ type externalConfig struct {
 
 	// Disable statistics gathering
 	DisableStats bool `json:"disable_stats"`
+
+	// Additional Help Text to be shown in the output of '/jira help' command
+	JiraAdminAdditionalHelpText string
 }
 
 const currentInstanceTTL = 1 * time.Second
