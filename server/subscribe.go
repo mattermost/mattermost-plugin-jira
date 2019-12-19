@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -649,11 +650,11 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 			return errors.Wrap(setError, "problem writing value")
 		}
 
-		if currentAttempt == 0 && utils.AreBytesEqual(initialBytes, newValue) {
+		if currentAttempt == 0 && bytes.Equal(initialBytes, newValue) {
 			return nil
 		}
 
-		currentAttempt += 1
+		currentAttempt++
 		if currentAttempt >= retryLimit {
 			return errors.New("reached write attempt limit")
 		}
