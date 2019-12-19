@@ -14,7 +14,7 @@ import JiraEpicSelector from './jira_epic_selector';
 
 describe('components/JiraEpicSelector', () => {
     const baseProps = {
-        fetchEpicsWithParams: jest.fn(),
+        fetchEpicsWithParams: jest.fn().mockResolvedValue({}),
         issueMetadata: issueMetadata as IssueMetadata,
         theme: Preferences.THEMES.default,
         isMulti: true,
