@@ -630,9 +630,15 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 		return initialBytes, modifiedBytes, nil
 	}
 
-	success := false
+	var (
+		retryLimit     = 5
+		retryWait      = 30 * time.Millisecond
+		success        = false
+		currentAttempt = 0
+	)
 	for !success {
 		initialBytes, newValue, err := readModify()
+
 		if err != nil {
 			return err
 		}
@@ -643,6 +649,16 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 			return errors.Wrap(setError, "problem writing value")
 		}
 
+		if currentAttempt == 0 && areBytesEqual(initialBytes, newValue) {
+			return nil
+		}
+
+		currentAttempt += 1
+		if currentAttempt >= retryLimit {
+			return errors.New("reached write attempt limit")
+		}
+
+		time.Sleep(retryWait)
 	}
 
 	return nil
