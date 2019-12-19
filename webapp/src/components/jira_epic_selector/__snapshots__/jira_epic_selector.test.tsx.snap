@@ -31,7 +31,7 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
       "results": Array [
         Object {
           "type": "return",
-          "value": undefined,
+          "value": Promise {},
         },
       ],
     }
@@ -107,7 +107,7 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
         "results": Array [
           Object {
             "type": "return",
-            "value": undefined,
+            "value": Promise {},
           },
         ],
       }

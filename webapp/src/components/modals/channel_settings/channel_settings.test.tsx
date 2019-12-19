@@ -17,8 +17,8 @@ describe('components/ChannelSettingsModal', () => {
     const baseProps = {
         theme: {},
         fetchJiraIssueMetadataForProjects: jest.fn(),
-        fetchChannelSubscriptions: jest.fn(),
-        fetchJiraProjectMetadata: jest.fn(),
+        fetchChannelSubscriptions: jest.fn().mockResolvedValue({}),
+        fetchJiraProjectMetadata: jest.fn().mockResolvedValue({}),
         sendEphemeralPost: jest.fn(),
         jiraIssueMetadata: {} as IssueMetadata,
         jiraProjectMetadata: {} as ProjectMetadata,
