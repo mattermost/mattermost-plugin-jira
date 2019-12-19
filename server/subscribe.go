@@ -649,7 +649,7 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 			return errors.Wrap(setError, "problem writing value")
 		}
 
-		if currentAttempt == 0 && areBytesEqual(initialBytes, newValue) {
+		if currentAttempt == 0 && utils.AreBytesEqual(initialBytes, newValue) {
 			return nil
 		}
 

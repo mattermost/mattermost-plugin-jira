@@ -166,17 +166,3 @@ func parseJIRAIssuesFromText(text string, keys []string) []string {
 
 	return issues
 }
-
-func areBytesEqual(b1, b2 []byte) bool {
-	if len(b1) != len(b2) {
-		return false
-	}
-
-	for i, v := range b1 {
-		if b2[i] != v {
-			return false
-		}
-	}
-
-	return true
-}
