@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -180,15 +181,9 @@ func TestListChannelSubscriptions(t *testing.T) {
 				},
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
-				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`\n\n"
-				expected += "#### Team 1 Display Name\n"
-				expected += "* **~channel-1-name** (1):\n  * PROJ - Sub Name 1\n\n"
-				expected += "#### Team 2 Display Name\n"
-				expected += "* **channel-3-name** (1):\n  * EXT - Sub Name 3\n"
-				expected += "* **channel-4** (1):\n  * EXT - Sub Name 4\n\n"
-				expected += "#### Group and Direct Messages\n"
-				expected += "* **channel-2-name-DM** (1):\n  * EXT - Sub Name 2"
-				assert.Equal(t, expected, actual)
+				// test that team names are ordered and channels per team are also shown
+				re := regexp.MustCompile("(?s)(.*)Team 1.*channel-1.*Team 2.*channel-(3|4).*channel-(3|4).*Group and Direct Messages.*channel-2")
+				assert.Regexp(t, re, actual)
 			},
 		},
 	} {
