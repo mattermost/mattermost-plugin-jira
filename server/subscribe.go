@@ -270,7 +270,7 @@ func (p *Plugin) removeChannelSubscription(subscriptionId string) error {
 	})
 }
 
-func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) error {
+func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription, client Client) error {
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
 		return err
@@ -283,7 +283,7 @@ func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) er
 			return nil, err
 		}
 
-		err = p.validateSubscription(newSubscription)
+		err = p.validateSubscription(newSubscription, client)
 		if err != nil {
 			return nil, err
 		}
@@ -300,13 +300,25 @@ func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) er
 	})
 }
 
-func (p *Plugin) validateSubscription(subscription *ChannelSubscription) error {
+func (p *Plugin) validateSubscription(subscription *ChannelSubscription, client Client) error {
 	if len(subscription.Name) == 0 {
 		return errors.New("Please provide a name for the subscription.")
 	}
 
 	if len(subscription.Name) > MAX_SUBSCRIPTION_NAME_LENGTH {
-		return fmt.Errorf("Please provide a name less than %d characters.", MAX_SUBSCRIPTION_NAME_LENGTH)
+		return errors.Errorf("Please provide a name less than %d characters.", MAX_SUBSCRIPTION_NAME_LENGTH)
+	}
+
+	if len(subscription.Filters.Events) == 0 {
+		return errors.New("Please provide at least one event type.")
+	}
+
+	if len(subscription.Filters.IssueTypes) == 0 {
+		return errors.New("Please provide at least one issue type.")
+	}
+
+	if (len(subscription.Filters.Projects)) == 0 {
+		return errors.New("Please provide a project identifier.")
 	}
 
 	channelId := subscription.ChannelId
@@ -317,13 +329,20 @@ func (p *Plugin) validateSubscription(subscription *ChannelSubscription) error {
 
 	for subID := range subs {
 		if subs[subID].Name == subscription.Name && subs[subID].Id != subscription.Id {
-			return fmt.Errorf("Subscription name, '%s', already exists. Please choose another name.", subs[subID].Name)
+			return errors.Errorf("Subscription name, '%s', already exists. Please choose another name.", subs[subID].Name)
 		}
 	}
+
+	projectKey := subscription.Filters.Projects.Elems()[0]
+	_, err = client.GetProject(projectKey)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to get project %q", projectKey)
+	}
+
 	return nil
 }
 
-func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscription) error {
+func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscription, client Client) error {
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
 		return err
@@ -341,7 +360,7 @@ func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscripti
 			return nil, errors.New("Existing subscription does not exist.")
 		}
 
-		err = p.validateSubscription(modifiedSubscription)
+		err = p.validateSubscription(modifiedSubscription, client)
 		if err != nil {
 			return nil, err
 		}
@@ -725,7 +744,22 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
 	}
 
-	err = p.addChannelSubscription(&subscription)
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	client, err := ji.GetClient(jiraUser)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	err = p.addChannelSubscription(&subscription, client)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -735,16 +769,6 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 	_, err = w.Write(b)
 	if err != nil {
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-	}
-
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
-	if err != nil {
-		return http.StatusInternalServerError, err
 	}
 
 	post := &model.Post{
@@ -780,7 +804,22 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 		return http.StatusForbidden, errors.New("Not a member of the channel specified")
 	}
 
-	err = p.editChannelSubscription(&subscription)
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	client, err := ji.GetClient(jiraUser)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	err = p.editChannelSubscription(&subscription, client)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -790,16 +829,6 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 	_, err = w.Write(b)
 	if err != nil {
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-	}
-
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
-	if err != nil {
-		return http.StatusInternalServerError, err
 	}
 
 	post := &model.Post{
