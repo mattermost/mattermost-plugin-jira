@@ -90,7 +90,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
     }
 
     render(): React.ReactElement {
-        const {channel, omitDisplayName} = this.props;
+        const {channel, channelSubscriptions, omitDisplayName} = this.props;
         const {error, showConfirmModal, subscriptionToDelete} = this.state;
 
         let errorDisplay = null;
@@ -127,20 +127,30 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
             titleMessage = <h2 className='text-center'>{'Jira Subscriptions'}</h2>;
         }
 
-        const subscriptionRows = (
-            <table className='table'>
-                <thead>
-                    <tr>
-                        <th scope='col'>{'Name'}</th>
-                        <th scope='col'>{'Project'}</th>
-                        <th scope='col'>{'Actions'}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {this.props.channelSubscriptions.map(this.renderRow)}
-                </tbody>
-            </table>
-        );
+        let subscriptionRows;
+        if (channelSubscriptions.length){
+            subscriptionRows =  (
+                <table className='table'>
+                    <thead>
+                        <tr>
+                            <th scope='col'>{'Name'}</th>
+                            <th scope='col'>{'Project'}</th>
+                            <th scope='col'>{'Actions'}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {channelSubscriptions.map(this.renderRow)}
+                    </tbody>
+                </table>
+            );
+        }
+        else {
+            subscriptionRows = (
+                <p>
+                    Click "Create Subscription" to receive Jira notifications in this channel.
+                </p>
+            );
+        }
 
         return (
             <div>
