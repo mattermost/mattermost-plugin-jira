@@ -128,8 +128,8 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         }
 
         let subscriptionRows;
-        if (channelSubscriptions.length){
-            subscriptionRows =  (
+        if (channelSubscriptions.length) {
+            subscriptionRows = (
                 <table className='table'>
                     <thead>
                         <tr>
@@ -143,11 +143,10 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                     </tbody>
                 </table>
             );
-        }
-        else {
+        } else {
             subscriptionRows = (
                 <p>
-                    Click "Create Subscription" to receive Jira notifications in this channel.
+                    {'Click "Create Subscription" to receive Jira notifications in this channel.'}
                 </p>
             );
         }
