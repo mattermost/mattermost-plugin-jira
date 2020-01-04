@@ -13,8 +13,9 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
-const commonHelpText = "###### Mattermost Jira Plugin - Slash Command Help\n" +
-	"* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
+const helpTextHeader = "###### Mattermost Jira Plugin - Slash Command Help\n"
+
+const commonHelpText = "\n* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
 	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
 	"* `/jira assign <issue-key> <assignee>` - Change the assignee of a Jira issue\n" +
 	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field\n" +
@@ -90,7 +91,16 @@ func commandHelp(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 func (p *Plugin) help(args *model.CommandArgs) *model.CommandResponse {
 	authorized, _ := authorizedSysAdmin(p, args.UserId)
 
-	helpText := commonHelpText
+	helpText := helpTextHeader
+	jiraAdminAdditionalHelpText := p.getConfig().JiraAdminAdditionalHelpText
+
+	// Check if JIRA admin has provided additional help text to be shown up along with regular output
+	if jiraAdminAdditionalHelpText != "" {
+		helpText += "    " + jiraAdminAdditionalHelpText
+	}
+
+	helpText += commonHelpText
+
 	if authorized {
 		helpText += sysAdminHelpText
 	}
