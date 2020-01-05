@@ -7,6 +7,8 @@ import (
 	"github.com/mattermost/mattermost-server/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
 
@@ -14,6 +16,8 @@ const (
 	mockUserIDWithNotifications    = "1"
 	mockUserIDWithoutNotifications = "2"
 	mockUserIDUnknown              = "3"
+	mockUserIDSysAdmin             = "4"
+	mockUserIDNonSysAdmin          = "5"
 )
 
 type mockUserStoreKV struct {
@@ -123,6 +127,111 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 			p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
 
 			assert.Equal(t, true, isSendEphemeralPostCalled)
+		})
+	}
+}
+
+func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
+	p := Plugin{}
+	tc := TestConfiguration{}
+	p.updateConfig(func(conf *config) {
+		conf.Secret = tc.Secret
+	})
+	api := &plugintest.API{}
+	siteURL := "https://somelink.com"
+	api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
+	api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
+	api.On("LogDebug",
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string")).Return(nil)
+	api.On("KVSet", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	api.On("KVSetWithExpiry", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	api.On("KVGet", "known_jira_instances").Return(nil, nil)
+	api.On("KVGet", "rsa_key").Return(nil, nil)
+	api.On("PublishWebSocketEvent", mock.AnythingOfTypeArgument("string"), mock.Anything, mock.Anything)
+
+	sysAdminUser := &model.User{
+		Id:    mockUserIDSysAdmin,
+		Roles: "system_admin",
+	}
+	api.On("GetUser", mockUserIDSysAdmin).Return(sysAdminUser, nil)
+	nonSysAdminUser := &model.User{
+		Id:    mockUserIDNonSysAdmin,
+		Roles: "",
+	}
+	api.On("GetUser", mockUserIDNonSysAdmin).Return(nonSysAdminUser, nil)
+
+	tests := map[string]struct {
+		commandArgs       *model.CommandArgs
+		expectedMsgPrefix string
+	}{
+		"no params - user is sys admin": {
+			commandArgs:       &model.CommandArgs{Command: "/jira install", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: strings.TrimSpace(commonHelpText + sysAdminHelpText),
+		},
+		"no params - user is not sys admin": {
+			commandArgs:       &model.CommandArgs{Command: "/jira install", UserId: mockUserIDNonSysAdmin},
+			expectedMsgPrefix: strings.TrimSpace(commonHelpText),
+		},
+		"install server without URL": {
+			commandArgs:       &model.CommandArgs{Command: "/jira install server", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: strings.TrimSpace(commonHelpText + sysAdminHelpText),
+		},
+		"install cloud instance without URL": {
+			commandArgs:       &model.CommandArgs{Command: "/jira install cloud", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: strings.TrimSpace(commonHelpText + sysAdminHelpText),
+		},
+		"install cloud instance as server": {
+			commandArgs:       &model.CommandArgs{Command: "/jira install server https://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: "The Jira URL you provided looks like a Jira Cloud URL",
+		},
+		"install server instance using mattermost site URL": {
+			commandArgs:       &model.CommandArgs{Command: "/jira install server https://somelink.com", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: "https://somelink.com is the Mattermost site URL. Please use your Jira URL with `/jira install`.",
+		},
+		"install valid cloud instance": {
+			commandArgs:       &model.CommandArgs{Command: "/jira install cloud https://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: "https://mmtest.atlassian.net has been successfully installed.",
+		},
+		"install valid server instance": {
+			commandArgs:       &model.CommandArgs{Command: "/jira install server https://jiralink.com", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: "Server instance has been installed",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			isSendEphemeralPostCalled := false
+
+			currentTestApi := api
+			currentTestApi.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
+				isSendEphemeralPostCalled = true
+
+				post := args.Get(1).(*model.Post)
+				actual := strings.TrimSpace(post.Message)
+				assert.True(t, strings.HasPrefix(actual, tt.expectedMsgPrefix), "Expected returned message to start with: \n%s\nActual:\n%s", tt.expectedMsgPrefix, actual)
+			}).Once().Return(&model.Post{})
+
+			p.SetAPI(currentTestApi)
+
+			store := NewStore(&p)
+			p.instanceStore = store
+			p.secretsStore = store
+			p.currentInstanceStore = mockCurrentInstanceStore{&p}
+			p.userStore = getMockUserStoreKV()
+
+			cmdResponse, appError := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
+			require.Nil(t, appError)
+			require.NotNil(t, cmdResponse)
+			assert.True(t, isSendEphemeralPostCalled)
 		})
 	}
 }
