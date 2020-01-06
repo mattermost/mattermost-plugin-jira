@@ -17,12 +17,16 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
       ],
     }
   }
-  fetchEpicsWithParams={
+  inputId="epic"
+  isMulti={true}
+  onChange={[MockFunction]}
+  removeValidate={[MockFunction]}
+  searchIssues={
     [MockFunction] {
       "calls": Array [
         Array [
           Object {
-            "epic_name_type_id": "customfield_10011",
+            "fields": "customfield_10011",
             "jql": "project=KT and issuetype=10000 and id IN (KT-17, KT-20) ORDER BY updated DESC",
             "q": "",
           },
@@ -36,10 +40,6 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
       ],
     }
   }
-  inputId="epic"
-  isMulti={true}
-  onChange={[MockFunction]}
-  removeValidate={[MockFunction]}
   theme={
     Object {
       "awayIndicator": "#ffbc42",
@@ -93,12 +93,20 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
     }
     cacheOptions={false}
     defaultOptions={true}
-    fetchEpicsWithParams={
+    filterOption={null}
+    isMulti={true}
+    loadOptions={[Function]}
+    menuPlacement="auto"
+    menuPortalTarget={<body />}
+    name="epic"
+    onChange={[Function]}
+    removeValidate={[MockFunction]}
+    searchIssues={
       [MockFunction] {
         "calls": Array [
           Array [
             Object {
-              "epic_name_type_id": "customfield_10011",
+              "fields": "customfield_10011",
               "jql": "project=KT and issuetype=10000 and id IN (KT-17, KT-20) ORDER BY updated DESC",
               "q": "",
             },
@@ -112,14 +120,6 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
         ],
       }
     }
-    filterOption={null}
-    isMulti={true}
-    loadOptions={[Function]}
-    menuPlacement="auto"
-    menuPortalTarget={<body />}
-    name="epic"
-    onChange={[Function]}
-    removeValidate={[MockFunction]}
     styles={
       Object {
         "clearIndicator": [Function],

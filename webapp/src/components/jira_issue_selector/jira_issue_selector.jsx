@@ -8,7 +8,6 @@ import debounce from 'debounce-promise';
 import AsyncSelect from 'react-select/async';
 
 import {getStyleForReactSelect} from 'utils/styles';
-import {doFetchWithResponse} from 'client';
 
 const searchDebounceDelay = 400;
 
@@ -17,9 +16,9 @@ export default class JiraIssueSelector extends Component {
         required: PropTypes.bool,
         theme: PropTypes.object.isRequired,
         onChange: PropTypes.func.isRequired,
-        fetchIssuesEndpoint: PropTypes.string.isRequired,
+        searchIssues: PropTypes.func.isRequired,
         error: PropTypes.string,
-        value: PropTypes.object,
+        value: PropTypes.string,
         addValidate: PropTypes.func.isRequired,
         removeValidate: PropTypes.func.isRequired,
     };
@@ -53,8 +52,16 @@ export default class JiraIssueSelector extends Component {
     };
 
     searchIssues = (text) => {
-        return doFetchWithResponse(this.props.fetchIssuesEndpoint + `?q=${encodeURIComponent(text.trim())}`).then(({data}) => {
-            return data;
+        const params = {
+            fields: 'key,summary',
+            q: encodeURIComponent(text.trim()),
+        };
+
+        return this.props.searchIssues(params).then(({data}) => {
+            return data.map((issue) => ({
+                value: issue.key,
+                label: `${issue.key}: ${issue.fields.summary}`,
+            }));
         }).catch((e) => {
             this.setState({error: e});
         });

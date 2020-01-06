@@ -4,12 +4,12 @@
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 
-import {fetchEpicsWithParams} from 'actions';
+import {searchIssues} from 'actions';
 
 import JiraEpicSelector from './jira_epic_selector';
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
-    fetchEpicsWithParams,
+    searchIssues,
 }, dispatch);
 
 export default connect(null, mapDispatchToProps)(JiraEpicSelector);
