@@ -146,7 +146,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         } else {
             subscriptionRows = (
                 <p>
-                    {'Click "Create Subscription" to receive Jira notifications in this channel.'}
+                    {'Click "Create Subscription" to receive Jira issue notifications in this channel.'}
                 </p>
             );
         }
