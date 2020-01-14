@@ -4,6 +4,7 @@
 package main
 
 import (
+	"encoding/json"
 	goexpvar "expvar"
 	"net/http"
 	"os"
@@ -14,6 +15,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-workflow/server/action"
+	"github.com/mattermost/mattermost-plugin-workflow/server/registry"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 )
 
@@ -42,10 +45,12 @@ const (
 	routeOAuth1PublicKey           = "/oauth1/public_key.html" // TODO remove, debugging?
 	routeUserConnect               = "/user/connect"
 	routeUserDisconnect            = "/user/disconnect"
+	routeWorkflowRegister          = "/workflow/register"
+	routeWorkflowTriggerSetup      = "/workflow/trigger_setup"
 )
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	status, err := handleHTTPRequest(p, w, r)
+	status, err := handleHTTPRequest(p, c, w, r)
 	if err != nil {
 		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
 		http.Error(w, err.Error(), status)
@@ -62,7 +67,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
 }
 
-func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+func handleHTTPRequest(p *Plugin, c *plugin.Context, w http.ResponseWriter, r *http.Request) (int, error) {
 	switch r.URL.Path {
 	// Issue APIs
 	case routeAPICreateIssue:
@@ -127,12 +132,88 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	case "/debug/vars":
 		goexpvar.Handler().ServeHTTP(w, r)
 		return 0, nil
+
+	// Workflow
+	case routeWorkflowRegister:
+		{
+			if c.SourcePluginId != "" {
+				return httpWorkflowRegister(p, w, r)
+			}
+		}
+	case routeWorkflowTriggerSetup:
+		{
+			if c.SourcePluginId != "" {
+				return httpWorkflowTriggerSetup(p, w, r)
+			}
+		}
 	}
 
 	if strings.HasPrefix(r.URL.Path, routeAPISubscriptionsChannel) {
 		return httpChannelSubscriptions(p, w, r)
 	}
 	return http.StatusNotFound, errors.New("not found")
+}
+
+func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+	params := registry.RegisterParams{
+		Triggers: []registry.TriggerParams{
+			{
+				TypeName:    "event",
+				DisplayName: "Jira Event",
+				Fields: []registry.Field{
+					{
+						Name: "events",
+						Type: "[]string",
+					},
+					{
+						Name: "projects",
+						Type: "[]string",
+					},
+					{
+						Name: "issue_types",
+						Type: "[]string",
+					},
+				},
+				VarInfos: []action.VarInfo{
+					{
+						Name:        "Summary",
+						Description: "The summery of the ticket",
+					},
+					{
+						Name:        "Description",
+						Description: "The description of the ticket",
+					},
+				},
+				TriggerSetupURL: "/jira" + routeWorkflowTriggerSetup,
+			},
+		},
+	}
+
+	if err := json.NewEncoder(w).Encode(&params); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
+
+func httpWorkflowTriggerSetup(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+	var params registry.SetupParams
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		return http.StatusBadRequest, errors.WithMessage(err, "Unable to decode setup params")
+	}
+
+	if params.BaseTrigger.Type() != "jira_event" {
+		return http.StatusBadRequest, errors.New("Unsupported trigger type.")
+	}
+
+	var trigger WorkflowTrigger
+	if err := json.Unmarshal(params.Trigger, &trigger); err != nil {
+		return http.StatusBadRequest, errors.WithMessage(err, "Unable to decode trigger")
+	}
+
+	p.workflowTriggerStore.AddTrigger(trigger, params.CallbackURL)
+
+	return http.StatusOK, nil
 }
 
 func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {

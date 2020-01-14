@@ -67,5 +67,9 @@ func (ww webhookWorker) process(rawData []byte) (err error) {
 		}
 	}
 
+	if err := ww.p.NotifyWorkflow(wh.(*webhook)); err != nil {
+		ww.p.errorf("WebhookWorker id: %d, error notifying workflow, err: %v", ww.id, err)
+	}
+
 	return nil
 }

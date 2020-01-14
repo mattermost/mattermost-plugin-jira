@@ -100,6 +100,9 @@ type Plugin struct {
 	otsStore             OTSStore
 	secretsStore         SecretsStore
 
+	// Active workflows store
+	workflowTriggerStore TriggerStore
+
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
 
@@ -204,6 +207,9 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	go p.initStats()
+
+	p.workflowTriggerStore = make(map[string]WorkflowTrigger)
+
 	return nil
 }
 
