@@ -302,8 +302,8 @@ func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request)
 
 	limit := 50
 	if len(limitStr) > 0 {
-		parsedLimit, err := strconv.Atoi(limitStr)
-		if err == nil {
+		parsedLimit, parseErr := strconv.Atoi(limitStr)
+		if parseErr == nil {
 			limit = parsedLimit
 		}
 	}
