@@ -55,3 +55,11 @@ func Map(vs []string, f func(string) string) []string {
 	}
 	return vsm
 }
+
+func IsJiraCloudURL(jiraURL string) (bool, error) {
+	u, err := url.Parse(jiraURL)
+	if err != nil {
+		return false, err
+	}
+	return strings.HasSuffix(u.Hostname(), ".atlassian.net"), nil
+}
