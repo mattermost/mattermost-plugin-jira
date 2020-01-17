@@ -180,7 +180,7 @@ func initUserCounter(currentInstanceStore CurrentInstanceStore, userStore UserSt
 		if err != nil {
 			return err.Error()
 		}
-		c, err := userStore.CountUsers(ji)
+		c, err := userStore.CountUsers()
 		if err != nil {
 			return err.Error()
 		}
