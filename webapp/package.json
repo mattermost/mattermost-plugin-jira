@@ -9,6 +9,7 @@
     "lint": "eslint --ignore-pattern node_modules --ignore-pattern dist --ignore-pattern tests --ext .js --ext .jsx --ext .ts --ext .tsx . --quiet",
     "fix": "eslint --ignore-pattern node_modules --ignore-pattern dist --ignore-pattern tests --ext .js --ext .jsx --ext .ts --ext .tsx . --quiet --fix",
     "test": "jest --forceExit --detectOpenHandles",
+    "test:watch": "jest --watch",
     "test-ci": "jest --forceExit --detectOpenHandles --maxWorkers=2",
     "convert-ts": "react-js-to-ts --arrow-parens always --no-bracket-spacing --single-quote --tab-width 4 --trailing-comma all"
   },
