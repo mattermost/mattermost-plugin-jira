@@ -454,7 +454,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                 role='form'
             >
                 <div className='margin-bottom x3 text-center'>
-                    <h2>{'Add Jira Subscription'}</h2>
+                    <h2>{'Add Jira Subscription in'} <strong>{this.props.channel.display_name}</strong></h2>
                 </div>
                 <div style={style.modalBody}>
                     {component}
