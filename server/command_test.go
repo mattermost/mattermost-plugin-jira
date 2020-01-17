@@ -176,19 +176,19 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 	}{
 		"no params - user is sys admin": {
 			commandArgs:       &model.CommandArgs{Command: "/jira install", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: strings.TrimSpace(commonHelpText + sysAdminHelpText),
+			expectedMsgPrefix: strings.TrimSpace(helpTextHeader + commonHelpText + sysAdminHelpText),
 		},
 		"no params - user is not sys admin": {
 			commandArgs:       &model.CommandArgs{Command: "/jira install", UserId: mockUserIDNonSysAdmin},
-			expectedMsgPrefix: strings.TrimSpace(commonHelpText),
+			expectedMsgPrefix: strings.TrimSpace(helpTextHeader + commonHelpText),
 		},
 		"install server without URL": {
 			commandArgs:       &model.CommandArgs{Command: "/jira install server", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: strings.TrimSpace(commonHelpText + sysAdminHelpText),
+			expectedMsgPrefix: strings.TrimSpace(helpTextHeader + commonHelpText + sysAdminHelpText),
 		},
 		"install cloud instance without URL": {
 			commandArgs:       &model.CommandArgs{Command: "/jira install cloud", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: strings.TrimSpace(commonHelpText + sysAdminHelpText),
+			expectedMsgPrefix: strings.TrimSpace(helpTextHeader + commonHelpText + sysAdminHelpText),
 		},
 		"install cloud instance as server": {
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
