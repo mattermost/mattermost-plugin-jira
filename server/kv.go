@@ -9,6 +9,7 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"github.com/mattermost/mattermost-server/v5/plugin"
 	"regexp"
 	"time"
 
@@ -484,42 +485,47 @@ func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnE
 
 var reHexKeyFormat = regexp.MustCompile("^[[:xdigit:]]{32}$")
 
+func checkReg(key string) (bool, error) {
+	// User records are not currently prefixed. Consider any 32-hex key.
+	if !reHexKeyFormat.MatchString(key) {
+		return true, nil
+	}
+	return true, nil
+}
+
 func (store store) CountUsers(ji Instance) (int, error) {
 	count := 0
-	for i := 0; ; i++ {
-		keys, appErr := store.plugin.API.KVList(i, listPerPage)
+
+	options := []plugin.KVListOption{
+		plugin.WithChecker(checkReg),
+	}
+
+	checkedKeys, err := store.plugin.Helpers.KVListWithOptions(options...)
+
+	if err != nil {
+		return 0, err
+	}
+
+	for _, key := range checkedKeys {
+		var data []byte
+		data, appErr := store.plugin.API.KVGet(key)
 		if appErr != nil {
 			return 0, appErr
 		}
-
-		for _, key := range keys {
-			// User records are not currently prefixed. Consider any 32-hex key.
-			if !reHexKeyFormat.MatchString(key) {
-				continue
-			}
-
-			var data []byte
-			data, appErr = store.plugin.API.KVGet(key)
-			if appErr != nil {
-				return 0, appErr
-			}
-			v := map[string]interface{}{}
-			err := json.Unmarshal(data, &v)
-			if err != nil {
-				// Skip non-JSON values.
-				continue
-			}
-
-			// A valid user record?
-			if v["Settings"] != nil && (v["accountId"] != nil || v["name"] != nil && v["key"] != nil) {
-				count++
-			}
+		v := map[string]interface{}{}
+		err = json.Unmarshal(data, &v)
+		if err != nil {
+			// Skip non-JSON values.
+			continue
 		}
 
-		if len(keys) < listPerPage {
-			break
+		// A valid user record?
+		if v["Settings"] != nil && (v["accountId"] != nil || v["name"] != nil && v["key"] != nil) {
+			count++
 		}
+
 	}
+
 	return count, nil
 }
 
