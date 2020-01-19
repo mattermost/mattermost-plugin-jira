@@ -4,13 +4,9 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 
-	triggerapi "github.com/mattermost/mattermost-plugin-workflow/server/trigger/api"
+	"github.com/mattermost/mattermost-plugin-workflow-client/workflowclient"
 )
 
 type WorkflowTrigger struct {
@@ -27,34 +23,24 @@ func (t TriggerStore) RemoveTrigger(callbackURL string) {
 }
 
 func (p *Plugin) NotifyWorkflow(wh *webhook) error {
-	activateParams := triggerapi.ActivateParameters{
+	activateParams := workflowclient.ActivateParameters{
 		TriggerVars: map[string]string{
 			"Summary":     wh.headline,
 			"Description": wh.text,
 		},
 	}
 
-	out, err := json.Marshal(&activateParams)
-	if err != nil {
-		return err
-	}
-
+	callbacks := []string{}
 	for callbackURL, trigger := range p.workflowTriggerStore {
 		if !p.matchesSubsciptionFilters(wh, trigger.SubscriptionFilters) {
 			continue
 		}
 
-		req, err := http.NewRequest("POST", callbackURL, bytes.NewBuffer(out))
-		if err != nil {
-			return err
-		}
+		callbacks = append(callbacks, callbackURL)
+	}
 
-		resp := p.API.PluginHTTP(req)
-		resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			respBody, _ := ioutil.ReadAll(resp.Body)
-			return fmt.Errorf("Error response from workflow plugin notifying: %v", string(respBody))
-		}
+	if err := workflowclient.NewClientPlugin(p.API).WorkflowCallbacks(callbacks, activateParams); err != nil {
+		return fmt.Errorf("Unable to notify some workflows: %w", err)
 	}
 
 	return nil

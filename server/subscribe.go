@@ -129,17 +129,14 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 	}
 
 	if !foundEvent {
-		fmt.Println("NO EVENT")
 		return false
 	}
 
 	if filters.IssueTypes.Len() != 0 && !filters.IssueTypes.ContainsAny(wh.JiraWebhook.Issue.Fields.Type.ID) {
-		fmt.Println("NO ISSUE TYPE")
 		return false
 	}
 
 	if filters.Projects.Len() != 0 && !filters.Projects.ContainsAny(wh.JiraWebhook.Issue.Fields.Project.Key) {
-		fmt.Println("NO PROJECT")
 		return false
 	}
 
@@ -166,7 +163,6 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 	}
 
 	if !validFilter {
-		fmt.Println("Invalid filter")
 		return false
 	}
 

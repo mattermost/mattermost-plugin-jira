@@ -15,8 +15,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-workflow/server/action"
-	"github.com/mattermost/mattermost-plugin-workflow/server/registry"
+	"github.com/mattermost/mattermost-plugin-workflow-client/workflowclient"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 )
 
@@ -155,12 +154,12 @@ func handleHTTPRequest(p *Plugin, c *plugin.Context, w http.ResponseWriter, r *h
 }
 
 func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	params := registry.RegisterParams{
-		Triggers: []registry.TriggerParams{
+	params := workflowclient.RegisterParams{
+		Triggers: []workflowclient.TriggerParams{
 			{
 				TypeName:    "event",
 				DisplayName: "Jira Event",
-				Fields: []registry.Field{
+				Fields: []workflowclient.Field{
 					{
 						Name: "events",
 						Type: "[]string",
@@ -174,7 +173,7 @@ func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 						Type: "[]string",
 					},
 				},
-				VarInfos: []action.VarInfo{
+				VarInfos: []workflowclient.VarInfo{
 					{
 						Name:        "Summary",
 						Description: "The summery of the ticket",
@@ -197,12 +196,12 @@ func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 }
 
 func httpWorkflowTriggerSetup(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	var params registry.SetupParams
+	var params workflowclient.SetupParams
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		return http.StatusBadRequest, errors.WithMessage(err, "Unable to decode setup params")
 	}
 
-	if params.BaseTrigger.Type() != "jira_event" {
+	if params.BaseTrigger.BaseType != "jira_event" {
 		return http.StatusBadRequest, errors.New("Unsupported trigger type.")
 	}
 
