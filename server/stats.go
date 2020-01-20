@@ -176,11 +176,7 @@ func (p *Plugin) debugResetStats() error {
 
 func initUserCounter(currentInstanceStore CurrentInstanceStore, userStore UserStore) {
 	goexpvar.Publish("jira/mapped_users", goexpvar.Func(func() interface{} {
-		ji, err := currentInstanceStore.LoadCurrentJIRAInstance()
-		if err != nil {
-			return err.Error()
-		}
-		c, err := userStore.CountUsers(ji)
+		c, err := userStore.CountUsers()
 		if err != nil {
 			return err.Error()
 		}
