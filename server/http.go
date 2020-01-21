@@ -176,11 +176,23 @@ func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 				VarInfos: []workflowclient.VarInfo{
 					{
 						Name:        "Summary",
-						Description: "The summery of the ticket",
+						Description: "The summary of the ticket",
 					},
 					{
 						Name:        "Description",
 						Description: "The description of the ticket",
+					},
+					{
+						Name:        "Headline",
+						Description: "Markdown description of what happened.",
+					},
+					{
+						Name:        "Key",
+						Description: "The issue key. Eg: MM-1234",
+					},
+					{
+						Name:        "ID",
+						Description: "Jira issue ID",
 					},
 				},
 				TriggerSetupURL: "/jira" + routeWorkflowTriggerSetup,
@@ -188,6 +200,7 @@ func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 		},
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(&params); err != nil {
 		return http.StatusInternalServerError, err
 	}

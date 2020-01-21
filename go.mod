@@ -9,7 +9,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/google/uuid v1.1.1
-	github.com/mattermost/mattermost-plugin-workflow-client v0.0.0-20200120142326-4a476939b2e2
+	github.com/mattermost/mattermost-plugin-workflow-client v0.0.0-20200121183617-b71061053ec5
 	github.com/mattermost/mattermost-server/v5 v5.19.0
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/pkg/errors v0.8.1

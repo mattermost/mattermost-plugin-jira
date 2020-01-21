@@ -210,10 +210,8 @@ github.com/mattermost/gorp v2.0.1-0.20190301154413-3b31e9a39d05+incompatible h1:
 github.com/mattermost/gorp v2.0.1-0.20190301154413-3b31e9a39d05+incompatible/go.mod h1:0kX1qa3DOpaPJyOdMLeo7TcBN0QmUszj9a/VygOhDe0=
 github.com/mattermost/ldap v3.0.4+incompatible h1:SOeNnz+JNR+foQ3yHkYqijb9MLPhXN2BZP/PdX23VDU=
 github.com/mattermost/ldap v3.0.4+incompatible/go.mod h1:b4reDCcGpBxJ4WX0f224KFY+OR0npin7or7EFpeIko4=
-github.com/mattermost/mattermost-plugin-workflow-client v0.0.0-20200119181544-74f158c9bde1 h1:1IQJYFDkdnFIFRCgUp8Bg6J+kBiSyf+ycuPTCH8/vjs=
-github.com/mattermost/mattermost-plugin-workflow-client v0.0.0-20200119181544-74f158c9bde1/go.mod h1:k4WZVXIMH2tWqNJU2WGBeZWisCDqcKVMgnQL8bon0FA=
-github.com/mattermost/mattermost-plugin-workflow-client v0.0.0-20200120142326-4a476939b2e2 h1:wqZ+lCRLLnLgbu74pmNaO+Vd+L9Ol4NmPHch2JVl4YE=
-github.com/mattermost/mattermost-plugin-workflow-client v0.0.0-20200120142326-4a476939b2e2/go.mod h1:k4WZVXIMH2tWqNJU2WGBeZWisCDqcKVMgnQL8bon0FA=
+github.com/mattermost/mattermost-plugin-workflow-client v0.0.0-20200121183617-b71061053ec5 h1:7MIAQ618c6csSq2X3NtDX4ILwAiOjq06yJxVp3WXlBo=
+github.com/mattermost/mattermost-plugin-workflow-client v0.0.0-20200121183617-b71061053ec5/go.mod h1:k4WZVXIMH2tWqNJU2WGBeZWisCDqcKVMgnQL8bon0FA=
 github.com/mattermost/mattermost-server/v5 v5.19.0 h1:5hLPxmgvxjpMu7DTNTnqnuFjfQcGCKNUP1MOvoT5MkM=
 github.com/mattermost/mattermost-server/v5 v5.19.0/go.mod h1:10vIYDohcPNDMDk3XlRUjNO9nGk9fnFHEFeSIUYR82k=
 github.com/mattermost/rsc v0.0.0-20160330161541-bbaefb05eaa0/go.mod h1:nV5bfVpT//+B1RPD2JvRnxbkLmJEYXmRaaVl15fsXjs=

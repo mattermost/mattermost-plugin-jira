@@ -182,13 +182,13 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) (StringSet, error) {
 	}
 
 	// Jira Cloud comment event. We need to fetch issue data because it is not expanded in webhook payload.
-	issue := &jwh.Issue
 	isCommentEvent := jwh.WebhookEvent == "comment_created" || jwh.WebhookEvent == "comment_updated" || jwh.WebhookEvent == "comment_deleted"
 	if isCommentEvent && ji.GetType() == "cloud" {
-		issue, err = p.getIssueDataForCloudWebhook(ji, issue.ID)
+		issue, err := p.getIssueDataForCloudWebhook(ji, jwh.Issue.ID)
 		if err != nil {
 			return nil, err
 		}
+		jwh.Issue = *issue
 	}
 
 	channelIds := NewStringSet()
