@@ -24,19 +24,19 @@ func NewTriggerStore() *TriggerStore {
 	}
 }
 
-func (t TriggerStore) AddTrigger(trigger WorkflowTrigger, callbackURL string) {
+func (t *TriggerStore) AddTrigger(trigger WorkflowTrigger, callbackURL string) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	t.store[callbackURL] = trigger
 }
 
-func (t TriggerStore) RemoveTrigger(callbackURL string) {
+func (t *TriggerStore) RemoveTrigger(callbackURL string) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	delete(t.store, callbackURL)
 }
 
-func (t TriggerStore) ForEach(forEach func(string, WorkflowTrigger)) {
+func (t *TriggerStore) ForEach(forEach func(string, WorkflowTrigger)) {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 	for callbackURL, trigger := range t.store {
