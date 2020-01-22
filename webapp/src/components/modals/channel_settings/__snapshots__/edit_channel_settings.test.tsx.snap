@@ -8,7 +8,11 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
     className="margin-bottom x3 text-center"
   >
     <h2>
-      Add Jira Subscription
+      Add Jira Subscription in
+       
+      <strong>
+        FGFG
+      </strong>
     </h2>
   </div>
   <div
@@ -184,7 +188,11 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
     className="margin-bottom x3 text-center"
   >
     <h2>
-      Add Jira Subscription
+      Add Jira Subscription in
+       
+      <strong>
+        FGFG
+      </strong>
     </h2>
   </div>
   <div
@@ -3754,7 +3762,11 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
     className="margin-bottom x3 text-center"
   >
     <h2>
-      Add Jira Subscription
+      Add Jira Subscription in
+       
+      <strong>
+        FGFG
+      </strong>
     </h2>
   </div>
   <div
@@ -3930,7 +3942,11 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
     className="margin-bottom x3 text-center"
   >
     <h2>
-      Add Jira Subscription
+      Add Jira Subscription in
+       
+      <strong>
+        FGFG
+      </strong>
     </h2>
   </div>
   <div
@@ -4084,7 +4100,11 @@ exports[`components/EditChannelSettings should produce subscription error when a
     className="margin-bottom x3 text-center"
   >
     <h2>
-      Add Jira Subscription
+      Add Jira Subscription in
+       
+      <strong>
+        FGFG
+      </strong>
     </h2>
   </div>
   <div
