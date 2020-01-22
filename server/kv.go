@@ -60,7 +60,7 @@ type UserStore interface {
 	LoadMattermostUserId(ji Instance, jiraUserName string) (string, error)
 	LoadJIRAUserByAccountId(ji Instance, accountId string) (JIRAUser, error)
 	DeleteUserInfo(ji Instance, mattermostUserId string) error
-	CountUsers(ji Instance) (int, error)
+	CountUsers() (int, error)
 }
 
 type OTSStore interface {
@@ -484,7 +484,7 @@ func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnE
 
 var reHexKeyFormat = regexp.MustCompile("^[[:xdigit:]]{32}$")
 
-func (store store) CountUsers(ji Instance) (int, error) {
+func (store store) CountUsers() (int, error) {
 	count := 0
 	for i := 0; ; i++ {
 		keys, appErr := store.plugin.API.KVList(i, listPerPage)
