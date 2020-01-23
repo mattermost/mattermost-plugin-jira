@@ -20,6 +20,36 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
+func httpAPITransitionIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
+
+	mattermostUserId := requestData.UserId
+	if mattermostUserId == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	issueKey := requestData.Context["issueKey"].(string)
+	toState := requestData.Context["selected_option"].(string)
+
+	plugin := ji.GetPlugin()
+
+	msg, err := plugin.transitionJiraIssue(mattermostUserId, issueKey, toState)
+
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	post := &model.Post{
+		UserId:    plugin.getUserID(),
+		ChannelId: requestData.ChannelId,
+		Message:   msg,
+	}
+
+	_ = plugin.API.SendEphemeralPost(mattermostUserId, post)
+
+	return http.StatusOK, nil
+}
+
 func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,
@@ -712,7 +742,7 @@ func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issue
 		}
 	}
 
-	return parseIssue(issue), nil
+	return parseIssue(client, issue)
 }
 
 const MinUserSearchQueryLength = 3
