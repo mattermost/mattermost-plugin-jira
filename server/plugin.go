@@ -4,9 +4,12 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rsa"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -19,6 +22,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
+	"github.com/mattermost/mattermost-plugin-autolink/server/link"
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
@@ -204,6 +208,91 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	go p.initStats()
+
+	go func() {
+		time.Sleep(time.Second * 10)
+
+		instances, err := p.instanceStore.LoadKnownJIRAInstances()
+		if err != nil {
+			p.API.LogError("unable to register autolinks", "err", err)
+			return
+		}
+
+		for url := range instances {
+			instance, err := p.instanceStore.LoadJIRAInstance(url)
+			if err != nil {
+				continue
+			}
+
+			jci, ok := instance.(*jiraCloudInstance)
+			if !ok {
+				p.API.LogWarn("only cloud instances supported for autolink", "err", err)
+				continue
+			}
+
+			if err := p.InstallAutolinkForCloudInstance(jci); err != nil {
+				p.API.LogWarn("could not install autolinks for cloud instance", "instance", jci.BaseURL, "err", err)
+				continue
+			}
+		}
+	}()
+
+	return nil
+}
+
+func (p *Plugin) InstallAutolinkForCloudInstance(jci *jiraCloudInstance) error {
+	client, err := jci.getJIRAClientForServer()
+	if err != nil {
+		return fmt.Errorf("unable to get jira client for server: %w", err)
+	}
+
+	keys, err := JiraClient{Jira: client}.GetAllProjectKeys()
+	if err != nil {
+		return fmt.Errorf("unable to make jira client: %w", err)
+	}
+
+	for _, key := range keys {
+		err = p.InstallAutolink(key, jci.BaseURL)
+	}
+	if err != nil {
+		return fmt.Errorf("some keys where not installed: %w", err)
+	}
+
+	return nil
+}
+
+func (p *Plugin) InstallAutolink(key, baseURL string) error {
+	baseURL = strings.TrimRight(baseURL, "/")
+	installList := []link.Link{
+		{
+			Name:     key + " key to link for " + baseURL,
+			Pattern:  `(` + key + `)(-)(?P<jira_id>\d+)`,
+			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
+		},
+		{
+			Name:     key + " link to key for " + baseURL,
+			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)`,
+			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
+		},
+	}
+
+	for _, toInstall := range installList {
+		linkBytes, err := json.Marshal(&toInstall)
+		if err != nil {
+			return err
+		}
+
+		req, err := http.NewRequest("POST", "/mattermost-autolink/api/v1/link", bytes.NewReader(linkBytes))
+		if err != nil {
+			return err
+		}
+
+		resp := p.API.PluginHTTP(req)
+		if resp == nil || resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("Unable to install autolink.")
+		}
+	}
+
 	return nil
 }
 
