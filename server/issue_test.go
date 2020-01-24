@@ -13,6 +13,7 @@ const (
 	nonExistantIssueKey   = "FAKE-1"
 	noPermissionsIssueKey = "SUDO-1"
 	existingIssueKey      = "REAL-1"
+	nonExistantProjectKey = "FP"
 	noIssueFoundError     = "We couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue."
 	noPermissionsError    = "You do not have the appropriate permissions to perform this action. Please contact your Jira administrator."
 )
@@ -23,6 +24,13 @@ type testClient struct {
 	ProjectService
 	SearchService
 	IssueService
+}
+
+func (client testClient) GetProject(key string) (*jira.Project, error) {
+	if key == nonExistantProjectKey {
+		return nil, errors.New("Project " + key + " not found")
+	}
+	return nil, nil
 }
 
 func (client testClient) GetTransitions(issueKey string) ([]jira.Transition, error) {
