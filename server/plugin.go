@@ -32,6 +32,8 @@ const (
 	botDisplayName = "Jira"
 	botDescription = "Created by the Jira Plugin."
 
+	autolinkPluginId = "mattermost-autolink"
+
 	// Move these two to the plugin settings if admins need to adjust them.
 	WebhookMaxProcsPerServer = 20
 	WebhookBufferSize        = 10000
@@ -282,7 +284,7 @@ func (p *Plugin) InstallAutolink(key, baseURL string) error {
 			return err
 		}
 
-		req, err := http.NewRequest("POST", "/mattermost-autolink/api/v1/link", bytes.NewReader(linkBytes))
+		req, err := http.NewRequest("POST", "/"+autolinkPluginId+"/api/v1/link", bytes.NewReader(linkBytes))
 		if err != nil {
 			return err
 		}
