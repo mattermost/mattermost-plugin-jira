@@ -82,7 +82,7 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 	}
 
 	// Setup autolink
-	p.InstallAutolinkForCloudInstance(jiraInstance.(*jiraCloudInstance))
+	p.AddAutolinksForCloudInstance(jiraInstance.(*jiraCloudInstance))
 
 	err = json.NewEncoder(w).Encode([]string{"OK"})
 	if err != nil {

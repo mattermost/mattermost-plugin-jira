@@ -4,12 +4,9 @@
 package main
 
 import (
-	"bytes"
 	"crypto/rsa"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -22,7 +19,8 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
-	"github.com/mattermost/mattermost-plugin-autolink/server/link"
+	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
+	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
@@ -232,7 +230,7 @@ func (p *Plugin) OnActivate() error {
 				continue
 			}
 
-			if err := p.InstallAutolinkForCloudInstance(jci); err != nil {
+			if err := p.AddAutolinksForCloudInstance(jci); err != nil {
 				p.API.LogWarn("could not install autolinks for cloud instance", "instance", jci.BaseURL, "err", err)
 				continue
 			}
@@ -242,7 +240,7 @@ func (p *Plugin) OnActivate() error {
 	return nil
 }
 
-func (p *Plugin) InstallAutolinkForCloudInstance(jci *jiraCloudInstance) error {
+func (p *Plugin) AddAutolinksForCloudInstance(jci *jiraCloudInstance) error {
 	client, err := jci.getJIRAClientForServer()
 	if err != nil {
 		return fmt.Errorf("unable to get jira client for server: %w", err)
@@ -254,7 +252,7 @@ func (p *Plugin) InstallAutolinkForCloudInstance(jci *jiraCloudInstance) error {
 	}
 
 	for _, key := range keys {
-		err = p.InstallAutolink(key, jci.BaseURL)
+		err = p.AddAutolinks(key, jci.BaseURL)
 	}
 	if err != nil {
 		return fmt.Errorf("some keys where not installed: %w", err)
@@ -263,9 +261,9 @@ func (p *Plugin) InstallAutolinkForCloudInstance(jci *jiraCloudInstance) error {
 	return nil
 }
 
-func (p *Plugin) InstallAutolink(key, baseURL string) error {
+func (p *Plugin) AddAutolinks(key, baseURL string) error {
 	baseURL = strings.TrimRight(baseURL, "/")
-	installList := []link.Link{
+	installList := []autolink.Autolink{
 		{
 			Name:     key + " key to link for " + baseURL,
 			Pattern:  `(` + key + `)(-)(?P<jira_id>\d+)`,
@@ -278,21 +276,9 @@ func (p *Plugin) InstallAutolink(key, baseURL string) error {
 		},
 	}
 
-	for _, toInstall := range installList {
-		linkBytes, err := json.Marshal(&toInstall)
-		if err != nil {
-			return err
-		}
-
-		req, err := http.NewRequest("POST", "/"+autolinkPluginId+"/api/v1/link", bytes.NewReader(linkBytes))
-		if err != nil {
-			return err
-		}
-
-		resp := p.API.PluginHTTP(req)
-		if resp == nil || resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("Unable to install autolink.")
-		}
+	client := autolinkclient.NewClientPlugin(p.API)
+	if err := client.Add(installList...); err != nil {
+		return fmt.Errorf("Unabel to add autolinks: %w", err)
 	}
 
 	return nil
