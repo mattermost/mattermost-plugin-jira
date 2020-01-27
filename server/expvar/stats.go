@@ -103,19 +103,34 @@ func (stats *Stats) PrintConsolidated(pattern string) (string, error) {
 		}
 	}
 
+	// goexpvar.Do(func(variable expvar.KeyValue) {
+	// 	fmt.Printf("expvar.Key: %s expvar.Value: %s", variable.Key, variable.Value)
+	// })
+
 	bullet := func(k, v string) string {
+		// fmt.Printf("k = %+v\n", k)
+		// fmt.Printf("v = %+v\n", v)
 		if v == "" || v == "{}" {
 			return ""
 		}
 		return fmt.Sprintf(" * %s: `%s`\n", k, v)
 	}
 
+	fmt.Printf("1. re = %+v\n", re)
+
 	resp := ""
 	stats.Do(func(name string, e *Endpoint) {
+		fmt.Printf("1. name = %+v\n", name)
+		fmt.Printf("1. e = %+v\n", e.Name)
 		if re == nil || re.MatchString(name) {
 			resp += bullet(name, e.String())
 		}
 	})
+
+	mappedUsers := goexpvar.Get("jira/mapped_users")
+	// fmt.Printf("1. mappedUsers = %+v\n", mappedUsers)
+	resp += bullet("jira/mapped_users", mappedUsers.String())
+	fmt.Printf("1. Print Consolidated resp = %+v\n", resp)
 	return resp, nil
 }
 
@@ -132,6 +147,8 @@ func PrintExpvars(pattern string) (string, error) {
 	}
 
 	bullet := func(cond bool, k string, v interface{}) string {
+		fmt.Printf("2. k = %+v\n", k)
+		fmt.Printf("2. v = %+v\n", v)
 		if !cond {
 			return ""
 		}
@@ -144,9 +161,11 @@ func PrintExpvars(pattern string) (string, error) {
 
 	resp := ""
 	goexpvar.Do(func(kv goexpvar.KeyValue) {
+		fmt.Printf("2. kv = %+v\n", kv)
 		if re == nil || re.MatchString(kv.Key) {
 			resp += sbullet(kv.Key, kv.Value.String())
 		}
 	})
+	fmt.Printf("2. PrintExpvars resp = %+v\n", resp)
 	return resp, nil
 }
