@@ -248,14 +248,14 @@ func (p *Plugin) AddAutolinksForCloudInstance(jci *jiraCloudInstance) error {
 
 	keys, err := JiraClient{Jira: client}.GetAllProjectKeys()
 	if err != nil {
-		return fmt.Errorf("unable to make jira client: %w", err)
+		return fmt.Errorf("unable to get project keys: %w", err)
 	}
 
 	for _, key := range keys {
 		err = p.AddAutolinks(key, jci.BaseURL)
 	}
 	if err != nil {
-		return fmt.Errorf("some keys where not installed: %w", err)
+		return fmt.Errorf("some keys were not installed: %w", err)
 	}
 
 	return nil
@@ -278,7 +278,7 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 
 	client := autolinkclient.NewClientPlugin(p.API)
 	if err := client.Add(installList...); err != nil {
-		return fmt.Errorf("Unabel to add autolinks: %w", err)
+		return fmt.Errorf("Unable to add autolinks: %w", err)
 	}
 
 	return nil
