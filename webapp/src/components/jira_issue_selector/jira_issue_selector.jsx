@@ -54,7 +54,7 @@ export default class JiraIssueSelector extends Component {
     searchIssues = (text) => {
         const params = {
             fields: 'key,summary',
-            q: encodeURIComponent(text.trim()),
+            q: text.trim(),
         };
 
         return this.props.searchIssues(params).then(({data}) => {
