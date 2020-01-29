@@ -80,7 +80,7 @@ describe('components/EditChannelSettings', () => {
         channelSubscriptions: [channelSubscriptionForCloud],
         close: jest.fn(),
         selectedSubscription: channelSubscriptionForCloud,
-        creatingSubscription: false
+        creatingSubscription: false,
     };
 
     test('should match snapshot', () => {
