@@ -8,7 +8,7 @@ import AsyncSelect from 'react-select/async';
 
 import {getStyleForReactSelect} from 'utils/styles';
 import {isEpicNameField, isEpicIssueType} from 'utils/jira_issue_metadata';
-import {IssueMetadata, ReactSelectOption} from 'types/model';
+import {IssueMetadata, ReactSelectOption, JiraIssue} from 'types/model';
 
 import Setting from 'components/setting';
 
@@ -18,7 +18,7 @@ const searchDebounceDelay = 400;
 type Props = {
     required?: boolean;
     hideRequiredStar?: boolean;
-    fetchEpicsWithParams: (params: object) => Promise<{data: ReactSelectOption[]}>;
+    searchIssues: (params: object) => Promise<{data: JiraIssue[]}>;
     theme: object;
     isMulti?: boolean;
     onChange: (values: string[]) => void;
@@ -128,12 +128,15 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
 
         const params = {
             jql: fullJql,
-            epic_name_type_id: epicNameTypeId,
+            fields: epicNameTypeId,
             q: userInput,
         };
 
-        return this.props.fetchEpicsWithParams(params).then(({data}) => {
-            return data;
+        return this.props.searchIssues(params).then(({data}: {data: JiraIssue[]}) => {
+            return data.map((issue) => ({
+                value: issue.key,
+                label: `${issue.key}: ${issue.fields[epicNameTypeId]}`,
+            }));
         }).catch((e) => {
             this.setState({error: e});
             return [];

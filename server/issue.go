@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -265,7 +266,7 @@ func httpAPIGetCreateIssueMetadataForProjects(ji Instance, w http.ResponseWriter
 	return http.StatusOK, nil
 }
 
-func httpAPIGetSearchEpics(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
 			errors.New("Request: " + r.Method + " is not allowed, must be GET")
@@ -286,23 +287,35 @@ func httpAPIGetSearchEpics(ji Instance, w http.ResponseWriter, r *http.Request) 
 		return http.StatusInternalServerError, err
 	}
 
-	epicNameTypeID := r.FormValue("epic_name_type_id")
-	jqlString := r.FormValue("jql")
 	q := r.FormValue("q")
+	jqlString := r.FormValue("jql")
+	fieldsStr := r.FormValue("fields")
+	limitStr := r.FormValue("limit")
 
-	if len(epicNameTypeID) == 0 {
-		return http.StatusBadRequest, errors.New("epic_name_type_id query param is required")
+	if len(fieldsStr) == 0 {
+		fieldsStr = "key,summary"
 	}
 	if len(jqlString) == 0 {
-		return http.StatusBadRequest, errors.New("jql query param is required")
+		escaped := strings.ReplaceAll(q, `"`, `\"`)
+		jqlString = fmt.Sprintf(`text ~ "%s" OR text ~ "%s*"`, escaped, escaped)
 	}
+
+	limit := 50
+	if len(limitStr) > 0 {
+		parsedLimit, parseErr := strconv.Atoi(limitStr)
+		if parseErr == nil {
+			limit = parsedLimit
+		}
+	}
+
+	fields := strings.Split(fieldsStr, ",")
 
 	var exact *jira.Issue
 	var wg sync.WaitGroup
 	if reJiraIssueKey.MatchString(q) {
 		wg.Add(1)
 		go func() {
-			exact, _ = client.GetIssue(q, nil)
+			exact, _ = client.GetIssue(q, &jira.GetQueryOptions{Fields: fieldsStr})
 			wg.Done()
 		}()
 	}
@@ -311,34 +324,22 @@ func httpAPIGetSearchEpics(ji Instance, w http.ResponseWriter, r *http.Request) 
 	wg.Add(1)
 	go func() {
 		found, _ = client.SearchIssues(jqlString, &jira.SearchOptions{
-			MaxResults: 50,
-			Fields:     []string{epicNameTypeID},
+			MaxResults: limit,
+			Fields:     fields,
 		})
+
 		wg.Done()
 	}()
 
 	wg.Wait()
 
-	result := []utils.ReactSelectOption{}
+	result := []jira.Issue{}
 	if exact != nil {
-		name, _ := exact.Fields.Unknowns.String(epicNameTypeID)
-		if name != "" {
-			label := fmt.Sprintf("%s: %s", exact.Key, name)
-			result = append(result, utils.ReactSelectOption{
-				Label: label,
-				Value: exact.Key,
-			})
-		}
+		result = append(result, *exact)
 	}
-	for _, epic := range found {
-		name, _ := epic.Fields.Unknowns.String(epicNameTypeID)
-		if name != "" {
-			label := fmt.Sprintf("%s: %s", epic.Key, name)
-			result = append(result, utils.ReactSelectOption{
-				Label: label,
-				Value: epic.Key,
-			})
-		}
+
+	for _, issue := range found {
+		result = append(result, issue)
 	}
 
 	bb, err := json.Marshal(result)
@@ -436,80 +437,6 @@ func httpAPIGetJiraProjectMetadata(ji Instance, w http.ResponseWriter, r *http.R
 }
 
 var reJiraIssueKey = regexp.MustCompile(`^([[:alpha:]]+)-([[:digit:]]+)$`)
-
-func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("Request: " + r.Method + " is not allowed, must be GET")
-	}
-
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
-	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	client, err := ji.GetClient(jiraUser)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	q := r.FormValue("q")
-	var exact *jira.Issue
-	var wg sync.WaitGroup
-	if reJiraIssueKey.MatchString(q) {
-		wg.Add(1)
-		go func() {
-			exact, _ = client.GetIssue(q, nil)
-			wg.Done()
-		}()
-	}
-
-	jqlString := `text ~ "` + strings.ReplaceAll(q, `"`, `\"`) + `"`
-	var found []jira.Issue
-	wg.Add(1)
-	go func() {
-		found, _ = client.SearchIssues(jqlString, &jira.SearchOptions{
-			MaxResults: 50,
-			Fields:     []string{"key", "summary"},
-		})
-		wg.Done()
-	}()
-
-	wg.Wait()
-
-	var result []utils.ReactSelectOption
-	if exact != nil {
-		result = append(result, utils.ReactSelectOption{
-			Value: exact.Key,
-			Label: exact.Key + ": " + exact.Fields.Summary,
-		})
-	}
-	for _, issue := range found {
-		result = append(result, utils.ReactSelectOption{
-			Value: issue.Key,
-			Label: issue.Key + ": " + issue.Fields.Summary,
-		})
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	b, err := json.Marshal(result)
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to marshal response")
-	}
-	_, err = w.Write(b)
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write response")
-	}
-
-	return http.StatusOK, nil
-}
 
 func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {

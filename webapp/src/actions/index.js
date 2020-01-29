@@ -95,9 +95,9 @@ export const fetchJiraProjectMetadata = () => {
     };
 };
 
-export const fetchEpicsWithParams = (params) => {
+export const searchIssues = (params) => {
     return async (dispatch, getState) => {
-        const url = getPluginServerRoute(getState()) + '/api/v2/get-search-epics';
+        const url = getPluginServerRoute(getState()) + '/api/v2/get-search-issues';
         return doFetchWithResponse(`${url}${buildQueryString(params)}`);
     };
 };
