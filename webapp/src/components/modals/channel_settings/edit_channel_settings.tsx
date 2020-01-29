@@ -451,12 +451,9 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         const enableDeleteButton = Boolean(this.props.selectedSubscription);
 
         let saveSubscriptionButtonText = 'Save Subscription';
-        if (this.props.creatingSubscription) {
-            saveSubscriptionButtonText = 'Add Subscription';
-        }
-
         let headerText = 'Edit Jira Subscription for ';
         if (this.props.creatingSubscription) {
+            saveSubscriptionButtonText = 'Add Subscription';
             headerText = 'Add Jira Subscription in ';
         }
 
