@@ -18,6 +18,7 @@ const helpTextHeader = "###### Mattermost Jira Plugin - Slash Command Help\n"
 const commonHelpText = "\n* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
 	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
 	"* `/jira assign <issue-key> <assignee>` - Change the assignee of a Jira issue\n" +
+	"* `/jira unassign <issue-key>` - Unassign the Jira issue\n" +
 	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field\n" +
 	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
 	"* `/jira subscribe` - Configure the Jira notifications sent to this channel\n" +
@@ -57,6 +58,7 @@ var jiraCommandHandler = CommandHandler{
 		"settings":           executeSettings,
 		"transition":         executeTransition,
 		"assign":             executeAssign,
+		"unassign":           executeUnassign,
 		"uninstall/cloud":    executeUninstallCloud,
 		"uninstall/server":   executeUninstallServer,
 		"webhook":            executeWebhookURL,
@@ -517,6 +519,20 @@ func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandA
 	const uninstallInstructions = `Jira instance successfully disconnected. Go to **Settings > Applications > Application Links** to remove the application in your Jira Server or Data Center instance.`
 
 	return p.responsef(header, uninstallInstructions)
+}
+
+func executeUnassign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) < 1 {
+		return p.responsef(header, "Please specify an issue key in the form `/jira unassign <issue-key>`.")
+	}
+	issueKey := strings.ToUpper(args[0])
+
+	msg, err := p.unassignJiraIssue(header.UserId, issueKey)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+
+	return p.responsef(header, msg)
 }
 
 func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
