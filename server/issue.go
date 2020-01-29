@@ -168,19 +168,23 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, errors.Errorf("Failed to create issue. %s", err.Error())
 	}
 
-	// Reply to the post with the issue link that was created
+	// Reply with an ephemeral post with the Jira issue formatted as slack attachment.
 	reply := &model.Post{
 		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.GetURL(), created.Key),
 		ChannelId: channelId,
 		RootId:    rootId,
 		ParentId:  rootId,
-		UserId:    mattermostUserId,
+		UserId:    ji.GetPlugin().getConfig().botUserID,
 	}
-	_, appErr = api.CreatePost(reply)
-	if appErr != nil {
+
+	attachment, err := ji.GetPlugin().getIssueAsSlackAttachment(ji, jiraUser, created.Key)
+	if err != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to create notification post "+create.PostId)
+			errors.WithMessage(err, "failed to create notification post "+create.PostId)
 	}
+
+	reply.AddProp("attachments", attachment)
+	_ = api.SendEphemeralPost(mattermostUserId, reply)
 
 	if post != nil && len(post.FileIds) > 0 {
 		go func() {
