@@ -8,8 +8,7 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
     className="margin-bottom x3 text-center"
   >
     <h2>
-      Add Jira Subscription in
-       
+      Edit Jira Subscription for 
       <strong>
         FGFG
       </strong>
@@ -168,12 +167,12 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
     />
     <FormButton
       btnClass="btn-primary"
-      defaultMessage="Set Subscription"
+      defaultMessage="Save Subscription"
       disabled={false}
       extraClasses=""
       onClick={[Function]}
       saving={false}
-      savingMessage="Setting"
+      savingMessage="Saving..."
       type="button"
     />
   </ModalFooter>
@@ -188,8 +187,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
     className="margin-bottom x3 text-center"
   >
     <h2>
-      Add Jira Subscription in
-       
+      Edit Jira Subscription for 
       <strong>
         FGFG
       </strong>
@@ -3742,12 +3740,12 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
     />
     <FormButton
       btnClass="btn-primary"
-      defaultMessage="Set Subscription"
+      defaultMessage="Save Subscription"
       disabled={false}
       extraClasses=""
       onClick={[Function]}
       saving={false}
-      savingMessage="Setting"
+      savingMessage="Saving..."
       type="button"
     />
   </ModalFooter>
@@ -3762,8 +3760,7 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
     className="margin-bottom x3 text-center"
   >
     <h2>
-      Add Jira Subscription in
-       
+      Edit Jira Subscription for 
       <strong>
         FGFG
       </strong>
@@ -3922,12 +3919,12 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
     />
     <FormButton
       btnClass="btn-primary"
-      defaultMessage="Set Subscription"
+      defaultMessage="Save Subscription"
       disabled={false}
       extraClasses=""
       onClick={[Function]}
       saving={false}
-      savingMessage="Setting"
+      savingMessage="Saving..."
       type="button"
     />
   </ModalFooter>
@@ -3942,8 +3939,7 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
     className="margin-bottom x3 text-center"
   >
     <h2>
-      Add Jira Subscription in
-       
+      Edit Jira Subscription for 
       <strong>
         FGFG
       </strong>
@@ -4080,12 +4076,12 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
     />
     <FormButton
       btnClass="btn-primary"
-      defaultMessage="Set Subscription"
+      defaultMessage="Save Subscription"
       disabled={true}
       extraClasses=""
       onClick={[Function]}
       saving={false}
-      savingMessage="Setting"
+      savingMessage="Saving..."
       type="button"
     />
   </ModalFooter>
@@ -4100,8 +4096,7 @@ exports[`components/EditChannelSettings should produce subscription error when a
     className="margin-bottom x3 text-center"
   >
     <h2>
-      Add Jira Subscription in
-       
+      Edit Jira Subscription for 
       <strong>
         FGFG
       </strong>
@@ -4260,12 +4255,12 @@ exports[`components/EditChannelSettings should produce subscription error when a
     />
     <FormButton
       btnClass="btn-primary"
-      defaultMessage="Set Subscription"
+      defaultMessage="Save Subscription"
       disabled={false}
       extraClasses=""
       onClick={[Function]}
       saving={false}
-      savingMessage="Setting"
+      savingMessage="Saving..."
       type="button"
     />
   </ModalFooter>
