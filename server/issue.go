@@ -739,6 +739,9 @@ func (p *Plugin) unassignJiraIssue(mmUserId, issueKey string) (string, error) {
 	}
 
 	if err := client.UpdateAssignee(issueKey, &jira.User{}); err != nil {
+		if StatusCode(err) == http.StatusForbidden {
+			return "You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.", nil
+		}
 		return "", err
 	}
 
