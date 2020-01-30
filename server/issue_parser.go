@@ -25,7 +25,7 @@ func mdKeySummaryLink(issue *jira.Issue) string {
 	if pos < 0 {
 		return ""
 	}
-	return fmt.Sprintf("[%s](%s%s)", issue.Key+": "+issue.Fields.Summary, issue.Self[:pos], "/browse/"+issue.Key)
+	return fmt.Sprintf("[%s](%s%s)", issue.Key+": "+issue.Fields.Summary+" ("+issue.Fields.Status.Name+")", issue.Self[:pos], "/browse/"+issue.Key)
 }
 
 func reporterSummary(issue *jira.Issue) string {
@@ -33,7 +33,8 @@ func reporterSummary(issue *jira.Issue) string {
 	reporterSummary := avatarLink + " " + issue.Fields.Reporter.Name
 	return reporterSummary
 }
-func mdTransitionActions(client Client, issue *jira.Issue) ([]*model.PostAction, error) {
+
+func getTransitionActions(client Client, issue *jira.Issue) ([]*model.PostAction, error) {
 	var actions []*model.PostAction
 
 	ctx := map[string]interface{}{
@@ -53,10 +54,12 @@ func mdTransitionActions(client Client, issue *jira.Issue) ([]*model.PostAction,
 	}
 
 	for _, transition := range transitions {
-		options = append(options, &model.PostActionOptions{
-			Text:  transition.Name,
-			Value: transition.Name,
-		})
+		if transition.Name != issue.Fields.Status.Name {
+			options = append(options, &model.PostActionOptions{
+				Text:  transition.Name,
+				Value: transition.Name,
+			})
+		}
 	}
 
 	actions = append(actions, &model.PostAction{
@@ -93,12 +96,16 @@ func parseIssue(client Client, issue *jira.Issue) ([]*model.SlackAttachment, err
 		})
 	}
 
+<<<<<<< HEAD
 	fields = append(fields, &model.SlackAttachmentField{
 		Title: "Reporter",
 		Value: reporterSummary(issue),
 		Short: true,
 	})
 	actions, err := mdTransitionActions(client, issue)
+=======
+	actions, err := getTransitionActions(client, issue)
+>>>>>>> Show issue state on running jira view
 	if err != nil {
 		return []*model.SlackAttachment{}, err
 	}

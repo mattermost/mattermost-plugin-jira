@@ -20,6 +20,14 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
+func makePost(userId, channelId, message string) *model.Post {
+	return &model.Post{
+		UserId:    userId,
+		ChannelId: channelId,
+		Message:   message,
+	}
+}
+
 func httpAPITransitionIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
 
@@ -32,18 +40,30 @@ func httpAPITransitionIssue(ji Instance, w http.ResponseWriter, r *http.Request)
 	toState := requestData.Context["selected_option"].(string)
 
 	plugin := ji.GetPlugin()
+	jiraBotID := plugin.getUserID()
+	channelID := requestData.ChannelId
 
 	msg, err := plugin.transitionJiraIssue(mattermostUserId, issueKey, toState)
-
 	if err != nil {
+		_ = plugin.API.SendEphemeralPost(mattermostUserId, makePost(jiraBotID, channelID, "Failed to transition this issue."))
 		return http.StatusInternalServerError, err
 	}
 
-	post := &model.Post{
-		UserId:    plugin.getUserID(),
-		ChannelId: requestData.ChannelId,
-		Message:   msg,
+	jiraUser, err := plugin.userStore.LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		_ = plugin.API.SendEphemeralPost(mattermostUserId, makePost(jiraBotID, channelID, "Your username is not connected to Jira. Please type `jira connect`."))
+		return http.StatusUnauthorized, err
 	}
+
+	attachment, err := plugin.getIssueAsSlackAttachment(ji, jiraUser, issueKey)
+	if err != nil {
+		_ = plugin.API.SendEphemeralPost(mattermostUserId, makePost(jiraBotID, channelID, err.Error()))
+		return http.StatusInternalServerError, err
+	}
+
+	post := makePost(jiraBotID, channelID, msg)
+
+	post.AddProp("attachments", attachment)
 
 	_ = plugin.API.SendEphemeralPost(mattermostUserId, post)
 
