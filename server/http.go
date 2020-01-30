@@ -44,7 +44,7 @@ const (
 	routeOAuth1PublicKey           = "/oauth1/public_key.html" // TODO remove, debugging?
 	routeUserConnect               = "/user/connect"
 	routeUserDisconnect            = "/user/disconnect"
-	routeWorkflowRegister          = "/workflow/register"
+	routeWorkflowRegister          = "/workflow/meta"
 	routeWorkflowTriggerSetup      = "/workflow/trigger_setup"
 )
 
