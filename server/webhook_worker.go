@@ -56,6 +56,10 @@ func (ww webhookWorker) process(rawData []byte) (err error) {
 		ww.p.errorf("WebhookWorker id: %d, error posting notifications, err: %v", ww.id, err)
 	}
 
+	if err := wh.(*webhook).JiraWebhook.expandIssue(ww.p); err != nil {
+		return err
+	}
+
 	channelIds, err := ww.p.getChannelsSubscribed(wh.(*webhook))
 	if err != nil {
 		return err

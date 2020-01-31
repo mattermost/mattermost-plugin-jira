@@ -75,6 +75,25 @@ func (jwh *JiraWebhook) mdIssueType() string {
 	return strings.ToLower(jwh.Issue.Fields.Type.Name)
 }
 
+func (jwh *JiraWebhook) expandIssue(p *Plugin) error {
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return err
+	}
+
+	// Jira Cloud comment event. We need to fetch issue data because it is not expanded in webhook payload.
+	isCommentEvent := jwh.WebhookEvent == "comment_created" || jwh.WebhookEvent == "comment_updated" || jwh.WebhookEvent == "comment_deleted"
+	if isCommentEvent && ji.GetType() == "cloud" {
+		issue, err := p.getIssueDataForCloudWebhook(ji, jwh.Issue.ID)
+		if err != nil {
+			return err
+		}
+		jwh.Issue = *issue
+	}
+
+	return nil
+}
+
 func mdAddRemove(from, to, add, remove string) string {
 	added := mdDiff(from, to)
 	removed := mdDiff(to, from)
