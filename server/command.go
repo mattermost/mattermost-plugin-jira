@@ -654,12 +654,10 @@ func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandAr
 		manifest.Version, BuildHashShort, BuildHash, BuildDate)
 
 	pattern := strings.Join(args, " ")
-	fmt.Printf("0. useExpvar = %+v\n", useExpvar)
 	print := expvar.PrintExpvars
 	if !useExpvar {
 		var stats *expvar.Stats
 		var keys []string
-		// initUserCounter(p.currentInstanceStore, p.userStore)
 		stats, keys, err = p.consolidatedStoredStats()
 		if err != nil {
 			return p.responsef(commandArgs, "%v", err)
@@ -673,9 +671,6 @@ func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandAr
 		return p.responsef(commandArgs, "%v", err)
 	}
 
-	// mappedUsers := goexpvar.Get("jira/mapped_users")
-	// rmappedUsers := fmt.Sprintf(" * %s: %v\n", "User", mappedUsers)
-	// return p.responsef(commandArgs, resp+rstats+rmappedUsers)
 	return p.responsef(commandArgs, resp+rstats)
 }
 
