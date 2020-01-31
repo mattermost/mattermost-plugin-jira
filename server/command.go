@@ -659,6 +659,7 @@ func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandAr
 	if !useExpvar {
 		var stats *expvar.Stats
 		var keys []string
+		// initUserCounter(p.currentInstanceStore, p.userStore)
 		stats, keys, err = p.consolidatedStoredStats()
 		if err != nil {
 			return p.responsef(commandArgs, "%v", err)
