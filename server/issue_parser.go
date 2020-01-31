@@ -96,16 +96,13 @@ func parseIssue(client Client, issue *jira.Issue) ([]*model.SlackAttachment, err
 		})
 	}
 
-<<<<<<< HEAD
 	fields = append(fields, &model.SlackAttachmentField{
 		Title: "Reporter",
 		Value: reporterSummary(issue),
 		Short: true,
 	})
-	actions, err := mdTransitionActions(client, issue)
-=======
+
 	actions, err := getTransitionActions(client, issue)
->>>>>>> Show issue state on running jira view
 	if err != nil {
 		return []*model.SlackAttachment{}, err
 	}
