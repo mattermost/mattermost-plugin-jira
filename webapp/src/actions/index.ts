@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import {PostTypes} from 'mattermost-redux/action_types';
-import {Store, Action} from 'redux';
 import {
     GenericAction,
     DispatchFunc,

@@ -3,9 +3,13 @@
 
 import {combineReducers} from 'redux';
 
+import {
+    GenericAction,
+} from 'mattermost-redux/types/actions';
+
 import ActionTypes from 'action_types';
 
-function userConnected(state = false, action) {
+function userConnected(state = false, action: GenericAction): boolean {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
         return action.data.is_connected;
@@ -14,7 +18,7 @@ function userConnected(state = false, action) {
     }
 }
 
-function instanceInstalled(state = false, action) {
+function instanceInstalled(state = false, action: GenericAction): boolean {
     // We're notified of the instance status at startup (through getConnected)
     // and when we get a websocket instance_status event
     switch (action.type) {
@@ -27,7 +31,7 @@ function instanceInstalled(state = false, action) {
     }
 }
 
-function instanceType(state = '', action) {
+function instanceType(state = '', action: GenericAction): string {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
         return action.data.instance_type ? action.data.instance_type : state;
@@ -38,7 +42,7 @@ function instanceType(state = '', action) {
     }
 }
 
-function pluginSettings(state = null, action) {
+function pluginSettings(state = null, action: GenericAction): any {
     switch (action.type) {
     case ActionTypes.RECEIVED_PLUGIN_SETTINGS:
         return action.data;
@@ -47,7 +51,7 @@ function pluginSettings(state = null, action) {
     }
 }
 
-const createModalVisible = (state = false, action) => {
+const createModalVisible = (state = false, action: GenericAction): boolean => {
     switch (action.type) {
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL:
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST:
@@ -59,7 +63,8 @@ const createModalVisible = (state = false, action) => {
     }
 };
 
-const createModal = (state = '', action) => {
+// TODO: Crosscheck types
+const createModal = (state = '', action: GenericAction): any => {
     switch (action.type) {
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL:
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST:
@@ -76,7 +81,7 @@ const createModal = (state = '', action) => {
     }
 };
 
-const attachCommentToIssueModalVisible = (state = false, action) => {
+const attachCommentToIssueModalVisible = (state = false, action: GenericAction): boolean => {
     switch (action.type) {
     case ActionTypes.OPEN_ATTACH_COMMENT_TO_ISSUE_MODAL:
         return true;
@@ -87,7 +92,7 @@ const attachCommentToIssueModalVisible = (state = false, action) => {
     }
 };
 
-const attachCommentToIssueModalForPostId = (state = '', action) => {
+const attachCommentToIssueModalForPostId = (state = '', action: GenericAction): string => {
     switch (action.type) {
     case ActionTypes.OPEN_ATTACH_COMMENT_TO_ISSUE_MODAL:
         return action.data.postId;
@@ -98,7 +103,7 @@ const attachCommentToIssueModalForPostId = (state = '', action) => {
     }
 };
 
-const jiraIssueMetadata = (state = null, action) => {
+const jiraIssueMetadata = (state = null, action: GenericAction): any => {
     switch (action.type) {
     case ActionTypes.RECEIVED_JIRA_ISSUE_METADATA:
         return action.data;
@@ -111,7 +116,7 @@ const jiraIssueMetadata = (state = null, action) => {
     }
 };
 
-const jiraProjectMetadata = (state = null, action) => {
+const jiraProjectMetadata = (state = null, action: GenericAction): any => {
     switch (action.type) {
     case ActionTypes.RECEIVED_JIRA_PROJECT_METADATA:
         return action.data;
@@ -122,7 +127,7 @@ const jiraProjectMetadata = (state = null, action) => {
     }
 };
 
-const channelIdWithSettingsOpen = (state = '', action) => {
+const channelIdWithSettingsOpen = (state = '', action: GenericAction): string => {
     switch (action.type) {
     case ActionTypes.OPEN_CHANNEL_SETTINGS:
         return action.data.channelId;
@@ -133,7 +138,7 @@ const channelIdWithSettingsOpen = (state = '', action) => {
     }
 };
 
-const channelSubscriptions = (state = {}, action) => {
+const channelSubscriptions = (state = {}, action: GenericAction): any => {
     switch (action.type) {
     case ActionTypes.RECEIVED_CHANNEL_SUBSCRIPTIONS: {
         const nextState = {...state};
