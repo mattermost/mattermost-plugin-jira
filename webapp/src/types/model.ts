@@ -106,3 +106,36 @@ export type ChannelSubscription = {
     filters: ChannelSubscriptionFilters;
     name: string;
 }
+
+// Collection of ChannelSubscriptions
+export type ChannelSubscriptions = {[subscriptionId: string]: ChannelSubscription};
+
+export enum JiraInstanceType {
+    SERVER = 'server',
+    CLOUD = 'cloud',
+}
+
+export type CreateModal = {
+    postId?: string;
+    description?: string;
+    channelId?: string;
+}
+
+export type PluginSettings = {
+    ui_enabled: boolean;
+}
+
+export type PluginState = {
+    createModalVisible: boolean;
+    createModal: CreateModal;
+    attachCommentToIssueModalVisible: boolean;
+    attachCommentToIssueModalForPostId: string;
+    jiraIssueMetadata: IssueMetadata;
+    jiraProjectMetadata: ProjectMetadata;
+    channelIdWithSettingsOpen: string;
+    channelSubscriptions: ChannelSubscriptions;
+    userConnected: boolean;
+    instanceInstalled: boolean;
+    instanceType: JiraInstanceType;
+    pluginSettings: PluginSettings;
+}
