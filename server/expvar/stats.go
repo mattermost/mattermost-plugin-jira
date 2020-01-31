@@ -111,23 +111,21 @@ func (stats *Stats) PrintConsolidated(pattern string) (string, error) {
 		return fmt.Sprintf(" * %s: `%s`\n", k, v)
 	}
 
-	fmt.Printf("1. re = %+v\n", re)
-
 	resp := ""
 
-	goexpvar.Do(func(variable expvar.KeyValue) {
-		if re == nil || re.MatchString(variable.Key) {
-			resp += bullet(variable.Key, variable.Value.String())
+	goexpvar.Do(func(kv expvar.KeyValue) {
+		if re == nil || re.MatchString(kv.Key) {
+			resp += bullet(kv.Key, kv.Value.String())
 		}
 	})
 
-	resp += "\n\n"
-
-	stats.Do(func(name string, e *Endpoint) {
-		if re == nil || re.MatchString(name) {
-			resp += bullet(name, e.String())
-		}
-	})
+	// resp += "\n\n"
+	//
+	// stats.Do(func(name string, e *Endpoint) {
+	// 	if re == nil || re.MatchString(name) {
+	// 		resp += bullet(name, e.String())
+	// 	}
+	// })
 
 	return resp, nil
 }
@@ -145,8 +143,6 @@ func PrintExpvars(pattern string) (string, error) {
 	}
 
 	bullet := func(cond bool, k string, v interface{}) string {
-		fmt.Printf("2. k = %+v\n", k)
-		fmt.Printf("2. v = %+v\n", v)
 		if !cond {
 			return ""
 		}
@@ -159,7 +155,6 @@ func PrintExpvars(pattern string) (string, error) {
 
 	resp := ""
 	goexpvar.Do(func(kv goexpvar.KeyValue) {
-		fmt.Printf("2. kv = %+v\n", kv)
 		if re == nil || re.MatchString(kv.Key) {
 			resp += sbullet(kv.Key, kv.Value.String())
 		}
