@@ -2,13 +2,21 @@
 // See LICENSE.txt for license information.
 
 import {PostTypes} from 'mattermost-redux/action_types';
+import {Store, Action} from 'redux';
+import {
+    GenericAction,
+    DispatchFunc,
+    ActionFunc,
+    GetStateFunc,
+    ActionResult,
+} from 'mattermost-redux/types/actions';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
 import ActionTypes from 'action_types';
 import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
 import {getPluginServerRoute} from 'selectors';
 
-export const openCreateModal = (postId) => {
+export const openCreateModal = (postId: string): GenericAction => {
     return {
         type: ActionTypes.OPEN_CREATE_ISSUE_MODAL,
         data: {
@@ -17,7 +25,8 @@ export const openCreateModal = (postId) => {
     };
 };
 
-export const openCreateModalWithoutPost = (description, channelId) => (dispatch) => dispatch({
+// TODO: Crosscheck return type
+export const openCreateModalWithoutPost = (description: string, channelId: string) => (dispatch: DispatchFunc): DispatchFunc => dispatch({
     type: ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST,
     data: {
         description,
@@ -25,13 +34,13 @@ export const openCreateModalWithoutPost = (description, channelId) => (dispatch)
     },
 });
 
-export const closeCreateModal = () => {
+export const closeCreateModal = (): GenericAction => {
     return {
         type: ActionTypes.CLOSE_CREATE_ISSUE_MODAL,
     };
 };
 
-export const openAttachCommentToIssueModal = (postId) => {
+export const openAttachCommentToIssueModal = (postId: string): GenericAction => {
     return {
         type: ActionTypes.OPEN_ATTACH_COMMENT_TO_ISSUE_MODAL,
         data: {
@@ -40,14 +49,14 @@ export const openAttachCommentToIssueModal = (postId) => {
     };
 };
 
-export const closeAttachCommentToIssueModal = () => {
+export const closeAttachCommentToIssueModal = (): GenericAction => {
     return {
         type: ActionTypes.CLOSE_ATTACH_COMMENT_TO_ISSUE_MODAL,
     };
 };
 
-export const fetchJiraIssueMetadataForProjects = (projectKeys) => {
-    return async (dispatch, getState) => {
+export const fetchJiraIssueMetadataForProjects = (projectKeys: Array<string>): ActionFunc => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
         const baseUrl = getPluginServerRoute(getState());
         const projectKeysParam = projectKeys.join(',');
         let data = null;
@@ -68,14 +77,14 @@ export const fetchJiraIssueMetadataForProjects = (projectKeys) => {
     };
 };
 
-export const clearIssueMetadata = () => {
-    return async (dispatch) => {
+export const clearIssueMetadata = (): ActionFunc => {
+    return async (dispatch: DispatchFunc): Promise<ActionResult|ActionResult[]> => {
         dispatch({type: ActionTypes.CLEAR_JIRA_ISSUE_METADATA});
     };
 };
 
-export const fetchJiraProjectMetadata = () => {
-    return async (dispatch, getState) => {
+export const fetchJiraProjectMetadata = (): ActionFunc => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
         const baseUrl = getPluginServerRoute(getState());
         let data = null;
         try {
@@ -95,15 +104,16 @@ export const fetchJiraProjectMetadata = () => {
     };
 };
 
-export const searchIssues = (params) => {
-    return async (dispatch, getState) => {
+// TODO: Explore what type params are
+export const searchIssues = (params: any): ActionFunc => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): Promise<ActionResult|ActionResult[]> => {
         const url = getPluginServerRoute(getState()) + '/api/v2/get-search-issues';
         return doFetchWithResponse(`${url}${buildQueryString(params)}`);
     };
 };
 
-export const createIssue = (payload) => {
-    return async (dispatch, getState) => {
+export const createIssue = (payload: any): ActionFunc => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/create-issue`, {
@@ -117,8 +127,8 @@ export const createIssue = (payload) => {
         }
     };
 };
-export const attachCommentToIssue = (payload) => {
-    return async (dispatch, getState) => {
+export const attachCommentToIssue = (payload: any): ActionFunc => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/attach-comment-to-issue`, {
@@ -133,8 +143,8 @@ export const attachCommentToIssue = (payload) => {
     };
 };
 
-export const createChannelSubscription = (subscription) => {
-    return async (dispatch, getState) => {
+export const createChannelSubscription = (subscription: any): ActionFunc => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel`, {
@@ -154,8 +164,8 @@ export const createChannelSubscription = (subscription) => {
     };
 };
 
-export const editChannelSubscription = (subscription) => {
-    return async (dispatch, getState) => {
+export const editChannelSubscription = (subscription: any): ActionFunc => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel`, {
@@ -175,8 +185,8 @@ export const editChannelSubscription = (subscription) => {
     };
 };
 
-export const deleteChannelSubscription = (subscription) => {
-    return async (dispatch, getState) => {
+export const deleteChannelSubscription = (subscription: any): ActionFunc => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             await doFetch(`${baseUrl}/api/v2/subscriptions/channel/${subscription.id}`, {
@@ -195,8 +205,8 @@ export const deleteChannelSubscription = (subscription) => {
     };
 };
 
-export const fetchChannelSubscriptions = (channelId) => {
-    return async (dispatch, getState) => {
+export const fetchChannelSubscriptions = (channelId: string): ActionFunc => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
         const baseUrl = getPluginServerRoute(getState());
         let data = null;
         try {
@@ -217,8 +227,8 @@ export const fetchChannelSubscriptions = (channelId) => {
     };
 };
 
-export function getSettings() {
-    return async (dispatch, getState) => {
+export function getSettings(): ActionFunc {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
         let data;
         const baseUrl = getPluginServerRoute(getState());
         try {
@@ -238,8 +248,8 @@ export function getSettings() {
     };
 }
 
-export function getConnected() {
-    return async (dispatch, getState) => {
+export function getConnected(): ActionFunc {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
         let data;
         const baseUrl = getPluginServerRoute(getState());
         try {
@@ -277,7 +287,7 @@ export function handleConnectChange(store) {
     };
 }
 
-export const openChannelSettings = (channelId) => {
+export const openChannelSettings = (channelId: string): GenericAction => {
     return {
         type: ActionTypes.OPEN_CHANNEL_SETTINGS,
         data: {
@@ -286,7 +296,7 @@ export const openChannelSettings = (channelId) => {
     };
 };
 
-export const closeChannelSettings = () => {
+export const closeChannelSettings = (): GenericAction => {
     return {
         type: ActionTypes.CLOSE_CHANNEL_SETTINGS,
     };
@@ -308,8 +318,8 @@ export function handleInstanceStatusChange(store) {
     };
 }
 
-export function sendEphemeralPost(message, channelId) {
-    return (dispatch, getState) => {
+export function sendEphemeralPost(message: string, channelId: string) {
+    return (dispatch: DispatchFunc, getState: GetStateFunc): void => {
         const timestamp = Date.now();
         const post = {
             id: 'jiraPlugin' + Date.now(),
