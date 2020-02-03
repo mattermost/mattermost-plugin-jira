@@ -53,6 +53,7 @@ func getTransitionActions(client Client, issue *jira.Issue) ([]*model.PostAction
 		return actions, err
 	}
 
+	// Remove current issue status from possible transitions
 	for _, transition := range transitions {
 		if transition.Name != issue.Fields.Status.Name {
 			options = append(options, &model.PostActionOptions{
