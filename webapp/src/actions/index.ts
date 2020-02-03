@@ -24,7 +24,6 @@ export const openCreateModal = (postId: string): GenericAction => {
     };
 };
 
-// TODO: Crosscheck return type
 export const openCreateModalWithoutPost = (description: string, channelId: string) => (dispatch: DispatchFunc): DispatchFunc => dispatch({
     type: ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST,
     data: {
@@ -103,8 +102,7 @@ export const fetchJiraProjectMetadata = (): ActionFunc => {
     };
 };
 
-// TODO: Explore what type params are
-export const searchIssues = (params: any): ActionFunc => {
+export const searchIssues = (params: object): ActionFunc => {
     return async (dispatch: DispatchFunc, getState: GetStateFunc): Promise<ActionResult|ActionResult[]> => {
         const url = getPluginServerRoute(getState()) + '/api/v2/get-search-issues';
         return doFetchWithResponse(`${url}${buildQueryString(params)}`);
