@@ -51,12 +51,11 @@ func (ww webhookWorker) process(rawData []byte) (err error) {
 		return err
 	}
 
-	_, _, err = wh.PostNotifications(ww.p)
-	if err != nil {
+	if _, _, err = wh.PostNotifications(ww.p); err != nil {
 		ww.p.errorf("WebhookWorker id: %d, error posting notifications, err: %v", ww.id, err)
 	}
 
-	if err := wh.(*webhook).JiraWebhook.expandIssue(ww.p); err != nil {
+	if err = wh.(*webhook).JiraWebhook.expandIssue(ww.p); err != nil {
 		return err
 	}
 
