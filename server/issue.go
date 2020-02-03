@@ -715,6 +715,42 @@ func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issue
 	return parseIssue(issue), nil
 }
 
+func (p *Plugin) unassignJiraIssue(mmUserId, issueKey string) (string, error) {
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return "", err
+	}
+
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mmUserId)
+	if err != nil {
+		return "", err
+	}
+
+	client, err := ji.GetClient(jiraUser)
+	if err != nil {
+		return "", err
+	}
+
+	// check for valid issue key
+	_, err = client.GetIssue(issueKey, nil)
+	if err != nil {
+		errorMsg := fmt.Sprintf("We couldn't find the issue key `%s`.  Please confirm the issue key and try again.", issueKey)
+		return errorMsg, nil
+	}
+
+	if err := client.UpdateAssignee(issueKey, &jira.User{}); err != nil {
+		if StatusCode(err) == http.StatusForbidden {
+			return "You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.", nil
+		}
+		return "", err
+	}
+
+	permalink := fmt.Sprintf("%v/browse/%v", ji.GetURL(), issueKey)
+
+	msg := fmt.Sprintf("Unassigned Jira issue [%s](%s)", issueKey, permalink)
+	return msg, nil
+}
+
 const MinUserSearchQueryLength = 3
 
 func (p *Plugin) assignJiraIssue(mmUserId, issueKey, userSearch string) (string, error) {
