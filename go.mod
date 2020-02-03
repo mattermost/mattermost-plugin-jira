@@ -8,12 +8,10 @@ require (
 	github.com/dghubble/oauth1 v0.5.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/google/uuid v1.1.1
-	github.com/mattermost/mattermost-plugin-autolink v0.0.0-00010101000000-000000000000
+	github.com/mattermost/mattermost-plugin-autolink v1.1.3-0.20200203183014-8c82b7dc7fa6
 	github.com/mattermost/mattermost-server/v5 v5.18.0
 	github.com/pkg/errors v0.8.1
 	github.com/rbriski/atlassian-jwt v0.0.0-20180307182949-7bb4ae273058
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/oauth2 v0.0.0-20191202225959-858c2ad4c8b6
 )
-
-replace github.com/mattermost/mattermost-plugin-autolink => ../mattermost-plugin-autolink
