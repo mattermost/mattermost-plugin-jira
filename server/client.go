@@ -306,6 +306,7 @@ func MakeCreateIssueURL(ji Instance, project *jira.Project, issue *jira.Issue) s
 	q.Add("issuetype", issue.Fields.Type.ID)
 	q.Add("summary", issue.Fields.Summary)
 	q.Add("description", issue.Fields.Description)
+	q.Add("reporter", issue.Fields.Reporter.Name)
 
 	// if no priority, ID field does not exist
 	if issue.Fields.Priority != nil {
