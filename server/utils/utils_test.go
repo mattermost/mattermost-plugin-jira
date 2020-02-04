@@ -138,3 +138,13 @@ func TestByteSizeString(t *testing.T) {
 		})
 	}
 }
+
+func TestIsJiraCloudURL(t *testing.T) {
+	cloudLinkIsCloud, err := IsJiraCloudURL("https://mmtest.atlassian.net")
+	require.Nil(t, err)
+	assert.True(t, cloudLinkIsCloud)
+
+	serverLinkIsCloud, err := IsJiraCloudURL("https://somelink.com:1234/jira")
+	require.Nil(t, err)
+	assert.False(t, serverLinkIsCloud)
+}

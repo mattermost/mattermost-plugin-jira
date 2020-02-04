@@ -7,8 +7,6 @@ import {CSSTransition} from 'react-transition-group';
 
 import CloseIcon from './close_icon';
 
-import './full_screen_modal.scss';
-
 // This must be on sync with the animation time in ./full_screen_modal.scss
 const ANIMATION_DURATION = 100;
 
@@ -47,7 +45,7 @@ export default class FullScreenModal extends React.Component {
                 timeout={ANIMATION_DURATION}
                 appear={true}
             >
-                <div className='FullScreenModal'>
+                <div className='FullScreenModal FullScreenModal--compact'>
                     <CloseIcon
                         className='close-x'
                         onClick={this.close}

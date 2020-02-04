@@ -50,6 +50,7 @@ type UserService interface {
 // ProjectService is the interface for project-related APIs.
 type ProjectService interface {
 	GetProject(key string) (*jira.Project, error)
+	GetAllProjectKeys() ([]string, error)
 }
 
 // SearchService is the interface for search-related APIs.
@@ -158,6 +159,20 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 	}
 
 	return attachments[0], nil
+}
+
+func (client JiraClient) GetAllProjectKeys() ([]string, error) {
+	projectlist, resp, err := client.Jira.Project.GetList()
+	if err != nil {
+		return nil, userFriendlyJiraError(resp, err)
+	}
+
+	keys := make([]string, 0, len(*projectlist))
+	for _, project := range *projectlist {
+		keys = append(keys, project.Key)
+	}
+
+	return keys, nil
 }
 
 // GetProject returns a Project by key.

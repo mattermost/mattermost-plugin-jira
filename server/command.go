@@ -18,6 +18,7 @@ const helpTextHeader = "###### Mattermost Jira Plugin - Slash Command Help\n"
 const commonHelpText = "\n* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
 	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
 	"* `/jira assign <issue-key> <assignee>` - Change the assignee of a Jira issue\n" +
+	"* `/jira unassign <issue-key>` - Unassign the Jira issue\n" +
 	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field\n" +
 	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
 	"* `/jira subscribe` - Configure the Jira notifications sent to this channel\n" +
@@ -57,6 +58,7 @@ var jiraCommandHandler = CommandHandler{
 		"settings":           executeSettings,
 		"transition":         executeTransition,
 		"assign":             executeAssign,
+		"unassign":           executeUnassign,
 		"uninstall/cloud":    executeUninstallCloud,
 		"uninstall/server":   executeUninstallServer,
 		"webhook":            executeWebhookURL,
@@ -371,6 +373,13 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
+	isJiraCloudURL, err := utils.IsJiraCloudURL(jiraURL)
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
+	if isJiraCloudURL {
+		return p.responsef(header, "The Jira URL you provided looks like a Jira Cloud URL - install it with:\n```\n/jira install cloud %s\n```", jiraURL)
+	}
 
 	const addResponseFormat = `` +
 		`Server instance has been installed. To finish the configuration, add an Application Link in your Jira instance following these steps:
@@ -511,6 +520,20 @@ func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandA
 	const uninstallInstructions = `Jira instance successfully disconnected. Go to **Settings > Applications > Application Links** to remove the application in your Jira Server or Data Center instance.`
 
 	return p.responsef(header, uninstallInstructions)
+}
+
+func executeUnassign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) < 1 {
+		return p.responsef(header, "Please specify an issue key in the form `/jira unassign <issue-key>`.")
+	}
+	issueKey := strings.ToUpper(args[0])
+
+	msg, err := p.unassignJiraIssue(header.UserId, issueKey)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+
+	return p.responsef(header, msg)
 }
 
 func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

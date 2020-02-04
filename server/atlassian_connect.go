@@ -81,6 +81,9 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 		return http.StatusInternalServerError, err
 	}
 
+	// Setup autolink
+	p.AddAutolinksForCloudInstance(jiraInstance.(*jiraCloudInstance))
+
 	err = json.NewEncoder(w).Encode([]string{"OK"})
 	if err != nil {
 		return http.StatusInternalServerError,

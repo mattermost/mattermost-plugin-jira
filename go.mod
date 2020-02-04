@@ -1,6 +1,6 @@
 module github.com/mattermost/mattermost-plugin-jira
 
-go 1.12
+go 1.13
 
 require (
 	github.com/andygrunwald/go-jira v1.10.0
@@ -9,6 +9,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/google/uuid v1.1.1
+	github.com/mattermost/mattermost-plugin-autolink v1.1.3-0.20200203183014-8c82b7dc7fa6
 	github.com/mattermost/mattermost-plugin-workflow-client v0.0.0-20200121183617-b71061053ec5
 	github.com/mattermost/mattermost-server/v5 v5.19.0
 	github.com/pelletier/go-toml v1.6.0 // indirect
