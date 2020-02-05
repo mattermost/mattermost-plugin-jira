@@ -2,7 +2,6 @@ package expvar
 
 import (
 	"encoding/json"
-	"expvar"
 	goexpvar "expvar"
 	"fmt"
 	"regexp"
@@ -113,19 +112,19 @@ func (stats *Stats) PrintConsolidated(pattern string) (string, error) {
 
 	resp := ""
 
-	goexpvar.Do(func(kv expvar.KeyValue) {
-		if re == nil || re.MatchString(kv.Key) {
-			resp += bullet(kv.Key, kv.Value.String())
-		}
-	})
+	// goexpvar.Do(func(kv expvar.KeyValue) {
+	// 	if re == nil || re.MatchString(kv.Key) {
+	// 		resp += bullet(kv.Key, kv.Value.String())
+	// 	}
+	// })
 
 	// resp += "\n\n"
 	//
-	// stats.Do(func(name string, e *Endpoint) {
-	// 	if re == nil || re.MatchString(name) {
-	// 		resp += bullet(name, e.String())
-	// 	}
-	// })
+	stats.Do(func(name string, e *Endpoint) {
+		if re == nil || re.MatchString(name) {
+			resp += bullet(name, e.String())
+		}
+	})
 
 	return resp, nil
 }
