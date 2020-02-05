@@ -39,7 +39,7 @@ const (
 	routeIncomingWebhook           = "/webhook"
 	routeOAuth1Complete            = "/oauth1/complete.html"
 	routeOAuth1PublicKey           = "/oauth1/public_key.html" // TODO remove, debugging?
-	routeToDocsOrConnect           = "/user/docsorconn"
+	routeToDocsOrConnect           = "/user/docs-or-connect"
 	routeUserConnect               = "/user/connect"
 	routeUserDisconnect            = "/user/disconnect"
 )
