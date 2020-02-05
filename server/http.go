@@ -39,6 +39,7 @@ const (
 	routeIncomingWebhook           = "/webhook"
 	routeOAuth1Complete            = "/oauth1/complete.html"
 	routeOAuth1PublicKey           = "/oauth1/public_key.html" // TODO remove, debugging?
+	routeToDocsOrConnect           = "/user/docsorconn"
 	routeUserConnect               = "/user/connect"
 	routeUserDisconnect            = "/user/disconnect"
 )
@@ -116,6 +117,8 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	// User connect/disconnect links
 	case routeUserConnect:
 		return withInstance(p.currentInstanceStore, w, r, httpUserConnect)
+	case routeToDocsOrConnect:
+		return withInstance(p.currentInstanceStore, w, r, httpUserToDocsorConnect)
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:
 		return httpSubscribeWebhook(p, w, r)

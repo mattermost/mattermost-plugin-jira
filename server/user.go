@@ -82,6 +82,24 @@ func httpUserConnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, 
 	return http.StatusFound, nil
 }
 
+func httpUserToDocsorConnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserID == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	// If user is already connected we show them the docs
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserID)
+	if err == nil && len(jiraUser.Key()) != 0 {
+		jiraPluginDocsLink := "https://github.com/mattermost/mattermost-plugin-jira#1-features"
+		http.Redirect(w, r, jiraPluginDocsLink, http.StatusSeeOther)
+		return http.StatusSeeOther, nil
+	}
+
+	// Otherwise, attempt to connect them
+	return httpUserConnect(ji, w, r)
+}
+
 func httpAPIGetUserInfo(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
