@@ -14,6 +14,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -289,7 +291,14 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 }
 
 func (p *Plugin) GetPluginKey() string {
-	return "mattermost_" + regexpNonAlnum.ReplaceAllString(p.GetSiteURL(), "_")
+	var k string
+	k = "mattermost_" + regexpNonAlnum.ReplaceAllString(p.GetSiteURL(), "_")
+	if len(k) <= 32 {
+		return k
+	}
+
+	k = uuid.New().String()
+	return k
 }
 
 func (p *Plugin) GetPluginURLPath() string {
