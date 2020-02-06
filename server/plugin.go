@@ -290,23 +290,31 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 	return nil
 }
 
-func (p *Plugin) GetPluginKey() string {
+func (p *Plugin) GetPluginKey() (string, error) {
 	var k string
+
 	key := fmt.Sprintf("%s_atlassian_key", manifest.Id)
 	k = "mattermost_" + regexpNonAlnum.ReplaceAllString(p.GetSiteURL(), "_")
 	if len(k) <= 32 {
 		p.API.KVDelete(key)
-		return k
+		return k, nil
 	}
 
 	value, err := p.API.KVGet(key)
+
+	// Empty value or error, attempt to create a new key and save it
 	if len(value) == 0 || err != nil {
 		k = uuid.New().String()
-		p.API.KVSet(key, []byte(k))
-		return k
+		e := p.API.KVSet(key, []byte(k))
+
+		if e != nil {
+			return "", err
+		}
+
+		return k, nil
 	}
 
-	return string(value)
+	return string(value), nil
 }
 
 func (p *Plugin) GetPluginURLPath() string {

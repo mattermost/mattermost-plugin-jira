@@ -19,6 +19,11 @@ func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) 
 			errors.New("method " + r.Method + " is not allowed, must be GET")
 	}
 
+	key, err := p.GetPluginKey()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
 	return p.respondWithTemplate(w, r, "application/json", map[string]string{
 		"BaseURL":                      p.GetPluginURL(),
 		"RouteACJSON":                  routeACJSON,
@@ -27,7 +32,7 @@ func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) 
 		"RouteACUserRedirectWithToken": routeACUserRedirectWithToken,
 		"UserRedirectPageKey":          userRedirectPageKey,
 		"ExternalURL":                  p.GetSiteURL(),
-		"PluginKey":                    p.GetPluginKey(),
+		"PluginKey":                    key,
 	})
 }
 
