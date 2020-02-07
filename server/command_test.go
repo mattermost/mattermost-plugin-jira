@@ -2,14 +2,15 @@ package main
 
 import (
 	"errors"
+	"strings"
+	"testing"
+
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"testing"
 )
 
 const (
@@ -154,6 +155,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		mock.AnythingOfTypeArgument("string"),
 		mock.AnythingOfTypeArgument("string")).Return(nil)
 	api.On("KVSet", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	api.On("KVDelete", mock.AnythingOfType("string")).Return(nil)
 	api.On("KVSetWithExpiry", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
 	api.On("KVGet", "known_jira_instances").Return(nil, nil)
 	api.On("KVGet", "rsa_key").Return(nil, nil)
