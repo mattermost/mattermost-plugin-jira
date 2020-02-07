@@ -31,7 +31,7 @@ func (jti jiraTestInstance) GetURL() string {
 	return mockCurrentInstanceURL
 }
 func (jti jiraTestInstance) GetPlugin() *Plugin {
-	return &Plugin{userStore: mockUserStore{}}
+	return jti.Plugin
 }
 func (jti jiraTestInstance) GetMattermostKey() string {
 	return "jiraTestInstanceMattermostKey"

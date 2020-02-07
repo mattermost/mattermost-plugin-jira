@@ -1,8 +1,14 @@
 package main
 
 import (
-	"github.com/stretchr/testify/assert"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+
+	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
+	"github.com/mattermost/mattermost-server/v5/plugin/plugintest/mock"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUserSettings_String(t *testing.T) {
@@ -22,6 +28,61 @@ func TestUserSettings_String(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, tt.expectedOutput, tt.settings.String())
+		})
+	}
+}
+
+func TestUserRoutesToDocRoute(t *testing.T) {
+	tests := map[string]struct {
+		userID     string
+		statusCode int
+	}{
+		"user connected to jira will re-direct to docs":  {userID: "connected_user", statusCode: http.StatusSeeOther},
+		"user not connected to jira will atempt connect": {userID: "non_connected_user", statusCode: http.StatusFound},
+	}
+	api := &plugintest.API{}
+
+	api.On("LogError",
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string")).Return(nil)
+
+	api.On("LogDebug",
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string")).Return(nil)
+
+	p := Plugin{}
+	p.SetAPI(api)
+
+	p.userStore = getMockUserStoreKV()
+	p.currentInstanceStore = mockCurrentInstanceStore{&p}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			request := httptest.NewRequest("GET", routeToDocsOrConnect, nil)
+			request.Header.Set("Mattermost-User-Id", tc.userID)
+			w := httptest.NewRecorder()
+			p.ServeHTTP(&plugin.Context{}, w, request)
+			assert.Equal(t, tc.statusCode, w.Result().StatusCode)
 		})
 	}
 }
