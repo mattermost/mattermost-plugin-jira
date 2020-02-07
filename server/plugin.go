@@ -35,6 +35,7 @@ const (
 	// Move these two to the plugin settings if admins need to adjust them.
 	WebhookMaxProcsPerServer = 20
 	WebhookBufferSize        = 10000
+	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
 )
 
 var BuildHash = ""

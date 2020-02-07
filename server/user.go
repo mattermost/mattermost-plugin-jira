@@ -91,8 +91,7 @@ func httpUserToDocsorConnect(ji Instance, w http.ResponseWriter, r *http.Request
 	// If user is already connected we show them the docs
 	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserID)
 	if err == nil && len(jiraUser.Key()) != 0 {
-		jiraPluginDocsLink := "https://github.com/mattermost/mattermost-plugin-jira#1-features"
-		http.Redirect(w, r, jiraPluginDocsLink, http.StatusSeeOther)
+		http.Redirect(w, r, PluginRepo, http.StatusSeeOther)
 		return http.StatusSeeOther, nil
 	}
 
