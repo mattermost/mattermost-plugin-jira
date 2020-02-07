@@ -169,8 +169,8 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, errors.Errorf("Failed to create issue. %s", err.Error())
 	}
 
-	docsOrConnectLink := fmt.Sprintf("/plugins/%s%s", manifest.Id, routeToDocsOrConnect)
-	msg := fmt.Sprintf("Created Jira issue [%s](%s/browse/%s) by [mattermost-jira-plugin](%s)", created.Key, ji.GetURL(), created.Key, docsOrConnectLink)
+	startLink := fmt.Sprintf("/plugins/%s%s", manifest.Id, routeUserStart)
+	msg := fmt.Sprintf("Created Jira issue [%s](%s/browse/%s) by [mattermost-jira-plugin](%s)", created.Key, ji.GetURL(), created.Key, startLink)
 
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{

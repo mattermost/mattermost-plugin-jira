@@ -82,7 +82,7 @@ func httpUserConnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, 
 	return http.StatusFound, nil
 }
 
-func httpUserToDocsorConnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpUserStart(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
 		return http.StatusUnauthorized, errors.New("not authorized")

@@ -32,7 +32,7 @@ func TestUserSettings_String(t *testing.T) {
 	}
 }
 
-func TestUserRoutesToDocRoute(t *testing.T) {
+func TestRouteUserStart(t *testing.T) {
 	tests := map[string]struct {
 		userID     string
 		statusCode int
@@ -78,7 +78,7 @@ func TestUserRoutesToDocRoute(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			request := httptest.NewRequest("GET", routeToDocsOrConnect, nil)
+			request := httptest.NewRequest("GET", routeUserStart, nil)
 			request.Header.Set("Mattermost-User-Id", tc.userID)
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)
