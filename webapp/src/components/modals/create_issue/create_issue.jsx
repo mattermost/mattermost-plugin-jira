@@ -147,7 +147,7 @@ export default class CreateIssueModal extends PureComponent {
                 this.setState({error: created.error.message, submitting: false});
                 return;
             }
-            this.handleClose(e);
+            this.handleClose();
         });
     };
 
