@@ -2,14 +2,15 @@ package main
 
 import (
 	"errors"
+	"strings"
+	"testing"
+
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"testing"
 )
 
 const (
@@ -227,6 +228,74 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			p.secretsStore = store
 			p.currentInstanceStore = mockCurrentInstanceStore{&p}
 			p.userStore = getMockUserStoreKV()
+
+			cmdResponse, appError := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
+			require.Nil(t, appError)
+			require.NotNil(t, cmdResponse)
+			assert.True(t, isSendEphemeralPostCalled)
+		})
+	}
+}
+
+func TestPlugin_ExecuteCommand_Uninstall(t *testing.T) {
+	p := Plugin{}
+	tc := TestConfiguration{}
+	p.updateConfig(func(conf *config) {
+		conf.Secret = tc.Secret
+	})
+	api := &plugintest.API{}
+	siteURL := "https://somelink.com"
+	api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
+
+	sysAdminUser := &model.User{
+		Id:    mockUserIDSysAdmin,
+		Roles: "system_admin",
+	}
+	api.On("GetUser", mockUserIDSysAdmin).Return(sysAdminUser, nil)
+	nonSysAdminUser := &model.User{
+		Id:    mockUserIDNonSysAdmin,
+		Roles: "",
+	}
+	api.On("GetUser", mockUserIDNonSysAdmin).Return(nonSysAdminUser, nil)
+
+	tests := map[string]struct {
+		commandArgs       *model.CommandArgs
+		expectedMsgPrefix string
+	}{
+		"no params - user is sys admin": {
+			commandArgs:       &model.CommandArgs{Command: "/jira uninstall", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: strings.TrimSpace(helpTextHeader + commonHelpText + sysAdminHelpText),
+		},
+		"no params - user is not sys admin": {
+			commandArgs:       &model.CommandArgs{Command: "/jira uninstall", UserId: mockUserIDNonSysAdmin},
+			expectedMsgPrefix: strings.TrimSpace(helpTextHeader + commonHelpText),
+		},
+		"uninstall with invalid option": {
+			commandArgs:       &model.CommandArgs{Command: "/jira uninstall foo", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: strings.TrimSpace(helpTextHeader + commonHelpText + sysAdminHelpText),
+		},
+		"uninstall server instance without URL": {
+			commandArgs:       &model.CommandArgs{Command: "/jira uninstall server", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: strings.TrimSpace(helpTextHeader + commonHelpText + sysAdminHelpText),
+		},
+		"uninstall cloud instance without URL": {
+			commandArgs:       &model.CommandArgs{Command: "/jira uninstall cloud", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: strings.TrimSpace(helpTextHeader + commonHelpText + sysAdminHelpText),
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			isSendEphemeralPostCalled := false
+			currentTestAPI := api
+			currentTestAPI.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
+				isSendEphemeralPostCalled = true
+
+				post := args.Get(1).(*model.Post)
+				actual := strings.TrimSpace(post.Message)
+				assert.True(t, strings.HasPrefix(actual, tt.expectedMsgPrefix), "Expected returned message to start with: \n%s\nActual:\n%s", tt.expectedMsgPrefix, actual)
+			}).Once().Return(&model.Post{})
+
+			p.SetAPI(currentTestAPI)
 
 			cmdResponse, appError := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
 			require.Nil(t, appError)
