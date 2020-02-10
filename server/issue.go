@@ -186,6 +186,28 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	reply.AddProp("attachments", attachment)
 	_ = api.SendEphemeralPost(mattermostUserId, reply)
 
+	// Fetching issue details as Jira only returns the issue id and issue key at the time of
+	// issue creation. We will not have issue summery in the creation response.
+	createdIssue, err := client.GetIssue(created.Key, nil)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to fetch issue details "+created.Key)
+	}
+
+	// Create a public post for all the channel members
+	publicReply := &model.Post{
+		Message:   fmt.Sprintf("Created a Jira issue: %s", mdKeySummaryLink(createdIssue)),
+		ChannelId: channelId,
+		RootId:    rootId,
+		ParentId:  rootId,
+		UserId:    mattermostUserId,
+	}
+	_, appErr = api.CreatePost(publicReply)
+	if appErr != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to create notification post "+create.PostId)
+	}
+
 	if post != nil && len(post.FileIds) > 0 {
 		go func() {
 			conf := ji.GetPlugin().getConfig()
