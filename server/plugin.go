@@ -14,8 +14,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -290,31 +288,15 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 	return nil
 }
 
-func (p *Plugin) GetPluginKey() (string, error) {
-	var k string
-
-	key := fmt.Sprintf("%s_atlassian_key", manifest.Id)
-	k = "mattermost_" + regexpNonAlnum.ReplaceAllString(p.GetSiteURL(), "_")
-	if len(k) <= 32 {
-		p.API.KVDelete(key)
-		return k, nil
+func (p *Plugin) GetPluginKey() string {
+	sURL := p.GetSiteURL()
+	key := "mattermost_" + regexpNonAlnum.ReplaceAllString(sURL, "_")
+	if len(key) <= 32 {
+		return key
 	}
-
-	value, err := p.API.KVGet(key)
-
-	// Empty value or error, attempt to create a new key and save it
-	if len(value) == 0 || err != nil {
-		k = uuid.New().String()
-		e := p.API.KVSet(key, []byte(k))
-
-		if e != nil {
-			return "", err
-		}
-
-		return k, nil
-	}
-
-	return string(value), nil
+	start := len(sURL) - 30
+	end := len(sURL)
+	return "__" + sURL[start:end]
 }
 
 func (p *Plugin) GetPluginURLPath() string {

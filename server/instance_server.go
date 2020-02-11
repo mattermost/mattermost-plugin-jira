@@ -27,17 +27,12 @@ type jiraServerInstance struct {
 
 var _ Instance = (*jiraServerInstance)(nil)
 
-func NewJIRAServerInstance(p *Plugin, jiraURL string) (Instance, error) {
-	key, err := p.GetPluginKey()
-	if err != nil {
-		return nil, err
-	}
-
+func NewJIRAServerInstance(p *Plugin, jiraURL string) Instance {
 	return &jiraServerInstance{
 		JIRAInstance:  NewJIRAInstance(p, JIRATypeServer, jiraURL),
-		MattermostKey: key,
+		MattermostKey: p.GetPluginKey(),
 		JIRAServerURL: jiraURL,
-	}, nil
+	}
 }
 
 func (jsi jiraServerInstance) GetURL() string {

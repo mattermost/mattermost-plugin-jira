@@ -401,10 +401,7 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 
 If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://about.mattermost.com/default-jira-plugin) for troubleshooting help.
 `
-	ji, e := NewJIRAServerInstance(p, jiraURL)
-	if e != nil {
-		return p.responsef(header, e.Error())
-	}
+	ji := NewJIRAServerInstance(p, jiraURL)
 	err = p.instanceStore.StoreJIRAInstance(ji)
 	if err != nil {
 		return p.responsef(header, err.Error())
