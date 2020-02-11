@@ -25,6 +25,7 @@ const (
 	routeAPIGetJiraProjectMetadata = "/api/v2/get-jira-project-metadata"
 	routeAPIGetSearchIssues        = "/api/v2/get-search-issues"
 	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
+	routeAPIGetStatusCategory      = "/api/v2/get-status-category"
 	routeAPIUserInfo               = "/api/v2/userinfo"
 	routeAPISubscribeWebhook       = "/api/v2/webhook"
 	routeAPISubscriptionsChannel   = "/api/v2/subscriptions/channel"
@@ -78,6 +79,8 @@ func handleHTTPRequest(p *Plugin, c *plugin.Context, w http.ResponseWriter, r *h
 		return withInstance(p.currentInstanceStore, w, r, httpAPIGetSearchIssues)
 	case routeAPIAttachCommentToIssue:
 		return withInstance(p.currentInstanceStore, w, r, httpAPIAttachCommentToIssue)
+	case routeAPIGetStatusCategory:
+		return withInstance(p.currentInstanceStore, w, r, httpAPIGetStatusCategory)
 
 	// User APIs
 	case routeAPIUserInfo:

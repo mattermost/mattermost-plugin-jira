@@ -566,6 +566,36 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 	return http.StatusOK, nil
 }
 
+func httpAPIGetStatusCategory(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed, errors.New("Request " + r.Method + " is not allowed, Must be GET")
+	}
+
+	// Check if the req was made from mattermost account
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserID == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	// Get the JIRA user
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserID)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	// Get the jira library client
+	client, err := ji.GetClient(jiraUser)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	// Make a request to JIRA to get status categories
+	statuses, err := client.GetAllStatusCategories()
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to GetAllStatusCategories")
+	}
+}
+
 func notifyOnFailedAttachment(ji Instance, mattermostUserId, issueKey string, err error, format string, args ...interface{}) {
 	msg := "Failed to attach to issue: " + issueKey + ", " + fmt.Sprintf(format, args...)
 
