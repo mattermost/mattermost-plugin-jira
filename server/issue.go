@@ -594,6 +594,22 @@ func httpAPIGetStatusCategory(ji Instance, w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to GetAllStatusCategories")
 	}
+
+	// Marshalling Statuses recieved from API to JSON
+	statusesBytes, err := json.Marshal(statuses)
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal response of Jira statuses")
+	}
+
+	// Prepare Header to send to Plugin WebClient
+	w.Header().Set("Content-Type", "application/json")
+
+	// Write to Status JSON to HTTP reply
+	_, err = w.Write(statusesBytes)
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response of Jira statuses")
+	}
+	return http.StatusOK, nil
 }
 
 func notifyOnFailedAttachment(ji Instance, mattermostUserId, issueKey string, err error, format string, args ...interface{}) {
