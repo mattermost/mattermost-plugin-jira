@@ -480,14 +480,8 @@ func executeUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, i
 		&model.WebsocketBroadcast{},
 	)
 
-	var uninstallInstructions string
-	if instanceType == "cloud" {
-		uninstallInstructions = `Jira instance successfully disconnected. Go to [**Settings > Apps > Manage Apps**](%s/plugins/servlet/upm) to remove the application in your Jira Cloud instance.`
-	} else {
-		uninstallInstructions = `Jira instance successfully disconnected. Go to [**Settings > Applications > Application Links**](%s/plugins/servlet/applinks/listApplicationLinks) to remove the application in your Jira Server or Data Center instance.`
-	}
-
-	return p.responsef(header, uninstallInstructions, jiraURL)
+	uninstallInstructions := `Jira instance successfully disconnected. Go to [**the respective app management URL**](%s) to remove the application from your Jira instance.`
+	return p.responsef(header, uninstallInstructions, ji.GetManageAppsURL())
 }
 
 func executeUnassign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

@@ -118,6 +118,10 @@ func (jci jiraCloudInstance) GetURL() string {
 	return jci.AtlassianSecurityContext.BaseURL
 }
 
+func (jci jiraCloudInstance) GetManageAppsURL() string {
+	return fmt.Sprintf("%s/plugins/servlet/upm", jci.GetURL())
+}
+
 func (jci jiraCloudInstance) GetClient(jiraUser JIRAUser) (Client, error) {
 	client, _, err := jci.getJIRAClientForUser(jiraUser)
 	if err != nil {
