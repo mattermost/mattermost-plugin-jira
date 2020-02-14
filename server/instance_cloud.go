@@ -123,7 +123,7 @@ func (jci jiraCloudInstance) GetManageAppsURL() string {
 }
 
 func (jci jiraCloudInstance) GetClient(jiraUser JIRAUser) (Client, error) {
-	client, _, err := jci.getJIRAClientForUser(jiraUser)
+	client, err := jci.getJIRAClientForUser(jiraUser)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get Jira client for user "+jiraUser.DisplayName)
 	}
@@ -131,7 +131,7 @@ func (jci jiraCloudInstance) GetClient(jiraUser JIRAUser) (Client, error) {
 }
 
 // Creates a client for acting on behalf of a user
-func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Client, *http.Client, error) {
+func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Client, error) {
 	oauth2Conf := oauth2_jira.Config{
 		BaseURL: jci.GetURL(),
 		Subject: jiraUser.AccountID,
@@ -154,7 +154,7 @@ func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Clie
 		conf.stats, endpointNameFromRequest)
 
 	jiraClient, err := jira.NewClient(httpClient, oauth2Conf.BaseURL)
-	return jiraClient, httpClient, err
+	return jiraClient, err
 }
 
 // Creates a "bot" client with a JWT

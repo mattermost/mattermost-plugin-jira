@@ -102,6 +102,13 @@ export const searchIssues = (params) => {
     };
 };
 
+export const searchAutoCompleteFields = (params) => {
+    return async (dispatch, getState) => {
+        const url = getPluginServerRoute(getState()) + '/api/v2/get-search-autocomplete-fields';
+        return doFetchWithResponse(`${url}${buildQueryString(params)}`);
+    };
+};
+
 export const createIssue = (payload) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());

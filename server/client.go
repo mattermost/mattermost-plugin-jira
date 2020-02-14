@@ -57,6 +57,7 @@ type ProjectService interface {
 type SearchService interface {
 	SearchIssues(jql string, options *jira.SearchOptions) ([]jira.Issue, error)
 	SearchUsersAssignableToIssue(issueKey, query string, maxResults int) ([]jira.User, error)
+	SearchAutoCompleteFields(resultType interface{}, params map[string]string) (interface{}, error)
 }
 
 // IssueService is the interface for issue-related APIs.
@@ -248,6 +249,17 @@ func (client JiraClient) SearchIssues(jql string, options *jira.SearchOptions) (
 		return nil, userFriendlyJiraError(resp, err)
 	}
 	return found, nil
+}
+
+// SearchAutoCompleteFields searches fieldValue specified in the params and returns autocomplete suggestions
+// for that fieldValue
+func (client JiraClient) SearchAutoCompleteFields(resultType interface{}, params map[string]string) (interface{}, error) {
+	err := client.RESTGet("2/jql/autocompletedata/suggestions", params, resultType)
+	if err != nil {
+		return nil, err
+	}
+
+	return resultType, nil
 }
 
 // DoTransition executes a transition on an issue.

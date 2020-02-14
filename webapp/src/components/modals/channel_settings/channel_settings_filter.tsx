@@ -3,10 +3,11 @@ import React from 'react';
 import ReactSelectSetting from 'components/react_select_setting';
 import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
-import {isEpicLinkField, isMultiSelectField} from 'utils/jira_issue_metadata';
+import {isEpicLinkField, isMultiSelectField, isLabelField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
 import {Theme} from 'mattermost-redux/types/preferences';
+import JiraAutoCompleteSelector from 'components/jira_autocomplete_selector';
 
 export type Props = {
     fields: FilterField[];
@@ -241,6 +242,20 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
                     resetInvalidOnChange={true}
                     hideRequiredStar={true}
                     isMulti={true}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
+                />
+            );
+        } else if (isLabelField(field)) {
+            valueSelector = (
+                <JiraAutoCompleteSelector
+                    fieldName='labels'
+                    required={!disableLastSelect}
+                    theme={theme}
+                    value={value.values}
+                    onChange={this.handleEpicLinkChange}
+                    resetInvalidOnChange={true}
+                    hideRequiredStar={true}
                     addValidate={this.props.addValidate}
                     removeValidate={this.props.removeValidate}
                 />
