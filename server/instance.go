@@ -19,7 +19,7 @@ const prefixForInstance = true
 const wSEventInstanceStatus = "instance_status"
 
 type Instance interface {
-	GetClient(jiraUser JIRAUser) (Client, error)
+	GetClient(jiraUser JIRAUser) (Client, *http.Client, error)
 	GetDisplayDetails() map[string]string
 	GetMattermostKey() string
 	GetPlugin() *Plugin

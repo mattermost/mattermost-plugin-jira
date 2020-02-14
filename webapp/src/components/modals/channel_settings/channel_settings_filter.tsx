@@ -3,9 +3,10 @@ import React from 'react';
 import ReactSelectSetting from 'components/react_select_setting';
 import JiraEpicSelector from 'components/jira_epic_selector';
 
-import {isEpicLinkField, isMultiSelectField} from 'utils/jira_issue_metadata';
+import {isEpicLinkField, isMultiSelectField, isLabelField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
+import JiraLabelSelector from 'components/jira_label_selector';
 
 export type Props = {
     fields: FilterField[];
@@ -154,6 +155,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
 
     render(): JSX.Element {
         const {field, fields, value, theme} = this.props;
+        console.log('FIELD', field);
         let chosenFieldValues: ReactSelectOption[] = [];
         const style = getStyle(theme);
 
@@ -240,6 +242,19 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
                     resetInvalidOnChange={true}
                     hideRequiredStar={true}
                     isMulti={true}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
+                />
+            );
+        } else if (isLabelField(field)) {
+            valueSelector = (
+                <JiraLabelSelector
+                    required={!disableLastSelect}
+                    theme={theme}
+                    value={value.values}
+                    onChange={this.handleEpicLinkChange}
+                    resetInvalidOnChange={true}
+                    hideRequiredStar={true}
                     addValidate={this.props.addValidate}
                     removeValidate={this.props.removeValidate}
                 />

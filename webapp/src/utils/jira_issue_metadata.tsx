@@ -259,6 +259,10 @@ export function isEpicLinkField(field: JiraField | FilterField): boolean {
     return field.schema && field.schema.custom === JiraFieldCustomTypeEnums.EPIC_LINK;
 }
 
+export function isLabelField(field: JiraField | FilterField): boolean {
+    return field.key === 'labels';
+}
+
 export function isEpicIssueType(issueType: IssueType): boolean {
     return issueType.name === 'Epic';
 }

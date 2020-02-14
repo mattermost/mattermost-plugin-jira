@@ -31,6 +31,7 @@ type Client interface {
 	ProjectService
 	SearchService
 	UserService
+	LabelService
 }
 
 // RESTService is the low-level interface for invoking the upstream service.
@@ -71,6 +72,10 @@ type IssueService interface {
 	GetTransitions(issueKey string) ([]jira.Transition, error)
 	UpdateAssignee(issueKey string, user *jira.User) error
 	UpdateComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
+}
+
+type LabelService interface {
+	GetLabels(bareClient *http.Client, value, url string) (LabelResult, error)
 }
 
 // JiraClient is the common implementation of most Jira APIs, except those that are
@@ -159,6 +164,33 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 	}
 
 	return attachments[0], nil
+}
+
+func (client JiraClient) GetLabels(bareClient *http.Client, value, url string) (LabelResult, error) {
+	apiEndpoint := fmt.Sprintf("%s/rest/api/2/jql/autocompletedata/suggestions", url)
+	req, err := http.NewRequest("GET", apiEndpoint, nil)
+	if err != nil {
+		return LabelResult{}, err
+	}
+
+	q := req.URL.Query()
+	q.Add("fieldName", "labels")
+	q.Add("fieldValue", value)
+	req.URL.RawQuery = q.Encode()
+
+	v := new(LabelResult)
+	resp, err := bareClient.Do(req)
+	if err != nil {
+		return LabelResult{}, err
+	}
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(v)
+	if err != nil {
+		return LabelResult{}, err
+	}
+
+	return *v, nil
 }
 
 func (client JiraClient) GetAllProjectKeys() ([]string, error) {

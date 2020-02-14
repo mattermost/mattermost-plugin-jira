@@ -118,12 +118,12 @@ func (jci jiraCloudInstance) GetURL() string {
 	return jci.AtlassianSecurityContext.BaseURL
 }
 
-func (jci jiraCloudInstance) GetClient(jiraUser JIRAUser) (Client, error) {
-	client, _, err := jci.getJIRAClientForUser(jiraUser)
+func (jci jiraCloudInstance) GetClient(jiraUser JIRAUser) (Client, *http.Client, error) {
+	client, bare, err := jci.getJIRAClientForUser(jiraUser)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get Jira client for user "+jiraUser.DisplayName)
+		return nil, nil, errors.WithMessage(err, "failed to get Jira client for user "+jiraUser.DisplayName)
 	}
-	return newCloudClient(client), nil
+	return newCloudClient(client), bare, nil
 }
 
 // Creates a client for acting on behalf of a user
