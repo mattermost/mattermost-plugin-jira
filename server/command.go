@@ -59,8 +59,7 @@ var jiraCommandHandler = CommandHandler{
 		"transition":         executeTransition,
 		"assign":             executeAssign,
 		"unassign":           executeUnassign,
-		"uninstall/cloud":    executeUninstallCloud,
-		"uninstall/server":   executeUninstallServer,
+		"uninstall":          executeUninstall,
 		"webhook":            executeWebhookURL,
 		"stats":              executeStats,
 		"info":               executeInfo,
@@ -418,17 +417,9 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	return p.responsef(header, addResponseFormat, jiraURL, p.GetSiteURL(), ji.GetMattermostKey(), pkey)
 }
 
-func executeUninstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	return executeUninstall(p, c, header, "cloud", args...)
-}
-
-func executeUninstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	return executeUninstall(p, c, header, "server", args...)
-}
-
 // executeUninstall will uninstall the jira instance if the url matches, and then update all connected clients
 // so that their Jira-related menu options are removed.
-func executeUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, instanceType string, args ...string) *model.CommandResponse {
+func executeUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
@@ -436,11 +427,11 @@ func executeUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, i
 	if !authorized {
 		return p.responsef(header, "`/jira uninstall` can only be run by a System Administrator.")
 	}
-	if len(args) != 1 {
+	if len(args) != 2 {
 		return p.help(header)
 	}
 
-	jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
+	jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[1])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -450,11 +441,14 @@ func executeUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, i
 		return p.responsef(header, "No current Jira instance to uninstall")
 	}
 
+	instanceType := args[0]
 	var ok bool
 	if instanceType == "cloud" {
 		_, ok = ji.(*jiraCloudInstance)
-	} else {
+	} else if instanceType == "server" {
 		_, ok = ji.(*jiraServerInstance)
+	} else {
+		return p.help(header)
 	}
 
 	if !ok {
@@ -480,7 +474,7 @@ func executeUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, i
 		&model.WebsocketBroadcast{},
 	)
 
-	uninstallInstructions := `Jira instance successfully disconnected. Go to [**the respective app management URL**](%s) to remove the application from your Jira instance.`
+	uninstallInstructions := `Jira instance successfully disconnected. Navigate to [**your app management URL**](%s) in order to remove the application from your Jira instance.`
 	return p.responsef(header, uninstallInstructions, ji.GetManageAppsURL())
 }
 

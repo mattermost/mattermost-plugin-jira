@@ -268,7 +268,7 @@ func TestPlugin_ExecuteCommand_Uninstall(t *testing.T) {
 		},
 		"no params - user is not sys admin": {
 			commandArgs:       &model.CommandArgs{Command: "/jira uninstall", UserId: mockUserIDNonSysAdmin},
-			expectedMsgPrefix: strings.TrimSpace(helpTextHeader + commonHelpText),
+			expectedMsgPrefix: "`/jira uninstall` can only be run by a System Administrator.",
 		},
 		"uninstall with invalid option": {
 			commandArgs:       &model.CommandArgs{Command: "/jira uninstall foo", UserId: mockUserIDSysAdmin},
