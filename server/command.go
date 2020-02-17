@@ -441,18 +441,18 @@ func executeUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, a
 		return p.responsef(header, "No current Jira instance to uninstall")
 	}
 
-	instanceType := args[0]
 	var ok bool
-	if instanceType == "cloud" {
+	switch args[0] {
+	case "cloud":
 		_, ok = ji.(*jiraCloudInstance)
-	} else if instanceType == "server" {
+	case "server":
 		_, ok = ji.(*jiraServerInstance)
-	} else {
+	default:
 		return p.help(header)
 	}
 
 	if !ok {
-		return p.responsef(header, fmt.Sprintf("The current Jira instance is not a %s instance", instanceType))
+		return p.responsef(header, fmt.Sprintf("The current Jira instance is not a %s instance", args[0]))
 	}
 
 	if jiraURL != ji.GetURL() {
