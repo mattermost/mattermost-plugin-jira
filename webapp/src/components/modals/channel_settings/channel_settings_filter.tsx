@@ -155,7 +155,6 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
 
     render(): JSX.Element {
         const {field, fields, value, theme} = this.props;
-        console.log('FIELD', field);
         let chosenFieldValues: ReactSelectOption[] = [];
         const style = getStyle(theme);
 
