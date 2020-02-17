@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-workflow-client/workflowclient"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -205,6 +207,72 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to write response, postId: "+create.PostId+", channelId: "+channelId)
+	}
+	return http.StatusOK, nil
+}
+
+func httpWorkflowCreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodPost {
+		return http.StatusMethodNotAllowed,
+			errors.New("method " + r.Method + " is not allowed, must be POST")
+	}
+
+	var activationParams workflowclient.ActionActivationParams
+	if err := json.NewDecoder(r.Body).Decode(&activationParams); err != nil {
+		return http.StatusBadRequest,
+			errors.WithMessage(err, "failed to decode incoming request")
+	}
+
+	create := &struct {
+		UserId string           `json:"user_id"`
+		Fields jira.IssueFields `json:"fields"`
+	}{}
+	if err := json.NewDecoder(bytes.NewReader(activationParams.Action)).Decode(&create); err != nil {
+		return http.StatusBadRequest,
+			errors.WithMessage(err, "failed to decode incoming request specific parameters")
+	}
+
+	var client interface {
+		CreateIssue(issue *jira.Issue) (*jira.Issue, error)
+	}
+	if create.UserId != "" {
+		jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, create.UserId)
+		if err != nil {
+			return http.StatusInternalServerError, err
+		}
+
+		client, err = ji.GetClient(jiraUser)
+		if err != nil {
+			return http.StatusInternalServerError, err
+		}
+	} else {
+		jci, ok := ji.(*jiraCloudInstance)
+		if !ok {
+			return http.StatusBadRequest, errors.New("UserId is required for jira server instances.")
+		}
+
+		jiraClient, err := jci.getJIRAClientForServer()
+		if err != nil {
+			return http.StatusInternalServerError, fmt.Errorf("unable to get jira client for server: %w", err)
+		}
+
+		client = &JiraClient{Jira: jiraClient}
+	}
+
+	issue := &jira.Issue{
+		Fields: &create.Fields,
+	}
+
+	created, err := client.CreateIssue(issue)
+	if err != nil {
+		return http.StatusInternalServerError, errors.Errorf("Failed to create issue. %s", err.Error())
+	}
+
+	outputVars := make(workflowclient.Vars)
+	outputVars["TicketKey"] = created.Key
+
+	if err := json.NewEncoder(w).Encode(outputVars); err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("Unable to encode output: %w", err)
 	}
 	return http.StatusOK, nil
 }

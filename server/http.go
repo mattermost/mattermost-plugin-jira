@@ -45,6 +45,7 @@ const (
 	routeUserDisconnect            = "/user/disconnect"
 	routeWorkflowRegister          = "/workflow/meta"
 	routeWorkflowTriggerSetup      = "/workflow/trigger_setup"
+	routeWorkflowCreateIssue       = "/workflow/create_issue"
 )
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
@@ -142,6 +143,12 @@ func handleHTTPRequest(p *Plugin, c *plugin.Context, w http.ResponseWriter, r *h
 				return httpWorkflowTriggerSetup(p, w, r)
 			}
 		}
+	case routeWorkflowCreateIssue:
+		{
+			if c.SourcePluginId != "" {
+				return withInstance(p.currentInstanceStore, w, r, httpWorkflowCreateIssue)
+			}
+		}
 	}
 
 	if strings.HasPrefix(r.URL.Path, routeAPISubscriptionsChannel) {
@@ -193,6 +200,15 @@ func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 					},
 				},
 				TriggerSetupURL: "/jira" + routeWorkflowTriggerSetup,
+			},
+		},
+		Actions: []workflowclient.ActionParams{
+			{
+				TypeName:    "create",
+				DisplayName: "Jira Create",
+				Fields:      []workflowclient.Field{},
+				VarInfos:    []workflowclient.VarInfo{},
+				URL:         "/jira" + routeWorkflowCreateIssue,
 			},
 		},
 	}

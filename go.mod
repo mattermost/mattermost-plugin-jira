@@ -10,7 +10,7 @@ require (
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/mattermost/mattermost-plugin-autolink v1.1.3-0.20200203183014-8c82b7dc7fa6
-	github.com/mattermost/mattermost-plugin-workflow-client v0.0.0-20200121183617-b71061053ec5
+	github.com/mattermost/mattermost-plugin-workflow-client v0.0.0-20200225165807-b0524a245156
 	github.com/mattermost/mattermost-server/v5 v5.19.0
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/pkg/errors v0.8.1
