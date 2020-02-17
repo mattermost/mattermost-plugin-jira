@@ -474,7 +474,7 @@ func executeUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, a
 		&model.WebsocketBroadcast{},
 	)
 
-	uninstallInstructions := `Jira instance successfully disconnected. Navigate to [**your app management URL**](%s) in order to remove the application from your Jira instance.`
+	uninstallInstructions := `Jira instance successfully uninstalled. Navigate to [**your app management URL**](%s) in order to remove the application from your Jira instance.`
 	return p.responsef(header, uninstallInstructions, ji.GetManageAppsURL())
 }
 
