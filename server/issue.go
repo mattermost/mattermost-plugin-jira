@@ -38,6 +38,10 @@ func respondf(plugin *Plugin, status int, e error, mmuserID, jiraBotID, channelI
 
 func httpAPITransitionIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
+	if requestData == nil {
+		return http.StatusBadRequest, errors.New("Missing request data")
+	}
+
 	plugin := ji.GetPlugin()
 	jiraBotID := plugin.getUserID()
 	channelID := requestData.ChannelId
