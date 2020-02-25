@@ -9,13 +9,13 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
-	"github.com/mattermost/mattermost-server/v5/plugin"
 	"regexp"
 	"time"
 
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v5/plugin"
 )
 
 const (
@@ -490,14 +490,33 @@ func checkReg(key string) (bool, error) {
 	if !reHexKeyFormat.MatchString(key) {
 		return true, nil
 	}
-	return true, nil
+	return false, errors.New("Key is not 32-hex")
+}
+
+func (store store) checkValidUser(key string) (bool, error) {
+	var data []byte
+	data, appErr := store.plugin.API.KVGet(key)
+	if appErr != nil {
+		return false, appErr
+	}
+
+	v := map[string]interface{}{}
+
+	// Don't mind err from non-JSON values
+	json.Unmarshal(data, &v)
+
+	// A valid user record?
+	if v["Settings"] != nil && (v["accountId"] != nil || v["name"] != nil && v["key"] != nil) {
+		return true, nil
+	}
+
+	return false, errors.New("No valid users found")
 }
 
 func (store store) CountUsers(ji Instance) (int, error) {
-	count := 0
-
 	options := []plugin.KVListOption{
 		plugin.WithChecker(checkReg),
+		plugin.WithChecker(store.checkValidUser),
 	}
 
 	checkedKeys, err := store.plugin.Helpers.KVListWithOptions(options...)
@@ -506,27 +525,7 @@ func (store store) CountUsers(ji Instance) (int, error) {
 		return 0, err
 	}
 
-	for _, key := range checkedKeys {
-		var data []byte
-		data, appErr := store.plugin.API.KVGet(key)
-		if appErr != nil {
-			return 0, appErr
-		}
-		v := map[string]interface{}{}
-		err = json.Unmarshal(data, &v)
-		if err != nil {
-			// Skip non-JSON values.
-			continue
-		}
-
-		// A valid user record?
-		if v["Settings"] != nil && (v["accountId"] != nil || v["name"] != nil && v["key"] != nil) {
-			count++
-		}
-
-	}
-
-	return count, nil
+	return len(checkedKeys), nil
 }
 
 func (store store) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr error) {
