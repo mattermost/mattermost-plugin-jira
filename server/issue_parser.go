@@ -28,6 +28,12 @@ func mdKeySummaryLink(issue *jira.Issue) string {
 	return fmt.Sprintf("[%s](%s%s)", issue.Key+": "+issue.Fields.Summary, issue.Self[:pos], "/browse/"+issue.Key)
 }
 
+func reporterSummary(issue *jira.Issue) string {
+	avatarLink := fmt.Sprintf("![avatar](%s =30x30)", issue.Fields.Reporter.AvatarUrls.One6X16)
+	reporterSummary := avatarLink + " " + issue.Fields.Reporter.Name
+	return reporterSummary
+}
+
 func parseIssue(issue *jira.Issue) []*model.SlackAttachment {
 	text := mdKeySummaryLink(issue)
 	desc := truncate(issue.Fields.Description, 3000)
@@ -51,6 +57,13 @@ func parseIssue(issue *jira.Issue) []*model.SlackAttachment {
 			Short: true,
 		})
 	}
+
+	fields = append(fields, &model.SlackAttachmentField{
+		Title: "Reporter",
+		Value: reporterSummary(issue),
+		Short: true,
+	})
+
 	return []*model.SlackAttachment{
 		{
 			// TODO is this supposed to be themed?

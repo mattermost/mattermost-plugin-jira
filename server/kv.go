@@ -61,7 +61,7 @@ type UserStore interface {
 	LoadMattermostUserId(ji Instance, jiraUserName string) (string, error)
 	LoadJIRAUserByAccountId(ji Instance, accountId string) (JIRAUser, error)
 	DeleteUserInfo(ji Instance, mattermostUserId string) error
-	CountUsers(ji Instance) (int, error)
+	CountUsers() (int, error)
 }
 
 type OTSStore interface {

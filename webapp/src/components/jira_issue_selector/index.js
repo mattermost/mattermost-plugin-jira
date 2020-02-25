@@ -2,15 +2,14 @@
 // See LICENSE.txt for license information.
 
 import {connect} from 'react-redux';
+import {bindActionCreators} from 'redux';
 
-import {getPluginServerRoute} from 'selectors';
+import {searchIssues} from 'actions';
 
 import JiraIssueSelector from './jira_issue_selector';
 
-const mapStateToProps = (state) => {
-    return {
-        fetchIssuesEndpoint: getPluginServerRoute(state) + '/api/v2/get-search-issues',
-    };
-};
+const mapDispatchToProps = (dispatch) => bindActionCreators({
+    searchIssues,
+}, dispatch);
 
-export default connect(mapStateToProps, null, null, {withRef: true})(JiraIssueSelector);
+export default connect(null, mapDispatchToProps, null, {withRef: true})(JiraIssueSelector);

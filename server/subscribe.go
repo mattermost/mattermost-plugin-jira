@@ -114,86 +114,73 @@ func (p *Plugin) getUserID() string {
 	return p.getConfig().botUserID
 }
 
+func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilters) bool {
+	webhookEvents := wh.Events()
+	foundEvent := false
+	eventTypes := filters.Events
+	if eventTypes.Intersection(webhookEvents).Len() > 0 {
+		foundEvent = true
+	} else if eventTypes.ContainsAny(eventUpdatedAny) {
+		for _, eventType := range webhookEvents.Elems() {
+			if strings.HasPrefix(eventType, "event_updated") {
+				foundEvent = true
+			}
+		}
+	}
+
+	if !foundEvent {
+		return false
+	}
+
+	if filters.IssueTypes.Len() != 0 && !filters.IssueTypes.ContainsAny(wh.JiraWebhook.Issue.Fields.Type.ID) {
+		return false
+	}
+
+	if filters.Projects.Len() != 0 && !filters.Projects.ContainsAny(wh.JiraWebhook.Issue.Fields.Project.Key) {
+		return false
+	}
+
+	validFilter := true
+
+	for _, field := range filters.Fields {
+		// Broken filter, values must be provided
+		if field.Inclusion == "" || (field.Values.Len() == 0 && field.Inclusion != FILTER_EMPTY) {
+			validFilter = false
+			break
+		}
+
+		value := getIssueFieldValue(&wh.JiraWebhook.Issue, field.Key)
+		containsAny := value.ContainsAny(field.Values.Elems()...)
+		containsAll := value.ContainsAll(field.Values.Elems()...)
+
+		if (field.Inclusion == FILTER_INCLUDE_ANY && !containsAny) ||
+			(field.Inclusion == FILTER_INCLUDE_ALL && !containsAll) ||
+			(field.Inclusion == FILTER_EXCLUDE_ANY && containsAny) ||
+			(field.Inclusion == FILTER_EMPTY && value.Len() > 0) {
+			validFilter = false
+			break
+		}
+	}
+
+	if !validFilter {
+		return false
+	}
+
+	return true
+}
+
 func (p *Plugin) getChannelsSubscribed(wh *webhook) (StringSet, error) {
-	jwh := wh.JiraWebhook
 	subs, err := p.getSubscriptions()
 	if err != nil {
 		return nil, err
 	}
 
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return nil, err
-	}
-
-	subIds := subs.Channel.ById
-	instType := ji.GetType()
-
-	issue := &jwh.Issue
-	webhookEvents := wh.Events()
-	isCommentEvent := jwh.WebhookEvent == "comment_created" || jwh.WebhookEvent == "comment_updated" || jwh.WebhookEvent == "comment_deleted"
-
-	if isCommentEvent && instType == "cloud" {
-		// Jira Cloud comment event. We need to fetch issue data because it is not expanded in webhook payload.
-		issue, err = p.getIssueDataForCloudWebhook(ji, issue.ID)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	channelIds := NewStringSet()
+	subIds := subs.Channel.ById
 	for _, sub := range subIds {
-		foundEvent := false
-		eventTypes := sub.Filters.Events
-		if eventTypes.Intersection(webhookEvents).Len() > 0 {
-			foundEvent = true
-		} else if eventTypes.ContainsAny(eventUpdatedAny) {
-			for _, eventType := range webhookEvents.Elems() {
-				if strings.HasPrefix(eventType, "event_updated") {
-					foundEvent = true
-				}
-			}
+		if p.matchesSubsciptionFilters(wh, sub.Filters) {
+			channelIds = channelIds.Add(sub.ChannelId)
 		}
-
-		if !foundEvent {
-			continue
-		}
-
-		if !sub.Filters.IssueTypes.ContainsAny(issue.Fields.Type.ID) {
-			continue
-		}
-
-		if !sub.Filters.Projects.ContainsAny(issue.Fields.Project.Key) {
-			continue
-		}
-
-		validFilter := true
-
-		for _, field := range sub.Filters.Fields {
-			// Broken filter, values must be provided
-			if field.Inclusion == "" || (field.Values.Len() == 0 && field.Inclusion != FILTER_EMPTY) {
-				validFilter = false
-				break
-			}
-
-			value := getIssueFieldValue(issue, field.Key)
-			containsAny := value.ContainsAny(field.Values.Elems()...)
-			containsAll := value.ContainsAll(field.Values.Elems()...)
-
-			if (field.Inclusion == FILTER_INCLUDE_ANY && !containsAny) ||
-				(field.Inclusion == FILTER_INCLUDE_ALL && !containsAll) ||
-				(field.Inclusion == FILTER_EXCLUDE_ANY && containsAny) ||
-				(field.Inclusion == FILTER_EMPTY && value.Len() > 0) {
-				validFilter = false
-				break
-			}
-		}
-
-		if !validFilter {
-			continue
-		}
-
-		channelIds = channelIds.Add(sub.ChannelId)
 	}
 
 	return channelIds, nil
@@ -270,7 +257,7 @@ func (p *Plugin) removeChannelSubscription(subscriptionId string) error {
 	})
 }
 
-func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) error {
+func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription, client Client) error {
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
 		return err
@@ -283,7 +270,7 @@ func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) er
 			return nil, err
 		}
 
-		err = p.validateSubscription(newSubscription)
+		err = p.validateSubscription(newSubscription, client)
 		if err != nil {
 			return nil, err
 		}
@@ -300,13 +287,25 @@ func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription) er
 	})
 }
 
-func (p *Plugin) validateSubscription(subscription *ChannelSubscription) error {
+func (p *Plugin) validateSubscription(subscription *ChannelSubscription, client Client) error {
 	if len(subscription.Name) == 0 {
 		return errors.New("Please provide a name for the subscription.")
 	}
 
 	if len(subscription.Name) > MAX_SUBSCRIPTION_NAME_LENGTH {
-		return fmt.Errorf("Please provide a name less than %d characters.", MAX_SUBSCRIPTION_NAME_LENGTH)
+		return errors.Errorf("Please provide a name less than %d characters.", MAX_SUBSCRIPTION_NAME_LENGTH)
+	}
+
+	if len(subscription.Filters.Events) == 0 {
+		return errors.New("Please provide at least one event type.")
+	}
+
+	if len(subscription.Filters.IssueTypes) == 0 {
+		return errors.New("Please provide at least one issue type.")
+	}
+
+	if (len(subscription.Filters.Projects)) == 0 {
+		return errors.New("Please provide a project identifier.")
 	}
 
 	channelId := subscription.ChannelId
@@ -317,13 +316,20 @@ func (p *Plugin) validateSubscription(subscription *ChannelSubscription) error {
 
 	for subID := range subs {
 		if subs[subID].Name == subscription.Name && subs[subID].Id != subscription.Id {
-			return fmt.Errorf("Subscription name, '%s', already exists. Please choose another name.", subs[subID].Name)
+			return errors.Errorf("Subscription name, '%s', already exists. Please choose another name.", subs[subID].Name)
 		}
 	}
+
+	projectKey := subscription.Filters.Projects.Elems()[0]
+	_, err = client.GetProject(projectKey)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to get project %q", projectKey)
+	}
+
 	return nil
 }
 
-func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscription) error {
+func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscription, client Client) error {
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
 		return err
@@ -341,7 +347,7 @@ func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscripti
 			return nil, errors.New("Existing subscription does not exist.")
 		}
 
-		err = p.validateSubscription(modifiedSubscription)
+		err = p.validateSubscription(modifiedSubscription, client)
 		if err != nil {
 			return nil, err
 		}
@@ -725,7 +731,22 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
 	}
 
-	err = p.addChannelSubscription(&subscription)
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	client, err := ji.GetClient(jiraUser)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	err = p.addChannelSubscription(&subscription, client)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -735,16 +756,6 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 	_, err = w.Write(b)
 	if err != nil {
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-	}
-
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
-	if err != nil {
-		return http.StatusInternalServerError, err
 	}
 
 	post := &model.Post{
@@ -780,7 +791,22 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 		return http.StatusForbidden, errors.New("Not a member of the channel specified")
 	}
 
-	err = p.editChannelSubscription(&subscription)
+	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	client, err := ji.GetClient(jiraUser)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	err = p.editChannelSubscription(&subscription, client)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -790,16 +816,6 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 	_, err = w.Write(b)
 	if err != nil {
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-	}
-
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
-	if err != nil {
-		return http.StatusInternalServerError, err
 	}
 
 	post := &model.Post{
