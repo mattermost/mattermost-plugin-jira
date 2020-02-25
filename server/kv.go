@@ -513,7 +513,7 @@ func (store store) checkValidUser(key string) (bool, error) {
 	return false, errors.New("No valid users found")
 }
 
-func (store store) CountUsers(ji Instance) (int, error) {
+func (store store) CountUsers() (int, error) {
 	options := []plugin.KVListOption{
 		plugin.WithChecker(checkReg),
 		plugin.WithChecker(store.checkValidUser),
