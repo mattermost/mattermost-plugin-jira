@@ -202,30 +202,27 @@ func initUptime() {
 func (p *Plugin) consolidatedStoredStats() (*expvar.Stats, []string, error) {
 	stats := expvar.NewUnpublishedStats(nil)
 	var statsKeys []string
-	for i := 0; ; i++ {
-		keys, appErr := p.API.KVList(i, listPerPage)
+
+	options := []plugin.KVListOption{
+		plugin.WithChecker(checkPrefix),
+	}
+
+	checkedKeys, err := store.plugin.Helpers.KVListWithOptions(options...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, key := range checkedKeys {
+		var data []byte
+		data, appErr := p.API.KVGet(key)
 		if appErr != nil {
 			return nil, nil, appErr
 		}
-
-		for _, key := range keys {
-			if !strings.HasPrefix(key, prefixStats) {
-				continue
-			}
-			var data []byte
-			data, appErr = p.API.KVGet(key)
-			if appErr != nil {
-				return nil, nil, appErr
-			}
-			from := expvar.NewUnpublishedStats(data)
-			stats.Merge(from)
-			statsKeys = append(statsKeys, key)
-		}
-
-		if len(keys) < listPerPage {
-			break
-		}
+		from := expvar.NewUnpublishedStats(data)
+		stats.Merge(from)
+		statsKeys = append(statsKeys, key)
 	}
+
 	return stats, statsKeys, nil
 }
 
