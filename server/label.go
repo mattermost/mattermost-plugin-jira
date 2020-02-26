@@ -35,14 +35,14 @@ func httpAPIGetLabels(ji Instance, w http.ResponseWriter, r *http.Request) (int,
 		return http.StatusInternalServerError, err
 	}
 
-	client, bareClient, err := ji.GetClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
 	val := r.FormValue("fieldValue")
 
-	labels, err := client.GetLabels(bareClient, val, ji.GetURL())
+	labels, err := client.GetLabels(val, ji.GetURL())
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

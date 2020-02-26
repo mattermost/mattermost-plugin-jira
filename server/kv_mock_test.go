@@ -6,7 +6,6 @@ package main
 import (
 	"crypto/md5"
 	"fmt"
-	"net/http"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
@@ -43,8 +42,8 @@ func (jti jiraTestInstance) GetDisplayDetails() map[string]string {
 func (jti jiraTestInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
 	return "http://jiraTestInstanceUserConnectURL.some", nil
 }
-func (jti jiraTestInstance) GetClient(jiraUser JIRAUser) (Client, *http.Client, error) {
-	return testClient{}, nil, nil
+func (jti jiraTestInstance) GetClient(jiraUser JIRAUser) (Client, error) {
+	return testClient{}, nil
 }
 func (jti jiraTestInstance) GetUserGroups(jiraUser JIRAUser) ([]*jira.UserGroup, error) {
 	return nil, errors.New("not implemented")

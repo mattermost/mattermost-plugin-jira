@@ -118,16 +118,16 @@ func (jci jiraCloudInstance) GetURL() string {
 	return jci.AtlassianSecurityContext.BaseURL
 }
 
-func (jci jiraCloudInstance) GetClient(jiraUser JIRAUser) (Client, *http.Client, error) {
-	client, bare, err := jci.getJIRAClientForUser(jiraUser)
+func (jci jiraCloudInstance) GetClient(jiraUser JIRAUser) (Client, error) {
+	client, err := jci.getJIRAClientForUser(jiraUser)
 	if err != nil {
-		return nil, nil, errors.WithMessage(err, "failed to get Jira client for user "+jiraUser.DisplayName)
+		return nil, errors.WithMessage(err, "failed to get Jira client for user "+jiraUser.DisplayName)
 	}
-	return newCloudClient(client), bare, nil
+	return newCloudClient(client), nil
 }
 
 // Creates a client for acting on behalf of a user
-func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Client, *http.Client, error) {
+func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Client, error) {
 	oauth2Conf := oauth2_jira.Config{
 		BaseURL: jci.GetURL(),
 		Subject: jiraUser.AccountID,
@@ -150,7 +150,7 @@ func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Clie
 		conf.stats, endpointNameFromRequest)
 
 	jiraClient, err := jira.NewClient(httpClient, oauth2Conf.BaseURL)
-	return jiraClient, httpClient, err
+	return jiraClient, err
 }
 
 // Creates a "bot" client with a JWT

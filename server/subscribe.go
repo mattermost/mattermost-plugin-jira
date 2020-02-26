@@ -602,7 +602,7 @@ func (p *Plugin) hasPermissionToManageSubscription(userId, channelId string) err
 			return errors.Wrap(err, "could not load jira user")
 		}
 
-		client, _, err := ji.GetClient(jiraUser)
+		client, err := ji.GetClient(jiraUser)
 		if err != nil {
 			return errors.Wrap(err, "could not get an authenticated Jira client")
 		}
@@ -741,7 +741,7 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 		return http.StatusInternalServerError, err
 	}
 
-	client, _, err := ji.GetClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -801,7 +801,7 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 		return http.StatusInternalServerError, err
 	}
 
-	client, _, err := ji.GetClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

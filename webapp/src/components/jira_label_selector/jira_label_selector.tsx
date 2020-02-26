@@ -72,10 +72,10 @@ export default class JiraLabelSelector extends React.PureComponent<Props, State>
         });
     };
 
-    debouncedSearchIssues = debounce(this.searchLabels, searchDebounceDelay);
+    debouncedSearchLabel = debounce(this.searchLabels, searchDebounceDelay);
 
     handleLabelSearch = (inputValue: string): Promise<ReactSelectOption[]> => {
-        return this.debouncedSearchIssues(inputValue);
+        return this.debouncedSearchLabel(inputValue);
     }
 
     onChange = (options: ReactSelectOption[]): void => {
@@ -92,12 +92,28 @@ export default class JiraLabelSelector extends React.PureComponent<Props, State>
     }
 
     render = (): JSX.Element => {
+        const {value} = this.props;
+        const {cachedSelectedOptions} = this.state;
+        const preloadedLabels = value.map((v) => {
+            if (cachedSelectedOptions.length > 0) {
+                const alreadySelected = cachedSelectedOptions.find((option) => option.value === v);
+                if (alreadySelected) {
+                    return alreadySelected;
+                }
+            }
+            return {
+                label: v,
+                value: v,
+            };
+        });
+
         const selectComponent = (
             <AsyncSelect
                 isMulti={true}
                 name={'label'}
+                value={preloadedLabels}
                 onChange={this.onChange}
-                loadOptions={this.searchLabels}
+                loadOptions={this.handleLabelSearch}
                 required={this.props.required}
                 menuPortalTarget={document.body}
                 menuPlacement='auto'

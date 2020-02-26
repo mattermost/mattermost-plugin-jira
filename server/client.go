@@ -75,7 +75,7 @@ type IssueService interface {
 }
 
 type LabelService interface {
-	GetLabels(bareClient *http.Client, value, url string) (LabelResult, error)
+	GetLabels(value, url string) (LabelResult, error)
 }
 
 // JiraClient is the common implementation of most Jira APIs, except those that are
@@ -166,9 +166,9 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 	return attachments[0], nil
 }
 
-func (client JiraClient) GetLabels(bareClient *http.Client, value, url string) (LabelResult, error) {
+func (client JiraClient) GetLabels(value, url string) (LabelResult, error) {
 	apiEndpoint := fmt.Sprintf("%s/rest/api/2/jql/autocompletedata/suggestions", url)
-	req, err := http.NewRequest("GET", apiEndpoint, nil)
+	req, err := client.Jira.NewRequest("GET", apiEndpoint, nil)
 	if err != nil {
 		return LabelResult{}, err
 	}
@@ -179,13 +179,7 @@ func (client JiraClient) GetLabels(bareClient *http.Client, value, url string) (
 	req.URL.RawQuery = q.Encode()
 
 	v := new(LabelResult)
-	resp, err := bareClient.Do(req)
-	if err != nil {
-		return LabelResult{}, err
-	}
-	defer resp.Body.Close()
-
-	err = json.NewDecoder(resp.Body).Decode(v)
+	_, err = client.Jira.Do(req, v)
 	if err != nil {
 		return LabelResult{}, err
 	}

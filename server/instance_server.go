@@ -93,7 +93,7 @@ func (jsi jiraServerInstance) GetUserConnectURL(mattermostUserId string) (return
 	return authURL.String(), nil
 }
 
-func (jsi jiraServerInstance) GetClient(jiraUser JIRAUser) (client Client, bare *http.Client, returnErr error) {
+func (jsi jiraServerInstance) GetClient(jiraUser JIRAUser) (client Client, returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -102,12 +102,12 @@ func (jsi jiraServerInstance) GetClient(jiraUser JIRAUser) (client Client, bare 
 	}()
 
 	if jiraUser.Oauth1AccessToken == "" || jiraUser.Oauth1AccessSecret == "" {
-		return nil, nil, errors.New("No access token, please use /jira connect")
+		return nil, errors.New("No access token, please use /jira connect")
 	}
 
 	oauth1Config, err := jsi.GetOAuth1Config()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	token := oauth1.NewToken(jiraUser.Oauth1AccessToken, jiraUser.Oauth1AccessSecret)
@@ -122,10 +122,10 @@ func (jsi jiraServerInstance) GetClient(jiraUser JIRAUser) (client Client, bare 
 
 	jiraClient, err := jira.NewClient(httpClient, jsi.GetURL())
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return newServerClient(jiraClient), httpClient, nil
+	return newServerClient(jiraClient), nil
 }
 
 func (jsi jiraServerInstance) getOAuth1Config() *oauth1.Config {

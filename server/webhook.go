@@ -123,7 +123,7 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 			// Not connected to Jira, so can't check permissions
 			continue
 		}
-		client, _, err2 := ji.GetClient(jiraUser)
+		client, err2 := ji.GetClient(jiraUser)
 		if err2 != nil {
 			p.errorf("PostNotifications: error while getting jiraClient, err: %v", err2)
 			continue

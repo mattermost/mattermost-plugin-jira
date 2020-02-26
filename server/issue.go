@@ -51,7 +51,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, err
 	}
 
-	client, _, err := ji.GetClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -230,7 +230,7 @@ func httpAPIGetCreateIssueMetadataForProjects(ji Instance, w http.ResponseWriter
 		return http.StatusInternalServerError, err
 	}
 
-	client, _, err := ji.GetClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -282,7 +282,7 @@ func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request)
 		return http.StatusInternalServerError, err
 	}
 
-	client, _, err := ji.GetClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -374,7 +374,7 @@ func httpAPIGetJiraProjectMetadata(ji Instance, w http.ResponseWriter, r *http.R
 		return http.StatusInternalServerError, err
 	}
 
-	client, _, err := ji.GetClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -467,7 +467,7 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 		return http.StatusInternalServerError, err
 	}
 
-	client, _, err := ji.GetClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -692,7 +692,7 @@ func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 }
 
 func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issueKey string) ([]*model.SlackAttachment, error) {
-	client, _, err := ji.GetClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return nil, err
 	}
@@ -726,7 +726,7 @@ func (p *Plugin) unassignJiraIssue(mmUserId, issueKey string) (string, error) {
 		return "", err
 	}
 
-	client, _, err := ji.GetClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return "", err
 	}
@@ -764,7 +764,7 @@ func (p *Plugin) assignJiraIssue(mmUserId, issueKey, userSearch string) (string,
 		return "", err
 	}
 
-	client, _, err := ji.GetClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return "", err
 	}
@@ -849,7 +849,7 @@ func (p *Plugin) transitionJiraIssue(mmUserId, issueKey, toState string) (string
 		return "", err
 	}
 
-	client, _, err := ji.GetClient(jiraUser)
+	client, err := ji.GetClient(jiraUser)
 	if err != nil {
 		return "", err
 	}
