@@ -180,5 +180,5 @@ func (p *Plugin) GetWebhookURL(teamId, channelId string) (string, error) {
 	v.Add("secret", secret)
 	v.Add("team", team.Name)
 	v.Add("channel", channel.Name)
-	return p.GetPluginURL() + "/" + routeIncomingWebhook + "?" + v.Encode(), nil
+	return p.GetPluginURL() + routeIncomingWebhook + "?" + v.Encode(), nil
 }
