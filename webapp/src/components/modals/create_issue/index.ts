@@ -2,8 +2,10 @@
 // See LICENSE.txt for license information.
 
 import {connect} from 'react-redux';
-import {bindActionCreators} from 'redux';
+import {bindActionCreators, Dispatch} from 'redux';
 
+import {GlobalState} from 'mattermost-redux/types/store';
+import {GenericAction} from 'mattermost-redux/types/actions';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
@@ -12,7 +14,7 @@ import {isCreateModalVisible, getCreateModal, getJiraIssueMetadata, getJiraProje
 
 import CreateIssue from './create_issue';
 
-const mapStateToProps = (state) => {
+const mapStateToProps = (state: GlobalState): object => {
     const {postId, description, channelId} = getCreateModal(state);
     const post = (postId) ? getPost(state, postId) : null;
     const currentTeam = getCurrentTeam(state);
@@ -31,7 +33,7 @@ const mapStateToProps = (state) => {
     };
 };
 
-const mapDispatchToProps = (dispatch) => bindActionCreators({
+const mapDispatchToProps = (dispatch: Dispatch<GenericAction>): object => bindActionCreators({
     close: closeCreateModal,
     create: createIssue,
     fetchJiraIssueMetadataForProjects,
