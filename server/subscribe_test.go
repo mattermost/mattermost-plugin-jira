@@ -332,7 +332,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 					},
 				},
 			}),
-			ChannelIds: []string{},
+			ChannelIds: []string{"sampleChannelId"},
 		},
 		"multiple projects selected": {
 			WebhookTestData: "webhook-issue-created.json",
@@ -377,7 +377,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 					},
 				},
 			}),
-			ChannelIds: []string{},
+			ChannelIds: []string{"sampleChannelId"},
 		},
 		"event type does not match": {
 			WebhookTestData: "webhook-issue-deleted.json",

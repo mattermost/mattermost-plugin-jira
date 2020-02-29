@@ -19,6 +19,8 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
+	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
+	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
@@ -28,9 +30,12 @@ const (
 	botDisplayName = "Jira"
 	botDescription = "Created by the Jira Plugin."
 
+	autolinkPluginId = "mattermost-autolink"
+
 	// Move these two to the plugin settings if admins need to adjust them.
 	WebhookMaxProcsPerServer = 20
 	WebhookBufferSize        = 10000
+	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
 )
 
 var BuildHash = ""
@@ -99,6 +104,9 @@ type Plugin struct {
 	userStore            UserStore
 	otsStore             OTSStore
 	secretsStore         SecretsStore
+
+	// Active workflows store
+	workflowTriggerStore *TriggerStore
 
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
@@ -203,7 +211,81 @@ func (p *Plugin) OnActivate() error {
 		go webhookWorker{i, p, p.webhookQueue}.work()
 	}
 
+	p.workflowTriggerStore = NewTriggerStore()
+
 	go p.initStats()
+	go func() {
+		time.Sleep(time.Second * 10)
+
+		instances, err := p.instanceStore.LoadKnownJIRAInstances()
+		if err != nil {
+			p.API.LogError("unable to register autolinks", "err", err)
+			return
+		}
+
+		for url := range instances {
+			instance, err := p.instanceStore.LoadJIRAInstance(url)
+			if err != nil {
+				continue
+			}
+
+			jci, ok := instance.(*jiraCloudInstance)
+			if !ok {
+				p.API.LogWarn("only cloud instances supported for autolink", "err", err)
+				continue
+			}
+
+			if err := p.AddAutolinksForCloudInstance(jci); err != nil {
+				p.API.LogWarn("could not install autolinks for cloud instance", "instance", jci.BaseURL, "err", err)
+				continue
+			}
+		}
+	}()
+
+	return nil
+}
+
+func (p *Plugin) AddAutolinksForCloudInstance(jci *jiraCloudInstance) error {
+	client, err := jci.getJIRAClientForServer()
+	if err != nil {
+		return fmt.Errorf("unable to get jira client for server: %w", err)
+	}
+
+	keys, err := JiraClient{Jira: client}.GetAllProjectKeys()
+	if err != nil {
+		return fmt.Errorf("unable to get project keys: %w", err)
+	}
+
+	for _, key := range keys {
+		err = p.AddAutolinks(key, jci.BaseURL)
+	}
+	if err != nil {
+		return fmt.Errorf("some keys were not installed: %w", err)
+	}
+
+	return nil
+}
+
+func (p *Plugin) AddAutolinks(key, baseURL string) error {
+	baseURL = strings.TrimRight(baseURL, "/")
+	installList := []autolink.Autolink{
+		{
+			Name:     key + " key to link for " + baseURL,
+			Pattern:  `(` + key + `)(-)(?P<jira_id>\d+)`,
+			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
+		},
+		{
+			Name:     key + " link to key for " + baseURL,
+			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)`,
+			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
+		},
+	}
+
+	client := autolinkclient.NewClientPlugin(p.API)
+	if err := client.Add(installList...); err != nil {
+		return fmt.Errorf("Unable to add autolinks: %w", err)
+	}
+
 	return nil
 }
 

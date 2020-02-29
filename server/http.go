@@ -4,6 +4,7 @@
 package main
 
 import (
+	"encoding/json"
 	goexpvar "expvar"
 	"net/http"
 	"os"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-workflow-client/workflowclient"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 )
 
@@ -22,7 +24,6 @@ const (
 	routeAPIGetCreateIssueMetadata = "/api/v2/get-create-issue-metadata-for-project"
 	routeAPIGetJiraProjectMetadata = "/api/v2/get-jira-project-metadata"
 	routeAPIGetSearchIssues        = "/api/v2/get-search-issues"
-	routeAPIGetSearchEpics         = "/api/v2/get-search-epics"
 	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
 	routeAPIUserInfo               = "/api/v2/userinfo"
 	routeAPISubscribeWebhook       = "/api/v2/webhook"
@@ -40,12 +41,15 @@ const (
 	routeIncomingWebhook           = "/webhook"
 	routeOAuth1Complete            = "/oauth1/complete.html"
 	routeOAuth1PublicKey           = "/oauth1/public_key.html" // TODO remove, debugging?
+	routeUserStart                 = "/user/start"
 	routeUserConnect               = "/user/connect"
 	routeUserDisconnect            = "/user/disconnect"
+	routeWorkflowRegister          = "/workflow/meta"
+	routeWorkflowTriggerSetup      = "/workflow/trigger_setup"
 )
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	status, err := handleHTTPRequest(p, w, r)
+	status, err := handleHTTPRequest(p, c, w, r)
 	if err != nil {
 		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
 		http.Error(w, err.Error(), status)
@@ -62,7 +66,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
 }
 
-func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+func handleHTTPRequest(p *Plugin, c *plugin.Context, w http.ResponseWriter, r *http.Request) (int, error) {
 	switch r.URL.Path {
 	// Issue APIs
 	case routeAPICreateIssue:
@@ -73,8 +77,6 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 		return withInstance(p.currentInstanceStore, w, r, httpAPIGetJiraProjectMetadata)
 	case routeAPIGetSearchIssues:
 		return withInstance(p.currentInstanceStore, w, r, httpAPIGetSearchIssues)
-	case routeAPIGetSearchEpics:
-		return withInstance(p.currentInstanceStore, w, r, httpAPIGetSearchEpics)
 	case routeAPIAttachCommentToIssue:
 		return withInstance(p.currentInstanceStore, w, r, httpAPIAttachCommentToIssue)
 
@@ -119,6 +121,8 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	// User connect/disconnect links
 	case routeUserConnect:
 		return withInstance(p.currentInstanceStore, w, r, httpUserConnect)
+	case routeUserStart:
+		return withInstance(p.currentInstanceStore, w, r, httpUserStart)
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:
 		return httpSubscribeWebhook(p, w, r)
@@ -127,12 +131,101 @@ func handleHTTPRequest(p *Plugin, w http.ResponseWriter, r *http.Request) (int, 
 	case "/debug/vars":
 		goexpvar.Handler().ServeHTTP(w, r)
 		return 0, nil
+
+	// Workflow
+	case routeWorkflowRegister:
+		{
+			if c.SourcePluginId != "" {
+				return httpWorkflowRegister(p, w, r)
+			}
+		}
+	case routeWorkflowTriggerSetup:
+		{
+			if c.SourcePluginId != "" {
+				return httpWorkflowTriggerSetup(p, w, r)
+			}
+		}
 	}
 
 	if strings.HasPrefix(r.URL.Path, routeAPISubscriptionsChannel) {
 		return httpChannelSubscriptions(p, w, r)
 	}
 	return http.StatusNotFound, errors.New("not found")
+}
+
+func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+	params := workflowclient.RegisterParams{
+		Triggers: []workflowclient.TriggerParams{
+			{
+				TypeName:    "event",
+				DisplayName: "Jira Event",
+				Fields: []workflowclient.Field{
+					{
+						Name: "events",
+						Type: "[]string",
+					},
+					{
+						Name: "projects",
+						Type: "[]string",
+					},
+					{
+						Name: "issue_types",
+						Type: "[]string",
+					},
+				},
+				VarInfos: []workflowclient.VarInfo{
+					{
+						Name:        "Summary",
+						Description: "The summary of the ticket",
+					},
+					{
+						Name:        "Description",
+						Description: "The description of the ticket",
+					},
+					{
+						Name:        "Headline",
+						Description: "Markdown description of what happened.",
+					},
+					{
+						Name:        "Key",
+						Description: "The issue key. Eg: MM-1234",
+					},
+					{
+						Name:        "ID",
+						Description: "Jira issue ID",
+					},
+				},
+				TriggerSetupURL: "/jira" + routeWorkflowTriggerSetup,
+			},
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(&params); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
+
+func httpWorkflowTriggerSetup(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+	var params workflowclient.SetupParams
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		return http.StatusBadRequest, errors.WithMessage(err, "Unable to decode setup params")
+	}
+
+	if params.BaseTrigger.BaseType != "jira_event" {
+		return http.StatusBadRequest, errors.New("Unsupported trigger type.")
+	}
+
+	var trigger WorkflowTrigger
+	if err := json.Unmarshal(params.Trigger, &trigger); err != nil {
+		return http.StatusBadRequest, errors.WithMessage(err, "Unable to decode trigger")
+	}
+
+	p.workflowTriggerStore.AddTrigger(trigger, params.CallbackURL)
+
+	return http.StatusOK, nil
 }
 
 func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {

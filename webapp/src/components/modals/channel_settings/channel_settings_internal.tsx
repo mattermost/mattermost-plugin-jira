@@ -46,6 +46,7 @@ export default class ChannelSettingsModalInner extends React.PureComponent<Share
                     {...this.props}
                     finishEditSubscription={this.finishEditSubscription}
                     selectedSubscription={selectedSubscription}
+                    creatingSubscription={creatingSubscription}
                 />
             );
         } else {

@@ -54,6 +54,7 @@ const JiraEventOptions: ReactSelectOption[] = [
 export type Props = SharedProps & {
     finishEditSubscription: () => void;
     selectedSubscription: ChannelSubscription | null;
+    creatingSubscription: boolean;
 };
 
 export type State = {
@@ -449,12 +450,19 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         const enableSubmitButton = Boolean(this.state.filters.projects[0]);
         const enableDeleteButton = Boolean(this.props.selectedSubscription);
 
+        let saveSubscriptionButtonText = 'Save Subscription';
+        let headerText = 'Edit Jira Subscription for ';
+        if (this.props.creatingSubscription) {
+            saveSubscriptionButtonText = 'Add Subscription';
+            headerText = 'Add Jira Subscription in ';
+        }
+
         return (
             <form
                 role='form'
             >
                 <div className='margin-bottom x3 text-center'>
-                    <h2>{'Add Jira Subscription in'} <strong>{this.props.channel.display_name}</strong></h2>
+                    <h2>{headerText}<strong>{this.props.channel.display_name}</strong></h2>
                 </div>
                 <div style={style.modalBody}>
                     {component}
@@ -482,8 +490,8 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                         disabled={!enableSubmitButton}
                         btnClass='btn-primary'
                         saving={this.state.submitting}
-                        defaultMessage='Set Subscription'
-                        savingMessage='Setting'
+                        defaultMessage={saveSubscriptionButtonText}
+                        savingMessage='Saving...'
                     />
                 </Modal.Footer>
             </form>

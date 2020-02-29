@@ -96,6 +96,8 @@ export default class AttachIssueModal extends PureComponent {
                     value={this.state.issueKey}
                 />
                 <Input
+                    addValidate={this.validator.addComponent}
+                    removeValidate={this.validator.removeComponent}
                     label='Message Attached to Jira Issue'
                     type='textarea'
                     isDisabled={true}
