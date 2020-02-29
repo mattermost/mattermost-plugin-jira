@@ -187,7 +187,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	_ = api.SendEphemeralPost(mattermostUserId, reply)
 
 	// Fetching issue details as Jira only returns the issue id and issue key at the time of
-	// issue creation. We will not have issue summery in the creation response.
+	// issue creation. We will not have issue summary in the creation response.
 	createdIssue, err := client.GetIssue(created.Key, nil)
 	if err != nil {
 		return http.StatusInternalServerError,
@@ -205,7 +205,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	_, appErr = api.CreatePost(publicReply)
 	if appErr != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to create notification post "+create.PostId)
+			errors.WithMessage(appErr, "failed to create notification post "+create.PostId)
 	}
 
 	if post != nil && len(post.FileIds) > 0 {
