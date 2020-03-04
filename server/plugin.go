@@ -245,7 +245,7 @@ func (p *Plugin) OnActivate() error {
 }
 
 func (p *Plugin) AddAutolinksForCloudInstance(jci *jiraCloudInstance) error {
-	client, err := jci.getJIRAClientForServer()
+	client, err := jci.getJIRAClientForBot()
 	if err != nil {
 		return fmt.Errorf("unable to get jira client for server: %w", err)
 	}

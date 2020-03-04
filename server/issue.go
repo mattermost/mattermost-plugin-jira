@@ -251,7 +251,7 @@ func httpWorkflowCreateIssue(ji Instance, w http.ResponseWriter, r *http.Request
 			return http.StatusBadRequest, errors.New("UserId is required for jira server instances.")
 		}
 
-		jiraClient, err := jci.getJIRAClientForServer()
+		jiraClient, err := jci.getJIRAClientForBot()
 		if err != nil {
 			return http.StatusInternalServerError, fmt.Errorf("unable to get jira client for server: %w", err)
 		}
@@ -656,7 +656,7 @@ func (p *Plugin) getIssueDataForCloudWebhook(ji Instance, issueKey string) (*jir
 		return nil, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
 	}
 
-	jiraClient, err := jci.getJIRAClientForServer()
+	jiraClient, err := jci.getJIRAClientForBot()
 	if err != nil {
 		return nil, err
 	}
