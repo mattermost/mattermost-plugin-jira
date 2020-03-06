@@ -572,12 +572,13 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 	return http.StatusOK, nil
 }
 
-func httpAPIGetStatusCategory(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpAPIGetAllStatuses(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+	// This api should be only GET method
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed, errors.New("Request " + r.Method + " is not allowed, Must be GET")
 	}
 
-	// Check if the req was made from mattermost account
+	// Check if the req was made from within mattermost account
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
 		return http.StatusUnauthorized, errors.New("not authorized")
@@ -595,8 +596,8 @@ func httpAPIGetStatusCategory(ji Instance, w http.ResponseWriter, r *http.Reques
 		return http.StatusInternalServerError, err
 	}
 
-	// Make a request to JIRA to get status categories
-	statuses, err := client.GetAllStatusCategories()
+	// Make a request to jira to get statuses via jira client
+	statuses, err := client.GetAllStatuses()
 	if err != nil {
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to GetAllStatusCategories")
 	}

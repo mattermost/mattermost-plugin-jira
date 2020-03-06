@@ -72,7 +72,7 @@ type IssueService interface {
 	UpdateAssignee(issueKey string, user *jira.User) error
 	UpdateComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
 
-	GetAllStatusCategories() ([]jira.StatusCategory, error)
+	GetAllStatuses() ([]jira.Status, error)
 }
 
 // JiraClient is the common implementation of most Jira APIs, except those that are
@@ -240,13 +240,13 @@ func (client JiraClient) UpdateComment(issueKey string, comment *jira.Comment) (
 	return updated, err
 }
 
-// GetAllStatusCategories returns all the status categories from JIRA.
-func (client JiraClient) GetAllStatusCategories() ([]jira.StatusCategory, error) {
-	statusCategories, resp, err := client.Jira.StatusCategory.GetList()
+// GetAllStatuses returns a list of all statuses associated with JIRA workflows.
+func (client JiraClient) GetAllStatuses() ([]jira.Status, error) {
+	statuses, resp, err := client.Jira.Status.GetAllStatuses()
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
 	}
-	return statusCategories, err
+	return statuses, err
 }
 
 // SearchIssues searches issues as specified by jql and options.
