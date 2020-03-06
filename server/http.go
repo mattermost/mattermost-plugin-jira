@@ -42,6 +42,7 @@ const (
 	routeIncomingWebhook           = "/webhook"
 	routeOAuth1Complete            = "/oauth1/complete.html"
 	routeOAuth1PublicKey           = "/oauth1/public_key.html" // TODO remove, debugging?
+	routeUserStart                 = "/user/start"
 	routeUserConnect               = "/user/connect"
 	routeUserDisconnect            = "/user/disconnect"
 	routeWorkflowRegister          = "/workflow/meta"
@@ -123,6 +124,8 @@ func handleHTTPRequest(p *Plugin, c *plugin.Context, w http.ResponseWriter, r *h
 	// User connect/disconnect links
 	case routeUserConnect:
 		return withInstance(p.currentInstanceStore, w, r, httpUserConnect)
+	case routeUserStart:
+		return withInstance(p.currentInstanceStore, w, r, httpUserStart)
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:
 		return httpSubscribeWebhook(p, w, r)

@@ -318,6 +318,11 @@ func MakeCreateIssueURL(ji Instance, project *jira.Project, issue *jira.Issue) s
 	q.Add("summary", issue.Fields.Summary)
 	q.Add("description", issue.Fields.Description)
 
+	// Add reporter for only server instances
+	if ji.GetType() == JIRATypeServer {
+		q.Add("reporter", issue.Fields.Reporter.Name)
+	}
+
 	// if no priority, ID field does not exist
 	if issue.Fields.Priority != nil {
 		q.Add("priority", issue.Fields.Priority.ID)

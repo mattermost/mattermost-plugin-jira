@@ -6,6 +6,7 @@ package main
 import (
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -116,4 +117,22 @@ func TestJiraLink(t *testing.T) {
 
 	jwh.Issue.Self = "http://localhost:8080/foo/bar/rest/api/2/issue/10006"
 	assert.Equal(t, "[1](http://localhost:8080/foo/bar/QWERTY)", jwh.mdJiraLink("1", "/QWERTY"))
+}
+
+func TestWebhookQuotedComment(t *testing.T) {
+	for _, value := range []string{
+		"testdata/webhook-server-issue-updated-commented-3.json",
+		"testdata/webhook-server-issue-updated-comment-edited.json",
+	} {
+		f, err := os.Open(value)
+		require.NoError(t, err)
+		defer f.Close()
+		bb, err := ioutil.ReadAll(f)
+		require.Nil(t, err)
+		wh, err := ParseWebhook(bb)
+		require.NoError(t, err)
+		w := wh.(*webhook)
+		require.NotNil(t, w)
+		assert.True(t, strings.HasPrefix(w.text, ">"))
+	}
 }
