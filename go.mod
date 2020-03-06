@@ -3,7 +3,7 @@ module github.com/mattermost/mattermost-plugin-jira
 go 1.13
 
 require (
-	github.com/andygrunwald/go-jira v1.10.0
+	github.com/andygrunwald/go-jira v1.12.0
 	github.com/circonus-labs/circonusllhist v0.1.3
 	github.com/dghubble/oauth1 v0.5.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
