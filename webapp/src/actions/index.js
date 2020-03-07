@@ -46,6 +46,28 @@ export const closeAttachCommentToIssueModal = () => {
     };
 };
 
+/**
+ * Returns list of statuses the jira project uses, list is not stored in store but returned from function
+ * @function fetchJiraProjectStatuses
+ * @param none
+ * @returns {Promise} Promise object represents list data or error
+ */
+export const fetchJiraProjectStatuses = () => {
+    return async (dispatch, getState) => {
+        const baseURL = getPluginServerRoute(getState());
+        let data = null;
+        try {
+            data = await doFetch(`${baseURL}/api/v2/get-all-statuses`, {
+                message: 'get',
+            });
+        } catch (error) {
+            return {error};
+        }
+
+        return {data};
+    };
+};
+
 export const fetchJiraIssueMetadataForProjects = (projectKeys) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());

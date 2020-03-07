@@ -20,7 +20,7 @@ import {
     generateJQLStringFromSubscriptionFilters,
 } from 'utils/jira_issue_metadata';
 
-import {ChannelSubscription, ChannelSubscriptionFilters, ReactSelectOption} from 'types/model';
+import {ChannelSubscription, ChannelSubscriptionFilters, ReactSelectOption, FilterField, IssueTypeIdentifier} from 'types/model';
 
 import ChannelSettingsFilters from './channel_settings_filters';
 import {SharedProps} from './shared_props';
@@ -60,6 +60,8 @@ export type Props = SharedProps & {
 export type State = {
     filters: ChannelSubscriptionFilters;
     fetchingIssueMetadata: boolean;
+    isFetchingProjectStatuses: boolean;
+    projectStatuses: any; //TODO change it later
     error: string | null;
     getMetaDataErr: string | null;
     submitting: boolean;
@@ -101,6 +103,9 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             submitting: false,
             filters,
             fetchingIssueMetadata,
+            isFetchingProjectStatuses: false,
+            projectStatuses: [],
+            projectStatusField : {},
             subscriptionName,
             showConfirmModal: false,
             conflictingError: null,
@@ -215,6 +220,71 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         });
     };
 
+    fetchProjectStatuses = () => {
+        const {fetchJiraProjectStatuses} = this.props;
+
+        // API call function which returns back us the list of statuses
+        fetchJiraProjectStatuses().then((response) => {
+            const state = {isFetchingProjectStatuses: false} as State;
+
+            const validResponse = response.data && Array.isArray(response.data);
+            const errorResponse = response.error || (response.data && response.data.error);
+
+            console.log("<><>",response.data);
+            if (errorResponse) {
+                // If error is returned from the response
+                state.error = 'Failed to get JIRA project statuses';
+            } else if (validResponse) {
+                //  List could be empty or non empty
+                if (response.data.length !== 0) {
+                    // JIRA api returns all the statuses in all projects irrespective of repetitive status name. so we filter it
+                    // as it doesn't matter much for JQL
+                    const filteredStatuses = response.data.filter((element, position, originalArray) => {
+                        return originalArray.findIndex((uniqueElement) => uniqueElement.name === element.name) === position;
+                    });
+
+                    //   Now sort it for cosmetic reasons
+                    const sortedFilteredStatuses = filteredStatuses.sort((statusA, statusB) => {
+                        const statusNameA = statusA.name.toUpperCase();
+                        const statusNameB = statusB.name.toUpperCase();
+
+                        if (statusNameA < statusNameB) {
+                            return -1;
+                        }
+                        if (statusNameA > statusNameB) {
+                            return 1;
+                        }
+                        return 0;
+                    });
+
+                    const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, this.state.filters.projects);
+                    const issueTypes : Array<IssueTypeIdentifier>= issueOptions.map(issueOption => ({id: issueOption.value, name: issueOption.label}))
+
+                    const values : Array<ReactSelectOption> = sortedFilteredStatuses.map(status => ({label: status.name, value: status.id}))
+
+                    // Convert it to proper format for filter fields
+                    const statusesFilterField : FilterField =  {
+                        key: "status",
+                        name: "Status",
+                        schema : {
+                            type : "array",
+                            items : "options"
+                        },
+                        values : values,
+                        userDefined: false,
+                        issueTypes: issueTypes
+                    };
+                    
+                    state.projectStatusField = statusesFilterField 
+                } else {
+                    // Corner case when user has no statuses
+                }
+            }
+
+            this.setState(state);
+        });
+    }
+
     handleProjectChange = (id, value) => {
         this.clearConflictingErrorMessage();
 
@@ -240,8 +310,19 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             this.fetchIssueMetadata(projects);
         }
 
+        let isFetchingProjectStatuses = false;
+
+        // Jira api collects all the status across all the projects in a single request
+        // So here assuming user has at least a single status in the project, if not
+        // then we will safely assume the api call was never made and make again.
+        if (this.state.projectStatuses && this.state.projectStatuses.length === 0) {
+            isFetchingProjectStatuses = true;
+            this.fetchProjectStatuses();
+        }
+
         this.setState({
             fetchingIssueMetadata,
+            isFetchingProjectStatuses,
             getMetaDataErr: null,
             filters,
         });
@@ -308,7 +389,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         const projectOptions = getProjectValues(this.props.jiraProjectMetadata);
         const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, this.state.filters.projects);
         const customFields = getCustomFieldValuesForEvents(this.props.jiraIssueMetadata, this.state.filters.projects);
-        const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
+        const filterFields = [...getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects), this.state.projectStatusField];
 
         const eventOptions = JiraEventOptions.concat(customFields);
 
@@ -324,9 +405,12 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         let component = null;
         if (this.props.channel && this.props.channelSubscriptions) {
             let innerComponent = null;
-            if (this.state.fetchingIssueMetadata) {
+
+            // If its busy with fetching issue meta data or project status, show loading component instead
+            if (this.state.fetchingIssueMetadata || this.state.isFetchingProjectStatuses) {
                 innerComponent = <Loading/>;
-            } else if (this.state.filters.projects[0] && !this.state.getMetaDataErr && this.props.jiraIssueMetadata) {
+            } else if (this.state.filters.projects[0] && !this.state.getMetaDataErr &&
+                this.props.jiraIssueMetadata && this.state.isFetchingProjectStatuses === false) {
                 innerComponent = (
                     <React.Fragment>
                         <ReactSelectSetting

@@ -602,7 +602,7 @@ func httpAPIGetAllStatuses(ji Instance, w http.ResponseWriter, r *http.Request) 
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to GetAllStatusCategories")
 	}
 
-	// Marshalling Statuses recieved from API to JSON
+	// Marshalling Statuses received from API to JSON
 	statusesBytes, err := json.Marshal(statuses)
 	if err != nil {
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal response of Jira statuses")
