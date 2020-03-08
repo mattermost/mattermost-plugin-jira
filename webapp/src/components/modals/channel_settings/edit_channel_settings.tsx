@@ -118,7 +118,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             },
             userDefined: false,
             issueTypes: [],
-        }
+        };
 
         this.state = {
             error: null,
@@ -258,7 +258,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
 
             //  List of statuses could be empty or non empty, we will populate filter field when its not empty; else leave it as it is.
             const validNonEmptyResponse = data && Array.isArray(data) && data.length !== 0;
-            
+
             // If error is returned from the response
             if (error) {
                 state.error = 'Failed to get JIRA project statuses';
@@ -416,10 +416,10 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         const customFields = getCustomFieldValuesForEvents(this.props.jiraIssueMetadata, this.state.filters.projects);
 
         let filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
-        if (this.state.projectStatusField && this.state.projectStatusField.values && this.state.projectStatusField.values.length !== 0){
+        if (this.state.projectStatusField && this.state.projectStatusField.values && this.state.projectStatusField.values.length !== 0) {
             // If user has no statuses in all jira project, then we will not show status as filter at all,
             // If there are then add it to filter field to create field for it
-            filterFields = [...filterFields, this.state.projectStatusField]
+            filterFields = [...filterFields, this.state.projectStatusField];
         }
 
         const eventOptions = JiraEventOptions.concat(customFields);
