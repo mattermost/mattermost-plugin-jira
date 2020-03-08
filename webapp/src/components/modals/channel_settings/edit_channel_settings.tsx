@@ -103,7 +103,10 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         filters.fields = filters.fields || [];
 
         let fetchingIssueMetadata = false;
+        let fetchingProjectStatuses = false;
+
         if (filters.projects.length) {
+            fetchingProjectStatuses = true;
             fetchingIssueMetadata = true;
             this.fetchIssueMetadata(filters.projects);
         }
@@ -126,7 +129,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             submitting: false,
             filters,
             fetchingIssueMetadata,
-            fetchingProjectStatuses: Boolean(props.selectedSubscription),
+            fetchingProjectStatuses,
             projectStatusField,
             subscriptionName,
             showConfirmModal: false,
