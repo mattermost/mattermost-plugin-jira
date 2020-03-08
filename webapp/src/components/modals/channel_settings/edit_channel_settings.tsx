@@ -126,7 +126,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             submitting: false,
             filters,
             fetchingIssueMetadata,
-            fetchingProjectStatuses: true,
+            fetchingProjectStatuses: Boolean(props.selectedSubscription),
             projectStatusField,
             subscriptionName,
             showConfirmModal: false,
@@ -137,8 +137,13 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        // Jira get all status api collects all the status across all the projects in a single request
-        this.fetchProjectStatuses();
+        const {selectedSubscription} = this.props;
+
+        // This is scenario when an existing subscription is being edited
+        // So we will go ahead and fetch the statuses, and not wait for project selection to trigger the call
+        if (selectedSubscription !== null) {
+            this.fetchProjectStatuses();
+        }
     }
 
     handleClose = (e) => {
@@ -337,8 +342,22 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             this.fetchIssueMetadata(projects);
         }
 
+        let fetchingProjectStatuses = false;
+
+        // Jira api collects all the status across all the projects in a single request
+        // So here assuming user has at least a single status in the project, if not
+        // then we will safely assume the api call was never made and make again.
+        const doesProjectHaveNoStatus = (this.state.projectStatusField && this.state.projectStatusField.values) ?
+            (this.state.projectStatusField.values.length === 0) : true;
+
+        if (doesProjectHaveNoStatus) {
+            fetchingProjectStatuses = true;
+            this.fetchProjectStatuses();
+        }
+
         this.setState({
             fetchingIssueMetadata,
+            fetchingProjectStatuses,
             getMetaDataErr: null,
             filters,
         });
