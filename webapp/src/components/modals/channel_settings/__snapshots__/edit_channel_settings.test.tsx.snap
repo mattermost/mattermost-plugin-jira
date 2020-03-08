@@ -4044,6 +4044,10 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
         }
         value={Array []}
       />
+      <Loading
+        position="relative"
+        style={Object {}}
+      />
     </div>
   </div>
   <ModalFooter
