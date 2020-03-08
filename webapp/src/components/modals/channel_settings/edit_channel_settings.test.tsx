@@ -81,6 +81,7 @@ describe('components/EditChannelSettings', () => {
         close: jest.fn(),
         selectedSubscription: channelSubscriptionForCloud,
         creatingSubscription: false,
+        fetchJiraProjectStatuses: jest.fn().mockResolvedValue({}),
     };
 
     test('should match snapshot', () => {
