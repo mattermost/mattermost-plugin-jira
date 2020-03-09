@@ -10,16 +10,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Label struct {
+type Result struct {
 	Value       string `json:"value"`
 	DisplayName string `json:"displayName"`
 }
 
-type LabelResult struct {
-	Results []Label `json:"results"`
+type AutoCompleteResult struct {
+	Results []Result `json:"results"`
 }
 
-func httpAPIGetLabels(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+func httpAPIGetAutoCompleteFields(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
 			errors.New("Request: " + r.Method + " is not allowed, must be GET")
@@ -40,23 +40,21 @@ func httpAPIGetLabels(ji Instance, w http.ResponseWriter, r *http.Request) (int,
 		return http.StatusInternalServerError, err
 	}
 
-	val := r.FormValue("fieldValue")
-
 	params := map[string]string{
-		"fieldName":  "labels",
-		"fieldValue": val,
+		"fieldName":  r.FormValue("fieldName"),
+		"fieldValue": r.FormValue("fieldValue"),
 	}
 
-	labels, err := client.SearchAutoCompleteFields(&LabelResult{}, params)
+	results, err := client.SearchAutoCompleteFields(&AutoCompleteResult{}, params)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	if labels == nil {
+	if results == nil {
 		return http.StatusInternalServerError, errors.New("failed to return any results")
 	}
 
-	bb, err := json.Marshal(labels)
+	bb, err := json.Marshal(results)
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to marshal response")

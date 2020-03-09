@@ -6,7 +6,7 @@ import JiraEpicSelector from 'components/jira_epic_selector';
 import {isEpicLinkField, isMultiSelectField, isLabelField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
-import JiraLabelSelector from 'components/jira_label_selector';
+import JiraAutoCompleteSelector from 'components/jira_autocomplete_selector';
 
 export type Props = {
     fields: FilterField[];
@@ -247,7 +247,8 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
             );
         } else if (isLabelField(field)) {
             valueSelector = (
-                <JiraLabelSelector
+                <JiraAutoCompleteSelector
+                    fieldName='labels'
                     required={!disableLastSelect}
                     theme={theme}
                     value={value.values}

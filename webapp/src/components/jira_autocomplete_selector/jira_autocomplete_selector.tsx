@@ -15,7 +15,8 @@ type Props = {
     required?: boolean;
     hideRequiredStar?: boolean;
     theme: object;
-    searchLabels: (params: object) => Promise<any>;
+    searchAutoCompleteFields: (params: object) => Promise<any>;
+    fieldName: string;
     onChange: (values: string[]) => void;
     value: string[];
     addValidate: (isValid: () => boolean) => void;
@@ -29,7 +30,7 @@ type State = {
     cachedSelectedOptions: ReactSelectOption[];
 };
 
-export default class JiraLabelSelector extends React.PureComponent<Props, State> {
+export default class JiraAutoCompleteSelector extends React.PureComponent<Props, State> {
     state = {
         invalid: false,
         cachedSelectedOptions: [],
@@ -57,11 +58,13 @@ export default class JiraLabelSelector extends React.PureComponent<Props, State>
         return valid;
     };
 
-    searchLabels = (inputValue: string): Promise<ReactSelectOption[]> => {
+    searchAutoCompleteFields = (inputValue: string): Promise<ReactSelectOption[]> => {
+        const {fieldName} = this.props;
         const params = {
             fieldValue: inputValue,
+            fieldName,
         };
-        return this.props.searchLabels(params).then(({data}) => {
+        return this.props.searchAutoCompleteFields(params).then(({data}) => {
             return data.results.map((label) => ({
                 value: label.value,
                 label: label.value,
@@ -72,10 +75,10 @@ export default class JiraLabelSelector extends React.PureComponent<Props, State>
         });
     };
 
-    debouncedSearchLabel = debounce(this.searchLabels, searchDebounceDelay);
+    debouncedSearch = debounce(this.searchAutoCompleteFields, searchDebounceDelay);
 
-    handleLabelSearch = (inputValue: string): Promise<ReactSelectOption[]> => {
-        return this.debouncedSearchLabel(inputValue);
+    handleSearch = (inputValue: string): Promise<ReactSelectOption[]> => {
+        return this.debouncedSearch(inputValue);
     }
 
     onChange = (options: ReactSelectOption[]): void => {
@@ -92,9 +95,9 @@ export default class JiraLabelSelector extends React.PureComponent<Props, State>
     }
 
     render = (): JSX.Element => {
-        const {value} = this.props;
+        const {value, fieldName} = this.props;
         const {cachedSelectedOptions} = this.state;
-        const preloadedLabels = value.map((v) => {
+        const preloadedFields = value.map((v) => {
             if (cachedSelectedOptions.length > 0) {
                 const alreadySelected = cachedSelectedOptions.find((option) => option.value === v);
                 if (alreadySelected) {
@@ -110,10 +113,10 @@ export default class JiraLabelSelector extends React.PureComponent<Props, State>
         const selectComponent = (
             <AsyncSelect
                 isMulti={true}
-                name={'label'}
-                value={preloadedLabels}
+                name={fieldName}
+                value={preloadedFields}
                 onChange={this.onChange}
-                loadOptions={this.handleLabelSearch}
+                loadOptions={this.handleSearch}
                 required={this.props.required}
                 menuPortalTarget={document.body}
                 menuPlacement='auto'
@@ -124,7 +127,7 @@ export default class JiraLabelSelector extends React.PureComponent<Props, State>
         return (
             <Setting
                 {...{}}
-                inputId={'label'}
+                inputId={fieldName}
             >
                 {selectComponent}
             </Setting>

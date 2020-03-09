@@ -102,9 +102,9 @@ export const searchIssues = (params) => {
     };
 };
 
-export const searchLabels = (params) => {
+export const searchAutoCompleteFields = (params) => {
     return async (dispatch, getState) => {
-        const url = getPluginServerRoute(getState()) + '/api/v2/get-search-labels';
+        const url = getPluginServerRoute(getState()) + '/api/v2/get-search-autocomplete-fields';
         return doFetchWithResponse(`${url}${buildQueryString(params)}`);
     };
 };
