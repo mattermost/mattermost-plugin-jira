@@ -52,7 +52,7 @@ func httpAPIGetLabels(ji Instance, w http.ResponseWriter, r *http.Request) (int,
 		return http.StatusInternalServerError, err
 	}
 
-	if labels != nil {
+	if labels == nil {
 		return http.StatusInternalServerError, errors.New("failed to return any results")
 	}
 
