@@ -42,7 +42,7 @@ func httpAPIGetLabels(ji Instance, w http.ResponseWriter, r *http.Request) (int,
 
 	val := r.FormValue("fieldValue")
 
-	labels, err := client.GetLabels(val, ji.GetURL())
+	labels, err := client.GetLabels(val)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

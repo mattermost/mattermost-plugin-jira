@@ -75,7 +75,7 @@ type IssueService interface {
 }
 
 type LabelService interface {
-	GetLabels(value, url string) (LabelResult, error)
+	GetLabels(value string) (LabelResult, error)
 }
 
 // JiraClient is the common implementation of most Jira APIs, except those that are
@@ -166,7 +166,7 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 	return attachments[0], nil
 }
 
-func (client JiraClient) GetLabels(value, url string) (LabelResult, error) {
+func (client JiraClient) GetLabels(value string) (LabelResult, error) {
 	labels := new(LabelResult)
 	params := map[string]string{
 		"fieldName":  "labels",
