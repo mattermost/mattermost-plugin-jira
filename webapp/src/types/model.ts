@@ -139,3 +139,9 @@ export type PluginState = {
     instanceType: JiraInstanceType;
     pluginSettings: PluginSettings;
 }
+
+export type CreateModalValue = {
+    postId: string;
+    description: string;
+    channelId: string;
+} | {};

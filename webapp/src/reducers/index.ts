@@ -6,6 +6,7 @@ import {combineReducers} from 'redux';
 import {
     GenericAction,
 } from 'mattermost-redux/types/actions';
+import {CreateModalValue} from '../types/model';
 
 import ActionTypes from 'action_types';
 
@@ -63,8 +64,7 @@ const createModalVisible = (state = false, action: GenericAction): boolean => {
     }
 };
 
-// TODO: Crosscheck types
-const createModal = (state = '', action: GenericAction): any => {
+const createModal = (state = {}, action: GenericAction): CreateModalValue => {
     switch (action.type) {
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL:
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST:
