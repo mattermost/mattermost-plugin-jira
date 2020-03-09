@@ -42,9 +42,18 @@ func httpAPIGetLabels(ji Instance, w http.ResponseWriter, r *http.Request) (int,
 
 	val := r.FormValue("fieldValue")
 
-	labels, err := client.GetLabels(val)
+	params := map[string]string{
+		"fieldName":  "labels",
+		"fieldValue": val,
+	}
+
+	labels, err := client.SearchAutoCompleteFields(&LabelResult{}, params)
 	if err != nil {
 		return http.StatusInternalServerError, err
+	}
+
+	if labels != nil {
+		return http.StatusInternalServerError, errors.New("failed to return any results")
 	}
 
 	bb, err := json.Marshal(labels)

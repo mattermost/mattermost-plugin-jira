@@ -31,7 +31,6 @@ type Client interface {
 	ProjectService
 	SearchService
 	UserService
-	LabelService
 }
 
 // RESTService is the low-level interface for invoking the upstream service.
@@ -58,6 +57,7 @@ type ProjectService interface {
 type SearchService interface {
 	SearchIssues(jql string, options *jira.SearchOptions) ([]jira.Issue, error)
 	SearchUsersAssignableToIssue(issueKey, query string, maxResults int) ([]jira.User, error)
+	SearchAutoCompleteFields(resultType interface{}, params map[string]string) (interface{}, error)
 }
 
 // IssueService is the interface for issue-related APIs.
@@ -72,10 +72,6 @@ type IssueService interface {
 	GetTransitions(issueKey string) ([]jira.Transition, error)
 	UpdateAssignee(issueKey string, user *jira.User) error
 	UpdateComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
-}
-
-type LabelService interface {
-	GetLabels(value string) (LabelResult, error)
 }
 
 // JiraClient is the common implementation of most Jira APIs, except those that are
@@ -166,21 +162,6 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 	return attachments[0], nil
 }
 
-func (client JiraClient) GetLabels(value string) (LabelResult, error) {
-	labels := new(LabelResult)
-	params := map[string]string{
-		"fieldName":  "labels",
-		"fieldValue": value,
-	}
-
-	err := client.RESTGet("2/jql/autocompletedata/suggestions", params, labels)
-	if err != nil {
-		return LabelResult{}, err
-	}
-
-	return *labels, nil
-}
-
 func (client JiraClient) GetAllProjectKeys() ([]string, error) {
 	projectlist, resp, err := client.Jira.Project.GetList()
 	if err != nil {
@@ -268,6 +249,17 @@ func (client JiraClient) SearchIssues(jql string, options *jira.SearchOptions) (
 		return nil, userFriendlyJiraError(resp, err)
 	}
 	return found, nil
+}
+
+// SearchAutoCompleteFields searches fieldValue specified in the params and returns autocomplete suggestions
+// for that fieldValue
+func (client JiraClient) SearchAutoCompleteFields(resultType interface{}, params map[string]string) (interface{}, error) {
+	err := client.RESTGet("2/jql/autocompletedata/suggestions", params, resultType)
+	if err != nil {
+		return nil, err
+	}
+
+	return resultType, nil
 }
 
 // DoTransition executes a transition on an issue.

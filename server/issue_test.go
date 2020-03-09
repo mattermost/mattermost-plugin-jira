@@ -24,7 +24,6 @@ type testClient struct {
 	ProjectService
 	SearchService
 	IssueService
-	LabelService
 }
 
 func (client testClient) GetProject(key string) (*jira.Project, error) {
