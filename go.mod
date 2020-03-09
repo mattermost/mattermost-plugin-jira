@@ -8,7 +8,6 @@ require (
 	github.com/dghubble/oauth1 v0.5.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fatih/structs v1.1.0 // indirect
-	github.com/google/go-querystring v1.0.0
 	github.com/google/uuid v1.1.1
 	github.com/mattermost/mattermost-plugin-autolink v1.1.3-0.20200203183014-8c82b7dc7fa6
 	github.com/mattermost/mattermost-plugin-workflow-client v0.0.0-20200121183617-b71061053ec5

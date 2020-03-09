@@ -167,24 +167,18 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 }
 
 func (client JiraClient) GetLabels(value, url string) (LabelResult, error) {
-	apiEndpoint := fmt.Sprintf("%s/rest/api/2/jql/autocompletedata/suggestions", url)
-	req, err := client.Jira.NewRequest("GET", apiEndpoint, nil)
+	labels := new(LabelResult)
+	params := map[string]string{
+		"fieldName":  "labels",
+		"fieldValue": value,
+	}
+
+	err := client.RESTGet("2/jql/autocompletedata/suggestions", params, labels)
 	if err != nil {
 		return LabelResult{}, err
 	}
 
-	q := req.URL.Query()
-	q.Add("fieldName", "labels")
-	q.Add("fieldValue", value)
-	req.URL.RawQuery = q.Encode()
-
-	v := new(LabelResult)
-	_, err = client.Jira.Do(req, v)
-	if err != nil {
-		return LabelResult{}, err
-	}
-
-	return *v, nil
+	return *labels, nil
 }
 
 func (client JiraClient) GetAllProjectKeys() ([]string, error) {
