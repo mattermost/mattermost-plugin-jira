@@ -242,7 +242,7 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventCreatedComment),
 		headline:    fmt.Sprintf("%s **commented** on %s", commentAuthor, jwh.mdKeySummaryLink()),
-		text:        truncate(jwh.Comment.Body, 3000),
+		text:        truncate(quoteIssueComment(jwh.Comment.Body), 3000),
 	}
 
 	appendCommentNotifications(wh, "**mentioned** you in a new comment on")
@@ -309,6 +309,10 @@ func appendCommentNotifications(wh *webhook, verb string) {
 	})
 }
 
+func quoteIssueComment(comment string) string {
+	return fmt.Sprintf("> %s", comment)
+}
+
 func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
 	if jwh.Issue.ID == "" {
 		return nil, ErrWebhookIgnored
@@ -341,7 +345,7 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) (Webhook, error) {
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventUpdatedComment),
 		headline:    fmt.Sprintf("%s **edited comment** in %s", mdUser(&jwh.Comment.UpdateAuthor), jwh.mdKeySummaryLink()),
-		text:        truncate(jwh.Comment.Body, 3000),
+		text:        truncate(quoteIssueComment(jwh.Comment.Body), 3000),
 	}
 
 	appendCommentNotifications(wh, "**mentioned** you in a comment update on")

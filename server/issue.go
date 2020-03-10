@@ -169,9 +169,12 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, errors.Errorf("Failed to create issue. %s", err.Error())
 	}
 
+	startLink := fmt.Sprintf("/plugins/%s%s", manifest.Id, routeUserStart)
+	msg := fmt.Sprintf("Created Jira issue [%s](%s/browse/%s) by [mattermost-jira-plugin](%s)", created.Key, ji.GetURL(), created.Key, startLink)
+
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
-		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.GetURL(), created.Key),
+		Message:   msg,
 		ChannelId: channelId,
 		RootId:    rootId,
 		ParentId:  rootId,
@@ -538,9 +541,12 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 		rootId = post.RootId
 	}
 
+	startLink := fmt.Sprintf("/plugins/%s%s", manifest.Id, routeUserStart)
+	msg := fmt.Sprintf("Message attached to [%s](%s/browse/%s) by [mattermost-jira-plugin](%s)", attach.IssueKey, ji.GetURL(), attach.IssueKey, startLink)
+
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
-		Message:   fmt.Sprintf("Message attached to [%v](%v/browse/%v)", attach.IssueKey, ji.GetURL(), attach.IssueKey),
+		Message:   msg,
 		ChannelId: post.ChannelId,
 		RootId:    rootId,
 		ParentId:  rootId,
