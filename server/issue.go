@@ -28,7 +28,7 @@ func makePost(userId, channelId, message string) *model.Post {
 	}
 }
 
-func respondf(plugin *Plugin, status int, e error, mmuserID, jiraBotID, channelID, message string) (int, error) {
+func respondErr(plugin *Plugin, status int, e error, mmuserID, jiraBotID, channelID, message string) (int, error) {
 	_ = plugin.API.SendEphemeralPost(mmuserID, makePost(jiraBotID, channelID, message))
 	if e != nil {
 		return status, e
@@ -48,44 +48,34 @@ func httpAPITransitionIssue(ji Instance, w http.ResponseWriter, r *http.Request)
 
 	mattermostUserId := requestData.UserId
 	if mattermostUserId == "" {
-		return respondf(plugin, http.StatusUnauthorized, nil, mattermostUserId, jiraBotID, channelID, "user not authorized")
+		return respondErr(plugin, http.StatusUnauthorized, nil, mattermostUserId, jiraBotID, channelID, "user not authorized")
 	}
 
-	var issueKey string
-	var toState string
-	var found bool
-	var ok bool
-	var x interface{}
-
-	if x, found = requestData.Context["issueKey"]; found {
-		if issueKey, ok = x.(string); !ok {
-			return respondf(plugin, http.StatusInternalServerError, nil, mattermostUserId, jiraBotID, channelID, "Issue key type is wrong")
-		}
-	} else {
-		return respondf(plugin, http.StatusInternalServerError, nil, mattermostUserId, jiraBotID, channelID, "No issue key was found in context data")
+	val := requestData.Context["issueKey"]
+	issueKey, ok := val.(string)
+	if !ok {
+		return respondErr(plugin, http.StatusInternalServerError, nil, mattermostUserId, jiraBotID, channelID, "No issue key was found in context data")
 	}
 
-	if x, found = requestData.Context["selected_option"]; found {
-		if toState, ok = x.(string); !ok {
-			return respondf(plugin, http.StatusInternalServerError, nil, mattermostUserId, jiraBotID, channelID, "Transition option type is wrong")
-		}
-	} else {
-		return respondf(plugin, http.StatusInternalServerError, nil, mattermostUserId, jiraBotID, channelID, "No transition option was found in context data")
+	val = requestData.Context["selected_option"]
+	toState, ok := val.(string)
+	if !ok {
+		return respondErr(plugin, http.StatusInternalServerError, nil, mattermostUserId, jiraBotID, channelID, "No transition option was found in context data")
 	}
 
 	jiraUser, err := plugin.userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
-		return respondf(plugin, http.StatusUnauthorized, err, mattermostUserId, jiraBotID, channelID, "Your username is not connected to Jira. Please type `jira connect`.")
+		return respondErr(plugin, http.StatusUnauthorized, err, mattermostUserId, jiraBotID, channelID, "Your username is not connected to Jira. Please type `/jira connect`.")
 	}
 
 	msg, err := plugin.transitionJiraIssue(mattermostUserId, issueKey, toState)
 	if err != nil {
-		return respondf(plugin, http.StatusInternalServerError, err, mattermostUserId, jiraBotID, channelID, "Failed to transition this issue.")
+		return respondErr(plugin, http.StatusInternalServerError, err, mattermostUserId, jiraBotID, channelID, "Failed to transition this issue.")
 	}
 
 	attachment, err := plugin.getIssueAsSlackAttachment(ji, jiraUser, issueKey)
 	if err != nil {
-		return respondf(plugin, http.StatusInternalServerError, err, mattermostUserId, jiraBotID, channelID, err.Error())
+		return respondErr(plugin, http.StatusInternalServerError, err, mattermostUserId, jiraBotID, channelID, err.Error())
 	}
 
 	post := makePost(jiraBotID, channelID, msg)
