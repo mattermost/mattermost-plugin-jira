@@ -9,7 +9,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {UserProfile} from 'mattermost-redux/types/users';
 
 import PluginId from 'plugin_id';
-import {PluginState, CreateModal, IssueMetadata, ProjectMetadata, ChannelSubscriptions, PluginSettings, JiraInstanceType} from 'types/model';
+import {PluginState, CreateModalValue, IssueMetadata, ProjectMetadata, ChannelSubscriptions, PluginSettings, JiraInstanceType} from 'types/model';
 
 const getPluginState = (state: GlobalState): PluginState => state['plugins-' + PluginId] || {};
 
@@ -42,7 +42,7 @@ export const getCurrentUserLocale = createSelector(
 
 export const isCreateModalVisible = (state: GlobalState): boolean => getPluginState(state).createModalVisible;
 
-export const getCreateModal = (state: GlobalState): CreateModal => getPluginState(state).createModal;
+export const getCreateModal = (state: GlobalState): CreateModalValue => getPluginState(state).createModal;
 
 export const isAttachCommentToIssueModalVisible = (state: GlobalState): boolean => getPluginState(state).attachCommentToIssueModalVisible;
 

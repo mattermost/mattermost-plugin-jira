@@ -115,11 +115,11 @@ export enum JiraInstanceType {
     CLOUD = 'cloud',
 }
 
-export type CreateModal = {
-    postId?: string;
-    description?: string;
-    channelId?: string;
-}
+export type CreateModalValue = {
+    postId: string;
+    description: string;
+    channelId: string;
+} | {};
 
 export type PluginSettings = {
     ui_enabled: boolean;
@@ -127,7 +127,7 @@ export type PluginSettings = {
 
 export type PluginState = {
     createModalVisible: boolean;
-    createModal: CreateModal;
+    createModal: CreateModalValue;
     attachCommentToIssueModalVisible: boolean;
     attachCommentToIssueModalForPostId: string;
     jiraIssueMetadata: IssueMetadata;
@@ -139,9 +139,3 @@ export type PluginState = {
     instanceType: JiraInstanceType;
     pluginSettings: PluginSettings;
 }
-
-export type CreateModalValue = {
-    postId: string;
-    description: string;
-    channelId: string;
-} | {};

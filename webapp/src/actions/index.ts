@@ -24,7 +24,7 @@ export const openCreateModal = (postId: string): GenericAction => {
     };
 };
 
-export const openCreateModalWithoutPost = (description: string, channelId: string) => (dispatch: DispatchFunc): DispatchFunc => dispatch({
+export const openCreateModalWithoutPost = (description: string, channelId: string) => (dispatch: DispatchFunc): Promise<ActionResult> => dispatch({
     type: ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST,
     data: {
         description,
@@ -54,7 +54,7 @@ export const closeAttachCommentToIssueModal = (): GenericAction => {
 };
 
 export const fetchJiraIssueMetadataForProjects = (projectKeys: Array<string>): ActionFunc => {
-    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): Promise<ActionResult> => {
         const baseUrl = getPluginServerRoute(getState());
         const projectKeysParam = projectKeys.join(',');
         let data = null;
@@ -75,14 +75,12 @@ export const fetchJiraIssueMetadataForProjects = (projectKeys: Array<string>): A
     };
 };
 
-export const clearIssueMetadata = (): ActionFunc => {
-    return async (dispatch: DispatchFunc): Promise<ActionResult|ActionResult[]> => {
-        dispatch({type: ActionTypes.CLEAR_JIRA_ISSUE_METADATA});
-    };
+export const clearIssueMetadata = () => {
+    return async (dispatch: DispatchFunc): Promise<ActionResult> => dispatch({type: ActionTypes.CLEAR_JIRA_ISSUE_METADATA});
 };
 
 export const fetchJiraProjectMetadata = (): ActionFunc => {
-    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): Promise<ActionResult> => {
         const baseUrl = getPluginServerRoute(getState());
         let data = null;
         try {
@@ -110,7 +108,7 @@ export const searchIssues = (params: object): ActionFunc => {
 };
 
 export const createIssue = (payload: any): ActionFunc => {
-    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): Promise<ActionResult|ActionResult[]> => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/create-issue`, {
@@ -125,7 +123,7 @@ export const createIssue = (payload: any): ActionFunc => {
     };
 };
 export const attachCommentToIssue = (payload: any): ActionFunc => {
-    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): Promise<ActionResult|ActionResult[]> => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/attach-comment-to-issue`, {
@@ -141,7 +139,7 @@ export const attachCommentToIssue = (payload: any): ActionFunc => {
 };
 
 export const createChannelSubscription = (subscription: any): ActionFunc => {
-    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): Promise<ActionResult|ActionResult[]> => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel`, {
@@ -162,7 +160,7 @@ export const createChannelSubscription = (subscription: any): ActionFunc => {
 };
 
 export const editChannelSubscription = (subscription: any): ActionFunc => {
-    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): Promise<ActionResult|ActionResult[]> => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel`, {
@@ -183,7 +181,7 @@ export const editChannelSubscription = (subscription: any): ActionFunc => {
 };
 
 export const deleteChannelSubscription = (subscription: any): ActionFunc => {
-    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): Promise<ActionResult|ActionResult[]> => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             await doFetch(`${baseUrl}/api/v2/subscriptions/channel/${subscription.id}`, {
@@ -203,7 +201,7 @@ export const deleteChannelSubscription = (subscription: any): ActionFunc => {
 };
 
 export const fetchChannelSubscriptions = (channelId: string): ActionFunc => {
-    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): Promise<ActionResult|ActionResult[]> => {
         const baseUrl = getPluginServerRoute(getState());
         let data = null;
         try {
@@ -225,7 +223,7 @@ export const fetchChannelSubscriptions = (channelId: string): ActionFunc => {
 };
 
 export function getSettings(): ActionFunc {
-    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): Promise<ActionResult|ActionResult[]> => {
         let data;
         const baseUrl = getPluginServerRoute(getState());
         try {
@@ -246,7 +244,7 @@ export function getSettings(): ActionFunc {
 }
 
 export function getConnected(): ActionFunc {
-    return async (dispatch: DispatchFunc, getState: GetStateFunc): ActionResult => {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc): Promise<ActionResult|ActionResult[]> => {
         let data;
         const baseUrl = getPluginServerRoute(getState());
         try {
@@ -272,7 +270,7 @@ export function getConnected(): ActionFunc {
 }
 
 export function handleConnectChange(store) {
-    return (msg) => {
+    return (msg): void => {
         if (!msg.data) {
             return;
         }
@@ -300,7 +298,7 @@ export const closeChannelSettings = (): GenericAction => {
 };
 
 export function handleInstanceStatusChange(store) {
-    return (msg) => {
+    return (msg): void => {
         // Update the user's UI state when the instance state changes
         getConnected()(store.dispatch, store.getState);
 
