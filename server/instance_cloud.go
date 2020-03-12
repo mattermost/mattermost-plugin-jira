@@ -154,7 +154,7 @@ func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Clie
 }
 
 // Creates a "bot" client with a JWT
-func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
+func (jci jiraCloudInstance) getJIRAClientForBot() (*jira.Client, error) {
 	conf := jci.GetPlugin().getConfig()
 	jwtConf := &ajwt.Config{
 		Key:          jci.AtlassianSecurityContext.Key,
