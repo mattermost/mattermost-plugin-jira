@@ -172,7 +172,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	// Reply with an ephemeral post with the Jira issue formatted as slack attachment.
 	startLink := fmt.Sprintf("/plugins/%s%s", manifest.Id, routeUserStart)
 	msg := fmt.Sprintf("Created Jira issue [%s](%s/browse/%s) by [mattermost-jira-plugin](%s)", created.Key, ji.GetURL(), created.Key, startLink)
-  
+
 	reply := &model.Post{
 		Message:   msg,
 		ChannelId: channelId,
