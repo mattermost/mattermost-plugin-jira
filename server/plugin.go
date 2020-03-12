@@ -290,7 +290,14 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 }
 
 func (p *Plugin) GetPluginKey() string {
-	return "mattermost_" + regexpNonAlnum.ReplaceAllString(p.GetSiteURL(), "_")
+	sURL := p.GetSiteURL()
+	key := "mattermost_" + regexpNonAlnum.ReplaceAllString(sURL, "_")
+	if len(key) <= 32 {
+		return key
+	}
+	start := len(sURL) - 30
+	end := len(sURL)
+	return "__" + sURL[start:end]
 }
 
 func (p *Plugin) GetPluginURLPath() string {
