@@ -171,18 +171,44 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, errors.Errorf("Failed to create issue. %s", err.Error())
 	}
 
+	// Reply with an ephemeral post with the Jira issue formatted as slack attachment.
 	startLink := fmt.Sprintf("/plugins/%s%s", manifest.Id, routeUserStart)
 	msg := fmt.Sprintf("Created Jira issue [%s](%s/browse/%s) by [mattermost-jira-plugin](%s)", created.Key, ji.GetURL(), created.Key, startLink)
 
-	// Reply to the post with the issue link that was created
 	reply := &model.Post{
 		Message:   msg,
 		ChannelId: channelId,
 		RootId:    rootId,
 		ParentId:  rootId,
+		UserId:    ji.GetPlugin().getConfig().botUserID,
+	}
+
+	attachment, err := ji.GetPlugin().getIssueAsSlackAttachment(ji, jiraUser, created.Key)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to create notification post "+create.PostId)
+	}
+
+	reply.AddProp("attachments", attachment)
+	_ = api.SendEphemeralPost(mattermostUserId, reply)
+
+	// Fetching issue details as Jira only returns the issue id and issue key at the time of
+	// issue creation. We will not have issue summary in the creation response.
+	createdIssue, err := client.GetIssue(created.Key, nil)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to fetch issue details "+created.Key)
+	}
+
+	// Create a public post for all the channel members
+	publicReply := &model.Post{
+		Message:   fmt.Sprintf("Created a Jira issue: %s", mdKeySummaryLink(createdIssue)),
+		ChannelId: channelId,
+		RootId:    rootId,
+		ParentId:  rootId,
 		UserId:    mattermostUserId,
 	}
-	_, appErr = api.CreatePost(reply)
+	_, appErr = api.CreatePost(publicReply)
 	if appErr != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(appErr, "failed to create notification post "+create.PostId)
