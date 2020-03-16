@@ -45,7 +45,7 @@ func withServerInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f wit
 	return withInstance(p.currentInstanceStore, w, r, func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 		jsi, ok := ji.(*jiraServerInstance)
 		if !ok {
-			return http.StatusBadRequest, errors.New("Must be a Jira Server instance, is " + ji.GetType())
+			return respondErr(w, http.StatusBadRequest, errors.New("Must be a Jira Server instance, is "+ji.GetType()))
 		}
 		return f(jsi, w, r)
 	})

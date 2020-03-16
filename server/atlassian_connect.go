@@ -15,11 +15,11 @@ const userRedirectPageKey = "user-redirect"
 
 func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be GET")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
-	return p.respondWithTemplate(w, r, "application/json", map[string]string{
+	return p.respondTemplate(w, r, "application/json", map[string]string{
 		"BaseURL":                      p.GetPluginURL(),
 		"RouteACJSON":                  routeACJSON,
 		"RouteACInstalled":             routeACInstalled,
@@ -33,72 +33,67 @@ func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) 
 
 func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be POST")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be POST"))
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to decode request")
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to decode request"))
 	}
 
 	var asc AtlassianSecurityContext
 	err = json.Unmarshal(body, &asc)
 	if err != nil {
-		return http.StatusBadRequest,
-			errors.WithMessage(err, "failed to unmarshal request")
+		return respondErr(w, http.StatusBadRequest,
+			errors.WithMessage(err, "failed to unmarshal request"))
 	}
 
 	// Only allow this operation once, a JIRA instance must already exist
 	// for asc.BaseURL but its EventType would be empty.
 	ji, err := p.instanceStore.LoadJIRAInstance(asc.BaseURL)
 	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to load instance "+asc.BaseURL)
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to load instance "+asc.BaseURL))
 	}
 	if ji == nil {
-		return http.StatusNotFound,
-			errors.Errorf("Jira instance %s must first be added to Mattermost", asc.BaseURL)
+		return respondErr(w, http.StatusNotFound,
+			errors.Errorf("Jira instance %s must first be added to Mattermost", asc.BaseURL))
 	}
 	jci, ok := ji.(*jiraCloudInstance)
 	if !ok {
-		return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
+		return respondErr(w, http.StatusBadRequest,
+			errors.New("Must be a JIRA Cloud instance, is "+ji.GetType()))
 	}
 	if jci.Installed {
-		return http.StatusForbidden,
-			errors.Errorf("Jira instance %s is already installed", asc.BaseURL)
+		return respondErr(w, http.StatusForbidden,
+			errors.Errorf("Jira instance %s is already installed", asc.BaseURL))
 	}
 
 	// Create a permanent instance record, also store it as current
 	jiraInstance := NewJIRACloudInstance(p, asc.BaseURL, true, string(body), &asc)
 	err = p.instanceStore.StoreJIRAInstance(jiraInstance)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 	err = p.StoreCurrentJIRAInstanceAndNotify(jiraInstance)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	// Setup autolink
 	p.AddAutolinksForCloudInstance(jiraInstance.(*jiraCloudInstance))
 
-	err = json.NewEncoder(w).Encode([]string{"OK"})
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to encode response")
-	}
-	return http.StatusOK, nil
+	return respondJSON(w, []string{"OK"})
 }
 
 func httpACUninstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be POST")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be POST"))
 	}
 
 	// Just send an ok to the Jira server, even though we're not doing anything.
-	_ = json.NewEncoder(w).Encode([]string{"OK"})
-	return http.StatusOK, nil
+	return respondJSON(w, []string{"OK"})
 }

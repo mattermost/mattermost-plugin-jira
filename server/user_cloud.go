@@ -21,18 +21,18 @@ const (
 
 func httpACUserRedirect(jci *jiraCloudInstance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be GET")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
 	_, _, err := jci.parseHTTPRequestJWT(r)
 	if err != nil {
-		return http.StatusBadRequest, err
+		return respondErr(w, http.StatusBadRequest, err)
 	}
 
 	submitURL := path.Join(jci.Plugin.GetPluginURLPath(), routeACUserConfirm)
 
-	return jci.Plugin.respondWithTemplate(w, r, "text/html", struct {
+	return jci.Plugin.respondTemplate(w, r, "text/html", struct {
 		SubmitURL  string
 		ArgJiraJWT string
 		ArgMMToken string
@@ -46,25 +46,25 @@ func httpACUserRedirect(jci *jiraCloudInstance, w http.ResponseWriter, r *http.R
 func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *http.Request) (int, error) {
 	jwtToken, _, err := jci.parseHTTPRequestJWT(r)
 	if err != nil {
-		return http.StatusBadRequest, err
+		return respondErr(w, http.StatusBadRequest, err)
 	}
 	claims, ok := jwtToken.Claims.(jwt.MapClaims)
 	if !ok {
-		return http.StatusBadRequest, errors.New("invalid JWT claims")
+		return respondErr(w, http.StatusBadRequest, errors.New("invalid JWT claims"))
 	}
 	accountId, ok := claims["sub"].(string)
 	if !ok {
-		return http.StatusBadRequest, errors.New("invalid JWT claim sub")
+		return respondErr(w, http.StatusBadRequest, errors.New("invalid JWT claim sub"))
 	}
 
 	jiraClient, _, err := jci.getJIRAClientForUser(JIRAUser{User: jira.User{AccountID: accountId}})
 	if err != nil {
-		return http.StatusBadRequest, errors.Errorf("could not get client for user, err: %v", err)
+		return respondErr(w, http.StatusBadRequest, errors.Errorf("could not get client for user, err: %v", err))
 	}
 
 	jUser, _, err := jiraClient.User.GetSelf()
 	if err != nil {
-		return http.StatusBadRequest, errors.Errorf("could not get user info for client, err: %v", err)
+		return respondErr(w, http.StatusBadRequest, errors.Errorf("could not get user info for client, err: %v", err))
 	}
 
 	mmToken := r.FormValue(argMMToken)
@@ -83,24 +83,24 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 	}
 	mattermostUserId := r.Header.Get("Mattermost-User-ID")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New(
-			`Mattermost failed to recognize your user account. ` +
-				`Please make sure third-party cookies are not disabled in your browser settings.`)
+		return respondErr(w, http.StatusUnauthorized,
+			errors.New(`Mattermost failed to recognize your user account. `+
+				`Please make sure third-party cookies are not disabled in your browser settings.`))
 	}
 
 	requestedUserId, secret, err := jci.Plugin.ParseAuthToken(mmToken)
 	if err != nil {
-		return http.StatusUnauthorized, err
+		return respondErr(w, http.StatusUnauthorized, err)
 	}
 
 	if mattermostUserId != requestedUserId {
-		return http.StatusUnauthorized, errors.New("not authorized, user id does not match link")
+		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized, user id does not match link"))
 	}
 
 	mmuser, appErr := jci.Plugin.API.GetUser(mattermostUserId)
 	if appErr != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to load user "+mattermostUserId)
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to load user "+mattermostUserId))
 	}
 
 	switch r.URL.Path {
@@ -108,10 +108,10 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 		storedSecret := ""
 		storedSecret, err = jci.Plugin.otsStore.LoadOneTimeSecret(mattermostUserId)
 		if err != nil {
-			return http.StatusUnauthorized, err
+			return respondErr(w, http.StatusUnauthorized, err)
 		}
 		if len(storedSecret) == 0 || storedSecret != secret {
-			return http.StatusUnauthorized, errors.New("this link has already been used")
+			return respondErr(w, http.StatusUnauthorized, errors.New("this link has already been used"))
 		}
 		err = jci.Plugin.StoreUserInfoNotify(jci, mattermostUserId, uinfo)
 
@@ -121,11 +121,11 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 	case routeACUserConfirm:
 
 	default:
-		return http.StatusInternalServerError,
-			errors.New("route " + r.URL.Path + " should be unreachable")
+		return respondErr(w, http.StatusInternalServerError,
+			errors.New("route "+r.URL.Path+" should be unreachable"))
 	}
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	mmDisplayName := mmuser.GetDisplayName(model.SHOW_FULLNAME)
@@ -137,7 +137,7 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 	}
 
 	// This set of props should work for all relevant routes/templates
-	return jci.Plugin.respondWithTemplate(w, r, "text/html", struct {
+	return jci.Plugin.respondTemplate(w, r, "text/html", struct {
 		ConnectSubmitURL      string
 		DisconnectSubmitURL   string
 		ArgJiraJWT            string

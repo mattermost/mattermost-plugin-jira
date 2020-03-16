@@ -24,8 +24,8 @@ import (
 
 func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be POST")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be POST"))
 	}
 
 	api := ji.GetPlugin().API
@@ -39,23 +39,24 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	}{}
 	err := json.NewDecoder(r.Body).Decode(&create)
 	if err != nil {
-		return http.StatusBadRequest,
-			errors.WithMessage(err, "failed to decode incoming request")
+		return respondErr(w, http.StatusBadRequest,
+			errors.WithMessage(err, "failed to decode incoming request"))
 	}
 
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
+		return respondErr(w, http.StatusUnauthorized,
+			errors.New("not authorized"))
 	}
 
 	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	client, err := ji.GetClient(jiraUser)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	var post *model.Post
@@ -65,12 +66,12 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	if create.PostId != "" {
 		post, appErr = api.GetPost(create.PostId)
 		if appErr != nil {
-			return http.StatusInternalServerError,
-				errors.WithMessage(appErr, "failed to load post "+create.PostId)
+			return respondErr(w, http.StatusInternalServerError,
+				errors.WithMessage(appErr, "failed to load post "+create.PostId))
 		}
 		if post == nil {
-			return http.StatusInternalServerError,
-				errors.New("failed to load post " + create.PostId + ": not found")
+			return respondErr(w, http.StatusInternalServerError,
+				errors.New("failed to load post "+create.PostId+": not found"))
 		}
 		permalink := getPermaLink(ji, create.PostId, create.CurrentTeam)
 
@@ -115,8 +116,8 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 
 	project, err := client.GetProject(issue.Fields.Project.Key)
 	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessagef(err,
-			"failed to get project %q", issue.Fields.Project.Key)
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessagef(err, "failed to get project %q", issue.Fields.Project.Key))
 	}
 
 	if len(create.RequiredFieldsNotCovered) > 0 {
@@ -138,10 +139,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 			UserId:    ji.GetPlugin().getConfig().botUserID,
 		}
 		_ = api.SendEphemeralPost(mattermostUserId, reply)
-
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, "{}")
-		return http.StatusOK, nil
+		return respondJSON(w, struct{}{})
 	}
 
 	created, err := client.CreateIssue(issue)
@@ -163,12 +161,11 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 				ParentId:  rootId,
 				UserId:    ji.GetPlugin().getConfig().botUserID,
 			})
-			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintf(w, "{}")
-			return http.StatusOK, nil
+			return respondJSON(w, struct{}{})
 		}
 
-		return http.StatusInternalServerError, errors.Errorf("Failed to create issue. %s", err.Error())
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to create issue. %s"))
 	}
 
 	// Reply with an ephemeral post with the Jira issue formatted as slack attachment.
@@ -185,8 +182,8 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 
 	attachment, err := ji.GetPlugin().getIssueAsSlackAttachment(ji, jiraUser, created.Key)
 	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to create notification post "+create.PostId)
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to create notification post "+create.PostId))
 	}
 
 	reply.AddProp("attachments", attachment)
@@ -196,8 +193,8 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	// issue creation. We will not have issue summary in the creation response.
 	createdIssue, err := client.GetIssue(created.Key, nil)
 	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to fetch issue details "+created.Key)
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to fetch issue details "+created.Key))
 	}
 
 	// Create a public post for all the channel members
@@ -210,8 +207,8 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	}
 	_, appErr = api.CreatePost(publicReply)
 	if appErr != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to create notification post "+create.PostId)
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to create notification post "+create.PostId))
 	}
 
 	if post != nil && len(post.FileIds) > 0 {
@@ -226,30 +223,19 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		}()
 	}
 
-	userBytes, err := json.Marshal(created)
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to marshal response, postId: "+create.PostId+", channelId: "+channelId)
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(userBytes)
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write response, postId: "+create.PostId+", channelId: "+channelId)
-	}
-	return http.StatusOK, nil
+	return respondJSON(w, created)
 }
 
 func httpWorkflowCreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be POST")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be POST"))
 	}
 
 	var activationParams workflowclient.ActionActivationParams
 	if err := json.NewDecoder(r.Body).Decode(&activationParams); err != nil {
-		return http.StatusBadRequest,
-			errors.WithMessage(err, "failed to decode incoming request")
+		return respondErr(w, http.StatusBadRequest,
+			errors.WithMessage(err, "failed to decode incoming request"))
 	}
 
 	create := &struct {
@@ -257,8 +243,8 @@ func httpWorkflowCreateIssue(ji Instance, w http.ResponseWriter, r *http.Request
 		Fields jira.IssueFields `json:"fields"`
 	}{}
 	if err := json.NewDecoder(bytes.NewReader(activationParams.Action)).Decode(&create); err != nil {
-		return http.StatusBadRequest,
-			errors.WithMessage(err, "failed to decode incoming request specific parameters")
+		return respondErr(w, http.StatusBadRequest,
+			errors.WithMessage(err, "failed to decode incoming request specific parameters"))
 	}
 
 	var client interface {
@@ -267,22 +253,24 @@ func httpWorkflowCreateIssue(ji Instance, w http.ResponseWriter, r *http.Request
 	if create.UserId != "" {
 		jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, create.UserId)
 		if err != nil {
-			return http.StatusInternalServerError, err
+			return respondErr(w, http.StatusInternalServerError, err)
 		}
 
 		client, err = ji.GetClient(jiraUser)
 		if err != nil {
-			return http.StatusInternalServerError, err
+			return respondErr(w, http.StatusInternalServerError, err)
 		}
 	} else {
 		jci, ok := ji.(*jiraCloudInstance)
 		if !ok {
-			return http.StatusBadRequest, errors.New("UserId is required for jira server instances.")
+			return respondErr(w, http.StatusBadRequest,
+				errors.New("UserId is required for jira server instances."))
 		}
 
 		jiraClient, err := jci.getJIRAClientForBot()
 		if err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("unable to get jira client for server: %w", err)
+			return respondErr(w, http.StatusInternalServerError,
+				fmt.Errorf("unable to get jira client for server: %w", err))
 		}
 
 		client = &JiraClient{Jira: jiraClient}
@@ -294,42 +282,42 @@ func httpWorkflowCreateIssue(ji Instance, w http.ResponseWriter, r *http.Request
 
 	created, err := client.CreateIssue(issue)
 	if err != nil {
-		return http.StatusInternalServerError, errors.Errorf("Failed to create issue. %s", err.Error())
+		return respondErr(w, http.StatusInternalServerError,
+			errors.Errorf("Failed to create issue. %s", err.Error()))
 	}
 
 	outputVars := make(workflowclient.Vars)
 	outputVars["TicketKey"] = created.Key
 
-	if err := json.NewEncoder(w).Encode(outputVars); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("Unable to encode output: %w", err)
-	}
-	return http.StatusOK, nil
+	return respondJSON(w, outputVars)
 }
 
 func httpAPIGetCreateIssueMetadataForProjects(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("Request: " + r.Method + " is not allowed, must be GET")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("Request: "+r.Method+" is not allowed, must be GET"))
 	}
 
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
+		return respondErr(w, http.StatusUnauthorized,
+			errors.New("not authorized"))
 	}
 
 	projectKeys := r.FormValue("project-keys")
 	if projectKeys == "" {
-		return http.StatusBadRequest, errors.New("project-keys query param is required")
+		return respondErr(w, http.StatusBadRequest,
+			errors.New("project-keys query param is required"))
 	}
 
 	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	client, err := ji.GetClient(jiraUser)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	cimd, err := client.GetCreateMeta(&jira.GetQueryOptions{
@@ -337,51 +325,38 @@ func httpAPIGetCreateIssueMetadataForProjects(ji Instance, w http.ResponseWriter
 		ProjectKeys: projectKeys,
 	})
 	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to GetCreateIssueMetadata")
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to GetCreateIssueMetadata"))
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-
-	var bb []byte
 	if len(cimd.Projects) == 0 {
-		bb = []byte(`{"error": "You do not have permission to create issues in that project. Please contact your Jira admin."}`)
-	} else {
-		bb, err = json.Marshal(cimd)
-		if err != nil {
-			return http.StatusInternalServerError,
-				errors.WithMessage(err, "failed to marshal response")
-		}
+		return respondJSON(w, map[string]interface{}{
+			"error": "You do not have permission to create issues in that project. Please contact your Jira admin.",
+		})
 	}
 
-	_, err = w.Write(bb)
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write response")
-	}
-
-	return http.StatusOK, nil
+	return respondJSON(w, cimd)
 }
 
 func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("Request: " + r.Method + " is not allowed, must be GET")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("Request: "+r.Method+" is not allowed, must be GET"))
 	}
 
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
+		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
 	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	client, err := ji.GetClient(jiraUser)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	q := r.FormValue("q")
@@ -439,106 +414,80 @@ func httpAPIGetSearchIssues(ji Instance, w http.ResponseWriter, r *http.Request)
 		result = append(result, issue)
 	}
 
-	bb, err := json.Marshal(result)
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to marshal response")
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(bb)
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write response")
-	}
-
-	return http.StatusOK, nil
+	return respondJSON(w, result)
 }
 
 func httpAPIGetJiraProjectMetadata(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("Request: " + r.Method + " is not allowed, must be GET")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("Request: "+r.Method+" is not allowed, must be GET"))
 	}
 
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
+		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
 	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	client, err := ji.GetClient(jiraUser)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	cimd, err := client.GetCreateMeta(nil)
 	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to GetCreateIssueMetadata")
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to GetCreateIssueMetadata"))
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	if len(cimd.Projects) == 0 {
+		respondJSON(w, map[string]interface{}{
+			"error": "You do not have permission to create issues in any projects. Please contact your Jira admin.",
+		})
+	}
 
 	type option = utils.ReactSelectOption
-
 	type projectMetadata struct {
 		Projects          []option            `json:"projects"`
 		IssuesPerProjects map[string][]option `json:"issues_per_project"`
 	}
 
-	var bb []byte
-	if len(cimd.Projects) == 0 {
-		bb = []byte(`{"error": "You do not have permission to create issues in any projects. Please contact your Jira admin."}`)
-	} else {
-		projects := make([]option, 0, len(cimd.Projects))
-		issues := make(map[string][]option, len(cimd.Projects))
-		for _, prj := range cimd.Projects {
-			projects = append(projects, option{
-				Value: prj.Key,
-				Label: prj.Name,
-			})
-			issueTypes := make([]option, 0, len(prj.IssueTypes))
-			for _, issue := range prj.IssueTypes {
-				if issue.Subtasks {
-					continue
-				}
-				issueTypes = append(issueTypes, option{
-					Value: issue.Id,
-					Label: issue.Name,
-				})
+	projects := make([]option, 0, len(cimd.Projects))
+	issues := make(map[string][]option, len(cimd.Projects))
+	for _, prj := range cimd.Projects {
+		projects = append(projects, option{
+			Value: prj.Key,
+			Label: prj.Name,
+		})
+		issueTypes := make([]option, 0, len(prj.IssueTypes))
+		for _, issue := range prj.IssueTypes {
+			if issue.Subtasks {
+				continue
 			}
-			issues[prj.Key] = issueTypes
+			issueTypes = append(issueTypes, option{
+				Value: issue.Id,
+				Label: issue.Name,
+			})
 		}
-		payload := projectMetadata{
-			Projects:          projects,
-			IssuesPerProjects: issues,
-		}
-
-		bb, err = json.Marshal(payload)
-		if err != nil {
-			return http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal response")
-		}
+		issues[prj.Key] = issueTypes
 	}
 
-	_, err = w.Write(bb)
-	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-	}
-
-	return http.StatusOK, nil
+	return respondJSON(w, projectMetadata{
+		Projects:          projects,
+		IssuesPerProjects: issues,
+	})
 }
 
 var reJiraIssueKey = regexp.MustCompile(`^([[:alpha:]]+)-([[:digit:]]+)$`)
 
 func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be POST")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be POST"))
 	}
 
 	api := ji.GetPlugin().API
@@ -550,40 +499,41 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 	}{}
 	err := json.NewDecoder(r.Body).Decode(&attach)
 	if err != nil {
-		return http.StatusBadRequest,
-			errors.WithMessage(err, "failed to decode incoming request")
+		return respondErr(w, http.StatusBadRequest,
+			errors.WithMessage(err, "failed to decode incoming request"))
 	}
 
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
+		return respondErr(w, http.StatusUnauthorized,
+			errors.New("not authorized"))
 	}
 
 	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	client, err := ji.GetClient(jiraUser)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	// Lets add a permalink to the post in the Jira Description
 	post, appErr := api.GetPost(attach.PostId)
 	if appErr != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to load post "+attach.PostId)
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to load post "+attach.PostId))
 	}
 	if post == nil {
-		return http.StatusInternalServerError,
-			errors.New("failed to load post " + attach.PostId + ": not found")
+		return respondErr(w, http.StatusInternalServerError,
+			errors.New("failed to load post "+attach.PostId+": not found"))
 	}
 
 	commentUser, appErr := api.GetUser(post.UserId)
 	if appErr != nil {
-		return http.StatusInternalServerError,
-			errors.New("failed to load post.UserID " + post.UserId + ": not found")
+		return respondErr(w, http.StatusInternalServerError,
+			errors.New("failed to load post.UserID "+post.UserId+": not found"))
 	}
 
 	permalink := getPermaLink(ji, attach.PostId, attach.CurrentTeam)
@@ -597,13 +547,13 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 	commentAdded, err := client.AddComment(attach.IssueKey, &jiraComment)
 	if err != nil {
 		if strings.Contains(err.Error(), "you do not have the permission to comment on this issue") {
-			return http.StatusNotFound,
-				errors.New("You do not have permission to create a comment in the selected Jira issue. Please choose another issue or contact your Jira admin.")
+			return respondErr(w, http.StatusNotFound,
+				errors.New("You do not have permission to create a comment in the selected Jira issue. Please choose another issue or contact your Jira admin."))
 		}
 
 		// The error was not a permissions error; it was unanticipated. Return it to the client.
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to attach the comment, postId: "+attach.PostId)
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to attach the comment, postId: "+attach.PostId))
 	}
 
 	go func() {
@@ -648,22 +598,11 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 	}
 	_, appErr = api.CreatePost(reply)
 	if appErr != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to create notification post "+attach.PostId)
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to create notification post "+attach.PostId))
 	}
 
-	userBytes, err := json.Marshal(commentAdded)
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to marshal response "+attach.PostId)
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(userBytes)
-	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write response "+attach.PostId)
-	}
-	return http.StatusOK, nil
+	return respondJSON(w, commentAdded)
 }
 
 func notifyOnFailedAttachment(ji Instance, mattermostUserId, issueKey string, err error, format string, args ...interface{}) {
