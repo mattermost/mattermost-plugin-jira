@@ -79,6 +79,13 @@
         "type": "text",
         "help_text": "Additional Help Text to be shown to the user along with the output of `/jira help` command",
         "default": ""
+      },
+      {
+        "key": "HideDecriptionComment",
+        "display_name": "Hide issue descriptions and comments",
+        "type": "bool",
+        "help_text": "Hide detailed issue descriptions and comments from Subscription and Webhook messages",
+        "default": false
       }
     ],
     "footer": "Use this webhook URL format to [configure the Jira integration.](https://about.mattermost.com/default-jira-plugin)  `https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET`"
