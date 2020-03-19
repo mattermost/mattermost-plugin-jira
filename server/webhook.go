@@ -59,7 +59,7 @@ func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model
 	}
 
 	text := ""
-	if !p.getConfig().HideDecriptionComment && wh.text != "" {
+	if wh.text != "" && !p.getConfig().HideDecriptionComment {
 		text = wh.text
 		// Get instance for replacing accountids in text. If no instance is available, just skip it.
 		ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
