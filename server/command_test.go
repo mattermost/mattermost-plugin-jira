@@ -2,14 +2,15 @@ package main
 
 import (
 	"errors"
+	"strings"
+	"testing"
+
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"testing"
 )
 
 const (
@@ -34,10 +35,15 @@ func (store mockUserStoreKV) LoadJIRAUser(ji Instance, mattermostUserId string) 
 }
 
 func getMockUserStoreKV() mockUserStoreKV {
+	// Test JIRAUser
+	juser := JIRAUser{}
+	juser.AccountID = "test"
+
 	return mockUserStoreKV{
 		kv: map[string]JIRAUser{
 			mockUserIDWithNotifications:    {Settings: &UserSettings{Notifications: true}},
 			mockUserIDWithoutNotifications: {Settings: &UserSettings{Notifications: false}},
+			"connected_user":               juser,
 		},
 	}
 }

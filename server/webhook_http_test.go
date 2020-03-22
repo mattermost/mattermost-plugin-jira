@@ -38,6 +38,7 @@ type testWebhookWrapper struct {
 func (wh testWebhookWrapper) Events() StringSet {
 	return wh.Webhook.Events()
 }
+
 func (wh *testWebhookWrapper) PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error) {
 	post, status, err := wh.Webhook.PostToChannel(p, channelId, fromUserId)
 	if post != nil {
@@ -308,14 +309,14 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:                 testWebhookRequest("webhook-cloud-comment-created.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **commented** on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
-			ExpectedText:            "Added a comment",
+			ExpectedText:            "> Added a comment",
 			CurrentInstance:         true,
 		},
 		"CLOUD comment updated": {
 			Request:                 testWebhookRequest("webhook-cloud-comment-updated.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **edited comment** in story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
-			ExpectedText:            "Added a comment, then edited it",
+			ExpectedText:            "> Added a comment, then edited it",
 			CurrentInstance:         true,
 		},
 		"CLOUD comment deleted": {
@@ -327,14 +328,14 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-1.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Lev Brouk **commented** on story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
-			ExpectedText:            "unik",
+			ExpectedText:            "> unik",
 			CurrentInstance:         true,
 		},
 		"SERVER (old version) issue commented (no issue_event_type_name)": {
 			Request:                 testWebhookRequest("webhook-server-old-issue-updated-no-event-type-commented.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Lev Brouk **commented** on story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
-			ExpectedText:            "unik",
+			ExpectedText:            "> unik",
 			CurrentInstance:         true,
 		},
 		"SERVER issue comment deleted": {
@@ -353,21 +354,21 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:                 testWebhookRequest("webhook-server-issue-updated-comment-edited.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Lev Brouk **edited comment** in story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
-			ExpectedText:            "and higher eeven higher",
+			ExpectedText:            "> and higher eeven higher",
 			CurrentInstance:         true,
 		},
 		"SERVER (old version) issue comment edited (no issue_event_type_name)": {
 			Request:                 testWebhookRequest("webhook-server-old-issue-updated-no-event-type-comment-edited.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Lev Brouk **edited comment** in story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
-			ExpectedText:            "and higher eeven higher",
+			ExpectedText:            "> and higher eeven higher",
 			CurrentInstance:         true,
 		},
 		"SERVER issue commented notify": {
 			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-2.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **commented** on improvement [PRJA-42: test for notifications](http://test-server.azure.com:8080/browse/PRJA-42)",
-			ExpectedText:            "This is a test comment. We should act on it right away.",
+			ExpectedText:            "> This is a test comment. We should act on it right away.",
 			CurrentInstance:         true,
 		},
 		"SERVER: ignored comment created": {
@@ -543,14 +544,14 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:                 testWebhookRequest("webhook-cloud-comment-created.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **commented** on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
-			ExpectedText:            "Added a comment",
+			ExpectedText:            "> Added a comment",
 			CurrentInstance:         false,
 		},
 		"CLOUD comment updated - no Instance": {
 			Request:                 testWebhookRequest("webhook-cloud-comment-updated.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **edited comment** in story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
-			ExpectedText:            "Added a comment, then edited it",
+			ExpectedText:            "> Added a comment, then edited it",
 			CurrentInstance:         false,
 		},
 		"CLOUD comment deleted - no Instance": {
@@ -562,7 +563,7 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-1.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Lev Brouk **commented** on story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
-			ExpectedText:            "unik",
+			ExpectedText:            "> unik",
 			CurrentInstance:         false,
 		},
 		"SERVER issue comment deleted - no Instance": {
@@ -575,14 +576,14 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:                 testWebhookRequest("webhook-server-issue-updated-comment-edited.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Lev Brouk **edited comment** in story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
-			ExpectedText:            "and higher eeven higher",
+			ExpectedText:            "> and higher eeven higher",
 			CurrentInstance:         false,
 		},
 		"SERVER issue commented notify - no Instance": {
 			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-2.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **commented** on improvement [PRJA-42: test for notifications](http://test-server.azure.com:8080/browse/PRJA-42)",
-			ExpectedText:            "This is a test comment. We should act on it right away.",
+			ExpectedText:            "> This is a test comment. We should act on it right away.",
 			CurrentInstance:         false,
 		},
 		"SERVER: ignored comment created - no Instance": {

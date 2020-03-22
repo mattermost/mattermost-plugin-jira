@@ -35,6 +35,7 @@ const (
 	// Move these two to the plugin settings if admins need to adjust them.
 	WebhookMaxProcsPerServer = 20
 	WebhookBufferSize        = 10000
+	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
 )
 
 var BuildHash = ""
@@ -245,7 +246,7 @@ func (p *Plugin) OnActivate() error {
 }
 
 func (p *Plugin) AddAutolinksForCloudInstance(jci *jiraCloudInstance) error {
-	client, err := jci.getJIRAClientForServer()
+	client, err := jci.getJIRAClientForBot()
 	if err != nil {
 		return fmt.Errorf("unable to get jira client for server: %w", err)
 	}
@@ -289,7 +290,14 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 }
 
 func (p *Plugin) GetPluginKey() string {
-	return "mattermost_" + regexpNonAlnum.ReplaceAllString(p.GetSiteURL(), "_")
+	sURL := p.GetSiteURL()
+	key := "mattermost_" + regexpNonAlnum.ReplaceAllString(sURL, "_")
+	if len(key) <= 32 {
+		return key
+	}
+	start := len(sURL) - 30
+	end := len(sURL)
+	return "__" + sURL[start:end]
 }
 
 func (p *Plugin) GetPluginURLPath() string {
