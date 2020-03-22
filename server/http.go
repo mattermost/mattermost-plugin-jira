@@ -41,10 +41,12 @@ const (
 	routeIncomingWebhook           = "/webhook"
 	routeOAuth1Complete            = "/oauth1/complete.html"
 	routeOAuth1PublicKey           = "/oauth1/public_key.html" // TODO remove, debugging?
+	routeUserStart                 = "/user/start"
 	routeUserConnect               = "/user/connect"
 	routeUserDisconnect            = "/user/disconnect"
 	routeWorkflowRegister          = "/workflow/meta"
 	routeWorkflowTriggerSetup      = "/workflow/trigger_setup"
+	routeWorkflowCreateIssue       = "/workflow/create_issue"
 )
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
@@ -120,6 +122,8 @@ func handleHTTPRequest(p *Plugin, c *plugin.Context, w http.ResponseWriter, r *h
 	// User connect/disconnect links
 	case routeUserConnect:
 		return withInstance(p.currentInstanceStore, w, r, httpUserConnect)
+	case routeUserStart:
+		return withInstance(p.currentInstanceStore, w, r, httpUserStart)
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:
 		return httpSubscribeWebhook(p, w, r)
@@ -140,6 +144,12 @@ func handleHTTPRequest(p *Plugin, c *plugin.Context, w http.ResponseWriter, r *h
 		{
 			if c.SourcePluginId != "" {
 				return httpWorkflowTriggerSetup(p, w, r)
+			}
+		}
+	case routeWorkflowCreateIssue:
+		{
+			if c.SourcePluginId != "" {
+				return withInstance(p.currentInstanceStore, w, r, httpWorkflowCreateIssue)
 			}
 		}
 	}
@@ -193,6 +203,15 @@ func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 					},
 				},
 				TriggerSetupURL: "/jira" + routeWorkflowTriggerSetup,
+			},
+		},
+		Actions: []workflowclient.ActionParams{
+			{
+				TypeName:    "create",
+				DisplayName: "Jira Create",
+				Fields:      []workflowclient.Field{},
+				VarInfos:    []workflowclient.VarInfo{},
+				URL:         "/jira" + routeWorkflowCreateIssue,
 			},
 		},
 	}

@@ -34,7 +34,7 @@ func (jti jiraTestInstance) GetManageAppsURL() string {
 	return fmt.Sprintf("%s/apps/manage", mockCurrentInstanceURL)
 }
 func (jti jiraTestInstance) GetPlugin() *Plugin {
-	return &Plugin{userStore: mockUserStore{}}
+	return jti.Plugin
 }
 func (jti jiraTestInstance) GetMattermostKey() string {
 	return "jiraTestInstanceMattermostKey"

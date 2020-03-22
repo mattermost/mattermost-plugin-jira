@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-workflow-client/workflowclient"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -169,15 +171,44 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, errors.Errorf("Failed to create issue. %s", err.Error())
 	}
 
-	// Reply to the post with the issue link that was created
+	// Reply with an ephemeral post with the Jira issue formatted as slack attachment.
+	startLink := fmt.Sprintf("/plugins/%s%s", manifest.Id, routeUserStart)
+	msg := fmt.Sprintf("Created Jira issue [%s](%s/browse/%s) by [mattermost-jira-plugin](%s)", created.Key, ji.GetURL(), created.Key, startLink)
+
 	reply := &model.Post{
-		Message:   fmt.Sprintf("Created a Jira issue %v/browse/%v", ji.GetURL(), created.Key),
+		Message:   msg,
+		ChannelId: channelId,
+		RootId:    rootId,
+		ParentId:  rootId,
+		UserId:    ji.GetPlugin().getConfig().botUserID,
+	}
+
+	attachment, err := ji.GetPlugin().getIssueAsSlackAttachment(ji, jiraUser, created.Key)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to create notification post "+create.PostId)
+	}
+
+	reply.AddProp("attachments", attachment)
+	_ = api.SendEphemeralPost(mattermostUserId, reply)
+
+	// Fetching issue details as Jira only returns the issue id and issue key at the time of
+	// issue creation. We will not have issue summary in the creation response.
+	createdIssue, err := client.GetIssue(created.Key, nil)
+	if err != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to fetch issue details "+created.Key)
+	}
+
+	// Create a public post for all the channel members
+	publicReply := &model.Post{
+		Message:   fmt.Sprintf("Created a Jira issue: %s", mdKeySummaryLink(createdIssue)),
 		ChannelId: channelId,
 		RootId:    rootId,
 		ParentId:  rootId,
 		UserId:    mattermostUserId,
 	}
-	_, appErr = api.CreatePost(reply)
+	_, appErr = api.CreatePost(publicReply)
 	if appErr != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(appErr, "failed to create notification post "+create.PostId)
@@ -205,6 +236,72 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	if err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to write response, postId: "+create.PostId+", channelId: "+channelId)
+	}
+	return http.StatusOK, nil
+}
+
+func httpWorkflowCreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodPost {
+		return http.StatusMethodNotAllowed,
+			errors.New("method " + r.Method + " is not allowed, must be POST")
+	}
+
+	var activationParams workflowclient.ActionActivationParams
+	if err := json.NewDecoder(r.Body).Decode(&activationParams); err != nil {
+		return http.StatusBadRequest,
+			errors.WithMessage(err, "failed to decode incoming request")
+	}
+
+	create := &struct {
+		UserId string           `json:"user_id"`
+		Fields jira.IssueFields `json:"fields"`
+	}{}
+	if err := json.NewDecoder(bytes.NewReader(activationParams.Action)).Decode(&create); err != nil {
+		return http.StatusBadRequest,
+			errors.WithMessage(err, "failed to decode incoming request specific parameters")
+	}
+
+	var client interface {
+		CreateIssue(issue *jira.Issue) (*jira.Issue, error)
+	}
+	if create.UserId != "" {
+		jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, create.UserId)
+		if err != nil {
+			return http.StatusInternalServerError, err
+		}
+
+		client, err = ji.GetClient(jiraUser)
+		if err != nil {
+			return http.StatusInternalServerError, err
+		}
+	} else {
+		jci, ok := ji.(*jiraCloudInstance)
+		if !ok {
+			return http.StatusBadRequest, errors.New("UserId is required for jira server instances.")
+		}
+
+		jiraClient, err := jci.getJIRAClientForBot()
+		if err != nil {
+			return http.StatusInternalServerError, fmt.Errorf("unable to get jira client for server: %w", err)
+		}
+
+		client = &JiraClient{Jira: jiraClient}
+	}
+
+	issue := &jira.Issue{
+		Fields: &create.Fields,
+	}
+
+	created, err := client.CreateIssue(issue)
+	if err != nil {
+		return http.StatusInternalServerError, errors.Errorf("Failed to create issue. %s", err.Error())
+	}
+
+	outputVars := make(workflowclient.Vars)
+	outputVars["TicketKey"] = created.Key
+
+	if err := json.NewEncoder(w).Encode(outputVars); err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("Unable to encode output: %w", err)
 	}
 	return http.StatusOK, nil
 }
@@ -538,9 +635,12 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 		rootId = post.RootId
 	}
 
+	startLink := fmt.Sprintf("/plugins/%s%s", manifest.Id, routeUserStart)
+	msg := fmt.Sprintf("Message attached to [%s](%s/browse/%s) by [mattermost-jira-plugin](%s)", attach.IssueKey, ji.GetURL(), attach.IssueKey, startLink)
+
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
-		Message:   fmt.Sprintf("Message attached to [%v](%v/browse/%v)", attach.IssueKey, ji.GetURL(), attach.IssueKey),
+		Message:   msg,
 		ChannelId: post.ChannelId,
 		RootId:    rootId,
 		ParentId:  rootId,
@@ -588,7 +688,7 @@ func (p *Plugin) getIssueDataForCloudWebhook(ji Instance, issueKey string) (*jir
 		return nil, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
 	}
 
-	jiraClient, err := jci.getJIRAClientForServer()
+	jiraClient, err := jci.getJIRAClientForBot()
 	if err != nil {
 		return nil, err
 	}

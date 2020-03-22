@@ -13,3 +13,6 @@ vendor
 
 # Intellij
 .idea/
+
+#VS CODE
+.vscode/

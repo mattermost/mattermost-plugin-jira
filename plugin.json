@@ -81,6 +81,6 @@
         "default": ""
       }
     ],
-    "footer": "Use this webhook URL format to [configure the Jira integration.](https://about.mattermost.com/default-jira-plugin)  `https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET`"
+    "footer": "Use this webhook URL format to [configure the Jira integration.](https://github.com/mattermost/mattermost-plugin-jira/blob/master/readme.md)  `https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET`"
   }
 }

@@ -35,10 +35,15 @@ func (store mockUserStoreKV) LoadJIRAUser(ji Instance, mattermostUserId string) 
 }
 
 func getMockUserStoreKV() mockUserStoreKV {
+	// Test JIRAUser
+	juser := JIRAUser{}
+	juser.AccountID = "test"
+
 	return mockUserStoreKV{
 		kv: map[string]JIRAUser{
 			mockUserIDWithNotifications:    {Settings: &UserSettings{Notifications: true}},
 			mockUserIDWithoutNotifications: {Settings: &UserSettings{Notifications: false}},
+			"connected_user":               juser,
 		},
 	}
 }
