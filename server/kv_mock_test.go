@@ -30,6 +30,9 @@ func keyWithMockInstance(key string) string {
 func (jti jiraTestInstance) GetURL() string {
 	return mockCurrentInstanceURL
 }
+func (jti jiraTestInstance) GetManageAppsURL() string {
+	return fmt.Sprintf("%s/apps/manage", mockCurrentInstanceURL)
+}
 func (jti jiraTestInstance) GetPlugin() *Plugin {
 	return jti.Plugin
 }

@@ -26,6 +26,7 @@ type Instance interface {
 	GetType() string
 	GetURL() string
 	GetUserConnectURL(mattermostUserId string) (string, error)
+	GetManageAppsURL() string
 	Init(p *Plugin)
 }
 
