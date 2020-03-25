@@ -67,6 +67,9 @@ type externalConfig struct {
 
 	// Additional Help Text to be shown in the output of '/jira help' command
 	JiraAdminAdditionalHelpText string
+
+	// Hide issue descriptions and comments in Webhook and Subscription messages
+	HideDecriptionComment bool
 }
 
 const currentInstanceTTL = 1 * time.Second

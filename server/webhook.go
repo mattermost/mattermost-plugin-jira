@@ -56,25 +56,26 @@ func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model
 	post := &model.Post{
 		ChannelId: channelId,
 		UserId:    fromUserId,
-		// Props: map[string]interface{}{
-		// 	"from_webhook":  "true",
-		// 	"use_user_icon": "true",
-		// },
 	}
-	if wh.text != "" || len(wh.fields) != 0 {
+
+	text := ""
+	if wh.text != "" && !p.getConfig().HideDecriptionComment {
+		text = wh.text
 		// Get instance for replacing accountids in text. If no instance is available, just skip it.
 		ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 		if err == nil {
-			wh.text = replaceJiraAccountIds(ji, wh.text)
+			text = replaceJiraAccountIds(ji, text)
 		}
+	}
 
+	if text != "" || len(wh.fields) != 0 {
 		model.ParseSlackAttachment(post, []*model.SlackAttachment{
 			{
 				// TODO is this supposed to be themed?
 				Color:    "#95b7d0",
 				Fallback: wh.headline,
 				Pretext:  wh.headline,
-				Text:     wh.text,
+				Text:     text,
 				Fields:   wh.fields,
 			},
 		})

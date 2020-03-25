@@ -81,11 +81,14 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 			Notifications: true,
 		},
 	}
+
 	mattermostUserId := r.Header.Get("Mattermost-User-ID")
 	if mattermostUserId == "" {
-		return respondErr(w, http.StatusUnauthorized,
-			errors.New(`Mattermost failed to recognize your user account. `+
-				`Please make sure third-party cookies are not disabled in your browser settings.`))
+		siteURL := jci.Plugin.GetSiteURL()
+		return respondErr(w, http.StatusUnauthorized, errors.New(
+			`Mattermost failed to recognize your user account. `+
+				`Please make sure third-party cookies are not disabled in your browser settings. `+
+				`Make sure you are signed into Mattermost on `+siteURL+`.`))
 	}
 
 	requestedUserId, secret, err := jci.Plugin.ParseAuthToken(mmToken)

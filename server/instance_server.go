@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/andygrunwald/go-jira"
@@ -37,6 +38,10 @@ func NewJIRAServerInstance(p *Plugin, jiraURL string) Instance {
 
 func (jsi jiraServerInstance) GetURL() string {
 	return jsi.JIRAServerURL
+}
+
+func (jsi jiraServerInstance) GetManageAppsURL() string {
+	return fmt.Sprintf("%s/plugins/servlet/applinks/listApplicationLinks", jsi.GetURL())
 }
 
 type withServerInstanceFunc func(jsi *jiraServerInstance, w http.ResponseWriter, r *http.Request) (int, error)
