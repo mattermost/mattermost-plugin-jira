@@ -2,9 +2,13 @@ package main
 
 import (
 	"fmt"
+	"net/http/httptest"
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
+	"github.com/mattermost/mattermost-server/v5/plugin/plugintest/mock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -103,4 +107,48 @@ func TestTransitionJiraIssue(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRouteIssueTransition(t *testing.T) {
+	api := &plugintest.API{}
+
+	api.On("LogError",
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string")).Return(nil)
+
+	api.On("LogDebug",
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string"),
+		mock.AnythingOfTypeArgument("string")).Return(nil)
+
+	p := Plugin{}
+	p.SetAPI(api)
+
+	p.userStore = getMockUserStoreKV()
+	p.currentInstanceStore = mockCurrentInstanceStore{&p}
+
+	request := httptest.NewRequest("POST", routeIssueTransition, nil)
+	request.Header.Set("Mattermost-User-Id", "connected_user")
+	w := httptest.NewRecorder()
+	p.ServeHTTP(&plugin.Context{}, w, request)
+	assert.Equal(t, 400, w.Result().StatusCode)
 }

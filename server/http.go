@@ -30,6 +30,7 @@ const (
 	routeAPISubscriptionsChannel   = "/api/v2/subscriptions/channel"
 	routeAPISettingsInfo           = "/api/v2/settingsinfo"
 	routeAPIStats                  = "/api/v2/stats"
+	routeIssueTransition           = "/api/v2/transition"
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"
 	routeACUninstalled             = "/ac/uninstalled"
@@ -80,6 +81,8 @@ func handleHTTPRequest(p *Plugin, c *plugin.Context, w http.ResponseWriter, r *h
 		return withInstance(p.currentInstanceStore, w, r, httpAPIGetSearchIssues)
 	case routeAPIAttachCommentToIssue:
 		return withInstance(p.currentInstanceStore, w, r, httpAPIAttachCommentToIssue)
+	case routeIssueTransition:
+		return withInstance(p.currentInstanceStore, w, r, httpAPITransitionIssue)
 
 	// User APIs
 	case routeAPIUserInfo:

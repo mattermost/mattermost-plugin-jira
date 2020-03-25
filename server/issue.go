@@ -22,6 +22,71 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
+func makePost(userId, channelId, message string) *model.Post {
+	return &model.Post{
+		UserId:    userId,
+		ChannelId: channelId,
+		Message:   message,
+	}
+}
+
+func respondErr(plugin *Plugin, status int, e error, mmuserID, jiraBotID, channelID, message string) (int, error) {
+	_ = plugin.API.SendEphemeralPost(mmuserID, makePost(jiraBotID, channelID, message))
+	if e != nil {
+		return status, e
+	}
+	return status, errors.New(message)
+}
+
+func httpAPITransitionIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
+	if requestData == nil {
+		return http.StatusBadRequest, errors.New("Missing request data")
+	}
+
+	plugin := ji.GetPlugin()
+	jiraBotID := plugin.getUserID()
+	channelID := requestData.ChannelId
+
+	mattermostUserId := requestData.UserId
+	if mattermostUserId == "" {
+		return respondErr(plugin, http.StatusUnauthorized, nil, mattermostUserId, jiraBotID, channelID, "user not authorized")
+	}
+
+	val := requestData.Context["issueKey"]
+	issueKey, ok := val.(string)
+	if !ok {
+		return respondErr(plugin, http.StatusInternalServerError, nil, mattermostUserId, jiraBotID, channelID, "No issue key was found in context data")
+	}
+
+	val = requestData.Context["selected_option"]
+	toState, ok := val.(string)
+	if !ok {
+		return respondErr(plugin, http.StatusInternalServerError, nil, mattermostUserId, jiraBotID, channelID, "No transition option was found in context data")
+	}
+
+	jiraUser, err := plugin.userStore.LoadJIRAUser(ji, mattermostUserId)
+	if err != nil {
+		return respondErr(plugin, http.StatusUnauthorized, err, mattermostUserId, jiraBotID, channelID, "Your username is not connected to Jira. Please type `/jira connect`.")
+	}
+
+	msg, err := plugin.transitionJiraIssue(mattermostUserId, issueKey, toState)
+	if err != nil {
+		return respondErr(plugin, http.StatusInternalServerError, err, mattermostUserId, jiraBotID, channelID, "Failed to transition this issue.")
+	}
+
+	attachment, err := plugin.getIssueAsSlackAttachment(ji, jiraUser, issueKey)
+	if err != nil {
+		return respondErr(plugin, http.StatusInternalServerError, err, mattermostUserId, jiraBotID, channelID, err.Error())
+	}
+
+	post := makePost(jiraBotID, channelID, msg)
+	post.AddProp("attachments", attachment)
+	_ = plugin.API.SendEphemeralPost(mattermostUserId, post)
+
+	return http.StatusOK, nil
+}
+
 func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
 		return http.StatusMethodNotAllowed,
@@ -812,7 +877,7 @@ func (p *Plugin) getIssueAsSlackAttachment(ji Instance, jiraUser JIRAUser, issue
 		}
 	}
 
-	return parseIssue(issue), nil
+	return parseIssue(client, issue)
 }
 
 func (p *Plugin) unassignJiraIssue(mmUserId, issueKey string) (string, error) {
