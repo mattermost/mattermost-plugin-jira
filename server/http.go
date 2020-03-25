@@ -219,7 +219,7 @@ func httpWorkflowTriggerSetup(p *Plugin, w http.ResponseWriter, r *http.Request)
 
 	if params.BaseTrigger.BaseType != "jira_event" {
 		return respondErr(w, http.StatusBadRequest,
-			errors.New("Unsupported trigger type."))
+			errors.New("Unsupported trigger type"))
 	}
 
 	var trigger WorkflowTrigger

@@ -165,7 +165,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		}
 
 		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to create issue. %s"))
+			errors.WithMessage(err, "failed to create issue"))
 	}
 
 	// Reply with an ephemeral post with the Jira issue formatted as slack attachment.
