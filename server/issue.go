@@ -572,8 +572,7 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 	return http.StatusOK, nil
 }
 
-func httpAPIGetAllStatuses(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
-	// This api should be only GET method
+func httpAPIGetStatuses(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed, errors.New("Request " + r.Method + " is not allowed, Must be GET")
 	}
@@ -597,21 +596,18 @@ func httpAPIGetAllStatuses(ji Instance, w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Make a request to jira to get statuses via jira client
-	statuses, err := client.GetAllStatuses()
+	statuses, err := client.GetStatuses()
 	if err != nil {
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to GetAllStatusCategories")
 	}
 
-	// Marshalling Statuses received from API to JSON
 	statusesBytes, err := json.Marshal(statuses)
 	if err != nil {
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal response of Jira statuses")
 	}
 
-	// Prepare Header to send to Plugin WebClient
 	w.Header().Set("Content-Type", "application/json")
 
-	// Write to Status JSON to HTTP reply
 	_, err = w.Write(statusesBytes)
 	if err != nil {
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response of Jira statuses")

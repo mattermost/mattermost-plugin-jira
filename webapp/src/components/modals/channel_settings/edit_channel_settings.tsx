@@ -303,7 +303,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                 const issueTypes: Array<IssueTypeIdentifier> = issueOptions.map((issueOption) => ({id: issueOption.value, name: issueOption.label}));
 
                 // Convert the array of statuses we filtered and sorted to match format of React Select component
-                const values: Array<ReactSelectOption> = sortedFilteredStatuses.map((status) => ({label: status.name, value: status.id}));
+                const values: Array<ReactSelectOption> = sortedFilteredStatuses.map((status) => ({label: status.name, value: status.name}));
 
                 // Combine it to status filter field
                 const projectStatusField: FilterField = Object.assign(this.state.projectStatusField, {
@@ -380,7 +380,9 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             return;
         }
 
-        const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
+        let filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
+        filterFields = [...filterFields, this.state.projectStatusField];
+
         const configuredFields = this.state.filters.fields.concat([]);
         for (const v of this.state.filters.fields) {
             if (!filterFields.find((f) => f.key === v.key)) {
@@ -408,6 +410,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                     this.setState({error: edited.error.message, submitting: false});
                     return;
                 }
+
                 this.handleClose(e);
             });
         } else {
@@ -416,6 +419,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                     this.setState({error: created.error.message, submitting: false});
                     return;
                 }
+
                 this.handleClose(e);
             });
         }
