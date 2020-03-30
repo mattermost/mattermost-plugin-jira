@@ -601,12 +601,11 @@ func httpAPIGetStatuses(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to GetAllStatusCategories")
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	statusesBytes, err := json.Marshal(statuses)
 	if err != nil {
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal response of Jira statuses")
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 
 	_, err = w.Write(statusesBytes)
 	if err != nil {
