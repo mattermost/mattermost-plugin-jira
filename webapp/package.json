@@ -16,7 +16,7 @@
   "author": "",
   "license": "",
   "devDependencies": {
-    "@babel/cli": "7.5.5",
+    "@babel/cli": "^7.8.4",
     "@babel/core": "7.5.5",
     "@babel/plugin-proposal-class-properties": "7.5.5",
     "@babel/plugin-proposal-object-rest-spread": "7.5.5",
@@ -55,7 +55,7 @@
     "jest": "24.8.0",
     "jest-canvas-mock": "2.1.0",
     "jest-junit": "6.4.0",
-    "node-sass": "4.12.0",
+    "node-sass": "^4.13.1",
     "react-js-to-ts": "1.4.0",
     "sass-loader": "7.1.0",
     "style-loader": "0.23.1",
