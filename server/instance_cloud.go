@@ -66,7 +66,7 @@ func withCloudInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f with
 	return withInstance(p.currentInstanceStore, w, r, func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 		jci, ok := ji.(*jiraCloudInstance)
 		if !ok {
-			return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
+			return respondErr(w, http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is "+ji.GetType()))
 		}
 		return f(jci, w, r)
 	})

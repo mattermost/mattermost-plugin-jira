@@ -4,7 +4,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -58,24 +57,26 @@ type UserInfo struct {
 
 func httpUserConnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be GET")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
+		return respondErr(w, http.StatusUnauthorized,
+			errors.New("not authorized"))
 	}
 
 	// Users shouldn't be able to make multiple connections.
 	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err == nil && len(jiraUser.Key()) != 0 {
-		return http.StatusBadRequest, errors.New("You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.")
+		return respondErr(w, http.StatusBadRequest,
+			errors.New("You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect."))
 	}
 
 	redirectURL, err := ji.GetUserConnectURL(mattermostUserId)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	http.Redirect(w, r, redirectURL, http.StatusFound)
@@ -85,7 +86,8 @@ func httpUserConnect(ji Instance, w http.ResponseWriter, r *http.Request) (int, 
 func httpUserStart(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
+		return respondErr(w, http.StatusUnauthorized,
+			errors.New("not authorized"))
 	}
 
 	// If user is already connected we show them the docs
@@ -101,23 +103,17 @@ func httpUserStart(ji Instance, w http.ResponseWriter, r *http.Request) (int, er
 
 func httpAPIGetUserInfo(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be GET")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
+		return respondErr(w, http.StatusUnauthorized,
+			errors.New("not authorized"))
 	}
 
-	resp := getUserInfo(p, mattermostUserId)
-
-	b, _ := json.Marshal(resp)
-	_, err := w.Write(b)
-	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-	}
-	return http.StatusOK, nil
+	return respondJSON(w, getUserInfo(p, mattermostUserId))
 }
 
 func getUserInfo(p *Plugin, mattermostUserId string) UserInfo {
@@ -137,27 +133,21 @@ func getUserInfo(p *Plugin, mattermostUserId string) UserInfo {
 
 func httpAPIGetSettingsInfo(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be GET")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
+		return respondErr(w, http.StatusUnauthorized,
+			errors.New("not authorized"))
 	}
 
-	resp := struct {
+	return respondJSON(w, struct {
 		UIEnabled bool `json:"ui_enabled"`
 	}{
 		UIEnabled: p.getConfig().EnableJiraUI,
-	}
-
-	b, _ := json.Marshal(resp)
-	_, err := w.Write(b)
-	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-	}
-	return http.StatusOK, nil
+	})
 }
 
 func (p *Plugin) StoreUserInfoNotify(ji Instance, mattermostUserId string, jiraUser JIRAUser) error {

@@ -50,24 +50,25 @@ func (p *Plugin) initStats() {
 
 func httpAPIStats(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("method " + r.Method + " is not allowed, must be GET")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 	conf := p.getConfig()
 
 	isAdmin, err := authorizedSysAdmin(p, r.Header.Get("Mattermost-User-Id"))
 	if !isAdmin {
 		if conf.StatsSecret == "" {
-			return http.StatusForbidden, errors.New("Access forbidden: must be authenticated as an admin, or provide the stats API secret.")
+			return respondErr(w, http.StatusForbidden,
+				errors.New("Access forbidden: must be authenticated as an admin, or provide the stats API secret."))
 		}
 		var status int
 		status, err = verifyHTTPSecret(conf.StatsSecret, r.FormValue("secret"))
 		if err != nil {
-			return status, err
+			return respondErr(w, status, err)
 		}
 	}
 	if conf.stats == nil {
-		return http.StatusNotFound, errors.New("No stats available")
+		return respondErr(w, http.StatusNotFound, errors.New("No stats available"))
 	}
 
 	out := "{"
