@@ -166,19 +166,3 @@ func parseJIRAIssuesFromText(text string, keys []string) []string {
 
 	return issues
 }
-
-func respondEphemeralErr(plugin *Plugin, status int, e error, mmuserID, jiraBotID, channelID, message string) (int, error) {
-	_ = plugin.API.SendEphemeralPost(mmuserID, makePost(jiraBotID, channelID, message))
-	if e != nil {
-		return status, e
-	}
-	return status, errors.New(message)
-}
-
-func makePost(userId, channelId, message string) *model.Post {
-	return &model.Post{
-		UserId:    userId,
-		ChannelId: channelId,
-		Message:   message,
-	}
-}
