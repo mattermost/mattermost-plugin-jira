@@ -22,22 +22,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
-func makePost(userId, channelId, message string) *model.Post {
-	return &model.Post{
-		UserId:    userId,
-		ChannelId: channelId,
-		Message:   message,
-	}
-}
-
-func respondEphemeralErr(plugin *Plugin, status int, e error, mmuserID, jiraBotID, channelID, message string) (int, error) {
-	_ = plugin.API.SendEphemeralPost(mmuserID, makePost(jiraBotID, channelID, message))
-	if e != nil {
-		return status, e
-	}
-	return status, errors.New(message)
-}
-
 func httpAPITransitionIssue(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
 	if requestData == nil {
