@@ -150,5 +150,5 @@ func TestRouteIssueTransition(t *testing.T) {
 	request.Header.Set("Mattermost-User-Id", "connected_user")
 	w := httptest.NewRecorder()
 	p.ServeHTTP(&plugin.Context{}, w, request)
-	assert.Equal(t, 400, w.Result().StatusCode)
+	assert.Equal(t, 200, w.Result().StatusCode)
 }
