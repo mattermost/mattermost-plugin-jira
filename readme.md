@@ -72,7 +72,7 @@ The supported Jira fields are:
   - **Project Picker**: Custom fields and the built-in **Project** field.
   - **Single-Line Text**: Custom fields, and built-in fields such as **Summary**, **Environment**.
   - **Multi-Line Text**: Custom fields, and built-in fields such as **Description**.
-  - **Single-Choice Issue**: Custom fields, and built-in fields such as **Issue Type** and **Priority**. 
+  - **Single-Choice Issue**: Custom fields, and built-in fields such as **Issue Type** and **Priority**.
 
 #### 1.2.2 Attach Messages to Jira Issues
 
@@ -116,11 +116,11 @@ Note
 
 #### Step 2: Configure webhooks in Jira
 
-As of Jira 2.1, you need to configure a single webhook for all possible event triggers that you would like to be pushed into Mattermost.  This is called a firehose, and the plugin gets sent a stream of events from the jira server via the webhook configured below.  The plugin's new Channel Subscription feature processes the firehose of data and then routes the events to particular channels based on your subscriptions. 
+As of Jira 2.1, you need to configure a single webhook for all possible event triggers that you would like to be pushed into Mattermost.  This is called a firehose, and the plugin gets sent a stream of events from the jira server via the webhook configured below.  The plugin's new Channel Subscription feature processes the firehose of data and then routes the events to particular channels based on your subscriptions.
 
-Previously configured webhooks that point to specific channels are still supported and will continue to work. 
+Previously configured webhooks that point to specific channels are still supported and will continue to work.
 
-To control Mattermost channel subscriptions, use the command `/jira subscribe` in the channel in which you want to receive subscriptions.  It will open a new modal window to select the project and event triggers that will post to the channel. 
+To control Mattermost channel subscriptions, use the command `/jira subscribe` in the channel in which you want to receive subscriptions.  It will open a new modal window to select the project and event triggers that will post to the channel.
 
 1. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
   - For older versions of Jira, click the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
@@ -166,34 +166,26 @@ If you want to allow users to [create and manage Jira issues across Mattermost c
 If you face issues installing the plugin, see our [Frequently Asked Questions](#5-frequently-asked-questions-faq) for troubleshooting help, or open an issue in the [Mattermost Forum](http://forum.mattermost.org).
 
 
+## 3. Development
 
-## 3. Jira v2 Roadmap
-
-### Timeline
-
-The ship target dates are included below. These are subject to change:
-  - June 16th: Jira 2.0 released as part of Mattermost Server v5.12
-  - June 25th: Jira 2.1 Release Candidate cut
-       - Deployed to community.mattermost.com for wider testing
-       - Shared with customers for early feedback
-  - August 16th: Jira 2.1 released as part of Mattermost Server v5.14
-  - Oct 16th: Jira 2.2 - bug fixes and some extra troubleshooting functions  
-  - End of October: Jira 2.3 - Improved notification subscription functionality 
-
-
-## 4. Development
+To Contribute to the project see https://www.mattermost.org/contribute-to-mattermost
 
 This plugin contains both a server and web app portion.
-
-Use `make dist` to build distributions of the plugin that you can upload to a Mattermost server.
-Use `make check-style` to check the style.
-Use `make deploy` to deploy the plugin to your local server.
+- Use `make dist` to build distributions of the plugin that you can upload to a Mattermost server.
+- Use `make check-style` to check the style.
+- Use `make deploy` to deploy the plugin to your local server.
 
 For additional information on developing plugins, refer to [our plugin developer documentation](https://developers.mattermost.com/extend/plugins/).
 
-To test your changes against Jira locally, we recommend starting a 14-day trial for Jira Software Cloud, if you don't have a Jira project to test against. More information can be found here: https://www.atlassian.com/software/jira/try.
+### Environment Setup
 
-## 5. Frequently Asked Questions (FAQ)
+This plugin supports both Jira Server (self-hosted) and Jira Cloud instances. There can be slight differences in behavior between the two systems, so it's best to test with both systems individually when introducing new webhook logic, or adding a new Jira API call.
+
+To test your changes against a local instance of Jira Server, you need [Docker](https://docs.docker.com/install) installed, then you can use the `docker-compose.yml` file in this repository to create a Jira instance. Simply run `docker-compose up` in the directory of the repository, and a new Jira Server should start up and listen on your localhost's port 8080. It can take a few minutes to start up do to Jira Server's startup processes.
+
+To test your changes against a Jira Cloud instance, we recommend starting a 14-day trial, if you don't have a Jira project to test against. More information can be found here: https://www.atlassian.com/software/jira/try.
+
+## 4. Frequently Asked Questions (FAQ)
 
 ### Why doesn't my Jira plugin post any messages to Mattermost?
 
@@ -208,7 +200,7 @@ Try the following troubleshooting steps:
 5. If you specified a JQL query in your Jira webhook page, paste the JQL to Jira issue search and make sure it returns results. If it doesn't, the query may be incorrect. Refer to the [Atlassian documentation](https://confluence.atlassian.com/jirasoftwarecloud/advanced-searching-764478330.html) for help.
 6. Use a curl command to make a POST request to the webhook URL. If curl command completes with a ``200 OK`` response, the plugin is configured correctly. For instance, you can run the following command
 
-   ``` 
+   ```
    curl -v --insecure "https://<your-mattermost-url>/plugins/jira/webhook?secret=<your-secret>&team=<your-team>&channel=<your-channel>&user_id=admin&user_key=admin" --data '{"event":"some_jira_event"}'
    ```
 
@@ -236,7 +228,7 @@ where `<your-mattermost-url>`, `<your-port>`, `<your-secret>`, `<your-team-url>`
 
 ### How do I handle credential rotation for the Jira webhook?
 
-You can generate a new secret in **System Console > Plugins > Jira**, and paste the new webhook URL in your JIRA webhook configuration. 
+You can generate a new secret in **System Console > Plugins > Jira**, and paste the new webhook URL in your JIRA webhook configuration.
 
 This might result in downtime of the JIRA plugin, but it should only be a few minutes at most.
 
@@ -244,7 +236,7 @@ This might result in downtime of the JIRA plugin, but it should only be a few mi
 
 In Jira 2.1 there is a modal window for a "Channel Subscription" to Jira issues.  This requires a firehose of events to be sent from Jira to Mattermost, and the Jira plugin then "routes" or "drops" the events to particular channels.  The Channel Subscription modal (which you can access by going to a particular channel, then typing `jira /subscribe`) provides easy access for Mattermost Channel Admins to setup which notifications they want to receive per channel.
 
-Earlier versions of the Jira plugin (2.0) used a manual webhook configuration that pointed to specific channels and teams.  The webhook configuration was  `https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL`.  This method can still be used to setup notifications from Jira to Mattermost channels if the new Channel Subscription modal can't support a particular channel subscription yet.  
+Earlier versions of the Jira plugin (2.0) used a manual webhook configuration that pointed to specific channels and teams.  The webhook configuration was  `https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL`.  This method can still be used to setup notifications from Jira to Mattermost channels if the new Channel Subscription modal can't support a particular channel subscription yet.
 
 #### How do I manually Configure webhooks notifications to be sent to a Mattermost Channel?
 
@@ -269,7 +261,7 @@ If you want to send notifications from Jira to Mattermost, link a Jira project t
      - Issue Created; Issue Deleted
      - Issue Updated, including when an issue is reopened or resolved, or when the assignee is changed. Optionally send notifications for comments, see below.
 
-**Note**: You can send notifications for comments by selecting **Issue Updated**, then adding `&updated_comments=1` to the end of the webhook URL, such as 
+**Note**: You can send notifications for comments by selecting **Issue Updated**, then adding `&updated_comments=1` to the end of the webhook URL, such as
 
 ```
 https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3MOuxaiwsPzLwh&team=contributors&channel=town-square&updated_comments=1
@@ -277,26 +269,23 @@ https://community.mattermost.com/plugins/jira/webhook?secret=5JlVk56KPxX629ujeU3
 
 This sends all comment notifications to a Mattermost channel, including public and private comments, so be cautious of which channel you send these notifications to.
 
-## 6. Troubleshooting
+## 5. Troubleshooting
 
 **Note**: If you experience problems with Jira-related user interactions in Mattermost such as creating issues, disable these features by setting **Allow users to connect their Mattermost accounts to Jira** to false in **System Console > Plugins > Jira**. This setting does not affect Jira webhook notifications. After changing this setting to false, disable, then re-enable this plugin in **System Console > Plugins > Plugin Management** to reset the plugin state for all users.
 
-Sometimes the plugin may crash unexpectedly, you may notice:  
+Sometimes the plugin may crash unexpectedly, you may notice:
 
-- you will see a response in red text below the chat window displaying ` slash command with trigger of  '/(name)' not found,`  - If you check your log file, look for messages that refer to "plugins" and "health check fail", "ExecuteCommand" etc. 
+- you will see a response in red text below the chat window displaying ` slash command with trigger of  '/(name)' not found,`  - If you check your log file, look for messages that refer to "plugins" and "health check fail", "ExecuteCommand" etc.
 
 If you encounter these types of issues - you can set `LogSettings.FileLevel` to `DEBUG` in your config.json settings.   This will enable debug logging and give more verbose error events in the system log. Then try re-enabling the plugin in the system-console. These log results may be requested by others in the forum or by our support team.  **Note** If you have a site with high volumes of activity, this setting can cause Log files to expand substantially and may adversely impact the server performance.  Keep an eye on your server logs, or only enable in development environments.
 
 ### Jira/Mattermost user connections
-Connecting an account between Mattermost and Jira is a key part of the installation process and requires the end-user to authenticate with Jira and allow access to their Jira account. All `create`, `view`, `assign` and `transition` operations are done using the logged in user's Jira access token. 
+Connecting an account between Mattermost and Jira is a key part of the installation process and requires the end-user to authenticate with Jira and allow access to their Jira account. All `create`, `view`, `assign` and `transition` operations are done using the logged in user's Jira access token.
 
 - You must be signed into Mattermost on the same browser you are using to sign into Jira during `connect`
 
 - The domain end-users sign into Mattermost with on that browser must match the SiteURL in config.json
 
-
-## 7. Help
-
+## 6. Help
 For Mattermost customers - please open a support case.
 For Questions, Suggestions and Help - please find us on our forum at https://forum.mattermost.org/c/plugins
-To Contribute to the project see https://www.mattermost.org/contribute-to-mattermost/
