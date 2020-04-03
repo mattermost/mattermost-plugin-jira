@@ -166,3 +166,41 @@ func parseJIRAIssuesFromText(text string, keys []string) []string {
 
 	return issues
 }
+
+func isImageMIME(mime string) bool {
+	return strings.HasPrefix(mime, "image")
+}
+
+func isEmbbedableMIME(mime string) bool {
+	switch mime {
+	// .swf
+	case "application/x-shockwave-flash":
+		return true
+	// .mov
+	case "video/quicktime":
+		return true
+	// .rm
+	case "application/vnd.rn-realmedia":
+		return true
+	// .ram
+	case "audio/x-pn-realaudio":
+		return true
+	// .mp3
+	case "audio/mpeg3":
+		return true
+	case "audio/x-mpeg-3":
+		return true
+	case "video/mpeg":
+		return true
+	case "video/x-mpeg":
+		return true
+	// .wmv
+	case "video/x-ms-wmv":
+		return true
+	// .wma
+	case "video/x-ms-wma":
+		return true
+	default:
+		return false
+	}
+}

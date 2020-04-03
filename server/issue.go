@@ -280,7 +280,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 		go func() {
 			conf := ji.GetPlugin().getConfig()
 			for _, fileId := range post.FileIds {
-				mattermostName, _, e := client.AddAttachment(api, created.ID, fileId, conf.maxAttachmentSize)
+				mattermostName, _, _, e := client.AddAttachment(api, created.ID, fileId, conf.maxAttachmentSize)
 				if e != nil {
 					notifyOnFailedAttachment(ji, mattermostUserId, created.Key, e, "file: %s", mattermostName)
 				}
@@ -625,12 +625,16 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 		conf := ji.GetPlugin().getConfig()
 		extraText := ""
 		for _, fileId := range post.FileIds {
-			mattermostName, jiraName, e := client.AddAttachment(api, attach.IssueKey, fileId, conf.maxAttachmentSize)
+			mattermostName, jiraName, mime, e := client.AddAttachment(api, attach.IssueKey, fileId, conf.maxAttachmentSize)
 			if e != nil {
 				notifyOnFailedAttachment(ji, mattermostUserId, attach.IssueKey, e, "file: %s", mattermostName)
 			}
 
-			extraText += "\n\nAttachment: !" + jiraName + "!"
+			if isImageMIME(mime) || isEmbbedableMIME(mime) {
+				extraText += "\n\nAttachment: !" + jiraName + "!"
+			} else {
+				extraText += "\n\nAttachment: [^" + jiraName + "]"
+			}
 		}
 		if extraText == "" {
 			return
