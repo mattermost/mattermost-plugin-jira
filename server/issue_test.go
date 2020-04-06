@@ -1,11 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest/mock"
@@ -140,15 +144,53 @@ func TestRouteIssueTransition(t *testing.T) {
 		mock.AnythingOfTypeArgument("string"),
 		mock.AnythingOfTypeArgument("string")).Return(nil)
 
+	api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
+
 	p := Plugin{}
 	p.SetAPI(api)
 
 	p.userStore = getMockUserStoreKV()
 	p.currentInstanceStore = mockCurrentInstanceStore{&p}
 
-	request := httptest.NewRequest("POST", routeIssueTransition, nil)
-	request.Header.Set("Mattermost-User-Id", "connected_user")
-	w := httptest.NewRecorder()
-	p.ServeHTTP(&plugin.Context{}, w, request)
-	assert.Equal(t, 200, w.Result().StatusCode)
+	tests := map[string]struct {
+		bb           []byte
+		request      *model.PostActionIntegrationRequest
+		expectedCode int
+	}{
+		"No request data": {
+			request:      nil,
+			expectedCode: http.StatusBadRequest,
+		},
+		"No UserId": {
+			request: &model.PostActionIntegrationRequest{
+				UserId: "",
+			},
+			expectedCode: http.StatusUnauthorized,
+		},
+		"No issueKey": {
+			request: &model.PostActionIntegrationRequest{
+				UserId: "userID",
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+		"No selected_option": {
+			request: &model.PostActionIntegrationRequest{
+				UserId:  "userID",
+				Context: map[string]interface{}{"issueKey": "Some-Key"},
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			bb, err := json.Marshal(tt.request)
+			assert.Nil(t, err)
+
+			request := httptest.NewRequest("POST", routeIssueTransition, strings.NewReader(string(bb)))
+			w := httptest.NewRecorder()
+			p.ServeHTTP(&plugin.Context{}, w, request)
+			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "no request data")
+		})
+	}
+
 }
