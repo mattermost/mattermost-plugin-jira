@@ -537,7 +537,7 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	case uinfo.IsConnected:
 		resp += fmt.Sprintf("Connected to Jira %s as %s.\n", uinfo.JIRAURL, uinfo.JIRAUser.DisplayName)
 	case uinfo.InstanceInstalled:
-		resp += fmt.Sprintf("Jira %s is installed, but you are not connected. Please [connect](%s/%s).\n",
+		resp += fmt.Sprintf("Jira %s is installed, but you are not connected. Please [connect](%s%s).\n",
 			uinfo.JIRAURL, p.GetPluginURL(), routeUserConnect)
 	default:
 		return p.responsef(header, resp+"\nNo Jira instance installed, please contact your system administrator.")
