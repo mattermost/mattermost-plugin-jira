@@ -21,7 +21,7 @@ const commonHelpText = "\n* `/jira connect` - Connect your Mattermost account to
 	"* `/jira unassign <issue-key>` - Unassign the Jira issue\n" +
 	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field\n" +
 	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
-	"* `/jira stats` - Poll basic statistics about the Jira plug-in.  Receive performance metrics and authenticated users between Jira/Mattermost\n" +
+	"* `/jira stats` - Retrieve version information about the Jira plugin\n" +
 	"* `/jira info` - Retrieve information about the current user and the Jira plug-in\n" +
 	"* `/jira help` - Launch the Jira plugin command line help syntax\n" +
 	"* `/jira webhook` - Execute the Jira plug-in webhook. The Jira plugin gets sent a stream of pre-configured events from the Jira server\n" +
