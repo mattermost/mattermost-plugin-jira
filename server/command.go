@@ -24,7 +24,7 @@ const commonHelpText = "\n* `/jira connect` - Connect your Mattermost account to
 	"* `/jira stats` - Poll basic statistics about the Jira plug-in.  Receive performance metrics and authenticated users between Jira/Mattermost\n" +
 	"* `/jira info` - Retrieve information about the current user and the Jira plug-in\n" +
 	"* `/jira help` - Launch the Jira plugin command line help syntax\n" +
-	"* `/jira webhook` - Execute the Jira plug-in webhook. The Jira plug-in gets sent a stream of pre-configured events from the Jira server\n" +
+	"* `/jira webhook` - Execute the Jira plug-in webhook. The Jira plugin gets sent a stream of pre-configured events from the Jira server\n" +
 	"* `/jira subscribe` - Configure the Jira notifications sent to this channel\n" +
 	"* `/jira view <issue-key>` - View the details of a specific Jira issue\n" +
 	"* `/jira settings [setting] [value]` - Update your user settings\n" +
