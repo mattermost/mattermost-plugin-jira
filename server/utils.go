@@ -186,6 +186,8 @@ func isEmbbedableMIME(mime string) bool {
 		"audio/x-mpeg-3",
 		"video/mpeg",
 		"video/x-mpeg",
+		// .mp4
+		"video/mp4",
 		// .wmv
 		"video/x-ms-wmv",
 		"video/x-ms-asf",
