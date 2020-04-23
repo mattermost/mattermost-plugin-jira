@@ -21,11 +21,8 @@ const commonHelpText = "\n* `/jira connect` - Connect your Mattermost account to
 	"* `/jira unassign <issue-key>` - Unassign the Jira issue\n" +
 	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field\n" +
 	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
-	"* `/jira stats` - Retrieve version information about the Jira plugin\n" +
-	"* `/jira info` - Retrieve information about the current user and the Jira plug-in\n" +
+	"* `/jira info` - Display information about the current user and the Jira plug-in\n" +
 	"* `/jira help` - Launch the Jira plugin command line help syntax\n" +
-	"* `/jira webhook` - Execute the Jira plug-in webhook. The Jira plugin gets sent a stream of pre-configured events from the Jira server\n" +
-	"* `/jira subscribe` - Configure the Jira notifications sent to this channel\n" +
 	"* `/jira view <issue-key>` - View the details of a specific Jira issue\n" +
 	"* `/jira settings [setting] [value]` - Update your user settings\n" +
 	"  * [setting] can be `notifications`\n" +
@@ -38,7 +35,10 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"Uninstall:\n" +
 	"* `/jira uninstall cloud <URL>` - Disconnect Mattermost from a Jira Cloud instance located at <URL>\n" +
 	"* `/jira uninstall server <URL>` - Disconnect Mattermost from a Jira Server or Data Center instance located at <URL>\n" +
-	"* `/jira subscribe list` - List of Jira Notification subscription rules across all channels\n"
+	"* `/jira stats` - Display usage statistics\n" +
+	"* `/jira webhook` -  Configure the Mattermost webhook to receive JQL queries\n" +
+	"* `/jira subscribe` - Configure the Jira notifications sent to this channel\n" +
+	"* `/jira subscribe list` - Display all the the subscription rules setup across all the channels and teams on your Mattermost instance\n"
 
 // Available settings
 const (
