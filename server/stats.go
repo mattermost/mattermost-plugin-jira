@@ -165,7 +165,7 @@ func (p *Plugin) debugResetStats() error {
 		plugin.WithChecker(checkPrefix),
 	}
 
-	checkedKeys, err := store.plugin.Helpers.KVListWithOptions(options...)
+	checkedKeys, err := p.Helpers.KVListWithOptions(options...)
 	if err != nil {
 		return err
 	}
@@ -208,7 +208,7 @@ func (p *Plugin) consolidatedStoredStats() (*expvar.Stats, []string, error) {
 		plugin.WithChecker(checkPrefix),
 	}
 
-	checkedKeys, err := store.plugin.Helpers.KVListWithOptions(options...)
+	checkedKeys, err := p.Helpers.KVListWithOptions(options...)
 	if err != nil {
 		return nil, nil, err
 	}
