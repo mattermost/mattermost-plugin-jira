@@ -682,21 +682,22 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (st
 	}()
 
 	if r.Method != http.MethodPost {
-		return http.StatusMethodNotAllowed,
-			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			fmt.Errorf("Request: "+r.Method+" is not allowed, must be POST"))
 	}
 	if conf.Secret == "" {
-		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret")
+		return respondErr(w, http.StatusForbidden,
+			fmt.Errorf("JIRA plugin not configured correctly; must provide Secret"))
 	}
 	status, err = verifyHTTPSecret(conf.Secret, r.FormValue("secret"))
 	if err != nil {
-		return status, err
+		return respondErr(w, status, err)
 	}
 
 	bb, err := ioutil.ReadAll(r.Body)
 	size = utils.ByteSize(len(bb))
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	// If there is space in the queue, immediately return a 200; we will process the webhook event async.
@@ -705,7 +706,7 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (st
 	case p.webhookQueue <- bb:
 		return http.StatusOK, nil
 	default:
-		return http.StatusServiceUnavailable, nil
+		return respondErr(w, http.StatusServiceUnavailable, nil)
 	}
 }
 
@@ -713,59 +714,58 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 	subscription := ChannelSubscription{}
 	err := json.NewDecoder(r.Body).Decode(&subscription)
 	if err != nil {
-		return http.StatusBadRequest, errors.WithMessage(err, "failed to decode incoming request")
+		return respondErr(w, http.StatusBadRequest,
+			errors.WithMessage(err, "failed to decode incoming request"))
 	}
 
 	if len(subscription.ChannelId) != 26 ||
 		len(subscription.Id) != 0 {
-		return http.StatusBadRequest, fmt.Errorf("Channel subscription invalid")
+		return respondErr(w, http.StatusBadRequest,
+			fmt.Errorf("Channel subscription invalid"))
 	}
 
 	_, appErr := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId)
 	if appErr != nil {
-		return http.StatusForbidden, errors.New("Not a member of the channel specified")
+		return respondErr(w, http.StatusForbidden,
+			errors.New("Not a member of the channel specified"))
 	}
 
 	err = p.hasPermissionToManageSubscription(mattermostUserId, subscription.ChannelId)
 	if err != nil {
-		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
+		return respondErr(w, http.StatusForbidden,
+			errors.Wrap(err, "you don't have permission to manage subscriptions"))
 	}
 
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	client, err := ji.GetClient(jiraUser)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	err = p.addChannelSubscription(&subscription, client)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	b, _ := json.Marshal(&subscription)
-	_, err = w.Write(b)
+	code, err := respondJSON(w, &subscription)
 	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+		return code, err
 	}
 
-	post := &model.Post{
+	p.API.CreatePost(&model.Post{
 		UserId:    p.getConfig().botUserID,
 		ChannelId: subscription.ChannelId,
 		Message:   fmt.Sprintf("Jira subscription, \"%v\", was added to this channel by %v", subscription.Name, jiraUser.DisplayName),
-	}
-
-	p.API.CreatePost(post)
-
+	})
 	return http.StatusOK, nil
 }
 
@@ -773,146 +773,143 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 	subscription := ChannelSubscription{}
 	err := json.NewDecoder(r.Body).Decode(&subscription)
 	if err != nil {
-		return http.StatusBadRequest, errors.WithMessage(err, "failed to decode incoming request")
+		return respondErr(w, http.StatusBadRequest,
+			errors.WithMessage(err, "failed to decode incoming request"))
 	}
 
 	if len(subscription.ChannelId) != 26 ||
 		len(subscription.Id) != 26 {
-		return http.StatusBadRequest, fmt.Errorf("Channel subscription invalid")
+		return respondErr(w, http.StatusBadRequest,
+			fmt.Errorf("Channel subscription invalid"))
 	}
 
 	err = p.hasPermissionToManageSubscription(mattermostUserId, subscription.ChannelId)
 	if err != nil {
-		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
+		return respondErr(w, http.StatusForbidden,
+			errors.Wrap(err, "you don't have permission to manage subscriptions"))
 	}
 
 	_, appErr := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId)
 	if appErr != nil {
-		return http.StatusForbidden, errors.New("Not a member of the channel specified")
+		return respondErr(w, http.StatusForbidden,
+			errors.New("Not a member of the channel specified"))
 	}
 
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	client, err := ji.GetClient(jiraUser)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	err = p.editChannelSubscription(&subscription, client)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	b, _ := json.Marshal(&subscription)
-	_, err = w.Write(b)
+	code, err := respondJSON(w, &subscription)
 	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+		return code, err
 	}
 
-	post := &model.Post{
+	p.API.CreatePost(&model.Post{
 		UserId:    p.getConfig().botUserID,
 		ChannelId: subscription.ChannelId,
 		Message:   fmt.Sprintf("Jira subscription, \"%v\", was updated by %v", subscription.Name, jiraUser.DisplayName),
-	}
-
-	p.API.CreatePost(post)
-
+	})
 	return http.StatusOK, nil
 }
 
 func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
 	subscriptionId := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionsChannel+"/")
 	if len(subscriptionId) != 26 {
-		return http.StatusBadRequest, errors.New("bad subscription id")
+		return respondErr(w, http.StatusBadRequest,
+			errors.New("bad subscription id"))
 	}
 
 	subscription, err := p.getChannelSubscription(subscriptionId)
 	if err != nil {
-		return http.StatusBadRequest, errors.Wrap(err, "bad subscription id")
+		return respondErr(w, http.StatusBadRequest,
+			errors.Wrap(err, "bad subscription id"))
 	}
 
 	err = p.hasPermissionToManageSubscription(mattermostUserId, subscription.ChannelId)
 	if err != nil {
-		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
+		return respondErr(w, http.StatusForbidden,
+			errors.Wrap(err, "you don't have permission to manage subscriptions"))
 	}
 
 	_, appErr := p.API.GetChannelMember(subscription.ChannelId, mattermostUserId)
 	if appErr != nil {
-		return http.StatusForbidden, errors.New("Not a member of the channel specified")
+		return respondErr(w, http.StatusForbidden,
+			errors.New("Not a member of the channel specified"))
 	}
 
 	err = p.removeChannelSubscription(subscriptionId)
 	if err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "unable to remove channel subscription")
+		return respondErr(w, http.StatusInternalServerError,
+			errors.Wrap(err, "unable to remove channel subscription"))
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("{\"status\": \"OK\"}"))
+	code, err := respondJSON(w, map[string]interface{}{"status": "OK"})
+	if err != nil {
+		return code, err
+	}
 
 	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-
 	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-
-	post := &model.Post{
+	p.API.CreatePost(&model.Post{
 		UserId:    p.getConfig().botUserID,
 		ChannelId: subscription.ChannelId,
 		Message:   fmt.Sprintf("Jira subscription, \"%v\", was removed from this channel by %v", subscription.Name, jiraUser.DisplayName),
-	}
-
-	p.API.CreatePost(post)
-
+	})
 	return http.StatusOK, nil
 }
 
 func httpChannelGetSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
 	channelId := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionsChannel+"/")
 	if len(channelId) != 26 {
-		return http.StatusBadRequest, errors.New("bad channel id")
+		return respondErr(w, http.StatusBadRequest,
+			errors.New("bad channel id"))
 	}
 
 	if _, appErr := p.API.GetChannelMember(channelId, mattermostUserId); appErr != nil {
-		return http.StatusForbidden, errors.New("Not a member of the channel specified")
+		return respondErr(w, http.StatusForbidden,
+			errors.New("Not a member of the channel specified"))
 	}
 
 	if err := p.hasPermissionToManageSubscription(mattermostUserId, channelId); err != nil {
-		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
+		return respondErr(w, http.StatusForbidden,
+			errors.Wrap(err, "you don't have permission to manage subscriptions"))
 	}
 
 	subscriptions, err := p.getSubscriptionsForChannel(channelId)
 	if err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "unable to get channel subscriptions")
+		return respondErr(w, http.StatusInternalServerError,
+			errors.Wrap(err, "unable to get channel subscriptions"))
 	}
 
-	bytes, err := json.Marshal(subscriptions)
-	if err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "unable to marshal subscriptions")
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(bytes)
-
-	return http.StatusOK, nil
+	return respondJSON(w, subscriptions)
 }
 
 func httpChannelSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
+		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
 	switch r.Method {
@@ -925,6 +922,6 @@ func httpChannelSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Request)
 	case http.MethodPut:
 		return httpChannelEditSubscription(p, w, r, mattermostUserId)
 	default:
-		return http.StatusMethodNotAllowed, fmt.Errorf("Request: " + r.Method + " is not allowed.")
+		return respondErr(w, http.StatusMethodNotAllowed, fmt.Errorf("Request: "+r.Method+" is not allowed."))
 	}
 }

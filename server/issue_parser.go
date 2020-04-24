@@ -25,7 +25,7 @@ func mdKeySummaryLink(issue *jira.Issue) string {
 	if pos < 0 {
 		return ""
 	}
-	return fmt.Sprintf("[%s](%s%s)", issue.Key+": "+issue.Fields.Summary, issue.Self[:pos], "/browse/"+issue.Key)
+	return fmt.Sprintf("[%s](%s%s)", issue.Key+": "+issue.Fields.Summary+" ("+issue.Fields.Status.Name+")", issue.Self[:pos], "/browse/"+issue.Key)
 }
 
 func reporterSummary(issue *jira.Issue) string {
@@ -34,7 +34,46 @@ func reporterSummary(issue *jira.Issue) string {
 	return reporterSummary
 }
 
-func parseIssue(issue *jira.Issue) []*model.SlackAttachment {
+func getTransitionActions(client Client, issue *jira.Issue) ([]*model.PostAction, error) {
+	var actions []*model.PostAction
+
+	ctx := map[string]interface{}{
+		"issueKey": issue.ID,
+	}
+
+	integration := &model.PostActionIntegration{
+		URL:     fmt.Sprintf("/plugins/%s%s", manifest.Id, routeIssueTransition),
+		Context: ctx,
+	}
+
+	var options []*model.PostActionOptions
+
+	transitions, err := client.GetTransitions(issue.Key)
+	if err != nil {
+		return actions, err
+	}
+
+	// Remove current issue status from possible transitions
+	for _, transition := range transitions {
+		if transition.Name != issue.Fields.Status.Name {
+			options = append(options, &model.PostActionOptions{
+				Text:  transition.Name,
+				Value: transition.Name,
+			})
+		}
+	}
+
+	actions = append(actions, &model.PostAction{
+		Name:        "Transition issue",
+		Type:        "select",
+		Options:     options,
+		Integration: integration,
+	})
+
+	return actions, nil
+}
+
+func parseIssue(client Client, issue *jira.Issue) ([]*model.SlackAttachment, error) {
 	text := mdKeySummaryLink(issue)
 	desc := truncate(issue.Fields.Description, 3000)
 	desc = parseJiraLinksToMarkdown(desc)
@@ -64,12 +103,18 @@ func parseIssue(issue *jira.Issue) []*model.SlackAttachment {
 		Short: true,
 	})
 
+	actions, err := getTransitionActions(client, issue)
+	if err != nil {
+		return []*model.SlackAttachment{}, err
+	}
+
 	return []*model.SlackAttachment{
 		{
 			// TODO is this supposed to be themed?
-			Color:  "#95b7d0",
-			Text:   text,
-			Fields: fields,
+			Color:   "#95b7d0",
+			Text:    text,
+			Fields:  fields,
+			Actions: actions,
 		},
-	}
+	}, nil
 }

@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/andygrunwald/go-jira"
@@ -39,13 +40,17 @@ func (jsi jiraServerInstance) GetURL() string {
 	return jsi.JIRAServerURL
 }
 
+func (jsi jiraServerInstance) GetManageAppsURL() string {
+	return fmt.Sprintf("%s/plugins/servlet/applinks/listApplicationLinks", jsi.GetURL())
+}
+
 type withServerInstanceFunc func(jsi *jiraServerInstance, w http.ResponseWriter, r *http.Request) (int, error)
 
 func withServerInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f withServerInstanceFunc) (int, error) {
 	return withInstance(p.currentInstanceStore, w, r, func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 		jsi, ok := ji.(*jiraServerInstance)
 		if !ok {
-			return http.StatusBadRequest, errors.New("Must be a Jira Server instance, is " + ji.GetType())
+			return respondErr(w, http.StatusBadRequest, errors.New("Must be a Jira Server instance, is "+ji.GetType()))
 		}
 		return f(jsi, w, r)
 	})

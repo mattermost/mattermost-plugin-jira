@@ -30,6 +30,7 @@ const (
 	routeAPISubscriptionsChannel   = "/api/v2/subscriptions/channel"
 	routeAPISettingsInfo           = "/api/v2/settingsinfo"
 	routeAPIStats                  = "/api/v2/stats"
+	routeIssueTransition           = "/api/v2/transition"
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"
 	routeACUninstalled             = "/ac/uninstalled"
@@ -46,27 +47,18 @@ const (
 	routeUserDisconnect            = "/user/disconnect"
 	routeWorkflowRegister          = "/workflow/meta"
 	routeWorkflowTriggerSetup      = "/workflow/trigger_setup"
+	routeWorkflowCreateIssue       = "/workflow/create_issue"
 )
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	status, err := handleHTTPRequest(p, c, w, r)
+	status, err := p.serveHTTP(c, w, r)
 	if err != nil {
 		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
-		http.Error(w, err.Error(), status)
-		return
-	}
-	switch status {
-	case http.StatusOK:
-		// pass through
-	case 0:
-		status = http.StatusOK
-	default:
-		w.WriteHeader(status)
 	}
 	p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
 }
 
-func handleHTTPRequest(p *Plugin, c *plugin.Context, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) (int, error) {
 	switch r.URL.Path {
 	// Issue APIs
 	case routeAPICreateIssue:
@@ -79,6 +71,8 @@ func handleHTTPRequest(p *Plugin, c *plugin.Context, w http.ResponseWriter, r *h
 		return withInstance(p.currentInstanceStore, w, r, httpAPIGetSearchIssues)
 	case routeAPIAttachCommentToIssue:
 		return withInstance(p.currentInstanceStore, w, r, httpAPIAttachCommentToIssue)
+	case routeIssueTransition:
+		return withInstance(p.currentInstanceStore, w, r, httpAPITransitionIssue)
 
 	// User APIs
 	case routeAPIUserInfo:
@@ -145,12 +139,19 @@ func handleHTTPRequest(p *Plugin, c *plugin.Context, w http.ResponseWriter, r *h
 				return httpWorkflowTriggerSetup(p, w, r)
 			}
 		}
+	case routeWorkflowCreateIssue:
+		{
+			if c.SourcePluginId != "" {
+				return withInstance(p.currentInstanceStore, w, r, httpWorkflowCreateIssue)
+			}
+		}
 	}
 
 	if strings.HasPrefix(r.URL.Path, routeAPISubscriptionsChannel) {
 		return httpChannelSubscriptions(p, w, r)
 	}
-	return http.StatusNotFound, errors.New("not found")
+
+	return respondErr(w, http.StatusNotFound, errors.New("not found"))
 }
 
 func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -198,29 +199,36 @@ func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 				TriggerSetupURL: "/jira" + routeWorkflowTriggerSetup,
 			},
 		},
+		Actions: []workflowclient.ActionParams{
+			{
+				TypeName:    "create",
+				DisplayName: "Jira Create",
+				Fields:      []workflowclient.Field{},
+				VarInfos:    []workflowclient.VarInfo{},
+				URL:         "/jira" + routeWorkflowCreateIssue,
+			},
+		},
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(&params); err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	return http.StatusOK, nil
+	return respondJSON(w, &params)
 }
 
 func httpWorkflowTriggerSetup(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
 	var params workflowclient.SetupParams
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		return http.StatusBadRequest, errors.WithMessage(err, "Unable to decode setup params")
+		return respondErr(w, http.StatusBadRequest,
+			errors.WithMessage(err, "Unable to decode setup params"))
 	}
 
 	if params.BaseTrigger.BaseType != "jira_event" {
-		return http.StatusBadRequest, errors.New("Unsupported trigger type.")
+		return respondErr(w, http.StatusBadRequest,
+			errors.New("Unsupported trigger type"))
 	}
 
 	var trigger WorkflowTrigger
 	if err := json.Unmarshal(params.Trigger, &trigger); err != nil {
-		return http.StatusBadRequest, errors.WithMessage(err, "Unable to decode trigger")
+		return respondErr(w, http.StatusBadRequest,
+			errors.WithMessage(err, "Unable to decode trigger"))
 	}
 
 	p.workflowTriggerStore.AddTrigger(trigger, params.CallbackURL)
@@ -253,17 +261,34 @@ func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error
 	return templates, nil
 }
 
-func (p *Plugin) respondWithTemplate(w http.ResponseWriter, r *http.Request, contentType string, values interface{}) (int, error) {
+func respondErr(w http.ResponseWriter, code int, err error) (int, error) {
+	http.Error(w, err.Error(), code)
+	return code, err
+}
+
+func respondJSON(w http.ResponseWriter, obj interface{}) (int, error) {
+	data, err := json.Marshal(obj)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal response"))
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(data)
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+	}
+	return http.StatusOK, nil
+}
+
+func (p *Plugin) respondTemplate(w http.ResponseWriter, r *http.Request, contentType string, values interface{}) (int, error) {
 	w.Header().Set("Content-Type", contentType)
 	t := p.templates[r.URL.Path]
 	if t == nil {
-		return http.StatusInternalServerError,
-			errors.New("no template found for " + r.URL.Path)
+		return respondErr(w, http.StatusInternalServerError,
+			errors.New("no template found for "+r.URL.Path))
 	}
 	err := t.Execute(w, values)
 	if err != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write response")
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
 	}
 	return http.StatusOK, nil
 }
@@ -272,8 +297,8 @@ func (p *Plugin) respondSpecialTemplate(w http.ResponseWriter, key string, statu
 	w.Header().Set("Content-Type", contentType)
 	t := p.templates[key]
 	if t == nil {
-		return http.StatusInternalServerError,
-			errors.New("no template found for " + key)
+		return respondErr(w, http.StatusInternalServerError,
+			errors.New("no template found for "+key))
 	}
 	err := t.Execute(w, values)
 	if err != nil {

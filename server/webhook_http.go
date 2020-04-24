@@ -63,25 +63,26 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int,
 
 	// Validate the request and extract params
 	if r.Method != http.MethodPost {
-		return http.StatusMethodNotAllowed,
-			fmt.Errorf("Request: " + r.Method + " is not allowed, must be POST")
+		return respondErr(w, http.StatusMethodNotAllowed,
+			fmt.Errorf("Request: "+r.Method+" is not allowed, must be POST"))
 	}
 	if conf.Secret == "" {
-		return http.StatusForbidden, fmt.Errorf("JIRA plugin not configured correctly; must provide Secret")
+		return respondErr(w, http.StatusForbidden,
+			fmt.Errorf("JIRA plugin not configured correctly; must provide Secret"))
 	}
 	status, err = verifyHTTPSecret(conf.Secret, r.FormValue("secret"))
 	if err != nil {
-		return status, err
+		return respondErr(w, status, err)
 	}
 	teamName := r.FormValue("team")
 	if teamName == "" {
-		return http.StatusBadRequest,
-			errors.New("Request URL: no team name found")
+		return respondErr(w, http.StatusBadRequest,
+			errors.New("Request URL: no team name found"))
 	}
 	channelName := r.FormValue("channel")
 	if channelName == "" {
-		return http.StatusBadRequest,
-			errors.New("Request URL: no channel name found")
+		return respondErr(w, http.StatusBadRequest,
+			errors.New("Request URL: no channel name found"))
 	}
 
 	selectedEvents := defaultEvents.Add()
@@ -95,20 +96,20 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int,
 	bb, err := ioutil.ReadAll(r.Body)
 	size = utils.ByteSize(len(bb))
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelName, false)
 	if appErr != nil {
-		return appErr.StatusCode, appErr
+		return respondErr(w, appErr.StatusCode, appErr)
 	}
 
 	wh, err := ParseWebhook(bb)
 	if err == ErrWebhookIgnored {
-		return http.StatusOK, err
+		return respondErr(w, http.StatusOK, err)
 	}
 	if err != nil {
-		return http.StatusBadRequest, err
+		return respondErr(w, http.StatusBadRequest, err)
 	}
 
 	// Skip events we don't need to post
@@ -119,7 +120,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int,
 	// Post the event to the channel
 	_, statusCode, err := wh.PostToChannel(p, channel.Id, p.getUserID())
 	if err != nil {
-		return statusCode, err
+		return respondErr(w, statusCode, err)
 	}
 
 	return http.StatusOK, nil

@@ -1,0 +1,7 @@
+version: '3'
+services:
+  jira:
+    image: atlassian/jira-software:7 # It is recommended to test with version 7. Most, if not all, compatibility issues between Jira Server/Cloud exist in version 7.
+    # image: atlassian/jira-software:8 # Test with version 8 as well when adding new webhook handling logic, or introducing a new Jira API call.
+    ports:
+      - "8080:8080"

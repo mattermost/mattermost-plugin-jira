@@ -26,6 +26,7 @@ type Instance interface {
 	GetType() string
 	GetURL() string
 	GetUserConnectURL(mattermostUserId string) (string, error)
+	GetManageAppsURL() string
 	Init(p *Plugin)
 }
 
@@ -77,7 +78,7 @@ type withInstanceFunc func(ji Instance, w http.ResponseWriter, r *http.Request) 
 func withInstance(store CurrentInstanceStore, w http.ResponseWriter, r *http.Request, f withInstanceFunc) (int, error) {
 	ji, err := store.LoadCurrentJIRAInstance()
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 	return f(ji, w, r)
 }

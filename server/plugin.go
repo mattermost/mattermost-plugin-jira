@@ -67,6 +67,9 @@ type externalConfig struct {
 
 	// Additional Help Text to be shown in the output of '/jira help' command
 	JiraAdminAdditionalHelpText string
+
+	// Hide issue descriptions and comments in Webhook and Subscription messages
+	HideDecriptionComment bool
 }
 
 const currentInstanceTTL = 1 * time.Second
@@ -246,7 +249,7 @@ func (p *Plugin) OnActivate() error {
 }
 
 func (p *Plugin) AddAutolinksForCloudInstance(jci *jiraCloudInstance) error {
-	client, err := jci.getJIRAClientForServer()
+	client, err := jci.getJIRAClientForBot()
 	if err != nil {
 		return fmt.Errorf("unable to get jira client for server: %w", err)
 	}
@@ -290,7 +293,14 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 }
 
 func (p *Plugin) GetPluginKey() string {
-	return "mattermost_" + regexpNonAlnum.ReplaceAllString(p.GetSiteURL(), "_")
+	sURL := p.GetSiteURL()
+	key := "mattermost_" + regexpNonAlnum.ReplaceAllString(sURL, "_")
+	if len(key) <= 32 {
+		return key
+	}
+	start := len(sURL) - 30
+	end := len(sURL)
+	return "__" + sURL[start:end]
 }
 
 func (p *Plugin) GetPluginURLPath() string {

@@ -66,7 +66,7 @@ func withCloudInstance(p *Plugin, w http.ResponseWriter, r *http.Request, f with
 	return withInstance(p.currentInstanceStore, w, r, func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
 		jci, ok := ji.(*jiraCloudInstance)
 		if !ok {
-			return http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is " + ji.GetType())
+			return respondErr(w, http.StatusBadRequest, errors.New("Must be a JIRA Cloud instance, is "+ji.GetType()))
 		}
 		return f(jci, w, r)
 	})
@@ -118,6 +118,10 @@ func (jci jiraCloudInstance) GetURL() string {
 	return jci.AtlassianSecurityContext.BaseURL
 }
 
+func (jci jiraCloudInstance) GetManageAppsURL() string {
+	return fmt.Sprintf("%s/plugins/servlet/upm", jci.GetURL())
+}
+
 func (jci jiraCloudInstance) GetClient(jiraUser JIRAUser) (Client, error) {
 	client, _, err := jci.getJIRAClientForUser(jiraUser)
 	if err != nil {
@@ -154,7 +158,7 @@ func (jci jiraCloudInstance) getJIRAClientForUser(jiraUser JIRAUser) (*jira.Clie
 }
 
 // Creates a "bot" client with a JWT
-func (jci jiraCloudInstance) getJIRAClientForServer() (*jira.Client, error) {
+func (jci jiraCloudInstance) getJIRAClientForBot() (*jira.Client, error) {
 	conf := jci.GetPlugin().getConfig()
 	jwtConf := &ajwt.Config{
 		Key:          jci.AtlassianSecurityContext.Key,
