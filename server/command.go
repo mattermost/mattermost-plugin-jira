@@ -36,7 +36,7 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"* `/jira uninstall cloud <URL>` - Disconnect Mattermost from a Jira Cloud instance located at <URL>\n" +
 	"* `/jira uninstall server <URL>` - Disconnect Mattermost from a Jira Server or Data Center instance located at <URL>\n" +
 	"* `/jira stats` - Display usage statistics\n" +
-	"* `/jira webhook` -  Configure the Mattermost webhook to receive JQL queries\n" +
+	"* `/jira webhook` -  Show the Mattermost webhook to receive JQL queries\n" +
 	"* `/jira subscribe` - Configure the Jira notifications sent to this channel\n" +
 	"* `/jira subscribe list` - Display all the the subscription rules setup across all the channels and teams on your Mattermost instance\n"
 
