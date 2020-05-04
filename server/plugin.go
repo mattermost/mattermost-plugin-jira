@@ -298,7 +298,7 @@ func (p *Plugin) GetPluginKey() string {
 	prefix := "mattermost_"
 	escaped := regexpNonAlnum.ReplaceAllString(sURL, "_")
 
-	start := int(math.Min(float64(len(escaped)), 32)) - len(escaped)
+	start := len(escaped) - int(math.Min(float64(len(escaped)), 32))
 	return prefix + escaped[start:]
 }
 
