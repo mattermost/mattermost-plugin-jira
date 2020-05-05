@@ -257,42 +257,40 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 	p.userStore = getMockUserStoreKV()
 	p.currentInstanceStore = mockCurrentInstanceStore{&p}
 
+	type requestStruct struct {
+		PostId      string `json:"post_id"`
+		CurrentTeam string `json:"current_team"`
+		IssueKey    string `json:"issueKey"`
+	}
+
 	tests := map[string]struct {
-		method  string
-		header  string
-		request *struct {
-			PostId      string `json:"post_id"`
-			CurrentTeam string `json:"current_team"`
-			IssueKey    string `json:"issueKey"`
-		}
+		method       string
+		header       string
+		request      *requestStruct
 		expectedCode int
 	}{
 		"Wrong method": {
 			method:       "GET",
 			header:       "",
-			request:      nil,
+			request:      &requestStruct{},
 			expectedCode: http.StatusMethodNotAllowed,
 		},
 		"No header": {
 			method:       "POST",
 			header:       "",
-			request:      nil,
+			request:      &requestStruct{},
 			expectedCode: http.StatusUnauthorized,
 		},
 		"User not found": {
 			method:       "POST",
 			header:       "nobody",
-			request:      nil,
+			request:      &requestStruct{},
 			expectedCode: http.StatusInternalServerError,
 		},
 		"Failed to load post": {
 			method: "POST",
 			header: "1",
-			request: &struct {
-				PostId      string `json:"post_id"`
-				CurrentTeam string `json:"current_team"`
-				IssueKey    string `json:"issueKey"`
-			}{
+			request: &requestStruct{
 				PostId: "error_post",
 			},
 			expectedCode: http.StatusInternalServerError,
@@ -300,11 +298,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 		"Post not found": {
 			method: "POST",
 			header: "1",
-			request: &struct {
-				PostId      string `json:"post_id"`
-				CurrentTeam string `json:"current_team"`
-				IssueKey    string `json:"issueKey"`
-			}{
+			request: &requestStruct{
 				PostId: "post_not_found",
 			},
 			expectedCode: http.StatusInternalServerError,
@@ -312,11 +306,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 		"Post user not found": {
 			method: "POST",
 			header: "1",
-			request: &struct {
-				PostId      string `json:"post_id"`
-				CurrentTeam string `json:"current_team"`
-				IssueKey    string `json:"issueKey"`
-			}{
+			request: &requestStruct{
 				PostId: "0",
 			},
 			expectedCode: http.StatusInternalServerError,
@@ -324,11 +314,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 		"No permissions to comment on issue": {
 			method: "POST",
 			header: "1",
-			request: &struct {
-				PostId      string `json:"post_id"`
-				CurrentTeam string `json:"current_team"`
-				IssueKey    string `json:"issueKey"`
-			}{
+			request: &requestStruct{
 				PostId:   "1",
 				IssueKey: noPermissionsIssueKey,
 			},
@@ -337,11 +323,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 		"Failed to attach the comment": {
 			method: "POST",
 			header: "1",
-			request: &struct {
-				PostId      string `json:"post_id"`
-				CurrentTeam string `json:"current_team"`
-				IssueKey    string `json:"issueKey"`
-			}{
+			request: &requestStruct{
 				PostId:   "1",
 				IssueKey: attachCommentErrorKey,
 			},
@@ -350,11 +332,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 		"Succesfully created notification post": {
 			method: "POST",
 			header: "1",
-			request: &struct {
-				PostId      string `json:"post_id"`
-				CurrentTeam string `json:"current_team"`
-				IssueKey    string `json:"issueKey"`
-			}{
+			request: &requestStruct{
 				PostId:   "1",
 				IssueKey: existingIssueKey,
 			},
