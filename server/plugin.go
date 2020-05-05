@@ -7,6 +7,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -294,13 +295,11 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 
 func (p *Plugin) GetPluginKey() string {
 	sURL := p.GetSiteURL()
-	key := "mattermost_" + regexpNonAlnum.ReplaceAllString(sURL, "_")
-	if len(key) <= 32 {
-		return key
-	}
-	start := len(sURL) - 30
-	end := len(sURL)
-	return "__" + sURL[start:end]
+	prefix := "mattermost_"
+	escaped := regexpNonAlnum.ReplaceAllString(sURL, "_")
+
+	start := len(escaped) - int(math.Min(float64(len(escaped)), 32))
+	return prefix + escaped[start:]
 }
 
 func (p *Plugin) GetPluginURLPath() string {
