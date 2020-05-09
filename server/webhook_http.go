@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (
@@ -40,7 +41,7 @@ var eventParamMasks = map[string]StringSet{
 
 var ErrWebhookIgnored = errors.New("Webhook purposely ignored")
 
-func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int, err error) {
+func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID types.ID) (status int, err error) {
 	conf := p.getConfig()
 	start := time.Now()
 	size := utils.ByteSize(0)
@@ -118,7 +119,7 @@ func httpWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int,
 	}
 
 	// Post the event to the channel
-	_, statusCode, err := wh.PostToChannel(p, channel.Id, p.getUserID())
+	_, statusCode, err := wh.PostToChannel(p, instanceID, channel.Id, p.getUserID())
 	if err != nil {
 		return respondErr(w, statusCode, err)
 	}

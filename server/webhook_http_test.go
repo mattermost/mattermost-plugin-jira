@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
@@ -39,8 +40,8 @@ func (wh testWebhookWrapper) Events() StringSet {
 	return wh.Webhook.Events()
 }
 
-func (wh *testWebhookWrapper) PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error) {
-	post, status, err := wh.Webhook.PostToChannel(p, channelId, fromUserId)
+func (wh *testWebhookWrapper) PostToChannel(p *Plugin, instanceID types.ID, channelId, fromUserId string) (*model.Post, int, error) {
+	post, status, err := wh.Webhook.PostToChannel(p, "", channelId, fromUserId)
 	if post != nil {
 		wh.postedToChannel = post
 	}
@@ -649,12 +650,6 @@ func TestWebhookHTTP(t *testing.T) {
 				conf.Secret = validConfiguration.Secret
 			})
 			p.SetAPI(api)
-
-			if tc.CurrentInstance {
-				p.currentInstanceStore = mockCurrentInstanceStore{&p}
-			} else {
-				p.currentInstanceStore = mockCurrentInstanceStoreNoInstance{&p}
-			}
 
 			p.userStore = mockUserStore{}
 

@@ -62,7 +62,6 @@ func (client testClient) DoTransition(issueKey string, transitionID string) erro
 func TestTransitionJiraIssue(t *testing.T) {
 	p := Plugin{}
 	p.userStore = getMockUserStoreKV()
-	p.currentInstanceStore = mockCurrentInstanceStore{&p}
 
 	tests := map[string]struct {
 		issueKey    string
@@ -104,7 +103,12 @@ func TestTransitionJiraIssue(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			actual, err := p.transitionJiraIssue("connected_user", tt.issueKey, tt.toState)
+			actual, err := p.TransitionIssue(&InTransitionIssue{
+				InstanceID:       "",
+				mattermostUserID: "connected_user",
+				IssueKey:         tt.issueKey,
+				ToState:          tt.toState,
+			})
 			assert.Equal(t, tt.expectedMsg, actual)
 			if tt.expectedErr != nil {
 				assert.Error(t, tt.expectedErr, err)
@@ -150,7 +154,6 @@ func TestRouteIssueTransition(t *testing.T) {
 	p.SetAPI(api)
 
 	p.userStore = getMockUserStoreKV()
-	p.currentInstanceStore = mockCurrentInstanceStore{&p}
 
 	tests := map[string]struct {
 		bb           []byte

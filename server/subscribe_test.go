@@ -194,7 +194,6 @@ func TestListChannelSubscriptions(t *testing.T) {
 				conf.Secret = "somesecret"
 			})
 			p.SetAPI(api)
-			p.currentInstanceStore = mockCurrentInstanceStore{p}
 
 			subscriptionBytes, err := json.Marshal(tc.Subs)
 			assert.Nil(t, err)
@@ -254,7 +253,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 				return true
 			})).Return(nil)
 
-			actual, err := p.listChannelSubscriptions(team1.Id)
+			actual, err := p.listChannelSubscriptions("", team1.Id)
 			assert.Nil(t, err)
 			assert.NotNil(t, actual)
 
@@ -1011,7 +1010,6 @@ func TestGetChannelsSubscribed(t *testing.T) {
 				conf.Secret = "somesecret"
 			})
 			p.SetAPI(api)
-			p.currentInstanceStore = mockCurrentInstanceStore{p}
 
 			subscriptionBytes, err := json.Marshal(tc.Subs)
 			assert.Nil(t, err)

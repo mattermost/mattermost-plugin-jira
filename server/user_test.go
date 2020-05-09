@@ -13,15 +13,15 @@ import (
 
 func TestUserSettings_String(t *testing.T) {
 	tests := map[string]struct {
-		settings       UserSettings
+		settings       ConnectionSettings
 		expectedOutput string
 	}{
 		"notifications on": {
-			settings:       UserSettings{Notifications: false},
+			settings:       ConnectionSettings{Notifications: false},
 			expectedOutput: "\tNotifications: off",
 		},
 		"notifications off": {
-			settings:       UserSettings{Notifications: true},
+			settings:       ConnectionSettings{Notifications: true},
 			expectedOutput: "\tNotifications: on",
 		},
 	}
@@ -74,7 +74,6 @@ func TestRouteUserStart(t *testing.T) {
 	p.SetAPI(api)
 
 	p.userStore = getMockUserStoreKV()
-	p.currentInstanceStore = mockCurrentInstanceStore{&p}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {

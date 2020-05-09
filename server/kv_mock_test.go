@@ -12,7 +12,7 @@ import (
 )
 
 type jiraTestInstance struct {
-	JIRAInstance
+	InstanceCommon
 }
 
 var _ Instance = (*jiraTestInstance)(nil)
@@ -45,52 +45,31 @@ func (jti jiraTestInstance) GetDisplayDetails() map[string]string {
 func (jti jiraTestInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
 	return "http://jiraTestInstanceUserConnectURL.some", nil
 }
-func (jti jiraTestInstance) GetClient(jiraUser JIRAUser) (Client, error) {
+func (jti jiraTestInstance) GetClient(*Connection) (Client, error) {
 	return testClient{}, nil
 }
-func (jti jiraTestInstance) GetUserGroups(jiraUser JIRAUser) ([]*jira.UserGroup, error) {
+func (jti jiraTestInstance) GetUserGroups(*Connection) ([]*jira.UserGroup, error) {
 	return nil, errors.New("not implemented")
-}
-
-type mockCurrentInstanceStore struct {
-	plugin *Plugin
-}
-
-func (store mockCurrentInstanceStore) StoreCurrentJIRAInstance(ji Instance) error {
-	return nil
-}
-func (store mockCurrentInstanceStore) LoadCurrentJIRAInstance() (Instance, error) {
-	return &jiraTestInstance{
-		JIRAInstance: *NewJIRAInstance(store.plugin, "test", "jiraTestInstanceKey"),
-	}, nil
-}
-
-type mockCurrentInstanceStoreNoInstance struct {
-	plugin *Plugin
-}
-
-func (store mockCurrentInstanceStoreNoInstance) StoreCurrentJIRAInstance(ji Instance) error {
-	return nil
-}
-func (store mockCurrentInstanceStoreNoInstance) LoadCurrentJIRAInstance() (Instance, error) {
-	return nil, errors.New("failed to load current Jira instance: not found")
 }
 
 type mockUserStore struct{}
 
-func (store mockUserStore) StoreUserInfo(ji Instance, mattermostUserId string, jiraUser JIRAUser) error {
+func (store mockUserStore) StoreUser(*User) error {
 	return nil
 }
-func (store mockUserStore) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, error) {
-	return JIRAUser{}, nil
+func (store mockUserStore) LoadUser(string) (*User, error) {
+	return &User{}, nil
 }
-func (store mockUserStore) LoadMattermostUserId(ji Instance, jiraUserName string) (string, error) {
+func (store mockUserStore) StoreConnection(Instance, string, *Connection) error {
+	return nil
+}
+func (store mockUserStore) LoadConnection(Instance, string) (*Connection, error) {
+	return &Connection{}, nil
+}
+func (store mockUserStore) LoadMattermostUserId(instance Instance, jiraUserName string) (string, error) {
 	return "testMattermostUserId012345", nil
 }
-func (store mockUserStore) LoadJIRAUserByAccountId(ji Instance, accoundId string) (JIRAUser, error) {
-	return JIRAUser{}, nil
-}
-func (store mockUserStore) DeleteUserInfo(ji Instance, mattermostUserId string) error {
+func (store mockUserStore) DeleteConnection(instance Instance, mattermostUserId string) error {
 	return nil
 }
 func (store mockUserStore) CountUsers() (int, error) {

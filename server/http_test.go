@@ -365,7 +365,6 @@ func TestSubscribe(t *testing.T) {
 				conf.Secret = "somesecret"
 			})
 			p.SetAPI(api)
-			p.currentInstanceStore = mockCurrentInstanceStore{&p}
 			p.userStore = mockUserStore{}
 
 			w := httptest.NewRecorder()
@@ -511,7 +510,6 @@ func TestDeleteSubscription(t *testing.T) {
 				conf.Secret = "somesecret"
 			})
 			p.SetAPI(api)
-			p.currentInstanceStore = mockCurrentInstanceStore{&p}
 			p.userStore = mockUserStore{}
 
 			w := httptest.NewRecorder()
@@ -762,7 +760,6 @@ func TestEditSubscription(t *testing.T) {
 				conf.Secret = "somesecret"
 			})
 			p.SetAPI(api)
-			p.currentInstanceStore = mockCurrentInstanceStore{&p}
 			p.userStore = mockUserStore{}
 
 			w := httptest.NewRecorder()
@@ -956,7 +953,6 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 				conf.Secret = "somesecret"
 			})
 			p.SetAPI(api)
-			p.currentInstanceStore = mockCurrentInstanceStore{&p}
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("GET", "/api/v2/subscriptions/channel/"+tc.channelId, nil)

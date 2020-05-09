@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"text/template"
@@ -102,11 +103,9 @@ type Plugin struct {
 	conf     config
 	confLock sync.RWMutex
 
-	currentInstanceStore CurrentInstanceStore
-	instanceStore        InstanceStore
-	userStore            UserStore
-	otsStore             OTSStore
-	secretsStore         SecretsStore
+	userStore    UserStore
+	otsStore     OTSStore
+	secretsStore SecretsStore
 
 	// Active workflows store
 	workflowTriggerStore *TriggerStore
@@ -189,8 +188,6 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	store := NewStore(p)
-	p.currentInstanceStore = store
-	p.instanceStore = store
 	p.userStore = store
 	p.secretsStore = store
 	p.otsStore = store
@@ -220,26 +217,26 @@ func (p *Plugin) OnActivate() error {
 	go func() {
 		time.Sleep(time.Second * 10)
 
-		instances, err := p.instanceStore.LoadKnownJIRAInstances()
+		instances, err := p.LoadInstances()
 		if err != nil {
 			p.API.LogError("unable to register autolinks", "err", err)
 			return
 		}
 
-		for url := range instances {
-			instance, err := p.instanceStore.LoadJIRAInstance(url)
+		for _, url := range instances.IDs() {
+			instance, err := p.LoadInstance(url)
 			if err != nil {
 				continue
 			}
 
-			jci, ok := instance.(*jiraCloudInstance)
+			ci, ok := instance.(*cloudInstance)
 			if !ok {
 				p.API.LogWarn("only cloud instances supported for autolink", "err", err)
 				continue
 			}
 
-			if err := p.AddAutolinksForCloudInstance(jci); err != nil {
-				p.API.LogWarn("could not install autolinks for cloud instance", "instance", jci.BaseURL, "err", err)
+			if err := p.AddAutolinksForCloudInstance(ci); err != nil {
+				p.API.LogWarn("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 				continue
 			}
 		}
@@ -248,8 +245,8 @@ func (p *Plugin) OnActivate() error {
 	return nil
 }
 
-func (p *Plugin) AddAutolinksForCloudInstance(jci *jiraCloudInstance) error {
-	client, err := jci.getJIRAClientForBot()
+func (p *Plugin) AddAutolinksForCloudInstance(ci *cloudInstance) error {
+	client, err := ci.getClientForBot()
 	if err != nil {
 		return fmt.Errorf("unable to get jira client for server: %w", err)
 	}
@@ -260,7 +257,7 @@ func (p *Plugin) AddAutolinksForCloudInstance(jci *jiraCloudInstance) error {
 	}
 
 	for _, key := range keys {
-		err = p.AddAutolinks(key, jci.BaseURL)
+		err = p.AddAutolinks(key, ci.BaseURL)
 	}
 	if err != nil {
 		return fmt.Errorf("some keys were not installed: %w", err)
@@ -291,6 +288,8 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 
 	return nil
 }
+
+var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 func (p *Plugin) GetPluginKey() string {
 	sURL := p.GetSiteURL()

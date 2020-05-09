@@ -14,7 +14,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
-func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) (post *model.Post, returnErr error) {
+func (p *Plugin) CreateBotDMPost(instance Instance, userId, message, postType string) (post *model.Post, returnErr error) {
 	defer func() {
 		if returnErr != nil {
 			returnErr = errors.WithMessage(returnErr,
@@ -23,12 +23,12 @@ func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) 
 	}()
 
 	// Don't send DMs to users who have turned off notifications
-	jiraUser, err := p.userStore.LoadJIRAUser(ji, userId)
+	c, err := p.userStore.LoadConnection(instance, userId)
 	if err != nil {
 		// not connected to Jira, so no need to send a DM, and no need to report an error
 		return nil, nil
 	}
-	if jiraUser.Settings == nil || !jiraUser.Settings.Notifications {
+	if c.Settings == nil || !c.Settings.Notifications {
 		return nil, nil
 	}
 
@@ -81,24 +81,7 @@ func (p *Plugin) CreateBotDMtoMMUserId(mattermostUserId, format string, args ...
 	return post, nil
 }
 
-func (p *Plugin) StoreCurrentJIRAInstanceAndNotify(ji Instance) error {
-	appErr := p.currentInstanceStore.StoreCurrentJIRAInstance(ji)
-	if appErr != nil {
-		return appErr
-	}
-	// Notify users we have installed an instance
-	p.API.PublishWebSocketEvent(
-		wSEventInstanceStatus,
-		map[string]interface{}{
-			"instance_installed": true,
-			"instance_type":      ji.GetType(),
-		},
-		&model.WebsocketBroadcast{},
-	)
-	return nil
-}
-
-func replaceJiraAccountIds(ji Instance, body string) string {
+func (p *Plugin) replaceJiraAccountIds(instance Instance, body string) string {
 	result := body
 
 	for _, uname := range parseJIRAUsernamesFromText(body) {
@@ -107,13 +90,17 @@ func replaceJiraAccountIds(ji Instance, body string) string {
 		}
 
 		jiraUserID := uname[len("accountid:"):]
-		jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUserByAccountId(ji, jiraUserID)
+		mattermostUserID, err := p.userStore.LoadMattermostUserId(instance, jiraUserID)
+		if err != nil {
+			continue
+		}
+		c, err := p.userStore.LoadConnection(instance, mattermostUserID)
 		if err != nil {
 			continue
 		}
 
-		if jiraUser.DisplayName != "" {
-			result = strings.ReplaceAll(result, uname, jiraUser.DisplayName)
+		if c.DisplayName != "" {
+			result = strings.ReplaceAll(result, uname, c.DisplayName)
 		}
 	}
 

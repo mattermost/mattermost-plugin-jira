@@ -23,26 +23,28 @@ const (
 
 type mockUserStoreKV struct {
 	mockUserStore
-	kv map[string]JIRAUser
+	kv map[string]Connection
 }
 
-func (store mockUserStoreKV) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, error) {
+var _ UserStore = (*mockUserStoreKV)(nil)
+
+func (store mockUserStoreKV) LoadJIRAUser(instance Instance, mattermostUserId string) (Connection, error) {
 	user, ok := store.kv[mattermostUserId]
 	if !ok {
-		return JIRAUser{}, errors.New("user not found")
+		return Connection{}, errors.New("user not found")
 	}
 	return user, nil
 }
 
 func getMockUserStoreKV() mockUserStoreKV {
-	// Test JIRAUser
-	juser := JIRAUser{}
+	// Test Connection
+	juser := Connection{}
 	juser.AccountID = "test"
 
 	return mockUserStoreKV{
-		kv: map[string]JIRAUser{
-			mockUserIDWithNotifications:    {Settings: &UserSettings{Notifications: true}},
-			mockUserIDWithoutNotifications: {Settings: &UserSettings{Notifications: false}},
+		kv: map[string]Connection{
+			mockUserIDWithNotifications:    {Settings: &ConnectionSettings{Notifications: true}},
+			mockUserIDWithoutNotifications: {Settings: &ConnectionSettings{Notifications: false}},
 			"connected_user":               juser,
 		},
 	}
@@ -123,11 +125,6 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 			}).Once().Return(&model.Post{})
 
 			p.SetAPI(currentTestApi)
-			if tt.initializeEmptyUserStorage {
-				p.currentInstanceStore = mockCurrentInstanceStoreNoInstance{}
-			} else {
-				p.currentInstanceStore = mockCurrentInstanceStore{}
-			}
 			p.userStore = getMockUserStoreKV()
 
 			p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
@@ -229,9 +226,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			p.SetAPI(currentTestApi)
 
 			store := NewStore(&p)
-			p.instanceStore = store
 			p.secretsStore = store
-			p.currentInstanceStore = mockCurrentInstanceStore{&p}
 			p.userStore = getMockUserStoreKV()
 
 			cmdResponse, appError := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)

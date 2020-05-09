@@ -4,81 +4,128 @@
 package main
 
 import (
-	"net/http"
-	"regexp"
-	"sync"
+	"encoding/json"
+	"fmt"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
+	"github.com/pkg/errors"
 )
 
 const (
-	JIRATypeCloud  = "cloud"
-	JIRATypeServer = "server"
+	// Key to migrate the V2 installed instance
+	v2keyCurrentJIRAInstance = "current_jira_instance"
+	keyInstances             = "known_jira_instances"
+	prefixInstance           = "jira_instance_"
 )
 
-const prefixForInstance = true
-
-const wSEventInstanceStatus = "instance_status"
-
 type Instance interface {
-	GetClient(jiraUser JIRAUser) (Client, error)
+	GetClient(*Connection) (Client, error)
 	GetDisplayDetails() map[string]string
-	GetMattermostKey() string
-	GetPlugin() *Plugin
-	GetType() string
-	GetURL() string
 	GetUserConnectURL(mattermostUserId string) (string, error)
 	GetManageAppsURL() string
-	Init(p *Plugin)
+	GetURL() string
+
+	Common() *InstanceCommon
+	types.Value
 }
 
-type JIRAInstance struct {
-	*Plugin `json:"-"`
-	lock    *sync.RWMutex
+type InstanceCommon struct {
+	*Plugin       `json:"-"`
+	PluginVersion string `json:",omitempty"`
 
-	Key           string
-	Type          string
-	PluginVersion string
+	URL       types.ID
+	Alias     string
+	Type      string
+	IsDefault bool
 }
 
-type InstanceStatus struct {
-	InstanceInstalled bool   `json:"instance_installed"`
-	InstanceType      string `json:"instance_type"`
-}
-
-var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
-
-func NewJIRAInstance(p *Plugin, typ, key string) *JIRAInstance {
-	return &JIRAInstance{
+func newInstanceCommon(p *Plugin, typ string, url types.ID) *InstanceCommon {
+	return &InstanceCommon{
 		Plugin:        p,
 		Type:          typ,
-		Key:           key,
+		URL:           url,
 		PluginVersion: manifest.Version,
-		lock:          &sync.RWMutex{},
 	}
 }
 
-func (ji JIRAInstance) GetKey() string {
-	return ji.Key
+func (common InstanceCommon) GetID() types.ID {
+	return common.URL
 }
 
-func (ji JIRAInstance) GetType() string {
-	return ji.Type
+func (common *InstanceCommon) Common() *InstanceCommon {
+	return common
 }
 
-func (ji JIRAInstance) GetPlugin() *Plugin {
-	return ji.Plugin
-}
-
-func (ji *JIRAInstance) Init(p *Plugin) {
-	ji.Plugin = p
-	ji.lock = &sync.RWMutex{}
-}
-
-type withInstanceFunc func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error)
-
-func withInstance(store CurrentInstanceStore, w http.ResponseWriter, r *http.Request, f withInstanceFunc) (int, error) {
-	ji, err := store.LoadCurrentJIRAInstance()
+func (p *Plugin) CreateInactiveCloudInstance(jiraURL string) (returnErr error) {
+	ci := newCloudInstance(p, types.ID(jiraURL), false,
+		fmt.Sprintf(`{"BaseURL": "%s"}`, jiraURL),
+		&AtlassianSecurityContext{BaseURL: jiraURL})
+	data, err := json.Marshal(ci)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return errors.WithMessagef(err, "failed to store new Jira Cloud instance:%s", jiraURL)
 	}
-	return f(ji, w, r)
+
+	// Expire in 15 minutes
+	appErr := p.API.KVSetWithExpiry(hashkey(prefixInstance,
+		ci.GetURL()), data, 15*60)
+	if appErr != nil {
+		return errors.WithMessagef(appErr, "failed to store new Jira Cloud instance:%s", jiraURL)
+	}
+	p.debugf("Stored: new Jira Cloud instance: %s", ci.GetURL())
+	return nil
+}
+
+func (p *Plugin) LoadInstance(id types.ID) (Instance, error) {
+	return p.loadInstance(prefixInstance + id.String())
+}
+
+func (p *Plugin) loadInstance(fullkey string) (Instance, error) {
+	data, appErr := p.API.KVGet(fullkey)
+	if appErr != nil {
+		return nil, appErr
+	}
+	if data == nil {
+		return nil, errors.New("not found: " + fullkey)
+	}
+
+	// Unmarshal into any of the types just so that we can get the common data
+	si := serverInstance{}
+	err := json.Unmarshal(data, &si)
+	if err != nil {
+		return nil, err
+	}
+
+	switch si.Type {
+	case CloudInstanceType:
+		ci := cloudInstance{}
+		err = json.Unmarshal(data, &ci)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+		}
+		if len(ci.RawAtlassianSecurityContext) > 0 {
+			err = json.Unmarshal([]byte(ci.RawAtlassianSecurityContext), &ci.AtlassianSecurityContext)
+			if err != nil {
+				return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+			}
+		}
+		ci.Plugin = p
+		return &ci, nil
+
+	case ServerInstanceType:
+		si.Plugin = p
+		return &si, nil
+	}
+
+	return nil, errors.New(fmt.Sprintf("Jira instance %s has unsupported type: %s", fullkey, si.Type))
+}
+
+func (p *Plugin) StoreInstance(instance Instance) error {
+	store := kvstore.NewStore(kvstore.NewPluginStore(p.API))
+	return store.Entity(prefixInstance).Store(instance.GetID(), instance)
+}
+
+func (p *Plugin) DeleteInstance(id types.ID) error {
+	store := kvstore.NewStore(kvstore.NewPluginStore(p.API))
+	return store.Entity(prefixInstance).Delete(id)
 }
