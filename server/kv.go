@@ -11,17 +11,25 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/pkg/errors"
 )
 
 const (
 	// Key to migrate the V2 installed instance
+	v2keyCurrentJIRAInstance = "current_jira_instance"
+
+	keyInstances        = "known_jira_instances"
 	keyRSAKey           = "rsa_key"
 	keyTokenSecret      = "token_secret"
+	prefixInstance      = "jira_instance_"
 	prefixOneTimeSecret = "ots_" // + unique key that will be deleted after the first verification
 	prefixStats         = "stats_"
 	prefixUser          = "user_"
 )
+
+var ErrAlreadyExists = errors.New("already exists")
 
 type Store interface {
 	InstanceStore
@@ -36,12 +44,13 @@ type SecretsStore interface {
 }
 
 type InstanceStore interface {
-	CreateInactiveCloudInstance(jiraURL string) error
-	DeleteInstance(key string) error
-	LoadInstance(key string) (Instance, error)
-	LoadInstances() (Instances, error)
+	CreateInactiveCloudInstance(types.ID) error
+	DeleteInstance(types.ID) error
+	LoadInstance(types.ID) (Instance, error)
+	LoadInstances() (*Instances, error)
 	StoreInstance(instance Instance) error
-	StoreInstances(Instances) error
+	StoreInstances(*Instances) error
+	UpdateInstances(updatef func(instances *Instances) error) error
 }
 
 type UserStore interface {
@@ -427,4 +436,104 @@ func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserId string) (*OAu
 		return nil, errors.WithMessage(appErr, "failed to delete temporary credentials for "+mmUserId)
 	}
 	return &credentials, nil
+}
+
+func (store *store) CreateInactiveCloudInstance(jiraURL types.ID) (returnErr error) {
+	ci := newCloudInstance(store.plugin, types.ID(jiraURL), false,
+		fmt.Sprintf(`{"BaseURL": "%s"}`, jiraURL),
+		&AtlassianSecurityContext{BaseURL: jiraURL.String()})
+	data, err := json.Marshal(ci)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to store new Jira Cloud instance:%s", jiraURL)
+	}
+
+	// Expire in 15 minutes
+	appErr := store.plugin.API.KVSetWithExpiry(hashkey(prefixInstance,
+		ci.GetURL()), data, 15*60)
+	if appErr != nil {
+		return errors.WithMessagef(appErr, "failed to store new Jira Cloud instance:%s", jiraURL)
+	}
+	store.plugin.debugf("Stored: new Jira Cloud instance: %s", ci.GetURL())
+	return nil
+}
+
+func (store *store) LoadInstance(id types.ID) (Instance, error) {
+	fullkey := prefixInstance + id.String()
+	data, appErr := store.plugin.API.KVGet(fullkey)
+	if appErr != nil {
+		return nil, appErr
+	}
+	if data == nil {
+		return nil, errors.New("not found: " + fullkey)
+	}
+
+	// Unmarshal into any of the types just so that we can get the common data
+	si := serverInstance{}
+	err := json.Unmarshal(data, &si)
+	if err != nil {
+		return nil, err
+	}
+
+	switch si.Type {
+	case CloudInstanceType:
+		ci := cloudInstance{}
+		err = json.Unmarshal(data, &ci)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+		}
+		if len(ci.RawAtlassianSecurityContext) > 0 {
+			err = json.Unmarshal([]byte(ci.RawAtlassianSecurityContext), &ci.AtlassianSecurityContext)
+			if err != nil {
+				return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+			}
+		}
+		ci.Plugin = store.plugin
+		return &ci, nil
+
+	case ServerInstanceType:
+		si.Plugin = store.plugin
+		return &si, nil
+	}
+
+	return nil, errors.New(fmt.Sprintf("Jira instance %s has unsupported type: %s", fullkey, si.Type))
+}
+
+func (store *store) StoreInstance(instance Instance) error {
+	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
+	return kv.Entity(prefixInstance).Store(instance.GetID(), instance)
+}
+
+func (store *store) DeleteInstance(id types.ID) error {
+	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
+	return kv.Entity(prefixInstance).Delete(id)
+}
+
+func (store *store) LoadInstances() (*Instances, error) {
+	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
+	vs, err := kv.ValueIndex(keyInstances, &instancesArray{}).Load()
+	if err != nil {
+		return nil, err
+	}
+	return &Instances{
+		ValueSet: vs,
+	}, nil
+}
+
+func (store *store) StoreInstances(instances *Instances) error {
+	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
+	return kv.ValueIndex(keyInstances, &instancesArray{}).Store(instances.ValueSet)
+}
+
+func (store *store) UpdateInstances(updatef func(instances *Instances) error) error {
+	instances, err := store.LoadInstances()
+	if err == kvstore.ErrNotFound {
+		instances = NewInstances()
+	} else if err != nil {
+		return err
+	}
+	err = updatef(instances)
+	if err != nil {
+		return err
+	}
+	return store.StoreInstances(instances)
 }

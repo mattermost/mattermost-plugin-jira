@@ -51,7 +51,7 @@ func checkNotSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 			assert.Nil(t, err)
 		}
 
-		subKey := keyWithMockInstance(JIRA_SUBSCRIPTIONS_KEY)
+		subKey := keyWithMockInstance1(JIRA_SUBSCRIPTIONS_KEY)
 		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
 		api.On("KVGet", subKey).Return(existingBytes, nil)
 
@@ -85,7 +85,7 @@ func checkHasSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 
 		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
 
-		subKey := keyWithMockInstance(JIRA_SUBSCRIPTIONS_KEY)
+		subKey := keyWithMockInstance1(JIRA_SUBSCRIPTIONS_KEY)
 		api.On("KVGet", subKey).Return(existingBytes, nil)
 
 		api.On("KVCompareAndSet", subKey, existingBytes, mock.MatchedBy(func(data []byte) bool {
@@ -132,7 +132,7 @@ func hasSubscriptions(subscriptions []ChannelSubscription, t *testing.T) func(ap
 
 		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
 
-		subKey := keyWithMockInstance(JIRA_SUBSCRIPTIONS_KEY)
+		subKey := keyWithMockInstance1(JIRA_SUBSCRIPTIONS_KEY)
 		api.On("KVGet", subKey).Return(existingBytes, nil)
 	}
 }
@@ -366,6 +366,9 @@ func TestSubscribe(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
+			p.instanceStore = getMockInstanceStoreKV(
+				newTestInstance(&p, mockInstance1URL),
+			)
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("POST", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
@@ -415,7 +418,7 @@ func TestDeleteSubscription(t *testing.T) {
 				}))
 				assert.Nil(t, err)
 
-				subKey := keyWithMockInstance(JIRA_SUBSCRIPTIONS_KEY)
+				subKey := keyWithMockInstance1(JIRA_SUBSCRIPTIONS_KEY)
 				api.On("KVGet", subKey).Return(existingBytes, nil)
 				api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(false)
 			},
@@ -511,6 +514,9 @@ func TestDeleteSubscription(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
+			p.instanceStore = getMockInstanceStoreKV(
+				newTestInstance(&p, mockInstance1URL),
+			)
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("DELETE", "/api/v2/subscriptions/channel/"+tc.subscriptionId, nil)
@@ -761,6 +767,9 @@ func TestEditSubscription(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
+			p.instanceStore = getMockInstanceStoreKV(
+				newTestInstance(&p, mockInstance1URL),
+			)
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("PUT", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
@@ -953,6 +962,9 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 				conf.Secret = "somesecret"
 			})
 			p.SetAPI(api)
+			p.instanceStore = getMockInstanceStoreKV(
+				newTestInstance(&p, mockInstance1URL),
+			)
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("GET", "/api/v2/subscriptions/channel/"+tc.channelId, nil)

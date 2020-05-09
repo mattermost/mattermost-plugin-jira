@@ -138,10 +138,10 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		if len(storedSecret) == 0 || storedSecret != secret {
 			return respondErr(w, http.StatusUnauthorized, errors.New("this link has already been used"))
 		}
-		err = p.ConnectUser(ci, mattermostUserId, c)
+		err = p.connectUser(ci, mattermostUserId, c)
 
 	case routeACUserDisconnected:
-		_, err = p.DisconnectUser(ci, mattermostUserId)
+		_, err = p.disconnectUser(ci, mattermostUserId)
 
 	case routeACUserConfirm:
 

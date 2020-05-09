@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
@@ -59,9 +60,27 @@ func (client testClient) DoTransition(issueKey string, transitionID string) erro
 	return nil
 }
 
+func (client testClient) GetIssue(issueKey string, options *jira.GetQueryOptions) (*jira.Issue, error) {
+	if issueKey == nonExistantIssueKey {
+		return nil, kvstore.ErrNotFound
+	}
+	return &jira.Issue{
+		Fields: &jira.IssueFields{
+			Reporter: &jira.User{},
+			Status:   &jira.Status{},
+		},
+	}, nil
+}
+
 func TestTransitionJiraIssue(t *testing.T) {
+	api := &plugintest.API{}
+	api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
 	p := Plugin{}
+	p.SetAPI(api)
 	p.userStore = getMockUserStoreKV()
+	p.instanceStore = getMockInstanceStoreKV(
+		newTestInstance(&p, mockInstance1URL),
+	)
 
 	tests := map[string]struct {
 		issueKey    string
@@ -96,7 +115,7 @@ func TestTransitionJiraIssue(t *testing.T) {
 		"Successfully transitioning to new state": {
 			issueKey:    existingIssueKey,
 			toState:     "inprog",
-			expectedMsg: fmt.Sprintf("[%s](%s/browse/%s) transitioned to `In Progress`", existingIssueKey, mockCurrentInstanceURL, existingIssueKey),
+			expectedMsg: fmt.Sprintf("[%s](%s/browse/%s) transitioned to `In Progress`", existingIssueKey, mockInstance1URL, existingIssueKey),
 			expectedErr: nil,
 		},
 	}

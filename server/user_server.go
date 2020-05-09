@@ -112,7 +112,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	// Set default settings the first time a user connects
 	c.Settings = &ConnectionSettings{Notifications: true}
 
-	err = p.ConnectUser(instance, mattermostUserId, c)
+	err = p.connectUser(instance, mattermostUserId, c)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -144,7 +144,7 @@ func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, i
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	_, err = p.DisconnectUser(instance, mattermostUserId)
+	_, err = p.disconnectUser(instance, mattermostUserId)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}

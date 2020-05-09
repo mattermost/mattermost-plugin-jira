@@ -7,6 +7,7 @@ import (
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -134,12 +135,12 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 		return p.help(header)
 	}
 
-	instance, args, err := p.parseCommandArgsInstance(args)
+	instanceID, args, err := p.parseCommandFlagInstanceID(args)
 	if err != nil {
 		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
 	}
 
-	disconnected, err := p.DisconnectUser(instance, header.UserId)
+	disconnected, err := p.DisconnectUser(instanceID, header.UserId)
 	if err == ErrConnectionNotFound {
 		return p.responsef(header, "Could not complete the **disconnection** request. You do not currently have a Jira account linked to your Mattermost account.")
 	}
@@ -154,7 +155,7 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 		return p.help(header)
 	}
 
-	instance, args, err := p.parseCommandArgsInstance(args)
+	instance, args, err := p.parseCommandFlagInstance(args)
 	if err != nil {
 		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
 	}
@@ -175,15 +176,15 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 }
 
 func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	instance, args, err := p.parseCommandArgsInstance(args)
+	instance, args, err := p.parseCommandFlagInstance(args)
 	if err != nil {
-		return p.responsef(header, "Failed to load Jira instance. Please contact your system administrator. Error: "+err.Error())
+		return p.responsef(header, "Failed to load Jira instance. Please contact your system administrator. Error: %v.", err)
 	}
 
 	mattermostUserId := header.UserId
 	conn, err := p.userStore.LoadConnection(instance, mattermostUserId)
 	if err != nil {
-		return p.responsef(header, "Your username is not connected to Jira. Please type `jira connect`. %v", err)
+		return p.responsef(header, "Your username is not connected to Jira. Please type `jira connect`. Error: %v.", err)
 	}
 
 	if len(args) == 0 {
@@ -205,24 +206,13 @@ func executeJiraDefault(p *Plugin, c *plugin.Context, header *model.CommandArgs,
 
 // executeView returns a Jira issue formatted as a slack attachment, or an error message.
 func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	instanceID := ""
-	issueID := ""
-	switch len(args) {
-	case 1:
-		issueID = args[0]
-	case 2:
-		instanceID = args[0]
-		issueID = args[1]
-	default:
-		return p.responsef(header, "Please specify an issue key in the form `/jira view <issue-key>`.")
-	}
-
-	instance, _, err := p.parseCommandArgsInstance([]string{instanceID})
+	instance, _, err := p.parseCommandFlagInstance(args)
 	if err != nil {
 		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
 	}
-
+	issueID := args[0]
 	mattermostUserId := header.UserId
+
 	conn, err := p.userStore.LoadConnection(instance, mattermostUserId)
 	if err != nil {
 		// TODO: try to retrieve the issue anonymously
@@ -253,7 +243,10 @@ func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArg
 	if !authorized {
 		return p.responsef(header, "`/jira subscribe list` can only be run by a system administrator.")
 	}
-	instanceID, args := p.parseCommandArgsInstanceID(args)
+	instanceID, args, err := p.parseCommandFlagInstanceID(args)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
 
 	msg, err := p.listChannelSubscriptions(instanceID, header.TeamId)
 	if err != nil {
@@ -292,7 +285,7 @@ func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs
 
 	// Create an "uninitialized" instance of Jira Cloud that will
 	// receive the /installed callback
-	err = p.CreateInactiveCloudInstance(jiraURL)
+	err = p.instanceStore.CreateInactiveCloudInstance(types.ID(jiraURL))
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -404,7 +397,7 @@ func executeUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, a
 }
 
 func executeUnassign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	instance, args, err := p.parseCommandArgsInstance(args)
+	instance, args, err := p.parseCommandFlagInstance(args)
 	if err != nil {
 		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
 	}
@@ -422,7 +415,7 @@ func executeUnassign(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 }
 
 func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	instance, args, err := p.parseCommandArgsInstance(args)
+	instance, args, err := p.parseCommandFlagInstance(args)
 	if err != nil {
 		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
 	}
@@ -688,7 +681,7 @@ func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs
 		return p.help(header)
 	}
 
-	instances, err := p.LoadInstances()
+	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
 		return p.responsef(header, "Failed to load known Jira instances: %v", err)
 	}
@@ -704,7 +697,7 @@ func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs
 	text := "Known Jira instances (selected instance is **bold**)\n\n| |URL|Type|\n|--|--|--|\n"
 	for i, key := range keys {
 		instanceID := types.ID(key)
-		instance, err := p.LoadInstance(instanceID)
+		instance, err := p.instanceStore.LoadInstance(instanceID)
 		if err != nil {
 			text += fmt.Sprintf("|%v|%s|error: %v|\n", i+1, key, err)
 			continue
@@ -727,18 +720,43 @@ func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs
 	return p.responsef(header, text)
 }
 
-func (p *Plugin) parseCommandArgsInstanceID(args []string) (types.ID, []string) {
+func (p *Plugin) parseCommandFlagInstanceID(args []string) (types.ID, []string, error) {
 	id := types.ID("")
-	if len(args) > 0 {
-		id = types.ID(args[0])
-		args = args[1:]
+	remaining := []string{}
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if !strings.HasPrefix(arg, "--instance") {
+			remaining = append(remaining, arg)
+			continue
+		}
+		if id != "" {
+			return "", nil, errors.New("--instance may not be specified multiple times")
+		}
+		str := arg[len("--instance"):]
+
+		// --instance=X
+		if strings.HasPrefix(str, "=") {
+			id = types.ID(str[1:])
+			continue
+		}
+
+		// --instance X
+		if i == len(args)-1 {
+			return "", nil, errors.New("--instance requires a value")
+		}
+		i++
+		id = types.ID(args[i])
 	}
-	return id, args
+
+	return id, remaining, nil
 }
 
-func (p *Plugin) parseCommandArgsInstance(args []string) (Instance, []string, error) {
-	id, args := p.parseCommandArgsInstanceID(args)
-	instance, err := p.LoadDefaultInstance(id)
+func (p *Plugin) parseCommandFlagInstance(args []string) (Instance, []string, error) {
+	instanceID, args, err := p.parseCommandFlagInstanceID(args)
+	if err != nil {
+		return nil, nil, err
+	}
+	instance, err := p.LoadDefaultInstance(instanceID)
 	if err != nil {
 		return nil, nil, err
 	}

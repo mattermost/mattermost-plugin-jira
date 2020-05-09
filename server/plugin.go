@@ -103,9 +103,10 @@ type Plugin struct {
 	conf     config
 	confLock sync.RWMutex
 
-	userStore    UserStore
-	otsStore     OTSStore
-	secretsStore SecretsStore
+	instanceStore InstanceStore
+	userStore     UserStore
+	otsStore      OTSStore
+	secretsStore  SecretsStore
 
 	// Active workflows store
 	workflowTriggerStore *TriggerStore
@@ -188,6 +189,7 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	store := NewStore(p)
+	p.instanceStore = store
 	p.userStore = store
 	p.secretsStore = store
 	p.otsStore = store
@@ -217,14 +219,14 @@ func (p *Plugin) OnActivate() error {
 	go func() {
 		time.Sleep(time.Second * 10)
 
-		instances, err := p.LoadInstances()
+		instances, err := p.instanceStore.LoadInstances()
 		if err != nil {
 			p.API.LogError("unable to register autolinks", "err", err)
 			return
 		}
 
 		for _, url := range instances.IDs() {
-			instance, err := p.LoadInstance(url)
+			instance, err := p.instanceStore.LoadInstance(url)
 			if err != nil {
 				continue
 			}

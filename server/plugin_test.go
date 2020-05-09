@@ -169,6 +169,9 @@ func TestPlugin(t *testing.T) {
 				conf.Secret = tc.Configuration.Secret
 			})
 			p.SetAPI(api)
+			p.instanceStore = getMockInstanceStoreKV(
+				newTestInstance(&p, mockInstance1URL),
+			)
 
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, tc.Request)

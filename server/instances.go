@@ -5,7 +5,6 @@ package main
 
 import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
@@ -21,6 +20,16 @@ const wSEventInstanceStatus = "instance_status"
 type Instances struct {
 	*types.ValueSet // of *InstanceCommon, not Instance
 	defaultID       types.ID
+}
+
+func NewInstances(initial ...*InstanceCommon) *Instances {
+	instances := &Instances{
+		ValueSet: types.NewValueSet(&instancesArray{}),
+	}
+	for _, ic := range initial {
+		instances.Set(ic)
+	}
+	return instances
 }
 
 func (instances *Instances) IsEmpty() bool {
@@ -70,62 +79,32 @@ func (instances Instances) SetDefault(id types.ID) error {
 	return nil
 }
 
-type instancesCommonArray []*InstanceCommon
+type instancesArray []*InstanceCommon
 
-func (p instancesCommonArray) Len() int                   { return len(p) }
-func (p instancesCommonArray) GetAt(n int) types.Value    { return p[n] }
-func (p instancesCommonArray) SetAt(n int, v types.Value) { p[n] = v.(*InstanceCommon) }
+func (p instancesArray) Len() int                   { return len(p) }
+func (p instancesArray) GetAt(n int) types.Value    { return p[n] }
+func (p instancesArray) SetAt(n int, v types.Value) { p[n] = v.(*InstanceCommon) }
 
-func (p instancesCommonArray) InstanceOf() types.ValueArray {
-	inst := make(instancesCommonArray, 0)
+func (p instancesArray) InstanceOf() types.ValueArray {
+	inst := make(instancesArray, 0)
 	return &inst
 }
-func (p *instancesCommonArray) Ref() interface{} { return &p }
-func (p *instancesCommonArray) Resize(n int) {
-	*p = make(instancesCommonArray, n)
+func (p *instancesArray) Ref() interface{} { return &p }
+func (p *instancesArray) Resize(n int) {
+	*p = make(instancesArray, n)
 }
-
-func (p *Plugin) LoadInstances() (*Instances, error) {
-	store := kvstore.NewStore(kvstore.NewPluginStore(p.API))
-	vs, err := store.ValueIndex(keyInstances, &instancesCommonArray{}).Load()
-	if err != nil {
-		return nil, err
-	}
-	return &Instances{
-		ValueSet: vs,
-	}, nil
-}
-
-func (p *Plugin) StoreInstances(instances *Instances) error {
-	store := kvstore.NewStore(kvstore.NewPluginStore(p.API))
-	return store.ValueIndex(keyInstances, &instancesCommonArray{}).Store(instances.ValueSet)
-}
-
-func (p *Plugin) UpdateInstances(updatef func(instances *Instances) error) error {
-	instances, err := p.LoadInstances()
-	if err != nil {
-		return err
-	}
-	err = updatef(instances)
-	if err != nil {
-		return err
-	}
-	return p.StoreInstances(instances)
-}
-
-var ErrAlreadyExists = errors.New("already exists")
 
 func (p *Plugin) InstallInstance(instance Instance) error {
-	err := p.UpdateInstances(
+	err := p.instanceStore.UpdateInstances(
 		func(instances *Instances) error {
 			if instances.Contains(instance.Common().URL) {
 				return ErrAlreadyExists
 			}
-			err := p.StoreInstance(instance)
+			err := p.instanceStore.StoreInstance(instance)
 			if err != nil {
 				return err
 			}
-			instances.Set(instance)
+			instances.Set(instance.Common())
 			return nil
 		})
 	if err != nil {
@@ -148,20 +127,20 @@ var ErrInstanceNotFound = errors.New("instance not found")
 
 func (p *Plugin) UninstallInstance(id types.ID, instanceType string) (Instance, error) {
 	var instance Instance
-	err := p.UpdateInstances(
+	err := p.instanceStore.UpdateInstances(
 		func(instances *Instances) error {
 			if !instances.Contains(id) {
 				return ErrInstanceNotFound
 			}
 			var err error
-			instance, err = p.LoadInstance(id)
+			instance, err = p.instanceStore.LoadInstance(id)
 			if err != nil {
 				return err
 			}
 			if instanceType != instance.Common().Type {
 				return errors.Errorf("%s did not match instance %s type %s", instanceType, id, instance.Common().Type)
 			}
-			return p.DeleteInstance(id)
+			return p.instanceStore.DeleteInstance(id)
 		})
 	if err != nil {
 		return nil, err
@@ -180,7 +159,7 @@ func (p *Plugin) UninstallInstance(id types.ID, instanceType string) (Instance, 
 }
 
 func (p *Plugin) StoreDefaultInstance(id types.ID) error {
-	err := p.UpdateInstances(
+	err := p.instanceStore.UpdateInstances(
 		func(instances *Instances) error {
 			return instances.SetDefault(id)
 		})
@@ -193,9 +172,12 @@ func (p *Plugin) StoreDefaultInstance(id types.ID) error {
 func (p *Plugin) LoadDefaultInstance(explicit types.ID) (Instance, error) {
 	id := types.ID("")
 	if explicit == "" {
-		instances, err := p.LoadInstances()
+		instances, err := p.instanceStore.LoadInstances()
 		if err != nil {
 			return nil, err
+		}
+		if instances.IsEmpty() {
+			return nil, ErrInstanceNotFound
 		}
 		id = instances.GetDefault().GetID()
 	} else {
@@ -206,7 +188,7 @@ func (p *Plugin) LoadDefaultInstance(explicit types.ID) (Instance, error) {
 		id = types.ID(normalized)
 	}
 
-	instance, err := p.LoadInstance(id)
+	instance, err := p.instanceStore.LoadInstance(id)
 	if err != nil {
 		return nil, err
 	}

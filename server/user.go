@@ -164,7 +164,7 @@ func (p *Plugin) httpGetSettingsInfo(w http.ResponseWriter, r *http.Request) (in
 	})
 }
 
-func (p *Plugin) ConnectUser(instance Instance, mattermostUserId string, c *Connection) error {
+func (p *Plugin) connectUser(instance Instance, mattermostUserId string, c *Connection) error {
 	err := p.userStore.StoreConnection(instance, mattermostUserId, c)
 	if err != nil {
 		return err
@@ -182,7 +182,15 @@ func (p *Plugin) ConnectUser(instance Instance, mattermostUserId string, c *Conn
 	return nil
 }
 
-func (p *Plugin) DisconnectUser(instance Instance, mattermostUserId string) (*Connection, error) {
+func (p *Plugin) DisconnectUser(instanceID types.ID, mattermostUserID string) (*Connection, error) {
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return nil, err
+	}
+	return p.disconnectUser(instance, mattermostUserID)
+}
+
+func (p *Plugin) disconnectUser(instance Instance, mattermostUserId string) (*Connection, error) {
 	conn, err := p.userStore.LoadConnection(instance, mattermostUserId)
 	if err != nil {
 		return nil, err

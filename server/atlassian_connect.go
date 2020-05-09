@@ -53,7 +53,7 @@ func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, e
 
 	// Only allow this operation once, a JIRA instance must already exist
 	// for asc.BaseURL, but not already installed.
-	instance, err := p.LoadInstance(types.ID(asc.BaseURL))
+	instance, err := p.instanceStore.LoadInstance(types.ID(asc.BaseURL))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to load instance "+asc.BaseURL))
@@ -74,7 +74,7 @@ func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, e
 
 	// Create a permanent instance record, also store it as current
 	newInstance := newCloudInstance(p, types.ID(asc.BaseURL), true, string(body), &asc)
-	err = p.StoreInstance(newInstance)
+	err = p.instanceStore.StoreInstance(newInstance)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}

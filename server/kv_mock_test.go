@@ -8,47 +8,59 @@ import (
 	"fmt"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/pkg/errors"
 )
 
-type jiraTestInstance struct {
+type testInstance struct {
 	InstanceCommon
 }
 
-var _ Instance = (*jiraTestInstance)(nil)
+var _ Instance = (*testInstance)(nil)
 
 const (
-	mockCurrentInstanceURL = "http://jiraTestInstanceURL.some"
+	mockInstance1URL = "http://jiraTestInstance1URL.some"
+	mockInstance2URL = "http://jiraTestInstance2URL.some"
 )
 
-func keyWithMockInstance(key string) string {
+func keyWithMockInstance1(key string) string {
 	h := md5.New()
-	fmt.Fprintf(h, "%s/%s", mockCurrentInstanceURL, key)
+	fmt.Fprintf(h, "%s/%s", mockInstance1URL, key)
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func (jti jiraTestInstance) GetURL() string {
-	return mockCurrentInstanceURL
+func newTestInstance(p *Plugin, id types.ID) Instance {
+	return &testInstance{
+		InstanceCommon: InstanceCommon{
+			URL:    id,
+			Plugin: p,
+			Type:   "testInstanceType",
+		},
+	}
 }
-func (jti jiraTestInstance) GetManageAppsURL() string {
-	return fmt.Sprintf("%s/apps/manage", mockCurrentInstanceURL)
+
+func (ti testInstance) GetURL() string {
+	return ti.URL.String()
 }
-func (jti jiraTestInstance) GetPlugin() *Plugin {
-	return jti.Plugin
+func (ti testInstance) GetManageAppsURL() string {
+	return fmt.Sprintf("%s/apps/manage", ti.URL)
 }
-func (jti jiraTestInstance) GetMattermostKey() string {
+func (ti testInstance) GetPlugin() *Plugin {
+	return ti.Plugin
+}
+func (ti testInstance) GetMattermostKey() string {
 	return "jiraTestInstanceMattermostKey"
 }
-func (jti jiraTestInstance) GetDisplayDetails() map[string]string {
+func (ti testInstance) GetDisplayDetails() map[string]string {
 	return map[string]string{}
 }
-func (jti jiraTestInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
-	return "http://jiraTestInstanceUserConnectURL.some", nil
+func (ti testInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
+	return fmt.Sprintf("%s/UserConnectURL.some", ti.URL), nil
 }
-func (jti jiraTestInstance) GetClient(*Connection) (Client, error) {
+func (ti testInstance) GetClient(*Connection) (Client, error) {
 	return testClient{}, nil
 }
-func (jti jiraTestInstance) GetUserGroups(*Connection) ([]*jira.UserGroup, error) {
+func (ti testInstance) GetUserGroups(*Connection) ([]*jira.UserGroup, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -74,4 +86,28 @@ func (store mockUserStore) DeleteConnection(instance Instance, mattermostUserId 
 }
 func (store mockUserStore) CountUsers() (int, error) {
 	return 0, nil
+}
+
+type mockInstanceStore struct{}
+
+func (store mockInstanceStore) CreateInactiveCloudInstance(types.ID) error {
+	return nil
+}
+func (store mockInstanceStore) DeleteInstance(types.ID) error {
+	return nil
+}
+func (store mockInstanceStore) LoadInstance(types.ID) (Instance, error) {
+	return &testInstance{}, nil
+}
+func (store mockInstanceStore) LoadInstances() (*Instances, error) {
+	return NewInstances(), nil
+}
+func (store mockInstanceStore) StoreInstance(instance Instance) error {
+	return nil
+}
+func (store mockInstanceStore) StoreInstances(*Instances) error {
+	return nil
+}
+func (store mockInstanceStore) UpdateInstances(updatef func(instances *Instances) error) error {
+	return nil
 }

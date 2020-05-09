@@ -24,6 +24,9 @@ func TestListChannelSubscriptions(t *testing.T) {
 	p.updateConfig(func(conf *config) {
 		conf.Secret = "somesecret"
 	})
+	p.instanceStore = getMockInstanceStoreKV(
+		newTestInstance(p, mockInstance1URL),
+	)
 
 	for name, tc := range map[string]struct {
 		Subs          *Subscriptions
@@ -198,7 +201,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 			subscriptionBytes, err := json.Marshal(tc.Subs)
 			assert.Nil(t, err)
 
-			subKey := keyWithMockInstance(JIRA_SUBSCRIPTIONS_KEY)
+			subKey := keyWithMockInstance1(JIRA_SUBSCRIPTIONS_KEY)
 			api.On("KVGet", subKey).Return(subscriptionBytes, nil)
 
 			channel1 := &model.Channel{
@@ -267,6 +270,9 @@ func TestGetChannelsSubscribed(t *testing.T) {
 	p.updateConfig(func(conf *config) {
 		conf.Secret = "somesecret"
 	})
+	p.instanceStore = getMockInstanceStoreKV(
+		newTestInstance(p, mockInstance1URL),
+	)
 
 	for name, tc := range map[string]struct {
 		WebhookTestData string
@@ -1014,7 +1020,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			subscriptionBytes, err := json.Marshal(tc.Subs)
 			assert.Nil(t, err)
 
-			subKey := keyWithMockInstance(JIRA_SUBSCRIPTIONS_KEY)
+			subKey := keyWithMockInstance1(JIRA_SUBSCRIPTIONS_KEY)
 			api.On("KVGet", subKey).Return(subscriptionBytes, nil)
 
 			api.On("KVCompareAndSet", subKey, subscriptionBytes, mock.MatchedBy(func(data []byte) bool {
