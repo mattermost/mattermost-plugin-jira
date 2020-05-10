@@ -111,19 +111,19 @@ func (ci *cloudInstance) GetManageAppsURL() string {
 	return fmt.Sprintf("%s/plugins/servlet/upm", ci.GetURL())
 }
 
-func (ci *cloudInstance) GetClient(c *Connection) (Client, error) {
-	client, _, err := ci.getClientForConnection(c)
+func (ci *cloudInstance) GetClient(connection *Connection) (Client, error) {
+	client, _, err := ci.getClientForConnection(connection)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get Jira client for user "+c.DisplayName)
+		return nil, errors.WithMessage(err, "failed to get Jira client for user "+connection.DisplayName)
 	}
 	return newCloudClient(client), nil
 }
 
 // Creates a client for acting on behalf of a user
-func (ci *cloudInstance) getClientForConnection(c *Connection) (*jira.Client, *http.Client, error) {
+func (ci *cloudInstance) getClientForConnection(connection *Connection) (*jira.Client, *http.Client, error) {
 	oauth2Conf := oauth2_jira.Config{
 		BaseURL: ci.GetURL(),
-		Subject: c.AccountID,
+		Subject: connection.AccountID,
 		Config: oauth2.Config{
 			ClientID:     ci.AtlassianSecurityContext.OAuthClientId,
 			ClientSecret: ci.AtlassianSecurityContext.SharedSecret,

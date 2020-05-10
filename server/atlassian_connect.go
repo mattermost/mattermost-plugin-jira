@@ -75,12 +75,10 @@ func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, e
 
 	// Create a permanent instance record, also store it as current
 	newInstance := newCloudInstance(p, types.ID(asc.BaseURL), true, string(body), &asc)
-	err = p.instanceStore.StoreInstance(newInstance)
+	err = p.InstallInstance(instance)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
-
-	// TODO: Add to index and notify! <><>
 
 	// Setup autolink
 	p.AddAutolinksForCloudInstance(newInstance)

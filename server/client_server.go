@@ -44,8 +44,8 @@ func (client jiraServerClient) SearchUsersAssignableToIssue(issueKey, query stri
 	return SearchUsersAssignableToIssue(client, issueKey, "username", query, maxResults)
 }
 
-// GetUserGroups returns the list of groups that a user belongs to.
-func (client jiraServerClient) GetUserGroups(c *Connection) ([]*jira.UserGroup, error) {
+// GetSelfGroups returns the list of groups that a user belongs to.
+func (client jiraServerClient) GetUserGroups(connection *Connection) ([]*jira.UserGroup, error) {
 	var result struct {
 		Groups struct {
 			Items []*jira.UserGroup

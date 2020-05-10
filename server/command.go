@@ -56,30 +56,31 @@ type CommandHandler struct {
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
-		"connect":                   executeConnect,
-		"disconnect":                executeDisconnect,
-		"install/cloud":             executeInstallCloud,
-		"install/server":            executeInstallServer,
-		"view":                      executeView,
-		"settings":                  executeSettings,
-		"transition":                executeTransition,
-		"assign":                    executeAssign,
-		"unassign":                  executeUnassign,
-		"uninstall":                 executeUninstall,
-		"webhook":                   executeWebhookURL,
-		"stats":                     executeStats,
-		"info":                      executeInfo,
-		"help":                      commandHelp,
-		"subscribe/list":            executeSubscribeList,
-		"debug/stats/reset":         executeDebugStatsReset,
-		"debug/stats/save":          executeDebugStatsSave,
-		"debug/stats/expvar":        executeDebugStatsExpvar,
-		"debug/workflow":            executeDebugWorkflow,
-		"instance/list":             executeInstanceList,
-		"instance/default":          executeInstanceDefault,
-		"instance/uninstall/cloud":  executeUninstall,
-		"instance/uninstall/server": executeUninstall,
-		"instance/settings":         executeSettings,
+		"connect":                 executeConnect,
+		"disconnect":              executeDisconnect,
+		"install/cloud":           executeInstanceInstallCloud,
+		"install/server":          executeInstanceInstallServer,
+		"view":                    executeView,
+		"settings":                executeSettings,
+		"transition":              executeTransition,
+		"assign":                  executeAssign,
+		"unassign":                executeUnassign,
+		"uninstall":               executeInstanceUninstall,
+		"webhook":                 executeWebhookURL,
+		"stats":                   executeStats,
+		"info":                    executeInfo,
+		"help":                    commandHelp,
+		"subscribe/list":          executeSubscribeList,
+		"debug/stats/reset":       executeDebugStatsReset,
+		"debug/stats/save":        executeDebugStatsSave,
+		"debug/stats/expvar":      executeDebugStatsExpvar,
+		"debug/workflow":          executeDebugWorkflow,
+		"instance/install/cloud":  executeInstanceInstallCloud,
+		"instance/install/server": executeInstanceInstallServer,
+		"instance/list":           executeInstanceList,
+		"instance/default":        executeInstanceDefault,
+		"instance/uninstall":      executeInstanceUninstall,
+		"instance/settings":       executeSettings,
 	},
 	defaultHandler: executeJiraDefault,
 }
@@ -132,15 +133,13 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 }
 
 func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	if len(args) > 1 {
-		return p.help(header)
-	}
-
 	instanceID, args, err := p.parseCommandFlagInstanceID(args)
 	if err != nil {
 		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
 	}
-
+	if len(args) != 0 {
+		return p.help(header)
+	}
 	disconnected, err := p.DisconnectUser(instanceID, header.UserId)
 	if err == ErrConnectionNotFound {
 		return p.responsef(header, "Could not complete the **disconnection** request. You do not currently have a Jira account linked to your Mattermost account.")
@@ -152,28 +151,26 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 }
 
 func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	if len(args) > 1 {
-		return p.help(header)
-	}
-
 	instance, args, err := p.parseCommandFlagInstance(args)
 	if err != nil {
 		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
 	}
-
-	if instance == nil {
-		return p.responsef(header, "[Click here to link your Jira account](%s%s)",
-			p.GetPluginURL(), routeUserConnect)
+	if len(args) != 0 {
+		return p.help(header)
 	}
 
-	conn, err := p.userStore.LoadConnection(instance, header.UserId)
-	if err == nil && len(conn.JiraAccountID()) != 0 {
-		return p.responsef(header, "You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.")
+	link := routeUserConnect
+	if instance != nil {
+		conn, err := p.userStore.LoadConnection(instance, header.UserId)
+		if err == nil && len(conn.JiraAccountID()) != 0 {
+			return p.responsef(header, "You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.")
+		}
+
+		link = p.pathWithInstance(link, instance.GetID())
 	}
 
-	// TODO add instanceID to the parameter to go straight there <><>
 	return p.responsef(header, "[Click here to link your Jira account](%s%s)",
-		p.GetPluginURL(), routeUserConnect)
+		p.GetPluginURL(), link)
 }
 
 func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -211,8 +208,12 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	if err != nil {
 		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
 	}
-	issueID := args[0]
+	if len(args) != 1 {
+		return p.responsef(header, "Please specify an issue key in the form `/jira view <issue-key>`.")
+	}
+
 	mattermostUserId := header.UserId
+	issueID := args[0]
 
 	conn, err := p.userStore.LoadConnection(instance, mattermostUserId)
 	if err != nil {
@@ -234,6 +235,57 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	_ = p.API.SendEphemeralPost(header.UserId, post)
 
 	return &model.CommandResponse{}
+}
+
+func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(header, "`/jira list` can only be run by a system administrator.")
+	}
+	if len(args) != 0 {
+		return p.help(header)
+	}
+
+	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return p.responsef(header, "Failed to load known Jira instances: %v", err)
+	}
+	if instances.IsEmpty() {
+		return p.responsef(header, "(none installed)\n")
+	}
+
+	keys := []string{}
+	for _, key := range instances.IDs() {
+		keys = append(keys, key.String())
+	}
+	sort.Strings(keys)
+	text := "Known Jira instances (selected instance is **bold**)\n\n| |URL|Type|\n|--|--|--|\n"
+	for i, key := range keys {
+		instanceID := types.ID(key)
+		instance, err := p.instanceStore.LoadInstance(instanceID)
+		if err != nil {
+			text += fmt.Sprintf("|%v|%s|error: %v|\n", i+1, key, err)
+			continue
+		}
+		details := ""
+		for k, v := range instance.GetDisplayDetails() {
+			details += fmt.Sprintf("%s:%s, ", k, v)
+		}
+		if len(details) > len(", ") {
+			details = details[:len(details)-2]
+		} else {
+			details = instance.Common().Type
+		}
+		format := "|%v|%s|%s|\n"
+		if instances.Get(instanceID).IsDefault {
+			format = "| **%v** | **%s** |%s|\n"
+		}
+		text += fmt.Sprintf(format, i+1, key, details)
+	}
+	return p.responsef(header, text)
 }
 
 func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -268,7 +320,7 @@ func authorizedSysAdmin(p *Plugin, userId string) (bool, error) {
 	return true, nil
 }
 
-func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
@@ -311,7 +363,7 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	return p.responsef(header, addResponseFormat, jiraURL, jiraURL, p.GetPluginURL(), routeACJSON)
 }
 
-func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
@@ -369,7 +421,7 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 
 // executeUninstall will uninstall the jira instance if the url matches, and then update all connected clients
 // so that their Jira-related menu options are removed.
-func executeUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeInstanceUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
@@ -668,57 +720,6 @@ func executeInstanceDefault(p *Plugin, c *plugin.Context, header *model.CommandA
 	}
 
 	return p.responsef(header, "%s is set as the default Jira instance", instanceID)
-}
-
-func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	authorized, err := authorizedSysAdmin(p, header.UserId)
-	if err != nil {
-		return p.responsef(header, "%v", err)
-	}
-	if !authorized {
-		return p.responsef(header, "`/jira list` can only be run by a system administrator.")
-	}
-	if len(args) != 0 {
-		return p.help(header)
-	}
-
-	instances, err := p.instanceStore.LoadInstances()
-	if err != nil {
-		return p.responsef(header, "Failed to load known Jira instances: %v", err)
-	}
-	if instances.IsEmpty() {
-		return p.responsef(header, "(none installed)\n")
-	}
-
-	keys := []string{}
-	for _, key := range instances.IDs() {
-		keys = append(keys, key.String())
-	}
-	sort.Strings(keys)
-	text := "Known Jira instances (selected instance is **bold**)\n\n| |URL|Type|\n|--|--|--|\n"
-	for i, key := range keys {
-		instanceID := types.ID(key)
-		instance, err := p.instanceStore.LoadInstance(instanceID)
-		if err != nil {
-			text += fmt.Sprintf("|%v|%s|error: %v|\n", i+1, key, err)
-			continue
-		}
-		details := ""
-		for k, v := range instance.GetDisplayDetails() {
-			details += fmt.Sprintf("%s:%s, ", k, v)
-		}
-		if len(details) > len(", ") {
-			details = details[:len(details)-2]
-		} else {
-			details = instance.Common().Type
-		}
-		format := "|%v|%s|%s|\n"
-		if instances.Get(instanceID).IsDefault {
-			format = "| **%v** | **%s** |%s|\n"
-		}
-		text += fmt.Sprintf(format, i+1, key, details)
-	}
-	return p.responsef(header, text)
 }
 
 func (p *Plugin) parseCommandFlagInstanceID(args []string) (types.ID, []string, error) {

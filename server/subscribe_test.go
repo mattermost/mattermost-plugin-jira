@@ -24,9 +24,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 	p.updateConfig(func(conf *config) {
 		conf.Secret = "somesecret"
 	})
-	p.instanceStore = getMockInstanceStoreKV(
-		newTestInstance(p, mockInstance1URL),
-	)
+	p.instanceStore = getMockInstanceStoreKV(testInstance1)
 
 	for name, tc := range map[string]struct {
 		Subs          *Subscriptions
@@ -201,8 +199,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 			subscriptionBytes, err := json.Marshal(tc.Subs)
 			assert.Nil(t, err)
 
-			subKey := keyWithMockInstance1(JIRA_SUBSCRIPTIONS_KEY)
-			api.On("KVGet", subKey).Return(subscriptionBytes, nil)
+			api.On("KVGet", testSubKey).Return(subscriptionBytes, nil)
 
 			channel1 := &model.Channel{
 				Id:          "channel1",
@@ -252,7 +249,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 			}
 			api.On("GetTeam", "team2Id").Return(team2, nil)
 
-			api.On("KVCompareAndSet", subKey, subscriptionBytes, mock.MatchedBy(func(data []byte) bool {
+			api.On("KVCompareAndSet", testSubKey, subscriptionBytes, mock.MatchedBy(func(data []byte) bool {
 				return true
 			})).Return(nil)
 
@@ -270,9 +267,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 	p.updateConfig(func(conf *config) {
 		conf.Secret = "somesecret"
 	})
-	p.instanceStore = getMockInstanceStoreKV(
-		newTestInstance(p, mockInstance1URL),
-	)
+	p.instanceStore = getMockInstanceStoreKV(testInstance1)
 
 	for name, tc := range map[string]struct {
 		WebhookTestData string
@@ -1020,10 +1015,9 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			subscriptionBytes, err := json.Marshal(tc.Subs)
 			assert.Nil(t, err)
 
-			subKey := keyWithMockInstance1(JIRA_SUBSCRIPTIONS_KEY)
-			api.On("KVGet", subKey).Return(subscriptionBytes, nil)
+			api.On("KVGet", testSubKey).Return(subscriptionBytes, nil)
 
-			api.On("KVCompareAndSet", subKey, subscriptionBytes, mock.MatchedBy(func(data []byte) bool {
+			api.On("KVCompareAndSet", testSubKey, subscriptionBytes, mock.MatchedBy(func(data []byte) bool {
 				return true
 			})).Return(nil)
 

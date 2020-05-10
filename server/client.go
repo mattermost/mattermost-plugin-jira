@@ -44,7 +44,7 @@ type RESTService interface {
 // UserService is the interface for user-related APIs.
 type UserService interface {
 	GetSelf() (*jira.User, error)
-	GetUserGroups(c *Connection) ([]*jira.UserGroup, error)
+	GetUserGroups(connection *Connection) ([]*jira.UserGroup, error)
 }
 
 // ProjectService is the interface for project-related APIs.

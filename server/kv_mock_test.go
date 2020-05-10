@@ -4,7 +4,6 @@
 package main
 
 import (
-	"crypto/md5"
 	"fmt"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -23,11 +22,8 @@ const (
 	mockInstance2URL = "http://jiraTestInstance2URL.some"
 )
 
-func keyWithMockInstance1(key string) string {
-	h := md5.New()
-	fmt.Fprintf(h, "%s/%s", mockInstance1URL, key)
-	return fmt.Sprintf("%x", h.Sum(nil))
-}
+var testInstance1 = newTestInstance(nil, mockInstance1URL)
+var testInstance2 = newTestInstance(nil, mockInstance2URL)
 
 func newTestInstance(p *Plugin, id types.ID) Instance {
 	return &testInstance{

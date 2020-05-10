@@ -95,41 +95,38 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 	api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
 	api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
 
-	baseCommand := "/jira settings"
-	// baseCommand := "/jira settings --instance=" + mockInstance1URL
-
 	tests := map[string]struct {
 		commandArgs                *model.CommandArgs
 		initializeEmptyUserStorage bool
 		expectedMsg                string
 	}{
 		"no storage": {
-			commandArgs:                &model.CommandArgs{Command: baseCommand, UserId: mockUserIDUnknown},
+			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
 			initializeEmptyUserStorage: true,
 			expectedMsg:                "Failed to load Jira instance. Please contact your system administrator. Error: instance not found.",
 		},
 		"user not found": {
-			commandArgs:                &model.CommandArgs{Command: baseCommand, UserId: mockUserIDUnknown},
+			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
 			initializeEmptyUserStorage: false,
 			expectedMsg:                "Your username is not connected to Jira. Please type `jira connect`. Error: user not found.",
 		},
 		"no params, with notifications": {
-			commandArgs:                &model.CommandArgs{Command: baseCommand, UserId: mockUserIDWithNotifications},
+			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithNotifications},
 			initializeEmptyUserStorage: false,
 			expectedMsg:                "Current settings:\n\tNotifications: on",
 		},
 		"no params, without notifications": {
-			commandArgs:                &model.CommandArgs{Command: baseCommand, UserId: mockUserIDWithoutNotifications},
+			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithoutNotifications},
 			initializeEmptyUserStorage: false,
 			expectedMsg:                "Current settings:\n\tNotifications: off",
 		},
 		"unknown setting": {
-			commandArgs:                &model.CommandArgs{Command: baseCommand + " test", UserId: mockUserIDWithoutNotifications},
+			commandArgs:                &model.CommandArgs{Command: "/jira settings" + " test", UserId: mockUserIDWithoutNotifications},
 			initializeEmptyUserStorage: false,
 			expectedMsg:                "Unknown setting.",
 		},
 		"set notifications without value": {
-			commandArgs:                &model.CommandArgs{Command: baseCommand + " notifications", UserId: mockUserIDWithoutNotifications},
+			commandArgs:                &model.CommandArgs{Command: "/jira settings" + " notifications", UserId: mockUserIDWithoutNotifications},
 			initializeEmptyUserStorage: false,
 			expectedMsg:                "`/jira settings notifications [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
 		},
@@ -162,14 +159,12 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 			}).Once().Return(&model.Post{})
 
 			p.SetAPI(currentTestApi)
-			p.userStore = getMockUserStoreKV()
 			if tt.initializeEmptyUserStorage {
 				p.instanceStore = getMockInstanceStoreKV()
 			} else {
-				p.instanceStore = getMockInstanceStoreKV(
-					newTestInstance(p, mockInstance1URL),
-				)
+				p.instanceStore = getMockInstanceStoreKV(testInstance1)
 			}
+			p.userStore = getMockUserStoreKV()
 
 			p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
 

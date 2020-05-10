@@ -56,7 +56,7 @@ type InstanceStore interface {
 type UserStore interface {
 	LoadUser(mattermostUserId string) (*User, error)
 	StoreUser(*User) error
-	StoreConnection(instance Instance, mattermostUserId string, c *Connection) error
+	StoreConnection(instance Instance, mattermostUserId string, connection *Connection) error
 	LoadConnection(instance Instance, mattermostUserId string) (*Connection, error)
 	LoadMattermostUserId(instance Instance, jiraUsername string) (string, error)
 	DeleteConnection(instance Instance, mattermostUserId string) error
@@ -78,7 +78,7 @@ type store struct {
 	plugin *Plugin
 }
 
-func NewStore(p *Plugin) *store {
+func NewStore(p *Plugin) Store {
 	return &store{plugin: p}
 }
 
@@ -140,35 +140,35 @@ func (store store) set(key string, v interface{}) (returnErr error) {
 	return nil
 }
 
-func (store store) StoreConnection(instance Instance, mattermostUserId string, c *Connection) (returnErr error) {
+func (store store) StoreConnection(instance Instance, mattermostUserId string, connection *Connection) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store connection, mattermostUserId:%s, Jira user:%s", mattermostUserId, c.DisplayName))
+			fmt.Sprintf("failed to store connection, mattermostUserId:%s, Jira user:%s", mattermostUserId, connection.DisplayName))
 	}()
 
-	err := store.set(keyWithInstance(instance, mattermostUserId), c)
+	err := store.set(keyWithInstance(instance, mattermostUserId), connection)
 	if err != nil {
 		return err
 	}
 
-	err = store.set(keyWithInstance(instance, c.JiraAccountID()), mattermostUserId)
+	err = store.set(keyWithInstance(instance, connection.JiraAccountID()), mattermostUserId)
 	if err != nil {
 		return err
 	}
 
 	// Also store AccountID -> mattermostUserID because Jira Cloud is deprecating the name field
 	// https://developer.atlassian.com/cloud/jira/platform/api-changes-for-user-privacy-announcement/
-	err = store.set(keyWithInstance(instance, c.JiraAccountID()), mattermostUserId)
+	err = store.set(keyWithInstance(instance, connection.JiraAccountID()), mattermostUserId)
 	if err != nil {
 		return err
 	}
 
 	store.plugin.debugf("Stored: connection, keys:\n\t%s (%s): %+v\n\t%s (%s): %s",
-		keyWithInstance(instance, mattermostUserId), mattermostUserId, c,
-		keyWithInstance(instance, c.JiraAccountID()), c.JiraAccountID(), mattermostUserId)
+		keyWithInstance(instance, mattermostUserId), mattermostUserId, connection,
+		keyWithInstance(instance, connection.JiraAccountID()), connection.JiraAccountID(), mattermostUserId)
 
 	return nil
 }

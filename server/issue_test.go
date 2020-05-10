@@ -78,9 +78,7 @@ func TestTransitionJiraIssue(t *testing.T) {
 	p := Plugin{}
 	p.SetAPI(api)
 	p.userStore = getMockUserStoreKV()
-	p.instanceStore = getMockInstanceStoreKV(
-		newTestInstance(&p, mockInstance1URL),
-	)
+	p.instanceStore = getMockInstanceStoreKV(testInstance1)
 
 	tests := map[string]struct {
 		issueKey    string

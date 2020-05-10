@@ -21,6 +21,8 @@ import (
 
 const TEST_DATA_LONG_SUBSCRIPTION_NAME = `aaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccdddddddddd`
 
+var testSubKey = keyWithInstance(testInstance1, JIRA_SUBSCRIPTIONS_KEY)
+
 func checkSubscriptionsEqual(t *testing.T, ls1 []ChannelSubscription, ls2 []ChannelSubscription) {
 	assert.Equal(t, len(ls1), len(ls2))
 
@@ -51,11 +53,10 @@ func checkNotSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 			assert.Nil(t, err)
 		}
 
-		subKey := keyWithMockInstance1(JIRA_SUBSCRIPTIONS_KEY)
 		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
-		api.On("KVGet", subKey).Return(existingBytes, nil)
+		api.On("KVGet", testSubKey).Return(existingBytes, nil)
 
-		api.On("KVCompareAndSet", subKey, existingBytes, mock.MatchedBy(func(data []byte) bool {
+		api.On("KVCompareAndSet", testSubKey, existingBytes, mock.MatchedBy(func(data []byte) bool {
 			t.Log(string(data))
 			var savedSubs Subscriptions
 			err := json.Unmarshal(data, &savedSubs)
@@ -85,10 +86,9 @@ func checkHasSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 
 		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
 
-		subKey := keyWithMockInstance1(JIRA_SUBSCRIPTIONS_KEY)
-		api.On("KVGet", subKey).Return(existingBytes, nil)
+		api.On("KVGet", testSubKey).Return(existingBytes, nil)
 
-		api.On("KVCompareAndSet", subKey, existingBytes, mock.MatchedBy(func(data []byte) bool {
+		api.On("KVCompareAndSet", testSubKey, existingBytes, mock.MatchedBy(func(data []byte) bool {
 			t.Log(string(data))
 			var savedSubs Subscriptions
 			err := json.Unmarshal(data, &savedSubs)
@@ -132,8 +132,7 @@ func hasSubscriptions(subscriptions []ChannelSubscription, t *testing.T) func(ap
 
 		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
 
-		subKey := keyWithMockInstance1(JIRA_SUBSCRIPTIONS_KEY)
-		api.On("KVGet", subKey).Return(existingBytes, nil)
+		api.On("KVGet", testSubKey).Return(existingBytes, nil)
 	}
 }
 
@@ -366,9 +365,7 @@ func TestSubscribe(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
-			p.instanceStore = getMockInstanceStoreKV(
-				newTestInstance(&p, mockInstance1URL),
-			)
+			p.instanceStore = getMockInstanceStoreKV(testInstance1)
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("POST", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
@@ -418,8 +415,7 @@ func TestDeleteSubscription(t *testing.T) {
 				}))
 				assert.Nil(t, err)
 
-				subKey := keyWithMockInstance1(JIRA_SUBSCRIPTIONS_KEY)
-				api.On("KVGet", subKey).Return(existingBytes, nil)
+				api.On("KVGet", testSubKey).Return(existingBytes, nil)
 				api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(false)
 			},
 		},
@@ -514,9 +510,7 @@ func TestDeleteSubscription(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
-			p.instanceStore = getMockInstanceStoreKV(
-				newTestInstance(&p, mockInstance1URL),
-			)
+			p.instanceStore = getMockInstanceStoreKV(testInstance1)
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("DELETE", "/api/v2/subscriptions/channel/"+tc.subscriptionId, nil)
@@ -767,9 +761,7 @@ func TestEditSubscription(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
-			p.instanceStore = getMockInstanceStoreKV(
-				newTestInstance(&p, mockInstance1URL),
-			)
+			p.instanceStore = getMockInstanceStoreKV(testInstance1)
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("PUT", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
@@ -962,9 +954,7 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 				conf.Secret = "somesecret"
 			})
 			p.SetAPI(api)
-			p.instanceStore = getMockInstanceStoreKV(
-				newTestInstance(&p, mockInstance1URL),
-			)
+			p.instanceStore = getMockInstanceStoreKV(testInstance1)
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("GET", "/api/v2/subscriptions/channel/"+tc.channelId, nil)

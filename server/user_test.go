@@ -74,9 +74,7 @@ func TestRouteUserStart(t *testing.T) {
 	p.SetAPI(api)
 
 	p.userStore = getMockUserStoreKV()
-	p.instanceStore = getMockInstanceStoreKV(
-		newTestInstance(&p, mockInstance1URL),
-	)
+	p.instanceStore = getMockInstanceStoreKV(testInstance1)
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {

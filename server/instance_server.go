@@ -86,15 +86,15 @@ func (si *serverInstance) GetUserConnectURL(mattermostUserId string) (returnURL 
 	return authURL.String(), nil
 }
 
-func (si *serverInstance) GetClient(c *Connection) (client Client, returnErr error) {
+func (si *serverInstance) GetClient(connection *Connection) (client Client, returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
 		}
-		returnErr = errors.WithMessage(returnErr, "failed to get a Jira client for "+c.DisplayName)
+		returnErr = errors.WithMessage(returnErr, "failed to get a Jira client for "+connection.DisplayName)
 	}()
 
-	if c.Oauth1AccessToken == "" || c.Oauth1AccessSecret == "" {
+	if connection.Oauth1AccessToken == "" || connection.Oauth1AccessSecret == "" {
 		return nil, errors.New("No access token, please use /jira connect")
 	}
 
@@ -103,7 +103,7 @@ func (si *serverInstance) GetClient(c *Connection) (client Client, returnErr err
 		return nil, err
 	}
 
-	token := oauth1.NewToken(c.Oauth1AccessToken, c.Oauth1AccessSecret)
+	token := oauth1.NewToken(connection.Oauth1AccessToken, connection.Oauth1AccessSecret)
 	conf := si.getConfig()
 
 	httpClient := oauth1Config.Client(oauth1.NoContext, token)

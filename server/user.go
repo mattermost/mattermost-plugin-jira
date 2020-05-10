@@ -10,8 +10,9 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-server/v5/model"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (
@@ -164,8 +165,8 @@ func (p *Plugin) httpGetSettingsInfo(w http.ResponseWriter, r *http.Request) (in
 	})
 }
 
-func (p *Plugin) connectUser(instance Instance, mattermostUserId string, c *Connection) error {
-	err := p.userStore.StoreConnection(instance, mattermostUserId, c)
+func (p *Plugin) connectUser(instance Instance, mattermostUserId string, connection *Connection) error {
+	err := p.userStore.StoreConnection(instance, mattermostUserId, connection)
 	if err != nil {
 		return err
 	}

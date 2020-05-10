@@ -814,8 +814,8 @@ func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 	return NewStringSet()
 }
 
-func (p *Plugin) getIssueAsSlackAttachment(instance Instance, c *Connection, issueKey string) ([]*model.SlackAttachment, error) {
-	client, err := instance.GetClient(c)
+func (p *Plugin) getIssueAsSlackAttachment(instance Instance, connection *Connection, issueKey string) ([]*model.SlackAttachment, error) {
+	client, err := instance.GetClient(connection)
 	if err != nil {
 		return nil, err
 	}
