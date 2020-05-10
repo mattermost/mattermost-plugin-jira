@@ -329,12 +329,13 @@ func (p *Plugin) WorkflowCreateIssue(activationParams *workflowclient.ActionActi
 		CreateIssue(issue *jira.Issue) (*jira.Issue, error)
 	}
 	if create.UserId != "" {
-		c, err := p.userStore.LoadConnection(instance, create.UserId)
+		var connection *Connection
+		connection, err = p.userStore.LoadConnection(instance, create.UserId)
 		if err != nil {
 			return nil, err
 		}
 
-		client, err = instance.GetClient(c)
+		client, err = instance.GetClient(connection)
 		if err != nil {
 			return nil, err
 		}
@@ -344,7 +345,8 @@ func (p *Plugin) WorkflowCreateIssue(activationParams *workflowclient.ActionActi
 			return nil, errors.New("UserId is required for jira server instances.")
 		}
 
-		jiraClient, err := ci.getClientForBot()
+		var jiraClient *jira.Client
+		jiraClient, err = ci.getClientForBot()
 		if err != nil {
 			return nil, fmt.Errorf("unable to get jira client for server: %w", err)
 		}
@@ -994,7 +996,8 @@ func (p *Plugin) TransitionIssue(in *InTransitionIssue) (string, error) {
 			in.ToState, strings.Join(matchingStates, ", "))
 	}
 
-	if err := client.DoTransition(in.IssueKey, transition.ID); err != nil {
+	err = client.DoTransition(in.IssueKey, transition.ID)
+	if err != nil {
 		return "", err
 	}
 
