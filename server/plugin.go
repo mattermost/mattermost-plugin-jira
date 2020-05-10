@@ -194,6 +194,11 @@ func (p *Plugin) OnActivate() error {
 	p.secretsStore = store
 	p.otsStore = store
 
+	err = store.MigrateV2Instances()
+	if err != nil {
+		return errors.WithMessage(err, "OnActivate: failed to migrate from previous version of the Jira plugin")
+	}
+
 	templates, err := p.loadTemplates(filepath.Join(bundlePath, "assets", "templates"))
 	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to load templates")

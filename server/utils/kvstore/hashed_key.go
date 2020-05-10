@@ -7,6 +7,8 @@ import (
 	"crypto/md5"
 	"fmt"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 type hashedKeyStore struct {
@@ -24,11 +26,19 @@ func NewHashedKeyStore(s KVStore, prefix string) KVStore {
 }
 
 func (s *hashedKeyStore) Load(key string) ([]byte, error) {
-	return s.store.Load(hashKey(s.prefix, key))
+	data, err := s.store.Load(hashKey(s.prefix, key))
+	if err != nil {
+		return nil, errors.Wrap(err, key)
+	}
+	return data, nil
 }
 
 func (s *hashedKeyStore) Store(key string, data []byte) error {
-	return s.store.Store(hashKey(s.prefix, key), data)
+	err := s.store.Store(hashKey(s.prefix, key), data)
+	if err != nil {
+		return errors.Wrap(err, key)
+	}
+	return nil
 }
 
 func (s *hashedKeyStore) StoreTTL(key string, data []byte, ttlSeconds int64) error {

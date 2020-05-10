@@ -184,7 +184,7 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserId string, connect
 }
 
 func (p *Plugin) DisconnectUser(instanceID types.ID, mattermostUserID string) (*Connection, error) {
-	instance, err := p.instanceStore.LoadInstance(instanceID)
+	instance, err := p.LoadDefaultInstance(instanceID)
 	if err != nil {
 		return nil, err
 	}

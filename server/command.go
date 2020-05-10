@@ -17,6 +17,7 @@ import (
 
 const helpTextHeader = "###### Mattermost Jira Plugin - Slash Command Help\n"
 
+// <><> TODO Update command Help
 const commonHelpText = "\n* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
 	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
 	"* `/jira assign <issue-key> <assignee>` - Change the assignee of a Jira issue\n" +
@@ -75,6 +76,8 @@ var jiraCommandHandler = CommandHandler{
 		"debug/stats/save":        executeDebugStatsSave,
 		"debug/stats/expvar":      executeDebugStatsExpvar,
 		"debug/workflow":          executeDebugWorkflow,
+		"debug/clean-instances":   executeDebugCleanInstances,
+		"debug/migrate-instances": executeDebugMigrateInstances,
 		"instance/install/cloud":  executeInstanceInstallCloud,
 		"instance/install/server": executeInstanceInstallServer,
 		"instance/list":           executeInstanceList,
@@ -582,6 +585,34 @@ func executeDebugStatsExpvar(p *Plugin, c *plugin.Context, commandArgs *model.Co
 
 func executeDebugWorkflow(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
 	return p.responsef(commandArgs, "Workflow Store:\n %v", p.workflowTriggerStore)
+}
+
+func executeDebugCleanInstances(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(header, "`/jira list` can only be run by a system administrator.")
+	}
+	_ = p.API.KVDelete(keyInstances)
+	return p.responsef(header, "Deleted instances\n")
+}
+
+func executeDebugMigrateInstances(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(header, "`/jira list` can only be run by a system administrator.")
+	}
+
+	err = p.instanceStore.MigrateV2Instances()
+	if err != nil {
+		return p.responsef(header, "Failed to migrated instances: %v\n", err)
+	}
+	return p.responsef(header, "Migrated instances\n")
 }
 
 func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, useExpvar bool, args ...string) *model.CommandResponse {

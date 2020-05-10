@@ -17,10 +17,11 @@ import (
 )
 
 const (
-	// Key to migrate the V2 installed instance
+	// Key to migrate V2 instances
 	v2keyCurrentJIRAInstance = "current_jira_instance"
+	v2keyKnownJiraInstances  = "known_jira_instances"
 
-	keyInstances        = "known_jira_instances"
+	keyInstances        = "instances/v3"
 	keyRSAKey           = "rsa_key"
 	keyTokenSecret      = "token_secret"
 	prefixInstance      = "jira_instance_"
@@ -51,6 +52,7 @@ type InstanceStore interface {
 	StoreInstance(instance Instance) error
 	StoreInstances(*Instances) error
 	UpdateInstances(updatef func(instances *Instances) error) error
+	MigrateV2Instances() error
 }
 
 type UserStore interface {
@@ -458,7 +460,10 @@ func (store *store) CreateInactiveCloudInstance(jiraURL types.ID) (returnErr err
 }
 
 func (store *store) LoadInstance(id types.ID) (Instance, error) {
-	fullkey := prefixInstance + id.String()
+	return store.loadInstance(hashkey(prefixInstance, id.String()))
+}
+
+func (store *store) loadInstance(fullkey string) (Instance, error) {
 	data, appErr := store.plugin.API.KVGet(fullkey)
 	if appErr != nil {
 		return nil, appErr
@@ -536,4 +541,64 @@ func (store *store) UpdateInstances(updatef func(instances *Instances) error) er
 		return err
 	}
 	return store.StoreInstances(instances)
+}
+
+// MigrateV2Instances migrates instance record(s) from the V2 data model.
+//
+// - v2keyKnownJiraInstances ("known_jira_instances") was stored as a
+//   map[string]string (InstanceID->Type), needs to be stored as Instances.
+//   https://github.com/mattermost/mattermost-plugin-jira/blob/885efe8eb70c92bcea64d1ced6e67710eda77b6e/server/kv.go#L375
+// - v2keyCurrentJIRAInstance ("current_jira_instance") stored an Instance; will
+//   be used to set the default instance.
+// - The instances themselves should be forward-compatible, including
+// 	 CurrentInstance.
+func (store *store) MigrateV2Instances() error {
+	// See if the V3 "instances" key exists; only attempt to migrate if it doesn't.
+	_, err := store.plugin.instanceStore.LoadInstances()
+	if err != kvstore.ErrNotFound {
+		return err
+	}
+
+	data, appErr := store.plugin.API.KVGet(v2keyKnownJiraInstances)
+	if appErr != nil {
+		return appErr
+	}
+	v2instances := map[string]string{}
+	if len(data) != 0 {
+		err := json.Unmarshal(data, &v2instances)
+		if err != nil {
+			return err
+		}
+	}
+	instances := NewInstances()
+	for k, v := range v2instances {
+		instances.Set(&InstanceCommon{
+			PluginVersion: manifest.Version,
+			URL:           types.ID(k),
+			Type:          v,
+		})
+	}
+
+	instance, err := store.loadInstance(v2keyCurrentJIRAInstance)
+	if err != nil && err != kvstore.ErrNotFound {
+		return err
+	}
+	if instance != nil {
+		instance.Common().URL = types.ID(instance.GetURL())
+		instances.Set(instance.Common())
+		err = store.StoreInstance(instance)
+		if err != nil {
+			return err
+		}
+
+		if instances.Len() > 1 {
+			instances.SetDefault(instance.GetID())
+		}
+	}
+
+	err = store.StoreInstances(instances)
+	if err != nil {
+		return err
+	}
+	return nil
 }
