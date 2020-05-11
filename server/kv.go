@@ -565,7 +565,7 @@ func (store *store) MigrateV2Instances() error {
 	}
 	v2instances := map[string]string{}
 	if len(data) != 0 {
-		err := json.Unmarshal(data, &v2instances)
+		err = json.Unmarshal(data, &v2instances)
 		if err != nil {
 			return err
 		}
