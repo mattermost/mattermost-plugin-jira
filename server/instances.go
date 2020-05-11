@@ -10,13 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	CloudInstanceType  = "cloud"
-	ServerInstanceType = "server"
-)
-
-const wSEventInstanceStatus = "instance_status"
-
 type Instances struct {
 	*types.ValueSet // of *InstanceCommon, not Instance
 	defaultID       types.ID
@@ -38,6 +31,20 @@ func (instances *Instances) IsEmpty() bool {
 
 func (instances Instances) Get(id types.ID) *InstanceCommon {
 	return instances.ValueSet.Get(id).(*InstanceCommon)
+}
+
+func (instances Instances) Set(ic *InstanceCommon) {
+	instances.ValueSet.Set(ic)
+}
+
+func (instances Instances) AsConfigMap() []interface{} {
+	out := []interface{}{}
+	for _, id := range instances.IDs() {
+		instance := instances.Get(id)
+		out = append(out, instance.Common().AsConfigMap())
+	}
+
+	return out
 }
 
 func (instances Instances) GetDefault() *InstanceCommon {
@@ -95,9 +102,10 @@ func (p *instancesArray) Resize(n int) {
 }
 
 func (p *Plugin) InstallInstance(instance Instance) error {
+	var updated *Instances
 	err := p.instanceStore.UpdateInstances(
 		func(instances *Instances) error {
-			if instances.Contains(instance.Common().URL) {
+			if instances.Contains(instance.GetID()) {
 				return ErrAlreadyExists
 			}
 			err := p.instanceStore.StoreInstance(instance)
@@ -105,6 +113,7 @@ func (p *Plugin) InstallInstance(instance Instance) error {
 				return err
 			}
 			instances.Set(instance.Common())
+			updated = instances
 			return nil
 		})
 	if err != nil {
@@ -112,21 +121,19 @@ func (p *Plugin) InstallInstance(instance Instance) error {
 	}
 
 	// Notify users we have installed an instance
-	p.API.PublishWebSocketEvent(
-		wSEventInstanceStatus,
+	p.API.PublishWebSocketEvent(websocketEventInstanceStatus,
 		map[string]interface{}{
-			"instance_installed": true,
-			"instance_type":      instance.Common().Type,
+			"instances": updated.AsConfigMap(),
 		},
-		&model.WebsocketBroadcast{},
-	)
+		&model.WebsocketBroadcast{})
 	return nil
 }
 
 var ErrInstanceNotFound = errors.New("instance not found")
 
-func (p *Plugin) UninstallInstance(id types.ID, instanceType string) (Instance, error) {
+func (p *Plugin) UninstallInstance(id types.ID, instanceType InstanceType) (Instance, error) {
 	var instance Instance
+	var updated *Instances
 	err := p.instanceStore.UpdateInstances(
 		func(instances *Instances) error {
 			if !instances.Contains(id) {
@@ -140,6 +147,7 @@ func (p *Plugin) UninstallInstance(id types.ID, instanceType string) (Instance, 
 			if instanceType != instance.Common().Type {
 				return errors.Errorf("%s did not match instance %s type %s", instanceType, id, instance.Common().Type)
 			}
+			updated = instances
 			return p.instanceStore.DeleteInstance(id)
 		})
 	if err != nil {
@@ -147,14 +155,11 @@ func (p *Plugin) UninstallInstance(id types.ID, instanceType string) (Instance, 
 	}
 
 	// Notify users we have uninstalled an instance
-	p.API.PublishWebSocketEvent(
-		wSEventInstanceStatus,
+	p.API.PublishWebSocketEvent(websocketEventInstanceStatus,
 		map[string]interface{}{
-			"instance_installed": false,
-			"instance_type":      "",
+			"instances": updated.AsConfigMap(),
 		},
-		&model.WebsocketBroadcast{},
-	)
+		&model.WebsocketBroadcast{})
 	return instance, nil
 }
 
@@ -170,27 +175,43 @@ func (p *Plugin) StoreDefaultInstance(id types.ID) error {
 }
 
 func (p *Plugin) LoadDefaultInstance(explicit types.ID) (Instance, error) {
-	id := types.ID("")
-	if explicit == "" {
-		instances, err := p.instanceStore.LoadInstances()
-		if err != nil {
-			return nil, err
-		}
-		if instances.IsEmpty() {
-			return nil, ErrInstanceNotFound
-		}
-		id = instances.GetDefault().GetID()
-	} else {
-		normalized, err := utils.NormalizeInstallURL(p.GetSiteURL(), explicit.String())
-		if err != nil {
-			return nil, err
-		}
-		id = types.ID(normalized)
+	id, err := p.ResolveInstanceID(explicit)
+	if err != nil {
+		return nil, err
 	}
-
+	if id == "" {
+		return nil, errors.New("No instance available")
+	}
 	instance, err := p.instanceStore.LoadInstance(id)
 	if err != nil {
 		return nil, err
 	}
 	return instance, nil
+}
+
+func (p *Plugin) ResolveInstanceID(explicit types.ID) (types.ID, error) {
+	if explicit != "" {
+		return explicit, nil
+	}
+
+	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return "", err
+	}
+	if instances.IsEmpty() {
+		return "", ErrInstanceNotFound
+	}
+	return instances.GetDefault().GetID(), nil
+}
+
+func (p *Plugin) ResolveInstanceURL(jiraurl string) (types.ID, error) {
+	if jiraurl != "" {
+		var err error
+		jiraurl, err = utils.NormalizeInstallURL(p.GetSiteURL(), jiraurl)
+		if err != nil {
+			return "", err
+		}
+		return types.ID(jiraurl), err
+	}
+	return p.ResolveInstanceID(types.ID(jiraurl))
 }

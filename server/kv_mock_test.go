@@ -28,18 +28,18 @@ var testInstance2 = newTestInstance(nil, mockInstance2URL)
 func newTestInstance(p *Plugin, id types.ID) Instance {
 	return &testInstance{
 		InstanceCommon: InstanceCommon{
-			URL:    id,
-			Plugin: p,
-			Type:   "testInstanceType",
+			InstanceID: id,
+			Plugin:     p,
+			Type:       "testInstanceType",
 		},
 	}
 }
 
 func (ti testInstance) GetURL() string {
-	return ti.URL.String()
+	return ti.InstanceID.String()
 }
 func (ti testInstance) GetManageAppsURL() string {
-	return fmt.Sprintf("%s/apps/manage", ti.URL)
+	return fmt.Sprintf("%s/apps/manage", ti.InstanceID)
 }
 func (ti testInstance) GetPlugin() *Plugin {
 	return ti.Plugin
@@ -51,7 +51,7 @@ func (ti testInstance) GetDisplayDetails() map[string]string {
 	return map[string]string{}
 }
 func (ti testInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
-	return fmt.Sprintf("%s/UserConnectURL.some", ti.URL), nil
+	return fmt.Sprintf("%s/UserConnectURL.some", ti.GetURL()), nil
 }
 func (ti testInstance) GetClient(*Connection) (Client, error) {
 	return testClient{}, nil
@@ -65,19 +65,19 @@ type mockUserStore struct{}
 func (store mockUserStore) StoreUser(*User) error {
 	return nil
 }
-func (store mockUserStore) LoadUser(string) (*User, error) {
+func (store mockUserStore) LoadUser(types.ID) (*User, error) {
 	return &User{}, nil
 }
-func (store mockUserStore) StoreConnection(Instance, string, *Connection) error {
+func (store mockUserStore) StoreConnection(types.ID, types.ID, *Connection) error {
 	return nil
 }
-func (store mockUserStore) LoadConnection(Instance, string) (*Connection, error) {
+func (store mockUserStore) LoadConnection(types.ID, types.ID) (*Connection, error) {
 	return &Connection{}, nil
 }
-func (store mockUserStore) LoadMattermostUserId(instance Instance, jiraUserName string) (string, error) {
+func (store mockUserStore) LoadMattermostUserId(instanceID types.ID, jiraUserName string) (types.ID, error) {
 	return "testMattermostUserId012345", nil
 }
-func (store mockUserStore) DeleteConnection(instance Instance, mattermostUserId string) error {
+func (store mockUserStore) DeleteConnection(instanceID, mattermostUserID types.ID) error {
 	return nil
 }
 func (store mockUserStore) CountUsers() (int, error) {

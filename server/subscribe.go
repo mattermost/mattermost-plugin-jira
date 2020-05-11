@@ -188,12 +188,12 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) (StringSet, error) {
 }
 
 func (p *Plugin) getSubscriptions(instanceID types.ID) (*Subscriptions, error) {
-	instance, err := p.LoadDefaultInstance(instanceID)
+	instanceID, err := p.ResolveInstanceID(instanceID)
 	if err != nil {
 		return nil, err
 	}
 
-	subKey := keyWithInstance(instance, JIRA_SUBSCRIPTIONS_KEY)
+	subKey := keyWithInstanceID(instanceID, JIRA_SUBSCRIPTIONS_KEY)
 	data, appErr := p.API.KVGet(subKey)
 	if appErr != nil {
 		return nil, appErr
@@ -230,12 +230,12 @@ func (p *Plugin) getChannelSubscription(instanceID types.ID, subscriptionId stri
 }
 
 func (p *Plugin) removeChannelSubscription(instanceID types.ID, subscriptionId string) error {
-	instance, err := p.LoadDefaultInstance(instanceID)
+	instanceID, err := p.ResolveInstanceID(instanceID)
 	if err != nil {
 		return err
 	}
 
-	subKey := keyWithInstance(instance, JIRA_SUBSCRIPTIONS_KEY)
+	subKey := keyWithInstanceID(instanceID, JIRA_SUBSCRIPTIONS_KEY)
 	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
 		subs, err := SubscriptionsFromJson(initialBytes)
 		if err != nil {
@@ -259,12 +259,12 @@ func (p *Plugin) removeChannelSubscription(instanceID types.ID, subscriptionId s
 }
 
 func (p *Plugin) addChannelSubscription(instanceID types.ID, newSubscription *ChannelSubscription, client Client) error {
-	instance, err := p.LoadDefaultInstance(instanceID)
+	instanceID, err := p.ResolveInstanceID(instanceID)
 	if err != nil {
 		return err
 	}
 
-	subKey := keyWithInstance(instance, JIRA_SUBSCRIPTIONS_KEY)
+	subKey := keyWithInstanceID(instanceID, JIRA_SUBSCRIPTIONS_KEY)
 	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
 		subs, err := SubscriptionsFromJson(initialBytes)
 		if err != nil {
@@ -331,12 +331,12 @@ func (p *Plugin) validateSubscription(instanceID types.ID, subscription *Channel
 }
 
 func (p *Plugin) editChannelSubscription(instanceID types.ID, modifiedSubscription *ChannelSubscription, client Client) error {
-	instance, err := p.LoadDefaultInstance(instanceID)
+	instanceID, err := p.ResolveInstanceID(instanceID)
 	if err != nil {
 		return err
 	}
 
-	subKey := keyWithInstance(instance, JIRA_SUBSCRIPTIONS_KEY)
+	subKey := keyWithInstanceID(instanceID, JIRA_SUBSCRIPTIONS_KEY)
 	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
 		subs, err := SubscriptionsFromJson(initialBytes)
 		if err != nil {
@@ -598,7 +598,7 @@ func (p *Plugin) hasPermissionToManageSubscription(instanceID types.ID, userId, 
 			return errors.Wrap(err, "could not load jira instance")
 		}
 
-		c, err := p.userStore.LoadConnection(instance, userId)
+		c, err := p.userStore.LoadConnection(instance.GetID(), types.ID(userId))
 		if err != nil {
 			return errors.Wrap(err, "could not load jira user")
 		}
@@ -844,11 +844,11 @@ func (p *Plugin) httpChannelDeleteSubscription(w http.ResponseWriter, r *http.Re
 		return code, err
 	}
 
-	instance, err := p.LoadDefaultInstance(instanceID)
+	instanceID, err = p.ResolveInstanceID(instanceID)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	connection, err := p.userStore.LoadConnection(instance, mattermostUserId)
+	connection, err := p.userStore.LoadConnection(instanceID, types.ID(mattermostUserId))
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

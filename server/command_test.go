@@ -24,13 +24,13 @@ const (
 
 type mockUserStoreKV struct {
 	mockUserStore
-	kv map[string]*Connection
+	kv map[types.ID]*Connection
 }
 
 var _ UserStore = (*mockUserStoreKV)(nil)
 
-func (store mockUserStoreKV) LoadConnection(instance Instance, mattermostUserId string) (*Connection, error) {
-	connection, ok := store.kv[mattermostUserId]
+func (store mockUserStoreKV) LoadConnection(instanceID, mattermostUserID types.ID) (*Connection, error) {
+	connection, ok := store.kv[mattermostUserID]
 	if !ok {
 		return &Connection{}, errors.New("user not found")
 	}
@@ -43,7 +43,7 @@ func getMockUserStoreKV() mockUserStoreKV {
 	juser.AccountID = "test"
 
 	return mockUserStoreKV{
-		kv: map[string]*Connection{
+		kv: map[types.ID]*Connection{
 			mockUserIDWithNotifications:    {Settings: &ConnectionSettings{Notifications: true}},
 			mockUserIDWithoutNotifications: {Settings: &ConnectionSettings{Notifications: false}},
 			"connected_user":               &juser,
@@ -89,10 +89,9 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 	tc := TestConfiguration{}
 	p.updateConfig(func(conf *config) {
 		conf.Secret = tc.Secret
+		conf.mattermostSiteURL = "https://somelink.com"
 	})
 	api := &plugintest.API{}
-	siteURL := "https://somelink.com"
-	api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
 	api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
 
 	tests := map[string]struct {
@@ -178,10 +177,9 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 	tc := TestConfiguration{}
 	p.updateConfig(func(conf *config) {
 		conf.Secret = tc.Secret
+		conf.mattermostSiteURL = "https://somelink.com"
 	})
 	api := &plugintest.API{}
-	siteURL := "https://somelink.com"
-	api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
 	api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
 	api.On("LogDebug",
 		mock.AnythingOfTypeArgument("string"),
@@ -282,10 +280,9 @@ func TestPlugin_ExecuteCommand_Uninstall(t *testing.T) {
 	tc := TestConfiguration{}
 	p.updateConfig(func(conf *config) {
 		conf.Secret = tc.Secret
+		conf.mattermostSiteURL = "https://somelink.com"
 	})
 	api := &plugintest.API{}
-	siteURL := "https://somelink.com"
-	api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
 
 	sysAdminUser := &model.User{
 		Id:    mockUserIDSysAdmin,

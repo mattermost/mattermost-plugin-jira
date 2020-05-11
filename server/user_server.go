@@ -92,13 +92,13 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 			errors.WithMessage(err, "failed to obtain oauth1 access token"))
 	}
 
-	c := &Connection{
+	connection := &Connection{
 		PluginVersion:      manifest.Version,
 		Oauth1AccessToken:  accessToken,
 		Oauth1AccessSecret: accessSecret,
 	}
 
-	client, err := instance.GetClient(c)
+	client, err := instance.GetClient(connection)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -107,12 +107,12 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
-	c.User = *juser
+	connection.User = *juser
 
 	// Set default settings the first time a user connects
-	c.Settings = &ConnectionSettings{Notifications: true}
+	connection.Settings = &ConnectionSettings{Notifications: true}
 
-	err = p.connectUser(instance, mattermostUserId, c)
+	err = p.connectUser(instance, types.ID(mattermostUserId), connection)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -144,7 +144,7 @@ func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, i
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	_, err = p.disconnectUser(instance, mattermostUserId)
+	_, err = p.disconnectUser(instance, types.ID(mattermostUserId))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}

@@ -15,14 +15,17 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
-const (
-	WS_EVENT_CONNECT    = "connect"
-	WS_EVENT_DISCONNECT = "disconnect"
-)
+type UserInfo struct {
+	IsConnected              bool       `json:"is_connected"`
+	CanConnect               bool       `json:"can_connect"`
+	User                     *User      `json:"user"`
+	Instances                *Instances `json:"instances"`
+	EffectiveDefaultInstance Instance   `json:"effective_default_instance"`
+}
 
 type User struct {
-	MattermostUserID string
-	Connections      []*Connection
+	MattermostUserID   types.ID   `json:"mattermost_user_id"`
+	ConnectedInstances *Instances `json:"connected_instances,omitempty"`
 }
 
 type Connection struct {
@@ -33,11 +36,11 @@ type Connection struct {
 	Settings           *ConnectionSettings
 }
 
-func (c *Connection) JiraAccountID() string {
+func (c *Connection) JiraAccountID() types.ID {
 	if c.AccountID != "" {
-		return c.AccountID
+		return types.ID(c.AccountID)
 	} else {
-		return c.Name
+		return types.ID(c.Name)
 	}
 }
 
@@ -51,11 +54,6 @@ func (s ConnectionSettings) String() string {
 		notifications = "on"
 	}
 	return fmt.Sprintf("\tNotifications: %s", notifications)
-}
-
-type Info struct {
-	User      *User
-	Instances []*Instance
 }
 
 func (p *Plugin) httpUserConnect(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
@@ -76,7 +74,7 @@ func (p *Plugin) httpUserConnect(w http.ResponseWriter, r *http.Request, instanc
 	}
 
 	// Users shouldn't be able to make multiple connections.
-	connection, err := p.userStore.LoadConnection(instance, mattermostUserId)
+	connection, err := p.userStore.LoadConnection(instance.GetID(), types.ID(mattermostUserId))
 	if err == nil && len(connection.JiraAccountID()) != 0 {
 		return respondErr(w, http.StatusBadRequest,
 			errors.New("You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect."))
@@ -99,13 +97,13 @@ func (p *Plugin) httpUserStart(w http.ResponseWriter, r *http.Request, instanceI
 			errors.New("not authorized"))
 	}
 
-	instance, err := p.LoadDefaultInstance(instanceID)
+	instanceID, err := p.ResolveInstanceID(instanceID)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	// If user is already connected we show them the docs
-	connection, err := p.userStore.LoadConnection(instance, mattermostUserID)
+	connection, err := p.userStore.LoadConnection(instanceID, types.ID(mattermostUserID))
 	if err == nil && len(connection.JiraAccountID()) != 0 {
 		http.Redirect(w, r, PluginRepo, http.StatusSeeOther)
 		return http.StatusSeeOther, nil
@@ -115,7 +113,7 @@ func (p *Plugin) httpUserStart(w http.ResponseWriter, r *http.Request, instanceI
 	return p.httpUserConnect(w, r, instanceID)
 }
 
-func (p *Plugin) httpGetInfo(w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return respondErr(w, http.StatusMethodNotAllowed,
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
@@ -127,23 +125,67 @@ func (p *Plugin) httpGetInfo(w http.ResponseWriter, r *http.Request) (int, error
 			errors.New("not authorized"))
 	}
 
-	return respondJSON(w, getUserInfo(p, mattermostUserId))
+	info, err := p.GetUserInfo(types.ID(mattermostUserId))
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+	return respondJSON(w, info)
 }
 
-func getUserInfo(p *Plugin, mattermostUserId string) *Info {
-	resp := &Info{}
+func (p *Plugin) GetUserInfo(mattermostUserID types.ID) (*UserInfo, error) {
+	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return nil, err
+	}
 
-	// if instance, err := p.currentInstanceStore.LoadCurrentJIRAInstance(); err == nil {
-	// 	resp.InstanceInstalled = true
-	// 	resp.InstanceType = instance.Common().Type
-	// 	resp.InstanceDetails = instance.GetDisplayDetails()
-	// 	resp.JIRAURL = instance.GetURL()
-	// 	if jiraUser, err := instance.GetPlugin().userStore.LoadJIRAUser(instance, mattermostUserId); err == nil {
-	// 		resp.Connection = jiraUser
-	// 		resp.IsConnected = true
-	// 	}
-	// }
-	return resp
+	user, err := p.MigrateV2User(mattermostUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	isConnected := !user.ConnectedInstances.IsEmpty()
+	canConnect := false
+	for _, instanceID := range instances.IDs() {
+		if !user.ConnectedInstances.Contains(instanceID) {
+			canConnect = true
+			break
+		}
+	}
+
+	globalDefaultInstance, _ := p.LoadDefaultInstance("")
+
+	return &UserInfo{
+		CanConnect:               canConnect,
+		IsConnected:              isConnected,
+		Instances:                instances,
+		User:                     user,
+		EffectiveDefaultInstance: globalDefaultInstance,
+	}, nil
+}
+
+func (info UserInfo) AsConfigMap() map[string]interface{} {
+	m := map[string]interface{}{
+		"can_connect":  info.CanConnect,
+		"is_connected": info.IsConnected,
+	}
+
+	if !info.Instances.IsEmpty() {
+		m["instances"] = info.Instances.AsConfigMap()
+	}
+	if info.User != nil {
+		m["user"] = info.User.AsConfigMap()
+	}
+	if info.EffectiveDefaultInstance != nil {
+		m["effective_default_instance"] = info.EffectiveDefaultInstance.Common().AsConfigMap()
+	}
+
+	return m
+}
+
+func (user *User) AsConfigMap() map[string]interface{} {
+	return map[string]interface{}{
+		"connected_instances": user.ConnectedInstances.AsConfigMap(),
+	}
 }
 
 func (p *Plugin) httpGetSettingsInfo(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -165,25 +207,41 @@ func (p *Plugin) httpGetSettingsInfo(w http.ResponseWriter, r *http.Request) (in
 	})
 }
 
-func (p *Plugin) connectUser(instance Instance, mattermostUserId string, connection *Connection) error {
-	err := p.userStore.StoreConnection(instance, mattermostUserId, connection)
+func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, connection *Connection) error {
+	user, err := p.userStore.LoadUser(mattermostUserID)
+	if err != nil {
+		if err != ErrUserNotFound {
+			return err
+		}
+		user = &User{
+			MattermostUserID: mattermostUserID,
+		}
+	}
+
+	user.ConnectedInstances.Set(instance.Common())
+
+	err = p.userStore.StoreConnection(instance.GetID(), mattermostUserID, connection)
+	if err != nil {
+		return err
+	}
+	err = p.userStore.StoreUser(user)
 	if err != nil {
 		return err
 	}
 
-	p.API.PublishWebSocketEvent(
-		WS_EVENT_CONNECT,
-		map[string]interface{}{
-			"is_connected": true,
-			"jira_url":     instance.GetURL(),
-		},
-		&model.WebsocketBroadcast{UserId: mattermostUserId},
+	info, err := p.GetUserInfo(types.ID(mattermostUserID))
+	if err != nil {
+		return err
+	}
+
+	p.API.PublishWebSocketEvent(websocketEventConnect, info.AsConfigMap(),
+		&model.WebsocketBroadcast{UserId: mattermostUserID.String()},
 	)
 
 	return nil
 }
 
-func (p *Plugin) DisconnectUser(instanceID types.ID, mattermostUserID string) (*Connection, error) {
+func (p *Plugin) DisconnectUser(instanceID, mattermostUserID types.ID) (*Connection, error) {
 	instance, err := p.LoadDefaultInstance(instanceID)
 	if err != nil {
 		return nil, err
@@ -191,25 +249,37 @@ func (p *Plugin) DisconnectUser(instanceID types.ID, mattermostUserID string) (*
 	return p.disconnectUser(instance, mattermostUserID)
 }
 
-func (p *Plugin) disconnectUser(instance Instance, mattermostUserId string) (*Connection, error) {
-	conn, err := p.userStore.LoadConnection(instance, mattermostUserId)
+func (p *Plugin) disconnectUser(instance Instance, mattermostUserID types.ID) (*Connection, error) {
+	user, err := p.userStore.LoadUser(mattermostUserID)
+	if err != nil {
+		return nil, err
+	}
+	if !user.ConnectedInstances.Contains(instance.GetID()) {
+		return nil, ErrInstanceNotFound
+	}
+
+	conn, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
 	if err != nil {
 		return nil, err
 	}
 
-	err = p.userStore.DeleteConnection(instance, mattermostUserId)
+	user.ConnectedInstances.Delete(instance.GetID())
+
+	err = p.userStore.DeleteConnection(instance.GetID(), mattermostUserID)
+	if err != nil {
+		return nil, err
+	}
+	err = p.userStore.StoreUser(user)
 	if err != nil {
 		return nil, err
 	}
 
-	instance.Common().API.PublishWebSocketEvent(
-		WS_EVENT_DISCONNECT,
-		map[string]interface{}{
-			"is_connected": false,
-			"jira_url":     instance.GetURL(),
-		},
-		&model.WebsocketBroadcast{UserId: mattermostUserId},
-	)
+	info, err := p.GetUserInfo(types.ID(mattermostUserID))
+	if err != nil {
+		return nil, err
+	}
 
+	p.API.PublishWebSocketEvent(websocketEventDisconnect, info.AsConfigMap(),
+		&model.WebsocketBroadcast{UserId: mattermostUserID.String()})
 	return conn, nil
 }

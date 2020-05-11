@@ -238,7 +238,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 
 	// Reply with an ephemeral post with the Jira issue formatted as slack attachment.
 	startLink := fmt.Sprintf("/plugins/%s%s", manifest.Id, routeUserStart)
-	msg := fmt.Sprintf("Created Jira issue [%s](%s/browse/%s) by [mattermost-jira-plugin](%s)", created.Key, instance.Common().URL, created.Key, startLink)
+	msg := fmt.Sprintf("Created Jira issue [%s](%s/browse/%s) by [mattermost-jira-plugin](%s)", created.Key, instance.GetURL(), created.Key, startLink)
 
 	reply := &model.Post{
 		Message:   msg,
@@ -313,7 +313,7 @@ func (p *Plugin) httpWorkflowCreateIssue(w http.ResponseWriter, r *http.Request)
 func (p *Plugin) WorkflowCreateIssue(activationParams *workflowclient.ActionActivationParams) (workflowclient.Vars, error) {
 	create := &struct {
 		InstanceID types.ID         `json:"instance_id"`
-		UserId     string           `json:"user_id"`
+		UserId     types.ID         `json:"user_id"`
 		Fields     jira.IssueFields `json:"fields"`
 	}{}
 	if err := json.NewDecoder(bytes.NewReader(activationParams.Action)).Decode(&create); err != nil {
@@ -330,7 +330,7 @@ func (p *Plugin) WorkflowCreateIssue(activationParams *workflowclient.ActionActi
 	}
 	if create.UserId != "" {
 		var connection *Connection
-		connection, err = p.userStore.LoadConnection(instance, create.UserId)
+		connection, err = p.userStore.LoadConnection(instance.GetID(), create.UserId)
 		if err != nil {
 			return nil, err
 		}
@@ -671,7 +671,7 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 	}
 
 	startLink := fmt.Sprintf("/plugins/%s%s", manifest.Id, routeUserStart)
-	msg := fmt.Sprintf("Message attached to [%s](%s/browse/%s) by [mattermost-jira-plugin](%s)", in.IssueKey, instance.Common().URL, in.IssueKey, startLink)
+	msg := fmt.Sprintf("Message attached to [%s](%s/browse/%s) by [mattermost-jira-plugin](%s)", in.IssueKey, instance.GetURL(), in.IssueKey, startLink)
 
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
@@ -708,7 +708,7 @@ func getPermaLink(instance Instance, postId string, currentTeam string) string {
 func (p *Plugin) getIssueDataForCloudWebhook(instance Instance, issueKey string) (*jira.Issue, error) {
 	ci, ok := instance.(*cloudInstance)
 	if !ok {
-		return nil, errors.New("Must be a JIRA Cloud instance, is " + instance.Common().Type)
+		return nil, errors.Errorf("Must be a JIRA Cloud instance, is %s", instance.Common().Type)
 	}
 
 	jiraClient, err := ci.getClientForBot()
@@ -839,7 +839,7 @@ func (p *Plugin) getIssueAsSlackAttachment(instance Instance, connection *Connec
 }
 
 func (p *Plugin) UnassignIssue(instance Instance, mattermostUserID types.ID, issueKey string) (string, error) {
-	connection, err := p.userStore.LoadConnection(instance, mattermostUserID.String())
+	connection, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
 	if err != nil {
 		return "", err
 	}
@@ -870,7 +870,7 @@ func (p *Plugin) UnassignIssue(instance Instance, mattermostUserID types.ID, iss
 const MinUserSearchQueryLength = 3
 
 func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issueKey, userSearch string) (string, error) {
-	connection, err := p.userStore.LoadConnection(instance, mattermostUserID.String())
+	connection, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
 	if err != nil {
 		return "", err
 	}
@@ -1035,7 +1035,7 @@ func (p *Plugin) getClient(instanceID, mattermostUserID types.ID) (Client, Insta
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	connection, err := p.userStore.LoadConnection(instance, mattermostUserID.String())
+	connection, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
 	if err != nil {
 		return nil, nil, nil, err
 	}

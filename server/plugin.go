@@ -84,16 +84,13 @@ type config struct {
 	// user ID of the bot account
 	botUserID string
 
-	// Cached current Jira instance. A non-0 expires indicates the presence
-	// of a value. A nil value means there is no instance available.
-	currentInstance        Instance
-	currentInstanceExpires time.Time
-
 	// Maximum attachment size allowed to be uploaded to Jira
 	maxAttachmentSize utils.ByteSize
 
 	stats             *expvar.Stats
 	statsStopAutosave chan bool
+
+	mattermostSiteURL string
 }
 
 type Plugin struct {
@@ -170,8 +167,15 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrap(err, "failed to ensure bot account")
 	}
 
+	mattermostSiteURL := ""
+	ptr := p.API.GetConfig().ServiceSettings.SiteURL
+	if ptr != nil {
+		mattermostSiteURL = *ptr
+	}
+
 	p.updateConfig(func(conf *config) {
 		conf.botUserID = botUserID
+		conf.mattermostSiteURL = mattermostSiteURL
 	})
 
 	bundlePath, err := p.API.GetBundlePath()
@@ -318,11 +322,7 @@ func (p *Plugin) GetPluginURL() string {
 }
 
 func (p *Plugin) GetSiteURL() string {
-	ptr := p.API.GetConfig().ServiceSettings.SiteURL
-	if ptr == nil {
-		return ""
-	}
-	return *ptr
+	return p.getConfig().mattermostSiteURL
 }
 
 func (p *Plugin) debugf(f string, args ...interface{}) {

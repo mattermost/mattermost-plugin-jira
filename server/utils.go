@@ -11,19 +11,20 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
-func (p *Plugin) CreateBotDMPost(instance Instance, userId, message, postType string) (post *model.Post, returnErr error) {
+func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message, postType string) (post *model.Post, returnErr error) {
 	defer func() {
 		if returnErr != nil {
 			returnErr = errors.WithMessage(returnErr,
-				fmt.Sprintf("failed to create direct post to user %v: ", userId))
+				fmt.Sprintf("failed to create direct post to user %v: ", mattermostUserID))
 		}
 	}()
 
 	// Don't send DMs to users who have turned off notifications
-	c, err := p.userStore.LoadConnection(instance, userId)
+	c, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
 	if err != nil {
 		// not connected to Jira, so no need to send a DM, and no need to report an error
 		return nil, nil
@@ -33,7 +34,7 @@ func (p *Plugin) CreateBotDMPost(instance Instance, userId, message, postType st
 	}
 
 	conf := p.getConfig()
-	channel, appErr := p.API.GetDirectChannel(userId, conf.botUserID)
+	channel, appErr := p.API.GetDirectChannel(mattermostUserID.String(), conf.botUserID)
 	if appErr != nil {
 		return nil, appErr
 	}
@@ -81,7 +82,7 @@ func (p *Plugin) CreateBotDMtoMMUserId(mattermostUserId, format string, args ...
 	return post, nil
 }
 
-func (p *Plugin) replaceJiraAccountIds(instance Instance, body string) string {
+func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string {
 	result := body
 
 	for _, uname := range parseJIRAUsernamesFromText(body) {
@@ -90,11 +91,11 @@ func (p *Plugin) replaceJiraAccountIds(instance Instance, body string) string {
 		}
 
 		jiraUserID := uname[len("accountid:"):]
-		mattermostUserID, err := p.userStore.LoadMattermostUserId(instance, jiraUserID)
+		mattermostUserID, err := p.userStore.LoadMattermostUserId(instanceID, jiraUserID)
 		if err != nil {
 			continue
 		}
-		c, err := p.userStore.LoadConnection(instance, mattermostUserID)
+		c, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
 		if err != nil {
 			continue
 		}

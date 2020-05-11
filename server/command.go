@@ -143,7 +143,7 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	if len(args) != 0 {
 		return p.help(header)
 	}
-	disconnected, err := p.DisconnectUser(instanceID, header.UserId)
+	disconnected, err := p.DisconnectUser(instanceID, types.ID(header.UserId))
 	if err == ErrConnectionNotFound {
 		return p.responsef(header, "Could not complete the **disconnection** request. You do not currently have a Jira account linked to your Mattermost account.")
 	}
@@ -154,7 +154,7 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 }
 
 func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	instance, args, err := p.parseCommandFlagInstance(args)
+	instanceID, args, err := p.parseCommandFlagInstanceID(args)
 	if err != nil {
 		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
 	}
@@ -163,13 +163,13 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 	}
 
 	link := routeUserConnect
-	if instance != nil {
-		conn, err := p.userStore.LoadConnection(instance, header.UserId)
+	if instanceID != "" {
+		conn, err := p.userStore.LoadConnection(instanceID, types.ID(header.UserId))
 		if err == nil && len(conn.JiraAccountID()) != 0 {
 			return p.responsef(header, "You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.")
 		}
 
-		link = p.pathWithInstance(link, instance.GetID())
+		link = p.pathWithInstance(link, instanceID)
 	}
 
 	return p.responsef(header, "[Click here to link your Jira account](%s%s)",
@@ -177,13 +177,13 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 }
 
 func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	instance, args, err := p.parseCommandFlagInstance(args)
+	instanceID, args, err := p.parseCommandFlagInstanceID(args)
 	if err != nil {
 		return p.responsef(header, "Failed to load Jira instance. Please contact your system administrator. Error: %v.", err)
 	}
 
-	mattermostUserId := header.UserId
-	conn, err := p.userStore.LoadConnection(instance, mattermostUserId)
+	mattermostUserID := types.ID(header.UserId)
+	conn, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
 	if err != nil {
 		return p.responsef(header, "Your username is not connected to Jira. Please type `jira connect`. Error: %v.", err)
 	}
@@ -194,7 +194,7 @@ func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 
 	switch args[0] {
 	case settingsNotifications:
-		return p.settingsNotifications(header, instance, mattermostUserId, conn, args)
+		return p.settingsNotifications(header, instanceID, mattermostUserID, conn, args)
 	default:
 		return p.responsef(header, "Unknown setting.")
 	}
@@ -215,10 +215,10 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 		return p.responsef(header, "Please specify an issue key in the form `/jira view <issue-key>`.")
 	}
 
-	mattermostUserId := header.UserId
+	mattermostUserID := types.ID(header.UserId)
 	issueID := args[0]
 
-	conn, err := p.userStore.LoadConnection(instance, mattermostUserId)
+	conn, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
 	if err != nil {
 		// TODO: try to retrieve the issue anonymously
 		return p.responsef(header, "Your username is not connected to Jira. Please type `jira connect`.")
@@ -280,7 +280,7 @@ func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs
 		if len(details) > len(", ") {
 			details = details[:len(details)-2]
 		} else {
-			details = instance.Common().Type
+			details = string(instance.Common().Type)
 		}
 		format := "|%v|%s|%s|\n"
 		if instances.Get(instanceID).IsDefault {
@@ -436,7 +436,7 @@ func executeInstanceUninstall(p *Plugin, c *plugin.Context, header *model.Comman
 		return p.help(header)
 	}
 
-	instanceType := args[0]
+	instanceType := InstanceType(args[0])
 	instanceURL := args[1]
 
 	id, err := utils.NormalizeInstallURL(p.GetSiteURL(), instanceURL)
@@ -514,64 +514,77 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	if len(args) != 0 {
 		return p.help(header)
 	}
+	mattermostUserID := types.ID(header.UserId)
+	bullet := func(cond bool, k string, v interface{}) string {
+		if !cond {
+			return ""
+		}
+		return fmt.Sprintf(" * %s: %v\n", k, v)
+	}
+	sbullet := func(k, v string) string {
+		return bullet(v != "", k, v)
+	}
 
-	// uinfo := getUserInfo(p, header.UserId)
+	info, err := p.GetUserInfo(mattermostUserID)
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
 
 	resp := fmt.Sprintf("Mattermost Jira plugin version: %s, "+
-		"[%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s), built %s\n",
+		"[%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s), built %s.\n",
 		manifest.Version, BuildHashShort, BuildHash, BuildDate)
 
-	// switch {
-	// case uinfo.IsConnected:
-	// 	resp += fmt.Sprintf("Connected to Jira %s as %s.\n", uinfo.JIRAURL, uinfo.Connection.DisplayName)
-	// case uinfo.InstanceInstalled:
-	// 	resp += fmt.Sprintf("Jira %s is installed, but you are not connected. Please [connect](%s%s).\n",
-	// 		uinfo.JIRAURL, p.GetPluginURL(), routeUserConnect)
-	// default:
-	// 	return p.responsef(header, resp+"\nNo Jira instance installed, please contact your system administrator.")
-	// }
+	resp += sbullet("Mattermost site URL", p.GetSiteURL())
+	resp += sbullet("Mattermost user ID", mattermostUserID.String())
 
-	// resp += fmt.Sprintf("\nJira:\n")
+	switch {
+	case info.IsConnected:
+		resp += fmt.Sprintf("###### Connected to %v Jira instances:\n", info.User.ConnectedInstances.Len())
+	case info.Instances.Len() > 0:
+		resp += fmt.Sprintf("Jira is installed, but you are not connected. Please [connect](%s%s).\n",
+			p.GetPluginURL(), routeUserConnect)
+	default:
+		return p.responsef(header, resp+"\nNo Jira instances installed, please contact your system administrator.")
+	}
 
-	// for k, v := range uinfo.InstanceDetails {
-	// 	resp += fmt.Sprintf(" * %s: %s\n", k, v)
-	// }
+	if info.IsConnected {
+		for _, instanceID := range info.User.ConnectedInstances.IDs() {
+			connection, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
+			if err != nil {
+				return p.responsef(header, err.Error())
+			}
 
-	// bullet := func(cond bool, k string, v interface{}) string {
-	// 	if !cond {
-	// 		return ""
-	// 	}
-	// 	return fmt.Sprintf(" * %s: %v\n", k, v)
-	// }
+			instance := info.User.ConnectedInstances.Get(instanceID)
+			switch instance.Common().Type {
+			case CloudInstanceType:
+				resp += sbullet(instanceID.String(), fmt.Sprintf("Cloud, connected as **%s** (AccountID: %s)",
+					connection.User.DisplayName,
+					connection.User.AccountID))
+			case ServerInstanceType:
+				resp += sbullet(instanceID.String(), fmt.Sprintf("Server, connected as **%s** (Name:%s, Key:%s, EmailAddress:%s)",
+					connection.User.DisplayName,
+					connection.User.Name,
+					connection.User.Key,
+					connection.User.EmailAddress))
 
-	// sbullet := func(k, v string) string {
-	// 	return bullet(v != "", k, v)
-	// }
+			}
 
-	// if uinfo.IsConnected {
-	// 	juser := uinfo.Connection.User
-	// 	resp += sbullet("User", juser.DisplayName)
-	// 	resp += sbullet("Self", juser.Self)
-	// 	resp += sbullet("AccountID", juser.AccountID)
-	// 	resp += sbullet("Name", juser.Name)
-	// 	resp += sbullet("Key", juser.Key)
-	// 	resp += sbullet("EmailAddress", juser.EmailAddress)
-	// 	resp += bullet(juser.Active, "Active", juser.Active)
-	// 	resp += sbullet("TimeZone", juser.TimeZone)
-	// 	resp += bullet(len(juser.ApplicationKeys) > 0, "ApplicationKeys", juser.ApplicationKeys)
+			resp += fmt.Sprintf("   * Settings: %+v\n", connection.Settings)
+		}
+	}
 
-	// 	resp += fmt.Sprintf("\nMattermost:\n")
+	if !info.Instances.IsEmpty() {
+		resp += fmt.Sprintf("###### Available Jira instances:\n")
+		for _, instanceID := range info.Instances.IDs() {
+			ic := info.Instances.Get(instanceID)
+			if ic.IsDefault {
+				resp += sbullet(instanceID.String(), fmt.Sprintf("%s, **default**", ic.Type))
+			} else {
+				resp += sbullet(instanceID.String(), fmt.Sprintf("%s", ic.Type))
+			}
+		}
+	}
 
-	// 	resp += sbullet("Site URL", p.GetSiteURL())
-	// 	resp += sbullet("User ID", header.UserId)
-
-	// 	resp += fmt.Sprintf(" * Settings: %+v", uinfo.Connection.Settings)
-
-	// 	if uinfo.Connection.Oauth1AccessToken != "" {
-	// 		resp += sbullet("OAuth1a access token", uinfo.Connection.Oauth1AccessToken)
-	// 		resp += sbullet("OAuth1a access secret (length)", strconv.Itoa(len(uinfo.Connection.Oauth1AccessSecret)))
-	// 	}
-	// }
 	return p.responsef(header, resp)
 }
 
@@ -754,7 +767,7 @@ func executeInstanceDefault(p *Plugin, c *plugin.Context, header *model.CommandA
 }
 
 func (p *Plugin) parseCommandFlagInstanceID(args []string) (types.ID, []string, error) {
-	id := types.ID("")
+	value := ""
 	remaining := []string{}
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
@@ -762,14 +775,14 @@ func (p *Plugin) parseCommandFlagInstanceID(args []string) (types.ID, []string, 
 			remaining = append(remaining, arg)
 			continue
 		}
-		if id != "" {
+		if value != "" {
 			return "", nil, errors.New("--instance may not be specified multiple times")
 		}
 		str := arg[len("--instance"):]
 
 		// --instance=X
 		if strings.HasPrefix(str, "=") {
-			id = types.ID(str[1:])
+			value = str[1:]
 			continue
 		}
 
@@ -778,9 +791,13 @@ func (p *Plugin) parseCommandFlagInstanceID(args []string) (types.ID, []string, 
 			return "", nil, errors.New("--instance requires a value")
 		}
 		i++
-		id = types.ID(args[i])
+		value = args[i]
 	}
 
+	id, err := p.ResolveInstanceURL(value)
+	if err != nil {
+		return "", nil, err
+	}
 	return id, remaining, nil
 }
 
@@ -789,7 +806,9 @@ func (p *Plugin) parseCommandFlagInstance(args []string) (Instance, []string, er
 	if err != nil {
 		return nil, nil, err
 	}
-	instance, err := p.LoadDefaultInstance(instanceID)
+
+	// already subject to defaults, so load directly
+	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	goexpvar "expvar"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -27,7 +28,7 @@ const (
 	routeAPIGetJiraProjectMetadata = "/api/v2/get-jira-project-metadata"
 	routeAPIGetSearchIssues        = "/api/v2/get-search-issues"
 	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
-	routeAPIInfo                   = "/api/v2/info"
+	routeAPIUserInfo               = "/api/v2/userinfo"
 	routeAPISubscribeWebhook       = "/api/v2/webhook"
 	routeAPISubscriptionsChannel   = "/api/v2/subscriptions/channel"
 	routeAPISettingsInfo           = "/api/v2/settingsinfo"
@@ -51,6 +52,12 @@ const (
 )
 
 const routePrefixInstance = "instance"
+
+const (
+	websocketEventInstanceStatus = "instance_status"
+	websocketEventConnect        = "connect"
+	websocketEventDisconnect     = "disconnect"
+)
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
 	status, err := p.serveHTTP(c, w, r)
@@ -80,8 +87,8 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return p.httpTransitionIssuePostAction(w, r)
 
 	// User APIs
-	case routeAPIInfo:
-		return p.httpGetInfo(w, r)
+	case routeAPIUserInfo:
+		return p.httpGetUserInfo(w, r)
 	case routeAPISettingsInfo:
 		return p.httpGetSettingsInfo(w, r)
 
@@ -315,7 +322,8 @@ func (p *Plugin) respondSpecialTemplate(w http.ResponseWriter, key string, statu
 }
 
 func (p *Plugin) pathWithInstance(route string, instanceID types.ID) string {
-	return path.Join(routePrefixInstance+"/"+instanceID.String(), route)
+	encoded := url.PathEscape(encode([]byte(instanceID)))
+	return path.Join("/"+routePrefixInstance+"/"+encoded, route)
 }
 
 func (p *Plugin) isInstancePath(route string) (instanceID types.ID, remainingPath string) {
@@ -323,8 +331,13 @@ func (p *Plugin) isInstancePath(route string) (instanceID types.ID, remainingPat
 	if len(ss) < 3 {
 		return "", route
 	}
-	if ss[0] != routePrefixInstance {
+	if ss[0] != "" && ss[1] != routePrefixInstance {
 		return "", route
 	}
-	return types.ID(ss[1]), strings.Join(ss[2:], "/")
+
+	id, err := decode(ss[2])
+	if err != nil {
+		return "", route
+	}
+	return types.ID(id), "/" + strings.Join(ss[3:], "/")
 }

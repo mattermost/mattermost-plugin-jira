@@ -66,7 +66,7 @@ func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, e
 	ci, ok := instance.(*cloudInstance)
 	if !ok {
 		return respondErr(w, http.StatusBadRequest,
-			errors.New("Must be a JIRA Cloud instance, is "+instance.Common().Type))
+			errors.Errorf("Must be a JIRA Cloud instance, is %s", instance.Common().Type))
 	}
 	if ci.Installed {
 		return respondErr(w, http.StatusForbidden,

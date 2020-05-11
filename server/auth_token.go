@@ -52,7 +52,7 @@ func (p *Plugin) NewEncodedAuthToken(mattermostUserID, secret string) (returnTok
 		return "", err
 	}
 
-	return encode(encrypted)
+	return encode(encrypted), nil
 }
 
 func (p *Plugin) ParseAuthToken(encoded string) (mattermostUserID, tokenSecret string, returnErr error) {
@@ -98,10 +98,10 @@ func (p *Plugin) ParseAuthToken(encoded string) (mattermostUserID, tokenSecret s
 	return t.MattermostUserID, t.Secret, nil
 }
 
-func encode(encrypted []byte) (string, error) {
+func encode(encrypted []byte) string {
 	encoded := make([]byte, base64.URLEncoding.EncodedLen(len(encrypted)))
 	base64.URLEncoding.Encode(encoded, encrypted)
-	return string(encoded), nil
+	return string(encoded)
 }
 
 func encrypt(plain, secret []byte) ([]byte, error) {

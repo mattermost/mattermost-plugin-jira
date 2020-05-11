@@ -7,6 +7,13 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
+type InstanceType string
+
+const (
+	CloudInstanceType  = InstanceType("cloud")
+	ServerInstanceType = InstanceType("server")
+)
+
 type Instance interface {
 	GetClient(*Connection) (Client, error)
 	GetDisplayDetails() map[string]string
@@ -22,23 +29,30 @@ type InstanceCommon struct {
 	*Plugin       `json:"-"`
 	PluginVersion string `json:",omitempty"`
 
-	URL       types.ID
-	Alias     string
-	Type      string
-	IsDefault bool
+	InstanceID types.ID
+	Type       InstanceType
+	IsDefault  bool
 }
 
-func newInstanceCommon(p *Plugin, typ string, url types.ID) *InstanceCommon {
+func newInstanceCommon(p *Plugin, instanceType InstanceType, instanceID types.ID) *InstanceCommon {
 	return &InstanceCommon{
 		Plugin:        p,
-		Type:          typ,
-		URL:           url,
+		Type:          instanceType,
+		InstanceID:    instanceID,
 		PluginVersion: manifest.Version,
 	}
 }
 
+func (ic InstanceCommon) AsConfigMap() map[string]interface{} {
+	return map[string]interface{}{
+		"type":        string(ic.Type),
+		"instance_id": string(ic.InstanceID),
+		"is_default":  ic.IsDefault,
+	}
+}
+
 func (common InstanceCommon) GetID() types.ID {
-	return common.URL
+	return common.InstanceID
 }
 
 func (common *InstanceCommon) Common() *InstanceCommon {

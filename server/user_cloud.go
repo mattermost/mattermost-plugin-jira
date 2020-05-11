@@ -90,7 +90,7 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 	}
 
 	mmToken := r.FormValue(argMMToken)
-	c := &Connection{
+	connection := &Connection{
 		PluginVersion: manifest.Version,
 		User: jira.User{
 			AccountID:   accountId,
@@ -138,10 +138,16 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		if len(storedSecret) == 0 || storedSecret != secret {
 			return respondErr(w, http.StatusUnauthorized, errors.New("this link has already been used"))
 		}
-		err = p.connectUser(ci, mattermostUserId, c)
+		err = p.connectUser(ci, types.ID(mattermostUserId), connection)
+		if err != nil {
+			return respondErr(w, http.StatusInternalServerError, err)
+		}
+		// TODO For https://github.com/mattermost/mattermost-plugin-jira/issues/149, need a channel ID
+		// msg := fmt.Sprintf("You have successfully connected your Jira account (**%s**).", connection.DisplayName)
+		// _ = p.API.SendEphemeralPost(mattermostUserId, makePost(p.getUserID(), channelID, msg))
 
 	case routeACUserDisconnected:
-		_, err = p.disconnectUser(ci, mattermostUserId)
+		_, err = p.disconnectUser(ci, types.ID(mattermostUserId))
 
 	case routeACUserConfirm:
 
