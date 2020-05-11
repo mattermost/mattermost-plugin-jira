@@ -197,7 +197,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		mock.AnythingOfTypeArgument("string")).Return(nil)
 	api.On("KVSet", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
 	api.On("KVSetWithExpiry", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
-	api.On("KVGet", "known_jira_instances").Return(nil, nil)
+	api.On("KVGet", keyInstances).Return(nil, nil)
 	api.On("KVGet", "rsa_key").Return(nil, nil)
 	api.On("PublishWebSocketEvent", mock.AnythingOfTypeArgument("string"), mock.Anything, mock.Anything)
 
