@@ -67,7 +67,7 @@ func (ww webhookWorker) process(rawData []byte) (err error) {
 	botUserId := ww.p.getUserID()
 	for _, channelId := range channelIds.Elems() {
 		if _, _, err1 := wh.PostToChannel(ww.p, v.instanceID, channelId, botUserId); err1 != nil {
-			ww.p.errorf("WebhookWorker id: %d, error posting to channel, err: %v", ww.id, err)
+			ww.p.errorf("WebhookWorker id: %d, error posting to channel, err: %v", ww.id, err1)
 		}
 	}
 

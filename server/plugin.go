@@ -91,6 +91,7 @@ type config struct {
 	statsStopAutosave chan bool
 
 	mattermostSiteURL string
+	rsaKey            *rsa.PrivateKey
 }
 
 type Plugin struct {
@@ -158,6 +159,12 @@ func (p *Plugin) OnConfigurationChange() error {
 }
 
 func (p *Plugin) OnActivate() error {
+	store := NewStore(p)
+	p.instanceStore = store
+	p.userStore = store
+	p.secretsStore = store
+	p.otsStore = store
+
 	botUserID, err := p.Helpers.EnsureBot(&model.Bot{
 		Username:    botUserName,
 		DisplayName: botDisplayName,
@@ -173,9 +180,15 @@ func (p *Plugin) OnActivate() error {
 		mattermostSiteURL = *ptr
 	}
 
+	rsaKey, err := p.secretsStore.EnsureRSAKey()
+	if err != nil {
+		return errors.WithMessage(err, "OnActivate: failed to make RSA public key")
+	}
+
 	p.updateConfig(func(conf *config) {
 		conf.botUserID = botUserID
 		conf.mattermostSiteURL = mattermostSiteURL
+		conf.rsaKey = rsaKey
 	})
 
 	bundlePath, err := p.API.GetBundlePath()
@@ -191,12 +204,6 @@ func (p *Plugin) OnActivate() error {
 	if appErr := p.API.SetProfileImage(botUserID, profileImage); appErr != nil {
 		return errors.Wrap(appErr, "couldn't set profile image")
 	}
-
-	store := NewStore(p)
-	p.instanceStore = store
-	p.userStore = store
-	p.secretsStore = store
-	p.otsStore = store
 
 	err = store.MigrateV2Instances()
 	if err != nil {

@@ -22,8 +22,6 @@ type serverInstance struct {
 
 	// The SiteURL may change as we go, so we store the PluginKey when as it was installed
 	MattermostKey string
-
-	// oauth1Config *oauth1.Config
 }
 
 var _ Instance = (*serverInstance)(nil)
@@ -62,11 +60,7 @@ func (si *serverInstance) GetUserConnectURL(mattermostUserId string) (returnURL 
 		returnErr = errors.WithMessage(returnErr, "failed to get a connect link")
 	}()
 
-	oauth1Config, err := si.getOAuth1Config()
-	if err != nil {
-		return "", err
-	}
-
+	oauth1Config := si.getOAuth1Config()
 	token, secret, err := oauth1Config.RequestToken()
 	if err != nil {
 		return "", err
@@ -98,15 +92,10 @@ func (si *serverInstance) GetClient(connection *Connection) (client Client, retu
 		return nil, errors.New("No access token, please use /jira connect")
 	}
 
-	oauth1Config, err := si.getOAuth1Config()
-	if err != nil {
-		return nil, err
-	}
-
 	token := oauth1.NewToken(connection.Oauth1AccessToken, connection.Oauth1AccessSecret)
 	conf := si.getConfig()
 
-	httpClient := oauth1Config.Client(oauth1.NoContext, token)
+	httpClient := si.getOAuth1Config().Client(oauth1.NoContext, token)
 	httpClient = utils.WrapHTTPClient(httpClient,
 		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
 		utils.WithResponseSizeLimit(conf.maxAttachmentSize))
@@ -121,19 +110,7 @@ func (si *serverInstance) GetClient(connection *Connection) (client Client, retu
 	return newServerClient(jiraClient), nil
 }
 
-func (si *serverInstance) getOAuth1Config() (returnConfig *oauth1.Config, returnErr error) {
-	defer func() {
-		if returnErr == nil {
-			return
-		}
-		returnErr = errors.WithMessage(returnErr, "failed to create an OAuth1 config")
-	}()
-
-	rsaKey, err := si.Plugin.secretsStore.EnsureRSAKey()
-	if err != nil {
-		return nil, err
-	}
-
+func (si *serverInstance) getOAuth1Config() *oauth1.Config {
 	return &oauth1.Config{
 		ConsumerKey:    si.MattermostKey,
 		ConsumerSecret: "dontcare",
@@ -143,6 +120,8 @@ func (si *serverInstance) getOAuth1Config() (returnConfig *oauth1.Config, return
 			AuthorizeURL:    si.GetURL() + "/plugins/servlet/oauth/authorize",
 			AccessTokenURL:  si.GetURL() + "/plugins/servlet/oauth/access-token",
 		},
-		Signer: &oauth1.RSASigner{PrivateKey: rsaKey},
-	}, nil
+		Signer: &oauth1.RSASigner{
+			PrivateKey: si.Plugin.getConfig().rsaKey,
+		},
+	}
 }

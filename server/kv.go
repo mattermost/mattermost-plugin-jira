@@ -554,12 +554,12 @@ func (store *store) UpdateInstances(updatef func(instances *Instances) error) er
 // - The instances themselves should be forward-compatible, including
 // 	 CurrentInstance.
 func (store *store) MigrateV2Instances() error {
-	// See if the V3 "instances" key exists; only attempt to migrate if it doesn't.
 	_, err := store.plugin.instanceStore.LoadInstances()
 	if err != kvstore.ErrNotFound {
 		return err
 	}
 
+	// The V3 "instances" key does not exist. Migrate.
 	data, appErr := store.plugin.API.KVGet(v2keyKnownJiraInstances)
 	if appErr != nil {
 		return appErr
@@ -607,12 +607,13 @@ func (store *store) MigrateV2Instances() error {
 // MigrateV2User migrates a user record from the V2 data model if needed. It
 // returns an up-to-date User object either way.
 func (p *Plugin) MigrateV2User(mattermostUserID types.ID) (*User, error) {
-	// See if the V3 "user" key exists; only attempt to migrate if it doesn't.
 	user, err := p.userStore.LoadUser(mattermostUserID)
 	if err != kvstore.ErrNotFound {
+		// return the existing key (or error)
 		return user, err
 	}
 
+	// V3 "user" key does not. Migrate.
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
 		return nil, err

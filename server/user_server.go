@@ -78,15 +78,9 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 		return respondErr(w, http.StatusUnauthorized, errors.New("request token mismatch"))
 	}
 
-	oauth1Config, err := si.getOAuth1Config()
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to obtain oauth1 config"))
-	}
-
 	// Although we pass the oauthTmpCredentials as required here. The JIRA server does not appar to validate it.
 	// We perform the check above for reuse so this is irrelavent to the security from our end.
-	accessToken, accessSecret, err := oauth1Config.AccessToken(requestToken, oauthTmpCredentials.Secret, verifier)
+	accessToken, accessSecret, err := si.getOAuth1Config().AccessToken(requestToken, oauthTmpCredentials.Secret, verifier)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to obtain oauth1 access token"))
@@ -189,16 +183,11 @@ func httpOAuth1aPublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 }
 
 func publicKeyString(p *Plugin) ([]byte, error) {
-	rsaKey, err := p.secretsStore.EnsureRSAKey()
-	if err != nil {
-		return nil, err
-	}
-
+	rsaKey := p.getConfig().rsaKey
 	b, err := x509.MarshalPKIXPublicKey(&rsaKey.PublicKey)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to encode public key")
 	}
-
 	return pem.EncodeToMemory(&pem.Block{
 		Type:  "PUBLIC KEY",
 		Bytes: b,

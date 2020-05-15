@@ -54,18 +54,14 @@ func (instances Instances) GetDefault() *InstanceCommon {
 	if instances.Len() == 1 {
 		return instances.ValueSet.GetAt(0).(*InstanceCommon)
 	}
-	if instances.defaultID != "" {
-		return instances.Get(instances.defaultID)
-	}
 
 	for _, id := range instances.ValueSet.IDs() {
 		instance := instances.Get(id)
 		if instance.IsDefault {
-			instances.defaultID = id
 			return instance
 		}
 	}
-	instances.defaultID = "not:::a:::url"
+
 	return nil
 }
 
@@ -74,15 +70,11 @@ func (instances Instances) SetDefault(id types.ID) error {
 		return ErrInstanceNotFound
 	}
 
-	if instances.defaultID != "" {
-		prev := instances.Get(instances.defaultID)
-		prev.IsDefault = false
-		instances.defaultID = ""
-	}
-
+	prev := instances.GetDefault()
+	prev.IsDefault = false
 	instance := instances.Get(id)
 	instance.IsDefault = true
-	instances.defaultID = id
+
 	return nil
 }
 
