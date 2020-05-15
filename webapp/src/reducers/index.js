@@ -14,25 +14,43 @@ function userConnected(state = false, action) {
     }
 }
 
-function instanceInstalled(state = false, action) {
-    // We're notified of the instance status at startup (through getConnected)
-    // and when we get a websocket instance_status event
+function userCanConnect(state = false, action) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
-        return action.data.instance_installed ? action.data.instance_installed : state;
-    case ActionTypes.RECEIVED_INSTANCE_STATUS:
-        return action.data.instance_installed;
+        return action.data.can_connect;
     default:
         return state;
     }
 }
 
-function instanceType(state = '', action) {
+function installedInstances(state = [], action) {
+    // We're notified of the instance status at startup (through getConnected)
+    // and when we get a websocket instance_status event
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
-        return action.data.instance_type ? action.data.instance_type : state;
+        return action.data.instances ? action.data.instances : state;
     case ActionTypes.RECEIVED_INSTANCE_STATUS:
-        return action.data.instance_type;
+        return action.data.instances ? action.data.instances : state;
+    default:
+        return state;
+    }
+}
+
+function defaultConnectInstance(state = {}, action) {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_CONNECTED:
+        return action.data.default_connect_instance ? action.data.default_connect_instance : state;
+    case ActionTypes.RECEIVED_INSTANCE_STATUS:
+        return action.data.default_connect_instance ? action.data.default_connect_instance : state;
+    default:
+        return state;
+    }
+}
+
+function defaultUseInstance(state = {}, action) {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_CONNECTED:
+        return action.data.default_use_instance ? action.data.default_use_instance : state;
     default:
         return state;
     }
@@ -177,8 +195,10 @@ const channelSubscriptions = (state = {}, action) => {
 
 export default combineReducers({
     userConnected,
-    instanceInstalled,
-    instanceType,
+    userCanConnect,
+    installedInstances,
+    defaultConnectInstance,
+    defaultUseInstance,
     pluginSettings,
     createModalVisible,
     createModal,

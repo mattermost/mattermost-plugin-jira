@@ -16,11 +16,12 @@ import (
 )
 
 type UserInfo struct {
-	IsConnected              bool       `json:"is_connected"`
-	CanConnect               bool       `json:"can_connect"`
-	User                     *User      `json:"user"`
-	Instances                *Instances `json:"instances"`
-	EffectiveDefaultInstance Instance   `json:"effective_default_instance"`
+	IsConnected            bool       `json:"is_connected"`
+	CanConnect             bool       `json:"can_connect"`
+	User                   *User      `json:"user"`
+	Instances              *Instances `json:"instances"`
+	DefaultConnectInstance Instance   `json:"default_connect_instance,omitempty"`
+	DefaultUseInstance     Instance   `json:"default_use_instance,omitempty"`
 }
 
 type User struct {
@@ -155,11 +156,12 @@ func (p *Plugin) GetUserInfo(mattermostUserID types.ID) (*UserInfo, error) {
 	globalDefaultInstance, _ := p.LoadDefaultInstance("")
 
 	return &UserInfo{
-		CanConnect:               canConnect,
-		IsConnected:              isConnected,
-		Instances:                instances,
-		User:                     user,
-		EffectiveDefaultInstance: globalDefaultInstance,
+		CanConnect:             canConnect,
+		IsConnected:            isConnected,
+		Instances:              instances,
+		User:                   user,
+		DefaultConnectInstance: globalDefaultInstance,
+		DefaultUseInstance:     globalDefaultInstance,
 	}, nil
 }
 
@@ -168,17 +170,18 @@ func (info UserInfo) AsConfigMap() map[string]interface{} {
 		"can_connect":  info.CanConnect,
 		"is_connected": info.IsConnected,
 	}
-
 	if !info.Instances.IsEmpty() {
 		m["instances"] = info.Instances.AsConfigMap()
 	}
 	if info.User != nil {
 		m["user"] = info.User.AsConfigMap()
 	}
-	if info.EffectiveDefaultInstance != nil {
-		m["effective_default_instance"] = info.EffectiveDefaultInstance.Common().AsConfigMap()
+	if info.DefaultConnectInstance != nil {
+		m["default_connect_instance"] = info.DefaultConnectInstance.Common().AsConfigMap()
 	}
-
+	if info.DefaultUseInstance != nil {
+		m["default_use_instance"] = info.DefaultUseInstance.Common().AsConfigMap()
+	}
 	return m
 }
 

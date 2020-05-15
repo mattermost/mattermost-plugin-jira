@@ -15,8 +15,9 @@ export default class CreateIssuePostMenuAction extends PureComponent {
         open: PropTypes.func.isRequired,
         postId: PropTypes.string,
         userConnected: PropTypes.bool.isRequired,
-        installedInstanceType: PropTypes.string.isRequired,
-        isInstanceInstalled: PropTypes.bool.isRequired,
+        userCanConnect: PropTypes.bool.isRequired,
+        installedInstances: PropTypes.array,
+        defaultConnectInstance: PropTypes.object,
         sendEphemeralPost: PropTypes.func.isRequired,
     };
 
@@ -41,15 +42,26 @@ export default class CreateIssuePostMenuAction extends PureComponent {
     };
 
     connectClick = () => {
-        if (this.props.isInstanceInstalled && this.props.installedInstanceType === 'server' && isDesktopApp()) {
-            this.props.sendEphemeralPost('Please use your browser to connect to Jira.');
+        if (!this.props.userCanConnect) {
             return;
         }
-        window.open('/plugins/' + PluginId + '/user/connect', '_blank');
+        let instancePrefix = '';
+        if (this.props.defaultConnectInstance && this.props.defaultConnectInstance.instance_id) {
+            if (this.props.defaultConnectInstance.type === 'server' && isDesktopApp()) {
+                this.props.sendEphemeralPost('Please use your browser to connect to Jira.');
+                return;
+            }
+            instancePrefix = '/instance/' + btoa(this.props.defaultConnectInstance.instance_id);
+        } else {
+            // TODO: present instance picker to choose an installed instance
+        }
+
+        const target = '/plugins/' + PluginId + instancePrefix + '/user/connect';
+        window.open(target, '_blank');
     };
 
     render() {
-        if (this.props.isSystemMessage || !this.props.isInstanceInstalled) {
+        if (this.props.isSystemMessage || !this.props.installedInstances) {
             return null;
         }
 
@@ -65,7 +77,7 @@ export default class CreateIssuePostMenuAction extends PureComponent {
                     {this.getLocalizedTitle()}
                 </button>
             );
-        } else {
+        } else if (this.props.userCanConnect) {
             content = (
                 <button
                     className='style--none'

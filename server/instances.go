@@ -120,12 +120,7 @@ func (p *Plugin) InstallInstance(instance Instance) error {
 		return err
 	}
 
-	// Notify users we have installed an instance
-	p.API.PublishWebSocketEvent(websocketEventInstanceStatus,
-		map[string]interface{}{
-			"instances": updated.AsConfigMap(),
-		},
-		&model.WebsocketBroadcast{})
+	p.wsInstancesChanged(updated)
 	return nil
 }
 
@@ -147,6 +142,7 @@ func (p *Plugin) UninstallInstance(id types.ID, instanceType InstanceType) (Inst
 			if instanceType != instance.Common().Type {
 				return errors.Errorf("%s did not match instance %s type %s", instanceType, id, instance.Common().Type)
 			}
+			instances.Delete(id)
 			updated = instances
 			return p.instanceStore.DeleteInstance(id)
 		})
@@ -155,12 +151,20 @@ func (p *Plugin) UninstallInstance(id types.ID, instanceType InstanceType) (Inst
 	}
 
 	// Notify users we have uninstalled an instance
-	p.API.PublishWebSocketEvent(websocketEventInstanceStatus,
-		map[string]interface{}{
-			"instances": updated.AsConfigMap(),
-		},
-		&model.WebsocketBroadcast{})
+	p.wsInstancesChanged(updated)
 	return instance, nil
+}
+
+func (p *Plugin) wsInstancesChanged(instances *Instances) {
+	msg := map[string]interface{}{
+		"instances": instances.AsConfigMap(),
+	}
+	defaultInstance := instances.GetDefault()
+	if defaultInstance != nil {
+		msg["default_connect_instance"] = defaultInstance.Common().AsConfigMap()
+	}
+	// Notify users we have uninstalled an instance
+	p.API.PublishWebSocketEvent(websocketEventInstanceStatus, msg, &model.WebsocketBroadcast{})
 }
 
 func (p *Plugin) StoreDefaultInstance(id types.ID) error {
@@ -200,6 +204,11 @@ func (p *Plugin) ResolveInstanceID(explicit types.ID) (types.ID, error) {
 	}
 	if instances.IsEmpty() {
 		return "", ErrInstanceNotFound
+	}
+
+	def := instances.GetDefault()
+	if def == nil {
+		return "", nil
 	}
 	return instances.GetDefault().GetID(), nil
 }
