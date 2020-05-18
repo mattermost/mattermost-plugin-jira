@@ -308,7 +308,7 @@ func MakeCreateIssueURL(ji Instance, project *jira.Project, issue *jira.Issue) s
 	q.Add("description", issue.Fields.Description)
 
 	// Add reporter for only server instances
-	if ji.GetType() == JIRATypeServer {
+	if ji.GetType() == JIRATypeServer && issue.Fields.Reporter != nil {
 		q.Add("reporter", issue.Fields.Reporter.Name)
 	}
 
