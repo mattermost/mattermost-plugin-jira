@@ -8,7 +8,6 @@ The Jira/Mattermost plugin documentation is currently being updated and relocate
 [![Code Coverage](https://img.shields.io/codecov/c/github/mattermost/mattermost-plugin-jira/master)](https://codecov.io/gh/mattermost/mattermost-plugin-jira)
 [![Release](https://img.shields.io/github/v/release/mattermost/mattermost-plugin-jira)](https://github.com/mattermost/mattermost-plugin-jira/releases)
 [![HW](https://img.shields.io/github/issues/mattermost/mattermost-plugin-jira/Up%20For%20Grabs?color=dark%20green&label=HW%20%28Up%20For%20Grabs%29)](https://github.com/mattermost/mattermost-plugin-jira/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3A%22Up+For+Grabs%22+label%3A%22Help+Wanted%22)
-[![Issues](https://img.shields.io/github/issues/mattermost/mattermost-plugin-jira.svg)](https://github.com/mattermost/mattermost-plugin-jira/issues)
 
 **Maintainer:** [@jfrerich](https://github.com/jfrerich)
 **Co-Maintainer:** [@levb](https://github.com/levb)
