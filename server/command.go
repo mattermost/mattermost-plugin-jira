@@ -354,7 +354,7 @@ func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs
 6. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
 7. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
 
-If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://about.mattermost.com/default-jira-plugin) for troubleshooting help.
+If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://mattermost.gitbook.io/plugin-jira) for troubleshooting help.
 `
 
 	// TODO What is the exact group membership in Jira required? Site-admins?
@@ -402,7 +402,7 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 6. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
 7. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
 
-If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://about.mattermost.com/default-jira-plugin) for troubleshooting help.
+If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://mattermost.gitbook.io/plugin-jira) for troubleshooting help.
 `
 	ji := NewJIRAServerInstance(p, jiraURL)
 	err = p.instanceStore.StoreJIRAInstance(ji)
