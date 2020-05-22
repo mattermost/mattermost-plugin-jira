@@ -73,7 +73,7 @@ func getTransitionActions(client Client, issue *jira.Issue) ([]*model.PostAction
 	return actions, nil
 }
 
-func parseIssue(client Client, issue *jira.Issue) ([]*model.SlackAttachment, error) {
+func asSlackAttachment(client Client, issue *jira.Issue) ([]*model.SlackAttachment, error) {
 	text := mdKeySummaryLink(issue)
 	desc := truncate(issue.Fields.Description, 3000)
 	desc = parseJiraLinksToMarkdown(desc)

@@ -55,18 +55,19 @@ func (ww webhookWorker) process(rawData []byte) (err error) {
 		ww.p.errorf("WebhookWorker id: %d, error posting notifications, err: %v", ww.id, err)
 	}
 
-	if err = wh.(*webhook).JiraWebhook.expandIssue(ww.p); err != nil {
+	v := wh.(*webhook)
+	if err = v.JiraWebhook.expandIssue(ww.p, v.instanceID); err != nil {
 		return err
 	}
 
-	channelIds, err := ww.p.getChannelsSubscribed(wh.(*webhook))
+	channelIds, err := ww.p.getChannelsSubscribed(v)
 	if err != nil {
 		return err
 	}
 	botUserId := ww.p.getUserID()
 	for _, channelId := range channelIds.Elems() {
-		if _, _, err1 := wh.PostToChannel(ww.p, channelId, botUserId); err1 != nil {
-			ww.p.errorf("WebhookWorker id: %d, error posting to channel, err: %v", ww.id, err)
+		if _, _, err1 := wh.PostToChannel(ww.p, v.instanceID, channelId, botUserId); err1 != nil {
+			ww.p.errorf("WebhookWorker id: %d, error posting to channel, err: %v", ww.id, err1)
 		}
 	}
 

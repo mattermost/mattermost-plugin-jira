@@ -3,7 +3,7 @@
 
 import {isDesktopApp, isMinimumDesktopAppVersion} from '../utils/user_agent';
 import {openCreateModalWithoutPost, openChannelSettings, sendEphemeralPost} from '../actions';
-import {isUserConnected, getInstalledInstanceType, isInstanceInstalled, getPluginSettings} from '../selectors';
+import {isUserConnected, getInstalledInstances, getPluginSettings, getDefaultConnectInstance} from '../selectors';
 import PluginId from 'plugin_id';
 
 export default class Hooks {
@@ -12,10 +12,10 @@ export default class Hooks {
         this.settings = settings;
     }
 
-    slashCommandWillBePostedHook = (message, contextArgs) => {
-        let messageTrimmed;
-        if (message) {
-            messageTrimmed = message.trim();
+    slashCommandWillBePostedHook = (rawMessage, contextArgs) => {
+        let message;
+        if (rawMessage) {
+            message = rawMessage.trim();
         }
 
         const pluginSettings = getPluginSettings(this.store.getState());
@@ -27,8 +27,11 @@ export default class Hooks {
             shouldEnableCreate = this.settings.ui_enabled;
         }
 
-        if (messageTrimmed && messageTrimmed.startsWith('/jira create') && shouldEnableCreate) {
-            if (!isInstanceInstalled(this.store.getState())) {
+        const createCommand = '/jira create';
+        const connectCommand = '/jira connect';
+        const subscribeCommand = '/jira subscribe';
+        if (message && message.startsWith(createCommand) && shouldEnableCreate) {
+            if (!getInstalledInstances(this.store.getState())) {
                 this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
                 return Promise.resolve({});
             }
@@ -36,13 +39,13 @@ export default class Hooks {
                 this.store.dispatch(sendEphemeralPost('Your Mattermost account is not connected to Jira. Please use `/jira connect` to connect your account, then try again.'));
                 return Promise.resolve({});
             }
-            const description = messageTrimmed.slice(12).trim();
+            const description = message.slice(createCommand.length).trim();
             this.store.dispatch(openCreateModalWithoutPost(description, contextArgs.channel_id));
             return Promise.resolve({});
         }
 
-        if (messageTrimmed && messageTrimmed === '/jira connect') {
-            if (!isInstanceInstalled(this.store.getState())) {
+        if (message && message.startsWith(connectCommand)) {
+            if (!getInstalledInstances(this.store.getState())) {
                 this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
                 return Promise.resolve({});
             }
@@ -51,18 +54,38 @@ export default class Hooks {
                 return Promise.resolve({});
             }
 
-            if (getInstalledInstanceType(this.store.getState()) === 'server' && isDesktopApp() && !isMinimumDesktopAppVersion(4, 3, 0)) { // eslint-disable-line no-magic-numbers
+            const args = message.slice(connectCommand.length).trim();
+            let instance = getDefaultConnectInstance(this.store.getState());
+
+            const instances = getInstalledInstances(this.store.getState());
+            const optInstance = '--instance';
+            if (args.startsWith(optInstance + ' ') || args.startsWith(optInstance + '=')) {
+                const instanceID = args.slice(optInstance.length + 1).trim();
+                instance = instances[instanceID];
+                if (!instance) {
+                    const errMsg = 'Jira instance ' + instanceID + ' is not installed. Please type `/jira info` to see the available Jira instances.';
+                    this.store.dispatch(sendEphemeralPost(errMsg));
+                    return Promise.resolve({});
+                }
+            }
+
+            if (instance && instance.type === 'server' && isDesktopApp() && !isMinimumDesktopAppVersion(4, 3, 0)) { // eslint-disable-line no-magic-numbers
                 const errMsg = 'Your version of the Mattermost desktop client does not support authenticating between Jira and Mattermost directly. To connect your Jira account with Mattermost, please go to Mattermost via your web browser and type `/jira connect`, or [check the Mattermost download page](https://mattermost.com/download/#mattermostApps) to get the latest version of the desktop client.';
                 this.store.dispatch(sendEphemeralPost(errMsg));
                 return Promise.resolve({});
             }
 
-            window.open('/plugins/' + PluginId + '/user/connect', '_blank');
+            let instancePrefix = '';
+            if (instance && instance.instance_id) {
+                instancePrefix = '/instance/' + btoa(instance.instance_id);
+            }
+            const target = '/plugins/' + PluginId + instancePrefix + '/user/connect';
+            window.open(target, '_blank');
             return Promise.resolve({});
         }
 
-        if (messageTrimmed && messageTrimmed === '/jira subscribe') {
-            if (!isInstanceInstalled(this.store.getState())) {
+        if (message && message === subscribeCommand) {
+            if (!getInstalledInstances(this.store.getState())) {
                 this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
                 return Promise.resolve({});
             }

@@ -3,18 +3,21 @@ package main
 import (
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const helpTextHeader = "###### Mattermost Jira Plugin - Slash Command Help\n"
 
+// <><> TODO Update command Help
 const commonHelpText = "\n* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
 	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
 	"* `/jira assign <issue-key> <assignee>` - Change the assignee of a Jira issue\n" +
@@ -54,28 +57,33 @@ type CommandHandler struct {
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
-		"connect":            executeConnect,
-		"disconnect":         executeDisconnect,
-		"install/cloud":      executeInstallCloud,
-		"install/server":     executeInstallServer,
-		"view":               executeView,
-		"settings":           executeSettings,
-		"transition":         executeTransition,
-		"assign":             executeAssign,
-		"unassign":           executeUnassign,
-		"uninstall":          executeUninstall,
-		"webhook":            executeWebhookURL,
-		"stats":              executeStats,
-		"info":               executeInfo,
-		"help":               commandHelp,
-		"subscribe/list":     executeSubscribeList,
-		"debug/stats/reset":  executeDebugStatsReset,
-		"debug/stats/save":   executeDebugStatsSave,
-		"debug/stats/expvar": executeDebugStatsExpvar,
-		"debug/workflow":     executeDebugWorkflow,
-		// "debug/instance/list":   executeDebugInstanceList,
-		// "debug/instance/select": executeDebugInstanceSelect,
-		// "debug/instance/delete": executeDebugInstanceDelete,
+		"connect":                 executeConnect,
+		"disconnect":              executeDisconnect,
+		"install/cloud":           executeInstanceInstallCloud,
+		"install/server":          executeInstanceInstallServer,
+		"view":                    executeView,
+		"settings":                executeSettings,
+		"transition":              executeTransition,
+		"assign":                  executeAssign,
+		"unassign":                executeUnassign,
+		"uninstall":               executeInstanceUninstall,
+		"webhook":                 executeWebhookURL,
+		"stats":                   executeStats,
+		"info":                    executeInfo,
+		"help":                    commandHelp,
+		"subscribe/list":          executeSubscribeList,
+		"debug/stats/reset":       executeDebugStatsReset,
+		"debug/stats/save":        executeDebugStatsSave,
+		"debug/stats/expvar":      executeDebugStatsExpvar,
+		"debug/workflow":          executeDebugWorkflow,
+		"debug/clean-instances":   executeDebugCleanInstances,
+		"debug/migrate-instances": executeDebugMigrateInstances,
+		"instance/install/cloud":  executeInstanceInstallCloud,
+		"instance/install/server": executeInstanceInstallServer,
+		"instance/list":           executeInstanceList,
+		"instance/default":        executeInstanceDefault,
+		"instance/uninstall":      executeInstanceUninstall,
+		"instance/settings":       executeSettings,
 	},
 	defaultHandler: executeJiraDefault,
 }
@@ -128,68 +136,67 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 }
 
 func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	instanceID, args, err := p.parseCommandFlagInstanceID(args)
+	if err != nil {
+		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
+	}
 	if len(args) != 0 {
 		return p.help(header)
 	}
-
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		p.errorf("executeDisconnect: failed to load current Jira instance: %v", err)
-		return p.responsef(header, "Failed to load current Jira instance. Please contact your system administrator.")
-	}
-
-	jiraUser, err := p.userStore.LoadJIRAUser(ji, header.UserId)
-	if err != nil {
+	disconnected, err := p.DisconnectUser(instanceID, types.ID(header.UserId))
+	if err == ErrConnectionNotFound {
 		return p.responsef(header, "Could not complete the **disconnection** request. You do not currently have a Jira account linked to your Mattermost account.")
 	}
-
-	err = p.userDisconnect(ji, header.UserId)
 	if err != nil {
 		return p.responsef(header, "Could not complete the **disconnection** request. Error: %v", err)
 	}
-
-	return p.responsef(header, "You have successfully disconnected your Jira account (**%s**).", jiraUser.DisplayName)
+	return p.responsef(header, "You have successfully disconnected your Jira account (**%s**).", disconnected.DisplayName)
 }
 
 func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	instanceID, args, err := p.parseCommandFlagInstanceID(args)
+	if err != nil {
+		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
+	}
 	if len(args) != 0 {
 		return p.help(header)
 	}
 
-	instance, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return p.responsef(header, "There is no Jira instance installed. Please contact your system administrator.")
-	}
+	link := routeUserConnect
+	if instanceID != "" {
+		conn, err := p.userStore.LoadConnection(instanceID, types.ID(header.UserId))
+		if err == nil && len(conn.JiraAccountID()) != 0 {
+			return p.responsef(header,
+				"You already have a Jira account linked to your Mattermost account from %s. Please use `/jira disconnect --instance=%s` to disconnect.",
+				instanceID, instanceID)
+		}
 
-	jiraUser, err := p.userStore.LoadJIRAUser(instance, header.UserId)
-	if err == nil && len(jiraUser.Key()) != 0 {
-		return p.responsef(header, "You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.")
+		link = p.pathWithInstance(link, instanceID)
 	}
 
 	return p.responsef(header, "[Click here to link your Jira account](%s%s)",
-		p.GetPluginURL(), routeUserConnect)
+		p.GetPluginURL(), link)
 }
 
 func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	instanceID, args, err := p.parseCommandFlagInstanceID(args)
 	if err != nil {
-		p.errorf("executeSettings: failed to load current Jira instance: %v", err)
-		return p.responsef(header, "Failed to load current Jira instance. Please contact your system administrator.")
+		return p.responsef(header, "Failed to load Jira instance. Please contact your system administrator. Error: %v.", err)
 	}
 
-	mattermostUserId := header.UserId
-	jiraUser, err := p.userStore.LoadJIRAUser(ji, mattermostUserId)
+	mattermostUserID := types.ID(header.UserId)
+	conn, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
 	if err != nil {
-		return p.responsef(header, "Your username is not connected to Jira. Please type `jira connect`. %v", err)
+		return p.responsef(header, "Your username is not connected to Jira. Please type `jira connect`. Error: %v.", err)
 	}
 
 	if len(args) == 0 {
-		return p.responsef(header, "Current settings:\n%s", jiraUser.Settings.String())
+		return p.responsef(header, "Current settings:\n%s", conn.Settings.String())
 	}
 
 	switch args[0] {
 	case settingsNotifications:
-		return p.settingsNotifications(header, ji, mattermostUserId, jiraUser, args)
+		return p.settingsNotifications(header, instanceID, mattermostUserID, conn, args)
 	default:
 		return p.responsef(header, "Unknown setting.")
 	}
@@ -202,24 +209,24 @@ func executeJiraDefault(p *Plugin, c *plugin.Context, header *model.CommandArgs,
 
 // executeView returns a Jira issue formatted as a slack attachment, or an error message.
 func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	instance, _, err := p.parseCommandFlagInstance(args)
+	if err != nil {
+		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
+	}
 	if len(args) != 1 {
 		return p.responsef(header, "Please specify an issue key in the form `/jira view <issue-key>`.")
 	}
 
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		p.errorf("executeView: failed to load current Jira instance: %v", err)
-		return p.responsef(header, "Failed to load current Jira instance. Please contact your system administrator.")
-	}
+	mattermostUserID := types.ID(header.UserId)
+	issueID := args[0]
 
-	mattermostUserId := header.UserId
-	jiraUser, err := p.userStore.LoadJIRAUser(ji, mattermostUserId)
+	conn, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
 	if err != nil {
-		// v2.2: try to retrieve the issue anonymously
+		// TODO: try to retrieve the issue anonymously
 		return p.responsef(header, "Your username is not connected to Jira. Please type `jira connect`.")
 	}
 
-	attachment, err := p.getIssueAsSlackAttachment(ji, jiraUser, strings.ToUpper(args[0]))
+	attachment, err := p.getIssueAsSlackAttachment(instance, conn, strings.ToUpper(issueID))
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -235,7 +242,7 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	return &model.CommandResponse{}
 }
 
-func executeDebugInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
@@ -247,42 +254,38 @@ func executeDebugInstanceList(p *Plugin, c *plugin.Context, header *model.Comman
 		return p.help(header)
 	}
 
-	known, err := p.instanceStore.LoadKnownJIRAInstances()
+	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
 		return p.responsef(header, "Failed to load known Jira instances: %v", err)
 	}
-	if len(known) == 0 {
+	if instances.IsEmpty() {
 		return p.responsef(header, "(none installed)\n")
 	}
 
-	current, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return p.responsef(header, "Failed to load current Jira instance: %v", err)
-	}
-
 	keys := []string{}
-	for key := range known {
-		keys = append(keys, key)
+	for _, key := range instances.IDs() {
+		keys = append(keys, key.String())
 	}
 	sort.Strings(keys)
 	text := "Known Jira instances (selected instance is **bold**)\n\n| |URL|Type|\n|--|--|--|\n"
 	for i, key := range keys {
-		ji, err := p.instanceStore.LoadJIRAInstance(key)
+		instanceID := types.ID(key)
+		instance, err := p.instanceStore.LoadInstance(instanceID)
 		if err != nil {
 			text += fmt.Sprintf("|%v|%s|error: %v|\n", i+1, key, err)
 			continue
 		}
 		details := ""
-		for k, v := range ji.GetDisplayDetails() {
+		for k, v := range instance.GetDisplayDetails() {
 			details += fmt.Sprintf("%s:%s, ", k, v)
 		}
 		if len(details) > len(", ") {
 			details = details[:len(details)-2]
 		} else {
-			details = ji.GetType()
+			details = string(instance.Common().Type)
 		}
 		format := "|%v|%s|%s|\n"
-		if key == current.GetURL() {
+		if instances.Get(instanceID).IsDefault {
 			format = "| **%v** | **%s** |%s|\n"
 		}
 		text += fmt.Sprintf(format, i+1, key, details)
@@ -298,8 +301,12 @@ func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArg
 	if !authorized {
 		return p.responsef(header, "`/jira subscribe list` can only be run by a system administrator.")
 	}
+	instanceID, args, err := p.parseCommandFlagInstanceID(args)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
 
-	msg, err := p.listChannelSubscriptions(header.TeamId)
+	msg, err := p.listChannelSubscriptions(instanceID, header.TeamId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
 	}
@@ -318,7 +325,7 @@ func authorizedSysAdmin(p *Plugin, userId string) (bool, error) {
 	return true, nil
 }
 
-func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
@@ -340,7 +347,7 @@ func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs
 
 	// Create an "uninitialized" instance of Jira Cloud that will
 	// receive the /installed callback
-	err = p.instanceStore.CreateInactiveCloudInstance(jiraURL)
+	err = p.instanceStore.CreateInactiveCloudInstance(types.ID(jiraURL))
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -368,10 +375,10 @@ Jira webhook URL: %s
 `
 
 	// TODO What is the exact group membership in Jira required? Site-admins?
-	return p.responsef(header, addResponseFormat, jiraURL, jiraURL, p.GetPluginURL(), routeACJSON, u)
+	return p.responsef(header, addResponseFormat, jiraURL, jiraURL, p.GetPluginURL(), p.pathWithInstance(routeACJSON, types.ID(jiraURL)), u)
 }
 
-func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
@@ -420,12 +427,8 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://mattermost.gitbook.io/plugin-jira) for troubleshooting help.
 Jira webhook URL: %s
 `
-	ji := NewJIRAServerInstance(p, jiraURL)
-	err = p.instanceStore.StoreJIRAInstance(ji)
-	if err != nil {
-		return p.responsef(header, err.Error())
-	}
-	err = p.StoreCurrentJIRAInstanceAndNotify(ji)
+	instance := newServerInstance(p, jiraURL)
+	err = p.InstallInstance(instance)
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -434,12 +437,12 @@ Jira webhook URL: %s
 	if err != nil {
 		return p.responsef(header, "Failed to load public key: %v", err)
 	}
-	return p.responsef(header, addResponseFormat, jiraURL, p.GetSiteURL(), ji.GetMattermostKey(), pkey, u)
+	return p.responsef(header, addResponseFormat, jiraURL, p.GetSiteURL(), instance.GetMattermostKey(), pkey, u)
 }
 
 // executeUninstall will uninstall the jira instance if the url matches, and then update all connected clients
 // so that their Jira-related menu options are removed.
-func executeUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeInstanceUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
@@ -451,42 +454,21 @@ func executeUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, a
 		return p.help(header)
 	}
 
-	jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[1])
+	instanceType := InstanceType(args[0])
+	instanceURL := args[1]
+
+	id, err := utils.NormalizeInstallURL(p.GetSiteURL(), instanceURL)
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
+	uninstalled, err := p.UninstallInstance(types.ID(id), instanceType)
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
 
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return p.responsef(header, "No current Jira instance to uninstall")
-	}
-
-	var ok bool
-	switch args[0] {
-	case "cloud":
-		_, ok = ji.(*jiraCloudInstance)
-	case "server":
-		_, ok = ji.(*jiraServerInstance)
-	default:
-		return p.help(header)
-	}
-
-	if !ok {
-		return p.responsef(header, fmt.Sprintf("The current Jira instance is not a %s instance", args[0]))
-	}
-
-	if jiraURL != ji.GetURL() {
-		return p.responsef(header, `You have entered an incorrect URL. The current Jira instance URL is %s. Please enter the URL correctly to confirm the uninstall command.`, ji.GetURL())
-	}
-
-	err = p.instanceStore.DeleteJiraInstance(ji.GetURL())
-	if err != nil {
-		return p.responsef(header, "Failed to delete Jira instance "+ji.GetURL())
-	}
-
 	// Notify users we have uninstalled an instance
 	p.API.PublishWebSocketEvent(
-		wSEventInstanceStatus,
+		websocketEventInstanceStatus,
 		map[string]interface{}{
 			"instance_installed": false,
 			"instance_type":      "",
@@ -503,31 +485,40 @@ func executeUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, a
 		`Jira instance successfully uninstalled. Navigate to [**your app management URL**](%s) in order to remove the application from your Jira instance.
 Don't forget to remove Jira-side webhook from URL: %s'
 `
-	return p.responsef(header, uninstallInstructions, ji.GetManageAppsURL(), u)
+	return p.responsef(header, uninstallInstructions, uninstalled.GetManageAppsURL(), u)
 }
 
 func executeUnassign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	instance, args, err := p.parseCommandFlagInstance(args)
+	if err != nil {
+		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
+	}
+
 	if len(args) < 1 {
 		return p.responsef(header, "Please specify an issue key in the form `/jira unassign <issue-key>`.")
 	}
 	issueKey := strings.ToUpper(args[0])
 
-	msg, err := p.unassignJiraIssue(header.UserId, issueKey)
+	msg, err := p.UnassignIssue(instance, types.ID(header.UserId), issueKey)
 	if err != nil {
 		return p.responsef(header, "%v", err)
 	}
-
 	return p.responsef(header, msg)
 }
 
 func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	instance, args, err := p.parseCommandFlagInstance(args)
+	if err != nil {
+		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
+	}
+
 	if len(args) < 2 {
 		return p.responsef(header, "Please specify an issue key and an assignee search string, in the form `/jira assign <issue-key> <assignee>`.")
 	}
 	issueKey := strings.ToUpper(args[0])
 	userSearch := strings.Join(args[1:], " ")
 
-	msg, err := p.assignJiraIssue(header.UserId, issueKey, userSearch)
+	msg, err := p.AssignIssue(instance, types.ID(header.UserId), issueKey, userSearch)
 	if err != nil {
 		return p.responsef(header, "%v", err)
 	}
@@ -535,6 +526,7 @@ func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args
 	return p.responsef(header, msg)
 }
 
+// TODO should transition command post to channel? Options?
 func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) < 2 {
 		return p.help(header)
@@ -542,9 +534,13 @@ func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	issueKey := strings.ToUpper(args[0])
 	toState := strings.Join(args[1:], " ")
 
-	msg, err := p.transitionJiraIssue(header.UserId, issueKey, toState)
+	msg, err := p.TransitionIssue(&InTransitionIssue{
+		mattermostUserID: types.ID(header.UserId),
+		IssueKey:         issueKey,
+		ToState:          toState,
+	})
 	if err != nil {
-		return p.responsef(header, "%v", err)
+		return p.responsef(header, err.Error())
 	}
 
 	return p.responsef(header, msg)
@@ -554,64 +550,97 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	if len(args) != 0 {
 		return p.help(header)
 	}
-
-	uinfo := getUserInfo(p, header.UserId)
-
-	resp := fmt.Sprintf("Mattermost Jira plugin version: %s, "+
-		"[%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s), built %s\n",
-		manifest.Version, BuildHashShort, BuildHash, BuildDate)
-
-	switch {
-	case uinfo.IsConnected:
-		resp += fmt.Sprintf("Connected to Jira %s as %s.\n", uinfo.JIRAURL, uinfo.JIRAUser.DisplayName)
-	case uinfo.InstanceInstalled:
-		resp += fmt.Sprintf("Jira %s is installed, but you are not connected. Please [connect](%s%s).\n",
-			uinfo.JIRAURL, p.GetPluginURL(), routeUserConnect)
-	default:
-		return p.responsef(header, resp+"\nNo Jira instance installed, please contact your system administrator.")
-	}
-
-	resp += fmt.Sprintf("\nJira:\n")
-
-	for k, v := range uinfo.InstanceDetails {
-		resp += fmt.Sprintf(" * %s: %s\n", k, v)
-	}
-
+	mattermostUserID := types.ID(header.UserId)
 	bullet := func(cond bool, k string, v interface{}) string {
 		if !cond {
 			return ""
 		}
 		return fmt.Sprintf(" * %s: %v\n", k, v)
 	}
-
 	sbullet := func(k, v string) string {
 		return bullet(v != "", k, v)
 	}
+	connectionBullet := func(ic *InstanceCommon, connection *Connection) string {
+		switch ic.Type {
+		case CloudInstanceType:
+			return sbullet(ic.InstanceID.String(), fmt.Sprintf("Cloud, connected as **%s** (AccountID: %s)",
+				connection.User.DisplayName,
+				connection.User.AccountID))
+		case ServerInstanceType:
+			return sbullet(ic.InstanceID.String(), fmt.Sprintf("Server, connected as **%s** (Name:%s, Key:%s, EmailAddress:%s)",
+				connection.User.DisplayName,
+				connection.User.Name,
+				connection.User.Key,
+				connection.User.EmailAddress))
+		}
+		return ""
+	}
 
-	if uinfo.IsConnected {
-		juser := uinfo.JIRAUser.User
-		resp += sbullet("User", juser.DisplayName)
-		resp += sbullet("Self", juser.Self)
-		resp += sbullet("AccountID", juser.AccountID)
-		resp += sbullet("Name", juser.Name)
-		resp += sbullet("Key", juser.Key)
-		resp += sbullet("EmailAddress", juser.EmailAddress)
-		resp += bullet(juser.Active, "Active", juser.Active)
-		resp += sbullet("TimeZone", juser.TimeZone)
-		resp += bullet(len(juser.ApplicationKeys) > 0, "ApplicationKeys", juser.ApplicationKeys)
+	info, err := p.GetUserInfo(mattermostUserID)
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
 
-		resp += fmt.Sprintf("\nMattermost:\n")
+	resp := fmt.Sprintf("Mattermost Jira plugin version: %s, "+
+		"[%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s), built %s.\n",
+		manifest.Version, BuildHashShort, BuildHash, BuildDate)
 
-		resp += sbullet("Site URL", p.GetSiteURL())
-		resp += sbullet("User ID", header.UserId)
+	resp += sbullet("Mattermost site URL", p.GetSiteURL())
+	resp += sbullet("Mattermost user ID", mattermostUserID.String())
 
-		resp += fmt.Sprintf(" * Settings: %+v", uinfo.JIRAUser.Settings)
+	switch {
+	case info.IsConnected:
+		resp += fmt.Sprintf("###### Connected to %v Jira instances:\n", info.User.ConnectedInstances.Len())
+	case info.Instances.Len() > 0:
+		resp += fmt.Sprintf("Jira is installed, but you are not connected. Please [connect](%s%s).\n",
+			p.GetPluginURL(), routeUserConnect)
+	default:
+		return p.responsef(header, resp+"\nNo Jira instances installed, please contact your system administrator.")
+	}
 
-		if uinfo.JIRAUser.Oauth1AccessToken != "" {
-			resp += sbullet("OAuth1a access token", uinfo.JIRAUser.Oauth1AccessToken)
-			resp += sbullet("OAuth1a access secret (length)", strconv.Itoa(len(uinfo.JIRAUser.Oauth1AccessSecret)))
+	if info.IsConnected {
+		for _, instanceID := range info.User.ConnectedInstances.IDs() {
+			connection, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
+			if err != nil {
+				return p.responsef(header, err.Error())
+			}
+
+			resp += connectionBullet(info.User.ConnectedInstances.Get(instanceID), connection)
+			resp += fmt.Sprintf("   * Settings: %+v\n", connection.Settings)
 		}
 	}
+
+	orphans := ""
+	if !info.Instances.IsEmpty() {
+		resp += fmt.Sprintf("\n###### Available Jira instances:\n")
+		for _, instanceID := range info.Instances.IDs() {
+			ic := info.Instances.Get(instanceID)
+			if ic.IsDefault {
+				resp += sbullet(instanceID.String(), fmt.Sprintf("%s, **default**", ic.Type))
+			} else {
+				resp += sbullet(instanceID.String(), fmt.Sprintf("%s", ic.Type))
+			}
+		}
+
+		for _, instanceID := range info.Instances.IDs() {
+			if info.IsConnected && info.User.ConnectedInstances.Contains(instanceID) {
+				continue
+			}
+			connection, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
+			if err != nil {
+				if err == ErrUserNotFound {
+					continue
+				}
+				return p.responsef(header, err.Error())
+			}
+
+			orphans += connectionBullet(info.Instances.Get(instanceID), connection)
+		}
+	}
+	if orphans != "" {
+		resp += fmt.Sprintf("###### Orphant Jira connections:\n%s", orphans)
+	}
+
 	return p.responsef(header, resp)
 }
 
@@ -625,6 +654,34 @@ func executeDebugStatsExpvar(p *Plugin, c *plugin.Context, commandArgs *model.Co
 
 func executeDebugWorkflow(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
 	return p.responsef(commandArgs, "Workflow Store:\n %v", p.workflowTriggerStore)
+}
+
+func executeDebugCleanInstances(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(header, "`/jira list` can only be run by a system administrator.")
+	}
+	_ = p.API.KVDelete(keyInstances)
+	return p.responsef(header, "Deleted instances\n")
+}
+
+func executeDebugMigrateInstances(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(header, "`/jira list` can only be run by a system administrator.")
+	}
+
+	err = p.instanceStore.MigrateV2Instances()
+	if err != nil {
+		return p.responsef(header, "Failed to migrated instances: %v\n", err)
+	}
+	return p.responsef(header, "Migrated instances\n")
 }
 
 func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, useExpvar bool, args ...string) *model.CommandResponse {
@@ -751,78 +808,65 @@ func (p *Plugin) responseRedirect(redirectURL string) *model.CommandResponse {
 	}
 }
 
-func executeDebugInstanceSelect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeInstanceDefault(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 1 {
 		return p.help(header)
 	}
-	instanceKey := args[0]
-	num, err := strconv.ParseUint(instanceKey, 10, 8)
-	if err == nil {
-		known, loadErr := p.instanceStore.LoadKnownJIRAInstances()
-		if loadErr != nil {
-			return p.responsef(header, "Failed to load known Jira instances: %v", err)
-		}
-		if num < 1 || int(num) > len(known) {
-			return p.responsef(header, "Wrong instance number %v, must be 1-%v\n", num, len(known)+1)
-		}
+	instanceID := types.ID(args[0])
 
-		keys := []string{}
-		for key := range known {
-			keys = append(keys, key)
-		}
-		sort.Strings(keys)
-		instanceKey = keys[num-1]
-	}
-
-	ji, err := p.instanceStore.LoadJIRAInstance(instanceKey)
+	err := p.StoreDefaultInstance(instanceID)
 	if err != nil {
-		return p.responsef(header, "Failed to load Jira instance %s: %v", instanceKey, err)
-	}
-	err = p.StoreCurrentJIRAInstanceAndNotify(ji)
-	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.responsef(header, "Failed to set default Jira instance %s: %v", instanceID, err)
 	}
 
-	return executeInfo(p, c, header)
+	return p.responsef(header, "%s is set as the default Jira instance", instanceID)
 }
 
-func executeDebugInstanceDelete(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	if len(args) != 1 {
-		return p.help(header)
-	}
-	instanceKey := args[0]
+func (p *Plugin) parseCommandFlagInstanceID(args []string) (types.ID, []string, error) {
+	value := ""
+	remaining := []string{}
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if !strings.HasPrefix(arg, "--instance") {
+			remaining = append(remaining, arg)
+			continue
+		}
+		if value != "" {
+			return "", nil, errors.New("--instance may not be specified multiple times")
+		}
+		str := arg[len("--instance"):]
 
-	known, err := p.instanceStore.LoadKnownJIRAInstances()
-	if err != nil {
-		return p.responsef(header, "Failed to load known JIRA instances: %v", err)
-	}
-	if len(known) == 0 {
-		return p.responsef(header, "There are no instances to delete.\n")
-	}
-
-	num, err := strconv.ParseUint(instanceKey, 10, 8)
-	if err == nil {
-		if num < 1 || int(num) > len(known) {
-			return p.responsef(header, "Wrong instance number %v, must be 1-%v\n", num, len(known)+1)
+		// --instance=X
+		if strings.HasPrefix(str, "=") {
+			value = str[1:]
+			continue
 		}
 
-		keys := []string{}
-		for key := range known {
-			keys = append(keys, key)
+		// --instance X
+		if i == len(args)-1 {
+			return "", nil, errors.New("--instance requires a value")
 		}
-		sort.Strings(keys)
-		instanceKey = keys[num-1]
+		i++
+		value = args[i]
 	}
 
-	// Remove the instance
-	err = p.instanceStore.DeleteJiraInstance(instanceKey)
+	id, err := p.ResolveInstanceURL(value)
 	if err != nil {
-		return p.responsef(header, "failed to delete Jira instance %s: %v", instanceKey, err)
+		return "", nil, err
+	}
+	return id, remaining, nil
+}
+
+func (p *Plugin) parseCommandFlagInstance(args []string) (Instance, []string, error) {
+	instanceID, args, err := p.parseCommandFlagInstanceID(args)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	// if that was our only instance, just respond with an empty list.
-	if len(known) == 1 {
-		return executeDebugInstanceList(p, c, header)
+	// already subject to defaults, so load directly
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return nil, nil, err
 	}
-	return executeDebugInstanceSelect(p, c, header, "1")
+	return instance, args, nil
 }

@@ -55,8 +55,12 @@ export const getChannelSubscriptions = (state) => getPluginState(state).channelS
 
 export const isUserConnected = (state) => getPluginState(state).userConnected;
 
-export const isInstanceInstalled = (state) => getPluginState(state).instanceInstalled;
+export const canUserConnect = (state) => getPluginState(state).userCanConnect;
+
+export const getInstalledInstances = (state) => getPluginState(state).installedInstances;
+
+export const getDefaultConnectInstance = (state) => getPluginState(state).defaultConnectInstance;
+
+export const getDefaultUseInstance = (state) => getPluginState(state).defaultUseInstance;
 
 export const getPluginSettings = (state) => getPluginState(state).pluginSettings;
-
-export const getInstalledInstanceType = (state) => getPluginState(state).instanceType;

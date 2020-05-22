@@ -7,9 +7,9 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"net/url"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"text/template"
@@ -84,16 +84,14 @@ type config struct {
 	// user ID of the bot account
 	botUserID string
 
-	// Cached current Jira instance. A non-0 expires indicates the presence
-	// of a value. A nil value means there is no instance available.
-	currentInstance        Instance
-	currentInstanceExpires time.Time
-
 	// Maximum attachment size allowed to be uploaded to Jira
 	maxAttachmentSize utils.ByteSize
 
 	stats             *expvar.Stats
 	statsStopAutosave chan bool
+
+	mattermostSiteURL string
+	rsaKey            *rsa.PrivateKey
 }
 
 type Plugin struct {
@@ -103,11 +101,10 @@ type Plugin struct {
 	conf     config
 	confLock sync.RWMutex
 
-	currentInstanceStore CurrentInstanceStore
-	instanceStore        InstanceStore
-	userStore            UserStore
-	otsStore             OTSStore
-	secretsStore         SecretsStore
+	instanceStore InstanceStore
+	userStore     UserStore
+	otsStore      OTSStore
+	secretsStore  SecretsStore
 
 	// Active workflows store
 	workflowTriggerStore *TriggerStore
@@ -162,6 +159,12 @@ func (p *Plugin) OnConfigurationChange() error {
 }
 
 func (p *Plugin) OnActivate() error {
+	store := NewStore(p)
+	p.instanceStore = store
+	p.userStore = store
+	p.secretsStore = store
+	p.otsStore = store
+
 	botUserID, err := p.Helpers.EnsureBot(&model.Bot{
 		Username:    botUserName,
 		DisplayName: botDisplayName,
@@ -171,8 +174,21 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrap(err, "failed to ensure bot account")
 	}
 
+	mattermostSiteURL := ""
+	ptr := p.API.GetConfig().ServiceSettings.SiteURL
+	if ptr != nil {
+		mattermostSiteURL = *ptr
+	}
+
+	rsaKey, err := p.secretsStore.EnsureRSAKey()
+	if err != nil {
+		return errors.WithMessage(err, "OnActivate: failed to make RSA public key")
+	}
+
 	p.updateConfig(func(conf *config) {
 		conf.botUserID = botUserID
+		conf.mattermostSiteURL = mattermostSiteURL
+		conf.rsaKey = rsaKey
 	})
 
 	bundlePath, err := p.API.GetBundlePath()
@@ -189,12 +205,10 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrap(appErr, "couldn't set profile image")
 	}
 
-	store := NewStore(p)
-	p.currentInstanceStore = store
-	p.instanceStore = store
-	p.userStore = store
-	p.secretsStore = store
-	p.otsStore = store
+	err = store.MigrateV2Instances()
+	if err != nil {
+		return errors.WithMessage(err, "OnActivate: failed to migrate from previous version of the Jira plugin")
+	}
 
 	templates, err := p.loadTemplates(filepath.Join(bundlePath, "assets", "templates"))
 	if err != nil {
@@ -221,26 +235,26 @@ func (p *Plugin) OnActivate() error {
 	go func() {
 		time.Sleep(time.Second * 10)
 
-		instances, err := p.instanceStore.LoadKnownJIRAInstances()
+		instances, err := p.instanceStore.LoadInstances()
 		if err != nil {
 			p.API.LogError("unable to register autolinks", "err", err)
 			return
 		}
 
-		for url := range instances {
-			instance, err := p.instanceStore.LoadJIRAInstance(url)
+		for _, url := range instances.IDs() {
+			instance, err := p.instanceStore.LoadInstance(url)
 			if err != nil {
 				continue
 			}
 
-			jci, ok := instance.(*jiraCloudInstance)
+			ci, ok := instance.(*cloudInstance)
 			if !ok {
 				p.API.LogWarn("only cloud instances supported for autolink", "err", err)
 				continue
 			}
 
-			if err := p.AddAutolinksForCloudInstance(jci); err != nil {
-				p.API.LogWarn("could not install autolinks for cloud instance", "instance", jci.BaseURL, "err", err)
+			if err := p.AddAutolinksForCloudInstance(ci); err != nil {
+				p.API.LogWarn("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 				continue
 			}
 		}
@@ -249,8 +263,8 @@ func (p *Plugin) OnActivate() error {
 	return nil
 }
 
-func (p *Plugin) AddAutolinksForCloudInstance(jci *jiraCloudInstance) error {
-	client, err := jci.getJIRAClientForBot()
+func (p *Plugin) AddAutolinksForCloudInstance(ci *cloudInstance) error {
+	client, err := ci.getClientForBot()
 	if err != nil {
 		return fmt.Errorf("unable to get jira client for server: %w", err)
 	}
@@ -261,7 +275,7 @@ func (p *Plugin) AddAutolinksForCloudInstance(jci *jiraCloudInstance) error {
 	}
 
 	for _, key := range keys {
-		err = p.AddAutolinks(key, jci.BaseURL)
+		err = p.AddAutolinks(key, ci.BaseURL)
 	}
 	if err != nil {
 		return fmt.Errorf("some keys were not installed: %w", err)
@@ -293,13 +307,17 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 	return nil
 }
 
+var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
+
 func (p *Plugin) GetPluginKey() string {
 	sURL := p.GetSiteURL()
-	prefix := "mattermost_"
-	escaped := regexpNonAlnum.ReplaceAllString(sURL, "_")
-
-	start := len(escaped) - int(math.Min(float64(len(escaped)), 32))
-	return prefix + escaped[start:]
+	key := "mattermost_" + regexpNonAlnum.ReplaceAllString(sURL, "_")
+	if len(key) <= 32 {
+		return key
+	}
+	start := len(sURL) - 30
+	end := len(sURL)
+	return "__" + sURL[start:end]
 }
 
 func (p *Plugin) GetPluginURLPath() string {
@@ -311,11 +329,7 @@ func (p *Plugin) GetPluginURL() string {
 }
 
 func (p *Plugin) GetSiteURL() string {
-	ptr := p.API.GetConfig().ServiceSettings.SiteURL
-	if ptr == nil {
-		return ""
-	}
-	return *ptr
+	return p.getConfig().mattermostSiteURL
 }
 
 func (p *Plugin) debugf(f string, args ...interface{}) {
