@@ -1,16 +1,21 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"errors"
 	"strings"
 	"testing"
 
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
-	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (
@@ -23,40 +28,74 @@ const (
 
 type mockUserStoreKV struct {
 	mockUserStore
-	kv map[string]JIRAUser
+	kv map[types.ID]*Connection
 }
 
-func (store mockUserStoreKV) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, error) {
-	user, ok := store.kv[mattermostUserId]
+var _ UserStore = (*mockUserStoreKV)(nil)
+
+func (store mockUserStoreKV) LoadConnection(instanceID, mattermostUserID types.ID) (*Connection, error) {
+	connection, ok := store.kv[mattermostUserID]
 	if !ok {
-		return JIRAUser{}, errors.New("user not found")
+		return &Connection{}, errors.New("user not found")
 	}
-	return user, nil
+	return connection, nil
 }
 
 func getMockUserStoreKV() mockUserStoreKV {
-	// Test JIRAUser
-	juser := JIRAUser{}
+	// Test Connection
+	juser := Connection{}
 	juser.AccountID = "test"
 
 	return mockUserStoreKV{
-		kv: map[string]JIRAUser{
-			mockUserIDWithNotifications:    {Settings: &UserSettings{Notifications: true}},
-			mockUserIDWithoutNotifications: {Settings: &UserSettings{Notifications: false}},
-			"connected_user":               juser,
+		kv: map[types.ID]*Connection{
+			mockUserIDWithNotifications:    {Settings: &ConnectionSettings{Notifications: true}},
+			mockUserIDWithoutNotifications: {Settings: &ConnectionSettings{Notifications: false}},
+			"connected_user":               &juser,
 		},
 	}
 }
 
+type mockInstanceStoreKV struct {
+	mockInstanceStore
+	kv map[types.ID]Instance
+	*Instances
+}
+
+var _ InstanceStore = (*mockInstanceStoreKV)(nil)
+
+func (store mockInstanceStoreKV) LoadInstances() (*Instances, error) {
+	return store.Instances, nil
+}
+
+func (store mockInstanceStoreKV) LoadInstance(id types.ID) (Instance, error) {
+	user, ok := store.kv[id]
+	if !ok {
+		return nil, errors.New("instance not found")
+	}
+	return user, nil
+}
+
+func getMockInstanceStoreKV(initial ...Instance) mockInstanceStoreKV {
+	kv := map[types.ID]Instance{}
+	instances := NewInstances()
+	for _, instance := range initial {
+		instances.Set(instance.Common())
+		kv[instance.GetID()] = instance
+	}
+	return mockInstanceStoreKV{
+		kv:        kv,
+		Instances: instances,
+	}
+}
+
 func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
-	p := Plugin{}
+	p := &Plugin{}
 	tc := TestConfiguration{}
 	p.updateConfig(func(conf *config) {
 		conf.Secret = tc.Secret
+		conf.mattermostSiteURL = "https://somelink.com"
 	})
 	api := &plugintest.API{}
-	siteURL := "https://somelink.com"
-	api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
 	api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
 
 	tests := map[string]struct {
@@ -67,12 +106,12 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 		"no storage": {
 			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
 			initializeEmptyUserStorage: true,
-			expectedMsg:                "Failed to load current Jira instance. Please contact your system administrator.",
+			expectedMsg:                "Failed to load Jira instance. Please contact your system administrator. Error: instance not found.",
 		},
 		"user not found": {
 			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
 			initializeEmptyUserStorage: false,
-			expectedMsg:                "Your username is not connected to Jira. Please type `jira connect`. user not found",
+			expectedMsg:                "Your username is not connected to Jira. Please type `jira connect`. Error: user not found.",
 		},
 		"no params, with notifications": {
 			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithNotifications},
@@ -85,12 +124,12 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 			expectedMsg:                "Current settings:\n\tNotifications: off",
 		},
 		"unknown setting": {
-			commandArgs:                &model.CommandArgs{Command: "/jira settings test", UserId: mockUserIDWithoutNotifications},
+			commandArgs:                &model.CommandArgs{Command: "/jira settings" + " test", UserId: mockUserIDWithoutNotifications},
 			initializeEmptyUserStorage: false,
 			expectedMsg:                "Unknown setting.",
 		},
 		"set notifications without value": {
-			commandArgs:                &model.CommandArgs{Command: "/jira settings notifications", UserId: mockUserIDWithoutNotifications},
+			commandArgs:                &model.CommandArgs{Command: "/jira settings" + " notifications", UserId: mockUserIDWithoutNotifications},
 			initializeEmptyUserStorage: false,
 			expectedMsg:                "`/jira settings notifications [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
 		},
@@ -124,9 +163,9 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 
 			p.SetAPI(currentTestApi)
 			if tt.initializeEmptyUserStorage {
-				p.currentInstanceStore = mockCurrentInstanceStoreNoInstance{}
+				p.instanceStore = getMockInstanceStoreKV()
 			} else {
-				p.currentInstanceStore = mockCurrentInstanceStore{}
+				p.instanceStore = getMockInstanceStoreKV(testInstance1)
 			}
 			p.userStore = getMockUserStoreKV()
 
@@ -142,10 +181,10 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 	tc := TestConfiguration{}
 	p.updateConfig(func(conf *config) {
 		conf.Secret = tc.Secret
+		conf.mattermostSiteURL = "https://somelink.com"
+		conf.rsaKey, _ = rsa.GenerateKey(rand.Reader, 1024)
 	})
 	api := &plugintest.API{}
-	siteURL := "https://somelink.com"
-	api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
 	api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
 	api.On("LogDebug",
 		mock.AnythingOfTypeArgument("string"),
@@ -161,7 +200,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		mock.AnythingOfTypeArgument("string")).Return(nil)
 	api.On("KVSet", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
 	api.On("KVSetWithExpiry", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
-	api.On("KVGet", "known_jira_instances").Return(nil, nil)
+	api.On("KVGet", keyInstances).Return(nil, nil)
 	api.On("KVGet", "rsa_key").Return(nil, nil)
 	api.On("PublishWebSocketEvent", mock.AnythingOfTypeArgument("string"), mock.Anything, mock.Anything)
 	api.On("GetTeam", mock.AnythingOfTypeArgument("string")).Return(&model.Team{Name: "TestTeam"}, nil)
@@ -237,7 +276,6 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			store := NewStore(&p)
 			p.instanceStore = store
 			p.secretsStore = store
-			p.currentInstanceStore = mockCurrentInstanceStore{&p}
 			p.userStore = getMockUserStoreKV()
 
 			cmdResponse, appError := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
@@ -253,10 +291,9 @@ func TestPlugin_ExecuteCommand_Uninstall(t *testing.T) {
 	tc := TestConfiguration{}
 	p.updateConfig(func(conf *config) {
 		conf.Secret = tc.Secret
+		conf.mattermostSiteURL = "https://somelink.com"
 	})
 	api := &plugintest.API{}
-	siteURL := "https://somelink.com"
-	api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
 
 	sysAdminUser := &model.User{
 		Id:    mockUserIDSysAdmin,

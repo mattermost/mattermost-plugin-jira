@@ -4,9 +4,6 @@
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 
-import PluginId from 'plugin_id';
-
-import {isDesktopApp} from 'utils/user_agent';
 import JiraIcon from 'components/icon';
 
 export default class AttachCommentToIssuePostMenuAction extends PureComponent {
@@ -16,8 +13,6 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
         open: PropTypes.func.isRequired,
         postId: PropTypes.string,
         userConnected: PropTypes.bool.isRequired,
-        isInstanceInstalled: PropTypes.bool.isRequired,
-        installedInstanceType: PropTypes.string.isRequired,
         sendEphemeralPost: PropTypes.func.isRequired,
     };
 
@@ -41,16 +36,8 @@ export default class AttachCommentToIssuePostMenuAction extends PureComponent {
         open(postId);
     };
 
-    connectClick = () => {
-        if (this.props.isInstanceInstalled && this.props.installedInstanceType === 'server' && isDesktopApp()) {
-            this.props.sendEphemeralPost('Please use your browser to connect to Jira.');
-            return;
-        }
-        window.open('/plugins/' + PluginId + '/user/connect', '_blank');
-    };
-
     render() {
-        if (this.props.isSystemMessage || !this.props.isInstanceInstalled || !this.props.userConnected) {
+        if (this.props.isSystemMessage || !this.props.userConnected) {
             return null;
         }
 

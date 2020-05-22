@@ -4,7 +4,7 @@
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 
-import {isUserConnected, isInstanceInstalled} from 'selectors';
+import {isUserConnected} from 'selectors';
 import {openChannelSettings} from 'actions';
 
 import SetupUI from './setup_ui';
@@ -12,7 +12,6 @@ import SetupUI from './setup_ui';
 const mapStateToProps = (state) => {
     return {
         userConnected: isUserConnected(state),
-        instanceInstalled: isInstanceInstalled(state),
     };
 };
 

@@ -44,7 +44,7 @@ type RESTService interface {
 // UserService is the interface for user-related APIs.
 type UserService interface {
 	GetSelf() (*jira.User, error)
-	GetUserGroups(user JIRAUser) ([]*jira.UserGroup, error)
+	GetUserGroups(connection *Connection) ([]*jira.UserGroup, error)
 }
 
 // ProjectService is the interface for project-related APIs.
@@ -295,8 +295,8 @@ func (client JiraClient) GetSelf() (*jira.User, error) {
 
 // MakeCreateIssueURL makes a URL that would take a browser to a pre-filled form
 // to file a new issue in Jira.
-func MakeCreateIssueURL(ji Instance, project *jira.Project, issue *jira.Issue) string {
-	u, err := url.Parse(fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", ji.GetURL()))
+func MakeCreateIssueURL(instance Instance, project *jira.Project, issue *jira.Issue) string {
+	u, err := url.Parse(fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", instance.GetURL()))
 	if err != nil {
 		return ""
 	}
@@ -308,7 +308,7 @@ func MakeCreateIssueURL(ji Instance, project *jira.Project, issue *jira.Issue) s
 	q.Add("description", issue.Fields.Description)
 
 	// Add reporter for only server instances
-	if ji.GetType() == JIRATypeServer && issue.Fields.Reporter != nil {
+	if instance.Common().Type == ServerInstanceType {
 		q.Add("reporter", issue.Fields.Reporter.Name)
 	}
 
