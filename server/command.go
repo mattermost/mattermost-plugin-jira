@@ -341,6 +341,11 @@ func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs
 		return p.responsef(header, err.Error())
 	}
 
+	u, err := p.GetWebhookURL(header.TeamId, header.ChannelId)
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
+
 	const addResponseFormat = `
 %s has been successfully installed. To finish the configuration, create a new app in your Jira instance following these steps:
 
@@ -355,10 +360,11 @@ func executeInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs
 7. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
 
 If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://about.mattermost.com/default-jira-plugin) for troubleshooting help.
+Jira webhook URL: %s
 `
 
 	// TODO What is the exact group membership in Jira required? Site-admins?
-	return p.responsef(header, addResponseFormat, jiraURL, jiraURL, p.GetPluginURL(), routeACJSON)
+	return p.responsef(header, addResponseFormat, jiraURL, jiraURL, p.GetPluginURL(), routeACJSON, u)
 }
 
 func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -384,6 +390,11 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 		return p.responsef(header, "The Jira URL you provided looks like a Jira Cloud URL - install it with:\n```\n/jira install cloud %s\n```", jiraURL)
 	}
 
+	u, err := p.GetWebhookURL(header.TeamId, header.ChannelId)
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
+
 	const addResponseFormat = `` +
 		`Server instance has been installed. To finish the configuration, add an Application Link in your Jira instance following these steps:
 
@@ -403,6 +414,7 @@ func executeInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArg
 7. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
 
 If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://about.mattermost.com/default-jira-plugin) for troubleshooting help.
+Jira webhook URL: %s
 `
 	ji := NewJIRAServerInstance(p, jiraURL)
 	err = p.instanceStore.StoreJIRAInstance(ji)
@@ -418,7 +430,7 @@ If you see an option to create a Jira issue, you're all set! If not, refer to ou
 	if err != nil {
 		return p.responsef(header, "Failed to load public key: %v", err)
 	}
-	return p.responsef(header, addResponseFormat, jiraURL, p.GetSiteURL(), ji.GetMattermostKey(), pkey)
+	return p.responsef(header, addResponseFormat, jiraURL, p.GetSiteURL(), ji.GetMattermostKey(), pkey, u)
 }
 
 // executeUninstall will uninstall the jira instance if the url matches, and then update all connected clients
@@ -478,8 +490,16 @@ func executeUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, a
 		&model.WebsocketBroadcast{},
 	)
 
-	uninstallInstructions := `Jira instance successfully uninstalled. Navigate to [**your app management URL**](%s) in order to remove the application from your Jira instance.`
-	return p.responsef(header, uninstallInstructions, ji.GetManageAppsURL())
+	u, err := p.GetWebhookURL(header.TeamId, header.ChannelId)
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
+
+	uninstallInstructions := `` +
+		`Jira instance successfully uninstalled. Navigate to [**your app management URL**](%s) in order to remove the application from your Jira instance.
+Don't forget to remove Jira-side webhook from URL: %s'
+`
+	return p.responsef(header, uninstallInstructions, ji.GetManageAppsURL(), u)
 }
 
 func executeUnassign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
