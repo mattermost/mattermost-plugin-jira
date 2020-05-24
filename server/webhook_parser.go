@@ -276,7 +276,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 			assigneeMentioned = true
 		}
 
-		notification := webhookNotification{
+		notification := webhookUserNotification{
 			message:     message,
 			postType:    PostTypeMention,
 			commentSelf: jwh.Comment.Self,
@@ -299,7 +299,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 		return
 	}
 
-	wh.notifications = append(wh.notifications, webhookNotification{
+	wh.notifications = append(wh.notifications, webhookUserNotification{
 		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
 		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
 		message:       fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
@@ -381,7 +381,7 @@ func appendNotificationForAssignee(wh *webhook) {
 		return
 	}
 
-	wh.notifications = append(wh.notifications, webhookNotification{
+	wh.notifications = append(wh.notifications, webhookUserNotification{
 		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
 		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
 		message:       fmt.Sprintf("%s **assigned** you to %s", jwh.mdUser(), jwh.mdKeySummaryLink()),

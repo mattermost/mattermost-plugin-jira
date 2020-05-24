@@ -50,7 +50,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	si, ok := instance.(*serverInstance)
 	if !ok {
 		return respondErr(w, http.StatusInternalServerError,
-			errors.Errorf("Bot supported for instance type %s", instance.Common().Type))
+			errors.Errorf("Not supported for instance type %s", instance.Common().Type))
 	}
 
 	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(r)
@@ -118,7 +118,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	}{
 		JiraDisplayName:       juser.DisplayName + " (" + juser.Name + ")",
 		MattermostDisplayName: mmuser.GetDisplayName(model.SHOW_NICKNAME_FULLNAME),
-		RevokeURL:             path.Join(p.GetPluginURLPath(), routeUserDisconnect),
+		RevokeURL:             path.Join(p.GetPluginURLPath(), instancePath(routeUserDisconnect, instance.GetID())),
 	})
 }
 

@@ -12,36 +12,43 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const helpTextHeader = "###### Mattermost Jira Plugin - Slash Command Help\n"
 
-// <><> TODO Update command Help
-const commonHelpText = "\n* `/jira connect` - Connect your Mattermost account to your Jira account\n" +
-	"* `/jira disconnect` - Disconnect your Mattermost account from your Jira account\n" +
-	"* `/jira assign <issue-key> <assignee>` - Change the assignee of a Jira issue\n" +
-	"* `/jira unassign <issue-key>` - Unassign the Jira issue\n" +
-	"* `/jira create <text (optional)>` - Create a new Issue with 'text' inserted into the description field\n" +
-	"* `/jira transition <issue-key> <state>` - Change the state of a Jira issue\n" +
-	"* `/jira info` - Display information about the current user and the Jira plug-in\n" +
+const commonHelpText = "\n" +
+	"* `/jira assign [--instance jiraURL] <issue-key> <assignee>` - Change the assignee of a Jira issue\n" +
+	"* `/jira connect [jiraURL]` - Connect your Mattermost account to your Jira account\n" +
+	"* `/jira create [--instance jiraURL] <text (optional)>` - Create a new Issue with 'text' inserted into the description field\n" +
+	"* `/jira disconnect [jiraURL]` - Disconnect your Mattermost account from your Jira account\n" +
 	"* `/jira help` - Launch the Jira plugin command line help syntax\n" +
-	"* `/jira view <issue-key>` - View the details of a specific Jira issue\n" +
-	"* `/jira settings [setting] [value]` - Update your user settings\n" +
+	"* `/jira info` - Display information about the current user and the Jira plug-in\n" +
+	"* `/jira instance list` - List installed Jira instances\n" +
+	"* `/jira instance settings [--instance jiraURL] [setting] [value]` - Update your user settings\n" +
 	"  * [setting] can be `notifications`\n" +
-	"  * [value] can be `on` or `off`\n"
+	"  * [value] can be `on` or `off`\n" +
+	"* `/jira transition [--instance jiraURL] <issue-key> <state>` - Change the state of a Jira issue\n" +
+	"* `/jira unassign [--instance jiraURL] <issue-key>` - Unassign the Jira issue\n" +
+	"* `/jira view [--instance jiraURL] <issue-key>` - View the details of a specific Jira issue\n" +
+	""
 
 const sysAdminHelpText = "\n###### For System Administrators:\n" +
-	"Install:\n" +
-	"* `/jira install cloud <URL>` - Connect Mattermost to a Jira Cloud instance located at <URL>\n" +
-	"* `/jira install server <URL>` - Connect Mattermost to a Jira Server or Data Center instance located at <URL>\n" +
-	"Uninstall:\n" +
-	"* `/jira uninstall cloud <URL>` - Disconnect Mattermost from a Jira Cloud instance located at <URL>\n" +
-	"* `/jira uninstall server <URL>` - Disconnect Mattermost from a Jira Server or Data Center instance located at <URL>\n" +
+	"Install Jira instances:\n" +
+	"* `/jira instance install cloud <jiraURL>` - Connect Mattermost to a Jira Cloud instance located at <jiraURL>\n" +
+	"* `/jira instance install server <jiraURL>` - Connect Mattermost to a Jira Server or Data Center instance located at <jiraURL>\n" +
+	"Uninstall Jira instances:\n" +
+	"* `/jira instance uninstall cloud <jiraURL>` - Disconnect Mattermost from a Jira Cloud instance located at <jiraURL>\n" +
+	"* `/jira instance uninstall server <jiraURL>` - Disconnect Mattermost from a Jira Server or Data Center instance located at <jiraURL>\n" +
+	"Manage channel subscriptions:\n" +
+	"* `/jira subscribe [--instance jiraURL]` - Configure the Jira notifications sent to this channel\n" +
+	"* `/jira subscribe list` - Display all the the subscription rules setup across all the channels and teams on your Mattermost instance\n" +
+	"Other:\n" +
+	"* `/jira instance v2 <jiraURL>` - Set the Jira instance to process \"v2\" webhooks and subscriptions (not prefixed with the instance ID)\n" +
 	"* `/jira stats` - Display usage statistics\n" +
-	"* `/jira webhook` -  Show the Mattermost webhook to receive JQL queries\n" +
-	"* `/jira subscribe` - Configure the Jira notifications sent to this channel\n" +
-	"* `/jira subscribe list` - Display all the the subscription rules setup across all the channels and teams on your Mattermost instance\n"
+	"* `/jira webhook [<jiraURL>]` -  Show the Mattermost webhook to receive JQL queries\n" +
+	""
 
 // Available settings
 const (
@@ -81,7 +88,7 @@ var jiraCommandHandler = CommandHandler{
 		"instance/install/cloud":  executeInstanceInstallCloud,
 		"instance/install/server": executeInstanceInstallServer,
 		"instance/list":           executeInstanceList,
-		"instance/default":        executeInstanceDefault,
+		"instance/v2":             executeInstanceV2Legacy,
 		"instance/uninstall":      executeInstanceUninstall,
 		"instance/settings":       executeSettings,
 	},
@@ -136,16 +143,24 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 }
 
 func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	instanceID, args, err := p.parseCommandFlagInstanceID(args)
-	if err != nil {
-		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
-	}
-	if len(args) != 0 {
+	var instanceID types.ID
+	switch len(args) {
+	case 0:
+		// skip
+	case 1:
+		jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
+		if err != nil {
+			return p.responsef(header, err.Error())
+		}
+		instanceID = types.ID(jiraURL)
+
+	default:
 		return p.help(header)
 	}
+
 	disconnected, err := p.DisconnectUser(instanceID, types.ID(header.UserId))
-	if err == ErrConnectionNotFound {
-		return p.responsef(header, "Could not complete the **disconnection** request. You do not currently have a Jira account linked to your Mattermost account.")
+	if errors.Cause(err) == kvstore.ErrNotFound {
+		return p.responsef(header, "Could not complete the **disconnection** request. You do not currently have a Jira account at %q linked to your Mattermost account.", instanceID)
 	}
 	if err != nil {
 		return p.responsef(header, "Could not complete the **disconnection** request. Error: %v", err)
@@ -154,11 +169,18 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 }
 
 func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	instanceID, args, err := p.parseCommandFlagInstanceID(args)
-	if err != nil {
-		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
-	}
-	if len(args) != 0 {
+	var instanceID types.ID
+	switch len(args) {
+	case 0:
+		// skip
+	case 1:
+		jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
+		if err != nil {
+			return p.responsef(header, err.Error())
+		}
+		instanceID = types.ID(jiraURL)
+
+	default:
 		return p.help(header)
 	}
 
@@ -171,7 +193,7 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 				instanceID, instanceID)
 		}
 
-		link = p.pathWithInstance(link, instanceID)
+		link = instancePath(link, instanceID)
 	}
 
 	return p.responsef(header, "[Click here to link your Jira account](%s%s)",
@@ -211,7 +233,7 @@ func executeJiraDefault(p *Plugin, c *plugin.Context, header *model.CommandArgs,
 func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	instance, _, err := p.parseCommandFlagInstance(args)
 	if err != nil {
-		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
+		return p.responsef(header, "Failed to identify a Jira instance. Error: %v.", err)
 	}
 	if len(args) != 1 {
 		return p.responsef(header, "Please specify an issue key in the form `/jira view <issue-key>`.")
@@ -285,8 +307,8 @@ func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs
 			details = string(instance.Common().Type)
 		}
 		format := "|%v|%s|%s|\n"
-		if instances.Get(instanceID).IsDefault {
-			format = "| **%v** | **%s** |%s|\n"
+		if instances.Get(instanceID).IsV2Legacy {
+			format = "|%v|%s (v2 legacy)|%s|\n"
 		}
 		text += fmt.Sprintf(format, i+1, key, details)
 	}
@@ -352,11 +374,6 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 		return p.responsef(header, err.Error())
 	}
 
-	u, err := p.GetWebhookURL(header.TeamId, header.ChannelId)
-	if err != nil {
-		return p.responsef(header, err.Error())
-	}
-
 	const addResponseFormat = `
 %s has been successfully installed. To finish the configuration, create a new app in your Jira instance following these steps:
 
@@ -371,11 +388,11 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 7. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
 
 If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://mattermost.gitbook.io/plugin-jira) for troubleshooting help.
-Jira webhook URL: %s
+<><> Jira webhook URL
 `
 
 	// TODO What is the exact group membership in Jira required? Site-admins?
-	return p.responsef(header, addResponseFormat, jiraURL, jiraURL, p.GetPluginURL(), p.pathWithInstance(routeACJSON, types.ID(jiraURL)), u)
+	return p.responsef(header, addResponseFormat, jiraURL, jiraURL, p.GetPluginURL(), instancePath(routeACJSON, types.ID(jiraURL)))
 }
 
 func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -401,31 +418,28 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 		return p.responsef(header, "The Jira URL you provided looks like a Jira Cloud URL - install it with:\n```\n/jira install cloud %s\n```", jiraURL)
 	}
 
-	u, err := p.GetWebhookURL(header.TeamId, header.ChannelId)
-	if err != nil {
-		return p.responsef(header, err.Error())
-	}
-
 	const addResponseFormat = `` +
 		`Server instance has been installed. To finish the configuration, add an Application Link in your Jira instance following these steps:
 
 1. Navigate to [**Settings > Applications > Application Links**](%s/plugins/servlet/applinks/listApplicationLinks)
-2. Enter %s as the application link, then click **Create new link**.
-3. In **Configure Application URL** screen, confirm your Mattermost URL is entered as the "New URL". Ignore any displayed errors and click **Continue**.
+2. Enter "Mattermost" as the application link, then click **Create new link**.
+3. In **Configure Application URL** screen, confirm "http://mattermost" as both "Entered URL" and "New URL". Ignore any displayed errors and click **Continue**.
 4. In **Link Applications** screen, set the following values:
   - **Application Name**: Mattermost
   - **Application Type**: Generic Application
 5. Check the **Create incoming link** value, then click **Continue**.
 6. In the following **Link Applications** screen, set the following values:
-  - **Consumer Key**: %s
-  - **Consumer Name**: Mattermost
-  - **Public Key**: %s
-7. Click **Continue**.
+  - **Consumer Key**: ` + "`%s`" + `
+  - **Consumer Name**: ` + "`Mattermost`" + `
+  - **Public Key**:` + "\n```\n%s\n```" + `
+  - **Consumer Callback URL**: _leave blank_
+  - **Allow 2-legged OAuth**: _leave unchecked_
+  7. Click **Continue**.
 6. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
 7. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
 
 If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://mattermost.gitbook.io/plugin-jira) for troubleshooting help.
-Jira webhook URL: %s
+<><> Jira webhook URL
 `
 	instance := newServerInstance(p, jiraURL)
 	err = p.InstallInstance(instance)
@@ -437,7 +451,7 @@ Jira webhook URL: %s
 	if err != nil {
 		return p.responsef(header, "Failed to load public key: %v", err)
 	}
-	return p.responsef(header, addResponseFormat, jiraURL, p.GetSiteURL(), instance.GetMattermostKey(), pkey, u)
+	return p.responsef(header, addResponseFormat, jiraURL, instance.GetMattermostKey(), strings.TrimSpace(string(pkey)))
 }
 
 // executeUninstall will uninstall the jira instance if the url matches, and then update all connected clients
@@ -476,22 +490,17 @@ func executeInstanceUninstall(p *Plugin, c *plugin.Context, header *model.Comman
 		&model.WebsocketBroadcast{},
 	)
 
-	u, err := p.GetWebhookURL(header.TeamId, header.ChannelId)
-	if err != nil {
-		return p.responsef(header, err.Error())
-	}
-
 	uninstallInstructions := `` +
 		`Jira instance successfully uninstalled. Navigate to [**your app management URL**](%s) in order to remove the application from your Jira instance.
-Don't forget to remove Jira-side webhook from URL: %s'
+<><> Don't forget to remove Jira-side webhook from URL'
 `
-	return p.responsef(header, uninstallInstructions, uninstalled.GetManageAppsURL(), u)
+	return p.responsef(header, uninstallInstructions, uninstalled.GetManageAppsURL())
 }
 
 func executeUnassign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	instance, args, err := p.parseCommandFlagInstance(args)
 	if err != nil {
-		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
+		return p.responsef(header, "Failed to identify a Jira instance. Error: %v.", err)
 	}
 
 	if len(args) < 1 {
@@ -509,7 +518,7 @@ func executeUnassign(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	instance, args, err := p.parseCommandFlagInstance(args)
 	if err != nil {
-		return p.responsef(header, "Failed to identify a Jira instance. Error: "+err.Error())
+		return p.responsef(header, "Failed to identify a Jira instance. Error: %v.", err)
 	}
 
 	if len(args) < 2 {
@@ -592,8 +601,7 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	case info.IsConnected:
 		resp += fmt.Sprintf("###### Connected to %v Jira instances:\n", info.User.ConnectedInstances.Len())
 	case info.Instances.Len() > 0:
-		resp += fmt.Sprintf("Jira is installed, but you are not connected. Please [connect](%s%s).\n",
-			p.GetPluginURL(), routeUserConnect)
+		resp += "Jira is installed, but you are not connected. Please type `/jira connect` to connect.\n"
 	default:
 		return p.responsef(header, resp+"\nNo Jira instances installed, please contact your system administrator.")
 	}
@@ -615,8 +623,8 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 		resp += fmt.Sprintf("\n###### Available Jira instances:\n")
 		for _, instanceID := range info.Instances.IDs() {
 			ic := info.Instances.Get(instanceID)
-			if ic.IsDefault {
-				resp += sbullet(instanceID.String(), fmt.Sprintf("%s, **default**", ic.Type))
+			if ic.IsV2Legacy {
+				resp += sbullet(instanceID.String(), fmt.Sprintf("%s, **v2 legacy**", ic.Type))
 			} else {
 				resp += sbullet(instanceID.String(), fmt.Sprintf("%s", ic.Type))
 			}
@@ -628,7 +636,7 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 			}
 			connection, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
 			if err != nil {
-				if err == ErrUserNotFound {
+				if errors.Cause(err) == kvstore.ErrNotFound {
 					continue
 				}
 				return p.responsef(header, err.Error())
@@ -766,15 +774,54 @@ func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	if !authorized {
 		return p.responsef(header, "`/jira webhook` can only be run by a system administrator.")
 	}
-	if len(args) != 0 {
+
+	var jiraURL string
+	switch len(args) {
+	case 0:
+		// skip
+	case 1:
+		jiraURL, err = utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
+		if err != nil {
+			return p.responsef(header, err.Error())
+		}
+
+	default:
 		return p.help(header)
 	}
 
-	u, err := p.GetWebhookURL(header.TeamId, header.ChannelId)
+	instance, err := p.LoadDefaultInstance(types.ID(jiraURL))
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
-	return p.responsef(header, "Please use the following URL to set up a Jira webhook: %v", u)
+	subWebhookURL, legacyWebhookURL, err := p.GetWebhookURL(jiraURL, header.TeamId, header.ChannelId)
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
+	return p.responsef(header,
+		"To set up webhook for instance %s please navigate to [Jira System Settings/Webhooks](%s) where you can add webhooks.\n"+
+			"Use `/jira webhook jiraURL` to specify another Jira instance. Use `/jira instance list` to view the available instances.\n"+
+			"##### Subscriptions webhook.\n"+
+			"Subscriptions webhook needs to be set up once, is shared by all channels and subscription filters.\n"+
+			"   - `%s`\n"+
+			"   - right-click on [link](%s) and \"Copy Link Address\" to Copy\n"+
+			"##### Legacy webhook.\n"+
+			"Legacy webhook needs to be set up for each channel. For this channel:\n"+
+			"   - `%s`\n"+
+			"   - right-click on [link](%s) and \"Copy Link Address\" to Copy\n"+
+			"   By default, the legacy webhook integration publishes notifications for issue create, resolve, unresolve, reopen, and assign events.\n"+
+			"   To publish (post) more events use the following extra `&`-separated parameters:\n"+
+			"   - `updated_all=1`: all events\n"+
+			"   - `updated_comments=1`: all comment events\n\n"+
+			"   - `updated_attachment=1`: updated issue attachments\n"+
+			"   - `updated_description=1`: updated issue description\n"+
+			"   - `updated_labels=1`: updated issue labels\n"+
+			"   - `updated_prioity=1`: updated issue priority\n"+
+			"   - `updated_rank=1`: ranked issue higher or lower\n"+
+			"   - `updated_sprint=1`: assigned issue to a different sprint\n"+
+			"   - `updated_status=1`: transitioned issed to a different status, like Done, In Progress\n"+
+			"   - `updated_summary=1`: renamed issue\n"+
+			"",
+		instance.GetID(), instance.GetManageWebhooksURL(), subWebhookURL, subWebhookURL, legacyWebhookURL, legacyWebhookURL)
 }
 
 func getCommand() *model.Command {
@@ -808,13 +855,20 @@ func (p *Plugin) responseRedirect(redirectURL string) *model.CommandResponse {
 	}
 }
 
-func executeInstanceDefault(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeInstanceV2Legacy(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(header, "`/jira instance default` can only be run by a system administrator.")
+	}
 	if len(args) != 1 {
 		return p.help(header)
 	}
 	instanceID := types.ID(args[0])
 
-	err := p.StoreDefaultInstance(instanceID)
+	err = p.StoreV2LegacyInstance(instanceID)
 	if err != nil {
 		return p.responsef(header, "Failed to set default Jira instance %s: %v", instanceID, err)
 	}

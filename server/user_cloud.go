@@ -34,7 +34,7 @@ func (p *Plugin) httpACUserRedirect(w http.ResponseWriter, r *http.Request, inst
 	ci, ok := instance.(*cloudInstance)
 	if !ok {
 		return respondErr(w, http.StatusInternalServerError,
-			errors.Errorf("Bot supported for instance type %s", instance.Common().Type))
+			errors.Errorf("Not supported for instance type %s", instance.Common().Type))
 	}
 
 	_, _, err = ci.parseHTTPRequestJWT(r)
@@ -42,7 +42,7 @@ func (p *Plugin) httpACUserRedirect(w http.ResponseWriter, r *http.Request, inst
 		return respondErr(w, http.StatusBadRequest, err)
 	}
 
-	submitURL := path.Join(ci.Plugin.GetPluginURLPath(), routeACUserConfirm)
+	submitURL := path.Join(ci.Plugin.GetPluginURLPath(), instancePath(routeACUserConfirm, instanceID))
 
 	return ci.Plugin.respondTemplate(w, r, "text/html", struct {
 		SubmitURL  string
@@ -63,7 +63,7 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 	ci, ok := instance.(*cloudInstance)
 	if !ok {
 		return respondErr(w, http.StatusInternalServerError,
-			errors.Errorf("Bot supported for instance type %s", instance.Common().Type))
+			errors.Errorf("2 Not supported for instance type %s", instance.Common().Type))
 	}
 
 	jwtToken, _, err := ci.parseHTTPRequestJWT(r)
@@ -128,7 +128,8 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 			errors.WithMessage(appErr, "failed to load user "+mattermostUserId))
 	}
 
-	switch r.URL.Path {
+	_, urlpath := splitInstancePath(r.URL.Path)
+	switch urlpath {
 	case routeACUserConnected:
 		storedSecret := ""
 		storedSecret, err = p.otsStore.LoadOneTimeSecret(mattermostUserId)
@@ -168,6 +169,8 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 	}
 
 	// This set of props should work for all relevant routes/templates
+	connectSubmitURL := path.Join(p.GetPluginURLPath(), instancePath(routeACUserConnected, instanceID))
+	disconnectSubmitURL := path.Join(p.GetPluginURLPath(), instancePath(routeACUserDisconnected, instanceID))
 	return ci.Plugin.respondTemplate(w, r, "text/html", struct {
 		ConnectSubmitURL      string
 		DisconnectSubmitURL   string
@@ -177,8 +180,8 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		JiraDisplayName       string
 		MattermostDisplayName string
 	}{
-		DisconnectSubmitURL:   path.Join(ci.Plugin.GetPluginURLPath(), routeACUserDisconnected),
-		ConnectSubmitURL:      path.Join(ci.Plugin.GetPluginURLPath(), routeACUserConnected),
+		DisconnectSubmitURL:   disconnectSubmitURL,
+		ConnectSubmitURL:      connectSubmitURL,
 		ArgJiraJWT:            argJiraJWT,
 		ArgMMToken:            argMMToken,
 		MMToken:               mmToken,

@@ -42,6 +42,10 @@ func (si *serverInstance) GetManageAppsURL() string {
 	return fmt.Sprintf("%s/plugins/servlet/applinks/listApplicationLinks", si.GetURL())
 }
 
+func (si *serverInstance) GetManageWebhooksURL() string {
+	return fmt.Sprintf("%s/plugins/servlet/webhooks", si.GetURL())
+}
+
 func (si *serverInstance) GetMattermostKey() string {
 	return si.MattermostKey
 }
@@ -111,17 +115,18 @@ func (si *serverInstance) GetClient(connection *Connection) (client Client, retu
 }
 
 func (si *serverInstance) getOAuth1Config() *oauth1.Config {
+	p := si.Plugin
 	return &oauth1.Config{
 		ConsumerKey:    si.MattermostKey,
 		ConsumerSecret: "dontcare",
-		CallbackURL:    si.Plugin.GetPluginURL() + "/" + routeOAuth1Complete,
+		CallbackURL:    p.GetPluginURL() + "/" + instancePath(routeOAuth1Complete, si.InstanceID),
 		Endpoint: oauth1.Endpoint{
 			RequestTokenURL: si.GetURL() + "/plugins/servlet/oauth/request-token",
 			AuthorizeURL:    si.GetURL() + "/plugins/servlet/oauth/authorize",
 			AccessTokenURL:  si.GetURL() + "/plugins/servlet/oauth/access-token",
 		},
 		Signer: &oauth1.RSASigner{
-			PrivateKey: si.Plugin.getConfig().rsaKey,
+			PrivateKey: p.getConfig().rsaKey,
 		},
 	}
 }

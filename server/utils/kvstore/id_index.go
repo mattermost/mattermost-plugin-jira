@@ -3,7 +3,10 @@
 
 package kvstore
 
-import "github.com/mattermost/mattermost-plugin-jira/server/utils/types"
+import (
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
+	"github.com/pkg/errors"
+)
 
 type IDIndexStore interface {
 	Load() (*types.IDSet, error)
@@ -53,7 +56,7 @@ func (s *idIndexStore) Delete(id types.ID) error {
 
 func (s *idIndexStore) Set(v types.ID) (bool, error) {
 	index, err := s.Load()
-	switch err {
+	switch errors.Cause(err) {
 	case nil:
 
 	case ErrNotFound:

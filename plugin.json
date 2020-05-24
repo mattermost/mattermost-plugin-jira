@@ -18,7 +18,6 @@
     "bundle_path": "webapp/dist/main.js"
   },
   "settings_schema": {
-    "header": "",
     "settings": [
       {
         "key": "EnableJiraUI",
@@ -88,6 +87,7 @@
         "default": false
       }
     ],
-    "footer": "Run `/jira webhook` command inside of a channel to see fully expanded URL to [configure the Jira integration.](https://github.com/mattermost/mattermost-plugin-jira/blob/master/readme.md) URL format: `https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET`"
+    "header": "Please refer to the `/jira` command [**documentation**](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) to further configure the Jira plugin.",
+    "footer": "Please refer to the `/jira` command [**documentation**](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) to further configure the Jira plugin. Specifically, [`/jira instance [un-]install`](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) and [`/jira webhook`](https://mattermost.gitbook.io/plugin-jira/setup/configuration#step-4-required-setup-webhooks-from-jira)"
   }
 }

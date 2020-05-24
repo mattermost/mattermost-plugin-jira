@@ -23,7 +23,7 @@ function userCanConnect(state = false, action) {
     }
 }
 
-function installedInstances(state = [], action) {
+function installedInstances(state = {}, action) {
     // We're notified of the instance status at startup (through getConnected)
     // and when we get a websocket instance_status event
     switch (action.type) {
@@ -47,10 +47,19 @@ function defaultConnectInstance(state = {}, action) {
     }
 }
 
-function defaultUseInstance(state = {}, action) {
+function defaultUserInstance(state = {}, action) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
         return action.data.default_use_instance ? action.data.default_use_instance : state;
+    default:
+        return state;
+    }
+}
+
+function userConnectedInstances(state = {}, action) {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_CONNECTED:
+        return action.data.user && action.data.user.connected_instances ? action.data.user.connected_instances : state;
     default:
         return state;
     }
@@ -196,9 +205,10 @@ const channelSubscriptions = (state = {}, action) => {
 export default combineReducers({
     userConnected,
     userCanConnect,
+    userConnectedInstances,
     installedInstances,
     defaultConnectInstance,
-    defaultUseInstance,
+    defaultUserInstance,
     pluginSettings,
     createModalVisible,
     createModal,

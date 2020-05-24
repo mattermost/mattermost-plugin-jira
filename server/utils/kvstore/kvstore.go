@@ -5,7 +5,8 @@ package kvstore
 
 import (
 	"encoding/json"
-	"errors"
+
+	"github.com/pkg/errors"
 )
 
 type KVStore interface {
@@ -21,7 +22,7 @@ var ErrNotFound = errors.New("not found")
 
 func Ensure(s KVStore, key string, newValue []byte) ([]byte, error) {
 	value, err := s.Load(key)
-	switch err {
+	switch errors.Cause(err) {
 	case nil:
 		return value, nil
 	case ErrNotFound:

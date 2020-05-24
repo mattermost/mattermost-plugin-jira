@@ -11,6 +11,8 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 
 	"github.com/mattermost/mattermost-server/v5/model"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 var jiraLinkWithTextRegex = regexp.MustCompile(`\[([^\[]+)\|([^\]]+)\]`)
@@ -34,7 +36,7 @@ func reporterSummary(issue *jira.Issue) string {
 	return reporterSummary
 }
 
-func getTransitionActions(client Client, issue *jira.Issue) ([]*model.PostAction, error) {
+func getTransitionActions(instanceID types.ID, client Client, issue *jira.Issue) ([]*model.PostAction, error) {
 	var actions []*model.PostAction
 
 	ctx := map[string]interface{}{
@@ -42,7 +44,7 @@ func getTransitionActions(client Client, issue *jira.Issue) ([]*model.PostAction
 	}
 
 	integration := &model.PostActionIntegration{
-		URL:     fmt.Sprintf("/plugins/%s%s", manifest.Id, routeIssueTransition),
+		URL:     fmt.Sprintf("/plugins/%s%s", manifest.Id, instancePath(routeIssueTransition, instanceID)),
 		Context: ctx,
 	}
 
@@ -73,7 +75,7 @@ func getTransitionActions(client Client, issue *jira.Issue) ([]*model.PostAction
 	return actions, nil
 }
 
-func asSlackAttachment(client Client, issue *jira.Issue) ([]*model.SlackAttachment, error) {
+func asSlackAttachment(instanceID types.ID, client Client, issue *jira.Issue) ([]*model.SlackAttachment, error) {
 	text := mdKeySummaryLink(issue)
 	desc := truncate(issue.Fields.Description, 3000)
 	desc = parseJiraLinksToMarkdown(desc)
@@ -103,7 +105,7 @@ func asSlackAttachment(client Client, issue *jira.Issue) ([]*model.SlackAttachme
 		Short: true,
 	})
 
-	actions, err := getTransitionActions(client, issue)
+	actions, err := getTransitionActions(instanceID, client, issue)
 	if err != nil {
 		return []*model.SlackAttachment{}, err
 	}
