@@ -833,7 +833,7 @@ func (p *Plugin) getIssueAsSlackAttachment(instance Instance, connection *Connec
 		}
 	}
 
-	return asSlackAttachment(client, issue)
+	return asSlackAttachment(instance.GetID(), client, issue)
 }
 
 func (p *Plugin) UnassignIssue(instance Instance, mattermostUserID types.ID, issueKey string) (string, error) {
@@ -1016,7 +1016,7 @@ func (p *Plugin) TransitionIssue(in *InTransitionIssue) (string, error) {
 		}
 	}
 
-	attachments, err := asSlackAttachment(client, issue)
+	attachments, err := asSlackAttachment(instance.GetID(), client, issue)
 	if err != nil {
 		return "", err
 	}

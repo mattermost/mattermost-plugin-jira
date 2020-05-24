@@ -12,17 +12,9 @@ import (
 
 	"github.com/mattermost/mattermost-server/v5/model"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
-
-type UserInfo struct {
-	IsConnected            bool       `json:"is_connected"`
-	CanConnect             bool       `json:"can_connect"`
-	User                   *User      `json:"user"`
-	Instances              *Instances `json:"instances"`
-	DefaultConnectInstance Instance   `json:"default_connect_instance,omitempty"`
-	DefaultUseInstance     Instance   `json:"default_use_instance,omitempty"`
-}
 
 type User struct {
 	MattermostUserID   types.ID   `json:"mattermost_user_id"`
@@ -114,79 +106,9 @@ func (p *Plugin) httpUserStart(w http.ResponseWriter, r *http.Request, instanceI
 	return p.httpUserConnect(w, r, instanceID)
 }
 
-func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be GET"))
-	}
-
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
-		return respondErr(w, http.StatusUnauthorized,
-			errors.New("not authorized"))
-	}
-
-	info, err := p.GetUserInfo(types.ID(mattermostUserId))
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
-	}
-	return respondJSON(w, info)
-}
-
-func (p *Plugin) GetUserInfo(mattermostUserID types.ID) (*UserInfo, error) {
-	instances, err := p.instanceStore.LoadInstances()
-	if err != nil {
-		return nil, err
-	}
-
-	user, err := p.MigrateV2User(mattermostUserID)
-	if err != nil {
-		return nil, err
-	}
-
-	isConnected := !user.ConnectedInstances.IsEmpty()
-	canConnect := false
-	for _, instanceID := range instances.IDs() {
-		if !user.ConnectedInstances.Contains(instanceID) {
-			canConnect = true
-			break
-		}
-	}
-
-	globalDefaultInstance, _ := p.LoadDefaultInstance("")
-
-	return &UserInfo{
-		CanConnect:             canConnect,
-		IsConnected:            isConnected,
-		Instances:              instances,
-		User:                   user,
-		DefaultConnectInstance: globalDefaultInstance,
-		DefaultUseInstance:     globalDefaultInstance,
-	}, nil
-}
-
-func (info UserInfo) AsConfigMap() map[string]interface{} {
-	m := map[string]interface{}{
-		"can_connect":  info.CanConnect,
-		"is_connected": info.IsConnected,
-	}
-	if !info.Instances.IsEmpty() {
-		m["instances"] = info.Instances.AsConfigMap()
-	}
-	if info.User != nil {
-		m["user"] = info.User.AsConfigMap()
-	}
-	if info.DefaultConnectInstance != nil {
-		m["default_connect_instance"] = info.DefaultConnectInstance.Common().AsConfigMap()
-	}
-	if info.DefaultUseInstance != nil {
-		m["default_use_instance"] = info.DefaultUseInstance.Common().AsConfigMap()
-	}
-	return m
-}
-
 func (user *User) AsConfigMap() map[string]interface{} {
 	return map[string]interface{}{
+		"mattermost_user_id":  user.MattermostUserID.String(),
 		"connected_instances": user.ConnectedInstances.AsConfigMap(),
 	}
 }
@@ -213,7 +135,7 @@ func (p *Plugin) httpGetSettingsInfo(w http.ResponseWriter, r *http.Request) (in
 func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, connection *Connection) error {
 	user, err := p.userStore.LoadUser(mattermostUserID)
 	if err != nil {
-		if err != ErrUserNotFound {
+		if errors.Cause(err) != kvstore.ErrNotFound {
 			return err
 		}
 		user = &User{
@@ -258,9 +180,8 @@ func (p *Plugin) disconnectUser(instance Instance, mattermostUserID types.ID) (*
 		return nil, err
 	}
 	if !user.ConnectedInstances.Contains(instance.GetID()) {
-		return nil, ErrInstanceNotFound
+		return nil, errors.Wrapf(kvstore.ErrNotFound, "user is not connected to %q", instance.GetID())
 	}
-
 	conn, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
 	if err != nil {
 		return nil, err
@@ -281,7 +202,6 @@ func (p *Plugin) disconnectUser(instance Instance, mattermostUserID types.ID) (*
 	if err != nil {
 		return nil, err
 	}
-
 	p.API.PublishWebSocketEvent(websocketEventDisconnect, info.AsConfigMap(),
 		&model.WebsocketBroadcast{UserId: mattermostUserID.String()})
 	return conn, nil

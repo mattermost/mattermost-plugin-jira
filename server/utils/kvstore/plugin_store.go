@@ -36,7 +36,7 @@ func (s *pluginStore) Load(key string) ([]byte, error) {
 		return nil, errors.WithMessage(appErr, "failed plugin KVGet")
 	}
 	if data == nil {
-		return nil, ErrNotFound
+		return nil, errors.Wrap(ErrNotFound, key)
 	}
 	return data, nil
 }

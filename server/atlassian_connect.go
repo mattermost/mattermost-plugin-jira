@@ -23,10 +23,10 @@ func (p *Plugin) httpACJSON(w http.ResponseWriter, r *http.Request, instanceID t
 
 	return p.respondTemplate(w, r, "application/json", map[string]string{
 		"BaseURL":                      p.GetPluginURL(),
-		"RouteACJSON":                  p.pathWithInstance(routeACJSON, instanceID),
+		"RouteACJSON":                  instancePath(routeACJSON, instanceID),
 		"RouteACInstalled":             routeACInstalled,
 		"RouteACUninstalled":           routeACUninstalled,
-		"RouteACUserRedirectWithToken": p.pathWithInstance(routeACUserRedirectWithToken, instanceID),
+		"RouteACUserRedirectWithToken": instancePath(routeACUserRedirectWithToken, instanceID),
 		"UserRedirectPageKey":          userRedirectPageKey,
 		"ExternalURL":                  p.GetSiteURL(),
 		"PluginKey":                    p.GetPluginKey(),
@@ -51,10 +51,11 @@ func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, e
 		return respondErr(w, http.StatusBadRequest,
 			errors.WithMessage(err, "failed to unmarshal request"))
 	}
+	instanceID := types.ID(asc.BaseURL)
 
 	// Only allow this operation once, a JIRA instance must already exist
 	// for asc.BaseURL, but not already installed.
-	instance, err := p.instanceStore.LoadInstance(types.ID(asc.BaseURL))
+	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to load instance "+asc.BaseURL))
@@ -74,8 +75,8 @@ func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, e
 	}
 
 	// Create a permanent instance record, also store it as current
-	newInstance := newCloudInstance(p, types.ID(asc.BaseURL), true, string(body), &asc)
-	err = p.InstallInstance(instance)
+	newInstance := newCloudInstance(p, instanceID, true, string(body), &asc)
+	err = p.InstallInstance(newInstance)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}

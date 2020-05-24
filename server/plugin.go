@@ -116,7 +116,7 @@ type Plugin struct {
 	templates map[string]*template.Template
 
 	// channel to distribute work to the webhook processors
-	webhookQueue chan []byte
+	webhookQueue chan *webhookMessage
 }
 
 func (p *Plugin) getConfig() config {
@@ -222,7 +222,7 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	// Create our queue of webhook events waiting to be processed.
-	p.webhookQueue = make(chan []byte, WebhookBufferSize)
+	p.webhookQueue = make(chan *webhookMessage, WebhookBufferSize)
 
 	// Spin up our webhook workers.
 	for i := 0; i < WebhookMaxProcsPerServer; i++ {

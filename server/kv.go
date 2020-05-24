@@ -174,17 +174,16 @@ func (store store) StoreConnection(instanceID, mattermostUserId types.ID, connec
 	return nil
 }
 
-var ErrConnectionNotFound = errors.New("connection not found")
-
 func (store store) LoadConnection(instanceID, mattermostUserID types.ID) (*Connection, error) {
 	c := &Connection{}
 	err := store.get(keyWithInstanceID(instanceID, mattermostUserID), c)
 	if err != nil {
-		return nil, errors.WithMessage(err,
-			fmt.Sprintf("failed to load connection for mattermostUserId:%s", mattermostUserID))
+		return nil, errors.Wrapf(err,
+			"failed to load connection for Mattermost user ID:%q, Jira:%q", mattermostUserID, instanceID)
 	}
 	if len(c.JiraAccountID()) == 0 {
-		return nil, ErrUserNotFound
+		return nil, errors.Wrapf(kvstore.ErrNotFound,
+			"failed to load connection for Mattermost user ID:%q, Jira:%q: empty Jira account ID", mattermostUserID, instanceID)
 	}
 	c.PluginVersion = manifest.Version
 	return c, nil
@@ -198,7 +197,7 @@ func (store store) LoadMattermostUserId(instanceID types.ID, jiraUserNameOrID st
 			"failed to load Mattermost user ID for Jira user/ID: "+jiraUserNameOrID)
 	}
 	if len(mattermostUserId) == 0 {
-		return "", ErrUserNotFound
+		return "", errors.Wrap(kvstore.ErrNotFound, "empty Mattermost user ID")
 	}
 	return mattermostUserId, nil
 }
@@ -251,8 +250,6 @@ func (store store) StoreUser(user *User) (returnErr error) {
 	store.plugin.debugf("Stored: user key:%s: %+v", key, user)
 	return nil
 }
-
-var ErrUserNotFound = errors.New("user not found")
 
 func (store store) LoadUser(mattermostUserId types.ID) (*User, error) {
 	user := User{
@@ -456,17 +453,24 @@ func (store *store) CreateInactiveCloudInstance(jiraURL types.ID) (returnErr err
 	}
 
 	// Expire in 15 minutes
-	appErr := store.plugin.API.KVSetWithExpiry(hashkey(prefixInstance,
-		ci.GetURL()), data, 15*60)
+	key := hashkey(prefixInstance, ci.GetURL())
+	appErr := store.plugin.API.KVSetWithExpiry(key, data, 15*60)
 	if appErr != nil {
 		return errors.WithMessagef(appErr, "failed to store new Jira Cloud instance:%s", jiraURL)
 	}
-	store.plugin.debugf("Stored: new Jira Cloud instance: %s", ci.GetURL())
+	store.plugin.debugf("Stored: new Jira Cloud instance: %s as %s", ci.GetURL(), key)
 	return nil
 }
 
-func (store *store) LoadInstance(id types.ID) (Instance, error) {
-	return store.loadInstance(hashkey(prefixInstance, id.String()))
+func (store *store) LoadInstance(instanceID types.ID) (Instance, error) {
+	if instanceID == "" {
+		return nil, errors.Wrap(kvstore.ErrNotFound, "no instance specified")
+	}
+	instance, err := store.loadInstance(hashkey(prefixInstance, instanceID.String()))
+	if err != nil {
+		return nil, errors.Wrap(err, instanceID.String())
+	}
+	return instance, nil
 }
 
 func (store *store) loadInstance(fullkey string) (Instance, error) {
@@ -475,7 +479,7 @@ func (store *store) loadInstance(fullkey string) (Instance, error) {
 		return nil, appErr
 	}
 	if data == nil {
-		return nil, errors.New("not found: " + fullkey)
+		return nil, errors.Wrap(kvstore.ErrNotFound, fullkey)
 	}
 
 	// Unmarshal into any of the types just so that we can get the common data
@@ -537,7 +541,7 @@ func (store *store) StoreInstances(instances *Instances) error {
 
 func (store *store) UpdateInstances(updatef func(instances *Instances) error) error {
 	instances, err := store.LoadInstances()
-	if err == kvstore.ErrNotFound {
+	if errors.Cause(err) == kvstore.ErrNotFound {
 		instances = NewInstances()
 	} else if err != nil {
 		return err
@@ -560,7 +564,7 @@ func (store *store) UpdateInstances(updatef func(instances *Instances) error) er
 // 	 CurrentInstance.
 func (store *store) MigrateV2Instances() error {
 	_, err := store.plugin.instanceStore.LoadInstances()
-	if err != kvstore.ErrNotFound {
+	if errors.Cause(err) != kvstore.ErrNotFound {
 		return err
 	}
 
@@ -586,7 +590,7 @@ func (store *store) MigrateV2Instances() error {
 	}
 
 	instance, err := store.loadInstance(v2keyCurrentJIRAInstance)
-	if err != nil && err != kvstore.ErrNotFound {
+	if err != nil && errors.Cause(err) != kvstore.ErrNotFound {
 		return err
 	}
 	if instance != nil {
@@ -598,7 +602,7 @@ func (store *store) MigrateV2Instances() error {
 		}
 
 		if instances.Len() > 1 {
-			instances.SetDefault(instance.GetID())
+			instances.SetV2Legacy(instance.GetID())
 		}
 	}
 
@@ -613,7 +617,7 @@ func (store *store) MigrateV2Instances() error {
 // returns an up-to-date User object either way.
 func (p *Plugin) MigrateV2User(mattermostUserID types.ID) (*User, error) {
 	user, err := p.userStore.LoadUser(mattermostUserID)
-	if err != kvstore.ErrNotFound {
+	if errors.Cause(err) != kvstore.ErrNotFound {
 		// return the existing key (or error)
 		return user, err
 	}
@@ -630,7 +634,7 @@ func (p *Plugin) MigrateV2User(mattermostUserID types.ID) (*User, error) {
 	}
 	for _, instanceID := range instances.IDs() {
 		_, err = p.userStore.LoadConnection(instanceID, mattermostUserID)
-		if err == ErrUserNotFound {
+		if errors.Cause(err) == kvstore.ErrNotFound {
 			continue
 		}
 		if err != nil {

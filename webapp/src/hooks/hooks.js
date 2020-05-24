@@ -3,7 +3,7 @@
 
 import {isDesktopApp, isMinimumDesktopAppVersion} from '../utils/user_agent';
 import {openCreateModalWithoutPost, openChannelSettings, sendEphemeralPost} from '../actions';
-import {isUserConnected, getInstalledInstances, getPluginSettings, getDefaultConnectInstance} from '../selectors';
+import {isUserConnected, getInstalledInstances, getPluginSettings, getDefaultConnectInstance, getUserConnectedInstances} from '../selectors';
 import PluginId from 'plugin_id';
 
 export default class Hooks {
@@ -49,21 +49,25 @@ export default class Hooks {
                 this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
                 return Promise.resolve({});
             }
-            if (isUserConnected(this.store.getState())) {
-                this.store.dispatch(sendEphemeralPost('You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect.'));
-                return Promise.resolve({});
-            }
 
             const args = message.slice(connectCommand.length).trim();
             let instance = getDefaultConnectInstance(this.store.getState());
 
-            const instances = getInstalledInstances(this.store.getState());
-            const optInstance = '--instance';
-            if (args.startsWith(optInstance + ' ') || args.startsWith(optInstance + '=')) {
-                const instanceID = args.slice(optInstance.length + 1).trim();
+            if (args) {
+                const instanceID = args;
+                const connectedInstances = getUserConnectedInstances(this.store.getState());
+                const alreadyConnected = connectedInstances[instanceID];
+
+                if (alreadyConnected) {
+                    this.store.dispatch(sendEphemeralPost(
+                        'Your Jira account at ' + alreadyConnected.InstanceID + ' is already linked to your Mattermost account. Please use `/jira disconnect` to disconnect.'));
+                    return Promise.resolve({});
+                }
+
+                const instances = getInstalledInstances(this.store.getState());
                 instance = instances[instanceID];
                 if (!instance) {
-                    const errMsg = 'Jira instance ' + instanceID + ' is not installed. Please type `/jira info` to see the available Jira instances.';
+                    const errMsg = 'Jira instance ' + instanceID + ' is not installed. Please type `/jira instance list` to see the available Jira instances.';
                     this.store.dispatch(sendEphemeralPost(errMsg));
                     return Promise.resolve({});
                 }
@@ -75,16 +79,18 @@ export default class Hooks {
                 return Promise.resolve({});
             }
 
-            let instancePrefix = '';
             if (instance && instance.instance_id) {
-                instancePrefix = '/instance/' + btoa(instance.instance_id);
+                const encodedID = btoa(instance.instance_id);
+                const target = '/plugins/' + PluginId + '/instance/' + encodedID + '/user/connect';
+                window.open(target, '_blank');
+            } else {
+                // TODO: <><> present instance picker to choose an installed instance
             }
-            const target = '/plugins/' + PluginId + instancePrefix + '/user/connect';
-            window.open(target, '_blank');
             return Promise.resolve({});
         }
 
         if (message && message === subscribeCommand) {
+            // TODO: <><> add instance picker and/or filter to Subscribe UI
             if (!getInstalledInstances(this.store.getState())) {
                 this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
                 return Promise.resolve({});

@@ -170,8 +170,8 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 	return true
 }
 
-func (p *Plugin) getChannelsSubscribed(wh *webhook) (StringSet, error) {
-	subs, err := p.getSubscriptions(wh.instanceID)
+func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) (StringSet, error) {
+	subs, err := p.getSubscriptions(instanceID)
 	if err != nil {
 		return nil, err
 	}
@@ -672,7 +672,7 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 	return nil
 }
 
-func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int, err error) {
+func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, instanceID types.ID) (status int, err error) {
 	conf := p.getConfig()
 	size := utils.ByteSize(0)
 	start := time.Now()
@@ -701,10 +701,18 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (st
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
+	instanceID, err = p.ResolveInstanceID(instanceID)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
 	// If there is space in the queue, immediately return a 200; we will process the webhook event async.
 	// If the queue is full, return a 503; we will not process that webhook event.
 	select {
-	case p.webhookQueue <- bb:
+	case p.webhookQueue <- &webhookMessage{
+		InstanceID: instanceID,
+		Data:       bb,
+	}:
 		return http.StatusOK, nil
 	default:
 		return respondErr(w, http.StatusServiceUnavailable, nil)
@@ -809,7 +817,8 @@ func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Requ
 }
 
 func (p *Plugin) httpChannelDeleteSubscription(w http.ResponseWriter, r *http.Request, mattermostUserId string, instanceID types.ID) (int, error) {
-	subscriptionId := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionsChannel+"/")
+	_, path := splitInstancePath(r.URL.Path)
+	subscriptionId := strings.TrimPrefix(path, routeAPISubscriptionsChannel+"/")
 	if len(subscriptionId) != 26 {
 		return respondErr(w, http.StatusBadRequest,
 			errors.New("bad subscription id"))
@@ -861,7 +870,8 @@ func (p *Plugin) httpChannelDeleteSubscription(w http.ResponseWriter, r *http.Re
 }
 
 func (p *Plugin) httpChannelGetSubscriptions(w http.ResponseWriter, r *http.Request, mattermostUserId string, instanceID types.ID) (int, error) {
-	channelId := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionsChannel+"/")
+	_, path := splitInstancePath(r.URL.Path)
+	channelId := strings.TrimPrefix(path, routeAPISubscriptionsChannel+"/")
 	if len(channelId) != 26 {
 		return respondErr(w, http.StatusBadRequest,
 			errors.New("bad channel id"))

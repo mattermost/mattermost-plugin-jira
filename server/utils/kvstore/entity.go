@@ -4,8 +4,9 @@
 package kvstore
 
 import (
-	"errors"
 	"regexp"
+
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -51,7 +52,7 @@ func (e *entityStore) NewID(name string) (types.ID, error) {
 
 		dummy := struct{}{}
 		err := e.Load(types.ID(id), &dummy)
-		if err == ErrNotFound {
+		if errors.Cause(err) == ErrNotFound {
 			return types.ID(id), nil
 		}
 	}

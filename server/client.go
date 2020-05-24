@@ -308,7 +308,7 @@ func MakeCreateIssueURL(instance Instance, project *jira.Project, issue *jira.Is
 	q.Add("description", issue.Fields.Description)
 
 	// Add reporter for only server instances
-	if instance.Common().Type == ServerInstanceType {
+	if instance.Common().Type == ServerInstanceType && issue.Fields.Reporter != nil {
 		q.Add("reporter", issue.Fields.Reporter.Name)
 	}
 
@@ -368,7 +368,8 @@ func endpointURL(endpoint string) (string, error) {
 var keyOrIDRegex = regexp.MustCompile("(^[[:alpha:]]+-)?[[:digit:]]+$")
 
 func endpointNameFromRequest(r *http.Request) string {
-	l := strings.ToLower(r.URL.Path)
+	_, path := splitInstancePath(r.URL.Path)
+	l := strings.ToLower(path)
 	s := strings.TrimLeft(l, "/rest/api")
 	if s == l {
 		return "_unrecognized"

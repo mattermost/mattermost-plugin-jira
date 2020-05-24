@@ -68,8 +68,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 }
 
 func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) (int, error) {
-	path := r.URL.Path
-	instanceID, path := p.isInstancePath(path)
+	instanceID, path := splitInstancePath(r.URL.Path)
 
 	switch path {
 	// Issue APIs
@@ -130,7 +129,7 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:
-		return httpSubscribeWebhook(p, w, r)
+		return p.httpSubscribeWebhook(w, r, instanceID)
 
 	// expvar
 	case "/debug/vars":
@@ -207,6 +206,7 @@ func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 						Description: "Jira issue ID",
 					},
 				},
+				//TODO <><> prefix route with instance? or unnecessary since it's for all instances?
 				TriggerSetupURL: "/jira" + routeWorkflowTriggerSetup,
 			},
 		},
@@ -216,7 +216,9 @@ func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 				DisplayName: "Jira Create",
 				Fields:      []workflowclient.Field{},
 				VarInfos:    []workflowclient.VarInfo{},
-				URL:         "/jira" + routeWorkflowCreateIssue,
+
+				// instanceID should be passed in as a parameter, in the JSON, no need to prefix the URL
+				URL: "/jira" + routeWorkflowCreateIssue,
 			},
 		},
 	}
@@ -291,8 +293,7 @@ func respondJSON(w http.ResponseWriter, obj interface{}) (int, error) {
 }
 
 func (p *Plugin) respondTemplate(w http.ResponseWriter, r *http.Request, contentType string, values interface{}) (int, error) {
-	path := r.URL.Path
-	_, path = p.isInstancePath(path)
+	_, path := splitInstancePath(r.URL.Path)
 	w.Header().Set("Content-Type", contentType)
 	t := p.templates[path]
 	if t == nil {
@@ -321,23 +322,29 @@ func (p *Plugin) respondSpecialTemplate(w http.ResponseWriter, key string, statu
 	return status, nil
 }
 
-func (p *Plugin) pathWithInstance(route string, instanceID types.ID) string {
+func instancePath(route string, instanceID types.ID) string {
 	encoded := url.PathEscape(encode([]byte(instanceID)))
 	return path.Join("/"+routePrefixInstance+"/"+encoded, route)
 }
 
-func (p *Plugin) isInstancePath(route string) (instanceID types.ID, remainingPath string) {
+func splitInstancePath(route string) (instanceID types.ID, remainingPath string) {
+	leadingSlash := ""
 	ss := strings.Split(route, "/")
-	if len(ss) < 3 {
+	if len(ss) > 1 && ss[0] == "" {
+		leadingSlash = "/"
+		ss = ss[1:]
+	}
+
+	if len(ss) < 2 {
 		return "", route
 	}
-	if ss[0] != "" && ss[1] != routePrefixInstance {
+	if ss[0] != routePrefixInstance {
 		return "", route
 	}
 
-	id, err := decode(ss[2])
+	id, err := decode(ss[1])
 	if err != nil {
 		return "", route
 	}
-	return types.ID(id), "/" + strings.Join(ss[3:], "/")
+	return types.ID(id), leadingSlash + strings.Join(ss[2:], "/")
 }

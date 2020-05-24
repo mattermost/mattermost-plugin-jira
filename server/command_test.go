@@ -36,7 +36,7 @@ var _ UserStore = (*mockUserStoreKV)(nil)
 func (store mockUserStoreKV) LoadConnection(instanceID, mattermostUserID types.ID) (*Connection, error) {
 	connection, ok := store.kv[mattermostUserID]
 	if !ok {
-		return &Connection{}, errors.New("user not found")
+		return &Connection{}, errors.New("TESTING user not found")
 	}
 	return connection, nil
 }
@@ -106,12 +106,12 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 		"no storage": {
 			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
 			initializeEmptyUserStorage: true,
-			expectedMsg:                "Failed to load Jira instance. Please contact your system administrator. Error: instance not found.",
+			expectedMsg:                "Failed to load Jira instance. Please contact your system administrator. Error: no instances installed: not found.",
 		},
 		"user not found": {
 			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
 			initializeEmptyUserStorage: false,
-			expectedMsg:                "Your username is not connected to Jira. Please type `jira connect`. Error: user not found.",
+			expectedMsg:                "Your username is not connected to Jira. Please type `jira connect`. Error: TESTING user not found.",
 		},
 		"no params, with notifications": {
 			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithNotifications},

@@ -17,7 +17,7 @@ import (
 type Webhook interface {
 	Events() StringSet
 	PostToChannel(p *Plugin, instanceID types.ID, channelId, fromUserId string) (*model.Post, int, error)
-	PostNotifications(p *Plugin) ([]*model.Post, int, error)
+	PostNotifications(p *Plugin, instanceID types.ID) ([]*model.Post, int, error)
 }
 
 type webhookField struct {
@@ -33,12 +33,11 @@ type webhook struct {
 	headline      string
 	text          string
 	fields        []*model.SlackAttachmentField
-	notifications []webhookNotification
+	notifications []webhookUserNotification
 	fieldInfo     webhookField
-	instanceID    types.ID
 }
 
-type webhookNotification struct {
+type webhookUserNotification struct {
 	jiraUsername  string
 	jiraAccountID string
 	message       string
@@ -94,13 +93,13 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelId, fromU
 	return post, http.StatusOK, nil
 }
 
-func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
+func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.Post, int, error) {
 	if len(wh.notifications) == 0 {
 		return nil, http.StatusOK, nil
 	}
 
 	// We will only send webhook events if we have a connected instance.
-	instance, err := p.LoadDefaultInstance(wh.instanceID)
+	instance, err := p.LoadDefaultInstance(instanceID)
 	if err != nil {
 		// This isn't an internal server error. There's just no instance installed.
 		return nil, http.StatusOK, nil
@@ -166,23 +165,33 @@ func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...inter
 	}
 }
 
-func (p *Plugin) GetWebhookURL(teamId, channelId string) (string, error) {
+func (p *Plugin) GetWebhookURL(jiraURL string, teamId, channelId string) (subURL, legacyURL string, err error) {
 	cf := p.getConfig()
+
+	instanceID, err := p.ResolveInstanceID(types.ID(jiraURL))
+	if err != nil {
+		return "", "", err
+	}
 
 	team, appErr := p.API.GetTeam(teamId)
 	if appErr != nil {
-		return "", appErr
+		return "", "", appErr
 	}
 
 	channel, appErr := p.API.GetChannel(channelId)
 	if appErr != nil {
-		return "", appErr
+		return "", "", appErr
 	}
 
 	v := url.Values{}
 	secret, _ := url.QueryUnescape(cf.Secret)
 	v.Add("secret", secret)
+	subURL = p.GetPluginURL() + instancePath(routeAPISubscribeWebhook, instanceID) + "?" + v.Encode()
+
+	// For the legacy URL, add team and channel. Secret is already in the map.
 	v.Add("team", team.Name)
 	v.Add("channel", channel.Name)
-	return p.GetPluginURL() + routeIncomingWebhook + "?" + v.Encode(), nil
+	legacyURL = p.GetPluginURL() + instancePath(routeIncomingWebhook, instanceID) + "?" + v.Encode()
+
+	return subURL, legacyURL, nil
 }

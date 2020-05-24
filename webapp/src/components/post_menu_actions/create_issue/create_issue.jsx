@@ -16,7 +16,7 @@ export default class CreateIssuePostMenuAction extends PureComponent {
         postId: PropTypes.string,
         userConnected: PropTypes.bool.isRequired,
         userCanConnect: PropTypes.bool.isRequired,
-        installedInstances: PropTypes.array,
+        installedInstances: PropTypes.object,
         defaultConnectInstance: PropTypes.object,
         sendEphemeralPost: PropTypes.func.isRequired,
     };
@@ -53,7 +53,7 @@ export default class CreateIssuePostMenuAction extends PureComponent {
             }
             instancePrefix = '/instance/' + btoa(this.props.defaultConnectInstance.instance_id);
         } else {
-            // TODO: present instance picker to choose an installed instance
+            // TODO: <><> present instance picker to choose an installed instance
         }
 
         const target = '/plugins/' + PluginId + instancePrefix + '/user/connect';

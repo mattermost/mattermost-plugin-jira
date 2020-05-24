@@ -41,6 +41,9 @@ func (ti testInstance) GetURL() string {
 func (ti testInstance) GetManageAppsURL() string {
 	return fmt.Sprintf("%s/apps/manage", ti.InstanceID)
 }
+func (ti testInstance) GetManageWebhooksURL() string {
+	return fmt.Sprintf("%s/webhooks/manage", ti.InstanceID)
+}
 func (ti testInstance) GetPlugin() *Plugin {
 	return ti.Plugin
 }

@@ -19,19 +19,22 @@ type Instance interface {
 	GetDisplayDetails() map[string]string
 	GetUserConnectURL(mattermostUserId string) (string, error)
 	GetManageAppsURL() string
+	GetManageWebhooksURL() string
 	GetURL() string
 
 	Common() *InstanceCommon
 	types.Value
 }
 
+// InstanceCommon contains metadata common for both cloud and server instances.
+// The fields lack `json` modifiers to be backwards compatible with v2.
 type InstanceCommon struct {
 	*Plugin       `json:"-"`
 	PluginVersion string `json:",omitempty"`
 
 	InstanceID types.ID
 	Type       InstanceType
-	IsDefault  bool
+	IsV2Legacy bool
 }
 
 func newInstanceCommon(p *Plugin, instanceType InstanceType, instanceID types.ID) *InstanceCommon {
@@ -47,7 +50,6 @@ func (ic InstanceCommon) AsConfigMap() map[string]interface{} {
 	return map[string]interface{}{
 		"type":        string(ic.Type),
 		"instance_id": string(ic.InstanceID),
-		"is_default":  ic.IsDefault,
 	}
 }
 

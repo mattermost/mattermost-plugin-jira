@@ -57,10 +57,12 @@ export const isUserConnected = (state) => getPluginState(state).userConnected;
 
 export const canUserConnect = (state) => getPluginState(state).userCanConnect;
 
+export const getUserConnectedInstances = (state) => getPluginState(state).userConnectedInstances;
+
 export const getInstalledInstances = (state) => getPluginState(state).installedInstances;
 
 export const getDefaultConnectInstance = (state) => getPluginState(state).defaultConnectInstance;
 
-export const getDefaultUseInstance = (state) => getPluginState(state).defaultUseInstance;
+export const getDefaultUserInstance = (state) => getPluginState(state).defaultUserInstance;
 
 export const getPluginSettings = (state) => getPluginState(state).pluginSettings;
