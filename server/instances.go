@@ -144,8 +144,7 @@ func (p *Plugin) wsInstancesChanged(instances *Instances) {
 	}
 	if instances.Len() == 1 {
 		instanceID := instances.IDs()[0]
-			msg["default_connect_instance"] = instances.Get(instanceID).AsConfigMap()
-		}
+		msg["default_connect_instance"] = instances.Get(instanceID).AsConfigMap()
 	}
 	// Notify users we have uninstalled an instance
 	p.API.PublishWebSocketEvent(websocketEventInstanceStatus, msg, &model.WebsocketBroadcast{})
