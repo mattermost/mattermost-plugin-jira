@@ -4,29 +4,27 @@
 import React from 'react';
 
 import debounce from 'debounce-promise';
-import AsyncSelect from 'react-select/async';
+import AsyncSelect, {Props as ReactSelectProps} from 'react-select/async';
 
 import {getStyleForReactSelect} from 'utils/styles';
-import {isEpicNameField, isEpicIssueType} from 'utils/jira_issue_metadata';
 import {IssueMetadata, ReactSelectOption, JiraIssue} from 'types/model';
+import {Props as ReactSelectSettingProps} from 'components/react_select_setting';
 
 import Setting from 'components/setting';
+import {Theme} from 'mattermost-redux/types/preferences';
 
-const searchDefaults = 'ORDER BY updated DESC';
 const searchDebounceDelay = 400;
 
-type Props = {
-    required?: boolean;
+export type Props = ReactSelectSettingProps & {
     hideRequiredStar?: boolean;
     searchIssues: (params: object) => Promise<{data: JiraIssue[]}>;
-    theme: object;
-    isMulti?: boolean;
-    onChange: (values: string[]) => void;
-    value: string[];
-    addValidate: (isValid: () => boolean) => void;
-    removeValidate: (isValid: () => boolean) => void;
-    issueMetadata: IssueMetadata;
+    theme: Theme;
+    onChange: (values: string | string[]) => void;
+    value: string | string[];
     resetInvalidOnChange?: boolean;
+
+    fetchInitialSelectedValues: () => Promise<ReactSelectOption[]>;
+    search: (searchTerm: string) => Promise<ReactSelectOption[]>;
 };
 
 type State = {
@@ -35,7 +33,7 @@ type State = {
     cachedSelectedOptions: ReactSelectOption[];
 };
 
-export default class JiraEpicSelector extends React.PureComponent<Props, State> {
+export default class BackendSelector extends React.PureComponent<Props, State> {
     static defaultProps = {
         isMulti: false,
     };
@@ -44,8 +42,9 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
         super(props);
 
         this.state = {
-            cachedSelectedOptions: [],
             invalid: false,
+            error: '',
+            cachedSelectedOptions: [],
         };
     }
 
@@ -53,7 +52,12 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
         if (this.props.addValidate) {
             this.props.addValidate(this.isValid);
         }
-        this.fetchInitialSelectedValues();
+
+        this.props.fetchInitialSelectedValues().then((options: ReactSelectOption[]) => {
+            this.setState({cachedSelectedOptions: this.state.cachedSelectedOptions.concat(options)});
+        }).catch((e) => {
+            this.setState({error: e});
+        });
     }
 
     componentWillUnmount(): void {
@@ -68,88 +72,36 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
         }
     }
 
-    fetchInitialSelectedValues = (): void => {
-        if (!this.props.value.length) {
-            return;
-        }
-
-        const epicIds = this.props.value.join(', ');
-        const searchStr = `and id IN (${epicIds})`;
-        const userInput = ''; // Fetching by saved ids, no user input to process
-
-        this.fetchEpicsFromJql(searchStr, userInput).then((options) => {
-            if (options) {
-                this.setState({cachedSelectedOptions: this.state.cachedSelectedOptions.concat(options)});
-            }
-        });
-    };
-
     handleIssueSearchTermChange = (inputValue: string): Promise<ReactSelectOption[]> => {
-        return this.debouncedSearchIssues(inputValue);
+        return this.debouncedSearch(inputValue);
     };
 
-    searchIssues = async (userInput: string): Promise<ReactSelectOption[]> => {
-        const epicIssueType = this.props.issueMetadata.projects[0].issuetypes.find(isEpicIssueType);
-        if (!epicIssueType) {
-            return [];
-        }
-
-        const epicNameTypeId = Object.keys(epicIssueType.fields).find((key) => isEpicNameField(epicIssueType.fields[key]));
-        if (!epicNameTypeId) {
-            return [];
-        }
-
-        const epicNameTypeName = epicIssueType.fields[epicNameTypeId].name;
-
-        let searchStr = '';
-        if (userInput) {
-            const cleanedInput = userInput.trim().replace(/"/g, '\\"');
-            searchStr = ` and ("${epicNameTypeName}"~"${cleanedInput}" or "${epicNameTypeName}"~"${cleanedInput}*")`;
-        }
-
-        return this.fetchEpicsFromJql(searchStr, userInput);
-    };
-
-    debouncedSearchIssues = debounce(this.searchIssues, searchDebounceDelay);
-
-    fetchEpicsFromJql = async (jqlSearch: string, userInput: string): Promise<ReactSelectOption[]> => {
-        const epicIssueType = this.props.issueMetadata.projects[0].issuetypes.find(isEpicIssueType);
-        if (!epicIssueType) {
-            return [];
-        }
-
-        const epicNameTypeId = Object.keys(epicIssueType.fields).find((key) => isEpicNameField(epicIssueType.fields[key]));
-        if (!epicNameTypeId) {
-            return [];
-        }
-
-        const projectKey = this.props.issueMetadata.projects[0].key;
-        const fullJql = `project=${projectKey} and issuetype=${epicIssueType.id} ${jqlSearch} ${searchDefaults}`;
-
-        const params = {
-            jql: fullJql,
-            fields: epicNameTypeId,
-            q: userInput,
-        };
-
-        return this.props.searchIssues(params).then(({data}: {data: JiraIssue[]}) => {
-            return data.map((issue) => ({
-                value: issue.key,
-                label: `${issue.key}: ${issue.fields[epicNameTypeId]}`,
-            }));
+    search = async (userInput: string): Promise<ReactSelectOption[]> => {
+        return this.props.search(userInput).then((options) => {
+            return options || [];
         }).catch((e) => {
             this.setState({error: e});
             return [];
         });
     };
 
-    onChange = (options: ReactSelectOption[]): void => {
+    debouncedSearch = debounce(this.search, searchDebounceDelay);
+
+    onChange = (options: ReactSelectOption | ReactSelectOption[]): void => {
         if (!options) {
-            this.props.onChange([]);
+            if (this.props.isMulti) {
+                this.props.onChange([]);
+            } else {
+                this.props.onChange('');
+            }
             return;
         }
         this.setState({cachedSelectedOptions: this.state.cachedSelectedOptions.concat(options)});
-        this.props.onChange(options.map((v) => v.value));
+        if (this.props.isMulti) {
+            this.props.onChange((options as ReactSelectOption[]).map((v) => v.value));
+        } else {
+            this.props.onChange((options as ReactSelectOption).value);
+        }
 
         if (this.props.resetInvalidOnChange) {
             this.setState({invalid: false});
@@ -161,7 +113,7 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
             return true;
         }
 
-        const valid = this.props.value && this.props.value.toString().length !== 0;
+        const valid = Boolean(this.props.value && this.props.value.toString().length !== 0);
         this.setState({invalid: !valid});
         return valid;
     };
@@ -191,7 +143,8 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
             );
         }
 
-        const values = this.props.value.map((v) => {
+        let value;
+        const valueToOption = (v: string) => {
             if (this.state.cachedSelectedOptions && this.state.cachedSelectedOptions.length) {
                 const selected = this.state.cachedSelectedOptions.find((option) => option.value === v);
                 if (selected) {
@@ -199,23 +152,24 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
                 }
             }
 
-            // Epic's name hasn't been fetched yet
+            // option's label hasn't been fetched yet
             return {
                 label: v,
                 value: v,
             };
-        });
+        };
 
-        const {
-            issueMetadata, // eslint-disable-line @typescript-eslint/no-unused-vars
-            ...props
-        } = this.props;
+        if (this.props.isMulti) {
+            value = (this.props.value as string[]).map(valueToOption);
+        } else if (this.props.value) {
+            value = valueToOption(this.props.value as string);
+        }
 
         const selectComponent = (
             <AsyncSelect
-                {...props}
+                {...this.props}
                 name={'epic'}
-                value={values}
+                value={value}
                 onChange={this.onChange}
                 required={this.props.required}
                 isMulti={this.props.isMulti}
@@ -229,7 +183,7 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
 
         return (
             <Setting
-                {...props}
+                {...this.props}
                 inputId={'epic'}
             >
                 {selectComponent}

@@ -8,11 +8,13 @@ import {components} from 'react-select';
 
 import ReactSelectSetting from 'components/react_select_setting';
 import Input from 'components/input';
+import JiraEpicSelector from './data_selectors/jira_epic_selector';
 
 export default class JiraField extends React.Component {
     static propTypes = {
         id: PropTypes.string.isRequired,
         field: PropTypes.object.isRequired,
+        issueMetadata: PropTypes.object.isRequired,
         obeyRequired: PropTypes.bool,
         onChange: PropTypes.func.isRequired,
         value: PropTypes.any,
@@ -82,6 +84,30 @@ export default class JiraField extends React.Component {
                     label={field.name}
                     type='textarea'
                     onChange={this.props.onChange}
+                    required={this.props.obeyRequired && field.required}
+                    value={this.props.value}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
+                />
+            );
+        }
+
+        if (field.schema.custom === 'com.pyxis.greenhopper.jira:gh-epic-link') {
+            return (
+                <JiraEpicSelector
+                    key={this.props.id}
+                    label={field.name}
+                    isClearable={true}
+                    placeholder={''}
+                    issueMetadata={this.props.issueMetadata}
+                    theme={this.props.theme}
+                    value={this.props.value}
+                    onChange={(value) => {
+                        this.props.onChange(this.props.id, value);
+                    }}
+                    resetInvalidOnChange={true}
+                    hideRequiredStar={false}
+                    isMulti={false}
                     required={this.props.obeyRequired && field.required}
                     value={this.props.value}
                     addValidate={this.props.addValidate}

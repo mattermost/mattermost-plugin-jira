@@ -13,6 +13,7 @@ export default class JiraFields extends React.Component {
             PropTypes.array,
         ]).isRequired,
         onChange: PropTypes.func.isRequired,
+        issueMetadata: PropTypes.object.isRequired,
         values: PropTypes.object,
         isFilter: PropTypes.bool,
         allowedFields: PropTypes.array.isRequired,
@@ -56,6 +57,7 @@ export default class JiraFields extends React.Component {
                 <JiraField
                     key={fieldName}
                     id={fieldName}
+                    issueMetadata={this.props.issueMetadata}
                     field={fields[fieldName]}
                     obeyRequired={true}
                     onChange={this.props.onChange}

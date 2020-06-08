@@ -12,6 +12,7 @@ import Loading from 'components/loading';
 import ReactSelectSetting from 'components/react_select_setting';
 
 import {getProjectValues, getIssueValues, getFields} from 'utils/jira_issue_metadata';
+import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
 const initialState = {
     submitting: false,
@@ -91,7 +92,7 @@ export default class CreateIssueModal extends PureComponent {
         'com.atlassian.jira.plugin.system.customfieldtypes:select',
         'com.atlassian.jira.plugin.system.customfieldtypes:project',
 
-        // 'com.pyxis.greenhopper.jira:gh-epic-link',
+        'com.pyxis.greenhopper.jira:gh-epic-link',
 
         // epic label is 'Epic Name' for cloud instance
         'com.pyxis.greenhopper.jira:gh-epic-label',
@@ -297,7 +298,7 @@ export default class CreateIssueModal extends PureComponent {
             );
             footer = footerClose;
         } else if (!jiraProjectMetadata || !jiraProjectMetadata.projects) {
-            component = <Loading/>;
+            component = <Loading />;
         } else {
             const issueOptions = getIssueValues(jiraProjectMetadata, this.state.projectKey);
             const projectOptions = getProjectValues(jiraProjectMetadata);
@@ -309,6 +310,7 @@ export default class CreateIssueModal extends PureComponent {
                 fieldsComponent = (
                     <JiraFields
                         fields={getFields(jiraIssueMetadata, this.state.projectKey, this.state.issueType)}
+                        issueMetadata={jiraIssueMetadata}
                         onChange={this.handleFieldChange}
                         values={this.state.fields}
                         allowedFields={this.allowedFields}
@@ -320,7 +322,7 @@ export default class CreateIssueModal extends PureComponent {
                     />
                 );
             } else {
-                fieldsComponent = <Loading/>;
+                fieldsComponent = <Loading />;
             }
 
             component = (

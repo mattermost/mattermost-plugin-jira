@@ -1,17 +1,18 @@
 import React from 'react';
 
 import ReactSelectSetting from 'components/react_select_setting';
-import JiraEpicSelector from 'components/jira_epic_selector';
+import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
 import {isEpicLinkField, isMultiSelectField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
+import {Theme} from 'mattermost-redux/types/preferences';
 
 export type Props = {
     fields: FilterField[];
     field: FilterField;
     value: FilterValue;
-    theme: object;
+    theme: Theme;
     chosenIssueTypes: string[];
     issueMetadata: IssueMetadata;
     onChange: (f1: FilterValue, f2: FilterValue) => void;
