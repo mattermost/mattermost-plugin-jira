@@ -85,6 +85,7 @@ export default class CreateIssueModal extends PureComponent {
         'description',
         'summary',
         'labels',
+        'assignee',
     ];
 
     allowedSchemaCustom = [
@@ -94,6 +95,8 @@ export default class CreateIssueModal extends PureComponent {
         'com.atlassian.jira.plugin.system.customfieldtypes:project',
 
         'com.pyxis.greenhopper.jira:gh-epic-link',
+        'com.atlassian.jira.plugin.system.customfieldtypes:labels',
+        'com.atlassian.jira.plugin.system.customfieldtypes:userpicker',
 
         // epic label is 'Epic Name' for cloud instance
         'com.pyxis.greenhopper.jira:gh-epic-label',

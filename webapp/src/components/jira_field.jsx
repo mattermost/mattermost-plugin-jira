@@ -120,17 +120,32 @@ export default class JiraField extends React.Component {
             );
         }
 
-        if (field.key === 'labels') {
+        if (field.schema.system === 'labels' || field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:labels') {
             return (
                 <JiraAutoCompleteSelector
                     {...selectProps}
                     key={this.props.id}
-                    fieldName={'labels'}
+                    fieldName={field.name}
                     onChange={(value) => {
                         this.props.onChange(this.props.id, value);
                     }}
                     value={this.props.value || []}
-                    isMulti={true}
+                    isMulti={field.schema.type === 'array'}
+                />
+            );
+        }
+
+        if (field.schema.type === 'user') {
+            return (
+                <JiraAutoCompleteSelector
+                    {...selectProps}
+                    key={this.props.id}
+                    fieldName={field.name}
+                    onChange={(value) => {
+                        this.props.onChange(this.props.id, {accountId: value});
+                    }}
+                    value={this.props.value && this.props.value.accountId}
+                    isMulti={false}
                 />
             );
         }

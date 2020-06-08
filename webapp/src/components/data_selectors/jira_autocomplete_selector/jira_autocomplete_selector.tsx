@@ -13,6 +13,15 @@ import BackendSelector, {Props as BackendSelectorProps} from '../backend_selecto
 
 const searchDebounceDelay = 400;
 
+const stripHTML = (text: string) => {
+    if (!text) {
+        return text;
+    }
+
+    var doc = new DOMParser().parseFromString(text, 'text/html');
+    return doc.body.textContent || '';
+ }
+
 type Props = BackendSelectorProps & {
     searchAutoCompleteFields: (params: object) => Promise<any>;
     fieldName: string;
@@ -34,9 +43,9 @@ export default class JiraAutoCompleteSelector extends React.PureComponent<Props>
             fieldName,
         };
         return this.props.searchAutoCompleteFields(params).then(({data}) => {
-            return data.results.map((label) => ({
-                value: label.value,
-                label: label.value,
+            return data.results.map((suggestion: {value: string, displayName: string}) => ({
+                value: suggestion.value,
+                label: stripHTML(suggestion.displayName),
             }));
         });
     };
