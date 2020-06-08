@@ -11,6 +11,7 @@ export type AllowedValue = {
 
 export type FieldSchema = {
     type: string;
+    system?: string;
     custom?: string;
     customId?: number;
     items?: string;

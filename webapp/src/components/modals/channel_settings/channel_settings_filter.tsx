@@ -254,7 +254,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
             valueSelector = (
                 <JiraAutoCompleteSelector
                     {...selectProps}
-                    fieldName='labels'
+                    fieldName={field.name}
                     value={value.values}
                     onChange={this.handleEpicLinkChange}
                 />

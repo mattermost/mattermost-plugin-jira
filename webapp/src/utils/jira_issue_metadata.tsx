@@ -260,7 +260,7 @@ export function isEpicLinkField(field: JiraField | FilterField): boolean {
 }
 
 export function isLabelField(field: JiraField | FilterField): boolean {
-    return field.key === 'labels';
+    return field.schema.system === 'labels' || field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:labels';
 }
 
 export function isEpicIssueType(issueType: IssueType): boolean {
