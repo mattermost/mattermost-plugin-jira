@@ -9,6 +9,7 @@ import {components} from 'react-select';
 import ReactSelectSetting from 'components/react_select_setting';
 import Input from 'components/input';
 import JiraEpicSelector from './data_selectors/jira_epic_selector';
+import JiraAutoCompleteSelector from './data_selectors/jira_autocomplete_selector';
 
 export default class JiraField extends React.Component {
     static propTypes = {
@@ -92,26 +93,44 @@ export default class JiraField extends React.Component {
             );
         }
 
+        const selectProps = {
+            theme: this.props.theme,
+            addValidate: this.props.addValidate,
+            removeValidate: this.props.removeValidate,
+            label: field.name,
+            required: this.props.obeyRequired && field.required,
+            hideRequiredStar: false,
+            resetInvalidOnChange: true,
+            placeholder: '',
+            isClearable: true,
+        }
+
         if (field.schema.custom === 'com.pyxis.greenhopper.jira:gh-epic-link') {
             return (
                 <JiraEpicSelector
+                    {...selectProps}
                     key={this.props.id}
-                    label={field.name}
-                    isClearable={true}
-                    placeholder={''}
                     issueMetadata={this.props.issueMetadata}
-                    theme={this.props.theme}
-                    value={this.props.value}
                     onChange={(value) => {
                         this.props.onChange(this.props.id, value);
                     }}
-                    resetInvalidOnChange={true}
-                    hideRequiredStar={false}
-                    isMulti={false}
-                    required={this.props.obeyRequired && field.required}
                     value={this.props.value}
-                    addValidate={this.props.addValidate}
-                    removeValidate={this.props.removeValidate}
+                    isMulti={false}
+                />
+            );
+        }
+
+        if (field.key === 'labels') {
+            return (
+                <JiraAutoCompleteSelector
+                    {...selectProps}
+                    key={this.props.id}
+                    fieldName={'labels'}
+                    onChange={(value) => {
+                        this.props.onChange(this.props.id, value);
+                    }}
+                    value={this.props.value || []}
+                    isMulti={true}
                 />
             );
         }
