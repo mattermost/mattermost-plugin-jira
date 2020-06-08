@@ -17,9 +17,9 @@ export const getBaseStyles = (theme: Theme) => {
     };
 };
 
-export const getStyleForReactSelect = (theme: Theme): Styles | undefined => {
+export const getStyleForReactSelect = (theme: Theme): Styles => {
     if (!theme) {
-        return;
+        return {};
     }
 
     return {

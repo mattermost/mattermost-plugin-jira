@@ -1,12 +1,13 @@
 import React from 'react';
 
+import {Theme} from 'mattermost-redux/types/preferences';
+
 import ReactSelectSetting from 'components/react_select_setting';
 import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
 import {isEpicLinkField, isMultiSelectField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
-import {Theme} from 'mattermost-redux/types/preferences';
 
 export type Props = {
     fields: FilterField[];

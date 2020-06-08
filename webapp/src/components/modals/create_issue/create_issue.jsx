@@ -12,7 +12,6 @@ import Loading from 'components/loading';
 import ReactSelectSetting from 'components/react_select_setting';
 
 import {getProjectValues, getIssueValues, getFields} from 'utils/jira_issue_metadata';
-import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
 const initialState = {
     submitting: false,
@@ -298,7 +297,7 @@ export default class CreateIssueModal extends PureComponent {
             );
             footer = footerClose;
         } else if (!jiraProjectMetadata || !jiraProjectMetadata.projects) {
-            component = <Loading />;
+            component = <Loading/>;
         } else {
             const issueOptions = getIssueValues(jiraProjectMetadata, this.state.projectKey);
             const projectOptions = getProjectValues(jiraProjectMetadata);
@@ -322,7 +321,7 @@ export default class CreateIssueModal extends PureComponent {
                     />
                 );
             } else {
-                fieldsComponent = <Loading />;
+                fieldsComponent = <Loading/>;
             }
 
             component = (

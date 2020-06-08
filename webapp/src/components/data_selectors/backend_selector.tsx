@@ -6,12 +6,13 @@ import React from 'react';
 import debounce from 'debounce-promise';
 import AsyncSelect, {Props as ReactSelectProps} from 'react-select/async';
 
+import {Theme} from 'mattermost-redux/types/preferences';
+
 import {getStyleForReactSelect} from 'utils/styles';
 import {IssueMetadata, ReactSelectOption, JiraIssue} from 'types/model';
 import {Props as ReactSelectSettingProps} from 'components/react_select_setting';
 
 import Setting from 'components/setting';
-import {Theme} from 'mattermost-redux/types/preferences';
 
 const searchDebounceDelay = 400;
 
@@ -20,7 +21,7 @@ export type Props = ReactSelectSettingProps & {
     searchIssues: (params: object) => Promise<{data: JiraIssue[]}>;
     theme: Theme;
     onChange: (values: string | string[]) => void;
-    value: string | string[];
+    value?: string | string[];
     resetInvalidOnChange?: boolean;
 
     fetchInitialSelectedValues: () => Promise<ReactSelectOption[]>;

@@ -3,6 +3,8 @@
 
 import React from 'react';
 import {shallow, mount} from 'enzyme';
+import {Provider} from 'react-redux';
+import configureStore from 'redux-mock-store';
 
 import Preferences from 'mattermost-redux/constants/preferences';
 
@@ -12,6 +14,16 @@ import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.jso
 import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project.json';
 
 import CreateIssue from './create_issue';
+
+const mockStore = configureStore();
+const WrappedCreateIssue = (props) => {
+    const store = mockStore({})
+    return (
+        <Provider store={store}>
+            <CreateIssue {...props}/>
+        </Provider>
+    );
+}
 
 describe('components/CreateIssue', () => {
     const baseActions = {
@@ -133,9 +145,10 @@ describe('components/CreateIssue', () => {
         const create = jest.fn().mockResolvedValue({});
         const props = {...baseProps, create};
         const wrapper = mount(
-            <CreateIssue {...props}/>
-        );
-        const fields = wrapper.state('fields');
+            <WrappedCreateIssue {...props}/>
+        ).find(CreateIssue);
+
+        const fields = wrapper.find(CreateIssue).state('fields');
 
         wrapper.setState({
             fields: {
