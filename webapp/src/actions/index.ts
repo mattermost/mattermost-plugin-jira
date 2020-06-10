@@ -4,9 +4,35 @@
 import {PostTypes} from 'mattermost-redux/action_types';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
+import PluginId from 'plugin_id';
 import ActionTypes from 'action_types';
 import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
-import {getPluginServerRoute} from 'selectors';
+import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances, getDefaultConnectInstance} from 'selectors';
+import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
+
+export const openConnectModal = () => {
+    return {
+        type: ActionTypes.OPEN_CONNECT_MODAL,
+    };
+};
+
+export const closeConnectModal = () => {
+    return {
+        type: ActionTypes.CLOSE_CONNECT_MODAL,
+    };
+};
+
+export const openDisconnectModal = () => {
+    return {
+        type: ActionTypes.OPEN_DISCONNECT_MODAL,
+    };
+};
+
+export const closeDisconnectModal = () => {
+    return {
+        type: ActionTypes.CLOSE_DISCONNECT_MODAL,
+    };
+};
 
 export const openCreateModal = (postId) => {
     return {
@@ -264,6 +290,86 @@ export function getConnected() {
     };
 }
 
+export function disconnectUser(instanceID: string) {
+    return async (dispatch, getState) => {
+        let data;
+        const baseUrl = getPluginServerRoute(getState());
+        try {
+            data = await doFetch(`${baseUrl}/api/v3/disconnect`, {
+                method: 'post',
+                body: {instance_id: instanceID},
+            });
+        } catch (error) {
+            return {error};
+        }
+
+        return dispatch(getConnected());
+    };
+}
+
+export function handleConnectFlow(instanceID?: string) {
+    return async (dispatch, getState) => {
+        const state = getState();
+        const instances = getInstalledInstances(state);
+        const connectedInstances = getUserConnectedInstances(state);
+
+        if (!instances.length) {
+            dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
+            return;
+        }
+
+        if (instances.length === connectedInstances.length) {
+            let postMessage = `Your Mattermost account is already linked to ${instances[0].instance_id}\n`;
+            if (instances.length > 1) {
+                const bullets = connectedInstances.map((instance) => `* ${instance.instance_id}`).join('\n');
+                postMessage = `Your Mattermost account is already linked to all installed Jira instances:\n${bullets}\n`;
+            }
+            postMessage += 'Please use `/jira disconnect` to disconnect.';
+            dispatch(sendEphemeralPost(postMessage));
+            return;
+        }
+
+        let instance = getDefaultConnectInstance(state);
+        if (instanceID) {
+            const alreadyConnected = connectedInstances.find((i) => i.instance_id === instanceID);
+
+            if (alreadyConnected) {
+                dispatch(sendEphemeralPost(
+                    'Your Jira account at ' + instanceID + ' is already linked to your Mattermost account. Please use `/jira disconnect` to disconnect.'));
+                return;
+            }
+
+            instance = instances.find((i) => i.instance_id === instanceID);
+            if (!instance) {
+                const errMsg = 'Jira instance ' + instanceID + ' is not installed. Please type `/jira instance list` to see the available Jira instances.';
+                dispatch(sendEphemeralPost(errMsg));
+                return;
+            }
+        }
+
+        if (instance && instance.type === 'server' && isDesktopApp() && !isMinimumDesktopAppVersion(4, 3, 0)) { // eslint-disable-line no-magic-numbers
+            const errMsg = 'Your version of the Mattermost desktop client does not support authenticating between Jira and Mattermost directly. To connect your Jira account with Mattermost, please go to Mattermost via your web browser and type `/jira connect`, or [check the Mattermost download page](https://mattermost.com/download/#mattermostApps) to get the latest version of the desktop client.';
+            dispatch(sendEphemeralPost(errMsg));
+            return;
+        }
+
+        if (instance && instance.instance_id) {
+            dispatch(redirectConnect(instance.instance_id));
+            return;
+        }
+
+        dispatch(openConnectModal());
+    };
+}
+
+export function redirectConnect(instanceID: string) {
+    return async (dispatch, getState) => {
+        const instancePrefix = '/instance/' + btoa(instanceID);
+        const target = '/plugins/' + PluginId + instancePrefix + '/user/connect';
+        window.open(target, '_blank');
+    };
+}
+
 export function handleConnectChange(store) {
     return (msg) => {
         if (!msg.data) {
@@ -308,7 +414,7 @@ export function handleInstanceStatusChange(store) {
     };
 }
 
-export function sendEphemeralPost(message, channelId) {
+export function sendEphemeralPost(message: string, channelId?: string) {
     return (dispatch, getState) => {
         const timestamp = Date.now();
         const post = {

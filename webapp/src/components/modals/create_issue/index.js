@@ -7,7 +7,7 @@ import {bindActionCreators} from 'redux';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {closeCreateModal, createIssue, fetchJiraIssueMetadataForProjects, fetchJiraProjectMetadata, clearIssueMetadata} from 'actions';
+import {closeCreateModal, createIssue, fetchJiraIssueMetadataForProjects, fetchJiraProjectMetadata, clearIssueMetadata, redirectConnect} from 'actions';
 import {isCreateModalVisible, getCreateModal, getJiraIssueMetadata, getJiraProjectMetadata} from 'selectors';
 
 import CreateIssue from './create_issue';
@@ -37,6 +37,7 @@ const mapDispatchToProps = (dispatch) => bindActionCreators({
     fetchJiraIssueMetadataForProjects,
     fetchJiraProjectMetadata,
     clearIssueMetadata,
+    redirectConnect,
 }, dispatch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(CreateIssue);

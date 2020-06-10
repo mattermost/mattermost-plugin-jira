@@ -2,7 +2,9 @@
 // See LICENSE.txt for license information.
 
 import {Store, Action} from 'redux';
-import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
+
+import ConnectModal from 'components/modals/connect_modal';
+import DisconnectModal from 'components/modals/disconnect_modal';
 
 import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue';
 import CreateIssueModal from 'components/modals/create_issue';
@@ -18,7 +20,7 @@ import reducers from './reducers';
 import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings} from './actions';
 import Hooks from './hooks/hooks';
 
-const setupUILater = (registry: PluginRegistry, store: Store<object, Action<object>>): () => Promise<void> => async () => {
+const setupUILater = (registry: any, store: Store<object, Action<object>>): () => Promise<void> => async () => {
     registry.registerReducer(reducers);
 
     const settings = await store.dispatch(getSettings());
@@ -27,6 +29,8 @@ const setupUILater = (registry: PluginRegistry, store: Store<object, Action<obje
         await getConnected()(store.dispatch, store.getState);
 
         if (settings.ui_enabled) {
+            registry.registerRootComponent(ConnectModal);
+            registry.registerRootComponent(DisconnectModal);
             registry.registerRootComponent(CreateIssueModal);
             registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
             registry.registerRootComponent(AttachCommentToIssueModal);

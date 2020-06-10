@@ -1,0 +1,58 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`components/DisconnectModalForm should match snapshot 1`] = `
+<form
+  onSubmit={[Function]}
+  role="form"
+>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+    style={
+      Object {
+        "backgroundColor": undefined,
+        "color": undefined,
+        "padding": "2em 2em 3em",
+      }
+    }
+  >
+    <Connect(JiraInstanceSelector)
+      onChange={[Function]}
+      onlyShowConnectedInstances={true}
+      theme={Object {}}
+      value=""
+    />
+  </ModalBody>
+  <ModalFooter
+    bsClass="modal-footer"
+    componentClass="div"
+    style={
+      Object {
+        "padding": "2rem 15px",
+      }
+    }
+  >
+    <FormButton
+      btnClass="btn-link"
+      defaultMessage="Cancel"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
+      btnClass="btn btn-primary"
+      defaultMessage="Disconnect"
+      disabled={true}
+      extraClasses=""
+      saving={false}
+      savingMessage="Creating"
+      type="submit"
+    />
+    <p
+      className="error-text"
+    />
+  </ModalFooter>
+</form>
+`;

@@ -4,7 +4,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -67,6 +69,7 @@ func (p *Plugin) httpUserConnect(w http.ResponseWriter, r *http.Request, instanc
 	}
 
 	// Users shouldn't be able to make multiple connections.
+	// TODO <> this block needs to be updated. Though idk if this route will still get called?
 	connection, err := p.userStore.LoadConnection(instance.GetID(), types.ID(mattermostUserId))
 	if err == nil && len(connection.JiraAccountID()) != 0 {
 		return respondErr(w, http.StatusBadRequest,
@@ -80,6 +83,50 @@ func (p *Plugin) httpUserConnect(w http.ResponseWriter, r *http.Request, instanc
 
 	http.Redirect(w, r, redirectURL, http.StatusFound)
 	return http.StatusFound, nil
+}
+
+func (p *Plugin) httpUserDisconnect(w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodPost {
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be POST"))
+	}
+
+	mattermostUserId := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserId == "" {
+		return respondErr(w, http.StatusUnauthorized,
+			errors.New("not authorized"))
+	}
+
+	disconnectPayload := &struct {
+		InstanceID string `json:"instance_id"`
+	}{}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to decode request"))
+	}
+
+	err = json.Unmarshal(body, disconnectPayload)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to unmarshal disconnect payload"))
+	}
+
+	instanceID := types.ID(disconnectPayload.InstanceID)
+	_, err = p.DisconnectUser(instanceID, types.ID(mattermostUserId))
+
+	if errors.Cause(err) == kvstore.ErrNotFound {
+		return respondErr(w, http.StatusNotFound,
+			errors.Errorf("Could not complete the **disconnection** request. You do not currently have a Jira account at %q linked to your Mattermost account.", instanceID))
+	}
+	if err != nil {
+		return respondErr(w, http.StatusNotFound,
+			errors.Errorf("Could not complete the **disconnection** request. Error: %v", err))
+	}
+
+	w.Write([]byte(`{"success": true}`))
+	return http.StatusOK, nil
 }
 
 // TODO succinctly document the difference between start and connect

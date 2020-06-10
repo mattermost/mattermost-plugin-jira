@@ -4,8 +4,6 @@
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 
-import PluginId from 'plugin_id';
-import {isDesktopApp} from 'utils/user_agent';
 import JiraIcon from 'components/icon';
 
 export default class CreateIssuePostMenuAction extends PureComponent {
@@ -16,9 +14,8 @@ export default class CreateIssuePostMenuAction extends PureComponent {
         postId: PropTypes.string,
         userConnected: PropTypes.bool.isRequired,
         userCanConnect: PropTypes.bool.isRequired,
-        installedInstances: PropTypes.object,
-        defaultConnectInstance: PropTypes.object,
-        sendEphemeralPost: PropTypes.func.isRequired,
+        installedInstances: PropTypes.array.isRequired,
+        handleConnectFlow: PropTypes.func.isRequired,
     };
 
     static defaultTypes = {
@@ -42,26 +39,11 @@ export default class CreateIssuePostMenuAction extends PureComponent {
     };
 
     connectClick = () => {
-        if (!this.props.userCanConnect) {
-            return;
-        }
-        let instancePrefix = '';
-        if (this.props.defaultConnectInstance && this.props.defaultConnectInstance.instance_id) {
-            if (this.props.defaultConnectInstance.type === 'server' && isDesktopApp()) {
-                this.props.sendEphemeralPost('Please use your browser to connect to Jira.');
-                return;
-            }
-            instancePrefix = '/instance/' + btoa(this.props.defaultConnectInstance.instance_id);
-        } else {
-            // TODO: <><> present instance picker to choose an installed instance
-        }
-
-        const target = '/plugins/' + PluginId + instancePrefix + '/user/connect';
-        window.open(target, '_blank');
+        this.props.handleConnectFlow();
     };
 
     render() {
-        if (this.props.isSystemMessage || !this.props.installedInstances) {
+        if (this.props.isSystemMessage || !this.props.installedInstances.length) {
             return null;
         }
 
@@ -88,6 +70,8 @@ export default class CreateIssuePostMenuAction extends PureComponent {
                     {'Connect to Jira'}
                 </button>
             );
+        } else {
+            return null;
         }
 
         return (
