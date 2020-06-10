@@ -7,6 +7,7 @@ import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import PluginId from 'plugin_id';
+import {Instance} from 'types/model';
 
 const getPluginState = (state) => state['plugins-' + PluginId] || {};
 
@@ -37,6 +38,9 @@ export const getCurrentUserLocale = createSelector(
     }
 );
 
+export const isConnectModalVisible = (state) => getPluginState(state).connectModalVisible;
+export const isDisconnectModalVisible = (state) => getPluginState(state).disconnectModalVisible;
+
 export const isCreateModalVisible = (state) => getPluginState(state).createModalVisible;
 
 export const getCreateModal = (state) => getPluginState(state).createModal;
@@ -57,9 +61,9 @@ export const isUserConnected = (state) => getPluginState(state).userConnected;
 
 export const canUserConnect = (state) => getPluginState(state).userCanConnect;
 
-export const getUserConnectedInstances = (state) => getPluginState(state).userConnectedInstances;
+export const getUserConnectedInstances = (state): Instance[] => getPluginState(state).userConnectedInstances;
 
-export const getInstalledInstances = (state) => getPluginState(state).installedInstances;
+export const getInstalledInstances = (state): Instance[] => getPluginState(state).installedInstances;
 
 export const getDefaultConnectInstance = (state) => getPluginState(state).defaultConnectInstance;
 

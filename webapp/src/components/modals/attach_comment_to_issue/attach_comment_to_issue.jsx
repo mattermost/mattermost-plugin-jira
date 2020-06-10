@@ -10,6 +10,7 @@ import Input from 'components/input';
 
 import JiraIssueSelector from 'components/jira_issue_selector';
 import Validator from 'components/validator';
+import {getModalStyles} from 'utils/styles';
 
 const initialState = {
     submitting: false,
@@ -78,7 +79,7 @@ export default class AttachIssueModal extends PureComponent {
     render() {
         const {visible, theme} = this.props;
         const {error, submitting} = this.state;
-        const style = getStyle(theme);
+        const style = getModalStyles(theme);
 
         if (!visible) {
             return null;
@@ -153,19 +154,3 @@ export default class AttachIssueModal extends PureComponent {
         );
     }
 }
-
-const getStyle = (theme) => ({
-    modalBody: {
-        padding: '2em 2em 3em',
-        color: theme.centerChannelColor,
-        backgroundColor: theme.centerChannelBg,
-    },
-    modalFooter: {
-        padding: '2rem 15px',
-    },
-    descriptionArea: {
-        height: 'auto',
-        width: '100%',
-        color: '#000',
-    },
-});

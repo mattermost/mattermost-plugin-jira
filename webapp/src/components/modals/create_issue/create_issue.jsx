@@ -12,6 +12,7 @@ import Loading from 'components/loading';
 import ReactSelectSetting from 'components/react_select_setting';
 
 import {getProjectValues, getIssueValues, getFields} from 'utils/jira_issue_metadata';
+import {getModalStyles} from 'utils/styles';
 
 const initialState = {
     submitting: false,
@@ -220,7 +221,7 @@ export default class CreateIssueModal extends PureComponent {
     render() {
         const {visible, theme, jiraIssueMetadata, jiraProjectMetadata} = this.props;
         const {error, getMetaDataError, submitting} = this.state;
-        const style = getStyle(theme);
+        const style = getModalStyles(theme);
 
         if (!visible) {
             return null;
@@ -388,19 +389,3 @@ export default class CreateIssueModal extends PureComponent {
         );
     }
 }
-
-const getStyle = (theme) => ({
-    modalBody: {
-        padding: '2em 2em 3em',
-        color: theme.centerChannelColor,
-        backgroundColor: theme.centerChannelBg,
-    },
-    modalFooter: {
-        padding: '2rem 15px',
-    },
-    descriptionArea: {
-        height: 'auto',
-        width: '100%',
-        color: '#000',
-    },
-});

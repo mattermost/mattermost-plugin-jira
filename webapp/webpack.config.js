@@ -70,6 +70,7 @@ const config = {
         'react-bootstrap': 'ReactBootstrap',
     },
     output: {
+        devtoolNamespace: 'jira',
         path: path.join(__dirname, '/dist'),
         publicPath: '/',
         filename: 'main.js',

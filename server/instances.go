@@ -38,11 +38,11 @@ func (instances Instances) Set(ic *InstanceCommon) {
 	instances.ValueSet.Set(ic)
 }
 
-func (instances Instances) AsConfigMap() map[string]interface{} {
-	out := map[string]interface{}{}
+func (instances Instances) AsConfigMap() []interface{} {
+	out := []interface{}{}
 	for _, id := range instances.IDs() {
 		instance := instances.Get(id)
-		out[instance.GetID().String()] = instance.Common().AsConfigMap()
+		out = append(out, instance.Common().AsConfigMap())
 	}
 	return out
 }

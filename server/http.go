@@ -34,6 +34,7 @@ const (
 	routeAPISettingsInfo           = "/api/v2/settingsinfo"
 	routeAPIStats                  = "/api/v2/stats"
 	routeIssueTransition           = "/api/v2/transition"
+	routeAPIUserDisconnect         = "/api/v3/disconnect"
 	routeACInstalled               = "/ac/installed"
 	routeACJSON                    = "/ac/atlassian-connect.json"
 	routeACUninstalled             = "/ac/uninstalled"
@@ -126,6 +127,8 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return p.httpUserConnect(w, r, instanceID)
 	case routeUserStart:
 		return p.httpUserStart(w, r, instanceID)
+	case routeAPIUserDisconnect:
+		return p.httpUserDisconnect(w, r)
 
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:

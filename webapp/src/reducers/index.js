@@ -23,12 +23,10 @@ function userCanConnect(state = false, action) {
     }
 }
 
-function installedInstances(state = {}, action) {
+function installedInstances(state = [], action) {
     // We're notified of the instance status at startup (through getConnected)
     // and when we get a websocket instance_status event
     switch (action.type) {
-    case ActionTypes.RECEIVED_CONNECTED:
-        return action.data.instances ? action.data.instances : state;
     case ActionTypes.RECEIVED_INSTANCE_STATUS:
         return action.data.instances ? action.data.instances : state;
     default:
@@ -38,8 +36,6 @@ function installedInstances(state = {}, action) {
 
 function defaultConnectInstance(state = {}, action) {
     switch (action.type) {
-    case ActionTypes.RECEIVED_CONNECTED:
-        return action.data.default_connect_instance ? action.data.default_connect_instance : state;
     case ActionTypes.RECEIVED_INSTANCE_STATUS:
         return action.data.default_connect_instance ? action.data.default_connect_instance : state;
     default:
@@ -56,7 +52,7 @@ function defaultUserInstance(state = {}, action) {
     }
 }
 
-function userConnectedInstances(state = {}, action) {
+function userConnectedInstances(state = [], action) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
         return action.data.user && action.data.user.connected_instances ? action.data.user.connected_instances : state;
@@ -73,6 +69,28 @@ function pluginSettings(state = null, action) {
         return state;
     }
 }
+
+const connectModalVisible = (state = false, action) => {
+    switch (action.type) {
+    case ActionTypes.OPEN_CONNECT_MODAL:
+        return true;
+    case ActionTypes.CLOSE_CONNECT_MODAL:
+        return false;
+    default:
+        return state;
+    }
+};
+
+const disconnectModalVisible = (state = false, action) => {
+    switch (action.type) {
+    case ActionTypes.OPEN_DISCONNECT_MODAL:
+        return true;
+    case ActionTypes.CLOSE_DISCONNECT_MODAL:
+        return false;
+    default:
+        return state;
+    }
+};
 
 const createModalVisible = (state = false, action) => {
     switch (action.type) {
@@ -210,6 +228,8 @@ export default combineReducers({
     defaultConnectInstance,
     defaultUserInstance,
     pluginSettings,
+    connectModalVisible,
+    disconnectModalVisible,
     createModalVisible,
     createModal,
     attachCommentToIssueModalVisible,

@@ -106,3 +106,19 @@ export type ChannelSubscription = {
     filters: ChannelSubscriptionFilters;
     name: string;
 }
+
+export type Instance = {
+    instance_id: string;
+    is_default: boolean;
+    type: 'cloud' | 'server';
+}
+
+export type GetConnectedResponse = {
+    data: {
+        can_connect: boolean;
+        instances: Instance[];
+        is_connected: boolean;
+        user: {connected_instances: Instance[]};
+    };
+    error?: Error;
+};
