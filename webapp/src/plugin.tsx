@@ -15,7 +15,7 @@ import SetupUI from 'components/setup_ui';
 import PluginId from 'plugin_id';
 
 import reducers from './reducers';
-import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings} from './actions';
+import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings, openChannelSettings} from './actions';
 import Hooks from './hooks/hooks';
 
 const setupUILater = (registry: PluginRegistry, store: Store<object, Action<object>>): () => Promise<void> => async () => {
@@ -32,6 +32,11 @@ const setupUILater = (registry: PluginRegistry, store: Store<object, Action<obje
             registry.registerRootComponent(AttachCommentToIssueModal);
             registry.registerPostDropdownMenuComponent(AttachCommentToIssuePostMenuAction);
         }
+
+        registry.registerChannelHeaderMenuAction('Jira Subscriptions',
+            (channelId) => {
+                store.dispatch(openChannelSettings(channelId));
+            });
 
         registry.registerRootComponent(ChannelSettingsModal);
 
