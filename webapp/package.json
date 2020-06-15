@@ -65,7 +65,7 @@
   "dependencies": {
     "core-js": "3.1.4",
     "debounce-promise": "3.1.2",
-    "mattermost-redux": "github:mattermost/mattermost-redux#40e5bd5a18daa919c62a06b360aa27f2e6ed3e13",
+    "mattermost-redux": "5.23.0",
     "mattermost-webapp": "github:mattermost/mattermost-webapp#23f5f93d9f12a7e2b5623e5cee6814366abd9a0f",
     "react": "16.8.6",
     "react-bootstrap": "0.32.4",

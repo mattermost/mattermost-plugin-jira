@@ -40,19 +40,19 @@ export default class Hooks {
             shouldEnableCreate = this.settings.ui_enabled;
         }
 
-        if (message && message.startsWith(createCommand) && shouldEnableCreate) {
-            this.handleCreateSlashCommand(message, contextArgs);
+        if (message.startsWith(createCommand) && shouldEnableCreate) {
+            return this.handleCreateSlashCommand(message, contextArgs);
         }
 
-        if (message && message.startsWith(connectCommand)) {
+        if (message.startsWith(connectCommand)) {
             return this.handleConnectSlashCommand(message, contextArgs);
         }
 
-        if (message && message.startsWith(disconnectCommand)) {
+        if (message.startsWith(disconnectCommand)) {
             return this.handleDisconnectSlashCommand(message, contextArgs);
         }
 
-        if (message && message === subscribeCommand) {
+        if (message === subscribeCommand) {
             return this.handleSubscribeSlashCommand(message, contextArgs);
         }
 

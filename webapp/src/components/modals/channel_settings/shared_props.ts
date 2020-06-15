@@ -1,16 +1,23 @@
-import {ProjectMetadata, IssueMetadata, ChannelSubscription} from 'types/model';
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import {Theme} from 'mattermost-redux/types/preferences';
+import {Channel} from 'mattermost-redux/types/channels';
+
+import {IssueMetadata, ChannelSubscription, Instance, APIResponse} from 'types/model';
 
 export type SharedProps = {
-    channel: {id: string; name: string; display_name: string} | null;
-    theme: any;
-    jiraProjectMetadata: ProjectMetadata;
-    jiraIssueMetadata: IssueMetadata | null;
+    channel: Channel | null;
+    theme: Theme;
     channelSubscriptions: ChannelSubscription[];
     omitDisplayName: boolean;
-    createChannelSubscription: (sub: ChannelSubscription) => Promise<any>;
-    deleteChannelSubscription: (sub: ChannelSubscription) => Promise<any>;
-    editChannelSubscription: (sub: ChannelSubscription) => Promise<any>;
-    fetchJiraIssueMetadataForProjects: (projectKeys: string[]) => Promise<any>;
-    clearIssueMetadata: () => void;
+    installedInstances: Instance[];
+    connectedInstances: Instance[];
+    createChannelSubscription: (sub: ChannelSubscription) => Promise<APIResponse<{}>>;
+    deleteChannelSubscription: (sub: ChannelSubscription) => Promise<APIResponse<{}>>;
+    editChannelSubscription: (sub: ChannelSubscription) => Promise<APIResponse<{}>>;
+    fetchJiraIssueMetadataForProjects: (projectKeys: string[], instanceID: string) => Promise<APIResponse<IssueMetadata>>;
+    fetchChannelSubscriptions: (channelId: string) => Promise<APIResponse<ChannelSubscription[]>>;
     close: () => void;
+    sendEphemeralPost: (message: string) => void;
 };

@@ -11,7 +11,7 @@ import CreateIssueModal from 'components/modals/create_issue';
 import ChannelSettingsModal from 'components/modals/channel_settings';
 
 import AttachCommentToIssuePostMenuAction from 'components/post_menu_actions/attach_comment_to_issue';
-import AttachCommentToIssueModal from 'components/modals/attach_comment_to_issue';
+import AttachCommentToIssueModal from 'components/modals/attach_comment_modal';
 import SetupUI from 'components/setup_ui';
 
 import PluginId from 'plugin_id';

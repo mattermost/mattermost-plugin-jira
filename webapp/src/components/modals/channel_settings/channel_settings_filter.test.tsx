@@ -29,6 +29,7 @@ describe('components/ChannelSettingsFilter', () => {
         removeValidate: jest.fn(),
         onChange: jest.fn(),
         removeFilter: jest.fn(),
+        instanceID: 'https://something.atlassian.net',
     };
 
     test('should match snapshot', () => {

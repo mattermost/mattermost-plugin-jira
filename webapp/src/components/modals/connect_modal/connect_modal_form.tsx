@@ -4,12 +4,12 @@
 import React, {PureComponent} from 'react';
 import {Modal} from 'react-bootstrap';
 
-import {id as PluginId} from 'manifest';
-
-import FormButton from 'components/form_button';
-import JiraInstanceSelector from 'components/jira_instance_selector';
+import {ReactSelectOption} from 'types/model';
 
 import {getModalStyles} from 'utils/styles';
+
+import ReactSelectSetting from 'components/react_select_setting';
+import FormButton from 'components/form_button';
 
 import {Props} from './props';
 export type State = {
@@ -53,7 +53,7 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
         this.props.closeModal();
     }
 
-    handleInstanceChoice = (instanceID: string) => {
+    handleInstanceChoice = (_: string, instanceID: string) => {
         let error = '';
         if (instanceID && this.isAlreadyConnectedToInstance(instanceID)) {
             error = 'You are already connected to this Jira instance.';
@@ -66,11 +66,15 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
         const style = getModalStyles(this.props.theme);
         const {selectedInstance} = this.state;
 
-        const component = (
-            <JiraInstanceSelector
+        const options: ReactSelectOption[] = this.props.installedInstances.map((instance: Instance) => (
+            {label: instance.instance_id, value: instance.instance_id}
+        ));
+        const instanceSelector = (
+            <ReactSelectSetting
+                options={options}
                 theme={this.props.theme}
                 onChange={this.handleInstanceChoice}
-                value={selectedInstance}
+                value={options.find((opt) => opt.value === this.state.selectedInstance)}
             />
         );
 
@@ -105,7 +109,7 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
                     style={style.modalBody}
                     ref='modalBody'
                 >
-                    {component}
+                    {instanceSelector}
                 </Modal.Body>
                 <Modal.Footer style={style.modalFooter}>
                     {footer}

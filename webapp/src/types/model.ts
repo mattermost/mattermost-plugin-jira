@@ -11,7 +11,7 @@ export type AllowedValue = {
 
 export type FieldSchema = {
     type: string;
-    custom?: string;
+    custom?: JiraFieldCustomTypeEnums;
     customId?: number;
     items?: string;
 };
@@ -73,11 +73,24 @@ export type ProjectMetadata = {
     issues_per_project: {[key: string]: ReactSelectOption[]};
 }
 
+export enum JiraFieldTypeEnums {
+    PROJECT = 'project',
+    ISSUE_TYPE = 'issuetype',
+    PRIORITY = 'priority',
+    DESCRIPTION = 'description',
+    SUMMARY = 'summary',
+}
+
 export enum JiraFieldCustomTypeEnums {
     SPRINT = 'com.pyxis.greenhopper.jira:gh-sprint',
     EPIC_LINK = 'com.pyxis.greenhopper.jira:gh-epic-link',
     EPIC_NAME = 'com.pyxis.greenhopper.jira:gh-epic-label',
     RANK = 'com.pyxis.greenhopper.jira:gh-lexo-rank',
+
+    TEXT_AREA = 'com.atlassian.jira.plugin.system.customfieldtypes:textarea',
+    TEXT_FIELD = 'com.atlassian.jira.plugin.system.customfieldtypes:textfield',
+    SELECT = 'com.atlassian.jira.plugin.system.customfieldtypes:select',
+    PROJECT = 'com.atlassian.jira.plugin.system.customfieldtypes:project',
 }
 
 export enum FilterFieldInclusion {
@@ -105,6 +118,7 @@ export type ChannelSubscription = {
     channel_id: string;
     filters: ChannelSubscriptionFilters;
     name: string;
+    instance_id: string;
 }
 
 export type Instance = {
@@ -121,4 +135,32 @@ export type GetConnectedResponse = {
         user: {connected_instances: Instance[]};
     };
     error?: Error;
+};
+
+export type APIResponse<T> = {
+    error?: Error;
+    data: T;
+};
+
+export type CreateIssueRequest = {
+    instance_id: string;
+    required_fields_not_covered: string[][];
+    post_id: string;
+    current_team: string;
+    channel_id: string;
+    fields: {};
+};
+
+export type SearchIssueParams = {
+    jql?: string;
+    fields: string;
+    q: string;
+    instance_id: string;
+};
+
+export type AttachCommentRequest = {
+    post_id: string;
+    current_team: string;
+    issueKey: string;
+    instance_id: string;
 };

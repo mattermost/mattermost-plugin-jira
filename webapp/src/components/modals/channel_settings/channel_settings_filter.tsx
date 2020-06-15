@@ -18,6 +18,7 @@ export type Props = {
     removeFilter: (f1: FilterValue) => void;
     addValidate: (isValid: () => boolean) => void;
     removeValidate: (isValid: () => boolean) => void;
+    instanceID: string;
 };
 
 export type State = {
@@ -242,6 +243,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
                     isMulti={true}
                     addValidate={this.props.addValidate}
                     removeValidate={this.props.removeValidate}
+                    instanceID={this.props.instanceID}
                 />
             );
         } else {

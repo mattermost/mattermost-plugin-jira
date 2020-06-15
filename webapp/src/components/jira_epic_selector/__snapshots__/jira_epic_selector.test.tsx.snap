@@ -18,6 +18,7 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
     }
   }
   inputId="epic"
+  instanceID="https://something.atlassian.net"
   isMulti={true}
   onChange={[MockFunction]}
   removeValidate={[MockFunction]}
@@ -27,6 +28,7 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
         Array [
           Object {
             "fields": "customfield_10011",
+            "instance_id": "https://something.atlassian.net",
             "jql": "project=KT and issuetype=10000 and id IN (KT-17, KT-20) ORDER BY updated DESC",
             "q": "",
           },
@@ -51,6 +53,7 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
       "dndIndicator": "#f74343",
       "errorTextColor": "#fd5960",
       "linkColor": "#2389d7",
+      "mentionBg": "#ffffff",
       "mentionBj": "#ffffff",
       "mentionColor": "#145dbf",
       "mentionHighlightBg": "#ffe577",
@@ -94,6 +97,7 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
     cacheOptions={false}
     defaultOptions={true}
     filterOption={null}
+    instanceID="https://something.atlassian.net"
     isMulti={true}
     loadOptions={[Function]}
     menuPlacement="auto"
@@ -107,6 +111,7 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
           Array [
             Object {
               "fields": "customfield_10011",
+              "instance_id": "https://something.atlassian.net",
               "jql": "project=KT and issuetype=10000 and id IN (KT-17, KT-20) ORDER BY updated DESC",
               "q": "",
             },
@@ -148,6 +153,7 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
         "dndIndicator": "#f74343",
         "errorTextColor": "#fd5960",
         "linkColor": "#2389d7",
+        "mentionBg": "#ffffff",
         "mentionBj": "#ffffff",
         "mentionColor": "#145dbf",
         "mentionHighlightBg": "#ffe577",

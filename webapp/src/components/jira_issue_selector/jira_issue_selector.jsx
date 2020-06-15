@@ -21,6 +21,7 @@ export default class JiraIssueSelector extends Component {
         value: PropTypes.string,
         addValidate: PropTypes.func.isRequired,
         removeValidate: PropTypes.func.isRequired,
+        instanceID: PropTypes.string.isRequired,
     };
 
     constructor(props) {
@@ -55,6 +56,7 @@ export default class JiraIssueSelector extends Component {
         const params = {
             fields: 'key,summary',
             q: text.trim(),
+            instance_id: this.props.instanceID,
         };
 
         return this.props.searchIssues(params).then(({data}) => {

@@ -8,7 +8,7 @@ import AsyncSelect from 'react-select/async';
 
 import {getStyleForReactSelect} from 'utils/styles';
 import {isEpicNameField, isEpicIssueType} from 'utils/jira_issue_metadata';
-import {IssueMetadata, ReactSelectOption, JiraIssue} from 'types/model';
+import {IssueMetadata, ReactSelectOption, JiraIssue, SearchIssueParams} from 'types/model';
 
 import Setting from 'components/setting';
 
@@ -18,7 +18,7 @@ const searchDebounceDelay = 400;
 type Props = {
     required?: boolean;
     hideRequiredStar?: boolean;
-    searchIssues: (params: object) => Promise<{data: JiraIssue[]}>;
+    searchIssues: (params: SearchIssueParams) => Promise<{data: JiraIssue[]}>;
     theme: object;
     isMulti?: boolean;
     onChange: (values: string[]) => void;
@@ -27,6 +27,7 @@ type Props = {
     removeValidate: (isValid: () => boolean) => void;
     issueMetadata: IssueMetadata;
     resetInvalidOnChange?: boolean;
+    instanceID: string;
 };
 
 type State = {
@@ -130,6 +131,7 @@ export default class JiraEpicSelector extends React.PureComponent<Props, State> 
             jql: fullJql,
             fields: epicNameTypeId,
             q: userInput,
+            instance_id: this.props.instanceID,
         };
 
         return this.props.searchIssues(params).then(({data}: {data: JiraIssue[]}) => {
