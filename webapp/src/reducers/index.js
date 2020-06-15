@@ -143,30 +143,6 @@ const attachCommentToIssueModalForPostId = (state = '', action) => {
     }
 };
 
-const jiraIssueMetadata = (state = null, action) => {
-    switch (action.type) {
-    case ActionTypes.RECEIVED_JIRA_ISSUE_METADATA:
-        return action.data;
-    case ActionTypes.CLEAR_JIRA_ISSUE_METADATA:
-        return null;
-    case ActionTypes.CLOSE_CHANNEL_SETTINGS:
-        return null;
-    default:
-        return state;
-    }
-};
-
-const jiraProjectMetadata = (state = null, action) => {
-    switch (action.type) {
-    case ActionTypes.RECEIVED_JIRA_PROJECT_METADATA:
-        return action.data;
-    case ActionTypes.CLOSE_CHANNEL_SETTINGS:
-        return null;
-    default:
-        return state;
-    }
-};
-
 const channelIdWithSettingsOpen = (state = '', action) => {
     switch (action.type) {
     case ActionTypes.OPEN_CHANNEL_SETTINGS:
@@ -234,8 +210,6 @@ export default combineReducers({
     createModal,
     attachCommentToIssueModalVisible,
     attachCommentToIssueModalForPostId,
-    jiraIssueMetadata,
-    jiraProjectMetadata,
     channelIdWithSettingsOpen,
     channelSubscriptions,
 });

@@ -16,11 +16,10 @@ exports[`components/DisconnectModalForm should match snapshot 1`] = `
       }
     }
   >
-    <Connect(JiraInstanceSelector)
+    <ReactSelectSetting
       onChange={[Function]}
-      onlyShowConnectedInstances={true}
+      options={Array []}
       theme={Object {}}
-      value=""
     />
   </ModalBody>
   <ModalFooter

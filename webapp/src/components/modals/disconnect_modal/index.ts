@@ -11,6 +11,7 @@ import DisconnectModal from './disconnect_modal';
 
 const mapStateToProps = (state) => {
     return {
+        connectedInstances: getUserConnectedInstances(state),
         visible: isDisconnectModalVisible(state),
     };
 };

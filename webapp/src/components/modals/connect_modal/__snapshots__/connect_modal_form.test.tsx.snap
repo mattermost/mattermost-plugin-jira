@@ -16,10 +16,21 @@ exports[`components/ConnectModalForm should match snapshot 1`] = `
       }
     }
   >
-    <Connect(JiraInstanceSelector)
+    <ReactSelectSetting
       onChange={[Function]}
+      options={
+        Array [
+          Object {
+            "label": "https://something.atlassian.net",
+            "value": "https://something.atlassian.net",
+          },
+          Object {
+            "label": "http://localhost:8080",
+            "value": "http://localhost:8080",
+          },
+        ]
+      }
       theme={Object {}}
-      value=""
     />
   </ModalBody>
   <ModalFooter

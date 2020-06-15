@@ -17,6 +17,7 @@ describe('components/DisconnectModalForm', () => {
         ...baseActions,
         visible: true,
         theme: {},
+        connectedInstances: [],
     };
 
     test('should match snapshot', () => {
@@ -42,7 +43,7 @@ describe('components/DisconnectModalForm', () => {
             <DisconnectModalForm {...props}/>
         );
 
-        wrapper.instance().handleInstanceChoice('https://something.atlassian.net');
+        wrapper.instance().handleInstanceChoice('', 'https://something.atlassian.net');
         expect(wrapper.state().selectedInstance).toEqual('https://something.atlassian.net');
 
         wrapper.instance().submit({preventDefault: jest.fn()});
@@ -68,7 +69,7 @@ describe('components/DisconnectModalForm', () => {
             <DisconnectModalForm {...props}/>
         );
 
-        wrapper.instance().handleInstanceChoice('https://something.atlassian.net');
+        wrapper.instance().handleInstanceChoice('', 'https://something.atlassian.net');
         expect(wrapper.state().selectedInstance).toEqual('https://something.atlassian.net');
 
         wrapper.instance().submit({preventDefault: jest.fn()});

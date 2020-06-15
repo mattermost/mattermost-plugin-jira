@@ -385,7 +385,7 @@ func (p *Plugin) httpGetCreateIssueMetadataForProjects(w http.ResponseWriter, r 
 			errors.New("project-keys query param is required"))
 	}
 
-	instanceID := r.FormValue("instance")
+	instanceID := r.FormValue("instance_id")
 
 	cimd, err := p.GetCreateIssueMetadataForProjects(types.ID(instanceID), types.ID(mattermostUserId), projectKeys)
 	if err != nil {
@@ -422,7 +422,7 @@ func (p *Plugin) httpGetSearchIssues(w http.ResponseWriter, r *http.Request) (in
 	if mattermostUserId == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
-	instanceID := r.FormValue("instance")
+	instanceID := r.FormValue("instance_id")
 	q := r.FormValue("q")
 	jqlString := r.FormValue("jql")
 	fieldsStr := r.FormValue("fields")
@@ -510,12 +510,12 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	instanceID := r.FormValue("instance")
+	instanceID := r.FormValue("instance_id")
 
 	cimd, err := p.GetJiraProjectMetadata(types.ID(instanceID), types.ID(mattermostUserId))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to GetCreateIssueMetadata"))
+			errors.WithMessage(err, "failed to GetProjectMetadata"))
 	}
 
 	if len(cimd.Projects) == 0 {

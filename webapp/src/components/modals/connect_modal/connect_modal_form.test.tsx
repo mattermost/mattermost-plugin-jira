@@ -23,6 +23,18 @@ describe('components/ConnectModalForm', () => {
                 type: 'cloud' as 'cloud',
             },
         ],
+        installedInstances: [
+            {
+                instance_id: 'https://something.atlassian.net',
+                is_default: true,
+                type: 'cloud' as 'cloud',
+            },
+            {
+                instance_id: 'http://localhost:8080',
+                is_default: true,
+                type: 'server' as 'server',
+            },
+        ],
     };
 
     test('should match snapshot', () => {
@@ -45,7 +57,7 @@ describe('components/ConnectModalForm', () => {
             <ConnectModalForm {...props}/>
         );
 
-        wrapper.instance().handleInstanceChoice('http://localhost:8080');
+        wrapper.instance().handleInstanceChoice('', 'http://localhost:8080');
         expect(wrapper.state().selectedInstance).toEqual('http://localhost:8080');
         expect(wrapper.state().error).toEqual('');
     });
@@ -56,7 +68,7 @@ describe('components/ConnectModalForm', () => {
             <ConnectModalForm {...props}/>
         );
 
-        wrapper.instance().handleInstanceChoice('https://something.atlassian.net');
+        wrapper.instance().handleInstanceChoice('', 'https://something.atlassian.net');
         expect(wrapper.state().selectedInstance).toEqual('https://something.atlassian.net');
         expect(wrapper.state().error).toEqual('You are already connected to this Jira instance.');
     });

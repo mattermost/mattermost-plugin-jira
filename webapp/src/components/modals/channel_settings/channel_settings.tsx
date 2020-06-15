@@ -12,45 +12,9 @@ import {SharedProps} from './shared_props';
 
 import './channel_settings_modal.scss';
 
-export type Props = SharedProps & {
-    fetchJiraProjectMetadata: () => Promise<{data?: ProjectMetadata; error: Error}>;
-    fetchChannelSubscriptions: (channelId: string) => Promise<{data: ChannelSubscription[]; error: Error}>;
-    sendEphemeralPost: (message: string) => void;
-    channelSubscriptions: ChannelSubscription[] | null;
-    jiraProjectMetadata: ProjectMetadata | null;
-}
+export type Props = SharedProps;
 
 export default class ChannelSettingsModal extends PureComponent<Props> {
-    componentDidUpdate(prevProps: Props): void {
-        if (this.props.channel && (!prevProps.channel || this.props.channel.id !== prevProps.channel.id)) {
-            this.fetchData();
-        }
-    }
-
-    fetchData = async (): Promise<void> => {
-        if (!this.props.channel) {
-            return;
-        }
-
-        this.props.sendEphemeralPost('Retrieving Subscriptions');
-
-        const projectsPromise = this.props.fetchJiraProjectMetadata();
-        const subscriptionsPromise = this.props.fetchChannelSubscriptions(this.props.channel.id);
-
-        const subscriptionsResponse = await subscriptionsPromise;
-        if (subscriptionsResponse.error) {
-            this.props.sendEphemeralPost('You do not have permission to edit subscriptions for this channel. Subscribing to Jira events will create notifications in this channel when certain events occur, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.');
-            this.handleClose();
-            return;
-        }
-
-        const projectsResponse = await projectsPromise;
-        if (projectsResponse.error) {
-            this.props.sendEphemeralPost('Failed to get Jira project information. Please contact your Mattermost administrator.');
-            this.handleClose();
-        }
-    };
-
     handleClose = (e?: Event): void => {
         if (e && e.preventDefault) {
             e.preventDefault();
@@ -60,7 +24,7 @@ export default class ChannelSettingsModal extends PureComponent<Props> {
     };
 
     render(): JSX.Element {
-        const isModalOpen = Boolean(this.props.channel && this.props.jiraProjectMetadata && this.props.channelSubscriptions);
+        const isModalOpen = Boolean(this.props.channel);
 
         let inner;
         if (isModalOpen) {

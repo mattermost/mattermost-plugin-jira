@@ -4,12 +4,12 @@
 import React, {PureComponent} from 'react';
 import {Modal} from 'react-bootstrap';
 
-import {id as PluginId} from 'manifest';
-
-import FormButton from 'components/form_button';
-import JiraInstanceSelector from 'components/jira_instance_selector';
+import {ReactSelectOption} from 'types/model';
 
 import {getModalStyles} from 'utils/styles';
+
+import FormButton from 'components/form_button';
+import ReactSelectSetting from 'components/react_select_setting';
 
 import {Props} from './props';
 export type State = {
@@ -50,19 +50,22 @@ export default class DisconnectModalForm extends PureComponent<Props, State> {
         this.props.closeModal();
     }
 
-    handleInstanceChoice = (instanceID: string) => {
+    handleInstanceChoice = (_: string, instanceID: string) => {
         this.setState({selectedInstance: instanceID, error: ''});
     }
 
     render(): JSX.Element {
         const style = getModalStyles(this.props.theme);
 
-        const component = (
-            <JiraInstanceSelector
+        const options: ReactSelectOption[] = this.props.connectedInstances.map((instance: Instance) => (
+            {label: instance.instance_id, value: instance.instance_id}
+        ));
+        const instanceSelector = (
+            <ReactSelectSetting
+                options={options}
                 theme={this.props.theme}
                 onChange={this.handleInstanceChoice}
-                value={this.state.selectedInstance}
-                onlyShowConnectedInstances={true}
+                value={options.find((opt) => opt.value === this.state.selectedInstance)}
             />
         );
 
@@ -96,7 +99,7 @@ export default class DisconnectModalForm extends PureComponent<Props, State> {
                     style={style.modalBody}
                     ref='modalBody'
                 >
-                    {component}
+                    {instanceSelector}
                 </Modal.Body>
                 <Modal.Footer style={style.modalFooter}>
                     {footer}

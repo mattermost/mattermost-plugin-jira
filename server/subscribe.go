@@ -46,10 +46,11 @@ type SubscriptionFilters struct {
 }
 
 type ChannelSubscription struct {
-	Id        string              `json:"id"`
-	ChannelId string              `json:"channel_id"`
-	Filters   SubscriptionFilters `json:"filters"`
-	Name      string              `json:"name"`
+	Id         string              `json:"id"`
+	ChannelId  string              `json:"channel_id"`
+	Filters    SubscriptionFilters `json:"filters"`
+	Name       string              `json:"name"`
+	InstanceID types.ID            `json:"instance_id"`
 }
 
 type ChannelSubscriptions struct {
@@ -96,7 +97,7 @@ func NewSubscriptions() *Subscriptions {
 	}
 }
 
-func SubscriptionsFromJson(bytes []byte) (*Subscriptions, error) {
+func SubscriptionsFromJson(bytes []byte, instanceID types.ID) (*Subscriptions, error) {
 	var subs *Subscriptions
 	if len(bytes) != 0 {
 		unmarshalErr := json.Unmarshal(bytes, &subs)
@@ -106,6 +107,10 @@ func SubscriptionsFromJson(bytes []byte) (*Subscriptions, error) {
 		subs.PluginVersion = manifest.Version
 	} else {
 		subs = NewSubscriptions()
+	}
+
+	for _, sub := range subs.Channel.ById {
+		sub.InstanceID = instanceID
 	}
 
 	return subs, nil
@@ -198,7 +203,7 @@ func (p *Plugin) getSubscriptions(instanceID types.ID) (*Subscriptions, error) {
 	if appErr != nil {
 		return nil, appErr
 	}
-	return SubscriptionsFromJson(data)
+	return SubscriptionsFromJson(data, instanceID)
 }
 
 func (p *Plugin) getSubscriptionsForChannel(instanceID types.ID, channelId string) ([]ChannelSubscription, error) {
@@ -237,7 +242,7 @@ func (p *Plugin) removeChannelSubscription(instanceID types.ID, subscriptionId s
 
 	subKey := keyWithInstanceID(instanceID, JIRA_SUBSCRIPTIONS_KEY)
 	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
-		subs, err := SubscriptionsFromJson(initialBytes)
+		subs, err := SubscriptionsFromJson(initialBytes, instanceID)
 		if err != nil {
 			return nil, err
 		}
@@ -266,7 +271,7 @@ func (p *Plugin) addChannelSubscription(instanceID types.ID, newSubscription *Ch
 
 	subKey := keyWithInstanceID(instanceID, JIRA_SUBSCRIPTIONS_KEY)
 	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
-		subs, err := SubscriptionsFromJson(initialBytes)
+		subs, err := SubscriptionsFromJson(initialBytes, instanceID)
 		if err != nil {
 			return nil, err
 		}
@@ -338,7 +343,7 @@ func (p *Plugin) editChannelSubscription(instanceID types.ID, modifiedSubscripti
 
 	subKey := keyWithInstanceID(instanceID, JIRA_SUBSCRIPTIONS_KEY)
 	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
-		subs, err := SubscriptionsFromJson(initialBytes)
+		subs, err := SubscriptionsFromJson(initialBytes, instanceID)
 		if err != nil {
 			return nil, err
 		}

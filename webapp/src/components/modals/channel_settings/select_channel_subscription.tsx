@@ -50,13 +50,8 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
 
     renderRow = (sub: ChannelSubscription): JSX.Element => {
         const projectKey = sub.filters.projects[0];
-        let projectName = projectKey;
 
-        const project = this.props.jiraProjectMetadata.projects.find((opt) => opt.value === projectKey);
-        if (project) {
-            projectName = project.label;
-        }
-
+        const showInstanceColumn = this.props.installedInstances.length > 1;
         return (
             <tr
                 key={sub.id}
@@ -66,8 +61,14 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                     <span>{sub.name || '(no name)'}</span>
                 </td>
                 <td>
-                    <span>{projectName}</span>
+                    <span>{projectKey}</span>
                 </td>
+                {showInstanceColumn && (
+                    <td>
+                        <span>{sub.instance_id}</span>
+                    </td>
+                )}
+
                 <td>
                     <button
                         className='style--none color--link'
@@ -127,6 +128,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
             titleMessage = <h2 className='text-center'>{'Jira Subscriptions'}</h2>;
         }
 
+        const showInstanceColumn = this.props.installedInstances.length > 1;
         let subscriptionRows;
         if (channelSubscriptions.length) {
             subscriptionRows = (
@@ -135,6 +137,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                         <tr>
                             <th scope='col'>{'Name'}</th>
                             <th scope='col'>{'Project'}</th>
+                            {showInstanceColumn && <th scope='col'>{'Instance'}</th>}
                             <th scope='col'>{'Actions'}</th>
                         </tr>
                     </thead>

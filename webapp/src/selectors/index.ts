@@ -49,10 +49,6 @@ export const isAttachCommentToIssueModalVisible = (state) => getPluginState(stat
 
 export const getAttachCommentToIssueModalForPostId = (state) => getPluginState(state).attachCommentToIssueModalForPostId;
 
-export const getJiraIssueMetadata = (state) => getPluginState(state).jiraIssueMetadata;
-
-export const getJiraProjectMetadata = (state) => getPluginState(state).jiraProjectMetadata;
-
 export const getChannelIdWithSettingsOpen = (state) => getPluginState(state).channelIdWithSettingsOpen;
 
 export const getChannelSubscriptions = (state) => getPluginState(state).channelSubscriptions;

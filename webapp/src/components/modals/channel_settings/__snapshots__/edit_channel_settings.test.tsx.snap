@@ -19,7 +19,7 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
       Object {
         "backgroundColor": "#ffffff",
         "color": "#3d3c40",
-        "padding": "2em 0",
+        "padding": "2em 2em 3em",
       }
     }
   >
@@ -42,47 +42,14 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
     <div
       className="container-fluid"
     >
-      <ReactSelectSetting
+      <Connect(JiraInstanceAndProjectSelector)
         addValidate={[Function]}
-        isMulti={false}
-        label="Project"
-        limitOptions={true}
-        name="projects"
-        onChange={[Function]}
-        options={
-          Array [
-            Object {
-              "label": "DKH-Project",
-              "value": "DP",
-            },
-            Object {
-              "label": "Issue Dialog Testing",
-              "value": "IDT",
-            },
-            Object {
-              "label": "Koch Testing",
-              "value": "KT",
-            },
-            Object {
-              "label": "LEV-test",
-              "value": "LT",
-            },
-            Object {
-              "label": "restricted",
-              "value": "RES",
-            },
-            Object {
-              "label": "scrum1",
-              "value": "SCRUM1",
-            },
-            Object {
-              "label": "Testing Extensions",
-              "value": "EXT",
-            },
-          ]
-        }
+        onError={[Function]}
+        onInstanceChange={[Function]}
+        onProjectChange={[Function]}
         removeValidate={[Function]}
-        required={true}
+        selectedInstanceID="https://something.atlassian.net"
+        selectedProjectID="KT"
         theme={
           Object {
             "awayIndicator": "#ffbc42",
@@ -94,6 +61,7 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
             "dndIndicator": "#f74343",
             "errorTextColor": "#fd5960",
             "linkColor": "#2389d7",
+            "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
             "mentionColor": "#145dbf",
             "mentionHighlightBg": "#ffe577",
@@ -110,14 +78,6 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
             "sidebarUnreadText": "#ffffff",
             "type": "Mattermost",
           }
-        }
-        value={
-          Array [
-            Object {
-              "label": "Koch Testing",
-              "value": "KT",
-            },
-          ]
         }
       />
       <Loading
@@ -198,7 +158,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
       Object {
         "backgroundColor": "#ffffff",
         "color": "#3d3c40",
-        "padding": "2em 0",
+        "padding": "2em 2em 3em",
       }
     }
   >
@@ -221,47 +181,14 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
     <div
       className="container-fluid"
     >
-      <ReactSelectSetting
+      <Connect(JiraInstanceAndProjectSelector)
         addValidate={[Function]}
-        isMulti={false}
-        label="Project"
-        limitOptions={true}
-        name="projects"
-        onChange={[Function]}
-        options={
-          Array [
-            Object {
-              "label": "DKH-Project",
-              "value": "DP",
-            },
-            Object {
-              "label": "Issue Dialog Testing",
-              "value": "IDT",
-            },
-            Object {
-              "label": "Koch Testing",
-              "value": "KT",
-            },
-            Object {
-              "label": "LEV-test",
-              "value": "LT",
-            },
-            Object {
-              "label": "restricted",
-              "value": "RES",
-            },
-            Object {
-              "label": "scrum1",
-              "value": "SCRUM1",
-            },
-            Object {
-              "label": "Testing Extensions",
-              "value": "EXT",
-            },
-          ]
-        }
+        onError={[Function]}
+        onInstanceChange={[Function]}
+        onProjectChange={[Function]}
         removeValidate={[Function]}
-        required={true}
+        selectedInstanceID="https://something.atlassian.net"
+        selectedProjectID="KT"
         theme={
           Object {
             "awayIndicator": "#ffbc42",
@@ -273,6 +200,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
             "dndIndicator": "#f74343",
             "errorTextColor": "#fd5960",
             "linkColor": "#2389d7",
+            "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
             "mentionColor": "#145dbf",
             "mentionHighlightBg": "#ffe577",
@@ -289,14 +217,6 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
             "sidebarUnreadText": "#ffffff",
             "type": "Mattermost",
           }
-        }
-        value={
-          Array [
-            Object {
-              "label": "Koch Testing",
-              "value": "KT",
-            },
-          ]
         }
       />
       <ReactSelectSetting
@@ -478,6 +398,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
             "dndIndicator": "#f74343",
             "errorTextColor": "#fd5960",
             "linkColor": "#2389d7",
+            "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
             "mentionColor": "#145dbf",
             "mentionHighlightBg": "#ffe577",
@@ -513,20 +434,20 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
         options={
           Array [
             Object {
-              "label": "Epic",
-              "value": "10000",
+              "label": "Task",
+              "value": "10002",
             },
             Object {
               "label": "Story",
               "value": "10001",
             },
             Object {
-              "label": "Task",
-              "value": "10002",
-            },
-            Object {
               "label": "Bug",
               "value": "10004",
+            },
+            Object {
+              "label": "Epic",
+              "value": "10000",
             },
           ]
         }
@@ -543,6 +464,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
             "dndIndicator": "#f74343",
             "errorTextColor": "#fd5960",
             "linkColor": "#2389d7",
+            "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
             "mentionColor": "#145dbf",
             "mentionHighlightBg": "#ffe577",
@@ -917,6 +839,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
             },
           ]
         }
+        instanceID="https://something.atlassian.net"
         issueMetadata={
           Object {
             "expand": "projects",
@@ -3632,6 +3555,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
             "dndIndicator": "#f74343",
             "errorTextColor": "#fd5960",
             "linkColor": "#2389d7",
+            "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
             "mentionColor": "#145dbf",
             "mentionHighlightBg": "#ffe577",
@@ -3771,7 +3695,7 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
       Object {
         "backgroundColor": "#ffffff",
         "color": "#3d3c40",
-        "padding": "2em 0",
+        "padding": "2em 2em 3em",
       }
     }
   >
@@ -3794,47 +3718,14 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
     <div
       className="container-fluid"
     >
-      <ReactSelectSetting
+      <Connect(JiraInstanceAndProjectSelector)
         addValidate={[Function]}
-        isMulti={false}
-        label="Project"
-        limitOptions={true}
-        name="projects"
-        onChange={[Function]}
-        options={
-          Array [
-            Object {
-              "label": "DKH-Project",
-              "value": "DP",
-            },
-            Object {
-              "label": "Issue Dialog Testing",
-              "value": "IDT",
-            },
-            Object {
-              "label": "Koch Testing",
-              "value": "KT",
-            },
-            Object {
-              "label": "LEV-test",
-              "value": "LT",
-            },
-            Object {
-              "label": "restricted",
-              "value": "RES",
-            },
-            Object {
-              "label": "scrum1",
-              "value": "SCRUM1",
-            },
-            Object {
-              "label": "Testing Extensions",
-              "value": "EXT",
-            },
-          ]
-        }
+        onError={[Function]}
+        onInstanceChange={[Function]}
+        onProjectChange={[Function]}
         removeValidate={[Function]}
-        required={true}
+        selectedInstanceID="https://something.atlassian.net"
+        selectedProjectID="KT"
         theme={
           Object {
             "awayIndicator": "#ffbc42",
@@ -3846,6 +3737,7 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
             "dndIndicator": "#f74343",
             "errorTextColor": "#fd5960",
             "linkColor": "#2389d7",
+            "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
             "mentionColor": "#145dbf",
             "mentionHighlightBg": "#ffe577",
@@ -3862,14 +3754,6 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
             "sidebarUnreadText": "#ffffff",
             "type": "Mattermost",
           }
-        }
-        value={
-          Array [
-            Object {
-              "label": "Koch Testing",
-              "value": "KT",
-            },
-          ]
         }
       />
       <Loading
@@ -3950,7 +3834,7 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
       Object {
         "backgroundColor": "#ffffff",
         "color": "#3d3c40",
-        "padding": "2em 0",
+        "padding": "2em 2em 3em",
       }
     }
   >
@@ -3973,47 +3857,13 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
     <div
       className="container-fluid"
     >
-      <ReactSelectSetting
+      <Connect(JiraInstanceAndProjectSelector)
         addValidate={[Function]}
-        isMulti={false}
-        label="Project"
-        limitOptions={true}
-        name="projects"
-        onChange={[Function]}
-        options={
-          Array [
-            Object {
-              "label": "DKH-Project",
-              "value": "DP",
-            },
-            Object {
-              "label": "Issue Dialog Testing",
-              "value": "IDT",
-            },
-            Object {
-              "label": "Koch Testing",
-              "value": "KT",
-            },
-            Object {
-              "label": "LEV-test",
-              "value": "LT",
-            },
-            Object {
-              "label": "restricted",
-              "value": "RES",
-            },
-            Object {
-              "label": "scrum1",
-              "value": "SCRUM1",
-            },
-            Object {
-              "label": "Testing Extensions",
-              "value": "EXT",
-            },
-          ]
-        }
+        onError={[Function]}
+        onInstanceChange={[Function]}
+        onProjectChange={[Function]}
         removeValidate={[Function]}
-        required={true}
+        selectedInstanceID="https://something.atlassian.net"
         theme={
           Object {
             "awayIndicator": "#ffbc42",
@@ -4025,6 +3875,7 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
             "dndIndicator": "#f74343",
             "errorTextColor": "#fd5960",
             "linkColor": "#2389d7",
+            "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
             "mentionColor": "#145dbf",
             "mentionHighlightBg": "#ffe577",
@@ -4042,7 +3893,6 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
             "type": "Mattermost",
           }
         }
-        value={Array []}
       />
     </div>
   </div>
@@ -4107,7 +3957,7 @@ exports[`components/EditChannelSettings should produce subscription error when a
       Object {
         "backgroundColor": "#ffffff",
         "color": "#3d3c40",
-        "padding": "2em 0",
+        "padding": "2em 2em 3em",
       }
     }
   >
@@ -4130,47 +3980,14 @@ exports[`components/EditChannelSettings should produce subscription error when a
     <div
       className="container-fluid"
     >
-      <ReactSelectSetting
+      <Connect(JiraInstanceAndProjectSelector)
         addValidate={[Function]}
-        isMulti={false}
-        label="Project"
-        limitOptions={true}
-        name="projects"
-        onChange={[Function]}
-        options={
-          Array [
-            Object {
-              "label": "DKH-Project",
-              "value": "DP",
-            },
-            Object {
-              "label": "Issue Dialog Testing",
-              "value": "IDT",
-            },
-            Object {
-              "label": "Koch Testing",
-              "value": "KT",
-            },
-            Object {
-              "label": "LEV-test",
-              "value": "LT",
-            },
-            Object {
-              "label": "restricted",
-              "value": "RES",
-            },
-            Object {
-              "label": "scrum1",
-              "value": "SCRUM1",
-            },
-            Object {
-              "label": "Testing Extensions",
-              "value": "EXT",
-            },
-          ]
-        }
+        onError={[Function]}
+        onInstanceChange={[Function]}
+        onProjectChange={[Function]}
         removeValidate={[Function]}
-        required={true}
+        selectedInstanceID="https://something.atlassian.net"
+        selectedProjectID="KT"
         theme={
           Object {
             "awayIndicator": "#ffbc42",
@@ -4182,6 +3999,7 @@ exports[`components/EditChannelSettings should produce subscription error when a
             "dndIndicator": "#f74343",
             "errorTextColor": "#fd5960",
             "linkColor": "#2389d7",
+            "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
             "mentionColor": "#145dbf",
             "mentionHighlightBg": "#ffe577",
@@ -4198,14 +4016,6 @@ exports[`components/EditChannelSettings should produce subscription error when a
             "sidebarUnreadText": "#ffffff",
             "type": "Mattermost",
           }
-        }
-        value={
-          Array [
-            Object {
-              "label": "Koch Testing",
-              "value": "KT",
-            },
-          ]
         }
       />
       <Loading

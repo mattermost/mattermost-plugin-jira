@@ -5,13 +5,16 @@ import React from 'react';
 import {shallow, mount} from 'enzyme';
 
 import Preferences from 'mattermost-redux/constants/preferences';
+import {Team} from 'mattermost-redux/types/teams';
 
 import projectMetadata from 'testdata/cloud-get-jira-project-metadata.json';
 import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.json';
 import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project.json';
 
-import CreateIssue from './create_issue';
+import {IssueMetadata} from 'types/model';
+
+import CreateIssueForm from './create_issue_form';
 
 describe('components/CreateIssue', () => {
     const baseActions = {
@@ -26,31 +29,39 @@ describe('components/CreateIssue', () => {
         theme: Preferences.THEMES.default,
         jiraProjectMetadata: projectMetadata,
         jiraIssueMetadata: issueMetadata,
-        currentTeam: {},
+        currentTeam: {name: 'Team1'} as Team,
         close: jest.fn(),
         visible: true,
+        channelId: 'channel-id-1',
+    };
+
+    const baseState = {
+        instanceID: 'https://something.atlassian.net',
+        jiraIssueMetadata: issueMetadata as IssueMetadata,
     };
 
     test('should match snapshot', () => {
         const props = {...baseProps};
-        const wrapper = shallow(
-            <CreateIssue {...props}/>
+        const wrapper = shallow<CreateIssueForm>(
+            <CreateIssueForm {...props}/>
         );
+        wrapper.setState(baseState);
         expect(wrapper).toMatchSnapshot();
     });
 
     test('should match snapshot with no issue metadata', () => {
-        const props = {...baseProps, jiraIssueMetadata: null};
-        const wrapper = shallow(
-            <CreateIssue {...props}/>
+        const props = {...baseProps};
+        const wrapper = shallow<CreateIssueForm>(
+            <CreateIssueForm {...props}/>
         );
+        wrapper.setState({...baseState, jiraIssueMetadata: null});
         expect(wrapper).toMatchSnapshot();
     });
 
-    test('should match snapshot with no project or issue metadata', () => {
-        const props = {...baseProps, jiraIssueMetadata: null, jiraProjectMetadata: null};
-        const wrapper = shallow(
-            <CreateIssue {...props}/>
+    test('should match snapshot with no instance id', () => {
+        const props = {...baseProps};
+        const wrapper = shallow<CreateIssueForm>(
+            <CreateIssueForm {...props}/>
         );
         expect(wrapper).toMatchSnapshot();
     });
@@ -58,9 +69,10 @@ describe('components/CreateIssue', () => {
     test('should match snapshot with form filled', async () => {
         const create = jest.fn().mockResolvedValue({});
         const props = {...baseProps, create};
-        const wrapper = shallow(
-            <CreateIssue {...props}/>
+        const wrapper = shallow<CreateIssueForm>(
+            <CreateIssueForm {...props}/>
         );
+        wrapper.setState(baseState);
         const fields = wrapper.state('fields');
 
         wrapper.setState({
@@ -75,16 +87,16 @@ describe('components/CreateIssue', () => {
             projectKey: 'KT',
             issueType: '10001',
         });
-
         expect(wrapper).toMatchSnapshot();
     });
 
     test('should match snapshot with error', async () => {
         const create = jest.fn().mockResolvedValue({});
         const props = {...baseProps, create};
-        const wrapper = shallow(
-            <CreateIssue {...props}/>
+        const wrapper = shallow<CreateIssueForm>(
+            <CreateIssueForm {...props}/>
         );
+        wrapper.setState(baseState);
         const fields = wrapper.state('fields');
 
         wrapper.setState({
@@ -101,57 +113,18 @@ describe('components/CreateIssue', () => {
             error: 'Some error',
         });
 
-        expect(wrapper).toMatchSnapshot();
-    });
-
-    test('should match snapshot with getMetadataError', async () => {
-        const create = jest.fn().mockResolvedValue({});
-        const props = {...baseProps, create};
-        const wrapper = shallow(
-            <CreateIssue {...props}/>
-        );
-        const fields = wrapper.state('fields');
-
-        wrapper.setState({
-            fields: {
-                ...fields,
-                summary: '',
-                description: 'some description',
-                project: {key: 'KT'},
-                issuetype: {id: '10001'},
-                priority: {id: 1},
-            },
-            projectKey: 'KT',
-            issueType: '10001',
-            getMetaDataError: 'Some error',
-        });
-
+        wrapper.setState({instanceID: 'https://something.atlassian.net'});
         expect(wrapper).toMatchSnapshot();
     });
 
     test('should call create prop to create an issue', async () => {
         const create = jest.fn().mockResolvedValue({});
         const props = {...baseProps, create};
-        const wrapper = mount(
-            <CreateIssue {...props}/>
+        const wrapper = shallow<CreateIssueForm>(
+            <CreateIssueForm {...props}/>
         );
+        wrapper.setState(baseState);
         const fields = wrapper.state('fields');
-
-        wrapper.setState({
-            fields: {
-                ...fields,
-                summary: '',
-                description: 'some description',
-                project: {key: 'KT'},
-                issuetype: {id: '10001'},
-                priority: {id: 1},
-            },
-            projectKey: 'KT',
-            issueType: '10001',
-        });
-
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
-        expect(create).not.toHaveBeenCalled();
 
         wrapper.setState({
             fields: {
@@ -166,7 +139,7 @@ describe('components/CreateIssue', () => {
             issueType: '10001',
         });
 
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
+        wrapper.instance().handleSubmit();
         expect(create).toHaveBeenCalled();
     });
 
@@ -178,26 +151,11 @@ describe('components/CreateIssue', () => {
             jiraProjectMetadata: serverProjectMetadata,
             jiraIssueMetadata: serverIssueMetadata,
         };
-        const wrapper = mount(
-            <CreateIssue {...props}/>
+        const wrapper = shallow<CreateIssueForm>(
+            <CreateIssueForm {...props}/>
         );
+        wrapper.setState(baseState);
         const fields = wrapper.state('fields');
-
-        wrapper.setState({
-            fields: {
-                ...fields,
-                summary: '',
-                description: 'some description',
-                project: {key: 'HEY'},
-                issuetype: {id: '10001'},
-                priority: {id: 1},
-            },
-            projectKey: 'HEY',
-            issueType: '10001',
-        });
-
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
-        expect(create).not.toHaveBeenCalled();
 
         wrapper.setState({
             fields: {
@@ -212,7 +170,7 @@ describe('components/CreateIssue', () => {
             issueType: '10001',
         });
 
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
+        wrapper.instance().handleSubmit();
         expect(create).toHaveBeenCalled();
     });
 });

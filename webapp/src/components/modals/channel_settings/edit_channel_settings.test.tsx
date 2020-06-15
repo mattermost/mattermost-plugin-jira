@@ -19,11 +19,10 @@ import EditChannelSettings from './edit_channel_settings';
 describe('components/EditChannelSettings', () => {
     const baseActions = {
         createChannelSubscription: jest.fn().mockResolvedValue({}),
-        clearIssueMetadata: jest.fn().mockResolvedValue({}),
         deleteChannelSubscription: jest.fn().mockResolvedValue({}),
         editChannelSubscription: jest.fn().mockResolvedValue({}),
         fetchChannelSubscriptions: jest.fn().mockResolvedValue({}),
-        fetchJiraIssueMetadataForProjects: jest.fn().mockResolvedValue({}),
+        fetchJiraIssueMetadataForProjects: jest.fn().mockResolvedValue({data: cloudIssueMetadata}),
     };
 
     const channelSubscriptionForCloud = {
@@ -48,6 +47,7 @@ describe('components/EditChannelSettings', () => {
             }],
         },
         name: 'SubTestName',
+        instance_id: 'https://something.atlassian.net',
     };
 
     const channelSubscriptionForServer = {
@@ -68,6 +68,7 @@ describe('components/EditChannelSettings', () => {
             }],
         },
         name: 'SubTestName',
+        instance_id: 'https://something.atlassian.net',
     };
 
     const baseProps = {
@@ -75,12 +76,15 @@ describe('components/EditChannelSettings', () => {
         channel: testChannel,
         theme: Preferences.THEMES.default,
         finishEditSubscription: jest.fn(),
-        jiraProjectMetadata: cloudProjectMetadata as ProjectMetadata,
-        jiraIssueMetadata: cloudIssueMetadata as IssueMetadata,
         channelSubscriptions: [channelSubscriptionForCloud],
         close: jest.fn(),
         selectedSubscription: channelSubscriptionForCloud,
         creatingSubscription: false,
+    };
+
+    const baseState = {
+        instanceID: 'https://something.atlassian.net',
+        jiraIssueMetadata: cloudIssueMetadata as IssueMetadata,
     };
 
     test('should match snapshot', () => {
@@ -88,6 +92,7 @@ describe('components/EditChannelSettings', () => {
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
+        wrapper.setState(baseState);
         expect(wrapper).toMatchSnapshot();
     });
 
@@ -96,14 +101,16 @@ describe('components/EditChannelSettings', () => {
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
+        wrapper.setState(baseState);
         expect(wrapper).toMatchSnapshot();
     });
 
     test('should match snapshot with no issue metadata', () => {
-        const props = {...baseProps, jiraIssueMetadata: null};
+        const props = {...baseProps};
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
+        wrapper.setState({...baseState, jiraIssueMetadata: null});
         expect(wrapper).toMatchSnapshot();
     });
 
@@ -112,6 +119,7 @@ describe('components/EditChannelSettings', () => {
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
+        wrapper.setState(baseState);
 
         expect(wrapper.state().fetchingIssueMetadata).toBe(true);
         await Promise.resolve();
@@ -120,21 +128,19 @@ describe('components/EditChannelSettings', () => {
     });
 
     test('should change project filter when chosen', async () => {
-        const clearIssueMetadata = jest.fn().mockResolvedValue({});
         let fetchJiraIssueMetadataForProjects = jest.fn().mockResolvedValue({});
         const props = {
             ...baseProps,
             fetchJiraIssueMetadataForProjects,
-            clearIssueMetadata,
         };
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
-        wrapper.instance().handleProjectChange('projects', 'TES');
+        wrapper.setState(baseState);
+        wrapper.instance().handleProjectChange('TES');
         expect(wrapper.state().filters.projects).toEqual(['TES']);
         expect(wrapper.state().fetchingIssueMetadata).toBe(true);
         expect(fetchJiraIssueMetadataForProjects).toHaveBeenCalled();
-        expect(clearIssueMetadata).toHaveBeenCalled();
 
         await Promise.resolve();
         expect(wrapper.state().fetchingIssueMetadata).toBe(false);
@@ -143,14 +149,14 @@ describe('components/EditChannelSettings', () => {
         fetchJiraIssueMetadataForProjects = jest.fn().mockResolvedValue({error: {message: 'Failure'}});
         wrapper.setProps({fetchJiraIssueMetadataForProjects});
 
-        wrapper.instance().handleProjectChange('projects', 'TES');
-        expect(wrapper.state().filters.projects).toEqual(['TES']);
+        wrapper.instance().handleProjectChange('KT');
+        expect(wrapper.state().filters.projects).toEqual(['KT']);
         expect(fetchJiraIssueMetadataForProjects).toHaveBeenCalled();
         expect(wrapper.state().fetchingIssueMetadata).toBe(true);
 
         await Promise.resolve();
         expect(wrapper.state().fetchingIssueMetadata).toBe(false);
-        expect(wrapper.state().getMetaDataErr).toEqual('The project TES is unavailable. Please contact your system administrator.');
+        expect(wrapper.state().getMetaDataErr).toEqual('The project KT is unavailable. Please contact your system administrator.');
     });
 
     test('should show an error when a previously configured field is not in the issue metadata', async () => {
@@ -172,6 +178,7 @@ describe('components/EditChannelSettings', () => {
                 }],
             },
             name: 'SubTestName',
+            instance_id: 'https://something.atlassian.net',
         };
 
         const props = {
@@ -182,6 +189,7 @@ describe('components/EditChannelSettings', () => {
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
+        wrapper.setState(baseState);
 
         await Promise.resolve();
         expect(wrapper.state().fetchingIssueMetadata).toBe(false);
@@ -206,6 +214,7 @@ describe('components/EditChannelSettings', () => {
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
+        wrapper.setState(baseState);
 
         wrapper.setState({
             filters: channelSubscriptionForCloud.filters,
@@ -218,6 +227,7 @@ describe('components/EditChannelSettings', () => {
                 channel_id: testChannel.id,
                 filters: channelSubscriptionForCloud.filters,
                 name: channelSubscriptionForCloud.name,
+                instance_id: 'https://something.atlassian.net',
             }
         );
         expect(editChannelSubscription).not.toHaveBeenCalled();
@@ -250,7 +260,6 @@ describe('components/EditChannelSettings', () => {
             editChannelSubscription,
             channelSubscriptions: [],
             selectedSubscription: null,
-            jiraIssueMetadata: serverIssueMetadata as IssueMetadata,
             jiraProjectMetadata: serverProjectMetadata as ProjectMetadata,
             finishEditSubscription,
         };
@@ -258,6 +267,7 @@ describe('components/EditChannelSettings', () => {
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
+        wrapper.setState({...baseState, jiraIssueMetadata: serverIssueMetadata});
 
         wrapper.setState({
             filters: channelSubscriptionForServer.filters,
@@ -269,6 +279,7 @@ describe('components/EditChannelSettings', () => {
                 channel_id: testChannel.id,
                 filters: channelSubscriptionForServer.filters,
                 name: null,
+                instance_id: 'https://something.atlassian.net',
             }
         );
         expect(editChannelSubscription).not.toHaveBeenCalled();
@@ -310,6 +321,7 @@ describe('components/EditChannelSettings', () => {
                 }],
             },
             name: 'SubTestName',
+            instance_id: 'https://something.atlassian.net',
         };
 
         const editChannelSubscription = jest.fn().mockResolvedValue({});
@@ -322,6 +334,7 @@ describe('components/EditChannelSettings', () => {
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
+        wrapper.setState(baseState);
 
         wrapper.instance().handleCreate({preventDefault: jest.fn()});
         expect(wrapper.state().error).toBe(null);
@@ -338,6 +351,7 @@ describe('components/EditChannelSettings', () => {
                     }],
                 },
                 name: 'SubTestName',
+                instance_id: 'https://something.atlassian.net',
             }
         );
     });
@@ -355,6 +369,7 @@ describe('components/EditChannelSettings', () => {
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
+        wrapper.setState(baseState);
 
         wrapper.setState({
             filters: channelSubscriptionForCloud.filters,
@@ -368,6 +383,7 @@ describe('components/EditChannelSettings', () => {
                 channel_id: testChannel.id,
                 filters: channelSubscriptionForCloud.filters,
                 name: channelSubscriptionForCloud.name,
+                instance_id: 'https://something.atlassian.net',
             }
         );
         expect(createChannelSubscription).not.toHaveBeenCalled();
@@ -401,6 +417,7 @@ describe('components/EditChannelSettings', () => {
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
+        wrapper.setState(baseState);
 
         // initially, there are no errors
         expect(wrapper.state().conflictingError).toBe(null);
@@ -424,6 +441,7 @@ describe('components/EditChannelSettings', () => {
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
+        wrapper.setState(baseState);
 
         // Add issue type with conflicting filter fields
         wrapper.instance().handleIssueChange('issue_types', ['10004', '10000']);
@@ -460,6 +478,7 @@ describe('components/EditChannelSettings', () => {
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
+        wrapper.setState(baseState);
 
         const filters = channelSubscriptionForCloud.filters;
 
@@ -502,6 +521,7 @@ describe('components/EditChannelSettings', () => {
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
+        wrapper.setState(baseState);
 
         expect(wrapper.exists('#jira-delete-subscription')).toBe(true);
         expect(wrapper.find('#jira-delete-subscription').prop('disabled')).toBe(true);
@@ -518,6 +538,7 @@ describe('components/EditChannelSettings', () => {
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
+        wrapper.setState(baseState);
 
         expect(wrapper.exists('#jira-delete-subscription')).toBe(true);
         wrapper.find('#jira-delete-subscription').simulate('click');
@@ -543,6 +564,7 @@ describe('components/EditChannelSettings', () => {
         const wrapper = shallow<EditChannelSettings>(
             <EditChannelSettings {...props}/>
         );
+        wrapper.setState(baseState);
 
         expect(wrapper.exists('#jira-delete-subscription')).toBe(true);
         wrapper.find('#jira-delete-subscription').simulate('click');

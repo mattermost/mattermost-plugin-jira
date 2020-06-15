@@ -10,17 +10,18 @@ import FormButton from 'components/form_button';
 import Input from 'components/input';
 import Loading from 'components/loading';
 import Validator from 'components/validator';
-import {getBaseStyles} from 'utils/styles';
+import JiraInstanceAndProjectSelector from 'components/jira_instance_and_project_selector';
+
+import {getBaseStyles, getModalStyles} from 'utils/styles';
 import {
-    getProjectValues,
-    getIssueValuesForMultipleProjects,
     getCustomFieldValuesForEvents,
     getCustomFieldFiltersForProjects,
     getConflictingFields,
     generateJQLStringFromSubscriptionFilters,
+    getIssueTypes,
 } from 'utils/jira_issue_metadata';
 
-import {ChannelSubscription, ChannelSubscriptionFilters, ReactSelectOption} from 'types/model';
+import {ChannelSubscription, ChannelSubscriptionFilters, ReactSelectOption, FilterValue, IssueMetadata} from 'types/model';
 
 import ChannelSettingsFilters from './channel_settings_filters';
 import {SharedProps} from './shared_props';
@@ -59,7 +60,9 @@ export type Props = SharedProps & {
 
 export type State = {
     filters: ChannelSubscriptionFilters;
+    instanceID: string;
     fetchingIssueMetadata: boolean;
+    jiraIssueMetadata: IssueMetadata | null;
     error: string | null;
     getMetaDataErr: string | null;
     submitting: boolean;
@@ -89,10 +92,15 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
 
         filters.fields = filters.fields || [];
 
+        let instanceID = '';
+        if (this.props.selectedSubscription) {
+            instanceID = this.props.selectedSubscription.instance_id;
+        }
+
         let fetchingIssueMetadata = false;
-        if (filters.projects.length) {
+        if (filters.projects.length && instanceID) {
             fetchingIssueMetadata = true;
-            this.fetchIssueMetadata(filters.projects);
+            this.fetchIssueMetadata(filters.projects, instanceID);
         }
 
         this.state = {
@@ -101,22 +109,24 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             submitting: false,
             filters,
             fetchingIssueMetadata,
+            jiraIssueMetadata: null,
             subscriptionName,
             showConfirmModal: false,
             conflictingError: null,
+            instanceID,
         };
 
         this.validator = new Validator();
     }
 
-    handleClose = (e) => {
+    handleClose = (e?: React.FormEvent) => {
         if (e && e.preventDefault) {
             e.preventDefault();
         }
         this.props.finishEditSubscription();
     };
 
-    handleNameChange = (id, value) => {
+    handleNameChange = (id: string, value: string) => {
         this.setState({subscriptionName: value});
     };
 
@@ -168,11 +178,11 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
 
         let conflictingFields = null;
         if (finalValue.length > this.state.filters.issue_types.length) {
-            const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
+            const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects);
             conflictingFields = getConflictingFields(
                 filterFields,
                 finalValue,
-                this.props.jiraIssueMetadata
+                this.state.jiraIssueMetadata
             );
         }
 
@@ -195,16 +205,20 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         this.setState({filters, conflictingError: null});
     };
 
-    fetchIssueMetadata = (projectKeys) => {
-        this.props.fetchJiraIssueMetadataForProjects(projectKeys).then((fetched) => {
-            const state = {fetchingIssueMetadata: false} as State;
+    fetchIssueMetadata = (projectKeys: string[], instanceID: string) => {
+        if (!instanceID) {
+            this.setState({getMetaDataErr: 'No Jira instance is selected.'});
+        }
 
-            const error = fetched.error || (fetched.data && fetched.data.error);
+        this.props.fetchJiraIssueMetadataForProjects(projectKeys, instanceID).then(({data, error}) => {
+            const jiraIssueMetadata = data as IssueMetadata;
+            const state = {fetchingIssueMetadata: false, jiraIssueMetadata} as State;
+
             if (error) {
                 state.getMetaDataErr = `The project ${projectKeys[0]} is unavailable. Please contact your system administrator.`;
             }
 
-            const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
+            const filterFields = getCustomFieldFiltersForProjects(jiraIssueMetadata, this.state.filters.projects);
             for (const v of this.state.filters.fields) {
                 if (!filterFields.find((f) => f.key === v.key)) {
                     state.error = 'A field in this subscription has been removed from Jira, so the subscription is invalid. When this form is submitted, the configured field will be removed from the subscription to make the subscription valid again.';
@@ -215,14 +229,27 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         });
     };
 
-    handleProjectChange = (id, value) => {
+    handleJiraInstanceChange = (instanceID: string) => {
+        if (instanceID === this.state.instanceID) {
+            return;
+        }
+
+        this.setState({instanceID, error: null});
+        this.handleProjectChange('');
+    }
+
+    handleProjectChange = (projectID: string) => {
         this.clearConflictingErrorMessage();
 
-        let projects = value;
-        if (!projects) {
+        let projects: string[];
+        if (projectID) {
+            projects = [projectID];
+        } else {
             projects = [];
-        } else if (!Array.isArray(projects)) {
-            projects = [projects];
+        }
+
+        if (projects.length && this.state.filters.projects[0] === projects[0]) {
+            return;
         }
 
         const filters = {
@@ -234,10 +261,9 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
 
         let fetchingIssueMetadata = false;
 
-        this.props.clearIssueMetadata();
         if (projects && projects.length) {
             fetchingIssueMetadata = true;
-            this.fetchIssueMetadata(projects);
+            this.fetchIssueMetadata(projects, this.state.instanceID);
         }
 
         this.setState({
@@ -247,12 +273,12 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
         });
     };
 
-    handleFilterFieldChange = (fields) => {
+    handleFilterFieldChange = (fields: FilterValue[]) => {
         this.setState({filters: {...this.state.filters, fields}});
         this.clearConflictingErrorMessage();
     };
 
-    handleCreate = (e) => {
+    handleCreate = (e?: React.FormEvent) => {
         if (e && e.preventDefault) {
             e.preventDefault();
         }
@@ -261,7 +287,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             return;
         }
 
-        const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
+        const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects);
         const configuredFields = this.state.filters.fields.concat([]);
         for (const v of this.state.filters.fields) {
             if (!filterFields.find((f) => f.key === v.key)) {
@@ -278,6 +304,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             channel_id: this.props.channel.id,
             filters,
             name: this.state.subscriptionName,
+            instance_id: this.state.instanceID,
         } as ChannelSubscription;
 
         this.setState({submitting: true, error: null});
@@ -303,12 +330,13 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
     };
 
     render(): JSX.Element {
-        const style = getStyle(this.props.theme);
+        const style = getModalStyles(this.props.theme);
 
-        const projectOptions = getProjectValues(this.props.jiraProjectMetadata);
-        const issueOptions = getIssueValuesForMultipleProjects(this.props.jiraProjectMetadata, this.state.filters.projects);
-        const customFields = getCustomFieldValuesForEvents(this.props.jiraIssueMetadata, this.state.filters.projects);
-        const filterFields = getCustomFieldFiltersForProjects(this.props.jiraIssueMetadata, this.state.filters.projects);
+        const issueTypes = getIssueTypes(this.state.jiraIssueMetadata, this.state.filters.projects[0]);
+        const issueOptions = issueTypes.map((it) => ({label: it.name, value: it.id}));
+
+        const customFields = getCustomFieldValuesForEvents(this.state.jiraIssueMetadata, this.state.filters.projects);
+        const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects);
 
         const eventOptions = JiraEventOptions.concat(customFields);
 
@@ -326,7 +354,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
             let innerComponent = null;
             if (this.state.fetchingIssueMetadata) {
                 innerComponent = <Loading/>;
-            } else if (this.state.filters.projects[0] && !this.state.getMetaDataErr && this.props.jiraIssueMetadata) {
+            } else if (this.state.filters.projects[0] && !this.state.getMetaDataErr && this.state.jiraIssueMetadata) {
                 innerComponent = (
                     <React.Fragment>
                         <ReactSelectSetting
@@ -358,18 +386,19 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             fields={filterFields}
                             values={this.state.filters.fields}
                             chosenIssueTypes={this.state.filters.issue_types}
-                            issueMetadata={this.props.jiraIssueMetadata}
+                            issueMetadata={this.state.jiraIssueMetadata}
                             theme={this.props.theme}
                             onChange={this.handleFilterFieldChange}
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
+                            instanceID={this.state.instanceID}
                         />
                         <div>
                             <label className='control-label margin-bottom'>
                                 {'Approximate JQL Output'}
                             </label>
                             <div style={getBaseStyles(this.props.theme).codeBlock}>
-                                <span>{generateJQLStringFromSubscriptionFilters(this.props.jiraIssueMetadata, filterFields, this.state.filters)}</span>
+                                <span>{generateJQLStringFromSubscriptionFilters(this.state.jiraIssueMetadata, filterFields, this.state.filters)}</span>
                             </div>
                         </div>
                     </React.Fragment>
@@ -393,16 +422,14 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                         />
                     </div>
                     <div className='container-fluid'>
-                        <ReactSelectSetting
-                            name={'projects'}
-                            label={'Project'}
-                            limitOptions={true}
-                            required={true}
-                            onChange={this.handleProjectChange}
-                            options={projectOptions}
-                            isMulti={false}
+                        <JiraInstanceAndProjectSelector
+                            selectedInstanceID={this.state.instanceID}
+                            selectedProjectID={this.state.filters.projects[0]}
+                            onInstanceChange={this.handleJiraInstanceChange}
+                            onProjectChange={this.handleProjectChange}
+                            onError={(error: string) => this.setState({error})}
+
                             theme={this.props.theme}
-                            value={projectOptions.filter((option) => this.state.filters.projects.includes(option.value))}
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
                         />
