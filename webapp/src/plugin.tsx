@@ -4,6 +4,7 @@
 import {Store, Action} from 'redux';
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 
+import ChannelHeaderMenuAction from 'components/channel_header_actions';
 import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue';
 import CreateIssueModal from 'components/modals/create_issue';
 import ChannelSettingsModal from 'components/modals/channel_settings';
@@ -15,7 +16,7 @@ import SetupUI from 'components/setup_ui';
 import PluginId from 'plugin_id';
 
 import reducers from './reducers';
-import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings, openChannelSettings} from './actions';
+import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings} from './actions';
 import Hooks from './hooks/hooks';
 
 const setupUILater = (registry: PluginRegistry, store: Store<object, Action<object>>): () => Promise<void> => async () => {
@@ -32,12 +33,7 @@ const setupUILater = (registry: PluginRegistry, store: Store<object, Action<obje
             registry.registerRootComponent(AttachCommentToIssueModal);
             registry.registerPostDropdownMenuComponent(AttachCommentToIssuePostMenuAction);
         }
-
-        registry.registerChannelHeaderMenuAction('Jira Subscriptions',
-            (channelId) => {
-                store.dispatch(openChannelSettings(channelId));
-            });
-
+        registry.registerChannelHeaderMenuAction(ChannelHeaderMenuAction);
         registry.registerRootComponent(ChannelSettingsModal);
 
         const hooks = new Hooks(store, settings);
