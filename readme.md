@@ -23,11 +23,10 @@ Support for multiple Jira instances is considered, but not yet supported.
 
  - [1. Features](#1-features)
  - [2. Configuration](#2-configuration)
- - [3. Jira v2 Roadmap](#3-jira-v2-roadmap)
- - [4. Development](#4-development)
- - [5. Frequently Asked Questions (FAQ)](#5-frequently-asked-questions-faq)
- - [6. Troubleshooting](#6-Troubleshooting)
- - [7. Help](#7-Help)
+ - [3. Development](#3-development)
+ - [4. Frequently Asked Questions (FAQ)](#4-frequently-asked-questions-faq)
+ - [5. Troubleshooting](#5-Troubleshooting)
+ - [6. Help](#6-Help)
 
 ### Requirements
 - For Jira 2.1 Mattermost server v5.14+ is required (Certain plugin APIs became available)
