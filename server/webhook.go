@@ -61,13 +61,7 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelId, fromU
 
 	text := ""
 	if wh.text != "" && !p.getConfig().HideDecriptionComment {
-		text = wh.text
-		// Get instance for replacing accountids in text. If no instance is available, just skip it.
-		var err error
-		instanceID, err = p.ResolveInstanceID(instanceID)
-		if err == nil {
-			text = p.replaceJiraAccountIds(instanceID, text)
-		}
+		text = p.replaceJiraAccountIds(instanceID, wh.text)
 	}
 
 	if text != "" || len(wh.fields) != 0 {
@@ -99,7 +93,7 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 	}
 
 	// We will only send webhook events if we have a connected instance.
-	instance, err := p.LoadDefaultInstance(instanceID)
+	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		// This isn't an internal server error. There's just no instance installed.
 		return nil, http.StatusOK, nil
@@ -168,7 +162,7 @@ func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...inter
 func (p *Plugin) GetWebhookURL(jiraURL string, teamId, channelId string) (subURL, legacyURL string, err error) {
 	cf := p.getConfig()
 
-	instanceID, err := p.ResolveInstanceID(types.ID(jiraURL))
+	instanceID, err := p.ResolveWebhookInstanceURL(jiraURL)
 	if err != nil {
 		return "", "", err
 	}

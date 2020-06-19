@@ -77,7 +77,7 @@ func (jwh *JiraWebhook) mdIssueType() string {
 }
 
 func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
-	instance, err := p.LoadDefaultInstance(instanceID)
+	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		return err
 	}

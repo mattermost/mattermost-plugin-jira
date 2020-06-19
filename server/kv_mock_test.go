@@ -18,21 +18,23 @@ type testInstance struct {
 var _ Instance = (*testInstance)(nil)
 
 const (
-	mockInstance1URL = "http://jiraTestInstance1URL.some"
-	mockInstance2URL = "http://jiraTestInstance2URL.some"
+	mockInstance1URL = "jiraurl1"
+	mockInstance2URL = "jiraurl2"
 )
 
-var testInstance1 = newTestInstance(nil, mockInstance1URL)
-var testInstance2 = newTestInstance(nil, mockInstance2URL)
+var testInstance1 = &testInstance{
+	InstanceCommon: InstanceCommon{
+		InstanceID: mockInstance1URL,
+		IsV2Legacy: true,
+		Type:       "testInstanceType",
+	},
+}
 
-func newTestInstance(p *Plugin, id types.ID) Instance {
-	return &testInstance{
-		InstanceCommon: InstanceCommon{
-			InstanceID: id,
-			Plugin:     p,
-			Type:       "testInstanceType",
-		},
-	}
+var testInstance2 = &testInstance{
+	InstanceCommon: InstanceCommon{
+		InstanceID: mockInstance2URL,
+		Type:       "testInstanceType",
+	},
 }
 
 func (ti testInstance) GetURL() string {
@@ -68,8 +70,8 @@ type mockUserStore struct{}
 func (store mockUserStore) StoreUser(*User) error {
 	return nil
 }
-func (store mockUserStore) LoadUser(types.ID) (*User, error) {
-	return &User{}, nil
+func (store mockUserStore) LoadUser(id types.ID) (*User, error) {
+	return NewUser(id), nil
 }
 func (store mockUserStore) StoreConnection(types.ID, types.ID, *Connection) error {
 	return nil

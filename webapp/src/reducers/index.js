@@ -34,19 +34,10 @@ function installedInstances(state = [], action) {
     }
 }
 
-function defaultConnectInstance(state = {}, action) {
-    switch (action.type) {
-    case ActionTypes.RECEIVED_INSTANCE_STATUS:
-        return action.data.default_connect_instance ? action.data.default_connect_instance : state;
-    default:
-        return state;
-    }
-}
-
 function defaultUserInstance(state = {}, action) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
-        return action.data.default_use_instance ? action.data.default_use_instance : state;
+        return action.data.user && action.data.user.default_instance_id ? action.data.user.default_instance_id : state;
     default:
         return state;
     }
@@ -201,7 +192,6 @@ export default combineReducers({
     userCanConnect,
     userConnectedInstances,
     installedInstances,
-    defaultConnectInstance,
     defaultUserInstance,
     pluginSettings,
     connectModalVisible,

@@ -3,10 +3,11 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"errors"
 	"strings"
 	"testing"
 
+	jira "github.com/andygrunwald/go-jira"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -28,29 +29,54 @@ const (
 
 type mockUserStoreKV struct {
 	mockUserStore
-	kv map[types.ID]*Connection
+	connections map[types.ID]*Connection
+	users       map[types.ID]*User
 }
 
 var _ UserStore = (*mockUserStoreKV)(nil)
 
 func (store mockUserStoreKV) LoadConnection(instanceID, mattermostUserID types.ID) (*Connection, error) {
-	connection, ok := store.kv[mattermostUserID]
+	connection, ok := store.connections[mattermostUserID]
 	if !ok {
-		return &Connection{}, errors.New("TESTING user not found")
+		return nil, errors.Errorf("TESTING connection %q %q not found", instanceID, mattermostUserID)
 	}
 	return connection, nil
 }
 
+func (store mockUserStoreKV) LoadUser(mattermostUserID types.ID) (*User, error) {
+	user, ok := store.users[mattermostUserID]
+	if !ok {
+		return nil, errors.Errorf("TESTING user %q not found", mattermostUserID)
+	}
+	return user, nil
+}
+
 func getMockUserStoreKV() mockUserStoreKV {
-	// Test Connection
-	juser := Connection{}
-	juser.AccountID = "test"
+	newuser := func(id types.ID) *User {
+		u := NewUser(id)
+		u.ConnectedInstances.Set(testInstance1.Common())
+		return u
+	}
+
+	connection := Connection{
+		User: jira.User{
+			AccountID: "test",
+		},
+	}
+
+	withNotifications := connection // copy
+	withNotifications.Settings = &ConnectionSettings{Notifications: true}
 
 	return mockUserStoreKV{
-		kv: map[types.ID]*Connection{
-			mockUserIDWithNotifications:    {Settings: &ConnectionSettings{Notifications: true}},
-			mockUserIDWithoutNotifications: {Settings: &ConnectionSettings{Notifications: false}},
-			"connected_user":               &juser,
+		users: map[types.ID]*User{
+			"connected_user":               newuser("connected_user"),
+			mockUserIDWithNotifications:    newuser(mockUserIDWithNotifications),
+			mockUserIDWithoutNotifications: newuser(mockUserIDWithoutNotifications),
+		},
+		connections: map[types.ID]*Connection{
+			mockUserIDWithNotifications:    &withNotifications,
+			mockUserIDWithoutNotifications: &connection,
+			"connected_user":               &connection,
 		},
 	}
 }
@@ -70,17 +96,19 @@ func (store mockInstanceStoreKV) LoadInstances() (*Instances, error) {
 func (store mockInstanceStoreKV) LoadInstance(id types.ID) (Instance, error) {
 	user, ok := store.kv[id]
 	if !ok {
-		return nil, errors.New("instance not found")
+		return nil, errors.Errorf("instance %q not found", id)
 	}
 	return user, nil
 }
 
-func getMockInstanceStoreKV(initial ...Instance) mockInstanceStoreKV {
+func getMockInstanceStoreKV(uninitialized bool) mockInstanceStoreKV {
 	kv := map[types.ID]Instance{}
 	instances := NewInstances()
-	for _, instance := range initial {
-		instances.Set(instance.Common())
-		kv[instance.GetID()] = instance
+	if !uninitialized {
+		instances.Set(testInstance1.Common())
+		instances.Set(testInstance2.Common())
+		kv[testInstance1.GetID()] = testInstance1
+		kv[testInstance2.GetID()] = testInstance2
 	}
 	return mockInstanceStoreKV{
 		kv:        kv,
@@ -106,12 +134,12 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 		"no storage": {
 			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
 			initializeEmptyUserStorage: true,
-			expectedMsg:                "Failed to load Jira instance. Please contact your system administrator. Error: no instances installed: not found.",
+			expectedMsg:                "Failed to load your connection to Jira. Please type `jira connect`, or contact your system administrator. Error: TESTING user \"3\" not found.",
 		},
 		"user not found": {
 			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
 			initializeEmptyUserStorage: false,
-			expectedMsg:                "Your username is not connected to Jira. Please type `jira connect`. Error: TESTING user not found.",
+			expectedMsg:                "Failed to load your connection to Jira. Please type `jira connect`, or contact your system administrator. Error: TESTING user \"3\" not found.",
 		},
 		"no params, with notifications": {
 			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithNotifications},
@@ -162,11 +190,7 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 			}).Once().Return(&model.Post{})
 
 			p.SetAPI(currentTestApi)
-			if tt.initializeEmptyUserStorage {
-				p.instanceStore = getMockInstanceStoreKV()
-			} else {
-				p.instanceStore = getMockInstanceStoreKV(testInstance1)
-			}
+			p.instanceStore = getMockInstanceStoreKV(tt.initializeEmptyUserStorage)
 			p.userStore = getMockUserStoreKV()
 
 			p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)

@@ -217,7 +217,7 @@ func (p *Plugin) OnActivate() error {
 	}
 	p.templates = templates
 
-	err = p.API.RegisterCommand(getCommand())
+	err = p.API.RegisterCommand(createJiraCommand())
 	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to register command")
 	}

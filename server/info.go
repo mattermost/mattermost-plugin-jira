@@ -12,12 +12,12 @@ import (
 )
 
 type UserInfo struct {
-	IsConnected            bool       `json:"is_connected"`
-	CanConnect             bool       `json:"can_connect"`
-	User                   *User      `json:"user"`
-	Instances              *Instances `json:"instances"`
-	DefaultConnectInstance Instance   `json:"default_connect_instance,omitempty"`
-	DefaultUserInstance    Instance   `json:"default_user_instance,omitempty"`
+	IsConnected bool       `json:"is_connected"`
+	CanConnect  bool       `json:"can_connect"`
+	User        *User      `json:"user"`
+	Instances   *Instances `json:"instances"`
+
+	connectable *Instances
 }
 
 func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -36,7 +36,7 @@ func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, e
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
-	// return respondJSON(w, info)
+
 	return respondJSON(w, info.AsConfigMap())
 }
 
@@ -52,23 +52,24 @@ func (p *Plugin) GetUserInfo(mattermostUserID types.ID) (*UserInfo, error) {
 	}
 
 	isConnected := !user.ConnectedInstances.IsEmpty()
-	canConnect := false
+	connectable := NewInstances()
 	for _, instanceID := range instances.IDs() {
 		if !user.ConnectedInstances.Contains(instanceID) {
-			canConnect = true
-			break
+			connectable.Set(instances.Get(instanceID))
 		}
 	}
 
-	globalDefaultInstance, _ := p.LoadDefaultInstance("")
-
+	for _, instanceID := range user.ConnectedInstances.IDs() {
+		if !instances.Contains(instanceID) {
+			user.ConnectedInstances.Delete(instanceID)
+		}
+	}
 	return &UserInfo{
-		CanConnect:             canConnect,
-		IsConnected:            isConnected,
-		Instances:              instances,
-		User:                   user,
-		DefaultConnectInstance: globalDefaultInstance,
-		DefaultUserInstance:    globalDefaultInstance,
+		CanConnect:  !connectable.IsEmpty(),
+		IsConnected: isConnected,
+		Instances:   instances,
+		User:        user,
+		connectable: connectable,
 	}, nil
 }
 
@@ -82,12 +83,6 @@ func (info UserInfo) AsConfigMap() map[string]interface{} {
 	}
 	if info.User != nil {
 		m["user"] = info.User.AsConfigMap()
-	}
-	if info.DefaultConnectInstance != nil {
-		m["default_connect_instance"] = info.DefaultConnectInstance.Common().AsConfigMap()
-	}
-	if info.DefaultUserInstance != nil {
-		m["default_use_instance"] = info.DefaultUserInstance.Common().AsConfigMap()
 	}
 	return m
 }

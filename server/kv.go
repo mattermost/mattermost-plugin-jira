@@ -108,9 +108,8 @@ func (store store) get(key string, v interface{}) (returnErr error) {
 	if appErr != nil {
 		return appErr
 	}
-
 	if data == nil {
-		return nil
+		return kvstore.ErrNotFound
 	}
 
 	err := json.Unmarshal(data, v)
@@ -181,10 +180,6 @@ func (store store) LoadConnection(instanceID, mattermostUserID types.ID) (*Conne
 		return nil, errors.Wrapf(err,
 			"failed to load connection for Mattermost user ID:%q, Jira:%q", mattermostUserID, instanceID)
 	}
-	if len(c.JiraAccountID()) == 0 {
-		return nil, errors.Wrapf(kvstore.ErrNotFound,
-			"failed to load connection for Mattermost user ID:%q, Jira:%q: empty Jira account ID", mattermostUserID, instanceID)
-	}
 	c.PluginVersion = manifest.Version
 	return c, nil
 }
@@ -193,11 +188,8 @@ func (store store) LoadMattermostUserId(instanceID types.ID, jiraUserNameOrID st
 	mattermostUserId := types.ID("")
 	err := store.get(keyWithInstanceID(instanceID, types.ID(jiraUserNameOrID)), &mattermostUserId)
 	if err != nil {
-		return "", errors.WithMessage(err,
+		return "", errors.Wrapf(err,
 			"failed to load Mattermost user ID for Jira user/ID: "+jiraUserNameOrID)
-	}
-	if len(mattermostUserId) == 0 {
-		return "", errors.Wrap(kvstore.ErrNotFound, "empty Mattermost user ID")
 	}
 	return mattermostUserId, nil
 }
@@ -241,27 +233,27 @@ func (store store) StoreUser(user *User) (returnErr error) {
 			fmt.Sprintf("failed to store user, mattermostUserId:%s", user.MattermostUserID))
 	}()
 
+	user.PluginVersion = manifest.Version
+
 	key := hashkey(prefixUser, user.MattermostUserID.String())
 	err := store.set(key, user)
 	if err != nil {
 		return err
 	}
 
-	store.plugin.debugf("Stored: user key:%s: %+v", key, user)
+	store.plugin.debugf("Stored: user %s key:%s: connected to:%s", user.MattermostUserID, key, user.ConnectedInstances.IDs())
 	return nil
 }
 
-func (store store) LoadUser(mattermostUserId types.ID) (*User, error) {
-	user := User{
-		ConnectedInstances: NewInstances(),
-	}
-	key := hashkey(prefixUser, user.MattermostUserID.String())
-	err := store.get(key, &user)
+func (store store) LoadUser(mattermostUserID types.ID) (*User, error) {
+	user := NewUser(mattermostUserID)
+	key := hashkey(prefixUser, mattermostUserID.String())
+	err := store.get(key, user)
 	if err != nil {
 		return nil, errors.WithMessage(err,
-			fmt.Sprintf("failed to load Jira user for mattermostUserId:%s", mattermostUserId))
+			fmt.Sprintf("failed to load Jira user for mattermostUserId:%s", mattermostUserID))
 	}
-	return &user, nil
+	return user, nil
 }
 
 var reHexKeyFormat = regexp.MustCompile("^[[:xdigit:]]{32}$")
@@ -354,20 +346,21 @@ func (store store) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
 		returnErr = errors.WithMessage(returnErr, "failed to ensure RSA key")
 	}()
 
-	appErr := store.get(keyRSAKey, &rsaKey)
-	if appErr != nil {
-		return nil, appErr
+	err := store.get(keyRSAKey, &rsaKey)
+	if err != nil && errors.Cause(err) != kvstore.ErrNotFound {
+		return nil, err
 	}
 
 	if rsaKey == nil {
-		newRSAKey, err := rsa.GenerateKey(rand.Reader, 1024)
+		var newRSAKey *rsa.PrivateKey
+		newRSAKey, err = rsa.GenerateKey(rand.Reader, 1024)
 		if err != nil {
 			return nil, err
 		}
 
-		appErr = store.set(keyRSAKey, newRSAKey)
-		if appErr != nil {
-			return nil, appErr
+		err = store.set(keyRSAKey, newRSAKey)
+		if err != nil {
+			return nil, err
 		}
 		rsaKey = newRSAKey
 		store.plugin.debugf("Stored: RSA key")
@@ -376,9 +369,9 @@ func (store store) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
 	// If we weren't able to save a new key above, another server must have beat us to it. Get the
 	// key from the database, and if that fails, error out.
 	if rsaKey == nil {
-		appErr = store.get(keyRSAKey, &rsaKey)
-		if appErr != nil {
-			return nil, appErr
+		err = store.get(keyRSAKey, &rsaKey)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -628,10 +621,7 @@ func (p *Plugin) MigrateV2User(mattermostUserID types.ID) (*User, error) {
 		return nil, err
 	}
 
-	user = &User{
-		MattermostUserID:   mattermostUserID,
-		ConnectedInstances: NewInstances(),
-	}
+	user = NewUser(mattermostUserID)
 	for _, instanceID := range instances.IDs() {
 		_, err = p.userStore.LoadConnection(instanceID, mattermostUserID)
 		if errors.Cause(err) == kvstore.ErrNotFound {

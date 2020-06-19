@@ -57,11 +57,13 @@ export const isUserConnected = (state) => getPluginState(state).userConnected;
 
 export const canUserConnect = (state) => getPluginState(state).userCanConnect;
 
-export const getUserConnectedInstances = (state): Instance[] => getPluginState(state).userConnectedInstances;
+export const getUserConnectedInstances = (state): Instance[] => {
+    const installed = getPluginState(state).installedInstances as Instance[];
+    const connected = getPluginState(state).userConnectedInstances as Instance[];
+    return connected.filter((instance1) => installed.find((instance2) => instance1.instance_id === instance2.instance_id));
+};
 
 export const getInstalledInstances = (state): Instance[] => getPluginState(state).installedInstances;
-
-export const getDefaultConnectInstance = (state) => getPluginState(state).defaultConnectInstance;
 
 export const getDefaultUserInstance = (state) => getPluginState(state).defaultUserInstance;
 

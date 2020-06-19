@@ -43,7 +43,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 		})
 	}()
 
-	instance, err := p.LoadDefaultInstance(instanceID)
+	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -133,12 +133,7 @@ func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, i
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	instance, err := p.LoadDefaultInstance(instanceID)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
-	}
-
-	_, err = p.disconnectUser(instance, types.ID(mattermostUserId))
+	_, err := p.DisconnectUser(instanceID.String(), types.ID(mattermostUserId))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}

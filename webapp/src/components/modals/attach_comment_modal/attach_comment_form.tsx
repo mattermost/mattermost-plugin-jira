@@ -65,9 +65,9 @@ export default class AttachCommentToIssueForm extends PureComponent<Props, State
         this.props.attachComment(issue).then(({error}) => {
             if (error) {
                 this.setState({error: error.message, submitting: false});
-                return;
+            } else {
+                this.handleClose();
             }
-            this.handleClose();
         });
     };
 

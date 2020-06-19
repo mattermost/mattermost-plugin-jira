@@ -24,7 +24,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 	p.updateConfig(func(conf *config) {
 		conf.Secret = "somesecret"
 	})
-	p.instanceStore = getMockInstanceStoreKV(testInstance1)
+	p.instanceStore = getMockInstanceStoreKV(false)
 
 	for name, tc := range map[string]struct {
 		Subs          *Subscriptions
@@ -253,7 +253,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 				return true
 			})).Return(nil)
 
-			actual, err := p.listChannelSubscriptions("", team1.Id)
+			actual, err := p.listChannelSubscriptions(testInstance1.InstanceID, team1.Id)
 			assert.Nil(t, err)
 			assert.NotNil(t, actual)
 
@@ -267,7 +267,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 	p.updateConfig(func(conf *config) {
 		conf.Secret = "somesecret"
 	})
-	p.instanceStore = getMockInstanceStoreKV(testInstance1)
+	p.instanceStore = getMockInstanceStoreKV(false)
 
 	for name, tc := range map[string]struct {
 		WebhookTestData string
@@ -1031,7 +1031,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			wh, err := ParseWebhook(bb)
 			assert.Nil(t, err)
 
-			actual, err := p.getChannelsSubscribed(wh.(*webhook), "")
+			actual, err := p.getChannelsSubscribed(wh.(*webhook), testInstance1.InstanceID)
 			assert.Nil(t, err)
 
 			assert.Equal(t, len(tc.ChannelIds), len(actual))

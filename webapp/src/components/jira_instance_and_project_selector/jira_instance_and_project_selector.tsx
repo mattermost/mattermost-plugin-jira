@@ -1,24 +1,26 @@
 import React from 'react';
 
-import {Instance, ProjectMetadata, ReactSelectOption} from 'types/model';
+import {Theme} from 'mattermost-redux/types/preferences';
+
+import {Instance, ProjectMetadata, ReactSelectOption, APIResponse} from 'types/model';
 import ReactSelectSetting from 'components/react_select_setting';
 import {getProjectValues} from 'utils/jira_issue_metadata';
 
-type Props = {
+export type Props = {
     selectedInstanceID: string | null;
     selectedProjectID: string | null;
     onInstanceChange: (instanceID: string) => void;
     onProjectChange: (projectID: string) => void;
     onError: (err: string) => void;
 
-    theme: {};
+    theme: Theme;
     addValidate: (isValid: () => boolean) => void;
     removeValidate: (isValid: () => boolean) => void;
 
     installedInstances: Instance[];
     connectedInstances: Instance[];
-    defaultUserInstance?: Instance;
-    fetchJiraProjectMetadata: (instanceID: string) => Promise<{data?: ProjectMetadata; error: Error}>;
+    defaultUserInstance?: string;
+    fetchJiraProjectMetadata: (instanceID: string) => Promise<APIResponse<ProjectMetadata>>;
     hideProjectSelector?: boolean;
 };
 
@@ -38,12 +40,14 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
         } else if (this.props.connectedInstances.length === 1) {
             instanceID = this.props.connectedInstances[0].instance_id;
         } else if (this.props.defaultUserInstance) {
-            instanceID = this.props.defaultUserInstance.instance_id;
+            instanceID = this.props.defaultUserInstance;
         }
 
         let fetchingProjectMetadata = false;
         if (instanceID) {
             this.props.onInstanceChange(instanceID);
+
+            // We don't need to have a project selector for the attach modal.
             if (!props.hideProjectSelector) {
                 this.fetchJiraProjectMetadata(instanceID);
                 fetchingProjectMetadata = true;
@@ -58,13 +62,24 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
     }
 
     fetchJiraProjectMetadata = async (instanceID: string) => {
-        this.setState({jiraProjectMetadata: null, fetchingProjectMetadata: true});
+        if (this.state && !this.state.fetchingProjectMetadata) {
+            this.setState({jiraProjectMetadata: null, fetchingProjectMetadata: true});
+        }
+
         const {data, error} = await this.props.fetchJiraProjectMetadata(instanceID);
         if (error) {
             this.setState({fetchingProjectMetadata: false});
             this.props.onError(error.message);
         } else {
-            this.setState({jiraProjectMetadata: data as ProjectMetadata, fetchingProjectMetadata: false});
+            const projectMetadata = data as ProjectMetadata;
+            this.setState({
+                jiraProjectMetadata: projectMetadata,
+                fetchingProjectMetadata: false,
+            });
+
+            if (projectMetadata.default_project_key) {
+                this.props.onProjectChange(projectMetadata.default_project_key);
+            }
         }
     }
 
