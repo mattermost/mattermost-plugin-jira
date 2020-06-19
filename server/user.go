@@ -19,8 +19,10 @@ import (
 )
 
 type User struct {
+	PluginVersion      string
 	MattermostUserID   types.ID   `json:"mattermost_user_id"`
 	ConnectedInstances *Instances `json:"connected_instances,omitempty"`
+	DefaultInstanceID  types.ID   `json:"default_instance_id,omitempty"`
 }
 
 type Connection struct {
@@ -29,6 +31,7 @@ type Connection struct {
 	Oauth1AccessToken  string `json:",omitempty"`
 	Oauth1AccessSecret string `json:",omitempty"`
 	Settings           *ConnectionSettings
+	DefaultProjectKey  string `json:"default_project_key,omitempty"`
 }
 
 func (c *Connection) JiraAccountID() types.ID {
@@ -43,12 +46,19 @@ type ConnectionSettings struct {
 	Notifications bool `json:"notifications"`
 }
 
-func (s ConnectionSettings) String() string {
+func (s *ConnectionSettings) String() string {
 	notifications := "off"
-	if s.Notifications {
+	if s != nil && s.Notifications {
 		notifications = "on"
 	}
 	return fmt.Sprintf("\tNotifications: %s", notifications)
+}
+
+func NewUser(mattermostUserID types.ID) *User {
+	return &User{
+		MattermostUserID:   mattermostUserID,
+		ConnectedInstances: NewInstances(),
+	}
 }
 
 func (p *Plugin) httpUserConnect(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
@@ -63,7 +73,7 @@ func (p *Plugin) httpUserConnect(w http.ResponseWriter, r *http.Request, instanc
 			errors.New("not authorized"))
 	}
 
-	instance, err := p.LoadDefaultInstance(instanceID)
+	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -113,12 +123,11 @@ func (p *Plugin) httpUserDisconnect(w http.ResponseWriter, r *http.Request) (int
 			errors.WithMessage(err, "failed to unmarshal disconnect payload"))
 	}
 
-	instanceID := types.ID(disconnectPayload.InstanceID)
-	_, err = p.DisconnectUser(instanceID, types.ID(mattermostUserId))
-
+	_, err = p.DisconnectUser(disconnectPayload.InstanceID, types.ID(mattermostUserId))
 	if errors.Cause(err) == kvstore.ErrNotFound {
 		return respondErr(w, http.StatusNotFound,
-			errors.Errorf("Could not complete the **disconnection** request. You do not currently have a Jira account at %q linked to your Mattermost account.", instanceID))
+			errors.Errorf("Could not complete the **disconnection** request. You do not currently have a Jira account at %q linked to your Mattermost account.",
+				disconnectPayload.InstanceID))
 	}
 	if err != nil {
 		return respondErr(w, http.StatusNotFound,
@@ -137,11 +146,6 @@ func (p *Plugin) httpUserStart(w http.ResponseWriter, r *http.Request, instanceI
 			errors.New("not authorized"))
 	}
 
-	instanceID, err := p.ResolveInstanceID(instanceID)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
-	}
-
 	// If user is already connected we show them the docs
 	connection, err := p.userStore.LoadConnection(instanceID, types.ID(mattermostUserID))
 	if err == nil && len(connection.JiraAccountID()) != 0 {
@@ -157,6 +161,37 @@ func (user *User) AsConfigMap() map[string]interface{} {
 	return map[string]interface{}{
 		"mattermost_user_id":  user.MattermostUserID.String(),
 		"connected_instances": user.ConnectedInstances.AsConfigMap(),
+		"default_instance_id": user.DefaultInstanceID.String(),
+	}
+}
+
+func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, projectKey string) {
+	user, err := p.userStore.LoadUser(mattermostUserID)
+	if err != nil {
+		return
+	}
+	if !user.ConnectedInstances.Contains(instanceID) {
+		return
+	}
+
+	connection, err := p.userStore.LoadConnection(instanceID, user.MattermostUserID)
+	if err != nil {
+		return
+	}
+	if instanceID != "" && instanceID != user.DefaultInstanceID {
+		user.DefaultInstanceID = instanceID
+		err = p.userStore.StoreUser(user)
+		if err != nil {
+			return
+		}
+	}
+
+	if projectKey != "" && projectKey != connection.DefaultProjectKey {
+		connection.DefaultProjectKey = projectKey
+		err = p.userStore.StoreConnection(instanceID, user.MattermostUserID, connection)
+		if err != nil {
+			return
+		}
 	}
 }
 
@@ -185,11 +220,8 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, conne
 		if errors.Cause(err) != kvstore.ErrNotFound {
 			return err
 		}
-		user = &User{
-			MattermostUserID: mattermostUserID,
-		}
+		user = NewUser(mattermostUserID)
 	}
-
 	user.ConnectedInstances.Set(instance.Common())
 
 	err = p.userStore.StoreConnection(instance.GetID(), mattermostUserID, connection)
@@ -213,31 +245,27 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, conne
 	return nil
 }
 
-func (p *Plugin) DisconnectUser(instanceID, mattermostUserID types.ID) (*Connection, error) {
-	instance, err := p.LoadDefaultInstance(instanceID)
+func (p *Plugin) DisconnectUser(instanceURL string, mattermostUserID types.ID) (*Connection, error) {
+	user, instance, err := p.LoadUserInstance(mattermostUserID, instanceURL)
 	if err != nil {
 		return nil, err
 	}
-	return p.disconnectUser(instance, mattermostUserID)
+	return p.disconnectUser(instance, user)
 }
 
-func (p *Plugin) disconnectUser(instance Instance, mattermostUserID types.ID) (*Connection, error) {
-	user, err := p.userStore.LoadUser(mattermostUserID)
-	if err != nil {
-		return nil, err
-	}
+func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, error) {
 	if !user.ConnectedInstances.Contains(instance.GetID()) {
 		return nil, errors.Wrapf(kvstore.ErrNotFound, "user is not connected to %q", instance.GetID())
 	}
-	conn, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
+	conn, err := p.userStore.LoadConnection(instance.GetID(), user.MattermostUserID)
 	if err != nil {
 		return nil, err
 	}
 
 	user.ConnectedInstances.Delete(instance.GetID())
 
-	err = p.userStore.DeleteConnection(instance.GetID(), mattermostUserID)
-	if err != nil {
+	err = p.userStore.DeleteConnection(instance.GetID(), user.MattermostUserID)
+	if err != nil && errors.Cause(err) != kvstore.ErrNotFound {
 		return nil, err
 	}
 	err = p.userStore.StoreUser(user)
@@ -245,11 +273,11 @@ func (p *Plugin) disconnectUser(instance Instance, mattermostUserID types.ID) (*
 		return nil, err
 	}
 
-	info, err := p.GetUserInfo(types.ID(mattermostUserID))
+	info, err := p.GetUserInfo(types.ID(user.MattermostUserID))
 	if err != nil {
 		return nil, err
 	}
 	p.API.PublishWebSocketEvent(websocketEventDisconnect, info.AsConfigMap(),
-		&model.WebsocketBroadcast{UserId: mattermostUserID.String()})
+		&model.WebsocketBroadcast{UserId: user.MattermostUserID.String()})
 	return conn, nil
 }

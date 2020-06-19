@@ -4,6 +4,8 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -47,7 +49,7 @@ func (instances Instances) AsConfigMap() []interface{} {
 	return out
 }
 
-func (instances Instances) GetLegacy() *InstanceCommon {
+func (instances Instances) GetV2Legacy() *InstanceCommon {
 	if instances.IsEmpty() {
 		return nil
 	}
@@ -65,7 +67,7 @@ func (instances Instances) SetV2Legacy(instanceID types.ID) error {
 		return errors.Wrapf(kvstore.ErrNotFound, "instance %q", instanceID)
 	}
 
-	prev := instances.GetLegacy()
+	prev := instances.GetV2Legacy()
 	if prev != nil {
 		prev.IsV2Legacy = false
 	}
@@ -142,10 +144,6 @@ func (p *Plugin) wsInstancesChanged(instances *Instances) {
 	msg := map[string]interface{}{
 		"instances": instances.AsConfigMap(),
 	}
-	if instances.Len() == 1 {
-		instanceID := instances.IDs()[0]
-		msg["default_connect_instance"] = instances.Get(instanceID).AsConfigMap()
-	}
 	// Notify users we have uninstalled an instance
 	p.API.PublishWebSocketEvent(websocketEventInstanceStatus, msg, &model.WebsocketBroadcast{})
 }
@@ -161,48 +159,154 @@ func (p *Plugin) StoreV2LegacyInstance(id types.ID) error {
 	return nil
 }
 
-func (p *Plugin) LoadDefaultInstance(explicit types.ID) (Instance, error) {
-	id, err := p.ResolveInstanceID(explicit)
-	if err != nil {
-		return nil, err
-	}
-	if id == "" {
-		return nil, errors.Wrap(kvstore.ErrNotFound, "no default available")
-	}
-	instance, err := p.instanceStore.LoadInstance(id)
-	if err != nil {
-		return nil, err
-	}
-	return instance, nil
-}
-
-func (p *Plugin) ResolveInstanceID(explicit types.ID) (types.ID, error) {
-	if explicit != "" {
-		return explicit, nil
-	}
-
-	instances, err := p.instanceStore.LoadInstances()
-	if err != nil {
-		return "", err
-	}
-	switch instances.Len() {
-	case 0:
-		return "", errors.Wrap(kvstore.ErrNotFound, "no instances installed")
-	case 1:
-		return instances.IDs()[0], nil
-	default:
-		return "", errors.Wrapf(kvstore.ErrNotFound, "can't choose default from %v instances", instances.Len())
-	}
-}
-
-func (p *Plugin) ResolveInstanceURL(jiraurl string) (types.ID, error) {
-	if jiraurl != "" {
-		var err error
-		jiraurl, err = utils.NormalizeInstallURL(p.GetSiteURL(), jiraurl)
+func (p *Plugin) ResolveWebhookInstanceURL(instanceURL string) (types.ID, error) {
+	var err error
+	if instanceURL != "" {
+		instanceURL, err = utils.NormalizeInstallURL(p.GetSiteURL(), instanceURL)
 		if err != nil {
 			return "", err
 		}
-		return types.ID(jiraurl), err
 	}
-	return p.ResolveInstanceID(types.ID(jiraurl))
+	instanceID := types.ID(instanceURL)
+	if instanceID == "" {
+		instances, err := p.instanceStore.LoadInstances()
+		if err != nil {
+			return "", err
+		}
+		if instances.IsEmpty() {
+			return "", errors.Wrap(kvstore.ErrNotFound, "no instances installed")
+		}
+		v2 := instances.GetV2Legacy()
+		if v2 == nil {
+			return "", errors.Wrap(kvstore.ErrNotFound, "V2 legacy instance is not set")
+		}
+		instanceID = v2.InstanceID
+	}
+	return instanceID, nil
+}
+
+func (p *Plugin) LoadUserInstance(mattermostUserID types.ID, instanceURL string) (*User, Instance, error) {
+	user, err := p.userStore.LoadUser(mattermostUserID)
+	if err != nil {
+		return nil, nil, err
+	}
+	instanceID, err := p.resolveUserInstanceURL(user, instanceURL)
+	if err != nil {
+		return nil, nil, err
+	}
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return nil, nil, err
+	}
+	return user, instance, nil
+}
+
+func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.ID, error) {
+	var err error
+	if instanceURL != "" {
+		instanceURL, err = utils.NormalizeInstallURL(p.GetSiteURL(), instanceURL)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	switch {
+	case types.ID(instanceURL) != "":
+		return types.ID(instanceURL), nil
+	case user.DefaultInstanceID != "":
+		return user.DefaultInstanceID, nil
+	case user.ConnectedInstances.Len() == 1:
+		return user.ConnectedInstances.IDs()[0], nil
+	}
+
+	return "", errors.Wrap(kvstore.ErrNotFound, "unable to pick the default Jira instance")
+}
+
+func (p *Plugin) httpAutocompleteConnect(w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be GET"))
+	}
+	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-Id"))
+	if mattermostUserID == "" {
+		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
+	}
+
+	info, err := p.GetUserInfo(mattermostUserID)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	out := []model.AutocompleteListItem{}
+	for _, instanceID := range info.connectable.IDs() {
+		out = append(out, model.AutocompleteListItem{
+			Item: instanceID.String(),
+		})
+	}
+	return respondJSON(w, out)
+}
+
+func (p *Plugin) httpAutocompleteUserInstance(w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be GET"))
+	}
+	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-Id"))
+	if mattermostUserID == "" {
+		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
+	}
+
+	info, err := p.GetUserInfo(mattermostUserID)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	out := []model.AutocompleteListItem{}
+	if info.User == nil {
+		return respondJSON(w, out)
+	}
+
+	// Put the default in first
+	if info.User.DefaultInstanceID != "" {
+		out = append(out, model.AutocompleteListItem{
+			Item: info.User.DefaultInstanceID.String(),
+		})
+	}
+
+	for _, instanceID := range info.User.ConnectedInstances.IDs() {
+		if instanceID != info.User.DefaultInstanceID {
+			out = append(out, model.AutocompleteListItem{
+				Item: instanceID.String(),
+			})
+		}
+	}
+	return respondJSON(w, out)
+}
+
+func (p *Plugin) httpAutocompleteInstalledInstance(w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be GET"))
+	}
+	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-Id"))
+	if mattermostUserID == "" {
+		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
+	}
+
+	info, err := p.GetUserInfo(mattermostUserID)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	out := []model.AutocompleteListItem{}
+	if info.User == nil {
+		return respondJSON(w, out)
+	}
+
+	for _, instanceID := range info.Instances.IDs() {
+		out = append(out, model.AutocompleteListItem{
+			Item: instanceID.String(),
+		})
+	}
+	return respondJSON(w, out)
 }

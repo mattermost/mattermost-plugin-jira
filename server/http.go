@@ -23,33 +23,36 @@ import (
 )
 
 const (
-	routeAPICreateIssue            = "/api/v2/create-issue"
-	routeAPIGetCreateIssueMetadata = "/api/v2/get-create-issue-metadata-for-project"
-	routeAPIGetJiraProjectMetadata = "/api/v2/get-jira-project-metadata"
-	routeAPIGetSearchIssues        = "/api/v2/get-search-issues"
-	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
-	routeAPIUserInfo               = "/api/v2/userinfo"
-	routeAPISubscribeWebhook       = "/api/v2/webhook"
-	routeAPISubscriptionsChannel   = "/api/v2/subscriptions/channel"
-	routeAPISettingsInfo           = "/api/v2/settingsinfo"
-	routeAPIStats                  = "/api/v2/stats"
-	routeIssueTransition           = "/api/v2/transition"
-	routeAPIUserDisconnect         = "/api/v3/disconnect"
-	routeACInstalled               = "/ac/installed"
-	routeACJSON                    = "/ac/atlassian-connect.json"
-	routeACUninstalled             = "/ac/uninstalled"
-	routeACUserRedirectWithToken   = "/ac/user_redirect.html"
-	routeACUserConfirm             = "/ac/user_confirm.html"
-	routeACUserConnected           = "/ac/user_connected.html"
-	routeACUserDisconnected        = "/ac/user_disconnected.html"
-	routeIncomingWebhook           = "/webhook"
-	routeOAuth1Complete            = "/oauth1/complete.html"
-	routeUserStart                 = "/user/start"
-	routeUserConnect               = "/user/connect"
-	routeUserDisconnect            = "/user/disconnect"
-	routeWorkflowRegister          = "/workflow/meta"
-	routeWorkflowTriggerSetup      = "/workflow/trigger_setup"
-	routeWorkflowCreateIssue       = "/workflow/create_issue"
+	routeAutocompleteConnect           = "/autocomplete/connect"
+	routeAutocompleteUserInstance      = "/autocomplete/user-instance"
+	routeAutocompleteInstalledInstance = "/autocomplete/installed-instance"
+	routeAPICreateIssue                = "/api/v2/create-issue"
+	routeAPIGetCreateIssueMetadata     = "/api/v2/get-create-issue-metadata-for-project"
+	routeAPIGetJiraProjectMetadata     = "/api/v2/get-jira-project-metadata"
+	routeAPIGetSearchIssues            = "/api/v2/get-search-issues"
+	routeAPIAttachCommentToIssue       = "/api/v2/attach-comment-to-issue"
+	routeAPIUserInfo                   = "/api/v2/userinfo"
+	routeAPISubscribeWebhook           = "/api/v2/webhook"
+	routeAPISubscriptionsChannel       = "/api/v2/subscriptions/channel"
+	routeAPISettingsInfo               = "/api/v2/settingsinfo"
+	routeAPIStats                      = "/api/v2/stats"
+	routeIssueTransition               = "/api/v2/transition"
+	routeAPIUserDisconnect             = "/api/v3/disconnect"
+	routeACInstalled                   = "/ac/installed"
+	routeACJSON                        = "/ac/atlassian-connect.json"
+	routeACUninstalled                 = "/ac/uninstalled"
+	routeACUserRedirectWithToken       = "/ac/user_redirect.html"
+	routeACUserConfirm                 = "/ac/user_confirm.html"
+	routeACUserConnected               = "/ac/user_connected.html"
+	routeACUserDisconnected            = "/ac/user_disconnected.html"
+	routeIncomingWebhook               = "/webhook"
+	routeOAuth1Complete                = "/oauth1/complete.html"
+	routeUserStart                     = "/user/start"
+	routeUserConnect                   = "/user/connect"
+	routeUserDisconnect                = "/user/disconnect"
+	routeWorkflowRegister              = "/workflow/meta"
+	routeWorkflowTriggerSetup          = "/workflow/trigger_setup"
+	routeWorkflowCreateIssue           = "/workflow/create_issue"
 )
 
 const routePrefixInstance = "instance"
@@ -69,7 +72,31 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 }
 
 func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) (int, error) {
-	instanceID, path := splitInstancePath(r.URL.Path)
+	var err error
+	path := r.URL.Path
+	instanceURL := ""
+	instanceURL, path = splitInstancePath(path)
+	callbackInstanceID := types.ID("")
+
+	// Add any "callback" URLs here so that the caller instance is properly identified
+	switch path {
+	case routeACJSON,
+		routeACUserRedirectWithToken,
+		routeACUserConfirm,
+		routeACUserConnected,
+		routeACUserDisconnected,
+		routeIncomingWebhook,
+		routeOAuth1Complete,
+		routeUserDisconnect,
+		routeUserConnect,
+		routeUserStart,
+		routeAPISubscribeWebhook:
+
+		callbackInstanceID, err = p.ResolveWebhookInstanceURL(instanceURL)
+		if err != nil {
+			return respondErr(w, http.StatusInternalServerError, err)
+		}
+	}
 
 	switch path {
 	// Issue APIs
@@ -98,7 +125,7 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 		// Atlassian Connect application
 	case routeACJSON:
-		return p.httpACJSON(w, r, instanceID)
+		return p.httpACJSON(w, r, callbackInstanceID)
 	case routeACInstalled:
 		return p.httpACInstalled(w, r)
 	case routeACUninstalled:
@@ -106,33 +133,41 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 	// Atlassian Connect user mapping
 	case routeACUserRedirectWithToken:
-		return p.httpACUserRedirect(w, r, instanceID)
+		return p.httpACUserRedirect(w, r, callbackInstanceID)
 	case routeACUserConfirm,
 		routeACUserConnected,
 		routeACUserDisconnected:
-		return p.httpACUserInteractive(w, r, instanceID)
+		return p.httpACUserInteractive(w, r, callbackInstanceID)
+
+		// Command autocomplete
+	case routeAutocompleteConnect:
+		return p.httpAutocompleteConnect(w, r)
+	case routeAutocompleteUserInstance:
+		return p.httpAutocompleteUserInstance(w, r)
+	case routeAutocompleteInstalledInstance:
+		return p.httpAutocompleteInstalledInstance(w, r)
 
 	// Incoming webhook
 	case routeIncomingWebhook:
-		return p.httpWebhook(w, r, instanceID)
+		return p.httpWebhook(w, r, callbackInstanceID)
 
 	// Oauth1 (Jira Server)
 	case routeOAuth1Complete:
-		return p.httpOAuth1aComplete(w, r, instanceID)
+		return p.httpOAuth1aComplete(w, r, callbackInstanceID)
 	case routeUserDisconnect:
-		return p.httpOAuth1aDisconnect(w, r, instanceID)
+		return p.httpOAuth1aDisconnect(w, r, callbackInstanceID)
 
 	// User connect/disconnect links
 	case routeUserConnect:
-		return p.httpUserConnect(w, r, instanceID)
+		return p.httpUserConnect(w, r, callbackInstanceID)
 	case routeUserStart:
-		return p.httpUserStart(w, r, instanceID)
+		return p.httpUserStart(w, r, callbackInstanceID)
 	case routeAPIUserDisconnect:
 		return p.httpUserDisconnect(w, r)
 
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:
-		return p.httpSubscribeWebhook(w, r, instanceID)
+		return p.httpSubscribeWebhook(w, r, callbackInstanceID)
 
 	// expvar
 	case "/debug/vars":
@@ -161,7 +196,7 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	if strings.HasPrefix(path, routeAPISubscriptionsChannel) {
-		return p.httpChannelSubscriptions(w, r, instanceID)
+		return p.httpChannelSubscriptions(w, r)
 	}
 
 	return respondErr(w, http.StatusNotFound, errors.New("not found"))
@@ -330,7 +365,7 @@ func instancePath(route string, instanceID types.ID) string {
 	return path.Join("/"+routePrefixInstance+"/"+encoded, route)
 }
 
-func splitInstancePath(route string) (instanceID types.ID, remainingPath string) {
+func splitInstancePath(route string) (instanceURL string, remainingPath string) {
 	leadingSlash := ""
 	ss := strings.Split(route, "/")
 	if len(ss) > 1 && ss[0] == "" {
@@ -349,5 +384,5 @@ func splitInstancePath(route string) (instanceID types.ID, remainingPath string)
 	if err != nil {
 		return "", route
 	}
-	return types.ID(id), leadingSlash + strings.Join(ss[2:], "/")
+	return string(id), leadingSlash + strings.Join(ss[2:], "/")
 }

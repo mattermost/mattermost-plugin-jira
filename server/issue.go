@@ -49,7 +49,7 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 		return respondErr(w, http.StatusUnauthorized, errors.New(msg))
 	}
 
-	val := requestData.Context["issueKey"]
+	val := requestData.Context["issue_key"]
 	issueKey, ok := val.(string)
 	if !ok {
 		msg = "No issue key was found in context data"
@@ -65,7 +65,7 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 		return respondErr(w, http.StatusInternalServerError, errors.New(msg))
 	}
 
-	val = requestData.Context["instanceID"]
+	val = requestData.Context["instance_id"]
 	instanceID, ok := val.(string)
 	if !ok {
 		msg = "No issue key was found in context data"
@@ -262,6 +262,8 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 		return nil, errors.WithMessage(err, "failed to fetch issue details "+created.Key)
 	}
 
+	p.UpdateUserDefaults(in.mattermostUserID, in.InstanceID, project.Key)
+
 	// Create a public post for all the channel members
 	publicReply := &model.Post{
 		Message:   fmt.Sprintf("Created a Jira issue: %s", mdKeySummaryLink(createdIssue)),
@@ -319,7 +321,7 @@ func (p *Plugin) WorkflowCreateIssue(activationParams *workflowclient.ActionActi
 		return nil, errors.WithMessage(err, "failed to decode incoming request specific parameters")
 	}
 
-	instance, err := p.LoadDefaultInstance(create.InstanceID)
+	instance, err := p.instanceStore.LoadInstance(create.InstanceID)
 	if err != nil {
 		return nil, err
 	}
@@ -497,6 +499,7 @@ func (p *Plugin) GetSearchIssues(instanceID, mattermostUserID types.ID, q, jqlSt
 type OutProjectMetadata struct {
 	Projects          []utils.ReactSelectOption            `json:"projects"`
 	IssuesPerProjects map[string][]utils.ReactSelectOption `json:"issues_per_project"`
+	DefaultProjectKey string                               `json:"default_project_key,omitempty"`
 }
 
 func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -512,7 +515,7 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 
 	instanceID := r.FormValue("instance_id")
 
-	cimd, err := p.GetJiraProjectMetadata(types.ID(instanceID), types.ID(mattermostUserId))
+	cimd, connection, err := p.GetJiraProjectMetadata(types.ID(instanceID), types.ID(mattermostUserId))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to GetProjectMetadata"))
@@ -548,16 +551,20 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 	return respondJSON(w, OutProjectMetadata{
 		Projects:          projects,
 		IssuesPerProjects: issues,
+		DefaultProjectKey: connection.DefaultProjectKey,
 	})
 }
 
-func (p *Plugin) GetJiraProjectMetadata(instanceID, mattermostUserID types.ID) (*jira.CreateMetaInfo, error) {
-	client, _, _, err := p.getClient(instanceID, mattermostUserID)
+func (p *Plugin) GetJiraProjectMetadata(instanceID, mattermostUserID types.ID) (*jira.CreateMetaInfo, *Connection, error) {
+	client, _, connection, err := p.getClient(instanceID, mattermostUserID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-
-	return client.GetCreateMeta(nil)
+	metainfo, err := client.GetCreateMeta(nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	return metainfo, connection, nil
 }
 
 var reJiraIssueKey = regexp.MustCompile(`^([[:alpha:]]+)-([[:digit:]]+)$`)
@@ -668,6 +675,8 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 		// the original post was a reply
 		rootId = post.RootId
 	}
+
+	p.UpdateUserDefaults(in.mattermostUserID, in.InstanceID, "")
 
 	msg := fmt.Sprintf("Message attached to [%s](%s/browse/%s)", in.IssueKey, instance.GetURL(), in.IssueKey)
 
@@ -1029,7 +1038,7 @@ func (p *Plugin) TransitionIssue(in *InTransitionIssue) (string, error) {
 }
 
 func (p *Plugin) getClient(instanceID, mattermostUserID types.ID) (Client, Instance, *Connection, error) {
-	instance, err := p.LoadDefaultInstance(instanceID)
+	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		return nil, nil, nil, err
 	}

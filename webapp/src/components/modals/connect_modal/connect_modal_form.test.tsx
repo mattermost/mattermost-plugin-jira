@@ -4,6 +4,8 @@
 import React from 'react';
 import {shallow} from 'enzyme';
 
+import {InstanceType} from 'types/model';
+
 import ConnectModalForm from './connect_modal_form';
 
 describe('components/ConnectModalForm', () => {
@@ -19,20 +21,17 @@ describe('components/ConnectModalForm', () => {
         connectedInstances: [
             {
                 instance_id: 'https://something.atlassian.net',
-                is_default: true,
-                type: 'cloud' as 'cloud',
+                type: InstanceType.CLOUD,
             },
         ],
         installedInstances: [
             {
                 instance_id: 'https://something.atlassian.net',
-                is_default: true,
-                type: 'cloud' as 'cloud',
+                type: InstanceType.CLOUD,
             },
             {
                 instance_id: 'http://localhost:8080',
-                is_default: true,
-                type: 'server' as 'server',
+                type: InstanceType.SERVER,
             },
         ],
     };

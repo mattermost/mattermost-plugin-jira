@@ -7,9 +7,9 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 import PluginId from 'plugin_id';
 import ActionTypes from 'action_types';
 import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
-import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances, getDefaultConnectInstance} from 'selectors';
+import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances} from 'selectors';
 import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
-import {ChannelSubscription, CreateIssueRequest, SearchIssueParams} from 'types/model';
+import {ChannelSubscription, CreateIssueRequest, SearchIssueParams, InstanceType} from 'types/model';
 
 export const openConnectModal = () => {
     return {
@@ -158,7 +158,7 @@ export const createChannelSubscription = (subscription: ChannelSubscription) => 
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            const data = await doFetch(`${baseUrl}/instance/${btoa(subscription.instance_id)}/api/v2/subscriptions/channel`, {
+            const data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel`, {
                 method: 'post',
                 body: JSON.stringify(subscription),
             });
@@ -179,7 +179,7 @@ export const editChannelSubscription = (subscription: ChannelSubscription) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            const data = await doFetch(`${baseUrl}/instance/${btoa(subscription.instance_id)}/api/v2/subscriptions/channel`, {
+            const data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel`, {
                 method: 'put',
                 body: JSON.stringify(subscription),
             });
@@ -200,7 +200,7 @@ export const deleteChannelSubscription = (subscription: ChannelSubscription) => 
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            await doFetch(`${baseUrl}/instance/${btoa(subscription.instance_id)}/api/v2/subscriptions/channel/${subscription.id}`, {
+            await doFetch(`${baseUrl}/api/v2/subscriptions/channel/${subscription.id}?instance_id=${subscription.instance_id}`, {
                 method: 'delete',
             });
 
@@ -222,7 +222,7 @@ export const fetchChannelSubscriptions = (channelId: string) => {
         const installedInstances = getInstalledInstances(getState());
 
         const promises = installedInstances.map((instance) => {
-            return doFetch(`${baseUrl}/instance/${btoa(instance.instance_id)}/api/v2/subscriptions/channel/${channelId}`, {
+            return doFetch(`${baseUrl}/api/v2/subscriptions/channel/${channelId}?instance_id=${instance.instance_id}`, {
                 method: 'get',
             });
         });
@@ -332,7 +332,10 @@ export function handleConnectFlow(instanceID?: string) {
             return;
         }
 
-        let instance = getDefaultConnectInstance(state);
+        let instance;
+        if (instances.length === 1) {
+            instance = instances[0];
+        }
         if (instanceID) {
             const alreadyConnected = connectedInstances.find((i) => i.instance_id === instanceID);
 
@@ -350,7 +353,7 @@ export function handleConnectFlow(instanceID?: string) {
             }
         }
 
-        if (instance && instance.type === 'server' && isDesktopApp() && !isMinimumDesktopAppVersion(4, 3, 0)) { // eslint-disable-line no-magic-numbers
+        if (instance && instance.type === InstanceType.SERVER && isDesktopApp() && !isMinimumDesktopAppVersion(4, 3, 0)) { // eslint-disable-line no-magic-numbers
             const errMsg = 'Your version of the Mattermost desktop client does not support authenticating between Jira and Mattermost directly. To connect your Jira account with Mattermost, please go to Mattermost via your web browser and type `/jira connect`, or [check the Mattermost download page](https://mattermost.com/download/#mattermostApps) to get the latest version of the desktop client.';
             dispatch(sendEphemeralPost(errMsg));
             return;

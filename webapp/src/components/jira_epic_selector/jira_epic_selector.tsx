@@ -6,9 +6,11 @@ import React from 'react';
 import debounce from 'debounce-promise';
 import AsyncSelect from 'react-select/async';
 
+import {Theme} from 'mattermost-redux/types/preferences';
+
 import {getStyleForReactSelect} from 'utils/styles';
 import {isEpicNameField, isEpicIssueType} from 'utils/jira_issue_metadata';
-import {IssueMetadata, ReactSelectOption, JiraIssue, SearchIssueParams} from 'types/model';
+import {IssueMetadata, ReactSelectOption, JiraIssue, SearchIssueParams, APIResponse} from 'types/model';
 
 import Setting from 'components/setting';
 
@@ -18,8 +20,8 @@ const searchDebounceDelay = 400;
 type Props = {
     required?: boolean;
     hideRequiredStar?: boolean;
-    searchIssues: (params: SearchIssueParams) => Promise<{data: JiraIssue[]}>;
-    theme: object;
+    searchIssues: (params: SearchIssueParams) => Promise<APIResponse<JiraIssue[]>>;
+    theme: Theme;
     isMulti?: boolean;
     onChange: (values: string[]) => void;
     value: string[];

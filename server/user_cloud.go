@@ -27,7 +27,7 @@ func (p *Plugin) httpACUserRedirect(w http.ResponseWriter, r *http.Request, inst
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
-	instance, err := p.LoadDefaultInstance(instanceID)
+	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -56,7 +56,7 @@ func (p *Plugin) httpACUserRedirect(w http.ResponseWriter, r *http.Request, inst
 }
 
 func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
-	instance, err := p.LoadDefaultInstance(instanceID)
+	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -148,7 +148,7 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		// _ = p.API.SendEphemeralPost(mattermostUserId, makePost(p.getUserID(), channelID, msg))
 
 	case routeACUserDisconnected:
-		_, err = p.disconnectUser(ci, types.ID(mattermostUserId))
+		_, err = p.DisconnectUser(ci.InstanceID.String(), types.ID(mattermostUserId))
 
 	case routeACUserConfirm:
 

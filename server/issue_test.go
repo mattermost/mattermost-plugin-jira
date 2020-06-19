@@ -89,7 +89,7 @@ func TestTransitionJiraIssue(t *testing.T) {
 	p := Plugin{}
 	p.SetAPI(api)
 	p.userStore = getMockUserStoreKV()
-	p.instanceStore = getMockInstanceStoreKV(testInstance1)
+	p.instanceStore = getMockInstanceStoreKV(false)
 
 	tests := map[string]struct {
 		issueKey    string
@@ -132,7 +132,7 @@ func TestTransitionJiraIssue(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			actual, err := p.TransitionIssue(&InTransitionIssue{
-				InstanceID:       "",
+				InstanceID:       testInstance1.InstanceID,
 				mattermostUserID: "connected_user",
 				IssueKey:         tt.issueKey,
 				ToState:          tt.toState,

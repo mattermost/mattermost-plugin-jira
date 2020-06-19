@@ -1,16 +1,19 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {isDesktopApp, isMinimumDesktopAppVersion} from '../utils/user_agent';
 import {openCreateModalWithoutPost, openChannelSettings, sendEphemeralPost, openDisconnectModal, handleConnectFlow} from '../actions';
-import {isUserConnected, getInstalledInstances, getPluginSettings, getDefaultConnectInstance, getUserConnectedInstances} from '../selectors';
+import {isUserConnected, getInstalledInstances, getPluginSettings, getUserConnectedInstances} from '../selectors';
 
 type ContextArgs = {channel_id: string};
 
 const createCommand = '/jira create';
 const connectCommand = '/jira connect';
 const disconnectCommand = '/jira disconnect';
+const issueCreateCommand = '/jira issue create';
+const instanceConnectCommand = '/jira instance connect';
+const instanceDisconnectCommand = '/jira instance disconnect';
 const subscribeCommand = '/jira subscribe';
+const subscribeEditCommand = '/jira subscribe edit';
 
 export default class Hooks {
     private store: any;
@@ -40,19 +43,19 @@ export default class Hooks {
             shouldEnableCreate = this.settings.ui_enabled;
         }
 
-        if (message.startsWith(createCommand) && shouldEnableCreate) {
+        if ((message.startsWith(createCommand) || message.startsWith(issueCreateCommand)) && shouldEnableCreate) {
             return this.handleCreateSlashCommand(message, contextArgs);
         }
 
-        if (message.startsWith(connectCommand)) {
+        if (message.startsWith(connectCommand) || message.startsWith(instanceConnectCommand)) {
             return this.handleConnectSlashCommand(message, contextArgs);
         }
 
-        if (message.startsWith(disconnectCommand)) {
+        if (message.startsWith(disconnectCommand) || message.startsWith(instanceDisconnectCommand)) {
             return this.handleDisconnectSlashCommand(message, contextArgs);
         }
 
-        if (message === subscribeCommand) {
+        if (message === subscribeCommand || message === subscribeEditCommand) {
             return this.handleSubscribeSlashCommand(message, contextArgs);
         }
 
@@ -74,7 +77,6 @@ export default class Hooks {
     }
 
     handleSubscribeSlashCommand = (message: string, contextArgs: ContextArgs) => {
-        // TODO: <><> add instance picker and/or filter to Subscribe UI
         if (!getInstalledInstances(this.store.getState())) {
             this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
             return Promise.resolve({});

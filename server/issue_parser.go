@@ -40,11 +40,12 @@ func getTransitionActions(instanceID types.ID, client Client, issue *jira.Issue)
 	var actions []*model.PostAction
 
 	ctx := map[string]interface{}{
-		"issueKey": issue.ID,
+		"issue_key":   issue.ID,
+		"instance_id": instanceID.String(),
 	}
 
 	integration := &model.PostActionIntegration{
-		URL:     fmt.Sprintf("/plugins/%s%s", manifest.Id, instancePath(routeIssueTransition, instanceID)),
+		URL:     fmt.Sprintf("/plugins/%s%s", manifest.Id, routeIssueTransition),
 		Context: ctx,
 	}
 

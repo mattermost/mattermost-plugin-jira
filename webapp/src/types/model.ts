@@ -71,6 +71,7 @@ export type IssueMetadata = {
 export type ProjectMetadata = {
     projects: ReactSelectOption[];
     issues_per_project: {[key: string]: ReactSelectOption[]};
+    default_project_key?: string;
 }
 
 export enum JiraFieldTypeEnums {
@@ -121,10 +122,13 @@ export type ChannelSubscription = {
     instance_id: string;
 }
 
+export enum InstanceType {
+    CLOUD = 'cloud',
+    SERVER = 'server',
+}
 export type Instance = {
     instance_id: string;
-    is_default: boolean;
-    type: 'cloud' | 'server';
+    type: InstanceType;
 }
 
 export type GetConnectedResponse = {

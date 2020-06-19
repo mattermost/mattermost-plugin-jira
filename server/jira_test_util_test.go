@@ -23,6 +23,7 @@ func getJiraTestData(filename string) ([]byte, error) {
 func withExistingChannelSubscriptions(subscriptions []ChannelSubscription) *Subscriptions {
 	ret := NewSubscriptions()
 	for _, sub := range subscriptions {
+		sub.InstanceID = testInstance1.GetID()
 		ret.Channel.add(&sub)
 	}
 	return ret
