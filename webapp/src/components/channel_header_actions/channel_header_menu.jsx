@@ -1,9 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
-// See LICENSE.txt for license information.
-
 import React from 'react';
 import PropTypes from 'prop-types';
 
@@ -18,8 +15,8 @@ export default class ChannelHeaderMenuAction extends React.PureComponent {
     };
 
     handleClick = () => {
-        const {open, channelId, userConnected} = this.props;
-        if (this.props.isInstanceInstalled && userConnected) {
+        const {isInstanceInstalled, userConnected, open, channelId} = this.props;
+        if (isInstanceInstalled && userConnected) {
             open(channelId);
         }
     };

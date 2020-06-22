@@ -13,10 +13,8 @@ import {isUserConnected, isInstanceInstalled} from 'selectors';
 import ChannelHeaderMenuAction from './channel_header_menu';
 
 const mapStateToProps = (state) => {
-    const channelId = getCurrentChannelId(state);
-
     return {
-        channelId,
+        channelId: getCurrentChannelId(state),
         userConnected: isUserConnected(state),
         isInstanceInstalled: isInstanceInstalled(state),
     };
