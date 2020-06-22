@@ -2,26 +2,25 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import PropTypes from 'prop-types';
 
 import JiraIcon from 'components/icon';
 
-export default class ChannelHeaderMenuAction extends React.PureComponent {
-    static propTypes = {
-        open: PropTypes.func.isRequired,
-        channelId: PropTypes.string.isRequired,
-        isInstanceInstalled: PropTypes.bool.isRequired,
-        userConnected: PropTypes.bool.isRequired,
-    };
+export type Props = {
+    open: (channelId: string) => void;
+    channelId: string;
+    isInstanceInstalled: boolean;
+    userConnected: boolean;
+};
 
-    handleClick = () => {
+export default class ChannelHeaderMenuAction extends React.PureComponent<Props> {
+    handleClick = (): void => {
         const {isInstanceInstalled, userConnected, open, channelId} = this.props;
         if (isInstanceInstalled && userConnected) {
             open(channelId);
         }
     };
 
-    render() {
+    render(): JSX.Element {
         return (
             <button
                 className='style--none'
