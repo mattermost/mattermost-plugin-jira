@@ -85,6 +85,7 @@ type mockInstanceStoreKV struct {
 	mockInstanceStore
 	kv map[types.ID]Instance
 	*Instances
+	*Plugin
 }
 
 var _ InstanceStore = (*mockInstanceStoreKV)(nil)
@@ -94,14 +95,15 @@ func (store mockInstanceStoreKV) LoadInstances() (*Instances, error) {
 }
 
 func (store mockInstanceStoreKV) LoadInstance(id types.ID) (Instance, error) {
-	user, ok := store.kv[id]
+	instance, ok := store.kv[id]
 	if !ok {
 		return nil, errors.Errorf("instance %q not found", id)
 	}
-	return user, nil
+	instance.Common().Plugin = store.Plugin
+	return instance, nil
 }
 
-func getMockInstanceStoreKV(uninitialized bool) mockInstanceStoreKV {
+func (p *Plugin) getMockInstanceStoreKV(uninitialized bool) mockInstanceStoreKV {
 	kv := map[types.ID]Instance{}
 	instances := NewInstances()
 	if !uninitialized {
@@ -113,6 +115,7 @@ func getMockInstanceStoreKV(uninitialized bool) mockInstanceStoreKV {
 	return mockInstanceStoreKV{
 		kv:        kv,
 		Instances: instances,
+		Plugin:    p,
 	}
 }
 
@@ -190,7 +193,7 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 			}).Once().Return(&model.Post{})
 
 			p.SetAPI(currentTestApi)
-			p.instanceStore = getMockInstanceStoreKV(tt.initializeEmptyUserStorage)
+			p.instanceStore = p.getMockInstanceStoreKV(tt.initializeEmptyUserStorage)
 			p.userStore = getMockUserStoreKV()
 
 			p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)

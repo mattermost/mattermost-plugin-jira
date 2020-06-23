@@ -659,7 +659,7 @@ func TestWebhookHTTP(t *testing.T) {
 			p.SetAPI(api)
 
 			p.userStore = mockUserStore{}
-			p.instanceStore = getMockInstanceStoreKV(false)
+			p.instanceStore = p.getMockInstanceStoreKV(false)
 
 			w := httptest.NewRecorder()
 			recorder := &testWebhookWrapper{}
