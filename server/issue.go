@@ -590,7 +590,7 @@ func (p *Plugin) httpAttachCommentToIssue(w http.ResponseWriter, r *http.Request
 
 	added, err := p.AttachCommentToIssue(&in)
 	if err != nil {
-		return respondErr(w, http.StatusBadRequest,
+		return respondErr(w, http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to attach comment to issue"))
 	}
 
@@ -650,6 +650,7 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 			mattermostName, jiraName, mime, e := client.AddAttachment(p.API, in.IssueKey, fileId, conf.maxAttachmentSize)
 			if e != nil {
 				notifyOnFailedAttachment(instance, in.mattermostUserID.String(), in.IssueKey, e, "file: %s", mattermostName)
+				continue
 			}
 			if isImageMIME(mime) || isEmbbedableMIME(mime) {
 				extraText += "\n\nAttachment: !" + jiraName + "!"

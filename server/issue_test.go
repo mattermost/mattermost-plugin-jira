@@ -61,16 +61,6 @@ func (client testClient) DoTransition(issueKey string, transitionID string) erro
 	return nil
 }
 
-func (client testClient) AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error) {
-	if issueKey == noPermissionsIssueKey {
-		return nil, errors.New("you do not have the permission to comment on this issue")
-	} else if issueKey == attachCommentErrorKey {
-		return nil, errors.New("Unanticipated error")
-	}
-
-	return nil, nil
-}
-
 func (client testClient) GetIssue(issueKey string, options *jira.GetQueryOptions) (*jira.Issue, error) {
 	if issueKey == nonExistantIssueKey {
 		return nil, kvstore.ErrNotFound
@@ -83,13 +73,23 @@ func (client testClient) GetIssue(issueKey string, options *jira.GetQueryOptions
 	}, nil
 }
 
+func (client testClient) AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error) {
+	if issueKey == noPermissionsIssueKey {
+		return nil, errors.New("you do not have the permission to comment on this issue")
+	} else if issueKey == attachCommentErrorKey {
+		return nil, errors.New("Unanticipated error")
+	}
+
+	return nil, nil
+}
+
 func TestTransitionJiraIssue(t *testing.T) {
 	api := &plugintest.API{}
 	api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
 	p := Plugin{}
 	p.SetAPI(api)
 	p.userStore = getMockUserStoreKV()
-	p.instanceStore = getMockInstanceStoreKV(false)
+	p.instanceStore = p.getMockInstanceStoreKV(false)
 
 	tests := map[string]struct {
 		issueKey    string
@@ -271,14 +271,9 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(nil, (*model.AppError)(nil))
 
-	p := Plugin{}
-	p.SetAPI(api)
-
-	p.userStore = getMockUserStoreKV()
-	p.instanceStore = getMockInstanceStoreKV(testInstance1)
-
 	type requestStruct struct {
 		PostId      string `json:"post_id"`
+		InstanceID  string `json:"instance_id"`
 		CurrentTeam string `json:"current_team"`
 		IssueKey    string `json:"issueKey"`
 	}
@@ -338,7 +333,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 				PostId:   "1",
 				IssueKey: noPermissionsIssueKey,
 			},
-			expectedCode: http.StatusNotFound,
+			expectedCode: http.StatusInternalServerError,
 		},
 		"Failed to attach the comment": {
 			method: "POST",
@@ -361,6 +356,15 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			p := Plugin{}
+			p.SetAPI(api)
+			p.updateConfig(func(conf *config) {
+				conf.mattermostSiteURL = "https://somelink.com"
+			})
+			p.userStore = getMockUserStoreKV()
+			p.instanceStore = p.getMockInstanceStoreKV(false)
+
+			tt.request.InstanceID = testInstance1.InstanceID.String()
 			bb, err := json.Marshal(tt.request)
 			assert.Nil(t, err)
 
