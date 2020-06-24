@@ -217,9 +217,11 @@ func (p *Plugin) OnActivate() error {
 	}
 	p.templates = templates
 
-	err = p.API.RegisterCommand(createJiraCommand())
+	// Register /jira command and stash the loaded list of known instances for
+	// later (autolink registration).
+	instances, err := p.registerJiraCommand()
 	if err != nil {
-		return errors.WithMessage(err, "OnActivate: failed to register command")
+		return errors.Wrap(err, "OnActivate")
 	}
 
 	// Create our queue of webhook events waiting to be processed.
@@ -233,15 +235,8 @@ func (p *Plugin) OnActivate() error {
 	p.workflowTriggerStore = NewTriggerStore()
 
 	go p.initStats()
+
 	go func() {
-		time.Sleep(time.Second * 10)
-
-		instances, err := p.instanceStore.LoadInstances()
-		if err != nil {
-			p.API.LogError("unable to register autolinks", "err", err)
-			return
-		}
-
 		for _, url := range instances.IDs() {
 			instance, err := p.instanceStore.LoadInstance(url)
 			if err != nil {

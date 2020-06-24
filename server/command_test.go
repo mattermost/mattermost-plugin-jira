@@ -137,12 +137,12 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 		"no storage": {
 			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
 			initializeEmptyUserStorage: true,
-			expectedMsg:                "Failed to load your connection to Jira. Please type `jira connect`, or contact your system administrator. Error: TESTING user \"3\" not found.",
+			expectedMsg:                "Failed to load your connection to Jira. Error: TESTING user \"3\" not found.",
 		},
 		"user not found": {
 			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
 			initializeEmptyUserStorage: false,
-			expectedMsg:                "Failed to load your connection to Jira. Please type `jira connect`, or contact your system administrator. Error: TESTING user \"3\" not found.",
+			expectedMsg:                "Failed to load your connection to Jira. Error: TESTING user \"3\" not found.",
 		},
 		"no params, with notifications": {
 			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithNotifications},
@@ -230,8 +230,9 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 	api.On("KVGet", keyInstances).Return(nil, nil)
 	api.On("KVGet", "rsa_key").Return(nil, nil)
 	api.On("PublishWebSocketEvent", mock.AnythingOfTypeArgument("string"), mock.Anything, mock.Anything)
-	api.On("GetTeam", mock.AnythingOfTypeArgument("string")).Return(&model.Team{Name: "TestTeam"}, nil)
-	api.On("GetChannel", mock.AnythingOfTypeArgument("string")).Return(&model.Channel{Name: "TestChannel"}, nil)
+	// api.On("GetTeam", mock.AnythingOfTypeArgument("string")).Return(&model.Team{Name: "TestTeam"}, nil)
+	// api.On("GetChannel", mock.AnythingOfTypeArgument("string")).Return(&model.Channel{Name: "TestChannel"}, nil)
+	api.On("UnregisterCommand", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
 
 	sysAdminUser := &model.User{
 		Id:    mockUserIDSysAdmin,
@@ -279,7 +280,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		"install non secure cloud instance": {
 			commandArgs:       &model.CommandArgs{Command: "/jira install cloud http://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
 			expectedMsgPrefix: "`/jira install cloud` requires a secure connection (HTTPS). Please run the following command:",
-		},		
+		},
 		"install valid server instance": {
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://jiralink.com", UserId: mockUserIDSysAdmin},
 			expectedMsgPrefix: "Server instance has been installed",

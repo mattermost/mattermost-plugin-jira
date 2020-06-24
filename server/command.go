@@ -17,6 +17,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
+const commandTrigger = "jira"
+
 const helpTextHeader = "###### Mattermost Jira Plugin - Slash Command Help\n"
 
 const commonHelpText = "\n" +
@@ -51,19 +53,37 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"* `/jira webhook [<jiraURL>]` -  Show the Mattermost webhook to receive JQL queries\n" +
 	""
 
-func createJiraCommand() *model.Command {
+func (p *Plugin) registerJiraCommand() (*Instances, error) {
+	// Optimistically unregister what was registered before
+	_ = p.API.UnregisterCommand("", commandTrigger)
+
+	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to initialize the list of known Jira instances")
+	}
+
+	optInstance := instances.Len() > 1
+	err = p.API.RegisterCommand(createJiraCommand(optInstance))
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to register /%s command", commandTrigger)
+	}
+
+	return instances, nil
+}
+
+func createJiraCommand(optInstance bool) *model.Command {
 	jira := model.NewAutocompleteData(
-		"jira", "[issue|instance|info|help]", "Connect to and interact with Jira")
+		commandTrigger, "[issue|instance|info|help]", "Connect to and interact with Jira")
 
 	// Top-level common commands
-	jira.AddCommand(createViewCommand())
-	jira.AddCommand(createTransitionCommand())
-	jira.AddCommand(createAssignCommand())
-	jira.AddCommand(createUnassignCommand())
+	jira.AddCommand(createViewCommand(optInstance))
+	jira.AddCommand(createTransitionCommand(optInstance))
+	jira.AddCommand(createAssignCommand(optInstance))
+	jira.AddCommand(createUnassignCommand(optInstance))
 
 	// Generic commands
-	jira.AddCommand(createIssueCommand())
-	jira.AddCommand(createInstanceCommand())
+	jira.AddCommand(createIssueCommand(optInstance))
+	jira.AddCommand(createInstanceCommand(optInstance))
 
 	// Admin commands
 	jira.AddCommand(createSubscribeCommand())
@@ -84,11 +104,11 @@ func createJiraCommand() *model.Command {
 	}
 }
 
-func createInstanceCommand() *model.AutocompleteData {
+func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 	instance := model.NewAutocompleteData(
 		"instance", "[connect|disconnect|settings]", "View and manage installed Jira instances; more commands available to system administrators")
 	instance.AddCommand(createConnectCommand())
-	instance.AddCommand(createSettingsCommand())
+	instance.AddCommand(createSettingsCommand(optInstance))
 	instance.AddCommand(createDisconnectCommand())
 
 	jiraTypes := []model.AutocompleteListItem{
@@ -113,17 +133,20 @@ func createInstanceCommand() *model.AutocompleteData {
 	return instance
 }
 
-func createIssueCommand() *model.AutocompleteData {
+func createIssueCommand(optInstance bool) *model.AutocompleteData {
 	issue := model.NewAutocompleteData(
 		"issue", "[view|assign|transition]", "View and manage Jira issues")
-	issue.AddCommand(createViewCommand())
-	issue.AddCommand(createTransitionCommand())
-	issue.AddCommand(createAssignCommand())
-	issue.AddCommand(createUnassignCommand())
+	issue.AddCommand(createViewCommand(optInstance))
+	issue.AddCommand(createTransitionCommand(optInstance))
+	issue.AddCommand(createAssignCommand(optInstance))
+	issue.AddCommand(createUnassignCommand(optInstance))
 	return issue
 }
 
-func withFlagInstance(cmd *model.AutocompleteData) {
+func withFlagInstance(cmd *model.AutocompleteData, optInstance bool) {
+	if !optInstance {
+		return
+	}
 	cmd.AddNamedDynamicListArgument("instance", "Jira URL", routeAutocompleteUserInstance, false)
 }
 
@@ -146,7 +169,7 @@ func createDisconnectCommand() *model.AutocompleteData {
 	return disconnect
 }
 
-func createSettingsCommand() *model.AutocompleteData {
+func createSettingsCommand(optInstance bool) *model.AutocompleteData {
 	settings := model.NewAutocompleteData(
 		"settings", "[list|notifications]", "View or update your user settings")
 
@@ -160,45 +183,45 @@ func createSettingsCommand() *model.AutocompleteData {
 		{HelpText: "Turn notifications on", Item: "on"},
 		{HelpText: "Turn notifications off", Item: "off"},
 	})
-	withFlagInstance(notifications)
+	withFlagInstance(notifications, optInstance)
 	settings.AddCommand(notifications)
 
 	return settings
 }
 
-func createViewCommand() *model.AutocompleteData {
+func createViewCommand(optInstance bool) *model.AutocompleteData {
 	view := model.NewAutocompleteData(
 		"view", "[issue]", "Display a Jira issue")
 	withParamIssueKey(view)
-	withFlagInstance(view)
+	withFlagInstance(view, optInstance)
 	return view
 }
 
-func createTransitionCommand() *model.AutocompleteData {
+func createTransitionCommand(optInstance bool) *model.AutocompleteData {
 	transition := model.NewAutocompleteData(
 		"transition", "[Jira issue] [To state]", "Change the state of a Jira issue")
 	withParamIssueKey(transition)
 	// TODO: Implement dynamic transition autocomplete
 	transition.AddTextArgument("To state", "", "")
-	withFlagInstance(transition)
+	withFlagInstance(transition, optInstance)
 	return transition
 }
 
-func createAssignCommand() *model.AutocompleteData {
+func createAssignCommand(optInstance bool) *model.AutocompleteData {
 	assign := model.NewAutocompleteData(
 		"assign", "[Jira issue] [user]", "Change the assignee of a Jira issue")
 	withParamIssueKey(assign)
 	// TODO: Implement dynamic Jira user search autocomplete
 	assign.AddTextArgument("User", "", "")
-	withFlagInstance(assign)
+	withFlagInstance(assign, optInstance)
 	return assign
 }
 
-func createUnassignCommand() *model.AutocompleteData {
+func createUnassignCommand(optInstance bool) *model.AutocompleteData {
 	unassign := model.NewAutocompleteData(
 		"unassign", "[Jira issue]", "Unassign a Jira issue")
 	withParamIssueKey(unassign)
-	withFlagInstance(unassign)
+	withFlagInstance(unassign, optInstance)
 	return unassign
 }
 
@@ -382,7 +405,7 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	user, instance, args, err := p.loadFlagUserInstance(header.UserId, args)
 	if err != nil {
-		return p.responsef(header, "Failed to load your connection to Jira. Please type `jira connect`, or contact your system administrator. Error: %v.", err)
+		return p.responsef(header, "Failed to load your connection to Jira. Error: %v.", err)
 	}
 
 	conn, err := p.userStore.LoadConnection(instance.GetID(), user.MattermostUserID)
@@ -413,7 +436,7 @@ func executeJiraDefault(p *Plugin, c *plugin.Context, header *model.CommandArgs,
 func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	user, instance, args, err := p.loadFlagUserInstance(header.UserId, args)
 	if err != nil {
-		return p.responsef(header, "Failed to identify a Jira instance. Error: %v.", err)
+		return p.responsef(header, "Failed to load your connection to Jira. Error: %v.", err)
 	}
 	if len(args) != 1 {
 		return p.responsef(header, "Please specify an issue key in the form `/jira view <issue-key>`.")
@@ -679,7 +702,7 @@ func executeInstanceUninstall(p *Plugin, c *plugin.Context, header *model.Comman
 func executeUnassign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	_, instance, args, err := p.loadFlagUserInstance(header.UserId, args)
 	if err != nil {
-		return p.responsef(header, "Failed to identify a Jira instance. Error: %v.", err)
+		return p.responsef(header, "Failed to load your connection to Jira. Error: %v.", err)
 	}
 
 	if len(args) < 1 {
@@ -697,7 +720,7 @@ func executeUnassign(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	_, instance, args, err := p.loadFlagUserInstance(header.UserId, args)
 	if err != nil {
-		return p.responsef(header, "Failed to identify a Jira instance. Error: %v.", err)
+		return p.responsef(header, "Failed to load your connection to Jira. Error: %v.", err)
 	}
 
 	if len(args) < 2 {
