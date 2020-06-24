@@ -149,6 +149,8 @@ func (store store) StoreConnection(instanceID, mattermostUserId types.ID, connec
 			fmt.Sprintf("failed to store connection, mattermostUserId:%s, Jira user:%s", mattermostUserId, connection.DisplayName))
 	}()
 
+	connection.PluginVersion = manifest.Version
+
 	err := store.set(keyWithInstanceID(instanceID, mattermostUserId), connection)
 	if err != nil {
 		return err
@@ -444,6 +446,7 @@ func (store *store) CreateInactiveCloudInstance(jiraURL types.ID) (returnErr err
 	if err != nil {
 		return errors.WithMessagef(err, "failed to store new Jira Cloud instance:%s", jiraURL)
 	}
+	ci.PluginVersion = manifest.Version
 
 	// Expire in 15 minutes
 	key := hashkey(prefixInstance, ci.GetURL())
@@ -508,6 +511,7 @@ func (store *store) loadInstance(fullkey string) (Instance, error) {
 
 func (store *store) StoreInstance(instance Instance) error {
 	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
+	instance.Common().PluginVersion = manifest.Version
 	return kv.Entity(prefixInstance).Store(instance.GetID(), instance)
 }
 
