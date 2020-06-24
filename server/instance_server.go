@@ -18,8 +18,6 @@ import (
 type serverInstance struct {
 	*InstanceCommon
 
-	JIRAServerURL string
-
 	// The SiteURL may change as we go, so we store the PluginKey when as it was installed
 	MattermostKey string
 }
@@ -30,12 +28,11 @@ func newServerInstance(p *Plugin, jiraURL string) *serverInstance {
 	return &serverInstance{
 		InstanceCommon: newInstanceCommon(p, ServerInstanceType, types.ID(jiraURL)),
 		MattermostKey:  p.GetPluginKey(),
-		JIRAServerURL:  jiraURL,
 	}
 }
 
 func (si *serverInstance) GetURL() string {
-	return si.JIRAServerURL
+	return si.InstanceID.String()
 }
 
 func (si *serverInstance) GetManageAppsURL() string {
