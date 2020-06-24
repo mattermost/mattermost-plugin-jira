@@ -241,7 +241,7 @@ func (store store) StoreUser(user *User) (returnErr error) {
 		return err
 	}
 
-	store.plugin.debugf("Stored: user %s key:%s: connected to:%s", user.MattermostUserID, key, user.ConnectedInstances.IDs())
+	store.plugin.debugf("Stored: user %s key:%s: connected to:%q", user.MattermostUserID, key, user.ConnectedInstances.IDs())
 	return nil
 }
 
