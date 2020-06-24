@@ -58,7 +58,7 @@ func getTransitionActions(client Client, issue *jira.Issue) ([]*model.PostAction
 		if transition.Name != issue.Fields.Status.Name {
 			options = append(options, &model.PostActionOptions{
 				Text:  transition.Name,
-				Value: transition.Name,
+				Value: transition.To.Name,
 			})
 		}
 	}
