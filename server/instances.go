@@ -107,6 +107,13 @@ func (p *Plugin) InstallInstance(instance Instance) error {
 		return err
 	}
 
+	// Re-register the /jira command with the new number of instances.
+	_, err = p.registerJiraCommand()
+	if err != nil {
+		p.errorf("InstallInstance: failed to re-register `/%s` command; please re-activate the plugin using the System Console. Error: %s",
+			commandTrigger, err.Error())
+	}
+
 	p.wsInstancesChanged(updated)
 	return nil
 }
@@ -133,6 +140,13 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 		})
 	if err != nil {
 		return nil, err
+	}
+
+	// Re-register the /jira command with the new number of instances.
+	_, err = p.registerJiraCommand()
+	if err != nil {
+		p.errorf("UninstallInstance: failed to re-register `/%s` command; please re-activate the plugin using the System Console. Error: %s",
+			commandTrigger, err.Error())
 	}
 
 	// Notify users we have uninstalled an instance
@@ -202,6 +216,10 @@ func (p *Plugin) LoadUserInstance(mattermostUserID types.ID, instanceURL string)
 }
 
 func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.ID, error) {
+	if user.ConnectedInstances.IsEmpty() {
+		return "", errors.Wrap(kvstore.ErrNotFound, "your account is not connected to Jira. Please use `/jira connect`")
+	}
+
 	var err error
 	if instanceURL != "" {
 		instanceURL, err = utils.NormalizeInstallURL(p.GetSiteURL(), instanceURL)
