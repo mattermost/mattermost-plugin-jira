@@ -255,9 +255,9 @@ func appendCommentNotifications(wh *webhook, verb string) {
 	jwh := wh.JiraWebhook
 	commentAuthor := mdUser(&jwh.Comment.UpdateAuthor)
 
-	message := fmt.Sprintf("%s %s %s:\n>%s",
-		commentAuthor, verb, jwh.mdKeySummaryLink(), jwh.Comment.Body)
-
+	message := fmt.Sprintf("%s %s %s:\n%s",
+		commentAuthor, verb, jwh.mdKeySummaryLink(), wh.text)
+	
 	assigneeMentioned := false
 
 	for _, u := range parseJIRAUsernamesFromText(wh.Comment.Body) {
@@ -310,7 +310,12 @@ func appendCommentNotifications(wh *webhook, verb string) {
 }
 
 func quoteIssueComment(comment string) string {
-	return fmt.Sprintf("> %s", comment)
+	words := strings.Split(comment, "\n");
+	for i := 0; i < len(words); i++ {
+		words[i] = "> " + words[i]; 
+	}
+	quotedComment := strings.Join(words, "\n");
+	return quotedComment
 }
 
 func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
