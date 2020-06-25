@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"strings"
+	"sync"
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -83,37 +84,39 @@ func getMockUserStoreKV() mockUserStoreKV {
 
 type mockInstanceStoreKV struct {
 	mockInstanceStore
-	kv map[types.ID]Instance
+	kv *sync.Map
 	*Instances
 	*Plugin
 }
 
 var _ InstanceStore = (*mockInstanceStoreKV)(nil)
 
-func (store mockInstanceStoreKV) LoadInstances() (*Instances, error) {
+func (store *mockInstanceStoreKV) LoadInstances() (*Instances, error) {
 	return store.Instances, nil
 }
 
-func (store mockInstanceStoreKV) LoadInstance(id types.ID) (Instance, error) {
-	instance, ok := store.kv[id]
+func (store *mockInstanceStoreKV) LoadInstance(id types.ID) (Instance, error) {
+	v, ok := store.kv.Load(id)
 	if !ok {
 		return nil, errors.Errorf("instance %q not found", id)
 	}
-	instance.Common().Plugin = store.Plugin
+	instance := v.(Instance)
 	return instance, nil
 }
 
-func (p *Plugin) getMockInstanceStoreKV(uninitialized bool) mockInstanceStoreKV {
-	kv := map[types.ID]Instance{}
+func (p *Plugin) getMockInstanceStoreKV(uninitialized bool) *mockInstanceStoreKV {
+	kv := sync.Map{}
 	instances := NewInstances()
 	if !uninitialized {
-		instances.Set(testInstance1.Common())
-		instances.Set(testInstance2.Common())
-		kv[testInstance1.GetID()] = testInstance1
-		kv[testInstance2.GetID()] = testInstance2
+		for _, ti := range []*testInstance{testInstance1, testInstance2} {
+			instance := *ti
+			instance.Plugin = p
+			instances.Set(instance.Common())
+			kv.Store(instance.GetID(), &instance)
+		}
 	}
-	return mockInstanceStoreKV{
-		kv:        kv,
+	return &mockInstanceStoreKV{
+		kv:        &kv,
 		Instances: instances,
 		Plugin:    p,
 	}
