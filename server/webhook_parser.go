@@ -310,11 +310,11 @@ func appendCommentNotifications(wh *webhook, verb string) {
 }
 
 func quoteIssueComment(comment string) string {
-	words := strings.Split(comment, "\n");
-	for i := 0; i < len(words); i++ {
-		words[i] = "> " + words[i]; 
+	lines := strings.Split(comment, "\n");
+	for i := 0; i < len(lines); i++ {
+		lines[i] = "> " + lines[i]; 
 	}
-	quotedComment := strings.Join(words, "\n");
+	quotedComment := strings.Join(lines, "\n");
 	return quotedComment
 }
 
