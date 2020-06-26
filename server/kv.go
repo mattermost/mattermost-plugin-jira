@@ -9,7 +9,7 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
-	"regexp"
+	"strings"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -63,6 +63,7 @@ type UserStore interface {
 	LoadMattermostUserId(instanceID types.ID, jiraUsername string) (types.ID, error)
 	DeleteConnection(instanceID, mattermostUserID types.ID) error
 	CountUsers() (int, error)
+	MapUsers(func(user *User) error) error
 }
 
 type OTSStore interface {
@@ -258,8 +259,6 @@ func (store store) LoadUser(mattermostUserID types.ID) (*User, error) {
 	return user, nil
 }
 
-var reHexKeyFormat = regexp.MustCompile("^[[:xdigit:]]{32}$")
-
 func (store store) CountUsers() (int, error) {
 	count := 0
 	for i := 0; ; i++ {
@@ -269,25 +268,7 @@ func (store store) CountUsers() (int, error) {
 		}
 
 		for _, key := range keys {
-			// User records are not currently prefixed. Consider any 32-hex key.
-			if !reHexKeyFormat.MatchString(key) {
-				continue
-			}
-
-			var data []byte
-			data, appErr = store.plugin.API.KVGet(key)
-			if appErr != nil {
-				return 0, appErr
-			}
-			v := map[string]interface{}{}
-			err := json.Unmarshal(data, &v)
-			if err != nil {
-				// Skip non-JSON values.
-				continue
-			}
-
-			// A valid user record?
-			if v["Settings"] != nil && (v["accountId"] != nil || v["name"] != nil && v["key"] != nil) {
+			if strings.HasPrefix(key, prefixUser) {
 				count++
 			}
 		}
@@ -297,6 +278,37 @@ func (store store) CountUsers() (int, error) {
 		}
 	}
 	return count, nil
+}
+
+func (store store) MapUsers(f func(user *User) error) error {
+	for i := 0; ; i++ {
+		keys, appErr := store.plugin.API.KVList(i, listPerPage)
+		if appErr != nil {
+			return appErr
+		}
+
+		for _, key := range keys {
+			if !strings.HasPrefix(key, prefixUser) {
+				continue
+			}
+
+			user := NewUser("")
+			err := store.get(key, user)
+			if err != nil {
+				return errors.WithMessage(err, fmt.Sprintf("failed to load Jira user for key:%s", key))
+			}
+
+			err = f(user)
+			if err != nil {
+				return err
+			}
+		}
+
+		if len(keys) < listPerPage {
+			break
+		}
+	}
+	return nil
 }
 
 func (store store) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr error) {
