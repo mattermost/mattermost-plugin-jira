@@ -88,6 +88,9 @@ func (store mockUserStore) DeleteConnection(instanceID, mattermostUserID types.I
 func (store mockUserStore) CountUsers() (int, error) {
 	return 0, nil
 }
+func (store mockUserStore) MapUsers(func(*User) error) error {
+	return nil
+}
 
 type mockInstanceStore struct{}
 

@@ -134,6 +134,19 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 			if instanceType != instance.Common().Type {
 				return errors.Errorf("%s did not match instance %s type %s", instanceType, instanceID, instance.Common().Type)
 			}
+
+			p.userStore.MapUsers(func(user *User) error {
+				if !user.ConnectedInstances.Contains(instance.GetID()) {
+					return nil
+				}
+
+				_, err = p.disconnectUser(instance, user)
+				if err != nil {
+					p.infof("UninstallInstance: failed to disconnect user: %v", err)
+				}
+				return nil
+			})
+
 			instances.Delete(instanceID)
 			updated = instances
 			return p.instanceStore.DeleteInstance(instanceID)

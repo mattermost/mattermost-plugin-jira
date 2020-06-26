@@ -262,6 +262,10 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 		return nil, err
 	}
 
+	if user.DefaultInstanceID == instance.GetID() {
+		user.DefaultInstanceID = ""
+	}
+
 	user.ConnectedInstances.Delete(instance.GetID())
 
 	err = p.userStore.DeleteConnection(instance.GetID(), user.MattermostUserID)
