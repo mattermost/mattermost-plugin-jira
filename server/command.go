@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net/url"
 	"sort"
@@ -583,25 +584,11 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 		return p.responsef(header, err.Error())
 	}
 
-	const addResponseFormat = `
-%s has been successfully installed. To finish the configuration, create a new app in your Jira instance following these steps:
-
-1. Navigate to [**Settings > Apps > Manage Apps**](%s/plugins/servlet/upm?source=side_nav_manage_addons).
-  - For older versions of Jira, navigate to **Administration > Applications > Add-ons > Manage add-ons**.
-2. Click **Settings** at bottom of page, enable development mode, and apply this change.
-  - Enabling development mode allows you to install apps that are not from the Atlassian Marketplace.
-3. Click **Upload app**.
-4. In the **From this URL field**, enter: %s%s
-5. Wait for the app to install. Once completed, you should see an "Installed and ready to go!" message.
-6. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
-7. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
-
-If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://mattermost.gitbook.io/plugin-jira) for troubleshooting help.
-<><> Jira webhook URL
-`
-
-	// TODO What is the exact group membership in Jira required? Site-admins?
-	return p.responsef(header, addResponseFormat, jiraURL, jiraURL, p.GetPluginURL(), instancePath(routeACJSON, types.ID(jiraURL)))
+	return p.respondCommandTemplate(header, "/command/install_cloud.md", map[string]string{
+		"JiraURL":                 jiraURL,
+		"PluginURL":               p.GetPluginURL(),
+		"AtlassianConnectJSONURL": p.GetPluginURL() + instancePath(routeACJSON, types.ID(jiraURL)),
+	})
 }
 
 func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -627,40 +614,22 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 		return p.responsef(header, "The Jira URL you provided looks like a Jira Cloud URL - install it with:\n```\n/jira install cloud %s\n```", jiraURL)
 	}
 
-	const addResponseFormat = `` +
-		`Server instance has been installed. To finish the configuration, add an Application Link in your Jira instance following these steps:
-
-1. Navigate to [**Settings > Applications > Application Links**](%s/plugins/servlet/applinks/listApplicationLinks)
-2. Enter "Mattermost" as the application link, then click **Create new link**.
-3. In **Configure Application URL** screen, confirm "http://mattermost" as both "Entered URL" and "New URL". Ignore any displayed errors and click **Continue**.
-4. In **Link Applications** screen, set the following values:
-  - **Application Name**: Mattermost
-  - **Application Type**: Generic Application
-5. Check the **Create incoming link** value, then click **Continue**.
-6. In the following **Link Applications** screen, set the following values:
-  - **Consumer Key**: ` + "`%s`" + `
-  - **Consumer Name**: ` + "`Mattermost`" + `
-  - **Public Key**:` + "\n```\n%s\n```" + `
-  - **Consumer Callback URL**: _leave blank_
-  - **Allow 2-legged OAuth**: _leave unchecked_
-  7. Click **Continue**.
-6. Use the "/jira connect" command to connect your Mattermost account with your Jira account.
-7. Click the "More Actions" (...) option of any message in the channel (available when you hover over a message).
-
-If you see an option to create a Jira issue, you're all set! If not, refer to our [documentation](https://mattermost.gitbook.io/plugin-jira) for troubleshooting help.
-<><> Jira webhook URL
-`
 	instance := newServerInstance(p, jiraURL)
 	err = p.InstallInstance(instance)
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
-
 	pkey, err := publicKeyString(p)
 	if err != nil {
 		return p.responsef(header, "Failed to load public key: %v", err)
 	}
-	return p.responsef(header, addResponseFormat, jiraURL, instance.GetMattermostKey(), strings.TrimSpace(string(pkey)))
+
+	return p.respondCommandTemplate(header, "/command/install_server.md", map[string]string{
+		"JiraURL":       jiraURL,
+		"PluginURL":     p.GetPluginURL(),
+		"MattermostKey": instance.GetMattermostKey(),
+		"PublicKey":     strings.TrimSpace(string(pkey)),
+	})
 }
 
 // executeUninstall will uninstall the jira instance if the url matches, and then update all connected clients
@@ -1123,4 +1092,17 @@ func (p *Plugin) loadFlagUserInstance(mattermostUserID string, args []string) (*
 		return nil, nil, nil, err
 	}
 	return user, instance, args, nil
+}
+
+func (p *Plugin) respondCommandTemplate(commandArgs *model.CommandArgs, path string, values interface{}) *model.CommandResponse {
+	t := p.templates[path]
+	if t == nil {
+		return p.responsef(commandArgs, "no template found for "+path)
+	}
+	bb := &bytes.Buffer{}
+	err := t.Execute(bb, values)
+	if err != nil {
+		p.responsef(commandArgs, "failed to format results: %v", err)
+	}
+	return p.responsef(commandArgs, bb.String())
 }
