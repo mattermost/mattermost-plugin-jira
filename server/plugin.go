@@ -218,7 +218,7 @@ func (p *Plugin) OnActivate() error {
 
 	templates, err := p.loadTemplates(filepath.Join(bundlePath, "assets", "templates"))
 	if err != nil {
-		return errors.WithMessage(err, "OnActivate: failed to load templates")
+		return err
 	}
 	p.templates = templates
 

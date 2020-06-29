@@ -3,6 +3,8 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -219,7 +221,7 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 }
 
 func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
-	api := &plugintest.API{}
+	api := plugintest.API{}
 	api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
 	api.On("LogDebug",
 		mock.AnythingOfTypeArgument("string"),
@@ -285,7 +287,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		"install valid cloud instance": {
 			numInstances:      0,
 			commandArgs:       &model.CommandArgs{Command: "/jira install cloud https://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "https://mmtest.atlassian.net has been successfully installed.",
+			expectedMsgPrefix: "https://mmtest.atlassian.net has been successfully added.",
 		},
 		"install valid server instance 1 preinstalled": {
 			numInstances:      1,
@@ -296,7 +298,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		"install valid server instance 2 preinstalled": {
 			numInstances:      2,
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://jiralink.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "Server instance has been installed",
+			expectedMsgPrefix: "https://jiralink.com has been successfully added",
 		},
 	}
 	for name, tt := range tests {
@@ -325,13 +327,17 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 				assert.True(t, strings.HasPrefix(actual, tt.expectedMsgPrefix), "Expected returned message to start with: \n%s\nActual:\n%s", tt.expectedMsgPrefix, actual)
 			}).Once().Return(&model.Post{})
 
-			p.SetAPI(currentTestApi)
+			p.SetAPI(&currentTestApi)
+			_, filename, _, _ := runtime.Caller(0)
+			templates, err := p.loadTemplates(filepath.Dir(filename) + "/../assets/templates")
+			require.NoError(t, err)
+			p.templates = templates
 
 			store := NewStore(&p)
 			p.instanceStore = p.getMockInstanceStoreKV(tt.numInstances)
 			p.secretsStore = store
 			p.userStore = getMockUserStoreKV()
-			p.enterpriseChecker = enterprise.NewEnterpriseChecker(currentTestApi)
+			p.enterpriseChecker = enterprise.NewEnterpriseChecker(&currentTestApi)
 
 			cmdResponse, appError := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
 			require.Nil(t, appError)

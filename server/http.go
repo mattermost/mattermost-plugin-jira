@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	goexpvar "expvar"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"os"
 	"path"
@@ -64,6 +65,11 @@ const (
 )
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
+	if strings.HasPrefix(r.URL.Path, "/plugins/servlet") {
+		body, _ := httputil.DumpRequest(r, true)
+		p.errorf("Received an unknown request as a Jira plugin:\n%s", string(body))
+	}
+
 	status, err := p.serveHTTP(c, w, r)
 	if err != nil {
 		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
@@ -288,6 +294,7 @@ func httpWorkflowTriggerSetup(p *Plugin, w http.ResponseWriter, r *http.Request)
 }
 
 func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {
+	dir = filepath.Clean(dir)
 	templates := make(map[string]*template.Template)
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
