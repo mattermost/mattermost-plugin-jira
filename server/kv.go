@@ -51,7 +51,6 @@ type InstanceStore interface {
 	LoadInstances() (*Instances, error)
 	StoreInstance(instance Instance) error
 	StoreInstances(*Instances) error
-	UpdateInstances(updatef func(instances *Instances) error) error
 	MigrateV2Instances() error
 }
 
@@ -548,7 +547,7 @@ func (store *store) StoreInstances(instances *Instances) error {
 	return kv.ValueIndex(keyInstances, &instancesArray{}).Store(instances.ValueSet)
 }
 
-func (store *store) UpdateInstances(updatef func(instances *Instances) error) error {
+func UpdateInstances(store InstanceStore, updatef func(instances *Instances) error) error {
 	instances, err := store.LoadInstances()
 	if errors.Cause(err) == kvstore.ErrNotFound {
 		instances = NewInstances()

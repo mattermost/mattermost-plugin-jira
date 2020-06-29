@@ -365,7 +365,7 @@ func TestSubscribe(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
-			p.instanceStore = p.getMockInstanceStoreKV(false)
+			p.instanceStore = p.getMockInstanceStoreKV(1)
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("POST", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
@@ -510,7 +510,7 @@ func TestDeleteSubscription(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
-			p.instanceStore = p.getMockInstanceStoreKV(false)
+			p.instanceStore = p.getMockInstanceStoreKV(0)
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("DELETE",
@@ -763,7 +763,7 @@ func TestEditSubscription(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
-			p.instanceStore = p.getMockInstanceStoreKV(false)
+			p.instanceStore = p.getMockInstanceStoreKV(1)
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("PUT", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
@@ -956,7 +956,7 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 				conf.Secret = "somesecret"
 			})
 			p.SetAPI(api)
-			p.instanceStore = p.getMockInstanceStoreKV(false)
+			p.instanceStore = p.getMockInstanceStoreKV(1)
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("GET", "/api/v2/subscriptions/channel/"+tc.channelId+"?instance_id="+testInstance1.GetID().String(), nil)

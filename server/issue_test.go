@@ -89,7 +89,7 @@ func TestTransitionJiraIssue(t *testing.T) {
 	p := Plugin{}
 	p.SetAPI(api)
 	p.userStore = getMockUserStoreKV()
-	p.instanceStore = p.getMockInstanceStoreKV(false)
+	p.instanceStore = p.getMockInstanceStoreKV(1)
 
 	tests := map[string]struct {
 		issueKey    string
@@ -362,7 +362,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 				conf.mattermostSiteURL = "https://somelink.com"
 			})
 			p.userStore = getMockUserStoreKV()
-			p.instanceStore = p.getMockInstanceStoreKV(false)
+			p.instanceStore = p.getMockInstanceStoreKV(1)
 
 			tt.request.InstanceID = testInstance1.InstanceID.String()
 			bb, err := json.Marshal(tt.request)
