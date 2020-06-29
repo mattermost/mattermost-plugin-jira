@@ -24,7 +24,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 	p.updateConfig(func(conf *config) {
 		conf.Secret = "somesecret"
 	})
-	p.instanceStore = p.getMockInstanceStoreKV(false)
+	p.instanceStore = p.getMockInstanceStoreKV(0)
 
 	for name, tc := range map[string]struct {
 		Subs          *Subscriptions
@@ -267,7 +267,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 	p.updateConfig(func(conf *config) {
 		conf.Secret = "somesecret"
 	})
-	p.instanceStore = p.getMockInstanceStoreKV(false)
+	p.instanceStore = p.getMockInstanceStoreKV(0)
 
 	for name, tc := range map[string]struct {
 		WebhookTestData string

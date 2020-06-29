@@ -93,8 +93,14 @@ func (p *instancesArray) Resize(n int) {
 
 func (p *Plugin) InstallInstance(instance Instance) error {
 	var updated *Instances
-	err := p.instanceStore.UpdateInstances(
+	err := UpdateInstances(p.instanceStore,
 		func(instances *Instances) error {
+			if !p.enterpriseChecker.HasEnterpriseFeatures() {
+				if len(instances.IDs()) >= 1 {
+					return errors.Errorf("You need an Enterprise License to install multiple Jira instances")
+				}
+			}
+
 			err := p.instanceStore.StoreInstance(instance)
 			if err != nil {
 				return err
@@ -113,7 +119,6 @@ func (p *Plugin) InstallInstance(instance Instance) error {
 		p.errorf("InstallInstance: failed to re-register `/%s` command; please re-activate the plugin using the System Console. Error: %s",
 			commandTrigger, err.Error())
 	}
-
 	p.wsInstancesChanged(updated)
 	return nil
 }
@@ -121,7 +126,7 @@ func (p *Plugin) InstallInstance(instance Instance) error {
 func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceType) (Instance, error) {
 	var instance Instance
 	var updated *Instances
-	err := p.instanceStore.UpdateInstances(
+	err := UpdateInstances(p.instanceStore,
 		func(instances *Instances) error {
 			if !instances.Contains(instanceID) {
 				return errors.Wrapf(kvstore.ErrNotFound, "instance %q", instanceID)
@@ -176,7 +181,7 @@ func (p *Plugin) wsInstancesChanged(instances *Instances) {
 }
 
 func (p *Plugin) StoreV2LegacyInstance(id types.ID) error {
-	err := p.instanceStore.UpdateInstances(
+	err := UpdateInstances(p.instanceStore,
 		func(instances *Instances) error {
 			return instances.SetV2Legacy(id)
 		})

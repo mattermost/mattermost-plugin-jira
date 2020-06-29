@@ -23,6 +23,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
+	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
@@ -118,6 +119,10 @@ type Plugin struct {
 
 	// channel to distribute work to the webhook processors
 	webhookQueue chan *webhookMessage
+
+	// service that determiines if this Mattermost instance has access to
+	// enterprise features
+	enterpriseChecker enterprise.EnterpriseChecker
 }
 
 func (p *Plugin) getConfig() config {
@@ -233,6 +238,8 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	p.workflowTriggerStore = NewTriggerStore()
+
+	p.enterpriseChecker = enterprise.NewEnterpriseChecker(p.API)
 
 	go p.initStats()
 
