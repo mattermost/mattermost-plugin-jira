@@ -73,7 +73,7 @@
                     "16x16": "http://localhost:8082/secure/useravatar?size=xsmall&avatarId=10349",
                     "32x32": "http://localhost:8082/secure/useravatar?size=medium&avatarId=10349"
                 },
-                "displayName": "Aida Pirahmadi",
+                "displayName": "user",
                 "active": true,
                 "timeZone": "GMT"
             },
@@ -90,11 +90,11 @@
                     "16x16": "http://localhost:8082/secure/useravatar?size=xsmall&avatarId=10349",
                     "32x32": "http://localhost:8082/secure/useravatar?size=medium&avatarId=10349"
                 },
-                "displayName": "Aida Pirahmadi",
+                "displayName": "user",
                 "active": true,
                 "timeZone": "GMT"
             },
-            "customfield_10000": "{summaryBean=com.atlassian.jira.plugin.devstatus.rest.SummaryBean@4829bc9b[summary={pullrequest=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@98c463[overall=PullRequestOverallBean{stateCount=0, state='OPEN', details=PullRequestOverallDetails{openCount=0, mergedCount=0, declinedCount=0}},byInstanceType={}], build=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@b999b83[overall=com.atlassian.jira.plugin.devstatus.summary.beans.BuildOverallBean@4de4ed4f[failedBuildCount=0,successfulBuildCount=0,unknownBuildCount=0,count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], review=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@411be8a4[overall=com.atlassian.jira.plugin.devstatus.summary.beans.ReviewsOverallBean@46d0af22[stateCount=0,state=<null>,dueDate=<null>,overDue=false,count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], deployment-environment=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@1d271f8[overall=com.atlassian.jira.plugin.devstatus.summary.beans.DeploymentOverallBean@6b367a18[topEnvironments=[],showProjects=false,successfulCount=0,count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], repository=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@75f6f112[overall=com.atlassian.jira.plugin.devstatus.summary.beans.CommitOverallBean@361ce931[count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], branch=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@245303bb[overall=com.atlassian.jira.plugin.devstatus.summary.beans.BranchOverallBean@7ced5b93[count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}]},errors=[],configErrors=[]], devSummaryJson={\"cachedValue\":{\"errors\":[],\"configErrors\":[],\"summary\":{\"pullrequest\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"stateCount\":0,\"state\":\"OPEN\",\"details\":{\"openCount\":0,\"mergedCount\":0,\"declinedCount\":0,\"total\":0},\"open\":true},\"byInstanceType\":{}},\"build\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"failedBuildCount\":0,\"successfulBuildCount\":0,\"unknownBuildCount\":0},\"byInstanceType\":{}},\"review\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"stateCount\":0,\"state\":null,\"dueDate\":null,\"overDue\":false,\"completed\":false},\"byInstanceType\":{}},\"deployment-environment\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"topEnvironments\":[],\"showProjects\":false,\"successfulCount\":0},\"byInstanceType\":{}},\"repository\":{\"overall\":{\"count\":0,\"lastUpdated\":null},\"byInstanceType\":{}},\"branch\":{\"overall\":{\"count\":0,\"lastUpdated\":null},\"byInstanceType\":{}}}},\"isStale\":false}}",
+            "customfield_10000": "",
             "aggregateprogress": {
                 "progress": 0,
                 "total": 0

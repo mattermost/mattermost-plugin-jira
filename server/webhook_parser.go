@@ -256,7 +256,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 	commentAuthor := mdUser(&jwh.Comment.UpdateAuthor)
 
 	message := fmt.Sprintf("%s %s %s:\n%s",
-		commentAuthor, verb, jwh.mdKeySummaryLink(), wh.text)
+		commentAuthor, verb, jwh.mdKeySummaryLink(), quoteIssueComment(jwh.Comment.Body))
 	assigneeMentioned := false
 
 	for _, u := range parseJIRAUsernamesFromText(wh.Comment.Body) {
