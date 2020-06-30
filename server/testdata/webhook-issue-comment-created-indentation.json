@@ -3,9 +3,9 @@
     "webhookEvent": "jira:issue_updated",
     "issue_event_type_name": "issue_commented",
     "user": {
-        "self": "http://localhost:8082/rest/api/2/user?username=farapira",
-        "name": "farapira",
-        "key": "farapira",
+        "self": "http://localhost:8082/rest/api/2/user?username=test",
+        "name": "test",
+        "key": "test",
         "emailAddress": "sample@yahoo.com",
         "avatarUrls": {
             "48x48": "http://localhost:8082/secure/useravatar?avatarId=10337",
@@ -124,9 +124,9 @@
                         "self": "http://localhost:8082/rest/api/2/issue/10101/comment/10503",
                         "id": "10503",
                         "author": {
-                            "self": "http://localhost:8082/rest/api/2/user?username=farapira",
-                            "name": "farapira",
-                            "key": "farapira",
+                            "self": "http://localhost:8082/rest/api/2/user?username=test",
+                            "name": "test",
+                            "key": "test",
                             "emailAddress": "sample@yahoo.com",
                             "avatarUrls": {
                                 "48x48": "http://localhost:8082/secure/useravatar?avatarId=10337",
@@ -140,9 +140,9 @@
                         },
                         "body": "[~Test] creating a test comment\r\n\r\na second line for the test comment",
                         "updateAuthor": {
-                            "self": "http://localhost:8082/rest/api/2/user?username=farapira",
-                            "name": "farapira",
-                            "key": "farapira",
+                            "self": "http://localhost:8082/rest/api/2/user?username=test",
+                            "name": "test",
+                            "key": "test",
                             "emailAddress": "sample@yahoo.com",
                             "avatarUrls": {
                                 "48x48": "http://localhost:8082/secure/useravatar?avatarId=10337",
@@ -196,9 +196,9 @@
         "self": "http://localhost:8082/rest/api/2/issue/10101/comment/10503",
         "id": "10503",
         "author": {
-            "self": "http://localhost:8082/rest/api/2/user?username=farapira",
-            "name": "farapira",
-            "key": "farapira",
+            "self": "http://localhost:8082/rest/api/2/user?username=test",
+            "name": "test",
+            "key": "test",
             "emailAddress": "sample@yahoo.com",
             "avatarUrls": {
                 "48x48": "http://localhost:8082/secure/useravatar?avatarId=10337",
@@ -212,9 +212,9 @@
         },
         "body": "[~Test] creating a test comment\r\n\r\na second line for the test comment",
         "updateAuthor": {
-            "self": "http://localhost:8082/rest/api/2/user?username=farapira",
-            "name": "farapira",
-            "key": "farapira",
+            "self": "http://localhost:8082/rest/api/2/user?username=test",
+            "name": "test",
+            "key": "test",
             "emailAddress": "sample@yahoo.com",
             "avatarUrls": {
                 "48x48": "http://localhost:8082/secure/useravatar?avatarId=10337",
