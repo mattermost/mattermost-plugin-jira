@@ -292,7 +292,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		"install valid server instance 1 preinstalled": {
 			numInstances:      1,
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://jiralink.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "Server instance has been installed",
+			expectedMsgPrefix: "https://jiralink.com has been successfully added",
 		},
 
 		"install valid server instance 2 preinstalled": {
@@ -328,6 +328,11 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			}).Once().Return(&model.Post{})
 
 			p.SetAPI(&currentTestApi)
+			_, filename, _, _ := runtime.Caller(0)
+			templates, err := p.loadTemplates(filepath.Dir(filename) + "/../assets/templates")
+			require.NoError(t, err)
+			p.templates = templates
+
 			_, filename, _, _ := runtime.Caller(0)
 			templates, err := p.loadTemplates(filepath.Dir(filename) + "/../assets/templates")
 			require.NoError(t, err)
