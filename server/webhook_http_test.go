@@ -331,6 +331,13 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedText:            "> unik",
 			CurrentInstance:         true,
 		},
+		"SERVER issue comment created indentation": {
+			Request:         testWebhookRequest("webhook-issue-comment-created-indentation.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline: "User **commented** on story [TEST-4: unit testing](http://localhost:8082/browse/TEST-4)",
+			ExpectedText:     "> [~Test] creating a test comment\r\n> \r\n> a second line for the test comment",
+			CurrentInstance:  true,
+		},
 		"SERVER (old version) issue commented (no issue_event_type_name)": {
 			Request:                 testWebhookRequest("webhook-server-old-issue-updated-no-event-type-commented.json"),
 			ExpectedSlackAttachment: true,
@@ -342,13 +349,6 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:          testWebhookRequest("webhook-server-issue-updated-comment-deleted.json"),
 			ExpectedHeadline: "Lev Brouk **deleted comment** in story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
 			ExpectedText:     "",
-			CurrentInstance:  true,
-		},
-		"SERVER issue comment created indentation": {
-			Request:         testWebhookRequest("webhook-issue-comment-created-indentation.json"),
-			ExpectedSlackAttachment: true,
-			ExpectedHeadline: "User **commented** on story [TEST-4: unit testing](http://localhost:8082/browse/TEST-4)",
-			ExpectedText:     "> [~Test] creating a test comment\r\n> \r\n> a second line for the test comment",
 			CurrentInstance:  true,
 		},
 		"SERVER (old version) issue comment deleted (no issue_event_type_name)": {
