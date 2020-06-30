@@ -309,7 +309,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 }
 
 func quoteIssueComment(comment string) string {
-	lines := strings.Split(comment, "\n");
+	lines := strings.Split(comment, "\n")
 	for i, line := range lines {
 		lines[i] = "> " + line
 	}
