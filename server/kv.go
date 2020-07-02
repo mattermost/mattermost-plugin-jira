@@ -576,7 +576,9 @@ func (store *store) MigrateV2Instances() error {
 		return err
 	}
 
-	// The V3 "instances" key does not exist. Migrate.
+	// The V3 "instances" key does not exist. Migrate. Note that KVGet returns
+	// empty data and no error when no key exists, so the V3 key always gets
+	// initialized unless there is an actual DB/network error.
 	data, appErr := store.plugin.API.KVGet(v2keyKnownJiraInstances)
 	if appErr != nil {
 		return appErr

@@ -20,6 +20,45 @@ import (
 
 const commandTrigger = "jira"
 
+var jiraCommandHandler = CommandHandler{
+	handlers: map[string]CommandHandlerFunc{
+		"assign":                  executeAssign,
+		"connect":                 executeConnect,
+		"debug/clean-kv":          executeDebugCleanKV,
+		"debug/migrate-instances": executeDebugMigrateInstances,
+		"debug/stats/expvar":      executeDebugStatsExpvar,
+		"debug/stats/reset":       executeDebugStatsReset,
+		"debug/stats/save":        executeDebugStatsSave,
+		"debug/workflow":          executeDebugWorkflow,
+		"disconnect":              executeDisconnect,
+		"help":                    executeHelp,
+		"info":                    executeInfo,
+		"install/cloud":           executeInstanceInstallCloud,
+		"install/server":          executeInstanceInstallServer,
+		"instance/connect":        executeConnect,
+		"instance/disconnect":     executeDisconnect,
+		"instance/install/cloud":  executeInstanceInstallCloud,
+		"instance/install/server": executeInstanceInstallServer,
+		"instance/list":           executeInstanceList,
+		"instance/settings":       executeSettings,
+		"instance/uninstall":      executeInstanceUninstall,
+		"instance/v2":             executeInstanceV2Legacy,
+		"issue/assign":            executeAssign,
+		"issue/transition":        executeTransition,
+		"issue/unassign":          executeUnassign,
+		"issue/view":              executeView,
+		"settings":                executeSettings,
+		"stats":                   executeStats,
+		"subscribe/list":          executeSubscribeList,
+		"transition":              executeTransition,
+		"unassign":                executeUnassign,
+		"uninstall":               executeInstanceUninstall,
+		"view":                    executeView,
+		"webhook":                 executeWebhookURL,
+	},
+	defaultHandler: executeJiraDefault,
+}
+
 const helpTextHeader = "###### Mattermost Jira Plugin - Slash Command Help\n"
 
 const commonHelpText = "\n" +
@@ -250,45 +289,6 @@ type CommandHandlerFunc func(p *Plugin, c *plugin.Context, header *model.Command
 type CommandHandler struct {
 	handlers       map[string]CommandHandlerFunc
 	defaultHandler CommandHandlerFunc
-}
-
-var jiraCommandHandler = CommandHandler{
-	handlers: map[string]CommandHandlerFunc{
-		"assign":                  executeAssign,
-		"connect":                 executeConnect,
-		"debug/clean-kv":          executeDebugCleanKV,
-		"debug/migrate-instances": executeDebugMigrateInstances,
-		"debug/stats/expvar":      executeDebugStatsExpvar,
-		"debug/stats/reset":       executeDebugStatsReset,
-		"debug/stats/save":        executeDebugStatsSave,
-		"debug/workflow":          executeDebugWorkflow,
-		"disconnect":              executeDisconnect,
-		"help":                    executeHelp,
-		"info":                    executeInfo,
-		"install/cloud":           executeInstanceInstallCloud,
-		"install/server":          executeInstanceInstallServer,
-		"instance/connect":        executeConnect,
-		"instance/disconnect":     executeDisconnect,
-		"instance/install/cloud":  executeInstanceInstallCloud,
-		"instance/install/server": executeInstanceInstallServer,
-		"instance/list":           executeInstanceList,
-		"instance/settings":       executeSettings,
-		"instance/uninstall":      executeInstanceUninstall,
-		"instance/v2":             executeInstanceV2Legacy,
-		"issue/assign":            executeAssign,
-		"issue/transition":        executeTransition,
-		"issue/unassign":          executeUnassign,
-		"issue/view":              executeView,
-		"settings":                executeSettings,
-		"stats":                   executeStats,
-		"subscribe/list":          executeSubscribeList,
-		"transition":              executeTransition,
-		"unassign":                executeUnassign,
-		"uninstall":               executeInstanceUninstall,
-		"view":                    executeView,
-		"webhook":                 executeWebhookURL,
-	},
-	defaultHandler: executeJiraDefault,
 }
 
 func (ch CommandHandler) Handle(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
