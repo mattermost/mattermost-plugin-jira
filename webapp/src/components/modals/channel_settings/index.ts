@@ -23,7 +23,7 @@ import {
     getChannelIdWithSettingsOpen,
     getInstalledInstances,
     getUserConnectedInstances,
-    getDefaultUserInstance,
+    getDefaultUserInstanceID,
 } from 'selectors';
 
 import ChannelSettingsModal from './channel_settings';

@@ -24,7 +24,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
 
         installedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}, {instance_id: 'instance3', type: InstanceType.SERVER}],
         connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}],
-        defaultUserInstance: '',
+        defaultUserInstanceID: '',
         fetchJiraProjectMetadata: jest.fn().mockResolvedValue({data: {
             default_project_key: 'TEST',
             projects: [
@@ -67,7 +67,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         const props = {
             ...baseProps,
             connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}],
-            defaultUserInstance: 'instance1',
+            defaultUserInstanceID: 'instance1',
         };
         const wrapper = shallow<JiraInstanceAndProjectSelector>(
             <JiraInstanceAndProjectSelector {...props}/>
@@ -82,7 +82,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         let props = {
             ...baseProps,
             onInstanceChange: jest.fn(),
-            defaultUserInstance: 'instance2',
+            defaultUserInstanceID: 'instance2',
         };
         let wrapper = shallow<JiraInstanceAndProjectSelector>(
             <JiraInstanceAndProjectSelector {...props}/>
@@ -102,7 +102,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         props = {
             ...baseProps,
             onInstanceChange: jest.fn(),
-            defaultUserInstance: 'instance2',
+            defaultUserInstanceID: 'instance2',
             selectedInstanceID: 'instance3', // pre-selected instance should take precedence. i.e. from existing subscription
         };
         wrapper = shallow<JiraInstanceAndProjectSelector>(
@@ -123,7 +123,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
     test('should use default project key after fetch', async () => {
         const props = {
             ...baseProps,
-            defaultUserInstance: 'instance2',
+            defaultUserInstanceID: 'instance2',
             onProjectChange: jest.fn(),
         };
         const wrapper = shallow<JiraInstanceAndProjectSelector>(
@@ -140,7 +140,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             ...baseProps,
             fetchJiraProjectMetadata: jest.fn().mockResolvedValue({error: {message: 'Some error'}}),
             onError: jest.fn(),
-            defaultUserInstance: 'instance2',
+            defaultUserInstanceID: 'instance2',
         };
         const wrapper = shallow<JiraInstanceAndProjectSelector>(
             <JiraInstanceAndProjectSelector {...props}/>

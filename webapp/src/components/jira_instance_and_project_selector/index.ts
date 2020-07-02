@@ -10,7 +10,7 @@ import {
     getJiraProjectMetadata,
     getInstalledInstances,
     getUserConnectedInstances,
-    getDefaultUserInstance,
+    getDefaultUserInstanceID,
 } from 'selectors';
 
 import JiraInstanceAndProjectSelector from './jira_instance_and_project_selector';
@@ -18,12 +18,12 @@ import JiraInstanceAndProjectSelector from './jira_instance_and_project_selector
 const mapStateToProps = (state) => {
     const installedInstances = getInstalledInstances(state);
     const connectedInstances = getUserConnectedInstances(state);
-    const defaultUserInstance = getDefaultUserInstance(state);
+    const defaultUserInstanceID = getDefaultUserInstanceID(state);
 
     return {
         installedInstances,
         connectedInstances,
-        defaultUserInstance,
+        defaultUserInstanceID,
     };
 };
 

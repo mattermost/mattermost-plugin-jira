@@ -246,12 +246,13 @@ func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.I
 		}
 	}
 
-	switch {
-	case types.ID(instanceURL) != "":
+	if types.ID(instanceURL) != "" {
 		return types.ID(instanceURL), nil
-	case user.DefaultInstanceID != "":
+	}
+	if user.DefaultInstanceID != "" && user.ConnectedInstances.Contains(user.DefaultInstanceID) {
 		return user.DefaultInstanceID, nil
-	case user.ConnectedInstances.Len() == 1:
+	}
+	if user.ConnectedInstances.Len() == 1 {
 		return user.ConnectedInstances.IDs()[0], nil
 	}
 

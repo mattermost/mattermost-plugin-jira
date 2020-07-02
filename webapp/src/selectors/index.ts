@@ -65,6 +65,6 @@ export const getUserConnectedInstances = (state): Instance[] => {
 
 export const getInstalledInstances = (state): Instance[] => getPluginState(state).installedInstances;
 
-export const getDefaultUserInstance = (state) => getPluginState(state).defaultUserInstance;
+export const getDefaultUserInstanceID = (state) => getPluginState(state).defaultUserInstanceID;
 
 export const getPluginSettings = (state) => getPluginState(state).pluginSettings;

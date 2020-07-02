@@ -19,7 +19,7 @@ export type Props = {
 
     installedInstances: Instance[];
     connectedInstances: Instance[];
-    defaultUserInstance?: string;
+    defaultUserInstanceID?: string;
     fetchJiraProjectMetadata: (instanceID: string) => Promise<APIResponse<ProjectMetadata>>;
     hideProjectSelector?: boolean;
 };
@@ -39,8 +39,8 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
             instanceID = this.props.selectedInstanceID;
         } else if (this.props.connectedInstances.length === 1) {
             instanceID = this.props.connectedInstances[0].instance_id;
-        } else if (this.props.defaultUserInstance) {
-            instanceID = this.props.defaultUserInstance;
+        } else if (this.props.defaultUserInstanceID) {
+            instanceID = this.props.defaultUserInstanceID;
         }
 
         let fetchingProjectMetadata = false;

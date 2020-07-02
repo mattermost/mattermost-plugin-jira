@@ -5,6 +5,17 @@ import {combineReducers} from 'redux';
 
 import ActionTypes from 'action_types';
 
+function installedInstances(state = [], action) {
+    // We're notified of the instance status at startup (through getConnected)
+    // and when we get a websocket instance_status event
+    switch (action.type) {
+    case ActionTypes.RECEIVED_INSTANCE_STATUS:
+        return action.data.instances ? action.data.instances : [];
+    default:
+        return state;
+    }
+}
+
 function userConnected(state = false, action) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
@@ -23,21 +34,10 @@ function userCanConnect(state = false, action) {
     }
 }
 
-function installedInstances(state = [], action) {
-    // We're notified of the instance status at startup (through getConnected)
-    // and when we get a websocket instance_status event
-    switch (action.type) {
-    case ActionTypes.RECEIVED_INSTANCE_STATUS:
-        return action.data.instances ? action.data.instances : state;
-    default:
-        return state;
-    }
-}
-
-function defaultUserInstance(state = {}, action) {
+function defaultUserInstanceID(state = '', action) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
-        return action.data.user && action.data.user.default_instance_id ? action.data.user.default_instance_id : state;
+        return action.data.user ? action.data.user.default_instance_id : state;
     default:
         return state;
     }
@@ -46,7 +46,10 @@ function defaultUserInstance(state = {}, action) {
 function userConnectedInstances(state = [], action) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
-        return action.data.user && action.data.user.connected_instances ? action.data.user.connected_instances : state;
+        if (action.data.user) {
+            return action.data.user.connected_instances ? action.data.user.connected_instances : [];
+        }
+        return state;
     default:
         return state;
     }
@@ -192,7 +195,7 @@ export default combineReducers({
     userCanConnect,
     userConnectedInstances,
     installedInstances,
-    defaultUserInstance,
+    defaultUserInstanceID,
     pluginSettings,
     connectModalVisible,
     disconnectModalVisible,
