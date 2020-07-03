@@ -632,13 +632,14 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 			mattermostName, jiraName, mime, e := client.AddAttachment(api, attach.IssueKey, fileId, conf.maxAttachmentSize)
 			if e != nil {
 				notifyOnFailedAttachment(ji, mattermostUserId, attach.IssueKey, e, "file: %s", mattermostName)
+				continue
 			}
-
 			if isImageMIME(mime) || isEmbbedableMIME(mime) {
 				extraText += "\n\nAttachment: !" + jiraName + "!"
 			} else {
 				extraText += "\n\nAttachment: [^" + jiraName + "]"
 			}
+
 		}
 		if extraText == "" {
 			return
