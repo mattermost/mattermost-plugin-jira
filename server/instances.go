@@ -209,28 +209,41 @@ func (p *Plugin) ResolveWebhookInstanceURL(instanceURL string) (types.ID, error)
 			return "", errors.Wrap(kvstore.ErrNotFound, "no instances installed")
 		}
 		v2 := instances.GetV2Legacy()
-		if v2 == nil {
-			return "", errors.Wrap(kvstore.ErrNotFound, "V2 legacy instance is not set")
+		switch {
+		case v2 != nil:
+			instanceID = v2.InstanceID
+		case instances.Len() == 1:
+			instanceID = instances.IDs()[0]
+		default:
+			return "", errors.Wrap(kvstore.ErrNotFound, "specify a Jira instance")
 		}
-		instanceID = v2.InstanceID
 	}
 	return instanceID, nil
 }
 
 func (p *Plugin) LoadUserInstance(mattermostUserID types.ID, instanceURL string) (*User, Instance, error) {
-	user, err := p.userStore.LoadUser(mattermostUserID)
+	user, instanceID, err := p.ResolveUserInstanceURL(mattermostUserID, instanceURL)
 	if err != nil {
 		return nil, nil, err
 	}
-	instanceID, err := p.resolveUserInstanceURL(user, instanceURL)
-	if err != nil {
-		return nil, nil, err
-	}
+
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		return nil, nil, err
 	}
 	return user, instance, nil
+}
+
+func (p *Plugin) ResolveUserInstanceURL(mattermostUserID types.ID, instanceURL string) (*User, types.ID, error) {
+	user, err := p.userStore.LoadUser(mattermostUserID)
+	if err != nil {
+		return nil, "", err
+	}
+	instanceID, err := p.resolveUserInstanceURL(user, instanceURL)
+	if err != nil {
+		return nil, "", err
+	}
+	return user, instanceID, nil
 }
 
 func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.ID, error) {
