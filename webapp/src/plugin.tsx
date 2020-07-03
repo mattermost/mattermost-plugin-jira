@@ -4,7 +4,7 @@
 import {Store, Action} from 'redux';
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 
-import ChannelHeaderMenuAction from 'components/channel_header_actions';
+import ChannelHeaderMenuAction from 'components/channel_header_action';
 import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue';
 import CreateIssueModal from 'components/modals/create_issue';
 import ChannelSettingsModal from 'components/modals/channel_settings';
