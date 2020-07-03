@@ -90,7 +90,7 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"Other:\n" +
 	"* `/jira instance v2 <jiraURL>` - Set the Jira instance to process \"v2\" webhooks and subscriptions (not prefixed with the instance ID)\n" +
 	"* `/jira stats` - Display usage statistics\n" +
-	"* `/jira webhook [<jiraURL>]` -  Show the Mattermost webhook to receive JQL queries\n" +
+	"* `/jira webhook [--instance=<jiraURL>]` -  Show the Mattermost webhook to receive JQL queries\n" +
 	""
 
 func (p *Plugin) registerJiraCommand() (*Instances, error) {
@@ -127,7 +127,7 @@ func createJiraCommand(optInstance bool) *model.Command {
 
 	// Admin commands
 	jira.AddCommand(createSubscribeCommand())
-	jira.AddCommand(createWebhookCommand())
+	jira.AddCommand(createWebhookCommand(optInstance))
 
 	// Help and info
 	jira.AddCommand(model.NewAutocompleteData("info", "", "Display information about the current user and the Jira plug-in"))
@@ -183,11 +183,11 @@ func createIssueCommand(optInstance bool) *model.AutocompleteData {
 	return issue
 }
 
-func withFlagInstance(cmd *model.AutocompleteData, optInstance bool) {
+func withFlagInstance(cmd *model.AutocompleteData, optInstance bool, route string) {
 	if !optInstance {
 		return
 	}
-	cmd.AddNamedDynamicListArgument("instance", "Jira URL", routeAutocompleteUserInstance, false)
+	cmd.AddNamedDynamicListArgument("instance", "Jira URL", route, false)
 }
 
 func withParamIssueKey(cmd *model.AutocompleteData) {
@@ -223,7 +223,7 @@ func createSettingsCommand(optInstance bool) *model.AutocompleteData {
 		{HelpText: "Turn notifications on", Item: "on"},
 		{HelpText: "Turn notifications off", Item: "off"},
 	})
-	withFlagInstance(notifications, optInstance)
+	withFlagInstance(notifications, optInstance, routeAutocompleteUserInstance)
 	settings.AddCommand(notifications)
 
 	return settings
@@ -233,7 +233,7 @@ func createViewCommand(optInstance bool) *model.AutocompleteData {
 	view := model.NewAutocompleteData(
 		"view", "[issue]", "Display a Jira issue")
 	withParamIssueKey(view)
-	withFlagInstance(view, optInstance)
+	withFlagInstance(view, optInstance, routeAutocompleteUserInstance)
 	return view
 }
 
@@ -243,7 +243,7 @@ func createTransitionCommand(optInstance bool) *model.AutocompleteData {
 	withParamIssueKey(transition)
 	// TODO: Implement dynamic transition autocomplete
 	transition.AddTextArgument("To state", "", "")
-	withFlagInstance(transition, optInstance)
+	withFlagInstance(transition, optInstance, routeAutocompleteUserInstance)
 	return transition
 }
 
@@ -253,7 +253,7 @@ func createAssignCommand(optInstance bool) *model.AutocompleteData {
 	withParamIssueKey(assign)
 	// TODO: Implement dynamic Jira user search autocomplete
 	assign.AddTextArgument("User", "", "")
-	withFlagInstance(assign, optInstance)
+	withFlagInstance(assign, optInstance, routeAutocompleteUserInstance)
 	return assign
 }
 
@@ -261,7 +261,7 @@ func createUnassignCommand(optInstance bool) *model.AutocompleteData {
 	unassign := model.NewAutocompleteData(
 		"unassign", "[Jira issue]", "Unassign a Jira issue")
 	withParamIssueKey(unassign)
-	withFlagInstance(unassign, optInstance)
+	withFlagInstance(unassign, optInstance, routeAutocompleteUserInstance)
 	return unassign
 }
 
@@ -276,11 +276,11 @@ func createSubscribeCommand() *model.AutocompleteData {
 	return subscribe
 }
 
-func createWebhookCommand() *model.AutocompleteData {
+func createWebhookCommand(optInstance bool) *model.AutocompleteData {
 	webhook := model.NewAutocompleteData(
 		"webhook", "[Jira URL]", "Display the webhook URLs to set up on Jira")
 	webhook.RoleID = model.SYSTEM_ADMIN_ROLE_ID
-	webhook.AddDynamicListArgument("Jira URL", routeAutocompleteInstalledInstance, false)
+	withFlagInstance(webhook, optInstance, routeAutocompleteInstalledInstance)
 	return webhook
 }
 
@@ -715,14 +715,25 @@ func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args
 
 // TODO should transition command post to channel? Options?
 func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	instanceURL, args, err := p.parseCommandFlagInstanceURL(args)
+	if err != nil {
+		return p.responsef(header, "Failed to load your connection to Jira. Error: %v.", err)
+	}
 	if len(args) < 2 {
 		return p.help(header)
 	}
 	issueKey := strings.ToUpper(args[0])
 	toState := strings.Join(args[1:], " ")
+	mattermostUserID := types.ID(header.UserId)
+
+	_, instanceID, err := p.ResolveUserInstanceURL(mattermostUserID, instanceURL)
+	if err != nil {
+		return p.responsef(header, "Failed to identify Jira instance %s. Error: %v.", instanceURL, err)
+	}
 
 	msg, err := p.TransitionIssue(&InTransitionIssue{
-		mattermostUserID: types.ID(header.UserId),
+		InstanceID:       instanceID,
+		mattermostUserID: mattermostUserID,
 		IssueKey:         issueKey,
 		ToState:          toState,
 	})
@@ -960,13 +971,12 @@ func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	if !authorized {
 		return p.responsef(header, "`/jira webhook` can only be run by a system administrator.")
 	}
-
-	if len(args) > 1 {
-		return p.help(header)
+	jiraURL, args, err := p.parseCommandFlagInstanceURL(args)
+	if err != nil {
+		return p.responsef(header, "%v", err)
 	}
-	jiraURL := ""
 	if len(args) > 0 {
-		jiraURL = args[0]
+		return p.help(header)
 	}
 
 	instanceID, err := p.ResolveWebhookInstanceURL(jiraURL)
