@@ -3,8 +3,6 @@
 
 import React from 'react';
 import {shallow, mount} from 'enzyme';
-import {Provider} from 'react-redux';
-import configureStore from 'redux-mock-store';
 
 import Preferences from 'mattermost-redux/constants/preferences';
 
@@ -14,16 +12,6 @@ import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.jso
 import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project.json';
 
 import CreateIssue from './create_issue';
-
-const mockStore = configureStore();
-const WrappedCreateIssue = (props) => {
-    const store = mockStore({})
-    return (
-        <Provider store={store}>
-            <CreateIssue {...props}/>
-        </Provider>
-    );
-}
 
 describe('components/CreateIssue', () => {
     const baseActions = {
@@ -144,28 +132,12 @@ describe('components/CreateIssue', () => {
     test('should call create prop to create an issue', async () => {
         const create = jest.fn().mockResolvedValue({});
         const props = {...baseProps, create};
-        const wrapper = mount(
-            <WrappedCreateIssue {...props}/>
-        ).find(CreateIssue);
 
-        const fields = wrapper.find(CreateIssue).state('fields');
+        const wrapper = shallow(
+            <CreateIssue {...props}/>
+        );
 
-        wrapper.setState({
-            fields: {
-                ...fields,
-                summary: '',
-                description: 'some description',
-                project: {key: 'KT'},
-                issuetype: {id: '10001'},
-                priority: {id: 1},
-            },
-            projectKey: 'KT',
-            issueType: '10001',
-        });
-
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
-        expect(create).not.toHaveBeenCalled();
-
+        const fields = wrapper.state('fields');
         wrapper.setState({
             fields: {
                 ...fields,

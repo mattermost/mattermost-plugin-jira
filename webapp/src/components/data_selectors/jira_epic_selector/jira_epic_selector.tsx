@@ -14,7 +14,11 @@ import BackendSelector, {Props as BackendSelectorProps} from '../backend_selecto
 const searchDefaults = 'ORDER BY updated DESC';
 
 type Props = BackendSelectorProps & {
-    searchIssues: (params: object) => Promise<{data: JiraIssue[]}>;
+    searchIssues: (params: {
+        jql: string;
+        fields: string;
+        q: string;
+    }) => Promise<{data: JiraIssue[]}>;
     issueMetadata: IssueMetadata;
 };
 
