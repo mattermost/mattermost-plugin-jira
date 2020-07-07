@@ -53,13 +53,17 @@ export const getChannelIdWithSettingsOpen = (state) => getPluginState(state).cha
 
 export const getChannelSubscriptions = (state) => getPluginState(state).channelSubscriptions;
 
-export const isUserConnected = (state) => getPluginState(state).userConnected;
+export const isUserConnected = (state) => getUserConnectedInstances(state).length > 0;
 
 export const canUserConnect = (state) => getPluginState(state).userCanConnect;
 
 export const getUserConnectedInstances = (state): Instance[] => {
     const installed = getPluginState(state).installedInstances as Instance[];
     const connected = getPluginState(state).userConnectedInstances as Instance[];
+    if (!installed || !connected) {
+        return [];
+    }
+
     return connected.filter((instance1) => installed.find((instance2) => instance1.instance_id === instance2.instance_id));
 };
 

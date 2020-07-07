@@ -77,7 +77,7 @@ export default class Hooks {
     }
 
     handleSubscribeSlashCommand = (message: string, contextArgs: ContextArgs) => {
-        if (!getInstalledInstances(this.store.getState())) {
+        if (!getInstalledInstances(this.store.getState()).length) {
             this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
             return Promise.resolve({});
         }
