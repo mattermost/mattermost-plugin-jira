@@ -309,11 +309,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 }
 
 func quoteIssueComment(comment string) string {
-	lines := strings.Split(comment, "\n")
-	for i, line := range lines {
-		lines[i] = "> " + line
-	}
-	return strings.Join(lines, "\n")
+	return "> " + strings.ReplaceAll(comment, "\n", "\n> ")
 }
 
 func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
