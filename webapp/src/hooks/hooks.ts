@@ -71,7 +71,12 @@ export default class Hooks {
             this.store.dispatch(sendEphemeralPost('Your Mattermost account is not connected to Jira. Please use `/jira connect` to connect your account, then try again.'));
             return Promise.resolve({});
         }
-        const description = message.slice(createCommand.length).trim();
+        let description = '';
+        if (message.startsWith(createCommand)) {
+            description = message.slice(createCommand.length).trim();
+        } else if (message.startsWith(issueCreateCommand)) {
+            description = message.slice(issueCreateCommand.length).trim();
+        }
         this.store.dispatch(openCreateModalWithoutPost(description, contextArgs.channel_id));
         return Promise.resolve({});
     }
@@ -100,7 +105,12 @@ export default class Hooks {
             return Promise.resolve({});
         }
 
-        const args = message.slice(disconnectCommand.length).trim();
+        let args = '';
+        if (message.startsWith(disconnectCommand)) {
+            args = message.slice(disconnectCommand.length).trim();
+        } else if (message.startsWith(instanceDisconnectCommand)) {
+            args = message.slice(instanceDisconnectCommand.length).trim();
+        }
         if (connectedInstances.length < 2 || args) {
             // Let the server take care of the command
             return Promise.resolve({message, args: contextArgs});
@@ -111,7 +121,12 @@ export default class Hooks {
     }
 
     handleConnectSlashCommand = (message: string, contextArgs: ContextArgs) => {
-        const instanceID = message.slice(connectCommand.length).trim();
+        let instanceID = '';
+        if (message.startsWith(connectCommand)) {
+            instanceID = message.slice(connectCommand.length).trim();
+        } else if (message.startsWith(instanceConnectCommand)) {
+            instanceID = message.slice(instanceConnectCommand.length).trim();
+        }
         this.store.dispatch(handleConnectFlow(instanceID));
         return Promise.resolve({});
     }
