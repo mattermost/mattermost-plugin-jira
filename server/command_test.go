@@ -333,11 +333,6 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			require.NoError(t, err)
 			p.templates = templates
 
-			_, filename, _, _ := runtime.Caller(0)
-			templates, err := p.loadTemplates(filepath.Dir(filename) + "/../assets/templates")
-			require.NoError(t, err)
-			p.templates = templates
-
 			store := NewStore(&p)
 			p.instanceStore = p.getMockInstanceStoreKV(tt.numInstances)
 			p.secretsStore = store

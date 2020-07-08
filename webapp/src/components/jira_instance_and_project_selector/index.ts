@@ -4,10 +4,9 @@
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 
-import {fetchJiraProjectMetadata} from 'actions';
+import {fetchJiraProjectMetadata, getConnected} from 'actions';
 
 import {
-    getJiraProjectMetadata,
     getInstalledInstances,
     getUserConnectedInstances,
     getDefaultUserInstanceID,
@@ -29,6 +28,7 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
     fetchJiraProjectMetadata,
+    getConnected,
 }, dispatch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(JiraInstanceAndProjectSelector);

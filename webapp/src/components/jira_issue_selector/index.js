@@ -12,4 +12,4 @@ const mapDispatchToProps = (dispatch) => bindActionCreators({
     searchIssues,
 }, dispatch);
 
-export default connect(null, mapDispatchToProps)(JiraIssueSelector);
+export default connect(null, mapDispatchToProps, null)(JiraIssueSelector);

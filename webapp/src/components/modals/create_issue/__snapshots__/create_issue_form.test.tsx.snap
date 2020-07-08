@@ -65,14 +65,26 @@ exports[`components/CreateIssue should match snapshot 1`] = `
     }
   >
     <FormButton
-      btnClass="btn btn-primary"
-      defaultMessage="Close"
+      btnClass="btn-link"
+      defaultMessage="Cancel"
       disabled={false}
       extraClasses=""
       onClick={[Function]}
       savingMessage="Creating"
-      type="submit"
+      type="button"
     />
+    <FormButton
+      btnClass="btn btn-primary"
+      defaultMessage="Create"
+      disabled={true}
+      extraClasses=""
+      id="submit-button"
+      saving={false}
+      savingMessage="Creating"
+      type="submit"
+    >
+      Create
+    </FormButton>
   </ModalFooter>
 </form>
 `;
@@ -1668,14 +1680,26 @@ exports[`components/CreateIssue should match snapshot with no instance id 1`] = 
     }
   >
     <FormButton
-      btnClass="btn btn-primary"
-      defaultMessage="Close"
+      btnClass="btn-link"
+      defaultMessage="Cancel"
       disabled={false}
       extraClasses=""
       onClick={[Function]}
       savingMessage="Creating"
-      type="submit"
+      type="button"
     />
+    <FormButton
+      btnClass="btn btn-primary"
+      defaultMessage="Create"
+      disabled={true}
+      extraClasses=""
+      id="submit-button"
+      saving={false}
+      savingMessage="Creating"
+      type="submit"
+    >
+      Create
+    </FormButton>
   </ModalFooter>
 </form>
 `;
@@ -1745,14 +1769,26 @@ exports[`components/CreateIssue should match snapshot with no issue metadata 1`]
     }
   >
     <FormButton
-      btnClass="btn btn-primary"
-      defaultMessage="Close"
+      btnClass="btn-link"
+      defaultMessage="Cancel"
       disabled={false}
       extraClasses=""
       onClick={[Function]}
       savingMessage="Creating"
-      type="submit"
+      type="button"
     />
+    <FormButton
+      btnClass="btn btn-primary"
+      defaultMessage="Create"
+      disabled={true}
+      extraClasses=""
+      id="submit-button"
+      saving={false}
+      savingMessage="Creating"
+      type="submit"
+    >
+      Create
+    </FormButton>
   </ModalFooter>
 </form>
 `;

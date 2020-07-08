@@ -136,7 +136,10 @@ export type GetConnectedResponse = {
         can_connect: boolean;
         instances: Instance[];
         is_connected: boolean;
-        user: {connected_instances: Instance[]};
+        user: {
+            connected_instances: Instance[];
+            default_instance_id?: string;
+        };
     };
     error?: Error;
 };

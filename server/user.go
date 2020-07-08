@@ -193,6 +193,15 @@ func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, proje
 			return
 		}
 	}
+
+	info, err := p.GetUserInfo(types.ID(mattermostUserID))
+	if err != nil {
+		return
+	}
+
+	p.API.PublishWebSocketEvent(websocketEventConnect, info.AsConfigMap(),
+		&model.WebsocketBroadcast{UserId: mattermostUserID.String()},
+	)
 }
 
 func (p *Plugin) httpGetSettingsInfo(w http.ResponseWriter, r *http.Request) (int, error) {
