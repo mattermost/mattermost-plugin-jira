@@ -13,10 +13,17 @@ import EditChannelSettings from './edit_channel_settings';
 import SelectChannelSubscription from './select_channel_subscription';
 import {SharedProps} from './shared_props';
 
-export default class ChannelSettingsModalInner extends React.PureComponent<SharedProps> {
+type State = {
+    creatingSubscription: boolean;
+    selectedSubscription: ChannelSubscription | null;
+    loading: boolean;
+}
+
+export default class ChannelSettingsModalInner extends React.PureComponent<SharedProps, State> {
     state = {
         creatingSubscription: false,
         selectedSubscription: null,
+        loading: false,
     };
 
     componentDidMount(): void {
@@ -28,12 +35,17 @@ export default class ChannelSettingsModalInner extends React.PureComponent<Share
             return;
         }
 
-        this.props.fetchChannelSubscriptions(this.props.channel.id).then(({error}) => {
-            if (error) {
-                this.props.sendEphemeralPost('You do not have permission to edit subscriptions for this channel. Subscribing to Jira events will create notifications in this channel when certain events occur, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.');
-                this.props.close();
-            }
-        });
+        this.setState({loading: true});
+        await Promise.all([
+            this.props.fetchChannelSubscriptions(this.props.channel.id).then(({error}) => {
+                if (error) {
+                    this.props.sendEphemeralPost('You do not have permission to edit subscriptions for this channel. Subscribing to Jira events will create notifications in this channel when certain events occur, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.');
+                    this.props.close();
+                }
+            }),
+            this.props.getConnected(),
+        ]);
+        this.setState({loading: false});
     };
 
     showEditChannelSubscription = (subscription: ChannelSubscription): void => {
@@ -59,7 +71,7 @@ export default class ChannelSettingsModalInner extends React.PureComponent<Share
         const {selectedSubscription, creatingSubscription} = this.state;
 
         let form;
-        if (!this.props.channelSubscriptions) {
+        if (this.state.loading || !this.props.channelSubscriptions) {
             form = <Loading/>;
         } else if (selectedSubscription || creatingSubscription) {
             form = (

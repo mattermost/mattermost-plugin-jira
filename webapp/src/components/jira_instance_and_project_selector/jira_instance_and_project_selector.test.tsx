@@ -32,6 +32,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
                 {value: 'AA', label: 'Apples Arrangement'},
             ],
         }}),
+        getConnected: jest.fn().mockResolvedValue({error: null}),
         hideProjectSelector: false,
     };
 
@@ -78,7 +79,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         });
     });
 
-    test('should assign the correct initial instance id', () => {
+    test('should assign the correct initial instance id', async () => {
         let props = {
             ...baseProps,
             onInstanceChange: jest.fn(),
@@ -87,6 +88,8 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         let wrapper = shallow<JiraInstanceAndProjectSelector>(
             <JiraInstanceAndProjectSelector {...props}/>
         );
+
+        await props.getConnected();
         expect(props.onInstanceChange).toBeCalledWith('instance2');
 
         props = {
@@ -97,6 +100,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         wrapper = shallow<JiraInstanceAndProjectSelector>(
             <JiraInstanceAndProjectSelector {...props}/>
         );
+        await props.getConnected();
         expect(props.onInstanceChange).toBeCalledWith('instance1');
 
         props = {
@@ -108,6 +112,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         wrapper = shallow<JiraInstanceAndProjectSelector>(
             <JiraInstanceAndProjectSelector {...props}/>
         );
+        await props.getConnected();
         expect(props.onInstanceChange).toBeCalledWith('instance3');
 
         props = {
@@ -117,6 +122,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         wrapper = shallow<JiraInstanceAndProjectSelector>(
             <JiraInstanceAndProjectSelector {...props}/>
         );
+        await props.getConnected();
         expect(props.onInstanceChange).not.toBeCalled();
     });
 
@@ -129,6 +135,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         const wrapper = shallow<JiraInstanceAndProjectSelector>(
             <JiraInstanceAndProjectSelector {...props}/>
         );
+        await props.getConnected();
         expect(wrapper.state().fetchingProjectMetadata).toBe(true);
 
         await props.fetchJiraProjectMetadata('');
@@ -146,6 +153,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             <JiraInstanceAndProjectSelector {...props}/>
         );
 
+        await props.getConnected();
         await props.fetchJiraProjectMetadata('');
         expect(props.onError).toHaveBeenCalledWith('Some error');
     });

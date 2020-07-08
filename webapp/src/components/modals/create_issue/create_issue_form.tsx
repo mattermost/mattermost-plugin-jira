@@ -40,7 +40,7 @@ type Props = {
     close: (e?: Event) => void;
     create: (issue: CreateIssueRequest) => Promise<APIResponse<{}>>;
     description?: string;
-    channelId: string;
+    channelId?: string;
     currentTeam: Team;
     post?: Post;
     theme: Theme;
@@ -197,8 +197,13 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             return;
         }
 
-        const {post, channelId} = this.props;
+        const {post} = this.props;
         const postId = post ? post.id : '';
+
+        let channelId = this.props.channelId;
+        if (post) {
+            channelId = post.channel_id;
+        }
 
         const requiredFieldsNotCovered = this.getFieldsNotCovered();
         const issue = {
@@ -274,13 +279,25 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             />
         );
 
-        let footer = (
-            <FormButton
-                type='submit'
-                btnClass='btn btn-primary'
-                defaultMessage='Close'
-                onClick={this.handleClose}
-            />
+        const disableSubmit = this.state.fetchingIssueMetadata || !(this.state.projectKey && this.state.jiraIssueMetadata);
+        const footer = (
+            <React.Fragment>
+                <FormButton
+                    type='button'
+                    btnClass='btn-link'
+                    defaultMessage='Cancel'
+                    onClick={this.handleClose}
+                />
+                <FormButton
+                    id='submit-button'
+                    type='submit'
+                    btnClass='btn btn-primary'
+                    saving={this.state.submitting}
+                    disabled={disableSubmit}
+                >
+                    {'Create'}
+                </FormButton>
+            </React.Fragment>
         );
 
         let form;
@@ -288,24 +305,6 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             form = <Loading/>;
         } else if (this.state.projectKey && this.state.jiraIssueMetadata) {
             form = this.renderForm();
-            footer = (
-                <React.Fragment>
-                    <FormButton
-                        type='button'
-                        btnClass='btn-link'
-                        defaultMessage='Cancel'
-                        onClick={this.handleClose}
-                    />
-                    <FormButton
-                        id='submit-button'
-                        type='submit'
-                        btnClass='btn btn-primary'
-                        saving={this.state.submitting}
-                    >
-                        {'Create'}
-                    </FormButton>
-                </React.Fragment>
-            );
         }
 
         let error;
@@ -329,7 +328,6 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             >
                 <Modal.Body
                     style={style.modalBody}
-                    ref='modalBody'
                 >
                     {error}
                     {instanceSelector}

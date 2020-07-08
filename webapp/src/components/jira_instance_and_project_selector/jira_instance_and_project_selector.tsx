@@ -2,7 +2,7 @@ import React from 'react';
 
 import {Theme} from 'mattermost-redux/types/preferences';
 
-import {Instance, ProjectMetadata, ReactSelectOption, APIResponse} from 'types/model';
+import {Instance, ProjectMetadata, ReactSelectOption, APIResponse, GetConnectedResponse} from 'types/model';
 import ReactSelectSetting from 'components/react_select_setting';
 import {getProjectValues} from 'utils/jira_issue_metadata';
 
@@ -21,10 +21,12 @@ export type Props = {
     connectedInstances: Instance[];
     defaultUserInstanceID?: string;
     fetchJiraProjectMetadata: (instanceID: string) => Promise<APIResponse<ProjectMetadata>>;
+    getConnected: () => Promise<GetConnectedResponse>;
     hideProjectSelector?: boolean;
 };
 
 type State = {
+    fetchingInstances: boolean;
     fetchingProjectMetadata: boolean;
     jiraProjectMetadata: ProjectMetadata | null;
     disableInstanceSelector: boolean;
@@ -34,35 +36,49 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
     constructor(props: Props) {
         super(props);
 
-        let instanceID = '';
-        if (this.props.selectedInstanceID) {
-            instanceID = this.props.selectedInstanceID;
-        } else if (this.props.connectedInstances.length === 1) {
-            instanceID = this.props.connectedInstances[0].instance_id;
-        } else if (this.props.defaultUserInstanceID) {
-            instanceID = this.props.defaultUserInstanceID;
-        }
-
-        let fetchingProjectMetadata = false;
-        if (instanceID) {
-            this.props.onInstanceChange(instanceID);
-
-            // We don't need to have a project selector for the attach modal.
-            if (!props.hideProjectSelector) {
-                this.fetchJiraProjectMetadata(instanceID);
-                fetchingProjectMetadata = true;
-            }
-        }
-
         this.state = {
-            fetchingProjectMetadata,
+            fetchingProjectMetadata: false,
+            fetchingInstances: false,
             jiraProjectMetadata: null,
             disableInstanceSelector: Boolean(this.props.selectedInstanceID),
         };
     }
 
+    componentDidMount() {
+        this.fetchInstances();
+    }
+
+    fetchInstances = async () => {
+        if (this.props.selectedInstanceID) {
+            this.props.onInstanceChange(this.props.selectedInstanceID);
+            if (!this.props.hideProjectSelector) {
+                this.fetchJiraProjectMetadata(this.props.selectedInstanceID);
+            }
+            return;
+        }
+
+        this.setState({fetchingInstances: true});
+        const {error} = await this.props.getConnected();
+        this.setState({fetchingInstances: false});
+        if (error) {
+            this.props.onError(error.message);
+            return;
+        }
+
+        let instanceID = '';
+        if (this.props.connectedInstances.length === 1) {
+            instanceID = this.props.connectedInstances[0].instance_id;
+        } else if (this.props.defaultUserInstanceID) {
+            instanceID = this.props.defaultUserInstanceID;
+        }
+
+        if (instanceID) {
+            this.handleJiraInstanceChange('', instanceID);
+        }
+    }
+
     fetchJiraProjectMetadata = async (instanceID: string) => {
-        if (this.state && !this.state.fetchingProjectMetadata) {
+        if (!this.state.fetchingProjectMetadata) {
             this.setState({jiraProjectMetadata: null, fetchingProjectMetadata: true});
         }
 
@@ -70,16 +86,17 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
         if (error) {
             this.setState({fetchingProjectMetadata: false});
             this.props.onError(error.message);
-        } else {
-            const projectMetadata = data as ProjectMetadata;
-            this.setState({
-                jiraProjectMetadata: projectMetadata,
-                fetchingProjectMetadata: false,
-            });
+            return;
+        }
 
-            if (projectMetadata.default_project_key) {
-                this.props.onProjectChange(projectMetadata.default_project_key);
-            }
+        const projectMetadata = data as ProjectMetadata;
+        this.setState({
+            jiraProjectMetadata: projectMetadata,
+            fetchingProjectMetadata: false,
+        });
+
+        if (projectMetadata.default_project_key) {
+            this.props.onProjectChange(projectMetadata.default_project_key);
         }
     }
 
@@ -116,6 +133,7 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
                     isDisabled={this.state.disableInstanceSelector}
                     required={!this.state.disableInstanceSelector}
                     theme={this.props.theme}
+                    isLoading={this.state.fetchingInstances}
                 />
             );
         }

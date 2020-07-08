@@ -4,7 +4,7 @@
 import React, {PureComponent} from 'react';
 import {Modal} from 'react-bootstrap';
 
-import {ReactSelectOption} from 'types/model';
+import {ReactSelectOption, Instance} from 'types/model';
 
 import {getModalStyles} from 'utils/styles';
 
@@ -54,6 +54,10 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
     }
 
     handleInstanceChoice = (_: string, instanceID: string) => {
+        if (instanceID === this.state.selectedInstance) {
+            return;
+        }
+
         let error = '';
         if (instanceID && this.isAlreadyConnectedToInstance(instanceID)) {
             error = 'You are already connected to this Jira instance.';
@@ -107,7 +111,6 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
             >
                 <Modal.Body
                     style={style.modalBody}
-                    ref='modalBody'
                 >
                     {instanceSelector}
                 </Modal.Body>

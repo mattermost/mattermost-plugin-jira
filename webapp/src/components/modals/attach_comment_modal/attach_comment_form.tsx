@@ -138,7 +138,6 @@ export default class AttachCommentToIssueForm extends PureComponent<Props, State
             >
                 <Modal.Body
                     style={style.modalBody}
-                    ref='modalBody'
                 >
                     {instanceSelector}
                     {form}
