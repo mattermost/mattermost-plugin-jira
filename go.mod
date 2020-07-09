@@ -14,6 +14,7 @@ require (
 	github.com/mattermost/mattermost-server/v5 v5.24.0-rc1
 	github.com/pkg/errors v0.9.1
 	github.com/rbriski/atlassian-jwt v0.0.0-20180307182949-7bb4ae273058
+	github.com/rudderlabs/analytics-go v3.2.1+incompatible
 	github.com/stretchr/testify v1.5.1
 	github.com/trivago/tgo v1.0.7 // indirect
 	golang.org/x/oauth2 v0.0.0-20191202225959-858c2ad4c8b6

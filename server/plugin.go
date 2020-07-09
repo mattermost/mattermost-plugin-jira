@@ -25,7 +25,9 @@ import (
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
+	"github.com/mattermost/mattermost-plugin-jira/server/jiraTracker"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/telemetry"
 )
 
 const (
@@ -120,6 +122,12 @@ type Plugin struct {
 	// channel to distribute work to the webhook processors
 	webhookQueue chan *webhookMessage
 
+	// telemetry client
+	telemetryClient telemetry.Client
+
+	// telemetry Tracker
+	Tracker jiraTracker.Tracker
+
 	// service that determiines if this Mattermost instance has access to
 	// enterprise features
 	enterpriseChecker enterprise.EnterpriseChecker
@@ -161,6 +169,28 @@ func (p *Plugin) OnConfigurationChange() error {
 		conf.externalConfig = ec
 		conf.maxAttachmentSize = maxAttachmentSize
 	})
+
+	// create new tracker on each configuration change
+	p.Tracker = jiraTracker.New(telemetry.NewTracker(
+		p.telemetryClient,
+		p.API.GetDiagnosticId(),
+		p.API.GetServerVersion(),
+		manifest.Id,
+		manifest.Version,
+		*p.API.GetConfig().LogSettings.EnableDiagnostics,
+	))
+
+	return nil
+}
+
+func (p *Plugin) OnDeactivate() error {
+	// close the tracker on plugin deactivation
+	if p.telemetryClient != nil {
+		err := p.telemetryClient.Close()
+		if err != nil {
+			errors.Wrap(err, "OnDeactivate: Failed to close telemetryClient.")
+		}
+	}
 	return nil
 }
 
@@ -245,7 +275,8 @@ func (p *Plugin) OnActivate() error {
 
 	go func() {
 		for _, url := range instances.IDs() {
-			instance, err := p.instanceStore.LoadInstance(url)
+			var instance Instance
+			instance, err = p.instanceStore.LoadInstance(url)
 			if err != nil {
 				continue
 			}
@@ -256,12 +287,18 @@ func (p *Plugin) OnActivate() error {
 				continue
 			}
 
-			if err := p.AddAutolinksForCloudInstance(ci); err != nil {
+			if err = p.AddAutolinksForCloudInstance(ci); err != nil {
 				p.API.LogWarn("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 				continue
 			}
 		}
 	}()
+
+	// initialize the rudder client once on activation
+	p.telemetryClient, err = telemetry.NewRudderClient()
+	if err != nil {
+		p.API.LogError("Cannot create telemetry client. err=%v", err)
+	}
 
 	return nil
 }
