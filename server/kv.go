@@ -605,6 +605,7 @@ func (store *store) MigrateV2Instances() error {
 	}
 	if instance != nil {
 		instance.Common().InstanceID = types.ID(instance.GetURL())
+		instance.Common().IsV2Legacy = true
 		instances.Set(instance.Common())
 		err = store.StoreInstance(instance)
 		if err != nil {
