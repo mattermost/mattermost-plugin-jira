@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {shallow, mount} from 'enzyme';
+import {shallow} from 'enzyme';
 
 import Preferences from 'mattermost-redux/constants/preferences';
 
@@ -132,26 +132,10 @@ describe('components/CreateIssue', () => {
     test('should call create prop to create an issue', async () => {
         const create = jest.fn().mockResolvedValue({});
         const props = {...baseProps, create};
-        const wrapper = mount(
+        const wrapper = shallow(
             <CreateIssue {...props}/>
         );
         const fields = wrapper.state('fields');
-
-        wrapper.setState({
-            fields: {
-                ...fields,
-                summary: '',
-                description: 'some description',
-                project: {key: 'KT'},
-                issuetype: {id: '10001'},
-                priority: {id: 1},
-            },
-            projectKey: 'KT',
-            issueType: '10001',
-        });
-
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
-        expect(create).not.toHaveBeenCalled();
 
         wrapper.setState({
             fields: {
@@ -178,26 +162,10 @@ describe('components/CreateIssue', () => {
             jiraProjectMetadata: serverProjectMetadata,
             jiraIssueMetadata: serverIssueMetadata,
         };
-        const wrapper = mount(
+        const wrapper = shallow(
             <CreateIssue {...props}/>
         );
         const fields = wrapper.state('fields');
-
-        wrapper.setState({
-            fields: {
-                ...fields,
-                summary: '',
-                description: 'some description',
-                project: {key: 'HEY'},
-                issuetype: {id: '10001'},
-                priority: {id: 1},
-            },
-            projectKey: 'HEY',
-            issueType: '10001',
-        });
-
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
-        expect(create).not.toHaveBeenCalled();
 
         wrapper.setState({
             fields: {
