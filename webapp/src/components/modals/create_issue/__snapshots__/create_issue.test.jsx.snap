@@ -110,7 +110,6 @@ exports[`components/CreateIssue should match snapshot 1`] = `
               "dndIndicator": "#f74343",
               "errorTextColor": "#fd5960",
               "linkColor": "#2389d7",
-              "mentionBg": "#ffffff",
               "mentionBj": "#ffffff",
               "mentionColor": "#145dbf",
               "mentionHighlightBg": "#ffe577",
@@ -149,7 +148,6 @@ exports[`components/CreateIssue should match snapshot 1`] = `
               "dndIndicator": "#f74343",
               "errorTextColor": "#fd5960",
               "linkColor": "#2389d7",
-              "mentionBg": "#ffffff",
               "mentionBj": "#ffffff",
               "mentionColor": "#145dbf",
               "mentionHighlightBg": "#ffe577",
@@ -270,7 +268,7 @@ exports[`components/CreateIssue should match snapshot with error 1`] = `
             title="Warning Icon"
           />
           <span>
-
+             
             Some error
           </span>
         </p>
@@ -327,7 +325,6 @@ exports[`components/CreateIssue should match snapshot with error 1`] = `
               "dndIndicator": "#f74343",
               "errorTextColor": "#fd5960",
               "linkColor": "#2389d7",
-              "mentionBg": "#ffffff",
               "mentionBj": "#ffffff",
               "mentionColor": "#145dbf",
               "mentionHighlightBg": "#ffe577",
@@ -391,7 +388,6 @@ exports[`components/CreateIssue should match snapshot with error 1`] = `
               "dndIndicator": "#f74343",
               "errorTextColor": "#fd5960",
               "linkColor": "#2389d7",
-              "mentionBg": "#ffffff",
               "mentionBj": "#ffffff",
               "mentionColor": "#145dbf",
               "mentionHighlightBg": "#ffe577",
@@ -3683,7 +3679,6 @@ exports[`components/CreateIssue should match snapshot with error 1`] = `
               "dndIndicator": "#f74343",
               "errorTextColor": "#fd5960",
               "linkColor": "#2389d7",
-              "mentionBg": "#ffffff",
               "mentionBj": "#ffffff",
               "mentionColor": "#145dbf",
               "mentionHighlightBg": "#ffe577",
@@ -3879,7 +3874,6 @@ exports[`components/CreateIssue should match snapshot with form filled 1`] = `
               "dndIndicator": "#f74343",
               "errorTextColor": "#fd5960",
               "linkColor": "#2389d7",
-              "mentionBg": "#ffffff",
               "mentionBj": "#ffffff",
               "mentionColor": "#145dbf",
               "mentionHighlightBg": "#ffe577",
@@ -3943,7 +3937,6 @@ exports[`components/CreateIssue should match snapshot with form filled 1`] = `
               "dndIndicator": "#f74343",
               "errorTextColor": "#fd5960",
               "linkColor": "#2389d7",
-              "mentionBg": "#ffffff",
               "mentionBj": "#ffffff",
               "mentionColor": "#145dbf",
               "mentionHighlightBg": "#ffe577",
@@ -7235,7 +7228,6 @@ exports[`components/CreateIssue should match snapshot with form filled 1`] = `
               "dndIndicator": "#f74343",
               "errorTextColor": "#fd5960",
               "linkColor": "#2389d7",
-              "mentionBg": "#ffffff",
               "mentionBj": "#ffffff",
               "mentionColor": "#145dbf",
               "mentionHighlightBg": "#ffe577",
@@ -7385,7 +7377,7 @@ exports[`components/CreateIssue should match snapshot with getMetadataError 1`] 
           title="Warning Icon"
         />
         <span>
-
+           
           Some error
         </span>
       </p>
@@ -7523,7 +7515,6 @@ exports[`components/CreateIssue should match snapshot with no issue metadata 1`]
               "dndIndicator": "#f74343",
               "errorTextColor": "#fd5960",
               "linkColor": "#2389d7",
-              "mentionBg": "#ffffff",
               "mentionBj": "#ffffff",
               "mentionColor": "#145dbf",
               "mentionHighlightBg": "#ffe577",
@@ -7562,7 +7553,6 @@ exports[`components/CreateIssue should match snapshot with no issue metadata 1`]
               "dndIndicator": "#f74343",
               "errorTextColor": "#fd5960",
               "linkColor": "#2389d7",
-              "mentionBg": "#ffffff",
               "mentionBj": "#ffffff",
               "mentionColor": "#145dbf",
               "mentionHighlightBg": "#ffe577",
