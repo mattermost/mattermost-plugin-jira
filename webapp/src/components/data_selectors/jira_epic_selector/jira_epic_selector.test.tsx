@@ -32,28 +32,6 @@ describe('components/JiraEpicSelector', () => {
         expect(wrapper).toMatchSnapshot();
     });
 
-    test('should call searchIssues on mount if values are present', () => {
-        const props = {...baseProps};
-        const wrapper = shallow<JiraEpicSelector>(
-            <JiraEpicSelector {...props}/>
-        );
-
-        wrapper.instance().fetchInitialSelectedValues();
-        expect(props.searchIssues).toHaveBeenCalledWith({
-            fields: 'customfield_10011',
-            jql: 'project=KT and issuetype=10000 and id IN (KT-17, KT-20) ORDER BY updated DESC',
-            q: '',
-        });
-    });
-
-    test('should not call searchIssues on mount if no values are present', () => {
-        const props = {...baseProps, value: []};
-        const wrapper = shallow<JiraEpicSelector>(
-            <JiraEpicSelector {...props}/>
-        );
-        expect(props.searchIssues).not.toHaveBeenCalled();
-    });
-
     test('#searchIssues should call searchIssues', () => {
         const searchIssues = jest.fn().mockResolvedValue({});
 

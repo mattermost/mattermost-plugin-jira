@@ -8,6 +8,8 @@ import AsyncSelect from 'react-select/async';
 
 import {Theme} from 'mattermost-redux/types/preferences';
 
+import {Theme} from 'mattermost-redux/types/preferences';
+
 import {getStyleForReactSelect} from 'utils/styles';
 import {ReactSelectOption} from 'types/model';
 import {Props as ReactSelectSettingProps} from 'components/react_select_setting';
@@ -20,7 +22,7 @@ export type Props = ReactSelectSettingProps & {
     hideRequiredStar?: boolean;
     theme: Theme;
     onChange: (values: string | string[]) => void;
-    value: string | string[];
+    value?: string | string[];
     resetInvalidOnChange?: boolean;
 
     fetchInitialSelectedValues: () => Promise<ReactSelectOption[]>;
