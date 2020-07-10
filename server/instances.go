@@ -114,7 +114,7 @@ func (p *Plugin) InstallInstance(instance Instance) error {
 	}
 
 	// Re-register the /jira command with the new number of instances.
-	_, err = p.registerJiraCommand()
+	err = p.registerJiraCommand(p.getConfig().EnableAutocomplete, updated.Len() > 1)
 	if err != nil {
 		p.errorf("InstallInstance: failed to re-register `/%s` command; please re-activate the plugin using the System Console. Error: %s",
 			commandTrigger, err.Error())
@@ -161,7 +161,7 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 	}
 
 	// Re-register the /jira command with the new number of instances.
-	_, err = p.registerJiraCommand()
+	err = p.registerJiraCommand(p.getConfig().EnableAutocomplete, updated.Len() > 1)
 	if err != nil {
 		p.errorf("UninstallInstance: failed to re-register `/%s` command; please re-activate the plugin using the System Console. Error: %s",
 			commandTrigger, err.Error())
