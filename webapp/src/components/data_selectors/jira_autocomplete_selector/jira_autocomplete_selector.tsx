@@ -12,9 +12,9 @@ const stripHTML = (text: string) => {
         return text;
     }
 
-    var doc = new DOMParser().parseFromString(text, 'text/html');
+    const doc = new DOMParser().parseFromString(text, 'text/html');
     return doc.body.textContent || '';
-}
+};
 
 type Props = BackendSelectorProps & {
     searchAutoCompleteFields: (params: object) => Promise<any>;
@@ -37,7 +37,7 @@ export default class JiraAutoCompleteSelector extends React.PureComponent<Props>
             fieldName,
         };
         return this.props.searchAutoCompleteFields(params).then(({data}) => {
-            return data.results.map((suggestion: {value: string, displayName: string}) => ({
+            return data.results.map((suggestion: {value: string; displayName: string}) => ({
                 value: suggestion.value,
                 label: stripHTML(suggestion.displayName),
             }));

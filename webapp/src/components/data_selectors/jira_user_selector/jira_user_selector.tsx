@@ -9,7 +9,7 @@ import BackendSelector, {Props as BackendSelectorProps} from '../backend_selecto
 
 type Props = BackendSelectorProps & {
     projectKey: string;
-    searchUsers: (params: {project: string; q: string;}) => Promise<{data: JiraUser[], error?: Error}>;
+    searchUsers: (params: {project: string; q: string}) => Promise<{data: JiraUser[]; error?: Error}>;
 };
 
 export default class JiraUserSelector extends React.PureComponent<Props> {
@@ -38,10 +38,13 @@ export default class JiraUserSelector extends React.PureComponent<Props> {
                 if (avatarURL) {
                     label = (
                         <span>
-                            <img src={avatarURL} style={{width: '24px', marginRight: '10px'}} />
+                            <img
+                                src={avatarURL}
+                                style={{width: '24px', marginRight: '10px'}}
+                            />
                             <span>{user.displayName}</span>
                         </span>
-                    )
+                    );
                 }
 
                 return {

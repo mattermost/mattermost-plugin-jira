@@ -169,6 +169,7 @@ const avoidedCustomTypesForFilters: string[] = [
 
 const acceptedCustomTypesForFilters: string[] = [
     JiraFieldCustomTypeEnums.EPIC_LINK,
+    JiraFieldCustomTypeEnums.CASCADING_SELECT,
 ];
 
 function isValidFieldForFilter(field: JiraField): boolean {

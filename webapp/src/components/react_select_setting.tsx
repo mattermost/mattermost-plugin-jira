@@ -6,11 +6,14 @@ import ReactSelect from 'react-select';
 import AsyncSelect, {Props as ReactSelectProps} from 'react-select/async';
 import CreatableSelect from 'react-select/creatable';
 
+import {Theme} from 'mattermost-redux/types/preferences';
+
+import {ActionMeta, ValueType} from 'react-select/src/types';
+
 import Setting from 'components/setting';
 
 import {getStyleForReactSelect} from 'utils/styles';
-import {Theme} from 'mattermost-redux/types/preferences';
-import {ActionMeta, ValueType} from 'react-select/src/types';
+
 import {ReactSelectOption} from 'types/model';
 
 const MAX_NUM_OPTIONS = 100;
@@ -52,9 +55,9 @@ export default class ReactSelectSetting extends React.PureComponent<Props, State
     }
 
     handleChange = (value: ReactSelectOption | ReactSelectOption[], action: ActionMeta) => {
-    if (this.props.onChange) {
+        if (this.props.onChange) {
             if (Array.isArray(value)) {
-                this.props.onChange(this.props.name, value.map(x => x.value));
+                this.props.onChange(this.props.name, value.map((x) => x.value));
             } else {
                 const newValue = value ? value.value : null;
                 this.props.onChange(this.props.name, newValue);
@@ -89,12 +92,12 @@ export default class ReactSelectSetting extends React.PureComponent<Props, State
     };
 
     render() {
-        const requiredMsg = "This field is required.";
+        const requiredMsg = 'This field is required.';
         let validationError = null;
 
         if (this.props.required && this.state.invalid) {
             validationError = (
-                <p className="help-text error-text">
+                <p className='help-text error-text'>
                     <span>{requiredMsg}</span>
                 </p>
             );
@@ -111,7 +114,7 @@ export default class ReactSelectSetting extends React.PureComponent<Props, State
                     loadOptions={this.filterOptions}
                     defaultOptions={true}
                     menuPortalTarget={document.body}
-                    menuPlacement="auto"
+                    menuPlacement='auto'
                     onChange={this.handleChange}
                     styles={getStyleForReactSelect(this.props.theme)}
                 />
@@ -120,11 +123,11 @@ export default class ReactSelectSetting extends React.PureComponent<Props, State
             selectComponent = (
                 <CreatableSelect
                     {...this.props}
-                    noOptionsMessage={() => "Start typing..."}
-                    formatCreateLabel={value => `Add "${value}"`}
-                    placeholder=""
+                    noOptionsMessage={() => 'Start typing...'}
+                    formatCreateLabel={(value) => `Add "${value}"`}
+                    placeholder=''
                     menuPortalTarget={document.body}
-                    menuPlacement="auto"
+                    menuPlacement='auto'
                     onChange={this.handleChange}
                     styles={getStyleForReactSelect(this.props.theme)}
                 />
@@ -134,14 +137,17 @@ export default class ReactSelectSetting extends React.PureComponent<Props, State
                 <ReactSelect
                     {...this.props}
                     menuPortalTarget={document.body}
-                    menuPlacement="auto"
+                    menuPlacement='auto'
                     onChange={this.handleChange}
                     styles={getStyleForReactSelect(this.props.theme)}
                 />
             );
         }
         return (
-            <Setting inputId={this.props.name} {...this.props}>
+            <Setting
+                inputId={this.props.name}
+                {...this.props}
+            >
                 {selectComponent}
                 {validationError}
             </Setting>

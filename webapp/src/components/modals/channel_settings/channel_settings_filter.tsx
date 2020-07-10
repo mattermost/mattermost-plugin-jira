@@ -1,12 +1,13 @@
 import React from 'react';
 
+import {Theme} from 'mattermost-redux/types/preferences';
+
 import ReactSelectSetting from 'components/react_select_setting';
 import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
 import {isEpicLinkField, isMultiSelectField, isLabelField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
-import {Theme} from 'mattermost-redux/types/preferences';
 import JiraAutoCompleteSelector from 'components/data_selectors/jira_autocomplete_selector';
 
 export type Props = {
@@ -238,7 +239,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
             isMulti: true,
             addValidate: this.props.addValidate,
             removeValidate: this.props.removeValidate,
-        }
+        };
 
         let valueSelector;
         if (isEpicLinkField(this.props.field)) {

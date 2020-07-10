@@ -8,6 +8,7 @@ import {components} from 'react-select';
 
 import ReactSelectSetting from 'components/react_select_setting';
 import Input from 'components/input';
+
 import JiraEpicSelector from './data_selectors/jira_epic_selector';
 import JiraAutoCompleteSelector from './data_selectors/jira_autocomplete_selector';
 import JiraUserSelector from './data_selectors/jira_user_selector';
@@ -16,6 +17,7 @@ export default class JiraField extends React.Component {
     static propTypes = {
         id: PropTypes.string.isRequired,
         field: PropTypes.object.isRequired,
+        projectKey: PropTypes.string.isRequired,
         issueMetadata: PropTypes.object.isRequired,
         obeyRequired: PropTypes.bool,
         onChange: PropTypes.func.isRequired,
@@ -95,7 +97,7 @@ export default class JiraField extends React.Component {
             resetInvalidOnChange: true,
             placeholder: '',
             isClearable: true,
-        }
+        };
 
         if (field.schema.custom === 'com.pyxis.greenhopper.jira:gh-epic-link') {
             return (
@@ -172,7 +174,7 @@ export default class JiraField extends React.Component {
 
                 const onChange = (id, val) => {
                     const newValue = val.map((v) => ({id: v}));
-                    this.props.onChange(id, newValue)
+                    this.props.onChange(id, newValue);
                 };
 
                 return (
@@ -186,19 +188,18 @@ export default class JiraField extends React.Component {
                         components={{Option: JiraField.IconOption}}
                     />
                 );
-            } else {
-                return (
-                    <ReactSelectSetting
-                        {...selectProps}
-                        name={this.props.id}
-                        options={options}
-                        onChange={(id, val) => this.props.onChange(id, {id: val})}
-                        isMulti={false}
-                        value={options.find((option) => option.value === (this.props.value && this.props.value.id))}
-                        components={{Option: JiraField.IconOption}}
-                    />
-                );
             }
+            return (
+                <ReactSelectSetting
+                    {...selectProps}
+                    name={this.props.id}
+                    options={options}
+                    onChange={(id, val) => this.props.onChange(id, {id: val})}
+                    isMulti={false}
+                    value={options.find((option) => option.value === (this.props.value && this.props.value.id))}
+                    components={{Option: JiraField.IconOption}}
+                />
+            );
         }
         return null;
     }

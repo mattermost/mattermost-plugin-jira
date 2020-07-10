@@ -12,7 +12,6 @@ import Loading from 'components/loading';
 import ReactSelectSetting from 'components/react_select_setting';
 
 import {getProjectValues, getIssueValues, getFields} from 'utils/jira_issue_metadata';
-import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
 const initialState = {
     submitting: false,
@@ -101,6 +100,7 @@ export default class CreateIssueModal extends PureComponent {
         'com.atlassian.jira.plugin.system.customfieldtypes:multiselect',
         'com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons',
         'com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes',
+        'com.atlassian.jira.plugin.system.customfieldtypes:url',
 
         'com.pyxis.greenhopper.jira:gh-epic-link',
         'com.atlassian.jira.plugin.system.customfieldtypes:labels',
@@ -129,6 +129,19 @@ export default class CreateIssueModal extends PureComponent {
             }
         });
         return fieldsNotCovered;
+    }
+
+    filterInvalidFields = (projectKey, issueType, fields) => {
+        const available = getFields(this.props.jiraIssueMetadata, projectKey, issueType);
+
+        const result = {};
+        for (const key of Object.keys(fields)) {
+            if (available[key] || key === 'project' || key === 'issuetype') {
+                result[key] = fields[key];
+            }
+        }
+
+        return result;
     }
 
     handleCreate = (e) => {
@@ -172,17 +185,6 @@ export default class CreateIssueModal extends PureComponent {
         this.setState(initialState, close);
     };
 
-    handleDescriptionChange = (e) => {
-        const description = e.target.value;
-        const {fields} = this.state;
-        const nFields = {
-            ...fields,
-            description,
-        };
-
-        this.setState({fields: nFields});
-    };
-
     handleProjectChange = (id, value) => {
         const projectKey = value;
 
@@ -191,18 +193,24 @@ export default class CreateIssueModal extends PureComponent {
         this.props.fetchJiraIssueMetadataForProjects([projectKey]).then((fetched) => {
             if (fetched.error) {
                 this.setState({getMetaDataError: fetched.error.message, submitting: false});
+                return;
             }
+
+            const fields = this.filterInvalidFields(this.state.projectKey, this.state.issueType, this.state.fields);
+            this.setState({fields});
         });
 
-        const fields = {...this.state.fields};
+        let fields = {...this.state.fields};
         const issueTypes = getIssueValues(this.props.jiraProjectMetadata, value);
         const issueType = issueTypes.length && issueTypes[0].value;
         fields.project = {
-            key: value,
+            key: projectKey,
         };
         fields.issuetype = {
             id: issueType,
         };
+
+        fields = this.filterInvalidFields(projectKey, issueType, fields);
         this.setState({
             projectKey,
             issueType,
@@ -211,20 +219,31 @@ export default class CreateIssueModal extends PureComponent {
     };
 
     handleIssueTypeChange = (id, value) => {
-        const fields = {...this.state.fields};
+        let fields = {...this.state.fields};
         const issueType = value;
         fields.issuetype = {
             id: issueType,
         };
+
+        fields = this.filterInvalidFields(this.state.projectKey, issueType, fields);
         this.setState({
             issueType,
             fields,
         });
     };
 
-    handleFieldChange = (id, value) => {
+    handleFieldChange = (key, value) => {
         const fields = {...this.state.fields};
-        fields[id] = value;
+        if (value) {
+            if (typeof value === 'object' && 'id' in value && value.id === null) {
+                delete fields[key];
+            } else {
+                fields[key] = value;
+            }
+        } else {
+            delete fields[key];
+        }
+
         this.setState({
             fields,
         });
@@ -310,7 +329,7 @@ export default class CreateIssueModal extends PureComponent {
             );
             footer = footerClose;
         } else if (!jiraProjectMetadata || !jiraProjectMetadata.projects) {
-            component = <Loading />;
+            component = <Loading/>;
         } else {
             const issueOptions = getIssueValues(jiraProjectMetadata, this.state.projectKey);
             const projectOptions = getProjectValues(jiraProjectMetadata);
@@ -334,7 +353,7 @@ export default class CreateIssueModal extends PureComponent {
                     />
                 );
             } else {
-                fieldsComponent = <Loading />;
+                fieldsComponent = <Loading/>;
             }
 
             component = (

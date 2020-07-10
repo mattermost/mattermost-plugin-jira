@@ -3,11 +3,12 @@
 
 import React from 'react';
 
+import {Theme} from 'mattermost-redux/types/preferences';
+
 import {isEpicNameField, isEpicIssueType} from 'utils/jira_issue_metadata';
 import {IssueMetadata, ReactSelectOption, JiraIssue} from 'types/model';
 import {Props as ReactSelectSettingProps} from 'components/react_select_setting';
 
-import {Theme} from 'mattermost-redux/types/preferences';
 import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
 
 const searchDefaults = 'ORDER BY updated DESC';
@@ -26,7 +27,7 @@ export default class JiraEpicSelector extends React.PureComponent<Props> {
         let epicIds = '';
         if (this.props.isMulti) {
             epicIds = (this.props.value as string[]).join(', ');
-        } else if(this.props.value) {
+        } else if (this.props.value) {
             epicIds = this.props.value as string;
         }
         const searchStr = `and id IN (${epicIds})`;
@@ -35,9 +36,8 @@ export default class JiraEpicSelector extends React.PureComponent<Props> {
         return this.fetchEpicsFromJql(searchStr, userInput).then((options) => {
             if (options) {
                 return options;
-            } else {
-                return [];
             }
+            return [];
         });
     };
 

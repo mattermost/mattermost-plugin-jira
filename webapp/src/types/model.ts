@@ -84,7 +84,7 @@ export enum AvatarSize {
 export type JiraUser = {
     self: string;
     accountId: string;
-    avatarUrls: {[size in AvatarSize]: string},
+    avatarUrls: {[size in AvatarSize]: string};
     displayName: string;
     active: boolean;
     timeZone: string;
@@ -95,6 +95,8 @@ export enum JiraFieldCustomTypeEnums {
     EPIC_LINK = 'com.pyxis.greenhopper.jira:gh-epic-link',
     EPIC_NAME = 'com.pyxis.greenhopper.jira:gh-epic-label',
     RANK = 'com.pyxis.greenhopper.jira:gh-lexo-rank',
+
+    CASCADING_SELECT = 'com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect',
 }
 
 export enum FilterFieldInclusion {

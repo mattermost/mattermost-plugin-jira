@@ -6,12 +6,13 @@ import React from 'react';
 import debounce from 'debounce-promise';
 import AsyncSelect from 'react-select/async';
 
+import {Theme} from 'mattermost-redux/types/preferences';
+
 import {getStyleForReactSelect} from 'utils/styles';
 import {ReactSelectOption} from 'types/model';
 import {Props as ReactSelectSettingProps} from 'components/react_select_setting';
 
 import Setting from 'components/setting';
-import {Theme} from 'mattermost-redux/types/preferences';
 
 const searchDebounceDelay = 400;
 
