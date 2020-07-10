@@ -25,6 +25,7 @@ const (
 	routeAPIGetJiraProjectMetadata = "/api/v2/get-jira-project-metadata"
 	routeAPIGetSearchIssues        = "/api/v2/get-search-issues"
 	routeAPIGetAutoCompleteFields  = "/api/v2/get-search-autocomplete-fields"
+	routeAPIGetSearchUsers         = "/api/v2/get-search-users"
 	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
 	routeAPIUserInfo               = "/api/v2/userinfo"
 	routeAPISubscribeWebhook       = "/api/v2/webhook"
@@ -72,6 +73,8 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return withInstance(p.currentInstanceStore, w, r, httpAPIGetSearchIssues)
 	case routeAPIGetAutoCompleteFields:
 		return withInstance(p.currentInstanceStore, w, r, httpAPIGetAutoCompleteFields)
+	case routeAPIGetSearchUsers:
+		return withInstance(p.currentInstanceStore, w, r, httpAPIGetSearchUsers)
 	case routeAPIAttachCommentToIssue:
 		return withInstance(p.currentInstanceStore, w, r, httpAPIAttachCommentToIssue)
 	case routeIssueTransition:

@@ -10,6 +10,7 @@ import ReactSelectSetting from 'components/react_select_setting';
 import Input from 'components/input';
 import JiraEpicSelector from './data_selectors/jira_epic_selector';
 import JiraAutoCompleteSelector from './data_selectors/jira_autocomplete_selector';
+import JiraUserSelector from './data_selectors/jira_user_selector';
 
 export default class JiraField extends React.Component {
     static propTypes = {
@@ -137,8 +138,9 @@ export default class JiraField extends React.Component {
 
         if (field.schema.type === 'user') {
             return (
-                <JiraAutoCompleteSelector
+                <JiraUserSelector
                     {...selectProps}
+                    projectKey={this.props.projectKey}
                     key={this.props.id}
                     fieldName={field.name}
                     onChange={(value) => {

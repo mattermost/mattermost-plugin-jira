@@ -2,16 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import AsyncSelect from 'react-select/async';
-import debounce from 'debounce-promise';
 
-import Setting from 'components/setting';
-import {getStyleForReactSelect} from 'utils/styles';
 import {ReactSelectOption} from 'types/model';
 
 import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
-
-const searchDebounceDelay = 400;
 
 const stripHTML = (text: string) => {
     if (!text) {
@@ -20,7 +14,7 @@ const stripHTML = (text: string) => {
 
     var doc = new DOMParser().parseFromString(text, 'text/html');
     return doc.body.textContent || '';
- }
+}
 
 type Props = BackendSelectorProps & {
     searchAutoCompleteFields: (params: object) => Promise<any>;

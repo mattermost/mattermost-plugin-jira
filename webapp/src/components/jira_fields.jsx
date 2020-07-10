@@ -24,10 +24,15 @@ export default class JiraFields extends React.Component {
     };
 
     render() {
-        const {allowedFields, allowedSchemaCustom, fields} = this.props;
+        const {allowedFields, allowedSchemaCustom, fields, values} = this.props;
 
         if (!fields) {
             return null;
+        }
+
+        let projectKey;
+        if (values && values.project) {
+            projectKey = values.project.key;
         }
 
         let fieldNames = Object.keys(fields);
@@ -58,6 +63,7 @@ export default class JiraFields extends React.Component {
                     key={fieldName}
                     id={fieldName}
                     issueMetadata={this.props.issueMetadata}
+                    projectKey={projectKey}
                     field={fields[fieldName]}
                     obeyRequired={true}
                     onChange={this.props.onChange}

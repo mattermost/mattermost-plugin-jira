@@ -4,10 +4,10 @@
 import React from 'react';
 
 import debounce from 'debounce-promise';
-import AsyncSelect, {Props as ReactSelectProps} from 'react-select/async';
+import AsyncSelect from 'react-select/async';
 
 import {getStyleForReactSelect} from 'utils/styles';
-import {IssueMetadata, ReactSelectOption, JiraIssue} from 'types/model';
+import {ReactSelectOption} from 'types/model';
 import {Props as ReactSelectSettingProps} from 'components/react_select_setting';
 
 import Setting from 'components/setting';
@@ -17,7 +17,6 @@ const searchDebounceDelay = 400;
 
 export type Props = ReactSelectSettingProps & {
     hideRequiredStar?: boolean;
-    searchIssues: (params: object) => Promise<{data: JiraIssue[]}>;
     theme: Theme;
     onChange: (values: string | string[]) => void;
     value: string | string[];

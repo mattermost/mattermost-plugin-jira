@@ -109,6 +109,13 @@ export const searchAutoCompleteFields = (params) => {
     };
 };
 
+export const searchUsers = (params) => {
+    return async (dispatch, getState) => {
+        const url = getPluginServerRoute(getState()) + '/api/v2/get-search-users';
+        return doFetchWithResponse(`${url}${buildQueryString(params)}`);
+    };
+};
+
 export const createIssue = (payload) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());

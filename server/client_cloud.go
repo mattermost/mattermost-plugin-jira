@@ -49,6 +49,11 @@ func (client jiraCloudClient) SearchUsersAssignableToIssue(issueKey, query strin
 	return SearchUsersAssignableToIssue(client, issueKey, "query", query, maxResults)
 }
 
+// SearchUsersAssignableInProject finds all users that can be assigned to some issue in a given project.
+func (client jiraCloudClient) SearchUsersAssignableInProject(projectKey, query string, maxResults int) ([]jira.User, error) {
+	return SearchUsersAssignableInProject(client, projectKey, "query", query, maxResults)
+}
+
 // GetUserGroups returns the list of groups that a user belongs to.
 func (client jiraCloudClient) GetUserGroups(user JIRAUser) ([]*jira.UserGroup, error) {
 	groups := []*jira.UserGroup{}

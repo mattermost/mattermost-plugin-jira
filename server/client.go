@@ -57,7 +57,8 @@ type ProjectService interface {
 type SearchService interface {
 	SearchIssues(jql string, options *jira.SearchOptions) ([]jira.Issue, error)
 	SearchUsersAssignableToIssue(issueKey, query string, maxResults int) ([]jira.User, error)
-	SearchAutoCompleteFields(resultType interface{}, params map[string]string) (interface{}, error)
+	SearchUsersAssignableInProject(projectKey, query string, maxResults int) ([]jira.User, error)
+	SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error)
 }
 
 // IssueService is the interface for issue-related APIs.
@@ -251,15 +252,25 @@ func (client JiraClient) SearchIssues(jql string, options *jira.SearchOptions) (
 	return found, nil
 }
 
+type Result struct {
+	Value       string `json:"value"`
+	DisplayName string `json:"displayName"`
+}
+
+type AutoCompleteResult struct {
+	Results []Result `json:"results"`
+}
+
 // SearchAutoCompleteFields searches fieldValue specified in the params and returns autocomplete suggestions
 // for that fieldValue
-func (client JiraClient) SearchAutoCompleteFields(resultType interface{}, params map[string]string) (interface{}, error) {
-	err := client.RESTGet("2/jql/autocompletedata/suggestions", params, resultType)
+func (client JiraClient) SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error) {
+	result := &AutoCompleteResult{}
+	err := client.RESTGet("2/jql/autocompletedata/suggestions", params, result)
 	if err != nil {
 		return nil, err
 	}
 
-	return resultType, nil
+	return result, nil
 }
 
 // DoTransition executes a transition on an issue.
@@ -354,6 +365,25 @@ func SearchUsersAssignableToIssue(client Client, issueKey, queryKey, queryValue 
 	params := map[string]string{
 		"issueKey": issueKey,
 		queryKey:   queryValue,
+	}
+	if maxResults > 0 {
+		params["maxResults"] = strconv.Itoa(maxResults)
+	}
+	err := client.RESTGet("2/user/assignable/search", params, &users)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+// SearchUsersAssignableInProject finds all users that can be assigned to some issue in a given project.
+// This is the shared implementation between the Server and the Cloud versions
+// which use different queryKey's.
+func SearchUsersAssignableInProject(client Client, projectKey, queryKey, queryValue string, maxResults int) ([]jira.User, error) {
+	users := []jira.User{}
+	params := map[string]string{
+		"project": projectKey,
+		queryKey:  queryValue,
 	}
 	if maxResults > 0 {
 		params["maxResults"] = strconv.Itoa(maxResults)

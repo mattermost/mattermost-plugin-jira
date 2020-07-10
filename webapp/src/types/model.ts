@@ -1,5 +1,5 @@
 export type ReactSelectOption = {
-    label: string;
+    label: string | React.ReactElement;
     value: string;
 };
 
@@ -72,6 +72,22 @@ export type IssueMetadata = {
 export type ProjectMetadata = {
     projects: ReactSelectOption[];
     issues_per_project: {[key: string]: ReactSelectOption[]};
+}
+
+export enum AvatarSize {
+    XSMALL = '16x16',
+    SMALL = '24x24',
+    MEDIUM = '36x36',
+    LARGE = '48x48',
+}
+
+export type JiraUser = {
+    self: string;
+    accountId: string;
+    avatarUrls: {[size in AvatarSize]: string},
+    displayName: string;
+    active: boolean;
+    timeZone: string;
 }
 
 export enum JiraFieldCustomTypeEnums {
