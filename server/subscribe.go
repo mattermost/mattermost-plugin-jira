@@ -350,23 +350,23 @@ func (p *Plugin) editChannelSubscription(instanceID types.ID, modifiedSubscripti
 	})
 }
 
+type InstanceSubMap map[types.ID][]string
+type ChannelSubMap map[string]InstanceSubMap
+type TeamSubsMap map[string]ChannelSubMap
+
 type SubsGroupedByTeam struct {
-	TeamId               string
-	TeamName             string
-	SubsGroupedByChannel []SubsGroupedByChannel
+	TeamId   string
+	TeamName string
+	Subs     TeamSubsMap
 }
 
 type SubsGroupedByChannel struct {
-	ChannelId string
-	SubIds    []string
+	ChannelId  string
+	NumberSubs int
+	SubIds     []string
 }
 
 func (p *Plugin) listChannelSubscriptions(instanceID types.ID, teamId string) (string, error) {
-	subs, err := p.getSubscriptions(instanceID)
-	if err != nil {
-		return "", err
-	}
-
 	sortedSubs, err := p.getSortedSubscriptions(instanceID)
 	if err != nil {
 		return "", err
@@ -375,40 +375,45 @@ func (p *Plugin) listChannelSubscriptions(instanceID types.ID, teamId string) (s
 	rows := []string{}
 
 	if sortedSubs == nil {
-		rows = append(rows, fmt.Sprintf("There are currently no channels subcriptions to Jira notifications. To add a subscription, navigate to a channel and type `/jira subscribe`\n"))
+		rows = append(rows, fmt.Sprintf("There are currently no channels subcriptions to Jira notifications. To add a subscription, navigate to a channel and type `/jira subscribe edit`\n"))
 		return strings.Join(rows, "\n"), nil
 	}
-	rows = append(rows, fmt.Sprintf("The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`"))
+	rows = append(rows, fmt.Sprintf("The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe edit`"))
 
 	for _, teamSubs := range sortedSubs {
 
 		// create header for each Team, DM and GM channels
 		rows = append(rows, fmt.Sprintf("\n#### %s", teamSubs.TeamName))
 
-		for _, grouped := range teamSubs.SubsGroupedByChannel {
-
-			channel, appErr := p.API.GetChannel(grouped.ChannelId)
+		for channelID, channelGroup := range teamSubs.Subs[teamSubs.TeamId] {
+			channel, appErr := p.API.GetChannel(string(channelID))
 			if appErr != nil {
 				return "", errors.New("Failed to get channel")
 			}
 
 			// only print channel name once for all subscriptions
-			channelRow := fmt.Sprintf("* **%s** (%d):", channel.Name, len(grouped.SubIds))
+			channelRow := fmt.Sprintf("* **%s** (%d):", channel.Name, p.getNumSubsForChannel(channelGroup))
 			if teamId == teamSubs.TeamId {
 				// only link the channels on the current team
-				channelRow = fmt.Sprintf("* **~%s** (%d):", channel.Name, len(grouped.SubIds))
+				channelRow = fmt.Sprintf("* **~%s** (%d):", channel.Name, p.getNumSubsForChannel(channelGroup))
 			}
 			rows = append(rows, channelRow)
 
-			for _, subId := range grouped.SubIds {
-				sub := subs.Channel.ById[subId]
-
-				subName := "(No Name)"
-				if sub.Name != "" {
-					subName = sub.Name
+			for instanceID, subsIDs := range channelGroup {
+				subs, err := p.getSubscriptions(types.ID(instanceID))
+				if err != nil {
+					return "", errors.New("Failed to get subs")
 				}
-				rows = append(rows, fmt.Sprintf("  * %s - %s", sub.Filters.Projects.Elems()[0], subName))
+				rows = append(rows, fmt.Sprintf("\t* (%d) %s", len(subsIDs), instanceID))
 
+				for _, subId := range subsIDs {
+					sub := subs.Channel.ById[subId]
+					subName := "(No Name)"
+					if sub.Name != "" {
+						subName = sub.Name
+					}
+					rows = append(rows, fmt.Sprintf("\t\t* %s - %s", sub.Filters.Projects.Elems()[0], subName))
+				}
 			}
 		}
 	}
@@ -416,57 +421,92 @@ func (p *Plugin) listChannelSubscriptions(instanceID types.ID, teamId string) (s
 	return strings.Join(rows, "\n"), nil
 }
 
+func (p *Plugin) getNumSubsForChannel(channelGroup InstanceSubMap) int {
+	totalSubs := 0
+	for _, subsIDs := range channelGroup {
+		totalSubs += len(subsIDs)
+	}
+	return totalSubs
+}
+
 func (p *Plugin) getSortedSubscriptions(instanceID types.ID) ([]SubsGroupedByTeam, error) {
-	subs, err := p.getSubscriptions(instanceID)
-	if err != nil {
-		return nil, err
+	var instanceSubs []*Subscriptions
+	if instanceID != "" {
+		subs, err := p.getSubscriptions(instanceID)
+		if err != nil {
+			return nil, err
+		}
+		instanceSubs = append(instanceSubs, subs)
+	} else {
+		instances, err := p.instanceStore.LoadInstances()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, instanceID := range instances.IDs() {
+			subs, err := p.getSubscriptions(instanceID)
+			if err != nil {
+				return nil, err
+			}
+			instanceSubs = append(instanceSubs, subs)
+		}
 	}
 
-	subsMap := make(map[string][]SubsGroupedByChannel)
-	teamMap := make(map[string]string)
+	subsMap := make(TeamSubsMap)
+	teamDisplayNameMap := make(map[string]string)
 
 	var teams []model.Team
 	var dmSubsIds []SubsGroupedByChannel
 
-	// get teams from subscriptions
-	for channelID, subIDs := range subs.Channel.IdByChannelId {
+	for _, subs := range instanceSubs {
+		// get teams from subscriptions
+		for channelID, subIDs := range subs.Channel.IdByChannelId {
 
-		// channel does not have any subIDs.
-		if len(subIDs) == 0 {
-			continue
+			// channel does not have any subIDs.
+			if len(subIDs) == 0 {
+				continue
+			}
+
+			channel, appErr := p.API.GetChannel(channelID)
+			if appErr != nil {
+				return nil, errors.New("Failed to get channel")
+			}
+
+			if subsMap[channel.TeamId] == nil {
+				subsMap[string(channel.TeamId)] = make(ChannelSubMap)
+			}
+
+			if subsMap[channel.TeamId][channelID] == nil {
+				subsMap[channel.TeamId][channelID] = make(InstanceSubMap)
+			}
+
+			var channelSubIds []string
+			for subID := range subIDs {
+				channelSubIds = append(channelSubIds, subID)
+				instanceID := subs.Channel.ById[subID].InstanceID
+				subsMap[channel.TeamId][channelID][instanceID] = append(subsMap[channel.TeamId][channelID][instanceID], subID)
+			}
+
+			grouped := SubsGroupedByChannel{
+				ChannelId:  channelID,
+				SubIds:     channelSubIds,
+				NumberSubs: len(channelSubIds),
+			}
+			// for DMs and GMs, save to array and go to next team
+			if channel.TeamId == "" {
+				dmSubsIds = append(dmSubsIds, grouped)
+				continue
+			}
+
+			// teamMap used to determine if already have the team saved
+			_, ok := teamDisplayNameMap[channel.TeamId]
+			if !ok {
+				team, _ := p.API.GetTeam(channel.TeamId)
+				teams = append(teams, *team)
+				teamDisplayNameMap[channel.TeamId] = team.DisplayName
+			}
+
 		}
-
-		channel, appErr := p.API.GetChannel(channelID)
-		if appErr != nil {
-			return nil, errors.New("Failed to get channel")
-		}
-
-		var channelSubIds []string
-		for subID := range subIDs {
-			channelSubIds = append(channelSubIds, subID)
-		}
-
-		grouped := SubsGroupedByChannel{
-			ChannelId: channelID,
-			SubIds:    channelSubIds,
-		}
-		// for DMs and GMs, save to array and go to next team
-		if channel.TeamId == "" {
-			dmSubsIds = append(dmSubsIds, grouped)
-			continue
-		}
-
-		// teamMap used to determine if already have the team saved
-		_, ok := teamMap[channel.TeamId]
-		if !ok {
-			team, _ := p.API.GetTeam(channel.TeamId)
-			teams = append(teams, *team)
-			teamMap[channel.TeamId] = team.DisplayName
-		}
-
-		// only save non-DM and non-GM subs to the map
-		subsMap[channel.TeamId] = append(subsMap[channel.TeamId], grouped)
-
 	}
 
 	var teamSubs []SubsGroupedByTeam
@@ -481,9 +521,9 @@ func (p *Plugin) getSortedSubscriptions(instanceID types.ID) ([]SubsGroupedByTea
 
 	for _, teamId := range teams {
 		teamData := SubsGroupedByTeam{
-			TeamId:               teamId.Id,
-			TeamName:             teamId.DisplayName,
-			SubsGroupedByChannel: subsMap[teamId.Id],
+			TeamId:   teamId.Id,
+			TeamName: teamId.DisplayName,
+			Subs:     subsMap,
 		}
 		teamSubs = append(teamSubs, teamData)
 	}
@@ -491,9 +531,9 @@ func (p *Plugin) getSortedSubscriptions(instanceID types.ID) ([]SubsGroupedByTea
 	// save all DM and GM channels under a generic teamName
 	if len(dmSubsIds) != 0 {
 		teamData := SubsGroupedByTeam{
-			TeamId:               "",
-			TeamName:             "Group and Direct Messages",
-			SubsGroupedByChannel: dmSubsIds,
+			TeamId:   "",
+			TeamName: "Group and Direct Messages",
+			Subs:     subsMap,
 		}
 		teamSubs = append(teamSubs, teamData)
 	}

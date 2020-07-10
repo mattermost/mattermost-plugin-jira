@@ -39,17 +39,18 @@ func TestListChannelSubscriptions(t *testing.T) {
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("PROJ"),
 					},
+					InstanceID: testInstance1.GetID(),
 				},
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
-				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`\n\n#### Team 1 Display Name\n* **~channel-1-name** (1):\n  * PROJ - Sub Name X"
+				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe edit`\n\n#### Team 1 Display Name\n* **~channel-1-name** (1):\n\t* (1) jiraurl1\n\t\t* PROJ - Sub Name X"
 				assert.Equal(t, expected, actual)
 			},
 		},
 		"zero subscriptions": {
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{}),
 			RunAssertions: func(t *testing.T, actual string) {
-				expected := "There are currently no channels subcriptions to Jira notifications. To add a subscription, navigate to a channel and type `/jira subscribe`\n"
+				expected := "There are currently no channels subcriptions to Jira notifications. To add a subscription, navigate to a channel and type `/jira subscribe edit`\n"
 				assert.Equal(t, expected, actual)
 			},
 		},
@@ -62,10 +63,11 @@ func TestListChannelSubscriptions(t *testing.T) {
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("PROJ"),
 					},
+					InstanceID: testInstance1.GetID(),
 				},
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
-				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`\n\n#### Group and Direct Messages\n* **channel-2-name-DM** (1):\n  * PROJ - Sub Name X"
+				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe edit`\n\n#### Group and Direct Messages\n* **channel-2-name-DM** (1):\n\t* (1) jiraurl1\n\t\t* PROJ - Sub Name X"
 				assert.Equal(t, expected, actual)
 			},
 		},
@@ -78,6 +80,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("PROJ"),
 					},
+					InstanceID: testInstance1.GetID(),
 				},
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -86,6 +89,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("EXT"),
 					},
+					InstanceID: testInstance1.GetID(),
 				},
 				ChannelSubscription{
 					Id:        model.NewId(),
@@ -93,11 +97,12 @@ func TestListChannelSubscriptions(t *testing.T) {
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("EXT"),
 					},
+					InstanceID: testInstance1.GetID(),
 				},
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
 				numlines := strings.Count(actual, "\n") + 1
-				assert.Equal(t, 7, numlines)
+				assert.Equal(t, 8, numlines)
 				assert.NotContains(t, actual, "\n#### Group and Direct Messages")
 				assert.Contains(t, actual, "\n#### Team 1 Display Name")
 				assert.Contains(t, actual, `**~channel-1-name** (3):`)
@@ -135,7 +140,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
 				numlines := strings.Count(actual, "\n") + 1
-				assert.Equal(t, 10, numlines)
+				assert.Equal(t, 12, numlines)
 				assert.Contains(t, actual, "\n#### Group and Direct Messages")
 				assert.Contains(t, actual, "\n#### Team 1 Display Name")
 				assert.Contains(t, actual, `Group and Direct Messages`)

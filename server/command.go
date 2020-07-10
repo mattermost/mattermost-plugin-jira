@@ -126,7 +126,7 @@ func createJiraCommand(optInstance bool) *model.Command {
 	jira.AddCommand(createInstanceCommand(optInstance))
 
 	// Admin commands
-	jira.AddCommand(createSubscribeCommand())
+	jira.AddCommand(createSubscribeCommand(optInstance))
 	jira.AddCommand(createWebhookCommand(optInstance))
 
 	// Help and info
@@ -265,13 +265,16 @@ func createUnassignCommand(optInstance bool) *model.AutocompleteData {
 	return unassign
 }
 
-func createSubscribeCommand() *model.AutocompleteData {
+func createSubscribeCommand(optInstance bool) *model.AutocompleteData {
 	subscribe := model.NewAutocompleteData(
 		"subscribe", "[edit|list]", "List or configure the Jira notifications sent to this channel")
 	subscribe.AddCommand(model.NewAutocompleteData(
 		"edit", "", "Configure the Jira notifications sent to this channel"))
-	subscribe.AddCommand(model.NewAutocompleteData(
-		"list", "", "List the Jira notifications sent to this channel"))
+
+	list := model.NewAutocompleteData(
+		"list", "", "List the Jira notifications sent to this channel")
+	withFlagInstance(list, optInstance, routeAutocompleteInstalledInstance)
+	subscribe.AddCommand(list)
 	subscribe.RoleID = model.SYSTEM_ADMIN_ROLE_ID
 	return subscribe
 }
@@ -526,12 +529,13 @@ func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArg
 	if !authorized {
 		return p.responsef(header, "`/jira subscribe list` can only be run by a system administrator.")
 	}
-	instanceID, args, err := p.parseCommandFlagInstanceURL(args)
+
+	_, instance, args, err := p.loadFlagUserInstance(header.UserId, args)
 	if err != nil {
-		return p.responsef(header, "%v", err)
+		return p.responsef(header, "Failed to identify the Jira instance. Error: %v.", err)
 	}
 
-	msg, err := p.listChannelSubscriptions(types.ID(instanceID), header.TeamId)
+	msg, err := p.listChannelSubscriptions(instance.GetID(), header.TeamId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
 	}
@@ -1063,8 +1067,7 @@ func executeInstanceV2Legacy(p *Plugin, c *plugin.Context, header *model.Command
 func (p *Plugin) parseCommandFlagInstanceURL(args []string) (string, []string, error) {
 	value := ""
 	remaining := []string{}
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
+	for i, arg := range args {
 		if !strings.HasPrefix(arg, "--instance") {
 			remaining = append(remaining, arg)
 			continue
