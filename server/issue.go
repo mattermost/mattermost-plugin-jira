@@ -239,8 +239,7 @@ func httpAPICreateIssue(ji Instance, w http.ResponseWriter, r *http.Request) (in
 	}
 
 	// Reply with an ephemeral post with the Jira issue formatted as slack attachment.
-	startLink := fmt.Sprintf("/plugins/%s%s", manifest.Id, routeUserStart)
-	msg := fmt.Sprintf("Created Jira issue [%s](%s/browse/%s) by [mattermost-jira-plugin](%s)", created.Key, ji.GetURL(), created.Key, startLink)
+	msg := fmt.Sprintf("Created Jira issue [%s](%s/browse/%s)", created.Key, ji.GetURL(), created.Key)
 
 	reply := &model.Post{
 		Message:   msg,
@@ -633,13 +632,14 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 			mattermostName, jiraName, mime, e := client.AddAttachment(api, attach.IssueKey, fileId, conf.maxAttachmentSize)
 			if e != nil {
 				notifyOnFailedAttachment(ji, mattermostUserId, attach.IssueKey, e, "file: %s", mattermostName)
+				continue
 			}
-
 			if isImageMIME(mime) || isEmbbedableMIME(mime) {
 				extraText += "\n\nAttachment: !" + jiraName + "!"
 			} else {
 				extraText += "\n\nAttachment: [^" + jiraName + "]"
 			}
+
 		}
 		if extraText == "" {
 			return
@@ -659,8 +659,7 @@ func httpAPIAttachCommentToIssue(ji Instance, w http.ResponseWriter, r *http.Req
 		rootId = post.RootId
 	}
 
-	startLink := fmt.Sprintf("/plugins/%s%s", manifest.Id, routeUserStart)
-	msg := fmt.Sprintf("Message attached to [%s](%s/browse/%s) by [mattermost-jira-plugin](%s)", attach.IssueKey, ji.GetURL(), attach.IssueKey, startLink)
+	msg := fmt.Sprintf("Message attached to [%s](%s/browse/%s)", attach.IssueKey, ji.GetURL(), attach.IssueKey)
 
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{

@@ -154,10 +154,6 @@ export default class JiraIssueSelector extends Component {
                 />
                 {validationError}
                 {issueError}
-                <div className={'help-text'}>
-                    {'Returns issues sorted by most recently updated.'} <br/>
-                    {'Tip: Use AND, OR, *, ~, and other modifiers like in a JQL query.'}
-                </div>
             </div>
         );
     }
