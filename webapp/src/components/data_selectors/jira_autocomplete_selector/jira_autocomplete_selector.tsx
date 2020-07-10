@@ -17,7 +17,7 @@ const stripHTML = (text: string) => {
 };
 
 type Props = BackendSelectorProps & {
-    searchAutoCompleteFields: (params: {fieldValue: string; fieldName: string;}) => (
+    searchAutoCompleteFields: (params: {fieldValue: string; fieldName: string}) => (
         Promise<{data: {results: {value: string; displayName: string}[]}; error?: Error}>
     );
     fieldName: string;
