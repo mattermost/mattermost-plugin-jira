@@ -34,7 +34,7 @@ export default class JiraUserSelector extends React.PureComponent<Props> {
 
             return data.map((user) => {
                 let label: string | React.ReactElement = user.displayName;
-                const avatarURL = user.avatarUrls[AvatarSize.MEDIUM];
+                const avatarURL = user.avatarUrls[AvatarSize.SMALL];
                 if (avatarURL) {
                     label = (
                         <span>

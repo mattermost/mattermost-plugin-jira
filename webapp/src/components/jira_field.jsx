@@ -51,20 +51,12 @@ export default class JiraField extends React.Component {
         );
     };
 
-    makeReactSelectValue = (allowedValue) => {
-        const label = allowedValue.name ? allowedValue.name : allowedValue.value;
-        return (
-            {value: allowedValue.id, label, allowedValue}
-        );
-    };
-
     renderCreateFields() {
         const field = this.props.field;
 
         if (field.schema.system === 'description') {
             return (
                 <Input
-                    key={this.props.id}
                     id={this.props.id}
                     label={field.name}
                     type='textarea'
@@ -81,7 +73,6 @@ export default class JiraField extends React.Component {
         if (field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:textarea') {
             return (
                 <Input
-                    key={this.props.id}
                     id={this.props.id}
                     label={field.name}
                     type='textarea'
@@ -110,7 +101,6 @@ export default class JiraField extends React.Component {
             return (
                 <JiraEpicSelector
                     {...selectProps}
-                    key={this.props.id}
                     issueMetadata={this.props.issueMetadata}
                     onChange={(value) => {
                         this.props.onChange(this.props.id, value);
@@ -125,7 +115,6 @@ export default class JiraField extends React.Component {
             return (
                 <JiraAutoCompleteSelector
                     {...selectProps}
-                    key={this.props.id}
                     fieldName={field.name}
                     onChange={(value) => {
                         this.props.onChange(this.props.id, value);
@@ -141,7 +130,6 @@ export default class JiraField extends React.Component {
                 <JiraUserSelector
                     {...selectProps}
                     projectKey={this.props.projectKey}
-                    key={this.props.id}
                     fieldName={field.name}
                     onChange={(value) => {
                         this.props.onChange(this.props.id, {accountId: value});
@@ -155,7 +143,6 @@ export default class JiraField extends React.Component {
         if (field.schema.type === 'string') {
             return (
                 <Input
-                    key={this.props.id}
                     id={this.props.id}
                     label={field.name}
                     type='input'
@@ -168,57 +155,51 @@ export default class JiraField extends React.Component {
             );
         }
 
-        // if this.props.field has allowedValues, then props.value will be an object
-        if (field.allowedValues && field.allowedValues.length && field.schema.type !== 'array') {
-            const options = field.allowedValues.map(this.makeReactSelectValue);
-
-            return (
-                <ReactSelectSetting
-                    key={this.props.id}
-                    name={this.props.id}
-                    label={field.name}
-                    options={options}
-                    required={this.props.obeyRequired && field.required}
-                    onChange={(id, val) => this.props.onChange(id, {id: val})}
-                    isMulti={false}
-                    value={options.find((option) => option.value === (this.props.value && this.props.value.id))}
-                    theme={this.props.theme}
-                    isClearable={true}
-                    components={{Option: JiraField.IconOption}}
-                    addValidate={this.props.addValidate}
-                    removeValidate={this.props.removeValidate}
-                />
-            );
-        }
-        return null;
-    }
-
-    renderFilterFields() {
-        const field = this.props.field;
-
         if (field.allowedValues && field.allowedValues.length) {
-            const options = field.allowedValues.map(this.makeReactSelectValue);
-            let value;
-            if (this.props.value) {
-                value = options.filter((option) => this.props.value.includes(option.value));
+            const options = field.allowedValues.map((allowedValue) => {
+                const label = allowedValue.name ? allowedValue.name : allowedValue.value;
+                return (
+                    {value: allowedValue.id, label, allowedValue}
+                );
+            });
+
+            if (field.schema.type === 'array') {
+                let selectedOptions = [];
+                if (this.props.value) {
+                    const values = this.props.value.map((v) => v.id);
+                    selectedOptions = options.filter((opt) => values.includes(opt.value));
+                }
+
+                const onChange = (id, val) => {
+                    const newValue = val.map((v) => ({id: v}));
+                    this.props.onChange(id, newValue)
+                };
+
+                return (
+                    <ReactSelectSetting
+                        {...selectProps}
+                        name={this.props.id}
+                        options={options}
+                        onChange={onChange}
+                        isMulti={true}
+                        value={selectedOptions}
+                        components={{Option: JiraField.IconOption}}
+                    />
+                );
+            } else {
+                return (
+                    <ReactSelectSetting
+                        {...selectProps}
+                        name={this.props.id}
+                        options={options}
+                        onChange={(id, val) => this.props.onChange(id, {id: val})}
+                        isMulti={false}
+                        value={options.find((option) => option.value === (this.props.value && this.props.value.id))}
+                        components={{Option: JiraField.IconOption}}
+                    />
+                );
             }
-
-            return (
-                <ReactSelectSetting
-                    key={field.key}
-                    name={field.key}
-                    label={field.name}
-                    options={options}
-                    required={this.props.obeyRequired && field.required}
-                    onChange={(id, val) => this.props.onChange(id, {id: val})}
-                    isMulti={true}
-                    value={value}
-                    addValidate={this.props.addValidate}
-                    removeValidate={this.props.removeValidate}
-                />
-            );
         }
-
         return null;
     }
 

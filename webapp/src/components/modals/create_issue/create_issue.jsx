@@ -86,6 +86,10 @@ export default class CreateIssueModal extends PureComponent {
         'summary',
         'labels',
         'assignee',
+        'security',
+        'components',
+        'fixVersions',
+        'versions',
     ];
 
     allowedSchemaCustom = [
@@ -93,6 +97,10 @@ export default class CreateIssueModal extends PureComponent {
         'com.atlassian.jira.plugin.system.customfieldtypes:textfield',
         'com.atlassian.jira.plugin.system.customfieldtypes:select',
         'com.atlassian.jira.plugin.system.customfieldtypes:project',
+        'com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect',
+        'com.atlassian.jira.plugin.system.customfieldtypes:multiselect',
+        'com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons',
+        'com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes',
 
         'com.pyxis.greenhopper.jira:gh-epic-link',
         'com.atlassian.jira.plugin.system.customfieldtypes:labels',
