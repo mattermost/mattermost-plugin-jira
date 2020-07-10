@@ -24,6 +24,9 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
+const autocompleteSearchRoute = "2/jql/autocompletedata/suggestions"
+const userSearchRoute = "2/user/assignable/search"
+
 // Client is the combined interface for all upstream APIs and convenience methods.
 type Client interface {
 	RESTService
@@ -265,7 +268,7 @@ type AutoCompleteResult struct {
 // for that fieldValue
 func (client JiraClient) SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error) {
 	result := &AutoCompleteResult{}
-	err := client.RESTGet("2/jql/autocompletedata/suggestions", params, result)
+	err := client.RESTGet(autocompleteSearchRoute, params, result)
 	if err != nil {
 		return nil, err
 	}
@@ -369,7 +372,7 @@ func SearchUsersAssignableToIssue(client Client, issueKey, queryKey, queryValue 
 	if maxResults > 0 {
 		params["maxResults"] = strconv.Itoa(maxResults)
 	}
-	err := client.RESTGet("2/user/assignable/search", params, &users)
+	err := client.RESTGet(userSearchRoute, params, &users)
 	if err != nil {
 		return nil, err
 	}
@@ -388,7 +391,7 @@ func SearchUsersAssignableInProject(client Client, projectKey, queryKey, queryVa
 	if maxResults > 0 {
 		params["maxResults"] = strconv.Itoa(maxResults)
 	}
-	err := client.RESTGet("2/user/assignable/search", params, &users)
+	err := client.RESTGet(userSearchRoute, params, &users)
 	if err != nil {
 		return nil, err
 	}
