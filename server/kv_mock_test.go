@@ -112,6 +112,6 @@ func (store mockInstanceStore) StoreInstance(instance Instance) error {
 func (store mockInstanceStore) StoreInstances(*Instances) error {
 	return nil
 }
-func (store mockInstanceStore) MigrateV2Instances() error {
-	return nil
+func (store mockInstanceStore) MigrateV2Instances() (*Instances, error) {
+	return nil, nil
 }

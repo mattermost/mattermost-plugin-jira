@@ -25,7 +25,6 @@ var jiraCommandHandler = CommandHandler{
 		"assign":                  executeAssign,
 		"connect":                 executeConnect,
 		"debug/clean-kv":          executeDebugCleanKV,
-		"debug/migrate-instances": executeDebugMigrateInstances,
 		"debug/stats/expvar":      executeDebugStatsExpvar,
 		"debug/stats/reset":       executeDebugStatsReset,
 		"debug/stats/save":        executeDebugStatsSave,
@@ -93,28 +92,38 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"* `/jira webhook [--instance=<jiraURL>]` -  Show the Mattermost webhook to receive JQL queries\n" +
 	""
 
-func (p *Plugin) registerJiraCommand() (*Instances, error) {
+func (p *Plugin) registerJiraCommand(enableAutocomplete, enableOptInstance bool) error {
 	// Optimistically unregister what was registered before
 	_ = p.API.UnregisterCommand("", commandTrigger)
 
-	instances, err := p.instanceStore.LoadInstances()
+	err := p.API.RegisterCommand(createJiraCommand(enableAutocomplete, enableOptInstance))
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to initialize the list of known Jira instances")
+		return errors.Wrapf(err, "failed to register /%s command", commandTrigger)
 	}
 
-	optInstance := instances.Len() > 1
-	err = p.API.RegisterCommand(createJiraCommand(optInstance))
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to register /%s command", commandTrigger)
-	}
-
-	return instances, nil
+	return nil
 }
 
-func createJiraCommand(optInstance bool) *model.Command {
+func createJiraCommand(enableAutocomplete, enableOptInstance bool) *model.Command {
 	jira := model.NewAutocompleteData(
 		commandTrigger, "[issue|instance|info|help]", "Connect to and interact with Jira")
 
+	if enableAutocomplete {
+		addSubCommands(jira, enableOptInstance)
+	}
+
+	return &model.Command{
+		Trigger:          jira.Trigger,
+		Description:      "Integration with Jira.",
+		DisplayName:      "Jira",
+		AutoComplete:     true,
+		AutocompleteData: jira,
+		AutoCompleteDesc: jira.HelpText,
+		AutoCompleteHint: jira.Hint,
+	}
+}
+
+func addSubCommands(jira *model.AutocompleteData, optInstance bool) {
 	// Top-level common commands
 	jira.AddCommand(createViewCommand(optInstance))
 	jira.AddCommand(createTransitionCommand(optInstance))
@@ -132,16 +141,6 @@ func createJiraCommand(optInstance bool) *model.Command {
 	// Help and info
 	jira.AddCommand(model.NewAutocompleteData("info", "", "Display information about the current user and the Jira plug-in"))
 	jira.AddCommand(model.NewAutocompleteData("help", "", "Display help for `/jira` command"))
-
-	return &model.Command{
-		Trigger:          jira.Trigger,
-		Description:      "Integration with Jira.",
-		DisplayName:      "Jira",
-		AutoComplete:     true,
-		AutocompleteData: jira,
-		AutoCompleteDesc: jira.HelpText,
-		AutoCompleteHint: jira.Hint,
-	}
 }
 
 func createInstanceCommand(optInstance bool) *model.AutocompleteData {
@@ -875,22 +874,6 @@ func executeDebugCleanKV(p *Plugin, c *plugin.Context, header *model.CommandArgs
 	}
 	p.API.KVDeleteAll()
 	return p.responsef(header, "Deleted all\n")
-}
-
-func executeDebugMigrateInstances(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	authorized, err := authorizedSysAdmin(p, header.UserId)
-	if err != nil {
-		return p.responsef(header, "%v", err)
-	}
-	if !authorized {
-		return p.responsef(header, "`/jira debug` can only be run by a system administrator.")
-	}
-
-	err = p.instanceStore.MigrateV2Instances()
-	if err != nil {
-		return p.responsef(header, "Failed to migrated instances: %v\n", err)
-	}
-	return p.responsef(header, "Migrated instances\n")
 }
 
 func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, useExpvar bool, args ...string) *model.CommandResponse {

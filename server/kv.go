@@ -51,7 +51,7 @@ type InstanceStore interface {
 	LoadInstances() (*Instances, error)
 	StoreInstance(instance Instance) error
 	StoreInstances(*Instances) error
-	MigrateV2Instances() error
+	MigrateV2Instances() (*Instances, error)
 }
 
 type UserStore interface {
@@ -570,10 +570,10 @@ func UpdateInstances(store InstanceStore, updatef func(instances *Instances) err
 //   be used to set the default instance.
 // - The instances themselves should be forward-compatible, including
 // 	 CurrentInstance.
-func (store *store) MigrateV2Instances() error {
-	_, err := store.plugin.instanceStore.LoadInstances()
+func (store *store) MigrateV2Instances() (*Instances, error) {
+	instances, err := store.plugin.instanceStore.LoadInstances()
 	if errors.Cause(err) != kvstore.ErrNotFound {
-		return err
+		return instances, err
 	}
 
 	// The V3 "instances" key does not exist. Migrate. Note that KVGet returns
@@ -581,16 +581,16 @@ func (store *store) MigrateV2Instances() error {
 	// initialized unless there is an actual DB/network error.
 	data, appErr := store.plugin.API.KVGet(v2keyKnownJiraInstances)
 	if appErr != nil {
-		return appErr
+		return nil, appErr
 	}
 	v2instances := map[string]string{}
 	if len(data) != 0 {
 		err = json.Unmarshal(data, &v2instances)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	instances := NewInstances()
+	instances = NewInstances()
 	for k, v := range v2instances {
 		instances.Set(&InstanceCommon{
 			PluginVersion: manifest.Version,
@@ -601,7 +601,7 @@ func (store *store) MigrateV2Instances() error {
 
 	instance, err := store.loadInstance(v2keyCurrentJIRAInstance)
 	if err != nil && errors.Cause(err) != kvstore.ErrNotFound {
-		return err
+		return nil, err
 	}
 	if instance != nil {
 		instance.Common().InstanceID = types.ID(instance.GetURL())
@@ -609,7 +609,7 @@ func (store *store) MigrateV2Instances() error {
 		instances.Set(instance.Common())
 		err = store.StoreInstance(instance)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if instances.Len() > 1 {
@@ -619,9 +619,9 @@ func (store *store) MigrateV2Instances() error {
 
 	err = store.StoreInstances(instances)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return instances, nil
 }
 
 // MigrateV2User migrates a user record from the V2 data model if needed. It

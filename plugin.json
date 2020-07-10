@@ -85,6 +85,13 @@
         "type": "bool",
         "help_text": "Hide detailed issue descriptions and comments from Subscription and Webhook messages",
         "default": false
+      },
+      {
+        "key": "EnableAutocomplete",
+        "display_name": "Enable slash command autocomplete",
+        "type": "bool",
+        "help_text": "Autocomplete guides users through the available `/jira` slash commands",
+        "default": true
       }
     ],
     "header": "Please refer to the `/jira` command [**documentation**](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) to further configure the Jira plugin.",

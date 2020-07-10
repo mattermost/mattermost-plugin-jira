@@ -75,6 +75,9 @@ type externalConfig struct {
 
 	// Hide issue descriptions and comments in Webhook and Subscription messages
 	HideDecriptionComment bool
+
+	// Enable slash command autocomplete
+	EnableAutocomplete bool
 }
 
 const currentInstanceTTL = 1 * time.Second
@@ -165,10 +168,22 @@ func (p *Plugin) OnConfigurationChange() error {
 		}
 	}
 
+	prev := p.getConfig()
 	p.updateConfig(func(conf *config) {
 		conf.externalConfig = ec
 		conf.maxAttachmentSize = maxAttachmentSize
 	})
+
+	// OnConfigurationChanged is first called before the plugin is activated,
+	// in this case don't register the command, let Activate do it, it has the instanceStore.
+	// TODO: consider moving (some? stores? all?) initialization into the first OnConfig instead of OnActivate.
+	if prev.EnableAutocomplete != ec.EnableAutocomplete && p.instanceStore != nil {
+		instances, err := p.instanceStore.LoadInstances()
+		if err != nil {
+			return err
+		}
+		p.registerJiraCommand(ec.EnableAutocomplete, instances.Len() > 1)
+	}
 
 	// create new tracker on each configuration change
 	p.Tracker = jiraTracker.New(telemetry.NewTracker(
@@ -188,7 +203,7 @@ func (p *Plugin) OnDeactivate() error {
 	if p.telemetryClient != nil {
 		err := p.telemetryClient.Close()
 		if err != nil {
-			errors.Wrap(err, "OnDeactivate: Failed to close telemetryClient.")
+			return errors.Wrap(err, "OnDeactivate: Failed to close telemetryClient.")
 		}
 	}
 	return nil
@@ -241,7 +256,7 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrap(appErr, "couldn't set profile image")
 	}
 
-	err = store.MigrateV2Instances()
+	instances, err := store.MigrateV2Instances()
 	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to migrate from previous version of the Jira plugin")
 	}
@@ -254,7 +269,7 @@ func (p *Plugin) OnActivate() error {
 
 	// Register /jira command and stash the loaded list of known instances for
 	// later (autolink registration).
-	instances, err := p.registerJiraCommand()
+	err = p.registerJiraCommand(p.getConfig().EnableAutocomplete, instances.Len() > 1)
 	if err != nil {
 		return errors.Wrap(err, "OnActivate")
 	}
