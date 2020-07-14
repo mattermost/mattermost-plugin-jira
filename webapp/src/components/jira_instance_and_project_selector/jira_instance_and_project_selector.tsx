@@ -116,7 +116,7 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
     }
 
     render() {
-        const instanceOptions: ReactSelectOption[] = this.props.installedInstances.map((instance: Instance) => (
+        const instanceOptions: ReactSelectOption[] = this.props.connectedInstances.map((instance: Instance) => (
             {label: instance.instance_id, value: instance.instance_id}
         ));
 

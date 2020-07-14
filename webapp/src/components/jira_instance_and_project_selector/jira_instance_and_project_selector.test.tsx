@@ -45,9 +45,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             <JiraInstanceAndProjectSelector {...props}/>
         );
 
-        process.nextTick(() => {
-            expect(wrapper).toMatchSnapshot();
-        });
+        expect(wrapper).toMatchSnapshot();
     });
 
     test('should match snapshot with two connected instances', () => {
@@ -59,9 +57,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             <JiraInstanceAndProjectSelector {...props}/>
         );
 
-        process.nextTick(() => {
-            expect(wrapper).toMatchSnapshot();
-        });
+        expect(wrapper).toMatchSnapshot();
     });
 
     test('should match snapshot with a default instance selected', () => {
@@ -74,9 +70,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             <JiraInstanceAndProjectSelector {...props}/>
         );
 
-        process.nextTick(() => {
-            expect(wrapper).toMatchSnapshot();
-        });
+        expect(wrapper).toMatchSnapshot();
     });
 
     test('should assign the correct initial instance id', async () => {

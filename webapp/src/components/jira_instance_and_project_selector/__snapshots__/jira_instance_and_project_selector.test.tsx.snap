@@ -1,0 +1,55 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`components/JiraInstanceAndProjectSelector should match snapshot with a default instance selected 1`] = `
+<Fragment>
+  <ReactSelectSetting
+    isDisabled={false}
+    isLoading={true}
+    label="Instance"
+    name="instance"
+    onChange={[Function]}
+    options={
+      Array [
+        Object {
+          "label": "instance1",
+          "value": "instance1",
+        },
+        Object {
+          "label": "instance2",
+          "value": "instance2",
+        },
+      ]
+    }
+    required={true}
+    theme={Object {}}
+  />
+</Fragment>
+`;
+
+exports[`components/JiraInstanceAndProjectSelector should match snapshot with one connected instance 1`] = `<Fragment />`;
+
+exports[`components/JiraInstanceAndProjectSelector should match snapshot with two connected instances 1`] = `
+<Fragment>
+  <ReactSelectSetting
+    isDisabled={false}
+    isLoading={true}
+    label="Instance"
+    name="instance"
+    onChange={[Function]}
+    options={
+      Array [
+        Object {
+          "label": "instance1",
+          "value": "instance1",
+        },
+        Object {
+          "label": "instance2",
+          "value": "instance2",
+        },
+      ]
+    }
+    required={true}
+    theme={Object {}}
+  />
+</Fragment>
+`;
