@@ -533,6 +533,9 @@ func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArg
 	if err != nil {
 		return p.responsef(header, "Failed to identify the Jira instance. Error: %v.", err)
 	}
+	if len(args) != 0 {
+		return p.responsef(header, "No arguments were expected.")
+	}
 
 	msg, err := p.listChannelSubscriptions(instance.GetID(), header.TeamId)
 	if err != nil {
@@ -684,7 +687,7 @@ func executeUnassign(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 		return p.responsef(header, "Failed to load your connection to Jira. Error: %v.", err)
 	}
 
-	if len(args) < 1 {
+	if len(args) != 1 {
 		return p.responsef(header, "Please specify an issue key in the form `/jira unassign <issue-key>`.")
 	}
 	issueKey := strings.ToUpper(args[0])
@@ -702,7 +705,7 @@ func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args
 		return p.responsef(header, "Failed to load your connection to Jira. Error: %v.", err)
 	}
 
-	if len(args) < 2 {
+	if len(args) != 2 {
 		return p.responsef(header, "Please specify an issue key and an assignee search string, in the form `/jira assign <issue-key> <assignee>`.")
 	}
 	issueKey := strings.ToUpper(args[0])
@@ -1048,33 +1051,43 @@ func executeInstanceV2Legacy(p *Plugin, c *plugin.Context, header *model.Command
 }
 
 func (p *Plugin) parseCommandFlagInstanceURL(args []string) (string, []string, error) {
-	value := ""
+	instanceURL := ""
 	remaining := []string{}
-	for i, arg := range args {
+	afterFlagInstance := false
+	for _, arg := range args {
+		if afterFlagInstance {
+			instanceURL = arg
+			afterFlagInstance = false
+			continue
+		}
 		if !strings.HasPrefix(arg, "--instance") {
 			remaining = append(remaining, arg)
 			continue
 		}
-		if value != "" {
+		if instanceURL != "" {
 			return "", nil, errors.New("--instance may not be specified multiple times")
 		}
 		str := arg[len("--instance"):]
 
 		// --instance=X
 		if strings.HasPrefix(str, "=") {
-			value = str[1:]
+			instanceURL = str[1:]
 			continue
 		}
 
-		// --instance X
-		if i == len(args)-1 {
-			return "", nil, errors.New("--instance requires a value")
+		// --instanceXXX error
+		if str != "" {
+			return "", nil, errors.Errorf("`%s` is not valid", arg)
 		}
-		i++
-		value = args[i]
+
+		// --instance X
+		afterFlagInstance = true
+	}
+	if afterFlagInstance && instanceURL == "" {
+		return "", nil, errors.New("--instance requires a value")
 	}
 
-	return value, remaining, nil
+	return instanceURL, remaining, nil
 }
 
 func (p *Plugin) loadFlagUserInstance(mattermostUserID string, args []string) (*User, Instance, []string, error) {
