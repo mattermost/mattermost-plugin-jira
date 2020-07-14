@@ -644,6 +644,11 @@ func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserId string) (*OAu
 	if appErr != nil {
 		return nil, errors.WithMessage(appErr, "failed to load temporary credentials for "+mmUserId)
 	}
+	// If the key expired, appErr is nil, but the data is also nil
+	if len(b) == 0 {
+		return nil, errors.Wrapf(ErrUserNotFound, "temporary credentials for %s not found or expired, try to connect again"+mmUserId)
+	}
+
 	var credentials OAuth1aTemporaryCredentials
 	err := json.Unmarshal(b, &credentials)
 	if err != nil {
