@@ -256,7 +256,7 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrap(appErr, "couldn't set profile image")
 	}
 
-	instances, err := store.MigrateV2Instances()
+	instances, err := MigrateV2Instances(p)
 	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to migrate from previous version of the Jira plugin")
 	}

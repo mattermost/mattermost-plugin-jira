@@ -15,7 +15,6 @@ import (
 
 type Instances struct {
 	*types.ValueSet // of *InstanceCommon, not Instance
-	defaultID       types.ID
 }
 
 func NewInstances(initial ...*InstanceCommon) *Instances {

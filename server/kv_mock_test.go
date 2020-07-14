@@ -103,6 +103,9 @@ func (store mockInstanceStore) DeleteInstance(types.ID) error {
 func (store mockInstanceStore) LoadInstance(types.ID) (Instance, error) {
 	return &testInstance{}, nil
 }
+func (store mockInstanceStore) LoadInstanceFullKey(string) (Instance, error) {
+	return &testInstance{}, nil
+}
 func (store mockInstanceStore) LoadInstances() (*Instances, error) {
 	return NewInstances(), nil
 }
@@ -111,7 +114,4 @@ func (store mockInstanceStore) StoreInstance(instance Instance) error {
 }
 func (store mockInstanceStore) StoreInstances(*Instances) error {
 	return nil
-}
-func (store mockInstanceStore) MigrateV2Instances() (*Instances, error) {
-	return nil, nil
 }
