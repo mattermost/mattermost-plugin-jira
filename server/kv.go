@@ -48,10 +48,10 @@ type InstanceStore interface {
 	CreateInactiveCloudInstance(types.ID) error
 	DeleteInstance(types.ID) error
 	LoadInstance(types.ID) (Instance, error)
+	LoadInstanceFullKey(string) (Instance, error)
 	LoadInstances() (*Instances, error)
 	StoreInstance(instance Instance) error
 	StoreInstances(*Instances) error
-	MigrateV2Instances() (*Instances, error)
 }
 
 type UserStore interface {
@@ -473,14 +473,14 @@ func (store *store) LoadInstance(instanceID types.ID) (Instance, error) {
 	if instanceID == "" {
 		return nil, errors.Wrap(kvstore.ErrNotFound, "no instance specified")
 	}
-	instance, err := store.loadInstance(hashkey(prefixInstance, instanceID.String()))
+	instance, err := store.LoadInstanceFullKey(hashkey(prefixInstance, instanceID.String()))
 	if err != nil {
 		return nil, errors.Wrap(err, instanceID.String())
 	}
 	return instance, nil
 }
 
-func (store *store) loadInstance(fullkey string) (Instance, error) {
+func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 	data, appErr := store.plugin.API.KVGet(fullkey)
 	if appErr != nil {
 		return nil, appErr
@@ -570,8 +570,8 @@ func UpdateInstances(store InstanceStore, updatef func(instances *Instances) err
 //   be used to set the default instance.
 // - The instances themselves should be forward-compatible, including
 // 	 CurrentInstance.
-func (store *store) MigrateV2Instances() (*Instances, error) {
-	instances, err := store.plugin.instanceStore.LoadInstances()
+func MigrateV2Instances(p *Plugin) (*Instances, error) {
+	instances, err := p.instanceStore.LoadInstances()
 	if errors.Cause(err) != kvstore.ErrNotFound {
 		return instances, err
 	}
@@ -579,10 +579,11 @@ func (store *store) MigrateV2Instances() (*Instances, error) {
 	// The V3 "instances" key does not exist. Migrate. Note that KVGet returns
 	// empty data and no error when no key exists, so the V3 key always gets
 	// initialized unless there is an actual DB/network error.
-	data, appErr := store.plugin.API.KVGet(v2keyKnownJiraInstances)
+	data, appErr := p.API.KVGet(v2keyKnownJiraInstances)
 	if appErr != nil {
 		return nil, appErr
 	}
+
 	v2instances := map[string]string{}
 	if len(data) != 0 {
 		err = json.Unmarshal(data, &v2instances)
@@ -599,25 +600,33 @@ func (store *store) MigrateV2Instances() (*Instances, error) {
 		})
 	}
 
-	instance, err := store.loadInstance(v2keyCurrentJIRAInstance)
+	instance, err := p.instanceStore.LoadInstanceFullKey(v2keyCurrentJIRAInstance)
 	if err != nil && errors.Cause(err) != kvstore.ErrNotFound {
 		return nil, err
 	}
-	if instance != nil {
-		instance.Common().InstanceID = types.ID(instance.GetURL())
-		instance.Common().IsV2Legacy = true
-		instances.Set(instance.Common())
-		err = store.StoreInstance(instance)
-		if err != nil {
-			return nil, err
-		}
+	switch instance.(type) {
+	case *cloudInstance:
+		ci := instance.(*cloudInstance)
+		ci.InstanceID = types.ID(ci.AtlassianSecurityContext.BaseURL)
 
-		if instances.Len() > 1 {
-			instances.SetV2Legacy(instance.GetID())
-		}
+	case *serverInstance:
+		si := instance.(*serverInstance)
+		si.InstanceID = types.ID(si.DeprecatedJIRAServerURL)
+
+	case nil:
+
+	default:
+		return nil, errors.Errorf("Can not finish v2 migration: Jira instance has type %T, which is not valid", instance)
 	}
 
-	err = store.StoreInstances(instances)
+	instances.Set(instance.Common())
+	instances.SetV2Legacy(instance.GetID())
+	err = p.instanceStore.StoreInstance(instance)
+	if err != nil {
+		return nil, err
+	}
+
+	err = p.instanceStore.StoreInstances(instances)
 	if err != nil {
 		return nil, err
 	}

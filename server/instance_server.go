@@ -20,6 +20,8 @@ type serverInstance struct {
 
 	// The SiteURL may change as we go, so we store the PluginKey when as it was installed
 	MattermostKey string
+
+	DeprecatedJIRAServerURL string `json:"JIRAServerURL"`
 }
 
 var _ Instance = (*serverInstance)(nil)
