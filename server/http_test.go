@@ -186,32 +186,32 @@ func TestSubscribe(t *testing.T) {
 			}, nil, t),
 		},
 		"Initial Subscription, GetProject mocked error": {
-			subscription:       fmt.Sprintf(`{"name": "some name", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
+			subscription:       fmt.Sprintf(`{"instance_id": "jiraurl1", "name": "some name", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls:           hasSubscriptions([]ChannelSubscription{}, t),
 		},
 		"Initial Subscription, empty name provided": {
-			subscription:       `{"name": "", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "jiraurl1", "name": "", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls:           hasSubscriptions([]ChannelSubscription{}, t),
 		},
 		"Initial Subscription, long name provided": {
-			subscription:       `{"name": "` + TEST_DATA_LONG_SUBSCRIPTION_NAME + `", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "jiraurl1", "name": "` + TEST_DATA_LONG_SUBSCRIPTION_NAME + `", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls:           hasSubscriptions([]ChannelSubscription{}, t),
 		},
 		"Initial Subscription, no project provided": {
-			subscription:       `{"name": "somename", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": [], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "jiraurl1", "name": "somename", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": [], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls:           hasSubscriptions([]ChannelSubscription{}, t),
 		},
 		"Initial Subscription, no events provided": {
-			subscription:       `{"name": "somename", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": [], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "jiraurl1", "name": "somename", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": [], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls:           hasSubscriptions([]ChannelSubscription{}, t),
 		},
 		"Initial Subscription, no issue types provided": {
-			subscription:       `{"name": "somename", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": []}}`,
+			subscription:       `{"instance_id": "jiraurl1", "name": "somename", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": []}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls:           hasSubscriptions([]ChannelSubscription{}, t),
 		},
@@ -419,7 +419,7 @@ func TestDeleteSubscription(t *testing.T) {
 				api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(false)
 			},
 		},
-		"Sucessfull delete": {
+		"Sucessful delete": {
 			subscriptionId:     "aaaaaaaaaaaaaaaaaaaaaaaaab",
 			expectedStatusCode: http.StatusOK,
 			apiCalls: checkNotSubscriptions([]ChannelSubscription{
@@ -510,7 +510,7 @@ func TestDeleteSubscription(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
-			p.instanceStore = p.getMockInstanceStoreKV(0)
+			p.instanceStore = p.getMockInstanceStoreKV(1)
 
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("DELETE",
@@ -675,7 +675,7 @@ func TestEditSubscription(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription, GetProject mocked error. Existing sub has nonexistent project.": {
-			subscription:       fmt.Sprintf(`{"id": "subaaaaaaaaaabbbbbbbbbbccc", "name": "subscription name", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
+			subscription:       fmt.Sprintf(`{"instance_id": "jiraurl1", "id": "subaaaaaaaaaabbbbbbbbbbccc", "name": "subscription name", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{},
 				withExistingChannelSubscriptions(
@@ -692,7 +692,7 @@ func TestEditSubscription(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription, GetProject mocked error. Existing sub has existing project.": {
-			subscription:       fmt.Sprintf(`{"id": "subaaaaaaaaaabbbbbbbbbbccc", "name": "subscription name", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
+			subscription:       fmt.Sprintf(`{"instance_id": "jiraurl1", "id": "subaaaaaaaaaabbbbbbbbbbccc", "name": "subscription name", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{},
 				withExistingChannelSubscriptions(
@@ -956,6 +956,7 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 				conf.Secret = "somesecret"
 			})
 			p.SetAPI(api)
+			p.userStore = mockUserStore{}
 			p.instanceStore = p.getMockInstanceStoreKV(1)
 
 			w := httptest.NewRecorder()

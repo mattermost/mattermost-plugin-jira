@@ -617,32 +617,34 @@ func (p *Plugin) hasPermissionToManageSubscription(instanceID types.ID, userId, 
 		}
 	}
 
-	if cfg.GroupsAllowedToEditJiraSubscriptions != "" {
-		instance, err := p.instanceStore.LoadInstance(instanceID)
-		if err != nil {
-			return errors.Wrap(err, "could not load jira instance")
-		}
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return errors.Wrap(err, "could not load jira instance")
+	}
 
-		c, err := p.userStore.LoadConnection(instance.GetID(), types.ID(userId))
-		if err != nil {
-			return errors.Wrap(err, "could not load jira user")
-		}
+	c, err := p.userStore.LoadConnection(instance.GetID(), types.ID(userId))
+	if err != nil {
+		return errors.Wrap(err, "could not load jira user")
+	}
 
-		client, err := instance.GetClient(c)
-		if err != nil {
-			return errors.Wrap(err, "could not get an authenticated Jira client")
-		}
+	if !instance.Common().IsV2Legacy || cfg.GroupsAllowedToEditJiraSubscriptions == "" {
+		return nil
+	}
 
-		groups, err := client.GetUserGroups(c)
-		if err != nil {
-			return errors.Wrap(err, "could not get jira user groups")
-		}
+	client, err := instance.GetClient(c)
+	if err != nil {
+		return errors.Wrap(err, "could not get an authenticated Jira client")
+	}
 
-		allowedGroups := strings.Split(cfg.GroupsAllowedToEditJiraSubscriptions, ",")
-		allowedGroups = utils.Map(allowedGroups, strings.TrimSpace)
-		if !inAllowedGroup(groups, allowedGroups) {
-			return errors.New("not in allowed jira user groups")
-		}
+	groups, err := client.GetUserGroups(c)
+	if err != nil {
+		return errors.Wrap(err, "could not get jira user groups")
+	}
+
+	allowedGroups := strings.Split(cfg.GroupsAllowedToEditJiraSubscriptions, ",")
+	allowedGroups = utils.Map(allowedGroups, strings.TrimSpace)
+	if !inAllowedGroup(groups, allowedGroups) {
+		return errors.New("not in allowed jira user groups")
 	}
 
 	return nil
