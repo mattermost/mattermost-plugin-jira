@@ -219,9 +219,9 @@ export const deleteChannelSubscription = (subscription: ChannelSubscription) => 
 export const fetchChannelSubscriptions = (channelId: string) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
-        const installedInstances = getInstalledInstances(getState());
+        const connectedInstances = getUserConnectedInstances(getState());
 
-        const promises = installedInstances.map((instance) => {
+        const promises = connectedInstances.map((instance) => {
             return doFetch(`${baseUrl}/api/v2/subscriptions/channel/${channelId}?instance_id=${instance.instance_id}`, {
                 method: 'get',
             });
@@ -229,12 +229,26 @@ export const fetchChannelSubscriptions = (channelId: string) => {
 
         let allResponses;
         try {
-            allResponses = await Promise.all(promises);
+            allResponses = await Promise.allSettled(promises);
         } catch (error) {
             return {error};
         }
 
-        const data = allResponses.reduce((accum, subs) => accum.concat(subs), []);
+        const errors: string[] = [];
+        let data: ChannelSubscription[] = [];
+
+        for (const res of allResponses) {
+            if (res.status === 'rejected') {
+                errors.push(res.reason);
+            } else {
+                data = data.concat(res.value);
+            }
+        }
+
+        if (errors.length > 0 && allResponses.length === errors.length) {
+            return {error: new Error(errors[0])};
+        }
+
         dispatch({
             type: ActionTypes.RECEIVED_CHANNEL_SUBSCRIPTIONS,
             channelId,
