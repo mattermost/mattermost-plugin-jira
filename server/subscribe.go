@@ -109,8 +109,10 @@ func SubscriptionsFromJson(bytes []byte, instanceID types.ID) (*Subscriptions, e
 		subs = NewSubscriptions()
 	}
 
-	for _, sub := range subs.Channel.ById {
+	// Backfill instance id's for old subscriptions
+	for subID, sub := range subs.Channel.ById {
 		sub.InstanceID = instanceID
+		subs.Channel.ById[subID] = sub
 	}
 
 	return subs, nil
