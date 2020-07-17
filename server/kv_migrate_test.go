@@ -24,8 +24,8 @@ func TestMigrateV2Instances(t *testing.T) {
 				"JIRAServerURL":"http://localhost:8080",
 				"MattermostKey":"mattermost_https_levb_ngrok_io"
 			}`,
-			expectInstance:  `{"PluginVersion":"2.4.0","InstanceID":"http://localhost:8080","Type":"server","IsV2Legacy":true,"MattermostKey":"mattermost_https_levb_ngrok_io","JIRAServerURL":"http://localhost:8080"}`,
-			expectInstances: `[{"PluginVersion":"2.4.0","InstanceID":"http://localhost:8080","Type":"server","IsV2Legacy":true}]`,
+			expectInstance:  `{"PluginVersion":"3.0.0","InstanceID":"http://localhost:8080","Type":"server","IsV2Legacy":true,"MattermostKey":"mattermost_https_levb_ngrok_io","JIRAServerURL":"http://localhost:8080"}`,
+			expectInstances: `[{"PluginVersion":"3.0.0","InstanceID":"http://localhost:8080","Type":"server","IsV2Legacy":true}]`,
 		},
 		"Cloud": {
 			known: `{"https://mmtest.atlassian.net":"cloud"}`,
@@ -36,8 +36,8 @@ func TestMigrateV2Instances(t *testing.T) {
 				"Installed": true,
 				"RawAtlassianSecurityContext": "{\"BaseURL\":\"https://mmtest.atlassian.net\"}"
 			}`,
-			expectInstance:  `{"PluginVersion":"2.4.0","InstanceID":"https://mmtest.atlassian.net","Type":"cloud","IsV2Legacy":true,"Installed":true,"RawAtlassianSecurityContext":"{\"BaseURL\":\"https://mmtest.atlassian.net\"}"}`,
-			expectInstances: `[{"PluginVersion":"2.4.0","InstanceID":"https://mmtest.atlassian.net","Type":"cloud","IsV2Legacy":true}]`,
+			expectInstance:  `{"PluginVersion":"3.0.0","InstanceID":"https://mmtest.atlassian.net","Type":"cloud","IsV2Legacy":true,"Installed":true,"RawAtlassianSecurityContext":"{\"BaseURL\":\"https://mmtest.atlassian.net\"}"}`,
+			expectInstances: `[{"PluginVersion":"3.0.0","InstanceID":"https://mmtest.atlassian.net","Type":"cloud","IsV2Legacy":true}]`,
 		},
 	}
 
@@ -97,6 +97,7 @@ func TestMigrateV2Instances(t *testing.T) {
 			p.SetAPI(api)
 			store := NewStore(p)
 			p.instanceStore = store
+			manifest.Version = "3.0.0"
 
 			instances, err := MigrateV2Instances(p)
 			require.NoError(t, err)
