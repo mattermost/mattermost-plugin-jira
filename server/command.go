@@ -146,9 +146,6 @@ func addSubCommands(jira *model.AutocompleteData, optInstance bool) {
 func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 	instance := model.NewAutocompleteData(
 		"instance", "[connect|disconnect|settings]", "View and manage installed Jira instances; more commands available to system administrators")
-	instance.AddCommand(createConnectCommand())
-	instance.AddCommand(createSettingsCommand(optInstance))
-	instance.AddCommand(createDisconnectCommand())
 
 	jiraTypes := []model.AutocompleteListItem{
 		{HelpText: "Jira Server or Datacenter", Item: "server"},
@@ -167,6 +164,14 @@ func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 	uninstall.AddDynamicListArgument("Jira instance", routeAutocompleteInstalledInstance, true)
 	uninstall.RoleID = model.SYSTEM_ADMIN_ROLE_ID
 
+	list := model.NewAutocompleteData(
+		"list", "", "List installed Jira instances")
+	list.RoleID = model.SYSTEM_ADMIN_ROLE_ID
+
+	instance.AddCommand(createConnectCommand())
+	instance.AddCommand(createDisconnectCommand())
+	instance.AddCommand(list)
+	instance.AddCommand(createSettingsCommand(optInstance))
 	instance.AddCommand(install)
 	instance.AddCommand(uninstall)
 	return instance
