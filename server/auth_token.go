@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const authTokenTTL = 15 * time.Minute
+const authTokenTTL = 59 * time.Second
 
 type AuthToken struct {
 	MattermostUserID string    `json:"mattermost_user_id,omitempty"`
