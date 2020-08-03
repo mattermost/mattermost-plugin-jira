@@ -50,7 +50,6 @@ export default class JiraAutoCompleteSelector extends React.PureComponent<Props>
         return (
             <BackendSelector
                 {...this.props}
-                name={'epic'}
                 fetchInitialSelectedValues={this.fetchInitialSelectedValues}
                 search={this.searchAutoCompleteFields}
             />

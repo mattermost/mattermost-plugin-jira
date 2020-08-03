@@ -59,7 +59,6 @@ export default class JiraUserSelector extends React.PureComponent<Props> {
         return (
             <BackendSelector
                 {...this.props}
-                name={'epic'}
                 fetchInitialSelectedValues={this.fetchInitialSelectedValues}
                 search={this.searchUsers}
             />

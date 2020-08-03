@@ -102,7 +102,6 @@ export default class JiraEpicSelector extends React.PureComponent<Props> {
         return (
             <BackendSelector
                 {...this.props}
-                name={'epic'}
                 fetchInitialSelectedValues={this.fetchInitialSelectedValues}
                 search={this.searchIssues}
             />

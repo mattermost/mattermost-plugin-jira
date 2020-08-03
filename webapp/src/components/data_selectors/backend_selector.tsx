@@ -168,7 +168,6 @@ export default class BackendSelector extends React.PureComponent<Props, State> {
         const selectComponent = (
             <AsyncSelect
                 {...this.props}
-                name={'epic'}
                 value={value}
                 onChange={this.onChange}
                 required={this.props.required}

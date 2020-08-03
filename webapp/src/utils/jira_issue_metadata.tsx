@@ -272,6 +272,10 @@ export function isMultiSelectField(field: FilterField): boolean {
     return field.schema.type === 'array';
 }
 
+export function isTextField(field: JiraField | FilterField): boolean {
+    return field.schema.type === 'string';
+}
+
 // Some Jira fields have special names for JQL
 function getFieldNameForJQL(field: FilterField) {
     switch (field.key) {

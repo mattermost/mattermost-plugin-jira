@@ -5,6 +5,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import JiraField from 'components/jira_field';
+import {isTextField} from 'utils/jira_issue_metadata';
 
 export default class JiraFields extends React.Component {
     static propTypes = {
@@ -23,8 +24,44 @@ export default class JiraFields extends React.Component {
         removeValidate: PropTypes.func.isRequired,
     };
 
+    getSortedFields = () => {
+        const {allowedFields, allowedSchemaCustom} = this.props;
+        let fields = Object.values(this.props.fields);
+
+        const start = [];
+        const summary = fields.find((f) => f.key === 'summary');
+        if (summary) {
+            start.push(summary);
+        }
+        const description = fields.find((f) => f.key === 'description');
+        if (description) {
+            start.push(description);
+        }
+
+        fields = fields.filter((field) => {
+            if (['summary', 'description', 'issuetype', 'project'].includes(field.key)) {
+                return false;
+            }
+            if (field.schema.custom && !allowedSchemaCustom.includes(field.schema.custom)) {
+                return false;
+            }
+            if (!field.schema.custom && !allowedFields.includes(field.key)) {
+                return false;
+            }
+
+            return true;
+        }).sort((a, b) => {
+            return a.name > b.name ? 1 : -1;
+        });
+
+        const selectFields = fields.filter((f) => !isTextField(f));
+        const textFields = fields.filter((f) => isTextField(f));
+
+        return [...start, ...selectFields, ...textFields];
+    }
+
     render() {
-        const {allowedFields, allowedSchemaCustom, fields, values} = this.props;
+        const {fields, values} = this.props;
 
         if (!fields) {
             return null;
@@ -35,45 +72,21 @@ export default class JiraFields extends React.Component {
             projectKey = values.project.key;
         }
 
-        let fieldNames = Object.keys(fields);
-        const fullLength = fieldNames.length;
-        fieldNames = fieldNames.filter((name) => name !== 'summary');
-        if (fullLength > fieldNames.length) {
-            fieldNames.unshift('summary');
-        }
-
-        return fieldNames.map((fieldName) => {
-            // Always Required Jira fields
-            if (fieldName === 'project' || fieldName === 'issuetype') {
-                return null;
-            }
-
-            // only allow these some custom types until handle further types
-            if (fields[fieldName].schema.custom && !allowedSchemaCustom.includes(fields[fieldName].schema.custom)) {
-                return null;
-            }
-
-            // only allow some default Jira fields until handle further types
-            if (!fields[fieldName].schema.custom && !allowedFields.includes(fieldName)) {
-                return null;
-            }
-
-            return (
-                <JiraField
-                    key={fieldName}
-                    id={fieldName}
-                    issueMetadata={this.props.issueMetadata}
-                    projectKey={projectKey}
-                    field={fields[fieldName]}
-                    obeyRequired={true}
-                    onChange={this.props.onChange}
-                    value={this.props.values && this.props.values[fieldName]}
-                    isFilter={this.props.isFilter}
-                    theme={this.props.theme}
-                    addValidate={this.props.addValidate}
-                    removeValidate={this.props.removeValidate}
-                />
-            );
-        });
+        return this.getSortedFields().map((field) => (
+            <JiraField
+                key={field.key}
+                id={field.key}
+                issueMetadata={this.props.issueMetadata}
+                projectKey={projectKey}
+                field={field}
+                obeyRequired={true}
+                onChange={this.props.onChange}
+                value={this.props.values && this.props.values[field.key]}
+                isFilter={this.props.isFilter}
+                theme={this.props.theme}
+                addValidate={this.props.addValidate}
+                removeValidate={this.props.removeValidate}
+            />
+        ));
     }
 }

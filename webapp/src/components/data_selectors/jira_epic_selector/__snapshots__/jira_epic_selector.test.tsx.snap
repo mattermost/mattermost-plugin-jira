@@ -2707,7 +2707,6 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
       ],
     }
   }
-  name="epic"
   onChange={[MockFunction]}
   removeValidate={[MockFunction]}
   search={[Function]}
