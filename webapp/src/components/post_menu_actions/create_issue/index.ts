@@ -2,19 +2,21 @@
 // See LICENSE.txt for license information.
 
 import {connect} from 'react-redux';
-import {bindActionCreators} from 'redux';
+import {bindActionCreators, Dispatch} from 'redux';
 
+import {GlobalState} from 'mattermost-redux/types/store';
+import {GenericAction} from 'mattermost-redux/types/actions';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
 
-import {openAttachCommentToIssueModal, sendEphemeralPost} from 'actions';
+import {openCreateModal, sendEphemeralPost} from 'actions';
 
 import {getCurrentUserLocale, isUserConnected, getInstalledInstanceType, isInstanceInstalled} from 'selectors';
 import {isCombinedUserActivityPost} from 'utils/posts';
 
-import AttachCommentToIssuePostMenuAction from './attach_comment_to_issue';
+import CreateIssuePostMenuAction from './create_issue';
 
-const mapStateToProps = (state, ownProps) => {
+const mapStateToProps = (state: GlobalState, ownProps: object): object => {
     const post = getPost(state, ownProps.postId);
     const oldSystemMessageOrNull = post ? isSystemMessage(post) : true;
     const systemMessage = isCombinedUserActivityPost(post) || oldSystemMessageOrNull;
@@ -28,9 +30,9 @@ const mapStateToProps = (state, ownProps) => {
     };
 };
 
-const mapDispatchToProps = (dispatch) => bindActionCreators({
-    open: openAttachCommentToIssueModal,
+const mapDispatchToProps = (dispatch: Dispatch<GenericAction>): object => bindActionCreators({
+    open: openCreateModal,
     sendEphemeralPost,
 }, dispatch);
 
-export default connect(mapStateToProps, mapDispatchToProps)(AttachCommentToIssuePostMenuAction);
+export default connect(mapStateToProps, mapDispatchToProps)(CreateIssuePostMenuAction);

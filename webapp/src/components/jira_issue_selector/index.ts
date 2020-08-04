@@ -2,13 +2,15 @@
 // See LICENSE.txt for license information.
 
 import {connect} from 'react-redux';
-import {bindActionCreators} from 'redux';
+import {bindActionCreators, Dispatch} from 'redux';
+
+import {GenericAction} from 'mattermost-redux/types/actions';
 
 import {searchIssues} from 'actions';
 
 import JiraIssueSelector from './jira_issue_selector';
 
-const mapDispatchToProps = (dispatch) => bindActionCreators({
+const mapDispatchToProps = (dispatch: Dispatch<GenericAction>): object => bindActionCreators({
     searchIssues,
 }, dispatch);
 
