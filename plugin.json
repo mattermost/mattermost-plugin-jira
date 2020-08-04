@@ -88,6 +88,6 @@
         "default": false
       }
     ],
-    "footer": "Use this webhook URL format to [configure the Jira integration.](https://github.com/mattermost/mattermost-plugin-jira/blob/master/readme.md)  `https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET`"
+    "footer": "Run `/jira webhook` command inside of a channel to see fully expanded URL to [configure the Jira integration.](https://github.com/mattermost/mattermost-plugin-jira/blob/master/readme.md) URL format: `https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET`"
   }
 }
