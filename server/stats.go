@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
+	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/pkg/errors"
 )
 
@@ -140,6 +141,13 @@ func (p *Plugin) saveStats() error {
 	return nil
 }
 
+func checkPrefix(key string) (bool, error) {
+	if !strings.HasPrefix(key, prefixStats) {
+		return true, nil
+	}
+	return false, errors.New("Key has no prefix")
+}
+
 // This is only useful in a single-server context, so can not be used in production
 // TODO: Need a way to reset all stats in production?
 func (p *Plugin) debugResetStats() error {
@@ -153,22 +161,19 @@ func (p *Plugin) debugResetStats() error {
 	}
 	stats.Reset()
 
-	for i := 0; ; i++ {
-		keys, appErr := p.API.KVList(i, listPerPage)
+	options := []plugin.KVListOption{
+		plugin.WithChecker(checkPrefix),
+	}
+
+	checkedKeys, err := p.Helpers.KVListWithOptions(options...)
+	if err != nil {
+		return err
+	}
+
+	for _, key := range checkedKeys {
+		appErr := p.API.KVDelete(key)
 		if appErr != nil {
 			return appErr
-		}
-		for _, key := range keys {
-			if !strings.HasPrefix(key, prefixStats) {
-				continue
-			}
-			appErr := p.API.KVDelete(key)
-			if appErr != nil {
-				return appErr
-			}
-		}
-		if len(keys) < listPerPage {
-			break
 		}
 	}
 
@@ -198,30 +203,27 @@ func initUptime() {
 func (p *Plugin) consolidatedStoredStats() (*expvar.Stats, []string, error) {
 	stats := expvar.NewUnpublishedStats(nil)
 	var statsKeys []string
-	for i := 0; ; i++ {
-		keys, appErr := p.API.KVList(i, listPerPage)
+
+	options := []plugin.KVListOption{
+		plugin.WithChecker(checkPrefix),
+	}
+
+	checkedKeys, err := p.Helpers.KVListWithOptions(options...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, key := range checkedKeys {
+		var data []byte
+		data, appErr := p.API.KVGet(key)
 		if appErr != nil {
 			return nil, nil, appErr
 		}
-
-		for _, key := range keys {
-			if !strings.HasPrefix(key, prefixStats) {
-				continue
-			}
-			var data []byte
-			data, appErr = p.API.KVGet(key)
-			if appErr != nil {
-				return nil, nil, appErr
-			}
-			from := expvar.NewUnpublishedStats(data)
-			stats.Merge(from)
-			statsKeys = append(statsKeys, key)
-		}
-
-		if len(keys) < listPerPage {
-			break
-		}
+		from := expvar.NewUnpublishedStats(data)
+		stats.Merge(from)
+		statsKeys = append(statsKeys, key)
 	}
+
 	return stats, statsKeys, nil
 }
 

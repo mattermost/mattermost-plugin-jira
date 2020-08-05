@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -60,24 +61,18 @@ func TestConsolidatedStoredStats(t *testing.T) {
 	stats2Data, err := json.Marshal(stats2)
 	require.Nil(t, err)
 
-	api.On("KVList", 0, 2).Return([]string{
-		"key1",
-		"stats_hostname1",
-	}, (*model.AppError)(nil))
-	api.On("KVList", 1, 2).Return([]string{
-		"key2",
-		"stats_hostname2",
-	}, (*model.AppError)(nil))
-	api.On("KVList", 2, 2).Return([]string{
-		"key3",
-		"key4",
-	}, (*model.AppError)(nil))
-	api.On("KVList", 3, 2).Return([]string{}, (*model.AppError)(nil))
-
 	api.On("KVGet", "stats_hostname1").Return(stats1Data, (*model.AppError)(nil))
 	api.On("KVGet", "stats_hostname2").Return(stats2Data, (*model.AppError)(nil))
 
+	defer api.AssertExpectations(t)
 	p.SetAPI(api)
+
+	helpers := &plugintest.Helpers{}
+
+	helpers.On("KVListWithOptions", mock.AnythingOfType("plugin.KVListOption")).Return([]string{"stats_hostname1", "stats_hostname2"}, nil)
+
+	defer helpers.AssertExpectations(t)
+	p.SetHelpers(helpers)
 
 	listPerPage = 2
 	consolidated, keys, _ := p.consolidatedStoredStats()

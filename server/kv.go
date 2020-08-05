@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v5/plugin"
 )
 
 const (
@@ -484,43 +485,47 @@ func (store store) DeleteUserInfo(ji Instance, mattermostUserId string) (returnE
 
 var reHexKeyFormat = regexp.MustCompile("^[[:xdigit:]]{32}$")
 
-func (store store) CountUsers() (int, error) {
-	count := 0
-	for i := 0; ; i++ {
-		keys, appErr := store.plugin.API.KVList(i, listPerPage)
-		if appErr != nil {
-			return 0, appErr
-		}
-
-		for _, key := range keys {
-			// User records are not currently prefixed. Consider any 32-hex key.
-			if !reHexKeyFormat.MatchString(key) {
-				continue
-			}
-
-			var data []byte
-			data, appErr = store.plugin.API.KVGet(key)
-			if appErr != nil {
-				return 0, appErr
-			}
-			v := map[string]interface{}{}
-			err := json.Unmarshal(data, &v)
-			if err != nil {
-				// Skip non-JSON values.
-				continue
-			}
-
-			// A valid user record?
-			if v["Settings"] != nil && (v["accountId"] != nil || v["name"] != nil && v["key"] != nil) {
-				count++
-			}
-		}
-
-		if len(keys) < listPerPage {
-			break
-		}
+func checkReg(key string) (bool, error) {
+	// User records are not currently prefixed. Consider any 32-hex key.
+	if !reHexKeyFormat.MatchString(key) {
+		return true, nil
 	}
-	return count, nil
+	return false, errors.New("Key is not 32-hex")
+}
+
+func (store store) checkValidUser(key string) (bool, error) {
+	var data []byte
+	data, appErr := store.plugin.API.KVGet(key)
+	if appErr != nil {
+		return false, appErr
+	}
+
+	v := map[string]interface{}{}
+
+	// Don't mind err from non-JSON values
+	json.Unmarshal(data, &v)
+
+	// A valid user record?
+	if v["Settings"] != nil && (v["accountId"] != nil || v["name"] != nil && v["key"] != nil) {
+		return true, nil
+	}
+
+	return false, errors.New("No valid users found")
+}
+
+func (store store) CountUsers() (int, error) {
+	options := []plugin.KVListOption{
+		plugin.WithChecker(checkReg),
+		plugin.WithChecker(store.checkValidUser),
+	}
+
+	checkedKeys, err := store.plugin.Helpers.KVListWithOptions(options...)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return len(checkedKeys), nil
 }
 
 func (store store) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr error) {
