@@ -4,6 +4,7 @@
 import {Store, Action} from 'redux';
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 
+import ChannelHeaderMenuAction from 'components/channel_header_action';
 import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue';
 import CreateIssueModal from 'components/modals/create_issue';
 import ChannelSettingsModal from 'components/modals/channel_settings';
@@ -32,7 +33,7 @@ const setupUILater = (registry: PluginRegistry, store: Store<object, Action<obje
             registry.registerRootComponent(AttachCommentToIssueModal);
             registry.registerPostDropdownMenuComponent(AttachCommentToIssuePostMenuAction);
         }
-
+        registry.registerChannelHeaderMenuAction(ChannelHeaderMenuAction);
         registry.registerRootComponent(ChannelSettingsModal);
 
         const hooks = new Hooks(store, settings);
