@@ -171,3 +171,8 @@ export type AttachCommentRequest = {
     issueKey: string;
     instance_id: string;
 };
+
+export type AllProjectMetadata = {
+    instance_id: string;
+    metadata: ProjectMetadata;
+}[];
