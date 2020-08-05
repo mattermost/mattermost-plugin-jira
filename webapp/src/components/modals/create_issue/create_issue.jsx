@@ -377,7 +377,6 @@ export default class CreateIssueModal extends PureComponent {
                 >
                     <Modal.Body
                         style={style.modalBody}
-                        ref='modalBody'
                     >
                         {component}
                     </Modal.Body>

@@ -71,10 +71,17 @@ export type Props = {
      * Set to hide the cancel button
      */
     hideCancel: boolean;
+};
 
-}
+type State = {
+    checked: boolean;
+};
 
-export default class ConfirmModal extends Component<Props> {
+export default class ConfirmModal extends Component<Props, State> {
+    state = {
+        checked: false,
+    };
+
     componentDidMount(): void {
         if (this.props.show) {
             document.addEventListener('keydown', this.handleKeypress);
@@ -85,8 +92,11 @@ export default class ConfirmModal extends Component<Props> {
         document.removeEventListener('keydown', this.handleKeypress);
     }
 
-    shouldComponentUpdate(nextProps: Props): boolean {
-        return nextProps.show !== this.props.show;
+    shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
+        return (
+            nextProps.show !== this.props.show ||
+            nextState.checked !== this.state.checked
+        );
     }
 
     componentDidUpdate(prevProps: Props): void {
@@ -108,14 +118,16 @@ export default class ConfirmModal extends Component<Props> {
         }
     }
 
-    handleConfirm = (): void => {
-        const checked = this.refs.checkbox ? this.refs.checkbox.checked : false;
-        this.props.onConfirm(checked);
+    handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        this.setState({checked: e.target.checked});
     }
 
-    handleCancel = (): void => {
-        const checked = this.refs.checkbox ? this.refs.checkbox.checked : false;
-        this.props.onCancel(checked);
+    handleConfirm = () => {
+        this.props.onConfirm(this.state.checked);
+    }
+
+    handleCancel = () => {
+        this.props.onCancel(this.state.checked);
     }
 
     render(): JSX.Element {
@@ -125,8 +137,9 @@ export default class ConfirmModal extends Component<Props> {
                 <div className='checkbox text-right margin-bottom--none'>
                     <label>
                         <input
-                            ref='checkbox'
                             type='checkbox'
+                            onChange={this.handleCheckboxChange}
+                            checked={this.state.checked}
                         />
                         {this.props.checkboxText}
                     </label>

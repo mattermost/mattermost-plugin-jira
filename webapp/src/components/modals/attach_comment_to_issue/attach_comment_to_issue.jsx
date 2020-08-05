@@ -128,7 +128,6 @@ export default class AttachIssueModal extends PureComponent {
                 >
                     <Modal.Body
                         style={style.modalBody}
-                        ref='modalBody'
                     >
                         {component}
                     </Modal.Body>
