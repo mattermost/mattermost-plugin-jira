@@ -14,6 +14,7 @@ import {
     editChannelSubscription,
     closeChannelSettings,
     fetchJiraProjectMetadata,
+    fetchJiraProjectMetadataForAllInstances,
     fetchJiraIssueMetadataForProjects,
     sendEphemeralPost,
     getConnected,
@@ -56,6 +57,7 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = (dispatch) => bindActionCreators({
     close: closeChannelSettings,
     fetchJiraProjectMetadata,
+    fetchJiraProjectMetadataForAllInstances,
     fetchJiraIssueMetadataForProjects,
     createChannelSubscription,
     fetchChannelSubscriptions,

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {ChannelSubscription} from 'types/model';
+import {ChannelSubscription, AllProjectMetadata} from 'types/model';
 
 import ConfirmModal from 'components/confirm_modal';
 
@@ -9,6 +9,7 @@ import {SharedProps} from './shared_props';
 type Props = SharedProps & {
     showEditChannelSubscription: (subscription: ChannelSubscription) => void;
     showCreateChannelSubscription: () => void;
+    allProjectMetadata: AllProjectMetadata | null;
 };
 
 type State = {
@@ -48,8 +49,25 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         });
     };
 
-    renderRow = (sub: ChannelSubscription): JSX.Element => {
+    getProjectName = (sub: ChannelSubscription): string => {
         const projectKey = sub.filters.projects[0];
+        if (!this.props.allProjectMetadata) {
+            return projectKey;
+        }
+
+        const instanceData = this.props.allProjectMetadata.find((m) => m.instance_id === sub.instance_id);
+        if (instanceData) {
+            const project = instanceData.metadata.projects.find((p) => p.value === projectKey);
+            if (project) {
+                return project.label;
+            }
+        }
+
+        return projectKey;
+    }
+
+    renderRow = (sub: ChannelSubscription): JSX.Element => {
+        const projectName = this.getProjectName(sub);
 
         const showInstanceColumn = this.props.installedInstances.length > 1;
         return (
@@ -61,7 +79,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                     <span>{sub.name || '(no name)'}</span>
                 </td>
                 <td>
-                    <span>{projectKey}</span>
+                    <span>{projectName}</span>
                 </td>
                 {showInstanceColumn && (
                     <td>

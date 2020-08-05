@@ -9,7 +9,7 @@ import ActionTypes from 'action_types';
 import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
 import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances} from 'selectors';
 import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
-import {ChannelSubscription, CreateIssueRequest, SearchIssueParams, InstanceType} from 'types/model';
+import {ChannelSubscription, CreateIssueRequest, SearchIssueParams, InstanceType, ProjectMetadata, APIResponse} from 'types/model';
 
 export const openConnectModal = () => {
     return {
@@ -112,6 +112,34 @@ export const fetchJiraProjectMetadata = (instanceID: string) => {
         }
 
         return {data};
+    };
+};
+
+export const fetchJiraProjectMetadataForAllInstances = () => {
+    return async (dispatch, getState) => {
+        const instances = getInstalledInstances(getState());
+        const promises = instances.map((instance) => dispatch(fetchJiraProjectMetadata(instance.instance_id)));
+        const responses = await Promise.all(promises) as APIResponse<ProjectMetadata>[];
+
+        const errors = [];
+        const metadata = [];
+        for (const [i, response] of responses.entries()) {
+            const instance = instances[i];
+            if (response.error) {
+                errors.push(response.error);
+            } else {
+                metadata.push({
+                    instance_id: instance.instance_id,
+                    metadata: response.data,
+                });
+            }
+        }
+
+        if (!metadata.length && errors.length) {
+            return {error: errors[0]};
+        }
+
+        return {data: metadata};
     };
 };
 
