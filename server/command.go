@@ -669,21 +669,11 @@ func executeInstanceUninstall(p *Plugin, c *plugin.Context, header *model.Comman
 		return p.responsef(header, err.Error())
 	}
 
-	// Notify users we have uninstalled an instance
-	p.API.PublishWebSocketEvent(
-		websocketEventInstanceStatus,
-		map[string]interface{}{
-			"instance_installed": false,
-			"instance_type":      "",
-		},
-		&model.WebsocketBroadcast{},
-	)
-
 	uninstallInstructions := `` +
 		`Jira instance successfully uninstalled. Navigate to [**your app management URL**](%s) in order to remove the application from your Jira instance.
-<><> Don't forget to remove Jira-side webhook from URL'
+Don't forget to remove Jira-side webhook in [Jira System Settings/Webhooks](%s)'
 `
-	return p.responsef(header, uninstallInstructions, uninstalled.GetManageAppsURL())
+	return p.responsef(header, uninstallInstructions, uninstalled.GetManageAppsURL(), uninstalled.GetManageWebhooksURL())
 }
 
 func executeUnassign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

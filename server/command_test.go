@@ -221,7 +221,7 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 }
 
 func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
-	api := plugintest.API{}
+	api := &plugintest.API{}
 	api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
 	api.On("LogDebug",
 		mock.AnythingOfTypeArgument("string"),
@@ -240,8 +240,6 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 	api.On("KVGet", keyInstances).Return(nil, nil)
 	api.On("KVGet", "rsa_key").Return(nil, nil)
 	api.On("PublishWebSocketEvent", mock.AnythingOfTypeArgument("string"), mock.Anything, mock.Anything)
-	// api.On("GetTeam", mock.AnythingOfTypeArgument("string")).Return(&model.Team{Name: "TestTeam"}, nil)
-	// api.On("GetChannel", mock.AnythingOfTypeArgument("string")).Return(&model.Channel{Name: "TestChannel"}, nil)
 	api.On("UnregisterCommand", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
 
 	sysAdminUser := &model.User{
@@ -319,10 +317,9 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			license.Features = &model.Features{}
 			license.Features.EnterprisePlugins = &trueValue
 
-			currentTestApi := api
-			currentTestApi.On("GetLicense").Return(&license)
-			currentTestApi.On("RegisterCommand", mock.Anything).Return(nil)
-			currentTestApi.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
+			api.On("GetLicense").Return(&license)
+			api.On("RegisterCommand", mock.Anything).Return(nil)
+			api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
 				isSendEphemeralPostCalled = true
 
 				post := args.Get(1).(*model.Post)
@@ -330,7 +327,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 				assert.True(t, strings.HasPrefix(actual, tt.expectedMsgPrefix), "Expected returned message to start with: \n%s\nActual:\n%s", tt.expectedMsgPrefix, actual)
 			}).Once().Return(&model.Post{})
 
-			p.SetAPI(&currentTestApi)
+			p.SetAPI(api)
 			_, filename, _, _ := runtime.Caller(0)
 			templates, err := p.loadTemplates(filepath.Dir(filename) + "/../assets/templates")
 			require.NoError(t, err)
@@ -340,7 +337,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			p.instanceStore = p.getMockInstanceStoreKV(tt.numInstances)
 			p.secretsStore = store
 			p.userStore = getMockUserStoreKV()
-			p.enterpriseChecker = enterprise.NewEnterpriseChecker(&currentTestApi)
+			p.enterpriseChecker = enterprise.NewEnterpriseChecker(api)
 
 			cmdResponse, appError := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
 			require.Nil(t, appError)
