@@ -257,9 +257,6 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 		mock.AnythingOfTypeArgument("string"),
 		mock.AnythingOfTypeArgument("string")).Return(nil)
 
-	siteURL := "https://somelink.com"
-	api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
-
 	api.On("GetPost", "error_post").Return(nil, &model.AppError{Id: "1"})
 	api.On("GetPost", "post_not_found").Return(nil, (*model.AppError)(nil))
 
