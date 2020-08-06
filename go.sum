@@ -328,8 +328,8 @@ github.com/mattermost/mattermost-plugin-workflow-client v0.0.0-20200225165807-b0
 github.com/mattermost/mattermost-server/v5 v5.18.0/go.mod h1:10vIYDohcPNDMDk3XlRUjNO9nGk9fnFHEFeSIUYR82k=
 github.com/mattermost/mattermost-server/v5 v5.19.0 h1:5hLPxmgvxjpMu7DTNTnqnuFjfQcGCKNUP1MOvoT5MkM=
 github.com/mattermost/mattermost-server/v5 v5.19.0/go.mod h1:10vIYDohcPNDMDk3XlRUjNO9nGk9fnFHEFeSIUYR82k=
-github.com/mattermost/mattermost-server/v5 v5.24.0-rc1 h1:B/8eXkPUlByrC7hBvJQc4CdPcziRFJWAE7JeLk2Cvxo=
-github.com/mattermost/mattermost-server/v5 v5.24.0-rc1/go.mod h1:wmIfEohk+D0xbFFfJPNvvUYaxeqUNKQcPZejT73m9YM=
+github.com/mattermost/mattermost-server/v5 v5.24.0 h1:7aW85q2nPOFgjzOCO1k4m3azdvIClZT3UShY1fYYSdc=
+github.com/mattermost/mattermost-server/v5 v5.24.0/go.mod h1:TVkOfVyk4wGw8j5J2IX3PDCP5R7j20IEP4FAezDK8Wk=
 github.com/mattermost/rsc v0.0.0-20160330161541-bbaefb05eaa0/go.mod h1:nV5bfVpT//+B1RPD2JvRnxbkLmJEYXmRaaVl15fsXjs=
 github.com/mattermost/rsc v0.0.0-20160330161541-bbaefb05eaa0/go.mod h1:nV5bfVpT//+B1RPD2JvRnxbkLmJEYXmRaaVl15fsXjs=
 github.com/mattermost/viper v1.0.4/go.mod h1:uc5hKG9lv4/KRwPOt2c1omOyirS/UnuA2TytiZQSFHM=
@@ -373,7 +373,6 @@ github.com/mitchellh/go-testing-interface v1.14.1/go.mod h1:gfgS7OtZj6MA4U1UrDRp
 github.com/mitchellh/go-wordwrap v1.0.0/go.mod h1:ZXFpozHsX6DPmq2I0TCekCxypsnAUbP2oI0UX1GXzOo=
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
 github.com/mitchellh/mapstructure v1.2.3/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
-github.com/mkraft/gziphandler v1.1.2-0.20200509175700-73dc64f3ad90/go.mod h1:gG8WEPb2aI5MHdmHv83au7bk3molRSZiAjdxYrEMJdQ=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
