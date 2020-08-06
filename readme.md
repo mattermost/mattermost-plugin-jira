@@ -19,6 +19,10 @@ This plugin supports Jira Core and Jira Software products, for Server, Data Cent
 
 Support for multiple Jira instances is considered, but not yet supported.
 
+## License
+
+This repository is licensed under the Apache 2.0 License, except for the [server/enterprise](server/enterprise) directory which is licensed under the [Mattermost Source Available License](LICENSE.enterprise). See [Mattermost Source Available License](https://docs.mattermost.com/overview/faq.html#mattermost-source-available-license) to learn more.
+
 ## Table of Contents
 
  - [1. Features](#1-features)
