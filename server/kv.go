@@ -571,6 +571,7 @@ func UpdateInstances(store InstanceStore, updatef func(instances *Instances) err
 // - The instances themselves should be forward-compatible, including
 // 	 CurrentInstance.
 func MigrateV2Instances(p *Plugin) (*Instances, error) {
+	// Check if V3 instances exist and return them if found
 	instances, err := p.instanceStore.LoadInstances()
 	if errors.Cause(err) != kvstore.ErrNotFound {
 		return instances, err
@@ -584,6 +585,7 @@ func MigrateV2Instances(p *Plugin) (*Instances, error) {
 		return nil, appErr
 	}
 
+	// Convert the V2 instances
 	v2instances := map[string]string{}
 	if len(data) != 0 {
 		err = json.Unmarshal(data, &v2instances)
@@ -614,6 +616,7 @@ func MigrateV2Instances(p *Plugin) (*Instances, error) {
 		si.InstanceID = types.ID(si.DeprecatedJIRAServerURL)
 
 	case nil:
+		return instances, nil
 
 	default:
 		return nil, errors.Errorf("Can not finish v2 migration: Jira instance has type %T, which is not valid", instance)

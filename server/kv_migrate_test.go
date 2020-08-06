@@ -10,10 +10,11 @@ import (
 
 func TestMigrateV2Instances(t *testing.T) {
 	tests := map[string]struct {
-		known           string
-		current         string
-		expectInstances string
-		expectInstance  string
+		known                string
+		current              string
+		expectInstances      string
+		expectInstance       string
+		numExpectedInstances int
 	}{
 		"Server": {
 			known: `{"http://localhost:8080":"server"}`,
@@ -24,8 +25,9 @@ func TestMigrateV2Instances(t *testing.T) {
 				"JIRAServerURL":"http://localhost:8080",
 				"MattermostKey":"mattermost_https_levb_ngrok_io"
 			}`,
-			expectInstance:  `{"PluginVersion":"3.0.0","InstanceID":"http://localhost:8080","Type":"server","IsV2Legacy":true,"MattermostKey":"mattermost_https_levb_ngrok_io","JIRAServerURL":"http://localhost:8080"}`,
-			expectInstances: `[{"PluginVersion":"3.0.0","InstanceID":"http://localhost:8080","Type":"server","IsV2Legacy":true}]`,
+			expectInstance:       `{"PluginVersion":"3.0.0","InstanceID":"http://localhost:8080","Type":"server","IsV2Legacy":true,"MattermostKey":"mattermost_https_levb_ngrok_io","JIRAServerURL":"http://localhost:8080"}`,
+			expectInstances:      `[{"PluginVersion":"3.0.0","InstanceID":"http://localhost:8080","Type":"server","IsV2Legacy":true}]`,
+			numExpectedInstances: 1,
 		},
 		"Cloud": {
 			known: `{"https://mmtest.atlassian.net":"cloud"}`,
@@ -36,8 +38,14 @@ func TestMigrateV2Instances(t *testing.T) {
 				"Installed": true,
 				"RawAtlassianSecurityContext": "{\"BaseURL\":\"https://mmtest.atlassian.net\"}"
 			}`,
-			expectInstance:  `{"PluginVersion":"3.0.0","InstanceID":"https://mmtest.atlassian.net","Type":"cloud","IsV2Legacy":true,"Installed":true,"RawAtlassianSecurityContext":"{\"BaseURL\":\"https://mmtest.atlassian.net\"}"}`,
-			expectInstances: `[{"PluginVersion":"3.0.0","InstanceID":"https://mmtest.atlassian.net","Type":"cloud","IsV2Legacy":true}]`,
+			expectInstance:       `{"PluginVersion":"3.0.0","InstanceID":"https://mmtest.atlassian.net","Type":"cloud","IsV2Legacy":true,"Installed":true,"RawAtlassianSecurityContext":"{\"BaseURL\":\"https://mmtest.atlassian.net\"}"}`,
+			expectInstances:      `[{"PluginVersion":"3.0.0","InstanceID":"https://mmtest.atlassian.net","Type":"cloud","IsV2Legacy":true}]`,
+			numExpectedInstances: 1,
+		},
+		"No Instance Installed": {
+			known:                `{}`,
+			current:              "",
+			numExpectedInstances: 0,
 		},
 	}
 
@@ -45,37 +53,16 @@ func TestMigrateV2Instances(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
-			api.On("LogError",
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string")).Return(nil)
-
-			api.On("LogDebug",
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogDebug", mock.AnythingOfTypeArgument("string")).Return(nil)
 
 			api.On("KVGet", keyInstances).Return(nil, nil)
 			api.On("KVGet", v2keyKnownJiraInstances).Return([]byte(tc.known), nil)
-			api.On("KVGet", v2keyCurrentJIRAInstance).Return([]byte(tc.current), nil)
+			if tc.current != "" {
+				api.On("KVGet", v2keyCurrentJIRAInstance).Return([]byte(tc.current), nil)
+			} else {
+				api.On("KVGet", v2keyCurrentJIRAInstance).Return(nil, nil)
+			}
 
 			storedInstancePayload := []byte{}
 			storedInstancesPayload := []byte{}
@@ -102,11 +89,13 @@ func TestMigrateV2Instances(t *testing.T) {
 			instances, err := MigrateV2Instances(p)
 			require.NoError(t, err)
 
-			require.Equal(t, 1, instances.Len())
-			id := instances.IDs()[0]
-			require.Equal(t, tc.expectInstance, string(storedInstancePayload))
-			require.Equal(t, tc.expectInstances, string(storedInstancesPayload))
-			require.Equal(t, id, instances.Get(id).GetID())
+			require.Equal(t, tc.numExpectedInstances, instances.Len())
+			if instances.Len() > 0 {
+				id := instances.IDs()[0]
+				require.Equal(t, tc.expectInstance, string(storedInstancePayload))
+				require.Equal(t, tc.expectInstances, string(storedInstancesPayload))
+				require.Equal(t, id, instances.Get(id).GetID())
+			}
 		})
 	}
 }
