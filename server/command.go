@@ -24,7 +24,6 @@ var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
 		"assign":                  executeAssign,
 		"connect":                 executeConnect,
-		"debug/clean-kv":          executeDebugCleanKV,
 		"debug/stats/expvar":      executeDebugStatsExpvar,
 		"debug/stats/reset":       executeDebugStatsReset,
 		"debug/stats/save":        executeDebugStatsSave,
@@ -860,18 +859,6 @@ func executeDebugStatsExpvar(p *Plugin, c *plugin.Context, commandArgs *model.Co
 
 func executeDebugWorkflow(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
 	return p.responsef(commandArgs, "Workflow Store:\n %v", p.workflowTriggerStore)
-}
-
-func executeDebugCleanKV(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	authorized, err := authorizedSysAdmin(p, header.UserId)
-	if err != nil {
-		return p.responsef(header, "%v", err)
-	}
-	if !authorized {
-		return p.responsef(header, "`/jira debug` can only be run by a system administrator.")
-	}
-	p.API.KVDeleteAll()
-	return p.responsef(header, "Deleted all\n")
 }
 
 func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, useExpvar bool, args ...string) *model.CommandResponse {
