@@ -131,7 +131,7 @@ type Plugin struct {
 	// telemetry Tracker
 	Tracker jiraTracker.Tracker
 
-	// service that determiines if this Mattermost instance has access to
+	// service that determines if this Mattermost instance has access to
 	// enterprise features
 	enterpriseChecker enterprise.EnterpriseChecker
 }
