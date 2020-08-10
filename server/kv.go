@@ -30,6 +30,8 @@ const (
 	prefixUser          = "user_"
 )
 
+type jiraV2Instances map[string]string
+
 var ErrAlreadyExists = errors.New("already exists")
 
 type Store interface {
@@ -52,6 +54,8 @@ type InstanceStore interface {
 	LoadInstances() (*Instances, error)
 	StoreInstance(instance Instance) error
 	StoreInstances(*Instances) error
+	StoreKnownJIRAInstancesAsV2(known jiraV2Instances) error
+	DeleteInstances() error
 }
 
 type UserStore interface {
@@ -542,6 +546,14 @@ func (store *store) LoadInstances() (*Instances, error) {
 	}, nil
 }
 
+func (store *store) DeleteInstances() error {
+	appErr := store.plugin.API.KVDelete(keyInstances)
+	if appErr != nil {
+		return appErr
+	}
+	return nil
+}
+
 func (store *store) StoreInstances(instances *Instances) error {
 	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
 	return kv.ValueIndex(keyInstances, &instancesArray{}).Store(instances.ValueSet)
@@ -586,7 +598,7 @@ func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	}
 
 	// Convert the V2 instances
-	v2instances := map[string]string{}
+	var v2instances jiraV2Instances
 	if len(data) != 0 {
 		err = json.Unmarshal(data, &v2instances)
 		if err != nil {
@@ -634,6 +646,86 @@ func MigrateV2Instances(p *Plugin) (*Instances, error) {
 		return nil, err
 	}
 	return instances, nil
+}
+
+func (store store) StoreKnownJIRAInstancesAsV2(known jiraV2Instances) (returnErr error) {
+	defer func() {
+		if returnErr == nil {
+			return
+		}
+		returnErr = errors.WithMessage(returnErr,
+			fmt.Sprintf("failed to store known Jira instances %+v", known))
+	}()
+
+	return store.set(v2keyKnownJiraInstances, known)
+}
+
+//  MigrateV3ToV2 performs necessary migrations when reverting from V3 to  V2
+func MigrateV3ToV2(p *Plugin) string {
+	// migrate V3 instances to v2
+	v2Instances, msg := MigrateV3InstancesToV2(p)
+	if msg != "" {
+		return msg
+	}
+
+	err := p.instanceStore.StoreKnownJIRAInstancesAsV2(v2Instances)
+	if err != nil {
+		return err.Error()
+	}
+
+	// delete instance/v3 key
+	err = p.instanceStore.DeleteInstances()
+	if err != nil {
+		return err.Error()
+	}
+
+	return msg
+}
+
+// MigrateV3InstancesToV2 migrates instance record(s) from the V3 data model.
+//
+// - v3 instances need to be stored as v2keyKnownJiraInstances
+//   (known_jira_instances)  map[string]string (InstanceID->Type),
+// - v2keyCurrentJIRAInstance ("current_jira_instance") stored an Instance; will
+//   be used to set the default instance.
+func MigrateV3InstancesToV2(p *Plugin) (jiraV2Instances, string) {
+
+	// Check if V3 instances exist
+	v3instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return nil, err.Error()
+	}
+	if v3instances.IsEmpty() {
+		return nil, fmt.Sprint("(none installed)")
+	}
+
+	// if there are no V2 legacy instances, don't allow migrating/reverting to old V2 version.
+	numV2legacyInstances := 0
+
+	// Convert the V3 instances back to V2
+	v2instances := jiraV2Instances{}
+	for _, key := range v3instances.IDs() {
+		instanceID := types.ID(key)
+
+		instance, err := p.instanceStore.LoadInstance(instanceID)
+		if err != nil {
+			return nil, err.Error()
+		}
+
+		if instance.Common().IsV2Legacy == true {
+			numV2legacyInstances += 1
+		}
+
+		ID := instance.GetID()
+		instanceType := instance.Common().Type
+		v2instances[string(ID)] = string(instanceType)
+	}
+
+	if numV2legacyInstances == 0 {
+		return nil, "No Jira V2 legacy instances found.  V3 to V2 Jira migrations are only allowed when the Jira plugin has been previously migrated from a V2 version."
+	}
+
+	return v2instances, ""
 }
 
 // MigrateV2User migrates a user record from the V2 data model if needed. It

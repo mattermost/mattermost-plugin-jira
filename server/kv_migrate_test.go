@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
@@ -96,6 +97,90 @@ func TestMigrateV2Instances(t *testing.T) {
 				require.Equal(t, tc.expectInstances, string(storedInstancesPayload))
 				require.Equal(t, id, instances.Get(id).GetID())
 			}
+		})
+	}
+}
+
+func TestMigrateV3InstancesToV2(t *testing.T) {
+	tests := map[string]struct {
+		expectKnown    jiraV2Instances
+		currentV3      string
+		v3Instances    string
+		expectInstance string
+		expectMessage  string
+	}{
+		"No Instance Installed": {
+			expectMessage: "unexpected end of JSON input",
+			expectKnown:   nil,
+		},
+		"no v2legacy instances found": {
+			currentV3: `{
+				"InstanceID":"http://localhost:8080",
+				"Key":"http://localhost:8080",
+				"Type":"server",
+				"IsV2Legacy":false,
+				"PluginVersion":"3.0.0",
+				"JIRAServerURL":"http://localhost:8080",
+				"MattermostKey":"mattermost_https_levb_ngrok_io"
+			}`,
+			v3Instances:   `[{"PluginVersion":"3.0.0","InstanceID":"http://localhost:8080","Type":"server","IsV2Legacy":true}]`,
+			expectKnown:   nil,
+			expectMessage: "No Jira V2 legacy instances found.  V3 to V2 Jira migrations are only allowed when the Jira plugin has been previously migrated from a V2 version.",
+		},
+		"Server": {
+			currentV3: `{
+				"InstanceID":"http://localhost:8080",
+				"Key":"http://localhost:8080",
+				"Type":"server",
+				"IsV2Legacy":true,
+				"PluginVersion":"2.4.0",
+				"JIRAServerURL":"http://localhost:8080",
+				"MattermostKey":"mattermost_https_levb_ngrok_io"
+			}`,
+			v3Instances:   `[{"PluginVersion":"3.0.0","InstanceID":"http://localhost:8080","Type":"server","IsV2Legacy":true}]`,
+			expectKnown:   jiraV2Instances{"http://localhost:8080": "server"},
+			expectMessage: "",
+		},
+		"Cloud": {
+			currentV3: `{
+				"InstanceID": "https://mmtest.atlassian.net",
+				"Key": "https://mmtest.atlassian.net",
+				"Type": "cloud",
+				"IsV2Legacy":true,
+				"PluginVersion": "2.4.0",
+				"Installed": true,
+				"RawAtlassianSecurityContext": "{\"BaseURL\":\"https://mmtest.atlassian.net\"}"
+			}`,
+			v3Instances:   `[{"PluginVersion":"3.0.0","InstanceID":"https://mmtest.atlassian.net","Type":"server","IsV2Legacy":true}]`,
+			expectKnown:   jiraV2Instances{"https://mmtest.atlassian.net": "cloud"},
+			expectMessage: "",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+
+			api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogDebug", mock.AnythingOfTypeArgument("string")).Return(nil)
+
+			// get mock v3 instances
+			api.On("KVGet", keyInstances).Return([]byte(tc.v3Instances), nil)
+
+			api.On("KVGet", "jira_instance_37d007a56d816107ce5b52c10342db37").Return([]byte(tc.currentV3), nil)
+			api.On("KVGet", "jira_instance_b5f8e96862ed24709919a73271ae8851").Return([]byte(tc.currentV3), nil)
+
+			p := &Plugin{}
+			p.SetAPI(api)
+			store := NewStore(p)
+			p.instanceStore = store
+			manifest.Version = "3.0.0"
+
+			v2Instances, msg := MigrateV3InstancesToV2(p)
+			fmt.Printf("v2Instances = %+v\n", v2Instances)
+
+			require.Equal(t, tc.expectKnown, v2Instances)
+			require.Equal(t, tc.expectMessage, msg)
 		})
 	}
 }

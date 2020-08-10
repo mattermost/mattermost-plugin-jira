@@ -52,6 +52,7 @@ var jiraCommandHandler = CommandHandler{
 		"unassign":                executeUnassign,
 		"uninstall":               executeInstanceUninstall,
 		"view":                    executeView,
+		"v2revert":                executeV2Revert,
 		"webhook":                 executeWebhookURL,
 	},
 	defaultHandler: executeJiraDefault,
@@ -89,6 +90,7 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"* `/jira instance v2 <jiraURL>` - Set the Jira instance to process \"v2\" webhooks and subscriptions (not prefixed with the instance ID)\n" +
 	"* `/jira stats` - Display usage statistics\n" +
 	"* `/jira webhook [--instance=<jiraURL>]` -  Show the Mattermost webhook to receive JQL queries\n" +
+	"* `/jira v2revert ` - Revert to V2 jira plugin data model\n" +
 	""
 
 func (p *Plugin) registerJiraCommand(enableAutocomplete, enableOptInstance bool) error {
@@ -468,6 +470,54 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	post.AddProp("attachments", attachment)
 
 	_ = p.API.SendEphemeralPost(header.UserId, post)
+
+	return &model.CommandResponse{}
+}
+
+// executeV2Revert reverts the store from v3 to v2 and instructs the user how
+// to proceed with downgrading
+func executeV2Revert(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(header, "`/jira v2revert` can only be run by a system administrator.")
+	}
+
+	preMessage := `#### |/jira v2revert| will revert the V3 Jira plugin database to V2. Please use the |--force| flag to complete this command.` + "\n"
+	// inform user the --force is required to complete the command
+	if len(args) == 1 && args[0] == "--force" {
+		msg := MigrateV3ToV2(p)
+		if msg != "" {
+			return p.responsef(header, msg)
+		}
+		preMessage = `#### Successfully reverted the V3 Jira plugin database to V2.` + "\n"
+	}
+
+	message := `After successfully reverting, please **choose one** of the following:
+
+##### 1. Install Jira plugin |v2.4.1|
+Downgrade to install the v2 compatible Jira plugin and use the reverted V2 data models created by the |v2revert| command.
+
+##### 2. Continue using the |v3| data model of the plugin
+After running |/jira v2revert| and downgrading the Jira plugin, you can migrate to Jira |v3.0+| by simply installing the v3 plugin again.
+If you ran |v2revert| unintentionally and would like to continue using the current version of the plugin (|v3+|) you can restarting the plugin through |System Console| > |PLUGINS| > |Plugin Management|.  This will perform the necessary migration steps to use a v3+ version of the Jira plugin.
+
+* how to handle multiserver? use default? does it matter?`
+
+	message = preMessage + message
+	message = strings.Replace(message, "|", "`", -1)
+
+	post := &model.Post{
+		UserId:    p.getUserID(),
+		ChannelId: header.ChannelId,
+		Message:   message,
+	}
+
+	_ = p.API.SendEphemeralPost(header.UserId, post)
+
+	p.Tracker.TrackV2Revert(header.UserId)
 
 	return &model.CommandResponse{}
 }
