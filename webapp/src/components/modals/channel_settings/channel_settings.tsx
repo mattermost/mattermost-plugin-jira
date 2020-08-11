@@ -15,6 +15,51 @@ import './channel_settings_modal.scss';
 export type Props = SharedProps;
 
 export default class ChannelSettingsModal extends PureComponent<Props> {
+    state = {
+        showModal: false,
+        allProjectMetadata: null,
+    }
+
+    componentDidUpdate(prevProps: Props) {
+        if (prevProps.channel && !this.props.channel) {
+            this.handleModalClosed();
+        } else if(!prevProps.channel && this.props.channel) {
+            this.handleModalOpened();
+        }
+    }
+
+    handleModalClosed = () => {
+        this.setState({showModal: false});
+    }
+
+    handleModalOpened = () => {
+        this.fetchData();
+    }
+
+    fetchData = async (): Promise<void> => {
+        if (!this.props.channel) {
+            return;
+        }
+
+        this.props.sendEphemeralPost('Fetching subscriptions.');
+
+        const subsResponse = await this.props.fetchChannelSubscriptions(this.props.channel.id);
+        if (subsResponse.error) {
+            this.props.sendEphemeralPost('You do not have permission to edit subscriptions for this channel. Subscribing to Jira events will create notifications in this channel when certain events occur, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.');
+            this.props.close();
+            return;
+        }
+
+        const projectResponses = await this.props.fetchJiraProjectMetadataForAllInstances();
+        if (projectResponses.error) {
+            this.props.sendEphemeralPost('Failed to fetch project metadata for any projects.');
+            this.props.close();
+            return;
+        }
+
+        this.setState({showModal: true, allProjectMetadata: projectResponses.data});
+    };
+
     handleClose = (e?: Event): void => {
         if (e && e.preventDefault) {
             e.preventDefault();
@@ -24,12 +69,13 @@ export default class ChannelSettingsModal extends PureComponent<Props> {
     };
 
     render(): JSX.Element {
-        const isModalOpen = Boolean(this.props.channel);
+        const isModalOpen = this.props.channel && this.state.showModal;
 
         let inner;
         if (isModalOpen) {
             inner = (
                 <ChannelSettingsModalInner
+                    allProjectMetadata={this.state.allProjectMetadata}
                     {...this.props}
                 />
             );
