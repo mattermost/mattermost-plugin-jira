@@ -23,7 +23,7 @@ export default class ChannelSettingsModal extends PureComponent<Props> {
     componentDidUpdate(prevProps: Props) {
         if (prevProps.channel && !this.props.channel) {
             this.handleModalClosed();
-        } else if(!prevProps.channel && this.props.channel) {
+        } else if (!prevProps.channel && this.props.channel) {
             this.handleModalOpened();
         }
     }
