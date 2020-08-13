@@ -4,81 +4,59 @@
 package main
 
 import (
-	"net/http"
-	"regexp"
-	"sync"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
+
+type InstanceType string
 
 const (
-	JIRATypeCloud  = "cloud"
-	JIRATypeServer = "server"
+	CloudInstanceType  = InstanceType("cloud")
+	ServerInstanceType = InstanceType("server")
 )
 
-const prefixForInstance = true
-
-const wSEventInstanceStatus = "instance_status"
-
 type Instance interface {
-	GetClient(jiraUser JIRAUser) (Client, error)
+	GetClient(*Connection) (Client, error)
 	GetDisplayDetails() map[string]string
-	GetMattermostKey() string
-	GetPlugin() *Plugin
-	GetType() string
-	GetURL() string
 	GetUserConnectURL(mattermostUserId string) (string, error)
 	GetManageAppsURL() string
-	Init(p *Plugin)
+	GetManageWebhooksURL() string
+	GetURL() string
+
+	Common() *InstanceCommon
+	types.Value
 }
 
-type JIRAInstance struct {
-	*Plugin `json:"-"`
-	lock    *sync.RWMutex
+// InstanceCommon contains metadata common for both cloud and server instances.
+// The fields lack `json` modifiers to be backwards compatible with v2.
+type InstanceCommon struct {
+	*Plugin       `json:"-"`
+	PluginVersion string `json:",omitempty"`
 
-	Key           string
-	Type          string
-	PluginVersion string
+	InstanceID types.ID
+	Type       InstanceType
+	IsV2Legacy bool
 }
 
-type InstanceStatus struct {
-	InstanceInstalled bool   `json:"instance_installed"`
-	InstanceType      string `json:"instance_type"`
-}
-
-var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
-
-func NewJIRAInstance(p *Plugin, typ, key string) *JIRAInstance {
-	return &JIRAInstance{
+func newInstanceCommon(p *Plugin, instanceType InstanceType, instanceID types.ID) *InstanceCommon {
+	return &InstanceCommon{
 		Plugin:        p,
-		Type:          typ,
-		Key:           key,
+		Type:          instanceType,
+		InstanceID:    instanceID,
 		PluginVersion: manifest.Version,
-		lock:          &sync.RWMutex{},
 	}
 }
 
-func (ji JIRAInstance) GetKey() string {
-	return ji.Key
-}
-
-func (ji JIRAInstance) GetType() string {
-	return ji.Type
-}
-
-func (ji JIRAInstance) GetPlugin() *Plugin {
-	return ji.Plugin
-}
-
-func (ji *JIRAInstance) Init(p *Plugin) {
-	ji.Plugin = p
-	ji.lock = &sync.RWMutex{}
-}
-
-type withInstanceFunc func(ji Instance, w http.ResponseWriter, r *http.Request) (int, error)
-
-func withInstance(store CurrentInstanceStore, w http.ResponseWriter, r *http.Request, f withInstanceFunc) (int, error) {
-	ji, err := store.LoadCurrentJIRAInstance()
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+func (ic InstanceCommon) AsConfigMap() map[string]interface{} {
+	return map[string]interface{}{
+		"type":        string(ic.Type),
+		"instance_id": string(ic.InstanceID),
 	}
-	return f(ji, w, r)
+}
+
+func (common InstanceCommon) GetID() types.ID {
+	return common.InstanceID
+}
+
+func (common *InstanceCommon) Common() *InstanceCommon {
+	return common
 }

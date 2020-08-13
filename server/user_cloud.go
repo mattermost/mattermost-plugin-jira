@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v5/model"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (
@@ -19,20 +21,30 @@ const (
 	argMMToken = "mm_token"
 )
 
-func httpACUserRedirect(jci *jiraCloudInstance, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) httpACUserRedirect(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
 	if r.Method != http.MethodGet {
 		return respondErr(w, http.StatusMethodNotAllowed,
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
-	_, _, err := jci.parseHTTPRequestJWT(r)
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+	ci, ok := instance.(*cloudInstance)
+	if !ok {
+		return respondErr(w, http.StatusInternalServerError,
+			errors.Errorf("Not supported for instance type %s", instance.Common().Type))
+	}
+
+	_, _, err = ci.parseHTTPRequestJWT(r)
 	if err != nil {
 		return respondErr(w, http.StatusBadRequest, err)
 	}
 
-	submitURL := path.Join(jci.Plugin.GetPluginURLPath(), routeACUserConfirm)
+	submitURL := path.Join(ci.Plugin.GetPluginURLPath(), instancePath(routeACUserConfirm, instanceID))
 
-	return jci.Plugin.respondTemplate(w, r, "text/html", struct {
+	return ci.Plugin.respondTemplate(w, r, "text/html", struct {
 		SubmitURL  string
 		ArgJiraJWT string
 		ArgMMToken string
@@ -43,8 +55,18 @@ func httpACUserRedirect(jci *jiraCloudInstance, w http.ResponseWriter, r *http.R
 	})
 }
 
-func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *http.Request) (int, error) {
-	jwtToken, _, err := jci.parseHTTPRequestJWT(r)
+func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+	ci, ok := instance.(*cloudInstance)
+	if !ok {
+		return respondErr(w, http.StatusInternalServerError,
+			errors.Errorf("2 Not supported for instance type %s", instance.Common().Type))
+	}
+
+	jwtToken, _, err := ci.parseHTTPRequestJWT(r)
 	if err != nil {
 		return respondErr(w, http.StatusBadRequest, err)
 	}
@@ -57,7 +79,7 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 		return respondErr(w, http.StatusBadRequest, errors.New("invalid JWT claim sub"))
 	}
 
-	jiraClient, err := jci.getJIRAClientForUser(JIRAUser{User: jira.User{AccountID: accountId}})
+	jiraClient, _, err := ci.getClientForConnection(&Connection{User: jira.User{AccountID: accountId}})
 	if err != nil {
 		return respondErr(w, http.StatusBadRequest, errors.Errorf("could not get client for user, err: %v", err))
 	}
@@ -68,7 +90,7 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 	}
 
 	mmToken := r.FormValue(argMMToken)
-	uinfo := JIRAUser{
+	connection := &Connection{
 		PluginVersion: manifest.Version,
 		User: jira.User{
 			AccountID:   accountId,
@@ -77,21 +99,21 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 			DisplayName: jUser.DisplayName,
 		},
 		// Set default settings the first time a user connects
-		Settings: &UserSettings{
+		Settings: &ConnectionSettings{
 			Notifications: true,
 		},
 	}
 
 	mattermostUserId := r.Header.Get("Mattermost-User-ID")
 	if mattermostUserId == "" {
-		siteURL := jci.Plugin.GetSiteURL()
+		siteURL := p.GetSiteURL()
 		return respondErr(w, http.StatusUnauthorized, errors.New(
 			`Mattermost failed to recognize your user account. `+
 				`Please make sure third-party cookies are not disabled in your browser settings. `+
 				`Make sure you are signed into Mattermost on `+siteURL+`.`))
 	}
 
-	requestedUserId, secret, err := jci.Plugin.ParseAuthToken(mmToken)
+	requestedUserId, secret, err := p.ParseAuthToken(mmToken)
 	if err != nil {
 		return respondErr(w, http.StatusUnauthorized, err)
 	}
@@ -100,26 +122,33 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized, user id does not match link"))
 	}
 
-	mmuser, appErr := jci.Plugin.API.GetUser(mattermostUserId)
+	mmuser, appErr := p.API.GetUser(mattermostUserId)
 	if appErr != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.WithMessage(appErr, "failed to load user "+mattermostUserId))
 	}
 
-	switch r.URL.Path {
+	_, urlpath := splitInstancePath(r.URL.Path)
+	switch urlpath {
 	case routeACUserConnected:
 		storedSecret := ""
-		storedSecret, err = jci.Plugin.otsStore.LoadOneTimeSecret(mattermostUserId)
+		storedSecret, err = p.otsStore.LoadOneTimeSecret(mattermostUserId)
 		if err != nil {
 			return respondErr(w, http.StatusUnauthorized, err)
 		}
 		if len(storedSecret) == 0 || storedSecret != secret {
 			return respondErr(w, http.StatusUnauthorized, errors.New("this link has already been used"))
 		}
-		err = jci.Plugin.StoreUserInfoNotify(jci, mattermostUserId, uinfo)
+		err = p.connectUser(ci, types.ID(mattermostUserId), connection)
+		if err != nil {
+			return respondErr(w, http.StatusInternalServerError, err)
+		}
+		// TODO For https://github.com/mattermost/mattermost-plugin-jira/issues/149, need a channel ID
+		// msg := fmt.Sprintf("You have successfully connected your Jira account (**%s**).", connection.DisplayName)
+		// _ = p.API.SendEphemeralPost(mattermostUserId, makePost(p.getUserID(), channelID, msg))
 
 	case routeACUserDisconnected:
-		err = jci.Plugin.DeleteUserInfoNotify(jci, mattermostUserId)
+		_, err = p.DisconnectUser(ci.InstanceID.String(), types.ID(mattermostUserId))
 
 	case routeACUserConfirm:
 
@@ -140,7 +169,9 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 	}
 
 	// This set of props should work for all relevant routes/templates
-	return jci.Plugin.respondTemplate(w, r, "text/html", struct {
+	connectSubmitURL := path.Join(p.GetPluginURLPath(), instancePath(routeACUserConnected, instanceID))
+	disconnectSubmitURL := path.Join(p.GetPluginURLPath(), instancePath(routeACUserDisconnected, instanceID))
+	return ci.Plugin.respondTemplate(w, r, "text/html", struct {
 		ConnectSubmitURL      string
 		DisconnectSubmitURL   string
 		ArgJiraJWT            string
@@ -149,8 +180,8 @@ func httpACUserInteractive(jci *jiraCloudInstance, w http.ResponseWriter, r *htt
 		JiraDisplayName       string
 		MattermostDisplayName string
 	}{
-		DisconnectSubmitURL:   path.Join(jci.Plugin.GetPluginURLPath(), routeACUserDisconnected),
-		ConnectSubmitURL:      path.Join(jci.Plugin.GetPluginURLPath(), routeACUserConnected),
+		DisconnectSubmitURL:   disconnectSubmitURL,
+		ConnectSubmitURL:      connectSubmitURL,
 		ArgJiraJWT:            argJiraJWT,
 		ArgMMToken:            argMMToken,
 		MMToken:               mmToken,

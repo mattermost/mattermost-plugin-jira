@@ -10,6 +10,7 @@ import (
 	"math"
 	"net/url"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"text/template"
@@ -22,8 +23,11 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
+	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
+	"github.com/mattermost/mattermost-plugin-jira/server/jiraTracker"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/telemetry"
 )
 
 const (
@@ -71,6 +75,9 @@ type externalConfig struct {
 
 	// Hide issue descriptions and comments in Webhook and Subscription messages
 	HideDecriptionComment bool
+
+	// Enable slash command autocomplete
+	EnableAutocomplete bool
 }
 
 const currentInstanceTTL = 1 * time.Second
@@ -84,16 +91,14 @@ type config struct {
 	// user ID of the bot account
 	botUserID string
 
-	// Cached current Jira instance. A non-0 expires indicates the presence
-	// of a value. A nil value means there is no instance available.
-	currentInstance        Instance
-	currentInstanceExpires time.Time
-
 	// Maximum attachment size allowed to be uploaded to Jira
 	maxAttachmentSize utils.ByteSize
 
 	stats             *expvar.Stats
 	statsStopAutosave chan bool
+
+	mattermostSiteURL string
+	rsaKey            *rsa.PrivateKey
 }
 
 type Plugin struct {
@@ -103,11 +108,10 @@ type Plugin struct {
 	conf     config
 	confLock sync.RWMutex
 
-	currentInstanceStore CurrentInstanceStore
-	instanceStore        InstanceStore
-	userStore            UserStore
-	otsStore             OTSStore
-	secretsStore         SecretsStore
+	instanceStore InstanceStore
+	userStore     UserStore
+	otsStore      OTSStore
+	secretsStore  SecretsStore
 
 	// Active workflows store
 	workflowTriggerStore *TriggerStore
@@ -119,7 +123,17 @@ type Plugin struct {
 	templates map[string]*template.Template
 
 	// channel to distribute work to the webhook processors
-	webhookQueue chan []byte
+	webhookQueue chan *webhookMessage
+
+	// telemetry client
+	telemetryClient telemetry.Client
+
+	// telemetry Tracker
+	Tracker jiraTracker.Tracker
+
+	// service that determines if this Mattermost instance has access to
+	// enterprise features
+	enterpriseChecker enterprise.EnterpriseChecker
 }
 
 func (p *Plugin) getConfig() config {
@@ -154,14 +168,54 @@ func (p *Plugin) OnConfigurationChange() error {
 		}
 	}
 
+	prev := p.getConfig()
 	p.updateConfig(func(conf *config) {
 		conf.externalConfig = ec
 		conf.maxAttachmentSize = maxAttachmentSize
 	})
+
+	// OnConfigurationChanged is first called before the plugin is activated,
+	// in this case don't register the command, let Activate do it, it has the instanceStore.
+	// TODO: consider moving (some? stores? all?) initialization into the first OnConfig instead of OnActivate.
+	if prev.EnableAutocomplete != ec.EnableAutocomplete && p.instanceStore != nil {
+		instances, err := p.instanceStore.LoadInstances()
+		if err != nil {
+			return err
+		}
+		p.registerJiraCommand(ec.EnableAutocomplete, instances.Len() > 1)
+	}
+
+	// create new tracker on each configuration change
+	p.Tracker = jiraTracker.New(telemetry.NewTracker(
+		p.telemetryClient,
+		p.API.GetDiagnosticId(),
+		p.API.GetServerVersion(),
+		manifest.Id,
+		manifest.Version,
+		*p.API.GetConfig().LogSettings.EnableDiagnostics,
+	))
+
+	return nil
+}
+
+func (p *Plugin) OnDeactivate() error {
+	// close the tracker on plugin deactivation
+	if p.telemetryClient != nil {
+		err := p.telemetryClient.Close()
+		if err != nil {
+			return errors.Wrap(err, "OnDeactivate: Failed to close telemetryClient.")
+		}
+	}
 	return nil
 }
 
 func (p *Plugin) OnActivate() error {
+	store := NewStore(p)
+	p.instanceStore = store
+	p.userStore = store
+	p.secretsStore = store
+	p.otsStore = store
+
 	botUserID, err := p.Helpers.EnsureBot(&model.Bot{
 		Username:    botUserName,
 		DisplayName: botDisplayName,
@@ -171,8 +225,21 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrap(err, "failed to ensure bot account")
 	}
 
+	mattermostSiteURL := ""
+	ptr := p.API.GetConfig().ServiceSettings.SiteURL
+	if ptr != nil {
+		mattermostSiteURL = *ptr
+	}
+
+	rsaKey, err := p.secretsStore.EnsureRSAKey()
+	if err != nil {
+		return errors.WithMessage(err, "OnActivate: failed to make RSA public key")
+	}
+
 	p.updateConfig(func(conf *config) {
 		conf.botUserID = botUserID
+		conf.mattermostSiteURL = mattermostSiteURL
+		conf.rsaKey = rsaKey
 	})
 
 	bundlePath, err := p.API.GetBundlePath()
@@ -189,26 +256,26 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrap(appErr, "couldn't set profile image")
 	}
 
-	store := NewStore(p)
-	p.currentInstanceStore = store
-	p.instanceStore = store
-	p.userStore = store
-	p.secretsStore = store
-	p.otsStore = store
+	instances, err := MigrateV2Instances(p)
+	if err != nil {
+		return errors.WithMessage(err, "OnActivate: failed to migrate from previous version of the Jira plugin")
+	}
 
 	templates, err := p.loadTemplates(filepath.Join(bundlePath, "assets", "templates"))
 	if err != nil {
-		return errors.WithMessage(err, "OnActivate: failed to load templates")
+		return err
 	}
 	p.templates = templates
 
-	err = p.API.RegisterCommand(getCommand())
+	// Register /jira command and stash the loaded list of known instances for
+	// later (autolink registration).
+	err = p.registerJiraCommand(p.getConfig().EnableAutocomplete, instances.Len() > 1)
 	if err != nil {
-		return errors.WithMessage(err, "OnActivate: failed to register command")
+		return errors.Wrap(err, "OnActivate")
 	}
 
 	// Create our queue of webhook events waiting to be processed.
-	p.webhookQueue = make(chan []byte, WebhookBufferSize)
+	p.webhookQueue = make(chan *webhookMessage, WebhookBufferSize)
 
 	// Spin up our webhook workers.
 	for i := 0; i < WebhookMaxProcsPerServer; i++ {
@@ -217,40 +284,42 @@ func (p *Plugin) OnActivate() error {
 
 	p.workflowTriggerStore = NewTriggerStore()
 
+	p.enterpriseChecker = enterprise.NewEnterpriseChecker(p.API)
+
 	go p.initStats()
+
 	go func() {
-		time.Sleep(time.Second * 10)
-
-		instances, err := p.instanceStore.LoadKnownJIRAInstances()
-		if err != nil {
-			p.API.LogError("unable to register autolinks", "err", err)
-			return
-		}
-
-		for url := range instances {
-			instance, err := p.instanceStore.LoadJIRAInstance(url)
+		for _, url := range instances.IDs() {
+			var instance Instance
+			instance, err = p.instanceStore.LoadInstance(url)
 			if err != nil {
 				continue
 			}
 
-			jci, ok := instance.(*jiraCloudInstance)
+			ci, ok := instance.(*cloudInstance)
 			if !ok {
 				p.API.LogWarn("only cloud instances supported for autolink", "err", err)
 				continue
 			}
 
-			if err := p.AddAutolinksForCloudInstance(jci); err != nil {
-				p.API.LogWarn("could not install autolinks for cloud instance", "instance", jci.BaseURL, "err", err)
+			if err = p.AddAutolinksForCloudInstance(ci); err != nil {
+				p.API.LogWarn("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 				continue
 			}
 		}
 	}()
 
+	// initialize the rudder client once on activation
+	p.telemetryClient, err = telemetry.NewRudderClient()
+	if err != nil {
+		p.API.LogError("Cannot create telemetry client. err=%v", err)
+	}
+
 	return nil
 }
 
-func (p *Plugin) AddAutolinksForCloudInstance(jci *jiraCloudInstance) error {
-	client, err := jci.getJIRAClientForBot()
+func (p *Plugin) AddAutolinksForCloudInstance(ci *cloudInstance) error {
+	client, err := ci.getClientForBot()
 	if err != nil {
 		return fmt.Errorf("unable to get jira client for server: %w", err)
 	}
@@ -261,7 +330,7 @@ func (p *Plugin) AddAutolinksForCloudInstance(jci *jiraCloudInstance) error {
 	}
 
 	for _, key := range keys {
-		err = p.AddAutolinks(key, jci.BaseURL)
+		err = p.AddAutolinks(key, ci.BaseURL)
 	}
 	if err != nil {
 		return fmt.Errorf("some keys were not installed: %w", err)
@@ -293,6 +362,8 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 	return nil
 }
 
+var regexpNonAlnum = regexp.MustCompile("[^a-zA-Z0-9]+")
+
 func (p *Plugin) GetPluginKey() string {
 	sURL := p.GetSiteURL()
 	prefix := "mattermost_"
@@ -311,11 +382,7 @@ func (p *Plugin) GetPluginURL() string {
 }
 
 func (p *Plugin) GetSiteURL() string {
-	ptr := p.API.GetConfig().ServiceSettings.SiteURL
-	if ptr == nil {
-		return ""
-	}
-	return *ptr
+	return p.getConfig().mattermostSiteURL
 }
 
 func (p *Plugin) debugf(f string, args ...interface{}) {

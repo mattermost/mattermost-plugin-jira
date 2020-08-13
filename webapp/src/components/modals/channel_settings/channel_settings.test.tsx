@@ -22,7 +22,7 @@ describe('components/ChannelSettingsModal', () => {
         sendEphemeralPost: jest.fn(),
         jiraIssueMetadata: {} as IssueMetadata,
         jiraProjectMetadata: {} as ProjectMetadata,
-        channel: null,
+        channel: testChannel,
         channelSubscriptions: [],
         omitDisplayName: false,
         createChannelSubscription: jest.fn(),
@@ -32,12 +32,10 @@ describe('components/ChannelSettingsModal', () => {
         close: () => jest.fn(),
     } as Props;
 
-    test('modal only shows when channel, channelSubscriptions, and jiraProjectMetadata props are present', async () => {
+    test('modal only shows when channel is present', async () => {
         const props = {
             ...baseProps,
             channel: null,
-            channelSubscriptions: [],
-            jiraProjectMetadata: {} as ProjectMetadata,
         };
 
         const wrapper = shallow<ChannelSettingsModal>(
@@ -50,28 +48,6 @@ describe('components/ChannelSettingsModal', () => {
         wrapper.setProps({
             ...props,
             channel: testChannel,
-            channelSubscriptions: null,
-            jiraProjectMetadata: {} as ProjectMetadata,
-        });
-
-        expect(wrapper.find(ChannelSettingsModalInner).length).toEqual(0);
-        expect(wrapper.find(FullScreenModal).props().show).toBe(false);
-
-        wrapper.setProps({
-            ...props,
-            channel: testChannel,
-            channelSubscriptions: [],
-            jiraProjectMetadata: null,
-        });
-
-        expect(wrapper.find(ChannelSettingsModalInner).length).toEqual(0);
-        expect(wrapper.find(FullScreenModal).props().show).toBe(false);
-
-        wrapper.setProps({
-            ...props,
-            channel: testChannel,
-            channelSubscriptions: [],
-            jiraProjectMetadata: {} as ProjectMetadata,
         });
 
         expect(wrapper.find(ChannelSettingsModalInner).length).toEqual(1);
@@ -82,13 +58,12 @@ describe('components/ChannelSettingsModal', () => {
         const props = {
             ...baseProps,
             fetchChannelSubscriptions: jest.fn().mockImplementation(() => Promise.resolve({error: 'Failed to fetch'})),
-            fetchJiraProjectMetadata: jest.fn().mockImplementation(() => Promise.resolve({data: {}})),
             sendEphemeralPost: jest.fn(),
             close: jest.fn(),
         };
 
-        const wrapper = shallow<ChannelSettingsModal>(
-            <ChannelSettingsModal {...props}/>
+        const wrapper = shallow<ChannelSettingsModalInner>(
+            <ChannelSettingsModalInner {...props}/>
         );
 
         wrapper.setProps({...props, channel: testChannel});
@@ -99,29 +74,5 @@ describe('components/ChannelSettingsModal', () => {
 
         expect(props.close).toHaveBeenCalled();
         expect(props.sendEphemeralPost).toHaveBeenCalledWith('You do not have permission to edit subscriptions for this channel. Subscribing to Jira events will create notifications in this channel when certain events occur, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.');
-    });
-
-    test('error fetching project metadata, should close modal and show ephemeral message', async () => {
-        const props = {
-            ...baseProps,
-            fetchChannelSubscriptions: jest.fn().mockImplementation(() => Promise.resolve({data: []})),
-            fetchJiraProjectMetadata: jest.fn().mockImplementation(() => Promise.resolve({error: 'Failed to fetch'})),
-            sendEphemeralPost: jest.fn(),
-            close: jest.fn(),
-        };
-
-        const wrapper = shallow<ChannelSettingsModal>(
-            <ChannelSettingsModal {...props}/>
-        );
-
-        wrapper.setProps({...props, channel: testChannel});
-
-        expect(props.fetchJiraProjectMetadata).toHaveBeenCalled();
-
-        await Promise.resolve();
-        await Promise.resolve();
-
-        expect(props.close).toHaveBeenCalled();
-        expect(props.sendEphemeralPost).toHaveBeenCalledWith('Failed to get Jira project information. Please contact your Mattermost administrator.');
     });
 });

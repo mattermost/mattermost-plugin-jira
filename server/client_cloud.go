@@ -55,10 +55,10 @@ func (client jiraCloudClient) SearchUsersAssignableInProject(projectKey, query s
 }
 
 // GetUserGroups returns the list of groups that a user belongs to.
-func (client jiraCloudClient) GetUserGroups(user JIRAUser) ([]*jira.UserGroup, error) {
+func (client jiraCloudClient) GetUserGroups(connection *Connection) ([]*jira.UserGroup, error) {
 	groups := []*jira.UserGroup{}
 	params := map[string]string{
-		"accountId": user.AccountID,
+		"accountId": connection.AccountID,
 	}
 	err := client.RESTGet("3/user/groups", params, &groups)
 	if err != nil {

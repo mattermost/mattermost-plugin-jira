@@ -17,7 +17,23 @@ export const getBaseStyles = (theme: Theme) => {
     };
 };
 
-export const getStyleForReactSelect = (theme: Theme): Styles => {
+export const getModalStyles = (theme) => ({
+    modalBody: {
+        padding: '2em 2em 3em',
+        color: theme.centerChannelColor,
+        backgroundColor: theme.centerChannelBg,
+    },
+    modalFooter: {
+        padding: '2rem 15px',
+    },
+    descriptionArea: {
+        height: 'auto',
+        width: '100%',
+        color: '#000',
+    },
+});
+
+export const getStyleForReactSelect = (theme) => {
     if (!theme) {
         return {};
     }

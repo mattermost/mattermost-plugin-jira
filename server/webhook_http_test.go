@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
@@ -39,15 +40,15 @@ func (wh testWebhookWrapper) Events() StringSet {
 	return wh.Webhook.Events()
 }
 
-func (wh *testWebhookWrapper) PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error) {
-	post, status, err := wh.Webhook.PostToChannel(p, channelId, fromUserId)
+func (wh *testWebhookWrapper) PostToChannel(p *Plugin, instanceID types.ID, channelId, fromUserId string) (*model.Post, int, error) {
+	post, status, err := wh.Webhook.PostToChannel(p, "", channelId, fromUserId)
 	if post != nil {
 		wh.postedToChannel = post
 	}
 	return post, status, err
 }
-func (wh *testWebhookWrapper) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
-	posts, status, err := wh.Webhook.PostNotifications(p)
+func (wh *testWebhookWrapper) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.Post, int, error) {
+	posts, status, err := wh.Webhook.PostNotifications(p, instanceID)
 	if len(posts) != 0 {
 		wh.postedNotifications = append(wh.postedNotifications, posts...)
 	}
@@ -330,6 +331,13 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Lev Brouk **commented** on story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
 			ExpectedText:            "> unik",
 			CurrentInstance:         true,
+		},
+		"SERVER issue comment created indentation": {
+			Request:         testWebhookRequest("webhook-issue-comment-created-indentation.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline: "User **commented** on story [TEST-4: unit testing](http://localhost:8082/browse/TEST-4)",
+			ExpectedText:     "> [~Test] creating a test comment\r\n> \r\n> a second line for the test comment",
+			CurrentInstance:  true,
 		},
 		"SERVER (old version) issue commented (no issue_event_type_name)": {
 			Request:                 testWebhookRequest("webhook-server-old-issue-updated-no-event-type-commented.json"),
@@ -650,13 +658,8 @@ func TestWebhookHTTP(t *testing.T) {
 			})
 			p.SetAPI(api)
 
-			if tc.CurrentInstance {
-				p.currentInstanceStore = mockCurrentInstanceStore{&p}
-			} else {
-				p.currentInstanceStore = mockCurrentInstanceStoreNoInstance{&p}
-			}
-
 			p.userStore = mockUserStore{}
+			p.instanceStore = p.getMockInstanceStoreKV(1)
 
 			w := httptest.NewRecorder()
 			recorder := &testWebhookWrapper{}

@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
@@ -45,10 +46,11 @@ type SubscriptionFilters struct {
 }
 
 type ChannelSubscription struct {
-	Id        string              `json:"id"`
-	ChannelId string              `json:"channel_id"`
-	Filters   SubscriptionFilters `json:"filters"`
-	Name      string              `json:"name"`
+	Id         string              `json:"id"`
+	ChannelId  string              `json:"channel_id"`
+	Filters    SubscriptionFilters `json:"filters"`
+	Name       string              `json:"name"`
+	InstanceID types.ID            `json:"instance_id"`
 }
 
 type ChannelSubscriptions struct {
@@ -95,7 +97,7 @@ func NewSubscriptions() *Subscriptions {
 	}
 }
 
-func SubscriptionsFromJson(bytes []byte) (*Subscriptions, error) {
+func SubscriptionsFromJson(bytes []byte, instanceID types.ID) (*Subscriptions, error) {
 	var subs *Subscriptions
 	if len(bytes) != 0 {
 		unmarshalErr := json.Unmarshal(bytes, &subs)
@@ -105,6 +107,12 @@ func SubscriptionsFromJson(bytes []byte) (*Subscriptions, error) {
 		subs.PluginVersion = manifest.Version
 	} else {
 		subs = NewSubscriptions()
+	}
+
+	// Backfill instance id's for old subscriptions
+	for subID, sub := range subs.Channel.ById {
+		sub.InstanceID = instanceID
+		subs.Channel.ById[subID] = sub
 	}
 
 	return subs, nil
@@ -169,8 +177,8 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 	return true
 }
 
-func (p *Plugin) getChannelsSubscribed(wh *webhook) (StringSet, error) {
-	subs, err := p.getSubscriptions()
+func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) (StringSet, error) {
+	subs, err := p.getSubscriptions(instanceID)
 	if err != nil {
 		return nil, err
 	}
@@ -186,22 +194,17 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook) (StringSet, error) {
 	return channelIds, nil
 }
 
-func (p *Plugin) getSubscriptions() (*Subscriptions, error) {
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return nil, err
-	}
-
-	subKey := keyWithInstance(ji, JIRA_SUBSCRIPTIONS_KEY)
+func (p *Plugin) getSubscriptions(instanceID types.ID) (*Subscriptions, error) {
+	subKey := keyWithInstanceID(instanceID, JIRA_SUBSCRIPTIONS_KEY)
 	data, appErr := p.API.KVGet(subKey)
 	if appErr != nil {
 		return nil, appErr
 	}
-	return SubscriptionsFromJson(data)
+	return SubscriptionsFromJson(data, instanceID)
 }
 
-func (p *Plugin) getSubscriptionsForChannel(channelId string) ([]ChannelSubscription, error) {
-	subs, err := p.getSubscriptions()
+func (p *Plugin) getSubscriptionsForChannel(instanceID types.ID, channelId string) ([]ChannelSubscription, error) {
+	subs, err := p.getSubscriptions(instanceID)
 	if err != nil {
 		return nil, err
 	}
@@ -214,8 +217,8 @@ func (p *Plugin) getSubscriptionsForChannel(channelId string) ([]ChannelSubscrip
 	return channelSubscriptions, nil
 }
 
-func (p *Plugin) getChannelSubscription(subscriptionId string) (*ChannelSubscription, error) {
-	subs, err := p.getSubscriptions()
+func (p *Plugin) getChannelSubscription(instanceID types.ID, subscriptionId string) (*ChannelSubscription, error) {
+	subs, err := p.getSubscriptions(instanceID)
 	if err != nil {
 		return nil, err
 	}
@@ -228,15 +231,10 @@ func (p *Plugin) getChannelSubscription(subscriptionId string) (*ChannelSubscrip
 	return &subscription, nil
 }
 
-func (p *Plugin) removeChannelSubscription(subscriptionId string) error {
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return err
-	}
-
-	subKey := keyWithInstance(ji, JIRA_SUBSCRIPTIONS_KEY)
+func (p *Plugin) removeChannelSubscription(instanceID types.ID, subscriptionId string) error {
+	subKey := keyWithInstanceID(instanceID, JIRA_SUBSCRIPTIONS_KEY)
 	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
-		subs, err := SubscriptionsFromJson(initialBytes)
+		subs, err := SubscriptionsFromJson(initialBytes, instanceID)
 		if err != nil {
 			return nil, err
 		}
@@ -257,20 +255,15 @@ func (p *Plugin) removeChannelSubscription(subscriptionId string) error {
 	})
 }
 
-func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription, client Client) error {
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return err
-	}
-
-	subKey := keyWithInstance(ji, JIRA_SUBSCRIPTIONS_KEY)
+func (p *Plugin) addChannelSubscription(instanceID types.ID, newSubscription *ChannelSubscription, client Client) error {
+	subKey := keyWithInstanceID(instanceID, JIRA_SUBSCRIPTIONS_KEY)
 	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
-		subs, err := SubscriptionsFromJson(initialBytes)
+		subs, err := SubscriptionsFromJson(initialBytes, instanceID)
 		if err != nil {
 			return nil, err
 		}
 
-		err = p.validateSubscription(newSubscription, client)
+		err = p.validateSubscription(instanceID, newSubscription, client)
 		if err != nil {
 			return nil, err
 		}
@@ -287,7 +280,7 @@ func (p *Plugin) addChannelSubscription(newSubscription *ChannelSubscription, cl
 	})
 }
 
-func (p *Plugin) validateSubscription(subscription *ChannelSubscription, client Client) error {
+func (p *Plugin) validateSubscription(instanceID types.ID, subscription *ChannelSubscription, client Client) error {
 	if len(subscription.Name) == 0 {
 		return errors.New("Please provide a name for the subscription.")
 	}
@@ -309,7 +302,7 @@ func (p *Plugin) validateSubscription(subscription *ChannelSubscription, client 
 	}
 
 	channelId := subscription.ChannelId
-	subs, err := p.getSubscriptionsForChannel(channelId)
+	subs, err := p.getSubscriptionsForChannel(instanceID, channelId)
 	if err != nil {
 		return err
 	}
@@ -329,15 +322,10 @@ func (p *Plugin) validateSubscription(subscription *ChannelSubscription, client 
 	return nil
 }
 
-func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscription, client Client) error {
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return err
-	}
-
-	subKey := keyWithInstance(ji, JIRA_SUBSCRIPTIONS_KEY)
+func (p *Plugin) editChannelSubscription(instanceID types.ID, modifiedSubscription *ChannelSubscription, client Client) error {
+	subKey := keyWithInstanceID(instanceID, JIRA_SUBSCRIPTIONS_KEY)
 	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
-		subs, err := SubscriptionsFromJson(initialBytes)
+		subs, err := SubscriptionsFromJson(initialBytes, instanceID)
 		if err != nil {
 			return nil, err
 		}
@@ -347,7 +335,7 @@ func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscripti
 			return nil, errors.New("Existing subscription does not exist.")
 		}
 
-		err = p.validateSubscription(modifiedSubscription, client)
+		err = p.validateSubscription(instanceID, modifiedSubscription, client)
 		if err != nil {
 			return nil, err
 		}
@@ -364,24 +352,24 @@ func (p *Plugin) editChannelSubscription(modifiedSubscription *ChannelSubscripti
 	})
 }
 
+type InstanceSubMap map[types.ID][]string
+type ChannelSubMap map[string]InstanceSubMap
+type TeamSubsMap map[string]ChannelSubMap
+
 type SubsGroupedByTeam struct {
-	TeamId               string
-	TeamName             string
-	SubsGroupedByChannel []SubsGroupedByChannel
+	TeamId   string
+	TeamName string
+	Subs     TeamSubsMap
 }
 
 type SubsGroupedByChannel struct {
-	ChannelId string
-	SubIds    []string
+	ChannelId  string
+	NumberSubs int
+	SubIds     []string
 }
 
-func (p *Plugin) listChannelSubscriptions(teamId string) (string, error) {
-	subs, err := p.getSubscriptions()
-	if err != nil {
-		return "", err
-	}
-
-	sortedSubs, err := p.getSortedSubscriptions()
+func (p *Plugin) listChannelSubscriptions(instanceID types.ID, teamId string) (string, error) {
+	sortedSubs, err := p.getSortedSubscriptions(instanceID)
 	if err != nil {
 		return "", err
 	}
@@ -389,40 +377,45 @@ func (p *Plugin) listChannelSubscriptions(teamId string) (string, error) {
 	rows := []string{}
 
 	if sortedSubs == nil {
-		rows = append(rows, fmt.Sprintf("There are currently no channels subcriptions to Jira notifications. To add a subscription, navigate to a channel and type `/jira subscribe`\n"))
+		rows = append(rows, fmt.Sprintf("There are currently no channels subcriptions to Jira notifications. To add a subscription, navigate to a channel and type `/jira subscribe edit`\n"))
 		return strings.Join(rows, "\n"), nil
 	}
-	rows = append(rows, fmt.Sprintf("The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe`"))
+	rows = append(rows, fmt.Sprintf("The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe edit`"))
 
 	for _, teamSubs := range sortedSubs {
 
 		// create header for each Team, DM and GM channels
 		rows = append(rows, fmt.Sprintf("\n#### %s", teamSubs.TeamName))
 
-		for _, grouped := range teamSubs.SubsGroupedByChannel {
-
-			channel, appErr := p.API.GetChannel(grouped.ChannelId)
+		for channelID, channelGroup := range teamSubs.Subs[teamSubs.TeamId] {
+			channel, appErr := p.API.GetChannel(string(channelID))
 			if appErr != nil {
 				return "", errors.New("Failed to get channel")
 			}
 
 			// only print channel name once for all subscriptions
-			channelRow := fmt.Sprintf("* **%s** (%d):", channel.Name, len(grouped.SubIds))
+			channelRow := fmt.Sprintf("* **%s** (%d):", channel.Name, p.getNumSubsForChannel(channelGroup))
 			if teamId == teamSubs.TeamId {
 				// only link the channels on the current team
-				channelRow = fmt.Sprintf("* **~%s** (%d):", channel.Name, len(grouped.SubIds))
+				channelRow = fmt.Sprintf("* **~%s** (%d):", channel.Name, p.getNumSubsForChannel(channelGroup))
 			}
 			rows = append(rows, channelRow)
 
-			for _, subId := range grouped.SubIds {
-				sub := subs.Channel.ById[subId]
-
-				subName := "(No Name)"
-				if sub.Name != "" {
-					subName = sub.Name
+			for instanceID, subsIDs := range channelGroup {
+				subs, err := p.getSubscriptions(types.ID(instanceID))
+				if err != nil {
+					return "", errors.New("Failed to get subs")
 				}
-				rows = append(rows, fmt.Sprintf("  * %s - %s", sub.Filters.Projects.Elems()[0], subName))
+				rows = append(rows, fmt.Sprintf("\t* (%d) %s", len(subsIDs), instanceID))
 
+				for _, subId := range subsIDs {
+					sub := subs.Channel.ById[subId]
+					subName := "(No Name)"
+					if sub.Name != "" {
+						subName = sub.Name
+					}
+					rows = append(rows, fmt.Sprintf("\t\t* %s - %s", sub.Filters.Projects.Elems()[0], subName))
+				}
 			}
 		}
 	}
@@ -430,57 +423,92 @@ func (p *Plugin) listChannelSubscriptions(teamId string) (string, error) {
 	return strings.Join(rows, "\n"), nil
 }
 
-func (p *Plugin) getSortedSubscriptions() ([]SubsGroupedByTeam, error) {
-	subs, err := p.getSubscriptions()
-	if err != nil {
-		return nil, err
+func (p *Plugin) getNumSubsForChannel(channelGroup InstanceSubMap) int {
+	totalSubs := 0
+	for _, subsIDs := range channelGroup {
+		totalSubs += len(subsIDs)
+	}
+	return totalSubs
+}
+
+func (p *Plugin) getSortedSubscriptions(instanceID types.ID) ([]SubsGroupedByTeam, error) {
+	var instanceSubs []*Subscriptions
+	if instanceID != "" {
+		subs, err := p.getSubscriptions(instanceID)
+		if err != nil {
+			return nil, err
+		}
+		instanceSubs = append(instanceSubs, subs)
+	} else {
+		instances, err := p.instanceStore.LoadInstances()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, instanceID := range instances.IDs() {
+			subs, err := p.getSubscriptions(instanceID)
+			if err != nil {
+				return nil, err
+			}
+			instanceSubs = append(instanceSubs, subs)
+		}
 	}
 
-	subsMap := make(map[string][]SubsGroupedByChannel)
-	teamMap := make(map[string]string)
+	subsMap := make(TeamSubsMap)
+	teamDisplayNameMap := make(map[string]string)
 
 	var teams []model.Team
 	var dmSubsIds []SubsGroupedByChannel
 
-	// get teams from subscriptions
-	for channelID, subIDs := range subs.Channel.IdByChannelId {
+	for _, subs := range instanceSubs {
+		// get teams from subscriptions
+		for channelID, subIDs := range subs.Channel.IdByChannelId {
 
-		// channel does not have any subIDs.
-		if len(subIDs) == 0 {
-			continue
+			// channel does not have any subIDs.
+			if len(subIDs) == 0 {
+				continue
+			}
+
+			channel, appErr := p.API.GetChannel(channelID)
+			if appErr != nil {
+				return nil, errors.New("Failed to get channel")
+			}
+
+			if subsMap[channel.TeamId] == nil {
+				subsMap[string(channel.TeamId)] = make(ChannelSubMap)
+			}
+
+			if subsMap[channel.TeamId][channelID] == nil {
+				subsMap[channel.TeamId][channelID] = make(InstanceSubMap)
+			}
+
+			var channelSubIds []string
+			for subID := range subIDs {
+				channelSubIds = append(channelSubIds, subID)
+				instanceID := subs.Channel.ById[subID].InstanceID
+				subsMap[channel.TeamId][channelID][instanceID] = append(subsMap[channel.TeamId][channelID][instanceID], subID)
+			}
+
+			grouped := SubsGroupedByChannel{
+				ChannelId:  channelID,
+				SubIds:     channelSubIds,
+				NumberSubs: len(channelSubIds),
+			}
+			// for DMs and GMs, save to array and go to next team
+			if channel.TeamId == "" {
+				dmSubsIds = append(dmSubsIds, grouped)
+				continue
+			}
+
+			// teamMap used to determine if already have the team saved
+			_, ok := teamDisplayNameMap[channel.TeamId]
+			if !ok {
+				team, _ := p.API.GetTeam(channel.TeamId)
+				teams = append(teams, *team)
+				teamDisplayNameMap[channel.TeamId] = team.DisplayName
+			}
+
 		}
-
-		channel, appErr := p.API.GetChannel(channelID)
-		if appErr != nil {
-			return nil, errors.New("Failed to get channel")
-		}
-
-		var channelSubIds []string
-		for subID := range subIDs {
-			channelSubIds = append(channelSubIds, subID)
-		}
-
-		grouped := SubsGroupedByChannel{
-			ChannelId: channelID,
-			SubIds:    channelSubIds,
-		}
-		// for DMs and GMs, save to array and go to next team
-		if channel.TeamId == "" {
-			dmSubsIds = append(dmSubsIds, grouped)
-			continue
-		}
-
-		// teamMap used to determine if already have the team saved
-		_, ok := teamMap[channel.TeamId]
-		if !ok {
-			team, _ := p.API.GetTeam(channel.TeamId)
-			teams = append(teams, *team)
-			teamMap[channel.TeamId] = team.DisplayName
-		}
-
-		// only save non-DM and non-GM subs to the map
-		subsMap[channel.TeamId] = append(subsMap[channel.TeamId], grouped)
-
 	}
 
 	var teamSubs []SubsGroupedByTeam
@@ -495,9 +523,9 @@ func (p *Plugin) getSortedSubscriptions() ([]SubsGroupedByTeam, error) {
 
 	for _, teamId := range teams {
 		teamData := SubsGroupedByTeam{
-			TeamId:               teamId.Id,
-			TeamName:             teamId.DisplayName,
-			SubsGroupedByChannel: subsMap[teamId.Id],
+			TeamId:   teamId.Id,
+			TeamName: teamId.DisplayName,
+			Subs:     subsMap,
 		}
 		teamSubs = append(teamSubs, teamData)
 	}
@@ -505,9 +533,9 @@ func (p *Plugin) getSortedSubscriptions() ([]SubsGroupedByTeam, error) {
 	// save all DM and GM channels under a generic teamName
 	if len(dmSubsIds) != 0 {
 		teamData := SubsGroupedByTeam{
-			TeamId:               "",
-			TeamName:             "Group and Direct Messages",
-			SubsGroupedByChannel: dmSubsIds,
+			TeamId:   "",
+			TeamName: "Group and Direct Messages",
+			Subs:     subsMap,
 		}
 		teamSubs = append(teamSubs, teamData)
 	}
@@ -559,7 +587,7 @@ func inAllowedGroup(inGroups []*jira.UserGroup, allowedGroups []string) bool {
 
 // hasPermissionToManageSubscription checks if MM user has permission to manage subscriptions in given channel.
 // returns nil if the user has permission and a descriptive error otherwise.
-func (p *Plugin) hasPermissionToManageSubscription(userId, channelId string) error {
+func (p *Plugin) hasPermissionToManageSubscription(instanceID types.ID, userId, channelId string) error {
 	cfg := p.getConfig()
 
 	switch cfg.RolesAllowedToEditJiraSubscriptions {
@@ -591,32 +619,34 @@ func (p *Plugin) hasPermissionToManageSubscription(userId, channelId string) err
 		}
 	}
 
-	if cfg.GroupsAllowedToEditJiraSubscriptions != "" {
-		ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-		if err != nil {
-			return errors.Wrap(err, "could not load jira instance")
-		}
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return errors.Wrap(err, "could not load jira instance")
+	}
 
-		jiraUser, err := p.userStore.LoadJIRAUser(ji, userId)
-		if err != nil {
-			return errors.Wrap(err, "could not load jira user")
-		}
+	c, err := p.userStore.LoadConnection(instance.GetID(), types.ID(userId))
+	if err != nil {
+		return errors.Wrap(err, "could not load jira user")
+	}
 
-		client, err := ji.GetClient(jiraUser)
-		if err != nil {
-			return errors.Wrap(err, "could not get an authenticated Jira client")
-		}
+	if !instance.Common().IsV2Legacy || cfg.GroupsAllowedToEditJiraSubscriptions == "" {
+		return nil
+	}
 
-		groups, err := client.GetUserGroups(jiraUser)
-		if err != nil {
-			return errors.Wrap(err, "could not get jira user groups")
-		}
+	client, err := instance.GetClient(c)
+	if err != nil {
+		return errors.Wrap(err, "could not get an authenticated Jira client")
+	}
 
-		allowedGroups := strings.Split(cfg.GroupsAllowedToEditJiraSubscriptions, ",")
-		allowedGroups = utils.Map(allowedGroups, strings.TrimSpace)
-		if !inAllowedGroup(groups, allowedGroups) {
-			return errors.New("not in allowed jira user groups")
-		}
+	groups, err := client.GetUserGroups(c)
+	if err != nil {
+		return errors.Wrap(err, "could not get jira user groups")
+	}
+
+	allowedGroups := strings.Split(cfg.GroupsAllowedToEditJiraSubscriptions, ",")
+	allowedGroups = utils.Map(allowedGroups, strings.TrimSpace)
+	if !inAllowedGroup(groups, allowedGroups) {
+		return errors.New("not in allowed jira user groups")
 	}
 
 	return nil
@@ -671,7 +701,7 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 	return nil
 }
 
-func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (status int, err error) {
+func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, instanceID types.ID) (status int, err error) {
 	conf := p.getConfig()
 	size := utils.ByteSize(0)
 	start := time.Now()
@@ -703,14 +733,17 @@ func httpSubscribeWebhook(p *Plugin, w http.ResponseWriter, r *http.Request) (st
 	// If there is space in the queue, immediately return a 200; we will process the webhook event async.
 	// If the queue is full, return a 503; we will not process that webhook event.
 	select {
-	case p.webhookQueue <- bb:
+	case p.webhookQueue <- &webhookMessage{
+		InstanceID: instanceID,
+		Data:       bb,
+	}:
 		return http.StatusOK, nil
 	default:
 		return respondErr(w, http.StatusServiceUnavailable, nil)
 	}
 }
 
-func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
+func (p *Plugin) httpChannelCreateSubscription(w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
 	subscription := ChannelSubscription{}
 	err := json.NewDecoder(r.Body).Decode(&subscription)
 	if err != nil {
@@ -730,31 +763,27 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 			errors.New("Not a member of the channel specified"))
 	}
 
-	err = p.hasPermissionToManageSubscription(mattermostUserId, subscription.ChannelId)
+	err = p.hasPermissionToManageSubscription(subscription.InstanceID, mattermostUserId, subscription.ChannelId)
 	if err != nil {
 		return respondErr(w, http.StatusForbidden,
 			errors.Wrap(err, "you don't have permission to manage subscriptions"))
 	}
 
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	client, _, connection, err := p.getClient(subscription.InstanceID, types.ID(mattermostUserId))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
+	err = p.addChannelSubscription(subscription.InstanceID, &subscription, client)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	client, err := ji.GetClient(jiraUser)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+	projectKey := ""
+	if subscription.Filters.Projects.Len() == 1 {
+		projectKey = subscription.Filters.Projects.Elems()[0]
 	}
-
-	err = p.addChannelSubscription(&subscription, client)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
-	}
+	p.UpdateUserDefaults(types.ID(mattermostUserId), subscription.InstanceID, projectKey)
 
 	code, err := respondJSON(w, &subscription)
 	if err != nil {
@@ -764,12 +793,12 @@ func httpChannelCreateSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 	p.API.CreatePost(&model.Post{
 		UserId:    p.getConfig().botUserID,
 		ChannelId: subscription.ChannelId,
-		Message:   fmt.Sprintf("Jira subscription, \"%v\", was added to this channel by %v", subscription.Name, jiraUser.DisplayName),
+		Message:   fmt.Sprintf("Jira subscription, \"%v\", was added to this channel by %v", subscription.Name, connection.DisplayName),
 	})
 	return http.StatusOK, nil
 }
 
-func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
+func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
 	subscription := ChannelSubscription{}
 	err := json.NewDecoder(r.Body).Decode(&subscription)
 	if err != nil {
@@ -783,7 +812,7 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 			fmt.Errorf("Channel subscription invalid"))
 	}
 
-	err = p.hasPermissionToManageSubscription(mattermostUserId, subscription.ChannelId)
+	err = p.hasPermissionToManageSubscription(subscription.InstanceID, mattermostUserId, subscription.ChannelId)
 	if err != nil {
 		return respondErr(w, http.StatusForbidden,
 			errors.Wrap(err, "you don't have permission to manage subscriptions"))
@@ -795,25 +824,20 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 			errors.New("Not a member of the channel specified"))
 	}
 
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	client, _, connection, err := p.getClient(subscription.InstanceID, types.ID(mattermostUserId))
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+	err = p.editChannelSubscription(subscription.InstanceID, &subscription, client)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+	projectKey := ""
+	if subscription.Filters.Projects.Len() == 1 {
+		projectKey = subscription.Filters.Projects.Elems()[0]
 	}
-
-	client, err := ji.GetClient(jiraUser)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
-	}
-
-	err = p.editChannelSubscription(&subscription, client)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
-	}
+	p.UpdateUserDefaults(types.ID(mattermostUserId), subscription.InstanceID, projectKey)
 
 	code, err := respondJSON(w, &subscription)
 	if err != nil {
@@ -823,25 +847,26 @@ func httpChannelEditSubscription(p *Plugin, w http.ResponseWriter, r *http.Reque
 	p.API.CreatePost(&model.Post{
 		UserId:    p.getConfig().botUserID,
 		ChannelId: subscription.ChannelId,
-		Message:   fmt.Sprintf("Jira subscription, \"%v\", was updated by %v", subscription.Name, jiraUser.DisplayName),
+		Message:   fmt.Sprintf("Jira subscription, \"%v\", was updated by %v", subscription.Name, connection.DisplayName),
 	})
 	return http.StatusOK, nil
 }
 
-func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
+func (p *Plugin) httpChannelDeleteSubscription(w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
 	subscriptionId := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionsChannel+"/")
 	if len(subscriptionId) != 26 {
 		return respondErr(w, http.StatusBadRequest,
 			errors.New("bad subscription id"))
 	}
 
-	subscription, err := p.getChannelSubscription(subscriptionId)
+	instanceID := types.ID(r.FormValue("instance_id"))
+	subscription, err := p.getChannelSubscription(instanceID, subscriptionId)
 	if err != nil {
 		return respondErr(w, http.StatusBadRequest,
 			errors.Wrap(err, "bad subscription id"))
 	}
 
-	err = p.hasPermissionToManageSubscription(mattermostUserId, subscription.ChannelId)
+	err = p.hasPermissionToManageSubscription(instanceID, mattermostUserId, subscription.ChannelId)
 	if err != nil {
 		return respondErr(w, http.StatusForbidden,
 			errors.Wrap(err, "you don't have permission to manage subscriptions"))
@@ -853,7 +878,7 @@ func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 			errors.New("Not a member of the channel specified"))
 	}
 
-	err = p.removeChannelSubscription(subscriptionId)
+	err = p.removeChannelSubscription(instanceID, subscriptionId)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.Wrap(err, "unable to remove channel subscription"))
@@ -864,40 +889,37 @@ func httpChannelDeleteSubscription(p *Plugin, w http.ResponseWriter, r *http.Req
 		return code, err
 	}
 
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserId)
+	connection, err := p.userStore.LoadConnection(instanceID, types.ID(mattermostUserId))
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 	p.API.CreatePost(&model.Post{
 		UserId:    p.getConfig().botUserID,
 		ChannelId: subscription.ChannelId,
-		Message:   fmt.Sprintf("Jira subscription, \"%v\", was removed from this channel by %v", subscription.Name, jiraUser.DisplayName),
+		Message:   fmt.Sprintf("Jira subscription, \"%v\", was removed from this channel by %v", subscription.Name, connection.DisplayName),
 	})
 	return http.StatusOK, nil
 }
 
-func httpChannelGetSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
+func (p *Plugin) httpChannelGetSubscriptions(w http.ResponseWriter, r *http.Request, mattermostUserId string) (int, error) {
 	channelId := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionsChannel+"/")
 	if len(channelId) != 26 {
 		return respondErr(w, http.StatusBadRequest,
 			errors.New("bad channel id"))
 	}
+	instanceID := types.ID(r.FormValue("instance_id"))
 
 	if _, appErr := p.API.GetChannelMember(channelId, mattermostUserId); appErr != nil {
 		return respondErr(w, http.StatusForbidden,
 			errors.New("Not a member of the channel specified"))
 	}
 
-	if err := p.hasPermissionToManageSubscription(mattermostUserId, channelId); err != nil {
+	if err := p.hasPermissionToManageSubscription(instanceID, mattermostUserId, channelId); err != nil {
 		return respondErr(w, http.StatusForbidden,
 			errors.Wrap(err, "you don't have permission to manage subscriptions"))
 	}
 
-	subscriptions, err := p.getSubscriptionsForChannel(channelId)
+	subscriptions, err := p.getSubscriptionsForChannel(instanceID, channelId)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.Wrap(err, "unable to get channel subscriptions"))
@@ -906,7 +928,7 @@ func httpChannelGetSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Reque
 	return respondJSON(w, subscriptions)
 }
 
-func httpChannelSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) httpChannelSubscriptions(w http.ResponseWriter, r *http.Request) (int, error) {
 	mattermostUserId := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserId == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
@@ -914,13 +936,13 @@ func httpChannelSubscriptions(p *Plugin, w http.ResponseWriter, r *http.Request)
 
 	switch r.Method {
 	case http.MethodPost:
-		return httpChannelCreateSubscription(p, w, r, mattermostUserId)
+		return p.httpChannelCreateSubscription(w, r, mattermostUserId)
 	case http.MethodDelete:
-		return httpChannelDeleteSubscription(p, w, r, mattermostUserId)
+		return p.httpChannelDeleteSubscription(w, r, mattermostUserId)
 	case http.MethodGet:
-		return httpChannelGetSubscriptions(p, w, r, mattermostUserId)
+		return p.httpChannelGetSubscriptions(w, r, mattermostUserId)
 	case http.MethodPut:
-		return httpChannelEditSubscription(p, w, r, mattermostUserId)
+		return p.httpChannelEditSubscription(w, r, mattermostUserId)
 	default:
 		return respondErr(w, http.StatusMethodNotAllowed, fmt.Errorf("Request: "+r.Method+" is not allowed."))
 	}

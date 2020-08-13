@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
@@ -60,6 +61,18 @@ func (client testClient) DoTransition(issueKey string, transitionID string) erro
 	return nil
 }
 
+func (client testClient) GetIssue(issueKey string, options *jira.GetQueryOptions) (*jira.Issue, error) {
+	if issueKey == nonExistantIssueKey {
+		return nil, kvstore.ErrNotFound
+	}
+	return &jira.Issue{
+		Fields: &jira.IssueFields{
+			Reporter: &jira.User{},
+			Status:   &jira.Status{},
+		},
+	}, nil
+}
+
 func (client testClient) AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error) {
 	if issueKey == noPermissionsIssueKey {
 		return nil, errors.New("you do not have the permission to comment on this issue")
@@ -71,9 +84,12 @@ func (client testClient) AddComment(issueKey string, comment *jira.Comment) (*ji
 }
 
 func TestTransitionJiraIssue(t *testing.T) {
+	api := &plugintest.API{}
+	api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
 	p := Plugin{}
+	p.SetAPI(api)
 	p.userStore = getMockUserStoreKV()
-	p.currentInstanceStore = mockCurrentInstanceStore{&p}
+	p.instanceStore = p.getMockInstanceStoreKV(1)
 
 	tests := map[string]struct {
 		issueKey    string
@@ -108,14 +124,19 @@ func TestTransitionJiraIssue(t *testing.T) {
 		"Successfully transitioning to new state": {
 			issueKey:    existingIssueKey,
 			toState:     "inprog",
-			expectedMsg: fmt.Sprintf("[%s](%s/browse/%s) transitioned to `In Progress`", existingIssueKey, mockCurrentInstanceURL, existingIssueKey),
+			expectedMsg: fmt.Sprintf("[%s](%s/browse/%s) transitioned to `In Progress`", existingIssueKey, mockInstance1URL, existingIssueKey),
 			expectedErr: nil,
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			actual, err := p.transitionJiraIssue("connected_user", tt.issueKey, tt.toState)
+			actual, err := p.TransitionIssue(&InTransitionIssue{
+				InstanceID:       testInstance1.InstanceID,
+				mattermostUserID: "connected_user",
+				IssueKey:         tt.issueKey,
+				ToState:          tt.toState,
+			})
 			assert.Equal(t, tt.expectedMsg, actual)
 			if tt.expectedErr != nil {
 				assert.Error(t, tt.expectedErr, err)
@@ -161,7 +182,6 @@ func TestRouteIssueTransition(t *testing.T) {
 	p.SetAPI(api)
 
 	p.userStore = getMockUserStoreKV()
-	p.currentInstanceStore = mockCurrentInstanceStore{&p}
 
 	tests := map[string]struct {
 		bb           []byte
@@ -237,9 +257,6 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 		mock.AnythingOfTypeArgument("string"),
 		mock.AnythingOfTypeArgument("string")).Return(nil)
 
-	siteURL := "https://somelink.com"
-	api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
-
 	api.On("GetPost", "error_post").Return(nil, &model.AppError{Id: "1"})
 	api.On("GetPost", "post_not_found").Return(nil, (*model.AppError)(nil))
 
@@ -251,14 +268,11 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(nil, (*model.AppError)(nil))
 
-	p := Plugin{}
-	p.SetAPI(api)
-
-	p.userStore = getMockUserStoreKV()
-	p.currentInstanceStore = mockCurrentInstanceStore{&p}
+	api.On("PublishWebSocketEvent", "connect", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.WebsocketBroadcast"))
 
 	type requestStruct struct {
 		PostId      string `json:"post_id"`
+		InstanceID  string `json:"instance_id"`
 		CurrentTeam string `json:"current_team"`
 		IssueKey    string `json:"issueKey"`
 	}
@@ -318,7 +332,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 				PostId:   "1",
 				IssueKey: noPermissionsIssueKey,
 			},
-			expectedCode: http.StatusNotFound,
+			expectedCode: http.StatusInternalServerError,
 		},
 		"Failed to attach the comment": {
 			method: "POST",
@@ -341,6 +355,15 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			p := Plugin{}
+			p.SetAPI(api)
+			p.updateConfig(func(conf *config) {
+				conf.mattermostSiteURL = "https://somelink.com"
+			})
+			p.userStore = getMockUserStoreKV()
+			p.instanceStore = p.getMockInstanceStoreKV(1)
+
+			tt.request.InstanceID = testInstance1.InstanceID.String()
 			bb, err := json.Marshal(tt.request)
 			assert.Nil(t, err)
 

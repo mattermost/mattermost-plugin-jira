@@ -50,7 +50,7 @@ func (client jiraServerClient) SearchUsersAssignableInProject(projectKey, query 
 }
 
 // GetUserGroups returns the list of groups that a user belongs to.
-func (client jiraServerClient) GetUserGroups(user JIRAUser) ([]*jira.UserGroup, error) {
+func (client jiraServerClient) GetUserGroups(connection *Connection) ([]*jira.UserGroup, error) {
 	var result struct {
 		Groups struct {
 			Items []*jira.UserGroup

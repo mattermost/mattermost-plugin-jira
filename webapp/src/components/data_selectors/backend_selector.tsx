@@ -8,23 +8,29 @@ import AsyncSelect from 'react-select/async';
 
 import {Theme} from 'mattermost-redux/types/preferences';
 
-import {getStyleForReactSelect} from 'utils/styles';
-import {ReactSelectOption} from 'types/model';
-import {Props as ReactSelectSettingProps} from 'components/react_select_setting';
+import {IssueMetadata, ReactSelectOption, JiraIssue, SearchIssueParams, APIResponse} from 'types/model';
 
+import {getStyleForReactSelect} from 'utils/styles';
+import {isEpicNameField, isEpicIssueType} from 'utils/jira_issue_metadata';
+
+import {Props as ReactSelectSettingProps} from 'components/react_select_setting';
 import Setting from 'components/setting';
 
 const searchDebounceDelay = 400;
 
 export type Props = ReactSelectSettingProps & {
     hideRequiredStar?: boolean;
-    theme: Theme;
     onChange: (values: string | string[]) => void;
     value?: string | string[];
-    resetInvalidOnChange?: boolean;
-
     fetchInitialSelectedValues: () => Promise<ReactSelectOption[]>;
     search: (searchTerm: string) => Promise<ReactSelectOption[]>;
+    theme: Theme;
+    isMulti?: boolean;
+    addValidate: (isValid: () => boolean) => void;
+    removeValidate: (isValid: () => boolean) => void;
+    issueMetadata: IssueMetadata;
+    resetInvalidOnChange?: boolean;
+    instanceID: string;
 };
 
 type State = {

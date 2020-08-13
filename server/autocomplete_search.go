@@ -7,10 +7,11 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/pkg/errors"
 )
 
-func httpAPIGetAutoCompleteFields(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) httpGetAutoCompleteFields(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
 			errors.New("Request: " + r.Method + " is not allowed, must be GET")
@@ -21,19 +22,15 @@ func httpAPIGetAutoCompleteFields(ji Instance, w http.ResponseWriter, r *http.Re
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
-	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserID)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	client, err := ji.GetClient(jiraUser)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
+	instanceID := r.FormValue("instance_id")
 	params := map[string]string{
 		"fieldName":  r.FormValue("fieldName"),
 		"fieldValue": r.FormValue("fieldValue"),
+	}
+
+	client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+	if err != nil {
+		return http.StatusInternalServerError, err
 	}
 
 	results, err := client.SearchAutoCompleteFields(params)
@@ -60,7 +57,7 @@ func httpAPIGetAutoCompleteFields(ji Instance, w http.ResponseWriter, r *http.Re
 	return http.StatusOK, nil
 }
 
-func httpAPIGetSearchUsers(ji Instance, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) httpGetSearchUsers(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed,
 			errors.New("Request: " + r.Method + " is not allowed, must be GET")
@@ -71,18 +68,14 @@ func httpAPIGetSearchUsers(ji Instance, w http.ResponseWriter, r *http.Request) 
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
-	jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUser(ji, mattermostUserID)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	client, err := ji.GetClient(jiraUser)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
+	instanceID := r.FormValue("instance_id")
 	projectKey := r.FormValue("project")
 	userSearch := r.FormValue("q")
+
+	client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
 
 	// Get list of assignable users
 	jiraUsers, err := client.SearchUsersAssignableInProject(projectKey, userSearch, 10)

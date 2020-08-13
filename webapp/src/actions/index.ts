@@ -4,9 +4,36 @@
 import {PostTypes} from 'mattermost-redux/action_types';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
+import PluginId from 'plugin_id';
 import ActionTypes from 'action_types';
 import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
-import {getPluginServerRoute} from 'selectors';
+import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances} from 'selectors';
+import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
+import {ChannelSubscription, CreateIssueRequest, SearchIssueParams, InstanceType, ProjectMetadata, APIResponse} from 'types/model';
+
+export const openConnectModal = () => {
+    return {
+        type: ActionTypes.OPEN_CONNECT_MODAL,
+    };
+};
+
+export const closeConnectModal = () => {
+    return {
+        type: ActionTypes.CLOSE_CONNECT_MODAL,
+    };
+};
+
+export const openDisconnectModal = () => {
+    return {
+        type: ActionTypes.OPEN_DISCONNECT_MODAL,
+    };
+};
+
+export const closeDisconnectModal = () => {
+    return {
+        type: ActionTypes.CLOSE_DISCONNECT_MODAL,
+    };
+};
 
 export const openCreateModal = (postId) => {
     return {
@@ -46,56 +73,77 @@ export const closeAttachCommentToIssueModal = () => {
     };
 };
 
-export const fetchJiraIssueMetadataForProjects = (projectKeys) => {
+export const fetchJiraIssueMetadataForProjects = (projectKeys: string[], instanceID: string) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         const projectKeysParam = projectKeys.join(',');
         let data = null;
+        const params = `project-keys=${projectKeysParam}&instance_id=${instanceID}`;
         try {
-            data = await doFetch(`${baseUrl}/api/v2/get-create-issue-metadata-for-project?project-keys=${projectKeysParam}`, {
+            data = await doFetch(`${baseUrl}/api/v2/get-create-issue-metadata-for-project?${params}`, {
                 method: 'get',
             });
         } catch (error) {
             return {error};
         }
 
-        dispatch({
-            type: ActionTypes.RECEIVED_JIRA_ISSUE_METADATA,
-            data,
-        });
+        if (data.error) {
+            return {error: new Error(data.error)};
+        }
 
         return {data};
     };
 };
 
-export const clearIssueMetadata = () => {
-    return async (dispatch) => {
-        dispatch({type: ActionTypes.CLEAR_JIRA_ISSUE_METADATA});
-    };
-};
-
-export const fetchJiraProjectMetadata = () => {
+export const fetchJiraProjectMetadata = (instanceID: string) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         let data = null;
         try {
-            data = await doFetch(`${baseUrl}/api/v2/get-jira-project-metadata`, {
+            data = await doFetch(`${baseUrl}/api/v2/get-jira-project-metadata?instance_id=${instanceID}`, {
                 method: 'get',
             });
         } catch (error) {
             return {error};
         }
 
-        dispatch({
-            type: ActionTypes.RECEIVED_JIRA_PROJECT_METADATA,
-            data,
-        });
+        if (data.error) {
+            return {error: new Error(data.error)};
+        }
 
         return {data};
     };
 };
 
-export const searchIssues = (params) => {
+export const fetchJiraProjectMetadataForAllInstances = () => {
+    return async (dispatch, getState) => {
+        const instances = getInstalledInstances(getState());
+        const promises = instances.map((instance) => dispatch(fetchJiraProjectMetadata(instance.instance_id)));
+        const responses = await Promise.all(promises) as APIResponse<ProjectMetadata>[];
+
+        const errors = [];
+        const metadata = [];
+        for (const [i, response] of responses.entries()) {
+            const instance = instances[i];
+            if (response.error) {
+                errors.push(response.error);
+            } else {
+                metadata.push({
+                    instance_id: instance.instance_id,
+                    metadata: response.data,
+                });
+            }
+        }
+
+        if (!metadata.length && errors.length) {
+            return {error: errors[0]};
+        }
+
+        return {data: metadata};
+    };
+};
+
+export const searchIssues = (params: SearchIssueParams) => {
     return async (dispatch, getState) => {
         const url = getPluginServerRoute(getState()) + '/api/v2/get-search-issues';
         return doFetchWithResponse(`${url}${buildQueryString(params)}`);
@@ -116,7 +164,7 @@ export const searchUsers = (params) => {
     };
 };
 
-export const createIssue = (payload) => {
+export const createIssue = (payload: CreateIssueRequest) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
@@ -131,6 +179,7 @@ export const createIssue = (payload) => {
         }
     };
 };
+
 export const attachCommentToIssue = (payload) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
@@ -147,7 +196,7 @@ export const attachCommentToIssue = (payload) => {
     };
 };
 
-export const createChannelSubscription = (subscription) => {
+export const createChannelSubscription = (subscription: ChannelSubscription) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
@@ -168,7 +217,7 @@ export const createChannelSubscription = (subscription) => {
     };
 };
 
-export const editChannelSubscription = (subscription) => {
+export const editChannelSubscription = (subscription: ChannelSubscription) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
@@ -189,11 +238,11 @@ export const editChannelSubscription = (subscription) => {
     };
 };
 
-export const deleteChannelSubscription = (subscription) => {
+export const deleteChannelSubscription = (subscription: ChannelSubscription) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            await doFetch(`${baseUrl}/api/v2/subscriptions/channel/${subscription.id}`, {
+            await doFetch(`${baseUrl}/api/v2/subscriptions/channel/${subscription.id}?instance_id=${subscription.instance_id}`, {
                 method: 'delete',
             });
 
@@ -209,16 +258,37 @@ export const deleteChannelSubscription = (subscription) => {
     };
 };
 
-export const fetchChannelSubscriptions = (channelId) => {
+export const fetchChannelSubscriptions = (channelId: string) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
-        let data = null;
-        try {
-            data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel/${channelId}`, {
+        const connectedInstances = getUserConnectedInstances(getState());
+
+        const promises = connectedInstances.map((instance) => {
+            return doFetch(`${baseUrl}/api/v2/subscriptions/channel/${channelId}?instance_id=${instance.instance_id}`, {
                 method: 'get',
             });
+        });
+
+        let allResponses;
+        try {
+            allResponses = await Promise.allSettled(promises);
         } catch (error) {
             return {error};
+        }
+
+        const errors: string[] = [];
+        let data: ChannelSubscription[] = [];
+
+        for (const res of allResponses) {
+            if (res.status === 'rejected') {
+                errors.push(res.reason);
+            } else {
+                data = data.concat(res.value);
+            }
+        }
+
+        if (errors.length > 0 && allResponses.length === errors.length) {
+            return {error: new Error(errors[0])};
         }
 
         dispatch({
@@ -278,6 +348,90 @@ export function getConnected() {
     };
 }
 
+export function disconnectUser(instanceID: string) {
+    return async (dispatch, getState) => {
+        let data;
+        const baseUrl = getPluginServerRoute(getState());
+        try {
+            data = await doFetch(`${baseUrl}/api/v3/disconnect`, {
+                method: 'post',
+                body: JSON.stringify({instance_id: instanceID}),
+            });
+        } catch (error) {
+            return {error};
+        }
+
+        return dispatch(getConnected());
+    };
+}
+
+export function handleConnectFlow(instanceID?: string) {
+    return async (dispatch, getState) => {
+        const state = getState();
+        const instances = getInstalledInstances(state);
+        const connectedInstances = getUserConnectedInstances(state);
+
+        if (!instances.length) {
+            dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
+            return;
+        }
+
+        // TODO <> connectedInstances is still 2 after uninstalling an instance
+        if (instances.length === connectedInstances.length) {
+            let postMessage = `Your Mattermost account is already linked to ${instances[0].instance_id}\n`;
+            if (instances.length > 1) {
+                const bullets = connectedInstances.map((instance) => `* ${instance.instance_id}`).join('\n');
+                postMessage = `Your Mattermost account is already linked to all installed Jira instances:\n${bullets}\n`;
+            }
+            postMessage += 'Please use `/jira disconnect` to disconnect.';
+            dispatch(sendEphemeralPost(postMessage));
+            return;
+        }
+
+        let instance;
+        if (instances.length === 1) {
+            instance = instances[0];
+        }
+        if (instanceID) {
+            const alreadyConnected = connectedInstances.find((i) => i.instance_id === instanceID);
+
+            if (alreadyConnected) {
+                dispatch(sendEphemeralPost(
+                    'Your Jira account at ' + instanceID + ' is already linked to your Mattermost account. Please use `/jira disconnect` to disconnect.'));
+                return;
+            }
+
+            instance = instances.find((i) => i.instance_id === instanceID);
+            if (!instance) {
+                const errMsg = 'Jira instance ' + instanceID + ' is not installed. Please type `/jira instance list` to see the available Jira instances.';
+                dispatch(sendEphemeralPost(errMsg));
+                return;
+            }
+        }
+
+        if (instance && instance.type === InstanceType.SERVER && isDesktopApp() && !isMinimumDesktopAppVersion(4, 3, 0)) { // eslint-disable-line no-magic-numbers
+            const errMsg = 'Your version of the Mattermost desktop client does not support authenticating between Jira and Mattermost directly. To connect your Jira account with Mattermost, please go to Mattermost via your web browser and type `/jira connect`, or [check the Mattermost download page](https://mattermost.com/download/#mattermostApps) to get the latest version of the desktop client.';
+            dispatch(sendEphemeralPost(errMsg));
+            return;
+        }
+
+        if (instance && instance.instance_id) {
+            dispatch(redirectConnect(instance.instance_id));
+            return;
+        }
+
+        dispatch(openConnectModal());
+    };
+}
+
+export function redirectConnect(instanceID: string) {
+    return async (dispatch, getState) => {
+        const instancePrefix = '/instance/' + btoa(instanceID);
+        const target = '/plugins/' + PluginId + instancePrefix + '/user/connect';
+        window.open(target, '_blank');
+    };
+}
+
 export function handleConnectChange(store) {
     return (msg) => {
         if (!msg.data) {
@@ -322,7 +476,7 @@ export function handleInstanceStatusChange(store) {
     };
 }
 
-export function sendEphemeralPost(message, channelId) {
+export function sendEphemeralPost(message: string, channelId?: string) {
     return (dispatch, getState) => {
         const timestamp = Date.now();
         const post = {

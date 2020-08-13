@@ -21,6 +21,7 @@ export type Props = {
     removeFilter: (f1: FilterValue) => void;
     addValidate: (isValid: () => boolean) => void;
     removeValidate: (isValid: () => boolean) => void;
+    instanceID: string;
 };
 
 export type State = {
@@ -229,6 +230,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
         }
 
         const selectProps = {
+            instanceID: this.props.instanceID,
             required: !disableLastSelect,
             isDisabled: disableLastSelect,
             isClearable: false,

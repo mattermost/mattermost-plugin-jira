@@ -22,6 +22,7 @@ describe('components/JiraEpicSelector', () => {
         value: ['KT-17', 'KT-20'],
         addValidate: jest.fn(),
         removeValidate: jest.fn(),
+        instanceID: 'https://something.atlassian.net',
     };
 
     test('should match snapshot', () => {
@@ -30,6 +31,28 @@ describe('components/JiraEpicSelector', () => {
             <JiraEpicSelector {...props}/>
         );
         expect(wrapper).toMatchSnapshot();
+    });
+
+    // these next two tests may fail. if so, delete them
+    test('should call searchIssues on mount if values are present', () => {
+        const props = {...baseProps};
+        const wrapper = shallow<JiraEpicSelector>(
+            <JiraEpicSelector {...props}/>
+        );
+        expect(props.searchIssues).toHaveBeenCalledWith({
+            fields: 'customfield_10011',
+            jql: 'project=KT and issuetype=10000 and id IN (KT-17, KT-20) ORDER BY updated DESC',
+            q: '',
+            instance_id: 'https://something.atlassian.net',
+        });
+    });
+
+    test('should not call searchIssues on mount if no values are present', () => {
+        const props = {...baseProps, value: []};
+        const wrapper = shallow<JiraEpicSelector>(
+            <JiraEpicSelector {...props}/>
+        );
+        expect(props.searchIssues).not.toHaveBeenCalled();
     });
 
     test('#searchIssues should call searchIssues', () => {
@@ -50,6 +73,7 @@ describe('components/JiraEpicSelector', () => {
             fields: 'customfield_10011',
             jql: 'project=KT and issuetype=10000  ORDER BY updated DESC',
             q: '',
+            instance_id: 'https://something.atlassian.net',
         });
 
         wrapper.instance().searchIssues('some input');
@@ -59,6 +83,7 @@ describe('components/JiraEpicSelector', () => {
             fields: 'customfield_10011',
             jql: 'project=KT and issuetype=10000  and ("Epic Name"~"some input" or "Epic Name"~"some input*") ORDER BY updated DESC',
             q: 'some input',
+            instance_id: 'https://something.atlassian.net',
         });
     });
 });

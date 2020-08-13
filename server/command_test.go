@@ -1,16 +1,26 @@
 package main
 
 import (
-	"errors"
+	"crypto/rand"
+	"crypto/rsa"
+	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 	"testing"
+
+	jira "github.com/andygrunwald/go-jira"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (
@@ -23,91 +33,168 @@ const (
 
 type mockUserStoreKV struct {
 	mockUserStore
-	kv map[string]JIRAUser
+	connections map[types.ID]*Connection
+	users       map[types.ID]*User
 }
 
-func (store mockUserStoreKV) LoadJIRAUser(ji Instance, mattermostUserId string) (JIRAUser, error) {
-	user, ok := store.kv[mattermostUserId]
+var _ UserStore = (*mockUserStoreKV)(nil)
+
+func (store mockUserStoreKV) LoadConnection(instanceID, mattermostUserID types.ID) (*Connection, error) {
+	connection, ok := store.connections[mattermostUserID]
 	if !ok {
-		return JIRAUser{}, errors.New("user not found")
+		return nil, errors.Errorf("TESTING connection %q %q not found", instanceID, mattermostUserID)
+	}
+	return connection, nil
+}
+
+func (store mockUserStoreKV) LoadUser(mattermostUserID types.ID) (*User, error) {
+	user, ok := store.users[mattermostUserID]
+	if !ok {
+		return nil, errors.Errorf("TESTING user %q not found", mattermostUserID)
 	}
 	return user, nil
 }
 
 func getMockUserStoreKV() mockUserStoreKV {
-	// Test JIRAUser
-	juser := JIRAUser{}
-	juser.AccountID = "test"
+	newuser := func(id types.ID) *User {
+		u := NewUser(id)
+		u.ConnectedInstances.Set(testInstance1.Common())
+		return u
+	}
+
+	connection := Connection{
+		User: jira.User{
+			AccountID: "test",
+		},
+	}
+
+	withNotifications := connection // copy
+	withNotifications.Settings = &ConnectionSettings{Notifications: true}
 
 	return mockUserStoreKV{
-		kv: map[string]JIRAUser{
-			mockUserIDWithNotifications:    {Settings: &UserSettings{Notifications: true}},
-			mockUserIDWithoutNotifications: {Settings: &UserSettings{Notifications: false}},
-			"connected_user":               juser,
+		users: map[types.ID]*User{
+			"connected_user":               newuser("connected_user"),
+			mockUserIDWithNotifications:    newuser(mockUserIDWithNotifications),
+			mockUserIDWithoutNotifications: newuser(mockUserIDWithoutNotifications),
+		},
+		connections: map[types.ID]*Connection{
+			mockUserIDWithNotifications:    &withNotifications,
+			mockUserIDWithoutNotifications: &connection,
+			"connected_user":               &connection,
 		},
 	}
 }
 
+type mockInstanceStoreKV struct {
+	mockInstanceStore
+	kv *sync.Map
+	*Instances
+	*Plugin
+}
+
+var _ InstanceStore = (*mockInstanceStoreKV)(nil)
+
+func (store *mockInstanceStoreKV) LoadInstances() (*Instances, error) {
+	return store.Instances, nil
+}
+
+func (store *mockInstanceStoreKV) LoadInstance(id types.ID) (Instance, error) {
+	v, ok := store.kv.Load(id)
+	if !ok {
+		return nil, errors.Errorf("instance %q not found", id)
+	}
+	instance := v.(Instance)
+	return instance, nil
+}
+
+func (p *Plugin) getMockInstanceStoreKV(n int) *mockInstanceStoreKV {
+	kv := sync.Map{}
+	instances := NewInstances()
+
+	if n > 2 || n == 0 {
+		return &mockInstanceStoreKV{
+			kv:        &kv,
+			Instances: instances,
+			Plugin:    p,
+		}
+	}
+
+	for i, ti := range []*testInstance{testInstance1, testInstance2} {
+		if i > n {
+			break
+		}
+		instance := *ti
+		instance.Plugin = p
+		instances.Set(instance.Common())
+		kv.Store(instance.GetID(), &instance)
+	}
+
+	return &mockInstanceStoreKV{
+		kv:        &kv,
+		Instances: instances,
+		Plugin:    p,
+	}
+}
+
 func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
-	p := Plugin{}
+	p := &Plugin{}
 	tc := TestConfiguration{}
 	p.updateConfig(func(conf *config) {
 		conf.Secret = tc.Secret
+		conf.mattermostSiteURL = "https://somelink.com"
 	})
 	api := &plugintest.API{}
-	siteURL := "https://somelink.com"
-	api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
 	api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
 
 	tests := map[string]struct {
-		commandArgs                *model.CommandArgs
-		initializeEmptyUserStorage bool
-		expectedMsg                string
+		commandArgs  *model.CommandArgs
+		numInstances int
+		expectedMsg  string
 	}{
 		"no storage": {
-			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
-			initializeEmptyUserStorage: true,
-			expectedMsg:                "Failed to load current Jira instance. Please contact your system administrator.",
+			commandArgs:  &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
+			numInstances: 2,
+			expectedMsg:  "Failed to load your connection to Jira. Error: TESTING user \"3\" not found.",
 		},
 		"user not found": {
-			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
-			initializeEmptyUserStorage: false,
-			expectedMsg:                "Your username is not connected to Jira. Please type `jira connect`. user not found",
+			commandArgs:  &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
+			numInstances: 0,
+			expectedMsg:  "Failed to load your connection to Jira. Error: TESTING user \"3\" not found.",
 		},
 		"no params, with notifications": {
-			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithNotifications},
-			initializeEmptyUserStorage: false,
-			expectedMsg:                "Current settings:\n\tNotifications: on",
+			commandArgs:  &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithNotifications},
+			numInstances: 1,
+			expectedMsg:  "Current settings:\n\tNotifications: on",
 		},
 		"no params, without notifications": {
-			commandArgs:                &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithoutNotifications},
-			initializeEmptyUserStorage: false,
-			expectedMsg:                "Current settings:\n\tNotifications: off",
+			commandArgs:  &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithoutNotifications},
+			numInstances: 1,
+			expectedMsg:  "Current settings:\n\tNotifications: off",
 		},
 		"unknown setting": {
-			commandArgs:                &model.CommandArgs{Command: "/jira settings test", UserId: mockUserIDWithoutNotifications},
-			initializeEmptyUserStorage: false,
-			expectedMsg:                "Unknown setting.",
+			commandArgs:  &model.CommandArgs{Command: "/jira settings" + " test", UserId: mockUserIDWithoutNotifications},
+			numInstances: 1,
+			expectedMsg:  "Unknown setting.",
 		},
 		"set notifications without value": {
-			commandArgs:                &model.CommandArgs{Command: "/jira settings notifications", UserId: mockUserIDWithoutNotifications},
-			initializeEmptyUserStorage: false,
-			expectedMsg:                "`/jira settings notifications [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
+			commandArgs:  &model.CommandArgs{Command: "/jira settings" + " notifications", UserId: mockUserIDWithoutNotifications},
+			numInstances: 1,
+			expectedMsg:  "`/jira settings notifications [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
 		},
 		"set notification with unknown value": {
-			commandArgs:                &model.CommandArgs{Command: "/jira settings notifications test", UserId: mockUserIDWithoutNotifications},
-			initializeEmptyUserStorage: false,
-			expectedMsg:                "`/jira settings notifications [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
+			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications test", UserId: mockUserIDWithoutNotifications},
+			numInstances: 1,
+			expectedMsg:  "`/jira settings notifications [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
 		},
 		"enable notifications": {
-			commandArgs:                &model.CommandArgs{Command: "/jira settings notifications on", UserId: mockUserIDWithoutNotifications},
-			initializeEmptyUserStorage: false,
-			expectedMsg:                "Settings updated. Notifications on.",
+			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications on", UserId: mockUserIDWithoutNotifications},
+			numInstances: 1,
+			expectedMsg:  "Settings updated. Notifications on.",
 		},
 		"disable notifications": {
-			commandArgs:                &model.CommandArgs{Command: "/jira settings notifications off", UserId: mockUserIDWithNotifications},
-			initializeEmptyUserStorage: false,
-			expectedMsg:                "Settings updated. Notifications off.",
+			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications off", UserId: mockUserIDWithNotifications},
+			numInstances: 1,
+			expectedMsg:  "Settings updated. Notifications off.",
 		},
 	}
 	for name, tt := range tests {
@@ -123,11 +210,7 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 			}).Once().Return(&model.Post{})
 
 			p.SetAPI(currentTestApi)
-			if tt.initializeEmptyUserStorage {
-				p.currentInstanceStore = mockCurrentInstanceStoreNoInstance{}
-			} else {
-				p.currentInstanceStore = mockCurrentInstanceStore{}
-			}
+			p.instanceStore = p.getMockInstanceStoreKV(tt.numInstances)
 			p.userStore = getMockUserStoreKV()
 
 			p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
@@ -138,14 +221,7 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 }
 
 func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
-	p := Plugin{}
-	tc := TestConfiguration{}
-	p.updateConfig(func(conf *config) {
-		conf.Secret = tc.Secret
-	})
 	api := &plugintest.API{}
-	siteURL := "https://somelink.com"
-	api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
 	api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
 	api.On("LogDebug",
 		mock.AnythingOfTypeArgument("string"),
@@ -161,9 +237,10 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		mock.AnythingOfTypeArgument("string")).Return(nil)
 	api.On("KVSet", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
 	api.On("KVSetWithExpiry", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
-	api.On("KVGet", "known_jira_instances").Return(nil, nil)
+	api.On("KVGet", keyInstances).Return(nil, nil)
 	api.On("KVGet", "rsa_key").Return(nil, nil)
 	api.On("PublishWebSocketEvent", mock.AnythingOfTypeArgument("string"), mock.Anything, mock.Anything)
+	api.On("UnregisterCommand", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
 
 	sysAdminUser := &model.User{
 		Id:    mockUserIDSysAdmin,
@@ -178,6 +255,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 
 	tests := map[string]struct {
 		commandArgs       *model.CommandArgs
+		numInstances      int
 		expectedMsgPrefix string
 	}{
 		"no params - user is sys admin": {
@@ -205,20 +283,43 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			expectedMsgPrefix: "https://somelink.com is the Mattermost site URL. Please use your Jira URL with `/jira install`.",
 		},
 		"install valid cloud instance": {
+			numInstances:      0,
 			commandArgs:       &model.CommandArgs{Command: "/jira install cloud https://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "https://mmtest.atlassian.net has been successfully installed.",
+			expectedMsgPrefix: "https://mmtest.atlassian.net has been successfully added.",
 		},
-		"install valid server instance": {
+		"install valid server instance 1 preinstalled": {
+			numInstances:      1,
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://jiralink.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "Server instance has been installed",
+			expectedMsgPrefix: "https://jiralink.com has been successfully added",
+		},
+		"install valid server instance 2 preinstalled": {
+			numInstances:      2,
+			commandArgs:       &model.CommandArgs{Command: "/jira install server https://jiralink.com", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: "https://jiralink.com has been successfully added",
+		},
+		"install non secure cloud instance": {
+			commandArgs:       &model.CommandArgs{Command: "/jira install cloud http://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: "`/jira install cloud` requires a secure connection (HTTPS). Please run the following command:",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			p := Plugin{}
+			p.updateConfig(func(conf *config) {
+				conf.mattermostSiteURL = "https://somelink.com"
+				conf.rsaKey, _ = rsa.GenerateKey(rand.Reader, 1024)
+			})
 			isSendEphemeralPostCalled := false
 
-			currentTestApi := api
-			currentTestApi.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
+			// add valid license
+			trueValue := true
+			var license model.License
+			license.Features = &model.Features{}
+			license.Features.EnterprisePlugins = &trueValue
+
+			api.On("GetLicense").Return(&license)
+			api.On("RegisterCommand", mock.Anything).Return(nil)
+			api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
 				isSendEphemeralPostCalled = true
 
 				post := args.Get(1).(*model.Post)
@@ -226,13 +327,17 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 				assert.True(t, strings.HasPrefix(actual, tt.expectedMsgPrefix), "Expected returned message to start with: \n%s\nActual:\n%s", tt.expectedMsgPrefix, actual)
 			}).Once().Return(&model.Post{})
 
-			p.SetAPI(currentTestApi)
+			p.SetAPI(api)
+			_, filename, _, _ := runtime.Caller(0)
+			templates, err := p.loadTemplates(filepath.Dir(filename) + "/../assets/templates")
+			require.NoError(t, err)
+			p.templates = templates
 
 			store := NewStore(&p)
-			p.instanceStore = store
+			p.instanceStore = p.getMockInstanceStoreKV(tt.numInstances)
 			p.secretsStore = store
-			p.currentInstanceStore = mockCurrentInstanceStore{&p}
 			p.userStore = getMockUserStoreKV()
+			p.enterpriseChecker = enterprise.NewEnterpriseChecker(api)
 
 			cmdResponse, appError := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
 			require.Nil(t, appError)
@@ -243,14 +348,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 }
 
 func TestPlugin_ExecuteCommand_Uninstall(t *testing.T) {
-	p := Plugin{}
-	tc := TestConfiguration{}
-	p.updateConfig(func(conf *config) {
-		conf.Secret = tc.Secret
-	})
 	api := &plugintest.API{}
-	siteURL := "https://somelink.com"
-	api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
 
 	sysAdminUser := &model.User{
 		Id:    mockUserIDSysAdmin,
@@ -290,6 +388,10 @@ func TestPlugin_ExecuteCommand_Uninstall(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			p := Plugin{}
+			p.updateConfig(func(conf *config) {
+				conf.mattermostSiteURL = "https://somelink.com"
+			})
 			isSendEphemeralPostCalled := false
 			currentTestAPI := api
 			currentTestAPI.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {

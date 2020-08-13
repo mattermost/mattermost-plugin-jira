@@ -10,7 +10,7 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {closeAttachCommentToIssueModal, attachCommentToIssue} from 'actions';
 import {isAttachCommentToIssueModalVisible, getAttachCommentToIssueModalForPostId} from 'selectors';
 
-import AttachCommentToIssue from './attach_comment_to_issue';
+import AttachCommentToIssueModal from './attach_comment_modal';
 
 const mapStateToProps = (state) => {
     const postId = getAttachCommentToIssueModalForPostId(state);
@@ -26,7 +26,7 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
     close: closeAttachCommentToIssueModal,
-    create: attachCommentToIssue,
+    attachComment: attachCommentToIssue,
 }, dispatch);
 
-export default connect(mapStateToProps, mapDispatchToProps)(AttachCommentToIssue);
+export default connect(mapStateToProps, mapDispatchToProps)(AttachCommentToIssueModal);

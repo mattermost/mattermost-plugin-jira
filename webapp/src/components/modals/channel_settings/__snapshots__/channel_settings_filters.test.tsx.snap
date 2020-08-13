@@ -98,6 +98,7 @@ exports[`components/ChannelSettingsFilters should match snapshot 1`] = `
             },
           ]
         }
+        instanceID="https://something.atlassian.net"
         issueMetadata={
           Object {
             "projects": Array [

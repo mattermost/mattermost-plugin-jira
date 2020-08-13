@@ -14,12 +14,19 @@ import {
     editChannelSubscription,
     closeChannelSettings,
     fetchJiraProjectMetadata,
+    fetchJiraProjectMetadataForAllInstances,
     fetchJiraIssueMetadataForProjects,
-    clearIssueMetadata,
     sendEphemeralPost,
+    getConnected,
 } from 'actions';
 
-import {getChannelSubscriptions, getChannelIdWithSettingsOpen, getJiraProjectMetadata, getJiraIssueMetadata} from 'selectors';
+import {
+    getChannelSubscriptions,
+    getChannelIdWithSettingsOpen,
+    getInstalledInstances,
+    getUserConnectedInstances,
+    getDefaultUserInstanceID,
+} from 'selectors';
 
 import ChannelSettingsModal from './channel_settings';
 
@@ -33,29 +40,30 @@ const mapStateToProps = (state) => {
         omitDisplayName = isDirectChannel(channel) || isGroupChannel(channel);
     }
 
-    const jiraIssueMetadata = getJiraIssueMetadata(state);
-    const jiraProjectMetadata = getJiraProjectMetadata(state);
-
     const channelSubscriptions = getChannelSubscriptions(state)[channelId];
+
+    const installedInstances = getInstalledInstances(state);
+    const connectedInstances = getUserConnectedInstances(state);
 
     return {
         omitDisplayName,
         channelSubscriptions,
         channel,
-        jiraIssueMetadata,
-        jiraProjectMetadata,
+        installedInstances,
+        connectedInstances,
     };
 };
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
     close: closeChannelSettings,
     fetchJiraProjectMetadata,
+    fetchJiraProjectMetadataForAllInstances,
     fetchJiraIssueMetadataForProjects,
-    clearIssueMetadata,
     createChannelSubscription,
     fetchChannelSubscriptions,
     deleteChannelSubscription,
     editChannelSubscription,
+    getConnected,
     sendEphemeralPost,
 }, dispatch);
 

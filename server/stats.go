@@ -42,13 +42,13 @@ func (p *Plugin) initStats() {
 		})
 	})
 
-	initUserCounter(p.currentInstanceStore, p.userStore)
+	initUserCounter(p.userStore)
 	initUptime()
 
 	p.startAutosaveStats()
 }
 
-func httpAPIStats(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) httpAPIStats(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return respondErr(w, http.StatusMethodNotAllowed,
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
@@ -175,7 +175,7 @@ func (p *Plugin) debugResetStats() error {
 	return nil
 }
 
-func initUserCounter(currentInstanceStore CurrentInstanceStore, userStore UserStore) {
+func initUserCounter(userStore UserStore) {
 	goexpvar.Publish("jira/mapped_users", goexpvar.Func(func() interface{} {
 		c, err := userStore.CountUsers()
 		if err != nil {

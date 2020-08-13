@@ -7,9 +7,9 @@ import {bindActionCreators} from 'redux';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
 
-import {openCreateModal, sendEphemeralPost} from 'actions';
+import {openCreateModal, handleConnectFlow} from 'actions';
 
-import {getCurrentUserLocale, isUserConnected, getInstalledInstanceType, isInstanceInstalled} from 'selectors';
+import {getCurrentUserLocale, isUserConnected, canUserConnect, getInstalledInstances} from 'selectors';
 import {isCombinedUserActivityPost} from 'utils/posts';
 
 import CreateIssuePostMenuAction from './create_issue';
@@ -23,14 +23,14 @@ const mapStateToProps = (state, ownProps) => {
         locale: getCurrentUserLocale(state),
         isSystemMessage: systemMessage,
         userConnected: isUserConnected(state),
-        isInstanceInstalled: isInstanceInstalled(state),
-        installedInstanceType: getInstalledInstanceType(state),
+        userCanConnect: canUserConnect(state),
+        installedInstances: getInstalledInstances(state),
     };
 };
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
     open: openCreateModal,
-    sendEphemeralPost,
+    handleConnectFlow,
 }, dispatch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(CreateIssuePostMenuAction);

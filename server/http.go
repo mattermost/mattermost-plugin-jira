@@ -7,7 +7,10 @@ import (
 	"encoding/json"
 	goexpvar "expvar"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -15,44 +18,60 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-plugin-workflow-client/workflowclient"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 )
 
 const (
-	routeAPICreateIssue            = "/api/v2/create-issue"
-	routeAPIGetCreateIssueMetadata = "/api/v2/get-create-issue-metadata-for-project"
-	routeAPIGetJiraProjectMetadata = "/api/v2/get-jira-project-metadata"
-	routeAPIGetSearchIssues        = "/api/v2/get-search-issues"
-	routeAPIGetAutoCompleteFields  = "/api/v2/get-search-autocomplete-fields"
-	routeAPIGetSearchUsers         = "/api/v2/get-search-users"
-	routeAPIAttachCommentToIssue   = "/api/v2/attach-comment-to-issue"
-	routeAPIUserInfo               = "/api/v2/userinfo"
-	routeAPISubscribeWebhook       = "/api/v2/webhook"
-	routeAPISubscriptionsChannel   = "/api/v2/subscriptions/channel"
-	routeAPISettingsInfo           = "/api/v2/settingsinfo"
-	routeAPIStats                  = "/api/v2/stats"
-	routeIssueTransition           = "/api/v2/transition"
-	routeACInstalled               = "/ac/installed"
-	routeACJSON                    = "/ac/atlassian-connect.json"
-	routeACUninstalled             = "/ac/uninstalled"
-	routeACUserRedirectWithToken   = "/ac/user_redirect.html"
-	routeACUserConfirm             = "/ac/user_confirm.html"
-	routeACUserConnected           = "/ac/user_connected.html"
-	routeACUserDisconnected        = "/ac/user_disconnected.html"
-	routeIncomingIssueEvent        = "/issue_event"
-	routeIncomingWebhook           = "/webhook"
-	routeOAuth1Complete            = "/oauth1/complete.html"
-	routeOAuth1PublicKey           = "/oauth1/public_key.html" // TODO remove, debugging?
-	routeUserStart                 = "/user/start"
-	routeUserConnect               = "/user/connect"
-	routeUserDisconnect            = "/user/disconnect"
-	routeWorkflowRegister          = "/workflow/meta"
-	routeWorkflowTriggerSetup      = "/workflow/trigger_setup"
-	routeWorkflowCreateIssue       = "/workflow/create_issue"
+	routeAutocompleteConnect           = "/autocomplete/connect"
+	routeAutocompleteUserInstance      = "/autocomplete/user-instance"
+	routeAutocompleteInstalledInstance = "/autocomplete/installed-instance"
+	routeAPICreateIssue                = "/api/v2/create-issue"
+	routeAPIGetCreateIssueMetadata     = "/api/v2/get-create-issue-metadata-for-project"
+	routeAPIGetJiraProjectMetadata     = "/api/v2/get-jira-project-metadata"
+	routeAPIGetSearchIssues            = "/api/v2/get-search-issues"
+	routeAPIGetAutoCompleteFields      = "/api/v2/get-search-autocomplete-fields"
+	routeAPIGetSearchUsers             = "/api/v2/get-search-users"
+	routeAPIAttachCommentToIssue       = "/api/v2/attach-comment-to-issue"
+	routeAPIUserInfo                   = "/api/v2/userinfo"
+	routeAPISubscribeWebhook           = "/api/v2/webhook"
+	routeAPISubscriptionsChannel       = "/api/v2/subscriptions/channel"
+	routeAPISettingsInfo               = "/api/v2/settingsinfo"
+	routeAPIStats                      = "/api/v2/stats"
+	routeIssueTransition               = "/api/v2/transition"
+	routeAPIUserDisconnect             = "/api/v3/disconnect"
+	routeACInstalled                   = "/ac/installed"
+	routeACJSON                        = "/ac/atlassian-connect.json"
+	routeACUninstalled                 = "/ac/uninstalled"
+	routeACUserRedirectWithToken       = "/ac/user_redirect.html"
+	routeACUserConfirm                 = "/ac/user_confirm.html"
+	routeACUserConnected               = "/ac/user_connected.html"
+	routeACUserDisconnected            = "/ac/user_disconnected.html"
+	routeIncomingWebhook               = "/webhook"
+	routeOAuth1Complete                = "/oauth1/complete.html"
+	routeUserStart                     = "/user/start"
+	routeUserConnect                   = "/user/connect"
+	routeUserDisconnect                = "/user/disconnect"
+	routeWorkflowRegister              = "/workflow/meta"
+	routeWorkflowTriggerSetup          = "/workflow/trigger_setup"
+	routeWorkflowCreateIssue           = "/workflow/create_issue"
+)
+
+const routePrefixInstance = "instance"
+
+const (
+	websocketEventInstanceStatus = "instance_status"
+	websocketEventConnect        = "connect"
+	websocketEventDisconnect     = "disconnect"
 )
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
+	if strings.HasPrefix(r.URL.Path, "/plugins/servlet") {
+		body, _ := httputil.DumpRequest(r, true)
+		p.errorf("Received an unknown request as a Jira plugin:\n%s", string(body))
+	}
+
 	status, err := p.serveHTTP(c, w, r)
 	if err != nil {
 		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
@@ -61,71 +80,106 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 }
 
 func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) (int, error) {
-	switch r.URL.Path {
+	var err error
+	path := r.URL.Path
+	instanceURL := ""
+	instanceURL, path = splitInstancePath(path)
+	callbackInstanceID := types.ID("")
+
+	// Add any "callback" URLs here so that the caller instance is properly identified
+	switch path {
+	case routeACJSON,
+		routeACUserRedirectWithToken,
+		routeACUserConfirm,
+		routeACUserConnected,
+		routeACUserDisconnected,
+		routeIncomingWebhook,
+		routeOAuth1Complete,
+		routeUserDisconnect,
+		routeUserConnect,
+		routeUserStart,
+		routeAPISubscribeWebhook:
+
+		callbackInstanceID, err = p.ResolveWebhookInstanceURL(instanceURL)
+		if err != nil {
+			return respondErr(w, http.StatusInternalServerError, err)
+		}
+	}
+
+	switch path {
 	// Issue APIs
 	case routeAPICreateIssue:
-		return withInstance(p.currentInstanceStore, w, r, httpAPICreateIssue)
+		return p.httpCreateIssue(w, r)
 	case routeAPIGetCreateIssueMetadata:
-		return withInstance(p.currentInstanceStore, w, r, httpAPIGetCreateIssueMetadataForProjects)
+		return p.httpGetCreateIssueMetadataForProjects(w, r)
 	case routeAPIGetJiraProjectMetadata:
-		return withInstance(p.currentInstanceStore, w, r, httpAPIGetJiraProjectMetadata)
+		return p.httpGetJiraProjectMetadata(w, r)
 	case routeAPIGetSearchIssues:
-		return withInstance(p.currentInstanceStore, w, r, httpAPIGetSearchIssues)
+		return p.httpGetSearchIssues(w, r)
 	case routeAPIGetAutoCompleteFields:
-		return withInstance(p.currentInstanceStore, w, r, httpAPIGetAutoCompleteFields)
+		return p.httpGetAutoCompleteFields(w, r)
 	case routeAPIGetSearchUsers:
-		return withInstance(p.currentInstanceStore, w, r, httpAPIGetSearchUsers)
+		return p.httpGetSearchUsers(w, r)
 	case routeAPIAttachCommentToIssue:
-		return withInstance(p.currentInstanceStore, w, r, httpAPIAttachCommentToIssue)
+		return p.httpAttachCommentToIssue(w, r)
 	case routeIssueTransition:
-		return withInstance(p.currentInstanceStore, w, r, httpAPITransitionIssue)
+		return p.httpTransitionIssuePostAction(w, r)
 
 	// User APIs
 	case routeAPIUserInfo:
-		return httpAPIGetUserInfo(p, w, r)
+		return p.httpGetUserInfo(w, r)
 	case routeAPISettingsInfo:
-		return httpAPIGetSettingsInfo(p, w, r)
+		return p.httpGetSettingsInfo(w, r)
 
 	// Stats
 	case routeAPIStats:
-		return httpAPIStats(p, w, r)
+		return p.httpAPIStats(w, r)
 
-	// Atlassian Connect application
-	case routeACInstalled:
-		return httpACInstalled(p, w, r)
+		// Atlassian Connect application
 	case routeACJSON:
-		return httpACJSON(p, w, r)
+		return p.httpACJSON(w, r, callbackInstanceID)
+	case routeACInstalled:
+		return p.httpACInstalled(w, r)
 	case routeACUninstalled:
-		return httpACUninstalled(p, w, r)
+		return p.httpACUninstalled(w, r)
 
 	// Atlassian Connect user mapping
 	case routeACUserRedirectWithToken:
-		return withCloudInstance(p, w, r, httpACUserRedirect)
+		return p.httpACUserRedirect(w, r, callbackInstanceID)
 	case routeACUserConfirm,
 		routeACUserConnected,
 		routeACUserDisconnected:
-		return withCloudInstance(p, w, r, httpACUserInteractive)
+		return p.httpACUserInteractive(w, r, callbackInstanceID)
+
+		// Command autocomplete
+	case routeAutocompleteConnect:
+		return p.httpAutocompleteConnect(w, r)
+	case routeAutocompleteUserInstance:
+		return p.httpAutocompleteUserInstance(w, r)
+	case routeAutocompleteInstalledInstance:
+		return p.httpAutocompleteInstalledInstance(w, r)
 
 	// Incoming webhook
-	case routeIncomingWebhook, routeIncomingIssueEvent:
-		return httpWebhook(p, w, r)
+	case routeIncomingWebhook:
+		return p.httpWebhook(w, r, callbackInstanceID)
 
 	// Oauth1 (Jira Server)
 	case routeOAuth1Complete:
-		return withServerInstance(p, w, r, httpOAuth1aComplete)
+		return p.httpOAuth1aComplete(w, r, callbackInstanceID)
 	case routeUserDisconnect:
-		return withServerInstance(p, w, r, httpOAuth1aDisconnect)
-	case routeOAuth1PublicKey:
-		return httpOAuth1aPublicKey(p, w, r)
+		return p.httpOAuth1aDisconnect(w, r, callbackInstanceID)
 
 	// User connect/disconnect links
 	case routeUserConnect:
-		return withInstance(p.currentInstanceStore, w, r, httpUserConnect)
+		return p.httpUserConnect(w, r, callbackInstanceID)
 	case routeUserStart:
-		return withInstance(p.currentInstanceStore, w, r, httpUserStart)
+		return p.httpUserStart(w, r, callbackInstanceID)
+	case routeAPIUserDisconnect:
+		return p.httpUserDisconnect(w, r)
+
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:
-		return httpSubscribeWebhook(p, w, r)
+		return p.httpSubscribeWebhook(w, r, callbackInstanceID)
 
 	// expvar
 	case "/debug/vars":
@@ -148,13 +202,13 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	case routeWorkflowCreateIssue:
 		{
 			if c.SourcePluginId != "" {
-				return withInstance(p.currentInstanceStore, w, r, httpWorkflowCreateIssue)
+				return p.httpWorkflowCreateIssue(w, r)
 			}
 		}
 	}
 
-	if strings.HasPrefix(r.URL.Path, routeAPISubscriptionsChannel) {
-		return httpChannelSubscriptions(p, w, r)
+	if strings.HasPrefix(path, routeAPISubscriptionsChannel) {
+		return p.httpChannelSubscriptions(w, r)
 	}
 
 	return respondErr(w, http.StatusNotFound, errors.New("not found"))
@@ -202,6 +256,7 @@ func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 						Description: "Jira issue ID",
 					},
 				},
+				//TODO <><> prefix route with instance? or unnecessary since it's for all instances?
 				TriggerSetupURL: "/jira" + routeWorkflowTriggerSetup,
 			},
 		},
@@ -211,7 +266,9 @@ func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 				DisplayName: "Jira Create",
 				Fields:      []workflowclient.Field{},
 				VarInfos:    []workflowclient.VarInfo{},
-				URL:         "/jira" + routeWorkflowCreateIssue,
+
+				// instanceID should be passed in as a parameter, in the JSON, no need to prefix the URL
+				URL: "/jira" + routeWorkflowCreateIssue,
 			},
 		},
 	}
@@ -243,6 +300,7 @@ func httpWorkflowTriggerSetup(p *Plugin, w http.ResponseWriter, r *http.Request)
 }
 
 func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {
+	dir = filepath.Clean(dir)
 	templates := make(map[string]*template.Template)
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -286,11 +344,12 @@ func respondJSON(w http.ResponseWriter, obj interface{}) (int, error) {
 }
 
 func (p *Plugin) respondTemplate(w http.ResponseWriter, r *http.Request, contentType string, values interface{}) (int, error) {
+	_, path := splitInstancePath(r.URL.Path)
 	w.Header().Set("Content-Type", contentType)
-	t := p.templates[r.URL.Path]
+	t := p.templates[path]
 	if t == nil {
 		return respondErr(w, http.StatusInternalServerError,
-			errors.New("no template found for "+r.URL.Path))
+			errors.New("no template found for "+path))
 	}
 	err := t.Execute(w, values)
 	if err != nil {
@@ -312,4 +371,31 @@ func (p *Plugin) respondSpecialTemplate(w http.ResponseWriter, key string, statu
 			errors.WithMessage(err, "failed to write response")
 	}
 	return status, nil
+}
+
+func instancePath(route string, instanceID types.ID) string {
+	encoded := url.PathEscape(encode([]byte(instanceID)))
+	return path.Join("/"+routePrefixInstance+"/"+encoded, route)
+}
+
+func splitInstancePath(route string) (instanceURL string, remainingPath string) {
+	leadingSlash := ""
+	ss := strings.Split(route, "/")
+	if len(ss) > 1 && ss[0] == "" {
+		leadingSlash = "/"
+		ss = ss[1:]
+	}
+
+	if len(ss) < 2 {
+		return "", route
+	}
+	if ss[0] != routePrefixInstance {
+		return "", route
+	}
+
+	id, err := decode(ss[1])
+	if err != nil {
+		return "", route
+	}
+	return string(id), leadingSlash + strings.Join(ss[2:], "/")
 }

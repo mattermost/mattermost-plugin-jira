@@ -9,11 +9,13 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const userRedirectPageKey = "user-redirect"
 
-func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) httpACJSON(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
 	if r.Method != http.MethodGet {
 		return respondErr(w, http.StatusMethodNotAllowed,
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
@@ -21,17 +23,17 @@ func httpACJSON(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) 
 
 	return p.respondTemplate(w, r, "application/json", map[string]string{
 		"BaseURL":                      p.GetPluginURL(),
-		"RouteACJSON":                  routeACJSON,
+		"RouteACJSON":                  instancePath(routeACJSON, instanceID),
 		"RouteACInstalled":             routeACInstalled,
 		"RouteACUninstalled":           routeACUninstalled,
-		"RouteACUserRedirectWithToken": routeACUserRedirectWithToken,
+		"RouteACUserRedirectWithToken": instancePath(routeACUserRedirectWithToken, instanceID),
 		"UserRedirectPageKey":          userRedirectPageKey,
 		"ExternalURL":                  p.GetSiteURL(),
 		"PluginKey":                    p.GetPluginKey(),
 	})
 }
 
-func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
 		return respondErr(w, http.StatusMethodNotAllowed,
 			errors.New("method "+r.Method+" is not allowed, must be POST"))
@@ -49,46 +51,43 @@ func httpACInstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, er
 		return respondErr(w, http.StatusBadRequest,
 			errors.WithMessage(err, "failed to unmarshal request"))
 	}
+	instanceID := types.ID(asc.BaseURL)
 
 	// Only allow this operation once, a JIRA instance must already exist
-	// for asc.BaseURL but its EventType would be empty.
-	ji, err := p.instanceStore.LoadJIRAInstance(asc.BaseURL)
+	// for asc.BaseURL, but not already installed.
+	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to load instance "+asc.BaseURL))
 	}
-	if ji == nil {
+	if instance == nil {
 		return respondErr(w, http.StatusNotFound,
 			errors.Errorf("Jira instance %s must first be added to Mattermost", asc.BaseURL))
 	}
-	jci, ok := ji.(*jiraCloudInstance)
+	ci, ok := instance.(*cloudInstance)
 	if !ok {
 		return respondErr(w, http.StatusBadRequest,
-			errors.New("Must be a JIRA Cloud instance, is "+ji.GetType()))
+			errors.Errorf("Must be a JIRA Cloud instance, is %s", instance.Common().Type))
 	}
-	if jci.Installed {
+	if ci.Installed {
 		return respondErr(w, http.StatusForbidden,
 			errors.Errorf("Jira instance %s is already installed", asc.BaseURL))
 	}
 
 	// Create a permanent instance record, also store it as current
-	jiraInstance := NewJIRACloudInstance(p, asc.BaseURL, true, string(body), &asc)
-	err = p.instanceStore.StoreJIRAInstance(jiraInstance)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
-	}
-	err = p.StoreCurrentJIRAInstanceAndNotify(jiraInstance)
+	newInstance := newCloudInstance(p, instanceID, true, string(body), &asc)
+	err = p.InstallInstance(newInstance)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	// Setup autolink
-	p.AddAutolinksForCloudInstance(jiraInstance.(*jiraCloudInstance))
+	p.AddAutolinksForCloudInstance(newInstance)
 
 	return respondJSON(w, []string{"OK"})
 }
 
-func httpACUninstalled(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) httpACUninstalled(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
 		return respondErr(w, http.StatusMethodNotAllowed,
 			errors.New("method "+r.Method+" is not allowed, must be POST"))
