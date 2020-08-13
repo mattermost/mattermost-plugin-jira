@@ -54,10 +54,7 @@ export default class JiraFields extends React.Component {
             return a.name > b.name ? 1 : -1;
         });
 
-        const selectFields = fields.filter((f) => !isTextField(f));
-        const textFields = fields.filter((f) => isTextField(f));
-
-        return [...start, ...selectFields, ...textFields];
+        return start.concat(fields);
     }
 
     render() {
