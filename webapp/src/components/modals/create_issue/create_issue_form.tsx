@@ -291,6 +291,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                         this.state.projectKey,
                         this.state.issueType
                     )}
+                    instanceID={this.state.instanceID}
                     issueMetadata={this.state.jiraIssueMetadata}
                     onChange={this.handleFieldChange}
                     values={this.state.fields}
@@ -346,7 +347,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
         let form;
         if (this.state.fetchingIssueMetadata) {
             form = <Loading/>;
-        } else if (this.state.projectKey && this.state.jiraIssueMetadata) {
+        } else if (this.state.projectKey && this.state.jiraIssueMetadata && this.state.instanceID) {
             form = this.renderForm();
         }
 

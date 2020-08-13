@@ -74,6 +74,7 @@ export default class JiraFields extends React.Component {
 
         return this.getSortedFields().map((field) => (
             <JiraField
+                instanceID={this.props.instanceID}
                 key={field.key}
                 id={field.key}
                 issueMetadata={this.props.issueMetadata}

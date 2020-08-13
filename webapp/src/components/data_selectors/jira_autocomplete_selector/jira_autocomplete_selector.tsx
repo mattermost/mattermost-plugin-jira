@@ -33,10 +33,11 @@ export default class JiraAutoCompleteSelector extends React.PureComponent<Props>
     };
 
     searchAutoCompleteFields = (inputValue: string): Promise<ReactSelectOption[]> => {
-        const {fieldName} = this.props;
+        const {fieldName, instanceID} = this.props;
         const params = {
             fieldValue: inputValue,
             fieldName,
+            instance_id: instanceID,
         };
         return this.props.searchAutoCompleteFields(params).then(({data}) => {
             return data.results.map((suggestion) => ({

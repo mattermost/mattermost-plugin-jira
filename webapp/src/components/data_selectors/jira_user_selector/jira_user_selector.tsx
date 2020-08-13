@@ -25,6 +25,7 @@ export default class JiraUserSelector extends React.PureComponent<Props> {
         const params = {
             q: inputValue,
             project: this.props.projectKey,
+            instance_id: this.props.instanceID,
         };
 
         return this.props.searchUsers(params).then(({data, error}) => {

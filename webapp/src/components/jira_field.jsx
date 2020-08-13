@@ -88,6 +88,7 @@ export default class JiraField extends React.Component {
         }
 
         const selectProps = {
+            instanceID: this.props.instanceID,
             theme: this.props.theme,
             addValidate: this.props.addValidate,
             removeValidate: this.props.removeValidate,
