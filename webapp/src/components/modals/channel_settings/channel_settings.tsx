@@ -69,7 +69,7 @@ export default class ChannelSettingsModal extends PureComponent<Props> {
     };
 
     render(): JSX.Element {
-        const isModalOpen = this.props.channel && this.state.showModal;
+        const isModalOpen = Boolean(this.props.channel && this.state.showModal);
 
         let inner;
         if (isModalOpen) {
