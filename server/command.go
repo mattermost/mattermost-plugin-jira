@@ -278,7 +278,6 @@ func createSubscribeCommand(optInstance bool) *model.AutocompleteData {
 		"list", "", "List the Jira notifications sent to this channel")
 	withFlagInstance(list, optInstance, routeAutocompleteInstalledInstance)
 	subscribe.AddCommand(list)
-	subscribe.RoleID = model.SYSTEM_ADMIN_ROLE_ID
 	return subscribe
 }
 
