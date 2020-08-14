@@ -33,6 +33,11 @@ include build/setup.mk
 
 BUNDLE_NAME ?= $(PLUGIN_ID)-$(PLUGIN_VERSION).tar.gz
 
+# Include custom makefile, if present
+ifneq ($(wildcard build/custom.mk),)
+	include build/custom.mk
+endif
+
 ## Checks the code style, tests, builds and bundles the plugin.
 all: check-style test dist
 
