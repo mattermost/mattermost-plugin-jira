@@ -5,7 +5,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import JiraField from 'components/jira_field';
-import {isTextField} from 'utils/jira_issue_metadata';
 
 export default class JiraFields extends React.Component {
     static propTypes = {
@@ -13,6 +12,7 @@ export default class JiraFields extends React.Component {
             PropTypes.object,
             PropTypes.array,
         ]).isRequired,
+        instanceID: PropTypes.string.isRequired,
         onChange: PropTypes.func.isRequired,
         issueMetadata: PropTypes.object.isRequired,
         values: PropTypes.object,

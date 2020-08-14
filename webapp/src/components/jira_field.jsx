@@ -16,6 +16,7 @@ import JiraUserSelector from './data_selectors/jira_user_selector';
 export default class JiraField extends React.Component {
     static propTypes = {
         id: PropTypes.string.isRequired,
+        instanceID: PropTypes.string.isRequired,
         field: PropTypes.object.isRequired,
         projectKey: PropTypes.string.isRequired,
         issueMetadata: PropTypes.object.isRequired,

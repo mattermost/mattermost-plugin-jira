@@ -3,11 +3,8 @@
 
 import React from 'react';
 
-import {Theme} from 'mattermost-redux/types/preferences';
-
 import {isEpicNameField, isEpicIssueType} from 'utils/jira_issue_metadata';
 import {IssueMetadata, ReactSelectOption, JiraIssue} from 'types/model';
-import {Props as ReactSelectSettingProps} from 'components/react_select_setting';
 
 import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
 
@@ -85,6 +82,7 @@ export default class JiraEpicSelector extends React.PureComponent<Props> {
             jql: fullJql,
             fields: epicNameTypeId,
             q: userInput,
+            instance_id: this.props.instanceID,
         };
 
         return this.props.searchIssues(params).then(({data}: {data: JiraIssue[]}) => {

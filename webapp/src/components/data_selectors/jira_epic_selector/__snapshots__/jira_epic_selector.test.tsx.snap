@@ -4,6 +4,7 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
 <BackendSelector
   addValidate={[MockFunction]}
   fetchInitialSelectedValues={[Function]}
+  instanceID="https://something.atlassian.net"
   isMulti={true}
   issueMetadata={
     Object {
