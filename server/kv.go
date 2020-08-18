@@ -54,8 +54,6 @@ type InstanceStore interface {
 	LoadInstances() (*Instances, error)
 	StoreInstance(instance Instance) error
 	StoreInstances(*Instances) error
-	StoreKnownJIRAInstancesAsV2(known jiraV2Instances) error
-	DeleteInstances() error
 }
 
 type UserStore interface {
@@ -546,14 +544,6 @@ func (store *store) LoadInstances() (*Instances, error) {
 	}, nil
 }
 
-func (store *store) DeleteInstances() error {
-	appErr := store.plugin.API.KVDelete(keyInstances)
-	if appErr != nil {
-		return appErr
-	}
-	return nil
-}
-
 func (store *store) StoreInstances(instances *Instances) error {
 	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
 	return kv.ValueIndex(keyInstances, &instancesArray{}).Store(instances.ValueSet)
@@ -648,18 +638,6 @@ func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	return instances, nil
 }
 
-func (store store) StoreKnownJIRAInstancesAsV2(known jiraV2Instances) (returnErr error) {
-	defer func() {
-		if returnErr == nil {
-			return
-		}
-		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store known Jira instances %+v", known))
-	}()
-
-	return store.set(v2keyKnownJiraInstances, known)
-}
-
 //  MigrateV3ToV2 performs necessary migrations when reverting from V3 to  V2
 func MigrateV3ToV2(p *Plugin) string {
 	// migrate V3 instances to v2
@@ -668,13 +646,18 @@ func MigrateV3ToV2(p *Plugin) string {
 		return msg
 	}
 
-	err := p.instanceStore.StoreKnownJIRAInstancesAsV2(v2Instances)
+	data, err := json.Marshal(v2Instances)
+	if err != nil {
+		return err.Error()
+	}
+
+	err = p.API.KVSet(v2keyKnownJiraInstances, data)
 	if err != nil {
 		return err.Error()
 	}
 
 	// delete instance/v3 key
-	err = p.instanceStore.DeleteInstances()
+	err = p.API.KVDelete(keyInstances)
 	if err != nil {
 		return err.Error()
 	}

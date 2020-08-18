@@ -100,9 +100,6 @@ func (store mockInstanceStore) CreateInactiveCloudInstance(types.ID) error {
 func (store mockInstanceStore) DeleteInstance(types.ID) error {
 	return nil
 }
-func (store mockInstanceStore) DeleteInstances() error {
-	return nil
-}
 func (store mockInstanceStore) LoadInstance(types.ID) (Instance, error) {
 	return &testInstance{}, nil
 }
@@ -116,8 +113,5 @@ func (store mockInstanceStore) StoreInstance(instance Instance) error {
 	return nil
 }
 func (store mockInstanceStore) StoreInstances(*Instances) error {
-	return nil
-}
-func (store mockInstanceStore) StoreKnownJIRAInstancesAsV2(jiraV2Instances) error {
 	return nil
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
@@ -103,11 +102,10 @@ func TestMigrateV2Instances(t *testing.T) {
 
 func TestMigrateV3InstancesToV2(t *testing.T) {
 	tests := map[string]struct {
-		expectKnown    jiraV2Instances
-		currentV3      string
-		v3Instances    string
-		expectInstance string
-		expectMessage  string
+		currentV3     string
+		v3Instances   string
+		expectKnown   jiraV2Instances
+		expectMessage string
 	}{
 		"No Instance Installed": {
 			expectMessage: "unexpected end of JSON input",
@@ -164,7 +162,6 @@ func TestMigrateV3InstancesToV2(t *testing.T) {
 			api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
 			api.On("LogDebug", mock.AnythingOfTypeArgument("string")).Return(nil)
 
-			// get mock v3 instances
 			api.On("KVGet", keyInstances).Return([]byte(tc.v3Instances), nil)
 
 			api.On("KVGet", "jira_instance_37d007a56d816107ce5b52c10342db37").Return([]byte(tc.currentV3), nil)
@@ -174,11 +171,8 @@ func TestMigrateV3InstancesToV2(t *testing.T) {
 			p.SetAPI(api)
 			store := NewStore(p)
 			p.instanceStore = store
-			manifest.Version = "3.0.0"
 
 			v2Instances, msg := MigrateV3InstancesToV2(p)
-			fmt.Printf("v2Instances = %+v\n", v2Instances)
-
 			require.Equal(t, tc.expectKnown, v2Instances)
 			require.Equal(t, tc.expectMessage, msg)
 		})
