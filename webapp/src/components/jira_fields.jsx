@@ -52,7 +52,7 @@ export default class JiraFields extends React.Component {
 
             return true;
         }).sort((a, b) => {
-            return a.name > b.name ? 1 : -1;
+            return fields[a].name > fields[b].name ? 1 : -1;
         });
 
         return start.concat(fieldKeys);
