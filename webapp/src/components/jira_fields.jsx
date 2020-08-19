@@ -29,13 +29,11 @@ export default class JiraFields extends React.Component {
         let fieldKeys = Object.keys(fields);
 
         const start = [];
-        const summary = fieldKeys.find((key) => key === 'summary');
-        if (summary) {
-            start.push(summary);
+        if (fieldKeys.includes('summary')) {
+            start.push('summary');
         }
-        const description = fieldKeys.find((key) => key === 'description');
-        if (description) {
-            start.push(description);
+        if (fieldKeys.includes('description')) {
+            start.push('description');
         }
 
         fieldKeys = fieldKeys.filter((key) => {
