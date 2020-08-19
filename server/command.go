@@ -498,11 +498,11 @@ func executeV2Revert(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 	message := `After successfully reverting, please **choose one** of the following:
 
 ##### 1. Install Jira plugin |v2.4.1|
-Downgrade to install the v2 compatible Jira plugin and use the reverted V2 data models created by the |v2revert| command.
+Downgrade to install the V2 compatible Jira plugin and use the reverted V2 data models created by the |v2revert| command.
 
 ##### 2. Continue using the |v3| data model of the plugin
 After running |/jira v2revert| and downgrading the Jira plugin, you can migrate to Jira |v3.0+| by simply installing the v3 plugin again.
-If you ran |v2revert| unintentionally and would like to continue using the current version of the plugin (|v3+|) you can restarting the plugin through |System Console| > |PLUGINS| > |Plugin Management|.  This will perform the necessary migration steps to use a v3+ version of the Jira plugin.
+If you ran |v2revert| unintentionally and would like to continue using the current version of the plugin (|v3+|) you can restart the plugin through |System Console| > |PLUGINS| > |Plugin Management|.  This will perform the necessary migration steps to use a |v3+| version of the Jira plugin.
 
 * how to handle multiserver? use default? does it matter?`
 

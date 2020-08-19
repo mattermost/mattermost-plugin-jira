@@ -651,15 +651,15 @@ func MigrateV3ToV2(p *Plugin) string {
 		return err.Error()
 	}
 
-	err = p.API.KVSet(v2keyKnownJiraInstances, data)
-	if err != nil {
-		return err.Error()
+	appErr := p.API.KVSet(v2keyKnownJiraInstances, data)
+	if appErr != nil {
+		return appErr.Error()
 	}
 
 	// delete instance/v3 key
-	err = p.API.KVDelete(keyInstances)
-	if err != nil {
-		return err.Error()
+	appErr = p.API.KVDelete(keyInstances)
+	if appErr != nil {
+		return appErr.Error()
 	}
 
 	return msg
