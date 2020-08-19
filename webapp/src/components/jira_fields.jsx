@@ -25,27 +25,28 @@ export default class JiraFields extends React.Component {
     };
 
     getSortedFields = () => {
-        const {allowedFields, allowedSchemaCustom} = this.props;
-        let fields = Object.values(this.props.fields);
+        const {allowedFields, allowedSchemaCustom, fields} = this.props;
+        let fieldKeys = Object.keys(fields);
 
         const start = [];
-        const summary = fields.find((f) => f.key === 'summary');
+        const summary = fieldKeys.find((key) => key === 'summary');
         if (summary) {
             start.push(summary);
         }
-        const description = fields.find((f) => f.key === 'description');
+        const description = fieldKeys.find((key) => key === 'description');
         if (description) {
             start.push(description);
         }
 
-        fields = fields.filter((field) => {
-            if (['summary', 'description', 'issuetype', 'project'].includes(field.key)) {
+        fieldKeys = fieldKeys.filter((key) => {
+            const field = fields[key];
+            if (['summary', 'description', 'issuetype', 'project'].includes(key)) {
                 return false;
             }
             if (field.schema.custom && !allowedSchemaCustom.includes(field.schema.custom)) {
                 return false;
             }
-            if (!field.schema.custom && !allowedFields.includes(field.key)) {
+            if (!field.schema.custom && !allowedFields.includes(key)) {
                 return false;
             }
 
@@ -54,7 +55,7 @@ export default class JiraFields extends React.Component {
             return a.name > b.name ? 1 : -1;
         });
 
-        return start.concat(fields);
+        return start.concat(fieldKeys);
     }
 
     render() {
@@ -69,22 +70,26 @@ export default class JiraFields extends React.Component {
             projectKey = values.project.key;
         }
 
-        return this.getSortedFields().map((field) => (
-            <JiraField
-                instanceID={this.props.instanceID}
-                key={field.key}
-                id={field.key}
-                issueMetadata={this.props.issueMetadata}
-                projectKey={projectKey}
-                field={field}
-                obeyRequired={true}
-                onChange={this.props.onChange}
-                value={this.props.values && this.props.values[field.key]}
-                isFilter={this.props.isFilter}
-                theme={this.props.theme}
-                addValidate={this.props.addValidate}
-                removeValidate={this.props.removeValidate}
-            />
-        ));
+        const keys = this.getSortedFields();
+        return keys.map((key) => {
+            const field = fields[key];
+            return (
+                <JiraField
+                    instanceID={this.props.instanceID}
+                    key={key}
+                    id={key}
+                    issueMetadata={this.props.issueMetadata}
+                    projectKey={projectKey}
+                    field={field}
+                    obeyRequired={true}
+                    onChange={this.props.onChange}
+                    value={this.props.values && this.props.values[field.key]}
+                    isFilter={this.props.isFilter}
+                    theme={this.props.theme}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
+                />
+            );
+        });
     }
 }
