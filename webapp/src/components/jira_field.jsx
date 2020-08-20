@@ -54,7 +54,7 @@ export default class JiraField extends React.Component {
         );
     };
 
-    renderCreateFields() {
+    render() {
         const field = this.props.field;
 
         if (field.schema.system === 'description') {
@@ -204,14 +204,6 @@ export default class JiraField extends React.Component {
             );
         }
         return null;
-    }
-
-    render() {
-        if (this.props.isFilter) {
-            return this.renderFilterFields();
-        }
-
-        return this.renderCreateFields();
     }
 }
 
