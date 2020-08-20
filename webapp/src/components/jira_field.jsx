@@ -136,9 +136,9 @@ export default class JiraField extends React.Component {
                     projectKey={this.props.projectKey}
                     fieldName={field.name}
                     onChange={(value) => {
-                        this.props.onChange(this.props.id, {accountId: value});
+                        this.props.onChange(this.props.id, value);
                     }}
-                    value={this.props.value && this.props.value.accountId}
+                    value={this.props.value}
                     isMulti={false}
                 />
             );

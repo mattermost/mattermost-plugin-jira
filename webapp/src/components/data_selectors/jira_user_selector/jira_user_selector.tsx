@@ -49,7 +49,7 @@ export default class JiraUserSelector extends React.PureComponent<Props> {
                 }
 
                 return {
-                    value: user.accountId,
+                    value: user,
                     label,
                 };
             });
