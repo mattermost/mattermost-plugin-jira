@@ -672,8 +672,6 @@ func MigrateV3ToV2(p *Plugin) string {
 // - v2keyCurrentJIRAInstance ("current_jira_instance") stored an Instance; will
 //   be used to set the default instance.
 func MigrateV3InstancesToV2(p *Plugin) (jiraV2Instances, string) {
-
-	// Check if V3 instances exist
 	v3instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
 		return nil, err.Error()
@@ -682,9 +680,8 @@ func MigrateV3InstancesToV2(p *Plugin) (jiraV2Instances, string) {
 		return nil, fmt.Sprint("(none installed)")
 	}
 
-	legacyInstance := v3instances.GetV2Legacy()
-
 	// if there are no V2 legacy instances, don't allow migrating/reverting to old V2 version.
+	legacyInstance := v3instances.GetV2Legacy()
 	if legacyInstance == nil {
 		return nil, "No Jira V2 legacy instances found.  V3 to V2 Jira migrations are only allowed when the Jira plugin has been previously migrated from a V2 version."
 	}
