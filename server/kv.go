@@ -682,31 +682,16 @@ func MigrateV3InstancesToV2(p *Plugin) (jiraV2Instances, string) {
 		return nil, fmt.Sprint("(none installed)")
 	}
 
+	legacyInstance := v3instances.GetV2Legacy()
+
 	// if there are no V2 legacy instances, don't allow migrating/reverting to old V2 version.
-	numV2legacyInstances := 0
+	if legacyInstance == nil {
+		return nil, "No Jira V2 legacy instances found.  V3 to V2 Jira migrations are only allowed when the Jira plugin has been previously migrated from a V2 version."
+	}
 
 	// Convert the V3 instances back to V2
 	v2instances := jiraV2Instances{}
-	for _, key := range v3instances.IDs() {
-		instanceID := types.ID(key)
-
-		instance, err := p.instanceStore.LoadInstance(instanceID)
-		if err != nil {
-			return nil, err.Error()
-		}
-
-		if instance.Common().IsV2Legacy == true {
-			numV2legacyInstances += 1
-		}
-
-		ID := instance.GetID()
-		instanceType := instance.Common().Type
-		v2instances[string(ID)] = string(instanceType)
-	}
-
-	if numV2legacyInstances == 0 {
-		return nil, "No Jira V2 legacy instances found.  V3 to V2 Jira migrations are only allowed when the Jira plugin has been previously migrated from a V2 version."
-	}
+	v2instances[string(legacyInstance.InstanceID)] = string(legacyInstance.Common().Type)
 
 	return v2instances, ""
 }
