@@ -486,40 +486,34 @@ func executeV2Revert(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 	}
 
 	preMessage := `#### |/jira v2revert| will revert the V3 Jira plugin database to V2. Please use the |--force| flag to complete this command.` + "\n"
+
 	// inform user the --force is required to complete the command
 	if len(args) == 1 && args[0] == "--force" {
 		msg := MigrateV3ToV2(p)
 		if msg != "" {
 			return p.responsef(header, msg)
 		}
-		preMessage = `#### Successfully reverted the V3 Jira plugin database to V2.` + "\n"
+		preMessage = `#### Successfully reverted the V3 Jira plugin database to V2.  The Jira plugin has been disabled.` + "\n"
+
+		go func() {
+			_ = p.API.DisablePlugin(manifest.Id)
+		}()
 	}
 
 	message := `After successfully reverting, please **choose one** of the following:
 
-##### 1. Install Jira plugin |v2.4.1|
+##### 1. Install Jira plugin |v2.4.0|
 Downgrade to install the V2 compatible Jira plugin and use the reverted V2 data models created by the |v2revert| command.
 
 ##### 2. Continue using the |v3| data model of the plugin
-After running |/jira v2revert| and downgrading the Jira plugin, you can migrate to Jira |v3.0+| by simply installing the v3 plugin again.
-If you ran |v2revert| unintentionally and would like to continue using the current version of the plugin (|v3+|) you can restart the plugin through |System Console| > |PLUGINS| > |Plugin Management|.  This will perform the necessary migration steps to use a |v3+| version of the Jira plugin.
-
-* how to handle multiserver? use default? does it matter?`
+If you ran |v2revert| unintentionally and would like to continue using the current version of the plugin (|v3+|) you can re-enable the plugin through |System Console| > |PLUGINS| > |Plugin Management|.  This will perform the necessary migration steps to use a |v3+| version of the Jira plugin.`
 
 	message = preMessage + message
 	message = strings.Replace(message, "|", "`", -1)
 
-	post := &model.Post{
-		UserId:    p.getUserID(),
-		ChannelId: header.ChannelId,
-		Message:   message,
-	}
-
-	_ = p.API.SendEphemeralPost(header.UserId, post)
-
 	p.Tracker.TrackV2Revert(header.UserId)
 
-	return &model.CommandResponse{}
+	return p.responsef(header, message)
 }
 
 func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
