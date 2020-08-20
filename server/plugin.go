@@ -185,6 +185,11 @@ func (p *Plugin) OnConfigurationChange() error {
 		p.registerJiraCommand(ec.EnableAutocomplete, instances.Len() > 1)
 	}
 
+	diagnostics := false
+	if p.API.GetConfig().LogSettings.EnableDiagnostics != nil {
+		diagnostics = *p.API.GetConfig().LogSettings.EnableDiagnostics
+	}
+
 	// create new tracker on each configuration change
 	p.Tracker = jiraTracker.New(telemetry.NewTracker(
 		p.telemetryClient,
@@ -192,7 +197,7 @@ func (p *Plugin) OnConfigurationChange() error {
 		p.API.GetServerVersion(),
 		manifest.Id,
 		manifest.Version,
-		*p.API.GetConfig().LogSettings.EnableDiagnostics,
+		diagnostics,
 	))
 
 	return nil
