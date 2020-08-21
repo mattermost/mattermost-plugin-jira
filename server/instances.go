@@ -95,7 +95,7 @@ func (p *Plugin) InstallInstance(instance Instance) error {
 	err := UpdateInstances(p.instanceStore,
 		func(instances *Instances) error {
 			if !p.enterpriseChecker.HasEnterpriseFeatures() {
-				if len(instances.IDs()) >= 1 {
+				if instances != nil && len(instances.IDs()) > 0 {
 					return errors.Errorf("You need an Enterprise License to install multiple Jira instances")
 				}
 			}
