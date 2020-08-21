@@ -109,7 +109,7 @@ func TestMigrateV3InstancesToV2(t *testing.T) {
 		"no v2legacy instances found": {
 			v3Instances:   `[{"InstanceID":"https://mmtest.atlassian.net","Type":"cloud","IsV2Legacy":false},{"InstanceID":"http://localhost:8080","Type":"server","IsV2Legacy":false}]`,
 			expectKnown:   nil,
-			expectMessage: "No Jira V2 legacy instances found.  V3 to V2 Jira migrations are only allowed when the Jira plugin has been previously migrated from a V2 version.",
+			expectMessage: "No Jira V2 legacy instances found. V3 to V2 Jira migrations are only allowed when the Jira plugin has been previously migrated from a V2 version.",
 		},
 		"2 Instances 1 legacy": {
 			v3Instances:   `[{"InstanceID":"https://mmtest.atlassian.net","Type":"cloud","IsV2Legacy":true},{"InstanceID":"http://localhost:8080","Type":"server","IsV2Legacy":false}]`,

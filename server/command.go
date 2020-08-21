@@ -486,14 +486,12 @@ func executeV2Revert(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 	}
 
 	preMessage := `#### |/jira v2revert| will revert the V3 Jira plugin database to V2. Please use the |--force| flag to complete this command.` + "\n"
-
-	// inform user the --force is required to complete the command
 	if len(args) == 1 && args[0] == "--force" {
 		msg := MigrateV3ToV2(p)
 		if msg != "" {
 			return p.responsef(header, msg)
 		}
-		preMessage = `#### Successfully reverted the V3 Jira plugin database to V2.  The Jira plugin has been disabled.` + "\n"
+		preMessage = `#### Successfully reverted the V3 Jira plugin database to V2. The Jira plugin has been disabled.` + "\n"
 
 		go func() {
 			_ = p.API.DisablePlugin(manifest.Id)
@@ -509,7 +507,7 @@ Downgrade to install the V2 compatible Jira plugin and use the reverted V2 data 
 If you ran |v2revert| unintentionally and would like to continue using the current version of the plugin (|v3+|) you can re-enable the plugin through |System Console| > |PLUGINS| > |Plugin Management|.  This will perform the necessary migration steps to use a |v3+| version of the Jira plugin.`
 
 	message = preMessage + message
-	message = strings.Replace(message, "|", "`", -1)
+	message = strings.ReplaceAll(message, "|", "`")
 
 	p.Tracker.TrackV2Revert(header.UserId)
 

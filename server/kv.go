@@ -683,7 +683,7 @@ func MigrateV3InstancesToV2(p *Plugin) (jiraV2Instances, string) {
 	// if there are no V2 legacy instances, don't allow migrating/reverting to old V2 version.
 	legacyInstance := v3instances.GetV2Legacy()
 	if legacyInstance == nil {
-		return nil, "No Jira V2 legacy instances found.  V3 to V2 Jira migrations are only allowed when the Jira plugin has been previously migrated from a V2 version."
+		return nil, "No Jira V2 legacy instances found. V3 to V2 Jira migrations are only allowed when the Jira plugin has been previously migrated from a V2 version."
 	}
 
 	// Convert the V3 instances back to V2
