@@ -501,7 +501,7 @@ func executeV2Revert(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 	message := `After successfully reverting, please **choose one** of the following:
 
 ##### 1. Install Jira plugin |v2.4.0|
-Downgrade to install the V2 compatible Jira plugin and use the reverted V2 data models created by the |v2revert| command.
+Downgrade to install the V2 compatible Jira plugin and use the reverted V2 data models created by the |v2revert| command. The Jira plugin |v2.4.0| can be found via the marketplace or GitHub releases page.
 
 ##### 2. Continue using the |v3| data model of the plugin
 If you ran |v2revert| unintentionally and would like to continue using the current version of the plugin (|v3+|) you can re-enable the plugin through |System Console| > |PLUGINS| > |Plugin Management|.  This will perform the necessary migration steps to use a |v3+| version of the Jira plugin.`
