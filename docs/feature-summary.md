@@ -18,7 +18,7 @@ Each user in Mattermost is connected with their own personal Jira account and no
 
 ### Create Jira issues
 
-Create Jira issues from scratch or based off a Mattermost message easily. Without leaving Mattermost's UI, quickly select the project, issue type, and enter other fields to create the issue.
+Create Jira issues from scratch or based off a Mattermost message. Without leaving Mattermost's UI, quickly select the project, issue type, and enter other fields to create the issue.
 
 ![image](https://user-images.githubusercontent.com/13119842/59113188-985a9280-8912-11e9-9def-9a7382b4137e.png)
 
