@@ -1,4 +1,4 @@
-# Table of contents
+# Table of Contents
 
 * [Mattermost/Jira Integration](README.md)
 * [Feature Summary](feature-summary.md)
@@ -9,7 +9,7 @@
 * [Configuration \(Steps 3-4\)](setup/configuration.md)
 * [Updating the Plugin](setup/updating-the-plugin.md)
 
-## Admininstrator Guide
+## Admininstrator's Guide
 
 * [Administrator Slash Commands](admininstrator-guide/administrator-slash-commands.md)
 * [Notification Management](admininstrator-guide/notification-management/README.md)
@@ -17,7 +17,7 @@
 * [Permissions](admininstrator-guide/permissions.md)
 * [Troubleshooting](admininstrator-guide/troubleshooting.md)
 
-## End-User Guide
+## End User Guide
 
 * [Getting Started](end-user-guide/getting-started.md)
 * [Using /jira commands](end-user-guide/using-jira-commands.md)
@@ -31,4 +31,3 @@
 ---
 
 * [Help and Support](help-and-support.md)
-
