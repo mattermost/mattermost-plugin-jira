@@ -260,9 +260,14 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
         this.setState({submitting: true});
         this.props.create(issue).then(({error}) => {
             if (error) {
+                if (requiredFieldsNotCovered.length && error.message.includes('required fields')) {
+                    this.handleClose();
+                    return;
+                }
                 this.setState({error: error.message, submitting: false});
                 return;
             }
+
             this.handleClose();
         });
     }

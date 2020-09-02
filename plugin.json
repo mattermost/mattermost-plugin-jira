@@ -5,7 +5,7 @@
   "homepage_url": "https://github.com/mattermost/mattermost-plugin-jira",
   "support_url": "https://github.com/mattermost/mattermost-plugin-jira/issues",
   "icon_path": "assets/icon.svg",
-  "version": "3.0.0-beta",
+  "version": "3.0.0-beta2.1",
   "min_server_version": "5.24.0",
   "server": {
     "executables": {
