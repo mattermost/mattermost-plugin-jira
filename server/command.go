@@ -353,8 +353,11 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	}
 	disconnected, err := p.DisconnectUser(jiraURL, types.ID(header.UserId))
 	if errors.Cause(err) == kvstore.ErrNotFound {
-		return p.responsef(header, "Could not complete the **disconnection** request. You do not currently have a Jira account at %q linked to your Mattermost account."+err.Error(),
-			jiraURL)
+		errorStr := "Your account is not connected to Jira. Please use `/jira connect` to connect your account."
+		if jiraURL != "" {
+			errorStr = fmt.Sprintf("You do not currently have a Jira account at %s linked to your Mattermost account. Please use `/jira connect` to connect your account.", jiraURL)
+		}
+		return p.responsef(header, errorStr)
 	}
 	if err != nil {
 		return p.responsef(header, "Could not complete the **disconnection** request. Error: %v", err)
