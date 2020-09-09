@@ -1,6 +1,7 @@
 package main
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
@@ -8,6 +9,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestInstallInstance(t *testing.T) {
@@ -85,6 +87,10 @@ func TestInstallInstance(t *testing.T) {
 			api.On("RegisterCommand", mock.Anything, mock.Anything).Return(nil)
 			api.On("PublishWebSocketEvent", mock.Anything, mock.Anything, mock.Anything)
 
+			path, err := filepath.Abs("..")
+			require.Nil(t, err)
+			api.On("GetBundlePath").Return(path, nil)
+
 			testInstance0 := &testInstance{
 				InstanceCommon: InstanceCommon{
 					InstanceID: mockInstance1URL,
@@ -93,7 +99,7 @@ func TestInstallInstance(t *testing.T) {
 				},
 			}
 
-			err := p.InstallInstance(testInstance0)
+			err = p.InstallInstance(testInstance0)
 			if tc.expectError {
 				assert.NotNil(t, err)
 				expected := "You need an Enterprise License to install multiple Jira instances"
