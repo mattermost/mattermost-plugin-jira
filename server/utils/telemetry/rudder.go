@@ -2,10 +2,12 @@ package telemetry
 
 import rudder "github.com/rudderlabs/analytics-go"
 
-const (
-	rudderDataPlaneURL = "https://pdat.matterlytics.com"
-	rudderWriteKey     = "1d5bMvdrfWClLxgK1FvV3s4U1tg"
-)
+// rudderDataPlaneURL is set to the common Data Plane URL for all Mattermost Projects.
+// It can be set during build time. More info in the package documentation.
+const rudderDataPlaneURL = "https://pdat.matterlytics.com"
+
+// rudderWriteKey is set during build time. More info in the package documentation.
+var rudderWriteKey string
 
 func NewRudderClient() (Client, error) {
 	return NewRudderClientWithCredentials(rudderWriteKey, rudderDataPlaneURL)
