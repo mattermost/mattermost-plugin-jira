@@ -224,6 +224,10 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
 
         const available = getFields(this.props.jiraIssueMetadata, projectKey, issueType);
 
+        if (Object.keys(available).length === 0) {
+            return fields;
+        }
+
         const result = {} as Fields;
         for (const key of Object.keys(fields)) {
             if (available[key] || key === 'project' || key === 'issuetype') {
