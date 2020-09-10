@@ -104,22 +104,9 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		},
 	}
 
-	mattermostUserId := r.Header.Get("Mattermost-User-ID")
-	if mattermostUserId == "" {
-		siteURL := p.GetSiteURL()
-		return respondErr(w, http.StatusUnauthorized, errors.New(
-			`Mattermost failed to recognize your user account. `+
-				`Please make sure third-party cookies are not disabled in your browser settings. `+
-				`Make sure you are signed into Mattermost on `+siteURL+`.`))
-	}
-
-	requestedUserId, secret, err := p.ParseAuthToken(mmToken)
+	mattermostUserId, secret, err := p.ParseAuthToken(mmToken)
 	if err != nil {
 		return respondErr(w, http.StatusUnauthorized, err)
-	}
-
-	if mattermostUserId != requestedUserId {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized, user id does not match link"))
 	}
 
 	mmuser, appErr := p.API.GetUser(mattermostUserId)
