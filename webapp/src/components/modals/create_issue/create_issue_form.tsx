@@ -218,6 +218,10 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
     }
 
     filterInvalidFields = (projectKey: string, issueType: string, fields: Fields) => {
+        if (!projectKey || !issueType || !this.props.jiraIssueMetadata) {
+            return fields;
+        }
+
         const available = getFields(this.props.jiraIssueMetadata, projectKey, issueType);
 
         const result = {} as Fields;
