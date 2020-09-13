@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-api/experimental/command"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
@@ -95,7 +96,12 @@ func (p *Plugin) registerJiraCommand(enableAutocomplete, enableOptInstance bool)
 	// Optimistically unregister what was registered before
 	_ = p.API.UnregisterCommand("", commandTrigger)
 
-	err := p.API.RegisterCommand(createJiraCommand(enableAutocomplete, enableOptInstance))
+	command, err := p.createJiraCommand(enableAutocomplete, enableOptInstance)
+	if err != nil {
+		return errors.Wrap(err, "failed to get command")
+	}
+
+	err = p.API.RegisterCommand(command)
 	if err != nil {
 		return errors.Wrapf(err, "failed to register /%s command", commandTrigger)
 	}
@@ -103,7 +109,7 @@ func (p *Plugin) registerJiraCommand(enableAutocomplete, enableOptInstance bool)
 	return nil
 }
 
-func createJiraCommand(enableAutocomplete, enableOptInstance bool) *model.Command {
+func (p *Plugin) createJiraCommand(enableAutocomplete, enableOptInstance bool) (*model.Command, error) {
 	jira := model.NewAutocompleteData(
 		commandTrigger, "[issue|instance|info|help]", "Connect to and interact with Jira")
 
@@ -111,15 +117,21 @@ func createJiraCommand(enableAutocomplete, enableOptInstance bool) *model.Comman
 		addSubCommands(jira, enableOptInstance)
 	}
 
-	return &model.Command{
-		Trigger:          jira.Trigger,
-		Description:      "Integration with Jira.",
-		DisplayName:      "Jira",
-		AutoComplete:     true,
-		AutocompleteData: jira,
-		AutoCompleteDesc: jira.HelpText,
-		AutoCompleteHint: jira.Hint,
+	iconData, err := command.GetIconData(p.API, "assets/icon.svg")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get icon data")
 	}
+
+	return &model.Command{
+		Trigger:              jira.Trigger,
+		Description:          "Integration with Jira.",
+		DisplayName:          "Jira",
+		AutoComplete:         true,
+		AutocompleteData:     jira,
+		AutoCompleteDesc:     jira.HelpText,
+		AutoCompleteHint:     jira.Hint,
+		AutocompleteIconData: iconData,
+	}, nil
 }
 
 func addSubCommands(jira *model.AutocompleteData, optInstance bool) {

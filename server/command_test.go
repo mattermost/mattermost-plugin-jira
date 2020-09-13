@@ -319,6 +319,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 
 			api.On("GetLicense").Return(&license)
 			api.On("RegisterCommand", mock.Anything).Return(nil)
+			api.On("GetBundlePath").Return("", nil)
 			api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
 				isSendEphemeralPostCalled = true
 
@@ -326,6 +327,10 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 				actual := strings.TrimSpace(post.Message)
 				assert.True(t, strings.HasPrefix(actual, tt.expectedMsgPrefix), "Expected returned message to start with: \n%s\nActual:\n%s", tt.expectedMsgPrefix, actual)
 			}).Once().Return(&model.Post{})
+
+			path, err := filepath.Abs("..")
+			require.Nil(t, err)
+			api.On("GetBundlePath").Return(path, nil)
 
 			p.SetAPI(api)
 			_, filename, _, _ := runtime.Caller(0)
