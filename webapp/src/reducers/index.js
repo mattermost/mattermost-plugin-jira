@@ -37,7 +37,10 @@ function userCanConnect(state = false, action) {
 function defaultUserInstanceID(state = '', action) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
-        return action.data.user ? action.data.user.default_instance_id : state;
+        if (action.data.user && action.data.user.default_instance_id) {
+            return action.data.user.default_instance_id;
+        }
+        return state;
     default:
         return state;
     }
