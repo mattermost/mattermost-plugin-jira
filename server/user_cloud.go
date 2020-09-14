@@ -110,7 +110,8 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		return respondErr(w, http.StatusUnauthorized, errors.New(
 			`Mattermost failed to recognize your user account. `+
 				`Please make sure third-party cookies are not disabled in your browser settings. `+
-				`Make sure you are signed into Mattermost on `+siteURL+`.`))
+				`Make sure you are signed into Mattermost on `+siteURL+`. `+
+				`Chrome is currently experiencing an issue with this authentication method. If you are using Chrome, please try using a different browser to connect your account, until this is resolved.`))
 	}
 
 	requestedUserId, secret, err := p.ParseAuthToken(mmToken)
