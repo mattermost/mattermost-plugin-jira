@@ -16,9 +16,8 @@ import ChannelSettingsModalInner from './channel_settings_internal';
 describe('components/ChannelSettingsModal', () => {
     const baseProps = {
         theme: {},
-        fetchJiraIssueMetadataForProjects: jest.fn(),
+        fetchJiraProjectMetadataForAllInstances: jest.fn().mockResolvedValue({}),
         fetchChannelSubscriptions: jest.fn().mockResolvedValue({}),
-        fetchJiraProjectMetadata: jest.fn().mockResolvedValue({}),
         sendEphemeralPost: jest.fn(),
         jiraIssueMetadata: {} as IssueMetadata,
         jiraProjectMetadata: {} as ProjectMetadata,
@@ -39,7 +38,7 @@ describe('components/ChannelSettingsModal', () => {
         };
 
         const wrapper = shallow<ChannelSettingsModal>(
-            <ChannelSettingsModal {...props}/>
+            <ChannelSettingsModal {...props}/>, {lifecycleExperimental: true}
         );
 
         expect(wrapper.find(ChannelSettingsModalInner).length).toEqual(0);
@@ -49,6 +48,9 @@ describe('components/ChannelSettingsModal', () => {
             ...props,
             channel: testChannel,
         });
+
+        await props.fetchChannelSubscriptions(testChannel.id);
+        await props.fetchJiraProjectMetadataForAllInstances();
 
         expect(wrapper.find(ChannelSettingsModalInner).length).toEqual(1);
         expect(wrapper.find(FullScreenModal).props().show).toBe(true);
@@ -60,19 +62,23 @@ describe('components/ChannelSettingsModal', () => {
             fetchChannelSubscriptions: jest.fn().mockImplementation(() => Promise.resolve({error: 'Failed to fetch'})),
             sendEphemeralPost: jest.fn(),
             close: jest.fn(),
+            channel: null,
         };
 
-        const wrapper = shallow<ChannelSettingsModalInner>(
-            <ChannelSettingsModalInner {...props}/>
+        const wrapper = shallow<ChannelSettingsModal>(
+            <ChannelSettingsModal {...props}/>, {lifecycleExperimental: true}
         );
 
-        wrapper.setProps({...props, channel: testChannel});
+        wrapper.setProps({
+            ...props,
+            channel: testChannel,
+        });
 
-        expect(props.fetchChannelSubscriptions).toHaveBeenCalled();
+        await props.fetchChannelSubscriptions(testChannel.id);
+        await props.fetchJiraProjectMetadataForAllInstances();
 
-        await Promise.resolve();
-
-        expect(props.close).toHaveBeenCalled();
+        expect(wrapper.find(ChannelSettingsModalInner).length).toEqual(0);
+        expect(wrapper.find(FullScreenModal).props().show).toBe(false);
         expect(props.sendEphemeralPost).toHaveBeenCalledWith('You do not have permission to edit subscriptions for this channel. Subscribing to Jira events will create notifications in this channel when certain events occur, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.');
     });
 });
