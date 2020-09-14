@@ -69,7 +69,7 @@
         "key": "GroupsAllowedToEditJiraSubscriptions",
         "display_name": "Jira Groups Allowed to Edit Jira Subscriptions",
         "type": "text",
-        "help_text": "Comma separated list of Group Names. List the Jira user groups who can create subscriptions. If none are specified, any Jira user can create a subscription.",
+        "help_text": "Comma separated list of Group Names. List the Jira user groups who can create subscriptions. If none are specified, any Jira user can create a subscription. Jira groups restrictions are only applicable for a legacy instance installed on Jira 2.4 or earlier.",
         "default": ""
       },
       {
