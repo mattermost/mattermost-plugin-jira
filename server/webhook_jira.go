@@ -4,6 +4,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -12,10 +13,10 @@ import (
 )
 
 type JiraWebhook struct {
-	WebhookEvent string       `json:"webhookEvent,omitempty"`
-	Issue        jira.Issue   `json:"issue,omitempty"`
-	User         jira.User    `json:"user,omitempty"`
-	Comment      jira.Comment `json:"comment,omitempty"`
+	WebhookEvent string      `json:"webhookEvent,omitempty"`
+	Issue        jira.Issue  `json:"issue,omitempty"`
+	User         jira.User   `json:"user,omitempty"`
+	Comment      jiraComment `json:"comment,omitempty"`
 	ChangeLog    struct {
 		Items []struct {
 			From       string
@@ -28,6 +29,24 @@ type JiraWebhook struct {
 		}
 	} `json:"changelog,omitempty"`
 	IssueEventTypeName string `json:"issue_event_type_name"`
+}
+
+type jiraComment struct {
+	jira.Comment
+}
+
+func (c *jiraComment) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 || string(data)[0] == '"' {
+		return nil
+	}
+
+	jc := jira.Comment{}
+	if err := json.Unmarshal(data, &jc); err != nil {
+		return err
+	}
+
+	c.Comment = jc
+	return nil
 }
 
 func (jwh *JiraWebhook) mdJiraLink(title, suffix string) string {
