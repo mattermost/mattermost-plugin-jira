@@ -86,9 +86,13 @@ func (p *Plugin) httpUserConnect(w http.ResponseWriter, r *http.Request, instanc
 			errors.New("You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect."))
 	}
 
-	redirectURL, err := instance.GetUserConnectURL(mattermostUserId)
+	redirectURL, cookie, err := instance.GetUserConnectURL(mattermostUserId)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	if cookie != nil {
+		http.SetCookie(w, cookie)
 	}
 
 	http.Redirect(w, r, redirectURL, http.StatusFound)

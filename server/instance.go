@@ -4,6 +4,8 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
@@ -17,7 +19,7 @@ const (
 type Instance interface {
 	GetClient(*Connection) (Client, error)
 	GetDisplayDetails() map[string]string
-	GetUserConnectURL(mattermostUserId string) (string, error)
+	GetUserConnectURL(mattermostUserId string) (string, *http.Cookie, error)
 	GetManageAppsURL() string
 	GetManageWebhooksURL() string
 	GetURL() string

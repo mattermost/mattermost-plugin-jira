@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
+	"time"
 
 	jira "github.com/andygrunwald/go-jira"
 	jwt "github.com/dgrijalva/jwt-go"
@@ -20,6 +22,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
+	"github.com/mattermost/mattermost-server/model"
 )
 
 type cloudInstance struct {
@@ -80,28 +83,77 @@ func (ci *cloudInstance) GetDisplayDetails() map[string]string {
 	}
 }
 
-func (ci *cloudInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
-	randomBytes := make([]byte, 32)
-	_, err := rand.Read(randomBytes)
+func (ci *cloudInstance) GetUserConnectURL(mattermostUserId string) (string, *http.Cookie, error) {
+	// Create JWT secret we use in Jira's connect URL params
+	randomBytes1 := make([]byte, 32)
+	_, err := rand.Read(randomBytes1)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	secret := fmt.Sprintf("%x", randomBytes)
-	err = ci.Plugin.otsStore.StoreOneTimeSecret(mattermostUserId, secret)
+	jwtSecret := strings.ReplaceAll(fmt.Sprintf("%x", randomBytes1), "-", "_")
+
+	randomBytes2 := make([]byte, 32)
+	_, err = rand.Read(randomBytes2)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
-	token, err := ci.Plugin.NewEncodedAuthToken(mattermostUserId, secret)
+	// Create cookie secret to act as a cross-reference of user integrity
+	cookieSecret := strings.ReplaceAll(fmt.Sprintf("%x", randomBytes2), "-", "_")
+	cookie, err := ci.Plugin.createCookieFromSecret(cookieSecret)
 	if err != nil {
-		return "", err
+		return "", nil, err
+	}
+
+	// Store JWT and cookie secret together in KV store
+	storedSecret := jwtSecret + "-" + cookieSecret
+	err = ci.Plugin.otsStore.StoreOneTimeSecret(mattermostUserId, storedSecret)
+	if err != nil {
+		return "", nil, err
+	}
+
+	token, err := ci.Plugin.NewEncodedAuthToken(mattermostUserId, jwtSecret)
+	if err != nil {
+		return "", nil, err
 	}
 
 	v := url.Values{}
 	v.Add(argMMToken, token)
 	connectURL := fmt.Sprintf("%s/login?dest-url=%s/plugins/servlet/ac/%s/%s?%v",
 		ci.GetURL(), ci.GetURL(), ci.AtlassianSecurityContext.Key, userRedirectPageKey, v.Encode())
-	return connectURL, nil
+
+	return connectURL, cookie, nil
+}
+
+func (p *Plugin) createCookieFromSecret(secret string) (*http.Cookie, error) {
+	siteURL := p.GetSiteURL()
+	u, err := url.Parse(siteURL)
+	if err != nil {
+		return nil, err
+	}
+
+	domain := u.Hostname()
+	path := u.Path
+	if path == "" {
+		path = "/"
+	}
+
+	maxAge := 15 * 60 // 15 minutes
+	expiresAt := time.Unix(model.GetMillis()/1000+int64(maxAge), 0)
+
+	cookie := &http.Cookie{
+		Name:     cookieSecretName,
+		Value:    secret,
+		Path:     path,
+		MaxAge:   maxAge,
+		Expires:  expiresAt,
+		HttpOnly: true,
+		Domain:   domain,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+	}
+
+	return cookie, nil
 }
 
 func (ci *cloudInstance) GetURL() string {
