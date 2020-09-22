@@ -14,6 +14,7 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 	ajwt "github.com/rbriski/atlassian-jwt"
 	"golang.org/x/oauth2"
@@ -22,7 +23,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
-	"github.com/mattermost/mattermost-server/model"
 )
 
 type cloudInstance struct {
