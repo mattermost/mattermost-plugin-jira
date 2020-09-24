@@ -36,7 +36,7 @@ Jira only allows webhooks to connect to the standard ports 80 and 443. If you ar
 https://32zanxm6u6.execute-api.us-east-1.amazonaws.com/dev/proxy?url=https%3A%2F%2F<your-mattermost-url>%3A<your-port>%2Fplugins%2Fjira%2Fwebhook%3Fsecret%<your-secret>%26team%3D<your-team-url>%26channel%3D<your-channel-url>
 ```
 
-where `<your-mattermost-url>`, `<your-port>`, `<your-secret>`, `<your-team-url>` and `<your-channel-url>` depend on your setup from the above steps.
+The `<your-mattermost-url>`, `<your-port>`, `<your-secret>`, `<your-team-url>`, and `<your-channel-url>` fields depend on your setup from the above steps.
 
 ## How do I handle credential rotation for the Jira webhook?
 
