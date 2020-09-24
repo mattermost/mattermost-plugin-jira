@@ -497,8 +497,9 @@ func executeV2Revert(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 			_ = p.API.DisablePlugin(manifest.Id)
 		}()
 	}
+	message := `**Please note that if you have multiple configured Jira instances this command will result in all non-legacy instances being removed.**
 
-	message := `After successfully reverting, please **choose one** of the following:
+After successfully reverting, please **choose one** of the following:
 
 ##### 1. Install Jira plugin |v2.4.0|
 Downgrade to install the V2 compatible Jira plugin and use the reverted V2 data models created by the |v2revert| command. The Jira plugin |v2.4.0| can be found via the marketplace or GitHub releases page.
