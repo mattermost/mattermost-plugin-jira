@@ -7,7 +7,7 @@ description: >-
 
 # Troubleshooting
 
-If you experience problems with Jira-related user interactions in Mattermost such as creating issues, disable these features by setting **Allow users to connect their Mattermost accounts to Jira** to false in **System Console > Plugins > Jira**. This setting does not affect Jira webhook notifications. After changing this setting to **false**, disable, then re-enable this plugin in **System Console > Plugins > Plugin Management** to reset the plugin state for all users.
+If you experience problems with Jira-related user interactions in Mattermost such as creating issues, disable these features by setting **Allow users to connect their Mattermost accounts to Jira** to **false** in **System Console > Plugins > Jira**. This setting does not affect Jira webhook notifications. Then re-enable this plugin in **System Console > Plugins > Plugin Management** to reset the plugin state for all users.
 
 Sometimes the plugin may crash unexpectedly and you may notice a response in red text below the chat window displaying `slash command with trigger of  '/(name)' not found,`. If you check your log file, look for messages that refer to `plugins` and `health check fail`, `ExecuteCommand` etc.
 
