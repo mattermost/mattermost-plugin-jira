@@ -2,7 +2,7 @@
 description: Get the most out the Jira/Mattermost integration
 ---
 
-# Using ``/jira`` Commands
+# Using `/jira` Commands
 
 ## Managing Jira issues from Mattermost
 
