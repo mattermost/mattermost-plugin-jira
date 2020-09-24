@@ -26,7 +26,7 @@ An approximate JQL query is output as well. If you're using custom fields or val
 
 ## Who can set up notification subscriptions for a channel?
 
-You can define in the plugin configuration who can set up a notification subscription. First, set which **Mattermost** user roles are allowed to access the subscription functionality at all:
+You can define who can set up a notification subscription in the plugin configuration. First, set which **Mattermost** user roles are allowed to access the subscription functionality at all:
 
 ![](../.gitbook/assets/image%20%282%29.png)
 
