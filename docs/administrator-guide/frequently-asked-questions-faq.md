@@ -48,7 +48,7 @@ In Jira 2.1 there is a modal window for a "Channel Subscription" to Jira issues.
 
 Earlier versions of the Jira plugin \(2.0\) used a manual webhook configuration that pointed to specific channels and teams. The webhook configuration was `https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL`. This method can still be used to set up notifications from Jira to Mattermost channels if the new Channel Subscription modal can't support a particular channel subscription yet.
 
-### How do I manually configure webhooks notifications to be sent to a Mattermost channel?
+## How do I manually configure webhooks notifications to be sent to a Mattermost channel?
 
 If you want to send notifications from Jira to Mattermost, link a Jira project to a Mattermost channel via webhooks.
 
