@@ -14,7 +14,7 @@ Notifications and webhooks can be used together or you can opt for one of them.
 
 When any webhook event is received from Jira, the plugin reviews all the notification subscriptions. If it matches a rule, it will post a notification to the channel. If there are no subscription matches, the webhook event is discarded.
 
-The notifications and metadata shown in a channel are not protected by Jira permissions. Anyone in the channel can see what's posted to the channel. If they click on the issue link, Jira will not let the user see further details if they do not have the appropriate permission.
+The notifications and metadata shown in a channel are not protected by Jira permissions. Anyone in the channel can see what's posted to the channel. However if they do not have the appropriate permission they won't be able to see further details of the issue if they click through to it.
 
 ## What is a notification subscription?
 
