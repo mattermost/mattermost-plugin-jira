@@ -32,7 +32,7 @@ The supported Jira fields are:
 
 ### Attach messages to Jira issues
 
-Keep all information in one place by attaching parts of Mattermost conversations in Jira issues as comments. To attach a message, click the **More Actions** \(...\) option of any message in the channel \(available when you hover over a message\), then select **Attach to Jira Issue**.
+Keep all information in one place by attaching parts of Mattermost conversations in Jira issues as comments. To attach a message, hover over the relevant message and select **\(...\) > More Actions > Attach to Jira Issue**.
 
 ![You can attach a message to an existing Jira ticket](../.gitbook/assets/image%20%286%29.png)
 
