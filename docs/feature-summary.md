@@ -8,11 +8,9 @@ Notify your team of the latest updates by sending notifications from your Jira p
 
 ![image](https://user-images.githubusercontent.com/13119842/59113100-6cd7a800-8912-11e9-9e23-3639c0eb9c4d.png)
 
-
-
 ### Personal Notifications: JiraBot
 
-Each user in Mattermost is connected with their own personal Jira account and notifications for issues where someone is mentioned or assigned an issue is mentioned in your own personal jira notification bot to help everyone stay on top of their assigned issues.
+Each user in Mattermost is connected with their own personal Jira account and notifications for issues where someone is mentioned or assigned an issue is mentioned in your own personal Jira notification bot to help everyone stay on top of their assigned issues.
 
 ![A personal JiraBot helps keep you on top of your relevant Jira activities](.gitbook/assets/image%20%287%29.png)
 
@@ -20,13 +18,10 @@ Each user in Mattermost is connected with their own personal Jira account and no
 
 ### Create Jira issues
 
-Create Jira issues from scratch or based off of a Mattermost message easily
-
-Without leaving Mattermost's UI, quickly select the project, issue type and enter other fields to create the issue.
+- Create Jira issues from scratch or based off of a Mattermost message easily.
+- Without leaving Mattermost's UI, quickly select the project, issue type and enter other fields to create the issue.
 
 ![image](https://user-images.githubusercontent.com/13119842/59113188-985a9280-8912-11e9-9def-9a7382b4137e.png)
-
-
 
 ### Attach Messages to Jira Issues
 
@@ -44,7 +39,6 @@ For instance, `/jira transition EXT-20 done` transitions the issue key **EXT-20*
 
 ### Assign Jira issues
 
-Assign issues to other Jira users without the need to switch to your Jira project. To assign an issue, use the /jira assign .
+Assign issues to other Jira users without the need to switch to your Jira project. To assign an issue, use the `/jira assign` command.
 
 For instance, `/jira assign EXT-20 john` transitions the issue key **EXT-20** to **John**.
-
