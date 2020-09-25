@@ -10,8 +10,10 @@
 4. In **Link Applications** screen, set the following values:
   - **Application Name**: Mattermost
   - **Application Type**: Generic Application
-5. **IMPORTANT**: Check the **Create incoming link** value, then click **Continue**.
-6. In the following **Link Applications** screen, set the following values:
+  - Check the **Create incoming link** value.
+      **(Important)**
+  - Click **Continue**
+5. In the following **Link Applications** screen, set the following values:
   - **Consumer Key**: `{{ .MattermostKey }}`
   - **Consumer Name**: `Mattermost`
   - **Public Key**:
@@ -20,7 +22,7 @@
 	```
   - **Consumer Callback URL**: _leave blank_
   - **Allow 2-legged OAuth**: _leave unchecked_
-  7. Click **Continue**.
+  - Click **Continue**
 6. Use the "/jira connect" command to connect your Mattermost account with your
    Jira account.
 7. Click the "More Actions" (...) option of any message in the channel
