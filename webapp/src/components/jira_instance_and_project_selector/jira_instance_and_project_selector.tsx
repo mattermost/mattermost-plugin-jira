@@ -95,7 +95,7 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
             fetchingProjectMetadata: false,
         });
 
-        if (projectMetadata.default_project_key) {
+        if (projectMetadata.default_project_key && !this.props.selectedProjectID) {
             this.props.onProjectChange(projectMetadata.default_project_key);
         }
     }
