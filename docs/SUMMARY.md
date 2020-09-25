@@ -27,5 +27,5 @@
 
 * [Environment](development/environment.md)
 * [Help Wanted!](development/help-wanted.md)
-* [Help and Support](help-and-support.md)
+* [Help and Support](development/help-and-support.md)
 
