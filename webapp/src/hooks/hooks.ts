@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {openCreateModalWithoutPost, openChannelSettings, sendEphemeralPost, openDisconnectModal, handleConnectFlow} from '../actions';
+import {openCreateModalWithoutPost, openChannelSettings, sendEphemeralPost, openDisconnectModal, handleConnectFlow, getConnected} from '../actions';
 import {isUserConnected, getInstalledInstances, getPluginSettings, getUserConnectedInstances} from '../selectors';
 
 type ContextArgs = {channel_id: string};
@@ -91,6 +91,7 @@ export default class Hooks {
             return Promise.resolve({});
         }
 
+        this.store.dispatch(getConnected());
         this.store.dispatch(openChannelSettings(contextArgs.channel_id));
         return Promise.resolve({});
     }
