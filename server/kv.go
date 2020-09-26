@@ -11,9 +11,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -536,6 +537,9 @@ func (store *store) DeleteInstance(id types.ID) error {
 func (store *store) LoadInstances() (*Instances, error) {
 	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
 	vs, err := kv.ValueIndex(keyInstances, &instancesArray{}).Load()
+	if errors.Cause(err) == kvstore.ErrNotFound {
+		return &Instances{}, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -575,7 +579,10 @@ func UpdateInstances(store InstanceStore, updatef func(instances *Instances) err
 func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	// Check if V3 instances exist and return them if found
 	instances, err := p.instanceStore.LoadInstances()
-	if errors.Cause(err) != kvstore.ErrNotFound {
+	if err != nil {
+		return nil, err
+	}
+	if !instances.IsEmpty() {
 		return instances, err
 	}
 
