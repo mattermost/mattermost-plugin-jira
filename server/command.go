@@ -710,7 +710,7 @@ func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs
 		}
 		format := "|%v|%s|%s|%s|\n"
 		if instances.Get(instanceID).IsV2Legacy {
-			format = "|%v|%s (v2 legacy)|%s|\n"
+			format = "|%v|%s (v2 legacy)|%s|%s|\n"
 		}
 		alias := instanceCommon.Alias
 		if alias == "" {
