@@ -12,12 +12,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest/mock"
+	"github.com/stretchr/testify/assert"
 )
 
 func validRequestBody() io.ReadCloser {
@@ -109,46 +108,12 @@ func TestPlugin(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
-			api.On("LogDebug",
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string")).Return(nil)
-			api.On("LogError",
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string")).Return(nil)
-			api.On("LogError",
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
+			api.On("LogError", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
+			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
 			api.On("KVGet", mock.AnythingOfTypeArgument("string")).Return(make([]byte, 0), (*model.AppError)(nil))
-			api.On("GetDirectChannel", mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("string")).Return(
+			api.On("GetDirectChannel", mockAnythingOfTypeBatch("string", 2)...).Return(
 				&model.Channel{}, (*model.AppError)(nil))
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
 				Id: "theuserid",
