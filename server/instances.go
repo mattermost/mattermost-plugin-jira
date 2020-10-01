@@ -402,16 +402,13 @@ func (p *Plugin) httpAutocompleteInstalledInstanceWithAlias(w http.ResponseWrite
 
 	instances, err := p.instanceStore.LoadInstances()
 	for _, instanceID := range info.Instances.IDs() {
-		alias := instances.getAlias(instanceID)
-		if alias != "" {
-			out = append(out, model.AutocompleteListItem{
-				Item: alias,
-			})
-		} else {
-			out = append(out, model.AutocompleteListItem{
-				Item: string(instanceID),
-			})
+		item := instances.getAlias(instanceID)
+		if item != "" {
+			item = string(instanceID)
 		}
+		out = append(out, model.AutocompleteListItem{
+			Item: item,
+		})
 	}
 	return respondJSON(w, out)
 }
