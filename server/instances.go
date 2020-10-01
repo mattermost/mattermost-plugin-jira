@@ -407,6 +407,10 @@ func (p *Plugin) httpAutocompleteInstalledInstanceWithAlias(w http.ResponseWrite
 			out = append(out, model.AutocompleteListItem{
 				Item: alias,
 			})
+		} else {
+			out = append(out, model.AutocompleteListItem{
+				Item: string(instanceID),
+			})
 		}
 	}
 	return respondJSON(w, out)
