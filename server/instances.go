@@ -403,7 +403,7 @@ func (p *Plugin) httpAutocompleteInstalledInstanceWithAlias(w http.ResponseWrite
 	instances, err := p.instanceStore.LoadInstances()
 	for _, instanceID := range info.Instances.IDs() {
 		item := instances.getAlias(instanceID)
-		if item != "" {
+		if item == "" {
 			item = string(instanceID)
 		}
 		out = append(out, model.AutocompleteListItem{
