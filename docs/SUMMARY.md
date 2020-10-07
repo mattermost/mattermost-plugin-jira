@@ -21,11 +21,10 @@
 * [Getting Started](end-user-guide/getting-started.md)
 * [Using /jira commands](end-user-guide/using-jira-commands.md)
 * [Notification Subscriptions](end-user-guide/notification-subscriptions.md)
-* [FAQ](end-user-guide/faq.md)
+* [FAQ](administrator-guide/frequently-asked-questions-faq.md)
 
 ## Development
 
 * [Environment](development/environment.md)
 * [Help Wanted!](development/help-wanted.md)
 * [Help and Support](development/help-and-support.md)
-
