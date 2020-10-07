@@ -10,7 +10,21 @@ description: Get the most out the Jira/Mattermost integration
 
 To create a Jira issue from a Mattermost message, hover over the relevant message and select **\(...\) > More Actions > Create Jira Issue**.
 
-![You can create a Jira issue from any Mattermost message](../.gitbook/assets/image%20%285%29.png)
+The available commands are listed below.
+
+**Note:** [setting] can be `notifications` and [value] can be `on` or `off`
+
+* `/jira help` - Launch the Jira plugin command line help syntax
+* `/jira info` - Display information about the current user and the Jira plug-in
+* `/jira instance list` - List installed Jira instances
+* `/jira connect [jiraURL]` - Connect your Mattermost account to your Jira account
+* `/jira disconnect [jiraURL]` - Disconnect your Mattermost account from your Jira account
+* `/jira [issue] assign [issue-key] [assignee]` - Change the assignee of a Jira issue
+* `/jira [issue] create [text]` - Create a new Issue with 'text' inserted into the description field
+* `/jira [issue] transition [issue-key] [state]` - Change the state of a Jira issue
+* `/jira [issue] unassign [issue-key]` - Unassign the Jira issue
+* `/jira [issue] view [issue-key]` - View the details of a specific Jira issue
+* `/jira instance settings [setting] [value]` - Update your user settings
 
 Then select the project and issue type, add a summary, and a description.
 
