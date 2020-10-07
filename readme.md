@@ -33,7 +33,7 @@ This repository is licensed under the Apache 2.0 License, except for the [server
 
 ### Requirements
 
-- For Jira 2.1 Mattermost server v5.14+ is required (certain plugin APIs became available)
+- For Jira 2.1 Mattermost Server v5.14+ is required (certain plugin APIs became available)
 - For Jira 2.0, Mattermost Server v5.12+ is required
 
 ## 1. Features
@@ -165,7 +165,7 @@ For instance, if the site URL is `https://community.mattermost.com`, and the gen
 
 then hit **Save**.
 
-#### Step 3: Install the Pplugin as an Application in Jira
+#### Step 3: Install the Plugin as an Application in Jira
 
 If you want to allow users to [create and manage Jira issues across Mattermost channels](#11-create-and-manage-jira-issues-in-mattermost), install the plugin as an application in your Jira instance. For Jira Server or Data Center instances, post `/jira install server <your-jira-url>` to a Mattermost channel as a Mattermost System Admin, and follow the steps posted to the channel. For Jira Cloud installs secure connections (HTTPS) are required, post `/jira install cloud https://<your-jira-url>`.
 
