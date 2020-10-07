@@ -21,6 +21,7 @@ Administrator slash commands are used to perform system-level functions that req
 
 * `/jira instance alias [URL] [alias-name]` - Assign an alias to an instance
 * `/jira instance unalias [alias-name]` - Remove an alias from an instance
+* `/jira instance list` - List installed Jira instances
 * `/jira instance v2 <jiraURL>` - Set the Jira instance to process \"v2\" webhooks and subscriptions (not prefixed with the instance ID)
 * `/jira stats` - Display usage statistics
 * `/jira webhook [--instance=<jiraURL>]` -  Show the Mattermost webhook to receive JQL queries
