@@ -30,6 +30,7 @@ To control Mattermost channel subscriptions, use the command `/jira subscribe` i
    ```
 
 3. Finally, set which issue events send messages to Mattermost channels and select all of the following:
+
 * Worklog
    * created
    * updated
@@ -49,10 +50,10 @@ To control Mattermost channel subscriptions, use the command `/jira subscribe` i
    * created
    * deleted
 
-5. Choose **Save**.
+4. Choose **Save**.
 
 ### Step 3: Install the plugin as an application in Jira
 
 To allow users to [create and manage Jira issues across Mattermost channels](../end-user-guide/using-jira-commands.md), install the plugin as an application in your Jira instance. For Jira Server or Data Center instances, post `/jira install server <your-jira-url>` to a Mattermost channel as a Mattermost System Admin, and follow the steps posted to the channel. For Jira Cloud, post `/jira install cloud <your-jira-url>`.
 
-If you encounter any issues during the installation process, see our [Frequently Asked Questions]() for troubleshooting help, or open an issue in the [Mattermost Forum](http://forum.mattermost.org).
+If you encounter any issues during the installation process, see our [Frequently Asked Questions](../administrator-guide/frequently-asked-questions-faq.md) for troubleshooting help, or open an issue in the [Mattermost Forum](http://forum.mattermost.org).
