@@ -27,5 +27,5 @@ This plugin contains both a server and web app portion. Read our documentation a
 ## Support
 
 - For Mattermost customers - Please open a support case.
-- For Questions, Suggestions, and Help - Please find us on our forum at https://forum.mattermost.org/c/plugins.
-
+- For Questions and help, visit the [Jira Plugin channel](https://community.mattermost.com/core/channels/jira-plugin) on our Community server.
+- For suggestions and feedback, you can [open an issue](https://github.com/mattermost/mattermost-plugin-jira/issues) or post in the Jira Plugin channel.
