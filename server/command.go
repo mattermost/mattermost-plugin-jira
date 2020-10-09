@@ -616,6 +616,7 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	post := &model.Post{
 		UserId:    p.getUserID(),
 		ChannelId: header.ChannelId,
+		RootId:    header.RootId,
 	}
 	post.AddProp("attachments", attachment)
 
