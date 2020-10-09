@@ -1,8 +1,10 @@
-# Mattermost/Jira Integration
+# Mattermost/Jira Plugin
 
-The Jira/Mattermost plugin documentation is located at: https://mattermost.gitbook.io/jira-plugin/ - let us know your thoughts on the new format in the [Plugin: Jira Channel](https://community-daily.mattermost.com/core/channels/jira-plugin) on our Mattermost community!
+This plugin supports a two-way integration between Mattermost and Jira. Jira Core and Jira Software products, for Server, Data Center, and Cloud platforms are supported. It has been tested with versions 7 and 8.
 
-# Mattermost Jira Plugin
+From v3.0 of this plugin, support for multiple Jira instances is offered.
+
+Visit our [Jira Plugin Documentation](https://mattermost.gitbook.io/jira-plugin/) for guidance on installation, configuration, and usage. 
 
 [![Build Status](https://img.shields.io/circleci/project/github/mattermost/mattermost-plugin-jira/master)](https://circleci.com/gh/mattermost/mattermost-plugin-jira)
 [![Code Coverage](https://img.shields.io/codecov/c/github/mattermost/mattermost-plugin-jira/master)](https://codecov.io/gh/mattermost/mattermost-plugin-jira)
@@ -11,12 +13,6 @@ The Jira/Mattermost plugin documentation is located at: https://mattermost.gitbo
 
 **Maintainer:** [@jfrerich](https://github.com/jfrerich)
 **Co-Maintainer:** [@levb](https://github.com/levb)
-
-This plugin supports a two-way integration between Mattermost and Jira. For a stable production release, please download the latest version [in the Releases tab](https://github.com/mattermost/mattermost-plugin-jira/releases) and follow [these instructions](#2-configuration) for install and configuration.
-
-This plugin supports Jira Core and Jira Software products, for Server, Data Center and Cloud platforms. It has been tested with versions 7 and 8.
-
-Support for multiple Jira instances is considered, but not yet supported.
 
 ## License
 
@@ -32,3 +28,4 @@ This plugin contains both a server and web app portion. Read our documentation a
 
 - For Mattermost customers - Please open a support case.
 - For Questions, Suggestions, and Help - Please find us on our forum at https://forum.mattermost.org/c/plugins.
+
