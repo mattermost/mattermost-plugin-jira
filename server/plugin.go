@@ -303,7 +303,7 @@ func (p *Plugin) OnActivate() error {
 
 			ci, ok := instance.(*cloudInstance)
 			if !ok {
-				p.API.LogWarn("only cloud instances supported for autolink", "err", err)
+				p.API.LogInfo("only cloud instances supported for autolink", "err", err)
 				continue
 			}
 
