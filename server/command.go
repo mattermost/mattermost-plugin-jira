@@ -614,7 +614,7 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 		return p.responsef(header, "Your username is not connected to Jira. Please type `jira connect`.")
 	}
 
-	attachment, err := p.getIssueAsSlackAttachment(instance, conn, strings.ToUpper(issueID))
+	attachment, err := p.getIssueAsSlackAttachment(instance, conn, strings.ToUpper(issueID), true)
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}

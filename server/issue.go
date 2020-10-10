@@ -31,6 +31,67 @@ func makePost(userId, channelId, message string) *model.Post {
 	}
 }
 
+func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) (int, error) {
+	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
+	if requestData == nil {
+		return respondErr(w, http.StatusBadRequest,
+			errors.New("Missing request data"))
+	}
+
+	jiraBotID := p.getUserID()
+	channelID := requestData.ChannelId
+	mattermostUserID := requestData.UserId
+	var msg string
+	if mattermostUserID == "" {
+		msg = "user not authorized"
+		_ = p.API.SendEphemeralPost(mattermostUserID, makePost(jiraBotID, channelID, msg))
+		return respondErr(w, http.StatusUnauthorized, errors.New(msg))
+	}
+
+	val := requestData.Context["issue_key"]
+	issueKey, ok := val.(string)
+	if !ok {
+		msg = "No issue key was found in context data"
+		_ = p.API.SendEphemeralPost(mattermostUserID, makePost(jiraBotID, channelID, msg))
+		return respondErr(w, http.StatusInternalServerError, errors.New(msg))
+	}
+
+	val = requestData.Context["instance_id"]
+	instanceID, ok := val.(string)
+	if !ok {
+		msg = "No instance id was found in context data"
+		_ = p.API.SendEphemeralPost(mattermostUserID, makePost(jiraBotID, channelID, msg))
+		return respondErr(w, http.StatusInternalServerError, errors.New(msg))
+	}
+
+	_, instance, connection, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+	if err != nil {
+		msg = "No connection could be loaded with given params"
+		_ = p.API.SendEphemeralPost(mattermostUserID, makePost(jiraBotID, channelID, msg))
+		return respondErr(w, http.StatusInternalServerError, errors.New(msg))
+	}
+
+	attachment, err := p.getIssueAsSlackAttachment(instance, connection, strings.ToUpper(issueKey), false)
+	if err != nil {
+		msg = "Could not get issue as slack attachment"
+		_ = p.API.SendEphemeralPost(mattermostUserID, makePost(jiraBotID, channelID, msg))
+		return respondErr(w, http.StatusInternalServerError, errors.New(msg))
+	}
+
+	post := &model.Post{
+		UserId:    mattermostUserID,
+		ChannelId: channelID,
+	}
+	post.AddProp("attachments", attachment)
+
+	p.API.CreatePost(post)
+	p.API.DeleteEphemeralPost(mattermostUserID, requestData.PostId)
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write([]byte(`{"status": "OK"}`))
+	return http.StatusOK, err
+}
+
 func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Request) (int, error) {
 	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
 	if requestData == nil {
@@ -247,7 +308,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 		UserId:    instance.Common().getConfig().botUserID,
 	}
 
-	attachment, err := instance.Common().getIssueAsSlackAttachment(instance, connection, created.Key)
+	attachment, err := instance.Common().getIssueAsSlackAttachment(instance, connection, created.Key, true)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to create notification post "+in.PostId)
 	}
@@ -822,7 +883,7 @@ func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 	return NewStringSet()
 }
 
-func (p *Plugin) getIssueAsSlackAttachment(instance Instance, connection *Connection, issueKey string) ([]*model.SlackAttachment, error) {
+func (p *Plugin) getIssueAsSlackAttachment(instance Instance, connection *Connection, issueKey string, showActions bool) ([]*model.SlackAttachment, error) {
 	client, err := instance.GetClient(connection)
 	if err != nil {
 		return nil, err
@@ -843,7 +904,7 @@ func (p *Plugin) getIssueAsSlackAttachment(instance Instance, connection *Connec
 		}
 	}
 
-	return asSlackAttachment(instance.GetID(), client, issue)
+	return asSlackAttachment(instance.GetID(), client, issue, showActions)
 }
 
 func (p *Plugin) UnassignIssue(instance Instance, mattermostUserID types.ID, issueKey string) (string, error) {
@@ -1026,7 +1087,7 @@ func (p *Plugin) TransitionIssue(in *InTransitionIssue) (string, error) {
 		}
 	}
 
-	attachments, err := asSlackAttachment(instance.GetID(), client, issue)
+	attachments, err := asSlackAttachment(instance.GetID(), client, issue, true)
 	if err != nil {
 		return "", err
 	}
