@@ -622,6 +622,7 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	post := &model.Post{
 		UserId:    p.getUserID(),
 		ChannelId: header.ChannelId,
+		RootId:    header.RootId,
 	}
 	post.AddProp("attachments", attachment)
 
@@ -1198,6 +1199,7 @@ func (p *Plugin) postCommandResponse(args *model.CommandArgs, text string) {
 	post := &model.Post{
 		UserId:    p.getUserID(),
 		ChannelId: args.ChannelId,
+		RootId:    args.RootId,
 		Message:   text,
 	}
 	_ = p.API.SendEphemeralPost(args.UserId, post)
