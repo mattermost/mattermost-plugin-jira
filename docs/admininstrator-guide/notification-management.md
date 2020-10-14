@@ -18,7 +18,7 @@ The notifications and metadata shown in a channel are not protected by Jira perm
 
 ## What is a notification subscription?
 
-Mattermost users can set up rules that define when a particular event with certain criteria are met in Jira that trigger a notification is sent to a particular channel. These subscription rules can specify the `Jira Project`, `Event Type`, `Issue Type`, and can filter out issues with certain values. 
+Mattermost users can set up rules that define when a particular event with certain criteria are met in Jira that trigger a notification is sent to a particular channel. These subscription rules can specify the `Jira Project`, `Event Type`, `Issue Type`, and can filter out issues with certain values.
 
 When a user is setting up a notification subscription they will only see the projects and issue types they have access to within Jira. If they can't see a project in Jira it won't be displayed as an option for that particular user when they are trying to setup a subscription in Mattermost.
 
@@ -34,9 +34,9 @@ Then, you can specify which Jira groups they also need to be a member of, in ord
 
 ![](../.gitbook/assets/image%20%283%29.png)
 
-## How can I see all the notification subscriptions that are set up in Mattermost? 
+## How can I see all the notification subscriptions that are set up in Mattermost?
 
-While logged in as a System Admin type `/jira list` in a Mattermost channel.
+While logged in as a System Admin type `/jira subscribe list` in a Mattermost channel.
 
 ## How can I set up Mattermost notifications directly within Jira?
 
