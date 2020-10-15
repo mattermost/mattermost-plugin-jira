@@ -27,5 +27,5 @@ For more information about contributing to Mattermost, and the different ways yo
 ## Support
 
 - For Mattermost customers - Please open a support case.
-- For questions and help, visit the [Jira Plugin channel](https://community.mattermost.com/core/channels/jira-plugin) on our Community server.
+- For questions, suggestions, and help, visit the [Jira Plugin channel](https://community.mattermost.com/core/channels/jira-plugin) on our Community server.
 - For suggestions and feedback, you can [open an issue](https://github.com/mattermost/mattermost-plugin-jira/issues) or post in the Jira Plugin channel.
