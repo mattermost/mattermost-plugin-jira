@@ -10,14 +10,14 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest/mock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 func testWebhookRequest(filename string) *http.Request {
@@ -333,11 +333,11 @@ func TestWebhookHTTP(t *testing.T) {
 			CurrentInstance:         true,
 		},
 		"SERVER issue comment created indentation": {
-			Request:         testWebhookRequest("webhook-issue-comment-created-indentation.json"),
+			Request:                 testWebhookRequest("webhook-issue-comment-created-indentation.json"),
 			ExpectedSlackAttachment: true,
-			ExpectedHeadline: "User **commented** on story [TEST-4: unit testing](http://localhost:8082/browse/TEST-4)",
-			ExpectedText:     "> [~Test] creating a test comment\r\n> \r\n> a second line for the test comment",
-			CurrentInstance:  true,
+			ExpectedHeadline:        "User **commented** on story [TEST-4: unit testing](http://localhost:8082/browse/TEST-4)",
+			ExpectedText:            "> [~Test] creating a test comment\r\n> \r\n> a second line for the test comment",
+			CurrentInstance:         true,
 		},
 		"SERVER (old version) issue commented (no issue_event_type_name)": {
 			Request:                 testWebhookRequest("webhook-server-old-issue-updated-no-event-type-commented.json"),
@@ -603,43 +603,9 @@ func TestWebhookHTTP(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
-			api.On("LogDebug",
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string")).Return(nil)
-			api.On("LogError",
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string")).Return(nil)
-			api.On("LogError",
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
+			api.On("LogError", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
+			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
 				Id: "theuserid",

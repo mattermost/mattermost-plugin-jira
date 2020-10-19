@@ -81,7 +81,7 @@ const commonHelpText = "\n" +
 
 const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"Install Jira instances:\n" +
-	"* `/jira instance install cloud [jiraURL[` - Connect Mattermost to a Jira Cloud instance located at <jiraURL>\n" +
+	"* `/jira instance install cloud [jiraURL]` - Connect Mattermost to a Jira Cloud instance located at <jiraURL>\n" +
 	"* `/jira instance install server [jiraURL]` - Connect Mattermost to a Jira Server or Data Center instance located at <jiraURL>\n" +
 	"Uninstall Jira instances:\n" +
 	"* `/jira instance uninstall cloud [jiraURL]` - Disconnect Mattermost from a Jira Cloud instance located at <jiraURL>\n" +
@@ -231,7 +231,7 @@ func createConnectCommand() *model.AutocompleteData {
 func createAliasCommand() *model.AutocompleteData {
 	alias := model.NewAutocompleteData(
 		"alias", "", "Create an alias to your Jira instance")
-	alias.AddDynamicListArgument("Jira URL", routeAutocompleteInstalledInstance, false)
+	alias.AddDynamicListArgument("Jira URL", routeAutocompleteInstalledInstanceWithAlias, false)
 	return alias
 }
 
@@ -313,7 +313,7 @@ func createSubscribeCommand(optInstance bool) *model.AutocompleteData {
 
 	list := model.NewAutocompleteData(
 		"list", "", "List the Jira notifications sent to this channel")
-	withFlagInstance(list, optInstance, routeAutocompleteInstalledInstance)
+	withFlagInstance(list, optInstance, routeAutocompleteInstalledInstanceWithAlias)
 	subscribe.AddCommand(list)
 	return subscribe
 }
@@ -322,7 +322,7 @@ func createWebhookCommand(optInstance bool) *model.AutocompleteData {
 	webhook := model.NewAutocompleteData(
 		"webhook", "[Jira URL]", "Display the webhook URLs to set up on Jira")
 	webhook.RoleID = model.SYSTEM_ADMIN_ROLE_ID
-	withFlagInstance(webhook, optInstance, routeAutocompleteInstalledInstance)
+	withFlagInstance(webhook, optInstance, routeAutocompleteInstalledInstanceWithAlias)
 	return webhook
 }
 
@@ -482,6 +482,12 @@ func executeInstanceAlias(p *Plugin, c *plugin.Context, header *model.CommandArg
 	if err != nil {
 		return p.responsef(header, "Failed to load instances. Error: %v.", err)
 	}
+
+	instanceFound := instances.getByAlias(string(instanceID))
+	if instanceFound != nil {
+		instanceID = instanceFound.InstanceID
+	}
+
 	isUnique, id := instances.isAliasUnique(instanceID, alias)
 	if !isUnique {
 		return p.responsef(header, "Alias `%v` already exists on InstanceID: %v.", alias, id)
@@ -616,6 +622,7 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	post := &model.Post{
 		UserId:    p.getUserID(),
 		ChannelId: header.ChannelId,
+		RootId:    header.RootId,
 	}
 	post.AddProp("attachments", attachment)
 
@@ -710,7 +717,7 @@ func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs
 		}
 		format := "|%v|%s|%s|%s|\n"
 		if instances.Get(instanceID).IsV2Legacy {
-			format = "|%v|%s (v2 legacy)|%s|\n"
+			format = "|%v|%s (v2 legacy)|%s|%s|\n"
 		}
 		alias := instanceCommon.Alias
 		if alias == "" {
@@ -1192,6 +1199,7 @@ func (p *Plugin) postCommandResponse(args *model.CommandArgs, text string) {
 	post := &model.Post{
 		UserId:    p.getUserID(),
 		ChannelId: args.ChannelId,
+		RootId:    args.RootId,
 		Message:   text,
 	}
 	_ = p.API.SendEphemeralPost(args.UserId, post)
