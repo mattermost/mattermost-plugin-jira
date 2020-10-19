@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -256,6 +257,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 	message := fmt.Sprintf("%s %s %s:\n%s",
 		commentAuthor, verb, jwh.mdKeySummaryLink(), quoteIssueComment(jwh.Comment.Body))
 	assigneeMentioned := false
+	reporterMentioned := false
 
 	for _, u := range parseJIRAUsernamesFromText(wh.Comment.Body) {
 		isAccountID := false
@@ -269,9 +271,12 @@ func appendCommentNotifications(wh *webhook, verb string) {
 			continue
 		}
 
-		// Avoid duplicated mention for assignee. Boolean value is checked after the loop.
+		// Avoid duplicated mention for assignee and reporter. Boolean value is checked after the loop.
 		if jwh.Issue.Fields.Assignee != nil && (u == jwh.Issue.Fields.Assignee.Name || u == jwh.Issue.Fields.Assignee.AccountID) {
 			assigneeMentioned = true
+		}
+		if jwh.Issue.Fields.Reporter != nil && (u == jwh.Issue.Fields.Reporter.Name || u == jwh.Issue.Fields.Reporter.AccountID) {
+			reporterMentioned = true
 		}
 
 		notification := webhookUserNotification{
@@ -289,21 +294,33 @@ func appendCommentNotifications(wh *webhook, verb string) {
 		wh.notifications = append(wh.notifications, notification)
 	}
 
+	commentMessage := fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body)
+
 	// Don't send a notification to the assignee if they don't exist, or if are also the author.
 	// Also, if the assignee was mentioned above, avoid sending a duplicate notification here.
 	// Jira Server uses name field, Jira Cloud uses the AccountID field.
-	if assigneeMentioned || jwh.Issue.Fields.Assignee == nil || jwh.Issue.Fields.Assignee.Name == jwh.User.Name ||
-		(jwh.Issue.Fields.Assignee.AccountID != "" && jwh.Issue.Fields.Assignee.AccountID == jwh.Comment.UpdateAuthor.AccountID) {
-		return
+	if !assigneeMentioned && canSendNotification(jwh.Issue.Fields.Assignee, jwh.User.Name, jwh.Comment.UpdateAuthor.AccountID) {
+		wh.notifications = append(wh.notifications, webhookUserNotification{
+			jiraUsername:  jwh.Issue.Fields.Assignee.Name,
+			jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
+			message:       commentMessage,
+			postType:      PostTypeComment,
+			commentSelf:   jwh.Comment.Self,
+		})
 	}
+	if !reporterMentioned && canSendNotification(jwh.Issue.Fields.Reporter, jwh.User.Name, jwh.Comment.UpdateAuthor.AccountID) {
+		wh.notifications = append(wh.notifications, webhookUserNotification{
+			jiraUsername:  jwh.Issue.Fields.Reporter.Name,
+			jiraAccountID: jwh.Issue.Fields.Reporter.AccountID,
+			message:       commentMessage,
+			postType:      PostTypeComment,
+			commentSelf:   jwh.Comment.Self,
+		})
+	}
+}
 
-	wh.notifications = append(wh.notifications, webhookUserNotification{
-		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
-		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
-		message:       fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
-		postType:      PostTypeComment,
-		commentSelf:   jwh.Comment.Self,
-	})
+func canSendNotification(to *jira.User, fromName, fromAccountID string) bool {
+	return !(to == nil || to.Name == fromName || (to.AccountID != "" && to.AccountID == fromAccountID))
 }
 
 func quoteIssueComment(comment string) string {
