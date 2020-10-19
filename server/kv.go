@@ -538,7 +538,7 @@ func (store *store) LoadInstances() (*Instances, error) {
 	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
 	vs, err := kv.ValueIndex(keyInstances, &instancesArray{}).Load()
 	if errors.Cause(err) == kvstore.ErrNotFound {
-		return &Instances{}, nil
+		return NewInstances(), nil
 	}
 	if err != nil {
 		return nil, err
