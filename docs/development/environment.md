@@ -1,8 +1,6 @@
 # Environment
 
-## Development
-
-To contribute to the project see https://www.mattermost.org/contribute-to-mattermost
+To contribute to the project see https://www.mattermost.org/contribute-to-mattermost.
 
 Join the [Jira plugin channel](https://community.mattermost.com/core/channels/jira-plugin) on our community server to discuss any questions.
 
