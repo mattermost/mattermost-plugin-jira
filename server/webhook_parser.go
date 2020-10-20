@@ -299,7 +299,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 	// Don't send a notification to the assignee or reporter if they don't exist, or if are also the author.
 	// Also, if the assignee or reporter was mentioned above, avoid sending a duplicate notification here.
 	// Jira Server uses name field, Jira Cloud uses the AccountID field.
-	if !assigneeMentioned && canSendNotification(jwh.Issue.Fields.Assignee, jwh.User.Name, jwh.Comment.UpdateAuthor.AccountID) {
+	if !assigneeMentioned && shouldSendNotification(jwh.Issue.Fields.Assignee, jwh.User.Name, jwh.Comment.UpdateAuthor.AccountID) {
 		wh.notifications = append(wh.notifications, webhookUserNotification{
 			jiraUsername:  jwh.Issue.Fields.Assignee.Name,
 			jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
@@ -308,7 +308,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 			commentSelf:   jwh.Comment.Self,
 		})
 	}
-	if !reporterMentioned && canSendNotification(jwh.Issue.Fields.Reporter, jwh.User.Name, jwh.Comment.UpdateAuthor.AccountID) {
+	if !reporterMentioned && shouldSendNotification(jwh.Issue.Fields.Reporter, jwh.User.Name, jwh.Comment.UpdateAuthor.AccountID) {
 		wh.notifications = append(wh.notifications, webhookUserNotification{
 			jiraUsername:  jwh.Issue.Fields.Reporter.Name,
 			jiraAccountID: jwh.Issue.Fields.Reporter.AccountID,
@@ -319,7 +319,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 	}
 }
 
-func canSendNotification(to *jira.User, fromName, fromAccountID string) bool {
+func shouldSendNotification(to *jira.User, fromName, fromAccountID string) bool {
 	return !(to == nil || to.Name == fromName || (to.AccountID != "" && to.AccountID == fromAccountID))
 }
 
