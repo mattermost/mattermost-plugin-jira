@@ -40,8 +40,8 @@ func (wh testWebhookWrapper) Events() StringSet {
 	return wh.Webhook.Events()
 }
 
-func (wh *testWebhookWrapper) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID string) (*model.Post, int, error) {
-	post, status, err := wh.Webhook.PostToChannel(p, "", channelID, fromUserID)
+func (wh *testWebhookWrapper) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error) {
+	post, status, err := wh.Webhook.PostToChannel(p, "", channelID, fromUserID, subscriptionName)
 	if post != nil {
 		wh.postedToChannel = post
 	}

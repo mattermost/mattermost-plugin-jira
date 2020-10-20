@@ -24,7 +24,7 @@ const (
 
 type Webhook interface {
 	Events() StringSet
-	PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID string) (*model.Post, int, error)
+	PostToChannel(p *Plugin, instanceID types.ID, channelId, fromUserId, subscriptionName string) (*model.Post, int, error)
 	PostNotifications(p *Plugin, instanceID types.ID) ([]*model.Post, int, error)
 }
 
@@ -57,7 +57,8 @@ func (wh *webhook) Events() StringSet {
 	return wh.eventTypes
 }
 
-func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID string) (*model.Post, int, error) {
+
+func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error) {
 	if wh.headline == "" {
 		return nil, http.StatusBadRequest, errors.Errorf("unsupported webhook")
 	}
@@ -70,6 +71,10 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 	text := ""
 	if wh.text != "" && !p.getConfig().HideDecriptionComment {
 		text = p.replaceJiraAccountIds(instanceID, wh.text)
+	}
+
+	if p.getConfig().DisplaySubscriptionNameInNotifications && wh.text != "" && subscriptionName != "" {
+		text = fmt.Sprintf("%s\n\nSubscription Name: %s", text, subscriptionName)
 	}
 
 	if text != "" || len(wh.fields) != 0 {
