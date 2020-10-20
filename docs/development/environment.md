@@ -1,8 +1,6 @@
 # Environment
 
-## Development
-
-This plugin contains both a server and web app portion.
+To contribute to the project see https://www.mattermost.org/contribute-to-mattermost.
 
 Use `make dist` to build distributions of the plugin that you can upload to a Mattermost server. Use `make check-style` to check the style. Use `make deploy` to deploy the plugin to your local server.
 
