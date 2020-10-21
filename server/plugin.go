@@ -307,6 +307,12 @@ func (p *Plugin) OnActivate() error {
 				continue
 			}
 
+			status, apiErr := p.API.GetPluginStatus(autolinkPluginId)
+			if apiErr != nil || status.State != model.PluginStateRunning {
+				p.API.LogWarn("OnActivate: Autolink plugin is unavailable", "error", err.Error(), "status", status)
+				continue
+			}
+
 			if err = p.AddAutolinksForCloudInstance(ci); err != nil {
 				p.API.LogWarn("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 				continue
