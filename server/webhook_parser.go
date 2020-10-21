@@ -296,7 +296,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 
 	commentMessage := fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body)
 
-	// Don't send a notification to the assignee or reporter if they don't exist, or if are also the author.
+	// Don't send a notification to the assignee or reporter if they don't exist, or if they are also the author.
 	// Also, if the assignee or reporter was mentioned above, avoid sending a duplicate notification here.
 	// Jira Server uses name field, Jira Cloud uses the AccountID field.
 	if !assigneeMentioned && shouldSendNotification(jwh.Issue.Fields.Assignee, jwh.User.Name, jwh.Comment.UpdateAuthor.AccountID) {
