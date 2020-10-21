@@ -313,7 +313,7 @@ func (p *Plugin) OnActivate() error {
 				continue
 			}
 			if status.State != model.PluginStateRunning {
-				p.API.LogWarn("OnActivate: Autolink plugin unavailable. Plug-in is not running", "status", status)
+				p.API.LogWarn("OnActivate: Autolink plugin unavailable. Plugin is not running", "status", status)
 				continue
 			}
 
