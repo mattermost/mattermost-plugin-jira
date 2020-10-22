@@ -130,7 +130,7 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		foundEvent = true
 	} else if eventTypes.ContainsAny(eventUpdatedAny) {
 		for _, eventType := range webhookEvents.Elems() {
-			if strings.HasPrefix(eventType, "event_updated") || strings.HasSuffix(eventType, "comment"){
+			if strings.HasPrefix(eventType, "event_updated") || strings.HasSuffix(eventType, "comment") {
 				foundEvent = true
 			}
 		}
