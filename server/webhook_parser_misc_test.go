@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	jira "github.com/andygrunwald/go-jira"
+	"github.com/andygrunwald/go-jira"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -134,5 +134,107 @@ func TestWebhookQuotedComment(t *testing.T) {
 		w := wh.(*webhook)
 		require.NotNil(t, w)
 		assert.True(t, strings.HasPrefix(w.text, ">"))
+	}
+}
+
+func TestNotificationsIssueCommentCreatedEdited(t *testing.T) {
+	for name, tc := range map[string]struct {
+		filename       string
+		expectedNotifs []webhookUserNotification
+	}{
+		"issue comment created - notify assignee and reporter": {
+			filename: "testdata/webhook-issue-comment-created-notify-assignee-and-reporter.json",
+			expectedNotifs: []webhookUserNotification{
+				{
+					jiraUsername:  "assignee",
+					jiraAccountID: "assignee123",
+					postType:      PostTypeComment,
+				},
+				{
+					jiraUsername:  "reporter",
+					jiraAccountID: "reporter123",
+					postType:      PostTypeComment,
+				},
+			},
+		},
+		"issue comment created - notify mentioned users": {
+			filename: "testdata/webhook-issue-comment-created-notify-mentioned-users.json",
+			expectedNotifs: []webhookUserNotification{
+				{
+					jiraUsername: "alice",
+					postType:     PostTypeMention,
+				},
+				{
+					jiraAccountID: "bob123",
+					postType:      PostTypeMention,
+				},
+				{
+					jiraUsername: "assignee",
+					postType:     PostTypeMention,
+				},
+				{
+					jiraUsername: "reporter",
+					postType:     PostTypeMention,
+				},
+			},
+		},
+		"issue comment edited - notify assignee and reporter": {
+			filename: "testdata/webhook-issue-comment-edited-notify-assignee-and-reporter.json",
+			expectedNotifs: []webhookUserNotification{
+				{
+					jiraUsername:  "assignee",
+					jiraAccountID: "assignee123",
+					postType:      PostTypeComment,
+				},
+				{
+					jiraUsername:  "reporter",
+					jiraAccountID: "reporter123",
+					postType:      PostTypeComment,
+				},
+			},
+		},
+		"issue comment edited - notify mentioned users": {
+			filename: "testdata/webhook-issue-comment-edited-notify-mentioned-users.json",
+			expectedNotifs: []webhookUserNotification{
+				{
+					jiraUsername: "alice",
+					postType:     PostTypeMention,
+				},
+				{
+					jiraAccountID: "bob123",
+					postType:      PostTypeMention,
+				},
+				{
+					jiraUsername: "assignee",
+					postType:     PostTypeMention,
+				},
+				{
+					jiraUsername: "reporter",
+					postType:     PostTypeMention,
+				},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f, err := os.Open(tc.filename)
+			require.NoError(t, err)
+			defer f.Close()
+
+			b, err := ioutil.ReadAll(f)
+			require.Nil(t, err)
+
+			wh, err := ParseWebhook(b)
+			require.NoError(t, err)
+
+			w := wh.(*webhook)
+			require.NotNil(t, w)
+
+			require.Len(t, w.notifications, len(tc.expectedNotifs))
+			for i := range tc.expectedNotifs {
+				require.Equal(t, tc.expectedNotifs[i].jiraUsername, w.notifications[i].jiraUsername)
+				require.Equal(t, tc.expectedNotifs[i].jiraAccountID, w.notifications[i].jiraAccountID)
+				require.Equal(t, tc.expectedNotifs[i].postType, w.notifications[i].postType)
+			}
+		})
 	}
 }
