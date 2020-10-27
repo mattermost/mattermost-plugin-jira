@@ -424,8 +424,8 @@ export function handleConnectChange(store) {
             return;
         }
 
-        if (msg.event === "custom_jira_connect") {
-            store.dispatch(sendEphemeralPost("You have successfully connected your Jira account."));
+        if (msg.event === 'custom_jira_connect') {
+            store.dispatch(sendEphemeralPost('You have successfully connected your Jira account.'));
         }
 
         store.dispatch({
