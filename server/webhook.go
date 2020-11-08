@@ -15,6 +15,13 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
+const (
+	Nobody = "_nobody_"
+	commentDeleted = "comment_deleted"
+	commentUpdated = "comment_updated"
+	commentCreated = "comment_created"
+)
+
 type Webhook interface {
 	Events() StringSet
 	PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID string) (*model.Post, int, error)

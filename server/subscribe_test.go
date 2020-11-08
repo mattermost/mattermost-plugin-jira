@@ -22,7 +22,7 @@ import (
 func TestListChannelSubscriptions(t *testing.T) {
 	p := &Plugin{}
 	p.updateConfig(func(conf *config) {
-		conf.Secret = "somesecret"
+		conf.Secret = someSecret
 	})
 	p.instanceStore = p.getMockInstanceStoreKV(0)
 
@@ -197,7 +197,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 			api := &plugintest.API{}
 
 			p.updateConfig(func(conf *config) {
-				conf.Secret = "somesecret"
+				conf.Secret = someSecret
 			})
 			p.SetAPI(api)
 
@@ -270,7 +270,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 func TestGetChannelsSubscribed(t *testing.T) {
 	p := &Plugin{}
 	p.updateConfig(func(conf *config) {
-		conf.Secret = "somesecret"
+		conf.Secret = someSecret
 	})
 	p.instanceStore = p.getMockInstanceStoreKV(0)
 
@@ -1061,7 +1061,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			api := &plugintest.API{}
 
 			p.updateConfig(func(conf *config) {
-				conf.Secret = "somesecret"
+				conf.Secret = someSecret
 			})
 			p.SetAPI(api)
 

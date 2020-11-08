@@ -327,7 +327,7 @@ func TestSubscribe(t *testing.T) {
 			}
 
 			p.updateConfig(func(conf *config) {
-				conf.Secret = "somesecret"
+				conf.Secret = someSecret
 			})
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
@@ -438,7 +438,7 @@ func TestDeleteSubscription(t *testing.T) {
 			}
 
 			p.updateConfig(func(conf *config) {
-				conf.Secret = "somesecret"
+				conf.Secret = someSecret
 			})
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
@@ -657,7 +657,7 @@ func TestEditSubscription(t *testing.T) {
 			}
 
 			p.updateConfig(func(conf *config) {
-				conf.Secret = "somesecret"
+				conf.Secret = someSecret
 			})
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
@@ -817,7 +817,7 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 			}
 
 			p.updateConfig(func(conf *config) {
-				conf.Secret = "somesecret"
+				conf.Secret = someSecret
 			})
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}

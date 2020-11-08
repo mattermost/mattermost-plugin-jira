@@ -15,6 +15,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
+const EmptyJSONString = "{}"
+
 // Endpoint implements a expvar.Var and json.[Un-]Marshaller interfaces.
 // Its String() method returns aggregated values, the JSON methods serialize
 // and deserialize complete data and can be used to persist/restore.
@@ -109,7 +111,7 @@ func (e *Endpoint) Get() Endpoint {
 // String implements expvar.Var interface
 func (e *Endpoint) String() string {
 	if e == nil || e.Total == 0 {
-		return "{}"
+		return EmptyJSONString
 	}
 	ep := e.Get()
 	m := map[string]interface{}{

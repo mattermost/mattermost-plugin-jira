@@ -104,7 +104,7 @@ func (stats *Stats) PrintConsolidated(pattern string) (string, error) {
 	}
 
 	bullet := func(k, v string) string {
-		if v == "" || v == "{}" {
+		if v == "" || v == EmptyJSONString {
 			return ""
 		}
 		return fmt.Sprintf(" * %s: `%s`\n", k, v)

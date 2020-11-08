@@ -23,6 +23,16 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
+const (
+	commaSeparator   = ", "
+	labelsField      = "labels"
+	statusField      = "status"
+	reporterField    = "reporter"
+	priorityField    = "priority"
+	descriptionField = "description"
+	resolutionField  = "resolution"
+)
+
 func makePost(userID,
 	channelID, message string) *model.Post {
 	return &model.Post{
@@ -83,7 +93,7 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 	p.API.DeleteEphemeralPost(mattermostUserID, requestData.PostId)
 
 	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write([]byte(`{"status": "OK"}`))
+	_, err = w.Write([]byte(`{statusField: "OK"}`))
 	return http.StatusOK, err
 }
 
@@ -137,7 +147,7 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write([]byte(`{"status": "OK"}`))
+	_, err = w.Write([]byte(`{statusField: "OK"}`))
 	return http.StatusOK, err
 }
 
@@ -227,7 +237,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 
 	for i, notCovered := range in.RequiredFieldsNotCovered {
 		// First position in the slice is the key value (shouldn't change, regardless of localization)
-		if strings.ToLower(notCovered[0]) == "reporter" {
+		if strings.ToLower(notCovered[0]) == reporterField {
 			requiredFieldsNotCovered := in.RequiredFieldsNotCovered[:i]
 			if i+1 < len(in.RequiredFieldsNotCovered) {
 				requiredFieldsNotCovered = append(requiredFieldsNotCovered,
@@ -753,7 +763,7 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 }
 
 func notifyOnFailedAttachment(instance Instance, mattermostUserID, issueKey string, err error, format string, args ...interface{}) {
-	msg := "Failed to attach to issue: " + issueKey + ", " + fmt.Sprintf(format, args...)
+	msg := "Failed to attach to issue: " + issueKey + commaSeparator + fmt.Sprintf(format, args...)
 
 	instance.Common().Plugin.API.LogError(fmt.Sprintf("%s: %v", msg, err), "issue", issueKey)
 	errMsg := err.Error()
@@ -843,11 +853,11 @@ func getIssueCustomFieldValue(issue *jira.Issue, key string) StringSet {
 func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 	key = strings.ToLower(key)
 	switch key {
-	case "status":
+	case statusField:
 		return NewStringSet(issue.Fields.Status.ID)
-	case "labels":
+	case labelsField:
 		return NewStringSet(issue.Fields.Labels...)
-	case "priority":
+	case priorityField:
 		return NewStringSet(issue.Fields.Priority.ID)
 	case "fixversions":
 		result := NewStringSet()
@@ -976,7 +986,7 @@ func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issue
 			extra := jiraUsers[i].Name
 			if jiraUsers[i].EmailAddress != "" {
 				if extra != "" {
-					extra += ", "
+					extra += commaSeparator
 				}
 				extra += jiraUsers[i].EmailAddress
 			}
@@ -1027,7 +1037,6 @@ func (p *Plugin) TransitionIssue(in *InTransitionIssue) (string, error) {
 	if err != nil {
 		return "", errors.New(
 
-
 			"we couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue")
 	}
 	if len(transitions) < 1 {
@@ -1051,14 +1060,14 @@ func (p *Plugin) TransitionIssue(in *InTransitionIssue) (string, error) {
 	switch len(matchingStates) {
 	case 0:
 		return "", errors.Errorf("%q is not a valid state. Please use one of: %q",
-			in.ToState, strings.Join(availableStates, ", "))
+			in.ToState, strings.Join(availableStates, commaSeparator))
 
 	case 1:
 		// proceed
 
 	default:
 		return "", errors.Errorf("please be more specific, %q matched several states: %q",
-			in.ToState, strings.Join(matchingStates, ", "))
+			in.ToState, strings.Join(matchingStates, commaSeparator))
 	}
 
 	err = client.DoTransition(in.IssueKey, transition.ID)

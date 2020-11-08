@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 )
 
+const someSecret = "somesecret"
+
 func getJiraTestData(filename string) ([]byte, error) {
 	f, err := os.Open(filepath.Join("testdata", filename))
 

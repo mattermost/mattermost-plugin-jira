@@ -24,6 +24,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
+const unrecognizedEndpoint = "_unrecognized"
+
 // Client is the combined interface for all upstream APIs and convenience methods.
 type Client interface {
 	RESTService
@@ -371,13 +373,13 @@ func endpointNameFromRequest(r *http.Request) string {
 	l := strings.ToLower(path)
 	s := strings.TrimLeft(l, "/rest/api")
 	if s == l {
-		return "_unrecognized"
+		return unrecognizedEndpoint
 	}
 	parts := strings.Split(s, "/")
 	n := len(parts)
 
 	if n < 2 {
-		return "_unrecognized"
+		return unrecognizedEndpoint
 	}
 	var out = []string{"api/jira", parts[0], parts[1]}
 	context := parts[1]

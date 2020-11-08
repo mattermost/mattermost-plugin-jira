@@ -42,9 +42,9 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	if err != nil {
 		return p.responsef(header, "Your username is not connected to Jira. Please type `jira connect`. %v", err)
 	}
-	notifications := "off"
+	notifications := settingOff
 	if updatedConnection.Settings.Notifications {
-		notifications = "on"
+		notifications = settingOn
 	}
 
 	return p.responsef(header, "Settings updated. Notifications %s.", notifications)

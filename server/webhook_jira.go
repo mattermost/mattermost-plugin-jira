@@ -50,7 +50,7 @@ func (jwh *JiraWebhook) mdIssueSummary() string {
 
 func (jwh *JiraWebhook) mdIssueAssignee() string {
 	if jwh.Issue.Fields.Assignee == nil {
-		return "_nobody_"
+		return Nobody
 	}
 	return mdUser(jwh.Issue.Fields.Assignee)
 }
@@ -84,7 +84,7 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 	}
 
 	// Jira Cloud comment event. We need to fetch issue data because it is not expanded in webhook payload.
-	isCommentEvent := jwh.WebhookEvent == "comment_created" || jwh.WebhookEvent == "comment_updated" || jwh.WebhookEvent == "comment_deleted"
+	isCommentEvent := jwh.WebhookEvent == commentCreated || jwh.WebhookEvent == commentUpdated || jwh.WebhookEvent == commentDeleted
 	if isCommentEvent && instance.Common().Type == "cloud" {
 		issue, err := p.getIssueDataForCloudWebhook(instance, jwh.Issue.ID)
 		if err != nil {

@@ -28,6 +28,7 @@ const (
 	mockUserIDUnknown              = "3"
 	mockUserIDSysAdmin             = "4"
 	mockUserIDNonSysAdmin          = "5"
+	mattermostSiteURL              = "https://somelink.com"
 )
 
 type mockUserStoreKV struct {
@@ -140,7 +141,7 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 	tc := TestConfiguration{}
 	p.updateConfig(func(conf *config) {
 		conf.Secret = tc.Secret
-		conf.mattermostSiteURL = "https://somelink.com"
+		conf.mattermostSiteURL = mattermostSiteURL
 	})
 	api := &plugintest.API{}
 	api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
@@ -294,7 +295,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			p := Plugin{}
 			p.updateConfig(func(conf *config) {
-				conf.mattermostSiteURL = "https://somelink.com"
+				conf.mattermostSiteURL = mattermostSiteURL
 				conf.rsaKey, _ = rsa.GenerateKey(rand.Reader, 1024)
 			})
 			isSendEphemeralPostCalled := false
@@ -383,7 +384,7 @@ func TestPlugin_ExecuteCommand_Uninstall(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			p := Plugin{}
 			p.updateConfig(func(conf *config) {
-				conf.mattermostSiteURL = "https://somelink.com"
+				conf.mattermostSiteURL = mattermostSiteURL
 			})
 			isSendEphemeralPostCalled := false
 			currentTestAPI := api
