@@ -547,9 +547,7 @@ func (p *Plugin) GetSearchIssues(instanceID, mattermostUserID types.ID, q, jqlSt
 		result = append(result, *exact)
 	}
 
-	for _, issue := range found {
-		result = append(result, issue)
-	}
+	result = append(result, found...)
 
 	return result, nil
 }
@@ -967,7 +965,7 @@ func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issue
 
 	// handle number of returned jira users
 	if len(jiraUsers) == 0 {
-		errorMsg := fmt.Sprintf("We couldn't find the assignee. Please use a Jira member and try again.")
+		errorMsg := "We couldn't find the assignee. Please use a Jira member and try again."
 		return "", fmt.Errorf(errorMsg)
 	}
 

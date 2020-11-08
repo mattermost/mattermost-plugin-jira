@@ -682,7 +682,7 @@ func MigrateV3InstancesToV2(p *Plugin) (JiraV2Instances, string) {
 		return nil, err.Error()
 	}
 	if v3instances.IsEmpty() {
-		return nil, fmt.Sprint("(none installed)")
+		return nil, "(none installed)"
 	}
 
 	// if there are no V2 legacy instances, don't allow migrating/reverting to old V2 version.

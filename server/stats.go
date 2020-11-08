@@ -100,9 +100,9 @@ func (p *Plugin) startAutosaveStats() {
 		ticker := time.NewTicker(statsAutosaveInterval)
 		for {
 			select {
-			case _ = <-stop:
+			case <-stop:
 				return
-			case _ = <-ticker.C:
+			case <-ticker.C:
 				p.saveStats()
 			}
 		}

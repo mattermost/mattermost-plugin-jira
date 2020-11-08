@@ -171,11 +171,7 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		}
 	}
 
-	if !validFilter {
-		return false
-	}
-
-	return true
+	return validFilter
 }
 
 func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) (StringSet, error) {
@@ -378,10 +374,10 @@ func (p *Plugin) listChannelSubscriptions(instanceID types.ID, teamID string) (s
 	rows := []string{}
 
 	if sortedSubs == nil {
-		rows = append(rows, fmt.Sprintf("There are currently no channels subcriptions to Jira notifications. To add a subscription, navigate to a channel and type `/jira subscribe edit`\n"))
+		rows = append(rows, "There are currently no channels subcriptions to Jira notifications. To add a subscription, navigate to a channel and type `/jira subscribe edit`\n")
 		return strings.Join(rows, "\n"), nil
 	}
-	rows = append(rows, fmt.Sprintf("The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe edit`"))
+	rows = append(rows, "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe edit`")
 
 	for _, teamSubs := range sortedSubs {
 		// create header for each Team, DM and GM channels

@@ -1020,7 +1020,7 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 
 	orphans := ""
 	if !info.Instances.IsEmpty() {
-		resp += fmt.Sprintf("\n###### Available Jira instances:\n")
+		resp += "\n###### Available Jira instances:\n"
 		for _, instanceID := range info.Instances.IDs() {
 			encoded := url.PathEscape(encode([]byte(instanceID)))
 			ic := info.Instances.Get(instanceID)
