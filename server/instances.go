@@ -320,7 +320,7 @@ func (p *Plugin) httpAutocompleteConnect(w http.ResponseWriter, r *http.Request)
 		return respondErr(w, http.StatusMethodNotAllowed,
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
-	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-Id"))
+	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-ID"))
 	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
@@ -344,7 +344,7 @@ func (p *Plugin) httpAutocompleteUserInstance(w http.ResponseWriter, r *http.Req
 		return respondErr(w, http.StatusMethodNotAllowed,
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
-	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-Id"))
+	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-ID"))
 	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
@@ -386,7 +386,7 @@ func (p *Plugin) httpAutocompleteInstalledInstanceWithAlias(w http.ResponseWrite
 		return respondErr(w, http.StatusMethodNotAllowed,
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
-	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-Id"))
+	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-ID"))
 	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
@@ -418,7 +418,7 @@ func (p *Plugin) httpAutocompleteInstalledInstance(w http.ResponseWriter, r *htt
 		return respondErr(w, http.StatusMethodNotAllowed,
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
-	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-Id"))
+	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-ID"))
 	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}

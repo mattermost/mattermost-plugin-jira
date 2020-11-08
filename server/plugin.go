@@ -26,7 +26,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
-	"github.com/mattermost/mattermost-plugin-jira/server/jiraTracker"
+	"github.com/mattermost/mattermost-plugin-jira/server/jiratracker"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/telemetry"
 )
@@ -36,7 +36,7 @@ const (
 	botDisplayName = "Jira"
 	botDescription = "Created by the Jira Plugin."
 
-	autolinkPluginId = "mattermost-autolink"
+	autolinkPluginID = "mattermost-autolink"
 
 	// Move these two to the plugin settings if admins need to adjust them.
 	WebhookMaxProcsPerServer = 20
@@ -130,11 +130,11 @@ type Plugin struct {
 	telemetryClient telemetry.Client
 
 	// telemetry Tracker
-	Tracker jiraTracker.Tracker
+	Tracker jiratracker.Tracker
 
 	// service that determines if this Mattermost instance has access to
 	// enterprise features
-	enterpriseChecker enterprise.EnterpriseChecker
+	enterpriseChecker enterprise.Checker
 }
 
 func (p *Plugin) getConfig() config {
@@ -192,7 +192,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	}
 
 	// create new tracker on each configuration change
-	p.Tracker = jiraTracker.New(telemetry.NewTracker(
+	p.Tracker = jiratracker.New(telemetry.NewTracker(
 		p.telemetryClient,
 		p.API.GetDiagnosticId(),
 		p.API.GetServerVersion(),
@@ -308,7 +308,7 @@ func (p *Plugin) OnActivate() error {
 				continue
 			}
 
-			status, apiErr := p.API.GetPluginStatus(autolinkPluginId)
+			status, apiErr := p.API.GetPluginStatus(autolinkPluginID)
 			if apiErr != nil {
 				p.API.LogWarn("OnActivate: Autolink plugin unavailable. API returned error", "error", apiErr.Error())
 				continue
@@ -372,7 +372,7 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 
 	client := autolinkclient.NewClientPlugin(p.API)
 	if err := client.Add(installList...); err != nil {
-		return fmt.Errorf("Unable to add autolinks: %w", err)
+		return fmt.Errorf("unable to add autolinks: %w", err)
 	}
 
 	return nil

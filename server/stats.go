@@ -56,11 +56,11 @@ func (p *Plugin) httpAPIStats(w http.ResponseWriter, r *http.Request) (int, erro
 	}
 	conf := p.getConfig()
 
-	isAdmin, err := authorizedSysAdmin(p, r.Header.Get("Mattermost-User-Id"))
+	isAdmin, err := authorizedSysAdmin(p, r.Header.Get("Mattermost-User-ID"))
 	if !isAdmin {
 		if conf.StatsSecret == "" {
 			return respondErr(w, http.StatusForbidden,
-				errors.New("Access forbidden: must be authenticated as an admin, or provide the stats API secret."))
+				errors.New("access forbidden: must be authenticated as an admin, or provide the stats API secret"))
 		}
 		var status int
 		status, err = verifyHTTPSecret(conf.StatsSecret, r.FormValue("secret"))
@@ -69,7 +69,7 @@ func (p *Plugin) httpAPIStats(w http.ResponseWriter, r *http.Request) (int, erro
 		}
 	}
 	if conf.stats == nil {
-		return respondErr(w, http.StatusNotFound, errors.New("No stats available"))
+		return respondErr(w, http.StatusNotFound, errors.New("no stats available"))
 	}
 
 	out := "{"

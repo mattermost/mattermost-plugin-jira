@@ -19,7 +19,7 @@ const (
 type Instance interface {
 	GetClient(*Connection) (Client, error)
 	GetDisplayDetails() map[string]string
-	GetUserConnectURL(mattermostUserId string) (string, *http.Cookie, error)
+	GetUserConnectURL(mattermostUserID string) (string, *http.Cookie, error)
 	GetManageAppsURL() string
 	GetManageWebhooksURL() string
 	GetURL() string
@@ -57,10 +57,10 @@ func (ic InstanceCommon) AsConfigMap() map[string]interface{} {
 	}
 }
 
-func (common InstanceCommon) GetID() types.ID {
-	return common.InstanceID
+func (ic InstanceCommon) GetID() types.ID {
+	return ic.InstanceID
 }
 
-func (common *InstanceCommon) Common() *InstanceCommon {
-	return common
+func (ic *InstanceCommon) Common() *InstanceCommon {
+	return ic
 }

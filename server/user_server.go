@@ -59,19 +59,19 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 			errors.WithMessage(err, "failed to parse callback request from Jira"))
 	}
 
-	mattermostUserId := r.Header.Get("Mattermost-User-ID")
-	if mattermostUserId == "" {
+	mattermostUserID := r.Header.Get("Mattermost-User-ID")
+	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
-	mmuser, appErr := p.API.GetUser(mattermostUserId)
+	mmuser, appErr := p.API.GetUser(mattermostUserID)
 	if appErr != nil {
 		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to load user "+mattermostUserId))
+			errors.WithMessage(appErr, "failed to load user "+mattermostUserID))
 	}
 
-	oauthTmpCredentials, err := p.otsStore.OneTimeLoadOauth1aTemporaryCredentials(mattermostUserId)
+	oauthTmpCredentials, err := p.otsStore.OneTimeLoadOauth1aTemporaryCredentials(mattermostUserID)
 	if err != nil || oauthTmpCredentials == nil || len(oauthTmpCredentials.Token) <= 0 {
-		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to get temporary credentials for "+mattermostUserId))
+		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to get temporary credentials for "+mattermostUserID))
 	}
 
 	if oauthTmpCredentials.Token != requestToken {
@@ -106,7 +106,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	// Set default settings the first time a user connects
 	connection.Settings = &ConnectionSettings{Notifications: true}
 
-	err = p.connectUser(instance, types.ID(mattermostUserId), connection)
+	err = p.connectUser(instance, types.ID(mattermostUserID), connection)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -128,12 +128,12 @@ func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, i
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
+	mattermostUserID := r.Header.Get("Mattermost-User-ID")
+	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	_, err := p.DisconnectUser(instanceID.String(), types.ID(mattermostUserId))
+	_, err := p.DisconnectUser(instanceID.String(), types.ID(mattermostUserID))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -154,7 +154,7 @@ func httpOAuth1aPublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
-	userID := r.Header.Get("Mattermost-User-Id")
+	userID := r.Header.Get("Mattermost-User-ID")
 	if userID == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}

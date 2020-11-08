@@ -200,15 +200,15 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			isSendEphemeralPostCalled := false
 
-			currentTestApi := api
-			currentTestApi.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
+			currentTestAPI := api
+			currentTestAPI.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
 				isSendEphemeralPostCalled = true
 
 				post := args.Get(1).(*model.Post)
 				assert.Equal(t, tt.expectedMsg, post.Message)
 			}).Once().Return(&model.Post{})
 
-			p.SetAPI(currentTestApi)
+			p.SetAPI(currentTestAPI)
 			p.instanceStore = p.getMockInstanceStoreKV(tt.numInstances)
 			p.userStore = getMockUserStoreKV()
 

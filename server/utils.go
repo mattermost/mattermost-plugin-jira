@@ -55,16 +55,16 @@ func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message,
 	return post, nil
 }
 
-func (p *Plugin) CreateBotDMtoMMUserId(mattermostUserId, format string, args ...interface{}) (post *model.Post, returnErr error) {
+func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...interface{}) (post *model.Post, returnErr error) {
 	defer func() {
 		if returnErr != nil {
 			returnErr = errors.WithMessage(returnErr,
-				fmt.Sprintf("failed to create DMError to user %v: ", mattermostUserId))
+				fmt.Sprintf("failed to create DMError to user %v: ", mattermostUserID))
 		}
 	}()
 
 	conf := p.getConfig()
-	channel, appErr := p.API.GetDirectChannel(mattermostUserId, conf.botUserID)
+	channel, appErr := p.API.GetDirectChannel(mattermostUserID, conf.botUserID)
 	if appErr != nil {
 		return nil, appErr
 	}
@@ -92,7 +92,7 @@ func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string 
 		}
 
 		jiraUserID := uname[len("accountid:"):]
-		mattermostUserID, err := p.userStore.LoadMattermostUserId(instanceID, jiraUserID)
+		mattermostUserID, err := p.userStore.LoadMattermostUserID(instanceID, jiraUserID)
 		if err != nil {
 			continue
 		}

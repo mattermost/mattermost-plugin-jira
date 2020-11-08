@@ -86,7 +86,7 @@ func (p *Plugin) ParseAuthToken(encoded string) (mattermostUserID, tokenSecret s
 		}
 
 		if t.Expires.Before(time.Now()) {
-			return errors.New("Expired token")
+			return errors.New("expired token")
 		}
 
 		return nil

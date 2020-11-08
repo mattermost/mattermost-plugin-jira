@@ -24,7 +24,7 @@ type JiraWebhook struct {
 			To         string
 			ToString   string
 			Field      string
-			FieldId    string
+			FieldID    string
 			FieldType  string `json:"fieldtype"`
 		}
 	} `json:"changelog,omitempty"`
@@ -48,11 +48,11 @@ func (jwh *JiraWebhook) mdIssueSummary() string {
 	return truncate(jwh.Issue.Fields.Summary, 80)
 }
 
-func (w *JiraWebhook) mdIssueAssignee() string {
-	if w.Issue.Fields.Assignee == nil {
+func (jwh *JiraWebhook) mdIssueAssignee() string {
+	if jwh.Issue.Fields.Assignee == nil {
 		return "_nobody_"
 	}
-	return mdUser(w.Issue.Fields.Assignee)
+	return mdUser(jwh.Issue.Fields.Assignee)
 }
 
 func (jwh *JiraWebhook) mdSummaryLink() string {

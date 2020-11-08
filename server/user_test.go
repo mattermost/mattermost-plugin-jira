@@ -54,7 +54,7 @@ func TestRouteUserStart(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			request := httptest.NewRequest("GET", routeUserStart, nil)
-			request.Header.Set("Mattermost-User-Id", tc.userID)
+			request.Header.Set("Mattermost-User-ID", tc.userID)
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)
 			assert.Equal(t, tc.statusCode, w.Result().StatusCode)

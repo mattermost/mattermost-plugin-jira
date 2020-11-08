@@ -33,8 +33,8 @@ func TestListChannelSubscriptions(t *testing.T) {
 		"one subscription": {
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "channel1",
+					ID:        model.NewId(),
+					ChannelID: "channel1",
 					Name:      "Sub Name X",
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("PROJ"),
@@ -57,8 +57,8 @@ func TestListChannelSubscriptions(t *testing.T) {
 		"one subscription in DM channel": {
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "channel2",
+					ID:        model.NewId(),
+					ChannelID: "channel2",
 					Name:      "Sub Name X",
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("PROJ"),
@@ -74,8 +74,8 @@ func TestListChannelSubscriptions(t *testing.T) {
 		"one channel with three subscriptions": {
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "channel1",
+					ID:        model.NewId(),
+					ChannelID: "channel1",
 					Name:      "Sub Name X",
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("PROJ"),
@@ -83,8 +83,8 @@ func TestListChannelSubscriptions(t *testing.T) {
 					InstanceID: testInstance1.GetID(),
 				},
 				{
-					Id:        model.NewId(),
-					ChannelId: "channel1",
+					ID:        model.NewId(),
+					ChannelID: "channel1",
 					Name:      "Sub Name Y",
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("EXT"),
@@ -92,8 +92,8 @@ func TestListChannelSubscriptions(t *testing.T) {
 					InstanceID: testInstance1.GetID(),
 				},
 				{
-					Id:        model.NewId(),
-					ChannelId: "channel1",
+					ID:        model.NewId(),
+					ChannelID: "channel1",
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("EXT"),
 					},
@@ -114,24 +114,24 @@ func TestListChannelSubscriptions(t *testing.T) {
 		"two channels with multiple subscriptions": {
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "channel1",
+					ID:        model.NewId(),
+					ChannelID: "channel1",
 					Name:      "Sub Name X",
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("PROJ"),
 					},
 				},
 				{
-					Id:        model.NewId(),
-					ChannelId: "channel1",
+					ID:        model.NewId(),
+					ChannelID: "channel1",
 					Name:      "Sub Name Y",
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("EXT"),
 					},
 				},
 				{
-					Id:        model.NewId(),
-					ChannelId: "channel2",
+					ID:        model.NewId(),
+					ChannelID: "channel2",
 					Name:      "Sub Name Z",
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("EXT"),
@@ -154,32 +154,32 @@ func TestListChannelSubscriptions(t *testing.T) {
 		"two teams with two channels with multiple subscriptions": {
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        "SubID1a",
-					ChannelId: "channel1",
+					ID:        "SubID1a",
+					ChannelID: "channel1",
 					Name:      "Sub Name 1",
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("PROJ"),
 					},
 				},
 				{
-					Id:        "SubID2",
-					ChannelId: "channel2",
+					ID:        "SubID2",
+					ChannelID: "channel2",
 					Name:      "Sub Name 2",
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("EXT"),
 					},
 				},
 				{
-					Id:        "SubID3",
-					ChannelId: "channel3",
+					ID:        "SubID3",
+					ChannelID: "channel3",
 					Name:      "Sub Name 3",
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("EXT"),
 					},
 				},
 				{
-					Id:        "SubID4",
-					ChannelId: "channel4",
+					ID:        "SubID4",
+					ChannelID: "channel4",
 					Name:      "Sub Name 4",
 					Filters: SubscriptionFilters{
 						Projects: NewStringSet("EXT"),
@@ -283,8 +283,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet(),
 						Projects:   NewStringSet(),
@@ -298,8 +298,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("TES"),
@@ -313,8 +313,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("NOPE"),
@@ -328,8 +328,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet(),
@@ -343,8 +343,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("TES", "OTHER"),
@@ -358,8 +358,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("TES"),
@@ -373,8 +373,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("TES"),
@@ -388,8 +388,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-issue-deleted.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_summary"),
 						Projects:   NewStringSet("TES"),
@@ -403,8 +403,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-issue-updated-labels.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_any"),
 						Projects:   NewStringSet("TES"),
@@ -418,8 +418,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_any"),
 						Projects:   NewStringSet("TES"),
@@ -433,8 +433,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-issue-updated-components.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_any"),
 						Projects:   NewStringSet("TES"),
@@ -453,8 +453,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-updated-custom-field.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_customfield_10072"),
 						Projects:   NewStringSet("TES"),
@@ -468,8 +468,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-server-updated-custom-field.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_numfield"),
 						Projects:   NewStringSet("TES"),
@@ -483,8 +483,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-updated-custom-field.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_customfield_10002"),
 						Projects:   NewStringSet("TES"),
@@ -498,8 +498,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-server-updated-custom-field.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_numfield2"),
 						Projects:   NewStringSet("TES"),
@@ -513,8 +513,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-issue-updated-multiple-custom-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_customfield_10002"),
 						Projects:   NewStringSet("TES"),
@@ -528,8 +528,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-updated-custom-field.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_any"),
 						Projects:   NewStringSet("TES"),
@@ -543,8 +543,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId1",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId1",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("TES"),
@@ -552,8 +552,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 					},
 				},
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId2",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId2",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("TES"),
@@ -567,8 +567,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId1",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId1",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("TES"),
@@ -576,8 +576,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 					},
 				},
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId2",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId2",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_deleted"),
 						Projects:   NewStringSet("TES"),
@@ -591,8 +591,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId1",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId1",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_deleted"),
 						Projects:   NewStringSet("TES"),
@@ -600,8 +600,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 					},
 				},
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId2",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId2",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_deleted"),
 						Projects:   NewStringSet("TES"),
@@ -615,14 +615,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "status", Values: NewStringSet("10004"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "status", Values: NewStringSet("10004"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -633,14 +633,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "status", Values: NewStringSet("10005"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "status", Values: NewStringSet("10005"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -651,14 +651,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10068", Values: NewStringSet("10033", "10034"), Inclusion: FILTER_INCLUDE_ALL},
+							{Key: "customfield_10068", Values: NewStringSet("10033", "10034"), Inclusion: FilterIncludeAll},
 						},
 					},
 				},
@@ -669,14 +669,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10068", Values: NewStringSet("10033", "10035"), Inclusion: FILTER_INCLUDE_ALL},
+							{Key: "customfield_10068", Values: NewStringSet("10033", "10035"), Inclusion: FilterIncludeAll},
 						},
 					},
 				},
@@ -687,14 +687,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "status", Values: NewStringSet("10004"), Inclusion: FILTER_EXCLUDE_ANY},
+							{Key: "status", Values: NewStringSet("10004"), Inclusion: FilterExcludeAny},
 						},
 					},
 				},
@@ -705,14 +705,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "status", Values: NewStringSet("10005"), Inclusion: FILTER_EXCLUDE_ANY},
+							{Key: "status", Values: NewStringSet("10005"), Inclusion: FilterExcludeAny},
 						},
 					},
 				},
@@ -723,14 +723,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10060", Values: NewStringSet(), Inclusion: FILTER_EMPTY},
+							{Key: "customfield_10060", Values: NewStringSet(), Inclusion: FilterEmpty},
 						},
 					},
 				},
@@ -741,14 +741,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "status", Values: NewStringSet(), Inclusion: FILTER_EMPTY},
+							{Key: "status", Values: NewStringSet(), Inclusion: FilterEmpty},
 						},
 					},
 				},
@@ -759,14 +759,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10068", Values: NewStringSet("10033"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10068", Values: NewStringSet("10033"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -777,14 +777,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10068", Values: NewStringSet("10001"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10068", Values: NewStringSet("10001"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -795,14 +795,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10076", Values: NewStringSet("10039"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10076", Values: NewStringSet("10039"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -813,14 +813,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10076", Values: NewStringSet("10001"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10076", Values: NewStringSet("10001"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -831,14 +831,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10078", Values: NewStringSet("some value"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10078", Values: NewStringSet("some value"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -849,14 +849,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10078", Values: NewStringSet("wrong value"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10078", Values: NewStringSet("wrong value"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -867,14 +867,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10071", Values: NewStringSet("value1"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10071", Values: NewStringSet("value1"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -885,15 +885,15 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10071", Values: NewStringSet("value1", "value3"), Inclusion: FILTER_INCLUDE_ANY},
-							{Key: "customfield_10071", Values: NewStringSet("value4"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10071", Values: NewStringSet("value1", "value3"), Inclusion: FilterIncludeAny},
+							{Key: "customfield_10071", Values: NewStringSet("value4"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -904,14 +904,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10071", Values: NewStringSet("value1", "value3"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10071", Values: NewStringSet("value1", "value3"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -922,14 +922,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10071", Values: NewStringSet("wrong value"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10071", Values: NewStringSet("wrong value"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -940,14 +940,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "fixVersions", Values: NewStringSet("10000"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "fixVersions", Values: NewStringSet("10000"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -958,14 +958,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-server-issue-updated-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_any"),
 						Projects:   NewStringSet("HEY"),
 						IssueTypes: NewStringSet("10001"),
 						Fields: []FieldFilter{
-							{Key: "Priority", Values: NewStringSet("1"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "Priority", Values: NewStringSet("1"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -976,14 +976,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "labels2", Values: NewStringSet("some value"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "labels2", Values: NewStringSet("some value"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -994,14 +994,14 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_created"),
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields: []FieldFilter{
-							{Key: "customfield_10026", Values: NewStringSet("some value"), Inclusion: FILTER_INCLUDE_ANY},
+							{Key: "customfield_10026", Values: NewStringSet("some value"), Inclusion: FilterIncludeAny},
 						},
 					},
 				},
@@ -1012,8 +1012,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-comment-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_any"),
 						Projects:   NewStringSet("TES"),
@@ -1028,8 +1028,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-comment-updated.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_any"),
 						Projects:   NewStringSet("TES"),
@@ -1044,8 +1044,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-comment-deleted.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				ChannelSubscription{
-					Id:        model.NewId(),
-					ChannelId: "sampleChannelId",
+					ID:        model.NewId(),
+					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_any"),
 						Projects:   NewStringSet("KT"),
@@ -1088,8 +1088,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			assert.Nil(t, err)
 
 			assert.Equal(t, len(tc.ChannelIds), len(actual))
-			for _, channelId := range tc.ChannelIds {
-				assert.Contains(t, actual, channelId)
+			for _, channelID := range tc.ChannelIds {
+				assert.Contains(t, actual, channelID)
 			}
 		})
 	}

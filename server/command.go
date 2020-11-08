@@ -753,8 +753,8 @@ func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArg
 	return p.responsef(header, msg)
 }
 
-func authorizedSysAdmin(p *Plugin, userId string) (bool, error) {
-	user, appErr := p.API.GetUser(userId)
+func authorizedSysAdmin(p *Plugin, userID string) (bool, error) {
+	user, appErr := p.API.GetUser(userID)
 	if appErr != nil {
 		return false, appErr
 	}
