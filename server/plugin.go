@@ -195,7 +195,7 @@ func (p *Plugin) OnConfigurationChange() error {
 		p.telemetryClient,
 		p.API.GetDiagnosticId(),
 		p.API.GetServerVersion(),
-		manifest.Id,
+		manifest.ID,
 		manifest.Version,
 		diagnostics,
 	))
@@ -389,7 +389,7 @@ func (p *Plugin) GetPluginKey() string {
 }
 
 func (p *Plugin) GetPluginURLPath() string {
-	return "/plugins/" + manifest.Id
+	return "/plugins/" + manifest.ID
 }
 
 func (p *Plugin) GetPluginURL() string {
