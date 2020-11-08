@@ -125,7 +125,7 @@ func encrypt(plain, secret []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	sealed := aesgcm.Seal(nil, nonce, []byte(plain), nil)
+	sealed := aesgcm.Seal(nil, nonce, plain, nil)
 	return append(nonce, sealed...), nil
 }
 

@@ -453,7 +453,7 @@ func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserID string) (*OAu
 }
 
 func (store *store) CreateInactiveCloudInstance(jiraURL types.ID) (returnErr error) {
-	ci := newCloudInstance(store.plugin, types.ID(jiraURL), false,
+	ci := newCloudInstance(store.plugin, jiraURL, false,
 		fmt.Sprintf(`{"BaseURL": "%s"}`, jiraURL),
 		&AtlassianSecurityContext{BaseURL: jiraURL.String()})
 	data, err := json.Marshal(ci)

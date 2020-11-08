@@ -384,7 +384,7 @@ func (p *Plugin) listChannelSubscriptions(instanceID types.ID, teamID string) (s
 		rows = append(rows, fmt.Sprintf("\n#### %s", teamSubs.TeamName))
 
 		for channelID, channelGroup := range teamSubs.Subs[teamSubs.TeamID] {
-			channel, appErr := p.API.GetChannel(string(channelID))
+			channel, appErr := p.API.GetChannel(channelID)
 			if appErr != nil {
 				return "", errors.New("failed to get channel")
 			}
@@ -398,7 +398,7 @@ func (p *Plugin) listChannelSubscriptions(instanceID types.ID, teamID string) (s
 			rows = append(rows, channelRow)
 
 			for instanceID, subsIDs := range channelGroup {
-				subs, err := p.getSubscriptions(types.ID(instanceID))
+				subs, err := p.getSubscriptions(instanceID)
 				if err != nil {
 					return "", errors.New("failed to get subs")
 				}
@@ -470,7 +470,7 @@ func (p *Plugin) getSortedSubscriptions(instanceID types.ID) ([]SubsGroupedByTea
 			}
 
 			if subsMap[channel.TeamId] == nil {
-				subsMap[string(channel.TeamId)] = make(ChannelSubMap)
+				subsMap[channel.TeamId] = make(ChannelSubMap)
 			}
 
 			if subsMap[channel.TeamId][channelID] == nil {

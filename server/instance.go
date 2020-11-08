@@ -53,7 +53,7 @@ func (ic InstanceCommon) AsConfigMap() map[string]interface{} {
 	return map[string]interface{}{
 		"type":        string(ic.Type),
 		"instance_id": string(ic.InstanceID),
-		"alias":       string(ic.Alias),
+		"alias":       ic.Alias,
 	}
 }
 
