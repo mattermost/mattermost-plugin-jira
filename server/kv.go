@@ -33,8 +33,6 @@ const (
 
 type JiraV2Instances map[string]string
 
-var ErrAlreadyExists = errors.New("already exists")
-
 type Store interface {
 	InstanceStore
 	UserStore

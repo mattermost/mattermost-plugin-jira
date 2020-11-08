@@ -14,7 +14,6 @@ import (
 	"strings"
 	"sync"
 	"text/template"
-	"time"
 
 	"github.com/pkg/errors"
 
@@ -80,8 +79,6 @@ type externalConfig struct {
 	// Enable slash command autocomplete
 	EnableAutocomplete bool
 }
-
-const currentInstanceTTL = 1 * time.Second
 
 const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb
 

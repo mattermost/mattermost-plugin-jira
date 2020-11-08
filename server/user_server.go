@@ -148,35 +148,6 @@ func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, i
 		})
 }
 
-func httpOAuth1aPublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be GET"))
-	}
-
-	userID := r.Header.Get("Mattermost-User-ID")
-	if userID == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
-	}
-
-	if !p.API.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
-		return respondErr(w, http.StatusForbidden, errors.New("forbidden"))
-	}
-
-	w.Header().Set("Content-Type", "text/plain")
-	pkey, err := publicKeyString(p)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to load public key"))
-	}
-	_, err = w.Write(pkey)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write response"))
-	}
-	return http.StatusOK, nil
-}
-
 func publicKeyString(p *Plugin) ([]byte, error) {
 	rsaKey := p.getConfig().rsaKey
 	b, err := x509.MarshalPKIXPublicKey(&rsaKey.PublicKey)

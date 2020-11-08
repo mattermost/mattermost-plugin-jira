@@ -20,7 +20,6 @@ import (
 const (
 	PostTypeComment  = "custom_jira_comment"
 	PostTypeMention  = "custom_jira_mention"
-	PostTypeAssigned = "custom_jira_assigned"
 )
 
 // The keys listed here can be used in the Jira webhook URL to control what events

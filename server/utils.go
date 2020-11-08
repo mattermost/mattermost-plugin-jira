@@ -139,23 +139,6 @@ func parseJIRAUsernamesFromText(text string) []string {
 	return usernames
 }
 
-func parseJIRAIssuesFromText(text string, keys []string) []string {
-	issueMap := map[string]bool{}
-	issues := []string{}
-
-	for _, key := range keys {
-		var re = regexp.MustCompile(fmt.Sprintf(`(?m)%s-[0-9]+`, key))
-		for _, match := range re.FindAllString(text, -1) {
-			if !issueMap[match] {
-				issues = append(issues, match)
-				issueMap[match] = true
-			}
-		}
-	}
-
-	return issues
-}
-
 func isImageMIME(mime string) bool {
 	return strings.HasPrefix(mime, "image")
 }
