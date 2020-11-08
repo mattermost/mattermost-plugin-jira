@@ -174,11 +174,13 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 			fieldsNotFound = append(fieldsNotFound, field)
 		}
 	}
-	if len(events) == 0 {
+
+	switch {
+	case len(events) == 0:
 		return nil
-	} else if len(events) == 1 {
+	case len(events) == 1:
 		return events[0]
-	} else {
+	default:
 		return mergeWebhookEvents(events)
 	}
 }

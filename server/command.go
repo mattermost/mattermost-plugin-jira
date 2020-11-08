@@ -780,7 +780,7 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 		return p.responsef(header, err.Error())
 	}
 	if strings.Contains(jiraURL, "http:") {
-		jiraURL = strings.Replace(jiraURL, "http:", "https:", -1)
+		jiraURL = strings.ReplaceAll(jiraURL, "http:", "https:")
 		return p.responsef(header, "`/jira install cloud` requires a secure connection (HTTPS). Please run the following command:\n```\n/jira install cloud %s\n```", jiraURL)
 	}
 

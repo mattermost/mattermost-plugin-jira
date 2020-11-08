@@ -257,7 +257,7 @@ func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 						Description: "Jira issue ID",
 					},
 				},
-				//TODO <><> prefix route with instance? or unnecessary since it's for all instances?
+				// TODO <><> prefix route with instance? or unnecessary since it's for all instances?
 				TriggerSetupURL: "/jira" + routeWorkflowTriggerSetup,
 			},
 		},

@@ -70,7 +70,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	}
 
 	oauthTmpCredentials, err := p.otsStore.OneTimeLoadOauth1aTemporaryCredentials(mattermostUserID)
-	if err != nil || oauthTmpCredentials == nil || len(oauthTmpCredentials.Token) <= 0 {
+	if err != nil || oauthTmpCredentials == nil || len(oauthTmpCredentials.Token) == 0 {
 		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to get temporary credentials for "+mattermostUserID))
 	}
 

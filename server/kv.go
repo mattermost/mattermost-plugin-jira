@@ -615,14 +615,12 @@ func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	if err != nil && errors.Cause(err) != kvstore.ErrNotFound {
 		return nil, err
 	}
-	switch instance.(type) {
+	switch instance := instance.(type) {
 	case *cloudInstance:
-		ci := instance.(*cloudInstance)
-		ci.InstanceID = types.ID(ci.AtlassianSecurityContext.BaseURL)
+		instance.InstanceID = types.ID(instance.AtlassianSecurityContext.BaseURL)
 
 	case *serverInstance:
-		si := instance.(*serverInstance)
-		si.InstanceID = types.ID(si.DeprecatedJIRAServerURL)
+		instance.InstanceID = types.ID(instance.DeprecatedJIRAServerURL)
 
 	case nil:
 		return instances, nil

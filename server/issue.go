@@ -255,7 +255,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 		var fieldsString string
 		for _, v := range in.RequiredFieldsNotCovered {
 			// Second position in the slice is the localized name of that key.
-			fieldsString = fieldsString + fmt.Sprintf("- %+v\n", v[1])
+			fieldsString += fmt.Sprintf("- %+v\n", v[1])
 		}
 
 		reply := &model.Post{
