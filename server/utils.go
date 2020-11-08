@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"strings"
 
-	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -107,19 +106,6 @@ func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string 
 	}
 
 	return result
-}
-
-func (p *Plugin) loadJIRAProjectKeys(jiraClient *jira.Client) ([]string, error) {
-	list, _, err := jiraClient.Project.GetList()
-	if err != nil {
-		return nil, errors.WithMessage(err, "Error requesting list of Jira projects")
-	}
-
-	projectKeys := []string{}
-	for _, proj := range *list {
-		projectKeys = append(projectKeys, proj.Key)
-	}
-	return projectKeys, nil
 }
 
 func parseJIRAUsernamesFromText(text string) []string {

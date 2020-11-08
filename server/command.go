@@ -1210,12 +1210,6 @@ func (p *Plugin) responsef(commandArgs *model.CommandArgs, format string, args .
 	return &model.CommandResponse{}
 }
 
-func (p *Plugin) responseRedirect(redirectURL string) *model.CommandResponse {
-	return &model.CommandResponse{
-		GotoLocation: redirectURL,
-	}
-}
-
 func executeInstanceV2Legacy(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
