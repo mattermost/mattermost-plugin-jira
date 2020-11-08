@@ -12,8 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 )
 
 const statsKeyExpiration = 30 * 24 * time.Hour // 30 days

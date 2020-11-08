@@ -18,9 +18,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-plugin-workflow-client/workflowclient"
 	"github.com/mattermost/mattermost-server/v5/plugin"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (

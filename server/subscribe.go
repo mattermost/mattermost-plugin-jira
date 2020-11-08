@@ -16,9 +16,10 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-server/v5/model"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
-	"github.com/mattermost/mattermost-server/v5/model"
 )
 
 const (
@@ -383,7 +384,6 @@ func (p *Plugin) listChannelSubscriptions(instanceID types.ID, teamId string) (s
 	rows = append(rows, fmt.Sprintf("The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe edit`"))
 
 	for _, teamSubs := range sortedSubs {
-
 		// create header for each Team, DM and GM channels
 		rows = append(rows, fmt.Sprintf("\n#### %s", teamSubs.TeamName))
 
@@ -463,7 +463,6 @@ func (p *Plugin) getSortedSubscriptions(instanceID types.ID) ([]SubsGroupedByTea
 	for _, subs := range instanceSubs {
 		// get teams from subscriptions
 		for channelID, subIDs := range subs.Channel.IdByChannelId {
-
 			// channel does not have any subIDs.
 			if len(subIDs) == 0 {
 				continue
@@ -507,7 +506,6 @@ func (p *Plugin) getSortedSubscriptions(instanceID types.ID) ([]SubsGroupedByTea
 				teams = append(teams, *team)
 				teamDisplayNameMap[channel.TeamId] = team.DisplayName
 			}
-
 		}
 	}
 
@@ -656,7 +654,7 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 	readModify := func() ([]byte, []byte, error) {
 		initialBytes, appErr := p.API.KVGet(key)
 		if appErr != nil {
-			return nil, nil, errors.Wrap(appErr, "unable to read inital value")
+			return nil, nil, errors.Wrap(appErr, "unable to read initial value")
 		}
 
 		modifiedBytes, err := modify(initialBytes)

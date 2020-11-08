@@ -6,11 +6,12 @@ package main
 import (
 	"net/http"
 
+	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/pkg/errors"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/pkg/errors"
 )
 
 type Instances struct {

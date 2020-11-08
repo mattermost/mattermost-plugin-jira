@@ -32,7 +32,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 	}{
 		"one subscription": {
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "channel1",
 					Name:      "Sub Name X",
@@ -56,7 +56,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 		},
 		"one subscription in DM channel": {
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "channel2",
 					Name:      "Sub Name X",
@@ -73,7 +73,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 		},
 		"one channel with three subscriptions": {
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "channel1",
 					Name:      "Sub Name X",
@@ -82,7 +82,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 					},
 					InstanceID: testInstance1.GetID(),
 				},
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "channel1",
 					Name:      "Sub Name Y",
@@ -91,7 +91,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 					},
 					InstanceID: testInstance1.GetID(),
 				},
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "channel1",
 					Filters: SubscriptionFilters{
@@ -113,7 +113,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 		},
 		"two channels with multiple subscriptions": {
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "channel1",
 					Name:      "Sub Name X",
@@ -121,7 +121,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 						Projects: NewStringSet("PROJ"),
 					},
 				},
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "channel1",
 					Name:      "Sub Name Y",
@@ -129,7 +129,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 						Projects: NewStringSet("EXT"),
 					},
 				},
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "channel2",
 					Name:      "Sub Name Z",
@@ -153,7 +153,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 		},
 		"two teams with two channels with multiple subscriptions": {
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        "SubID1a",
 					ChannelId: "channel1",
 					Name:      "Sub Name 1",
@@ -161,7 +161,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 						Projects: NewStringSet("PROJ"),
 					},
 				},
-				ChannelSubscription{
+				{
 					Id:        "SubID2",
 					ChannelId: "channel2",
 					Name:      "Sub Name 2",
@@ -169,7 +169,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 						Projects: NewStringSet("EXT"),
 					},
 				},
-				ChannelSubscription{
+				{
 					Id:        "SubID3",
 					ChannelId: "channel3",
 					Name:      "Sub Name 3",
@@ -177,7 +177,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 						Projects: NewStringSet("EXT"),
 					},
 				},
-				ChannelSubscription{
+				{
 					Id:        "SubID4",
 					ChannelId: "channel4",
 					Name:      "Sub Name 4",
@@ -282,7 +282,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"no filters selected": {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -297,7 +297,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"fields match": {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -312,7 +312,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"project does not match": {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -327,7 +327,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"no project selected": {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -342,7 +342,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"multiple projects selected": {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -357,7 +357,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"issue type does not match": {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -372,7 +372,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"no issue type selected": {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -387,7 +387,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"event type does not match": {
 			WebhookTestData: "webhook-issue-deleted.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -402,7 +402,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"updated all selected": {
 			WebhookTestData: "webhook-issue-updated-labels.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -417,7 +417,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"updated all selected, wrong incoming event": {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -432,7 +432,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"CLOUD - components selected": {
 			WebhookTestData: "webhook-issue-updated-components.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -452,7 +452,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"CLOUD - custom field selected": {
 			WebhookTestData: "webhook-cloud-issue-updated-custom-field.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -467,7 +467,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"SERVER - custom field selected": {
 			WebhookTestData: "webhook-server-updated-custom-field.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -482,7 +482,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"CLOUD - custom field selected, wrong field": {
 			WebhookTestData: "webhook-cloud-issue-updated-custom-field.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -497,7 +497,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"SERVER - custom field selected, wrong field": {
 			WebhookTestData: "webhook-server-updated-custom-field.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -512,7 +512,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"custom field selected is the second of two custom fields in webhook": {
 			WebhookTestData: "webhook-issue-updated-multiple-custom-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -527,7 +527,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"updated all selected, custom field": {
 			WebhookTestData: "webhook-cloud-issue-updated-custom-field.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -542,7 +542,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"multiple subscriptions, both acceptable": {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId1",
 					Filters: SubscriptionFilters{
@@ -551,7 +551,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						IssueTypes: NewStringSet("10001"),
 					},
 				},
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId2",
 					Filters: SubscriptionFilters{
@@ -566,7 +566,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"multiple subscriptions, one acceptable": {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId1",
 					Filters: SubscriptionFilters{
@@ -575,7 +575,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						IssueTypes: NewStringSet("10001"),
 					},
 				},
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId2",
 					Filters: SubscriptionFilters{
@@ -590,7 +590,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"multiple subscriptions, neither acceptable": {
 			WebhookTestData: "webhook-issue-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId1",
 					Filters: SubscriptionFilters{
@@ -599,7 +599,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						IssueTypes: NewStringSet("10001"),
 					},
 				},
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId2",
 					Filters: SubscriptionFilters{
@@ -614,7 +614,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"status field filter configured, matches": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -632,7 +632,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"status field filter configured, does not match": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -650,7 +650,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"status field filter configured to include all values, all are present": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -668,7 +668,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"field filter configured to include all values, one is missing": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -686,7 +686,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"field filter configured to exclude, field is present": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -704,7 +704,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"status field filter configured to exclude, field is not present": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -722,7 +722,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"filter configured to empty, field is not present": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -740,7 +740,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"filter configured to empty, field is present": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -758,7 +758,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"custom multi-select field filter configured, matches": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -776,7 +776,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"custom multi-select field filter configured, does not match": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -794,7 +794,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"custom single-select field filter configured, matches": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -812,7 +812,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"custom single-select field filter configured, does not match": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -830,7 +830,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"custom string field filter configured, matches": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -848,7 +848,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"custom string field filter configured, does not match": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -866,7 +866,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"custom string array field filter configured, matches": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -884,7 +884,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"two filters, custom string array field filter with multiple values configured, one matches": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -903,7 +903,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"custom string array field filter with multiple values configured, one matches": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -921,7 +921,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"custom string array field filter configured, does not match": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -939,7 +939,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"fixVersions filter configured, matches": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -957,7 +957,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"priority filter configured, matches": {
 			WebhookTestData: "webhook-server-issue-updated-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -975,7 +975,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"custom string field filter configured, field is not present in issue metadata": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -993,7 +993,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"custom string field filter configured, field is null in issue metadata": {
 			WebhookTestData: "webhook-cloud-issue-created-many-fields.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					Id:        model.NewId(),
 					ChannelId: "sampleChannelId",
 					Filters: SubscriptionFilters{

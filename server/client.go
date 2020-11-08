@@ -262,7 +262,6 @@ func (client JiraClient) DoTransition(issueKey, transitionID string) error {
 // AddAttachment uploads a file attachment
 func (client JiraClient) AddAttachment(api plugin.API, issueKey, fileID string, maxSize utils.ByteSize) (
 	mattermostName, jiraName, mime string, err error) {
-
 	fileinfo, appErr := api.GetFileInfo(fileID)
 	if appErr != nil {
 		return "", "", "", appErr

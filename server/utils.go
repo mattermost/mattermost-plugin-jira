@@ -11,8 +11,9 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-server/v5/model"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message, postType string) (post *model.Post, returnErr error) {

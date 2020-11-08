@@ -714,7 +714,6 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 			} else {
 				extraText += "\n\nAttachment: [^" + jiraName + "]"
 			}
-
 		}
 		if extraText == "" {
 			return
@@ -896,7 +895,6 @@ func (p *Plugin) getIssueAsSlackAttachment(instance Instance, connection *Connec
 
 		default:
 			return nil, errors.WithMessage(err, "request to Jira failed")
-
 		}
 	}
 

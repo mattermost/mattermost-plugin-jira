@@ -79,7 +79,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	}
 
 	// Although we pass the oauthTmpCredentials as required here. The JIRA server does not appar to validate it.
-	// We perform the check above for reuse so this is irrelavent to the security from our end.
+	// We perform the check above for reuse so this is irrelevant to the security from our end.
 	accessToken, accessSecret, err := si.getOAuth1Config().AccessToken(requestToken, oauthTmpCredentials.Secret, verifier)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,

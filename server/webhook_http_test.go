@@ -78,7 +78,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			ExpectedText:            "Unit test description, not that long",
 			ExpectedFields: []*model.SlackAttachmentField{
-				&model.SlackAttachmentField{
+				{
 					Title: "Priority",
 					Value: "High",
 					Short: true,
@@ -102,7 +102,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			// ExpectedText:            "Unit test description, not that long",
 			ExpectedFields: []*model.SlackAttachmentField{
-				&model.SlackAttachmentField{
+				{
 					Title: "Priority",
 					Value: "High",
 					Short: true,
@@ -401,7 +401,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			ExpectedText:            "Unit test description, not that long",
 			ExpectedFields: []*model.SlackAttachmentField{
-				&model.SlackAttachmentField{
+				{
 					Title: "Priority",
 					Value: "High",
 					Short: true,
@@ -425,7 +425,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			// ExpectedText:            "Unit test description, not that long",
 			ExpectedFields: []*model.SlackAttachmentField{
-				&model.SlackAttachmentField{
+				{
 					Title: "Priority",
 					Value: "High",
 					Short: true,

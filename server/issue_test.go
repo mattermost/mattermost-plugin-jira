@@ -52,9 +52,9 @@ func (client testClient) GetTransitions(issueKey string) ([]jira.Transition, err
 	}
 
 	return []jira.Transition{
-		jira.Transition{To: jira.Status{Name: "To Do"}},
-		jira.Transition{To: jira.Status{Name: "In Progress"}},
-		jira.Transition{To: jira.Status{Name: "In Testing"}},
+		{To: jira.Status{Name: "To Do"}},
+		{To: jira.Status{Name: "In Progress"}},
+		{To: jira.Status{Name: "In Testing"}},
 	}, nil
 }
 
@@ -98,7 +98,7 @@ func TestTransitionJiraIssue(t *testing.T) {
 		expectedMsg string
 		expectedErr error
 	}{
-		"Transitioning a non existant issue": {
+		"Transitioning a non existent issue": {
 			issueKey:    nonExistantIssueKey,
 			toState:     "To Do",
 			expectedMsg: "",
@@ -200,7 +200,6 @@ func TestRouteIssueTransition(t *testing.T) {
 			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "no request data")
 		})
 	}
-
 }
 
 func TestRouteShareIssuePublicly(t *testing.T) {
@@ -373,7 +372,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			},
 			expectedCode: http.StatusInternalServerError,
 		},
-		"Succesfully created notification post": {
+		"Successfully created notification post": {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{

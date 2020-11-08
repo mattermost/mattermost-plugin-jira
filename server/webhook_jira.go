@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/andygrunwald/go-jira"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 

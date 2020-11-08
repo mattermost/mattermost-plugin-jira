@@ -23,6 +23,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/jiraTracker"

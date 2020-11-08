@@ -27,7 +27,6 @@ func (ww webhookWorker) work() {
 		if err != nil {
 			ww.p.errorf("WebhookWorker id: %d, error processing, err: %v", ww.id, err)
 		}
-
 	}
 }
 

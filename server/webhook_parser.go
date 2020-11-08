@@ -77,7 +77,6 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		wh, err = parseWebhookCommentDeleted(jwh)
 	default:
 		err = errors.Errorf("Unsupported webhook event: %v", jwh.WebhookEvent)
-
 	}
 	if err != nil {
 		return nil, err
