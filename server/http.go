@@ -55,6 +55,7 @@ const (
 	routeWorkflowRegister                       = "/workflow/meta"
 	routeWorkflowTriggerSetup                   = "/workflow/trigger_setup"
 	routeWorkflowCreateIssue                    = "/workflow/create_issue"
+	routeSharePublicly                          = "/api/v2/share-issue-publicly"
 )
 
 const routePrefixInstance = "instance"
@@ -119,6 +120,8 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return p.httpAttachCommentToIssue(w, r)
 	case routeIssueTransition:
 		return p.httpTransitionIssuePostAction(w, r)
+	case routeSharePublicly:
+		return p.httpShareIssuePublicly(w, r)
 
 	// User APIs
 	case routeAPIUserInfo:
