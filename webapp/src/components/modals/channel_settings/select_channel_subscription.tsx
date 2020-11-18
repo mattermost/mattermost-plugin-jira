@@ -70,6 +70,10 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         const projectName = this.getProjectName(sub);
 
         const showInstanceColumn = this.props.installedInstances.length > 1;
+
+        const alias = this.props.installedInstances.filter((instance) => instance.instance_id === sub.instance_id)[0].alias;
+        const instanceName = alias || sub.instance_id;
+
         return (
             <tr
                 key={sub.id}
@@ -83,7 +87,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                 </td>
                 {showInstanceColumn && (
                     <td>
-                        <span>{sub.instance_id}</span>
+                        <span>{instanceName}</span>
                     </td>
                 )}
 

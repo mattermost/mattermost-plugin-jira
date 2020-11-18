@@ -31,6 +31,61 @@ func makePost(userId, channelId, message string) *model.Post {
 	}
 }
 
+func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) (int, error) {
+	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
+	if requestData == nil {
+		return respondErr(w, http.StatusBadRequest,
+			errors.New("Missing request data"))
+	}
+
+	jiraBotID := p.getUserID()
+	channelID := requestData.ChannelId
+	mattermostUserID := requestData.UserId
+	if mattermostUserID == "" {
+		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+			"user not authorized"), w, http.StatusUnauthorized)
+	}
+
+	val := requestData.Context["issue_key"]
+	issueKey, ok := val.(string)
+	if !ok {
+		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+			"No issue key was found in context data"), w, http.StatusInternalServerError)
+	}
+
+	val = requestData.Context["instance_id"]
+	instanceID, ok := val.(string)
+	if !ok {
+		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+			"No instance id was found in context data"), w, http.StatusInternalServerError)
+	}
+
+	_, instance, connection, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+	if err != nil {
+		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+			"No connection could be loaded with given params"), w, http.StatusInternalServerError)
+	}
+
+	attachment, err := p.getIssueAsSlackAttachment(instance, connection, strings.ToUpper(issueKey), false)
+	if err != nil {
+		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+			"Could not get issue as slack attachment"), w, http.StatusInternalServerError)
+	}
+
+	post := &model.Post{
+		UserId:    mattermostUserID,
+		ChannelId: channelID,
+	}
+	post.AddProp("attachments", attachment)
+
+	p.API.CreatePost(post)
+	p.API.DeleteEphemeralPost(mattermostUserID, requestData.PostId)
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write([]byte(`{"status": "OK"}`))
+	return http.StatusOK, err
+}
+
 func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Request) (int, error) {
 	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
 	if requestData == nil {
@@ -41,51 +96,53 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 	jiraBotID := p.getUserID()
 	channelID := requestData.ChannelId
 
-	var msg string
-	mattermostUserId := requestData.UserId
-	if mattermostUserId == "" {
-		msg = "user not authorized"
-		_ = p.API.SendEphemeralPost(mattermostUserId, makePost(jiraBotID, channelID, msg))
-		return respondErr(w, http.StatusUnauthorized, errors.New(msg))
+	mattermostUserID := requestData.UserId
+	if mattermostUserID == "" {
+		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+			"user not authorized"), w, http.StatusUnauthorized)
 	}
 
 	val := requestData.Context["issue_key"]
 	issueKey, ok := val.(string)
 	if !ok {
-		msg = "No issue key was found in context data"
-		_ = p.API.SendEphemeralPost(mattermostUserId, makePost(jiraBotID, channelID, msg))
-		return respondErr(w, http.StatusInternalServerError, errors.New(msg))
+		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+			"No issue key was found in context data"), w, http.StatusInternalServerError)
 	}
 
 	val = requestData.Context["selected_option"]
 	toState, ok := val.(string)
 	if !ok {
-		msg = "No transition option was found in context data"
-		_ = p.API.SendEphemeralPost(mattermostUserId, makePost(jiraBotID, channelID, msg))
-		return respondErr(w, http.StatusInternalServerError, errors.New(msg))
+		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+			"No transition option was found in context data"), w, http.StatusInternalServerError)
 	}
 
 	val = requestData.Context["instance_id"]
 	instanceID, ok := val.(string)
 	if !ok {
-		msg = "No issue key was found in context data"
-		_ = p.API.SendEphemeralPost(mattermostUserId, makePost(jiraBotID, channelID, msg))
-		return respondErr(w, http.StatusInternalServerError, errors.New(msg))
+		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+			"No instance id was found in context data"), w, http.StatusInternalServerError)
 	}
 
 	msg, err := p.TransitionIssue(&InTransitionIssue{
-		mattermostUserID: types.ID(mattermostUserId),
+		mattermostUserID: types.ID(mattermostUserID),
 		InstanceID:       types.ID(instanceID),
 		IssueKey:         issueKey,
 		ToState:          toState,
 	})
 	if err != nil {
 		msg = "Failed to transition this issue."
-		_ = p.API.SendEphemeralPost(mattermostUserId, makePost(jiraBotID, channelID, msg))
+		_ = p.API.SendEphemeralPost(mattermostUserID, makePost(jiraBotID, channelID, msg))
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	return http.StatusOK, nil
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write([]byte(`{"status": "OK"}`))
+	return http.StatusOK, err
+}
+
+func (p *Plugin) respondErrWithFeedback(mattermostUserID string, post *model.Post, w http.ResponseWriter, status int) (int, error) {
+	_ = p.API.SendEphemeralPost(mattermostUserID, post)
+	return respondErr(w, status, errors.New(post.Message))
 }
 
 type InCreateIssue struct {
@@ -247,7 +304,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 		UserId:    instance.Common().getConfig().botUserID,
 	}
 
-	attachment, err := instance.Common().getIssueAsSlackAttachment(instance, connection, created.Key)
+	attachment, err := instance.Common().getIssueAsSlackAttachment(instance, connection, created.Key, true)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to create notification post "+in.PostId)
 	}
@@ -822,7 +879,7 @@ func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 	return NewStringSet()
 }
 
-func (p *Plugin) getIssueAsSlackAttachment(instance Instance, connection *Connection, issueKey string) ([]*model.SlackAttachment, error) {
+func (p *Plugin) getIssueAsSlackAttachment(instance Instance, connection *Connection, issueKey string, showActions bool) ([]*model.SlackAttachment, error) {
 	client, err := instance.GetClient(connection)
 	if err != nil {
 		return nil, err
@@ -843,7 +900,7 @@ func (p *Plugin) getIssueAsSlackAttachment(instance Instance, connection *Connec
 		}
 	}
 
-	return asSlackAttachment(instance.GetID(), client, issue)
+	return asSlackAttachment(instance.GetID(), client, issue, showActions)
 }
 
 func (p *Plugin) UnassignIssue(instance Instance, mattermostUserID types.ID, issueKey string) (string, error) {
@@ -1026,7 +1083,7 @@ func (p *Plugin) TransitionIssue(in *InTransitionIssue) (string, error) {
 		}
 	}
 
-	attachments, err := asSlackAttachment(instance.GetID(), client, issue)
+	attachments, err := asSlackAttachment(instance.GetID(), client, issue, true)
 	if err != nil {
 		return "", err
 	}
