@@ -303,7 +303,17 @@ func (p *Plugin) OnActivate() error {
 
 			ci, ok := instance.(*cloudInstance)
 			if !ok {
-				p.API.LogWarn("only cloud instances supported for autolink", "err", err)
+				p.API.LogInfo("only cloud instances supported for autolink", "err", err)
+				continue
+			}
+
+			status, apiErr := p.API.GetPluginStatus(autolinkPluginId)
+			if apiErr != nil {
+				p.API.LogWarn("OnActivate: Autolink plugin unavailable. API returned error", "error", apiErr.Error())
+				continue
+			}
+			if status.State != model.PluginStateRunning {
+				p.API.LogWarn("OnActivate: Autolink plugin unavailable. Plugin is not running", "status", status)
 				continue
 			}
 

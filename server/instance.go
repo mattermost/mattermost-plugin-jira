@@ -33,6 +33,7 @@ type InstanceCommon struct {
 	PluginVersion string `json:",omitempty"`
 
 	InstanceID types.ID
+	Alias      string
 	Type       InstanceType
 	IsV2Legacy bool
 }
@@ -50,6 +51,7 @@ func (ic InstanceCommon) AsConfigMap() map[string]interface{} {
 	return map[string]interface{}{
 		"type":        string(ic.Type),
 		"instance_id": string(ic.InstanceID),
+		"alias":       string(ic.Alias),
 	}
 }
 

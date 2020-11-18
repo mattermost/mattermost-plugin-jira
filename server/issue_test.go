@@ -9,13 +9,14 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest/mock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 )
 
 const (
@@ -148,33 +149,9 @@ func TestTransitionJiraIssue(t *testing.T) {
 func TestRouteIssueTransition(t *testing.T) {
 	api := &plugintest.API{}
 
-	api.On("LogError",
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string")).Return(nil)
+	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
-	api.On("LogDebug",
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string")).Return(nil)
+	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 
 	api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
 
@@ -226,36 +203,89 @@ func TestRouteIssueTransition(t *testing.T) {
 
 }
 
+func TestRouteShareIssuePublicly(t *testing.T) {
+	validUserID := "1"
+	api := &plugintest.API{}
+	p := Plugin{}
+	api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
+	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
+	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
+	api.On("DeleteEphemeralPost", validUserID, "").Return()
+	p.SetAPI(api)
+	p.instanceStore = p.getMockInstanceStoreKV(1)
+	p.userStore = getMockUserStoreKV()
+
+	tests := map[string]struct {
+		bb           []byte
+		request      *model.PostActionIntegrationRequest
+		expectedCode int
+	}{
+		"No request data": {
+			request:      nil,
+			expectedCode: http.StatusBadRequest,
+		},
+		"No UserId": {
+			request: &model.PostActionIntegrationRequest{
+				UserId: "",
+			},
+			expectedCode: http.StatusUnauthorized,
+		},
+		"No issueKey": {
+			request: &model.PostActionIntegrationRequest{
+				UserId: "userID",
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+		"No instanceId": {
+			request: &model.PostActionIntegrationRequest{
+				UserId: "userID",
+				Context: map[string]interface{}{
+					"issue_key": "TEST-10",
+				},
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+		"No connection": {
+			request: &model.PostActionIntegrationRequest{
+				UserId: "userID",
+				Context: map[string]interface{}{
+					"issue_key":   "TEST-10",
+					"instance_id": "id",
+				},
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+		"Happy Path": {
+			request: &model.PostActionIntegrationRequest{
+				UserId: validUserID,
+				Context: map[string]interface{}{
+					"issue_key":   "TEST-10",
+					"instance_id": testInstance1.InstanceID.String(),
+				},
+			},
+			expectedCode: http.StatusOK,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			bb, err := json.Marshal(tt.request)
+			assert.Nil(t, err)
+
+			request := httptest.NewRequest("POST", routeSharePublicly, strings.NewReader(string(bb)))
+			w := httptest.NewRecorder()
+			p.ServeHTTP(&plugin.Context{}, w, request)
+			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "no request data")
+		})
+	}
+}
+
 func TestRouteAttachCommentToIssue(t *testing.T) {
 	api := &plugintest.API{}
 
-	api.On("LogError",
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string")).Return(nil)
+	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
-	api.On("LogDebug",
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string")).Return(nil)
+	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 
 	api.On("GetPost", "error_post").Return(nil, &model.AppError{Id: "1"})
 	api.On("GetPost", "post_not_found").Return(nil, (*model.AppError)(nil))

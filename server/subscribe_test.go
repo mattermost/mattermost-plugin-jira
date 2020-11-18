@@ -1008,6 +1008,54 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			}),
 			ChannelIds: []string{},
 		},
+		"subscribed any issue update, comment added, matches": {
+			WebhookTestData: "webhook-cloud-comment-created.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_updated_any"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+						Fields:     []FieldFilter{},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"subscribed any issue update, comment updated, matches": {
+			WebhookTestData: "webhook-cloud-comment-updated.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_updated_any"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+						Fields:     []FieldFilter{},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
+		"subscribed any issue update, comment deleted, matches": {
+			WebhookTestData: "webhook-cloud-comment-deleted.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				ChannelSubscription{
+					Id:        model.NewId(),
+					ChannelId: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_updated_any"),
+						Projects:   NewStringSet("KT"),
+						IssueTypes: NewStringSet("10002"),
+						Fields:     []FieldFilter{},
+					},
+				},
+			}),
+			ChannelIds: []string{"sampleChannelId"},
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
