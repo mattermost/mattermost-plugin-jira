@@ -424,6 +424,10 @@ export function handleConnectChange(store) {
             return;
         }
 
+        if (msg.event === 'custom_jira_connect') {
+            store.dispatch(sendEphemeralPost('You have successfully connected your Jira account. Type in /jira to get started. '));
+        }
+
         store.dispatch({
             type: ActionTypes.RECEIVED_CONNECTED,
             data: msg.data,
