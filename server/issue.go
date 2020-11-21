@@ -983,8 +983,7 @@ func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issue
 
 	// handle number of returned jira users
 	if len(jiraUsers) == 0 {
-		errorMsg := "We couldn't find the assignee. Please use a Jira member and try again."
-		return "", fmt.Errorf(errorMsg)
+		return "", fmt.Errorf("we couldn't find the assignee. Please use a Jira member and try again")
 	}
 
 	if len(jiraUsers) > 1 {

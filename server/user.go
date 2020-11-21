@@ -272,7 +272,7 @@ func (p *Plugin) DisconnectUser(instanceURL string, mattermostUserID types.ID) (
 	return p.disconnectUser(instance, user)
 }
 
-func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, error) {
+func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, error) { //nolint:interfacer
 	if !user.ConnectedInstances.Contains(instance.GetID()) {
 		return nil, errors.Wrapf(kvstore.ErrNotFound, "user is not connected to %q", instance.GetID())
 	}

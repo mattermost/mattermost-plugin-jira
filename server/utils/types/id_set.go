@@ -42,7 +42,7 @@ func NewIDSet(vv ...ID) *IDSet {
 	return i
 }
 
-func (i *IDSet) Set(v ID) {
+func (i *IDSet) Set(v ID) { //nolint:interfacer
 	i.ValueSet.Set(v)
 }
 
