@@ -1011,7 +1011,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"subscribed any issue update, comment added, matches": {
 			WebhookTestData: "webhook-cloud-comment-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					ID:        model.NewId(),
 					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -1027,7 +1027,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"subscribed any issue update, comment updated, matches": {
 			WebhookTestData: "webhook-cloud-comment-updated.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					ID:        model.NewId(),
 					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
@@ -1043,7 +1043,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		"subscribed any issue update, comment deleted, matches": {
 			WebhookTestData: "webhook-cloud-comment-deleted.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
-				ChannelSubscription{
+				{
 					ID:        model.NewId(),
 					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
