@@ -4,7 +4,7 @@
 package main
 
 import (
-	"crypto/md5"
+	"crypto/md5" // #nosec G501
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
@@ -86,13 +86,13 @@ func NewStore(p *Plugin) Store {
 }
 
 func keyWithInstanceID(instanceID, key types.ID) string {
-	h := md5.New()
+	h := md5.New() // #nosec G401
 	fmt.Fprintf(h, "%s/%s", instanceID, key)
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
 func hashkey(prefix, key string) string {
-	h := md5.New()
+	h := md5.New() // #nosec G401
 	_, _ = h.Write([]byte(key))
 	return fmt.Sprintf("%s%x", prefix, h.Sum(nil))
 }
@@ -367,7 +367,7 @@ func (store store) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
 
 	if rsaKey == nil {
 		var newRSAKey *rsa.PrivateKey
-		newRSAKey, err = rsa.GenerateKey(rand.Reader, 1024)
+		newRSAKey, err = rsa.GenerateKey(rand.Reader, 2048)
 		if err != nil {
 			return nil, err
 		}

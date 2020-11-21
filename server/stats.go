@@ -1,7 +1,7 @@
 package main
 
 import (
-	"crypto/md5"
+	"crypto/md5" // #nosec G501
 	"encoding/json"
 	goexpvar "expvar"
 	"fmt"
@@ -93,7 +93,7 @@ func (p *Plugin) httpAPIStats(w http.ResponseWriter, r *http.Request) (int, erro
 func (p *Plugin) startAutosaveStats() {
 	stop := make(chan bool)
 	go func() {
-		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		r := rand.New(rand.NewSource(time.Now().UnixNano())) // #nosec G404
 		dither := time.Duration(r.Intn(statsAutosaveMaxDither)) * time.Second
 		time.Sleep(dither)
 
@@ -228,7 +228,7 @@ func (p *Plugin) consolidatedStoredStats() (*expvar.Stats, []string, error) {
 
 func statsKeyName() string {
 	hostname, _ := os.Hostname()
-	h := md5.New()
+	h := md5.New() // #nosec G401
 	_, _ = h.Write([]byte(hostname))
 	return fmt.Sprintf("%s%x", prefixStats, h.Sum(nil))
 }

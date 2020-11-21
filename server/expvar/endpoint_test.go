@@ -64,7 +64,7 @@ func TestEndpointRecord(t *testing.T) {
 
 func TestEndpointUnmarshal(t *testing.T) {
 	e := newTestEndpoint(t)
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	r := rand.New(rand.NewSource(time.Now().UnixNano())) // #nosec G404
 	for i := 0; i < 10; i++ {
 		e.Record(utils.ByteSize(r.Intn(1000*1000*1000)),
 			utils.ByteSize(r.Intn(2*1000*1000)),

@@ -101,6 +101,7 @@ func checkHasSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 						subToCheck.Filters.Projects.Equals(savedSub.Filters.Projects) &&
 						subToCheck.Filters.IssueTypes.Equals(savedSub.Filters.IssueTypes) &&
 						subToCheck.Filters.Events.Equals(savedSub.Filters.Events) {
+						savedSub := savedSub // fix gosec G601
 						foundSub = &savedSub
 						break
 					}

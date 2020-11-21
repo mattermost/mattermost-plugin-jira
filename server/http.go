@@ -44,7 +44,7 @@ const (
 	routeACInstalled                            = "/ac/installed"
 	routeACJSON                                 = "/ac/atlassian-connect.json"
 	routeACUninstalled                          = "/ac/uninstalled"
-	routeACUserRedirectWithToken                = "/ac/user_redirect.html"
+	routeACUserRedirectWithToken                = "/ac/user_redirect.html" // #nosec G101
 	routeACUserConfirm                          = "/ac/user_confirm.html"
 	routeACUserConnected                        = "/ac/user_connected.html"
 	routeACUserDisconnected                     = "/ac/user_disconnected.html"
