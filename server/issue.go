@@ -139,15 +139,14 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 			"No instance id was found in context data"), w, http.StatusInternalServerError)
 	}
 
-	msg, err := p.TransitionIssue(&InTransitionIssue{
+	_, err := p.TransitionIssue(&InTransitionIssue{
 		mattermostUserID: types.ID(mattermostUserID),
 		InstanceID:       types.ID(instanceID),
 		IssueKey:         issueKey,
 		ToState:          toState,
 	})
 	if err != nil {
-		msg = "Failed to transition this issue."
-		_ = p.API.SendEphemeralPost(mattermostUserID, makePost(jiraBotID, channelID, msg))
+		_ = p.API.SendEphemeralPost(mattermostUserID, makePost(jiraBotID, channelID, "Failed to transition this issue."))
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 

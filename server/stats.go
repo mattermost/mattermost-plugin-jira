@@ -57,6 +57,10 @@ func (p *Plugin) httpAPIStats(w http.ResponseWriter, r *http.Request) (int, erro
 	conf := p.getConfig()
 
 	isAdmin, err := authorizedSysAdmin(p, r.Header.Get("Mattermost-User-ID"))
+	if err != nil {
+		return http.StatusInternalServerError, errors.Wrap(err, "failed to authorize")
+	}
+
 	if !isAdmin {
 		if conf.StatsSecret == "" {
 			return respondErr(w, http.StatusForbidden,

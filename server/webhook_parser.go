@@ -110,7 +110,6 @@ func parseWebhookUnspecified(jwh *JiraWebhook) (Webhook, error) {
 
 func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 	var events []*webhook
-	var fieldsNotFound []string
 	for _, item := range jwh.ChangeLog.Items {
 		field := item.Field
 		fieldID := item.FieldID
@@ -170,8 +169,6 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 
 		if event != nil {
 			events = append(events, event)
-		} else {
-			fieldsNotFound = append(fieldsNotFound, field)
 		}
 	}
 

@@ -389,6 +389,10 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 		jiraURL = args[0]
 	}
 	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return p.responsef(header, "Failed to load instances: "+err.Error())
+	}
+
 	instance := instances.getByAlias(jiraURL)
 	if instance != nil {
 		jiraURL = instance.InstanceID.String()
@@ -416,6 +420,10 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 		jiraURL = args[0]
 	}
 	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return p.responsef(header, "Failed to load instances: "+err.Error())
+	}
+
 	instance := instances.getByAlias(jiraURL)
 	if instance != nil {
 		jiraURL = instance.InstanceID.String()

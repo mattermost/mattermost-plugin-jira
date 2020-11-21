@@ -371,10 +371,8 @@ var keyOrIDRegex = regexp.MustCompile("(^[[:alpha:]]+-)?[[:digit:]]+$")
 func endpointNameFromRequest(r *http.Request) string {
 	_, path := splitInstancePath(r.URL.Path)
 	l := strings.ToLower(path)
-	s := strings.TrimLeft(l, "/rest/api")
-	if s == l {
-		return unrecognizedEndpoint
-	}
+	s := strings.TrimPrefix(l, "/rest/api")
+	s = strings.Trim(s, "/")
 	parts := strings.Split(s, "/")
 	n := len(parts)
 
