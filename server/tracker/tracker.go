@@ -1,4 +1,4 @@
-package jiratracker
+package tracker
 
 import "github.com/mattermost/mattermost-plugin-jira/server/utils/telemetry"
 

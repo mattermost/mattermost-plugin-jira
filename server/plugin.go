@@ -25,7 +25,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
-	"github.com/mattermost/mattermost-plugin-jira/server/jiratracker"
+	"github.com/mattermost/mattermost-plugin-jira/server/tracker"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/telemetry"
 )
@@ -127,7 +127,7 @@ type Plugin struct {
 	telemetryClient telemetry.Client
 
 	// telemetry Tracker
-	Tracker jiratracker.Tracker
+	Tracker tracker.Tracker
 
 	// service that determines if this Mattermost instance has access to
 	// enterprise features
@@ -189,7 +189,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	}
 
 	// create new tracker on each configuration change
-	p.Tracker = jiratracker.New(telemetry.NewTracker(
+	p.Tracker = tracker.New(telemetry.NewTracker(
 		p.telemetryClient,
 		p.API.GetDiagnosticId(),
 		p.API.GetServerVersion(),
