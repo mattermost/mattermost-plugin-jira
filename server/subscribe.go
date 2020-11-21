@@ -784,11 +784,16 @@ func (p *Plugin) httpChannelCreateSubscription(w http.ResponseWriter, r *http.Re
 		return code, err
 	}
 
-	p.API.CreatePost(&model.Post{
+	_, appErr = p.API.CreatePost(&model.Post{
 		UserId:    p.getConfig().botUserID,
 		ChannelId: subscription.ChannelID,
 		Message:   fmt.Sprintf("Jira subscription, \"%v\", was added to this channel by %v", subscription.Name, connection.DisplayName),
 	})
+	if appErr != nil {
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to create notification post"))
+	}
+
 	return http.StatusOK, nil
 }
 
@@ -838,11 +843,16 @@ func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Requ
 		return code, err
 	}
 
-	p.API.CreatePost(&model.Post{
+	_, appErr = p.API.CreatePost(&model.Post{
 		UserId:    p.getConfig().botUserID,
 		ChannelId: subscription.ChannelID,
 		Message:   fmt.Sprintf("Jira subscription, \"%v\", was updated by %v", subscription.Name, connection.DisplayName),
 	})
+	if appErr != nil {
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to create notification post"))
+	}
+
 	return http.StatusOK, nil
 }
 
@@ -887,11 +897,15 @@ func (p *Plugin) httpChannelDeleteSubscription(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	p.API.CreatePost(&model.Post{
+	_, appErr = p.API.CreatePost(&model.Post{
 		UserId:    p.getConfig().botUserID,
 		ChannelId: subscription.ChannelID,
 		Message:   fmt.Sprintf("Jira subscription, \"%v\", was removed from this channel by %v", subscription.Name, connection.DisplayName),
 	})
+	if appErr != nil {
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to create notification post"))
+	}
 	return http.StatusOK, nil
 }
 

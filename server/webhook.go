@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	Nobody = "_nobody_"
+	Nobody         = "_nobody_"
 	commentDeleted = "comment_deleted"
 	commentUpdated = "comment_updated"
 	commentCreated = "comment_created"

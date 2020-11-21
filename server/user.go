@@ -138,7 +138,11 @@ func (p *Plugin) httpUserDisconnect(w http.ResponseWriter, r *http.Request) (int
 			errors.Errorf("Could not complete the **disconnection** request. Error: %v", err))
 	}
 
-	w.Write([]byte(`{"success": true}`))
+	_, err = w.Write([]byte(`{"success": true}`))
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+	}
+
 	return http.StatusOK, nil
 }
 

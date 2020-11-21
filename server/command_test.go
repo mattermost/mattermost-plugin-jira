@@ -213,7 +213,8 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 			p.instanceStore = p.getMockInstanceStoreKV(tt.numInstances)
 			p.userStore = getMockUserStoreKV()
 
-			p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
+			_, err := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
+			require.Nil(t, err)
 
 			assert.Equal(t, true, isSendEphemeralPostCalled)
 		})

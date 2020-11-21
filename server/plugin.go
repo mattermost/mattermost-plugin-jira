@@ -180,7 +180,10 @@ func (p *Plugin) OnConfigurationChange() error {
 		if err != nil {
 			return err
 		}
-		p.registerJiraCommand(ec.EnableAutocomplete, instances.Len() > 1)
+		err = p.registerJiraCommand(ec.EnableAutocomplete, instances.Len() > 1)
+		if err != nil {
+			return err
+		}
 	}
 
 	diagnostics := false

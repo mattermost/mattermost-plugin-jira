@@ -103,7 +103,7 @@ func (p *Plugin) startAutosaveStats() {
 			case <-stop:
 				return
 			case <-ticker.C:
-				p.saveStats()
+				_ = p.saveStats()
 			}
 		}
 	}()

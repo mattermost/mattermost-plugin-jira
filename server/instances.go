@@ -177,7 +177,7 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 				return errors.Errorf("%s did not match instance %s type %s", instanceType, instanceID, instance.Common().Type)
 			}
 
-			p.userStore.MapUsers(func(user *User) error {
+			err = p.userStore.MapUsers(func(user *User) error {
 				if !user.ConnectedInstances.Contains(instance.GetID()) {
 					return nil
 				}
@@ -188,6 +188,9 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 				}
 				return nil
 			})
+			if err != nil {
+				return err
+			}
 
 			instances.Delete(instanceID)
 			updated = instances

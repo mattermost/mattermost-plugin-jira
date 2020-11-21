@@ -628,7 +628,11 @@ func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	}
 
 	instances.Set(instance.Common())
-	instances.SetV2Legacy(instance.GetID())
+	err = instances.SetV2Legacy(instance.GetID())
+	if err != nil {
+		return nil, err
+	}
+
 	err = p.instanceStore.StoreInstance(instance)
 	if err != nil {
 		return nil, err

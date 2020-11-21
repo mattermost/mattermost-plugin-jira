@@ -89,7 +89,12 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 	}
 	post.AddProp("attachments", attachment)
 
-	p.API.CreatePost(post)
+	_, appErr := p.API.CreatePost(post)
+	if appErr != nil {
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to create notification post"))
+	}
+
 	p.API.DeleteEphemeralPost(mattermostUserID, requestData.PostId)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -588,9 +593,13 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 	}
 
 	if len(cimd.Projects) == 0 {
-		respondJSON(w, map[string]interface{}{
+		_, err = respondJSON(w, map[string]interface{}{
 			"error": "You do not have permission to create issues in any projects. Please contact your Jira admin.",
 		})
+		if err != nil {
+			return respondErr(w, http.StatusInternalServerError,
+				errors.WithMessage(err, "failed to create response"))
+		}
 	}
 
 	type option = utils.ReactSelectOption

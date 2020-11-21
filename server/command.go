@@ -1135,7 +1135,10 @@ func executeDebugStatsSave(p *Plugin, c *plugin.Context, commandArgs *model.Comm
 	if stats == nil {
 		return p.responsef(commandArgs, "No stats to save")
 	}
-	p.saveStats()
+	err = p.saveStats()
+	if err != nil {
+		return p.responsef(commandArgs, "%v", err)
+	}
 	return p.responsef(commandArgs, "Saved stats")
 }
 
