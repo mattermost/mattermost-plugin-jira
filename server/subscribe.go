@@ -937,7 +937,7 @@ func (p *Plugin) httpChannelGetSubscriptions(w http.ResponseWriter, r *http.Requ
 }
 
 func (p *Plugin) httpChannelSubscriptions(w http.ResponseWriter, r *http.Request) (int, error) {
-	mattermostUserID := r.Header.Get("Mattermost-User-ID")
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}

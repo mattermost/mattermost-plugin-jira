@@ -59,7 +59,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 			errors.WithMessage(err, "failed to parse callback request from Jira"))
 	}
 
-	mattermostUserID := r.Header.Get("Mattermost-User-ID")
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
@@ -128,7 +128,7 @@ func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, i
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
-	mattermostUserID := r.Header.Get("Mattermost-User-ID")
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}

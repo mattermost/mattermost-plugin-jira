@@ -397,7 +397,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			assert.Nil(t, err)
 
 			request := httptest.NewRequest(tt.method, routeAPIAttachCommentToIssue, strings.NewReader(string(bb)))
-			request.Header.Add("Mattermost-User-ID", tt.header)
+			request.Header.Add("Mattermost-User-Id", tt.header)
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)
 			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "no request data")

@@ -337,7 +337,7 @@ func TestSubscribe(t *testing.T) {
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("POST", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
 			if !tc.skipAuthorize {
-				request.Header.Set("Mattermost-User-ID", model.NewId())
+				request.Header.Set("Mattermost-User-Id", model.NewId())
 			}
 			p.ServeHTTP(&plugin.Context{}, w, request)
 			body, _ := ioutil.ReadAll(w.Result().Body)
@@ -450,7 +450,7 @@ func TestDeleteSubscription(t *testing.T) {
 				"/api/v2/subscriptions/channel/"+tc.subscriptionID+"?instance_id="+testInstance1.GetID().String(),
 				nil)
 			if !tc.skipAuthorize {
-				request.Header.Set("Mattermost-User-ID", model.NewId())
+				request.Header.Set("Mattermost-User-Id", model.NewId())
 			}
 			p.ServeHTTP(&plugin.Context{}, w, request)
 			body, _ := ioutil.ReadAll(w.Result().Body)
@@ -667,7 +667,7 @@ func TestEditSubscription(t *testing.T) {
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("PUT", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
 			if !tc.skipAuthorize {
-				request.Header.Set("Mattermost-User-ID", model.NewId())
+				request.Header.Set("Mattermost-User-Id", model.NewId())
 			}
 			p.ServeHTTP(&plugin.Context{}, w, request)
 			body, _ := ioutil.ReadAll(w.Result().Body)
@@ -827,7 +827,7 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 			w := httptest.NewRecorder()
 			request := httptest.NewRequest("GET", "/api/v2/subscriptions/channel/"+tc.channelID+"?instance_id="+testInstance1.GetID().String(), nil)
 			if !tc.skipAuthorize {
-				request.Header.Set("Mattermost-User-ID", model.NewId())
+				request.Header.Set("Mattermost-User-Id", model.NewId())
 			}
 			p.ServeHTTP(&plugin.Context{}, w, request)
 			assert.Equal(t, tc.expectedStatusCode, w.Result().StatusCode)

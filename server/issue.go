@@ -183,7 +183,7 @@ func (p *Plugin) httpCreateIssue(w http.ResponseWriter, r *http.Request) (int, e
 			errors.WithMessage(err, "failed to decode incoming request"))
 	}
 
-	in.mattermostUserID = types.ID(r.Header.Get("Mattermost-User-ID"))
+	in.mattermostUserID = types.ID(r.Header.Get("Mattermost-User-Id"))
 	if in.mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized,
 			errors.New("not authorized"))
@@ -447,7 +447,7 @@ func (p *Plugin) httpGetCreateIssueMetadataForProjects(w http.ResponseWriter, r 
 			errors.New("Request: "+r.Method+" is not allowed, must be GET"))
 	}
 
-	mattermostUserID := r.Header.Get("Mattermost-User-ID")
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized,
 			errors.New("not authorized"))
@@ -492,7 +492,7 @@ func (p *Plugin) httpGetSearchIssues(w http.ResponseWriter, r *http.Request) (in
 		return respondErr(w, http.StatusMethodNotAllowed,
 			errors.New("Request: "+r.Method+" is not allowed, must be GET"))
 	}
-	mattermostUserID := r.Header.Get("Mattermost-User-ID")
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
@@ -578,7 +578,7 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 			errors.New("Request: "+r.Method+" is not allowed, must be GET"))
 	}
 
-	mattermostUserID := r.Header.Get("Mattermost-User-ID")
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
@@ -656,7 +656,7 @@ func (p *Plugin) httpAttachCommentToIssue(w http.ResponseWriter, r *http.Request
 			errors.WithMessage(err, "failed to decode incoming request"))
 	}
 
-	in.mattermostUserID = types.ID(r.Header.Get("Mattermost-User-ID"))
+	in.mattermostUserID = types.ID(r.Header.Get("Mattermost-User-Id"))
 	if in.mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized,
 			errors.New("not authorized"))

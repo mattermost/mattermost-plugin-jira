@@ -56,7 +56,7 @@ func (p *Plugin) httpAPIStats(w http.ResponseWriter, r *http.Request) (int, erro
 	}
 	conf := p.getConfig()
 
-	isAdmin, err := authorizedSysAdmin(p, r.Header.Get("Mattermost-User-ID"))
+	isAdmin, err := authorizedSysAdmin(p, r.Header.Get("Mattermost-User-Id"))
 	if err != nil {
 		return http.StatusInternalServerError, errors.Wrap(err, "failed to authorize")
 	}

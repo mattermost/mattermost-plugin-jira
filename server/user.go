@@ -67,7 +67,7 @@ func (p *Plugin) httpUserConnect(w http.ResponseWriter, r *http.Request, instanc
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
-	mattermostUserID := r.Header.Get("Mattermost-User-ID")
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized,
 			errors.New("not authorized"))
@@ -105,7 +105,7 @@ func (p *Plugin) httpUserDisconnect(w http.ResponseWriter, r *http.Request) (int
 			errors.New("method "+r.Method+" is not allowed, must be POST"))
 	}
 
-	mattermostUserID := r.Header.Get("Mattermost-User-ID")
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized,
 			errors.New("not authorized"))
@@ -148,7 +148,7 @@ func (p *Plugin) httpUserDisconnect(w http.ResponseWriter, r *http.Request) (int
 
 // TODO succinctly document the difference between start and connect
 func (p *Plugin) httpUserStart(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
-	mattermostUserID := r.Header.Get("Mattermost-User-ID")
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized,
 			errors.New("not authorized"))
@@ -218,7 +218,7 @@ func (p *Plugin) httpGetSettingsInfo(w http.ResponseWriter, r *http.Request) (in
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
-	mattermostUserID := r.Header.Get("Mattermost-User-ID")
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized,
 			errors.New("not authorized"))

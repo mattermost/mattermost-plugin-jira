@@ -26,7 +26,7 @@ func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, e
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
-	mattermostUserID := r.Header.Get("Mattermost-User-ID")
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized,
 			errors.New("not authorized"))
