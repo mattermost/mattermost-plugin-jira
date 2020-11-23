@@ -373,6 +373,11 @@ func endpointNameFromRequest(r *http.Request) string {
 	l := strings.ToLower(path)
 	s := strings.TrimPrefix(l, "/rest/api")
 	s = strings.Trim(s, "/")
+
+	if s == l {
+		return "_unrecognized"
+	}
+
 	parts := strings.Split(s, "/")
 	n := len(parts)
 
