@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const NotAvailableString = "n/a"
+const NotAvailable = "n/a"
 
 type ReactSelectOption struct {
 	Label string `json:"label"`

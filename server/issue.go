@@ -24,7 +24,6 @@ import (
 )
 
 const (
-	commaSeparator   = ", "
 	labelsField      = "labels"
 	statusField      = "status"
 	reporterField    = "reporter"
@@ -770,7 +769,7 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 }
 
 func notifyOnFailedAttachment(instance Instance, mattermostUserID, issueKey string, err error, format string, args ...interface{}) {
-	msg := "Failed to attach to issue: " + issueKey + commaSeparator + fmt.Sprintf(format, args...)
+	msg := "Failed to attach to issue: " + issueKey + ", " + fmt.Sprintf(format, args...)
 
 	instance.Common().Plugin.API.LogError(fmt.Sprintf("%s: %v", msg, err), "issue", issueKey)
 	errMsg := err.Error()
@@ -992,7 +991,7 @@ func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issue
 			extra := jiraUsers[i].Name
 			if jiraUsers[i].EmailAddress != "" {
 				if extra != "" {
-					extra += commaSeparator
+					extra += ", "
 				}
 				extra += jiraUsers[i].EmailAddress
 			}
@@ -1064,14 +1063,14 @@ func (p *Plugin) TransitionIssue(in *InTransitionIssue) (string, error) {
 	switch len(matchingStates) {
 	case 0:
 		return "", errors.Errorf("%q is not a valid state. Please use one of: %q",
-			in.ToState, strings.Join(availableStates, commaSeparator))
+			in.ToState, strings.Join(availableStates, ", "))
 
 	case 1:
 		// proceed
 
 	default:
 		return "", errors.Errorf("please be more specific, %q matched several states: %q",
-			in.ToState, strings.Join(matchingStates, commaSeparator))
+			in.ToState, strings.Join(matchingStates, ", "))
 	}
 
 	err = client.DoTransition(in.IssueKey, transition.ID)

@@ -46,21 +46,21 @@ func (size ByteSize) String() string {
 		}
 
 		if size > math.MaxInt64/10 {
-			return utils.NotAvailableString
+			return utils.NotAvailable
 		}
 
 		s := strconv.FormatUint(uint64((size*10+u/2)/u), 10)
 		l := len(s)
 		switch {
 		case l < 2:
-			return utils.NotAvailableString
+			return utils.NotAvailable
 		case s[l-1] == '0':
 			return withCommas(s[:l-1]) + sizeSuffixes[i]
 		default:
 			return withCommas(s[:l-1]) + "." + s[l-1:] + sizeSuffixes[i]
 		}
 	}
-	return utils.NotAvailableString
+	return utils.NotAvailable
 }
 
 func ParseByteSize(str string) (ByteSize, error) {
