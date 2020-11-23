@@ -33,8 +33,7 @@ const (
 	resolutionField  = "resolution"
 )
 
-func makePost(userID,
-	channelID, message string) *model.Post {
+func makePost(userID, channelID, message string) *model.Post {
 	return &model.Post{
 		UserId:    userID,
 		ChannelId: channelID,
@@ -1042,9 +1041,7 @@ func (p *Plugin) TransitionIssue(in *InTransitionIssue) (string, error) {
 
 	transitions, err := client.GetTransitions(in.IssueKey)
 	if err != nil {
-		return "", errors.New(
-
-			"we couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue")
+		return "", errors.New("we couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue")
 	}
 	if len(transitions) < 1 {
 		return "", errors.New("you do not have the appropriate permissions to perform this action. Please contact your Jira administrator")
