@@ -172,10 +172,10 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 		}
 	}
 
-	switch {
-	case len(events) == 0:
+	switch len(events) {
+	case 0:
 		return nil
-	case len(events) == 1:
+	case 1:
 		return events[0]
 	default:
 		return mergeWebhookEvents(events)
