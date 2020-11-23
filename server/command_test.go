@@ -297,7 +297,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			p := Plugin{}
 			p.updateConfig(func(conf *config) {
 				conf.mattermostSiteURL = mattermostSiteURL
-				conf.rsaKey, _ = rsa.GenerateKey(rand.Reader, 2048)
+				conf.rsaKey, _ = rsa.GenerateKey(rand.Reader, 1024) // #nosec G403
 			})
 			isSendEphemeralPostCalled := false
 

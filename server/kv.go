@@ -367,7 +367,7 @@ func (store store) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
 
 	if rsaKey == nil {
 		var newRSAKey *rsa.PrivateKey
-		newRSAKey, err = rsa.GenerateKey(rand.Reader, 2048)
+		newRSAKey, err = rsa.GenerateKey(rand.Reader, 1024) // #nosec G403
 		if err != nil {
 			return nil, err
 		}
