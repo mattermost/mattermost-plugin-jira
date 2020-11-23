@@ -36,7 +36,7 @@ func (instances Instances) Get(id types.ID) *InstanceCommon {
 	return instances.ValueSet.Get(id).(*InstanceCommon)
 }
 
-func (instances Instances) Set(ic *InstanceCommon) { //nolint:interfacer
+func (instances Instances) Set(ic *InstanceCommon) {
 	instances.ValueSet.Set(ic)
 }
 
