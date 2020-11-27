@@ -686,7 +686,7 @@ func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs
 
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
-		return p.responsef(header, "Failed to load known Jira instances: %v", err)
+		return p.responsef(header, "No Jira instances have been installed")
 	}
 	if instances.IsEmpty() {
 		return p.responsef(header, "(none installed)\n")
