@@ -62,7 +62,7 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 	if wh.headline == "" {
 		return nil, http.StatusBadRequest, errors.Errorf("unsupported webhook")
 	} else if p.getConfig().DisplaySubscriptionNameInNotifications && subscriptionName != "" {
-		wh.headline = fmt.Sprintf("%s\nSubscription Name: %s", wh.headline, subscriptionName)
+		wh.headline = fmt.Sprintf("%s\nSubscription: %s", wh.headline, subscriptionName)
 	}
 
 	post := &model.Post{
