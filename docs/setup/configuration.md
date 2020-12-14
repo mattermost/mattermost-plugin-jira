@@ -31,24 +31,24 @@ To control Mattermost channel subscriptions, use the command `/jira subscribe` i
 
 3. Finally, set which issue events send messages to Mattermost channels and select all of the following:
 
-* Worklog
-   * created
-   * updated
-   * deleted
-* Comment
-   * created
-   * updated
-   * deleted
-* Issue
-   * created
-   * updated
-   * deleted
-* Issue link
-   * created
-   * deleted
-* Attachment
-   * created
-   * deleted
+   * Worklog
+      * created
+      * updated
+      * deleted
+   * Comment
+      * created
+      * updated
+      * deleted
+   * Issue
+      * created
+      * updated
+      * deleted
+   * Issue link
+      * created
+      * deleted
+   * Attachment
+      * created
+      * deleted
 
 4. Choose **Save**.
 
