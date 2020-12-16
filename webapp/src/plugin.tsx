@@ -44,6 +44,7 @@ const setupUILater = (registry: any, store: Store<object, Action<object>>): () =
     } finally {
         registry.registerWebSocketEventHandler(`custom_${PluginId}_connect`, handleConnectChange(store));
         registry.registerWebSocketEventHandler(`custom_${PluginId}_disconnect`, handleConnectChange(store));
+        registry.registerWebSocketEventHandler(`custom_${PluginId}_update_defaults`, handleConnectChange(store));
         registry.registerWebSocketEventHandler(`custom_${PluginId}_instance_status`, handleInstanceStatusChange(store));
     }
 };

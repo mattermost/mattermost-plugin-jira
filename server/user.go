@@ -203,7 +203,7 @@ func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, proje
 		return
 	}
 
-	p.API.PublishWebSocketEvent(websocketEventConnect, info.AsConfigMap(),
+	p.API.PublishWebSocketEvent(websocketEventUpdateDefaults, info.AsConfigMap(),
 		&model.WebsocketBroadcast{UserId: mattermostUserID.String()},
 	)
 }
