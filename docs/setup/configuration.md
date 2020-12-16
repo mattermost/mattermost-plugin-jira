@@ -21,7 +21,7 @@ To control Mattermost channel subscriptions, use the command `/jira subscribe` i
 1. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
    * For older versions of Jira, click the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
 2. Click **Create a WebHook** to create a new webhook. 
-3. Enter a **Name** for the webhook and add the Jira webhook URL [https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET](https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET) as the **URL**.
+3. Enter a **Name** for the webhook and add the Jira plugin webhook URL [https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET](https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET) as the **URL**.
 
    * Replace `SITEURL` with the site URL of your Mattermost instance, and `WEBHOOKSECRET` with the secret generated in Mattermost via **System Console > Plugins > Jira**. For instance, if the site URL is `https://community.mattermost.com`, and the generated webhook secret is `5JlVk56KPxX629ujeU3MOuxaiwsPzLwh`, then the final webhook URL would be:
 
