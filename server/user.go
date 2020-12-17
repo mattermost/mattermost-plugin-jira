@@ -198,7 +198,7 @@ func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, proje
 		}
 	}
 
-	info, err := p.GetUserInfo(types.ID(mattermostUserID))
+	info, err := p.GetUserInfo(types.ID(mattermostUserID), user)
 	if err != nil {
 		return
 	}
@@ -246,7 +246,7 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, conne
 		return err
 	}
 
-	info, err := p.GetUserInfo(types.ID(mattermostUserID))
+	info, err := p.GetUserInfo(types.ID(mattermostUserID), user)
 	if err != nil {
 		return err
 	}
@@ -292,7 +292,7 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 		return nil, err
 	}
 
-	info, err := p.GetUserInfo(types.ID(user.MattermostUserID))
+	info, err := p.GetUserInfo(types.ID(user.MattermostUserID), user)
 	if err != nil {
 		return nil, err
 	}
