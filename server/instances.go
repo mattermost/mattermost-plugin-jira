@@ -296,6 +296,9 @@ func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.I
 	}
 
 	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return p.responsef(header, "Failed to load instances. Error: %v.", err)
+	}
 	instance := instances.getByAlias(instanceURL)
 	if instance != nil {
 		instanceURL = instance.InstanceID.String()
@@ -366,6 +369,9 @@ func (p *Plugin) httpAutocompleteUserInstance(w http.ResponseWriter, r *http.Req
 	}
 
 	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return p.responsef(header, "Failed to load instances. Error: %v.", err)
+	}
 	for _, instanceID := range info.User.ConnectedInstances.IDs() {
 		if instanceID != info.User.DefaultInstanceID {
 			id := instances.getAlias(instanceID)
@@ -401,6 +407,9 @@ func (p *Plugin) httpAutocompleteInstalledInstanceWithAlias(w http.ResponseWrite
 	}
 
 	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return p.responsef(header, "Failed to load instances. Error: %v.", err)
+	}
 	for _, instanceID := range info.Instances.IDs() {
 		item := instances.getAlias(instanceID)
 		if item == "" {
