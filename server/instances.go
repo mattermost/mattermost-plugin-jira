@@ -295,15 +295,16 @@ func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.I
 		}
 	}
 
+	instanceID := types.ID(instanceURL)
+	if instanceID == ""{
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
-		return p.responsef(header, "Failed to load instances. Error: %v.", err)
-	}
+		return "", err
+		}
 	instance := instances.getByAlias(instanceURL)
 	if instance != nil {
 		instanceURL = instance.InstanceID.String()
-	}
-
+		}
 	if types.ID(instanceURL) != "" {
 		return types.ID(instanceURL), nil
 	}
@@ -313,7 +314,7 @@ func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.I
 	if user.ConnectedInstances.Len() == 1 {
 		return user.ConnectedInstances.IDs()[0], nil
 	}
-
+	}
 	return "", errors.Wrap(kvstore.ErrNotFound, "unable to pick the default Jira instance")
 }
 
@@ -367,11 +368,6 @@ func (p *Plugin) httpAutocompleteUserInstance(w http.ResponseWriter, r *http.Req
 			Item: info.User.DefaultInstanceID.String(),
 		})
 	}
-
-	instances, err := p.instanceStore.LoadInstances()
-	if err != nil {
-		return p.responsef(header, "Failed to load instances. Error: %v.", err)
-	}
 	for _, instanceID := range info.User.ConnectedInstances.IDs() {
 		if instanceID != info.User.DefaultInstanceID {
 			id := instances.getAlias(instanceID)
@@ -405,11 +401,6 @@ func (p *Plugin) httpAutocompleteInstalledInstanceWithAlias(w http.ResponseWrite
 	if info.User == nil {
 		return respondJSON(w, out)
 	}
-
-	instances, err := p.instanceStore.LoadInstances()
-	if err != nil {
-		return p.responsef(header, "Failed to load instances. Error: %v.", err)
-	}
 	for _, instanceID := range info.Instances.IDs() {
 		item := instances.getAlias(instanceID)
 		if item == "" {
@@ -418,7 +409,7 @@ func (p *Plugin) httpAutocompleteInstalledInstanceWithAlias(w http.ResponseWrite
 		out = append(out, model.AutocompleteListItem{
 			Item: item,
 		})
-	}
+	}	
 	return respondJSON(w, out)
 }
 func (p *Plugin) httpAutocompleteInstalledInstance(w http.ResponseWriter, r *http.Request) (int, error) {
