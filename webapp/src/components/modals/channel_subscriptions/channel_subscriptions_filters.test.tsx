@@ -11,7 +11,7 @@ import {getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
 
 import ChannelSubscriptionsFilters, {Props} from './channel_subscriptions_filters';
 
-describe('components/ChannelSettingsFilters', () => {
+describe('components/ChannelSubscriptionsFilters', () => {
     const field = {
         hasDefaultValue: false,
         key: 'priority',

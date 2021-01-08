@@ -12,7 +12,7 @@ import JiraEpicSelector from 'components/jira_epic_selector';
 
 import ChannelSubscriptionsFilter, {Props} from './channel_subscriptions_filter';
 
-describe('components/ChannelSettingsFilter', () => {
+describe('components/ChannelSubscriptionsFilter', () => {
     const fields = getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key]);
     const baseProps: Props = {
         theme: {},
