@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`components/EditChannelSettings should match snapshot 1`] = `
+exports[`components/EditChannelSubscriptions should match snapshot 1`] = `
 <form
   role="form"
 >
@@ -139,7 +139,7 @@ exports[`components/EditChannelSettings should match snapshot 1`] = `
 </form>
 `;
 
-exports[`components/EditChannelSettings should match snapshot after fetching issue metadata 1`] = `
+exports[`components/EditChannelSubscriptions should match snapshot after fetching issue metadata 1`] = `
 <form
   role="form"
 >
@@ -491,7 +491,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
           ]
         }
       />
-      <ChannelSettingsFilters
+      <ChannelSubscriptionsFilters
         addValidate={[Function]}
         chosenIssueTypes={
           Array [
@@ -3676,7 +3676,7 @@ exports[`components/EditChannelSettings should match snapshot after fetching iss
 </form>
 `;
 
-exports[`components/EditChannelSettings should match snapshot with no issue metadata 1`] = `
+exports[`components/EditChannelSubscriptions should match snapshot with no issue metadata 1`] = `
 <form
   role="form"
 >
@@ -3815,7 +3815,7 @@ exports[`components/EditChannelSettings should match snapshot with no issue meta
 </form>
 `;
 
-exports[`components/EditChannelSettings should match snapshot with no subscriptions 1`] = `
+exports[`components/EditChannelSubscriptions should match snapshot with no subscriptions 1`] = `
 <form
   role="form"
 >
@@ -3938,7 +3938,7 @@ exports[`components/EditChannelSettings should match snapshot with no subscripti
 </form>
 `;
 
-exports[`components/EditChannelSettings should produce subscription error when add conflicting issue type 1`] = `
+exports[`components/EditChannelSubscriptions should produce subscription error when add conflicting issue type 1`] = `
 <form
   role="form"
 >
