@@ -7,7 +7,7 @@ import {ChannelSubscription, AllProjectMetadata} from 'types/model';
 
 import BackIcon from '../full_screen_modal/back_icon';
 
-import EditChannelSettings from './edit_channel_settings';
+import EditChannelSubscriptions from './edit_channel_subscriptions';
 import SelectChannelSubscription from './select_channel_subscription';
 import {SharedProps} from './shared_props';
 
@@ -20,7 +20,7 @@ type Props = SharedProps & {
     allProjectMetadata: AllProjectMetadata | null;
 }
 
-export default class ChannelSettingsModalInner extends React.PureComponent<Props, State> {
+export default class ChannelSubscriptionsModalInner extends React.PureComponent<Props, State> {
     state = {
         creatingSubscription: false,
         selectedSubscription: null,
@@ -51,7 +51,7 @@ export default class ChannelSettingsModalInner extends React.PureComponent<Props
         let form;
         if (selectedSubscription || creatingSubscription) {
             form = (
-                <EditChannelSettings
+                <EditChannelSubscriptions
                     {...this.props}
                     finishEditSubscription={this.finishEditSubscription}
                     selectedSubscription={selectedSubscription}
