@@ -10,7 +10,7 @@ import FullScreenModal from '../full_screen_modal/full_screen_modal';
 import ChannelSubscriptionsModalInner from './channel_subscriptions_internal';
 import {SharedProps} from './shared_props';
 
-import './channel_settings_modal.scss';
+import './channel_subscriptions_modal.scss';
 
 export type Props = SharedProps;
 
