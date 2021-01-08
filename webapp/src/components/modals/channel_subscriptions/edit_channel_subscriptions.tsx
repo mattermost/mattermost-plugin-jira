@@ -23,7 +23,7 @@ import {
 
 import {ChannelSubscription, ChannelSubscriptionFilters, ReactSelectOption, FilterValue, IssueMetadata} from 'types/model';
 
-import ChannelSettingsFilters from './channel_settings_filters';
+import ChannelSubscriptionsFilters from './channel_subscriptions_filters';
 import {SharedProps} from './shared_props';
 
 const JiraEventOptions: ReactSelectOption[] = [
@@ -71,7 +71,7 @@ export type State = {
     conflictingError: string | null;
 };
 
-export default class EditChannelSettings extends PureComponent<Props, State> {
+export default class EditChannelSubscriptions extends PureComponent<Props, State> {
     private validator: Validator;
 
     constructor(props: Props) {
@@ -382,7 +382,7 @@ export default class EditChannelSettings extends PureComponent<Props, State> {
                             removeValidate={this.validator.removeComponent}
                         />
                         {conflictingErrorComponent}
-                        <ChannelSettingsFilters
+                        <ChannelSubscriptionsFilters
                             fields={filterFields}
                             values={this.state.filters.fields}
                             chosenIssueTypes={this.state.filters.issue_types}
