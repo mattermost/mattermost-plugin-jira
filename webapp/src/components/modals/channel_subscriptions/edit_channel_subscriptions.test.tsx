@@ -99,7 +99,7 @@ describe('components/EditChannelSubscriptions', () => {
     test('should match snapshot with no subscriptions', () => {
         const props = {...baseProps, channelSubscriptions: [], selectedSubscription: null};
         const wrapper = shallow<EditChannelSubscriptions>(
-            <EditChannelubscriptions {...props}/>
+            <EditChannelSubscriptions {...props}/>
         );
         wrapper.setState(baseState);
         expect(wrapper).toMatchSnapshot();
