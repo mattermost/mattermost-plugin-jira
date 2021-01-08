@@ -10,7 +10,7 @@ import {FilterFieldInclusion, IssueMetadata, FilterField} from 'types/model';
 import {getCustomFieldFiltersForProjects, isEpicLinkField} from 'utils/jira_issue_metadata';
 import JiraEpicSelector from 'components/jira_epic_selector';
 
-import ChannelSettingsFilter, {Props} from './channel_settings_filter';
+import ChannelSubscriptionsFilter, {Props} from './channel_subscriptions_filter';
 
 describe('components/ChannelSettingsFilter', () => {
     const fields = getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key]);
@@ -34,16 +34,16 @@ describe('components/ChannelSettingsFilter', () => {
 
     test('should match snapshot', () => {
         const props = {...baseProps, issueMetadata: {}};
-        const wrapper = shallow<ChannelSettingsFilter>(
-            <ChannelSettingsFilter {...props}/>
+        const wrapper = shallow<ChannelSubscriptionsFilter>(
+            <ChannelSubscriptionsFilter {...props}/>
         );
         expect(wrapper).toMatchSnapshot();
     });
 
     test('should render JiraEpicSelector when Epic Link field is selected', () => {
         const props = {...baseProps};
-        const wrapper = shallow<ChannelSettingsFilter>(
-            <ChannelSettingsFilter {...props}/>
+        const wrapper = shallow<ChannelSubscriptionsFilter>(
+            <ChannelSubscriptionsFilter {...props}/>
         );
 
         expect(wrapper.find(JiraEpicSelector).length).toBe(0);
@@ -59,8 +59,8 @@ describe('components/ChannelSettingsFilter', () => {
     test('should render correct inclusion captions for different include choices', () => {
         const props = {...baseProps};
 
-        const wrapper = shallow<ChannelSettingsFilter>(
-            <ChannelSettingsFilter {...props}/>
+        const wrapper = shallow<ChannelSubscriptionsFilter>(
+            <ChannelSubscriptionsFilter {...props}/>
         );
 
         const select = wrapper.find('ReactSelectSetting[name="inclusion"]');
@@ -94,8 +94,8 @@ describe('components/ChannelSettingsFilter', () => {
                 issueTypes: [{id: '10002', name: 'Task'}],
             },
         };
-        const wrapper = shallow<ChannelSettingsFilter>(
-            <ChannelSettingsFilter {...props}/>
+        const wrapper = shallow<ChannelSubscriptionsFilter>(
+            <ChannelSubscriptionsFilter {...props}/>
         );
 
         let result;
