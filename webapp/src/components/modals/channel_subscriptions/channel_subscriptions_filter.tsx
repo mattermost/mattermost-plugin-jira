@@ -344,7 +344,7 @@ type EmptyChannelSubscriptionFilterProps = {
     cancelAdd: () => void;
 };
 
-export function EmptyChannelSubscriptionsFilter(props: EmptyChannelSubscriptionsFilterProps): JSX.Element {
+export function EmptyChannelSubscriptionFilter(props: EmptyChannelSubscriptionFilterProps): JSX.Element {
     const handleFieldTypeChange = (name: string, choice: string): void => {
         const {onChange} = props;
 
