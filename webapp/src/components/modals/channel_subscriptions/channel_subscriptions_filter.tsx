@@ -335,7 +335,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
     }
 }
 
-type EmptyChannelSubscriptionsFilterProps = {
+type EmptyChannelSubscriptionFilterProps = {
     fields: FilterField[];
     theme: object;
     chosenIssueTypes: string[];
