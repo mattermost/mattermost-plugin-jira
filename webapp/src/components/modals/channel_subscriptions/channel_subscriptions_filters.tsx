@@ -22,7 +22,7 @@ type State = {
     showCreateRow: boolean;
 };
 
-export default class ChannelSubscriptionsFilters extends React.PureComponent<Props, State> {
+export default class ChannelSubscriptionFilters extends React.PureComponent<Props, State> {
     state = {
         showCreateRow: false,
     };
