@@ -71,7 +71,7 @@ export type State = {
     conflictingError: string | null;
 };
 
-export default class EditChannelSubscriptions extends PureComponent<Props, State> {
+export default class EditChannelSubscription extends PureComponent<Props, State> {
     private validator: Validator;
 
     constructor(props: Props) {
