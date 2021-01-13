@@ -9,9 +9,9 @@ import {useFieldForIssueMetadata} from 'testdata/jira-issue-metadata-helpers';
 import {FilterFieldInclusion} from 'types/model';
 import {getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
 
-import ChannelSubscriptionsFilters, {Props} from './channel_subscriptions_filters';
+import ChannelSubscriptionFilters, {Props} from './channel_subscriptions_filters';
 
-describe('components/ChannelSubscriptionsFilters', () => {
+describe('components/ChannelSubscriptionFilters', () => {
     const field = {
         hasDefaultValue: false,
         key: 'priority',
@@ -62,8 +62,8 @@ describe('components/ChannelSubscriptionsFilters', () => {
 
     test('should match snapshot', () => {
         const props = {...baseProps};
-        const wrapper = shallow<ChannelSubscriptionsFilters>(
-            <ChannelSubscriptionsFilters {...props}/>
+        const wrapper = shallow<ChannelSubscriptionFilters>(
+            <ChannelSubscriptionFilters {...props}/>
         );
 
         wrapper.setState({showCreateRow: true});
