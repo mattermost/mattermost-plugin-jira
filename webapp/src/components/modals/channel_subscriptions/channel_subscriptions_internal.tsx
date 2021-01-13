@@ -7,7 +7,7 @@ import {ChannelSubscription, AllProjectMetadata} from 'types/model';
 
 import BackIcon from '../full_screen_modal/back_icon';
 
-import EditChannelSubscriptions from './edit_channel_subscriptions';
+import EditChannelSubscription from './edit_channel_subscriptions';
 import SelectChannelSubscription from './select_channel_subscription';
 import {SharedProps} from './shared_props';
 
@@ -51,7 +51,7 @@ export default class ChannelSubscriptionsModalInner extends React.PureComponent<
         let form;
         if (selectedSubscription || creatingSubscription) {
             form = (
-                <EditChannelSubscriptions
+                <EditChannelSubscription
                     {...this.props}
                     finishEditSubscription={this.finishEditSubscription}
                     selectedSubscription={selectedSubscription}
