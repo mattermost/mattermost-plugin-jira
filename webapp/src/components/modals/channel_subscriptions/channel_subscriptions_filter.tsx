@@ -26,7 +26,7 @@ export type State = {
     error: string | null;
 }
 
-export default class ChannelSubscriptionsFilter extends React.PureComponent<Props, State> {
+export default class ChannelSubscriptionFilter extends React.PureComponent<Props, State> {
     state = {
         showConfirmDeleteModal: false,
         error: null,
