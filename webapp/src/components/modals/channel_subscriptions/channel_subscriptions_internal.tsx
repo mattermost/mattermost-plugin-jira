@@ -7,7 +7,7 @@ import {ChannelSubscription, AllProjectMetadata} from 'types/model';
 
 import BackIcon from '../full_screen_modal/back_icon';
 
-import EditChannelSubscription from './edit_channel_subscriptions';
+import EditChannelSubscription from './edit_channel_subscription';
 import SelectChannelSubscription from './select_channel_subscription';
 import {SharedProps} from './shared_props';
 
