@@ -22,6 +22,11 @@ const (
 	commentCreated = "comment_created"
 )
 
+const (
+	recipientTypeAssignee = "assignee"
+	recipientTypeReporter = "reporter"
+)
+
 type Webhook interface {
 	Events() StringSet
 	PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID string) (*model.Post, int, error)
@@ -51,6 +56,7 @@ type webhookUserNotification struct {
 	message       string
 	postType      string
 	commentSelf   string
+	recipientType string
 }
 
 func (wh *webhook) Events() StringSet {
@@ -149,7 +155,7 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 
 		notification.message = p.replaceJiraAccountIds(instance.GetID(), notification.message)
 
-		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType)
+		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType, notification.recipientType)
 		if err != nil {
 			p.errorf("PostNotifications: failed to create notification post, err: %v", err)
 			continue

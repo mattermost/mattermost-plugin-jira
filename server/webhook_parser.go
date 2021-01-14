@@ -306,6 +306,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 			message:       commentMessage,
 			postType:      PostTypeComment,
 			commentSelf:   jwh.Comment.Self,
+			recipientType: recipientTypeAssignee,
 		})
 	}
 	if !reporterMentioned && shouldSendNotification(jwh.Issue.Fields.Reporter, jwh.User.Name, jwh.Comment.UpdateAuthor.AccountID) {
@@ -315,6 +316,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 			message:       commentMessage,
 			postType:      PostTypeComment,
 			commentSelf:   jwh.Comment.Self,
+			recipientType: recipientTypeReporter,
 		})
 	}
 }

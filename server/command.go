@@ -592,6 +592,10 @@ func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 		return p.responsef(header, "Current settings:\n%s", conn.Settings.String())
 	case "notifications":
 		return p.settingsNotifications(header, instance.GetID(), user.MattermostUserID, conn, args)
+	case "send_notifications_for_assigned":
+		return p.settingsSendNotificationsForAssigned(header, instance.GetID(), user.MattermostUserID, conn, args)
+	case "send_notifications_for_reporter":
+		return p.settingsSendNotificationsForReporter(header, instance.GetID(), user.MattermostUserID, conn, args)
 	default:
 		return p.responsef(header, "Unknown setting.")
 	}

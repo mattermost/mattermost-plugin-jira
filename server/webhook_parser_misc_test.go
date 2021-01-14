@@ -149,11 +149,13 @@ func TestNotificationsIssueCommentCreatedEdited(t *testing.T) {
 					jiraUsername:  "assignee",
 					jiraAccountID: "assignee123",
 					postType:      PostTypeComment,
+					recipientType: recipientTypeAssignee,
 				},
 				{
 					jiraUsername:  "reporter",
 					jiraAccountID: "reporter123",
 					postType:      PostTypeComment,
+					recipientType: recipientTypeReporter,
 				},
 			},
 		},
@@ -185,11 +187,13 @@ func TestNotificationsIssueCommentCreatedEdited(t *testing.T) {
 					jiraUsername:  "assignee",
 					jiraAccountID: "assignee123",
 					postType:      PostTypeComment,
+					recipientType: recipientTypeAssignee,
 				},
 				{
 					jiraUsername:  "reporter",
 					jiraAccountID: "reporter123",
 					postType:      PostTypeComment,
+					recipientType: recipientTypeReporter,
 				},
 			},
 		},
@@ -234,6 +238,7 @@ func TestNotificationsIssueCommentCreatedEdited(t *testing.T) {
 				require.Equal(t, tc.expectedNotifs[i].jiraUsername, w.notifications[i].jiraUsername)
 				require.Equal(t, tc.expectedNotifs[i].jiraAccountID, w.notifications[i].jiraAccountID)
 				require.Equal(t, tc.expectedNotifs[i].postType, w.notifications[i].postType)
+				require.Equal(t, tc.expectedNotifs[i].recipientType, w.notifications[i].recipientType)
 			}
 		})
 	}
