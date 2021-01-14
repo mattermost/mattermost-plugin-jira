@@ -10,7 +10,7 @@ import {FilterFieldInclusion, IssueMetadata, FilterField} from 'types/model';
 import {getCustomFieldFiltersForProjects, isEpicLinkField} from 'utils/jira_issue_metadata';
 import JiraEpicSelector from 'components/jira_epic_selector';
 
-import ChannelSubscriptionFilter, {Props} from './channel_subscriptions_filter';
+import ChannelSubscriptionFilter, {Props} from './channel_subscription_filter';
 
 describe('components/ChannelSubscriptionFilter', () => {
     const fields = getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key]);

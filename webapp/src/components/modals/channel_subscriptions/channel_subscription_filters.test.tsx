@@ -9,7 +9,7 @@ import {useFieldForIssueMetadata} from 'testdata/jira-issue-metadata-helpers';
 import {FilterFieldInclusion} from 'types/model';
 import {getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
 
-import ChannelSubscriptionFilters, {Props} from './channel_subscriptions_filters';
+import ChannelSubscriptionFilters, {Props} from './channel_subscription_filters';
 
 describe('components/ChannelSubscriptionFilters', () => {
     const field = {

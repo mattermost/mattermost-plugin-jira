@@ -491,7 +491,7 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
           ]
         }
       />
-      <ChannelSubscriptionsFilters
+      <ChannelSubscriptionFilters
         addValidate={[Function]}
         chosenIssueTypes={
           Array [

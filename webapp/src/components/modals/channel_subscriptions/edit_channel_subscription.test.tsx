@@ -14,7 +14,7 @@ import testChannel from 'testdata/channel.json';
 
 import {IssueMetadata, ProjectMetadata, FilterFieldInclusion} from 'types/model';
 
-import EditChannelSubscription from './edit_channel_subscriptions';
+import EditChannelSubscription from './edit_channel_subscription';
 
 describe('components/EditChannelSubscription', () => {
     const baseActions = {

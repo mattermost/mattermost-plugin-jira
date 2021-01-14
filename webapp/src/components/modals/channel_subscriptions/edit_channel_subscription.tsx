@@ -21,9 +21,9 @@ import {
     getIssueTypes,
 } from 'utils/jira_issue_metadata';
 
-import {ChannelSubscription, ChannelSubscriptionFilters, ReactSelectOption, FilterValue, IssueMetadata} from 'types/model';
+import {ChannelSubscription, ChannelSubscriptionFilters as ChannelSubscriptionFiltersModel, ReactSelectOption, FilterValue, IssueMetadata} from 'types/model';
 
-import ChannelSubscriptionsFilters from './channel_subscriptions_filters';
+import ChannelSubscriptionFilters from './channel_subscription_filters';
 import {SharedProps} from './shared_props';
 
 const JiraEventOptions: ReactSelectOption[] = [
@@ -59,7 +59,7 @@ export type Props = SharedProps & {
 };
 
 export type State = {
-    filters: ChannelSubscriptionFilters;
+    filters: ChannelSubscriptionFiltersModel;
     instanceID: string;
     fetchingIssueMetadata: boolean;
     jiraIssueMetadata: IssueMetadata | null;
@@ -77,7 +77,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
     constructor(props: Props) {
         super(props);
 
-        let filters: ChannelSubscriptionFilters = {
+        let filters: ChannelSubscriptionFiltersModel = {
             events: [],
             projects: [],
             issue_types: [],
@@ -155,7 +155,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         this.setState({showConfirmModal: true});
     };
 
-    handleSettingChange = (id: keyof ChannelSubscriptionFilters, value: string[]) => {
+    handleSettingChange = (id: keyof ChannelSubscriptionFiltersModel, value: string[]) => {
         let finalValue = value;
         if (!finalValue) {
             finalValue = [];
@@ -172,7 +172,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         this.setState({conflictingError: null});
     }
 
-    handleIssueChange = (id: keyof ChannelSubscriptionFilters, value: string[] | null) => {
+    handleIssueChange = (id: keyof ChannelSubscriptionFiltersModel, value: string[] | null) => {
         const finalValue = value || [];
         const filters = {...this.state.filters, issue_types: finalValue};
 
@@ -382,7 +382,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                             removeValidate={this.validator.removeComponent}
                         />
                         {conflictingErrorComponent}
-                        <ChannelSubscriptionsFilters
+                        <ChannelSubscriptionFilters
                             fields={filterFields}
                             values={this.state.filters.fields}
                             chosenIssueTypes={this.state.filters.issue_types}

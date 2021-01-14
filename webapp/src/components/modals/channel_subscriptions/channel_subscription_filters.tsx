@@ -4,7 +4,7 @@ import {FilterField, FilterValue, IssueMetadata, FilterFieldInclusion} from 'typ
 
 import {getConflictingFields} from 'utils/jira_issue_metadata';
 
-import ChannelSubscriptionFilter, {EmptyChannelSubscriptionFilter} from './channel_subscriptions_filter';
+import ChannelSubscriptionFilter, {EmptyChannelSubscriptionFilter} from './channel_subscription_filter';
 
 export type Props = {
     fields: FilterField[];
