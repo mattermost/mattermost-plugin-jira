@@ -368,7 +368,7 @@ func (p *Plugin) httpAutocompleteUserInstance(w http.ResponseWriter, r *http.Req
 	}
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "failed to load instances"))
 	}
 
 	for _, instanceID := range info.User.ConnectedInstances.IDs() {
