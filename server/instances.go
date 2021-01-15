@@ -297,7 +297,7 @@ func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.I
 
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to load instances")
 	}
 	instance := instances.getByAlias(instanceURL)
 	if instance != nil {
