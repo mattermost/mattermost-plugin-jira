@@ -407,7 +407,7 @@ func (p *Plugin) httpAutocompleteInstalledInstanceWithAlias(w http.ResponseWrite
 
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "failed to load instances"))
 	}
 
 	for _, instanceID := range info.Instances.IDs() {
