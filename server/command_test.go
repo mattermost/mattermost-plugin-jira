@@ -10,14 +10,13 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
-	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -223,18 +222,7 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 	api := &plugintest.API{}
 	api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
-	api.On("LogDebug",
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string")).Return(nil)
+	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 	api.On("KVSet", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
 	api.On("KVSetWithExpiry", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
 	api.On("KVGet", keyInstances).Return(nil, nil)
@@ -319,6 +307,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 
 			api.On("GetLicense").Return(&license)
 			api.On("RegisterCommand", mock.Anything).Return(nil)
+			api.On("GetBundlePath").Return("", nil)
 			api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
 				isSendEphemeralPostCalled = true
 
@@ -326,6 +315,10 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 				actual := strings.TrimSpace(post.Message)
 				assert.True(t, strings.HasPrefix(actual, tt.expectedMsgPrefix), "Expected returned message to start with: \n%s\nActual:\n%s", tt.expectedMsgPrefix, actual)
 			}).Once().Return(&model.Post{})
+
+			path, err := filepath.Abs("..")
+			require.Nil(t, err)
+			api.On("GetBundlePath").Return(path, nil)
 
 			p.SetAPI(api)
 			_, filename, _, _ := runtime.Caller(0)

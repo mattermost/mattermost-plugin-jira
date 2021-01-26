@@ -75,6 +75,43 @@ func (instances Instances) SetV2Legacy(instanceID types.ID) error {
 	return nil
 }
 
+// getAlias returns the instance alias if it exists
+func (instances Instances) getAlias(instanceID types.ID) string {
+	for _, id := range instances.IDs() {
+		instance := instances.Get(id)
+		if instance.Common().InstanceID == instanceID {
+			return instance.Common().Alias
+		}
+	}
+	return ""
+}
+
+// getByAlias returns an instance with the requested alias
+func (instances Instances) getByAlias(alias string) (instance *InstanceCommon) {
+	if alias == "" {
+		return nil
+	}
+	for _, id := range instances.IDs() {
+		instance := instances.Get(id)
+		if instance.Common().Alias == alias {
+			return instance
+		}
+	}
+	return nil
+}
+
+// isAliasUnique returns true if no other instance has the requested alias
+func (instances Instances) isAliasUnique(instanceID types.ID, alias string) (bool, types.ID) {
+	for _, id := range instances.IDs() {
+		instance := instances.Get(id)
+		if instance.Common().Alias == alias && instance.Common().InstanceID != instanceID {
+			return false, instance.Common().InstanceID
+		}
+	}
+
+	return true, ""
+}
+
 type instancesArray []*InstanceCommon
 
 func (p instancesArray) Len() int                   { return len(p) }
@@ -96,7 +133,7 @@ func (p *Plugin) InstallInstance(instance Instance) error {
 		func(instances *Instances) error {
 			if !p.enterpriseChecker.HasEnterpriseFeatures() {
 				if instances != nil && len(instances.IDs()) > 0 {
-					return errors.Errorf("You need an Enterprise License to install multiple Jira instances")
+					return errors.Errorf("You need a valid Mattermost Enterprise E20 License to install multiple Jira instances")
 				}
 			}
 
@@ -258,6 +295,15 @@ func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.I
 		}
 	}
 
+	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load instances")
+	}
+	instance := instances.getByAlias(instanceURL)
+	if instance != nil {
+		instanceURL = instance.InstanceID.String()
+	}
+
 	if types.ID(instanceURL) != "" {
 		return types.ID(instanceURL), nil
 	}
@@ -267,7 +313,6 @@ func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.I
 	if user.ConnectedInstances.Len() == 1 {
 		return user.ConnectedInstances.IDs()[0], nil
 	}
-
 	return "", errors.Wrap(kvstore.ErrNotFound, "unable to pick the default Jira instance")
 }
 
@@ -281,7 +326,7 @@ func (p *Plugin) httpAutocompleteConnect(w http.ResponseWriter, r *http.Request)
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	info, err := p.GetUserInfo(mattermostUserID)
+	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -305,7 +350,7 @@ func (p *Plugin) httpAutocompleteUserInstance(w http.ResponseWriter, r *http.Req
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	info, err := p.GetUserInfo(mattermostUserID)
+	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -321,17 +366,61 @@ func (p *Plugin) httpAutocompleteUserInstance(w http.ResponseWriter, r *http.Req
 			Item: info.User.DefaultInstanceID.String(),
 		})
 	}
+	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "failed to load instances"))
+	}
 
 	for _, instanceID := range info.User.ConnectedInstances.IDs() {
 		if instanceID != info.User.DefaultInstanceID {
+			id := instances.getAlias(instanceID)
+			if id == "" {
+				id = instanceID.String()
+			}
 			out = append(out, model.AutocompleteListItem{
-				Item: instanceID.String(),
+				Item: id,
 			})
 		}
 	}
 	return respondJSON(w, out)
 }
 
+func (p *Plugin) httpAutocompleteInstalledInstanceWithAlias(w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("method "+r.Method+" is not allowed, must be GET"))
+	}
+	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-Id"))
+	if mattermostUserID == "" {
+		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
+	}
+
+	info, err := p.GetUserInfo(mattermostUserID, nil)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	out := []model.AutocompleteListItem{}
+	if info.User == nil {
+		return respondJSON(w, out)
+	}
+
+	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "failed to load instances"))
+	}
+
+	for _, instanceID := range info.Instances.IDs() {
+		item := instances.getAlias(instanceID)
+		if item == "" {
+			item = string(instanceID)
+		}
+		out = append(out, model.AutocompleteListItem{
+			Item: item,
+		})
+	}
+	return respondJSON(w, out)
+}
 func (p *Plugin) httpAutocompleteInstalledInstance(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return respondErr(w, http.StatusMethodNotAllowed,
@@ -342,7 +431,7 @@ func (p *Plugin) httpAutocompleteInstalledInstance(w http.ResponseWriter, r *htt
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	info, err := p.GetUserInfo(mattermostUserID)
+	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}

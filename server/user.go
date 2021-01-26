@@ -86,9 +86,13 @@ func (p *Plugin) httpUserConnect(w http.ResponseWriter, r *http.Request, instanc
 			errors.New("You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect."))
 	}
 
-	redirectURL, err := instance.GetUserConnectURL(mattermostUserId)
+	redirectURL, cookie, err := instance.GetUserConnectURL(mattermostUserId)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	if cookie != nil {
+		http.SetCookie(w, cookie)
 	}
 
 	http.Redirect(w, r, redirectURL, http.StatusFound)
@@ -194,12 +198,12 @@ func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, proje
 		}
 	}
 
-	info, err := p.GetUserInfo(types.ID(mattermostUserID))
+	info, err := p.GetUserInfo(types.ID(mattermostUserID), user)
 	if err != nil {
 		return
 	}
 
-	p.API.PublishWebSocketEvent(websocketEventConnect, info.AsConfigMap(),
+	p.API.PublishWebSocketEvent(websocketEventUpdateDefaults, info.AsConfigMap(),
 		&model.WebsocketBroadcast{UserId: mattermostUserID.String()},
 	)
 }
@@ -242,7 +246,7 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, conne
 		return err
 	}
 
-	info, err := p.GetUserInfo(types.ID(mattermostUserID))
+	info, err := p.GetUserInfo(types.ID(mattermostUserID), user)
 	if err != nil {
 		return err
 	}
@@ -288,7 +292,7 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 		return nil, err
 	}
 
-	info, err := p.GetUserInfo(types.ID(user.MattermostUserID))
+	info, err := p.GetUserInfo(types.ID(user.MattermostUserID), user)
 	if err != nil {
 		return nil, err
 	}

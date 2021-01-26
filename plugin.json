@@ -4,9 +4,10 @@
   "description": "Atlassian Jira plugin for Mattermost.",
   "homepage_url": "https://github.com/mattermost/mattermost-plugin-jira",
   "support_url": "https://github.com/mattermost/mattermost-plugin-jira/issues",
+  "release_notes_url": "https://github.com/mattermost/mattermost-plugin-jira/releases/tag/v3.0.0",
   "icon_path": "assets/icon.svg",
-  "version": "3.0.0-beta2.1",
-  "min_server_version": "5.24.0",
+  "version": "3.0.0",
+  "min_server_version": "5.26.0",
   "server": {
     "executables": {
       "linux-amd64": "server/dist/plugin-linux-amd64",
@@ -21,28 +22,28 @@
     "settings": [
       {
         "key": "EnableJiraUI",
-        "display_name": "Allow users to attach and create Jira issues in Mattermost",
+        "display_name": "Allow users to attach and create Jira issues in Mattermost:",
         "type": "bool",
-        "help_text": "When false, users cannot attach and create Jira issues in Mattermost. Does not affect Jira webhook notifications. After changing this setting to false, disable, then re-enable this plugin in **System Console > Plugins > Plugin Management** to reset the plugin state for all users. \n \n When true, install this plugin to your Jira instance with '/jira install’ to allow users to create and manage issues across Mattermost channels. See [documentation](https://about.mattermost.com/default-jira-plugin-link-application) to learn more.",
+        "help_text": "When **false**, users cannot attach and create Jira issues in Mattermost. Does not affect Jira webhook notifications. Select **false** then disable and re-enable this plugin in **System Console > Plugins > Plugin Management** to reset the plugin state for all users. \n \n When **true**, install this plugin to your Jira instance with `/jira install` to allow users to create and manage issues across Mattermost channels. See [documentation](https://about.mattermost.com/default-jira-plugin-link-application) to learn more.",
         "default": true
       },
       {
         "key": "Secret",
-        "display_name": "Webhook Secret",
+        "display_name": "Webhook Secret:",
         "type": "generated",
         "help_text": "The secret used to authenticate the webhook to Mattermost.",
         "regenerate_help_text": "Regenerates the secret for the webhook URL endpoint. Regenerating the secret invalidates your existing Jira integrations."
       },
       {
         "key": "StatsSecret",
-        "display_name": "Stats API Secret",
+        "display_name": "Stats API Secret:",
         "type": "generated",
         "help_text": "The secret used to access plugin's stats API.",
         "regenerate_help_text": "Regenerates the secret for the stats API endpoint. Regenerating the secret invalidates your existing stats API clients."
       },
       {
         "key": "RolesAllowedToEditJiraSubscriptions",
-        "display_name": "Mattermost Roles Allowed to Edit Jira Subscriptions",
+        "display_name": "Mattermost Roles Allowed to Edit Jira Subscriptions:",
         "type": "radio",
         "help_text": "Mattermost users who can subscribe channels to Jira tickets.",
         "default": "system_admin",
@@ -67,16 +68,16 @@
       },
       {
         "key": "GroupsAllowedToEditJiraSubscriptions",
-        "display_name": "Jira Groups Allowed to Edit Jira Subscriptions",
+        "display_name": "Jira Groups Allowed to Edit Jira Subscriptions:",
         "type": "text",
-        "help_text": "Comma separated list of Group Names. List the Jira user groups who can create subscriptions. If none are specified, any Jira user can create a subscription.",
+        "help_text": "Comma separated list of Group Names. List the Jira user groups who can create subscriptions. If none are specified, any Jira user can create a subscription. Jira groups restrictions are only applicable for a legacy instance installed on Jira 2.4 or earlier.",
         "default": ""
       },
       {
         "key": "JiraAdminAdditionalHelpText",
-        "display_name": "Additional Help Text to be shown with Jira Help",
+        "display_name": "Additional Help Text to be shown with Jira Help:",
         "type": "text",
-        "help_text": "Additional Help Text to be shown to the user along with the output of `/jira help` command",
+        "help_text": "Additional Help Text to be shown to the user along with the output of `/jira help` command.",
         "default": ""
       },
       {
@@ -88,13 +89,13 @@
       },
       {
         "key": "EnableAutocomplete",
-        "display_name": "Enable slash command autocomplete",
+        "display_name": "Enable slash command autocomplete:",
         "type": "bool",
-        "help_text": "Autocomplete guides users through the available `/jira` slash commands",
+        "help_text": "Autocomplete guides users through the available `/jira` slash commands.",
         "default": true
       }
     ],
     "header": "Please refer to the `/jira` command [**documentation**](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) to further configure the Jira plugin.",
-    "footer": "Please refer to the `/jira` command [**documentation**](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) to further configure the Jira plugin. Specifically, [`/jira instance [un-]install`](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) and [`/jira webhook`](https://mattermost.gitbook.io/plugin-jira/setup/configuration#step-4-required-setup-webhooks-from-jira)"
+    "footer": "Please refer to the `/jira` command [**documentation**](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) to further configure the Jira plugin. Specifically, [`/jira instance [un-]install`](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) and [`/jira webhook`](https://mattermost.gitbook.io/plugin-jira/setup/configuration#step-4-required-setup-webhooks-from-jira)."
   }
 }

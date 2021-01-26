@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -55,8 +56,8 @@ func (ti testInstance) GetMattermostKey() string {
 func (ti testInstance) GetDisplayDetails() map[string]string {
 	return map[string]string{}
 }
-func (ti testInstance) GetUserConnectURL(mattermostUserId string) (string, error) {
-	return fmt.Sprintf("%s/UserConnectURL.some", ti.GetURL()), nil
+func (ti testInstance) GetUserConnectURL(mattermostUserId string) (string, *http.Cookie, error) {
+	return fmt.Sprintf("%s/UserConnectURL.some", ti.GetURL()), nil, nil
 }
 func (ti testInstance) GetClient(*Connection) (Client, error) {
 	return testClient{}, nil

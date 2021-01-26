@@ -159,6 +159,7 @@ export enum InstanceType {
     SERVER = 'server',
 }
 export type Instance = {
+    alias?: string;
     instance_id: string;
     type: InstanceType;
 }

@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/dghubble/oauth1"
@@ -55,7 +56,7 @@ func (si *serverInstance) GetDisplayDetails() map[string]string {
 	}
 }
 
-func (si *serverInstance) GetUserConnectURL(mattermostUserId string) (returnURL string, returnErr error) {
+func (si *serverInstance) GetUserConnectURL(mattermostUserId string) (returnURL string, cookie *http.Cookie, returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
@@ -66,21 +67,21 @@ func (si *serverInstance) GetUserConnectURL(mattermostUserId string) (returnURL 
 	oauth1Config := si.getOAuth1Config()
 	token, secret, err := oauth1Config.RequestToken()
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	err = si.Plugin.otsStore.StoreOauth1aTemporaryCredentials(mattermostUserId,
 		&OAuth1aTemporaryCredentials{Token: token, Secret: secret})
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	authURL, err := oauth1Config.AuthorizationURL(token)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
-	return authURL.String(), nil
+	return authURL.String(), nil, nil
 }
 
 func (si *serverInstance) GetClient(connection *Connection) (client Client, returnErr error) {

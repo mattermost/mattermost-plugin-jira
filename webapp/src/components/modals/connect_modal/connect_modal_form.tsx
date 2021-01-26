@@ -71,7 +71,7 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
         const {selectedInstance} = this.state;
 
         const options: ReactSelectOption[] = this.props.installedInstances.map((instance: Instance) => (
-            {label: instance.instance_id, value: instance.instance_id}
+            {label: instance.alias || instance.instance_id, value: instance.instance_id}
         ));
         const instanceSelector = (
             <ReactSelectSetting
