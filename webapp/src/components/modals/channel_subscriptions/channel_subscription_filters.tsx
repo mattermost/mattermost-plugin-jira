@@ -4,7 +4,7 @@ import {FilterField, FilterValue, IssueMetadata, FilterFieldInclusion} from 'typ
 
 import {getConflictingFields} from 'utils/jira_issue_metadata';
 
-import ChannelSettingsFilter, {EmptyChannelSettingsFilter} from './channel_settings_filter';
+import ChannelSubscriptionFilter, {EmptyChannelSubscriptionFilter} from './channel_subscription_filter';
 
 export type Props = {
     fields: FilterField[];
@@ -22,7 +22,7 @@ type State = {
     showCreateRow: boolean;
 };
 
-export default class ChannelSettingsFilters extends React.PureComponent<Props, State> {
+export default class ChannelSubscriptionFilters extends React.PureComponent<Props, State> {
     state = {
         showCreateRow: false,
     };
@@ -92,7 +92,7 @@ export default class ChannelSettingsFilters extends React.PureComponent<Props, S
                         }
                         return (
                             <div key={i}>
-                                <ChannelSettingsFilter
+                                <ChannelSubscriptionFilter
                                     fields={nonConflictingFields}
                                     field={field}
                                     value={v}
@@ -110,7 +110,7 @@ export default class ChannelSettingsFilters extends React.PureComponent<Props, S
                     })}
                     {showCreateRow && (
                         <div>
-                            <EmptyChannelSettingsFilter
+                            <EmptyChannelSubscriptionFilter
                                 fields={nonConflictingFields}
                                 chosenIssueTypes={this.props.chosenIssueTypes}
                                 issueMetadata={this.props.issueMetadata}
