@@ -390,9 +390,8 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	}
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
-		return p.responsef(header, "Failed to load instances: "+err.Error())
+		return p.responsef(header, "Failed to load instances. Error: %v.", err)
 	}
-
 	instance := instances.getByAlias(jiraURL)
 	if instance != nil {
 		jiraURL = instance.InstanceID.String()
@@ -421,15 +420,14 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 	}
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
-		return p.responsef(header, "Failed to load instances: "+err.Error())
+		return p.responsef(header, "Failed to load instances. Error: %v.", err)
 	}
-
 	instance := instances.getByAlias(jiraURL)
 	if instance != nil {
 		jiraURL = instance.InstanceID.String()
 	}
 
-	info, err := p.GetUserInfo(types.ID(header.UserId))
+	info, err := p.GetUserInfo(types.ID(header.UserId), nil)
 	if err != nil {
 		return p.responsef(header, "Failed to connect: "+err.Error())
 	}
@@ -795,7 +793,7 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 	instances, _ := p.instanceStore.LoadInstances()
 	if !p.enterpriseChecker.HasEnterpriseFeatures() {
 		if instances != nil && len(instances.IDs()) > 0 {
-			return p.responsef(header, "You need an Enterprise License to install multiple Jira instances")
+			return p.responsef(header, "You need a valid Mattermost Enterprise E20 License to install multiple Jira instances")
 		}
 	}
 
@@ -990,7 +988,7 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 		return ""
 	}
 
-	info, err := p.GetUserInfo(mattermostUserID)
+	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}

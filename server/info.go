@@ -32,7 +32,7 @@ func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, e
 			errors.New("not authorized"))
 	}
 
-	info, err := p.GetUserInfo(types.ID(mattermostUserID))
+	info, err := p.GetUserInfo(types.ID(mattermostUserID), nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -40,15 +40,19 @@ func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, e
 	return respondJSON(w, info.AsConfigMap())
 }
 
-func (p *Plugin) GetUserInfo(mattermostUserID types.ID) (*UserInfo, error) {
+func (p *Plugin) GetUserInfo(mattermostUserID types.ID, user *User) (*UserInfo, error) {
+	var err error
+
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := p.MigrateV2User(mattermostUserID)
-	if err != nil {
-		return nil, err
+	if user == nil {
+		user, err = p.MigrateV2User(mattermostUserID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	isConnected := !user.ConnectedInstances.IsEmpty()

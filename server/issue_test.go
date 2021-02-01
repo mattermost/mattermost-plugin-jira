@@ -297,7 +297,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(nil, (*model.AppError)(nil))
 
-	api.On("PublishWebSocketEvent", "connect", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.WebsocketBroadcast"))
+	api.On("PublishWebSocketEvent", "update_defaults", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.WebsocketBroadcast"))
 
 	type requestStruct struct {
 		PostID      string `json:"post_id"`

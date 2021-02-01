@@ -65,6 +65,7 @@ const (
 	websocketEventInstanceStatus = "instance_status"
 	websocketEventConnect        = "connect"
 	websocketEventDisconnect     = "disconnect"
+	websocketEventUpdateDefaults = "update_defaults"
 )
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {

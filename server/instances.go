@@ -134,7 +134,7 @@ func (p *Plugin) InstallInstance(instance Instance) error {
 		func(instances *Instances) error {
 			if !p.enterpriseChecker.HasEnterpriseFeatures() {
 				if instances != nil && len(instances.IDs()) > 0 {
-					return errors.Errorf("You need an Enterprise License to install multiple Jira instances")
+					return errors.Errorf("You need a valid Mattermost Enterprise E20 License to install multiple Jira instances")
 				}
 			}
 
@@ -317,7 +317,6 @@ func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.I
 	if user.ConnectedInstances.Len() == 1 {
 		return user.ConnectedInstances.IDs()[0], nil
 	}
-
 	return "", errors.Wrap(kvstore.ErrNotFound, "unable to pick the default Jira instance")
 }
 
@@ -331,7 +330,7 @@ func (p *Plugin) httpAutocompleteConnect(w http.ResponseWriter, r *http.Request)
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	info, err := p.GetUserInfo(mattermostUserID)
+	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -355,7 +354,7 @@ func (p *Plugin) httpAutocompleteUserInstance(w http.ResponseWriter, r *http.Req
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	info, err := p.GetUserInfo(mattermostUserID)
+	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -371,7 +370,6 @@ func (p *Plugin) httpAutocompleteUserInstance(w http.ResponseWriter, r *http.Req
 			Item: info.User.DefaultInstanceID.String(),
 		})
 	}
-
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "failed to load instances"))
@@ -401,7 +399,7 @@ func (p *Plugin) httpAutocompleteInstalledInstanceWithAlias(w http.ResponseWrite
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	info, err := p.GetUserInfo(mattermostUserID)
+	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -437,7 +435,7 @@ func (p *Plugin) httpAutocompleteInstalledInstance(w http.ResponseWriter, r *htt
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	info, err := p.GetUserInfo(mattermostUserID)
+	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
