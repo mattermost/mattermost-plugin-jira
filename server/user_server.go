@@ -59,19 +59,19 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 			errors.WithMessage(err, "failed to parse callback request from Jira"))
 	}
 
-	mattermostUserId := r.Header.Get("Mattermost-User-ID")
-	if mattermostUserId == "" {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
-	mmuser, appErr := p.API.GetUser(mattermostUserId)
+	mmuser, appErr := p.API.GetUser(mattermostUserID)
 	if appErr != nil {
 		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to load user "+mattermostUserId))
+			errors.WithMessage(appErr, "failed to load user "+mattermostUserID))
 	}
 
-	oauthTmpCredentials, err := p.otsStore.OneTimeLoadOauth1aTemporaryCredentials(mattermostUserId)
-	if err != nil || oauthTmpCredentials == nil || len(oauthTmpCredentials.Token) <= 0 {
-		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to get temporary credentials for "+mattermostUserId))
+	oauthTmpCredentials, err := p.otsStore.OneTimeLoadOauth1aTemporaryCredentials(mattermostUserID)
+	if err != nil || oauthTmpCredentials == nil || oauthTmpCredentials.Token == "" {
+		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to get temporary credentials for "+mattermostUserID))
 	}
 
 	if oauthTmpCredentials.Token != requestToken {
@@ -79,7 +79,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	}
 
 	// Although we pass the oauthTmpCredentials as required here. The JIRA server does not appar to validate it.
-	// We perform the check above for reuse so this is irrelavent to the security from our end.
+	// We perform the check above for reuse so this is irrelevant to the security from our end.
 	accessToken, accessSecret, err := si.getOAuth1Config().AccessToken(requestToken, oauthTmpCredentials.Secret, verifier)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
@@ -106,7 +106,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	// Set default settings the first time a user connects
 	connection.Settings = &ConnectionSettings{Notifications: true}
 
-	err = p.connectUser(instance, types.ID(mattermostUserId), connection)
+	err = p.connectUser(instance, types.ID(mattermostUserID), connection)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -128,12 +128,12 @@ func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, i
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	_, err := p.DisconnectUser(instanceID.String(), types.ID(mattermostUserId))
+	_, err := p.DisconnectUser(instanceID.String(), types.ID(mattermostUserID))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -146,35 +146,6 @@ func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, i
 			Header:  "Disconnected from Jira.",
 			Message: "It is now safe to close this browser window.",
 		})
-}
-
-func httpOAuth1aPublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be GET"))
-	}
-
-	userID := r.Header.Get("Mattermost-User-Id")
-	if userID == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
-	}
-
-	if !p.API.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
-		return respondErr(w, http.StatusForbidden, errors.New("forbidden"))
-	}
-
-	w.Header().Set("Content-Type", "text/plain")
-	pkey, err := publicKeyString(p)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to load public key"))
-	}
-	_, err = w.Write(pkey)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write response"))
-	}
-	return http.StatusOK, nil
 }
 
 func publicKeyString(p *Plugin) ([]byte, error) {

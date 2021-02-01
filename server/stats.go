@@ -1,7 +1,7 @@
 package main
 
 import (
-	"crypto/md5"
+	"crypto/md5" // #nosec G501
 	"encoding/json"
 	goexpvar "expvar"
 	"fmt"
@@ -12,8 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 )
 
 const statsKeyExpiration = 30 * 24 * time.Hour // 30 days
@@ -56,10 +57,14 @@ func (p *Plugin) httpAPIStats(w http.ResponseWriter, r *http.Request) (int, erro
 	conf := p.getConfig()
 
 	isAdmin, err := authorizedSysAdmin(p, r.Header.Get("Mattermost-User-Id"))
+	if err != nil {
+		return http.StatusInternalServerError, errors.Wrap(err, "failed to authorize")
+	}
+
 	if !isAdmin {
 		if conf.StatsSecret == "" {
 			return respondErr(w, http.StatusForbidden,
-				errors.New("Access forbidden: must be authenticated as an admin, or provide the stats API secret."))
+				errors.New("access forbidden: must be authenticated as an admin, or provide the stats API secret"))
 		}
 		var status int
 		status, err = verifyHTTPSecret(conf.StatsSecret, r.FormValue("secret"))
@@ -68,7 +73,7 @@ func (p *Plugin) httpAPIStats(w http.ResponseWriter, r *http.Request) (int, erro
 		}
 	}
 	if conf.stats == nil {
-		return respondErr(w, http.StatusNotFound, errors.New("No stats available"))
+		return respondErr(w, http.StatusNotFound, errors.New("no stats available"))
 	}
 
 	out := "{"
@@ -92,17 +97,17 @@ func (p *Plugin) httpAPIStats(w http.ResponseWriter, r *http.Request) (int, erro
 func (p *Plugin) startAutosaveStats() {
 	stop := make(chan bool)
 	go func() {
-		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		r := rand.New(rand.NewSource(time.Now().UnixNano())) // #nosec G404
 		dither := time.Duration(r.Intn(statsAutosaveMaxDither)) * time.Second
 		time.Sleep(dither)
 
 		ticker := time.NewTicker(statsAutosaveInterval)
 		for {
 			select {
-			case _ = <-stop:
+			case <-stop:
 				return
-			case _ = <-ticker.C:
-				p.saveStats()
+			case <-ticker.C:
+				_ = p.saveStats()
 			}
 		}
 	}()
@@ -227,7 +232,7 @@ func (p *Plugin) consolidatedStoredStats() (*expvar.Stats, []string, error) {
 
 func statsKeyName() string {
 	hostname, _ := os.Hostname()
-	h := md5.New()
+	h := md5.New() // #nosec G401
 	_, _ = h.Write([]byte(hostname))
 	return fmt.Sprintf("%s%x", prefixStats, h.Sum(nil))
 }

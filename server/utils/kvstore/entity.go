@@ -8,8 +8,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-server/v5/model"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 type EntityStore interface {
@@ -29,16 +30,16 @@ func (s *store) Entity(prefix string) EntityStore {
 	}
 }
 
-func (s *entityStore) Load(id types.ID, ref interface{}) error {
-	return LoadJSON(s.kv, string(id), ref)
+func (e *entityStore) Load(id types.ID, ref interface{}) error {
+	return LoadJSON(e.kv, string(id), ref)
 }
 
-func (s *entityStore) Store(id types.ID, ref interface{}) error {
-	return StoreJSON(s.kv, string(id), ref)
+func (e *entityStore) Store(id types.ID, ref interface{}) error {
+	return StoreJSON(e.kv, string(id), ref)
 }
 
-func (s *entityStore) Delete(id types.ID) error {
-	return s.kv.Delete(string(id))
+func (e *entityStore) Delete(id types.ID) error {
+	return e.kv.Delete(string(id))
 }
 
 var ErrTryAgain = errors.New("try again")

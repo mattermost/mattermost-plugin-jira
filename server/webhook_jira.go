@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/andygrunwald/go-jira"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
@@ -23,7 +24,7 @@ type JiraWebhook struct {
 			To         string
 			ToString   string
 			Field      string
-			FieldId    string
+			FieldID    string
 			FieldType  string `json:"fieldtype"`
 		}
 	} `json:"changelog,omitempty"`
@@ -47,11 +48,11 @@ func (jwh *JiraWebhook) mdIssueSummary() string {
 	return truncate(jwh.Issue.Fields.Summary, 80)
 }
 
-func (w *JiraWebhook) mdIssueAssignee() string {
-	if w.Issue.Fields.Assignee == nil {
-		return "_nobody_"
+func (jwh *JiraWebhook) mdIssueAssignee() string {
+	if jwh.Issue.Fields.Assignee == nil {
+		return Nobody
 	}
-	return mdUser(w.Issue.Fields.Assignee)
+	return mdUser(jwh.Issue.Fields.Assignee)
 }
 
 func (jwh *JiraWebhook) mdSummaryLink() string {
@@ -83,7 +84,7 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 	}
 
 	// Jira Cloud comment event. We need to fetch issue data because it is not expanded in webhook payload.
-	isCommentEvent := jwh.WebhookEvent == "comment_created" || jwh.WebhookEvent == "comment_updated" || jwh.WebhookEvent == "comment_deleted"
+	isCommentEvent := jwh.WebhookEvent == commentCreated || jwh.WebhookEvent == commentUpdated || jwh.WebhookEvent == commentDeleted
 	if isCommentEvent && instance.Common().Type == "cloud" {
 		issue, err := p.getIssueDataForCloudWebhook(instance, jwh.Issue.ID)
 		if err != nil {

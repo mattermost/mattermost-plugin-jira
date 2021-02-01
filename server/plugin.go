@@ -14,7 +14,6 @@ import (
 	"strings"
 	"sync"
 	"text/template"
-	"time"
 
 	"github.com/pkg/errors"
 
@@ -23,9 +22,10 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
-	"github.com/mattermost/mattermost-plugin-jira/server/jiraTracker"
+	"github.com/mattermost/mattermost-plugin-jira/server/tracker"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/telemetry"
 )
@@ -35,7 +35,7 @@ const (
 	botDisplayName = "Jira"
 	botDescription = "Created by the Jira Plugin."
 
-	autolinkPluginId = "mattermost-autolink"
+	autolinkPluginID = "mattermost-autolink"
 
 	// Move these two to the plugin settings if admins need to adjust them.
 	WebhookMaxProcsPerServer = 20
@@ -79,8 +79,6 @@ type externalConfig struct {
 	// Enable slash command autocomplete
 	EnableAutocomplete bool
 }
-
-const currentInstanceTTL = 1 * time.Second
 
 const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb
 
@@ -129,11 +127,11 @@ type Plugin struct {
 	telemetryClient telemetry.Client
 
 	// telemetry Tracker
-	Tracker jiraTracker.Tracker
+	Tracker tracker.Tracker
 
 	// service that determines if this Mattermost instance has access to
 	// enterprise features
-	enterpriseChecker enterprise.EnterpriseChecker
+	enterpriseChecker enterprise.Checker
 }
 
 func (p *Plugin) getConfig() config {
@@ -182,7 +180,10 @@ func (p *Plugin) OnConfigurationChange() error {
 		if err != nil {
 			return err
 		}
-		p.registerJiraCommand(ec.EnableAutocomplete, instances.Len() > 1)
+		err = p.registerJiraCommand(ec.EnableAutocomplete, instances.Len() > 1)
+		if err != nil {
+			return err
+		}
 	}
 
 	diagnostics := false
@@ -191,11 +192,11 @@ func (p *Plugin) OnConfigurationChange() error {
 	}
 
 	// create new tracker on each configuration change
-	p.Tracker = jiraTracker.New(telemetry.NewTracker(
+	p.Tracker = tracker.New(telemetry.NewTracker(
 		p.telemetryClient,
 		p.API.GetDiagnosticId(),
 		p.API.GetServerVersion(),
-		manifest.Id,
+		manifest.ID,
 		manifest.Version,
 		diagnostics,
 	))
@@ -307,7 +308,7 @@ func (p *Plugin) OnActivate() error {
 				continue
 			}
 
-			status, apiErr := p.API.GetPluginStatus(autolinkPluginId)
+			status, apiErr := p.API.GetPluginStatus(autolinkPluginID)
 			if apiErr != nil {
 				p.API.LogWarn("OnActivate: Autolink plugin unavailable. API returned error", "error", apiErr.Error())
 				continue
@@ -371,7 +372,7 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 
 	client := autolinkclient.NewClientPlugin(p.API)
 	if err := client.Add(installList...); err != nil {
-		return fmt.Errorf("Unable to add autolinks: %w", err)
+		return fmt.Errorf("unable to add autolinks: %w", err)
 	}
 
 	return nil
@@ -389,7 +390,7 @@ func (p *Plugin) GetPluginKey() string {
 }
 
 func (p *Plugin) GetPluginURLPath() string {
-	return "/plugins/" + manifest.Id
+	return "/plugins/" + manifest.ID
 }
 
 func (p *Plugin) GetPluginURL() string {

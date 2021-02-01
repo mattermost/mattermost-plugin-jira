@@ -18,9 +18,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-plugin-workflow-client/workflowclient"
 	"github.com/mattermost/mattermost-server/v5/plugin"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (
@@ -43,7 +44,7 @@ const (
 	routeACInstalled                            = "/ac/installed"
 	routeACJSON                                 = "/ac/atlassian-connect.json"
 	routeACUninstalled                          = "/ac/uninstalled"
-	routeACUserRedirectWithToken                = "/ac/user_redirect.html"
+	routeACUserRedirectWithToken                = "/ac/user_redirect.html" // #nosec G101
 	routeACUserConfirm                          = "/ac/user_confirm.html"
 	routeACUserConnected                        = "/ac/user_connected.html"
 	routeACUserDisconnected                     = "/ac/user_disconnected.html"
@@ -257,7 +258,7 @@ func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 						Description: "Jira issue ID",
 					},
 				},
-				//TODO <><> prefix route with instance? or unnecessary since it's for all instances?
+				// TODO <><> prefix route with instance? or unnecessary since it's for all instances?
 				TriggerSetupURL: "/jira" + routeWorkflowTriggerSetup,
 			},
 		},
@@ -286,7 +287,7 @@ func httpWorkflowTriggerSetup(p *Plugin, w http.ResponseWriter, r *http.Request)
 
 	if params.BaseTrigger.BaseType != "jira_event" {
 		return respondErr(w, http.StatusBadRequest,
-			errors.New("Unsupported trigger type"))
+			errors.New("unsupported trigger type"))
 	}
 
 	var trigger WorkflowTrigger

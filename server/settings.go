@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-server/v5/model"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (
@@ -41,9 +42,9 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	if err != nil {
 		return p.responsef(header, "Your username is not connected to Jira. Please type `jira connect`. %v", err)
 	}
-	notifications := "off"
+	notifications := settingOff
 	if updatedConnection.Settings.Notifications {
-		notifications = "on"
+		notifications = settingOn
 	}
 
 	return p.responsef(header, "Settings updated. Notifications %s.", notifications)

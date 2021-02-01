@@ -76,12 +76,12 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 	if !ok {
 		return respondErr(w, http.StatusBadRequest, errors.New("invalid JWT claims"))
 	}
-	accountId, ok := claims["sub"].(string)
+	accountID, ok := claims["sub"].(string)
 	if !ok {
 		return respondErr(w, http.StatusBadRequest, errors.New("invalid JWT claim sub"))
 	}
 
-	jiraClient, _, err := ci.getClientForConnection(&Connection{User: jira.User{AccountID: accountId}})
+	jiraClient, _, err := ci.getClientForConnection(&Connection{User: jira.User{AccountID: accountID}})
 	if err != nil {
 		return respondErr(w, http.StatusBadRequest, errors.Errorf("could not get client for user, err: %v", err))
 	}
@@ -95,7 +95,7 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 	connection := &Connection{
 		PluginVersion: manifest.Version,
 		User: jira.User{
-			AccountID:   accountId,
+			AccountID:   accountID,
 			Key:         jUser.Key,
 			Name:        jUser.Name,
 			DisplayName: jUser.DisplayName,
@@ -115,22 +115,22 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 				`Please also make sure you are signed into Mattermost at `+siteURL))
 	}
 
-	mattermostUserId, secret, err := p.ParseAuthToken(mmToken)
+	mattermostUserID, secret, err := p.ParseAuthToken(mmToken)
 	if err != nil {
 		return respondErr(w, http.StatusUnauthorized, err)
 	}
 
-	mmuser, appErr := p.API.GetUser(mattermostUserId)
+	mmuser, appErr := p.API.GetUser(mattermostUserID)
 	if appErr != nil {
 		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to load user "+mattermostUserId))
+			errors.WithMessage(appErr, "failed to load user "+mattermostUserID))
 	}
 
 	_, urlpath := splitInstancePath(r.URL.Path)
 	switch urlpath {
 	case routeACUserConnected:
 		storedSecret := ""
-		storedSecret, err = p.otsStore.LoadOneTimeSecret(mattermostUserId)
+		storedSecret, err = p.otsStore.LoadOneTimeSecret(mattermostUserID)
 		if err != nil {
 			return respondErr(w, http.StatusUnauthorized, err)
 		}
@@ -139,16 +139,16 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		if len(parsed) < 2 || parsed[0] != secret || parsed[1] != secretCookie.Value {
 			return respondErr(w, http.StatusUnauthorized, errors.New("this link has already been used"))
 		}
-		err = p.connectUser(ci, types.ID(mattermostUserId), connection)
+		err = p.connectUser(ci, types.ID(mattermostUserID), connection)
 		if err != nil {
 			return respondErr(w, http.StatusInternalServerError, err)
 		}
 		// TODO For https://github.com/mattermost/mattermost-plugin-jira/issues/149, need a channel ID
 		// msg := fmt.Sprintf("You have successfully connected your Jira account (**%s**).", connection.DisplayName)
-		// _ = p.API.SendEphemeralPost(mattermostUserId, makePost(p.getUserID(), channelID, msg))
+		// _ = p.API.SendEphemeralPost(mattermostUserID, makePost(p.getUserID(), channelID, msg))
 
 	case routeACUserDisconnected:
-		_, err = p.DisconnectUser(ci.InstanceID.String(), types.ID(mattermostUserId))
+		_, err = p.DisconnectUser(ci.InstanceID.String(), types.ID(mattermostUserID))
 
 	case routeACUserConfirm:
 

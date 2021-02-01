@@ -19,6 +19,7 @@ type Track struct {
 }
 
 type tracker struct {
+	plugin        plugin.MattermostPlugin
 	client        Client
 	diagnosticID  string
 	serverVersion string
@@ -48,14 +49,13 @@ func (t *tracker) Track(event string, properties map[string]interface{}) {
 	properties["PluginVersion"] = t.pluginVersion
 	properties["ServerVersion"] = t.serverVersion
 
-	var p *plugin.MattermostPlugin
 	err := t.client.Enqueue(Track{
 		UserID:     t.diagnosticID,
 		Event:      event,
 		Properties: properties,
 	})
 	if err != nil {
-		p.API.LogWarn("cannot enqueue telemetry event, err=%s", err.Error())
+		t.plugin.API.LogWarn("cannot enqueue telemetry event, err=%s", err.Error())
 	}
 }
 

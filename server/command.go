@@ -657,7 +657,7 @@ func executeV2Revert(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 		preMessage = `#### Successfully reverted the V3 Jira plugin database to V2. The Jira plugin has been disabled.` + "\n"
 
 		go func() {
-			_ = p.API.DisablePlugin(manifest.Id)
+			_ = p.API.DisablePlugin(manifest.ID)
 		}()
 	}
 	message := `**Please note that if you have multiple configured Jira instances this command will result in all non-legacy instances being removed.**
@@ -759,8 +759,8 @@ func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArg
 	return p.responsef(header, msg)
 }
 
-func authorizedSysAdmin(p *Plugin, userId string) (bool, error) {
-	user, appErr := p.API.GetUser(userId)
+func authorizedSysAdmin(p *Plugin, userID string) (bool, error) {
+	user, appErr := p.API.GetUser(userID)
 	if appErr != nil {
 		return false, appErr
 	}
@@ -786,7 +786,7 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 		return p.responsef(header, err.Error())
 	}
 	if strings.Contains(jiraURL, "http:") {
-		jiraURL = strings.Replace(jiraURL, "http:", "https:", -1)
+		jiraURL = strings.ReplaceAll(jiraURL, "http:", "https:")
 		return p.responsef(header, "`/jira install cloud` requires a secure connection (HTTPS). Please run the following command:\n```\n/jira install cloud %s\n```", jiraURL)
 	}
 
@@ -1026,7 +1026,7 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 
 	orphans := ""
 	if !info.Instances.IsEmpty() {
-		resp += fmt.Sprintf("\n###### Available Jira instances:\n")
+		resp += "\n###### Available Jira instances:\n"
 		for _, instanceID := range info.Instances.IDs() {
 			encoded := url.PathEscape(encode([]byte(instanceID)))
 			ic := info.Instances.Get(instanceID)
@@ -1141,7 +1141,10 @@ func executeDebugStatsSave(p *Plugin, c *plugin.Context, commandArgs *model.Comm
 	if stats == nil {
 		return p.responsef(commandArgs, "No stats to save")
 	}
-	p.saveStats()
+	err = p.saveStats()
+	if err != nil {
+		return p.responsef(commandArgs, "%v", err)
+	}
 	return p.responsef(commandArgs, "Saved stats")
 }
 
@@ -1214,12 +1217,6 @@ func (p *Plugin) postCommandResponse(args *model.CommandArgs, text string) {
 func (p *Plugin) responsef(commandArgs *model.CommandArgs, format string, args ...interface{}) *model.CommandResponse {
 	p.postCommandResponse(commandArgs, fmt.Sprintf(format, args...))
 	return &model.CommandResponse{}
-}
-
-func (p *Plugin) responseRedirect(redirectURL string) *model.CommandResponse {
-	return &model.CommandResponse{
-		GotoLocation: redirectURL,
-	}
 }
 
 func executeInstanceV2Legacy(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

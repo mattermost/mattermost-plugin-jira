@@ -4,8 +4,9 @@
 package kvstore
 
 import (
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 type IDIndexStore interface {

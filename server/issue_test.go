@@ -52,9 +52,9 @@ func (client testClient) GetTransitions(issueKey string) ([]jira.Transition, err
 	}
 
 	return []jira.Transition{
-		jira.Transition{To: jira.Status{Name: "To Do"}},
-		jira.Transition{To: jira.Status{Name: "In Progress"}},
-		jira.Transition{To: jira.Status{Name: "In Testing"}},
+		{To: jira.Status{Name: "To Do"}},
+		{To: jira.Status{Name: "In Progress"}},
+		{To: jira.Status{Name: "In Testing"}},
 	}, nil
 }
 
@@ -78,7 +78,7 @@ func (client testClient) AddComment(issueKey string, comment *jira.Comment) (*ji
 	if issueKey == noPermissionsIssueKey {
 		return nil, errors.New("you do not have the permission to comment on this issue")
 	} else if issueKey == attachCommentErrorKey {
-		return nil, errors.New("Unanticipated error")
+		return nil, errors.New("unanticipated error")
 	}
 
 	return nil, nil
@@ -98,7 +98,7 @@ func TestTransitionJiraIssue(t *testing.T) {
 		expectedMsg string
 		expectedErr error
 	}{
-		"Transitioning a non existant issue": {
+		"Transitioning a non existent issue": {
 			issueKey:    nonExistantIssueKey,
 			toState:     "To Do",
 			expectedMsg: "",
@@ -169,7 +169,7 @@ func TestRouteIssueTransition(t *testing.T) {
 			request:      nil,
 			expectedCode: http.StatusBadRequest,
 		},
-		"No UserId": {
+		"No UserID": {
 			request: &model.PostActionIntegrationRequest{
 				UserId: "",
 			},
@@ -200,7 +200,6 @@ func TestRouteIssueTransition(t *testing.T) {
 			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "no request data")
 		})
 	}
-
 }
 
 func TestRouteShareIssuePublicly(t *testing.T) {
@@ -225,7 +224,7 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 			request:      nil,
 			expectedCode: http.StatusBadRequest,
 		},
-		"No UserId": {
+		"No UserID": {
 			request: &model.PostActionIntegrationRequest{
 				UserId: "",
 			},
@@ -301,7 +300,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 	api.On("PublishWebSocketEvent", "update_defaults", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.WebsocketBroadcast"))
 
 	type requestStruct struct {
-		PostId      string `json:"post_id"`
+		PostID      string `json:"post_id"`
 		InstanceID  string `json:"instance_id"`
 		CurrentTeam string `json:"current_team"`
 		IssueKey    string `json:"issueKey"`
@@ -335,7 +334,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostId: "error_post",
+				PostID: "error_post",
 			},
 			expectedCode: http.StatusInternalServerError,
 		},
@@ -343,7 +342,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostId: "post_not_found",
+				PostID: "post_not_found",
 			},
 			expectedCode: http.StatusInternalServerError,
 		},
@@ -351,7 +350,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostId: "0",
+				PostID: "0",
 			},
 			expectedCode: http.StatusInternalServerError,
 		},
@@ -359,7 +358,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostId:   "1",
+				PostID:   "1",
 				IssueKey: noPermissionsIssueKey,
 			},
 			expectedCode: http.StatusInternalServerError,
@@ -368,16 +367,16 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostId:   "1",
+				PostID:   "1",
 				IssueKey: attachCommentErrorKey,
 			},
 			expectedCode: http.StatusInternalServerError,
 		},
-		"Succesfully created notification post": {
+		"Successfully created notification post": {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostId:   "1",
+				PostID:   "1",
 				IssueKey: existingIssueKey,
 			},
 			expectedCode: http.StatusOK,

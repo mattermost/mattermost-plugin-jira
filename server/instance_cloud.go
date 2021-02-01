@@ -52,7 +52,7 @@ type AtlassianSecurityContext struct {
 	ProductType    string `json:"productType"`
 	Description    string `json:"description"`
 	EventType      string `json:"eventType"`
-	OAuthClientId  string `json:"oauthClientId"`
+	OAuthClientID  string `json:"oauthClientId"`
 }
 
 func newCloudInstance(p *Plugin, key types.ID, installed bool, rawASC string, asc *AtlassianSecurityContext) *cloudInstance {
@@ -83,7 +83,7 @@ func (ci *cloudInstance) GetDisplayDetails() map[string]string {
 	}
 }
 
-func (ci *cloudInstance) GetUserConnectURL(mattermostUserId string) (string, *http.Cookie, error) {
+func (ci *cloudInstance) GetUserConnectURL(mattermostUserID string) (string, *http.Cookie, error) {
 	// Create JWT secret we use in Jira's connect URL params
 	randomBytes1 := make([]byte, 32)
 	_, err := rand.Read(randomBytes1)
@@ -107,12 +107,12 @@ func (ci *cloudInstance) GetUserConnectURL(mattermostUserId string) (string, *ht
 
 	// Store JWT and cookie secret together in KV store
 	storedSecret := jwtSecret + "-" + cookieSecret
-	err = ci.Plugin.otsStore.StoreOneTimeSecret(mattermostUserId, storedSecret)
+	err = ci.Plugin.otsStore.StoreOneTimeSecret(mattermostUserID, storedSecret)
 	if err != nil {
 		return "", nil, err
 	}
 
-	token, err := ci.Plugin.NewEncodedAuthToken(mattermostUserId, jwtSecret)
+	token, err := ci.Plugin.NewEncodedAuthToken(mattermostUserID, jwtSecret)
 	if err != nil {
 		return "", nil, err
 	}
@@ -182,7 +182,7 @@ func (ci *cloudInstance) getClientForConnection(connection *Connection) (*jira.C
 		BaseURL: ci.GetURL(),
 		Subject: connection.AccountID,
 		Config: oauth2.Config{
-			ClientID:     ci.AtlassianSecurityContext.OAuthClientId,
+			ClientID:     ci.AtlassianSecurityContext.OAuthClientID,
 			ClientSecret: ci.AtlassianSecurityContext.SharedSecret,
 			Endpoint: oauth2.Endpoint{
 				AuthURL:  "https://auth.atlassian.io",
