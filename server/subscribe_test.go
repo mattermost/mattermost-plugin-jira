@@ -1313,7 +1313,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-comment-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					ID:        model.NewId(),
+					ID:        "rg86cd65efdjdjezgisgxaitzh",
 					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_any"),
@@ -1329,7 +1329,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-comment-updated.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					ID:        model.NewId(),
+					ID:        "rg86cd65efdjdjezgisgxaitzh",
 					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_any"),
@@ -1345,7 +1345,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			WebhookTestData: "webhook-cloud-comment-deleted.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
-					ID:        model.NewId(),
+					ID:        "rg86cd65efdjdjezgisgxaitzh",
 					ChannelID: "sampleChannelId",
 					Filters: SubscriptionFilters{
 						Events:     NewStringSet("event_updated_any"),
@@ -1388,9 +1388,16 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			actual, err := p.getChannelsSubscribed(wh.(*webhook), testInstance1.InstanceID)
 			assert.Nil(t, err)
 			assert.Equal(t, len(tc.ChannelSubscriptions), len(actual))
-			for _, channelID := range tc.ChannelSubscriptions {
-				assert.Contains(t, actual, channelID)
+			actualChannelIDs := NewStringSet()
+			for _, channelID := range actual {
+				actualChannelIDs.Add(channelID.ChannelID)
 			}
+
+			channelIDs := NewStringSet()
+			for _, channelID := range tc.ChannelSubscriptions {
+				channelIDs.Add(channelID.ChannelID)
+			}
+			assert.EqualValues(t, actualChannelIDs, channelIDs)
 		})
 	}
 }
