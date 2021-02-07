@@ -71,9 +71,9 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 		return err
 	}
 
-	botUserId := ww.p.getUserID()
+	botUserID := ww.p.getUserID()
 	for _, channelSubscribed := range channelsSubscribed {
-		if _, _, err1 := wh.PostToChannel(ww.p, msg.InstanceID, channelSubscribed.ChannelID, botUserId, channelSubscribed.Name); err1 != nil {
+		if _, _, err1 := wh.PostToChannel(ww.p, msg.InstanceID, channelSubscribed.ChannelID, botUserID, channelSubscribed.Name); err1 != nil {
 			ww.p.errorf("WebhookWorker id: %d, error posting to channel, err: %v", ww.id, err1)
 		}
 	}

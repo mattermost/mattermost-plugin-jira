@@ -24,7 +24,7 @@ const (
 
 type Webhook interface {
 	Events() StringSet
-	PostToChannel(p *Plugin, instanceID types.ID, channelId, fromUserId, subscriptionName string) (*model.Post, int, error)
+	PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error)
 	PostNotifications(p *Plugin, instanceID types.ID) ([]*model.Post, int, error)
 }
 
