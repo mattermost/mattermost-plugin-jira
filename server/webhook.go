@@ -57,7 +57,6 @@ func (wh *webhook) Events() StringSet {
 	return wh.eventTypes
 }
 
-
 func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error) {
 	if wh.headline == "" {
 		return nil, http.StatusBadRequest, errors.Errorf("unsupported webhook")
