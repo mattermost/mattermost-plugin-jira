@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -11,8 +13,6 @@ const (
 	settingOff = "off"
 )
 
-var onOffToBool = map[string]bool{settingOn: true, settingOff: false}
-
 func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, mattermostUserID types.ID, connection *Connection, args []string) *model.CommandResponse {
 	const helpText = "`/jira settings notifications [value]`\n* Invalid value. Accepted values are: `on` or `off`."
 
@@ -20,8 +20,8 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 		return p.responsef(header, helpText)
 	}
 
-	value, ok := onOffToBool[args[1]]
-	if !ok {
+	value, err := onOffToBool(args[1])
+	if err != nil {
 		return p.responsef(header, helpText)
 	}
 
@@ -29,7 +29,7 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 		connection.Settings = &ConnectionSettings{}
 	}
 	connection.Settings.Notifications = value
-	if err := p.userStore.StoreConnection(instanceID, mattermostUserID, connection); err != nil {
+	if err = p.userStore.StoreConnection(instanceID, mattermostUserID, connection); err != nil {
 		p.errorf("settingsNotifications, err: %v", err)
 		p.responsef(header, "Could not store new settings. Please contact your system administrator. error: %v", err)
 	}
@@ -56,8 +56,8 @@ func (p *Plugin) settingsSendNotificationsForAssigned(
 		return p.responsef(header, helpText)
 	}
 
-	value, ok := onOffToBool[args[1]]
-	if !ok {
+	value, err := onOffToBool(args[1])
+	if err != nil {
 		return p.responsef(header, helpText)
 	}
 
@@ -65,7 +65,7 @@ func (p *Plugin) settingsSendNotificationsForAssigned(
 		connection.Settings = &ConnectionSettings{}
 	}
 	connection.Settings.SendNotificationsForAssigned = value
-	if err := p.userStore.StoreConnection(instanceID, mattermostUserID, connection); err != nil {
+	if err = p.userStore.StoreConnection(instanceID, mattermostUserID, connection); err != nil {
 		p.errorf("settingsSendNotificationsForAssigned, err: %v", err)
 		p.responsef(header, "Could not store new settings. Please contact your system administrator. error: %v", err)
 	}
@@ -92,8 +92,8 @@ func (p *Plugin) settingsSendNotificationsForReporter(
 		return p.responsef(header, helpText)
 	}
 
-	value, ok := onOffToBool[args[1]]
-	if !ok {
+	value, err := onOffToBool(args[1])
+	if err != nil {
 		return p.responsef(header, helpText)
 	}
 
@@ -101,7 +101,7 @@ func (p *Plugin) settingsSendNotificationsForReporter(
 		connection.Settings = &ConnectionSettings{}
 	}
 	connection.Settings.SendNotificationsForReporter = value
-	if err := p.userStore.StoreConnection(instanceID, mattermostUserID, connection); err != nil {
+	if err = p.userStore.StoreConnection(instanceID, mattermostUserID, connection); err != nil {
 		p.errorf("settingsSendNotificationsForReporter, err: %v", err)
 		p.responsef(header, "Could not store new settings. Please contact your system administrator. error: %v", err)
 	}
@@ -114,6 +114,17 @@ func (p *Plugin) settingsSendNotificationsForReporter(
 
 	return p.responsef(header, "Settings updated. SendNotificationsForReporter %s.",
 		boolToOnOff(updatedConnection.Settings.SendNotificationsForReporter))
+}
+
+func onOffToBool(setting string) (bool, error) {
+	switch setting {
+	case settingOn:
+		return true, nil
+	case settingOff:
+		return false, nil
+	}
+
+	return false, fmt.Errorf("invalid setting: %s", setting)
 }
 
 func boolToOnOff(isOn bool) string {
