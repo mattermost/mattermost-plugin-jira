@@ -4,7 +4,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
-type EnterpriseChecker interface {
+type Checker interface {
 	HasEnterpriseFeatures() bool
 }
 
@@ -16,7 +16,7 @@ type PluginAPI interface {
 	GetLicense() *model.License
 }
 
-func NewEnterpriseChecker(api PluginAPI) EnterpriseChecker {
+func NewEnterpriseChecker(api PluginAPI) Checker {
 	return &enterpriseChecker{
 		api: api,
 	}

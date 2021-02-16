@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 )
 
+const someSecret = "somesecret"
+
 func getJiraTestData(filename string) ([]byte, error) {
 	f, err := os.Open(filepath.Join("testdata", filename))
 
@@ -22,9 +24,9 @@ func getJiraTestData(filename string) ([]byte, error) {
 
 func withExistingChannelSubscriptions(subscriptions []ChannelSubscription) *Subscriptions {
 	ret := NewSubscriptions()
-	for _, sub := range subscriptions {
+	for i, sub := range subscriptions {
 		sub.InstanceID = testInstance1.GetID()
-		ret.Channel.add(&sub)
+		ret.Channel.add(&subscriptions[i])
 	}
 	return ret
 }

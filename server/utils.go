@@ -8,11 +8,11 @@ import (
 	"regexp"
 	"strings"
 
-	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-server/v5/model"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message, postType string) (post *model.Post, returnErr error) {
@@ -54,16 +54,16 @@ func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message,
 	return post, nil
 }
 
-func (p *Plugin) CreateBotDMtoMMUserId(mattermostUserId, format string, args ...interface{}) (post *model.Post, returnErr error) {
+func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...interface{}) (post *model.Post, returnErr error) {
 	defer func() {
 		if returnErr != nil {
 			returnErr = errors.WithMessage(returnErr,
-				fmt.Sprintf("failed to create DMError to user %v: ", mattermostUserId))
+				fmt.Sprintf("failed to create DMError to user %v: ", mattermostUserID))
 		}
 	}()
 
 	conf := p.getConfig()
-	channel, appErr := p.API.GetDirectChannel(mattermostUserId, conf.botUserID)
+	channel, appErr := p.API.GetDirectChannel(mattermostUserID, conf.botUserID)
 	if appErr != nil {
 		return nil, appErr
 	}
@@ -91,7 +91,7 @@ func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string 
 		}
 
 		jiraUserID := uname[len("accountid:"):]
-		mattermostUserID, err := p.userStore.LoadMattermostUserId(instanceID, jiraUserID)
+		mattermostUserID, err := p.userStore.LoadMattermostUserID(instanceID, jiraUserID)
 		if err != nil {
 			continue
 		}
@@ -106,19 +106,6 @@ func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string 
 	}
 
 	return result
-}
-
-func (p *Plugin) loadJIRAProjectKeys(jiraClient *jira.Client) ([]string, error) {
-	list, _, err := jiraClient.Project.GetList()
-	if err != nil {
-		return nil, errors.WithMessage(err, "Error requesting list of Jira projects")
-	}
-
-	projectKeys := []string{}
-	for _, proj := range *list {
-		projectKeys = append(projectKeys, proj.Key)
-	}
-	return projectKeys, nil
 }
 
 func parseJIRAUsernamesFromText(text string) []string {
@@ -136,23 +123,6 @@ func parseJIRAUsernamesFromText(text string) []string {
 	}
 
 	return usernames
-}
-
-func parseJIRAIssuesFromText(text string, keys []string) []string {
-	issueMap := map[string]bool{}
-	issues := []string{}
-
-	for _, key := range keys {
-		var re = regexp.MustCompile(fmt.Sprintf(`(?m)%s-[0-9]+`, key))
-		for _, match := range re.FindAllString(text, -1) {
-			if !issueMap[match] {
-				issues = append(issues, match)
-				issueMap[match] = true
-			}
-		}
-	}
-
-	return issues
 }
 
 func isImageMIME(mime string) bool {

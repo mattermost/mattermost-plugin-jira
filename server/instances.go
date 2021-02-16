@@ -6,11 +6,12 @@ package main
 import (
 	"net/http"
 
+	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/pkg/errors"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/pkg/errors"
 )
 
 type Instances struct {
@@ -176,7 +177,7 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 				return errors.Errorf("%s did not match instance %s type %s", instanceType, instanceID, instance.Common().Type)
 			}
 
-			p.userStore.MapUsers(func(user *User) error {
+			err = p.userStore.MapUsers(func(user *User) error {
 				if !user.ConnectedInstances.Contains(instance.GetID()) {
 					return nil
 				}
@@ -187,6 +188,9 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 				}
 				return nil
 			})
+			if err != nil {
+				return err
+			}
 
 			instances.Delete(instanceID)
 			updated = instances
