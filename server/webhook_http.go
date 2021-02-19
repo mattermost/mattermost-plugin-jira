@@ -18,9 +18,8 @@ import (
 )
 
 const (
-	PostTypeComment  = "custom_jira_comment"
-	PostTypeMention  = "custom_jira_mention"
-	PostTypeAssigned = "custom_jira_assigned"
+	PostTypeComment = "custom_jira_comment"
+	PostTypeMention = "custom_jira_mention"
 )
 
 // The keys listed here can be used in the Jira webhook URL to control what events
@@ -39,7 +38,7 @@ var eventParamMasks = map[string]StringSet{
 	"updated_all":         allEvents,                             // all events
 }
 
-var ErrWebhookIgnored = errors.New("Webhook purposely ignored")
+var ErrWebhookIgnored = errors.New("webhook purposely ignored")
 
 func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID types.ID) (status int, err error) {
 	conf := p.getConfig()
@@ -78,12 +77,12 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 	teamName := r.FormValue("team")
 	if teamName == "" {
 		return respondErr(w, http.StatusBadRequest,
-			errors.New("Request URL: no team name found"))
+			errors.New("request URL: no team name found"))
 	}
 	channelName := r.FormValue("channel")
 	if channelName == "" {
 		return respondErr(w, http.StatusBadRequest,
-			errors.New("Request URL: no channel name found"))
+			errors.New("request URL: no channel name found"))
 	}
 
 	selectedEvents := defaultEvents.Add()
@@ -136,7 +135,7 @@ func verifyHTTPSecret(expected, got string) (status int, err error) {
 		unescaped, _ := url.QueryUnescape(got)
 		if unescaped == got {
 			return http.StatusForbidden,
-				errors.New("Request URL: secret did not match")
+				errors.New("request URL: secret did not match")
 		}
 		got = unescaped
 	}

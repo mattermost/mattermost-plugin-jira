@@ -4,12 +4,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 )
 
 func TestInstallInstance(t *testing.T) {
@@ -102,7 +103,7 @@ func TestInstallInstance(t *testing.T) {
 			err = p.InstallInstance(testInstance0)
 			if tc.expectError {
 				assert.NotNil(t, err)
-				expected := "You need an Enterprise License to install multiple Jira instances"
+				expected := "You need a valid Mattermost Enterprise E20 License to install multiple Jira instances"
 				assert.Equal(t, expected, err.Error())
 			} else {
 				assert.Nil(t, err)

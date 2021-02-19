@@ -28,7 +28,7 @@ import {
     getDefaultUserInstanceID,
 } from 'selectors';
 
-import ChannelSettingsModal from './channel_settings';
+import ChannelSubscriptionsModal from './channel_subscriptions';
 
 const mapStateToProps = (state) => {
     const channelId = getChannelIdWithSettingsOpen(state);
@@ -67,4 +67,4 @@ const mapDispatchToProps = (dispatch) => bindActionCreators({
     sendEphemeralPost,
 }, dispatch);
 
-export default connect(mapStateToProps, mapDispatchToProps)(ChannelSettingsModal);
+export default connect(mapStateToProps, mapDispatchToProps)(ChannelSubscriptionsModal);

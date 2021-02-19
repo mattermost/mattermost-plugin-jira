@@ -36,7 +36,7 @@ func reporterSummary(issue *jira.Issue) string {
 	return reporterSummary
 }
 
-func getTransitionActions(instanceID types.ID, client Client, issue *jira.Issue) ([]*model.PostAction, error) {
+func getActions(instanceID types.ID, client Client, issue *jira.Issue) ([]*model.PostAction, error) {
 	var actions []*model.PostAction
 
 	ctx := map[string]interface{}{
@@ -45,7 +45,7 @@ func getTransitionActions(instanceID types.ID, client Client, issue *jira.Issue)
 	}
 
 	integration := &model.PostActionIntegration{
-		URL:     fmt.Sprintf("/plugins/%s%s", manifest.Id, routeIssueTransition),
+		URL:     fmt.Sprintf("/plugins/%s%s", manifest.ID, routeIssueTransition),
 		Context: ctx,
 	}
 
@@ -73,10 +73,19 @@ func getTransitionActions(instanceID types.ID, client Client, issue *jira.Issue)
 		Integration: integration,
 	})
 
+	actions = append(actions, &model.PostAction{
+		Name: "Share publicly",
+		Type: "button",
+		Integration: &model.PostActionIntegration{
+			URL:     fmt.Sprintf("/plugins/%s%s", manifest.ID, routeSharePublicly),
+			Context: ctx,
+		},
+	})
+
 	return actions, nil
 }
 
-func asSlackAttachment(instanceID types.ID, client Client, issue *jira.Issue) ([]*model.SlackAttachment, error) {
+func asSlackAttachment(instanceID types.ID, client Client, issue *jira.Issue, showActions bool) ([]*model.SlackAttachment, error) {
 	text := mdKeySummaryLink(issue)
 	desc := truncate(issue.Fields.Description, 3000)
 	desc = parseJiraLinksToMarkdown(desc)
@@ -106,9 +115,13 @@ func asSlackAttachment(instanceID types.ID, client Client, issue *jira.Issue) ([
 		Short: true,
 	})
 
-	actions, err := getTransitionActions(instanceID, client, issue)
-	if err != nil {
-		return []*model.SlackAttachment{}, err
+	var actions []*model.PostAction
+	var err error
+	if showActions {
+		actions, err = getActions(instanceID, client, issue)
+		if err != nil {
+			return []*model.SlackAttachment{}, err
+		}
 	}
 
 	return []*model.SlackAttachment{

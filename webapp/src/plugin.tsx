@@ -7,8 +7,10 @@ import ConnectModal from 'components/modals/connect_modal';
 import DisconnectModal from 'components/modals/disconnect_modal';
 
 import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue';
+
 import CreateIssueModal from 'components/modals/create_issue';
-import ChannelSettingsModal from 'components/modals/channel_settings';
+
+import ChannelSubscriptionsModal from 'components/modals/channel_subscriptions';
 
 import AttachCommentToIssuePostMenuAction from 'components/post_menu_actions/attach_comment_to_issue';
 import AttachCommentToIssueModal from 'components/modals/attach_comment_modal';
@@ -37,13 +39,14 @@ const setupUILater = (registry: any, store: Store<object, Action<object>>): () =
             registry.registerPostDropdownMenuComponent(AttachCommentToIssuePostMenuAction);
         }
 
-        registry.registerRootComponent(ChannelSettingsModal);
+        registry.registerRootComponent(ChannelSubscriptionsModal);
 
         const hooks = new Hooks(store, settings);
         registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);
     } finally {
         registry.registerWebSocketEventHandler(`custom_${PluginId}_connect`, handleConnectChange(store));
         registry.registerWebSocketEventHandler(`custom_${PluginId}_disconnect`, handleConnectChange(store));
+        registry.registerWebSocketEventHandler(`custom_${PluginId}_update_defaults`, handleConnectChange(store));
         registry.registerWebSocketEventHandler(`custom_${PluginId}_instance_status`, handleInstanceStatusChange(store));
     }
 };

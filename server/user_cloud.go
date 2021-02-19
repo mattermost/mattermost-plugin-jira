@@ -6,6 +6,7 @@ package main
 import (
 	"net/http"
 	"path"
+	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
 	jwt "github.com/dgrijalva/jwt-go"
@@ -17,8 +18,9 @@ import (
 )
 
 const (
-	argJiraJWT = "jwt"
-	argMMToken = "mm_token"
+	argJiraJWT       = "jwt"
+	argMMToken       = "mm_token"
+	cookieSecretName = "jira_temp_cookie"
 )
 
 func (p *Plugin) httpACUserRedirect(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
@@ -74,12 +76,12 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 	if !ok {
 		return respondErr(w, http.StatusBadRequest, errors.New("invalid JWT claims"))
 	}
-	accountId, ok := claims["sub"].(string)
+	accountID, ok := claims["sub"].(string)
 	if !ok {
 		return respondErr(w, http.StatusBadRequest, errors.New("invalid JWT claim sub"))
 	}
 
-	jiraClient, _, err := ci.getClientForConnection(&Connection{User: jira.User{AccountID: accountId}})
+	jiraClient, _, err := ci.getClientForConnection(&Connection{User: jira.User{AccountID: accountID}})
 	if err != nil {
 		return respondErr(w, http.StatusBadRequest, errors.Errorf("could not get client for user, err: %v", err))
 	}
@@ -93,7 +95,7 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 	connection := &Connection{
 		PluginVersion: manifest.Version,
 		User: jira.User{
-			AccountID:   accountId,
+			AccountID:   accountID,
 			Key:         jUser.Key,
 			Name:        jUser.Name,
 			DisplayName: jUser.DisplayName,
@@ -104,52 +106,49 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		},
 	}
 
-	mattermostUserId := r.Header.Get("Mattermost-User-ID")
-	if mattermostUserId == "" {
+	secretCookie, err := r.Cookie(cookieSecretName)
+	if err != nil {
 		siteURL := p.GetSiteURL()
 		return respondErr(w, http.StatusUnauthorized, errors.New(
 			`Mattermost failed to recognize your user account. `+
-				`Please make sure third-party cookies are not disabled in your browser settings. `+
-				`Make sure you are signed into Mattermost on `+siteURL+`. `+
-				`Chrome is currently experiencing an issue with this authentication method. If you are using Chrome, please try using a different browser to connect your account, until this is resolved.`))
+				`Please make sure third-party cookies are enabled in your browser settings. You can disable this setting after conntecting your Jira account. `+
+				`Please also make sure you are signed into Mattermost at `+siteURL))
 	}
 
-	requestedUserId, secret, err := p.ParseAuthToken(mmToken)
+	mattermostUserID, secret, err := p.ParseAuthToken(mmToken)
 	if err != nil {
 		return respondErr(w, http.StatusUnauthorized, err)
 	}
 
-	if mattermostUserId != requestedUserId {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized, user id does not match link"))
-	}
-
-	mmuser, appErr := p.API.GetUser(mattermostUserId)
+	mmuser, appErr := p.API.GetUser(mattermostUserID)
 	if appErr != nil {
 		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to load user "+mattermostUserId))
+			errors.WithMessage(appErr, "failed to load user "+mattermostUserID))
 	}
 
 	_, urlpath := splitInstancePath(r.URL.Path)
 	switch urlpath {
 	case routeACUserConnected:
 		storedSecret := ""
-		storedSecret, err = p.otsStore.LoadOneTimeSecret(mattermostUserId)
+		storedSecret, err = p.otsStore.LoadOneTimeSecret(mattermostUserID)
 		if err != nil {
 			return respondErr(w, http.StatusUnauthorized, err)
 		}
-		if len(storedSecret) == 0 || storedSecret != secret {
+
+		parsed := strings.Split(storedSecret, "-")
+		if len(parsed) < 2 || parsed[0] != secret || parsed[1] != secretCookie.Value {
 			return respondErr(w, http.StatusUnauthorized, errors.New("this link has already been used"))
 		}
-		err = p.connectUser(ci, types.ID(mattermostUserId), connection)
+		err = p.connectUser(ci, types.ID(mattermostUserID), connection)
 		if err != nil {
 			return respondErr(w, http.StatusInternalServerError, err)
 		}
 		// TODO For https://github.com/mattermost/mattermost-plugin-jira/issues/149, need a channel ID
 		// msg := fmt.Sprintf("You have successfully connected your Jira account (**%s**).", connection.DisplayName)
-		// _ = p.API.SendEphemeralPost(mattermostUserId, makePost(p.getUserID(), channelID, msg))
+		// _ = p.API.SendEphemeralPost(mattermostUserID, makePost(p.getUserID(), channelID, msg))
 
 	case routeACUserDisconnected:
-		_, err = p.DisconnectUser(ci.InstanceID.String(), types.ID(mattermostUserId))
+		_, err = p.DisconnectUser(ci.InstanceID.String(), types.ID(mattermostUserID))
 
 	case routeACUserConfirm:
 

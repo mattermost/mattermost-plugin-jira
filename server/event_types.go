@@ -63,20 +63,3 @@ var allEvents = NewStringSet(
 	eventUpdatedIssuetype,
 	eventUpdatedFixVersion,
 )
-
-var updateEvents = NewStringSet(
-	eventUpdatedAssignee,
-	eventUpdatedAttachment,
-	eventUpdatedComment,
-	eventUpdatedDescription,
-	eventUpdatedLabels,
-	eventUpdatedPriority,
-	eventUpdatedRank,
-	eventUpdatedReopened,
-	eventUpdatedResolved,
-	eventUpdatedSprint,
-	eventUpdatedStatus,
-	eventUpdatedSummary,
-	eventUpdatedIssuetype,
-	eventUpdatedFixVersion,
-)

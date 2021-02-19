@@ -4,16 +4,17 @@
 package main
 
 import (
-	"crypto/md5"
+	"crypto/md5" // #nosec G501
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -30,9 +31,7 @@ const (
 	prefixUser          = "user_"
 )
 
-type jiraV2Instances map[string]string
-
-var ErrAlreadyExists = errors.New("already exists")
+type JiraV2Instances map[string]string
 
 type Store interface {
 	InstanceStore
@@ -61,7 +60,7 @@ type UserStore interface {
 	StoreUser(*User) error
 	StoreConnection(instanceID, mattermostUserID types.ID, connection *Connection) error
 	LoadConnection(instanceID, mattermostUserID types.ID) (*Connection, error)
-	LoadMattermostUserId(instanceID types.ID, jiraUsername string) (types.ID, error)
+	LoadMattermostUserID(instanceID types.ID, jiraUsername string) (types.ID, error)
 	DeleteConnection(instanceID, mattermostUserID types.ID) error
 	CountUsers() (int, error)
 	MapUsers(func(user *User) error) error
@@ -70,8 +69,8 @@ type UserStore interface {
 type OTSStore interface {
 	StoreOneTimeSecret(token, secret string) error
 	LoadOneTimeSecret(token string) (string, error)
-	StoreOauth1aTemporaryCredentials(mmUserId string, credentials *OAuth1aTemporaryCredentials) error
-	OneTimeLoadOauth1aTemporaryCredentials(mmUserId string) (*OAuth1aTemporaryCredentials, error)
+	StoreOauth1aTemporaryCredentials(mmUserID string, credentials *OAuth1aTemporaryCredentials) error
+	OneTimeLoadOauth1aTemporaryCredentials(mmUserID string) (*OAuth1aTemporaryCredentials, error)
 }
 
 // Number of items to retrieve in KVList operations, made a variable so
@@ -87,13 +86,13 @@ func NewStore(p *Plugin) Store {
 }
 
 func keyWithInstanceID(instanceID, key types.ID) string {
-	h := md5.New()
+	h := md5.New() // #nosec G401
 	fmt.Fprintf(h, "%s/%s", instanceID, key)
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
 func hashkey(prefix, key string) string {
-	h := md5.New()
+	h := md5.New() // #nosec G401
 	_, _ = h.Write([]byte(key))
 	return fmt.Sprintf("%s%x", prefix, h.Sum(nil))
 }
@@ -142,37 +141,37 @@ func (store store) set(key string, v interface{}) (returnErr error) {
 	return nil
 }
 
-func (store store) StoreConnection(instanceID, mattermostUserId types.ID, connection *Connection) (returnErr error) {
+func (store store) StoreConnection(instanceID, mattermostUserID types.ID, connection *Connection) (returnErr error) {
 	defer func() {
 		if returnErr == nil {
 			return
 		}
 		returnErr = errors.WithMessage(returnErr,
-			fmt.Sprintf("failed to store connection, mattermostUserId:%s, Jira user:%s", mattermostUserId, connection.DisplayName))
+			fmt.Sprintf("failed to store connection, mattermostUserID:%s, Jira user:%s", mattermostUserID, connection.DisplayName))
 	}()
 
 	connection.PluginVersion = manifest.Version
 
-	err := store.set(keyWithInstanceID(instanceID, mattermostUserId), connection)
+	err := store.set(keyWithInstanceID(instanceID, mattermostUserID), connection)
 	if err != nil {
 		return err
 	}
 
-	err = store.set(keyWithInstanceID(instanceID, connection.JiraAccountID()), mattermostUserId)
+	err = store.set(keyWithInstanceID(instanceID, connection.JiraAccountID()), mattermostUserID)
 	if err != nil {
 		return err
 	}
 
 	// Also store AccountID -> mattermostUserID because Jira Cloud is deprecating the name field
 	// https://developer.atlassian.com/cloud/jira/platform/api-changes-for-user-privacy-announcement/
-	err = store.set(keyWithInstanceID(instanceID, connection.JiraAccountID()), mattermostUserId)
+	err = store.set(keyWithInstanceID(instanceID, connection.JiraAccountID()), mattermostUserID)
 	if err != nil {
 		return err
 	}
 
 	store.plugin.debugf("Stored: connection, keys:\n\t%s (%s): %+v\n\t%s (%s): %s",
-		keyWithInstanceID(instanceID, mattermostUserId), mattermostUserId, connection,
-		keyWithInstanceID(instanceID, connection.JiraAccountID()), connection.JiraAccountID(), mattermostUserId)
+		keyWithInstanceID(instanceID, mattermostUserID), mattermostUserID, connection,
+		keyWithInstanceID(instanceID, connection.JiraAccountID()), connection.JiraAccountID(), mattermostUserID)
 
 	return nil
 }
@@ -188,14 +187,14 @@ func (store store) LoadConnection(instanceID, mattermostUserID types.ID) (*Conne
 	return c, nil
 }
 
-func (store store) LoadMattermostUserId(instanceID types.ID, jiraUserNameOrID string) (types.ID, error) {
-	mattermostUserId := types.ID("")
-	err := store.get(keyWithInstanceID(instanceID, types.ID(jiraUserNameOrID)), &mattermostUserId)
+func (store store) LoadMattermostUserID(instanceID types.ID, jiraUserNameOrID string) (types.ID, error) {
+	mattermostUserID := types.ID("")
+	err := store.get(keyWithInstanceID(instanceID, types.ID(jiraUserNameOrID)), &mattermostUserID)
 	if err != nil {
 		return "", errors.Wrapf(err,
 			"failed to load Mattermost user ID for Jira user/ID: "+jiraUserNameOrID)
 	}
-	return mattermostUserId, nil
+	return mattermostUserID, nil
 }
 
 func (store store) DeleteConnection(instanceID, mattermostUserID types.ID) (returnErr error) {
@@ -368,7 +367,7 @@ func (store store) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
 
 	if rsaKey == nil {
 		var newRSAKey *rsa.PrivateKey
-		newRSAKey, err = rsa.GenerateKey(rand.Reader, 1024)
+		newRSAKey, err = rsa.GenerateKey(rand.Reader, 1024) // #nosec G403
 		if err != nil {
 			return nil, err
 		}
@@ -416,27 +415,27 @@ func (store store) LoadOneTimeSecret(key string) (string, error) {
 	return string(b), nil
 }
 
-func (store store) StoreOauth1aTemporaryCredentials(mmUserId string, credentials *OAuth1aTemporaryCredentials) error {
+func (store store) StoreOauth1aTemporaryCredentials(mmUserID string, credentials *OAuth1aTemporaryCredentials) error {
 	data, err := json.Marshal(&credentials)
 	if err != nil {
 		return err
 	}
 	// Expire in 15 minutes
-	appErr := store.plugin.API.KVSetWithExpiry(hashkey(prefixOneTimeSecret, mmUserId), data, 15*60)
+	appErr := store.plugin.API.KVSetWithExpiry(hashkey(prefixOneTimeSecret, mmUserID), data, 15*60)
 	if appErr != nil {
-		return errors.WithMessage(appErr, "failed to store oauth temporary credentials for "+mmUserId)
+		return errors.WithMessage(appErr, "failed to store oauth temporary credentials for "+mmUserID)
 	}
 	return nil
 }
 
-func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserId string) (*OAuth1aTemporaryCredentials, error) {
-	b, appErr := store.plugin.API.KVGet(hashkey(prefixOneTimeSecret, mmUserId))
+func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserID string) (*OAuth1aTemporaryCredentials, error) {
+	b, appErr := store.plugin.API.KVGet(hashkey(prefixOneTimeSecret, mmUserID))
 	if appErr != nil {
-		return nil, errors.WithMessage(appErr, "failed to load temporary credentials for "+mmUserId)
+		return nil, errors.WithMessage(appErr, "failed to load temporary credentials for "+mmUserID)
 	}
 	// If the key expired, appErr is nil, but the data is also nil
 	if len(b) == 0 {
-		return nil, errors.Wrapf(kvstore.ErrNotFound, "temporary credentials for %s not found or expired, try to connect again"+mmUserId)
+		return nil, errors.Wrapf(kvstore.ErrNotFound, "temporary credentials for %s not found or expired, try to connect again"+mmUserID)
 	}
 
 	var credentials OAuth1aTemporaryCredentials
@@ -444,15 +443,15 @@ func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserId string) (*OAu
 	if err != nil {
 		return nil, err
 	}
-	appErr = store.plugin.API.KVDelete(hashkey(prefixOneTimeSecret, mmUserId))
+	appErr = store.plugin.API.KVDelete(hashkey(prefixOneTimeSecret, mmUserID))
 	if appErr != nil {
-		return nil, errors.WithMessage(appErr, "failed to delete temporary credentials for "+mmUserId)
+		return nil, errors.WithMessage(appErr, "failed to delete temporary credentials for "+mmUserID)
 	}
 	return &credentials, nil
 }
 
 func (store *store) CreateInactiveCloudInstance(jiraURL types.ID) (returnErr error) {
-	ci := newCloudInstance(store.plugin, types.ID(jiraURL), false,
+	ci := newCloudInstance(store.plugin, jiraURL, false,
 		fmt.Sprintf(`{"BaseURL": "%s"}`, jiraURL),
 		&AtlassianSecurityContext{BaseURL: jiraURL.String()})
 	data, err := json.Marshal(ci)
@@ -536,6 +535,9 @@ func (store *store) DeleteInstance(id types.ID) error {
 func (store *store) LoadInstances() (*Instances, error) {
 	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
 	vs, err := kv.ValueIndex(keyInstances, &instancesArray{}).Load()
+	if errors.Cause(err) == kvstore.ErrNotFound {
+		return NewInstances(), nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -575,7 +577,10 @@ func UpdateInstances(store InstanceStore, updatef func(instances *Instances) err
 func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	// Check if V3 instances exist and return them if found
 	instances, err := p.instanceStore.LoadInstances()
-	if errors.Cause(err) != kvstore.ErrNotFound {
+	if err != nil {
+		return nil, err
+	}
+	if !instances.IsEmpty() {
 		return instances, err
 	}
 
@@ -588,7 +593,7 @@ func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	}
 
 	// Convert the V2 instances
-	var v2instances jiraV2Instances
+	var v2instances JiraV2Instances
 	if len(data) != 0 {
 		err = json.Unmarshal(data, &v2instances)
 		if err != nil {
@@ -608,14 +613,12 @@ func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	if err != nil && errors.Cause(err) != kvstore.ErrNotFound {
 		return nil, err
 	}
-	switch instance.(type) {
+	switch instance := instance.(type) {
 	case *cloudInstance:
-		ci := instance.(*cloudInstance)
-		ci.InstanceID = types.ID(ci.AtlassianSecurityContext.BaseURL)
+		instance.InstanceID = types.ID(instance.AtlassianSecurityContext.BaseURL)
 
 	case *serverInstance:
-		si := instance.(*serverInstance)
-		si.InstanceID = types.ID(si.DeprecatedJIRAServerURL)
+		instance.InstanceID = types.ID(instance.DeprecatedJIRAServerURL)
 
 	case nil:
 		return instances, nil
@@ -625,7 +628,11 @@ func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	}
 
 	instances.Set(instance.Common())
-	instances.SetV2Legacy(instance.GetID())
+	err = instances.SetV2Legacy(instance.GetID())
+	if err != nil {
+		return nil, err
+	}
+
 	err = p.instanceStore.StoreInstance(instance)
 	if err != nil {
 		return nil, err
@@ -671,13 +678,13 @@ func MigrateV3ToV2(p *Plugin) string {
 //   (known_jira_instances)  map[string]string (InstanceID->Type),
 // - v2keyCurrentJIRAInstance ("current_jira_instance") stored an Instance; will
 //   be used to set the default instance.
-func MigrateV3InstancesToV2(p *Plugin) (jiraV2Instances, string) {
+func MigrateV3InstancesToV2(p *Plugin) (JiraV2Instances, string) {
 	v3instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
 		return nil, err.Error()
 	}
 	if v3instances.IsEmpty() {
-		return nil, fmt.Sprint("(none installed)")
+		return nil, "(none installed)"
 	}
 
 	// if there are no V2 legacy instances, don't allow migrating/reverting to old V2 version.
@@ -687,7 +694,7 @@ func MigrateV3InstancesToV2(p *Plugin) (jiraV2Instances, string) {
 	}
 
 	// Convert the V3 instances back to V2
-	v2instances := jiraV2Instances{}
+	v2instances := JiraV2Instances{}
 	v2instances[string(legacyInstance.InstanceID)] = string(legacyInstance.Common().Type)
 
 	return v2instances, ""

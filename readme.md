@@ -4,7 +4,7 @@ This plugin supports a two-way integration between Mattermost and Jira. Jira Cor
 
 From v3.0 of this plugin, support for multiple Jira instances is offered.
 
-Visit our [Jira Plugin Documentation](https://mattermost.gitbook.io/jira-plugin/) for guidance on installation, configuration, and usage. 
+Visit our [Jira Plugin Documentation](https://mattermost.gitbook.io/jira-plugin/) for guidance on installation, configuration, and usage.
 
 [![Build Status](https://img.shields.io/circleci/project/github/mattermost/mattermost-plugin-jira/master)](https://circleci.com/gh/mattermost/mattermost-plugin-jira)
 [![Code Coverage](https://img.shields.io/codecov/c/github/mattermost/mattermost-plugin-jira/master)](https://codecov.io/gh/mattermost/mattermost-plugin-jira)

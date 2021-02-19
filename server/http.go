@@ -18,9 +18,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-plugin-workflow-client/workflowclient"
 	"github.com/mattermost/mattermost-server/v5/plugin"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (
@@ -43,7 +44,7 @@ const (
 	routeACInstalled                            = "/ac/installed"
 	routeACJSON                                 = "/ac/atlassian-connect.json"
 	routeACUninstalled                          = "/ac/uninstalled"
-	routeACUserRedirectWithToken                = "/ac/user_redirect.html"
+	routeACUserRedirectWithToken                = "/ac/user_redirect.html" // #nosec G101
 	routeACUserConfirm                          = "/ac/user_confirm.html"
 	routeACUserConnected                        = "/ac/user_connected.html"
 	routeACUserDisconnected                     = "/ac/user_disconnected.html"
@@ -55,6 +56,7 @@ const (
 	routeWorkflowRegister                       = "/workflow/meta"
 	routeWorkflowTriggerSetup                   = "/workflow/trigger_setup"
 	routeWorkflowCreateIssue                    = "/workflow/create_issue"
+	routeSharePublicly                          = "/api/v2/share-issue-publicly"
 )
 
 const routePrefixInstance = "instance"
@@ -63,6 +65,7 @@ const (
 	websocketEventInstanceStatus = "instance_status"
 	websocketEventConnect        = "connect"
 	websocketEventDisconnect     = "disconnect"
+	websocketEventUpdateDefaults = "update_defaults"
 )
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
@@ -119,6 +122,8 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return p.httpAttachCommentToIssue(w, r)
 	case routeIssueTransition:
 		return p.httpTransitionIssuePostAction(w, r)
+	case routeSharePublicly:
+		return p.httpShareIssuePublicly(w, r)
 
 	// User APIs
 	case routeAPIUserInfo:
@@ -253,7 +258,7 @@ func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (in
 						Description: "Jira issue ID",
 					},
 				},
-				//TODO <><> prefix route with instance? or unnecessary since it's for all instances?
+				// TODO <><> prefix route with instance? or unnecessary since it's for all instances?
 				TriggerSetupURL: "/jira" + routeWorkflowTriggerSetup,
 			},
 		},
@@ -282,7 +287,7 @@ func httpWorkflowTriggerSetup(p *Plugin, w http.ResponseWriter, r *http.Request)
 
 	if params.BaseTrigger.BaseType != "jira_event" {
 		return respondErr(w, http.StatusBadRequest,
-			errors.New("Unsupported trigger type"))
+			errors.New("unsupported trigger type"))
 	}
 
 	var trigger WorkflowTrigger

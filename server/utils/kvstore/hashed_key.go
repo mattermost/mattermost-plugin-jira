@@ -4,7 +4,7 @@
 package kvstore
 
 import (
-	"crypto/md5"
+	"crypto/md5" // #nosec G501
 	"fmt"
 	"strings"
 
@@ -73,7 +73,7 @@ func hashKey(prefix, hashableKey string) string {
 		return prefix
 	}
 
-	h := md5.New()
+	h := md5.New() // #nosec G401
 	_, _ = h.Write([]byte(hashableKey))
 	return fmt.Sprintf("%s%x", prefix, h.Sum(nil))
 }

@@ -103,7 +103,7 @@ func TestMigrateV2Instances(t *testing.T) {
 func TestMigrateV3InstancesToV2(t *testing.T) {
 	tests := map[string]struct {
 		v3Instances   string
-		expectKnown   jiraV2Instances
+		expectKnown   JiraV2Instances
 		expectMessage string
 	}{
 		"no v2legacy instances found": {
@@ -118,7 +118,7 @@ func TestMigrateV3InstancesToV2(t *testing.T) {
 		},
 		"2 instances 1 legacy": {
 			v3Instances:   `[{"InstanceID":"https://mmtest.atlassian.net","Type":"cloud","IsV2Legacy":true},{"InstanceID":"http://localhost:8080","Type":"server","IsV2Legacy":false}]`,
-			expectKnown:   jiraV2Instances{"https://mmtest.atlassian.net": "cloud"},
+			expectKnown:   JiraV2Instances{"https://mmtest.atlassian.net": "cloud"},
 			expectMessage: "",
 		},
 	}
