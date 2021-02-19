@@ -421,7 +421,7 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 		jiraURL = instance.InstanceID.String()
 	}
 
-	info, err := p.GetUserInfo(types.ID(header.UserId))
+	info, err := p.GetUserInfo(types.ID(header.UserId), nil)
 	if err != nil {
 		return p.responsef(header, "Failed to connect: "+err.Error())
 	}
@@ -981,7 +981,7 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 		return ""
 	}
 
-	info, err := p.GetUserInfo(mattermostUserID)
+	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}

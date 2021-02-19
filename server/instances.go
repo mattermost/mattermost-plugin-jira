@@ -324,7 +324,7 @@ func (p *Plugin) httpAutocompleteConnect(w http.ResponseWriter, r *http.Request)
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	info, err := p.GetUserInfo(mattermostUserID)
+	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -348,7 +348,7 @@ func (p *Plugin) httpAutocompleteUserInstance(w http.ResponseWriter, r *http.Req
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	info, err := p.GetUserInfo(mattermostUserID)
+	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -390,7 +390,7 @@ func (p *Plugin) httpAutocompleteInstalledInstanceWithAlias(w http.ResponseWrite
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	info, err := p.GetUserInfo(mattermostUserID)
+	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -422,7 +422,7 @@ func (p *Plugin) httpAutocompleteInstalledInstance(w http.ResponseWriter, r *htt
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	info, err := p.GetUserInfo(mattermostUserID)
+	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
