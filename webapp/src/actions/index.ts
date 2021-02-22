@@ -429,7 +429,7 @@ export function handleConnectChange(store) {
         }
 
         // Invalid payload. Re-fetch user info
-        if (msg.data.user && 'username' in msg.data.user) {
+        if (msg.data.user && 'auth_service' in msg.data.user) {
             store.dispatch(getConnected());
             return;
         }
