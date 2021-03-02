@@ -174,21 +174,21 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 	return validFilter
 }
 
-func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) (StringSet, error) {
+func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) ([]ChannelSubscription, error) {
 	subs, err := p.getSubscriptions(instanceID)
 	if err != nil {
 		return nil, err
 	}
 
-	channelIds := NewStringSet()
+	var channelSubscriptions []ChannelSubscription
 	subIds := subs.Channel.ByID
 	for _, sub := range subIds {
 		if p.matchesSubsciptionFilters(wh, sub.Filters) {
-			channelIds = channelIds.Add(sub.ChannelID)
+			channelSubscriptions = append(channelSubscriptions, sub)
 		}
 	}
 
-	return channelIds, nil
+	return channelSubscriptions, nil
 }
 
 func (p *Plugin) getSubscriptions(instanceID types.ID) (*Subscriptions, error) {
