@@ -4,9 +4,27 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import JiraField from 'components/jira_field';
+import {Theme} from 'mattermost-redux/types/preferences';
 
-export default class JiraFields extends React.Component {
+import {JiraField, IssueMetadata, CreateIssueFields} from 'types/model';
+
+import JiraFieldComponent from './jira_field';
+
+type Props = {
+    fields: {[key: string]: JiraField};
+    instanceID: string;
+    onChange: (key: string, value: JiraField) => void;
+    issueMetadata: IssueMetadata | null;
+    values: CreateIssueFields;
+    isFilter: boolean;
+    allowedFields: string[];
+    allowedSchemaCustom: string[];
+    theme: Theme;
+    addValidate: (isValid: () => boolean) => void;
+    removeValidate: (isValid: () => boolean) => void;
+}
+
+export default class JiraFields extends React.Component<Props> {
     static propTypes = {
         fields: PropTypes.oneOfType([
             PropTypes.object,
@@ -50,6 +68,15 @@ export default class JiraFields extends React.Component {
 
             return true;
         }).sort((a, b) => {
+            const f1 = fields[a];
+            const f2 = fields[b];
+
+            if (f1.required && !f2.required) {
+                return -1;
+            }
+            if (!f1.required && f2.required) {
+                return 1;
+            }
             return fields[a].name > fields[b].name ? 1 : -1;
         });
 
@@ -72,7 +99,7 @@ export default class JiraFields extends React.Component {
         return keys.map((key) => {
             const field = fields[key];
             return (
-                <JiraField
+                <JiraFieldComponent
                     instanceID={this.props.instanceID}
                     key={key}
                     id={key}
