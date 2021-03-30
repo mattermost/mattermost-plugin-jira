@@ -11,9 +11,9 @@ import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.
 import {FilterFieldInclusion, IssueMetadata, FilterField} from 'types/model';
 import {getCustomFieldFiltersForProjects, isEpicLinkField} from 'utils/jira_issue_metadata';
 
-import ChannelSettingsFilter, {Props} from './channel_settings_filter';
+import ChannelSubscriptionFilter, {Props} from './channel_subscription_filter';
 
-describe('components/ChannelSettingsFilter', () => {
+describe('components/ChannelSubscriptionFilter', () => {
     const fields = getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key]);
     const baseProps: Props = {
         theme: {},
@@ -35,16 +35,16 @@ describe('components/ChannelSettingsFilter', () => {
 
     test('should match snapshot', () => {
         const props = {...baseProps, issueMetadata: {}};
-        const wrapper = shallow<ChannelSettingsFilter>(
-            <ChannelSettingsFilter {...props}/>
+        const wrapper = shallow<ChannelSubscriptionFilter>(
+            <ChannelSubscriptionFilter {...props}/>
         );
         expect(wrapper).toMatchSnapshot();
     });
 
     test('should render JiraEpicSelector when Epic Link field is selected', () => {
         const props = {...baseProps};
-        const wrapper = shallow<ChannelSettingsFilter>(
-            <ChannelSettingsFilter {...props}/>
+        const wrapper = shallow<ChannelSubscriptionFilter>(
+            <ChannelSubscriptionFilter {...props}/>
         );
 
         expect(wrapper.find(JiraEpicSelector).length).toBe(0);
@@ -60,8 +60,8 @@ describe('components/ChannelSettingsFilter', () => {
     test('should render correct inclusion captions for different include choices', () => {
         const props = {...baseProps};
 
-        const wrapper = shallow<ChannelSettingsFilter>(
-            <ChannelSettingsFilter {...props}/>
+        const wrapper = shallow<ChannelSubscriptionFilter>(
+            <ChannelSubscriptionFilter {...props}/>
         );
 
         const select = wrapper.find('ReactSelectSetting[name="inclusion"]');
@@ -95,8 +95,8 @@ describe('components/ChannelSettingsFilter', () => {
                 issueTypes: [{id: '10002', name: 'Task'}],
             },
         };
-        const wrapper = shallow<ChannelSettingsFilter>(
-            <ChannelSettingsFilter {...props}/>
+        const wrapper = shallow<ChannelSubscriptionFilter>(
+            <ChannelSubscriptionFilter {...props}/>
         );
 
         let result;

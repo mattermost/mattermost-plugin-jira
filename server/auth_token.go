@@ -86,7 +86,7 @@ func (p *Plugin) ParseAuthToken(encoded string) (mattermostUserID, tokenSecret s
 		}
 
 		if t.Expires.Before(time.Now()) {
-			return errors.New("Expired token")
+			return errors.New("expired token")
 		}
 
 		return nil
@@ -125,7 +125,7 @@ func encrypt(plain, secret []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	sealed := aesgcm.Seal(nil, nonce, []byte(plain), nil)
+	sealed := aesgcm.Seal(nil, nonce, plain, nil)
 	return append(nonce, sealed...), nil
 }
 

@@ -93,7 +93,7 @@ func TestWebhookVariousErrors(t *testing.T) {
 	assert.Equal(t, "", wh.mdJiraLink("test", "/test"))
 	assert.Equal(t, "", wh.mdIssueDescription())
 	assert.Equal(t, "", wh.mdIssueSummary())
-	assert.Equal(t, "_nobody_", wh.mdIssueAssignee())
+	assert.Equal(t, Nobody, wh.mdIssueAssignee())
 	assert.Equal(t, "", wh.mdIssueType())
 	assert.Equal(t, " ", wh.mdSummaryLink())
 	assert.Equal(t, " ", wh.mdKeyLink())

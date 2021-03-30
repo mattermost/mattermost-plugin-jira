@@ -8,8 +8,9 @@ import (
 	"net/http"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 type testInstance struct {
@@ -56,7 +57,7 @@ func (ti testInstance) GetMattermostKey() string {
 func (ti testInstance) GetDisplayDetails() map[string]string {
 	return map[string]string{}
 }
-func (ti testInstance) GetUserConnectURL(mattermostUserId string) (string, *http.Cookie, error) {
+func (ti testInstance) GetUserConnectURL(mattermostUserID string) (string, *http.Cookie, error) {
 	return fmt.Sprintf("%s/UserConnectURL.some", ti.GetURL()), nil, nil
 }
 func (ti testInstance) GetClient(*Connection) (Client, error) {
@@ -80,7 +81,7 @@ func (store mockUserStore) StoreConnection(types.ID, types.ID, *Connection) erro
 func (store mockUserStore) LoadConnection(types.ID, types.ID) (*Connection, error) {
 	return &Connection{}, nil
 }
-func (store mockUserStore) LoadMattermostUserId(instanceID types.ID, jiraUserName string) (types.ID, error) {
+func (store mockUserStore) LoadMattermostUserID(instanceID types.ID, jiraUserName string) (types.ID, error) {
 	return "testMattermostUserId012345", nil
 }
 func (store mockUserStore) DeleteConnection(instanceID, mattermostUserID types.ID) error {

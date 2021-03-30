@@ -37,9 +37,9 @@ type Connection struct {
 func (c *Connection) JiraAccountID() types.ID {
 	if c.AccountID != "" {
 		return types.ID(c.AccountID)
-	} else {
-		return types.ID(c.Name)
 	}
+
+	return types.ID(c.Name)
 }
 
 type ConnectionSettings struct {
@@ -67,8 +67,8 @@ func (p *Plugin) httpUserConnect(w http.ResponseWriter, r *http.Request, instanc
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized,
 			errors.New("not authorized"))
 	}
@@ -80,13 +80,13 @@ func (p *Plugin) httpUserConnect(w http.ResponseWriter, r *http.Request, instanc
 
 	// Users shouldn't be able to make multiple connections.
 	// TODO <> this block needs to be updated. Though idk if this route will still get called?
-	connection, err := p.userStore.LoadConnection(instance.GetID(), types.ID(mattermostUserId))
+	connection, err := p.userStore.LoadConnection(instance.GetID(), types.ID(mattermostUserID))
 	if err == nil && len(connection.JiraAccountID()) != 0 {
 		return respondErr(w, http.StatusBadRequest,
-			errors.New("You already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect."))
+			errors.New("you already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect"))
 	}
 
-	redirectURL, cookie, err := instance.GetUserConnectURL(mattermostUserId)
+	redirectURL, cookie, err := instance.GetUserConnectURL(mattermostUserID)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -105,8 +105,8 @@ func (p *Plugin) httpUserDisconnect(w http.ResponseWriter, r *http.Request) (int
 			errors.New("method "+r.Method+" is not allowed, must be POST"))
 	}
 
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized,
 			errors.New("not authorized"))
 	}
@@ -127,7 +127,7 @@ func (p *Plugin) httpUserDisconnect(w http.ResponseWriter, r *http.Request) (int
 			errors.WithMessage(err, "failed to unmarshal disconnect payload"))
 	}
 
-	_, err = p.DisconnectUser(disconnectPayload.InstanceID, types.ID(mattermostUserId))
+	_, err = p.DisconnectUser(disconnectPayload.InstanceID, types.ID(mattermostUserID))
 	if errors.Cause(err) == kvstore.ErrNotFound {
 		return respondErr(w, http.StatusNotFound,
 			errors.Errorf("Could not complete the **disconnection** request. You do not currently have a Jira account at %q linked to your Mattermost account.",
@@ -138,7 +138,11 @@ func (p *Plugin) httpUserDisconnect(w http.ResponseWriter, r *http.Request) (int
 			errors.Errorf("Could not complete the **disconnection** request. Error: %v", err))
 	}
 
-	w.Write([]byte(`{"success": true}`))
+	_, err = w.Write([]byte(`{"success": true}`))
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+	}
+
 	return http.StatusOK, nil
 }
 
@@ -198,7 +202,7 @@ func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, proje
 		}
 	}
 
-	info, err := p.GetUserInfo(types.ID(mattermostUserID), user)
+	info, err := p.GetUserInfo(mattermostUserID, user)
 	if err != nil {
 		return
 	}
@@ -214,8 +218,8 @@ func (p *Plugin) httpGetSettingsInfo(w http.ResponseWriter, r *http.Request) (in
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized,
 			errors.New("not authorized"))
 	}
@@ -246,7 +250,7 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, conne
 		return err
 	}
 
-	info, err := p.GetUserInfo(types.ID(mattermostUserID), user)
+	info, err := p.GetUserInfo(mattermostUserID, user)
 	if err != nil {
 		return err
 	}
@@ -292,7 +296,7 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 		return nil, err
 	}
 
-	info, err := p.GetUserInfo(types.ID(user.MattermostUserID), user)
+	info, err := p.GetUserInfo(user.MattermostUserID, user)
 	if err != nil {
 		return nil, err
 	}

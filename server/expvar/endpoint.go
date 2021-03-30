@@ -79,9 +79,9 @@ func (e *Endpoint) Record(reqSize, respSize utils.ByteSize, dur time.Duration, i
 		defer e.lock.Unlock()
 	}
 
-	e.RequestSize.RecordValue(float64(reqSize))
-	e.ResponseSize.RecordValue(float64(respSize))
-	e.Elapsed.RecordValue(float64(dur))
+	_ = e.RequestSize.RecordValue(float64(reqSize))
+	_ = e.ResponseSize.RecordValue(float64(respSize))
+	_ = e.Elapsed.RecordValue(float64(dur))
 
 	if isError {
 		e.Errors++
@@ -232,7 +232,7 @@ func (e *Endpoint) Merge(multi ...*Endpoint) {
 			if err != nil {
 				continue
 			}
-			to.RecordValues(value, count)
+			_ = to.RecordValues(value, count)
 		}
 	}
 

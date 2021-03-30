@@ -40,8 +40,8 @@ func (wh testWebhookWrapper) Events() StringSet {
 	return wh.Webhook.Events()
 }
 
-func (wh *testWebhookWrapper) PostToChannel(p *Plugin, instanceID types.ID, channelId, fromUserId string) (*model.Post, int, error) {
-	post, status, err := wh.Webhook.PostToChannel(p, "", channelId, fromUserId)
+func (wh *testWebhookWrapper) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error) {
+	post, status, err := wh.Webhook.PostToChannel(p, "", channelID, fromUserID, subscriptionName)
 	if post != nil {
 		wh.postedToChannel = post
 	}
@@ -78,7 +78,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			ExpectedText:            "Unit test description, not that long",
 			ExpectedFields: []*model.SlackAttachmentField{
-				&model.SlackAttachmentField{
+				{
 					Title: "Priority",
 					Value: "High",
 					Short: true,
@@ -102,7 +102,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			// ExpectedText:            "Unit test description, not that long",
 			ExpectedFields: []*model.SlackAttachmentField{
-				&model.SlackAttachmentField{
+				{
 					Title: "Priority",
 					Value: "High",
 					Short: true,
@@ -401,7 +401,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			ExpectedText:            "Unit test description, not that long",
 			ExpectedFields: []*model.SlackAttachmentField{
-				&model.SlackAttachmentField{
+				{
 					Title: "Priority",
 					Value: "High",
 					Short: true,
@@ -425,7 +425,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			// ExpectedText:            "Unit test description, not that long",
 			ExpectedFields: []*model.SlackAttachmentField{
-				&model.SlackAttachmentField{
+				{
 					Title: "Priority",
 					Value: "High",
 					Short: true,

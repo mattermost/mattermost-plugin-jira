@@ -26,13 +26,13 @@ func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, e
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized,
 			errors.New("not authorized"))
 	}
 
-	info, err := p.GetUserInfo(types.ID(mattermostUserId), nil)
+	info, err := p.GetUserInfo(types.ID(mattermostUserID), nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}

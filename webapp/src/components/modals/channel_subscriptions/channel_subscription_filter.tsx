@@ -29,7 +29,7 @@ export type State = {
     error: string | null;
 }
 
-export default class ChannelSettingsFilter extends React.PureComponent<Props, State> {
+export default class ChannelSubscriptionFilter extends React.PureComponent<Props, State> {
     state = {
         showConfirmDeleteModal: false,
         error: null,
@@ -342,7 +342,7 @@ export default class ChannelSettingsFilter extends React.PureComponent<Props, St
     }
 }
 
-type EmptyChannelSettingsFilterProps = {
+type EmptyChannelSubscriptionFilterProps = {
     fields: FilterField[];
     theme: object;
     chosenIssueTypes: string[];
@@ -351,7 +351,7 @@ type EmptyChannelSettingsFilterProps = {
     cancelAdd: () => void;
 };
 
-export function EmptyChannelSettingsFilter(props: EmptyChannelSettingsFilterProps): JSX.Element {
+export function EmptyChannelSubscriptionFilter(props: EmptyChannelSubscriptionFilterProps): JSX.Element {
     const handleFieldTypeChange = (name: string, choice: string): void => {
         const {onChange} = props;
 

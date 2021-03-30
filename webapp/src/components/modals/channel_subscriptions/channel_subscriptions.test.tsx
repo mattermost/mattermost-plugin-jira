@@ -10,8 +10,8 @@ import {IssueMetadata, ProjectMetadata} from 'types/model';
 
 import FullScreenModal from '../full_screen_modal/full_screen_modal';
 
-import ChannelSettingsModal, {Props} from './channel_settings';
-import ChannelSettingsModalInner from './channel_settings_internal';
+import ChannelSubscriptionsModal, {Props} from './channel_subscriptions';
+import ChannelSubscriptionsModalInner from './channel_subscriptions_internal';
 
 describe('components/ChannelSettingsModal', () => {
     const baseProps = {
@@ -37,11 +37,11 @@ describe('components/ChannelSettingsModal', () => {
             channel: null,
         };
 
-        const wrapper = shallow<ChannelSettingsModal>(
-            <ChannelSettingsModal {...props}/>, {lifecycleExperimental: true}
+        const wrapper = shallow<ChannelSubscriptionsModal>(
+            <ChannelSubscriptionsModal {...props}/>, {lifecycleExperimental: true}
         );
 
-        expect(wrapper.find(ChannelSettingsModalInner).length).toEqual(0);
+        expect(wrapper.find(ChannelSubscriptionsModalInner).length).toEqual(0);
         expect(wrapper.find(FullScreenModal).props().show).toBe(false);
 
         wrapper.setProps({
@@ -52,7 +52,7 @@ describe('components/ChannelSettingsModal', () => {
         await props.fetchChannelSubscriptions(testChannel.id);
         await props.fetchJiraProjectMetadataForAllInstances();
 
-        expect(wrapper.find(ChannelSettingsModalInner).length).toEqual(1);
+        expect(wrapper.find(ChannelSubscriptionsModalInner).length).toEqual(1);
         expect(wrapper.find(FullScreenModal).props().show).toBe(true);
     });
 
@@ -65,8 +65,8 @@ describe('components/ChannelSettingsModal', () => {
             channel: null,
         };
 
-        const wrapper = shallow<ChannelSettingsModal>(
-            <ChannelSettingsModal {...props}/>, {lifecycleExperimental: true}
+        const wrapper = shallow<ChannelSubscriptionsModal>(
+            <ChannelSubscriptionsModal {...props}/>, {lifecycleExperimental: true}
         );
 
         wrapper.setProps({
@@ -77,7 +77,7 @@ describe('components/ChannelSettingsModal', () => {
         await props.fetchChannelSubscriptions(testChannel.id);
         await props.fetchJiraProjectMetadataForAllInstances();
 
-        expect(wrapper.find(ChannelSettingsModalInner).length).toEqual(0);
+        expect(wrapper.find(ChannelSubscriptionsModalInner).length).toEqual(0);
         expect(wrapper.find(FullScreenModal).props().show).toBe(false);
         expect(props.sendEphemeralPost).toHaveBeenCalledWith('You do not have permission to edit subscriptions for this channel. Subscribing to Jira events will create notifications in this channel when certain events occur, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.');
     });

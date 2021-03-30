@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`components/ChannelSettingsFilters should match snapshot 1`] = `
+exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
 <div
   className="margin-bottom"
 >
@@ -13,7 +13,7 @@ exports[`components/ChannelSettingsFilters should match snapshot 1`] = `
     <div
       key="0"
     >
-      <ChannelSettingsFilter
+      <ChannelSubscriptionFilter
         addValidate={[MockFunction]}
         chosenIssueTypes={
           Array [
@@ -168,7 +168,7 @@ exports[`components/ChannelSettingsFilters should match snapshot 1`] = `
       />
     </div>
     <div>
-      <EmptyChannelSettingsFilter
+      <EmptyChannelSubscriptionFilter
         cancelAdd={[Function]}
         chosenIssueTypes={
           Array [

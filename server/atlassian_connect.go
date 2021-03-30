@@ -82,7 +82,10 @@ func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, e
 	}
 
 	// Setup autolink
-	p.AddAutolinksForCloudInstance(newInstance)
+	err = p.AddAutolinksForCloudInstance(newInstance)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
 
 	return respondJSON(w, []string{"OK"})
 }

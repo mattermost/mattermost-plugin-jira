@@ -28,6 +28,7 @@ const (
 	mockUserIDUnknown              = "3"
 	mockUserIDSysAdmin             = "4"
 	mockUserIDNonSysAdmin          = "5"
+	mattermostSiteURL              = "https://somelink.com"
 )
 
 type mockUserStoreKV struct {
@@ -140,7 +141,7 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 	tc := TestConfiguration{}
 	p.updateConfig(func(conf *config) {
 		conf.Secret = tc.Secret
-		conf.mattermostSiteURL = "https://somelink.com"
+		conf.mattermostSiteURL = mattermostSiteURL
 	})
 	api := &plugintest.API{}
 	api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
@@ -200,19 +201,20 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			isSendEphemeralPostCalled := false
 
-			currentTestApi := api
-			currentTestApi.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
+			currentTestAPI := api
+			currentTestAPI.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
 				isSendEphemeralPostCalled = true
 
 				post := args.Get(1).(*model.Post)
 				assert.Equal(t, tt.expectedMsg, post.Message)
 			}).Once().Return(&model.Post{})
 
-			p.SetAPI(currentTestApi)
+			p.SetAPI(currentTestAPI)
 			p.instanceStore = p.getMockInstanceStoreKV(tt.numInstances)
 			p.userStore = getMockUserStoreKV()
 
-			p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
+			_, err := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
+			require.Nil(t, err)
 
 			assert.Equal(t, true, isSendEphemeralPostCalled)
 		})
@@ -294,8 +296,8 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			p := Plugin{}
 			p.updateConfig(func(conf *config) {
-				conf.mattermostSiteURL = "https://somelink.com"
-				conf.rsaKey, _ = rsa.GenerateKey(rand.Reader, 1024)
+				conf.mattermostSiteURL = mattermostSiteURL
+				conf.rsaKey, _ = rsa.GenerateKey(rand.Reader, 1024) // #nosec G403
 			})
 			isSendEphemeralPostCalled := false
 
@@ -383,7 +385,7 @@ func TestPlugin_ExecuteCommand_Uninstall(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			p := Plugin{}
 			p.updateConfig(func(conf *config) {
-				conf.mattermostSiteURL = "https://somelink.com"
+				conf.mattermostSiteURL = mattermostSiteURL
 			})
 			isSendEphemeralPostCalled := false
 			currentTestAPI := api

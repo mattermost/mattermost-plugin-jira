@@ -14,9 +14,9 @@ import testChannel from 'testdata/channel.json';
 
 import {IssueMetadata, ProjectMetadata, FilterFieldInclusion} from 'types/model';
 
-import EditChannelSettings from './edit_channel_settings';
+import EditChannelSubscription from './edit_channel_subscription';
 
-describe('components/EditChannelSettings', () => {
+describe('components/EditChannelSubscription', () => {
     const baseActions = {
         createChannelSubscription: jest.fn().mockResolvedValue({}),
         deleteChannelSubscription: jest.fn().mockResolvedValue({}),
@@ -89,8 +89,8 @@ describe('components/EditChannelSettings', () => {
 
     test('should match snapshot', () => {
         const props = {...baseProps};
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState(baseState);
         expect(wrapper).toMatchSnapshot();
@@ -98,8 +98,8 @@ describe('components/EditChannelSettings', () => {
 
     test('should match snapshot with no subscriptions', () => {
         const props = {...baseProps, channelSubscriptions: [], selectedSubscription: null};
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState(baseState);
         expect(wrapper).toMatchSnapshot();
@@ -107,8 +107,8 @@ describe('components/EditChannelSettings', () => {
 
     test('should match snapshot with no issue metadata', () => {
         const props = {...baseProps};
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState({...baseState, jiraIssueMetadata: null});
         expect(wrapper).toMatchSnapshot();
@@ -116,8 +116,8 @@ describe('components/EditChannelSettings', () => {
 
     test('should match snapshot after fetching issue metadata', async () => {
         const props = {...baseProps};
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState(baseState);
 
@@ -133,8 +133,8 @@ describe('components/EditChannelSettings', () => {
             ...baseProps,
             fetchJiraIssueMetadataForProjects,
         };
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState(baseState);
         wrapper.instance().handleProjectChange('TES');
@@ -186,8 +186,8 @@ describe('components/EditChannelSettings', () => {
             channelSubscriptions: [subscription],
             selectedSubscription: subscription,
         };
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState(baseState);
 
@@ -211,8 +211,8 @@ describe('components/EditChannelSettings', () => {
             selectedSubscription: null,
             finishEditSubscription,
         };
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState(baseState);
 
@@ -264,8 +264,8 @@ describe('components/EditChannelSettings', () => {
             finishEditSubscription,
         };
 
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState({...baseState, jiraIssueMetadata: serverIssueMetadata});
 
@@ -331,8 +331,8 @@ describe('components/EditChannelSettings', () => {
             channelSubscriptions: [subscription],
             selectedSubscription: subscription,
         };
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState(baseState);
 
@@ -366,8 +366,8 @@ describe('components/EditChannelSettings', () => {
             editChannelSubscription,
             finishEditSubscription,
         };
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState(baseState);
 
@@ -414,8 +414,8 @@ describe('components/EditChannelSettings', () => {
             ...baseProps,
         };
 
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState(baseState);
 
@@ -438,8 +438,8 @@ describe('components/EditChannelSettings', () => {
             ...baseProps,
         };
 
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState(baseState);
 
@@ -475,8 +475,8 @@ describe('components/EditChannelSettings', () => {
             createChannelSubscription,
             channelSubscriptions: [],
         };
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState(baseState);
 
@@ -518,8 +518,8 @@ describe('components/EditChannelSettings', () => {
             channelSubscriptions: [],
             selectedSubscription: null,
         };
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState(baseState);
 
@@ -535,8 +535,8 @@ describe('components/EditChannelSettings', () => {
             deleteChannelSubscription,
             finishEditSubscription,
         };
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState(baseState);
 
@@ -561,8 +561,8 @@ describe('components/EditChannelSettings', () => {
             deleteChannelSubscription,
             finishEditSubscription,
         };
-        const wrapper = shallow<EditChannelSettings>(
-            <EditChannelSettings {...props}/>
+        const wrapper = shallow<EditChannelSubscription>(
+            <EditChannelSubscription {...props}/>
         );
         wrapper.setState(baseState);
 

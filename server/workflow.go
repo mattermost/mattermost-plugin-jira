@@ -64,7 +64,7 @@ func (p *Plugin) NotifyWorkflow(wh *webhook) error {
 	})
 
 	if err := workflowclient.NewClientPlugin(p.API).NotifyWorkflows(callbacks, activateParams); err != nil {
-		return fmt.Errorf("Unable to notify some workflows: %w", err)
+		return fmt.Errorf("unable to notify some workflows: %w", err)
 	}
 
 	return nil

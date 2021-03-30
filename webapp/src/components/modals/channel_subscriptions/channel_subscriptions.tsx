@@ -7,14 +7,14 @@ import {ProjectMetadata, ChannelSubscription} from 'types/model';
 
 import FullScreenModal from '../full_screen_modal/full_screen_modal';
 
-import ChannelSettingsModalInner from './channel_settings_internal';
+import ChannelSubscriptionsModalInner from './channel_subscriptions_internal';
 import {SharedProps} from './shared_props';
 
-import './channel_settings_modal.scss';
+import './channel_subscriptions_modal.scss';
 
 export type Props = SharedProps;
 
-export default class ChannelSettingsModal extends PureComponent<Props> {
+export default class ChannelSubscriptionsModal extends PureComponent<Props> {
     state = {
         showModal: false,
         allProjectMetadata: null,
@@ -40,8 +40,6 @@ export default class ChannelSettingsModal extends PureComponent<Props> {
         if (!this.props.channel) {
             return;
         }
-
-        this.props.sendEphemeralPost('Fetching subscriptions.');
 
         const subsResponse = await this.props.fetchChannelSubscriptions(this.props.channel.id);
         if (subsResponse.error) {
@@ -74,7 +72,7 @@ export default class ChannelSettingsModal extends PureComponent<Props> {
         let inner;
         if (isModalOpen) {
             inner = (
-                <ChannelSettingsModalInner
+                <ChannelSubscriptionsModalInner
                     allProjectMetadata={this.state.allProjectMetadata}
                     {...this.props}
                 />

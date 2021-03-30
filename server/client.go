@@ -26,6 +26,7 @@ import (
 
 const autocompleteSearchRoute = "2/jql/autocompletedata/suggestions"
 const userSearchRoute = "2/user/assignable/search"
+const unrecognizedEndpoint = "_unrecognized"
 
 // Client is the combined interface for all upstream APIs and convenience methods.
 type Client interface {
@@ -288,7 +289,6 @@ func (client JiraClient) DoTransition(issueKey, transitionID string) error {
 // AddAttachment uploads a file attachment
 func (client JiraClient) AddAttachment(api plugin.API, issueKey, fileID string, maxSize utils.ByteSize) (
 	mattermostName, jiraName, mime string, err error) {
-
 	fileinfo, appErr := api.GetFileInfo(fileID)
 	if appErr != nil {
 		return "", "", "", appErr
@@ -415,15 +415,18 @@ var keyOrIDRegex = regexp.MustCompile("(^[[:alpha:]]+-)?[[:digit:]]+$")
 func endpointNameFromRequest(r *http.Request) string {
 	_, path := splitInstancePath(r.URL.Path)
 	l := strings.ToLower(path)
-	s := strings.TrimLeft(l, "/rest/api")
+	s := strings.TrimPrefix(l, "/rest/api")
+	s = strings.Trim(s, "/")
+
 	if s == l {
 		return "_unrecognized"
 	}
+
 	parts := strings.Split(s, "/")
 	n := len(parts)
 
 	if n < 2 {
-		return "_unrecognized"
+		return unrecognizedEndpoint
 	}
 	var out = []string{"api/jira", parts[0], parts[1]}
 	context := parts[1]
