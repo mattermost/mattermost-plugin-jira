@@ -154,7 +154,7 @@ func TestIsJiraCloudURL(t *testing.T) {
 func TestIsJiraAccessible(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
-	dummyUrl := "https://dummy-url.com"
+	dummyURL := "https://dummy-url.com"
 
 	tests := map[string]struct {
 		status     int
@@ -168,10 +168,10 @@ func TestIsJiraAccessible(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			httpmock.RegisterResponder("GET", dummyUrl+"/status",
+			httpmock.RegisterResponder("GET", dummyURL+"/status",
 				httpmock.NewStringResponder(tt.status, tt.resBody))
 
-			jiraIsAccessible, _ := IsJiraAccessible(dummyUrl)
+			jiraIsAccessible, _ := IsJiraAccessible(dummyURL)
 			assert.Equal(t, tt.accessible, jiraIsAccessible)
 		})
 	}
