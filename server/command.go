@@ -785,14 +785,10 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 		return p.responsef(header, err.Error())
 	}
 
-	jiraIsAccessible, err := utils.IsJiraAccessible(jiraURL)
-	if err != nil {
-		return p.responsef(header, err.Error())
+	errMsg, accessible := checkIfJiraIsAccessible(jiraURL)
+	if !accessible {
+		return p.responsef(header, errMsg)
 	}
-	if !jiraIsAccessible {
-		return p.responsef(header, "It looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue.")
-	}
-
 	if strings.Contains(jiraURL, "http:") {
 		jiraURL = strings.ReplaceAll(jiraURL, "http:", "https:")
 		return p.responsef(header, "`/jira install cloud` requires a secure connection (HTTPS). Please run the following command:\n```\n/jira install cloud %s\n```", jiraURL)
@@ -842,14 +838,10 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 		return p.responsef(header, "The Jira URL you provided looks like a Jira Cloud URL - install it with:\n```\n/jira install cloud %s\n```", jiraURL)
 	}
 
-	jiraIsAccessible, err := utils.IsJiraAccessible(jiraURL)
-	if err != nil {
-		return p.responsef(header, err.Error())
+	errMsg, accessible := checkIfJiraIsAccessible(jiraURL)
+	if !accessible {
+		return p.responsef(header, errMsg)
 	}
-	if !jiraIsAccessible {
-		return p.responsef(header, "It looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue.")
-	}
-
 	instance := newServerInstance(p, jiraURL)
 	err = p.InstallInstance(instance)
 	if err != nil {
@@ -866,6 +858,17 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 		"MattermostKey": instance.GetMattermostKey(),
 		"PublicKey":     strings.TrimSpace(string(pkey)),
 	})
+}
+
+func checkIfJiraIsAccessible(jiraURL string) (string, bool) {
+	jiraIsAccessible, err := utils.IsJiraAccessible(jiraURL)
+	if err != nil {
+		return err.Error(), false
+	}
+	if !jiraIsAccessible {
+		return "It looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue.", false
+	}
+	return "", true
 }
 
 // executeUninstall will uninstall the jira instance if the url matches, and then update all connected clients
