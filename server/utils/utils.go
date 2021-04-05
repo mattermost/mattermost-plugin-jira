@@ -4,6 +4,9 @@
 package utils
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
@@ -64,4 +67,42 @@ func IsJiraCloudURL(jiraURL string) (bool, error) {
 		return false, err
 	}
 	return strings.HasSuffix(u.Hostname(), ".atlassian.net"), nil
+}
+
+type JiraStatus struct {
+	State string `json:"state"`
+}
+
+// IsJiraAccessible checks if `/status` endpoint of the Jira URL is accessible
+// and responding with the correct state which is "RUNNING"
+func IsJiraAccessible(jiraURL string) (bool, error) {
+	u, err := url.Parse(jiraURL)
+	if err != nil {
+		return false, err
+	}
+	if u.Host == "" {
+		return false, errors.Errorf("Invalid URL, no hostname: %q", jiraURL)
+	}
+
+	jURL := strings.TrimSuffix(u.String(), "/")
+	r, err := http.Get(jURL + "/status")
+	if err != nil {
+		return false, err
+	}
+	if r.StatusCode != http.StatusOK {
+		return false, nil
+	}
+
+	resBody, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		return false, nil
+	}
+	var j JiraStatus
+	err = json.Unmarshal(resBody, &j)
+	if err != nil {
+		return false, nil
+	}
+
+	return j.State == "RUNNING", nil
 }

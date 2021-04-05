@@ -784,6 +784,15 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
+
+	jiraIsAccessible, err := utils.IsJiraAccessible(jiraURL)
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
+	if !jiraIsAccessible {
+		return p.responsef(header, "It looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue.")
+	}
+
 	if strings.Contains(jiraURL, "http:") {
 		jiraURL = strings.ReplaceAll(jiraURL, "http:", "https:")
 		return p.responsef(header, "`/jira install cloud` requires a secure connection (HTTPS). Please run the following command:\n```\n/jira install cloud %s\n```", jiraURL)
@@ -831,6 +840,14 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 	}
 	if isJiraCloudURL {
 		return p.responsef(header, "The Jira URL you provided looks like a Jira Cloud URL - install it with:\n```\n/jira install cloud %s\n```", jiraURL)
+	}
+
+	jiraIsAccessible, err := utils.IsJiraAccessible(jiraURL)
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
+	if !jiraIsAccessible {
+		return p.responsef(header, "It looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue.")
 	}
 
 	instance := newServerInstance(p, jiraURL)

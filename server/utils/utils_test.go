@@ -5,6 +5,8 @@ package utils
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -147,4 +149,34 @@ func TestIsJiraCloudURL(t *testing.T) {
 	serverLinkIsCloud, err := IsJiraCloudURL("https://somelink.com:1234/jira")
 	require.Nil(t, err)
 	assert.False(t, serverLinkIsCloud)
+}
+
+func TestIsJiraAccessible(t *testing.T) {
+	tests := map[string]struct {
+		path       string
+		status     int
+		resBody    string
+		accessible bool
+	}{
+		"Accessible instance":                   {"/status", http.StatusOK, `{"state": "RUNNING"}`, true},
+		"Instance is not in correct state":      {"/status", http.StatusOK, `{"state": "STARTING"}`, false},
+		"Instance is not returning status body": {"/status", http.StatusOK, "", false},
+		"Instance not found":                    {"/status", http.StatusNotFound, "", false},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == tt.path {
+					_, _ = w.Write([]byte(tt.resBody))
+					w.WriteHeader(http.StatusNotFound)
+				}
+			}))
+			defer ts.Close()
+
+			tsURL := ts.URL
+			jiraIsAccessible, err := IsJiraAccessible(tsURL)
+			require.Nil(t, err)
+			assert.Equal(t, tt.accessible, jiraIsAccessible)
+		})
+	}
 }

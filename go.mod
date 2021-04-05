@@ -8,6 +8,7 @@ require (
 	github.com/dghubble/oauth1 v0.5.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/google/uuid v1.2.0
+	github.com/jarcoal/httpmock v1.0.8
 	github.com/mattermost/mattermost-plugin-api v0.0.16
 	github.com/mattermost/mattermost-plugin-autolink v1.2.2-0.20210709183311-c8fa30db649f
 	github.com/mattermost/mattermost-server/v5 v5.3.2-0.20210621071817-df224571d8a1
