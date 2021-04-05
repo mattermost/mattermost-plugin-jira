@@ -78,7 +78,7 @@ type JiraStatus struct {
 func IsJiraAccessible(jiraURL string) (bool, error) {
 	u, err := url.Parse(jiraURL)
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 	if u.Host == "" {
 		return false, errors.Errorf("Invalid URL, no hostname: %q", jiraURL)
@@ -87,7 +87,7 @@ func IsJiraAccessible(jiraURL string) (bool, error) {
 	jURL := strings.TrimSuffix(u.String(), "/")
 	r, err := http.Get(jURL + "/status")
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 	if r.StatusCode != http.StatusOK {
 		return false, nil

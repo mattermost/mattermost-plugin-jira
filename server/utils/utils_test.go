@@ -6,9 +6,9 @@ package utils
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
+	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -152,30 +152,26 @@ func TestIsJiraCloudURL(t *testing.T) {
 }
 
 func TestIsJiraAccessible(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	dummyUrl := "https://dummy-url.com"
+
 	tests := map[string]struct {
-		path       string
 		status     int
 		resBody    string
 		accessible bool
 	}{
-		"Accessible instance":                   {"/status", http.StatusOK, `{"state": "RUNNING"}`, true},
-		"Instance is not in correct state":      {"/status", http.StatusOK, `{"state": "STARTING"}`, false},
-		"Instance is not returning status body": {"/status", http.StatusOK, "", false},
-		"Instance not found":                    {"/status", http.StatusNotFound, "", false},
+		"Accessible instance":                   {http.StatusOK, `{"state": "RUNNING"}`, true},
+		"Instance is not in correct state":      {http.StatusOK, `{"state": "STARTING"}`, false},
+		"Instance is not returning status body": {http.StatusOK, "", false},
+		"Instance not found":                    {http.StatusNotFound, `{"state": "RUNNING"}`, false},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Path == tt.path {
-					_, _ = w.Write([]byte(tt.resBody))
-					w.WriteHeader(http.StatusNotFound)
-				}
-			}))
-			defer ts.Close()
+			httpmock.RegisterResponder("GET", dummyUrl+"/status",
+				httpmock.NewStringResponder(tt.status, tt.resBody))
 
-			tsURL := ts.URL
-			jiraIsAccessible, err := IsJiraAccessible(tsURL)
-			require.Nil(t, err)
+			jiraIsAccessible, _ := IsJiraAccessible(dummyUrl)
 			assert.Equal(t, tt.accessible, jiraIsAccessible)
 		})
 	}
