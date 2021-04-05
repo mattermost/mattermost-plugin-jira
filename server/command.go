@@ -97,6 +97,10 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"* `/jira v2revert ` - Revert to V2 jira plugin data model\n" +
 	""
 
+const jiraConnectionErrorText = "It looks like we couldn't validate the connection to your Jira server. " +
+	"Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. " +
+	"If you intend to have a one way integration from Jira to Mattermost this is not an issue."
+
 func (p *Plugin) registerJiraCommand(enableAutocomplete, enableOptInstance bool) error {
 	// Optimistically unregister what was registered before
 	_ = p.API.UnregisterCommand("", commandTrigger)
@@ -785,7 +789,7 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 		return p.responsef(header, err.Error())
 	}
 
-	errMsg, accessible := checkIfJiraIsAccessible(jiraURL)
+	accessible, errMsg := checkIfJiraIsAccessible(jiraURL)
 	if !accessible {
 		return p.responsef(header, errMsg)
 	}
@@ -838,7 +842,7 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 		return p.responsef(header, "The Jira URL you provided looks like a Jira Cloud URL - install it with:\n```\n/jira install cloud %s\n```", jiraURL)
 	}
 
-	errMsg, accessible := checkIfJiraIsAccessible(jiraURL)
+	accessible, errMsg := checkIfJiraIsAccessible(jiraURL)
 	if !accessible {
 		return p.responsef(header, errMsg)
 	}
@@ -860,15 +864,15 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 	})
 }
 
-func checkIfJiraIsAccessible(jiraURL string) (string, bool) {
+func checkIfJiraIsAccessible(jiraURL string) (bool, string) {
 	jiraIsAccessible, err := utils.IsJiraAccessible(jiraURL)
 	if err != nil {
-		return err.Error(), false
+		return false, err.Error()
 	}
 	if !jiraIsAccessible {
-		return "It looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue.", false
+		return false, jiraConnectionErrorText
 	}
-	return "", true
+	return true, ""
 }
 
 // executeUninstall will uninstall the jira instance if the url matches, and then update all connected clients
