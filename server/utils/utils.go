@@ -90,7 +90,7 @@ func IsJiraAccessible(jiraURL string) (bool, error) {
 		return false, nil
 	}
 	if r.StatusCode != http.StatusOK {
-		return false, nil
+		return false, errors.Errorf("Jira server returned http status code %q when checking for availability: %q", r.Status, jiraURL)
 	}
 
 	resBody, err := ioutil.ReadAll(r.Body)
@@ -103,6 +103,9 @@ func IsJiraAccessible(jiraURL string) (bool, error) {
 	if err != nil {
 		return false, nil
 	}
+	if j.State != "RUNNING" {
+		return false, errors.Errorf("Jira server is not in correct state, it should be up and running: %q", jiraURL)
+	}
 
-	return j.State == "RUNNING", nil
+	return true, nil
 }
