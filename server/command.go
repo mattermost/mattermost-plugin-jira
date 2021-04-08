@@ -798,35 +798,35 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 		}
 	}
 
-	// instance := newCloudInstanceOAuth(p, jiraURL)
-	// err = p.InstallInstance(instance)
-	// if err != nil {
-	// 	return p.responsef(header, err.Error())
-	// }
-	// pkey, err := publicKeyString(p)
-	// if err != nil {
-	// 	return p.responsef(header, "Failed to load public key: %v", err)
-	// }
-
-	// return p.respondCommandTemplate(header, "/command/install_server.md", map[string]string{
-	// 	"JiraURL":       jiraURL,
-	// 	"PluginURL":     p.GetPluginURL(),
-	// 	"MattermostKey": instance.GetMattermostKey(),
-	// 	"PublicKey":     strings.TrimSpace(string(pkey)),
-	// })
-
-	// Create an "uninitialized" instance of Jira Cloud that will
-	// receive the /installed callback
-	err = p.instanceStore.CreateInactiveCloudInstance(types.ID(jiraURL))
+	instance := newCloudInstanceOAuth(p, jiraURL)
+	err = p.InstallInstance(instance)
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
+	pkey, err := publicKeyString(p)
+	if err != nil {
+		return p.responsef(header, "Failed to load public key: %v", err)
+	}
 
-	return p.respondCommandTemplate(header, "/command/install_cloud.md", map[string]string{
-		"JiraURL":                 jiraURL,
-		"PluginURL":               p.GetPluginURL(),
-		"AtlassianConnectJSONURL": p.GetPluginURL() + instancePath(routeACJSON, types.ID(jiraURL)),
+	return p.respondCommandTemplate(header, "/command/install_server.md", map[string]string{
+		"JiraURL":       jiraURL,
+		"PluginURL":     p.GetPluginURL(),
+		"MattermostKey": instance.GetMattermostKey(),
+		"PublicKey":     strings.TrimSpace(string(pkey)),
 	})
+
+	// Create an "uninitialized" instance of Jira Cloud that will
+	// receive the /installed callback
+	// err = p.instanceStore.CreateInactiveCloudInstance(types.ID(jiraURL))
+	// if err != nil {
+	// 	return p.responsef(header, err.Error())
+	// }
+
+	// return p.respondCommandTemplate(header, "/command/install_cloud.md", map[string]string{
+	// 	"JiraURL":                 jiraURL,
+	// 	"PluginURL":               p.GetPluginURL(),
+	// 	"AtlassianConnectJSONURL": p.GetPluginURL() + instancePath(routeACJSON, types.ID(jiraURL)),
+	// })
 }
 
 func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

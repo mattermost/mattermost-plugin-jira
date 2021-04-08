@@ -47,7 +47,10 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	si, ok := instance.(*serverInstance)
+
+	// APPLINKTODO: OAuth complete should support Jira server and Jira cloud.
+	// In this commit, Jira server is not supported because of this line
+	si, ok := instance.(*cloudInstance)
 	if !ok {
 		return http.StatusInternalServerError,
 			errors.Errorf("Not supported for instance type %s", instance.Common().Type)

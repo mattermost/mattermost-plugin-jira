@@ -338,6 +338,12 @@ func (p *Plugin) OnActivate() error {
 }
 
 func (p *Plugin) AddAutolinksForCloudInstance(ci *cloudInstance) error {
+	if true {
+		// There is an issue in master where we cant get project keys with the bot client
+		// May be the cause for other issues too related to comments on Jira cloud
+		return nil
+	}
+
 	client, err := ci.getClientForBot()
 	if err != nil {
 		return fmt.Errorf("unable to get jira client for server: %w", err)
