@@ -1184,22 +1184,12 @@ func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 			"Subscriptions webhook needs to be set up once, is shared by all channels and subscription filters.\n"+
 			"   - `%s`\n"+
 			"   - right-click on [link](%s) and \"Copy Link Address\" to Copy\n"+
-			"##### Legacy webhook.\n"+
+			"##### Legacy webhooks\n"+
+			"If your organization's infrastructure is set up such that your Mattermost instance cannot connect to your Jira instance, you will not be able to use the Channel Subscriptions feature. You will instead need to use the \"Legacy Webhooks\" feature supported by the Jira plugin.\n"+
 			"Legacy webhook needs to be set up for each channel. For this channel:\n"+
 			"   - `%s`\n"+
-			"   - right-click on [link](%s) and \"Copy Link Address\" to Copy\n"+
-			"   By default, the legacy webhook integration publishes notifications for issue create, resolve, unresolve, reopen, and assign events.\n"+
-			"   To publish (post) more events use the following extra `&`-separated parameters:\n"+
-			"   - `updated_all=1`: all events\n"+
-			"   - `updated_comments=1`: all comment events\n\n"+
-			"   - `updated_attachment=1`: updated issue attachments\n"+
-			"   - `updated_description=1`: updated issue description\n"+
-			"   - `updated_labels=1`: updated issue labels\n"+
-			"   - `updated_prioity=1`: updated issue priority\n"+
-			"   - `updated_rank=1`: ranked issue higher or lower\n"+
-			"   - `updated_sprint=1`: assigned issue to a different sprint\n"+
-			"   - `updated_status=1`: transitioned issed to a different status, like Done, In Progress\n"+
-			"   - `updated_summary=1`: renamed issue\n"+
+			"   - right-click on [link](%s) and \"Copy Link Address\" to copy\n"+
+			" Visit the [Legacy Webhooks](https://mattermost.gitbook.io/plugin-jira/administrator-guide/notification-management#legacy-webhooks) page to learn more about this feature.\n"+
 			"",
 		instanceID, instance.GetManageWebhooksURL(), subWebhookURL, subWebhookURL, legacyWebhookURL, legacyWebhookURL)
 }
