@@ -413,13 +413,13 @@ func (p *Plugin) WorkflowCreateIssue(activationParams *workflowclient.ActionActi
 	} else {
 		ci, ok := instance.(*cloudInstance)
 		if !ok {
-			return nil, errors.New("userID is required for jira server instances")
+			return nil, errors.New("userID is required for jira cloud instances")
 		}
 
 		var jiraClient *jira.Client
 		jiraClient, err = ci.getClientForBot()
 		if err != nil {
-			return nil, fmt.Errorf("unable to get jira client for server: %w", err)
+			return nil, fmt.Errorf("unable to get jira client for bot: %w", err)
 		}
 
 		client = &JiraClient{Jira: jiraClient}

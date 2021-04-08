@@ -81,7 +81,7 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		return respondErr(w, http.StatusBadRequest, errors.New("invalid JWT claim sub"))
 	}
 
-	jiraClient, _, err := ci.getClientForConnection(&Connection{User: jira.User{AccountID: accountID}})
+	jiraClient, _, err := ci.getClientForConnectionLegacy(&Connection{User: jira.User{AccountID: accountID}})
 	if err != nil {
 		return respondErr(w, http.StatusBadRequest, errors.Errorf("could not get client for user, err: %v", err))
 	}

@@ -33,7 +33,10 @@ type cloudInstance struct {
 	// then receive a /installed callback that initializes the instance
 	// and makes it permanent. No subsequent /installed will be accepted
 	// for the instance.
-	Installed bool
+	Installed        bool
+	InstalledAppLink bool
+
+	MattermostKey string
 
 	// For cloud instances (atlassian-connect.json install and user auth)
 	RawAtlassianSecurityContext string
@@ -65,10 +68,20 @@ func newCloudInstance(p *Plugin, key types.ID, installed bool, rawASC string, as
 }
 
 func (ci *cloudInstance) GetMattermostKey() string {
+	if ci.InstalledAppLink {
+		// APPLINKTODO: not sure about this. Find everywhere GetMattermostKey is called
+		return ci.GetMattermostKeyOAuth()
+	}
+
 	return ci.AtlassianSecurityContext.Key
 }
 
 func (ci *cloudInstance) GetDisplayDetails() map[string]string {
+	if ci.InstalledAppLink {
+		// APPLINKTODO: not sure about this. Find everywhere GetDisplayDetails is called
+		return ci.GetDisplayDetailsOAuth()
+	}
+
 	if !ci.Installed {
 		return map[string]string{
 			"Setup": "In progress",
@@ -84,6 +97,10 @@ func (ci *cloudInstance) GetDisplayDetails() map[string]string {
 }
 
 func (ci *cloudInstance) GetUserConnectURL(mattermostUserID string) (string, *http.Cookie, error) {
+	if ci.InstalledAppLink {
+		return ci.GetUserConnectURLOAuth(mattermostUserID)
+	}
+
 	// Create JWT secret we use in Jira's connect URL params
 	randomBytes1 := make([]byte, 32)
 	_, err := rand.Read(randomBytes1)
@@ -157,6 +174,10 @@ func (p *Plugin) createCookieFromSecret(secret string) (*http.Cookie, error) {
 }
 
 func (ci *cloudInstance) GetURL() string {
+	if ci.InstalledAppLink {
+		return ci.GetURLOAuth()
+	}
+
 	return ci.AtlassianSecurityContext.BaseURL
 }
 
@@ -169,7 +190,19 @@ func (ci *cloudInstance) GetManageWebhooksURL() string {
 }
 
 func (ci *cloudInstance) GetClient(connection *Connection) (Client, error) {
-	client, _, err := ci.getClientForConnection(connection)
+	var client *jira.Client
+	var err error
+	if ci.InstalledAppLink {
+		if connection.Oauth1AccessToken != "" {
+			client, err = ci.getClientForConnectionOAuth(connection)
+		} else {
+			// APPLINKTODO: Looks like we have a dual install. This user has a legacy connection
+			client, _, err = ci.getClientForConnectionLegacy(connection)
+		}
+	} else {
+		client, _, err = ci.getClientForConnectionLegacy(connection)
+	}
+
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get Jira client for user "+connection.DisplayName)
 	}
@@ -177,7 +210,7 @@ func (ci *cloudInstance) GetClient(connection *Connection) (Client, error) {
 }
 
 // Creates a client for acting on behalf of a user
-func (ci *cloudInstance) getClientForConnection(connection *Connection) (*jira.Client, *http.Client, error) {
+func (ci *cloudInstance) getClientForConnectionLegacy(connection *Connection) (*jira.Client, *http.Client, error) {
 	oauth2Conf := oauth2_jira.Config{
 		BaseURL: ci.GetURL(),
 		Subject: connection.AccountID,
@@ -205,6 +238,8 @@ func (ci *cloudInstance) getClientForConnection(connection *Connection) (*jira.C
 
 // Creates a "bot" client with a JWT
 func (ci *cloudInstance) getClientForBot() (*jira.Client, error) {
+	// APPLINKTODO: need to handle jira cloud bot
+
 	conf := ci.getConfig()
 	jwtConf := &ajwt.Config{
 		Key:          ci.AtlassianSecurityContext.Key,
