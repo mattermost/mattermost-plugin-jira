@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {openCreateModalWithoutPost, openChannelSettings, sendEphemeralPost, openDisconnectModal, handleConnectFlow, getConnected} from '../actions';
-import {isUserConnected, getInstalledInstances, getPluginSettings, getUserConnectedInstances} from '../selectors';
+import {isUserConnected, getInstalledInstances, getPluginSettings, getUserConnectedInstances, instanceIsInstalled} from '../selectors';
 
 type ContextArgs = {channel_id: string};
 
@@ -63,14 +63,13 @@ export default class Hooks {
     }
 
     handleCreateSlashCommand = (message: string, contextArgs: ContextArgs) => {
-        if (!getInstalledInstances(this.store.getState())) {
-            this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
+        if (!this.checkInstanceIsInstalled()) {
             return Promise.resolve({});
         }
-        if (!isUserConnected(this.store.getState())) {
-            this.store.dispatch(sendEphemeralPost('Your Mattermost account is not connected to Jira. Please use `/jira connect` to connect your account, then try again.'));
+        if (!this.checkUserIsConnected()) {
             return Promise.resolve({});
         }
+
         let description = '';
         if (message.startsWith(createCommand)) {
             description = message.slice(createCommand.length).trim();
@@ -82,12 +81,10 @@ export default class Hooks {
     }
 
     handleSubscribeSlashCommand = (message: string, contextArgs: ContextArgs) => {
-        if (!getInstalledInstances(this.store.getState()).length) {
-            this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
+        if (!this.checkInstanceIsInstalled()) {
             return Promise.resolve({});
         }
-        if (!isUserConnected(this.store.getState())) {
-            this.store.dispatch(sendEphemeralPost('Your Mattermost account is not connected to Jira. Please use `/jira connect` to connect your account, then try again.'));
+        if (!this.checkUserIsConnected()) {
             return Promise.resolve({});
         }
 
@@ -97,15 +94,11 @@ export default class Hooks {
     }
 
     handleDisconnectSlashCommand = (message: string, contextArgs: ContextArgs) => {
-        const state = this.store.getState();
-        const instances = getInstalledInstances(state);
-        const connectedInstances = getUserConnectedInstances(state);
-
-        if (!instances.length) {
-            this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
+        if (!this.checkInstanceIsInstalled()) {
             return Promise.resolve({});
         }
 
+        const connectedInstances = getUserConnectedInstances(this.store.getState());
         let args = '';
         if (message.startsWith(disconnectCommand)) {
             args = message.slice(disconnectCommand.length).trim();
@@ -119,6 +112,30 @@ export default class Hooks {
 
         this.store.dispatch(openDisconnectModal());
         return Promise.resolve({});
+    }
+
+    checkInstanceIsInstalled = async (): Promise<boolean> => {
+        if (!instanceIsInstalled(this.store.getState())) {
+            await this.store.dispatch(getConnected());
+            if (!instanceIsInstalled(this.store.getState())) {
+                this.store.dispatch(sendEphemeralPost('There is no Jira instance installed. Please contact your system administrator.'));
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    checkUserIsConnected = async (): Promise<boolean> => {
+        if (!isUserConnected(this.store.getState())) {
+            await this.store.dispatch(getConnected());
+            if (!isUserConnected(this.store.getState())) {
+                this.store.dispatch(sendEphemeralPost('Your Mattermost account is not connected to Jira. Please use `/jira connect` to connect your account, then try again.'));
+                return false;
+            }
+        }
+
+        return true;
     }
 
     handleConnectSlashCommand = (message: string, contextArgs: ContextArgs) => {
