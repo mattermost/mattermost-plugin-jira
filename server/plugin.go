@@ -322,7 +322,7 @@ func (p *Plugin) OnActivate() error {
 			}
 
 			if err = p.AddAutolinksForCloudInstance(ci); err != nil {
-				p.API.LogWarn("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
+				p.API.LogInfo("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 				continue
 			}
 		}
