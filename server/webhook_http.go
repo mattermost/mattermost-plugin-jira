@@ -118,7 +118,7 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 	}
 
 	// Post the event to the channel
-	_, statusCode, err := wh.PostToChannel(p, instanceID, channel.Id, p.getUserID())
+	_, statusCode, err := wh.PostToChannel(p, instanceID, channel.Id, p.getUserID(), "")
 	if err != nil {
 		return respondErr(w, statusCode, err)
 	}

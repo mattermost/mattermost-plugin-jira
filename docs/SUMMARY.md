@@ -20,7 +20,6 @@
 
 * [Getting Started](end-user-guide/getting-started.md)
 * [Using /jira commands](end-user-guide/using-jira-commands.md)
-* [Notification Subscriptions](end-user-guide/notification-subscriptions.md)
 * [FAQ](administrator-guide/frequently-asked-questions-faq.md)
 
 ## Development
