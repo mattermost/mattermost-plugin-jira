@@ -52,6 +52,8 @@ The following Jira event notifications are supported:
 
 If you’d like to see support for additional events, [let us know](https://mattermost.uservoice.com/forums/306457-general).
 
+![This is the Channel Subscription modal](../.gitbook/assets/channel-subscriptions-modal.png)
+
 ## Setting up the webhook in Jira
 
 In order to have Jira post events to your Mattermost instance, you'll need to set up a webhook inside of Jira. Please see the instructions at [configure webhooks on the Jira server](https://mattermost.gitbook.io/plugin-jira/setting-up/configuration#step-2-configure-webhooks-on-the-jira-server).
