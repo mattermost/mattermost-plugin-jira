@@ -40,14 +40,14 @@ The `<your-mattermost-url>`, `<your-port>`, `<your-secret>`, `<your-team-url>`, 
 
 ## How do I handle credential rotation for the Jira webhook?
 
-You can generate a new secret in **System Console > Plugins > Jira**, and paste the new webhook URL in your Jira webhook configuration.
+Generate a new secret in **System Console > Plugins > Jira**, then paste the new webhook URL in your Jira webhook configuration.
 
-## What changed in the Jira 2.1 Webhook configuration?
+## What changed in the Jira 2.1 webhook configuration?
 
-In Jira 2.1 there is a modal window for a "Channel Subscription" to Jira issues. This requires a firehose of events to be sent from Jira to Mattermost, and the Jira plugin then "routes" or "drops" the events to particular channels. The Channel Subscription modal \(which you can access by going to a particular channel, then typing `jira /subscribe`\) provides easy access for Mattermost Channel Admins to setup which notifications they want to receive per channel.
+In Jira 2.1 there's a modal window for a "Channel Subscription" to Jira issues. This requires a firehose of events to be sent from Jira to Mattermost, and the Jira plugin then "routes" or "drops" the events to particular channels. The Channel Subscription modal \(which you can access by going to a particular channel, then typing `jira /subscribe`\) provides easy access for Mattermost Channel Admins to set up which notifications they want to receive per channel.
 
 Earlier versions of the Jira plugin \(2.0\) used a manual webhook configuration that pointed to specific channels and teams. The webhook configuration was `https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL`. This method can still be used to set up notifications from Jira to Mattermost channels if the new Channel Subscription modal doesn't support a particular channel subscription yet.
 
 ## How do I manually configure webhooks notifications to be sent to a Mattermost channel?
 
-If your organization's infrastructure is set up such that your Mattermost instance cannot connect to your Jira instance, you will not be able to use the Channel Subscriptions feature. You will instead need to use the [Legacy Webhooks](admininstrator-guide/notification-management.md#legacy-webhooks) feature supported by the Jira plugin.
+If your organization's infrastructure is set up in such a way that your Mattermost instance can't connect to your Jira instance, you won't be able to use the Channel Subscriptions feature. Instead, you need to use the [Legacy Webhooks](admininstrator-guide/notification-management.md#legacy-webhooks) feature supported by the Jira plugin.

@@ -20,9 +20,9 @@ The notifications and metadata shown in a channel are not protected by Jira perm
 
 Mattermost users can set up rules that define when a particular event with certain criteria are met in Jira that trigger a notification is sent to a particular channel. These subscription rules can specify the `Jira Project`, `Event Type`, `Issue Type`, and can filter out issues with certain values.
 
-When a user is setting up a notification subscription they will only see the projects and issue types they have access to within Jira. If they can't see a project in Jira it won't be displayed as an option for that particular user when they are trying to setup a subscription in Mattermost.
+When a user is setting up a notification subscription they'll only see the projects and issue types they have access to within Jira. If they can't see a project in Jira it won't be displayed as an option for that particular user when they are trying to set up a subscription in Mattermost.
 
-An approximate JQL query is output as well. This is not guaranteed to be valid JQL, and is only shown as a reference to what the query may look like if converted to JQL.
+An approximate JQL query is output as well. This is not guaranteed to be valid JQL and is only shown as a reference to what the query may look like if converted to JQL.
 
 ## Who can set up Notification Subscriptions for a channel?
 
@@ -30,7 +30,7 @@ You can specify who can set up a notification subscription in the plugin configu
 
 ![](../.gitbook/assets/image%20%282%29.png)
 
-You can also specify a comma-separated list of Jira groups the user needs to be a member of to be able to create/edit subscriptions. The user editing a subscription only needs to be a member of one of the listed groups. If this is left blank, then there will be no restriction on Jira groups.
+You can also specify a comma-separated list of Jira groups the user needs to be a member of to be able to create/edit subscriptions. The user editing a subscription only needs to be a member of one of the listed groups. If this is left blank there will be no restriction on Jira groups.
 
 ![](../.gitbook/assets/image%20%286%29.png)
 
@@ -54,15 +54,15 @@ If you’d like to see support for additional events, [let us know](https://matt
 
 ## Setting up the webhook in Jira
 
-In order to have Jira post events to your Mattermost instance, you'll need to set up a webhook inside of Jira. Please see the instructions at [https://mattermost.gitbook.io/plugin-jira/setting-up/configuration#step-2-configure-webhooks-on-the-jira-server](../setting-up/configuration#step-2-configure-webhooks-on-the-jira-server).
+In order to have Jira post events to your Mattermost instance, you'll need to set up a webhook inside of Jira. Please see the instructions at [configure webhooks on the Jira server](https://mattermost.gitbook.io/plugin-jira/setting-up/configuration#step-2-configure-webhooks-on-the-jira-server).
 
 ## Legacy Webhooks
 
-If your organization's infrastructure is set up such that your Mattermost instance cannot connect to your Jira instance, you will not be able to use the Channel Subscriptions feature. You will instead need to use the Legacy Webhooks feature supported by the Jira plugin. It is called "Legacy Webhooks" because it was the first iteration of the webhooks feature.
+If your organization's infrastructure is set up in such a way that your Mattermost instance can't connect to your Jira instance, you won't be able to use the Channel Subscriptions feature. Instead, you'll need to use the Legacy Webhooks feature (the first iteration of the webhooks feature supported by the Jira plugin).
 
 1. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
-   * For older versions of Jira, click the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
-2. Click **Create a WebHook** to create a new webhook. Enter a **Name** for the webhook and add the Jira webhook URL [https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL](https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL) \(for Jira 2.1\) as the **URL**.
+   * For older versions of Jira, select the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
+2. Select **Create a WebHook** to create a new webhook. Enter a **Name** for the webhook and add the Jira webhook URL [https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL](https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL) \(for Jira 2.1\) as the **URL**.
 
    * Replace `TEAMURL` and `CHANNELURL` with the Mattermost team URL and channel URL you want the Jira events to post to. The values should be in lower case.
    * Replace `SITEURL` with the site URL of your Mattermost instance, and `WEBHOOKSECRET` with the secret generated in Mattermost via **System Console > Plugins > Jira**.
@@ -73,7 +73,7 @@ If your organization's infrastructure is set up such that your Mattermost instan
    https://community.mattermost.com/plugins/jira/webhook?secret=MYSECRET&team=contributors&channel=town-square
    ```
 3. \(Optional\) Set a description and a custom JQL query to determine which tickets trigger events. For more information on JQL queries, refer to the [Atlassian help documentation](https://confluence.atlassian.com/jirasoftwarecloud/advanced-searching-764478330.html).
-4. Finally, set which issue events send messages to Mattermost channels, then hit **Save**. The following issue events are supported:
+4. Finally, set which issue events send messages to Mattermost channels, then select **Save**. The following issue events are supported:
    * Issue Created
    * Issue Deleted
    * Issue Updated, including when an issue is reopened or resolved, or when the assignee is changed. Optionally send notifications for comments, see below.

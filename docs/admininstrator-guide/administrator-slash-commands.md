@@ -15,7 +15,7 @@ Administrator slash commands are used to perform system-level functions that req
 ## Manage Channel Subscriptions
 
 * `/jira subscribe` - Configure the Jira notifications sent to this channel. See the [Notification Management](notification-management#who-can-set-up-notification-subscriptions-for-a-channel) page to see how to configure which users have access to the `subscribe` command.
-* `/jira subscribe list` - Display all the the subscription rules setup across all the channels and teams on your Mattermost instance. This command is only available to Mattermost system administrators.
+* `/jira subscribe list` - Display all the the subscription rules set up across all the channels and teams on your Mattermost instance. This command is only available to Mattermost System Admins.
 
 ## Other
 
