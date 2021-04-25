@@ -16,7 +16,7 @@ As of Jira 2.1, you need to configure a single webhook for all possible event tr
 
 Previously configured webhooks that point to specific channels are still supported and will continue to work.
 
-To control Mattermost channel subscriptions, use the command `/jira subscribe` in the channel in which you want to receive subscriptions. Then select the project and event triggers that will post to the channel. To manage all channel subscriptions as an administrator see [Notification Management](../admininstrator-guide/notification-management.md).
+To control Mattermost channel subscriptions, use the command `/jira subscribe` in the channel in which you want to receive subscriptions. Then select the project and event triggers that will post to the channel. To manage all channel subscriptions as an administrator see [Notification Management](../administrator-guide/notification-management.md).
 
 1. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
    * For older versions of Jira, click the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
