@@ -16,12 +16,14 @@ As of Jira 2.1, you need to configure a single webhook for all possible event tr
 
 Previously configured webhooks that point to specific channels are still supported and will continue to work.
 
-To control Mattermost channel subscriptions, use the command `/jira subscribe` in the channel in which you want to receive subscriptions. Then select the project and event triggers that will post to the channel. To manage all channel subscriptions as an administrator see [Notification Management](../administrator-guide/notification-management.md).
+Use the `/jira webhook` command to get your webhook URL to copy into Jira.
+
+To control Mattermost channel subscriptions, use the `/jira subscribe` command in the channel in which you want to receive subscriptions. Then select the project and event triggers that will post to the channel. To manage all channel subscriptions as an administrator see [Notification Management](../administrator-guide/notification-management.md).
 
 1. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
    * For older versions of Jira, click the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
-2. Click **Create a WebHook** to create a new webhook. 
-3. Enter a **Name** for the webhook and add the Jira webhook URL [https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET](https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET) as the **URL**.
+2. Click **Create a WebHook** to create a new webhook.
+3. Enter a **Name** for the webhook and add the Jira plugin webhook URL [https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET](https://SITEURL/plugins/jira/api/v2/webhook?secret=WEBHOOKSECRET) as the **URL**.
 
    * Replace `SITEURL` with the site URL of your Mattermost instance, and `WEBHOOKSECRET` with the secret generated in Mattermost via **System Console > Plugins > Jira**. For instance, if the site URL is `https://community.mattermost.com`, and the generated webhook secret is `5JlVk56KPxX629ujeU3MOuxaiwsPzLwh`, then the final webhook URL would be:
 
@@ -48,7 +50,12 @@ To control Mattermost channel subscriptions, use the command `/jira subscribe` i
    * Attachment
       * created
       * deleted
+
 4. Choose **Save**.
+
+For granular control of how issues are sent to certain channels in your Mattermost instance, you can use the Jira plugin's Channel Subscriptions feature in the Mattermost interface. The webhook JQL used on Jira's side should be made broad enough to make full use out of the feature.
+
+You can create multiple webhooks in Jira to point to the same endpoint on your Mattermost instance. This is useful when you only want issues from certain projects, or issues that fit a specific JQL criteria to be sent to your Mattermost instance. Larger organizations may want to filter the webhooks by project to minimize load on their Jira server, if they only need specific projects used for the webhook feature.
 
 ### Step 3: Install the plugin as an application in Jira
 

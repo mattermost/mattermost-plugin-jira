@@ -1,4 +1,4 @@
-# Table of contents
+# Table of Contents
 
 * [Mattermost/Jira Integration](README.md)
 * [Feature Summary](feature-summary.md)
