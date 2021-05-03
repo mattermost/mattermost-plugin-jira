@@ -20,4 +20,4 @@ This repository is licensed under the Apache 2.0 License, except for the [server
 
 ## Development
 
-Please read the Jira plugin's [developer docs](https://mattermost.gitbook.io/plugin-jira/development/environment) to learn more about contributing to the project.
+This plugin contains both a server and web app portion. Read our documentation about the [Developer Workflow](https://developers.mattermost.com/extend/plugins/developer-workflow/) and [Developer Setup](https://developers.mattermost.com/extend/plugins/developer-setup/) for more information about developing and extending plugins.

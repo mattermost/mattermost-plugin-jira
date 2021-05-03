@@ -1,4 +1,4 @@
-# Table of contents
+# Table of Contents
 
 * [Mattermost/Jira Integration](README.md)
 * [Feature Summary](feature-summary.md)
@@ -11,10 +11,10 @@
 
 ## Administrator Guide
 
-* [Administrator Slash Commands](admininstrator-guide/administrator-slash-commands.md)
-* [Notification Management](admininstrator-guide/notification-management.md)
-* [Permissions](admininstrator-guide/permissions.md)
-* [Troubleshooting](admininstrator-guide/troubleshooting.md)
+* [Administrator Slash Commands](administrator-guide/administrator-slash-commands.md)
+* [Notification Management](administrator-guide/notification-management.md)
+* [Permissions](administrator-guide/permissions.md)
+* [Troubleshooting](administrator-guide/troubleshooting.md)
 
 ## End User Guide
 
