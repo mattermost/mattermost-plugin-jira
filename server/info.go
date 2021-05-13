@@ -86,7 +86,7 @@ func (info UserInfo) AsConfigMap() map[string]interface{} {
 		m["instances"] = info.Instances.AsConfigMap()
 	}
 	if info.User != nil {
-		m["user"] = info.User.AsConfigMap()
+		m["user_info"] = info.User.AsConfigMap()
 	}
 	return m
 }

@@ -78,6 +78,9 @@ type externalConfig struct {
 
 	// Enable slash command autocomplete
 	EnableAutocomplete bool
+
+	// Display subscription name in notifications
+	DisplaySubscriptionNameInNotifications bool
 }
 
 const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb
