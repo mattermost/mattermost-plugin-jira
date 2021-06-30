@@ -790,13 +790,6 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 		return p.responsef(header, "`/jira install cloud` requires a secure connection (HTTPS). Please run the following command:\n```\n/jira install cloud %s\n```", jiraURL)
 	}
 
-	instances, _ := p.instanceStore.LoadInstances()
-	if !p.enterpriseChecker.HasEnterpriseFeatures() {
-		if instances != nil && len(instances.IDs()) > 0 {
-			return p.responsef(header, "You need a valid Mattermost Enterprise E20 License to install multiple Jira instances")
-		}
-	}
-
 	// Create an "uninitialized" instance of Jira Cloud that will
 	// receive the /installed callback
 	err = p.instanceStore.CreateInactiveCloudInstance(types.ID(jiraURL))

@@ -132,12 +132,6 @@ func (p *Plugin) InstallInstance(instance Instance) error {
 	var updated *Instances
 	err := UpdateInstances(p.instanceStore,
 		func(instances *Instances) error {
-			if !p.enterpriseChecker.HasEnterpriseFeatures() {
-				if instances != nil && len(instances.IDs()) > 0 {
-					return errors.Errorf("You need a valid Mattermost Enterprise E20 License to install multiple Jira instances")
-				}
-			}
-
 			err := p.instanceStore.StoreInstance(instance)
 			if err != nil {
 				return err
