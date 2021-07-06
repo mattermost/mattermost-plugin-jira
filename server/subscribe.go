@@ -466,7 +466,7 @@ func (p *Plugin) getSortedSubscriptions(instanceID types.ID) ([]SubsGroupedByTea
 
 			channel, appErr := p.API.GetChannel(channelID)
 			if appErr != nil {
-				p.API.LogWarn("getSortedSubscriptions: failed to get channel.", "channelID", channelID, "error", appErr)
+				p.API.LogDebug("getSortedSubscriptions: failed to get channel.", "channelID", channelID, "error", appErr)
 				continue
 			}
 
