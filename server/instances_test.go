@@ -59,17 +59,17 @@ func TestInstallInstance(t *testing.T) {
 		},
 		"1 preinstalled   nil license": {
 			numInstances: 1,
-			expectError:  false,
+			expectError:  true,
 			license:      nil,
 		},
 		"1 preinstalled   nil Features": {
 			numInstances: 1,
-			expectError:  false,
+			expectError:  true,
 			license:      &model.License{},
 		},
 		"1 preinstalled   nil Features EnterprisePlugins": {
 			numInstances: 1,
-			expectError:  false,
+			expectError:  true,
 			license: &model.License{
 				Features: &model.Features{},
 			},
