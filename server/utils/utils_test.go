@@ -5,8 +5,10 @@ package utils
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 
+	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -147,4 +149,30 @@ func TestIsJiraCloudURL(t *testing.T) {
 	serverLinkIsCloud, err := IsJiraCloudURL("https://somelink.com:1234/jira")
 	require.Nil(t, err)
 	assert.False(t, serverLinkIsCloud)
+}
+
+func TestIsJiraAccessible(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	dummyURL := "https://dummy-url.com"
+
+	tests := map[string]struct {
+		status     int
+		resBody    string
+		accessible bool
+	}{
+		"Accessible instance":                   {http.StatusOK, `{"state": "RUNNING"}`, true},
+		"Instance is not in correct state":      {http.StatusOK, `{"state": "STARTING"}`, false},
+		"Instance is not returning status body": {http.StatusOK, "", false},
+		"Instance not found":                    {http.StatusNotFound, `{"state": "RUNNING"}`, false},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			httpmock.RegisterResponder("GET", dummyURL+"/status",
+				httpmock.NewStringResponder(tt.status, tt.resBody))
+
+			jiraIsAccessible, _ := IsJiraAccessible(dummyURL)
+			assert.Equal(t, tt.accessible, jiraIsAccessible)
+		})
+	}
 }
