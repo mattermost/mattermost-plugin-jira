@@ -1,60 +1,34 @@
 ---
-description: Get the most out the Jira/Mattermost integration
+description: Use slash commands to interact with Jira issues
 ---
 
 # Using `/jira` commands
 
-## Managing Jira issues from Mattermost
-
-### Create Jira issues
-
-To create a Jira issue from a Mattermost message, hover over the relevant message and select **\(...\) > More Actions > Create Jira Issue**.
-
 The available commands are listed below.
-
-**Note:** [setting] can be `notifications` and [value] can be `on` or `off`
 
 * `/jira help` - Launch the Jira plugin command line help syntax
 * `/jira info` - Display information about the current user and the Jira plugin
-* `/jira instance list` - List installed Jira instances
 * `/jira connect [jiraURL]` - Connect your Mattermost account to your Jira account
 * `/jira disconnect [jiraURL]` - Disconnect your Mattermost account from your Jira account
-* `/jira [issue] assign [issue-key] [assignee]` - Change the assignee of a Jira issue
-* `/jira [issue] create [text]` - Create a new Issue with 'text' inserted into the description field
-* `/jira [issue] transition [issue-key] [state]` - Change the state of a Jira issue
-* `/jira [issue] unassign [issue-key]` - Unassign the Jira issue
-* `/jira [issue] view [issue-key]` - View the details of a specific Jira issue
+* `/jira issue assign [issue-key] [assignee]` - Change the assignee of a Jira issue
+* `/jira issue create [text]` - Create a new Issue with 'text' inserted into the description field
+* `/jira issue transition [issue-key] [state]` - Change the state of a Jira issue
+* `/jira issue unassign [issue-key]` - Unassign the Jira issue
+* `/jira issue view [issue-key]` - View the details of a specific Jira issue
+* `/jira instance settings` - View your user settings
 * `/jira instance settings [setting] [value]` - Update your user settings
 
-Then select the project and issue type, add a summary, and a description.
+**Note:** For the `/jira instance settings` command, [setting] can be `notifications` and [value] can be `on` or `off`
 
-![image](https://user-images.githubusercontent.com/13119842/59113188-985a9280-8912-11e9-9def-9a7382b4137e.png)
+### Authenticating with Jira
 
-Click **Create** to create the issue which includes any file attachments that were part of the Mattermost message.
+Use the `/jira connect` and `/jira disconnect` commands to manage the connection between your Mattermost account and Jira account.
 
-![image](https://user-images.githubusercontent.com/13119842/59113219-a4deeb00-8912-11e9-9741-5ddc8a4b51fa.png)
+### Creating a Jira issue
 
-**Note:** This plugin does not support all Jira fields. If the project you tried to create an issue for has **required fields** not yet supported, you'll be prompted to manually create an issue. Clicking the provided link opens the issue creation screen on the Jira web interface. The information you entered in Mattermost is migrated over so no work is lost.
+Use the `/jira issue create` command to create a Jira issue within Mattermost. A form will show that will allow you to fill out the issue. You can prepopulate the issue's summary using the command:
 
-The supported Jira fields are:
-
-* **Project Picker:** Custom fields and the built-in **Project** field.
-* **Single-Line Text:** Custom fields, and built-in fields such as **Summary** and **Environment**.
-* **Multi-Line Text:** Custom fields, and built-in fields such as **Description**.
-* **Single-Choice Issue:** Custom fields, and built-in fields such as **Issue Type** and **Priority**. 
-* **Assignee:** System field.
-
-### Attach Messages to Jira issues
-
-Keep all information in one place by attaching parts of Mattermost conversations in Jira issues as comments. To attach a message, hover over the relevant message and select **\(...\) > More Actions > Attach to Jira Issue**.
-
-![You can attach a message to an existing Jira ticket](../.gitbook/assets/image%20%286%29.png)
-
-Then, on the resulting dialog, select the issue you want to attach it to. You may search for issues containing specific text or just the issue number.
-
-![image](https://user-images.githubusercontent.com/13119842/59113267-b627f780-8912-11e9-90ec-417d430de7e6.png)
-
-Click **Attach** and the message is attached to the selected Jira issue as a comment with a permalink to the conversation thread as well so you can maintain context of the comment.
+`/jira issue create This is my issue's summary`
 
 ### Transition Jira issues
 
