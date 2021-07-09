@@ -21,58 +21,65 @@ func TestInstallInstance(t *testing.T) {
 		license      *model.License
 		numInstances int
 		expectError  bool
+		devEnabled   bool
 	}{
-		"0 preinstalled   valid license": {
+		"0 preinstalled, valid license": {
 			numInstances: 0,
 			expectError:  false,
 			license: &model.License{
-				Features: &model.Features{
-					EnterprisePlugins: &trueValue,
-				},
+				SkuShortName: "professional",
 			},
 		},
-		"0 preinstalled   nil license": {
+		"0 preinstalled, nil license": {
 			numInstances: 0,
 			expectError:  false,
 			license:      nil,
 		},
-		"0 preinstalled   nil Features": {
-			numInstances: 0,
-			expectError:  false,
-			license:      &model.License{},
-		},
-		"0 preinstalled   nil Features EnterprisePlugins": {
-			numInstances: 0,
-			expectError:  false,
-			license: &model.License{
-				Features: &model.Features{},
-			},
-		},
-		"1 preinstalled   valid license": {
+		"1 preinstalled, professional license": {
 			numInstances: 1,
 			expectError:  false,
 			license: &model.License{
-				Features: &model.Features{
-					EnterprisePlugins: &trueValue,
-				},
+				SkuShortName: "professional",
 			},
 		},
-		"1 preinstalled   nil license": {
+		"1 preinstalled, E10 license": {
+			numInstances: 1,
+			expectError:  false,
+			license: &model.License{
+				SkuShortName: "E10",
+			},
+		},
+		"1 preinstalled, E20 license": {
+			numInstances: 1,
+			expectError:  false,
+			license: &model.License{
+				SkuShortName: "E20",
+			},
+		},
+		"1 preinstalled, enterprise license": {
+			numInstances: 1,
+			expectError:  false,
+			license: &model.License{
+				SkuShortName: "enterprise",
+			},
+		},
+		"1 preinstalled, cloud starter license. should have error": {
+			numInstances: 1,
+			expectError:  true,
+			license: &model.License{
+				SkuShortName: "starter",
+			},
+		},
+		"1 preinstalled, dev mode": {
+			numInstances: 1,
+			expectError:  false,
+			license:      nil,
+			devEnabled:   true,
+		},
+		"1 preinstalled  nil license": {
 			numInstances: 1,
 			expectError:  true,
 			license:      nil,
-		},
-		"1 preinstalled   nil Features": {
-			numInstances: 1,
-			expectError:  true,
-			license:      &model.License{},
-		},
-		"1 preinstalled   nil Features EnterprisePlugins": {
-			numInstances: 1,
-			expectError:  true,
-			license: &model.License{
-				Features: &model.Features{},
-			},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -82,8 +89,15 @@ func TestInstallInstance(t *testing.T) {
 			p.enterpriseChecker = enterprise.NewEnterpriseChecker(api)
 			p.instanceStore = p.getMockInstanceStoreKV(tc.numInstances)
 
+			conf := &model.Config{}
+			if tc.devEnabled {
+				conf.ServiceSettings.EnableDeveloper = &trueValue
+				conf.ServiceSettings.EnableTesting = &trueValue
+			}
+
 			api.On("KVGet", mock.Anything).Return(mock.Anything, nil)
 			api.On("GetLicense").Return(tc.license)
+			api.On("GetConfig").Return(conf)
 			api.On("UnregisterCommand", mock.Anything, mock.Anything).Return(nil)
 			api.On("RegisterCommand", mock.Anything, mock.Anything).Return(nil)
 			api.On("PublishWebSocketEvent", mock.Anything, mock.Anything, mock.Anything)
@@ -103,7 +117,7 @@ func TestInstallInstance(t *testing.T) {
 			err = p.InstallInstance(testInstance0)
 			if tc.expectError {
 				assert.NotNil(t, err)
-				expected := "You need a valid Mattermost Enterprise E20 License to install multiple Jira instances"
+				expected := "You need a valid Mattermost Enterprise License to install multiple Jira instances."
 				assert.Equal(t, expected, err.Error())
 			} else {
 				assert.Nil(t, err)
