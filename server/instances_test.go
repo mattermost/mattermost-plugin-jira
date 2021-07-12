@@ -44,7 +44,7 @@ func TestInstallInstance(t *testing.T) {
 		},
 		"1 preinstalled, E10 license": {
 			numInstances: 1,
-			expectError:  false,
+			expectError:  true,
 			license: &model.License{
 				SkuShortName: "E10",
 			},
