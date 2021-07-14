@@ -28,7 +28,6 @@ var jiraCommandHandler = CommandHandler{
 		"debug/stats/expvar":      executeDebugStatsExpvar,
 		"debug/stats/reset":       executeDebugStatsReset,
 		"debug/stats/save":        executeDebugStatsSave,
-		"debug/workflow":          executeDebugWorkflow,
 		"disconnect":              executeDisconnect,
 		"help":                    executeHelp,
 		"info":                    executeInfo,
@@ -1065,10 +1064,6 @@ func executeStats(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, 
 
 func executeDebugStatsExpvar(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
 	return executeStatsImpl(p, c, commandArgs, true, args...)
-}
-
-func executeDebugWorkflow(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
-	return p.responsef(commandArgs, "Workflow Store:\n %v", p.workflowTriggerStore)
 }
 
 func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, useExpvar bool, args ...string) *model.CommandResponse {

@@ -114,9 +114,6 @@ type Plugin struct {
 	otsStore      OTSStore
 	secretsStore  SecretsStore
 
-	// Active workflows store
-	workflowTriggerStore *TriggerStore
-
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
 
@@ -290,8 +287,6 @@ func (p *Plugin) OnActivate() error {
 	for i := 0; i < WebhookMaxProcsPerServer; i++ {
 		go webhookWorker{i, p, p.webhookQueue}.work()
 	}
-
-	p.workflowTriggerStore = NewTriggerStore()
 
 	p.enterpriseChecker = enterprise.NewEnterpriseChecker(p.API)
 
