@@ -26,6 +26,49 @@ exports[`components/EditChannelSubscription should match snapshot 1`] = `
     <div
       className="container-fluid"
     >
+      <ReactSelectSetting
+        isDisabled={false}
+        isLoading={false}
+        label="Use Template"
+        name="template"
+        onChange={[Function]}
+        options={Array []}
+        required={false}
+        theme={
+          Object {
+            "awayIndicator": "#ffbc42",
+            "buttonBg": "#166de0",
+            "buttonColor": "#ffffff",
+            "centerChannelBg": "#ffffff",
+            "centerChannelColor": "#3d3c40",
+            "codeTheme": "github",
+            "dndIndicator": "#f74343",
+            "errorTextColor": "#fd5960",
+            "linkColor": "#2389d7",
+            "mentionBg": "#ffffff",
+            "mentionBj": "#ffffff",
+            "mentionColor": "#145dbf",
+            "mentionHighlightBg": "#ffe577",
+            "mentionHighlightLink": "#166de0",
+            "newMessageSeparator": "#ff8800",
+            "onlineIndicator": "#06d6a0",
+            "sidebarBg": "#145dbf",
+            "sidebarHeaderBg": "#1153ab",
+            "sidebarHeaderTextColor": "#ffffff",
+            "sidebarText": "#ffffff",
+            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveColor": "#ffffff",
+            "sidebarTextHoverBg": "#4578bf",
+            "sidebarUnreadText": "#ffffff",
+            "type": "Mattermost",
+          }
+        }
+        value={null}
+      />
+    </div>
+    <div
+      className="container-fluid"
+    >
       <Input
         addValidate={[Function]}
         label="Subscription Name"
@@ -117,6 +160,15 @@ exports[`components/EditChannelSubscription should match snapshot 1`] = `
       type="button"
     />
     <FormButton
+      btnClass="btn-info pull-left"
+      defaultMessage="Save as Template"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Saving..."
+      type="button"
+    />
+    <FormButton
       btnClass="btn-link"
       defaultMessage="Cancel"
       disabled={false}
@@ -162,6 +214,49 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
       }
     }
   >
+    <div
+      className="container-fluid"
+    >
+      <ReactSelectSetting
+        isDisabled={false}
+        isLoading={false}
+        label="Use Template"
+        name="template"
+        onChange={[Function]}
+        options={Array []}
+        required={false}
+        theme={
+          Object {
+            "awayIndicator": "#ffbc42",
+            "buttonBg": "#166de0",
+            "buttonColor": "#ffffff",
+            "centerChannelBg": "#ffffff",
+            "centerChannelColor": "#3d3c40",
+            "codeTheme": "github",
+            "dndIndicator": "#f74343",
+            "errorTextColor": "#fd5960",
+            "linkColor": "#2389d7",
+            "mentionBg": "#ffffff",
+            "mentionBj": "#ffffff",
+            "mentionColor": "#145dbf",
+            "mentionHighlightBg": "#ffe577",
+            "mentionHighlightLink": "#166de0",
+            "newMessageSeparator": "#ff8800",
+            "onlineIndicator": "#06d6a0",
+            "sidebarBg": "#145dbf",
+            "sidebarHeaderBg": "#1153ab",
+            "sidebarHeaderTextColor": "#ffffff",
+            "sidebarText": "#ffffff",
+            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveColor": "#ffffff",
+            "sidebarTextHoverBg": "#4578bf",
+            "sidebarUnreadText": "#ffffff",
+            "type": "Mattermost",
+          }
+        }
+        value={null}
+      />
+    </div>
     <div
       className="container-fluid"
     >
@@ -3654,6 +3749,15 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
       type="button"
     />
     <FormButton
+      btnClass="btn-info pull-left"
+      defaultMessage="Save as Template"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Saving..."
+      type="button"
+    />
+    <FormButton
       btnClass="btn-link"
       defaultMessage="Cancel"
       disabled={false}
@@ -3699,6 +3803,49 @@ exports[`components/EditChannelSubscription should match snapshot with no issue 
       }
     }
   >
+    <div
+      className="container-fluid"
+    >
+      <ReactSelectSetting
+        isDisabled={false}
+        isLoading={false}
+        label="Use Template"
+        name="template"
+        onChange={[Function]}
+        options={Array []}
+        required={false}
+        theme={
+          Object {
+            "awayIndicator": "#ffbc42",
+            "buttonBg": "#166de0",
+            "buttonColor": "#ffffff",
+            "centerChannelBg": "#ffffff",
+            "centerChannelColor": "#3d3c40",
+            "codeTheme": "github",
+            "dndIndicator": "#f74343",
+            "errorTextColor": "#fd5960",
+            "linkColor": "#2389d7",
+            "mentionBg": "#ffffff",
+            "mentionBj": "#ffffff",
+            "mentionColor": "#145dbf",
+            "mentionHighlightBg": "#ffe577",
+            "mentionHighlightLink": "#166de0",
+            "newMessageSeparator": "#ff8800",
+            "onlineIndicator": "#06d6a0",
+            "sidebarBg": "#145dbf",
+            "sidebarHeaderBg": "#1153ab",
+            "sidebarHeaderTextColor": "#ffffff",
+            "sidebarText": "#ffffff",
+            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveColor": "#ffffff",
+            "sidebarTextHoverBg": "#4578bf",
+            "sidebarUnreadText": "#ffffff",
+            "type": "Mattermost",
+          }
+        }
+        value={null}
+      />
+    </div>
     <div
       className="container-fluid"
     >
@@ -3793,6 +3940,15 @@ exports[`components/EditChannelSubscription should match snapshot with no issue 
       type="button"
     />
     <FormButton
+      btnClass="btn-info pull-left"
+      defaultMessage="Save as Template"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Saving..."
+      type="button"
+    />
+    <FormButton
       btnClass="btn-link"
       defaultMessage="Cancel"
       disabled={false}
@@ -3838,6 +3994,49 @@ exports[`components/EditChannelSubscription should match snapshot with no subscr
       }
     }
   >
+    <div
+      className="container-fluid"
+    >
+      <ReactSelectSetting
+        isDisabled={false}
+        isLoading={false}
+        label="Use Template"
+        name="template"
+        onChange={[Function]}
+        options={Array []}
+        required={false}
+        theme={
+          Object {
+            "awayIndicator": "#ffbc42",
+            "buttonBg": "#166de0",
+            "buttonColor": "#ffffff",
+            "centerChannelBg": "#ffffff",
+            "centerChannelColor": "#3d3c40",
+            "codeTheme": "github",
+            "dndIndicator": "#f74343",
+            "errorTextColor": "#fd5960",
+            "linkColor": "#2389d7",
+            "mentionBg": "#ffffff",
+            "mentionBj": "#ffffff",
+            "mentionColor": "#145dbf",
+            "mentionHighlightBg": "#ffe577",
+            "mentionHighlightLink": "#166de0",
+            "newMessageSeparator": "#ff8800",
+            "onlineIndicator": "#06d6a0",
+            "sidebarBg": "#145dbf",
+            "sidebarHeaderBg": "#1153ab",
+            "sidebarHeaderTextColor": "#ffffff",
+            "sidebarText": "#ffffff",
+            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveColor": "#ffffff",
+            "sidebarTextHoverBg": "#4578bf",
+            "sidebarUnreadText": "#ffffff",
+            "type": "Mattermost",
+          }
+        }
+        value={null}
+      />
+    </div>
     <div
       className="container-fluid"
     >
@@ -3916,6 +4115,15 @@ exports[`components/EditChannelSubscription should match snapshot with no subscr
       type="button"
     />
     <FormButton
+      btnClass="btn-info pull-left"
+      defaultMessage="Save as Template"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Saving..."
+      type="button"
+    />
+    <FormButton
       btnClass="btn-link"
       defaultMessage="Cancel"
       disabled={false}
@@ -3961,6 +4169,49 @@ exports[`components/EditChannelSubscription should produce subscription error wh
       }
     }
   >
+    <div
+      className="container-fluid"
+    >
+      <ReactSelectSetting
+        isDisabled={false}
+        isLoading={false}
+        label="Use Template"
+        name="template"
+        onChange={[Function]}
+        options={Array []}
+        required={false}
+        theme={
+          Object {
+            "awayIndicator": "#ffbc42",
+            "buttonBg": "#166de0",
+            "buttonColor": "#ffffff",
+            "centerChannelBg": "#ffffff",
+            "centerChannelColor": "#3d3c40",
+            "codeTheme": "github",
+            "dndIndicator": "#f74343",
+            "errorTextColor": "#fd5960",
+            "linkColor": "#2389d7",
+            "mentionBg": "#ffffff",
+            "mentionBj": "#ffffff",
+            "mentionColor": "#145dbf",
+            "mentionHighlightBg": "#ffe577",
+            "mentionHighlightLink": "#166de0",
+            "newMessageSeparator": "#ff8800",
+            "onlineIndicator": "#06d6a0",
+            "sidebarBg": "#145dbf",
+            "sidebarHeaderBg": "#1153ab",
+            "sidebarHeaderTextColor": "#ffffff",
+            "sidebarText": "#ffffff",
+            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveColor": "#ffffff",
+            "sidebarTextHoverBg": "#4578bf",
+            "sidebarUnreadText": "#ffffff",
+            "type": "Mattermost",
+          }
+        }
+        value={null}
+      />
+    </div>
     <div
       className="container-fluid"
     >
@@ -4052,6 +4303,15 @@ exports[`components/EditChannelSubscription should produce subscription error wh
       id="jira-delete-subscription"
       onClick={[Function]}
       savingMessage="Creating"
+      type="button"
+    />
+    <FormButton
+      btnClass="btn-info pull-left"
+      defaultMessage="Save as Template"
+      disabled={false}
+      extraClasses=""
+      onClick={[Function]}
+      savingMessage="Saving..."
       type="button"
     />
     <FormButton

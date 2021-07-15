@@ -333,9 +333,7 @@ func (p *Plugin) addChannelSubscription(instanceID types.ID, newSubscription *Ch
 
 func (p *Plugin) addSubscriptionTemplate(instanceID types.ID, newSubscriptionTemplate *SubscriptionTemplate) error {
 	subKey := keyWithInstanceID(instanceID, templateKey)
-
 	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
-
 		oldSubscriptionTemplates, err := SubscriptionTemplatesFromJSON(initialBytes)
 		if err != nil {
 			return nil, err
@@ -361,7 +359,6 @@ func (p *Plugin) addSubscriptionTemplate(instanceID types.ID, newSubscriptionTem
 func (p *Plugin) removeSubscriptionTemplate(instanceID types.ID, subscriptionTemplateID string) error {
 	subKey := keyWithInstanceID(instanceID, templateKey)
 	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
-
 		oldSubscriptionTemplates, err := SubscriptionTemplatesFromJSON(initialBytes)
 		if err != nil {
 			return nil, err
@@ -1068,7 +1065,6 @@ func (p *Plugin) httpChannelGetSubscriptions(w http.ResponseWriter, r *http.Requ
 }
 
 func (p *Plugin) httpGetSubscriptionTemplates(w http.ResponseWriter, r *http.Request, mattermostUserID string) (int, error) {
-
 	instanceID := types.ID(r.FormValue("instance_id"))
 
 	if len(instanceID) < 2 {
@@ -1137,7 +1133,6 @@ func (p *Plugin) httpDeleteSubscriptionTemplate(w http.ResponseWriter, r *http.R
 	}
 
 	return http.StatusOK, nil
-
 }
 
 func (p *Plugin) httpChannelSubscriptions(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -1173,8 +1168,6 @@ func (p *Plugin) httpChannelSubscriptionTemplates(w http.ResponseWriter, r *http
 		return p.httpDeleteSubscriptionTemplate(w, r, mattermostUserID)
 	case http.MethodGet:
 		return p.httpGetSubscriptionTemplates(w, r, mattermostUserID)
-	// case http.MethodPut:
-	//	return p.httpEditSubscriptionTemplate(w, r, mattermostUserID)
 	default:
 		return respondErr(w, http.StatusMethodNotAllowed, fmt.Errorf("Request: "+r.Method+" is not allowed."))
 	}

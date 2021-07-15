@@ -26,8 +26,6 @@ import {ChannelSubscription, ChannelSubscriptionFilters as ChannelSubscriptionFi
 import ChannelSubscriptionFilters from './channel_subscription_filters';
 import {SharedProps} from './shared_props';
 
-import channel_subscriptions from '.';
-
 const JiraEventOptions: ReactSelectOption[] = [
     {value: 'event_created', label: 'Issue Created'},
     {value: 'event_deleted', label: 'Issue Deleted'},

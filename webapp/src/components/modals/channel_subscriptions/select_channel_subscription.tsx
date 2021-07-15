@@ -33,10 +33,10 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
 
     handleConfirmDelete = (): void => {
         this.setState({showConfirmModal: false});
-        if (!this.state.isTemplate) {
-            this.deleteChannelSubscription(this.state.subscriptionToDelete);
-        } else {
+        if (this.state.isTemplate) {
             this.deleteSubscriptionTemplate(this.state.subscriptionToDelete);
+        } else {
+            this.deleteChannelSubscription(this.state.subscriptionToDelete);
         }
     }
 
