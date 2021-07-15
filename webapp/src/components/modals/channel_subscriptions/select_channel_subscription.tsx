@@ -16,6 +16,7 @@ type State = {
     error: string | null;
     showConfirmModal: boolean;
     subscriptionToDelete: ChannelSubscription | null;
+    isTemplate: boolean;
 }
 
 export default class SelectChannelSubscriptionInternal extends React.PureComponent<Props, State> {
@@ -23,6 +24,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         error: null,
         showConfirmModal: false,
         subscriptionToDelete: null,
+        isTemplate: false,
     };
 
     handleCancelDelete = (): void => {
@@ -31,18 +33,31 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
 
     handleConfirmDelete = (): void => {
         this.setState({showConfirmModal: false});
-        this.deleteChannelSubscription(this.state.subscriptionToDelete);
+        if (!this.state.isTemplate) {
+            this.deleteChannelSubscription(this.state.subscriptionToDelete);
+        } else {
+            this.deleteSubscriptionTemplate(this.state.subscriptionToDelete);
+        }
     }
 
-    handleDeleteChannelSubscription = (sub: ChannelSubscription): void => {
+    handleDeleteChannelSubscription = (sub: ChannelSubscription, isTemplate = false): void => {
         this.setState({
             showConfirmModal: true,
             subscriptionToDelete: sub,
+            isTemplate,
         });
     };
 
     deleteChannelSubscription = (sub: ChannelSubscription): void => {
         this.props.deleteChannelSubscription(sub).then((res: { error?: { message: string } }) => {
+            if (res.error) {
+                this.setState({error: res.error.message});
+            }
+        });
+    };
+
+    deleteSubscriptionTemplate = (sub: ChannelSubscription): void => {
+        this.props.deleteSubscriptionTemplate(sub).then((res: { error?: { message: string } }) => {
             if (res.error) {
                 this.setState({error: res.error.message});
             }
@@ -66,7 +81,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         return projectKey;
     }
 
-    renderRow = (sub: ChannelSubscription): JSX.Element => {
+    renderRow = (sub: ChannelSubscription, forTemplates = false): JSX.Element => {
         const projectName = this.getProjectName(sub);
 
         const showInstanceColumn = this.props.installedInstances.length > 1;
@@ -74,6 +89,13 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         const alias = this.props.installedInstances.filter((instance) => instance.instance_id === sub.instance_id)[0].alias;
         const instanceName = alias || sub.instance_id;
 
+        if (!forTemplates) {
+            return this.renderSubscriptionRow(sub, projectName, showInstanceColumn, instanceName);
+        }
+        return this.renderSubscriptionTemplateRow(sub, projectName, showInstanceColumn, instanceName);
+    }
+
+    renderSubscriptionRow(sub: ChannelSubscription, projectName: string, showInstanceColumn: boolean, instanceName: string): JSX.Element {
         return (
             <tr
                 key={sub.id}
@@ -112,8 +134,39 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         );
     }
 
+    renderSubscriptionTemplateRow(sub: ChannelSubscription, projectName: string, showInstanceColumn: boolean, instanceName: string): JSX.Element {
+        return (
+            <tr
+                key={sub.id}
+                className='select-channel-subscriptions-row'
+            >
+                <td>
+                    <span>{sub.name || '(no name)'}</span>
+                </td>
+                <td>
+                    <span>{projectName}</span>
+                </td>
+                {showInstanceColumn && (
+                    <td>
+                        <span>{instanceName}</span>
+                    </td>
+                )}
+
+                <td>
+                    <button
+                        className='style--none color--link'
+                        onClick={(): void => this.handleDeleteChannelSubscription(sub, true)}
+                        type='button'
+                    >
+                        {'Delete'}
+                    </button>
+                </td>
+            </tr>
+        );
+    }
+
     render(): React.ReactElement {
-        const {channel, channelSubscriptions, omitDisplayName} = this.props;
+        const {channel, channelSubscriptions, subscriptionTemplates, omitDisplayName} = this.props;
         const {error, showConfirmModal, subscriptionToDelete} = this.state;
 
         let errorDisplay = null;
@@ -152,9 +205,11 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
 
         const showInstanceColumn = this.props.installedInstances.length > 1;
         let subscriptionRows;
+        let subscriptionTemplateRows;
         if (channelSubscriptions.length) {
             subscriptionRows = (
                 <table className='table'>
+
                     <thead>
                         <tr>
                             <th scope='col'>{'Name'}</th>
@@ -164,7 +219,9 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                         </tr>
                     </thead>
                     <tbody>
-                        {channelSubscriptions.map(this.renderRow)}
+                        {channelSubscriptions.map((element) => {
+                            return this.renderRow(element, false);
+                        })}
                     </tbody>
                 </table>
             );
@@ -172,6 +229,37 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
             subscriptionRows = (
                 <p>
                     {'Click "Create Subscription" to receive Jira issue notifications in this channel.'}
+                </p>
+            );
+        }
+
+        if (subscriptionTemplates.length) {
+            subscriptionTemplateRows = (
+                <div>
+                    <hr/>
+                    <h2>{'Subscription Templates'}</h2>
+                    <table className='table'>
+
+                        <thead>
+                            <tr>
+                                <th scope='col'>{'Name'}</th>
+                                <th scope='col'>{'Project'}</th>
+                                {showInstanceColumn && <th scope='col'>{'Instance'}</th>}
+                                <th scope='col'>{'Actions'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {subscriptionTemplates.map((element) => {
+                                return this.renderRow(element, true);
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        } else {
+            subscriptionTemplateRows = (
+                <p>
+                    {'Click "Create Subscription" to create subscription templates.'}
                 </p>
             );
         }
@@ -191,6 +279,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                 {confirmModal}
                 {errorDisplay}
                 {subscriptionRows}
+                {subscriptionTemplateRows}
             </div>
         );
     }
