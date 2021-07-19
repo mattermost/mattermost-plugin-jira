@@ -66,9 +66,11 @@ export type State = {
     error: string | null;
     getMetaDataErr: string | null;
     submitting: boolean;
+    submittingTemplate: boolean;
     subscriptionName: string | null;
     showConfirmModal: boolean;
     conflictingError: string | null;
+    selectedTemplateID: string | null;
 };
 
 export default class EditChannelSubscription extends PureComponent<Props, State> {
@@ -114,6 +116,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             showConfirmModal: false,
             conflictingError: null,
             instanceID,
+            selectedTemplateID: null,
         };
 
         this.validator = new Validator();
@@ -278,7 +281,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         this.clearConflictingErrorMessage();
     };
 
-    handleCreate = (e?: React.FormEvent) => {
+    handleCreate = (e?: React.FormEvent, isTemplate = false) => {
         if (e && e.preventDefault) {
             e.preventDefault();
         }
@@ -307,9 +310,17 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             instance_id: this.state.instanceID,
         } as ChannelSubscription;
 
-        this.setState({submitting: true, error: null});
-
-        if (this.props.selectedSubscription) {
+        if (isTemplate) {
+            this.setState({submittingTemplate: true, error: null});
+            this.props.createSubscriptionTemplate(subscription).then((created) => {
+                if (created.error) {
+                    this.setState({error: created.error.message, submitting: false});
+                    return;
+                }
+                this.handleClose(e);
+            });
+        } else if (this.props.selectedSubscription) {
+            this.setState({submitting: true, error: null});
             subscription.id = this.props.selectedSubscription.id;
             this.props.editChannelSubscription(subscription).then((edited) => {
                 if (edited.error) {
@@ -319,6 +330,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                 this.handleClose(e);
             });
         } else {
+            this.setState({submitting: true, error: null});
             this.props.createChannelSubscription(subscription).then((created) => {
                 if (created.error) {
                     this.setState({error: created.error.message, submitting: false});
@@ -328,6 +340,19 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             });
         }
     };
+
+    handleCreateTemplate = (e?: React.FormEvent) => {
+        this.handleCreate(e, true);
+    }
+
+    handleTemplateChange =(_: any, templateID: string) => {
+        const templateChoosen = this.props.subscriptionTemplates.find((template) => template.id === templateID);
+        this.handleProjectChange(templateChoosen.filters.projects[0]);
+        this.setState({
+            filters: templateChoosen.filters,
+            selectedTemplateID: templateID,
+        });
+    }
 
     render(): JSX.Element {
         const style = getModalStyles(this.props.theme);
@@ -405,8 +430,26 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                 );
             }
 
+            const TemplateOptions: ReactSelectOption[] = this.props.subscriptionTemplates.map((template: ChannelSubscription) => (
+                {label: template.name || template.id, value: template.id}
+            ));
+
             component = (
                 <React.Fragment>
+
+                    <div className='container-fluid'>
+                        <ReactSelectSetting
+                            name={'template'}
+                            label={'Use Template'}
+                            options={TemplateOptions}
+                            onChange={this.handleTemplateChange}
+                            value={TemplateOptions.find((option) => option.value === this.state.selectedTemplateID) || null}
+                            isDisabled={false}
+                            required={false}
+                            theme={this.props.theme}
+                            isLoading={false}
+                        />
+                    </div>
                     <div className='container-fluid'>
                         <Input
                             label={'Subscription Name'}
@@ -505,12 +548,23 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                         disabled={!enableDeleteButton}
                         onClick={this.handleDeleteChannelSubscription}
                     />
+
+                    <FormButton
+                        type='button'
+                        onClick={this.handleCreateTemplate}
+                        btnClass='btn-info pull-left'
+                        saving={this.state.submittingTemplate}
+                        defaultMessage={'Save as Template'}
+                        savingMessage='Saving...'
+                    />
+
                     <FormButton
                         type='button'
                         btnClass='btn-link'
                         defaultMessage='Cancel'
                         onClick={this.handleClose}
                     />
+
                     <FormButton
                         type='button'
                         onClick={this.handleCreate}

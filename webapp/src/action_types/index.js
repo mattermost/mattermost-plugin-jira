@@ -30,6 +30,10 @@ export default {
     CREATED_CHANNEL_SUBSCRIPTION: `${PluginId}_created_channel_subscription`,
     EDITED_CHANNEL_SUBSCRIPTION: `${PluginId}_edited_channel_subscription`,
 
+    CREATED_SUBSCRIPTION_TEMPLATE: `${PluginId}_created_subscription_template`,
+    DELETED_SUBSCRIPTION_TEMPLATE: `${PluginId}_deleted_subscription_template`,
+
     RECEIVED_CHANNEL_SUBSCRIPTIONS: `${PluginId}_recevied_channel_subscriptions`,
+    RECEIVED_SUBSCRIPTION_TEMPLATES: `${PluginId}_recevied_subscription_templates`,
     DELETED_CHANNEL_SUBSCRIPTION: `${PluginId}_deleted_channel_subscription`,
 };

@@ -80,6 +80,7 @@ describe('components/EditChannelSubscription', () => {
         close: jest.fn(),
         selectedSubscription: channelSubscriptionForCloud,
         creatingSubscription: false,
+        subscriptionTemplates: [],
     };
 
     const baseState = {

@@ -36,6 +36,7 @@ const (
 	routeAPIUserInfo                            = "/api/v2/userinfo"
 	routeAPISubscribeWebhook                    = "/api/v2/webhook"
 	routeAPISubscriptionsChannel                = "/api/v2/subscriptions/channel"
+	routeAPISubscriptionTemplates               = "/api/v2/subscriptionTemplates"
 	routeAPISettingsInfo                        = "/api/v2/settingsinfo"
 	routeAPIStats                               = "/api/v2/stats"
 	routeIssueTransition                        = "/api/v2/transition"
@@ -187,6 +188,10 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 	if strings.HasPrefix(path, routeAPISubscriptionsChannel) {
 		return p.httpChannelSubscriptions(w, r)
+	}
+
+	if strings.HasPrefix(path, routeAPISubscriptionTemplates) {
+		return p.httpChannelSubscriptionTemplates(w, r)
 	}
 
 	return respondErr(w, http.StatusNotFound, errors.New("not found"))

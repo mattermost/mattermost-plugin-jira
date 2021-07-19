@@ -151,6 +151,35 @@ const channelIdWithSettingsOpen = (state = '', action) => {
     }
 };
 
+const subscriptionTemplates = (state = '', action) => {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_SUBSCRIPTION_TEMPLATES: {
+        const nextState = {...state};
+        nextState.subscriptionTemplates = action.data;
+        return nextState;
+    }
+    case ActionTypes.DELETED_SUBSCRIPTION_TEMPLATE: {
+        const subTemplate = action.data;
+        const nextState = {...state};
+
+        nextState.subscriptionTemplates = nextState.subscriptionTemplates.filter((st) => {
+            return st.id !== subTemplate.id;
+        });
+
+        return nextState;
+    }
+    case ActionTypes.CREATED_SUBSCRIPTION_TEMPLATE: {
+        const subTemplate = action.data;
+        const nextState = {...state};
+        nextState.subscriptionTemplates.push(subTemplate);
+
+        return nextState;
+    }
+    default:
+        return state;
+    }
+};
+
 const channelSubscriptions = (state = {}, action) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_CHANNEL_SUBSCRIPTIONS: {
@@ -207,5 +236,6 @@ export default combineReducers({
     attachCommentToIssueModalVisible,
     attachCommentToIssueModalForPostId,
     channelIdWithSettingsOpen,
+    subscriptionTemplates,
     channelSubscriptions,
 });
