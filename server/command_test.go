@@ -196,6 +196,46 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 			numInstances: 1,
 			expectedMsg:  "Settings updated. Notifications off.",
 		},
+		"set send_notifications_for_assigned without value": {
+			commandArgs:  &model.CommandArgs{Command: "/jira settings send_notifications_for_assigned", UserId: mockUserIDWithoutNotifications},
+			numInstances: 1,
+			expectedMsg:  "`/jira settings send_notifications_for_assigned [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
+		},
+		"set send_notifications_for_assigned with unknown value": {
+			commandArgs:  &model.CommandArgs{Command: "/jira settings send_notifications_for_assigned test", UserId: mockUserIDWithoutNotifications},
+			numInstances: 1,
+			expectedMsg:  "`/jira settings send_notifications_for_assigned [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
+		},
+		"enable send_notifications_for_assigned": {
+			commandArgs:  &model.CommandArgs{Command: "/jira settings send_notifications_for_assigned on", UserId: mockUserIDWithoutNotifications},
+			numInstances: 1,
+			expectedMsg:  "Settings updated. SendNotificationsForAssigned on.",
+		},
+		"disable send_notifications_for_assigned": {
+			commandArgs:  &model.CommandArgs{Command: "/jira settings send_notifications_for_assigned off", UserId: mockUserIDWithNotifications},
+			numInstances: 1,
+			expectedMsg:  "Settings updated. SendNotificationsForAssigned off.",
+		},
+		"set send_notifications_for_reporter without value": {
+			commandArgs:  &model.CommandArgs{Command: "/jira settings send_notifications_for_reporter", UserId: mockUserIDWithoutNotifications},
+			numInstances: 1,
+			expectedMsg:  "`/jira settings send_notifications_for_reporter [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
+		},
+		"set send_notifications_for_reporter with unknown value": {
+			commandArgs:  &model.CommandArgs{Command: "/jira settings send_notifications_for_reporter test", UserId: mockUserIDWithoutNotifications},
+			numInstances: 1,
+			expectedMsg:  "`/jira settings send_notifications_for_reporter [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
+		},
+		"enable send_notifications_for_reporter": {
+			commandArgs:  &model.CommandArgs{Command: "/jira settings send_notifications_for_reporter on", UserId: mockUserIDWithoutNotifications},
+			numInstances: 1,
+			expectedMsg:  "Settings updated. SendNotificationsForReporter on.",
+		},
+		"disable send_notifications_for_reporter": {
+			commandArgs:  &model.CommandArgs{Command: "/jira settings send_notifications_for_reporter off", UserId: mockUserIDWithNotifications},
+			numInstances: 1,
+			expectedMsg:  "Settings updated. SendNotificationsForReporter off.",
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
