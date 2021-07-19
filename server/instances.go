@@ -14,6 +14,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
+const licenseErrorString = "You need a valid Mattermost Enterprise License to install multiple Jira instances."
+
 type Instances struct {
 	*types.ValueSet // of *InstanceCommon, not Instance
 }
@@ -134,7 +136,7 @@ func (p *Plugin) InstallInstance(instance Instance) error {
 		func(instances *Instances) error {
 			if !p.enterpriseChecker.HasEnterpriseFeatures() {
 				if instances != nil && len(instances.IDs()) > 0 {
-					return errors.Errorf("You need a valid Mattermost Enterprise E20 License to install multiple Jira instances")
+					return errors.Errorf(licenseErrorString)
 				}
 			}
 

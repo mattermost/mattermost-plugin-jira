@@ -1,6 +1,7 @@
 package enterprise
 
 import (
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
@@ -14,6 +15,7 @@ type enterpriseChecker struct {
 
 type PluginAPI interface {
 	GetLicense() *model.License
+	GetConfig() *model.Config
 }
 
 func NewEnterpriseChecker(api PluginAPI) Checker {
@@ -22,23 +24,19 @@ func NewEnterpriseChecker(api PluginAPI) Checker {
 	}
 }
 
+const (
+	e20          = "E20"
+	professional = "professional"
+	enterprise   = "enterprise"
+)
+
 func (e *enterpriseChecker) HasEnterpriseFeatures() bool {
+	config := e.api.GetConfig()
 	license := e.api.GetLicense()
-	if license == nil {
-		return false
+
+	if license != nil && (license.SkuShortName == e20 || license.SkuShortName == enterprise || license.SkuShortName == professional) {
+		return true
 	}
 
-	if license.Features == nil {
-		return false
-	}
-
-	if license.Features.EnterprisePlugins == nil {
-		return false
-	}
-
-	if !*license.Features.EnterprisePlugins {
-		return false
-	}
-
-	return true
+	return pluginapi.IsE20LicensedOrDevelopment(config, license)
 }

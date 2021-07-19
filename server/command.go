@@ -792,7 +792,7 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 	instances, _ := p.instanceStore.LoadInstances()
 	if !p.enterpriseChecker.HasEnterpriseFeatures() {
 		if instances != nil && len(instances.IDs()) > 0 {
-			return p.responsef(header, "You need a valid Mattermost Enterprise E20 License to install multiple Jira instances")
+			return p.responsef(header, licenseErrorString)
 		}
 	}
 
