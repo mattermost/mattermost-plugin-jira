@@ -15,12 +15,12 @@
 * [Notification Management](administrator-guide/notification-management.md)
 * [Permissions](administrator-guide/permissions.md)
 * [Troubleshooting](administrator-guide/troubleshooting.md)
+* [FAQ](administrator-guide/frequently-asked-questions-faq.md)
 
 ## End User Guide
 
 * [Getting Started](end-user-guide/getting-started.md)
 * [Using /jira commands](end-user-guide/using-jira-commands.md)
-* [FAQ](administrator-guide/frequently-asked-questions-faq.md)
 
 ## Development
 
