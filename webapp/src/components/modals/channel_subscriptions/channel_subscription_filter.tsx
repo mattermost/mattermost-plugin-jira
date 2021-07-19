@@ -1,17 +1,20 @@
 import React from 'react';
 
-import ReactSelectSetting from 'components/react_select_setting';
-import JiraEpicSelector from 'components/jira_epic_selector';
+import {Theme} from 'mattermost-redux/types/preferences';
 
-import {isEpicLinkField, isMultiSelectField} from 'utils/jira_issue_metadata';
+import ReactSelectSetting from 'components/react_select_setting';
+import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
+
+import {isEpicLinkField, isMultiSelectField, isLabelField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
+import JiraAutoCompleteSelector from 'components/data_selectors/jira_autocomplete_selector';
 
 export type Props = {
     fields: FilterField[];
     field: FilterField;
     value: FilterValue;
-    theme: object;
+    theme: Theme;
     chosenIssueTypes: string[];
     issueMetadata: IssueMetadata;
     onChange: (f1: FilterValue, f2: FilterValue) => void;
@@ -226,43 +229,47 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
             disableLastSelect = true;
         }
 
+        const selectProps = {
+            instanceID: this.props.instanceID,
+            required: !disableLastSelect,
+            isDisabled: disableLastSelect,
+            isClearable: false,
+            placeholder: lastSelectPlaceholder,
+            theme,
+            resetInvalidOnChange: true,
+            hideRequiredStar: true,
+            isMulti: true,
+            addValidate: this.props.addValidate,
+            removeValidate: this.props.removeValidate,
+        };
+
         let valueSelector;
         if (isEpicLinkField(this.props.field)) {
             valueSelector = (
                 <JiraEpicSelector
-                    required={!disableLastSelect}
-                    isDisabled={disableLastSelect}
-                    isClearable={false}
-                    placeholder={lastSelectPlaceholder}
+                    {...selectProps}
                     issueMetadata={this.props.issueMetadata}
-                    theme={theme}
                     value={value.values}
                     onChange={this.handleEpicLinkChange}
-                    resetInvalidOnChange={true}
-                    hideRequiredStar={true}
-                    isMulti={true}
-                    addValidate={this.props.addValidate}
-                    removeValidate={this.props.removeValidate}
-                    instanceID={this.props.instanceID}
+                />
+            );
+        } else if (isLabelField(field)) {
+            valueSelector = (
+                <JiraAutoCompleteSelector
+                    {...selectProps}
+                    fieldName={field.name}
+                    value={value.values}
+                    onChange={this.handleEpicLinkChange}
                 />
             );
         } else {
             valueSelector = (
                 <ReactSelectSetting
+                    {...selectProps}
                     name={'values'}
-                    required={!disableLastSelect}
-                    isDisabled={disableLastSelect}
-                    isClearable={false}
-                    placeholder={lastSelectPlaceholder}
-                    hideRequiredStar={true}
                     options={fieldValueOptions}
-                    theme={theme}
                     onChange={this.handleFieldValuesChange}
-                    resetInvalidOnChange={true}
                     value={chosenFieldValues}
-                    isMulti={true}
-                    addValidate={this.props.addValidate}
-                    removeValidate={this.props.removeValidate}
                     allowUserDefinedValue={Boolean(field && field.userDefined)}
                 />
             );

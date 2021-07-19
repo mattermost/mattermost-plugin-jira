@@ -170,6 +170,7 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
           }
           allowUserDefinedValue={false}
           hideRequiredStar={true}
+          instanceID="https://something.atlassian.net"
           isClearable={false}
           isDisabled={false}
           isMulti={true}

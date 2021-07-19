@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {shallow, mount} from 'enzyme';
+import {shallow} from 'enzyme';
 
 import Preferences from 'mattermost-redux/constants/preferences';
 import {Team} from 'mattermost-redux/types/teams';

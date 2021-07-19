@@ -24,6 +24,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
+const autocompleteSearchRoute = "2/jql/autocompletedata/suggestions"
+const userSearchRoute = "2/user/assignable/search"
 const unrecognizedEndpoint = "_unrecognized"
 
 // Client is the combined interface for all upstream APIs and convenience methods.
@@ -59,6 +61,8 @@ type ProjectService interface {
 type SearchService interface {
 	SearchIssues(jql string, options *jira.SearchOptions) ([]jira.Issue, error)
 	SearchUsersAssignableToIssue(issueKey, query string, maxResults int) ([]jira.User, error)
+	SearchUsersAssignableInProject(projectKey, query string, maxResults int) ([]jira.User, error)
+	SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error)
 }
 
 // IssueService is the interface for issue-related APIs.
@@ -252,6 +256,27 @@ func (client JiraClient) SearchIssues(jql string, options *jira.SearchOptions) (
 	return found, nil
 }
 
+type Result struct {
+	Value       string `json:"value"`
+	DisplayName string `json:"displayName"`
+}
+
+type AutoCompleteResult struct {
+	Results []Result `json:"results"`
+}
+
+// SearchAutoCompleteFields searches fieldValue specified in the params and returns autocomplete suggestions
+// for that fieldValue
+func (client JiraClient) SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error) {
+	result := &AutoCompleteResult{}
+	err := client.RESTGet(autocompleteSearchRoute, params, result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // DoTransition executes a transition on an issue.
 func (client JiraClient) DoTransition(issueKey, transitionID string) error {
 	resp, err := client.Jira.Issue.DoTransition(issueKey, transitionID)
@@ -347,7 +372,26 @@ func SearchUsersAssignableToIssue(client Client, issueKey, queryKey, queryValue 
 	if maxResults > 0 {
 		params["maxResults"] = strconv.Itoa(maxResults)
 	}
-	err := client.RESTGet("2/user/assignable/search", params, &users)
+	err := client.RESTGet(userSearchRoute, params, &users)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+// SearchUsersAssignableInProject finds all users that can be assigned to some issue in a given project.
+// This is the shared implementation between the Server and the Cloud versions
+// which use different queryKey's.
+func SearchUsersAssignableInProject(client Client, projectKey, queryKey, queryValue string, maxResults int) ([]jira.User, error) {
+	users := []jira.User{}
+	params := map[string]string{
+		"project": projectKey,
+		queryKey:  queryValue,
+	}
+	if maxResults > 0 {
+		params["maxResults"] = strconv.Itoa(maxResults)
+	}
+	err := client.RESTGet(userSearchRoute, params, &users)
 	if err != nil {
 		return nil, err
 	}

@@ -169,6 +169,7 @@ const avoidedCustomTypesForFilters: string[] = [
 
 const acceptedCustomTypesForFilters: string[] = [
     JiraFieldCustomTypeEnums.EPIC_LINK,
+    JiraFieldCustomTypeEnums.CASCADING_SELECT,
 ];
 
 function isValidFieldForFilter(field: JiraField): boolean {
@@ -259,12 +260,20 @@ export function isEpicLinkField(field: JiraField | FilterField): boolean {
     return field.schema && field.schema.custom === JiraFieldCustomTypeEnums.EPIC_LINK;
 }
 
+export function isLabelField(field: JiraField | FilterField): boolean {
+    return field.schema.system === 'labels' || field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:labels';
+}
+
 export function isEpicIssueType(issueType: IssueType): boolean {
     return issueType.name === 'Epic';
 }
 
 export function isMultiSelectField(field: FilterField): boolean {
     return field.schema.type === 'array';
+}
+
+export function isTextField(field: JiraField | FilterField): boolean {
+    return field.schema.type === 'string';
 }
 
 // Some Jira fields have special names for JQL
