@@ -366,7 +366,7 @@ func endpointURL(endpoint string) (string, error) {
 	return endpoint, nil
 }
 
-var keyOrIDRegex = regexp.MustCompile("(^[[:alpha:]]+-)?[[:digit:]]+$")
+var keyOrIDRegex = regexp.MustCompile("(^[[:alnum:]]+-)?[[:digit:]]+$")
 
 func endpointNameFromRequest(r *http.Request) string {
 	_, path := splitInstancePath(r.URL.Path)
