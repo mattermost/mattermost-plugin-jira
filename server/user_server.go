@@ -45,45 +45,45 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return http.StatusInternalServerError, err
 	}
 	si, ok := instance.(*serverInstance)
 	if !ok {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.Errorf("Not supported for instance type %s", instance.Common().Type))
+		return http.StatusInternalServerError,
+			errors.Errorf("Not supported for instance type %s", instance.Common().Type)
 	}
 
 	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(r)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to parse callback request from Jira"))
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to parse callback request from Jira")
 	}
 
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
+		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 	mmuser, appErr := p.API.GetUser(mattermostUserID)
 	if appErr != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to load user "+mattermostUserID))
+		return http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to load user "+mattermostUserID)
 	}
 
 	oauthTmpCredentials, err := p.otsStore.OneTimeLoadOauth1aTemporaryCredentials(mattermostUserID)
 	if err != nil || oauthTmpCredentials == nil || oauthTmpCredentials.Token == "" {
-		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to get temporary credentials for "+mattermostUserID))
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to get temporary credentials for "+mattermostUserID)
 	}
 
 	if oauthTmpCredentials.Token != requestToken {
-		return respondErr(w, http.StatusUnauthorized, errors.New("request token mismatch"))
+		return http.StatusUnauthorized, errors.New("request token mismatch")
 	}
 
 	// Although we pass the oauthTmpCredentials as required here. The JIRA server does not appar to validate it.
 	// We perform the check above for reuse so this is irrelevant to the security from our end.
 	accessToken, accessSecret, err := si.getOAuth1Config().AccessToken(requestToken, oauthTmpCredentials.Secret, verifier)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to obtain oauth1 access token"))
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to obtain oauth1 access token")
 	}
 
 	connection := &Connection{
@@ -94,12 +94,12 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 
 	client, err := instance.GetClient(connection)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return http.StatusInternalServerError, err
 	}
 
 	juser, err := client.GetSelf()
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return http.StatusInternalServerError, err
 	}
 	connection.User = *juser
 
@@ -108,7 +108,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 
 	err = p.connectUser(instance, types.ID(mattermostUserID), connection)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return http.StatusInternalServerError, err
 	}
 
 	return p.respondTemplate(w, r, "text/html", struct {
