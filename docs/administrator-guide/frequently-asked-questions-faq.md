@@ -1,24 +1,24 @@
 # Frequently Asked Questions \(FAQ\)
 
-## Why doesn't my Jira plugin post any messages to Mattermost?
+## Why isn't the Jira plugin posting messages to Mattermost?
 
 Try the following troubleshooting steps:
 
 1. Confirm **Site URL** is configured in **System Console > Environment > Web Server**.
    * For older Mattermost versions, this setting is located in **System Console > General > Configuration**.
-2. Confirm **User** field is set in **System Console > Plugins > Jira**. The plugin needs to be attached to a user account for the webhook to post messages.
-3. Confirm the team URL and channel URL you specified in the Jira webhook URL is in lower case.
-4. For issue updated events, only status changes when the ticket is reopened, or when resolved/closed, and assignee changes are supported. If you'd like to see support for additional events, [let us know](https://mattermost.uservoice.com/forums/306457-general).
-5. If you specified a JQL query in your Jira webhook page, paste the JQL to Jira issue search and make sure it returns results. If it doesn't, the query may be incorrect. Refer to the [Atlassian documentation](https://confluence.atlassian.com/jirasoftwarecloud/advanced-searching-764478330.html) for help.
-6. Use a curl command to make a POST request to the webhook URL. If curl command completes with a `200 OK` response, the plugin is configured correctly. For instance, you can run the following command:
+2. If you specified a JQL query in your Jira webhook page, paste the JQL to Jira issue search and make sure it returns results. If it doesn't, the query may be incorrect. Refer to the [Atlassian documentation](https://confluence.atlassian.com/jirasoftwarecloud/advanced-searching-764478330.html) for help.
+
+If you're using [Legacy Webhooks](https://mattermost.gitbook.io/plugin-jira/administrator-guide/notification-management#legacy-webhooks):
+
+1. Confirm the team URL and channel URL you specified in the Jira webhook URL match up with the path shown in your browser when visiting the channel.
+2. For issue updated events, only status changes when the ticket is reopened, or when resolved/closed, and assignee changes are supported for Legacy Webhooks.
+3. Use a curl command to make a POST request to the webhook URL. If curl command completes with a `200 OK` response, the plugin is configured correctly. For instance, you can run the following command:
 
    ```text
-   curl -v --insecure "https://<your-mattermost-url>/plugins/jira/webhook?secret=<your-secret>&team=<your-team>&channel=<your-channel>&user_id=admin&user_key=admin" --data '{"event":"some_jira_event"}'
+   curl -v "https://<your-mattermost-url>/plugins/jira/webhook?secret=<your-secret>&team=<your-team>&channel=<your-channel>&user_id=admin&user_key=admin" --data '{"event":"some_jira_event"}'
    ```
 
-  The `<your-mattermost-url>`, `<your-secret>`, `<your-team-url>`, and `<your-channel-url>` fields depend on your setup when configuring the Jira plugin.
-
-The curl command won't result in an actual post in your channel.
+The `<your-mattermost-url>`, `<your-secret>`, `<your-team-url>`, and `<your-channel-url>` fields depend on your setup when configuring the Jira plugin. The curl command won't result in an actual post in your channel.
 
 If you're still having trouble with configuration, please to post in our [Troubleshooting forum](https://forum.mattermost.org/t/how-to-use-the-troubleshooting-forum/150) and we'll be happy to help with issues during setup.
 
