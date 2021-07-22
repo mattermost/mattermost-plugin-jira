@@ -62,6 +62,8 @@ In order to have Jira post events to your Mattermost instance, you'll need to se
 
 If your organization's infrastructure is set up in such a way that your Mattermost instance can't connect to your Jira instance, you won't be able to use the Channel Subscriptions feature. Instead, you'll need to use the Legacy Webhooks feature (the first iteration of the webhooks feature supported by the Jira plugin).
 
+To generate the webhook URL for a specific channel, run `/jira webhook` and use the URL output in the "Legacy Webhooks" section of the output.
+
 1. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
    * For older versions of Jira, select the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
 2. Select **Create a WebHook** to create a new webhook. Enter a **Name** for the webhook and add the Jira webhook URL [https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL](https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL) \(for Jira 2.1\) as the **URL**.
