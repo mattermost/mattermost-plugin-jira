@@ -418,7 +418,7 @@ export function redirectConnect(instanceID: string) {
             baseUrl = baseUrl.substr(0, baseUrl.length - 1);
         }
         const instancePrefix = '/instance/' + btoa(instanceID);
-        const target = baseUrl + '/plugins/' + PluginId + instancePrefix + '/user/connect';
+        const target = `${baseUrl}/plugins/${PluginId}${instancePrefix}/user/connect`;
         window.open(target, '_blank');
     };
 }
