@@ -237,8 +237,6 @@ func (p *Plugin) getSubscriptions(instanceID types.ID) (*Subscriptions, error) {
 func (p *Plugin) getTemplates(instanceID types.ID) (*Templates, error) {
 	subKey := keyWithInstanceID(instanceID, templateKey)
 	data, appErr := p.API.KVGet(subKey)
-	p.API.LogDebug(fmt.Sprintf("data got:%s subkey:%s", subKey, string(data)))
-
 	if appErr != nil {
 		return nil, appErr
 	}
@@ -1084,9 +1082,6 @@ func (p *Plugin) httpGetSubscriptionTemplates(w http.ResponseWriter, r *http.Req
 func (p *Plugin) httpCreateSubscriptionTemplate(w http.ResponseWriter, r *http.Request, mattermostUserID string) (int, error) {
 	subscriptionTemplate := SubscriptionTemplate{}
 	currentChannelID := r.FormValue("channel_id")
-
-	p.API.LogDebug(fmt.Sprintf("channel Id ------------------------------------------%s", currentChannelID))
-
 	err := json.NewDecoder(r.Body).Decode(&subscriptionTemplate)
 	if err != nil {
 		return respondErr(w, http.StatusBadRequest,
