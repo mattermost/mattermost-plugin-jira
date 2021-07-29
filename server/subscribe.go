@@ -1081,7 +1081,6 @@ func (p *Plugin) httpGetSubscriptionTemplates(w http.ResponseWriter, r *http.Req
 
 func (p *Plugin) httpCreateSubscriptionTemplate(w http.ResponseWriter, r *http.Request, mattermostUserID string) (int, error) {
 	subscriptionTemplate := SubscriptionTemplate{}
-	currentChannelID := r.FormValue("channel_id")
 	err := json.NewDecoder(r.Body).Decode(&subscriptionTemplate)
 	if err != nil {
 		return respondErr(w, http.StatusBadRequest,
