@@ -117,7 +117,7 @@ func TestInstallInstance(t *testing.T) {
 			err = p.InstallInstance(testInstance0)
 			if tc.expectError {
 				assert.NotNil(t, err)
-				expected := "You need a valid Mattermost Enterprise License to install multiple Jira instances."
+				expected := "You need a valid Mattermost E20, Professional, or Enterprise License to install multiple Jira instances."
 				assert.Equal(t, expected, err.Error())
 			} else {
 				assert.Nil(t, err)
