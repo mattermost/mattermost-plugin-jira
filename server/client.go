@@ -65,6 +65,7 @@ type SearchService interface {
 type IssueService interface {
 	GetIssue(key string, options *jira.GetQueryOptions) (*jira.Issue, error)
 	CreateIssue(issue *jira.Issue) (*jira.Issue, error)
+	GetWatchers(issueKey string) (*[]jira.User, error)
 
 	AddAttachment(api plugin.API, issueKey, fileID string, maxSize utils.ByteSize) (mattermostName, jiraName, mime string, err error)
 	AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
@@ -189,6 +190,15 @@ func (client JiraClient) GetProject(key string) (*jira.Project, error) {
 // GetIssue returns an Issue by key (with options).
 func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (*jira.Issue, error) {
 	issue, resp, err := client.Jira.Issue.Get(key, options)
+	if err != nil {
+		return nil, userFriendlyJiraError(resp, err)
+	}
+	return issue, nil
+}
+
+// GetWatchers returns an Issue watchers by issueKey.
+func (client JiraClient) GetWatchers(issueKey string) (*[]jira.User, error) {
+	issue, resp, err := client.Jira.Issue.GetWatchers(issueKey)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
 	}

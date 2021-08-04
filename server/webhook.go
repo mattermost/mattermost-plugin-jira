@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/andygrunwald/go-jira"
 	"net/http"
 	"net/url"
 
@@ -109,6 +110,8 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		return nil, http.StatusOK, nil
 	}
 
+	wh.checkWatcherUser(p, instance)
+
 	posts := []*model.Post{}
 	for _, notification := range wh.notifications {
 		var mattermostUserID types.ID
@@ -198,4 +201,80 @@ func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL
 	legacyURL = p.GetPluginURL() + instancePath(routeIncomingWebhook, instanceID) + "?" + v.Encode()
 
 	return subURL, legacyURL, nil
+}
+
+func (wh *webhook) getConnection(p *Plugin, instance Instance, notification webhookUserNotification) (con *Connection, err error) {
+	var mattermostUserID types.ID
+
+	// prefer accountId to username when looking up UserIds
+	if notification.jiraAccountID != "" {
+		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), notification.jiraAccountID)
+	} else {
+		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), notification.jiraUsername)
+	}
+	if err != nil {
+		return
+	}
+
+	// Check if the user has permissions.
+	con, err = p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
+	if err != nil {
+		// Not connected to Jira, so can't check permissions
+		return
+	}
+
+	return
+}
+
+func (wh *webhook) checkWatcherUser(p *Plugin, instance Instance) {
+	watcherUsers := &[]jira.User{}
+	for _, notification := range wh.notifications {
+		c, err := wh.getConnection(p, instance, notification)
+		if err != nil {
+			continue
+		}
+		client, err2 := instance.GetClient(c)
+		if err2 != nil {
+			continue
+		}
+		watcherUsers, err = client.GetWatchers(wh.Issue.ID)
+		if err != nil {
+			continue
+		}
+		break
+	}
+
+	for _, watcherUser := range *watcherUsers {
+		whUserNotification := &webhookUserNotification{}
+		postType := ""
+		message := ""
+		for _, notification := range wh.notifications {
+			if notification.jiraAccountID == watcherUser.AccountID || notification.jiraUsername == watcherUser.Name {
+				whUserNotification = &notification
+			}
+			postType = notification.postType
+			message = notification.message
+		}
+		if whUserNotification == nil {
+			whUserNotification = &webhookUserNotification{
+				jiraUsername:  watcherUser.Name,
+				jiraAccountID: watcherUser.AccountID,
+				message:       message,
+				postType:      postType,
+				commentSelf:   watcherUser.Self,
+			}
+
+			c, err := wh.getConnection(p, instance, *whUserNotification)
+			if err != nil {
+				continue
+			}
+
+			// if setting watching value is false don't put into webhookUserNotification
+			if c.Settings == nil || !c.Settings.Watching || err != nil {
+				continue
+			}
+
+			wh.notifications = append(wh.notifications, *whUserNotification)
+		}
+	}
 }
