@@ -39,6 +39,7 @@ const allowedSchemaCustom: string[] = [
     JiraFieldCustomTypeEnums.TEXT_FIELD,
     JiraFieldCustomTypeEnums.SELECT,
     JiraFieldCustomTypeEnums.PROJECT,
+    JiraFieldCustomTypeEnums.EPIC_LINK,
     JiraFieldCustomTypeEnums.EPIC_NAME,
     JiraFieldCustomTypeEnums.CASCADING_SELECT,
     JiraFieldCustomTypeEnums.MULTI_SELECT,
