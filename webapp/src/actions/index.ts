@@ -442,6 +442,12 @@ export function handleConnectChange(store) {
             store.dispatch(sendEphemeralPost('You have successfully connected your Jira account. Type in /jira to get started. '));
         }
 
+        // Invalid payload. Re-fetch user info
+        if (msg.data.user && 'auth_service' in msg.data.user) {
+            store.dispatch(getConnected());
+            return;
+        }
+
         store.dispatch({
             type: ActionTypes.RECEIVED_CONNECTED,
             data: msg.data,

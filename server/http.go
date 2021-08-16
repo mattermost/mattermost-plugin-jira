@@ -18,7 +18,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-workflow-client/workflowclient"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -55,9 +54,6 @@ const (
 	routeUserStart                              = "/user/start"
 	routeUserConnect                            = "/user/connect"
 	routeUserDisconnect                         = "/user/disconnect"
-	routeWorkflowRegister                       = "/workflow/meta"
-	routeWorkflowTriggerSetup                   = "/workflow/trigger_setup"
-	routeWorkflowCreateIssue                    = "/workflow/create_issue"
 	routeSharePublicly                          = "/api/v2/share-issue-publicly"
 )
 
@@ -193,26 +189,6 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	case "/debug/vars":
 		goexpvar.Handler().ServeHTTP(w, r)
 		return 0, nil
-
-	// Workflow
-	case routeWorkflowRegister:
-		{
-			if c.SourcePluginId != "" {
-				return httpWorkflowRegister(p, w, r)
-			}
-		}
-	case routeWorkflowTriggerSetup:
-		{
-			if c.SourcePluginId != "" {
-				return httpWorkflowTriggerSetup(p, w, r)
-			}
-		}
-	case routeWorkflowCreateIssue:
-		{
-			if c.SourcePluginId != "" {
-				return p.httpWorkflowCreateIssue(w, r)
-			}
-		}
 	}
 
 	if strings.HasPrefix(path, routeAPISubscriptionsChannel) {
@@ -220,91 +196,6 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	return respondErr(w, http.StatusNotFound, errors.New("not found"))
-}
-
-func httpWorkflowRegister(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	params := workflowclient.RegisterParams{
-		Triggers: []workflowclient.TriggerParams{
-			{
-				TypeName:    "event",
-				DisplayName: "Jira Event",
-				Fields: []workflowclient.Field{
-					{
-						Name: "events",
-						Type: "[]string",
-					},
-					{
-						Name: "projects",
-						Type: "[]string",
-					},
-					{
-						Name: "issue_types",
-						Type: "[]string",
-					},
-				},
-				VarInfos: []workflowclient.VarInfo{
-					{
-						Name:        "Summary",
-						Description: "The summary of the ticket",
-					},
-					{
-						Name:        "Description",
-						Description: "The description of the ticket",
-					},
-					{
-						Name:        "Headline",
-						Description: "Markdown description of what happened.",
-					},
-					{
-						Name:        "Key",
-						Description: "The issue key. Eg: MM-1234",
-					},
-					{
-						Name:        "ID",
-						Description: "Jira issue ID",
-					},
-				},
-				// TODO <><> prefix route with instance? or unnecessary since it's for all instances?
-				TriggerSetupURL: "/jira" + routeWorkflowTriggerSetup,
-			},
-		},
-		Actions: []workflowclient.ActionParams{
-			{
-				TypeName:    "create",
-				DisplayName: "Jira Create",
-				Fields:      []workflowclient.Field{},
-				VarInfos:    []workflowclient.VarInfo{},
-
-				// instanceID should be passed in as a parameter, in the JSON, no need to prefix the URL
-				URL: "/jira" + routeWorkflowCreateIssue,
-			},
-		},
-	}
-
-	return respondJSON(w, &params)
-}
-
-func httpWorkflowTriggerSetup(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	var params workflowclient.SetupParams
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		return respondErr(w, http.StatusBadRequest,
-			errors.WithMessage(err, "Unable to decode setup params"))
-	}
-
-	if params.BaseTrigger.BaseType != "jira_event" {
-		return respondErr(w, http.StatusBadRequest,
-			errors.New("unsupported trigger type"))
-	}
-
-	var trigger WorkflowTrigger
-	if err := json.Unmarshal(params.Trigger, &trigger); err != nil {
-		return respondErr(w, http.StatusBadRequest,
-			errors.WithMessage(err, "Unable to decode trigger"))
-	}
-
-	p.workflowTriggerStore.AddTrigger(trigger, params.CallbackURL)
-
-	return http.StatusOK, nil
 }
 
 func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {

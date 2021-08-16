@@ -78,9 +78,5 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 		}
 	}
 
-	if err := ww.p.NotifyWorkflow(wh.(*webhook)); err != nil {
-		ww.p.errorf("WebhookWorker id: %d, error notifying workflow, err: %v", ww.id, err)
-	}
-
 	return nil
 }
