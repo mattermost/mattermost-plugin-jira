@@ -1,5 +1,5 @@
 export type ReactSelectOption = {
-    label: string;
+    label: string | React.ReactElement;
     value: string;
 };
 
@@ -11,6 +11,7 @@ export type AllowedValue = {
 
 export type FieldSchema = {
     type: string;
+    system?: string;
     custom?: JiraFieldCustomTypeEnums;
     customId?: number;
     items?: string;
@@ -80,6 +81,28 @@ export enum JiraFieldTypeEnums {
     PRIORITY = 'priority',
     DESCRIPTION = 'description',
     SUMMARY = 'summary',
+    LABELS = 'labels',
+    ASSIGNEE = 'assignee',
+    SECURITY = 'security',
+    COMPONENTS = 'components',
+    FIX_VERSIONS = 'fixVersions',
+    AFFECTS_VERSIONS = 'versions',
+}
+
+export enum AvatarSize {
+    XSMALL = '16x16',
+    SMALL = '24x24',
+    MEDIUM = '36x36',
+    LARGE = '48x48',
+}
+
+export type JiraUser = {
+    self: string;
+    accountId: string;
+    avatarUrls: {[size in AvatarSize]: string};
+    displayName: string;
+    active: boolean;
+    timeZone: string;
 }
 
 export enum JiraFieldCustomTypeEnums {
@@ -88,10 +111,19 @@ export enum JiraFieldCustomTypeEnums {
     EPIC_NAME = 'com.pyxis.greenhopper.jira:gh-epic-label',
     RANK = 'com.pyxis.greenhopper.jira:gh-lexo-rank',
 
+    CASCADING_SELECT = 'com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect',
     TEXT_AREA = 'com.atlassian.jira.plugin.system.customfieldtypes:textarea',
     TEXT_FIELD = 'com.atlassian.jira.plugin.system.customfieldtypes:textfield',
     SELECT = 'com.atlassian.jira.plugin.system.customfieldtypes:select',
     PROJECT = 'com.atlassian.jira.plugin.system.customfieldtypes:project',
+
+    MULTI_SELECT = 'com.atlassian.jira.plugin.system.customfieldtypes:multiselect',
+    RADIO_BUTTONS = 'com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons',
+    MULTI_CHECKBOXES = 'com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes',
+    URL_FIELD = 'com.atlassian.jira.plugin.system.customfieldtypes:url',
+
+    LABELS = 'com.atlassian.jira.plugin.system.customfieldtypes:labels',
+    USER_PICKER = 'com.atlassian.jira.plugin.system.customfieldtypes:userpicker',
 }
 
 export enum FilterFieldInclusion {
@@ -177,3 +209,9 @@ export type AllProjectMetadata = {
     instance_id: string;
     metadata: ProjectMetadata;
 }[];
+
+export type CreateIssueFields = {
+    description: string;
+    project: {key: string};
+    issuetype: {id: string};
+} & {[key: string]: JiraField};
