@@ -57,6 +57,8 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 		return err
 	}
 
+	wh.CheckWatcherUser(ww.p, msg.InstanceID)
+
 	if _, _, err = wh.PostNotifications(ww.p, msg.InstanceID); err != nil {
 		ww.p.errorf("WebhookWorker id: %d, error posting notifications, err: %v", ww.id, err)
 	}

@@ -27,6 +27,7 @@ type Webhook interface {
 	Events() StringSet
 	PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error)
 	PostNotifications(p *Plugin, instanceID types.ID) ([]*model.Post, int, error)
+	CheckWatcherUser(p *Plugin, instanceID types.ID)
 }
 
 type webhookField struct {
@@ -109,8 +110,6 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		// This isn't an internal server error. There's just no instance installed.
 		return nil, http.StatusOK, nil
 	}
-
-	wh.checkWatcherUser(p, instance)
 
 	posts := []*model.Post{}
 	for _, notification := range wh.notifications {
@@ -226,7 +225,13 @@ func (wh *webhook) getConnection(p *Plugin, instance Instance, notification webh
 	return
 }
 
-func (wh *webhook) checkWatcherUser(p *Plugin, instance Instance) {
+func (wh *webhook) CheckWatcherUser(p *Plugin, instanceID types.ID) {
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		// This isn't an internal server error. There's just no instance installed.
+		return
+	}
+
 	watcherUsers := &[]jira.User{}
 	for _, notification := range wh.notifications {
 		c, err := wh.getConnection(p, instance, notification)
@@ -261,7 +266,7 @@ func (wh *webhook) checkWatcherUser(p *Plugin, instance Instance) {
 				jiraAccountID: watcherUser.AccountID,
 				message:       message,
 				postType:      postType,
-				commentSelf:   watcherUser.Self,
+				commentSelf:   wh.JiraWebhook.Comment.Self,
 			}
 
 			c, err := wh.getConnection(p, instance, *whUserNotification)
@@ -270,7 +275,7 @@ func (wh *webhook) checkWatcherUser(p *Plugin, instance Instance) {
 			}
 
 			// if setting watching value is false don't put into webhookUserNotification
-			if c.Settings == nil || !c.Settings.Watching || err != nil {
+			if err != nil || c.Settings == nil || (c.Settings.Watching != nil && !*c.Settings.Watching) {
 				continue
 			}
 

@@ -196,13 +196,13 @@ func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (*j
 	return issue, nil
 }
 
-// GetWatchers returns an Issue watchers by issueKey.
+// GetWatchers returns an array of Jira watchers for a given issue.
 func (client JiraClient) GetWatchers(issueKey string) (*[]jira.User, error) {
-	issue, resp, err := client.Jira.Issue.GetWatchers(issueKey)
+	watchers, resp, err := client.Jira.Issue.GetWatchers(issueKey)
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
 	}
-	return issue, nil
+	return watchers, nil
 }
 
 // GetTransitions returns transitions for an issue with issueKey.
