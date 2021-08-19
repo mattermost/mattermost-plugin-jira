@@ -4,11 +4,12 @@
 import React from 'react';
 import {shallow} from 'enzyme';
 
+import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
+
 import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 
 import {FilterFieldInclusion, IssueMetadata, FilterField} from 'types/model';
 import {getCustomFieldFiltersForProjects, isEpicLinkField} from 'utils/jira_issue_metadata';
-import JiraEpicSelector from 'components/jira_epic_selector';
 
 import ChannelSubscriptionFilter, {Props} from './channel_subscription_filter';
 

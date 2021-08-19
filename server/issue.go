@@ -560,7 +560,7 @@ func (p *Plugin) GetJiraProjectMetadata(instanceID, mattermostUserID types.ID) (
 	return metainfo, connection, nil
 }
 
-var reJiraIssueKey = regexp.MustCompile(`^([[:alpha:]]+)-([[:digit:]]+)$`)
+var reJiraIssueKey = regexp.MustCompile(`^([[:alnum:]]+)-([[:digit:]]+)$`)
 
 func (p *Plugin) httpAttachCommentToIssue(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodPost {
