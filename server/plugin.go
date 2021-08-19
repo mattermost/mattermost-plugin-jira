@@ -366,6 +366,16 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)`,
 			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
 		},
+		{
+			DisableNonWordPrefix: false,
+			DisableNonWordSuffix: false,
+			Disabled:             false,
+			Name:                 "jirajumptocomment",
+			Pattern:              `(?P<IssueKey>[A-Za-z]+-[0-9]+)[?]focusedCommentId[^\\s]+`,
+			Scope:                nil,
+			Template:             `[${IssueKey} Link to comment]($0)`,
+			WordMatch:            false,
+		},
 	}
 
 	client := autolinkclient.NewClientPlugin(p.API)
