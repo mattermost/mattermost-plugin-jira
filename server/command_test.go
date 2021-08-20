@@ -348,12 +348,11 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			isSendEphemeralPostCalled := false
 
 			// add valid license
-			trueValue := true
 			var license model.License
-			license.Features = &model.Features{}
-			license.Features.EnterprisePlugins = &trueValue
+			license.SkuShortName = "professional"
 
 			api.On("GetLicense").Return(&license)
+			api.On("GetConfig").Return(&model.Config{})
 			api.On("RegisterCommand", mock.Anything).Return(nil)
 			api.On("GetBundlePath").Return("", nil)
 			api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
