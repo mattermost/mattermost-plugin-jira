@@ -12,7 +12,7 @@ If you're using [Legacy Webhooks](https://mattermost.gitbook.io/plugin-jira/admi
 
 1. Confirm the team URL and channel URL you specified in the Jira webhook URL match up with the path shown in your browser when visiting the channel.
 
-2. Only events described in the Legacy Webhook [docs](https://mattermost.gitbook.io/plugin-jira/administrator-guide/notification-management#legacy-webhooks) are supported
+2. Only events described in the Legacy Webhook [docs](https://mattermost.gitbook.io/plugin-jira/administrator-guide/notification-management#legacy-webhooks) are supported.
 
 3. Use a curl command to make a POST request to the webhook URL. If curl command completes with a `200 OK` response, the plugin is configured correctly. For instance, you can run the following command:
 
