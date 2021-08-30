@@ -26,7 +26,7 @@ If you're still having trouble with configuration, please to post in our [Troubl
 
 ## How do I disable the plugin?
 
-You can disable the Jira plugin at any time from Mattermost at **System Console > Plugins > Management**. After disabling the plugin, any webhook requests coming from Jira will be ignored. Also, users will not be able to create Jira issues from Mattermost.
+You can disable the Jira plugin at any time from Mattermost via **System Console > Plugins > Management**. After disabling the plugin, any webhook requests coming from Jira will be ignored. Also, users will not be able to create Jira issues from Mattermost.
 
 If wish to only disable Jira-related user interactions coming from Mattermost such as creating issues, you can disable these features by setting **Allow users to connect their Mattermost accounts to Jira** to **false** in **System Console > Plugins > Jira**. You will then need to restart the plugin in **System Console > Plugins > Plugin Management** to update the UI for users currently logged in to Mattermost, or they can refresh to see the changes. This setting does not affect Jira webhook notifications.
 
