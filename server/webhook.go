@@ -194,6 +194,10 @@ func (wh *webhook) getConnection(p *Plugin, instance Instance, notification webh
 }
 
 func (wh *webhook) CheckIssueWatchers(p *Plugin, instanceID types.ID) {
+	if len(wh.notifications) == 0 {
+		return
+	}
+
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		// This isn't an internal server error. There's just no instance installed.
@@ -228,7 +232,7 @@ func (wh *webhook) CheckIssueWatchers(p *Plugin, instanceID types.ID) {
 			postType = notification.postType
 			message = notification.message
 		}
-		if !shouldNotReceiveNotification {
+		if shouldNotReceiveNotification {
 			continue
 		}
 		whUserNotification := webhookUserNotification{
