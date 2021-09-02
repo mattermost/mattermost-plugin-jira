@@ -48,11 +48,25 @@ type ConnectionSettings struct {
 }
 
 func (s *ConnectionSettings) String() string {
-	notifications := "off"
-	if s != nil && s.Notifications {
-		notifications = "on"
+	notifications, watching := "off", "off"
+	if s != nil {
+		if s.Notifications {
+			notifications = "on"
+		}
+		if s.Watching == nil || *s.Watching {
+			watching = "on"
+		}
 	}
-	return fmt.Sprintf("\tNotifications: %s", notifications)
+	return fmt.Sprintf("\tNotifications: %s\n\tWatching: %s", notifications, watching)
+}
+
+func (s *ConnectionSettings) ShouldReceiveWatcherNotifications() bool {
+	if s.Watching != nil {
+		return *s.Watching
+	}
+
+	// Check old setting for backwards compatibility
+	return s.Notifications
 }
 
 func NewUser(mattermostUserID types.ID) *User {

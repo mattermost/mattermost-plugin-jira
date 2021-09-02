@@ -425,3 +425,34 @@ func (p *Plugin) CheckSiteURL() error {
 	}
 	return nil
 }
+
+func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL, legacyURL string, err error) {
+	cf := p.getConfig()
+
+	instanceID, err := p.ResolveWebhookInstanceURL(jiraURL)
+	if err != nil {
+		return "", "", err
+	}
+
+	team, appErr := p.API.GetTeam(teamID)
+	if appErr != nil {
+		return "", "", appErr
+	}
+
+	channel, appErr := p.API.GetChannel(channelID)
+	if appErr != nil {
+		return "", "", appErr
+	}
+
+	v := url.Values{}
+	secret, _ := url.QueryUnescape(cf.Secret)
+	v.Add("secret", secret)
+	subURL = p.GetPluginURL() + instancePath(routeAPISubscribeWebhook, instanceID) + "?" + v.Encode()
+
+	// For the legacy URL, add team and channel. Secret is already in the map.
+	v.Add("team", team.Name)
+	v.Add("channel", channel.Name)
+	legacyURL = p.GetPluginURL() + instancePath(routeIncomingWebhook, instanceID) + "?" + v.Encode()
+
+	return subURL, legacyURL, nil
+}

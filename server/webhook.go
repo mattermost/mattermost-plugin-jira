@@ -5,9 +5,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/andygrunwald/go-jira"
 	"net/http"
-	"net/url"
 
 	"github.com/pkg/errors"
 
@@ -27,7 +25,7 @@ type Webhook interface {
 	Events() StringSet
 	PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error)
 	PostNotifications(p *Plugin, instanceID types.ID) ([]*model.Post, int, error)
-	CheckWatcherUser(p *Plugin, instanceID types.ID)
+	CheckIssueWatchers(p *Plugin, instanceID types.ID)
 }
 
 type webhookField struct {
@@ -171,41 +169,11 @@ func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...inter
 	}
 }
 
-func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL, legacyURL string, err error) {
-	cf := p.getConfig()
-
-	instanceID, err := p.ResolveWebhookInstanceURL(jiraURL)
-	if err != nil {
-		return "", "", err
-	}
-
-	team, appErr := p.API.GetTeam(teamID)
-	if appErr != nil {
-		return "", "", appErr
-	}
-
-	channel, appErr := p.API.GetChannel(channelID)
-	if appErr != nil {
-		return "", "", appErr
-	}
-
-	v := url.Values{}
-	secret, _ := url.QueryUnescape(cf.Secret)
-	v.Add("secret", secret)
-	subURL = p.GetPluginURL() + instancePath(routeAPISubscribeWebhook, instanceID) + "?" + v.Encode()
-
-	// For the legacy URL, add team and channel. Secret is already in the map.
-	v.Add("team", team.Name)
-	v.Add("channel", channel.Name)
-	legacyURL = p.GetPluginURL() + instancePath(routeIncomingWebhook, instanceID) + "?" + v.Encode()
-
-	return subURL, legacyURL, nil
-}
-
 func (wh *webhook) getConnection(p *Plugin, instance Instance, notification webhookUserNotification) (con *Connection, err error) {
 	var mattermostUserID types.ID
 
 	// prefer accountId to username when looking up UserIds
+
 	if notification.jiraAccountID != "" {
 		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), notification.jiraAccountID)
 	} else {
@@ -225,61 +193,59 @@ func (wh *webhook) getConnection(p *Plugin, instance Instance, notification webh
 	return
 }
 
-func (wh *webhook) CheckWatcherUser(p *Plugin, instanceID types.ID) {
+func (wh *webhook) CheckIssueWatchers(p *Plugin, instanceID types.ID) {
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		// This isn't an internal server error. There's just no instance installed.
 		return
 	}
 
-	watcherUsers := &[]jira.User{}
-	for _, notification := range wh.notifications {
-		c, err := wh.getConnection(p, instance, notification)
-		if err != nil {
-			continue
-		}
-		client, err2 := instance.GetClient(c)
-		if err2 != nil {
-			continue
-		}
-		watcherUsers, err = client.GetWatchers(wh.Issue.ID)
-		if err != nil {
-			continue
-		}
-		break
+	c, err := wh.getConnection(p, instance, webhookUserNotification{
+		jiraAccountID: wh.JiraWebhook.User.AccountID,
+		jiraUsername:  wh.JiraWebhook.User.Name,
+	})
+	if err != nil {
+		return
+	}
+	client, err2 := instance.GetClient(c)
+	if err2 != nil {
+		return
+	}
+	watcherUsers, err := client.GetWatchers(wh.Issue.ID)
+	if err != nil {
+		return
 	}
 
 	for _, watcherUser := range *watcherUsers {
-		whUserNotification := &webhookUserNotification{}
 		postType := ""
 		message := ""
+		var shouldNotReceiveNotification bool
 		for _, notification := range wh.notifications {
 			if notification.jiraAccountID == watcherUser.AccountID || notification.jiraUsername == watcherUser.Name {
-				whUserNotification = &notification
+				shouldNotReceiveNotification = true
+				break
 			}
 			postType = notification.postType
 			message = notification.message
 		}
-		if whUserNotification == nil {
-			whUserNotification = &webhookUserNotification{
-				jiraUsername:  watcherUser.Name,
-				jiraAccountID: watcherUser.AccountID,
-				message:       message,
-				postType:      postType,
-				commentSelf:   wh.JiraWebhook.Comment.Self,
-			}
-
-			c, err := wh.getConnection(p, instance, *whUserNotification)
-			if err != nil {
-				continue
-			}
-
-			// if setting watching value is false don't put into webhookUserNotification
-			if err != nil || c.Settings == nil || (c.Settings.Watching != nil && !*c.Settings.Watching) {
-				continue
-			}
-
-			wh.notifications = append(wh.notifications, *whUserNotification)
+		if !shouldNotReceiveNotification {
+			continue
 		}
+		whUserNotification := webhookUserNotification{
+			jiraUsername:  watcherUser.Name,
+			jiraAccountID: watcherUser.AccountID,
+			message:       message,
+			postType:      postType,
+			commentSelf:   wh.JiraWebhook.Comment.Self,
+		}
+
+		c, err = wh.getConnection(p, instance, whUserNotification)
+
+		// if setting watching value is false don't put into webhookUserNotification
+		if err != nil || c.Settings == nil || !c.Settings.ShouldReceiveWatcherNotifications() {
+			continue
+		}
+
+		wh.notifications = append(wh.notifications, whUserNotification)
 	}
 }

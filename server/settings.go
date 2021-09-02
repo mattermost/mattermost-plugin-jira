@@ -54,16 +54,18 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 }
 
 func (p *Plugin) settingsWatching(header *model.CommandArgs, instanceID, mattermostUserID types.ID, connection *Connection, args []string) *model.CommandResponse {
-	const helpText = "`/jira watching [value]`\n* Invalid value. Accepted values are: `on` or `off`."
+	const helpText = "`/jira settings watching [value]`\\n* Invalid value. Accepted values are: `on` or `off`."
 
 	if len(args) != 2 {
 		return p.responsef(header, helpText)
 	}
 
 	var value bool
+	notifications := settingOff
 	switch args[1] {
 	case settingOn:
 		value = true
+		notifications = settingOn
 	case settingOff:
 		value = false
 	default:
@@ -76,8 +78,8 @@ func (p *Plugin) settingsWatching(header *model.CommandArgs, instanceID, matterm
 	connection.Settings.Watching = &value
 	if err := p.userStore.StoreConnection(instanceID, mattermostUserID, connection); err != nil {
 		p.errorf("settingsWatching, err: %v", err)
-		p.responsef(header, errStoreNewSettings, err)
+		return p.responsef(header, errStoreNewSettings, err)
 	}
 
-	return p.responsef(header, "Settings updated. Watching %s.", value)
+	return p.responsef(header, "Settings updated. Watching %s.", notifications)
 }
