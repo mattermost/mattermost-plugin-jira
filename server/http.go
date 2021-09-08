@@ -195,6 +195,10 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return p.httpChannelSubscriptions(w, r)
 	}
 
+	if strings.HasPrefix(path, "/rest/applinks") {
+		return http.StatusNotFound, nil
+	}
+
 	return respondErr(w, http.StatusNotFound, errors.New("not found"))
 }
 
