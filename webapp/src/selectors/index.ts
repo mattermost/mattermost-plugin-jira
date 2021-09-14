@@ -35,7 +35,7 @@ export const getCurrentUserLocale = createSelector(
         }
 
         return locale;
-});
+    });
 
 export const getBaseUrl = (state) => {
     let baseUrl = state.entities.general.config.SiteURL;
