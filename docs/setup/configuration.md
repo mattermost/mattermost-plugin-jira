@@ -56,7 +56,7 @@ For granular control of how issues are sent to certain channels in your Mattermo
 
 You can create multiple webhooks in Jira to point to the same endpoint on your Mattermost instance. This is useful when you only want issues from certain projects, or issues that fit a specific JQL criteria to be sent to your Mattermost instance. Larger organizations may want to filter the webhooks by project to minimize load on their Jira server, if they only need specific projects used for the webhook feature.
 
-### Step 3: Install the plugin as an application in Jira
+### Step 4: Install the plugin as an application in Jira
 
 To control Mattermost channel subscriptions, use the command `/jira subscribe` in the channel in which you want to receive subscriptions. Then select the project and event triggers that will post to the channel. To manage all channel subscriptions as an administrator see [Notification Management](../admininstrator-guide/notification-management.md).
 
