@@ -40,4 +40,5 @@ func TestEndpointNameFromRequest(t *testing.T) {
 			require.Equal(t, tt.expected, name)
 		})
 	}
+
 }
