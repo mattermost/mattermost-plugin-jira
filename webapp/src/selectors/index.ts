@@ -37,15 +37,6 @@ export const getCurrentUserLocale = createSelector(
         return locale;
     });
 
-export const getBaseUrl = (state) => {
-    let baseUrl = state.entities.general.config.SiteURL;
-
-    if (baseUrl && baseUrl[baseUrl.length - 1] === '/') {
-        baseUrl = baseUrl.substr(0, baseUrl.length - 1);
-    }
-    return baseUrl;
-};
-
 export const isConnectModalVisible = (state) => getPluginState(state).connectModalVisible;
 export const isDisconnectModalVisible = (state) => getPluginState(state).disconnectModalVisible;
 

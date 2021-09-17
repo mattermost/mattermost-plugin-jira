@@ -7,7 +7,7 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 import PluginId from 'plugin_id';
 import ActionTypes from 'action_types';
 import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
-import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances, getBaseUrl} from 'selectors';
+import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances} from 'selectors';
 import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
 import {ChannelSubscription, CreateIssueRequest, SearchIssueParams, InstanceType, ProjectMetadata, APIResponse} from 'types/model';
 
@@ -412,9 +412,9 @@ export function handleConnectFlow(instanceID?: string) {
 
 export function redirectConnect(instanceID: string) {
     return async (dispatch, getState) => {
-        const baseUrl = getBaseUrl(getState());
+        const baseUrl = getPluginServerRoute(getState());
         const instancePrefix = '/instance/' + btoa(instanceID);
-        const target = `${baseUrl}/plugins/${PluginId}${instancePrefix}/user/connect`;
+        const target = `${baseUrl}${instancePrefix}/user/connect`;
         window.open(target, '_blank');
     };
 }
