@@ -150,6 +150,20 @@ export const searchIssues = (params: SearchIssueParams) => {
     };
 };
 
+export const searchAutoCompleteFields = (params) => {
+    return async (dispatch, getState) => {
+        const url = getPluginServerRoute(getState()) + '/api/v2/get-search-autocomplete-fields';
+        return doFetchWithResponse(`${url}${buildQueryString(params)}`);
+    };
+};
+
+export const searchUsers = (params) => {
+    return async (dispatch, getState) => {
+        const url = getPluginServerRoute(getState()) + '/api/v2/get-search-users';
+        return doFetchWithResponse(`${url}${buildQueryString(params)}`);
+    };
+};
+
 export const createIssue = (payload: CreateIssueRequest) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
@@ -426,6 +440,12 @@ export function handleConnectChange(store) {
 
         if (msg.event === 'custom_jira_connect') {
             store.dispatch(sendEphemeralPost('You have successfully connected your Jira account. Type in /jira to get started. '));
+        }
+
+        // Invalid payload. Re-fetch user info
+        if (msg.data.user && 'auth_service' in msg.data.user) {
+            store.dispatch(getConnected());
+            return;
         }
 
         store.dispatch({

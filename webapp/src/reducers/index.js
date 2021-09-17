@@ -37,8 +37,8 @@ function userCanConnect(state = false, action) {
 function defaultUserInstanceID(state = '', action) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
-        if (action.data.user && action.data.user.default_instance_id) {
-            return action.data.user.default_instance_id;
+        if (action.data.user_info && action.data.user_info.default_instance_id) {
+            return action.data.user_info.default_instance_id;
         }
         return state;
     default:
@@ -49,8 +49,8 @@ function defaultUserInstanceID(state = '', action) {
 function userConnectedInstances(state = [], action) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
-        if (action.data.user) {
-            return action.data.user.connected_instances ? action.data.user.connected_instances : [];
+        if (action.data.user_info) {
+            return action.data.user_info.connected_instances ? action.data.user_info.connected_instances : [];
         }
         return state;
     default:

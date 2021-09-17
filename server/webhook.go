@@ -29,7 +29,7 @@ const (
 
 type Webhook interface {
 	Events() StringSet
-	PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID string) (*model.Post, int, error)
+	PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error)
 	PostNotifications(p *Plugin, instanceID types.ID) ([]*model.Post, int, error)
 }
 
@@ -63,9 +63,11 @@ func (wh *webhook) Events() StringSet {
 	return wh.eventTypes
 }
 
-func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID string) (*model.Post, int, error) {
+func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error) {
 	if wh.headline == "" {
 		return nil, http.StatusBadRequest, errors.Errorf("unsupported webhook")
+	} else if p.getConfig().DisplaySubscriptionNameInNotifications && subscriptionName != "" {
+		wh.headline = fmt.Sprintf("%s\nSubscription: **%s**", wh.headline, subscriptionName)
 	}
 
 	post := &model.Post{

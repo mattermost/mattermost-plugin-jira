@@ -84,7 +84,7 @@ func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, e
 	// Setup autolink
 	err = p.AddAutolinksForCloudInstance(newInstance)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		p.API.LogInfo("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 	}
 
 	return respondJSON(w, []string{"OK"})

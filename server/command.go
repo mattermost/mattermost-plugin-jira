@@ -28,7 +28,6 @@ var jiraCommandHandler = CommandHandler{
 		"debug/stats/expvar":      executeDebugStatsExpvar,
 		"debug/stats/reset":       executeDebugStatsReset,
 		"debug/stats/save":        executeDebugStatsSave,
-		"debug/workflow":          executeDebugWorkflow,
 		"disconnect":              executeDisconnect,
 		"help":                    executeHelp,
 		"info":                    executeInfo,
@@ -97,6 +96,10 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"* `/jira webhook [--instance=<jiraURL>]` -  Show the Mattermost webhook to receive JQL queries\n" +
 	"* `/jira v2revert ` - Revert to V2 jira plugin data model\n" +
 	""
+
+const jiraConnectionErrorText = "It looks like we couldn't validate the connection to your Jira server. " +
+	"Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. " +
+	"If you intend to have a one way integration from Jira to Mattermost this is not an issue."
 
 func (p *Plugin) registerJiraCommand(enableAutocomplete, enableOptInstance bool) error {
 	// Optimistically unregister what was registered before
@@ -789,6 +792,11 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
+
+	accessible, errMsg := checkIfJiraIsAccessible(jiraURL)
+	if !accessible {
+		return p.responsef(header, errMsg)
+	}
 	if strings.Contains(jiraURL, "http:") {
 		jiraURL = strings.ReplaceAll(jiraURL, "http:", "https:")
 		return p.responsef(header, "`/jira install cloud` requires a secure connection (HTTPS). Please run the following command:\n```\n/jira install cloud %s\n```", jiraURL)
@@ -797,7 +805,7 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 	instances, _ := p.instanceStore.LoadInstances()
 	if !p.enterpriseChecker.HasEnterpriseFeatures() {
 		if instances != nil && len(instances.IDs()) > 0 {
-			return p.responsef(header, "You need a valid Mattermost Enterprise E20 License to install multiple Jira instances")
+			return p.responsef(header, licenseErrorString)
 		}
 	}
 
@@ -838,6 +846,10 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 		return p.responsef(header, "The Jira URL you provided looks like a Jira Cloud URL - install it with:\n```\n/jira install cloud %s\n```", jiraURL)
 	}
 
+	accessible, errMsg := checkIfJiraIsAccessible(jiraURL)
+	if !accessible {
+		return p.responsef(header, errMsg)
+	}
 	instance := newServerInstance(p, jiraURL)
 	err = p.InstallInstance(instance)
 	if err != nil {
@@ -854,6 +866,17 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 		"MattermostKey": instance.GetMattermostKey(),
 		"PublicKey":     strings.TrimSpace(string(pkey)),
 	})
+}
+
+func checkIfJiraIsAccessible(jiraURL string) (bool, string) {
+	jiraIsAccessible, err := utils.IsJiraAccessible(jiraURL)
+	if err != nil {
+		return false, err.Error()
+	}
+	if !jiraIsAccessible {
+		return false, jiraConnectionErrorText
+	}
+	return true, ""
 }
 
 // executeUninstall will uninstall the jira instance if the url matches, and then update all connected clients
@@ -1071,10 +1094,6 @@ func executeDebugStatsExpvar(p *Plugin, c *plugin.Context, commandArgs *model.Co
 	return executeStatsImpl(p, c, commandArgs, true, args...)
 }
 
-func executeDebugWorkflow(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
-	return p.responsef(commandArgs, "Workflow Store:\n %v", p.workflowTriggerStore)
-}
-
 func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, useExpvar bool, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, commandArgs.UserId)
 	if err != nil {
@@ -1188,22 +1207,12 @@ func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 			"Subscriptions webhook needs to be set up once, is shared by all channels and subscription filters.\n"+
 			"   - `%s`\n"+
 			"   - right-click on [link](%s) and \"Copy Link Address\" to Copy\n"+
-			"##### Legacy webhook.\n"+
+			"##### Legacy webhooks\n"+
+			"If your organization's infrastructure is set up such that your Mattermost instance cannot connect to your Jira instance, you will not be able to use the Channel Subscriptions feature. You will instead need to use the \"Legacy Webhooks\" feature supported by the Jira plugin.\n"+
 			"Legacy webhook needs to be set up for each channel. For this channel:\n"+
 			"   - `%s`\n"+
-			"   - right-click on [link](%s) and \"Copy Link Address\" to Copy\n"+
-			"   By default, the legacy webhook integration publishes notifications for issue create, resolve, unresolve, reopen, and assign events.\n"+
-			"   To publish (post) more events use the following extra `&`-separated parameters:\n"+
-			"   - `updated_all=1`: all events\n"+
-			"   - `updated_comments=1`: all comment events\n\n"+
-			"   - `updated_attachment=1`: updated issue attachments\n"+
-			"   - `updated_description=1`: updated issue description\n"+
-			"   - `updated_labels=1`: updated issue labels\n"+
-			"   - `updated_prioity=1`: updated issue priority\n"+
-			"   - `updated_rank=1`: ranked issue higher or lower\n"+
-			"   - `updated_sprint=1`: assigned issue to a different sprint\n"+
-			"   - `updated_status=1`: transitioned issed to a different status, like Done, In Progress\n"+
-			"   - `updated_summary=1`: renamed issue\n"+
+			"   - right-click on [link](%s) and \"Copy Link Address\" to copy\n"+
+			" Visit the [Legacy Webhooks](https://mattermost.gitbook.io/plugin-jira/administrator-guide/notification-management#legacy-webhooks) page to learn more about this feature.\n"+
 			"",
 		instanceID, instance.GetManageWebhooksURL(), subWebhookURL, subWebhookURL, legacyWebhookURL, legacyWebhookURL)
 }

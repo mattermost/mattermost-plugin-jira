@@ -2,8 +2,10 @@
 // See LICENSE.txt for license information.
 
 import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
+import {Styles} from 'react-select/src/styles';
+import {Theme} from 'mattermost-redux/types/preferences';
 
-export const getBaseStyles = (theme) => {
+export const getBaseStyles = (theme: Theme) => {
     return {
         codeBlock: ({
             padding: '10px 12px',
@@ -33,7 +35,7 @@ export const getModalStyles = (theme) => ({
 
 export const getStyleForReactSelect = (theme) => {
     if (!theme) {
-        return null;
+        return {};
     }
 
     return {

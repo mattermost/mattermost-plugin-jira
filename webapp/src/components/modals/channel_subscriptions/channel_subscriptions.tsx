@@ -41,8 +41,6 @@ export default class ChannelSubscriptionsModal extends PureComponent<Props> {
             return;
         }
 
-        this.props.sendEphemeralPost('Fetching subscriptions.');
-
         const subsResponse = await this.props.fetchChannelSubscriptions(this.props.channel.id);
         if (subsResponse.error) {
             this.props.sendEphemeralPost('You do not have permission to edit subscriptions for this channel. Subscribing to Jira events will create notifications in this channel when certain events occur, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.');

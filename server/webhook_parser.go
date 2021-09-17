@@ -309,6 +309,11 @@ func appendCommentNotifications(wh *webhook, verb string) {
 			recipientType: recipientTypeAssignee,
 		})
 	}
+	if assigneeMentioned || jwh.Issue.Fields.Assignee == nil ||
+		(jwh.Issue.Fields.Assignee.Name != "" && jwh.Issue.Fields.Assignee.Name == jwh.User.Name) ||
+		(jwh.Issue.Fields.Assignee.AccountID != "" && jwh.Issue.Fields.Assignee.AccountID == jwh.Comment.UpdateAuthor.AccountID) {
+		return
+	}
 	if !reporterMentioned && shouldSendNotification(jwh.Issue.Fields.Reporter, jwh.User.Name, jwh.Comment.UpdateAuthor.AccountID) {
 		wh.notifications = append(wh.notifications, webhookUserNotification{
 			jiraUsername:  jwh.Issue.Fields.Reporter.Name,

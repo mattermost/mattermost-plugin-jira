@@ -78,6 +78,9 @@ type externalConfig struct {
 
 	// Enable slash command autocomplete
 	EnableAutocomplete bool
+
+	// Display subscription name in notifications
+	DisplaySubscriptionNameInNotifications bool
 }
 
 const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb
@@ -110,9 +113,6 @@ type Plugin struct {
 	userStore     UserStore
 	otsStore      OTSStore
 	secretsStore  SecretsStore
-
-	// Active workflows store
-	workflowTriggerStore *TriggerStore
 
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
@@ -288,8 +288,6 @@ func (p *Plugin) OnActivate() error {
 		go webhookWorker{i, p, p.webhookQueue}.work()
 	}
 
-	p.workflowTriggerStore = NewTriggerStore()
-
 	p.enterpriseChecker = enterprise.NewEnterpriseChecker(p.API)
 
 	go p.initStats()
@@ -319,7 +317,7 @@ func (p *Plugin) OnActivate() error {
 			}
 
 			if err = p.AddAutolinksForCloudInstance(ci); err != nil {
-				p.API.LogWarn("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
+				p.API.LogInfo("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 				continue
 			}
 		}
