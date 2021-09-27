@@ -421,7 +421,7 @@ func (p *Plugin) CheckSiteURL() error {
 		return errors.WithMessage(err, "invalid SITEURL")
 	}
 	if u.Hostname() == "localhost" {
-		return errors.Errorf("%s is not a valid Mattermost SITEURL.", ustr)
+		return errors.Errorf("%s is not a valid URL that is reachable from the public internet.", ustr)
 	}
 	return nil
 }
