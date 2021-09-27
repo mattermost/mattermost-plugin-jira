@@ -4,6 +4,7 @@ ifndef MM_RUDDER_WRITE_KEY
 endif
 LDFLAGS += -X "github.com/mattermost/mattermost-plugin-jira/server/utils/telemetry.rudderWriteKey=$(MM_RUDDER_WRITE_KEY)"
 
+# Build info
 BUILD_DATE = $(shell date -u)
 BUILD_HASH = $(shell git rev-parse HEAD)
 BUILD_HASH_SHORT = $(shell git rev-parse --short HEAD)
