@@ -421,7 +421,7 @@ func (p *Plugin) CheckSiteURL() error {
 		return errors.WithMessage(err, "invalid SITEURL")
 	}
 	if u.Hostname() == "localhost" {
-		return errors.Errorf("%s is not a valid Mattermost SITEURL.", ustr)
+		return errors.Errorf("Using %s as your Mattermost SiteURL is not permitted, as the URL is not reachable from Jira. If you are using Jira Cloud, please make sure your URL is reachable from the public internet.", ustr)
 	}
 	return nil
 }
