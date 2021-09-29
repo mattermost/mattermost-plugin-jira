@@ -4,8 +4,11 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -56,14 +59,13 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 	if err != nil {
 		return err
 	}
-
-	if _, _, err = wh.PostNotifications(ww.p, msg.InstanceID); err != nil {
-		ww.p.errorf("WebhookWorker id: %d, error posting notifications, err: %v", ww.id, err)
-	}
-
 	v := wh.(*webhook)
 	if err = v.JiraWebhook.expandIssue(ww.p, msg.InstanceID); err != nil {
 		return err
+	}
+	err = wh.(*webhook).FetchReporterNotification(msg.Data, v.Issue.Fields.Reporter)
+	if _, _, err = wh.PostNotifications(ww.p, msg.InstanceID); err != nil {
+		ww.p.errorf("WebhookWorker id: %d, error posting notifications, err: %v", ww.id, err)
 	}
 
 	channelsSubscribed, err := ww.p.getChannelsSubscribed(v, msg.InstanceID)
@@ -78,5 +80,46 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 		}
 	}
 
+	return nil
+}
+
+func (wh *webhook) FetchReporterNotification(bb []byte, reporter *jira.User) error {
+	if wh.eventTypes.ContainsAny("event_created_comment") || wh.eventTypes.ContainsAny("event_updated_comment") {
+		jwhook := &JiraWebhook{}
+		err := json.Unmarshal(bb, &jwhook)
+		if err != nil {
+			return err
+		}
+		if jwhook.Issue.ID == "" {
+			return ErrWebhookIgnored
+		}
+
+		commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
+
+		whook := &webhook{
+			JiraWebhook: jwhook,
+			eventTypes:  NewStringSet(eventCreatedComment),
+			headline:    fmt.Sprintf("%s **commented** on %s", commentAuthor, jwhook.mdKeySummaryLink()),
+			text:        truncate(quoteIssueComment(jwhook.Comment.Body), 3000),
+		}
+		jwh := whook.JiraWebhook
+
+		commentAuthor = mdUser(&jwh.Comment.UpdateAuthor)
+
+		commentMessage := fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body)
+		if reporter == nil ||
+			(reporter.Name != "" && reporter.Name == jwh.User.Name) ||
+			(reporter.AccountID != "" && reporter.AccountID == jwh.Comment.UpdateAuthor.AccountID) {
+			return nil
+		}
+		wh.notifications = append(wh.notifications, webhookUserNotification{
+			jiraUsername:  reporter.Name,
+			jiraAccountID: reporter.AccountID,
+			message:       commentMessage,
+			postType:      PostTypeComment,
+			commentSelf:   jwh.Comment.Self,
+			recipientType: recipientTypeReporter,
+		})
+	}
 	return nil
 }

@@ -22,6 +22,11 @@ const (
 	commentCreated = "comment_created"
 )
 
+const (
+	recipientTypeAssignee = "assignee"
+	recipientTypeReporter = "reporter"
+)
+
 type Webhook interface {
 	Events() StringSet
 	PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error)
@@ -51,6 +56,7 @@ type webhookUserNotification struct {
 	message       string
 	postType      string
 	commentSelf   string
+	recipientType string
 }
 
 func (wh *webhook) Events() StringSet {

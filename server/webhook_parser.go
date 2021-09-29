@@ -304,6 +304,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 		message:       fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
 		postType:      PostTypeComment,
 		commentSelf:   jwh.Comment.Self,
+		recipientType: recipientTypeAssignee,
 	})
 }
 
