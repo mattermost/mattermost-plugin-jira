@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/andygrunwald/go-jira"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
