@@ -136,3 +136,16 @@ func TestWebhookQuotedComment(t *testing.T) {
 		assert.True(t, strings.HasPrefix(w.text, ">"))
 	}
 }
+
+func TestEpicLinkUpdateFormat(t *testing.T) {
+	f, err := os.Open("testdata/webhook-issue-updated-epic-link.json")
+	require.NoError(t, err)
+	defer f.Close()
+	bb, err := ioutil.ReadAll(f)
+	require.Nil(t, err)
+	wh, err := ParseWebhook(bb)
+	require.NoError(t, err)
+	w := wh.(*webhook)
+	require.NotNil(t, w)
+	require.Equal(t, w.headline, "Test User **updated** Epic Field from \"TES-11\" to \"TES-12\" on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)")
+}

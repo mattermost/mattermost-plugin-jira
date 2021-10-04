@@ -162,6 +162,8 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 			event = parseWebhookUpdatedField(jwh, eventUpdatedReporter, field, fieldID, fromWithDefault, toWithDefault)
 		case field == "Component":
 			event = parseWebhookUpdatedField(jwh, eventUpdatedComponents, field, fieldID, fromWithDefault, toWithDefault)
+		case field == "Epic Link":
+			event = parseWebhookUpdatedEpicLink(jwh, field, fieldID, from, to)
 		case item.FieldType == "custom":
 			eventType := fmt.Sprintf("event_updated_%s", fieldID)
 			event = parseWebhookUpdatedField(jwh, eventType, field, fieldID, fromWithDefault, toWithDefault)
@@ -402,6 +404,23 @@ func parseWebhookResolved(jwh *JiraWebhook, to string) *webhook {
 func parseWebhookUpdatedField(jwh *JiraWebhook, eventType string, field, fieldID, from, to string) *webhook {
 	wh := newWebhook(jwh, eventType, "**updated** %s from %q to %q on", field, from, to)
 	wh.fieldInfo = webhookField{field, fieldID, from, to}
+	return wh
+}
+
+func parseWebhookUpdatedEpicLink(jwh *JiraWebhook, field, fieldID, from, to string) *webhook {
+	eventType := fmt.Sprintf("event_updated_%s", fieldID)
+	fromFmttd := "~~None~~"
+	toFmtdd := "None"
+
+	if from != "" {
+		fromFmttd = jwh.mdJiraLink(from, "/browse/"+from)
+	}
+	if to != "" {
+		toFmtdd = jwh.mdJiraLink(to, "/browse/"+to)
+	}
+
+	wh := newWebhook(jwh, eventType, "**updated** Epic Link from %s to %s on", fromFmttd, toFmtdd)
+	wh.fieldInfo = webhookField{field, fieldID, fromFmttd, toFmtdd}
 	return wh
 }
 
