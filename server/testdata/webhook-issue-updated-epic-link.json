@@ -190,7 +190,7 @@
       "id": "10233",
       "items": [
         {
-          "field": "Epic Field",
+          "field": "Epic Link",
           "fieldtype": "custom",
           "fieldId": "customfield_10014",
           "from": "10011",
