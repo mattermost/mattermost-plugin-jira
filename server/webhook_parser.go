@@ -16,6 +16,11 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
+const (
+	defaultFromField = "~~None~~"
+	defaultToField   = "None"
+)
+
 var webhookWrapperFunc func(wh Webhook) Webhook
 
 func ParseWebhook(bb []byte) (wh Webhook, err error) {
@@ -121,11 +126,11 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 		to := item.ToString
 		fromWithDefault := from
 		if fromWithDefault == "" {
-			fromWithDefault = "~~None~~"
+			fromWithDefault = defaultFromField
 		}
 		toWithDefault := to
 		if toWithDefault == "" {
-			toWithDefault = "None"
+			toWithDefault = defaultToField
 		}
 
 		var event *webhook
@@ -409,8 +414,8 @@ func parseWebhookUpdatedField(jwh *JiraWebhook, eventType string, field, fieldID
 
 func parseWebhookUpdatedEpicLink(jwh *JiraWebhook, field, fieldID, from, to string) *webhook {
 	eventType := fmt.Sprintf("event_updated_%s", fieldID)
-	fromFmttd := "~~None~~"
-	toFmtdd := "None"
+	fromFmttd := defaultFromField
+	toFmtdd := defaultToField
 
 	if from != "" {
 		fromFmttd = jwh.mdJiraLink(from, "/browse/"+from)
