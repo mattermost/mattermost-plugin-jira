@@ -100,6 +100,13 @@
         "type": "bool",
         "help_text": "Display subscription name in post when a subscription posts to a channel",
         "default": false
+      },
+      {
+        "key": "EnableWebhookEventLogging",
+        "display_name": "Enable Webhook Event Logging:",
+        "type": "bool",
+        "help_text": "Allow the plugin to log the event from webhook.",
+        "default": false
       }
     ],
     "header": "Please refer to the `/jira` command [**documentation**](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) to further configure the Jira plugin.",
