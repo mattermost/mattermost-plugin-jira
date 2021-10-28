@@ -211,7 +211,7 @@ func (wh *webhook) CheckIssueWatchers(p *Plugin, instanceID types.ID) {
 	if err != nil {
 		return
 	}
-	client, err2 := instance.GetClient(c)
+	client, err := instance.GetClient(c)
 	if err2 != nil {
 		return
 	}
