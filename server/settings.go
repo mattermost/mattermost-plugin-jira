@@ -60,14 +60,14 @@ func (p *Plugin) settingsWatching(header *model.CommandArgs, instanceID, matterm
 		return p.responsef(header, helpText)
 	}
 
-	watching := false
-	watchingOnOff := settingOff
+	var value bool
+	notifications := settingOff
 	switch args[1] {
 	case settingOn:
-		watching = true
-		watchingOnOff = settingOn
+		value = true
+		notifications = settingOn
 	case settingOff:
-		watching = false
+		value = false
 	default:
 		return p.responsef(header, helpText)
 	}
@@ -75,11 +75,11 @@ func (p *Plugin) settingsWatching(header *model.CommandArgs, instanceID, matterm
 	if connection.Settings == nil {
 		connection.Settings = &ConnectionSettings{}
 	}
-	connection.Settings.Watching = &watching
+	connection.Settings.Watching = &value
 	if err := p.userStore.StoreConnection(instanceID, mattermostUserID, connection); err != nil {
 		p.errorf("settingsWatching, err: %v", err)
 		return p.responsef(header, errStoreNewSettings, err)
 	}
 
-	return p.responsef(header, "Settings updated. Watching %s.", watchingOnOff)
+	return p.responsef(header, "Settings updated. Watching %s.", notifications)
 }

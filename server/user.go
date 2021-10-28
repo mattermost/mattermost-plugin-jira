@@ -53,11 +53,11 @@ func (s *ConnectionSettings) String() string {
 		if s.Notifications {
 			notifications = "on"
 		}
-		if s.ShouldReceiveWatcherNotifications() {
+		if s.Watching == nil || *s.Watching {
 			watching = "on"
 		}
 	}
-	return fmt.Sprintf("- Notifications: %s\n- Watching: %s", notifications, watching)
+	return fmt.Sprintf("\tNotifications: %s\n\tWatching: %s", notifications, watching)
 }
 
 func (s *ConnectionSettings) ShouldReceiveWatcherNotifications() bool {
