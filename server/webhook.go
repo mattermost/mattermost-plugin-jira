@@ -199,7 +199,7 @@ func (wh *webhook) CheckIssueWatchers(p *Plugin, instanceID types.ID) {
 	}
 
 	instance, err := p.instanceStore.LoadInstance(instanceID)
-	if err != nil {
+	if err != nil && instance == nil {
 		// This isn't an internal server error. There's just no instance installed.
 		return
 	}
@@ -212,7 +212,7 @@ func (wh *webhook) CheckIssueWatchers(p *Plugin, instanceID types.ID) {
 		return
 	}
 	client, err := instance.GetClient(c)
-	if err2 != nil {
+	if err != nil {
 		return
 	}
 	watcherUsers, err := client.GetWatchers(wh.Issue.ID)
@@ -225,7 +225,7 @@ func (wh *webhook) CheckIssueWatchers(p *Plugin, instanceID types.ID) {
 		message := ""
 		var shouldNotReceiveNotification bool
 		for _, notification := range wh.notifications {
-			if notification.jiraAccountID == watcherUser.AccountID || notification.jiraUsername == watcherUser.Name {
+			if notification.jiraAccountID == watcherUser.AccountID || (notification.jiraUsername != "" && notification.jiraUsername == watcherUser.Name) {
 				shouldNotReceiveNotification = true
 				break
 			}
