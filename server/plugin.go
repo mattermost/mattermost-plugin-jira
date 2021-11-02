@@ -367,14 +367,9 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
 		},
 		{
-			DisableNonWordPrefix: false,
-			DisableNonWordSuffix: false,
-			Disabled:             false,
-			Name:                 "jirajumptocomment",
-			Pattern:              `(?P<IssueKey>[A-Za-z]+-[0-9]+)[?]focusedCommentId[^\\s]+`,
-			Scope:                nil,
-			Template:             `[${IssueKey} Link to comment]($0)`,
-			WordMatch:            false,
+			Name:     key + " jump to comment for " + baseURL,
+			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)[?](focusedCommentId)(=)(?P<comment_id>\d+)`,
+			Template: `[` + key + `-${jira_id} With Focused Comment($comment_id)](` + baseURL + `/browse/` + key + `-${jira_id}?focusedCommentId=$comment_id)`,
 		},
 	}
 
