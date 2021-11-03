@@ -79,6 +79,8 @@ type externalConfig struct {
 	// Enable slash command autocomplete
 	EnableAutocomplete bool
 
+	// Enable Webhook Event Logging
+	EnableWebhookEventLogging bool
 	// Display subscription name in notifications
 	DisplaySubscriptionNameInNotifications bool
 }
@@ -91,9 +93,6 @@ type config struct {
 
 	// user ID of the bot account
 	botUserID string
-
-	// Enable Webhook Event Logging
-	EnableWebhookEventLogging bool
 
 	// Maximum attachment size allowed to be uploaded to Jira
 	maxAttachmentSize utils.ByteSize

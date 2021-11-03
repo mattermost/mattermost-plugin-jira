@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"sort"
 	"strings"
 	"time"
@@ -714,11 +715,19 @@ func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, in
 		return respondErr(w, http.StatusForbidden,
 			fmt.Errorf("JIRA plugin not configured correctly; must provide Secret"))
 	}
+
 	status, err = verifyHTTPSecret(conf.Secret, r.FormValue("secret"))
 	if err != nil {
 		return respondErr(w, status, err)
 	}
 
+	if conf.EnableWebhookEventLogging {
+		parsedRequest, eventErr := httputil.DumpRequest(r, true)
+		if eventErr != nil {
+			return respondErr(w, status, eventErr)
+		}
+		p.API.LogInfo("Webhook Event Log", "event", string(parsedRequest))
+	}
 	bb, err := ioutil.ReadAll(r.Body)
 	size = utils.ByteSize(len(bb))
 	if err != nil {

@@ -82,7 +82,7 @@
       },
       {
         "key": "HideDecriptionComment",
-        "display_name": "Hide issue descriptions and comments",
+        "display_name": "Hide issue descriptions and comments:",
         "type": "bool",
         "help_text": "Hide detailed issue descriptions and comments from Subscription and Webhook messages",
         "default": false
@@ -96,7 +96,7 @@
       },
       {
         "key": "DisplaySubscriptionNameInNotifications",
-        "display_name": "Display subscription name in notifications",
+        "display_name": "Display subscription name in notifications:",
         "type": "bool",
         "help_text": "Display subscription name in post when a subscription posts to a channel",
         "default": false
