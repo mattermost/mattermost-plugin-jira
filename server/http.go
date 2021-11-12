@@ -196,7 +196,7 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return p.httpChannelSubscriptions(w, r)
 	}
 
-	w.Write([]byte("not found"))
+	http.Error(w, "not found", http.StatusNotFound)
 	return http.StatusNotFound, nil
 }
 
