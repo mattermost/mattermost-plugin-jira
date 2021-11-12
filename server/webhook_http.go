@@ -81,7 +81,7 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 		if eventErr != nil {
 			return respondErr(w, status, eventErr)
 		}
-		p.API.LogInfo("Webhook Event Log", "event", string(parsedRequest))
+		p.API.LogDebug("Webhook Event Log", "event", string(parsedRequest))
 	}
 
 	teamName := r.FormValue("team")
