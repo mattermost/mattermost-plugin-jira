@@ -75,6 +75,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	status, err := p.serveHTTP(c, w, r)
 	if err != nil {
 		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
+		return
 	}
 	p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
 }
@@ -195,11 +196,8 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return p.httpChannelSubscriptions(w, r)
 	}
 
-	if strings.HasPrefix(path, "/rest/applinks") {
-		return http.StatusNotFound, nil
-	}
-
-	return respondErr(w, http.StatusNotFound, errors.New("not found"))
+	w.Write([]byte("not found"))
+	return http.StatusNotFound, nil
 }
 
 func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {
