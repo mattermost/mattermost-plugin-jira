@@ -726,7 +726,7 @@ func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, in
 		if eventErr != nil {
 			return respondErr(w, status, eventErr)
 		}
-		p.API.LogInfo("Webhook Event Log", "event", string(parsedRequest))
+		p.API.LogDebug("Webhook Event Log", "event", string(parsedRequest))
 	}
 	bb, err := ioutil.ReadAll(r.Body)
 	size = utils.ByteSize(len(bb))
