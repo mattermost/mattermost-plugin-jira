@@ -83,7 +83,6 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 		}
 		p.API.LogDebug("Webhook Event Log", "event", string(parsedRequest))
 	}
-
 	teamName := r.FormValue("team")
 	if teamName == "" {
 		return respondErr(w, http.StatusBadRequest,
