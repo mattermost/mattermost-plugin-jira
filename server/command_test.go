@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/jarcoal/httpmock"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
@@ -243,6 +244,26 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 	}
 	api.On("GetUser", mockUserIDNonSysAdmin).Return(nonSysAdminUser, nil)
 
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "https://jiralink.com/status",
+		httpmock.NewStringResponder(200, `{"state": "RUNNING"}`))
+	httpmock.RegisterResponder("GET", "https://mmtest.atlassian.net/status",
+		httpmock.NewStringResponder(200, `{"state": "RUNNING"}`))
+	httpmock.RegisterResponder("GET", "http://mmtest.atlassian.net/status",
+		httpmock.NewStringResponder(200, `{"state": "RUNNING"}`))
+	httpmock.RegisterResponder("GET", "https://non-existing-jira-page.atlassian.net/status",
+		httpmock.NewStringResponder(404, ``))
+	httpmock.RegisterResponder("GET", "https://valid-jira-page.atlassian.net/status",
+		httpmock.NewStringResponder(200, ``))
+	httpmock.RegisterResponder("GET", "https://inaccessible-jira-server.com/status",
+		httpmock.NewStringResponder(404, ``))
+	httpmock.RegisterResponder("GET", "https://starting-jira-server.com/status",
+		httpmock.NewStringResponder(200, `{"state": "STARTING"}`))
+	httpmock.RegisterResponder("GET", "https://broken-json-response.com/status",
+		httpmock.NewStringResponder(200, `{"invalid-json": }`))
+
 	tests := map[string]struct {
 		commandArgs       *model.CommandArgs
 		numInstances      int
@@ -277,6 +298,16 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			commandArgs:       &model.CommandArgs{Command: "/jira install cloud https://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
 			expectedMsgPrefix: "https://mmtest.atlassian.net has been successfully added.",
 		},
+		"install inaccessible cloud instance": {
+			numInstances:      0,
+			commandArgs:       &model.CommandArgs{Command: "/jira install cloud https://non-existing-jira-page.atlassian.net", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: "Jira server returned http status code \"404\" when checking for availability: \"https://non-existing-jira-page.atlassian.net\"",
+		},
+		"install valid cloud instance with broken json response": {
+			numInstances:      0,
+			commandArgs:       &model.CommandArgs{Command: "/jira install cloud https://broken-json-response.com", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: "It looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue.",
+		},
 		"install valid server instance 1 preinstalled": {
 			numInstances:      1,
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://jiralink.com", UserId: mockUserIDSysAdmin},
@@ -286,6 +317,21 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			numInstances:      2,
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://jiralink.com", UserId: mockUserIDSysAdmin},
 			expectedMsgPrefix: "https://jiralink.com has been successfully added",
+		},
+		"install inaccessible server instance": {
+			numInstances:      0,
+			commandArgs:       &model.CommandArgs{Command: "/jira install server https://inaccessible-jira-server.com", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: "Jira server returned http status code \"404\" when checking for availability: \"https://inaccessible-jira-server.com\"",
+		},
+		"install valid server instance in wrong state": {
+			numInstances:      0,
+			commandArgs:       &model.CommandArgs{Command: "/jira install server https://starting-jira-server.com", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: "Jira server is not in correct state, it should be up and running: \"https://starting-jira-server.com\"",
+		},
+		"install valid server instance with broken json response": {
+			numInstances:      0,
+			commandArgs:       &model.CommandArgs{Command: "/jira install server https://broken-json-response.com", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: "It looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue.",
 		},
 		"install non secure cloud instance": {
 			commandArgs:       &model.CommandArgs{Command: "/jira install cloud http://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
@@ -302,12 +348,11 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			isSendEphemeralPostCalled := false
 
 			// add valid license
-			trueValue := true
 			var license model.License
-			license.Features = &model.Features{}
-			license.Features.EnterprisePlugins = &trueValue
+			license.SkuShortName = "professional"
 
 			api.On("GetLicense").Return(&license)
+			api.On("GetConfig").Return(&model.Config{})
 			api.On("RegisterCommand", mock.Anything).Return(nil)
 			api.On("GetBundlePath").Return("", nil)
 			api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
