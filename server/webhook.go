@@ -161,38 +161,6 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 	return posts, http.StatusOK, nil
 }
 
-func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...interface{}) *webhook {
-	return &webhook{
-		JiraWebhook: jwh,
-		eventTypes:  NewStringSet(eventType),
-		headline:    jwh.mdUser() + " " + fmt.Sprintf(format, args...) + " " + jwh.mdKeySummaryLink(),
-	}
-}
-
-func (wh *webhook) getConnection(p *Plugin, instance Instance, notification webhookUserNotification) (con *Connection, err error) {
-	var mattermostUserID types.ID
-
-	// prefer accountId to username when looking up UserIds
-
-	if notification.jiraAccountID != "" {
-		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), notification.jiraAccountID)
-	} else {
-		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), notification.jiraUsername)
-	}
-	if err != nil {
-		return
-	}
-
-	// Check if the user has permissions.
-	con, err = p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
-	if err != nil {
-		// Not connected to Jira, so can't check permissions
-		return
-	}
-
-	return
-}
-
 func (wh *webhook) CheckIssueWatchers(p *Plugin, instanceID types.ID) {
 	if len(wh.notifications) == 0 {
 		return
@@ -204,7 +172,7 @@ func (wh *webhook) CheckIssueWatchers(p *Plugin, instanceID types.ID) {
 		return
 	}
 
-	c, err := wh.getConnection(p, instance, webhookUserNotification{
+	c, err := p.getConnection(instance, webhookUserNotification{
 		jiraAccountID: wh.JiraWebhook.User.AccountID,
 		jiraUsername:  wh.JiraWebhook.User.Name,
 	})
@@ -243,7 +211,7 @@ func (wh *webhook) CheckIssueWatchers(p *Plugin, instanceID types.ID) {
 			commentSelf:   wh.JiraWebhook.Comment.Self,
 		}
 
-		c, err = wh.getConnection(p, instance, whUserNotification)
+		c, err = p.getConnection(instance, whUserNotification)
 
 		// if setting watching value is false don't put into webhookUserNotification
 		if err != nil || c.Settings == nil || !c.Settings.ShouldReceiveWatcherNotifications() {

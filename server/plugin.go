@@ -28,6 +28,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/tracker"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/telemetry"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (
@@ -455,4 +456,35 @@ func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL
 	legacyURL = p.GetPluginURL() + instancePath(routeIncomingWebhook, instanceID) + "?" + v.Encode()
 
 	return subURL, legacyURL, nil
+}
+func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...interface{}) *webhook {
+	return &webhook{
+		JiraWebhook: jwh,
+		eventTypes:  NewStringSet(eventType),
+		headline:    jwh.mdUser() + " " + fmt.Sprintf(format, args...) + " " + jwh.mdKeySummaryLink(),
+	}
+}
+
+func (p *Plugin) getConnection(instance Instance, notification webhookUserNotification) (con *Connection, err error) {
+	var mattermostUserID types.ID
+
+	// prefer accountId to username when looking up UserIds
+
+	if notification.jiraAccountID != "" {
+		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), notification.jiraAccountID)
+	} else {
+		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), notification.jiraUsername)
+	}
+	if err != nil {
+		return
+	}
+
+	// Check if the user has permissions.
+	con, err = p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
+	if err != nil {
+		// Not connected to Jira, so can't check permissions
+		return
+	}
+
+	return
 }
