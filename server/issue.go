@@ -785,7 +785,9 @@ func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 	case labelsField:
 		return NewStringSet(issue.Fields.Labels...)
 	case priorityField:
-		return NewStringSet(issue.Fields.Priority.ID)
+		if issue.Fields.Priority != nil {
+			return NewStringSet(issue.Fields.Priority.ID)
+		}
 	case "fixversions":
 		result := NewStringSet()
 		for _, v := range issue.Fields.FixVersions {
