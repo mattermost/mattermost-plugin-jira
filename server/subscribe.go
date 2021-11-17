@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/http/httputil"
 	"sort"
 	"strings"
 	"time"
@@ -721,17 +720,14 @@ func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, in
 		return respondErr(w, status, err)
 	}
 
-	if conf.EnableWebhookEventLogging {
-		parsedRequest, eventErr := httputil.DumpRequest(r, true)
-		if eventErr != nil {
-			return respondErr(w, status, eventErr)
-		}
-		p.API.LogDebug("Webhook Event Log", "event", string(parsedRequest))
-	}
 	bb, err := ioutil.ReadAll(r.Body)
 	size = utils.ByteSize(len(bb))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	if conf.EnableWebhookEventLogging {
+		p.API.LogDebug("Webhook Event Log", "event", string(bb))
 	}
 
 	// If there is space in the queue, immediately return a 200; we will process the webhook event async.
