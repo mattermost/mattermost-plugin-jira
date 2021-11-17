@@ -81,6 +81,7 @@ type externalConfig struct {
 
 	// Enable Webhook Event Logging
 	EnableWebhookEventLogging bool
+
 	// Display subscription name in notifications
 	DisplaySubscriptionNameInNotifications bool
 }
