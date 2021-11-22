@@ -79,4 +79,3 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 
 	return nil
 }
-

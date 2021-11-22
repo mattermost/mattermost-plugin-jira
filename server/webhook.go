@@ -4,13 +4,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
-	"encoding/json"
 
-	"github.com/pkg/errors"
 	"github.com/andygrunwald/go-jira"
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 
