@@ -43,7 +43,7 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
 		return respondErr(w, http.StatusBadRequest,
-			errors.New("unmarshall the body"))
+			errors.Wrap(err, "unmarshall the body"))
 	}
 
 	jiraBotID := p.getUserID()
