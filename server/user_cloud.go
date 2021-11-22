@@ -12,7 +12,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -160,8 +160,8 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	mmDisplayName := mmuser.GetDisplayName(model.SHOW_FULLNAME)
-	userName := mmuser.GetDisplayName(model.SHOW_USERNAME)
+	mmDisplayName := mmuser.GetDisplayName(model.ShowFullName)
+	userName := mmuser.GetDisplayName(model.ShowUsername)
 	if mmDisplayName == userName {
 		mmDisplayName = "@" + mmDisplayName
 	} else {

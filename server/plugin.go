@@ -17,8 +17,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin"
 
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
@@ -104,6 +105,7 @@ type config struct {
 
 type Plugin struct {
 	plugin.MattermostPlugin
+	client *pluginapi.Client
 
 	// configuration and a muttex to control concurrent access
 	conf     config
@@ -221,8 +223,9 @@ func (p *Plugin) OnActivate() error {
 	p.userStore = store
 	p.secretsStore = store
 	p.otsStore = store
+	p.client = pluginapi.NewClient(p.API, p.Driver)
 
-	botUserID, err := p.Helpers.EnsureBot(&model.Bot{
+	botUserID, err := p.client.Bot.EnsureBot(&model.Bot{
 		Username:    botUserName,
 		DisplayName: botDisplayName,
 		Description: botDescription,
