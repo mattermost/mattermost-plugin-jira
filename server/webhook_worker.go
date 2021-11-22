@@ -6,7 +6,6 @@ package main
 import (
 	"time"
 
-
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
