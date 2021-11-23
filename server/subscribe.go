@@ -127,6 +127,7 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 	webhookEvents := wh.Events()
 	foundEvent := false
 	eventTypes := filters.Events
+	delete(eventTypes, eventUpdatedComment)
 	if eventTypes.Intersection(webhookEvents).Len() > 0 {
 		foundEvent = true
 	} else if eventTypes.ContainsAny(eventUpdatedAny) {
