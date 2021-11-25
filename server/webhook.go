@@ -162,10 +162,6 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 }
 
 func (wh *webhook) CheckIssueWatchers(p *Plugin, instanceID types.ID) {
-	if len(wh.notifications) == 0 {
-		return
-	}
-
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil && instance == nil {
 		// This isn't an internal server error. There's just no instance installed.
