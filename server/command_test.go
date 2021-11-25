@@ -165,12 +165,12 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 		"no params, with notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithNotifications},
 			numInstances: 1,
-			expectedMsg:  "Current settings:\n- Notifications: on",
+			expectedMsg:  "Current settings:\n- Notifications: on\n- Watching: on",
 		},
 		"no params, without notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "Current settings:\n\tNotifications: off",
+			expectedMsg:  "Current settings:\n- Notifications: off\n- Wathing: off",
 		},
 		"unknown setting": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings" + " test", UserId: mockUserIDWithoutNotifications},
