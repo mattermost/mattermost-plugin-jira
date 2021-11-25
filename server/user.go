@@ -48,7 +48,7 @@ type ConnectionSettings struct {
 }
 
 func (s *ConnectionSettings) String() string {
-	notifications, watching := "off", "off"
+	notifications, watching := settingOff, settingOff
 	if s != nil {
 		if s.Notifications {
 			notifications = "on"
