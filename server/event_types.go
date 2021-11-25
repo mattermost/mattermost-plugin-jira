@@ -36,6 +36,7 @@ var legacyEvents = NewStringSet(
 var commentEvents = NewStringSet(
 	eventCreatedComment,
 	eventDeletedComment,
+	eventUpdatedComment,
 )
 
 var defaultEvents = legacyEvents.Add(eventUpdatedAssignee)
