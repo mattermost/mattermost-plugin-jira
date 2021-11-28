@@ -15,7 +15,7 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -39,10 +39,11 @@ func makePost(userID, channelID, message string) *model.Post {
 }
 
 func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) (int, error) {
-	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
-	if requestData == nil {
+	var requestData model.PostActionIntegrationRequest
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
 		return respondErr(w, http.StatusBadRequest,
-			errors.New("missing request data"))
+			errors.Wrap(err, "unmarshall the body"))
 	}
 
 	jiraBotID := p.getUserID()
@@ -99,10 +100,11 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 }
 
 func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Request) (int, error) {
-	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
-	if requestData == nil {
+	var requestData model.PostActionIntegrationRequest
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
 		return respondErr(w, http.StatusBadRequest,
-			errors.New("missing request data"))
+			errors.New("unmarshall the body"))
 	}
 
 	jiraBotID := p.getUserID()
@@ -135,7 +137,7 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 			"No instance id was found in context data"), w, http.StatusInternalServerError)
 	}
 
-	_, err := p.TransitionIssue(&InTransitionIssue{
+	_, err = p.TransitionIssue(&InTransitionIssue{
 		mattermostUserID: types.ID(mattermostUserID),
 		InstanceID:       types.ID(instanceID),
 		IssueKey:         issueKey,
@@ -272,7 +274,6 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 			Message:   fmt.Sprintf("[Please create your Jira issue manually](%v). %v\n%v", createURL, message, fieldsString),
 			ChannelId: channelID,
 			RootId:    rootID,
-			ParentId:  rootID,
 			UserId:    instance.Common().getConfig().botUserID,
 		}
 		_ = p.API.SendEphemeralPost(in.mattermostUserID.String(), reply)
@@ -295,7 +296,6 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 				Message:   message,
 				ChannelId: channelID,
 				RootId:    rootID,
-				ParentId:  rootID,
 				UserId:    instance.Common().getConfig().botUserID,
 			})
 			return nil, errors.Errorf("issue can not be created via API: %s", message)
@@ -311,7 +311,6 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 		Message:   msg,
 		ChannelId: channelID,
 		RootId:    rootID,
-		ParentId:  rootID,
 		UserId:    instance.Common().getConfig().botUserID,
 	}
 
@@ -337,7 +336,6 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 		Message:   fmt.Sprintf("Created a Jira issue: %s", mdKeySummaryLink(createdIssue)),
 		ChannelId: channelID,
 		RootId:    rootID,
-		ParentId:  rootID,
 		UserId:    in.mattermostUserID.String(),
 	}
 	_, appErr = p.API.CreatePost(publicReply)
@@ -678,7 +676,6 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 		Message:   msg,
 		ChannelId: post.ChannelId,
 		RootId:    rootID,
-		ParentId:  rootID,
 		UserId:    in.mattermostUserID.String(),
 	}
 	_, appErr = p.API.CreatePost(reply)
