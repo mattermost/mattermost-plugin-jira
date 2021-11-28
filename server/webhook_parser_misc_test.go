@@ -15,12 +15,14 @@ import (
 )
 
 func TestMarkdown(t *testing.T) {
+	p := &Plugin{}
+
 	f, err := os.Open("testdata/webhook-issue-created.json")
 	require.NoError(t, err)
 	defer f.Close()
 	bb, err := ioutil.ReadAll(f)
 	require.Nil(t, err)
-	wh, err := ParseWebhook(bb)
+	wh, err := ParseWebhook(bb, p, testInstance1.InstanceID)
 	require.NoError(t, err)
 	w := wh.(*webhook)
 	require.NotNil(t, w)
@@ -45,12 +47,14 @@ func TestEventTypeFormat(t *testing.T) {
 		"issue updated comment edited":                {"testdata/webhook-server-issue-updated-comment-edited.json", "Lev Brouk **edited comment** in story"},
 		"issue updated comment deleted":               {"testdata/webhook-server-issue-updated-comment-deleted.json", "Lev Brouk **deleted comment** in story"},
 	} {
+		p := &Plugin{}
+
 		f, err := os.Open(value.filename)
 		require.NoError(t, err)
 		defer f.Close()
 		bb, err := ioutil.ReadAll(f)
 		require.Nil(t, err)
-		wh, err := ParseWebhook(bb)
+		wh, err := ParseWebhook(bb, p, testInstance1.InstanceID)
 		require.NoError(t, err)
 		w := wh.(*webhook)
 		require.NotNil(t, w)
@@ -65,12 +69,14 @@ func TestNotificationsFormat(t *testing.T) {
 	}{
 		"issue updated commented created": {"testdata/webhook-server-issue-updated-commented-3.json", "Test User **mentioned** you in a new comment on improvement"},
 	} {
+		p := &Plugin{}
+
 		f, err := os.Open(value.filename)
 		require.NoError(t, err)
 		defer f.Close()
 		bb, err := ioutil.ReadAll(f)
 		require.Nil(t, err)
-		wh, err := ParseWebhook(bb)
+		wh, err := ParseWebhook(bb, p, testInstance1.InstanceID)
 		require.NoError(t, err)
 		w := wh.(*webhook)
 		require.NotNil(t, w)
@@ -124,12 +130,14 @@ func TestWebhookQuotedComment(t *testing.T) {
 		"testdata/webhook-server-issue-updated-commented-3.json",
 		"testdata/webhook-server-issue-updated-comment-edited.json",
 	} {
+		p := &Plugin{}
+
 		f, err := os.Open(value)
 		require.NoError(t, err)
 		defer f.Close()
 		bb, err := ioutil.ReadAll(f)
 		require.Nil(t, err)
-		wh, err := ParseWebhook(bb)
+		wh, err := ParseWebhook(bb, p, testInstance1.InstanceID)
 		require.NoError(t, err)
 		w := wh.(*webhook)
 		require.NotNil(t, w)
@@ -138,13 +146,19 @@ func TestWebhookQuotedComment(t *testing.T) {
 }
 
 func TestEpicLinkUpdateFormat(t *testing.T) {
+	p := &Plugin{}
+	p.updateConfig(func(conf *config) {
+		conf.Secret = someSecret
+	})
+	p.instanceStore = p.getMockInstanceStoreKV(0)
+
 	f, err := os.Open("testdata/webhook-issue-updated-epic-link.json")
 	require.NoError(t, err)
 	defer f.Close()
 
 	bb, err := ioutil.ReadAll(f)
 	require.Nil(t, err)
-	wh, err := ParseWebhook(bb)
+	wh, err := ParseWebhook(bb, p, testInstance1.InstanceID)
 	require.NoError(t, err)
 	w := wh.(*webhook)
 	require.NotNil(t, w)

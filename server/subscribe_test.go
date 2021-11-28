@@ -1382,7 +1382,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			bb, err := ioutil.ReadAll(r)
 			require.Nil(t, err)
 
-			wh, err := ParseWebhook(bb)
+			wh, err := ParseWebhook(bb, p, testInstance1.InstanceID)
 			assert.Nil(t, err)
 
 			actual, err := p.getChannelsSubscribed(wh.(*webhook), testInstance1.InstanceID)

@@ -14,6 +14,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v5/model"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (
@@ -23,7 +25,7 @@ const (
 
 var webhookWrapperFunc func(wh Webhook) Webhook
 
-func ParseWebhook(bb []byte) (wh Webhook, err error) {
+func ParseWebhook(bb []byte, p *Plugin, instanceID types.ID) (wh Webhook, err error) {
 	defer func() {
 		if err == nil || err == ErrWebhookIgnored {
 			return
@@ -64,7 +66,7 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		case "issue_assigned":
 			wh = parseWebhookAssigned(jwh, jwh.ChangeLog.Items[0].FromString, jwh.ChangeLog.Items[0].ToString)
 		case "issue_updated", "issue_generic", "issue_resolved", "issue_closed", "issue_work_started", "issue_reopened":
-			wh = parseWebhookChangeLog(jwh)
+			wh = parseWebhookChangeLog(jwh, p, instanceID)
 		case "issue_commented":
 			wh, err = parseWebhookCommentCreated(jwh)
 		case "issue_comment_edited":
@@ -72,7 +74,7 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		case "issue_comment_deleted":
 			wh, err = parseWebhookCommentDeleted(jwh)
 		default:
-			wh, err = parseWebhookUnspecified(jwh)
+			wh, err = parseWebhookUnspecified(jwh, p, instanceID)
 		}
 	case commentCreated:
 		wh, err = parseWebhookCommentCreated(jwh)
@@ -98,9 +100,9 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 	return wh, nil
 }
 
-func parseWebhookUnspecified(jwh *JiraWebhook) (Webhook, error) {
+func parseWebhookUnspecified(jwh *JiraWebhook, p *Plugin, instanceID types.ID) (Webhook, error) {
 	if len(jwh.ChangeLog.Items) > 0 {
-		return parseWebhookChangeLog(jwh), nil
+		return parseWebhookChangeLog(jwh, p, instanceID), nil
 	}
 
 	if jwh.Comment.ID != "" {
@@ -113,7 +115,7 @@ func parseWebhookUnspecified(jwh *JiraWebhook) (Webhook, error) {
 	return nil, errors.Errorf("Unsupported webhook event: %v", jwh.WebhookEvent)
 }
 
-func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
+func parseWebhookChangeLog(jwh *JiraWebhook, p *Plugin, instanceID types.ID) Webhook {
 	var events []*webhook
 	for _, item := range jwh.ChangeLog.Items {
 		field := item.Field
@@ -123,7 +125,9 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 		}
 
 		from := item.FromString
+		fromID := item.From
 		to := item.ToString
+		toID := item.To
 		fromWithDefault := from
 		if fromWithDefault == "" {
 			fromWithDefault = defaultFromField
@@ -168,7 +172,7 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 		case field == "Component":
 			event = parseWebhookUpdatedField(jwh, eventUpdatedComponents, field, fieldID, fromWithDefault, toWithDefault)
 		case field == "Epic Link":
-			event = parseWebhookUpdatedEpicLink(jwh, field, fieldID, from, to)
+			event = parseWebhookUpdatedEpicLink(jwh, field, fieldID, from, fromID, to, toID, p, instanceID)
 		case item.FieldType == "custom":
 			eventType := fmt.Sprintf("event_updated_%s", fieldID)
 			event = parseWebhookUpdatedField(jwh, eventType, field, fieldID, fromWithDefault, toWithDefault)
@@ -412,16 +416,27 @@ func parseWebhookUpdatedField(jwh *JiraWebhook, eventType string, field, fieldID
 	return wh
 }
 
-func parseWebhookUpdatedEpicLink(jwh *JiraWebhook, field, fieldID, from, to string) *webhook {
+func parseWebhookUpdatedEpicLink(jwh *JiraWebhook, field, fieldID, from, fromID, to, toID string, p *Plugin, instanceID types.ID) *webhook {
 	eventType := fmt.Sprintf("event_updated_%s", fieldID)
 	fromFmttd := defaultFromField
 	toFmtdd := defaultToField
 
 	if from != "" {
-		fromFmttd = jwh.mdJiraLink(from, "/browse/"+from)
+		epicName, err := p.getEpicName(fromID, instanceID)
+		// Fallback to epic id if request fails
+		if err != nil {
+			fromFmttd = jwh.mdJiraLink(from, "/browse/"+from)
+		} else {
+			fromFmttd = jwh.mdJiraLink(fmt.Sprintf("%s: %s", from, epicName), "/browse/"+from)
+		}
 	}
 	if to != "" {
-		toFmtdd = jwh.mdJiraLink(to, "/browse/"+to)
+		epicName, err := p.getEpicName(toID, instanceID)
+		if err != nil {
+			toFmtdd = jwh.mdJiraLink(to, "/browse/"+to)
+		} else {
+			toFmtdd = jwh.mdJiraLink(fmt.Sprintf("%s: %s", to, epicName), "/browse/"+to)
+		}
 	}
 
 	wh := newWebhook(jwh, eventType, "**updated** Epic Link from %s to %s on", fromFmttd, toFmtdd)
