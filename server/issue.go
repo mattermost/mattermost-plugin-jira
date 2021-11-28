@@ -731,6 +731,20 @@ func (p *Plugin) getIssueDataForCloudWebhook(instance Instance, issueKey string)
 	return issue, nil
 }
 
+func (p *Plugin) getEpicName(epicID string, instanceID types.ID) (string, error) {
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return "", err
+	}
+
+	epic, err := p.getIssueDataForCloudWebhook(instance, epicID)
+	if err != nil {
+		return "", err
+	}
+
+	return epic.Fields.Summary, err
+}
+
 func getIssueCustomFieldValue(issue *jira.Issue, key string) StringSet {
 	m, exists := issue.Fields.Unknowns.Value(key)
 	if !exists || m == nil {
