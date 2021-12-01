@@ -4,7 +4,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -208,43 +207,28 @@ func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL
 	return subURL, legacyURL, nil
 }
 
-func (wh *webhook) applyReporterNotification(bb []byte, reporter *jira.User) error {
-	if wh.eventTypes.ContainsAny("event_created_comment", "event_updated_comment") {
-		jwhook := wh.JiraWebhook
-		err := json.Unmarshal(bb, &jwhook)
-		if err != nil {
-			return err
-		}
-		if jwhook.Issue.ID == "" {
-			return ErrWebhookIgnored
-		}
-
-		commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
-
-		whook := &webhook{
-			JiraWebhook: jwhook,
-			eventTypes:  NewStringSet(eventCreatedComment),
-			headline:    fmt.Sprintf("%s **commented** on %s", commentAuthor, jwhook.mdKeySummaryLink()),
-			text:        truncate(quoteIssueComment(jwhook.Comment.Body), 3000),
-		}
-		jwh := whook.JiraWebhook
-
-		commentAuthor = mdUser(&jwh.Comment.UpdateAuthor)
-
-		commentMessage := fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body)
-		if reporter == nil ||
-			(reporter.Name != "" && reporter.Name == jwh.User.Name) ||
-			(reporter.AccountID != "" && reporter.AccountID == jwh.Comment.UpdateAuthor.AccountID) {
-			return nil
-		}
-		wh.notifications = append(wh.notifications, webhookUserNotification{
-			jiraUsername:  reporter.Name,
-			jiraAccountID: reporter.AccountID,
-			message:       commentMessage,
-			postType:      PostTypeComment,
-			commentSelf:   jwh.Comment.Self,
-			recipientType: recipientTypeReporter,
-		})
+func (wh *webhook) applyReporterNotification(reporter *jira.User) {
+	if !wh.eventTypes.ContainsAny("event_created_comment") {
+		return 
 	}
-	return nil
+
+	jwhook := wh.JiraWebhook
+	if reporter == nil ||
+		(reporter.Name != "" && reporter.Name == jwhook.User.Name) ||
+		(reporter.AccountID != "" && reporter.AccountID == jwhook.Comment.UpdateAuthor.AccountID) {
+		return
+	}
+
+	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
+
+	commentMessage := fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body)
+
+	wh.notifications = append(wh.notifications, webhookUserNotification{
+		jiraUsername:  reporter.Name,
+		jiraAccountID: reporter.AccountID,
+		message:       commentMessage,
+		postType:      PostTypeComment,
+		commentSelf:   jwhook.Comment.Self,
+		recipientType: recipientTypeReporter,
+	})
 }
