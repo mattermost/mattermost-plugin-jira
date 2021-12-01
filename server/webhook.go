@@ -209,7 +209,7 @@ func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL
 
 func (wh *webhook) applyReporterNotification(reporter *jira.User) {
 	if !wh.eventTypes.ContainsAny("event_created_comment") {
-		return 
+		return
 	}
 
 	jwhook := wh.JiraWebhook
