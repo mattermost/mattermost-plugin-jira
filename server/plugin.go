@@ -469,7 +469,6 @@ func (p *Plugin) getConnection(instance Instance, notification webhookUserNotifi
 	var mattermostUserID types.ID
 
 	// prefer accountId to username when looking up UserIds
-
 	if notification.jiraAccountID != "" {
 		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), notification.jiraAccountID)
 	} else {
