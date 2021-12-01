@@ -21,7 +21,7 @@ func TestUserSettings_String(t *testing.T) {
 		},
 		"notifications off": {
 			settings:       ConnectionSettings{Notifications: true},
-			expectedOutput: "- Notifications: on\n- Watching: on",
+			expectedOutput: "- Notifications: on\n\t- Watching: on",
 		},
 	}
 	for name, tt := range tests {
