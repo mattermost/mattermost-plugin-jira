@@ -17,7 +17,7 @@ func TestUserSettings_String(t *testing.T) {
 	}{
 		"notifications on": {
 			settings:       ConnectionSettings{Notifications: false},
-			expectedOutput: "- Notifications: off\n- Watching: off",
+			expectedOutput: "- Notifications: off\n\t- Watching: off",
 		},
 		"notifications off": {
 			settings:       ConnectionSettings{Notifications: true},
