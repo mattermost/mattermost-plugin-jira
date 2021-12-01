@@ -432,6 +432,7 @@ func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL
 
 	instanceID, err := p.ResolveWebhookInstanceURL(jiraURL)
 	if err != nil {
+		p.API.LogError("error while getting instance ID", err)
 		return "", "", err
 	}
 
@@ -481,6 +482,7 @@ func (p *Plugin) getConnection(instance Instance, notification webhookUserNotifi
 	// Check if the user has permissions.
 	con, err = p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
 	if err != nil {
+		p.API.LogError("error while load connection", err)
 		// Not connected to Jira, so can't check permissions
 		return
 	}
