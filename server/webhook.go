@@ -219,7 +219,7 @@ func (wh *webhook) applyReporterNotification(reporter *jira.User) {
 		return
 	}
 
-	if checkNotificationAlreadyExist(reporter.Name, reporter.AccountID) {
+	if wh.checkNotificationAlreadyExist(reporter.Name, reporter.AccountID) {
 		return
 	}
 
@@ -237,7 +237,7 @@ func (wh *webhook) applyReporterNotification(reporter *jira.User) {
 	})
 }
 
-func (wh *Webhook) checkNotificationAlreadyExist(username, accountID string) bool {
+func (wh *webhook) checkNotificationAlreadyExist(username, accountID string) bool {
 	for _, val := range wh.notifications {
 		if val.jiraUsername == username && val.jiraAccountID == accountID {
 			return true
