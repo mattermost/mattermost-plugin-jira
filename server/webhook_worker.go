@@ -62,7 +62,7 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 	}
 
 	v.applyReporterNotification(v.Issue.Fields.Reporter)
-	
+
 	if _, _, err = wh.PostNotifications(ww.p, msg.InstanceID); err != nil {
 		ww.p.errorf("WebhookWorker id: %d, error posting notifications, err: %v", ww.id, err)
 	}
