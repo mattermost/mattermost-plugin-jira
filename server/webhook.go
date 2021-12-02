@@ -219,6 +219,10 @@ func (wh *webhook) applyReporterNotification(reporter *jira.User) {
 		return
 	}
 
+	if checkNotificationAlreadyExist(reporter.Name, reporter.AccountID) {
+		return
+	}
+
 	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
 
 	commentMessage := fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body)
@@ -231,4 +235,14 @@ func (wh *webhook) applyReporterNotification(reporter *jira.User) {
 		commentSelf:   jwhook.Comment.Self,
 		recipientType: recipientTypeReporter,
 	})
+}
+
+func (wh *Webhook) checkNotificationAlreadyExist(username, accountID string) bool {
+	for _, val := range wh.notifications {
+		if val.jiraUsername == username && val.jiraAccountID == accountID {
+			return true
+		}
+	}
+
+	return false
 }
