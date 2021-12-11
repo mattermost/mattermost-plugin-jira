@@ -714,6 +714,7 @@ func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, in
 		return respondErr(w, http.StatusForbidden,
 			fmt.Errorf("JIRA plugin not configured correctly; must provide Secret"))
 	}
+
 	status, err = verifyHTTPSecret(conf.Secret, r.FormValue("secret"))
 	if err != nil {
 		return respondErr(w, status, err)
@@ -723,6 +724,10 @@ func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, in
 	size = utils.ByteSize(len(bb))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	if conf.EnableWebhookEventLogging {
+		p.API.LogDebug("Webhook Event Log", "event", string(bb))
 	}
 
 	// If there is space in the queue, immediately return a 200; we will process the webhook event async.

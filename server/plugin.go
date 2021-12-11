@@ -80,6 +80,9 @@ type externalConfig struct {
 	// Enable slash command autocomplete
 	EnableAutocomplete bool
 
+	// Enable Webhook Event Logging
+	EnableWebhookEventLogging bool
+
 	// Display subscription name in notifications
 	DisplaySubscriptionNameInNotifications bool
 }
