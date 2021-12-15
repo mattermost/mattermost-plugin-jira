@@ -68,6 +68,7 @@ const config = {
         'react-redux': 'ReactRedux',
         'prop-types': 'PropTypes',
         'react-bootstrap': 'ReactBootstrap',
+        'react-intl': 'ReactIntl',
     },
     output: {
         devtoolNamespace: 'jira',
