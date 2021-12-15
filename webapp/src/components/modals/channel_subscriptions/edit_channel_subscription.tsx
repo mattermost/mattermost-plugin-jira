@@ -1,8 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// TODO: i18n
+
 import React, {PureComponent} from 'react';
 import {Modal} from 'react-bootstrap';
+
+import {injectIntl, IntlShape} from 'react-intl';
 
 import ReactSelectSetting from 'components/react_select_setting';
 import ConfirmModal from 'components/confirm_modal';
@@ -26,36 +30,37 @@ import {ChannelSubscription, ChannelSubscriptionFilters as ChannelSubscriptionFi
 import ChannelSubscriptionFilters from './channel_subscription_filters';
 import {SharedProps} from './shared_props';
 
-const JiraEventOptions: ReactSelectOption[] = [
-    {value: 'event_created', label: 'Issue Created'},
-    {value: 'event_deleted', label: 'Issue Deleted'},
-    {value: 'event_deleted_unresolved', label: 'Issue Deleted, Unresolved'},
-    {value: 'event_updated_reopened', label: 'Issue Reopened'},
-    {value: 'event_updated_resolved', label: 'Issue Resolved'},
-    {value: 'event_created_comment', label: 'Comment Created'},
-    {value: 'event_updated_comment', label: 'Comment Updated'},
-    {value: 'event_deleted_comment', label: 'Comment Deleted'},
-    {value: 'event_updated_any', label: 'Issue Updated: Any'},
-    {value: 'event_updated_affects_version', label: 'Issue Updated: Affects Version'},
-    {value: 'event_updated_assignee', label: 'Issue Updated: Assignee'},
-    {value: 'event_updated_attachment', label: 'Issue Updated: Attachment'},
-    {value: 'event_updated_description', label: 'Issue Updated: Description'},
-    {value: 'event_updated_fix_version', label: 'Issue Updated: Fix Version'},
-    {value: 'event_updated_issue_type', label: 'Issue Updated: Issue Type'},
-    {value: 'event_updated_labels', label: 'Issue Updated: Labels'},
-    {value: 'event_updated_priority', label: 'Issue Updated: Priority'},
-    {value: 'event_updated_rank', label: 'Issue Updated: Rank'},
-    {value: 'event_updated_reporter', label: 'Issue Updated: Reporter'},
-    {value: 'event_updated_sprint', label: 'Issue Updated: Sprint'},
-    {value: 'event_updated_status', label: 'Issue Updated: Status'},
-    {value: 'event_updated_summary', label: 'Issue Updated: Summary'},
-    {value: 'event_updated_components', label: 'Issue Updated: Components'},
+const makeJiraEventOptions = (formatMessage: (descriptor: {defaultMessage: string}) => string): ReactSelectOption[] => [
+    {value: 'event_created', label: formatMessage({defaultMessage: 'Issue Created'})},
+    {value: 'event_deleted', label: formatMessage({defaultMessage: 'Issue Deleted'})},
+    {value: 'event_deleted_unresolved', label: formatMessage({defaultMessage: 'Issue Deleted, Unresolved'})},
+    {value: 'event_updated_reopened', label: formatMessage({defaultMessage: 'Issue Reopened'})},
+    {value: 'event_updated_resolved', label: formatMessage({defaultMessage: 'Issue Resolved'})},
+    {value: 'event_created_comment', label: formatMessage({defaultMessage: 'Comment Created'})},
+    {value: 'event_updated_comment', label: formatMessage({defaultMessage: 'Comment Updated'})},
+    {value: 'event_deleted_comment', label: formatMessage({defaultMessage: 'Comment Deleted'})},
+    {value: 'event_updated_any', label: formatMessage({defaultMessage: 'Issue Updated: Any'})},
+    {value: 'event_updated_affects_version', label: formatMessage({defaultMessage: 'Issue Updated: Affects Version'})},
+    {value: 'event_updated_assignee', label: formatMessage({defaultMessage: 'Issue Updated: Assignee'})},
+    {value: 'event_updated_attachment', label: formatMessage({defaultMessage: 'Issue Updated: Attachment'})},
+    {value: 'event_updated_description', label: formatMessage({defaultMessage: 'Issue Updated: Description'})},
+    {value: 'event_updated_fix_version', label: formatMessage({defaultMessage: 'Issue Updated: Fix Version'})},
+    {value: 'event_updated_issue_type', label: formatMessage({defaultMessage: 'Issue Updated: Issue Type'})},
+    {value: 'event_updated_labels', label: formatMessage({defaultMessage: 'Issue Updated: Labels'})},
+    {value: 'event_updated_priority', label: formatMessage({defaultMessage: 'Issue Updated: Priority'})},
+    {value: 'event_updated_rank', label: formatMessage({defaultMessage: 'Issue Updated: Rank'})},
+    {value: 'event_updated_reporter', label: formatMessage({defaultMessage: 'Issue Updated: Reporter'})},
+    {value: 'event_updated_sprint', label: formatMessage({defaultMessage: 'Issue Updated: Sprint'})},
+    {value: 'event_updated_status', label: formatMessage({defaultMessage: 'Issue Updated: Status'})},
+    {value: 'event_updated_summary', label: formatMessage({defaultMessage: 'Issue Updated: Summary'})},
+    {value: 'event_updated_components', label: formatMessage({defaultMessage: 'Issue Updated: Components'})},
 ];
 
 export type Props = SharedProps & {
     finishEditSubscription: () => void;
     selectedSubscription: ChannelSubscription | null;
     creatingSubscription: boolean;
+    intl: IntlShape;
 };
 
 export type State = {
@@ -71,8 +76,9 @@ export type State = {
     conflictingError: string | null;
 };
 
-export default class EditChannelSubscription extends PureComponent<Props, State> {
+export class EditChannelSubscription extends PureComponent<Props, State> {
     private validator: Validator;
+    private JiraEventOptions: ReactSelectOption[];
 
     constructor(props: Props) {
         super(props);
@@ -117,6 +123,9 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         };
 
         this.validator = new Validator();
+
+        const {formatMessage} = props.intl;
+        this.JiraEventOptions = makeJiraEventOptions(formatMessage);
     }
 
     handleClose = (e?: React.FormEvent) => {
@@ -206,8 +215,10 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
     };
 
     fetchIssueMetadata = (projectKeys: string[], instanceID: string) => {
+        const {formatMessage} = this.props.intl;
+
         if (!instanceID) {
-            this.setState({getMetaDataErr: 'No Jira instance is selected.'});
+            this.setState({getMetaDataErr: formatMessage({defaultMessage: 'No Jira instance is selected.'})});
         }
 
         this.props.fetchJiraIssueMetadataForProjects(projectKeys, instanceID).then(({data, error}) => {
@@ -330,6 +341,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
     };
 
     render(): JSX.Element {
+        const {formatMessage} = this.props.intl;
         const style = getModalStyles(this.props.theme);
 
         const issueTypes = getIssueTypes(this.state.jiraIssueMetadata, this.state.filters.projects[0]);
@@ -338,7 +350,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         const customFields = getCustomFieldValuesForEvents(this.state.jiraIssueMetadata, this.state.filters.projects);
         const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects);
 
-        const eventOptions = JiraEventOptions.concat(customFields);
+        const eventOptions = this.JiraEventOptions.concat(customFields);
 
         let conflictingErrorComponent = null;
         if (this.state.conflictingError) {
@@ -359,7 +371,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                     <React.Fragment>
                         <ReactSelectSetting
                             name={'events'}
-                            label={'Events'}
+                            label={formatMessage({defaultMessage: 'Events'})}
                             required={true}
                             onChange={this.handleSettingChange}
                             options={eventOptions}
@@ -371,7 +383,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                         />
                         <ReactSelectSetting
                             name={'issue_types'}
-                            label={'Issue Type'}
+                            label={formatMessage({defaultMessage: 'Issue Type'})}
                             required={true}
                             onChange={this.handleIssueChange}
                             options={issueOptions}
@@ -395,7 +407,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                         />
                         <div>
                             <label className='control-label margin-bottom'>
-                                {'Approximate JQL Output'}
+                                {formatMessage({defaultMessage: 'Approximate JQL Output'})}
                             </label>
                             <div style={getBaseStyles(this.props.theme).codeBlock}>
                                 <span>{generateJQLStringFromSubscriptionFilters(this.state.jiraIssueMetadata, filterFields, this.state.filters)}</span>
@@ -409,8 +421,8 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                 <React.Fragment>
                     <div className='container-fluid'>
                         <Input
-                            label={'Subscription Name'}
-                            placeholder={'Name'}
+                            label={formatMessage({defaultMessage: 'Subscription Name'})}
+                            placeholder={formatMessage({defaultMessage: 'Name'})}
                             type={'input'}
                             maxLength={100}
                             required={true}
@@ -452,15 +464,15 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         if (this.props.selectedSubscription) {
             confirmComponent = (
                 <ConfirmModal
-                    cancelButtonText={'Cancel'}
-                    confirmButtonText={'Delete'}
+                    cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
+                    confirmButtonText={formatMessage({defaultMessage: 'Delete'})}
                     confirmButtonClass={'btn btn-danger'}
                     hideCancel={false}
                     message={confirmDeleteMessage}
                     onCancel={this.handleCancelDelete}
                     onConfirm={this.handleConfirmDelete}
                     show={showConfirmModal}
-                    title={'Subscription'}
+                    title={formatMessage({defaultMessage: 'Subscription'})}
                 />
             );
         }
@@ -526,18 +538,4 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
     }
 }
 
-const getStyle = (theme: any): any => ({
-    modalBody: {
-        padding: '2em 0',
-        color: theme.centerChannelColor,
-        backgroundColor: theme.centerChannelBg,
-    },
-    modalFooter: {
-        padding: '2rem 15px',
-    },
-    descriptionArea: {
-        height: 'auto',
-        width: '100%',
-        color: '#000',
-    },
-});
+export default injectIntl(EditChannelSubscription);

@@ -1,5 +1,9 @@
 import React from 'react';
 
+// TODO: i18n
+
+import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
+
 import {ChannelSubscription, AllProjectMetadata} from 'types/model';
 
 import ConfirmModal from 'components/confirm_modal';
@@ -10,6 +14,7 @@ type Props = SharedProps & {
     showEditChannelSubscription: (subscription: ChannelSubscription) => void;
     showCreateChannelSubscription: () => void;
     allProjectMetadata: AllProjectMetadata | null;
+    intl: IntlShape;
 };
 
 type State = {
@@ -18,7 +23,7 @@ type State = {
     subscriptionToDelete: ChannelSubscription | null;
 }
 
-export default class SelectChannelSubscriptionInternal extends React.PureComponent<Props, State> {
+export class SelectChannelSubscriptionInternal extends React.PureComponent<Props, State> {
     state = {
         error: null,
         showConfirmModal: false,
@@ -67,6 +72,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
     }
 
     renderRow = (sub: ChannelSubscription): JSX.Element => {
+        const {formatMessage} = this.props.intl;
         const projectName = this.getProjectName(sub);
 
         const showInstanceColumn = this.props.installedInstances.length > 1;
@@ -80,7 +86,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                 className='select-channel-subscriptions-row'
             >
                 <td>
-                    <span>{sub.name || '(no name)'}</span>
+                    <span>{sub.name || formatMessage({defaultMessage: '(no name)'})}</span>
                 </td>
                 <td>
                     <span>{projectName}</span>
@@ -97,7 +103,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                         onClick={(): void => this.props.showEditChannelSubscription(sub)}
                         type='button'
                     >
-                        {'Edit'}
+                        {formatMessage({defaultMessage: 'Edit'})}
                     </button>
                     {' - '}
                     <button
@@ -105,7 +111,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                         onClick={(): void => this.handleDeleteChannelSubscription(sub)}
                         type='button'
                     >
-                        {'Delete'}
+                        {formatMessage({defaultMessage: 'Delete'})}
                     </button>
                 </td>
             </tr>
@@ -113,6 +119,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
     }
 
     render(): React.ReactElement {
+        const {formatMessage} = this.props.intl;
         const {channel, channelSubscriptions, omitDisplayName} = this.props;
         const {error, showConfirmModal, subscriptionToDelete} = this.state;
 
@@ -132,22 +139,22 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         if (showConfirmModal) {
             confirmModal = (
                 <ConfirmModal
-                    cancelButtonText={'Cancel'}
-                    confirmButtonText={'Delete'}
+                    cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
+                    confirmButtonText={formatMessage({defaultMessage: 'Delete'})}
                     confirmButtonClass={'btn btn-danger'}
                     hideCancel={false}
                     message={confirmDeleteMessage}
                     onCancel={this.handleCancelDelete}
                     onConfirm={this.handleConfirmDelete}
                     show={true}
-                    title={'Subscription'}
+                    title={formatMessage({defaultMessage: 'Subscription'})}
                 />
             );
         }
 
-        let titleMessage = <h2 className='text-center'>{'Jira Subscriptions in'} <strong>{channel.display_name}</strong></h2>;
+        let titleMessage = <h2 className='text-center'>{formatMessage({defaultMessage: 'Jira Subscriptions in {channelName}'}, {channelName: ''})} <strong>{channel.display_name}</strong></h2>;
         if (omitDisplayName) {
-            titleMessage = <h2 className='text-center'>{'Jira Subscriptions'}</h2>;
+            titleMessage = <h2 className='text-center'>{formatMessage({defaultMessage: 'Jira Subscriptions'})}</h2>;
         }
 
         const showInstanceColumn = this.props.installedInstances.length > 1;
@@ -157,10 +164,10 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                 <table className='table'>
                     <thead>
                         <tr>
-                            <th scope='col'>{'Name'}</th>
-                            <th scope='col'>{'Project'}</th>
-                            {showInstanceColumn && <th scope='col'>{'Instance'}</th>}
-                            <th scope='col'>{'Actions'}</th>
+                            <th scope='col'>{formatMessage({defaultMessage: 'Name'})}</th>
+                            <th scope='col'>{formatMessage({defaultMessage: 'Project'})}</th>
+                            {showInstanceColumn && <th scope='col'>{formatMessage({defaultMessage: 'Instance'})}</th>}
+                            <th scope='col'>{formatMessage({defaultMessage: 'Actions'})}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -171,7 +178,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         } else {
             subscriptionRows = (
                 <p>
-                    {'Click "Create Subscription" to receive Jira issue notifications in this channel.'}
+                    <FormattedMessage defaultMessage='Click "Create Subscription" to receive Jira issue notifications in this channel.'/>
                 </p>
             );
         }
@@ -185,7 +192,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                         onClick={this.props.showCreateChannelSubscription}
                         type='button'
                     >
-                        {'Create Subscription'}
+                        <FormattedMessage defaultMessage='Create Subscription'/>
                     </button>
                 </div>
                 {confirmModal}
@@ -195,3 +202,5 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         );
     }
 }
+
+export default injectIntl(SelectChannelSubscriptionInternal);

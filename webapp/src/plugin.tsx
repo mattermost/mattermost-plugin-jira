@@ -82,6 +82,16 @@ export default class Plugin {
                         setHeaderButtonId={this.setHeaderButtonId}
                     />
                 );
-            });
+            },
+        );
+
+        registry.registerTranslations((locale: string) => {
+            try {
+                // eslint-disable-next-line global-require
+                return require(`../i18n/${locale}.json`); // TODO make async, this increases bundle size exponentially
+            } catch {
+                return {};
+            }
+        });
     }
 }

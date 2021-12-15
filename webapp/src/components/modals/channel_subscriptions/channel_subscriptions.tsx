@@ -2,8 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {PureComponent} from 'react';
-
-import {ProjectMetadata, ChannelSubscription} from 'types/model';
+import {injectIntl, IntlShape} from 'react-intl';
 
 import FullScreenModal from '../full_screen_modal/full_screen_modal';
 
@@ -12,9 +11,9 @@ import {SharedProps} from './shared_props';
 
 import './channel_subscriptions_modal.scss';
 
-export type Props = SharedProps;
+export type Props = SharedProps & {intl: IntlShape};
 
-export default class ChannelSubscriptionsModal extends PureComponent<Props> {
+export class ChannelSubscriptionsModal extends PureComponent<Props> {
     state = {
         showModal: false,
         allProjectMetadata: null,
@@ -37,20 +36,25 @@ export default class ChannelSubscriptionsModal extends PureComponent<Props> {
     }
 
     fetchData = async (): Promise<void> => {
+        const {formatMessage} = this.props.intl;
         if (!this.props.channel) {
             return;
         }
 
         const subsResponse = await this.props.fetchChannelSubscriptions(this.props.channel.id);
         if (subsResponse.error) {
-            this.props.sendEphemeralPost('You do not have permission to edit subscriptions for this channel. Subscribing to Jira events will create notifications in this channel when certain events occur, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.');
+            this.props.sendEphemeralPost(
+                formatMessage({defaultMessage: 'You do not have permission to edit subscriptions for this channel. Subscribing to Jira events will create notifications in this channel when certain events occur, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.'}),
+            );
             this.props.close();
             return;
         }
 
         const projectResponses = await this.props.fetchJiraProjectMetadataForAllInstances();
         if (projectResponses.error) {
-            this.props.sendEphemeralPost('Failed to fetch project metadata for any projects.');
+            this.props.sendEphemeralPost(
+                formatMessage({defaultMessage: 'Failed to fetch project metadata for any projects.'}),
+            );
             this.props.close();
             return;
         }
@@ -93,3 +97,5 @@ export default class ChannelSubscriptionsModal extends PureComponent<Props> {
         );
     }
 }
+
+export default injectIntl(ChannelSubscriptionsModal);

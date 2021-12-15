@@ -3,6 +3,7 @@
 
 import React, {PureComponent} from 'react';
 import {Modal} from 'react-bootstrap';
+import {FormattedMessage} from 'react-intl';
 
 import ConnectModalForm from './connect_modal_form';
 import {Props} from './props';
@@ -27,7 +28,7 @@ export default function ConnectModal(props: Props) {
         >
             <Modal.Header closeButton={true}>
                 <Modal.Title>
-                    {'Connect to Jira'}
+                    <FormattedMessage defaultMessage='Connect to Jira'/>
                 </Modal.Title>
             </Modal.Header>
             {content}

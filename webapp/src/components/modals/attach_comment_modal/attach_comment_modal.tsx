@@ -6,6 +6,8 @@ import {Modal} from 'react-bootstrap';
 
 import {Theme} from 'mattermost-redux/types/preferences';
 
+import {FormattedMessage} from 'react-intl';
+
 import AttachCommentToIssueForm from './attach_comment_form';
 
 type Props = {
@@ -31,7 +33,7 @@ export default function AttachCommentToIssueModal(props: Props) {
         >
             <Modal.Header closeButton={true}>
                 <Modal.Title>
-                    {'Attach Message to Jira Issue'}
+                    <FormattedMessage defaultMessage='Attach Message to Jira Issue'/>
                 </Modal.Title>
             </Modal.Header>
             <AttachCommentToIssueForm {...props}/>

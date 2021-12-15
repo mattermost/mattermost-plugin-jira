@@ -4,6 +4,8 @@
 import React, {PureComponent} from 'react';
 import {Modal} from 'react-bootstrap';
 
+import {injectIntl} from 'react-intl';
+
 import {ReactSelectOption, Instance} from 'types/model';
 
 import {getModalStyles} from 'utils/styles';
@@ -18,7 +20,7 @@ export type State = {
     selectedInstance: string;
 };
 
-export default class DisconnectModalForm extends PureComponent<Props, State> {
+export class DisconnectModalForm extends PureComponent<Props, State> {
     state = {
         submitting: false,
         error: '',
@@ -26,13 +28,14 @@ export default class DisconnectModalForm extends PureComponent<Props, State> {
     };
 
     submit = async (e) => {
+        const {formatMessage} = this.props.intl;
         if (e.preventDefault) {
             e.preventDefault();
         }
 
         const selectedInstance = this.state.selectedInstance;
         if (!selectedInstance) {
-            this.setState({error: 'Please select a Jira instance'});
+            this.setState({error: formatMessage({defaultMessage: 'Please select a Jira instance'})});
             return;
         }
 
@@ -40,7 +43,7 @@ export default class DisconnectModalForm extends PureComponent<Props, State> {
             if (error) {
                 this.setState({error: error.toString()});
             } else {
-                this.props.sendEphemeralPost(`Successfully disconnected from Jira instance ${selectedInstance}`);
+                this.props.sendEphemeralPost(formatMessage({defaultMessage: 'Successfully disconnected from Jira instance {selectedInstance}'}, {selectedInstance}));
                 this.props.closeModal();
             }
         });
@@ -59,6 +62,7 @@ export default class DisconnectModalForm extends PureComponent<Props, State> {
     }
 
     render(): JSX.Element {
+        const {formatMessage} = this.props.intl;
         const style = getModalStyles(this.props.theme);
 
         const options: ReactSelectOption[] = this.props.connectedInstances.map((instance: Instance) => (
@@ -78,13 +82,13 @@ export default class DisconnectModalForm extends PureComponent<Props, State> {
                 <FormButton
                     type='button'
                     btnClass='btn-link'
-                    defaultMessage='Cancel'
+                    defaultMessage={formatMessage({defaultMessage: 'Cancel'})}
                     onClick={this.closeModal}
                 />
                 <FormButton
                     type='submit'
                     btnClass='btn btn-primary'
-                    defaultMessage='Disconnect'
+                    defaultMessage={formatMessage({defaultMessage: 'Disconnect'})}
                     disabled={!this.state.selectedInstance}
                     saving={this.state.submitting}
                 />
@@ -111,3 +115,5 @@ export default class DisconnectModalForm extends PureComponent<Props, State> {
         );
     }
 }
+
+export default injectIntl(DisconnectModalForm);

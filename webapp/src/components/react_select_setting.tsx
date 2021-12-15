@@ -5,6 +5,7 @@ import React from 'react';
 import ReactSelect from 'react-select';
 import AsyncSelect, {Props as ReactSelectProps} from 'react-select/async';
 import CreatableSelect from 'react-select/creatable';
+import {injectIntl, IntlShape} from 'react-intl';
 
 import {Theme} from 'mattermost-redux/types/preferences';
 
@@ -27,13 +28,14 @@ export type Props = Omit<ReactSelectProps<ReactSelectOption>, 'theme'> & {
     allowUserDefinedValue?: boolean;
     limitOptions?: boolean;
     resetInvalidOnChange?: boolean;
+    intl: IntlShape;
 };
 
 type State = {
     invalid: boolean;
 };
 
-export default class ReactSelectSetting extends React.PureComponent<Props, State> {
+export class ReactSelectSetting extends React.PureComponent<Props, State> {
     state: State = {invalid: false};
 
     componentDidMount() {
@@ -92,7 +94,9 @@ export default class ReactSelectSetting extends React.PureComponent<Props, State
     };
 
     render() {
-        const requiredMsg = 'This field is required.';
+        const {formatMessage} = this.props.intl;
+
+        const requiredMsg = formatMessage({defaultMessage: 'This field is required.'});
         let validationError = null;
 
         if (this.props.required && this.state.invalid) {
@@ -123,7 +127,7 @@ export default class ReactSelectSetting extends React.PureComponent<Props, State
             selectComponent = (
                 <CreatableSelect
                     {...this.props}
-                    noOptionsMessage={() => 'Start typing...'}
+                    noOptionsMessage={() => formatMessage({defaultMessage: 'Start typing...'})}
                     formatCreateLabel={(value) => `Add "${value}"`}
                     placeholder=''
                     menuPortalTarget={document.body}
@@ -154,3 +158,5 @@ export default class ReactSelectSetting extends React.PureComponent<Props, State
         );
     }
 }
+
+export default injectIntl(ReactSelectSetting);

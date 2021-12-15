@@ -1,4 +1,5 @@
 import React from 'react';
+import {injectIntl, IntlShape} from 'react-intl';
 
 import {FilterField, FilterValue, IssueMetadata, FilterFieldInclusion} from 'types/model';
 
@@ -16,13 +17,14 @@ export type Props = {
     removeValidate: (isValid: () => boolean) => void;
     onChange: (f: FilterValue[]) => void;
     instanceID: string;
+    intl: IntlShape;
 };
 
 type State = {
     showCreateRow: boolean;
 };
 
-export default class ChannelSubscriptionFilters extends React.PureComponent<Props, State> {
+export class ChannelSubscriptionFilters extends React.PureComponent<Props, State> {
     state = {
         showCreateRow: false,
     };
@@ -64,6 +66,7 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
     };
 
     render(): JSX.Element {
+        const {formatMessage} = this.props.intl;
         const {fields, values} = this.props;
         const {showCreateRow} = this.state;
         const style = getStyle();
@@ -82,7 +85,7 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
                 <label
                     className='control-label margin-bottom'
                 >
-                    {'Filters'}
+                    {formatMessage({defaultMessage: 'Filters'})}
                 </label>
                 <div>
                     {values.map((v, i) => {
@@ -127,7 +130,7 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
                         type='button'
                     >
                         <span style={style.plusIcon}>{'+'}</span>
-                        {'Add Filter'}
+                        {formatMessage({defaultMessage: 'Add Filter'})}
                     </button>
                 </div>
             </div>
@@ -141,3 +144,5 @@ const getStyle = () => ({
         margin: '-1px 4px 0 0',
     },
 });
+
+export default injectIntl(ChannelSubscriptionFilters);

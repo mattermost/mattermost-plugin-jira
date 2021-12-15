@@ -3,6 +3,7 @@
 
 import React from 'react';
 import {Modal} from 'react-bootstrap';
+import {FormattedMessage} from 'react-intl';
 
 import CreateIssueForm from './create_issue_form';
 
@@ -26,7 +27,9 @@ export default function CreateIssueModal(props: Props) {
             backdrop='static'
         >
             <Modal.Header closeButton={true}>
-                <Modal.Title>{'Create Jira Issue'}</Modal.Title>
+                <Modal.Title>
+                    <FormattedMessage defaultMessage='Create Jira Issue'/>
+                </Modal.Title>
             </Modal.Header>
             <CreateIssueForm {...props}/>
         </Modal>

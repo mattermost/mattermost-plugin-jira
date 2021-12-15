@@ -3,6 +3,7 @@
 
 import React, {PureComponent} from 'react';
 import {Modal} from 'react-bootstrap';
+import {FormattedMessage} from 'react-intl';
 
 import DisconnectModalForm from './disconnect_modal_form';
 import {Props} from './props';
@@ -27,7 +28,7 @@ export default function DisconnectModal(props: Props) {
         >
             <Modal.Header closeButton={true}>
                 <Modal.Title>
-                    {'Disconnect from Jira'}
+                    <FormattedMessage defaultMessage='Disconnect from Jira'/>
                 </Modal.Title>
             </Modal.Header>
             {content}

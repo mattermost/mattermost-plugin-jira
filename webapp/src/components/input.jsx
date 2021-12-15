@@ -4,9 +4,11 @@
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 
+import {injectIntl} from 'react-intl';
+
 import Setting from './setting.jsx';
 
-export default class Input extends PureComponent {
+export class Input extends PureComponent {
     static propTypes = {
         id: PropTypes.string,
         label: PropTypes.node.isRequired,
@@ -28,6 +30,7 @@ export default class Input extends PureComponent {
             'input',
             'textarea',
         ]),
+        intl: PropTypes.object,
     };
 
     static defaultProps = {
@@ -79,7 +82,8 @@ export default class Input extends PureComponent {
     };
 
     render() {
-        const requiredMsg = 'This field is required.';
+        const {formatMessage} = this.props.intl;
+        const requiredMsg = formatMessage({defaultMessage: 'This field is required.'});
         const style = getStyle();
         const value = this.props.value || '';
 
@@ -158,3 +162,5 @@ const getStyle = () => ({
         resize: 'none',
     },
 });
+
+export default injectIntl(Input);

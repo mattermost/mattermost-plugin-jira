@@ -4,6 +4,8 @@
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 
+import {FormattedMessage} from 'react-intl';
+
 import JiraIcon from 'components/icon';
 
 export default class CreateIssuePostMenuAction extends PureComponent {
@@ -20,16 +22,6 @@ export default class CreateIssuePostMenuAction extends PureComponent {
 
     static defaultTypes = {
         locale: 'en',
-    };
-
-    getLocalizedTitle = () => {
-        const {locale} = this.props;
-        switch (locale) {
-        case 'es':
-            return 'Crear incidencia en Jira';
-        default:
-            return 'Create Jira Issue';
-        }
     };
 
     handleClick = (e) => {
@@ -56,7 +48,7 @@ export default class CreateIssuePostMenuAction extends PureComponent {
                     onClick={this.handleClick}
                 >
                     <JiraIcon type='menu'/>
-                    {this.getLocalizedTitle()}
+                    <FormattedMessage defaultMessage='Create Jira Issue'/>
                 </button>
             );
         } else if (this.props.userCanConnect) {
@@ -67,7 +59,7 @@ export default class CreateIssuePostMenuAction extends PureComponent {
                     onClick={this.connectClick}
                 >
                     <JiraIcon type='menu'/>
-                    {'Connect to Jira'}
+                    <FormattedMessage defaultMessage='Connect to Jira'/>
                 </button>
             );
         } else {

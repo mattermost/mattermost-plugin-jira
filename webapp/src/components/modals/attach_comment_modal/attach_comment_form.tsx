@@ -8,6 +8,8 @@ import {Post} from 'mattermost-redux/types/posts';
 import {Team} from 'mattermost-redux/types/teams';
 import {Theme} from 'mattermost-redux/types/preferences';
 
+import {injectIntl, IntlShape} from 'react-intl';
+
 import {APIResponse, AttachCommentRequest} from 'types/model';
 
 import {getModalStyles} from 'utils/styles';
@@ -25,6 +27,7 @@ type Props = {
     post: Post;
     currentTeam: Team;
     theme: Theme;
+    intl: IntlShape;
 }
 
 type State = {
@@ -35,7 +38,7 @@ type State = {
     instanceID: string;
 }
 
-export default class AttachCommentToIssueForm extends PureComponent<Props, State> {
+export class AttachCommentToIssueForm extends PureComponent<Props, State> {
     private validator = new Validator();
     state = {
         submitting: false,
@@ -84,6 +87,8 @@ export default class AttachCommentToIssueForm extends PureComponent<Props, State
     };
 
     render() {
+        const {formatMessage} = this.props.intl;
+
         const {theme} = this.props;
         const {error, submitting} = this.state;
         const style = getModalStyles(theme);
@@ -119,7 +124,7 @@ export default class AttachCommentToIssueForm extends PureComponent<Props, State
                     <Input
                         addValidate={this.validator.addComponent}
                         removeValidate={this.validator.removeComponent}
-                        label='Message Attached to Jira Issue'
+                        label={formatMessage({defaultMessage: 'Message Attached to Jira Issue'})}
                         type='textarea'
                         isDisabled={true}
                         value={this.props.post.message}
@@ -157,10 +162,12 @@ export default class AttachCommentToIssueForm extends PureComponent<Props, State
                         savingMessage='Attaching'
                         disabled={disableSubmit}
                     >
-                        {'Attach'}
+                        {formatMessage({defaultMessage: 'Attach'})}
                     </FormButton>
                 </Modal.Footer>
             </form>
         );
     }
 }
+
+export default injectIntl(AttachCommentToIssueForm);

@@ -2,6 +2,8 @@ import React from 'react';
 
 import {Theme} from 'mattermost-redux/types/preferences';
 
+import {injectIntl, IntlShape} from 'react-intl';
+
 import {Instance, ProjectMetadata, ReactSelectOption, APIResponse, GetConnectedResponse} from 'types/model';
 import ReactSelectSetting from 'components/react_select_setting';
 import {getProjectValues} from 'utils/jira_issue_metadata';
@@ -16,6 +18,7 @@ export type Props = {
     theme: Theme;
     addValidate: (isValid: () => boolean) => void;
     removeValidate: (isValid: () => boolean) => void;
+    intl: IntlShape;
 
     installedInstances: Instance[];
     connectedInstances: Instance[];
@@ -32,7 +35,7 @@ type State = {
     disableInstanceSelector: boolean;
 };
 
-export default class JiraInstanceAndProjectSelector extends React.PureComponent<Props, State> {
+export class JiraInstanceAndProjectSelector extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props);
 
@@ -116,11 +119,15 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
     }
 
     render() {
+        const {formatMessage} = this.props.intl;
+
         const instanceOptions: ReactSelectOption[] = this.props.installedInstances.map((instance: Instance) => (
             {label: instance.alias || instance.instance_id, value: instance.instance_id}
         ));
 
-        const label = this.state.disableInstanceSelector ? 'Instance (saved)' : 'Instance';
+        const instanceSavedStr = formatMessage({defaultMessage: 'Instance (saved)'});
+        const instanceStr = formatMessage({defaultMessage: 'Instance'});
+        const label = this.state.disableInstanceSelector ? instanceSavedStr : instanceStr;
         let instanceSelector;
         if (this.props.connectedInstances.length > 1 && this.props.installedInstances.length > 1) {
             instanceSelector = (
@@ -144,7 +151,7 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
             projectSelector = (
                 <ReactSelectSetting
                     name={'projects'}
-                    label={'Project'}
+                    label={formatMessage({defaultMessage: 'Project'})}
                     limitOptions={true}
                     required={true}
                     onChange={this.handleProjectChange}
@@ -167,3 +174,5 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
         );
     }
 }
+
+export default injectIntl(JiraInstanceAndProjectSelector);

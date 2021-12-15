@@ -7,11 +7,13 @@ import PropTypes from 'prop-types';
 import debounce from 'debounce-promise';
 import AsyncSelect from 'react-select/async';
 
+import {injectIntl} from 'react-intl';
+
 import {getStyleForReactSelect} from 'utils/styles';
 
 const searchDebounceDelay = 400;
 
-export default class JiraIssueSelector extends Component {
+export class JiraIssueSelector extends Component {
     static propTypes = {
         required: PropTypes.bool,
         theme: PropTypes.object.isRequired,
@@ -22,6 +24,7 @@ export default class JiraIssueSelector extends Component {
         addValidate: PropTypes.func.isRequired,
         removeValidate: PropTypes.func.isRequired,
         instanceID: PropTypes.string.isRequired,
+        intl: PropTypes.object,
     };
 
     constructor(props) {
@@ -87,6 +90,8 @@ export default class JiraIssueSelector extends Component {
     };
 
     render = () => {
+        const {formatMessage} = this.props.intl;
+
         const {error} = this.props;
         const requiredStar = (
             <span
@@ -137,12 +142,12 @@ export default class JiraIssueSelector extends Component {
                     className={'control-label'}
                     htmlFor={'issue'}
                 >
-                    {'Jira Issue'}
+                    {formatMessage({defaultMessage: 'Jira Issue'})}
                 </label>
                 {this.props.required && requiredStar}
                 <AsyncSelect
                     name={'issue'}
-                    placeholder={'Search for issues containing text...'}
+                    placeholder={formatMessage({defaultMessage: 'Search for issues containing text...'})}
                     onChange={this.onChange}
                     required={true}
                     disabled={false}
@@ -160,3 +165,5 @@ export default class JiraIssueSelector extends Component {
         );
     }
 }
+
+export default injectIntl(JiraIssueSelector);

@@ -3,6 +3,7 @@
 
 import React from 'react';
 import {Modal} from 'react-bootstrap';
+import {IntlShape} from 'react-intl';
 
 import {Theme} from 'mattermost-redux/types/preferences';
 import {Post} from 'mattermost-redux/types/posts';
@@ -60,6 +61,7 @@ type Props = {
     theme: Theme;
     visible: boolean;
     fetchJiraIssueMetadataForProjects: (projectKeys: string[], instanceID: string) => Promise<APIResponse<IssueMetadata>>;
+    intl: IntlShape;
 };
 
 type State = {
@@ -274,6 +276,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
     }
 
     renderForm = () => {
+        const {formatMessage} = this.props.intl;
         const issueTypes = getIssueTypes(this.state.jiraIssueMetadata, this.state.projectKey);
         const issueOptions = issueTypes.map((it) => ({label: it.name, value: it.id}));
 
@@ -281,7 +284,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             <div>
                 <ReactSelectSetting
                     name={'issue_type'}
-                    label={'Issue Type'}
+                    label={formatMessage({defaultMessage: 'Issue Type'})}
                     required={true}
                     onChange={this.handleIssueTypeChange}
                     options={issueOptions}
@@ -313,6 +316,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
     }
 
     render() {
+        const {formatMessage} = this.props.intl;
         const style = getModalStyles(this.props.theme);
 
         const instanceSelector = (
@@ -335,7 +339,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                 <FormButton
                     type='button'
                     btnClass='btn-link'
-                    defaultMessage='Cancel'
+                    defaultMessage={formatMessage({defaultMessage: 'Cancel'})}
                     onClick={this.handleClose}
                 />
                 <FormButton
@@ -344,9 +348,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                     btnClass='btn btn-primary'
                     saving={this.state.submitting}
                     disabled={disableSubmit}
-                >
-                    {'Create'}
-                </FormButton>
+                />
             </React.Fragment>
         );
 

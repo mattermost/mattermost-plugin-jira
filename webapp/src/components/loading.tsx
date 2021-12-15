@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {PureComponent} from 'react';
+import {FormattedMessage} from 'react-intl';
 
 type Props = {
     position?: 'absolute' | 'fixed' | 'relative' | 'static' | 'inherit';
@@ -22,7 +23,7 @@ export default class Loading extends PureComponent<Props> {
             >
                 <div className='loading__content'>
                     <h3>
-                        {'Loading'}
+                        <FormattedMessage defaultMessage='Loading'/>
                     </h3>
                     <div className='round round-1'/>
                     <div className='round round-2'/>

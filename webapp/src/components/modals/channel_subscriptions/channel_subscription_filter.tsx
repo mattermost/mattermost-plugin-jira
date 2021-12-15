@@ -2,6 +2,8 @@ import React from 'react';
 
 import {Theme} from 'mattermost-redux/types/preferences';
 
+import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
+
 import ReactSelectSetting from 'components/react_select_setting';
 import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
@@ -22,6 +24,7 @@ export type Props = {
     addValidate: (isValid: () => boolean) => void;
     removeValidate: (isValid: () => boolean) => void;
     instanceID: string;
+    intl: IntlShape;
 };
 
 export type State = {
@@ -29,7 +32,7 @@ export type State = {
     error: string | null;
 }
 
-export default class ChannelSubscriptionFilter extends React.PureComponent<Props, State> {
+export class ChannelSubscriptionFilter extends React.PureComponent<Props, State> {
     state = {
         showConfirmDeleteModal: false,
         error: null,
@@ -113,14 +116,22 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
     }
 
     checkFieldConflictError = (): string | null => {
+        const {formatMessage} = this.props.intl;
+
         const conflictIssueTypes = this.getConflictingIssueTypes().map((it) => it.name);
         if (conflictIssueTypes.length) {
-            return `${this.props.field.name} does not exist for issue type(s): ${conflictIssueTypes.join(', ')}.`;
+            const conflictIssueTypesStr = conflictIssueTypes.join(', ');
+            const fieldName = this.props.field.name;
+            return formatMessage(
+                {defaultMessage: '{fieldName} does not exist for issue {numIssueTypes, plural, one {type} other {types}}: {conflictIssueTypesStr}.'},
+                {fieldName, numIssueTypes: conflictIssueTypes.length, conflictIssueTypesStr}
+            );
         }
         return null;
     };
 
     renderInclusionDropdownOption = (data: ReactSelectOption, meta: {context: string}): JSX.Element | string => {
+        const {formatMessage} = this.props.intl;
         const {value, label} = data;
         const {context} = meta;
 
@@ -133,16 +144,16 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         let subtext = '';
         switch (value) {
         case FilterFieldInclusion.INCLUDE_ANY:
-            subtext = 'Includes either of the values (or)';
+            subtext = formatMessage({defaultMessage: 'Includes either of the values (or)'});
             break;
         case FilterFieldInclusion.INCLUDE_ALL:
-            subtext = 'Includes all of the values (and)';
+            subtext = formatMessage({defaultMessage: 'Includes all of the values (and)'});
             break;
         case FilterFieldInclusion.EXCLUDE_ANY:
-            subtext = 'Excludes all of the values';
+            subtext = formatMessage({defaultMessage: 'Excludes all of the values'});
             break;
         case FilterFieldInclusion.EMPTY:
-            subtext = 'Includes when the value is empty';
+            subtext = formatMessage({defaultMessage: 'Includes when the value is empty'});
             break;
         }
 
@@ -157,6 +168,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
     }
 
     render(): JSX.Element {
+        const {formatMessage} = this.props.intl;
         const {field, fields, value, theme} = this.props;
         let chosenFieldValues: ReactSelectOption[] = [];
         const style = getStyle(theme);
@@ -168,10 +180,10 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         let chosenFieldType = null;
 
         const inclusionSelectOptions: ReactSelectOption[] = [
-            {label: 'Include', value: FilterFieldInclusion.INCLUDE_ANY},
-            {label: 'Include All', value: FilterFieldInclusion.INCLUDE_ALL},
-            {label: 'Exclude', value: FilterFieldInclusion.EXCLUDE_ANY},
-            {label: 'Empty', value: FilterFieldInclusion.EMPTY},
+            {label: formatMessage({defaultMessage: 'Include'}), value: FilterFieldInclusion.INCLUDE_ANY},
+            {label: formatMessage({defaultMessage: 'Include All'}), value: FilterFieldInclusion.INCLUDE_ALL},
+            {label: formatMessage({defaultMessage: 'Exclude'}), value: FilterFieldInclusion.EXCLUDE_ANY},
+            {label: formatMessage({defaultMessage: 'Empty'}), value: FilterFieldInclusion.EMPTY},
         ];
 
         if (!isMultiSelectField(field)) {
@@ -217,7 +229,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                     className='btn btn-info'
                     type='button'
                 >
-                    {'Cancel'}
+                    {formatMessage({defaultMessage: 'Cancel'})}
                 </button>
             );
         }
@@ -277,15 +289,15 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
 
         const confirmDeleteModal = (
             <ConfirmModal
-                cancelButtonText={'Cancel'}
-                confirmButtonText={'Delete'}
+                cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Delete'})}
                 confirmButtonClass={'btn btn-danger'}
                 hideCancel={false}
-                message={'Are you sure you want to delete this filter?'}
+                message={formatMessage({defaultMessage: 'Are you sure you want to delete this filter?'})}
                 onCancel={this.handleCancelDelete}
                 onConfirm={this.handleConfirmDelete}
                 show={this.state.showConfirmDeleteModal}
-                title={'Field Filter'}
+                title={formatMessage({defaultMessage: 'Field Filter'})}
             />
         );
 
@@ -420,3 +432,5 @@ const getStyle = (theme: any): any => ({
         margin: '0 0 10px',
     },
 });
+
+export default injectIntl(ChannelSubscriptionFilter);

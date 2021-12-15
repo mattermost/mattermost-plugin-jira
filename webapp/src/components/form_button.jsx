@@ -3,8 +3,9 @@
 
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
+import {injectIntl} from 'react-intl';
 
-export default class FormButton extends PureComponent {
+export class FormButton extends PureComponent {
     static propTypes = {
         executing: PropTypes.bool,
         disabled: PropTypes.bool,
@@ -15,6 +16,7 @@ export default class FormButton extends PureComponent {
         saving: PropTypes.bool,
         savingMessage: PropTypes.string,
         type: PropTypes.string,
+        intl: PropTypes.object,
     };
 
     static defaultProps = {
@@ -26,7 +28,11 @@ export default class FormButton extends PureComponent {
     };
 
     render() {
+        const {formatMessage} = this.props.intl;
         const {saving, disabled, savingMessage, defaultMessage, btnClass, extraClasses, ...props} = this.props;
+
+        const message = defaultMessage || formatMessage({defaultMessage: 'Create'});
+        const saveMessage = savingMessage || formatMessage({defaultMessage: 'Creating'});
 
         let contents;
         if (saving) {
@@ -36,11 +42,11 @@ export default class FormButton extends PureComponent {
                         className='fa fa-spin fa-spinner'
                         title={'Loading Icon'}
                     />
-                    {savingMessage}
+                    {saveMessage}
                 </span>
             );
         } else {
-            contents = defaultMessage;
+            contents = message;
         }
 
         let className = 'save-button btn ' + btnClass;
@@ -61,3 +67,5 @@ export default class FormButton extends PureComponent {
         );
     }
 }
+
+export default injectIntl(FormButton);

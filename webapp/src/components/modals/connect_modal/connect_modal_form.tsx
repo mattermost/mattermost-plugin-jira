@@ -4,6 +4,8 @@
 import React, {PureComponent} from 'react';
 import {Modal} from 'react-bootstrap';
 
+import {injectIntl} from 'react-intl';
+
 import {ReactSelectOption, Instance} from 'types/model';
 
 import {getModalStyles} from 'utils/styles';
@@ -18,7 +20,7 @@ export type State = {
     selectedInstance: string;
 };
 
-export default class ConnectModalForm extends PureComponent<Props, State> {
+export class ConnectModalForm extends PureComponent<Props, State> {
     state = {
         submitting: false,
         error: '',
@@ -26,18 +28,19 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
     };
 
     submit = async (e) => {
+        const {formatMessage} = this.props.intl;
         if (e.preventDefault) {
             e.preventDefault();
         }
 
         const selectedInstance = this.state.selectedInstance;
         if (!selectedInstance) {
-            this.setState({error: 'Please select a Jira instance'});
+            this.setState({error: formatMessage({defaultMessage: 'Please select a Jira instance'})});
             return;
         }
 
         if (this.isAlreadyConnectedToInstance(this.state.selectedInstance)) {
-            this.setState({error: 'You are already connected to this Jira instance.'});
+            this.setState({error: formatMessage({defaultMessage: 'You are already connected to this Jira instance.'})});
             return;
         }
 
@@ -54,19 +57,21 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
     }
 
     handleInstanceChoice = (_: string, instanceID: string) => {
+        const {formatMessage} = this.props.intl;
         if (instanceID === this.state.selectedInstance) {
             return;
         }
 
         let error = '';
         if (instanceID && this.isAlreadyConnectedToInstance(instanceID)) {
-            error = 'You are already connected to this Jira instance.';
+            error = formatMessage({defaultMessage: 'You are already connected to this Jira instance.'});
         }
 
         this.setState({selectedInstance: instanceID, error});
     }
 
     render(): JSX.Element {
+        const {formatMessage} = this.props.intl;
         const style = getModalStyles(this.props.theme);
         const {selectedInstance} = this.state;
 
@@ -88,13 +93,13 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
                 <FormButton
                     type='button'
                     btnClass='btn-link'
-                    defaultMessage='Cancel'
+                    defaultMessage={formatMessage({defaultMessage: 'Cancel'})}
                     onClick={this.closeModal}
                 />
                 <FormButton
                     type='submit'
                     btnClass='btn btn-primary'
-                    defaultMessage='Connect'
+                    defaultMessage={formatMessage({defaultMessage: 'Connect'})}
                     disabled={disableSubmit}
                     saving={this.state.submitting}
                 />
@@ -121,3 +126,5 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
         );
     }
 }
+
+export default injectIntl(ConnectModalForm);

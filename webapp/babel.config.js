@@ -29,6 +29,13 @@ const config = {
         '@babel/plugin-syntax-dynamic-import',
         '@babel/proposal-object-rest-spread',
         'babel-plugin-typescript-to-proptypes',
+        [
+            'formatjs',
+            {
+                idInterpolationPattern: '[sha512:contenthash:base64:6]',
+                ast: true,
+            },
+        ],
     ],
 };
 
