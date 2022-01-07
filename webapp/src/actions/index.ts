@@ -511,3 +511,10 @@ export function sendEphemeralPost(message: string, channelId?: string) {
         });
     };
 }
+
+export function GetIssueByKey(issueKey:string){
+    return async (dispatch, getState) => {
+        const url = getPluginServerRoute(getState()) + '/api/v2/get-isse-by-key';
+        return doFetchWithResponse(`${url}${buildQueryString(params)}`);
+    };
+}

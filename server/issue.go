@@ -420,7 +420,7 @@ func (p *Plugin) httpGetSearchIssues(w http.ResponseWriter, r *http.Request) (in
 	limitStr := r.FormValue("limit")
 
 	result, err := p.GetSearchIssues(types.ID(instanceID), types.ID(mattermostUserID), q, jqlString, fieldsStr, limitStr)
-	if err != nil {
+	if err != nil {GetSearchIssues
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 	return respondJSON(w, result)
@@ -1039,4 +1039,57 @@ func (p *Plugin) getClient(instanceID, mattermostUserID types.ID) (Client, Insta
 		return nil, nil, nil, err
 	}
 	return client, instance, connection, nil
+}
+
+func (p *Plugin) httpGetIssueByKey(w http.ResponseWriter, r *http.Request) (int,error){
+	if r.Method != http.MethodGet {
+		return respondErr(w, http.StatusMethodNotAllowed,
+			errors.New("Request: "+r.Method+" is not allowed, must be GET"))
+	}
+
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserID == "" {
+		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
+	}
+
+	instanceID := r.FormValue("instance_id")
+
+	cimd, connection, err := p.GetJiraProjectMetadata(types.ID(instanceID), types.ID(mattermostUserID))
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to GetProjectMetadata"))
+	}
+
+	if len(cimd.Projects) == 0 {
+		_, err = respondJSON(w, map[string]interface{}{
+			"error": "You do not have permission to create issues in any projects. Please contact your Jira admin.",
+		})
+		if err != nil {
+			return respondErr(w, http.StatusInternalServerError,
+				errors.WithMessage(err, "failed to create response"))
+		}
+	}
+
+	type option = utils.ReactSelectOption
+	projects := make([]option, 0, len(cimd.Projects))
+	issues := make(map[string][]option, len(cimd.Projects))
+	for _, prj := range cimd.Projects {
+		projects = append(projects, option{
+			Value: prj.Key,
+			Label: prj.Name,
+		})
+		issueTypes := make([]option, 0, len(prj.IssueTypes))
+		for _, issue := range prj.IssueTypes {
+			if issue.Subtasks {
+				continue
+			}
+			issueTypes = append(issueTypes, option{
+				Value: issue.Id,
+				Label: issue.Name,
+			})
+		}
+		issues[prj.Key] = issueTypes
+	}
+
+	return respondJSON(w, jira.Issue)
 }
