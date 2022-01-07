@@ -44,6 +44,8 @@ export const openCreateModal = (postId) => {
     };
 };
 
+export const getJiraTickets
+
 export const openCreateModalWithoutPost = (description, channelId) => (dispatch) => dispatch({
     type: ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST,
     data: {

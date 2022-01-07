@@ -37,7 +37,7 @@ export const getCurrentUserLocale = createSelector(
         return locale;
     }
 );
-
+export const isEnabled = (state) => getPluginState(state).enabled;
 export const isConnectModalVisible = (state) => getPluginState(state).connectModalVisible;
 export const isDisconnectModalVisible = (state) => getPluginState(state).disconnectModalVisible;
 
