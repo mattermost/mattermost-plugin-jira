@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-api/experimental/command"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -181,17 +181,17 @@ func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 		"install", "[cloud|server] [URL]", "Connect Mattermost to a Jira instance")
 	install.AddStaticListArgument("Jira type: server or cloud", true, jiraTypes)
 	install.AddTextArgument("Jira URL", "Enter the Jira URL, e.g. https://mattermost.atlassian.net", "")
-	install.RoleID = model.SYSTEM_ADMIN_ROLE_ID
+	install.RoleID = model.SystemAdminRoleId
 
 	uninstall := model.NewAutocompleteData(
 		"uninstall", "[cloud|server] [URL]", "Disconnect Mattermost from a Jira instance")
 	uninstall.AddStaticListArgument("Jira type: server or cloud", true, jiraTypes)
 	uninstall.AddDynamicListArgument("Jira instance", routeAutocompleteInstalledInstance, true)
-	uninstall.RoleID = model.SYSTEM_ADMIN_ROLE_ID
+	uninstall.RoleID = model.SystemAdminRoleId
 
 	list := model.NewAutocompleteData(
 		"list", "", "List installed Jira instances")
-	list.RoleID = model.SYSTEM_ADMIN_ROLE_ID
+	list.RoleID = model.SystemAdminRoleId
 
 	instance.AddCommand(createConnectCommand())
 	instance.AddCommand(createDisconnectCommand())
@@ -324,7 +324,7 @@ func createSubscribeCommand(optInstance bool) *model.AutocompleteData {
 func createWebhookCommand(optInstance bool) *model.AutocompleteData {
 	webhook := model.NewAutocompleteData(
 		"webhook", "[Jira URL]", "Display the webhook URLs to set up on Jira")
-	webhook.RoleID = model.SYSTEM_ADMIN_ROLE_ID
+	webhook.RoleID = model.SystemAdminRoleId
 	withFlagInstance(webhook, optInstance, routeAutocompleteInstalledInstanceWithAlias)
 	return webhook
 }

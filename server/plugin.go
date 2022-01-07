@@ -17,8 +17,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin"
 
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
@@ -79,6 +80,9 @@ type externalConfig struct {
 	// Enable slash command autocomplete
 	EnableAutocomplete bool
 
+	// Enable Webhook Event Logging
+	EnableWebhookEventLogging bool
+
 	// Display subscription name in notifications
 	DisplaySubscriptionNameInNotifications bool
 }
@@ -104,6 +108,7 @@ type config struct {
 
 type Plugin struct {
 	plugin.MattermostPlugin
+	client *pluginapi.Client
 
 	// configuration and a muttex to control concurrent access
 	conf     config
@@ -221,8 +226,9 @@ func (p *Plugin) OnActivate() error {
 	p.userStore = store
 	p.secretsStore = store
 	p.otsStore = store
+	p.client = pluginapi.NewClient(p.API, p.Driver)
 
-	botUserID, err := p.Helpers.EnsureBot(&model.Bot{
+	botUserID, err := p.client.Bot.EnsureBot(&model.Bot{
 		Username:    botUserName,
 		DisplayName: botDisplayName,
 		Description: botDescription,
@@ -421,7 +427,7 @@ func (p *Plugin) CheckSiteURL() error {
 		return errors.WithMessage(err, "invalid SITEURL")
 	}
 	if u.Hostname() == "localhost" {
-		return errors.Errorf("%s is not a valid Mattermost SITEURL.", ustr)
+		return errors.Errorf("Using %s as your Mattermost SiteURL is not permitted, as the URL is not reachable from Jira. If you are using Jira Cloud, please make sure your URL is reachable from the public internet.", ustr)
 	}
 	return nil
 }

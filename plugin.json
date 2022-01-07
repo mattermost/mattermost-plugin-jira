@@ -7,11 +7,13 @@
   "release_notes_url": "https://github.com/mattermost/mattermost-plugin-jira/releases/tag/v3.1.0",
   "icon_path": "assets/icon.svg",
   "version": "3.1.0",
-  "min_server_version": "5.26.0",
+  "min_server_version": "5.37.0",
   "server": {
     "executables": {
       "linux-amd64": "server/dist/plugin-linux-amd64",
+      "linux-arm64": "server/dist/plugin-linux-arm64",
       "darwin-amd64": "server/dist/plugin-darwin-amd64",
+      "darwin-arm64": "server/dist/plugin-darwin-arm64",
       "windows-amd64": "server/dist/plugin-windows-amd64.exe"
     }
   },
@@ -82,7 +84,7 @@
       },
       {
         "key": "HideDecriptionComment",
-        "display_name": "Hide issue descriptions and comments",
+        "display_name": "Hide issue descriptions and comments:",
         "type": "bool",
         "help_text": "Hide detailed issue descriptions and comments from Subscription and Webhook messages",
         "default": false
@@ -96,9 +98,16 @@
       },
       {
         "key": "DisplaySubscriptionNameInNotifications",
-        "display_name": "Display subscription name in notifications",
+        "display_name": "Display subscription name in notifications:",
         "type": "bool",
         "help_text": "Display subscription name in post when a subscription posts to a channel",
+        "default": false
+      },
+      {
+        "key": "EnableWebhookEventLogging",
+        "display_name": "Enable Webhook Event Logging:",
+        "type": "bool",
+        "help_text": "Allow the plugin to log the webhook event. The log level needs to be set to `DEBUG`.",
         "default": false
       }
     ],

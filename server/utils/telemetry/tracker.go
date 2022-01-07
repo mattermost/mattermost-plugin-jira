@@ -1,6 +1,6 @@
 package telemetry
 
-import "github.com/mattermost/mattermost-server/v5/plugin"
+import "github.com/mattermost/mattermost-server/v6/plugin"
 
 type Tracker interface {
 	Track(event string, properties map[string]interface{})
