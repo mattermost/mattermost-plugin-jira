@@ -158,7 +158,7 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 
 		notification.message = p.replaceJiraAccountIds(instance.GetID(), notification.message)
 
-		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType)
+		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType, notification.recipientType)
 		if err != nil {
 			p.errorf("PostNotifications: failed to create notification post, err: %v", err)
 			continue

@@ -104,7 +104,11 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	connection.User = *juser
 
 	// Set default settings the first time a user connects
-	connection.Settings = &ConnectionSettings{Notifications: true}
+	connection.Settings = &ConnectionSettings{
+		SendNotificationsForMention:true,
+		SendNotificationsForAssignee :true,
+		SendNotificationsForReporter: true,
+	}
 
 	err = p.connectUser(instance, types.ID(mattermostUserID), connection)
 	if err != nil {

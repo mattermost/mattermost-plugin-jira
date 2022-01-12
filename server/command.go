@@ -260,12 +260,29 @@ func createSettingsCommand(optInstance bool) *model.AutocompleteData {
 		"list", "", "View your current settings")
 	settings.AddCommand(list)
 
+	setting := []model.AutocompleteListItem{
+		{HelpText: "Turn on notification on", Item: "on"},
+		{HelpText: "Turn on notification off", Item: "off"},
+	}
 	notifications := model.NewAutocompleteData(
-		"notifications", "[on|off]", "Update your user notifications settings")
-	notifications.AddStaticListArgument("value", true, []model.AutocompleteListItem{
-		{HelpText: "Turn notifications on", Item: "on"},
-		{HelpText: "Turn notifications off", Item: "off"},
-	})
+		"notifications", "[assinee|mention|reporter]", "manage notifications")
+
+	assigneeNotifications := model.NewAutocompleteData(
+		"assignee", "", "manage assignee notifications")
+	assigneeNotifications.AddStaticListArgument("value", true, setting)
+
+	mentionNotifications := model.NewAutocompleteData(
+		"mention", "", "manage mention notifications")
+	mentionNotifications.AddStaticListArgument("value", true, setting)
+
+	reporterNotifications := model.NewAutocompleteData(
+		"reporter", "", "manage reporter notifications")
+	reporterNotifications.AddStaticListArgument("value", true, setting)
+
+	notifications.AddCommand(assigneeNotifications)
+	notifications.AddCommand(mentionNotifications)
+	notifications.AddCommand(reporterNotifications)
+
 	withFlagInstance(notifications, optInstance, routeAutocompleteInstalledInstanceWithAlias)
 	settings.AddCommand(notifications)
 
@@ -372,14 +389,15 @@ func (p *Plugin) help(args *model.CommandArgs) *model.CommandResponse {
 }
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	err := p.CheckSiteURL()
-	if err != nil {
-		return p.responsef(commandArgs, err.Error()), nil
-	}
+	// err := p.CheckSiteURL()
+	// if err != nil {
+	// 	return p.responsef(commandArgs, err.Error()), nil
+	// }
 	args := strings.Fields(commandArgs.Command)
 	if len(args) == 0 || args[0] != "/jira" {
 		return p.help(commandArgs), nil
 	}
+	p.API.LogWarn("===", "args", args[1:])
 	return jiraCommandHandler.Handle(p, c, commandArgs, args[1:]...), nil
 }
 

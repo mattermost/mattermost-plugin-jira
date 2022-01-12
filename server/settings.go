@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/mattermost/mattermost-server/v6/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -12,14 +14,13 @@ const (
 )
 
 func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, mattermostUserID types.ID, connection *Connection, args []string) *model.CommandResponse {
-	const helpText = "`/jira settings notifications [value]`\n* Invalid value. Accepted values are: `on` or `off`."
+	const helpText = "`/jira settings notifications [assignee/mention/reporter] [value]`\n* Invalid value. Accepted values are: `on` or `off`."
 
-	if len(args) != 2 {
+	if len(args) != 3 {
 		return p.responsef(header, helpText)
 	}
-
 	var value bool
-	switch args[1] {
+	switch args[2] {
 	case settingOn:
 		value = true
 	case settingOff:
@@ -27,11 +28,20 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	default:
 		return p.responsef(header, helpText)
 	}
-
 	if connection.Settings == nil {
 		connection.Settings = &ConnectionSettings{}
 	}
-	connection.Settings.Notifications = value
+	switch args[1] {
+	case "assignee":
+		connection.Settings.SendNotificationsForAssignee = value
+	case "mention":
+		connection.Settings.SendNotificationsForMention = value
+	case "reporter":
+		connection.Settings.SendNotificationsForReporter = value
+	default:
+		return p.responsef(header, helpText)
+	}
+
 	if err := p.userStore.StoreConnection(instanceID, mattermostUserID, connection); err != nil {
 		p.errorf("settingsNotifications, err: %v", err)
 		p.responsef(header, "Could not store new settings. Please contact your system administrator. error: %v", err)
@@ -43,9 +53,20 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 		return p.responsef(header, "Your username is not connected to Jira. Please type `jira connect`. %v", err)
 	}
 	notifications := settingOff
-	if updatedConnection.Settings.Notifications {
-		notifications = settingOn
+	switch args[1] {
+	case "assignee":
+		if updatedConnection.Settings.SendNotificationsForAssignee {
+			notifications = settingOn
+		}
+	case "mention":
+		if updatedConnection.Settings.SendNotificationsForMention {
+			notifications = settingOn
+		}
+	case "reporter":
+		if updatedConnection.Settings.SendNotificationsForReporter {
+			notifications = settingOn
+		}
 	}
 
-	return p.responsef(header, "Settings updated. Notifications %s.", notifications)
+	return p.responsef(header, "Settings updated.\n\t%s %s.", strings.Title(args[1]), notifications)
 }

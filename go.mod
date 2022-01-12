@@ -7,7 +7,7 @@ require (
 	github.com/circonus-labs/circonusllhist v0.1.3
 	github.com/dghubble/oauth1 v0.5.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/google/uuid v1.2.0
+	github.com/google/uuid v1.3.0
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/mattermost/mattermost-plugin-api v0.0.21
 	github.com/mattermost/mattermost-plugin-autolink v1.2.2-0.20210709183311-c8fa30db649f
@@ -18,5 +18,5 @@ require (
 	github.com/rudderlabs/analytics-go v3.3.1+incompatible
 	github.com/stretchr/testify v1.7.0
 	github.com/trivago/tgo v1.0.7 // indirect
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
 )
