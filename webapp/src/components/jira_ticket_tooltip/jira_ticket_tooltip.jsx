@@ -1,22 +1,16 @@
-import React, {PureComponent, Fragment} from "react";
+import React, {Fragment, PureComponent} from "react";
 import JiraAvatar from './assets/jira_avatar.png';
+import PropTypes from 'prop-types';
 
-type Props = {
-    ticketId?: string,
-    ticketTitle: string,
-    ticketDescription: string,
-    ticketStatus: string,
-    ticketStatusKey: string,
-    ticketLabel: Array<string>,
-    ticketAssignee: string,
-    ticketAssigneePicture: string,
-    ticketFixVersion?: string | null,
-    ticketURI: string,
-    ticketIssueTypeIconURI: string,
-};
+export default class TicketPopover extends PureComponent {
+    static propTypes = {
+        href: PropTypes.string,
+        connected: PropTypes.any,
+        value: PropTypes.any,
+    }
 
-export default class TicketPopover extends PureComponent<Props> {
-    truncateString(str: string, num: number) {
+
+    truncateString(str, num) {
         if (num > str.length) {
             return str;
         } else {
@@ -25,13 +19,33 @@ export default class TicketPopover extends PureComponent<Props> {
         }
     }
 
+    async init(){
+        let ticketId = ""
+        if (this.href.includes('attlasian.net/browse')){
+            ticketId = href.split('/browse/')[1].split('/');
+            this.props.value = await getTicket(ticketId);
+        }
+
+        if (this.href.includes("atlassian.net/jira/software")) {
+            const urlParams = new URLSearchParams(fi);
+            ticketId = urlParams.get('selectedIssue');
+            this.props.value = await getTicket(ticketId);
+        }
+    }
+
+    componentDidMount() {
+        if (this.connected) {
+            this.init();
+        }
+    }
+
     //
-    fixVersionLabel(fixVersion: string | undefined | null) {
+    fixVersionLabel(fixVersion) {
         if (fixVersion) {
             return <div className="fix-version-label" style={{
                 color: '#333',
                 margin: '16px 0px',
-                textAlign: 'left' as 'left',
+                textAlign: 'left',
                 fontFamily: 'open sans',
                 fontSize: '10px',
                 padding: '0px 0px 2px 0px',
@@ -45,7 +59,7 @@ export default class TicketPopover extends PureComponent<Props> {
         }
     }
 
-    tagTicketStatus(ticketStatus: string, ticketStatusKey: string) {
+    tagTicketStatus(ticketStatus, ticketStatusKey) {
         const defaultStyle = {
             fontFamily: 'open sans',
             fontStyle: 'normal',
@@ -53,7 +67,7 @@ export default class TicketPopover extends PureComponent<Props> {
             fontSize: '12px',
             marginTop: '4px',
             padding: '4px 8px 0px 8px',
-            align: 'center' as 'center',
+            align: 'center',
             height: 20,
             marginBottom: '8px',
             borderRadius: '4px',
@@ -85,24 +99,25 @@ export default class TicketPopover extends PureComponent<Props> {
         }}>{ticketStatus}</span>
     }
 
-    labelList(labels: Array<string> | null | undefined) {
+    labelList(labels) {
         if (labels !== undefined && labels !== null) {
             let totalString = 0
             let totalHide = 0;
             return (
                 <Fragment>
                     <div className={'ticket-popover-label'}>
-                        {labels.map(function (label: string) {
+                        {labels.map(function (label) {
                             if (totalString >= 45 || totalString + label.length >= 45) {
                                 totalHide++;
                                 return null;
                             }
                             totalString += label.length + 3;
-                            return <span className="jiraticket-popover-label-list" >{label}</span>;
+                            return <span className="jiraticket-popover-label-list">{label}</span>;
                         })}
                     </div>
                     {
-                        totalHide !== 0 ? (<div className={'jiraticket-popover-total-hide-label'}>+{totalHide}more</div>) : null
+                        totalHide !== 0 ? (
+                            <div className={'jiraticket-popover-total-hide-label'}>+{totalHide}more</div>) : null
                     }
 
                 </Fragment>
@@ -112,52 +127,39 @@ export default class TicketPopover extends PureComponent<Props> {
 
 
     render() {
-        const {
-            ticketIssueTypeIconURI,
-            ticketId,
-            ticketTitle,
-            ticketDescription,
-            ticketFixVersion,
-            ticketStatus,
-            ticketStatusKey,
-            ticketURI,
-            ticketLabel,
-            ticketAssignee,
-            ticketAssigneePicture,
-        } = this.props;
-
         return (
             <div className={'ticket-popover'}>
                 <div className={'ticket-popover-header'}>
                     <div className={'ticket-popover-header-container'}>
-                        <a href={ticketURI} title={'goto ticket'}>
+                        <a href={this.props.value.self} title={'goto ticket'}>
                             <img src={JiraAvatar} width={14} height={14}
                                  alt={'jira-avatar'}
                                  className={'ticket-popover-header-avatar'}/></a>
-                        <a href={ticketURI} className={'ticket-popover-keyword'}>
-                            <span style={{fontSize: 12}}>{ticketId}</span>
-                            <img alt={'jira-issue-icon'} width="14" height="14" src={ticketIssueTypeIconURI}/>
+                        <a href={this.props.value.self} className={'ticket-popover-keyword'}>
+                            <span style={{fontSize: 12}}>{this.props.value.key}</span>
+                            <img alt={'jira-issue-icon'} width="14" height="14" src={this.props.value.fields.status.iconUrl}/>
                         </a>
                     </div>
                 </div>
                 <div className={'ticket-popover-body'}>
                     <div className={'ticket-popover-title'}>
-                        <a href={ticketURI}>
-                            <h5>{this.truncateString(ticketTitle, 80)}</h5>
+                        <a href={this.props.value.self}>
+                            <h5>{this.truncateString(this.props.value.names, 80)}</h5>
                         </a>
-                        {this.tagTicketStatus(ticketStatus, ticketStatusKey)}
+                        {this.tagTicketStatus(this.value.fields.status.name, this.value.fields.status.statusCategory.key)}
                     </div>
                     <div className={'ticket-popover-description'}
-                         dangerouslySetInnerHTML={{__html: ticketDescription}}/>
+                         dangerouslySetInnerHTML={{__html: this.props.value.fields.description}}/>
                     <div className={'ticket-popover-labels'}>
-                        {this.fixVersionLabel(ticketFixVersion)}
-                        {this.labelList(ticketLabel)}
+                        {this.fixVersionLabel(this.props.value.fields.fixVersions)}
+                        {this.labelList(this.props.value.fields.labels)}
                     </div>
                 </div>
                 <div className={'ticket-popover-footer'}>
-                    <img className={'ticket-popover-footer-assigner-profile'} src={ticketAssigneePicture} alt={'jira assigner profile'}/>
+                    <img className={'ticket-popover-footer-assigner-profile'} src={this.props.value.fields.assignee.avatarUrls["48x48"]}
+                         alt={'jira assigner profile'}/>
                     <span className={'ticket-popover-footer-assigner-name'}>
-                            {ticketAssignee}
+                            {this.props.value.fields.assignee.name}
                         </span>
                     <span className={'ticket-popover-footer-assigner-is-assigned'}>is assigned</span>
                 </div>

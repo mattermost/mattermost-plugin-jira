@@ -420,7 +420,7 @@ func (p *Plugin) httpGetSearchIssues(w http.ResponseWriter, r *http.Request) (in
 	limitStr := r.FormValue("limit")
 
 	result, err := p.GetSearchIssues(types.ID(instanceID), types.ID(mattermostUserID), q, jqlString, fieldsStr, limitStr)
-	if err != nil {GetSearchIssues
+	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 	return respondJSON(w, result)
@@ -1052,8 +1052,9 @@ func (p *Plugin) httpGetIssueByKey(w http.ResponseWriter, r *http.Request) (int,
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
+	instanceID := r.FormValue("instance_id")
 	issueKey := r.FormValue("issue_key")
-	issue,err := p.GetIssueByKey(issueKey)
+	issue,err := p.GetIssueByKey(types.ID(instanceID), types.ID(mattermostUserID),issueKey)
 	if err != nil{
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -1061,7 +1062,13 @@ func (p *Plugin) httpGetIssueByKey(w http.ResponseWriter, r *http.Request) (int,
 	return respondJSON(w, issue)
 }
 
-func (p *Plugin) GetIssueByKey(issueKey string) (jira.Issue, error) {
+func (p *Plugin) GetIssueByKey(instanceID,mattermostUserID types.ID,issueKey string) (*jira.Issue, error) {
+
+	client, _, _, err := p.getClient(instanceID, mattermostUserID)
+	if err != nil {
+		return nil, err
+	}
+
 	exact,err := client.GetIssue(issueKey,nil)
 	if err != nil {
 		switch StatusCode(err) {
@@ -1075,5 +1082,5 @@ func (p *Plugin) GetIssueByKey(issueKey string) (jira.Issue, error) {
 			return nil, errors.WithMessage(err, "request to Jira failed")
 		}
 	}
-	return *exact, nil
+	return exact, nil
 }
