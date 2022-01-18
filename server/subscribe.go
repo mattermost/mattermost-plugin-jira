@@ -729,7 +729,6 @@ func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, in
 	if conf.EnableWebhookEventLogging {
 		p.API.LogDebug("Webhook Event Log", "event", string(bb))
 	}
-
 	// If there is space in the queue, immediately return a 200; we will process the webhook event async.
 	// If the queue is full, return a 503; we will not process that webhook event.
 	select {

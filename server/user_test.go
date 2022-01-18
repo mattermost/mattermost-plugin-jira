@@ -16,11 +16,19 @@ func TestUserSettings_String(t *testing.T) {
 		expectedOutput string
 	}{
 		"notifications on": {
-			settings:       ConnectionSettings{Notifications: false},
+			settings: ConnectionSettings{
+				SendNotificationsForMention:  false,
+				SendNotificationsForAssignee: false,
+				SendNotificationsForReporter: false,
+			},
 			expectedOutput: "\tNotifications: off",
 		},
 		"notifications off": {
-			settings:       ConnectionSettings{Notifications: true},
+			settings: ConnectionSettings{
+				SendNotificationsForMention:  false,
+				SendNotificationsForAssignee: false,
+				SendNotificationsForReporter: false,
+			},
 			expectedOutput: "\tNotifications: on",
 		},
 	}

@@ -105,9 +105,13 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 }
 
 func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.Post, int, error) {
+
+	p.API.LogWarn("post notification === 1", "===", len(wh.notifications))
+
 	if len(wh.notifications) == 0 {
 		return nil, http.StatusOK, nil
 	}
+	p.API.LogWarn("post notification === 2", "===", len(wh.notifications))
 
 	// We will only send webhook events if we have a connected instance.
 	instance, err := p.instanceStore.LoadInstance(instanceID)
@@ -115,11 +119,13 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		// This isn't an internal server error. There's just no instance installed.
 		return nil, http.StatusOK, nil
 	}
+	p.API.LogWarn("post notification === 3", "===", len(wh.notifications))
 
 	posts := []*model.Post{}
 	for _, notification := range wh.notifications {
 		var mattermostUserID types.ID
 		var err error
+		p.API.LogWarn("post notification === 4", "===", len(wh.notifications), "notification.jiraAccountID", notification.jiraAccountID, "instance.GetID()", instance.GetID())
 
 		// prefer accountId to username when looking up UserIds
 		if notification.jiraAccountID != "" {
@@ -127,9 +133,12 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		} else {
 			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), notification.jiraUsername)
 		}
+		p.API.LogWarn("post notification === 5", "===", len(wh.notifications), "mattermostUserID", mattermostUserID, "error", err)
+
 		if err != nil {
 			continue
 		}
+		p.API.LogWarn("post notification === 6", "===", len(wh.notifications))
 
 		// Check if the user has permissions.
 		c, err2 := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
@@ -137,6 +146,8 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 			// Not connected to Jira, so can't check permissions
 			continue
 		}
+		p.API.LogWarn("post notification === 7", "===", len(wh.notifications))
+
 		client, err2 := instance.GetClient(c)
 		if err2 != nil {
 			p.errorf("PostNotifications: error while getting jiraClient, err: %v", err2)
@@ -144,6 +155,7 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		}
 		// If this is a comment-related webhook, we need to check if they have permissions to read that.
 		// Otherwise, check if they can view the issue.
+		p.API.LogWarn("post notification === 8", "===", len(wh.notifications))
 
 		isCommentEvent := wh.Events().Intersection(commentEvents).Len() > 0
 		if isCommentEvent {
@@ -151,12 +163,16 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		} else {
 			_, err = client.GetIssue(wh.Issue.ID, nil)
 		}
+		p.API.LogWarn("post notification === 9", "===", len(wh.notifications))
+
 		if err != nil {
 			p.errorf("PostNotifications: failed to get self: %v", err)
 			continue
 		}
+		p.API.LogWarn("post notification === 10", "===", len(wh.notifications))
 
 		notification.message = p.replaceJiraAccountIds(instance.GetID(), notification.message)
+		p.API.LogWarn("post notification ===", "===", len(wh.notifications))
 
 		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType, notification.recipientType)
 		if err != nil {

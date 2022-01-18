@@ -43,14 +43,14 @@ func (c *Connection) JiraAccountID() types.ID {
 }
 
 type ConnectionSettings struct {
-	SendNotificationsForMention bool `json:"send_notifications_for_mention"`
+	SendNotificationsForMention  bool `json:"send_notifications_for_mention"`
 	SendNotificationsForAssignee bool `json:"send_notifications_for_assignee"`
-    SendNotificationsForReporter bool `json:"send_notifications_for_reporter"`
+	SendNotificationsForReporter bool `json:"send_notifications_for_reporter"`
 }
 
 func (s *ConnectionSettings) String() string {
 	assigneeNotifications := "Notifications for assignee : off"
-	mentionNotifications :=	"Notifications for mention : off"
+	mentionNotifications := "Notifications for mention : off"
 	reporterNotifications := "Notifications for reporter : off"
 	if s != nil && s.SendNotificationsForAssignee {
 		assigneeNotifications = "Notifications for assignee : on"
@@ -207,13 +207,13 @@ func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, proje
 		}
 	}
 
-	if projectKey != "" && projectKey != connection.DefaultProjectKey {
-		connection.DefaultProjectKey = projectKey
-		err = p.userStore.StoreConnection(instanceID, user.MattermostUserID, connection)
-		if err != nil {
-			return
-		}
+	// if projectKey != "" && projectKey != connection.DefaultProjectKey {
+	connection.DefaultProjectKey = projectKey
+	err = p.userStore.StoreConnection(instanceID, user.MattermostUserID, connection)
+	if err != nil {
+		return
 	}
+	// }
 
 	info, err := p.GetUserInfo(mattermostUserID, user)
 	if err != nil {

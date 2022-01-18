@@ -48,7 +48,7 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 	if jwh.Issue.Fields == nil {
 		return nil, ErrWebhookIgnored
 	}
-
+	fmt.Println("=================", string(bb))
 	switch jwh.WebhookEvent {
 	case "jira:issue_created":
 		wh = parseWebhookCreated(jwh)
@@ -84,7 +84,6 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 	if wh == nil {
 		return nil, errors.Errorf("Unsupported webhook data: %v", jwh.WebhookEvent)
 	}
-
 	// For HTTP testing, so we can capture the output of the interface
 	if webhookWrapperFunc != nil {
 		wh = webhookWrapperFunc(wh)

@@ -51,7 +51,6 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 			conf.stats.EnsureEndpoint(path).Record(utils.ByteSize(len(msg.Data)), 0, time.Since(start), isError, isIgnored)
 		}
 	}()
-
 	wh, err := ParseWebhook(msg.Data)
 	if err != nil {
 		return err
@@ -66,6 +65,7 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 	if _, _, err = wh.PostNotifications(ww.p, msg.InstanceID); err != nil {
 		ww.p.errorf("WebhookWorker id: %d, error posting notifications, err: %v", ww.id, err)
 	}
+
 	channelsSubscribed, err := ww.p.getChannelsSubscribed(v, msg.InstanceID)
 	if err != nil {
 		return err
