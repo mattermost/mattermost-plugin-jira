@@ -5,6 +5,7 @@ package main
 
 import (
 	"crypto/rsa"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -15,9 +16,11 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-api/experimental/bot/logger"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
@@ -118,6 +121,13 @@ type Plugin struct {
 	userStore     UserStore
 	otsStore      OTSStore
 	secretsStore  SecretsStore
+	flowManager   *FlowManager
+	log           logger.Logger
+
+	// Most of ServeHTTP does not use an http router, but we need one to support the setup wizard flow. Introducing it here incrementally.
+	//
+	// TODO: transition ServeHTTP to use gorilla
+	gorillaRouter *mux.Router
 
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
@@ -227,6 +237,8 @@ func (p *Plugin) OnActivate() error {
 	p.secretsStore = store
 	p.otsStore = store
 	p.client = pluginapi.NewClient(p.API, p.Driver)
+	p.log = logger.New(p.API)
+	p.gorillaRouter = mux.NewRouter()
 
 	botUserID, err := p.client.Bot.EnsureBot(&model.Bot{
 		Username:    botUserName,
@@ -278,6 +290,8 @@ func (p *Plugin) OnActivate() error {
 		return err
 	}
 	p.templates = templates
+
+	p.flowManager = p.NewFlowManager()
 
 	// Register /jira command and stash the loaded list of known instances for
 	// later (autolink registration).
@@ -430,4 +444,18 @@ func (p *Plugin) CheckSiteURL() error {
 		return errors.Errorf("Using %s as your Mattermost SiteURL is not permitted, as the URL is not reachable from Jira. If you are using Jira Cloud, please make sure your URL is reachable from the public internet.", ustr)
 	}
 	return nil
+}
+
+func (p *Plugin) storeConfig(ec externalConfig) error {
+	var out map[string]interface{}
+	data, err := json.Marshal(ec)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(data, &out)
+	if err != nil {
+		return err
+	}
+
+	return p.client.Configuration.SavePluginConfig(out)
 }

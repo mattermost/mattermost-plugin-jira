@@ -50,6 +50,7 @@ const (
 	routeACUserConnected                        = "/ac/user_connected.html"
 	routeACUserDisconnected                     = "/ac/user_disconnected.html"
 	routeIncomingWebhook                        = "/webhook"
+	routeSetupWizard                            = "/setup-wizard"
 	routeOAuth1Complete                         = "/oauth1/complete.html"
 	routeUserStart                              = "/user/start"
 	routeUserConnect                            = "/user/connect"
@@ -73,10 +74,14 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	status, err := p.serveHTTP(c, w, r)
-	if err != nil {
-		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
+	switch {
+	case err == nil && status == http.StatusOK:
+		p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
+	case status == 0:
+		p.API.LogDebug("Passed to another router: ", "Path", r.URL.Path, "Method", r.Method)
+	default:
+		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
 	}
-	p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
 }
 
 func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -195,7 +200,8 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return p.httpChannelSubscriptions(w, r)
 	}
 
-	return respondErr(w, http.StatusNotFound, errors.New("not found"))
+	p.gorillaRouter.ServeHTTP(w, r)
+	return 0, nil
 }
 
 func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {

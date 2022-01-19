@@ -56,6 +56,7 @@ var jiraCommandHandler = CommandHandler{
 		"view":                    executeView,
 		"v2revert":                executeV2Revert,
 		"webhook":                 executeWebhookURL,
+		"get-started":             executeGetStarted,
 	},
 	defaultHandler: executeJiraDefault,
 }
@@ -1211,6 +1212,22 @@ func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 			" Visit the [Legacy Webhooks](https://mattermost.gitbook.io/plugin-jira/administrator-guide/notification-management#legacy-webhooks) page to learn more about this feature.\n"+
 			"",
 		instanceID, instance.GetManageWebhooksURL(), subWebhookURL, subWebhookURL, legacyWebhookURL, legacyWebhookURL)
+}
+
+func executeGetStarted(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(header, "`/jira get-started` can only be run by a system administrator.")
+	}
+
+	err = p.flowManager.StartConfigurationWizard(header.UserId)
+	if err != nil {
+		return p.responsef(header, errors.Wrap(err, "Failed to start configuration wizard").Error())
+	}
+	return p.responsef(header, "continue in the direct conversation with @jira bot.")
 }
 
 func (p *Plugin) postCommandResponse(args *model.CommandArgs, text string) {
