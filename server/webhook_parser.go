@@ -384,6 +384,7 @@ func appendNotificationForAssignee(wh *webhook) {
 		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
 		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
 		message:       fmt.Sprintf("%s **assigned** you to %s", jwh.mdUser(), jwh.mdKeySummaryLink()),
+		recipientType: recipientTypeAssignee,
 	})
 }
 
