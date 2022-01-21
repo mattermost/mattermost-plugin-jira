@@ -48,7 +48,7 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 	if jwh.Issue.Fields == nil {
 		return nil, ErrWebhookIgnored
 	}
-	fmt.Println("=================", string(bb))
+
 	switch jwh.WebhookEvent {
 	case "jira:issue_created":
 		wh = parseWebhookCreated(jwh)

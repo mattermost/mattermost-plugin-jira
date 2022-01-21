@@ -51,10 +51,12 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 			conf.stats.EnsureEndpoint(path).Record(utils.ByteSize(len(msg.Data)), 0, time.Since(start), isError, isIgnored)
 		}
 	}()
+
 	wh, err := ParseWebhook(msg.Data)
 	if err != nil {
 		return err
 	}
+
 	v := wh.(*webhook)
 	if err = v.JiraWebhook.expandIssue(ww.p, msg.InstanceID); err != nil {
 		return err

@@ -151,18 +151,13 @@ func (store store) StoreConnection(instanceID, mattermostUserID types.ID, connec
 	}()
 
 	connection.PluginVersion = manifest.Version
-	store.plugin.API.LogWarn("step 1 ", "store connection", "step 2 ")
-	err := store.set(keyWithInstanceID(instanceID, mattermostUserID), connection)
-	store.plugin.API.LogWarn("step 2 ", "err", err, "keyWithInstanceID(instanceID, mattermostUserID)", keyWithInstanceID(instanceID, mattermostUserID))
 
-	store.plugin.API.LogWarn("step 2.1 ", "instanceID", instanceID, "connection.JiraAccountID()", connection.JiraAccountID())
+	err := store.set(keyWithInstanceID(instanceID, mattermostUserID), connection)
 	if err != nil {
 		return err
 	}
 
 	err = store.set(keyWithInstanceID(instanceID, connection.JiraAccountID()), mattermostUserID)
-	store.plugin.API.LogWarn("step 3 ", "err", err, "keyWithInstanceID(instanceID, connection.JiraAccountID())", keyWithInstanceID(instanceID, connection.JiraAccountID()))
-
 	if err != nil {
 		return err
 	}
@@ -170,8 +165,6 @@ func (store store) StoreConnection(instanceID, mattermostUserID types.ID, connec
 	// Also store AccountID -> mattermostUserID because Jira Cloud is deprecating the name field
 	// https://developer.atlassian.com/cloud/jira/platform/api-changes-for-user-privacy-announcement/
 	err = store.set(keyWithInstanceID(instanceID, connection.JiraAccountID()), mattermostUserID)
-	store.plugin.API.LogWarn("step 4 ", "err", err, "keyWithInstanceID(instanceID, connection.JiraAccountID() ", keyWithInstanceID(instanceID, connection.JiraAccountID()))
-
 	if err != nil {
 		return err
 	}
@@ -196,7 +189,6 @@ func (store store) LoadConnection(instanceID, mattermostUserID types.ID) (*Conne
 
 func (store store) LoadMattermostUserID(instanceID types.ID, jiraUserNameOrID string) (types.ID, error) {
 	mattermostUserID := types.ID("")
-	store.plugin.API.LogWarn("step 0", "keyWithInstanceID(instanceID, types.ID(jiraUserNameOrID)", keyWithInstanceID(instanceID, types.ID(jiraUserNameOrID)))
 	err := store.get(keyWithInstanceID(instanceID, types.ID(jiraUserNameOrID)), &mattermostUserID)
 	if err != nil {
 		return "", errors.Wrapf(err,

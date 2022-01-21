@@ -207,13 +207,13 @@ func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, proje
 		}
 	}
 
-	// if projectKey != "" && projectKey != connection.DefaultProjectKey {
-	connection.DefaultProjectKey = projectKey
-	err = p.userStore.StoreConnection(instanceID, user.MattermostUserID, connection)
-	if err != nil {
-		return
+	if projectKey != "" && projectKey != connection.DefaultProjectKey {
+		connection.DefaultProjectKey = projectKey
+		err = p.userStore.StoreConnection(instanceID, user.MattermostUserID, connection)
+		if err != nil {
+			return
+		}
 	}
-	// }
 
 	info, err := p.GetUserInfo(mattermostUserID, user)
 	if err != nil {

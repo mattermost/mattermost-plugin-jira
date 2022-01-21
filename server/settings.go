@@ -19,6 +19,7 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	if len(args) != 3 {
 		return p.responsef(header, helpText)
 	}
+
 	var value bool
 	switch args[2] {
 	case settingOn:
@@ -28,6 +29,7 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	default:
 		return p.responsef(header, helpText)
 	}
+
 	if connection.Settings == nil {
 		connection.Settings = &ConnectionSettings{}
 	}
