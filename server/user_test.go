@@ -17,11 +17,11 @@ func TestUserSettings_String(t *testing.T) {
 	}{
 		"notifications on": {
 			settings: ConnectionSettings{
-				SendNotificationsForMention:  false,
-				SendNotificationsForAssignee: false,
-				SendNotificationsForReporter: false,
+				SendNotificationsForMention:  true,
+				SendNotificationsForAssignee: true,
+				SendNotificationsForReporter: true,
 			},
-			expectedOutput: "\tNotifications: off",
+			expectedOutput: "\tNotifications Status:\n\t- Notifications for assignee : on \n\t- Notifications for mention : on \n\t- Notifications for reporter : on",
 		},
 		"notifications off": {
 			settings: ConnectionSettings{
@@ -29,7 +29,7 @@ func TestUserSettings_String(t *testing.T) {
 				SendNotificationsForAssignee: false,
 				SendNotificationsForReporter: false,
 			},
-			expectedOutput: "\tNotifications: on",
+			expectedOutput: "\tNotifications Status:\n\t- Notifications for assignee : off \n\t- Notifications for mention : off \n\t- Notifications for reporter : off",
 		},
 	}
 	for name, tt := range tests {
