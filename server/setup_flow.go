@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -17,6 +19,8 @@ const (
 	FlowStepWelcome                = "welcome"
 	FlowStepChooseEdition          = "choose_edition"
 	FlowStepConfirmNonAtlassianURL = "confirm-non-atlassian"
+	FlowStepConfigureCloudApp      = "configure-cloud-app"
+	FlowStepConfigureServerApp     = "configure-server-app"
 	FlowStepTestNext1              = "test-next1"
 	FlowStepTestNext2              = "test-next2"
 	FlowStepCancel                 = "cancel"
@@ -50,7 +54,8 @@ func (p *Plugin) NewFlowManager() *FlowManager {
 
 	fm.addStep(FlowStepWelcome, fm.stepWelcome())
 	fm.addStep(FlowStepChooseEdition, fm.stepChooseEdition())
-	fm.addStep(FlowStepConfirmNonAtlassianURL, steps.NewEmptyStep("", "<>/<> TODO Confirm Non-Atlassian URL"))
+	fm.addStep(FlowStepConfirmNonAtlassianURL, fm.stepConfirmNonAtlassianURL(""))
+	fm.addStep(FlowStepConfigureCloudApp, steps.NewEmptyStep("", "<>/<> TODO Configure Cloud App"))
 	fm.addStep(FlowStepTestNext1, steps.NewEmptyStep("", "<>/<> TODO Next 1"))
 	fm.addStep(FlowStepTestNext2, steps.NewEmptyStep("", "<>/<> TODO Next 2"))
 	fm.addStep(FlowStepCancel, steps.NewEmptyStep("", "<>/<> TODO Finished"))
@@ -100,6 +105,25 @@ func (fm *FlowManager) stepWelcome() steps.Step {
 		Build()
 }
 
+func (fm *FlowManager) dialogEnterJiraCloudURL() *steps.Dialog {
+	return &steps.Dialog{
+		Dialog: model.Dialog{
+			Title:            "Enter Jira Cloud Organization",
+			IntroductionText: "Enter Jira Cloud URL (usually, `https://yourorg.atlassian.net`), or just the organization part, `yourorg`.",
+			SubmitLabel:      "Continue",
+			Elements: []model.DialogElement{
+				{
+					DisplayName: "Jira Cloud organization",
+					Name:        "url",
+					Type:        "text",
+					SubType:     "text",
+				},
+			},
+		},
+		OnDialogSubmit: fm.submitCreateCloudInstance,
+	}
+}
+
 func (fm *FlowManager) stepChooseEdition() steps.Step {
 	pretext := fm.pretext(":white_check_mark: Choose Jira Edition - Cloud or Server")
 	text := "Please choose whether you use the Atlassian Jira Cloud or Server (on-prem) edition. "
@@ -107,24 +131,9 @@ func (fm *FlowManager) stepChooseEdition() steps.Step {
 	return steps.NewCustomStepBuilder("", text).
 		WithPretext(pretext).
 		WithButton(steps.Button{
-			Name:  "Jira Cloud",
-			Style: steps.Primary,
-			Dialog: &steps.Dialog{
-				Dialog: model.Dialog{
-					Title:            "Enter Jira Cloud Organization",
-					IntroductionText: "Enter Jira Cloud URL (usually, `https://yourorg.atlassian.net`), or just the organization part, `yourorg`.",
-					SubmitLabel:      "Continue",
-					Elements: []model.DialogElement{
-						{
-							DisplayName: "Jira Cloud organization",
-							Name:        "url",
-							Type:        "text",
-							SubType:     "text",
-						},
-					},
-				},
-				OnDialogSubmit: fm.submitCreateCloudInstance,
-			},
+			Name:   "Jira Cloud",
+			Style:  steps.Primary,
+			Dialog: fm.dialogEnterJiraCloudURL(),
 			OnClick: func() int {
 				return -1
 			},
@@ -161,29 +170,62 @@ func (fm *FlowManager) stepChooseEdition() steps.Step {
 		Build()
 }
 
+func (fm *FlowManager) stepConfirmNonAtlassianURL(jiraURL string) steps.Step {
+	pretext := fm.pretext(":warning: Confirm your Jira Cloud URL")
+	text := fmt.Sprintf("The URL you entered (`%s`) does not look like a Jira Cloud URL, they usually look like `yourorg.atlassian.net`.", jiraURL)
+	return steps.NewCustomStepBuilder("", text).
+		WithPretext(pretext).
+		WithButton(steps.Button{
+			Name:  "Confirm and Continue",
+			Style: steps.Primary,
+			OnClick: func() int {
+				return fm.skipOffset(FlowStepConfirmNonAtlassianURL, FlowStepConfigureCloudApp)
+			},
+		}).
+		WithButton(steps.Button{
+			Name:   "Re-enter",
+			Style:  steps.Primary,
+			Dialog: fm.dialogEnterJiraCloudURL(),
+			OnClick: func() int {
+				return -1
+			},
+		}).
+		WithButton(steps.Button{
+			Name:  "Cancel",
+			Style: steps.Danger,
+			OnClick: func() int {
+				return fm.skipOffset(FlowStepConfirmNonAtlassianURL, FlowStepCancel)
+			},
+		}).
+		Build()
+}
+
+var jiraOrgRegexp = regexp.MustCompile(`^[\w-]+$`)
+
 func (fm *FlowManager) submitCreateCloudInstance(userID string, submission map[string]interface{}) (int, *steps.Attachment, string, map[string]string) {
 	jiraURL, _ := submission["url"].(string)
 	if jiraURL == "" {
 		return 0, nil, "no URL in the request", nil
 	}
+	jiraURL = strings.TrimSpace(jiraURL)
+	if jiraOrgRegexp.MatchString(jiraURL) {
+		jiraURL = fmt.Sprintf("https://%s.atlassian.net", jiraURL)
+	}
+
 	u, err := url.Parse(jiraURL)
-	switch {
-	case err == nil && !strings.HasSuffix(u.Host, "atlassian.net"):
-		return fm.skipOffset(FlowStepChooseEdition, FlowStepConfirmNonAtlassianURL), nil, "", nil
-
-	case err == nil:
-		//
-
-	default:
+	if err != nil {
 		return 0, nil, err.Error(), nil
+	}
+	if !strings.HasSuffix(u.Host, "atlassian.net") {
+		fm.overrideStep(FlowStepConfirmNonAtlassianURL, fm.stepConfirmNonAtlassianURL(u.String()))
+		return fm.skipTo(userID, FlowStepConfirmNonAtlassianURL), nil, "", nil
 	}
 
 	err = fm.submitCreateInstance(false, userID, u.String())
 	if err != nil {
 		return 0, nil, err.Error(), nil
 	}
-
-	return fm.skipOffset(FlowStepChooseEdition, FlowStepTestNext1), nil, "", nil
+	return fm.skipTo(userID, FlowStepConfigureCloudApp), nil, "", nil
 }
 
 func (fm *FlowManager) submitCreateServerInstance(userID string, submission map[string]interface{}) (int, *steps.Attachment, string, map[string]string) {
@@ -191,8 +233,14 @@ func (fm *FlowManager) submitCreateServerInstance(userID string, submission map[
 	if jiraURL == "" {
 		return 0, nil, "no URL in the request", nil
 	}
+	jiraURL = strings.TrimSpace(jiraURL)
 
-	err := fm.submitCreateInstance(false, userID, jiraURL)
+	u, err := url.Parse(jiraURL)
+	if err != nil {
+		return 0, nil, err.Error(), nil
+	}
+
+	err = fm.submitCreateInstance(true, userID, u.String())
 	if err != nil {
 		return 0, nil, err.Error(), nil
 	}
@@ -204,8 +252,7 @@ func (fm *FlowManager) submitCreateInstance(isServer bool, userID, jiraURL strin
 
 	// TODO Validate URL? save Config
 
-	fm.logger.Errorf("<>/<> %s\n", jiraURL)
-
+	fm.logger.Errorf("<>/<> %v %q\n", isServer, jiraURL)
 	return nil
 }
 
@@ -225,6 +272,15 @@ func (fm *FlowManager) addStep(name string, step steps.Step) {
 	fm.steps = append(fm.steps, step)
 }
 
+func (fm *FlowManager) overrideStep(name string, step steps.Step) bool {
+	i, ok := fm.index[name]
+	if !ok {
+		return false
+	}
+	fm.steps[i] = step
+	return true
+}
+
 func (fm *FlowManager) skipOffset(fromName, toName string) int {
 	from, ok := fm.index[fromName]
 	if !ok {
@@ -235,4 +291,18 @@ func (fm *FlowManager) skipOffset(fromName, toName string) int {
 		return -1
 	}
 	return to - from - 1
+}
+
+func (fm *FlowManager) skipTo(userID, toName string) int {
+	_, current, err := fm.ctl.GetCurrentStep(userID)
+	if err != nil {
+		return -1
+	}
+	to, ok := fm.index[toName]
+	if !ok {
+		return -1
+	}
+
+	fmt.Printf("<>/<> skipTo: %v %s(%v): %v\n", current, toName, to, to-current-1)
+	return to - current - 1
 }
