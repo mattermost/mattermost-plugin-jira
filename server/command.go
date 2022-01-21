@@ -269,15 +269,15 @@ func createSettingsCommand(optInstance bool) *model.AutocompleteData {
 		"notifications", "[assinee|mention|reporter]", "manage notifications")
 
 	assigneeNotifications := model.NewAutocompleteData(
-		"assignee", "", "manage assignee notifications")
+		subCommandAssignee, "", "manage assignee notifications")
 	assigneeNotifications.AddStaticListArgument("value", true, setting)
 
 	mentionNotifications := model.NewAutocompleteData(
-		"mention", "", "manage mention notifications")
+		subCommandMention, "", "manage mention notifications")
 	mentionNotifications.AddStaticListArgument("value", true, setting)
 
 	reporterNotifications := model.NewAutocompleteData(
-		"reporter", "", "manage reporter notifications")
+		subCommandReporter, "", "manage reporter notifications")
 	reporterNotifications.AddStaticListArgument("value", true, setting)
 
 	notifications.AddCommand(assigneeNotifications)

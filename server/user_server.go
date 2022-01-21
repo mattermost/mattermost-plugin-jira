@@ -105,8 +105,8 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 
 	// Set default settings the first time a user connects
 	connection.Settings = &ConnectionSettings{
-		SendNotificationsForMention:true,
-		SendNotificationsForAssignee :true,
+		SendNotificationsForMention:  true,
+		SendNotificationsForAssignee: true,
 		SendNotificationsForReporter: true,
 	}
 

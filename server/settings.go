@@ -11,6 +11,10 @@ import (
 const (
 	settingOn  = "on"
 	settingOff = "off"
+
+	subCommandAssignee = "assignee"
+	subCommandMention  = "mention"
+	subCommandReporter = "reporter"
 )
 
 func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, mattermostUserID types.ID, connection *Connection, args []string) *model.CommandResponse {
@@ -34,11 +38,11 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 		connection.Settings = &ConnectionSettings{}
 	}
 	switch args[1] {
-	case "assignee":
+	case subCommandAssignee:
 		connection.Settings.SendNotificationsForAssignee = value
-	case "mention":
+	case subCommandMention:
 		connection.Settings.SendNotificationsForMention = value
-	case "reporter":
+	case subCommandReporter:
 		connection.Settings.SendNotificationsForReporter = value
 	default:
 		return p.responsef(header, helpText)
@@ -56,15 +60,15 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	}
 	notifications := settingOff
 	switch args[1] {
-	case "assignee":
+	case subCommandAssignee:
 		if updatedConnection.Settings.SendNotificationsForAssignee {
 			notifications = settingOn
 		}
-	case "mention":
+	case subCommandMention:
 		if updatedConnection.Settings.SendNotificationsForMention {
 			notifications = settingOn
 		}
-	case "reporter":
+	case subCommandReporter:
 		if updatedConnection.Settings.SendNotificationsForReporter {
 			notifications = settingOn
 		}
