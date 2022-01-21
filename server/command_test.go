@@ -70,7 +70,11 @@ func getMockUserStoreKV() mockUserStoreKV {
 	}
 
 	withNotifications := connection // copy
-	withNotifications.Settings = &ConnectionSettings{Notifications: true}
+	withNotifications.Settings = &ConnectionSettings{
+		SendNotificationsForMention:  true,
+		SendNotificationsForAssignee: true,
+		SendNotificationsForReporter: true,
+	}
 
 	return mockUserStoreKV{
 		users: map[types.ID]*User{
