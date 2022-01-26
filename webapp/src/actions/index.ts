@@ -6,10 +6,17 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
 import PluginId from 'plugin_id';
 import ActionTypes from 'action_types';
-import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
-import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances} from 'selectors';
+import {buildQueryString, doFetch, doFetchWithResponse} from 'client';
+import {getInstalledInstances, getPluginServerRoute, getUserConnectedInstances} from 'selectors';
 import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
-import {ChannelSubscription, CreateIssueRequest, SearchIssueParams, InstanceType, ProjectMetadata, APIResponse} from 'types/model';
+import {
+    APIResponse,
+    ChannelSubscription,
+    CreateIssueRequest,
+    InstanceType,
+    ProjectMetadata,
+    SearchIssueParams
+} from 'types/model';
 
 export const openConnectModal = () => {
     return {
@@ -44,7 +51,10 @@ export const openCreateModal = (postId) => {
     };
 };
 
-export const getJiraTickets
+export const getJiraTickets = (ticketID: any) => {
+    console.log(ticketID);
+    return null;
+};
 
 export const openCreateModalWithoutPost = (description, channelId) => (dispatch) => dispatch({
     type: ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST,
@@ -512,7 +522,7 @@ export function sendEphemeralPost(message: string, channelId?: string) {
     };
 }
 
-export function GetIssueByKey(issueKey:string){
+export function GetIssueByKey(issueKey: string) {
     return async (dispatch, getState) => {
         const url = getPluginServerRoute(getState()) + '/api/v2/get-isse-by-key';
         return doFetchWithResponse(`${url}${buildQueryString(params)}`);
