@@ -25,6 +25,7 @@ const (
 	keyInstances        = "instances/v3"
 	keyRSAKey           = "rsa_key"
 	keyTokenSecret      = "token_secret"
+	keySetupWizardData  = "setup_wizard_data"
 	prefixInstance      = "jira_instance_"
 	prefixOneTimeSecret = "ots_" // + unique key that will be deleted after the first verification
 	prefixStats         = "stats_"
@@ -38,6 +39,8 @@ type Store interface {
 	UserStore
 	SecretsStore
 	OTSStore
+
+	UpdateSetupWizardData(map[string]string) (map[string]string, error)
 }
 
 type SecretsStore interface {
@@ -350,6 +353,44 @@ func (store store) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr erro
 	}
 
 	return secret, nil
+}
+
+func (store store) UpdateSetupWizardData(update map[string]string) (map[string]string, error) {
+	// nil, nil == NOT_FOUND
+	data, appErr := store.plugin.API.KVGet(keySetupWizardData)
+	if appErr != nil {
+		return nil, errors.Wrap(appErr, "failed to read setup wizard state data")
+	}
+
+	prev := map[string]string{}
+	if len(data) > 0 {
+		err := json.Unmarshal(data, &prev)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse wizard state data")
+		}
+	}
+
+	changed := false
+	for key, value := range update {
+		if prev[key] != value {
+			prev[key] = value
+			changed = true
+		}
+	}
+
+	if changed {
+		encoded, err := json.Marshal(prev)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to encode wizard state data")
+		}
+
+		appErr := store.plugin.API.KVSet(keySetupWizardData, encoded)
+		if appErr != nil {
+			return nil, errors.Wrap(appErr, "failed to save setup wizard state data")
+		}
+	}
+
+	return prev, nil
 }
 
 func (store store) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
