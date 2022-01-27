@@ -22,3 +22,5 @@ require (
 	github.com/trivago/tgo v1.0.7 // indirect
 	golang.org/x/oauth2 v0.0.0-20210805134026-6f1e6394065a
 )
+
+replace github.com/mattermost/mattermost-plugin-api => ../mattermost-plugin-api

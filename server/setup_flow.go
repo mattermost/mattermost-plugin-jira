@@ -2,15 +2,14 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 	"regexp"
 	"strings"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-plugin-api/experimental/bot/logger"
 	"github.com/mattermost/mattermost-plugin-api/experimental/bot/poster"
 	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
 	"github.com/mattermost/mattermost-plugin-api/experimental/flow/steps"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 
 	"github.com/mattermost/mattermost-server/v6/model"
 )
@@ -27,47 +26,36 @@ const (
 )
 
 type FlowManager struct {
-	client           *pluginapi.Client
-	getConfiguration func() config
-	pluginURL        string
-
-	logger logger.Logger
-	poster poster.Poster
-	store  flow.Store
-	ctl    flow.Controller
-	index  map[string]int
-	steps  []steps.Step
+	p     *Plugin
+	ctl   flow.Controller
+	index map[string]int
+	steps []steps.Step
 }
 
 func (p *Plugin) NewFlowManager() *FlowManager {
-	conf := p.getConfig()
-
 	fm := &FlowManager{
-		client:           p.client,
-		logger:           p.log,
-		pluginURL:        *p.client.Configuration.GetConfig().ServiceSettings.SiteURL + "/" + "plugins" + "/" + manifest.ID,
-		poster:           poster.NewPoster(&p.client.Post, conf.botUserID),
-		store:            flow.NewFlowStore(*p.client, "flow_store"),
-		getConfiguration: p.getConfig,
-		index:            map[string]int{},
+		p:     p,
+		index: map[string]int{},
 	}
-
 	fm.addStep(FlowStepWelcome, fm.stepWelcome())
 	fm.addStep(FlowStepChooseEdition, fm.stepChooseEdition())
 	fm.addStep(FlowStepConfirmNonAtlassianURL, fm.stepConfirmNonAtlassianURL(""))
-	fm.addStep(FlowStepConfigureCloudApp, steps.NewEmptyStep("", "<>/<> TODO Configure Cloud App"))
+	fm.addStep(FlowStepCloudURLError, fm.stepConfirmNonAtlassianURL(""))
+	fm.addStep(FlowStepConfigureCloudApp, fm.stepConfigureCloudApp(""))
 	fm.addStep(FlowStepTestNext1, steps.NewEmptyStep("", "<>/<> TODO Next 1"))
 	fm.addStep(FlowStepTestNext2, steps.NewEmptyStep("", "<>/<> TODO Next 2"))
 	fm.addStep(FlowStepCancel, steps.NewEmptyStep("", "<>/<> TODO Finished"))
 
+	conf := p.getConfig()
+	pluginURL := *p.client.Configuration.GetConfig().ServiceSettings.SiteURL + "/" + "plugins" + "/" + manifest.ID
 	fm.ctl = flow.NewFlowController(
-		fm.logger,
+		p.log,
 		p.gorillaRouter,
-		fm.poster,
+		poster.NewPoster(&p.client.Post, conf.botUserID),
 		&p.client.Frontend,
-		fm.pluginURL,
+		pluginURL,
 		flow.NewFlow(fm.steps, routeSetupWizard, nil),
-		fm.store,
+		flow.NewFlowStore(*p.client, "flow_store"),
 		&propertyStore{},
 	)
 
@@ -91,15 +79,15 @@ func (fm *FlowManager) stepWelcome() steps.Step {
 		WithButton(steps.Button{
 			Name:  "Continue",
 			Style: steps.Primary,
-			OnClick: func() int {
-				return fm.skipOffset(FlowStepWelcome, FlowStepChooseEdition)
+			OnClick: func(userID string) int {
+				return fm.skip(userID, FlowStepChooseEdition)
 			},
 		}).
 		WithButton(steps.Button{
 			Name:  "Cancel",
 			Style: steps.Danger,
-			OnClick: func() int {
-				return fm.skipOffset(FlowStepWelcome, FlowStepCancel)
+			OnClick: func(userID string) int {
+				return fm.skip(userID, FlowStepCancel)
 			},
 		}).
 		Build()
@@ -134,7 +122,7 @@ func (fm *FlowManager) stepChooseEdition() steps.Step {
 			Name:   "Jira Cloud",
 			Style:  steps.Primary,
 			Dialog: fm.dialogEnterJiraCloudURL(),
-			OnClick: func() int {
+			OnClick: func(userID string) int {
 				return -1
 			},
 		}).
@@ -156,15 +144,15 @@ func (fm *FlowManager) stepChooseEdition() steps.Step {
 				},
 				OnDialogSubmit: fm.submitCreateServerInstance,
 			},
-			OnClick: func() int {
+			OnClick: func(userID string) int {
 				return -1
 			},
 		}).
 		WithButton(steps.Button{
 			Name:  "Cancel",
 			Style: steps.Danger,
-			OnClick: func() int {
-				return fm.skipOffset(FlowStepChooseEdition, FlowStepCancel)
+			OnClick: func(userID string) int {
+				return fm.skip(userID, FlowStepCancel)
 			},
 		}).
 		Build()
@@ -178,23 +166,68 @@ func (fm *FlowManager) stepConfirmNonAtlassianURL(jiraURL string) steps.Step {
 		WithButton(steps.Button{
 			Name:  "Confirm and Continue",
 			Style: steps.Primary,
-			OnClick: func() int {
-				return fm.skipOffset(FlowStepConfirmNonAtlassianURL, FlowStepConfigureCloudApp)
+			OnClick: func(userID string) int {
+				// TODO: <>/<> need persistent state, can't really override
+				// OnClick, this only works on a single server, and because ctl
+				// stores a pointer to steps.
+				jiraURL, err := fm.p.installInactiveCloudInstance(jiraURL)
+				if err != nil {
+					panic(err.Error())
+					return -1
+				}
+				return fm.overrideAndSkip(userID, FlowStepConfigureCloudApp, fm.stepConfigureCloudApp(jiraURL))
 			},
 		}).
 		WithButton(steps.Button{
 			Name:   "Re-enter",
 			Style:  steps.Primary,
 			Dialog: fm.dialogEnterJiraCloudURL(),
-			OnClick: func() int {
+			OnClick: func(userID string) int {
 				return -1
 			},
 		}).
 		WithButton(steps.Button{
 			Name:  "Cancel",
 			Style: steps.Danger,
-			OnClick: func() int {
-				return fm.skipOffset(FlowStepConfirmNonAtlassianURL, FlowStepCancel)
+			OnClick: func(userID string) int {
+				return fm.skip(userID, FlowStepCancel)
+			},
+		}).
+		Build()
+}
+
+func (fm *FlowManager) stepConfigureCloudApp(jiraURL string) steps.Step {
+	pretext := fm.pretext(":white_check_mark: Configure Mattermost App in Jira")
+	text := fmt.Sprintf("%s has been successfully added. ", jiraURL)
+	text += "To finish the configuration, create a new app in your Jira instance following these steps:\n\n"
+	text += fmt.Sprintf("1. Navigate to [**Settings > Apps > Manage Apps**](%s/plugins/servlet/upm?source=side_nav_manage_addons).\n", jiraURL)
+	text += "2. Click **Settings** at bottom of page, enable development mode, and apply this change.\n"
+	text += "  - Enabling development mode allows you to install apps that are not from the Atlassian Marketplace.\n"
+	text += "3. Click **Upload app**.\n"
+	text += fmt.Sprintf("4. In the **From this URL field**, enter: `%s`", fm.p.GetPluginURL()+instancePath(routeACJSON, types.ID(jiraURL)))
+	text += `5. Wait for the app to install. Once completed, you should see an "Installed and ready to go!" message.`
+
+	return steps.NewCustomStepBuilder("", text).
+		WithPretext(pretext).
+		WithButton(steps.Button{
+			Name:  "Continue to Connect Your User Account",
+			Style: steps.Primary,
+			OnClick: func(userID string) int {
+				return -1
+			},
+		}).
+		WithButton(steps.Button{
+			Name:  "Ask a Jira Admin",
+			Style: steps.Warning,
+			OnClick: func(userID string) int {
+				return -1
+			},
+		}).
+		WithButton(steps.Button{
+			Name:  "Cancel",
+			Style: steps.Danger,
+			OnClick: func(userID string) int {
+				return fm.skip(userID, FlowStepCancel)
 			},
 		}).
 		Build()
@@ -212,20 +245,16 @@ func (fm *FlowManager) submitCreateCloudInstance(userID string, submission map[s
 		jiraURL = fmt.Sprintf("https://%s.atlassian.net", jiraURL)
 	}
 
-	u, err := url.Parse(jiraURL)
-	if err != nil {
-		return 0, nil, err.Error(), nil
-	}
-	if !strings.HasSuffix(u.Host, "atlassian.net") {
-		fm.overrideStep(FlowStepConfirmNonAtlassianURL, fm.stepConfirmNonAtlassianURL(u.String()))
-		return fm.skipTo(userID, FlowStepConfirmNonAtlassianURL), nil, "", nil
+	if !utils.IsJiraCloudURL(jiraURL) {
+		return fm.overrideAndSkip(userID, FlowStepConfirmNonAtlassianURL, fm.stepConfirmNonAtlassianURL(jiraURL)), nil, "", nil
 	}
 
-	err = fm.submitCreateInstance(false, userID, u.String())
+	jiraURL, err := fm.p.installInactiveCloudInstance(jiraURL)
 	if err != nil {
 		return 0, nil, err.Error(), nil
 	}
-	return fm.skipTo(userID, FlowStepConfigureCloudApp), nil, "", nil
+
+	return fm.overrideAndSkip(userID, FlowStepConfigureCloudApp, fm.stepConfigureCloudApp(jiraURL)), nil, "", nil
 }
 
 func (fm *FlowManager) submitCreateServerInstance(userID string, submission map[string]interface{}) (int, *steps.Attachment, string, map[string]string) {
@@ -235,25 +264,11 @@ func (fm *FlowManager) submitCreateServerInstance(userID string, submission map[
 	}
 	jiraURL = strings.TrimSpace(jiraURL)
 
-	u, err := url.Parse(jiraURL)
+	_, _, err := fm.p.installServerInstance(jiraURL)
 	if err != nil {
 		return 0, nil, err.Error(), nil
 	}
-
-	err = fm.submitCreateInstance(true, userID, u.String())
-	if err != nil {
-		return 0, nil, err.Error(), nil
-	}
-
-	return fm.skipOffset(FlowStepChooseEdition, FlowStepTestNext2), nil, "", nil
-}
-
-func (fm *FlowManager) submitCreateInstance(isServer bool, userID, jiraURL string) error {
-
-	// TODO Validate URL? save Config
-
-	fm.logger.Errorf("<>/<> %v %q\n", isServer, jiraURL)
-	return nil
+	return fm.skip(userID, FlowStepTestNext2), nil, "", nil
 }
 
 func (fm FlowManager) pretext(t string) string {
@@ -272,28 +287,17 @@ func (fm *FlowManager) addStep(name string, step steps.Step) {
 	fm.steps = append(fm.steps, step)
 }
 
-func (fm *FlowManager) overrideStep(name string, step steps.Step) bool {
+func (fm *FlowManager) overrideAndSkip(userID, name string, step steps.Step) int {
 	i, ok := fm.index[name]
 	if !ok {
-		return false
+		return -1
 	}
 	fm.steps[i] = step
-	return true
+
+	return fm.skip(userID, name)
 }
 
-func (fm *FlowManager) skipOffset(fromName, toName string) int {
-	from, ok := fm.index[fromName]
-	if !ok {
-		return -1
-	}
-	to, ok := fm.index[toName]
-	if !ok {
-		return -1
-	}
-	return to - from - 1
-}
-
-func (fm *FlowManager) skipTo(userID, toName string) int {
+func (fm *FlowManager) skip(userID, toName string) int {
 	_, current, err := fm.ctl.GetCurrentStep(userID)
 	if err != nil {
 		return -1
@@ -303,6 +307,5 @@ func (fm *FlowManager) skipTo(userID, toName string) int {
 		return -1
 	}
 
-	fmt.Printf("<>/<> skipTo: %v %s(%v): %v\n", current, toName, to, to-current-1)
-	return to - current - 1
+	return to - current
 }

@@ -15,37 +15,35 @@ import (
 
 func TestNormalizeInstallURL(t *testing.T) {
 	for _, tc := range []struct {
-		in, siteURL, out, err string
+		in, out, err string
 	}{
 		// Happy
-		{"http://mmtest.atlassian.net", "", "http://mmtest.atlassian.net", ""},
-		{"https://mmtest.atlassian.net", "", "https://mmtest.atlassian.net", ""},
-		{"some://mmtest.atlassian.net", "", "some://mmtest.atlassian.net", ""},
-		{"mmtest.atlassian.net", "", "https://mmtest.atlassian.net", ""},
-		{"mmtest.atlassian.net/", "", "https://mmtest.atlassian.net", ""},
-		{"mmtest.atlassian.net/abc", "", "https://mmtest.atlassian.net/abc", ""},
-		{"mmtest.atlassian.net/abc/", "", "https://mmtest.atlassian.net/abc", ""},
-		{"mmtest", "", "https://mmtest", ""},
-		{"mmtest/", "", "https://mmtest", ""},
-		{"//xyz.com", "", "https://xyz.com", ""},
-		{"//xyz.com/", "", "https://xyz.com", ""},
+		{"http://mmtest.atlassian.net", "http://mmtest.atlassian.net", ""},
+		{"https://mmtest.atlassian.net", "https://mmtest.atlassian.net", ""},
+		{"some://mmtest.atlassian.net", "some://mmtest.atlassian.net", ""},
+		{"mmtest.atlassian.net", "https://mmtest.atlassian.net", ""},
+		{"mmtest.atlassian.net/", "https://mmtest.atlassian.net", ""},
+		{"mmtest.atlassian.net/abc", "https://mmtest.atlassian.net/abc", ""},
+		{"mmtest.atlassian.net/abc/", "https://mmtest.atlassian.net/abc", ""},
+		{"mmtest", "https://mmtest", ""},
+		{"mmtest/", "https://mmtest", ""},
+		{"//xyz.com", "https://xyz.com", ""},
+		{"//xyz.com/", "https://xyz.com", ""},
 
 		// Errors
-		{"[jdsh", "", "",
+		{"[jdsh", "",
 			`parse "//[jdsh": missing ']' in host`},
-		{"/mmtest", "", "",
+		{"/mmtest", "",
 			`Invalid URL, no hostname: "/mmtest"`},
-		{"/mmtest/", "", "",
+		{"/mmtest/", "",
 			`Invalid URL, no hostname: "/mmtest/"`},
-		{"http:/mmtest/", "", "",
+		{"http:/mmtest/", "",
 			`Invalid URL, no hostname: "http:/mmtest/"`},
-		{"hƒƒp://xyz.com", "", "",
+		{"hƒƒp://xyz.com", "",
 			`parse "hƒƒp://xyz.com": first path segment in URL cannot contain colon`},
-		{"https://mattermost.site.url", "https://mattermost.site.url/", "",
-			"https://mattermost.site.url is the Mattermost site URL. Please use your Jira URL with `/jira install`."},
 	} {
 		t.Run(tc.in, func(t *testing.T) {
-			out, err := NormalizeInstallURL(tc.siteURL, tc.in)
+			out, err := NormalizeJiraURL(tc.in)
 			require.Equal(t, tc.out, out)
 			errTxt := ""
 			if err != nil {
@@ -142,12 +140,10 @@ func TestByteSizeString(t *testing.T) {
 }
 
 func TestIsJiraCloudURL(t *testing.T) {
-	cloudLinkIsCloud, err := IsJiraCloudURL("https://mmtest.atlassian.net")
-	require.Nil(t, err)
+	cloudLinkIsCloud := IsJiraCloudURL("https://mmtest.atlassian.net")
 	assert.True(t, cloudLinkIsCloud)
 
-	serverLinkIsCloud, err := IsJiraCloudURL("https://somelink.com:1234/jira")
-	require.Nil(t, err)
+	serverLinkIsCloud := IsJiraCloudURL("https://somelink.com:1234/jira")
 	assert.False(t, serverLinkIsCloud)
 }
 
@@ -171,8 +167,20 @@ func TestIsJiraAccessible(t *testing.T) {
 			httpmock.RegisterResponder("GET", dummyURL+"/status",
 				httpmock.NewStringResponder(tt.status, tt.resBody))
 
-			jiraIsAccessible, _ := IsJiraAccessible(dummyURL)
-			assert.Equal(t, tt.accessible, jiraIsAccessible)
+			_, err := CheckJiraURL("", dummyURL, false)
+			assert.Equal(t, tt.accessible, err == nil)
 		})
 	}
+
+	t.Run("site URL", func(t *testing.T) {
+		_, err := CheckJiraURL(dummyURL, dummyURL, false)
+		assert.Error(t, err)
+		assert.Equal(t, "https://dummy-url.com is the Mattermost site URL. Please use your Jira URL", err.Error())
+	})
+
+	t.Run("https URL", func(t *testing.T) {
+		_, err := CheckJiraURL("", "http://test.com", true)
+		assert.Error(t, err)
+		assert.Equal(t, "a secure https URL is required", err.Error())
+	})
 }

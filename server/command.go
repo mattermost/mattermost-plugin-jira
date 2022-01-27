@@ -785,32 +785,10 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 	if len(args) != 1 {
 		return p.help(header)
 	}
-	jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
+
+	jiraURL, err := p.installInactiveCloudInstance(args[0])
 	if err != nil {
-		return p.responsef(header, err.Error())
-	}
-
-	accessible, errMsg := checkIfJiraIsAccessible(jiraURL)
-	if !accessible {
-		return p.responsef(header, errMsg)
-	}
-	if strings.Contains(jiraURL, "http:") {
-		jiraURL = strings.ReplaceAll(jiraURL, "http:", "https:")
-		return p.responsef(header, "`/jira install cloud` requires a secure connection (HTTPS). Please run the following command:\n```\n/jira install cloud %s\n```", jiraURL)
-	}
-
-	instances, _ := p.instanceStore.LoadInstances()
-	if !p.enterpriseChecker.HasEnterpriseFeatures() {
-		if instances != nil && len(instances.IDs()) > 0 {
-			return p.responsef(header, licenseErrorString)
-		}
-	}
-
-	// Create an "uninitialized" instance of Jira Cloud that will
-	// receive the /installed callback
-	err = p.instanceStore.CreateInactiveCloudInstance(types.ID(jiraURL))
-	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.responsef(header, "%v", err)
 	}
 
 	return p.respondCommandTemplate(header, "/command/install_cloud.md", map[string]string{
@@ -831,24 +809,7 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 	if len(args) != 1 {
 		return p.help(header)
 	}
-	jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
-	if err != nil {
-		return p.responsef(header, err.Error())
-	}
-	isJiraCloudURL, err := utils.IsJiraCloudURL(jiraURL)
-	if err != nil {
-		return p.responsef(header, err.Error())
-	}
-	if isJiraCloudURL {
-		return p.responsef(header, "The Jira URL you provided looks like a Jira Cloud URL - install it with:\n```\n/jira install cloud %s\n```", jiraURL)
-	}
-
-	accessible, errMsg := checkIfJiraIsAccessible(jiraURL)
-	if !accessible {
-		return p.responsef(header, errMsg)
-	}
-	instance := newServerInstance(p, jiraURL)
-	err = p.InstallInstance(instance)
+	jiraURL, instance, err := p.installServerInstance(args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -863,17 +824,6 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 		"MattermostKey": instance.GetMattermostKey(),
 		"PublicKey":     strings.TrimSpace(string(pkey)),
 	})
-}
-
-func checkIfJiraIsAccessible(jiraURL string) (bool, string) {
-	jiraIsAccessible, err := utils.IsJiraAccessible(jiraURL)
-	if err != nil {
-		return false, err.Error()
-	}
-	if !jiraIsAccessible {
-		return false, jiraConnectionErrorText
-	}
-	return true, ""
 }
 
 // executeUninstall will uninstall the jira instance if the url matches, and then update all connected clients
@@ -893,7 +843,7 @@ func executeInstanceUninstall(p *Plugin, c *plugin.Context, header *model.Comman
 	instanceType := InstanceType(args[0])
 	instanceURL := args[1]
 
-	id, err := utils.NormalizeInstallURL(p.GetSiteURL(), instanceURL)
+	id, err := utils.NormalizeJiraURL(instanceURL)
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}

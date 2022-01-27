@@ -27,11 +27,26 @@ type serverInstance struct {
 
 var _ Instance = (*serverInstance)(nil)
 
-func newServerInstance(p *Plugin, jiraURL string) *serverInstance {
-	return &serverInstance{
+func (p *Plugin) installServerInstance(rawURL string) (string, *serverInstance, error) {
+	jiraURL, err := utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
+	if err != nil {
+		return "", nil, err
+	}
+	if utils.IsJiraCloudURL(jiraURL) {
+		return "", nil, errors.Errorf("`%s` is not a Jira server URL, it refers to Jira Cloud", jiraURL)
+	}
+
+	instance := &serverInstance{
 		InstanceCommon: newInstanceCommon(p, ServerInstanceType, types.ID(jiraURL)),
 		MattermostKey:  p.GetPluginKey(),
 	}
+
+	err = p.InstallInstance(instance)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return jiraURL, instance, err
 }
 
 func (si *serverInstance) GetURL() string {

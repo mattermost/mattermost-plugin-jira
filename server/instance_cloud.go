@@ -64,6 +64,29 @@ func newCloudInstance(p *Plugin, key types.ID, installed bool, rawASC string, as
 	}
 }
 
+func (p *Plugin) installInactiveCloudInstance(rawURL string) (string, error) {
+	jiraURL, err := utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
+	if err != nil {
+		return "", err
+	}
+
+	instances, _ := p.instanceStore.LoadInstances()
+	if !p.enterpriseChecker.HasEnterpriseFeatures() {
+		if instances != nil && len(instances.IDs()) > 0 {
+			return "", errors.New(licenseErrorString)
+		}
+	}
+
+	// Create an "uninitialized" instance of Jira Cloud that will
+	// receive the /installed callback
+	err = p.instanceStore.CreateInactiveCloudInstance(types.ID(jiraURL))
+	if err != nil {
+		return "", err
+	}
+
+	return jiraURL, err
+}
+
 func (ci *cloudInstance) GetMattermostKey() string {
 	return ci.AtlassianSecurityContext.Key
 }
