@@ -5,307 +5,241 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/mattermost/mattermost-plugin-api/experimental/bot/poster"
 	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
-	"github.com/mattermost/mattermost-plugin-api/experimental/flow/steps"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
-
 	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/pkg/errors"
 )
 
 const (
-	FlowStepWelcome                = "welcome"
-	FlowStepChooseEdition          = "choose_edition"
-	FlowStepConfirmNonAtlassianURL = "confirm-non-atlassian"
-	FlowStepConfigureCloudApp      = "configure-cloud-app"
-	FlowStepConfigureServerApp     = "configure-server-app"
-	FlowStepTestNext1              = "test-next1"
-	FlowStepTestNext2              = "test-next2"
-	FlowStepCancel                 = "cancel"
+	stepSetupWelcome            flow.Name = "setup-welcome"
+	stepDelegate                          = "delegate"
+	stepDelegated                         = "delegated"
+	stepChooseEdition                     = "choose-edition"
+	stepAddedCloudInstance                = "added-cloud"
+	stepEnableJiraDeveloperMode           = "enable-devmode"
+	stepUploadJiraApp                     = "upload-ac-app"
+	stepConfigureServerApp                = "configure-server-app"
+	stepCancel                            = "cancel"
 )
 
-type FlowManager struct {
-	p     *Plugin
-	ctl   flow.Controller
-	index map[string]int
-	steps []steps.Step
-}
+const (
+	keyEdition             = "Edition"
+	keyDelegatedTo         = "Delegated"
+	keyJiraURL             = "URL"
+	keyAtlassianConnectURL = "ACURL"
+)
 
-func (p *Plugin) NewFlowManager() *FlowManager {
-	fm := &FlowManager{
-		p:     p,
-		index: map[string]int{},
-	}
-	fm.addStep(FlowStepWelcome, fm.stepWelcome())
-	fm.addStep(FlowStepChooseEdition, fm.stepChooseEdition())
-	fm.addStep(FlowStepConfirmNonAtlassianURL, fm.stepConfirmNonAtlassianURL(""))
-	fm.addStep(FlowStepCloudURLError, fm.stepConfirmNonAtlassianURL(""))
-	fm.addStep(FlowStepConfigureCloudApp, fm.stepConfigureCloudApp(""))
-	fm.addStep(FlowStepTestNext1, steps.NewEmptyStep("", "<>/<> TODO Next 1"))
-	fm.addStep(FlowStepTestNext2, steps.NewEmptyStep("", "<>/<> TODO Next 2"))
-	fm.addStep(FlowStepCancel, steps.NewEmptyStep("", "<>/<> TODO Finished"))
-
-	conf := p.getConfig()
+func (p *Plugin) NewSetupFlow() flow.Flow {
 	pluginURL := *p.client.Configuration.GetConfig().ServiceSettings.SiteURL + "/" + "plugins" + "/" + manifest.ID
-	fm.ctl = flow.NewFlowController(
-		p.log,
-		p.gorillaRouter,
-		poster.NewPoster(&p.client.Post, conf.botUserID),
-		&p.client.Frontend,
-		pluginURL,
-		flow.NewFlow(fm.steps, routeSetupWizard, nil),
-		flow.NewFlowStore(*p.client, "flow_store"),
-		&propertyStore{},
-	)
+	conf := p.getConfig()
+	return flow.NewUserFlow("setup", p.client, pluginURL, conf.botUserID).
+		WithSteps(
+			p.stepWelcome(),
+			p.stepDelegate(),
+			p.stepDelegated(),
+			p.stepChooseEdition(),
 
-	return fm
+			// Jira Cloud steps
+			p.stepAddedCloudInstance(),
+			p.stepEnableJiraDeveloperMode(),
+			p.stepUploadJiraApp(),
+		).
+		InitHTTP(p.gorillaRouter)
 }
 
-func (fm *FlowManager) StartConfigurationWizard(userID string) error {
-	err := fm.ctl.Start(userID)
-	if err != nil {
-		return err
-	}
-
-	return nil
+var cancelButton = flow.Button{
+	Name:    "Cancel",
+	Color:   flow.ColorDanger,
+	OnClick: flow.Goto(stepCancel),
 }
 
-func (fm *FlowManager) stepWelcome() steps.Step {
-	pretext := fm.pretext(":wave: Welcome to Jira for Mattermost!")
-	text := "Configure the Mattermost Jira integration. This step requires Mattermost site administrator access. It also requires involvement from your organization's Jira administrator. If you do not have administrator access to Jira, please find out who can help you with the setup before proceeding further."
-	return steps.NewCustomStepBuilder("", text).
-		WithPretext(pretext).
-		WithButton(steps.Button{
-			Name:  "Continue",
-			Style: steps.Primary,
-			OnClick: func(userID string) int {
-				return fm.skip(userID, FlowStepChooseEdition)
-			},
-		}).
-		WithButton(steps.Button{
-			Name:  "Cancel",
-			Style: steps.Danger,
-			OnClick: func(userID string) int {
-				return fm.skip(userID, FlowStepCancel)
-			},
-		}).
-		Build()
-}
-
-func (fm *FlowManager) dialogEnterJiraCloudURL() *steps.Dialog {
-	return &steps.Dialog{
-		Dialog: model.Dialog{
-			Title:            "Enter Jira Cloud Organization",
-			IntroductionText: "Enter Jira Cloud URL (usually, `https://yourorg.atlassian.net`), or just the organization part, `yourorg`.",
-			SubmitLabel:      "Continue",
-			Elements: []model.DialogElement{
-				{
-					DisplayName: "Jira Cloud organization",
-					Name:        "url",
-					Type:        "text",
-					SubType:     "text",
-				},
-			},
-		},
-		OnDialogSubmit: fm.submitCreateCloudInstance,
+func continueButton(next flow.Name) flow.Button {
+	return flow.Button{
+		Name:    "Continue",
+		Color:   flow.ColorPrimary,
+		OnClick: flow.Goto(next),
 	}
 }
 
-func (fm *FlowManager) stepChooseEdition() steps.Step {
-	pretext := fm.pretext(":white_check_mark: Choose Jira Edition - Cloud or Server")
-	text := "Please choose whether you use the Atlassian Jira Cloud or Server (on-prem) edition. "
-	text += "If you need to integrate with more than one Jira instance, please refer to the [documentation](<>/<> TODO)"
-	return steps.NewCustomStepBuilder("", text).
-		WithPretext(pretext).
-		WithButton(steps.Button{
-			Name:   "Jira Cloud",
-			Style:  steps.Primary,
-			Dialog: fm.dialogEnterJiraCloudURL(),
-			OnClick: func(userID string) int {
-				return -1
-			},
+func (p *Plugin) stepWelcome() flow.Step {
+	return flow.NewStep(stepSetupWelcome).
+		WithPretext("##### :wave: Welcome to Jira integration! [Learn more](https://github.com/mattermost/mattermost-plugin-jira#readme)").
+		WithTitle("Configure the integration.").
+		WithMessage("Just a few more steps to go!\n" +
+			"- **Step 1:** <>/<> TODO.\n").
+		WithButton(continueButton(stepDelegate)).
+		WithButton(cancelButton)
+}
+
+func (p *Plugin) stepDelegate() flow.Step {
+	return flow.NewStep(stepDelegate).
+		WithPretext("##### :hand: Are you a Jira administrator?").
+		WithMessage("Configuring the integration requires administrator access to Jira. If you are not a Jira administrator you can ask another Mattermost user to do it.").
+		WithButton(flow.Button{
+			Name:    "Continue myself",
+			Color:   flow.ColorPrimary,
+			OnClick: flow.Goto(stepChooseEdition),
 		}).
-		WithButton(steps.Button{
-			Name:  "Jira Server",
-			Style: steps.Primary,
-			Dialog: &steps.Dialog{
-				Dialog: model.Dialog{
-					Title:       "Enter Jira Server URL",
-					SubmitLabel: "Continue",
-					Elements: []model.DialogElement{
-						{
-							DisplayName: "Jira Server URL",
-							Name:        "url",
-							Type:        "text",
-							SubType:     "text",
-						},
+		WithButton(flow.Button{
+			Name:  "Ask someone else",
+			Color: flow.ColorDefault,
+			Dialog: &model.Dialog{
+				Title:       "Send instructions to",
+				SubmitLabel: "Send",
+				Elements: []model.DialogElement{
+					{
+						DisplayName: "", // TODO: This will still show a *
+						Name:        "aider",
+						Type:        "select",
+						DataSource:  "users",
+						Placeholder: "Search for people",
 					},
 				},
-				OnDialogSubmit: fm.submitCreateServerInstance,
 			},
-			OnClick: func(userID string) int {
-				return -1
-			},
+			OnDialogSubmit: p.submitDelegateSelection,
 		}).
-		WithButton(steps.Button{
-			Name:  "Cancel",
-			Style: steps.Danger,
-			OnClick: func(userID string) int {
-				return fm.skip(userID, FlowStepCancel)
-			},
-		}).
-		Build()
+		WithButton(cancelButton)
 }
 
-func (fm *FlowManager) stepConfirmNonAtlassianURL(jiraURL string) steps.Step {
-	pretext := fm.pretext(":warning: Confirm your Jira Cloud URL")
-	text := fmt.Sprintf("The URL you entered (`%s`) does not look like a Jira Cloud URL, they usually look like `yourorg.atlassian.net`.", jiraURL)
-	return steps.NewCustomStepBuilder("", text).
-		WithPretext(pretext).
-		WithButton(steps.Button{
-			Name:  "Confirm and Continue",
-			Style: steps.Primary,
-			OnClick: func(userID string) int {
-				// TODO: <>/<> need persistent state, can't really override
-				// OnClick, this only works on a single server, and because ctl
-				// stores a pointer to steps.
-				jiraURL, err := fm.p.installInactiveCloudInstance(jiraURL)
-				if err != nil {
-					panic(err.Error())
-					return -1
-				}
-				return fm.overrideAndSkip(userID, FlowStepConfigureCloudApp, fm.stepConfigureCloudApp(jiraURL))
-			},
-		}).
-		WithButton(steps.Button{
-			Name:   "Re-enter",
-			Style:  steps.Primary,
-			Dialog: fm.dialogEnterJiraCloudURL(),
-			OnClick: func(userID string) int {
-				return -1
-			},
-		}).
-		WithButton(steps.Button{
-			Name:  "Cancel",
-			Style: steps.Danger,
-			OnClick: func(userID string) int {
-				return fm.skip(userID, FlowStepCancel)
-			},
-		}).
-		Build()
+func (p *Plugin) submitDelegateSelection(userID string, submission map[string]interface{}, state flow.State) (flow.Name, flow.State, string, map[string]string) {
+	aiderIDRaw, ok := submission["aider"]
+	if !ok {
+		return "", nil, "aider missing", nil
+	}
+	aiderID, ok := aiderIDRaw.(string)
+	if !ok {
+		return "", nil, "aider is not a string", nil
+	}
+
+	aider, err := p.client.User.Get(aiderID)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "failed get user").Error(), nil
+	}
+
+	// err = p.StartSetupWizard(aider.Id, true)
+	// if err != nil {
+	// 	return 0, nil, errors.Wrap(err, "failed start configration wizzard").Error(), nil
+	// }
+
+	state[keyDelegatedTo] = aider.Id
+	return stepDelegated, state, "", nil
 }
 
-func (fm *FlowManager) stepConfigureCloudApp(jiraURL string) steps.Step {
-	pretext := fm.pretext(":white_check_mark: Configure Mattermost App in Jira")
-	text := fmt.Sprintf("%s has been successfully added. ", jiraURL)
-	text += "To finish the configuration, create a new app in your Jira instance following these steps:\n\n"
-	text += fmt.Sprintf("1. Navigate to [**Settings > Apps > Manage Apps**](%s/plugins/servlet/upm?source=side_nav_manage_addons).\n", jiraURL)
-	text += "2. Click **Settings** at bottom of page, enable development mode, and apply this change.\n"
-	text += "  - Enabling development mode allows you to install apps that are not from the Atlassian Marketplace.\n"
-	text += "3. Click **Upload app**.\n"
-	text += fmt.Sprintf("4. In the **From this URL field**, enter: `%s`", fm.p.GetPluginURL()+instancePath(routeACJSON, types.ID(jiraURL)))
-	text += `5. Wait for the app to install. Once completed, you should see an "Installed and ready to go!" message.`
+func (p *Plugin) stepDelegated() flow.Step {
+	return flow.NewStep(stepDelegated).
+		WithMessage("Asked {{.Delegated}} to finish configuring the integration").
+		WithButton(cancelButton)
+}
 
-	return steps.NewCustomStepBuilder("", text).
-		WithPretext(pretext).
-		WithButton(steps.Button{
-			Name:  "Continue to Connect Your User Account",
-			Style: steps.Primary,
-			OnClick: func(userID string) int {
-				return -1
+func (p *Plugin) stepChooseEdition() flow.Step {
+	return flow.NewStep(stepChooseEdition).
+		WithPretext("##### :white_check_mark: Choose Jira Edition.").
+		WithTitle("Cloud or Server (on-premise).").
+		WithMessage("Please choose whether you use the Atlassian Jira Cloud or Server (on-premise) edition. " +
+			"If you need to integrate with more than one Jira instance, please refer to the [documentation](<>/<> TODO)").
+		WithButton(flow.Button{
+			Name:  "Jira Cloud",
+			Color: flow.ColorPrimary,
+			Dialog: &model.Dialog{
+				Title:            "Enter Jira Cloud Organization",
+				IntroductionText: "Enter Jira Cloud URL (usually, `https://yourorg.atlassian.net`), or just the organization part, `yourorg`.",
+				SubmitLabel:      "Continue",
+				Elements: []model.DialogElement{
+					{
+						DisplayName: "Jira Cloud organization",
+						Name:        "url",
+						Type:        "text",
+						SubType:     "text",
+					},
+				},
 			},
+			OnDialogSubmit: p.submitCreateCloudInstance,
 		}).
-		WithButton(steps.Button{
-			Name:  "Ask a Jira Admin",
-			Style: steps.Warning,
-			OnClick: func(userID string) int {
-				return -1
+		WithButton(flow.Button{
+			Name:  "Jira Server",
+			Color: flow.ColorPrimary,
+			Dialog: &model.Dialog{
+				Title:       "Enter Jira Server URL",
+				SubmitLabel: "Continue",
+				Elements: []model.DialogElement{
+					{
+						DisplayName: "Jira Server URL",
+						Name:        "url",
+						Type:        "text",
+						SubType:     "text",
+					},
+				},
 			},
+			OnDialogSubmit: p.submitCreateServerInstance,
 		}).
-		WithButton(steps.Button{
-			Name:  "Cancel",
-			Style: steps.Danger,
-			OnClick: func(userID string) int {
-				return fm.skip(userID, FlowStepCancel)
-			},
-		}).
-		Build()
+		WithButton(cancelButton)
 }
 
 var jiraOrgRegexp = regexp.MustCompile(`^[\w-]+$`)
 
-func (fm *FlowManager) submitCreateCloudInstance(userID string, submission map[string]interface{}) (int, *steps.Attachment, string, map[string]string) {
+func (p *Plugin) submitCreateCloudInstance(userID string, submission map[string]interface{}, state flow.State) (flow.Name, flow.State, string, map[string]string) {
 	jiraURL, _ := submission["url"].(string)
 	if jiraURL == "" {
-		return 0, nil, "no URL in the request", nil
+		return "", nil, "no URL in the request", nil
 	}
 	jiraURL = strings.TrimSpace(jiraURL)
 	if jiraOrgRegexp.MatchString(jiraURL) {
 		jiraURL = fmt.Sprintf("https://%s.atlassian.net", jiraURL)
 	}
 
-	if !utils.IsJiraCloudURL(jiraURL) {
-		return fm.overrideAndSkip(userID, FlowStepConfirmNonAtlassianURL, fm.stepConfirmNonAtlassianURL(jiraURL)), nil, "", nil
-	}
-
-	jiraURL, err := fm.p.installInactiveCloudInstance(jiraURL)
+	jiraURL, err := p.installInactiveCloudInstance(jiraURL)
 	if err != nil {
-		return 0, nil, err.Error(), nil
+		return "", nil, err.Error(), nil
 	}
 
-	return fm.overrideAndSkip(userID, FlowStepConfigureCloudApp, fm.stepConfigureCloudApp(jiraURL)), nil, "", nil
+	state[keyEdition] = string(CloudInstanceType)
+	state[keyJiraURL] = jiraURL
+	state[keyAtlassianConnectURL] = p.GetPluginURL() + instancePath(routeACJSON, types.ID(jiraURL))
+
+	return stepEnableJiraDeveloperMode, state, "", nil
 }
 
-func (fm *FlowManager) submitCreateServerInstance(userID string, submission map[string]interface{}) (int, *steps.Attachment, string, map[string]string) {
+func (p *Plugin) submitCreateServerInstance(userID string, submission map[string]interface{}, state flow.State) (flow.Name, flow.State, string, map[string]string) {
 	jiraURL, _ := submission["url"].(string)
 	if jiraURL == "" {
-		return 0, nil, "no URL in the request", nil
+		return "", nil, "no URL in the request", nil
 	}
 	jiraURL = strings.TrimSpace(jiraURL)
 
-	_, _, err := fm.p.installServerInstance(jiraURL)
+	_, _, err := p.installServerInstance(jiraURL)
 	if err != nil {
-		return 0, nil, err.Error(), nil
+		return "", nil, err.Error(), nil
 	}
-	return fm.skip(userID, FlowStepTestNext2), nil, "", nil
+	return stepConfigureServerApp, state, "", nil
 }
 
-func (fm FlowManager) pretext(t string) string {
-	return "##### " + t
+func (p *Plugin) stepAddedCloudInstance() flow.Step {
+	return flow.NewStep(stepAddedCloudInstance).
+		WithMessage("Jira cloud {{.URL}} has been added, and is ready to configure.")
 }
 
-type propertyStore struct {
+func (p *Plugin) stepEnableJiraDeveloperMode() flow.Step {
+	return flow.NewStep(stepEnableJiraDeveloperMode).
+		WithPretext("##### :white_check_mark: Configure the Mattermost app in Jira").
+		WithTitle("Enable development mode.").
+		WithMessage("Mattermost Jira Cloud integration requires setting your Jira to _development mode_. " +
+			"Enabling the development mode allows you to install apps like Mattermost, from outside the Atlassian Marketplace." +
+			"Please follow these steps and press **Continue** when done:\n\n" +
+			"1. Navigate to [**Settings > Apps > Manage Apps**]({{.URL}}/plugins/servlet/upm?source=side_nav_manage_addons).\n" +
+			"2. Click **Settings** at bottom of page.\n" +
+			"3. Check **Enable development mode**, and press **Apply**.\n").
+		WithButton(continueButton(stepUploadJiraApp)).
+		WithButton(cancelButton)
 }
 
-func (ps *propertyStore) SetProperty(userID, propertyName string, value interface{}) error {
-	return nil
-}
-
-func (fm *FlowManager) addStep(name string, step steps.Step) {
-	fm.index[name] = len(fm.steps)
-	fm.steps = append(fm.steps, step)
-}
-
-func (fm *FlowManager) overrideAndSkip(userID, name string, step steps.Step) int {
-	i, ok := fm.index[name]
-	if !ok {
-		return -1
-	}
-	fm.steps[i] = step
-
-	return fm.skip(userID, name)
-}
-
-func (fm *FlowManager) skip(userID, toName string) int {
-	_, current, err := fm.ctl.GetCurrentStep(userID)
-	if err != nil {
-		return -1
-	}
-	to, ok := fm.index[toName]
-	if !ok {
-		return -1
-	}
-
-	return to - current
+func (p *Plugin) stepUploadJiraApp() flow.Step {
+	return flow.NewStep(stepUploadJiraApp).
+		WithTitle("Upload Mattermost app (atlassian-config) to Jira.").
+		WithMessage("To finish the configuration, create a new app in your Jira instance by following these steps:\n\n" +
+			"1. From [**Settings > Apps > Manage Apps**]({{.URL}}/plugins/servlet/upm?source=side_nav_manage_addons) click **Upload app**.\n" +
+			"2. In the **From this URL field**, enter: `{{.ACURL}}`, press **Upload**\n" +
+			"3. Wait for the app to install. Once completed, you should see an \"Installed and ready to go!\" message.\n").
+		WithButton(continueButton("<>/<> TODO")).
+		WithButton(cancelButton)
 }

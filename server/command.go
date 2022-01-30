@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-api/experimental/command"
+	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
@@ -1173,7 +1174,9 @@ func executeSetup(p *Plugin, c *plugin.Context, header *model.CommandArgs, args 
 		return p.responsef(header, "`/jira setup` can only be run by a system administrator.")
 	}
 
-	err = p.flowManager.StartConfigurationWizard(header.UserId)
+	err = p.setupFlow.Start(header.UserId, flow.State{
+		"Test": "test-string",
+	})
 	if err != nil {
 		return p.responsef(header, errors.Wrap(err, "Failed to start setup wizard").Error())
 	}

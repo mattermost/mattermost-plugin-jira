@@ -20,7 +20,7 @@ import (
 	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-plugin-api/experimental/bot/logger"
+	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
@@ -121,12 +121,11 @@ type Plugin struct {
 	userStore     UserStore
 	otsStore      OTSStore
 	secretsStore  SecretsStore
-	flowManager   *FlowManager
-	log           logger.Logger
 
-	// Most of ServeHTTP does not use an http router, but we need one to support the setup wizard flow. Introducing it here incrementally.
-	//
-	// TODO: transition ServeHTTP to use gorilla
+	setupFlow flow.Flow
+
+	// Most of ServeHTTP does not use an http router, but we need one to support
+	// the setup wizard flow. Introducing it here incrementally.
 	gorillaRouter *mux.Router
 
 	// Generated once, then cached in the database, and here deserialized
@@ -237,7 +236,6 @@ func (p *Plugin) OnActivate() error {
 	p.secretsStore = store
 	p.otsStore = store
 	p.client = pluginapi.NewClient(p.API, p.Driver)
-	p.log = logger.New(p.API)
 	p.gorillaRouter = mux.NewRouter()
 
 	botUserID, err := p.client.Bot.EnsureBot(&model.Bot{
@@ -291,7 +289,7 @@ func (p *Plugin) OnActivate() error {
 	}
 	p.templates = templates
 
-	p.flowManager = p.NewFlowManager()
+	p.setupFlow = p.NewSetupFlow()
 
 	// Register /jira command and stash the loaded list of known instances for
 	// later (autolink registration).
