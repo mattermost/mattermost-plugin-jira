@@ -79,8 +79,10 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
 	case status == 0:
 		p.API.LogDebug("Passed to another router: ", "Path", r.URL.Path, "Method", r.Method)
-	default:
+	case err != nil:
 		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
+	default:
+		p.API.LogDebug("unexpected plugin response", "Status", strconv.Itoa(status), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
 	}
 }
 

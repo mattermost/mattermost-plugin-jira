@@ -64,7 +64,7 @@ func newCloudInstance(p *Plugin, key types.ID, installed bool, rawASC string, as
 	}
 }
 
-func (p *Plugin) installInactiveCloudInstance(rawURL string) (string, error) {
+func (p *Plugin) installInactiveCloudInstance(rawURL string, actingUserID string) (string, error) {
 	jiraURL, err := utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
 	if err != nil {
 		return "", err
@@ -79,7 +79,7 @@ func (p *Plugin) installInactiveCloudInstance(rawURL string) (string, error) {
 
 	// Create an "uninitialized" instance of Jira Cloud that will
 	// receive the /installed callback
-	err = p.instanceStore.CreateInactiveCloudInstance(types.ID(jiraURL))
+	err = p.instanceStore.CreateInactiveCloudInstance(types.ID(jiraURL), actingUserID)
 	if err != nil {
 		return "", err
 	}
@@ -188,7 +188,11 @@ func (ci *cloudInstance) GetManageAppsURL() string {
 }
 
 func (ci *cloudInstance) GetManageWebhooksURL() string {
-	return fmt.Sprintf("%s/plugins/servlet/webhooks", ci.GetURL())
+	return cloudManageWebhooksURL(ci.GetURL())
+}
+
+func cloudManageWebhooksURL(jiraURL string) string {
+	return fmt.Sprintf("%s/plugins/servlet/webhooks", jiraURL)
 }
 
 func (ci *cloudInstance) GetClient(connection *Connection) (Client, error) {

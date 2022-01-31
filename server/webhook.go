@@ -199,3 +199,11 @@ func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL
 
 	return subURL, legacyURL, nil
 }
+
+func (p *Plugin) getSubscriptionsWebhookURL(instanceID types.ID) string {
+	cf := p.getConfig()
+	v := url.Values{}
+	secret, _ := url.QueryUnescape(cf.Secret)
+	v.Add("secret", secret)
+	return p.GetPluginURL() + instancePath(routeAPISubscribeWebhook, instanceID) + "?" + v.Encode()
+}

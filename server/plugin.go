@@ -4,7 +4,9 @@
 package main
 
 import (
+	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -55,7 +57,7 @@ type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
 	EnableJiraUI bool `json:"enablejiraui"`
 
-	// Legacy 1.x Webhook secret
+	// Webhook secret
 	Secret string `json:"secret"`
 
 	// Stats API secret
@@ -251,6 +253,11 @@ func (p *Plugin) OnActivate() error {
 	ptr := p.API.GetConfig().ServiceSettings.SiteURL
 	if ptr != nil {
 		mattermostSiteURL = *ptr
+	}
+
+	err = p.setDefaultConfiguration()
+	if err != nil {
+		return errors.Wrap(err, "failed to set default configuration")
 	}
 
 	rsaKey, err := p.secretsStore.EnsureRSAKey()
@@ -456,4 +463,58 @@ func (p *Plugin) storeConfig(ec externalConfig) error {
 	}
 
 	return p.client.Configuration.SavePluginConfig(out)
+}
+
+func generateSecret() (string, error) {
+	b := make([]byte, 256)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	s := base64.RawStdEncoding.EncodeToString(b)
+
+	s = s[:32]
+
+	return s, nil
+}
+
+func (c *externalConfig) setDefaults() (bool, error) {
+	changed := false
+
+	if c.Secret == "" {
+		secret, err := generateSecret()
+		if err != nil {
+			return false, err
+		}
+		c.Secret = secret
+		changed = true
+	}
+
+	if c.StatsSecret == "" {
+		secret, err := generateSecret()
+		if err != nil {
+			return false, err
+		}
+		c.StatsSecret = secret
+		changed = true
+	}
+
+	return changed, nil
+}
+
+func (p *Plugin) setDefaultConfiguration() error {
+	ec := p.getConfig().externalConfig
+	changed, err := ec.setDefaults()
+	if err != nil {
+		return err
+	}
+
+	if changed {
+		err := p.storeConfig(ec)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

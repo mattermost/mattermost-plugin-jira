@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-api/experimental/command"
-	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
@@ -787,7 +786,7 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 		return p.help(header)
 	}
 
-	jiraURL, err := p.installInactiveCloudInstance(args[0])
+	jiraURL, err := p.installInactiveCloudInstance(args[0], header.UserId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
 	}
@@ -1174,9 +1173,7 @@ func executeSetup(p *Plugin, c *plugin.Context, header *model.CommandArgs, args 
 		return p.responsef(header, "`/jira setup` can only be run by a system administrator.")
 	}
 
-	err = p.setupFlow.Start(header.UserId, flow.State{
-		"Test": "test-string",
-	})
+	err = p.setupFlow.ForUser(header.UserId).Start(nil)
 	if err != nil {
 		return p.responsef(header, errors.Wrap(err, "Failed to start setup wizard").Error())
 	}
