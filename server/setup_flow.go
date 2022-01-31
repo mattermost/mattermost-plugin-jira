@@ -104,7 +104,7 @@ func (p *Plugin) stepWelcome() flow.Step {
 		WithPretext("##### :wave: Welcome to Jira integration! [Learn more](https://github.com/mattermost/mattermost-plugin-jira#readme)").
 		WithTitle("Configure the integration.").
 		WithMessage("Just a few more steps to go!\n" +
-			"- **Step 1:** <>/<> TODO.\n").
+			"- **Step 1:** <>/<> TODO: describe the steps....\n").
 		WithButton(continueButton(stepDelegate)).
 		WithButton(cancelButton)
 }
