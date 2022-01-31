@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/jarcoal/httpmock v1.0.8
-	github.com/mattermost/mattermost-plugin-api v0.0.23-0.20220127122951-8ccbb53d5ecb
+	github.com/mattermost/mattermost-plugin-api v0.0.23-0.20220131221313-aa1e8a81b5df
 	github.com/mattermost/mattermost-plugin-autolink v1.2.2-0.20210709183311-c8fa30db649f
 	github.com/mattermost/mattermost-server/v6 v6.3.0
 	github.com/mholt/archiver/v3 v3.5.1
@@ -23,4 +23,4 @@ require (
 	golang.org/x/oauth2 v0.0.0-20210805134026-6f1e6394065a
 )
 
-replace github.com/mattermost/mattermost-plugin-api => ../mattermost-plugin-api
+// replace github.com/mattermost/mattermost-plugin-api => ../mattermost-plugin-api
