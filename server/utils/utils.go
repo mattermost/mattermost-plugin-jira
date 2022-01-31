@@ -71,8 +71,8 @@ type JiraStatus struct {
 
 // CheckJiraURL checks if `/status` endpoint of the Jira URL is accessible
 // and responding with the correct state which is "RUNNING"
-func CheckJiraURL(mattermostSiteURL, jiraURL string, requireHTTPS bool) (string, error) {
-	jiraURL, err := NormalizeJiraURL(jiraURL)
+func CheckJiraURL(mattermostSiteURL, jiraURL string, requireHTTPS bool) (_ string, err error) {
+	jiraURL, err = NormalizeJiraURL(jiraURL)
 	if err != nil {
 		return "", err
 	}
@@ -83,11 +83,20 @@ func CheckJiraURL(mattermostSiteURL, jiraURL string, requireHTTPS bool) (string,
 		return "", errors.New("a secure https URL is required")
 	}
 
+	defer func() {
+		if err != nil {
+			err = errors.Wrap(err, "it looks like we couldn't validate the connection to your Jira server. "+
+				"Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. "+
+				"If you intend to have a one way integration from Jira to Mattermost this is not an issue")
+		}
+	}()
+
 	resp, err := http.Get(jiraURL + "/status")
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return "", errors.Errorf("Jira server returned http status code %q when checking for availability: %q", resp.Status, jiraURL)
 	}

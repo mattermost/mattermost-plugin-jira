@@ -98,10 +98,6 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"* `/jira v2revert ` - Revert to V2 jira plugin data model\n" +
 	""
 
-const jiraConnectionErrorText = "It looks like we couldn't validate the connection to your Jira server. " +
-	"Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. " +
-	"If you intend to have a one way integration from Jira to Mattermost this is not an issue."
-
 func (p *Plugin) registerJiraCommand(enableAutocomplete, enableOptInstance bool) error {
 	// Optimistically unregister what was registered before
 	_ = p.API.UnregisterCommand("", commandTrigger)
@@ -788,7 +784,7 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 
 	jiraURL, err := p.installInactiveCloudInstance(args[0], header.UserId)
 	if err != nil {
-		return p.responsef(header, "%v", err)
+		return p.responsef(header, err.Error())
 	}
 
 	return p.respondCommandTemplate(header, "/command/install_cloud.md", map[string]string{
@@ -1164,6 +1160,7 @@ func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 		instanceID, instance.GetManageWebhooksURL(), subWebhookURL, subWebhookURL, legacyWebhookURL, legacyWebhookURL)
 }
 
+// TODO <>/<> setup command autocomplete
 func executeSetup(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {

@@ -50,7 +50,6 @@ const (
 	routeACUserConnected                        = "/ac/user_connected.html"
 	routeACUserDisconnected                     = "/ac/user_disconnected.html"
 	routeIncomingWebhook                        = "/webhook"
-	routeSetupWizard                            = "/setup-wizard"
 	routeOAuth1Complete                         = "/oauth1/complete.html"
 	routeUserStart                              = "/user/start"
 	routeUserConnect                            = "/user/connect"

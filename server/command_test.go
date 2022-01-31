@@ -287,11 +287,11 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		},
 		"install cloud instance as server": {
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "The Jira URL you provided looks like a Jira Cloud URL",
+			expectedMsgPrefix: "`https://mmtest.atlassian.net` is not a Jira server URL, it refers to Jira Cloud",
 		},
 		"install server instance using mattermost site URL": {
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://somelink.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "https://somelink.com is the Mattermost site URL. Please use your Jira URL with `/jira install`.",
+			expectedMsgPrefix: "https://somelink.com is the Mattermost site URL. Please use your Jira URL",
 		},
 		"install valid cloud instance": {
 			numInstances:      0,
@@ -301,12 +301,12 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		"install inaccessible cloud instance": {
 			numInstances:      0,
 			commandArgs:       &model.CommandArgs{Command: "/jira install cloud https://non-existing-jira-page.atlassian.net", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "Jira server returned http status code \"404\" when checking for availability: \"https://non-existing-jira-page.atlassian.net\"",
+			expectedMsgPrefix: `it looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue: Jira server returned http status code "404" when checking for availability: "https://non-existing-jira-page.atlassian.net"`,
 		},
 		"install valid cloud instance with broken json response": {
 			numInstances:      0,
 			commandArgs:       &model.CommandArgs{Command: "/jira install cloud https://broken-json-response.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "It looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue.",
+			expectedMsgPrefix: "it looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue: invalid character '}' looking for beginning of value",
 		},
 		"install valid server instance 1 preinstalled": {
 			numInstances:      1,
@@ -321,21 +321,21 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		"install inaccessible server instance": {
 			numInstances:      0,
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://inaccessible-jira-server.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "Jira server returned http status code \"404\" when checking for availability: \"https://inaccessible-jira-server.com\"",
+			expectedMsgPrefix: `it looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue: Jira server returned http status code "404" when checking for availability: "https://inaccessible-jira-server.com"`,
 		},
 		"install valid server instance in wrong state": {
 			numInstances:      0,
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://starting-jira-server.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "Jira server is not in correct state, it should be up and running: \"https://starting-jira-server.com\"",
+			expectedMsgPrefix: `it looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue: Jira server is not in correct state, it should be up and running: "https://starting-jira-server.com"`,
 		},
 		"install valid server instance with broken json response": {
 			numInstances:      0,
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://broken-json-response.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "It looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue.",
+			expectedMsgPrefix: "it looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue: invalid character '}' looking for beginning of value",
 		},
 		"install non secure cloud instance": {
 			commandArgs:       &model.CommandArgs{Command: "/jira install cloud http://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "`/jira install cloud` requires a secure connection (HTTPS). Please run the following command:",
+			expectedMsgPrefix: "a secure https URL is required",
 		},
 	}
 	for name, tt := range tests {

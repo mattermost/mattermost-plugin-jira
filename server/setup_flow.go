@@ -5,28 +5,30 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
-	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
+	"github.com/mattermost/mattermost-server/v6/model"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (
 	stepSetupWelcome             flow.Name = "setup-welcome"
-	stepDelegate                           = "delegate"
-	stepDelegated                          = "delegated"
-	stepChooseEdition                      = "choose-edition"
-	stepCloudAddedInstance                 = "cloud-added"
-	stepCloudEnableDeveloperMode           = "cloud-enable-dev"
-	stepCloudUploadApp                     = "cloud-upload-app"
-	stepCloudInstalledApp                  = "cloud-installed"
-	stepCloudConnect                       = "cloud-connect"
-	stepCloudConnected                     = "cloud-connected"
-	stepConfigureServerApp                 = "configure-server-app"
-	stepWebhook                            = "webhook"
-	stepWebhookDone                        = "webhook-done"
-	stepCancel                             = "cancel"
-	stepDone                               = "done"
+	stepDelegate                 flow.Name = "delegate"
+	stepDelegated                flow.Name = "delegated"
+	stepChooseEdition            flow.Name = "choose-edition"
+	stepCloudAddedInstance       flow.Name = "cloud-added"
+	stepCloudEnableDeveloperMode flow.Name = "cloud-enable-dev"
+	stepCloudUploadApp           flow.Name = "cloud-upload-app"
+	stepCloudInstalledApp        flow.Name = "cloud-installed"
+	stepCloudConnect             flow.Name = "cloud-connect"
+	stepCloudConnected           flow.Name = "cloud-connected"
+	stepConfigureServerApp       flow.Name = "configure-server-app"
+	stepWebhook                  flow.Name = "webhook"
+	stepWebhookDone              flow.Name = "webhook-done"
+	stepCancel                   flow.Name = "cancel"
+	stepDone                     flow.Name = "done"
 )
 
 const (
@@ -42,7 +44,7 @@ const (
 func (p *Plugin) NewSetupFlow() flow.Flow {
 	pluginURL := *p.client.Configuration.GetConfig().ServiceSettings.SiteURL + "/" + "plugins" + "/" + manifest.ID
 	conf := p.getConfig()
-	return flow.NewUserFlow("setup", p.client, pluginURL, conf.botUserID).
+	return flow.NewUserFlow("setup-wizard", p.client, pluginURL, conf.botUserID).
 		WithSteps(
 			p.stepWelcome(),
 			p.stepDelegate(),
@@ -218,7 +220,7 @@ var jiraOrgRegexp = regexp.MustCompile(`^[\w-]+$`)
 func (p *Plugin) submitCreateCloudInstance(f flow.Flow, submission map[string]interface{}) (flow.Name, flow.State, string, map[string]string) {
 	jiraURL, _ := submission["url"].(string)
 	if jiraURL == "" {
-		return "", nil, "no URL in the request", nil
+		return "", nil, "no Jira cloud URL in the request", nil
 	}
 	jiraURL = strings.TrimSpace(jiraURL)
 	if jiraOrgRegexp.MatchString(jiraURL) {
@@ -242,7 +244,7 @@ func (p *Plugin) submitCreateCloudInstance(f flow.Flow, submission map[string]in
 func (p *Plugin) submitCreateServerInstance(f flow.Flow, submission map[string]interface{}) (flow.Name, flow.State, string, map[string]string) {
 	jiraURL, _ := submission["url"].(string)
 	if jiraURL == "" {
-		return "", nil, "no URL in the request", nil
+		return "", nil, "no Jira server URL in the request", nil
 	}
 	jiraURL = strings.TrimSpace(jiraURL)
 

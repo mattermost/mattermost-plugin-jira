@@ -87,7 +87,7 @@ func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, e
 		p.API.LogInfo("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 	}
 
-	p.setupFlow.ForUser(ci.SetupWizardUserID).Go(stepCloudInstalledApp)
+	_ = p.setupFlow.ForUser(ci.SetupWizardUserID).Go(stepCloudInstalledApp)
 
 	return respondJSON(w, []string{"OK"})
 }
