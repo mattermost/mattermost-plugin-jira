@@ -1051,6 +1051,8 @@ github.com/mattermost/mattermost-plugin-api v0.0.23-0.20220202172731-6fa429fcacf
 github.com/mattermost/mattermost-plugin-api v0.0.23-0.20220202172731-6fa429fcacfc/go.mod h1:MM+tZ+36Obm9jqcveoxY2RFbwLaZKZUgR1zUlc0UBYw=
 github.com/mattermost/mattermost-plugin-api v0.0.23-0.20220202173942-88b6cf0af53f h1:MjpGpUOf3iBj66LCtLrvbB5jJQRCbfzDIZ+3MLQfFWc=
 github.com/mattermost/mattermost-plugin-api v0.0.23-0.20220202173942-88b6cf0af53f/go.mod h1:MM+tZ+36Obm9jqcveoxY2RFbwLaZKZUgR1zUlc0UBYw=
+github.com/mattermost/mattermost-plugin-api v0.0.23-0.20220202195226-2de11ed8acbb h1:Ux82KPLV0VAqwA0ypzuVi/f27KQjt5Ly3Jz8zGeQ0PA=
+github.com/mattermost/mattermost-plugin-api v0.0.23-0.20220202195226-2de11ed8acbb/go.mod h1:MM+tZ+36Obm9jqcveoxY2RFbwLaZKZUgR1zUlc0UBYw=
 github.com/mattermost/mattermost-plugin-autolink v1.2.2-0.20210709183311-c8fa30db649f h1:gPS9kYNkmnvBpX0jlUqOkVZA5dTlMmARZB8QT0AbtN4=
 github.com/mattermost/mattermost-plugin-autolink v1.2.2-0.20210709183311-c8fa30db649f/go.mod h1:JO5RQqTYL2D1zDz7+5ucAmNeRMiudDvZQoRtqbm+1sU=
 github.com/mattermost/mattermost-server/v5 v5.3.2-0.20210621071817-df224571d8a1 h1:5/lZibP83SrOpuKs4fE782pfWNFX/QTWwO2PuJJwGJ4=

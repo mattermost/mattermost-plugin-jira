@@ -1160,7 +1160,6 @@ func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 		instanceID, instance.GetManageWebhooksURL(), subWebhookURL, subWebhookURL, legacyWebhookURL, legacyWebhookURL)
 }
 
-// <>/<> TODO: setup command autocomplete
 func executeSetup(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {

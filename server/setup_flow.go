@@ -16,6 +16,7 @@ import (
 const (
 	stepSetupWelcome             flow.Name = "setup-welcome"
 	stepDelegate                 flow.Name = "delegate"
+	stepDelegateComplete         flow.Name = "delegate-complete"
 	stepDelegated                flow.Name = "delegated"
 	stepChooseEdition            flow.Name = "choose-edition"
 	stepCloudAddedInstance       flow.Name = "cloud-added"
@@ -34,6 +35,7 @@ const (
 const (
 	keyEdition             = "Edition"
 	keyDelegatedTo         = "Delegated"
+	keyDelegatedFromUserID = "DelegatedFromUserID"
 	keyJiraURL             = "URL"
 	keyConnectURL          = "ConnectURL"
 	keyWebhookURL          = "WebhookURL"
@@ -49,6 +51,7 @@ func (p *Plugin) NewSetupFlow() *flow.Flow {
 			p.stepWelcome(),
 			p.stepDelegate(),
 			p.stepDelegated(),
+			p.stepDelegateComplete(),
 			p.stepChooseEdition(),
 
 			// Jira Cloud steps
@@ -154,21 +157,33 @@ func (p *Plugin) submitDelegateSelection(f *flow.Flow, submission map[string]int
 		return "", nil, nil, errors.Wrap(err, "failed get user")
 	}
 
-	// <>/<> TODO add and test the delegate flow
-	// err = p.StartSetupWizard(aider.Id, true)
-	// if err != nil {
-	// 	return 0, nil, errors.Wrap(err, "failed start configration wizzard").Error(), nil
-	// }
+	err = p.setupFlow.ForUser(aider.Id).Start(flow.State{
+		keyDelegatedFromUserID: f.UserID,
+	})
+	if err != nil {
+		return "", nil, nil, errors.Wrap(err, "failed to start configration wizzard")
+	}
 
 	return stepDelegated, flow.State{
-		keyDelegatedTo: aider.Id,
+		keyDelegatedTo: aider.GetDisplayName(model.ShowNicknameFullName),
 	}, nil, nil
 }
 
 func (p *Plugin) stepDelegated() flow.Step {
 	return flow.NewStep(stepDelegated).
-		WithText("Asked {{.Delegated}} to finish configuring the integration").
+		WithText("Asked {{.Delegated}} to finish configuring the integration.").
+		WithButton(flow.Button{
+			Name:     "Waiting for {{.Delegated}}...",
+			Color:    flow.ColorDefault,
+			Disabled: true,
+		}).
 		WithButton(cancelButton)
+}
+
+func (p *Plugin) stepDelegateComplete() flow.Step {
+	return flow.NewStep(stepDelegateComplete).
+		WithText("{{.Delegated}} completed configuring the integration.").
+		Next(stepDone)
 }
 
 func (p *Plugin) stepChooseEdition() flow.Step {
@@ -353,7 +368,13 @@ func (p *Plugin) stepWebhook() flow.Step {
 				IntroductionText: "Please scroll to select the entire URL if necessary:\n```\n{{.WebhookURL}}\n```\n",
 				SubmitLabel:      "Continue",
 			},
-			OnDialogSubmit: flow.DialogGoto(stepWebhookDone),
+			OnDialogSubmit: func(f *flow.Flow, _ map[string]interface{}) (flow.Name, flow.State, map[string]string, error) {
+				delegatedFrom, ok := f.State[keyDelegatedFromUserID]
+				if ok {
+					_ = p.setupFlow.ForUser(delegatedFrom).Go(stepDelegateComplete)
+				}
+				return stepWebhookDone, nil, nil, nil
+			},
 		}).
 		WithButton(cancelButton)
 }
