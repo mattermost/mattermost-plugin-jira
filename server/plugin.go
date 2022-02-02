@@ -124,7 +124,7 @@ type Plugin struct {
 	otsStore      OTSStore
 	secretsStore  SecretsStore
 
-	setupFlow flow.Flow
+	setupFlow *flow.Flow
 
 	// Most of ServeHTTP does not use an http router, but we need one to support
 	// the setup wizard flow. Introducing it here incrementally.
