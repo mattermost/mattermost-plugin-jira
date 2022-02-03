@@ -106,7 +106,7 @@ func (p *Plugin) stepWelcome() flow.Step {
 	return flow.NewStep(stepSetupWelcome).
 		WithPretext("##### :wave: Welcome to Jira integration! [Learn more](https://github.com/mattermost/mattermost-plugin-jira#readme)").
 		WithTitle("Configure the integration.").
-		WithText("Just a few more steps to go!\n" +
+		WithText("Just a few steps to go!\n" +
 			"- **Step 1:** <>/<> TODO: describe the steps....\n").
 		WithButton(continueButton(stepDelegate)).
 		WithButton(cancelButton)
@@ -115,7 +115,7 @@ func (p *Plugin) stepWelcome() flow.Step {
 func (p *Plugin) stepDelegate() flow.Step {
 	return flow.NewStep(stepDelegate).
 		WithPretext("##### :hand: Are you a Jira administrator?").
-		WithText("Configuring the integration requires administrator access to Jira. If you are not a Jira administrator you can ask another Mattermost user to do it.").
+		WithText("Configuring the integration requires administrator access to Jira. If you aren't a Jira admin you can ask another Mattermost user to do it.").
 		WithButton(flow.Button{
 			Name:    "Continue myself",
 			Color:   flow.ColorPrimary,
@@ -282,8 +282,8 @@ func (p *Plugin) stepCloudEnableDeveloperMode() flow.Step {
 	return flow.NewStep(stepCloudEnableDeveloperMode).
 		WithPretext("##### :white_check_mark: Configure the Mattermost app in Jira").
 		WithTitle("Enable development mode.").
-		WithText("Mattermost Jira Cloud integration requires setting your Jira to _development mode_. " +
-			"Enabling the development mode allows you to install apps like Mattermost, from outside the Atlassian Marketplace." +
+		WithText("The Mattermost Jira Cloud integration requires setting your Jira instance to _development mode_. " +
+			"In development mode you can install apps, like Mattermost, available outside the Atlassian Marketplace." +
 			"Please follow these steps and press **Continue** when done:\n\n" +
 			"1. Navigate to [**Settings > Apps > Manage Apps**]({{.URL}}/plugins/servlet/upm?source=side_nav_manage_addons).\n" +
 			"2. Click **Settings** at bottom of page.\n" +
@@ -321,7 +321,7 @@ func (p *Plugin) stepCloudInstalledApp() flow.Step {
 	}
 	return flow.NewStep(stepCloudInstalledApp).
 		WithTitle("Confirmed.").
-		WithText("You have finished configuring the Mattermost App in Jira. Please select **Continue** to connect your user account.").
+		WithText("You've finished configuring the Mattermost App in Jira. Select **Continue** to connect your user account.").
 		WithButton(flow.Button{
 			Name:    "Continue",
 			Color:   flow.ColorPrimary,
@@ -349,7 +349,7 @@ func (p *Plugin) stepCloudConnect() flow.Step {
 func (p *Plugin) stepCloudConnected() flow.Step {
 	return flow.NewStep(stepCloudConnected).
 		WithTitle("Connected Jira user account.").
-		WithText("You have connected your user account to Jira.").
+		WithText("You've connected your user account to Jira.").
 		Next(stepWebhook)
 }
 
