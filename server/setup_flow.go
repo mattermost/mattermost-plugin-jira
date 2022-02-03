@@ -297,7 +297,7 @@ func (p *Plugin) stepCloudUploadApp() flow.Step {
 	return flow.NewStep(stepCloudUploadApp).
 		WithTitle("Upload the Mattermost app (atlassian-config) to Jira.").
 		WithText("To finish the configuration, create a new app in your Jira instance by following these steps:\n\n" +
-			"1. From [**Settings > Apps > Manage Apps**]({{.URL}}/plugins/servlet/upm?source=side_nav_manage_addons) click **Upload app**.\n" +
+			"1. From [**Settings > Apps > Manage Apps**]({{.URL}}/plugins/servlet/upm?source=side_nav_manage_addons) select **Upload app**.\n" +
 			"2. In the **From this URL field**, enter: `{{.ACURL}}`, press **Upload**\n" +
 			"3. Wait for the app to install. Once completed, you should see an \"Installed and ready to go!\" message.\n").
 		WithButton(flow.Button{
