@@ -286,7 +286,7 @@ func (p *Plugin) stepCloudEnableDeveloperMode() flow.Step {
 			"Enabling the development mode allows you to install apps like Mattermost, from outside the Atlassian Marketplace." +
 			"Complete the following steps, then select **Continue**:\n\n" +
 			"1. Navigate to [**Settings > Apps > Manage Apps**]({{.URL}}/plugins/servlet/upm?source=side_nav_manage_addons).\n" +
-			"2. Click **Settings** at bottom of page.\n" +
+			"2. Select **Settings** at the bottom of the page.\n" +
 			"3. Check **Enable development mode**, and press **Apply**.\n").
 		WithButton(continueButton(stepCloudUploadApp)).
 		WithButton(skipButton(stepCloudInstalledApp)).
