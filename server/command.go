@@ -809,7 +809,7 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
-	pkey, err := publicKeyString(p)
+	pkey, err := p.publicKeyString()
 	if err != nil {
 		return p.responsef(header, "Failed to load public key: %v", err)
 	}

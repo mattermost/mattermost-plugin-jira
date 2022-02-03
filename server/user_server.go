@@ -148,7 +148,7 @@ func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, i
 		})
 }
 
-func publicKeyString(p *Plugin) ([]byte, error) {
+func (p *Plugin) publicKeyString() ([]byte, error) {
 	rsaKey := p.getConfig().rsaKey
 	b, err := x509.MarshalPKIXPublicKey(&rsaKey.PublicKey)
 	if err != nil {

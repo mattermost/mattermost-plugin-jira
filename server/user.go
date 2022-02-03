@@ -250,6 +250,8 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, conne
 		return err
 	}
 
+	_ = p.setupFlow.ForUser(string(mattermostUserID)).Go(stepConnected)
+
 	info, err := p.GetUserInfo(mattermostUserID, user)
 	if err != nil {
 		return err

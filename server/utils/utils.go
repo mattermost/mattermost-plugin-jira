@@ -79,9 +79,6 @@ func CheckJiraURL(mattermostSiteURL, jiraURL string, requireHTTPS bool) (_ strin
 	if jiraURL == strings.TrimSuffix(mattermostSiteURL, "/") {
 		return "", errors.Errorf("%s is the Mattermost site URL. Please use your Jira URL", jiraURL)
 	}
-	if !strings.HasPrefix(jiraURL, "https://") {
-		return "", errors.New("a secure https URL is required")
-	}
 
 	defer func() {
 		if err != nil {

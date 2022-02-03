@@ -147,8 +147,6 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		// msg := fmt.Sprintf("You have successfully connected your Jira account (**%s**).", connection.DisplayName)
 		// _ = p.API.SendEphemeralPost(mattermostUserID, makePost(p.getUserID(), channelID, msg))
 
-		_ = p.setupFlow.ForUser(mattermostUserID).Go(stepCloudConnected)
-
 	case routeACUserDisconnected:
 		_, err = p.DisconnectUser(ci.InstanceID.String(), types.ID(mattermostUserID))
 
