@@ -177,10 +177,4 @@ func TestIsJiraAccessible(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, "https://dummy-url.com is the Mattermost site URL. Please use your Jira URL", err.Error())
 	})
-
-	t.Run("https URL", func(t *testing.T) {
-		_, err := CheckJiraURL("", "http://test.com", true)
-		assert.Error(t, err)
-		assert.Equal(t, "a secure https URL is required", err.Error())
-	})
 }
