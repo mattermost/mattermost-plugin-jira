@@ -282,12 +282,12 @@ func (p *Plugin) stepCloudEnableDeveloperMode() flow.Step {
 	return flow.NewStep(stepCloudEnableDeveloperMode).
 		WithPretext("##### :white_check_mark: Configure the Mattermost app in Jira").
 		WithTitle("Enable development mode.").
-		WithText("The Mattermost Jira Cloud integration requires setting your Jira instance to _development mode_. " +
-			"In development mode you can install apps, like Mattermost, available outside the Atlassian Marketplace." +
-			"Please follow these steps and press **Continue** when done:\n\n" +
+		WithText("Mattermost Jira Cloud integration requires setting your Jira to _development mode_. " +
+			"Enabling the development mode allows you to install apps like Mattermost, from outside the Atlassian Marketplace." +
+			"Complete the following steps, then select **Continue**:\n\n" +
 			"1. Navigate to [**Settings > Apps > Manage Apps**]({{.URL}}/plugins/servlet/upm?source=side_nav_manage_addons).\n" +
-			"2. Click **Settings** at bottom of page.\n" +
-			"3. Check **Enable development mode**, and press **Apply**.\n").
+			"2. Select **Settings** at the bottom of the page.\n" +
+			"3. Select **Enable development mode**, then select **Apply**.\n").
 		WithButton(continueButton(stepCloudUploadApp)).
 		WithButton(skipButton(stepCloudInstalledApp)).
 		WithButton(cancelButton)
@@ -295,10 +295,10 @@ func (p *Plugin) stepCloudEnableDeveloperMode() flow.Step {
 
 func (p *Plugin) stepCloudUploadApp() flow.Step {
 	return flow.NewStep(stepCloudUploadApp).
-		WithTitle("Upload Mattermost app (atlassian-config) to Jira.").
+		WithTitle("Upload the Mattermost app (atlassian-config) to Jira.").
 		WithText("To finish the configuration, create a new app in your Jira instance by following these steps:\n\n" +
-			"1. From [**Settings > Apps > Manage Apps**]({{.URL}}/plugins/servlet/upm?source=side_nav_manage_addons) click **Upload app**.\n" +
-			"2. In the **From this URL field**, enter: `{{.ACURL}}`, press **Upload**\n" +
+			"1. From [**Settings > Apps > Manage Apps**]({{.URL}}/plugins/servlet/upm?source=side_nav_manage_addons) select **Upload app**.\n" +
+			"2. In the **From this URL field**, enter: `{{.ACURL}}`, then select **Upload**\n" +
 			"3. Wait for the app to install. Once completed, you should see an \"Installed and ready to go!\" message.\n").
 		WithButton(flow.Button{
 			Name:     "Waiting for confirmation...",
