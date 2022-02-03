@@ -287,7 +287,7 @@ func (p *Plugin) stepCloudEnableDeveloperMode() flow.Step {
 			"Complete the following steps, then select **Continue**:\n\n" +
 			"1. Navigate to [**Settings > Apps > Manage Apps**]({{.URL}}/plugins/servlet/upm?source=side_nav_manage_addons).\n" +
 			"2. Select **Settings** at the bottom of the page.\n" +
-			"3. Check **Enable development mode**, and press **Apply**.\n").
+			"3. Select **Enable development mode**, then select **Apply**.\n").
 		WithButton(continueButton(stepCloudUploadApp)).
 		WithButton(skipButton(stepCloudInstalledApp)).
 		WithButton(cancelButton)
