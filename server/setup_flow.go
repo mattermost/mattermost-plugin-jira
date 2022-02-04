@@ -196,7 +196,7 @@ func (p *Plugin) stepChooseEdition() flow.Step {
 						DisplayName: "Jira Server URL",
 						Name:        "url",
 						Type:        "text",
-						SubType:     "text",
+						SubType:     "url",
 					},
 				},
 			},
