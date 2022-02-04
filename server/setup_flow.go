@@ -179,7 +179,9 @@ func (p *Plugin) stepChooseEdition() flow.Step {
 						DisplayName: "Jira Cloud organization",
 						Name:        "url",
 						Type:        "text",
-						SubType:     "url",
+						// text, not URL since normally just the org name needs
+						// to be entered.
+						SubType: "text",
 					},
 				},
 			},
