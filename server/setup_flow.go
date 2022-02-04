@@ -179,7 +179,7 @@ func (p *Plugin) stepChooseEdition() flow.Step {
 						DisplayName: "Jira Cloud organization",
 						Name:        "url",
 						Type:        "text",
-						SubType:     "text",
+						SubType:     "url",
 					},
 				},
 			},
