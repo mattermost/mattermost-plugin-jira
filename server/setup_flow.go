@@ -124,10 +124,10 @@ func (p *Plugin) stepDelegate() flow.Step {
 			OnClick: flow.Goto(stepChooseEdition),
 		}).
 		WithButton(flow.Button{
-			Name:  "Ask someone else",
+			Name:  "I need someone else",
 			Color: flow.ColorDefault,
 			Dialog: &model.Dialog{
-				Title:       "Send instructions to",
+				Title:       "Send instructions",
 				SubmitLabel: "Send",
 				Elements: []model.DialogElement{
 					{
@@ -179,7 +179,7 @@ func (p *Plugin) stepChooseEdition() flow.Step {
 						DisplayName: "Jira Cloud organization",
 						Name:        "url",
 						Type:        "text",
-						SubType:     "text",
+						SubType:     "url",
 					},
 				},
 			},
@@ -196,7 +196,7 @@ func (p *Plugin) stepChooseEdition() flow.Step {
 						DisplayName: "Jira Server URL",
 						Name:        "url",
 						Type:        "text",
-						SubType:     "text",
+						SubType:     "url",
 					},
 				},
 			},
