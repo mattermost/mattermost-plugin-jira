@@ -432,17 +432,19 @@ func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL
 
 	instanceID, err := p.ResolveWebhookInstanceURL(jiraURL)
 	if err != nil {
-		p.API.LogError("error while getting instance ID", err)
+		p.API.LogError("error while getting instance ID", "error", err)
 		return "", "", err
 	}
 
 	team, appErr := p.API.GetTeam(teamID)
 	if appErr != nil {
+		p.API.LogError("error while getting team", "error", err)
 		return "", "", appErr
 	}
 
 	channel, appErr := p.API.GetChannel(channelID)
 	if appErr != nil {
+		p.API.LogError("error while getting channel", "error", err)
 		return "", "", appErr
 	}
 
@@ -466,7 +468,7 @@ func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...inter
 	}
 }
 
-func (p *Plugin) getConnection(instance Instance, notification webhookUserNotification) (con *Connection, err error) {
+func (p *Plugin) getConnection(instance Instance, notification webhookUserNotification) (conn *Connection, err error) {
 	var mattermostUserID types.ID
 
 	// prefer accountId to username when looking up UserIds
@@ -480,9 +482,9 @@ func (p *Plugin) getConnection(instance Instance, notification webhookUserNotifi
 	}
 
 	// Check if the user has permissions.
-	con, err = p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
+	conn, err = p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
 	if err != nil {
-		p.API.LogError("error while load connection", err)
+		p.API.LogError("error while load connection", "error", err)
 		// Not connected to Jira, so can't check permissions
 		return
 	}

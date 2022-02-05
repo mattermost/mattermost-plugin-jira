@@ -480,6 +480,7 @@ func (store *store) LoadInstance(instanceID types.ID) (Instance, error) {
 		if errors.Is(errors.Wrap(kvstore.ErrNotFound, hashedKey), err) {
 			return nil, nil
 		}
+		store.plugin.API.LogError("error while load instance", "error", err)
 		return nil, errors.Wrap(err, instanceID.String())
 	}
 	if instance == nil {
