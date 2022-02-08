@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -19,6 +20,11 @@ const (
 	commentDeleted = "comment_deleted"
 	commentUpdated = "comment_updated"
 	commentCreated = "comment_created"
+)
+
+const (
+	recipientTypeAssignee = "assignee"
+	recipientTypeReporter = "reporter"
 )
 
 type Webhook interface {
@@ -51,6 +57,7 @@ type webhookUserNotification struct {
 	message       string
 	postType      string
 	commentSelf   string
+	recipientType string
 }
 
 func (wh *webhook) Events() StringSet {
@@ -120,6 +127,7 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		} else {
 			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), notification.jiraUsername)
 		}
+
 		if err != nil {
 			continue
 		}
@@ -130,6 +138,7 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 			// Not connected to Jira, so can't check permissions
 			continue
 		}
+
 		client, err2 := instance.GetClient(c)
 		if err2 != nil {
 			p.errorf("PostNotifications: error while getting jiraClient, err: %v", err2)
@@ -144,6 +153,7 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		} else {
 			_, err = client.GetIssue(wh.Issue.ID, nil)
 		}
+
 		if err != nil {
 			p.errorf("PostNotifications: failed to get self: %v", err)
 			continue
@@ -151,7 +161,7 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 
 		notification.message = p.replaceJiraAccountIds(instance.GetID(), notification.message)
 
-		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType)
+		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType, notification.recipientType)
 		if err != nil {
 			p.errorf("PostNotifications: failed to create notification post, err: %v", err)
 			continue
@@ -210,10 +220,50 @@ func (wh *webhook) CheckIssueWatchers(p *Plugin, instanceID types.ID) {
 		c, err = p.getConnection(instance, whUserNotification)
 
 		// if setting watching value is false don't put into webhookUserNotification
-		if err != nil || c.Settings == nil || !c.Settings.ShouldReceiveWatcherNotifications() {
+		if err != nil || c.Settings == nil || !c.Settings.SendNotificationsForWatching {
 			continue
 		}
 
 		wh.notifications = append(wh.notifications, whUserNotification)
 	}
+}
+
+func (wh *webhook) applyReporterNotification(reporter *jira.User) {
+	if !wh.eventTypes.ContainsAny("event_created_comment") {
+		return
+	}
+
+	jwhook := wh.JiraWebhook
+	if reporter == nil ||
+		(reporter.Name != "" && reporter.Name == jwhook.User.Name) ||
+		(reporter.AccountID != "" && reporter.AccountID == jwhook.Comment.UpdateAuthor.AccountID) {
+		return
+	}
+
+	if wh.checkNotificationAlreadyExist(reporter.Name, reporter.AccountID) {
+		return
+	}
+
+	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
+
+	commentMessage := fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body)
+
+	wh.notifications = append(wh.notifications, webhookUserNotification{
+		jiraUsername:  reporter.Name,
+		jiraAccountID: reporter.AccountID,
+		message:       commentMessage,
+		postType:      PostTypeComment,
+		commentSelf:   jwhook.Comment.Self,
+		recipientType: recipientTypeReporter,
+	})
+}
+
+func (wh *webhook) checkNotificationAlreadyExist(username, accountID string) bool {
+	for _, val := range wh.notifications {
+		if val.jiraUsername == username && val.jiraAccountID == accountID {
+			return true
+		}
+	}
+
+	return false
 }

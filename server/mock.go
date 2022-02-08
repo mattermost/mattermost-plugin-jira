@@ -1,6 +1,6 @@
 package main
 
-import "github.com/mattermost/mattermost-server/v5/plugin/plugintest/mock"
+import "github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
 
 func mockAnythingOfTypeBatch(argType string, numCalls int) []interface{} {
 	args := make([]interface{}, numCalls)

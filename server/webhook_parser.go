@@ -13,7 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 )
 
 var webhookWrapperFunc func(wh Webhook) Webhook
@@ -84,7 +84,6 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 	if wh == nil {
 		return nil, errors.Errorf("Unsupported webhook data: %v", jwh.WebhookEvent)
 	}
-
 	// For HTTP testing, so we can capture the output of the interface
 	if webhookWrapperFunc != nil {
 		wh = webhookWrapperFunc(wh)
@@ -304,6 +303,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 		message:       fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
 		postType:      PostTypeComment,
 		commentSelf:   jwh.Comment.Self,
+		recipientType: recipientTypeAssignee,
 	})
 }
 
@@ -384,6 +384,7 @@ func appendNotificationForAssignee(wh *webhook) {
 		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
 		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
 		message:       fmt.Sprintf("%s **assigned** you to %s", jwh.mdUser(), jwh.mdKeySummaryLink()),
+		recipientType: recipientTypeAssignee,
 	})
 }
 

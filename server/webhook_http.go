@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"time"
 
@@ -73,6 +74,14 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 	status, err = verifyHTTPSecret(conf.Secret, r.FormValue("secret"))
 	if err != nil {
 		return respondErr(w, status, err)
+	}
+
+	if conf.EnableWebhookEventLogging {
+		parsedRequest, eventErr := httputil.DumpRequest(r, true)
+		if eventErr != nil {
+			return respondErr(w, status, eventErr)
+		}
+		p.API.LogDebug("Webhook Event Log", "event", string(parsedRequest))
 	}
 	teamName := r.FormValue("team")
 	if teamName == "" {

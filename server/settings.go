@@ -1,7 +1,9 @@
 package main
 
 import (
-	"github.com/mattermost/mattermost-server/v5/model"
+	"strings"
+
+	"github.com/mattermost/mattermost-server/v6/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -12,17 +14,21 @@ const (
 
 	errStoreNewSettings = "Could not store new settings. Please contact your system administrator. error: %v"
 	errConnectToJira    = "Your username is not connected to Jira. Please type `/jira connect`. %v"
+	subCommandAssignee  = "assignee"
+	subCommandMention   = "mention"
+	subCommandReporter  = "reporter"
+	subCommandWatching  = "watching"
 )
 
 func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, mattermostUserID types.ID, connection *Connection, args []string) *model.CommandResponse {
-	const helpText = "`/jira settings notifications [value]`\n* Invalid value. Accepted values are: `on` or `off`."
+	const helpText = "`/jira settings notifications [assignee/mention/reporter/watching] [value]`\n* Invalid value. Accepted values are: `on` or `off`."
 
-	if len(args) != 2 {
+	if len(args) != 3 {
 		return p.responsef(header, helpText)
 	}
 
 	var value bool
-	switch args[1] {
+	switch args[2] {
 	case settingOn:
 		value = true
 	case settingOff:
@@ -34,7 +40,19 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	if connection.Settings == nil {
 		connection.Settings = &ConnectionSettings{}
 	}
-	connection.Settings.Notifications = value
+	switch args[1] {
+	case subCommandAssignee:
+		connection.Settings.SendNotificationsForAssignee = value
+	case subCommandMention:
+		connection.Settings.SendNotificationsForMention = value
+	case subCommandReporter:
+		connection.Settings.SendNotificationsForReporter = value
+	case subCommandWatching:
+		connection.Settings.SendNotificationsForWatching = value
+	default:
+		return p.responsef(header, helpText)
+	}
+
 	if err := p.userStore.StoreConnection(instanceID, mattermostUserID, connection); err != nil {
 		p.errorf("settingsNotifications, err: %v", err)
 		p.responsef(header, errStoreNewSettings, err)
@@ -46,41 +64,24 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 		return p.responsef(header, errConnectToJira, err)
 	}
 	notifications := settingOff
-	if updatedConnection.Settings.Notifications {
-		notifications = settingOn
-	}
-
-	return p.responsef(header, "Settings updated. Notifications %s.", notifications)
-}
-
-func (p *Plugin) settingsWatching(header *model.CommandArgs, instanceID, mattermostUserID types.ID, connection *Connection, args []string) *model.CommandResponse {
-	const helpText = "`/jira settings watching [value]`\\n* Invalid value. Accepted values are: `on` or `off`."
-
-	if len(args) != 2 {
-		return p.responsef(header, helpText)
-	}
-
-	wathing := false
-	wathingOnOff := settingOff
-
 	switch args[1] {
-	case settingOn:
-		wathing = true
-		wathingOnOff = settingOn
-	case settingOff:
-		wathing = false
-	default:
-		return p.responsef(header, helpText)
+	case subCommandAssignee:
+		if updatedConnection.Settings.SendNotificationsForAssignee {
+			notifications = settingOn
+		}
+	case subCommandMention:
+		if updatedConnection.Settings.SendNotificationsForMention {
+			notifications = settingOn
+		}
+	case subCommandReporter:
+		if updatedConnection.Settings.SendNotificationsForReporter {
+			notifications = settingOn
+		}
+	case subCommandWatching:
+		if updatedConnection.Settings.SendNotificationsForWatching {
+			notifications = settingOn
+		}
 	}
 
-	if connection.Settings == nil {
-		connection.Settings = &ConnectionSettings{}
-	}
-	connection.Settings.Watching = &wathing
-	if err := p.userStore.StoreConnection(instanceID, mattermostUserID, connection); err != nil {
-		p.errorf("settingsWatching, err: %v", err)
-		return p.responsef(header, errStoreNewSettings, err)
-	}
-
-	return p.responsef(header, "Settings updated. Watching %s.", wathingOnOff)
+	return p.responsef(header, "Settings updated.\n\t%s %s.", strings.Title(args[1]), notifications)
 }

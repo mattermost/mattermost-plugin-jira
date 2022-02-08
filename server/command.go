@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-api/experimental/command"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -181,17 +181,17 @@ func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 		"install", "[cloud|server] [URL]", "Connect Mattermost to a Jira instance")
 	install.AddStaticListArgument("Jira type: server or cloud", true, jiraTypes)
 	install.AddTextArgument("Jira URL", "Enter the Jira URL, e.g. https://mattermost.atlassian.net", "")
-	install.RoleID = model.SYSTEM_ADMIN_ROLE_ID
+	install.RoleID = model.SystemAdminRoleId
 
 	uninstall := model.NewAutocompleteData(
 		"uninstall", "[cloud|server] [URL]", "Disconnect Mattermost from a Jira instance")
 	uninstall.AddStaticListArgument("Jira type: server or cloud", true, jiraTypes)
 	uninstall.AddDynamicListArgument("Jira instance", routeAutocompleteInstalledInstance, true)
-	uninstall.RoleID = model.SYSTEM_ADMIN_ROLE_ID
+	uninstall.RoleID = model.SystemAdminRoleId
 
 	list := model.NewAutocompleteData(
 		"list", "", "List installed Jira instances")
-	list.RoleID = model.SYSTEM_ADMIN_ROLE_ID
+	list.RoleID = model.SystemAdminRoleId
 
 	instance.AddCommand(createConnectCommand())
 	instance.AddCommand(createDisconnectCommand())
@@ -260,12 +260,30 @@ func createSettingsCommand(optInstance bool) *model.AutocompleteData {
 		"list", "", "View your current settings")
 	settings.AddCommand(list)
 
+	setting := []model.AutocompleteListItem{
+		{HelpText: "Turn on notification on", Item: "on"},
+		{HelpText: "Turn on notification off", Item: "off"},
+	}
+
 	notifications := model.NewAutocompleteData(
-		"notifications", "[on|off]", "Update your user notifications settings")
-	notifications.AddStaticListArgument("value", true, []model.AutocompleteListItem{
-		{HelpText: "Turn notifications on", Item: "on"},
-		{HelpText: "Turn notifications off", Item: "off"},
-	})
+		"notifications", "[assinee|mention|reporter]", "manage notifications")
+
+	assigneeNotifications := model.NewAutocompleteData(
+		subCommandAssignee, "", "manage assignee notifications")
+	assigneeNotifications.AddStaticListArgument("value", true, setting)
+
+	mentionNotifications := model.NewAutocompleteData(
+		subCommandMention, "", "manage mention notifications")
+	mentionNotifications.AddStaticListArgument("value", true, setting)
+
+	reporterNotifications := model.NewAutocompleteData(
+		subCommandReporter, "", "manage reporter notifications")
+	reporterNotifications.AddStaticListArgument("value", true, setting)
+
+	notifications.AddCommand(assigneeNotifications)
+	notifications.AddCommand(mentionNotifications)
+	notifications.AddCommand(reporterNotifications)
+
 	withFlagInstance(notifications, optInstance, routeAutocompleteInstalledInstanceWithAlias)
 	settings.AddCommand(notifications)
 
@@ -324,7 +342,7 @@ func createSubscribeCommand(optInstance bool) *model.AutocompleteData {
 func createWebhookCommand(optInstance bool) *model.AutocompleteData {
 	webhook := model.NewAutocompleteData(
 		"webhook", "[Jira URL]", "Display the webhook URLs to set up on Jira")
-	webhook.RoleID = model.SYSTEM_ADMIN_ROLE_ID
+	webhook.RoleID = model.SystemAdminRoleId
 	withFlagInstance(webhook, optInstance, routeAutocompleteInstalledInstanceWithAlias)
 	return webhook
 }
@@ -372,14 +390,11 @@ func (p *Plugin) help(args *model.CommandArgs) *model.CommandResponse {
 }
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	err := p.CheckSiteURL()
-	if err != nil {
-		return p.responsef(commandArgs, err.Error()), nil
-	}
 	args := strings.Fields(commandArgs.Command)
 	if len(args) == 0 || args[0] != "/jira" {
 		return p.help(commandArgs), nil
 	}
+
 	return jiraCommandHandler.Handle(p, c, commandArgs, args[1:]...), nil
 }
 
@@ -595,8 +610,6 @@ func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 		return p.responsef(header, "Current settings:\n%s", conn.Settings.String())
 	case "notifications":
 		return p.settingsNotifications(header, instance.GetID(), user.MattermostUserID, conn, args)
-	case "watching":
-		return p.settingsWatching(header, instance.GetID(), user.MattermostUserID, conn, args)
 	default:
 		return p.responsef(header, "Unknown setting.")
 	}

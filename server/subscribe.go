@@ -16,7 +16,7 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -587,7 +587,7 @@ func (p *Plugin) hasPermissionToManageSubscription(instanceID types.ID, userID, 
 
 	switch cfg.RolesAllowedToEditJiraSubscriptions {
 	case "team_admin":
-		if !p.API.HasPermissionToChannel(userID, channelID, model.PERMISSION_MANAGE_TEAM) {
+		if !p.API.HasPermissionToChannel(userID, channelID, model.PermissionManageTeam) {
 			return errors.New("is not team admin")
 		}
 	case "channel_admin":
@@ -596,12 +596,12 @@ func (p *Plugin) hasPermissionToManageSubscription(instanceID types.ID, userID, 
 			return errors.Wrap(appErr, "unable to get channel to check permission")
 		}
 		switch channel.Type {
-		case model.CHANNEL_OPEN:
-			if !p.API.HasPermissionToChannel(userID, channelID, model.PERMISSION_MANAGE_PUBLIC_CHANNEL_PROPERTIES) {
+		case model.ChannelTypeOpen:
+			if !p.API.HasPermissionToChannel(userID, channelID, model.PermissionManagePublicChannelProperties) {
 				return errors.New("is not channel admin")
 			}
-		case model.CHANNEL_PRIVATE:
-			if !p.API.HasPermissionToChannel(userID, channelID, model.PERMISSION_MANAGE_PRIVATE_CHANNEL_PROPERTIES) {
+		case model.ChannelTypePrivate:
+			if !p.API.HasPermissionToChannel(userID, channelID, model.PermissionManagePrivateChannelProperties) {
 				return errors.New("is not channel admin")
 			}
 		default:
@@ -609,7 +609,7 @@ func (p *Plugin) hasPermissionToManageSubscription(instanceID types.ID, userID, 
 		}
 	case "users":
 	default:
-		if !p.API.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
+		if !p.API.HasPermissionTo(userID, model.PermissionManageSystem) {
 			return errors.New("is not system admin")
 		}
 	}
@@ -714,6 +714,7 @@ func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, in
 		return respondErr(w, http.StatusForbidden,
 			fmt.Errorf("JIRA plugin not configured correctly; must provide Secret"))
 	}
+
 	status, err = verifyHTTPSecret(conf.Secret, r.FormValue("secret"))
 	if err != nil {
 		return respondErr(w, status, err)
@@ -723,6 +724,10 @@ func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, in
 	size = utils.ByteSize(len(bb))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	if conf.EnableWebhookEventLogging {
+		p.API.LogDebug("Webhook Event Log", "event", string(bb))
 	}
 
 	// If there is space in the queue, immediately return a 200; we will process the webhook event async.

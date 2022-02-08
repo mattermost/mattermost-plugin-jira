@@ -12,7 +12,7 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -43,30 +43,34 @@ func (c *Connection) JiraAccountID() types.ID {
 }
 
 type ConnectionSettings struct {
-	Notifications bool  `json:"notifications"`
-	Watching      *bool `json:"watching"`
+	SendNotificationsForMention  bool `json:"send_notifications_for_mention"`
+	SendNotificationsForAssignee bool `json:"send_notifications_for_assignee"`
+	SendNotificationsForReporter bool `json:"send_notifications_for_reporter"`
+	SendNotificationsForWatching bool `json:"send_notifications_for_watching"`
 }
 
 func (s *ConnectionSettings) String() string {
-	notifications, watching := settingOff, settingOff
-	if s != nil {
-		if s.Notifications {
-			notifications = "on"
-		}
-		if s.ShouldReceiveWatcherNotifications() {
-			watching = "on"
-		}
-	}
-	return fmt.Sprintf("- Notifications: %s\n\t- Watching: %s", notifications, watching)
-}
-
-func (s *ConnectionSettings) ShouldReceiveWatcherNotifications() bool {
-	if s.Watching != nil {
-		return *s.Watching
+	assigneeNotifications := "Notifications for assignee : off"
+	mentionNotifications := "Notifications for mention : off"
+	reporterNotifications := "Notifications for reporter : off"
+	watchingNotifications := "Notifications for watching : off"
+	if s != nil && s.SendNotificationsForAssignee {
+		assigneeNotifications = "Notifications for assignee : on"
 	}
 
-	// Check old setting for backwards compatibility
-	return s.Notifications
+	if s != nil && s.SendNotificationsForMention {
+		mentionNotifications = "Notifications for mention : on"
+	}
+
+	if s != nil && s.SendNotificationsForReporter {
+		reporterNotifications = "Notifications for reporter : on"
+	}
+
+	if s != nil && s.SendNotificationsForWatching {
+		watchingNotifications = "Notifications for watching : on"
+	}
+
+	return fmt.Sprintf("\tNotifications Status:\n\t- %s \n\t- %s \n\t- %s \n\t- %s", assigneeNotifications, mentionNotifications, reporterNotifications, watchingNotifications)
 }
 
 func NewUser(mattermostUserID types.ID) *User {

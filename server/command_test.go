@@ -11,9 +11,9 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/jarcoal/httpmock"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
-	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -70,7 +70,12 @@ func getMockUserStoreKV() mockUserStoreKV {
 	}
 
 	withNotifications := connection // copy
-	withNotifications.Settings = &ConnectionSettings{Notifications: true}
+	withNotifications.Settings = &ConnectionSettings{
+		SendNotificationsForMention:  true,
+		SendNotificationsForAssignee: true,
+		SendNotificationsForReporter: true,
+		SendNotificationsForWatching: true,
+	}
 
 	return mockUserStoreKV{
 		users: map[types.ID]*User{
@@ -165,12 +170,12 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 		"no params, with notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithNotifications},
 			numInstances: 1,
-			expectedMsg:  "Current settings:\n- Notifications: on\n\t- Watching: on",
+			expectedMsg:  "Current settings:\n\tNotifications Status:\n\t- Notifications for assignee : on \n\t- Notifications for mention : on \n\t- Notifications for reporter : on",
 		},
 		"no params, without notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "Current settings:\n- Notifications: off\n\t- Watching: off",
+			expectedMsg:  "Current settings:\n\tNotifications Status:\n\t- Notifications for assignee : off \n\t- Notifications for mention : off \n\t- Notifications for reporter : off",
 		},
 		"unknown setting": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings" + " test", UserId: mockUserIDWithoutNotifications},
@@ -180,22 +185,22 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 		"set notifications without value": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings" + " notifications", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "`/jira settings notifications [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
+			expectedMsg:  "`/jira settings notifications [assignee/mention/reporter] [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
 		},
 		"set notification with unknown value": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications test", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "`/jira settings notifications [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
+			expectedMsg:  "`/jira settings notifications [assignee/mention/reporter] [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
 		},
 		"enable notifications": {
-			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications on", UserId: mockUserIDWithoutNotifications},
+			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications assignee on", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated. Notifications on.",
+			expectedMsg:  "Settings updated.\n\tAssignee on.",
 		},
 		"disable notifications": {
-			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications off", UserId: mockUserIDWithNotifications},
+			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications assignee off", UserId: mockUserIDWithNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated. Notifications off.",
+			expectedMsg:  "Settings updated.\n\tAssignee off.",
 		},
 	}
 	for name, tt := range tests {

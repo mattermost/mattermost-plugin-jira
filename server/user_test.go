@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/mattermost/mattermost-server/v5/plugin"
-	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
+	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,12 +16,20 @@ func TestUserSettings_String(t *testing.T) {
 		expectedOutput string
 	}{
 		"notifications on": {
-			settings:       ConnectionSettings{Notifications: false},
-			expectedOutput: "- Notifications: off\n\t- Watching: off",
+			settings: ConnectionSettings{
+				SendNotificationsForMention:  true,
+				SendNotificationsForAssignee: true,
+				SendNotificationsForReporter: true,
+			},
+			expectedOutput: "\tNotifications Status:\n\t- Notifications for assignee : on \n\t- Notifications for mention : on \n\t- Notifications for reporter : on",
 		},
 		"notifications off": {
-			settings:       ConnectionSettings{Notifications: true},
-			expectedOutput: "- Notifications: on\n\t- Watching: on",
+			settings: ConnectionSettings{
+				SendNotificationsForMention:  false,
+				SendNotificationsForAssignee: false,
+				SendNotificationsForReporter: false,
+			},
+			expectedOutput: "\tNotifications Status:\n\t- Notifications for assignee : off \n\t- Notifications for mention : off \n\t- Notifications for reporter : off",
 		},
 	}
 	for name, tt := range tests {

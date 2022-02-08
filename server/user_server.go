@@ -13,7 +13,7 @@ import (
 	"github.com/dghubble/oauth1"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -104,7 +104,12 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	connection.User = *juser
 
 	// Set default settings the first time a user connects
-	connection.Settings = &ConnectionSettings{Notifications: true}
+	connection.Settings = &ConnectionSettings{
+		SendNotificationsForMention:  true,
+		SendNotificationsForAssignee: true,
+		SendNotificationsForReporter: true,
+		SendNotificationsForWatching: true,
+	}
 
 	err = p.connectUser(instance, types.ID(mattermostUserID), connection)
 	if err != nil {
@@ -117,7 +122,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 		RevokeURL             string
 	}{
 		JiraDisplayName:       juser.DisplayName + " (" + juser.Name + ")",
-		MattermostDisplayName: mmuser.GetDisplayName(model.SHOW_NICKNAME_FULLNAME),
+		MattermostDisplayName: mmuser.GetDisplayName(model.ShowNicknameFullName),
 		RevokeURL:             path.Join(p.GetPluginURLPath(), instancePath(routeUserDisconnect, instance.GetID())),
 	})
 }
