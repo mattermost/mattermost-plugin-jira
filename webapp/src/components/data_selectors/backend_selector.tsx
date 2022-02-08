@@ -162,12 +162,12 @@ export default class BackendSelector extends React.PureComponent<Props, State> {
             return {
                 label: (
                     <span>
-                            <img
-                                src={ v.avatarUrls[AvatarSize.SMALL]}
-                                style={{width: '24px', marginRight: '10px'}}
-                            />
-                            <span>{v.displayName}</span>
-                        </span>
+                        <img
+                            src={v.avatarUrls[AvatarSize.SMALL]}
+                            style={{width: '24px', marginRight: '10px'}}
+                        />
+                        <span>{v.displayName}</span>
+                    </span>
                 ),
                 value: v,
             };
