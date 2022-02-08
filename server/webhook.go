@@ -31,7 +31,6 @@ type Webhook interface {
 	Events() StringSet
 	PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error)
 	PostNotifications(p *Plugin, instanceID types.ID) ([]*model.Post, int, error)
-	CheckIssueWatchers(p *Plugin, instanceID types.ID)
 }
 
 type webhookField struct {
@@ -171,26 +170,26 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 	return posts, http.StatusOK, nil
 }
 
-func (wh *webhook) CheckIssueWatchers(p *Plugin, instanceID types.ID) {
+func (wh *webhook) checkIssueWatchers(p *Plugin, instanceID types.ID) {
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil && instance == nil {
 		// This isn't an internal server error. There's just no instance installed.
 		return
 	}
 
-	c, err := p.getConnection(instance, webhookUserNotification{
-		jiraAccountID: wh.JiraWebhook.User.AccountID,
-		jiraUsername:  wh.JiraWebhook.User.Name,
-	})
+	ci, ok := instance.(*cloudInstance)
+	if !ok {
+		return
+	}
+	client, err := ci.getClientForBot()
+	// client, err := instance.GetClient(c)
 	if err != nil {
 		return
 	}
-	client, err := instance.GetClient(c)
+
+	watcherUsers, resp, err := client.Issue.GetWatchers(wh.Issue.ID)
 	if err != nil {
-		return
-	}
-	watcherUsers, err := client.GetWatchers(wh.Issue.ID)
-	if err != nil {
+		err = userFriendlyJiraError(resp, err)
 		return
 	}
 
@@ -215,13 +214,6 @@ func (wh *webhook) CheckIssueWatchers(p *Plugin, instanceID types.ID) {
 			message:       message,
 			postType:      postType,
 			commentSelf:   wh.JiraWebhook.Comment.Self,
-		}
-
-		c, err = p.getConnection(instance, whUserNotification)
-
-		// if setting watching value is false don't put into webhookUserNotification
-		if err != nil || c.Settings == nil || !c.Settings.SendNotificationsForWatching {
-			continue
 		}
 
 		wh.notifications = append(wh.notifications, whUserNotification)

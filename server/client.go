@@ -202,8 +202,11 @@ func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (*j
 
 // GetWatchers returns an array of Jira users watching for a given issue.
 func (client JiraClient) GetWatchers(issueKey string) (*[]jira.User, error) {
+	fmt.Println("_______________", issueKey)
 	watchers, resp, err := client.Jira.Issue.GetWatchers(issueKey)
+	respBypte, _ := json.Marshal(resp.Body)
 	if err != nil {
+		fmt.Println("_______________1", string(respBypte), "err", err)
 		return nil, userFriendlyJiraError(resp, err)
 	}
 	return watchers, nil

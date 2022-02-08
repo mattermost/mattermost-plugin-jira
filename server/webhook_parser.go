@@ -250,6 +250,8 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 // appendCommentNotifications modifies wh
 func appendCommentNotifications(wh *webhook, verb string) {
 	jwh := wh.JiraWebhook
+	fmt.Println("&&&&&&&&&&&&&&&&&&&&&&", jwh.User)
+
 	commentAuthor := mdUser(&jwh.Comment.UpdateAuthor)
 
 	message := fmt.Sprintf("%s %s %s:\n%s",

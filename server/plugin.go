@@ -486,7 +486,10 @@ func (p *Plugin) getConnection(instance Instance, notification webhookUserNotifi
 	if err != nil {
 		return
 	}
-
+	fmt.Println("+++++++++++++++++", mattermostUserID)
+	if mattermostUserID == "" {
+		mattermostUserID = ""
+	}
 	// Check if the user has permissions.
 	conn, err = p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
 	if err != nil {
