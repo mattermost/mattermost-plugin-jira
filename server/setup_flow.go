@@ -211,10 +211,13 @@ func (p *Plugin) stepServerAddAppLink() flow.Step {
 	return flow.NewStep(stepServerAddAppLink).
 		WithPretext("##### :white_check_mark: Configure the Mattermost application link in Jira").
 		WithTitle("Create Application Link.").
-		WithText("Server `{{.JiraURL}}` has been successfully added. To finish the configuration add and configure an Application Link in your Jira instance following these steps:\n" +
-			"1. Navigate to [**Settings > Applications > Application Links**]({{.JiraURL}}/plugins/servlet/applinks/listApplicationLinks)\n" +
-			"2. Enter `{{.PluginURL}}` as the application link, then select **Create new link**." +
-			"3. Ignore any errors in Jira's **Configure Application URL** confirmation screen, and select **Continue**.").
+		WithText("Server `{{.JiraURL}}` has been successfully added. " +
+			"To finish the configuration add and configure an Application Link in your Jira instance.\n" +
+			"Complete the following steps, then come back here and select **Continue**:\n\n" +
+			"1. Navigate to [**Settings > Applications > Application Links**]({{.JiraURL}}/plugins/servlet/applinks/listApplicationLinks).\n" +
+			"2. Enter `{{.PluginURL}}` as the application link, then select **Create new link**.\n" +
+			"3. Ignore any errors in Jira's **Configure Application URL** confirmation screen.\n" +
+			"4. Select **Continue**.\n").
 		WithButton(continueButton(stepServerConfigureAppLink1)).
 		WithButton(cancelButton)
 }
@@ -222,12 +225,12 @@ func (p *Plugin) stepServerAddAppLink() flow.Step {
 func (p *Plugin) stepServerConfigureAppLink1() flow.Step {
 	return flow.NewStep(stepServerConfigureAppLink1).
 		WithTitle("Create Incoming Application Link.").
-		WithText("1. In Jira's **Link Applications** screen enter the following values:\n" +
+		WithText("Complete the following steps, then come back here and select **Continue**:\n\n" +
+			"1. In Jira's **Link Applications** screen enter the following values, leave all other fields blank.\n" +
 			"  - **Application Name**:  `Mattermost`\n" +
 			"  - **Application Type**: **Generic Application**\n" +
-			"  - _other fields_...: _blank_\n" +
-			"  - **Create incoming link**: :heavy_check_mark: **IMPORTANT: check**\n" +
-			"2. Select **Continue**\n").
+			"  - **Create incoming link**: :heavy_check_mark: **(important)**\n" +
+			"2. Select **Continue**.\n").
 		WithButton(continueButton(stepServerConfigureAppLink2)).
 		WithButton(cancelButton)
 }
@@ -235,13 +238,12 @@ func (p *Plugin) stepServerConfigureAppLink1() flow.Step {
 func (p *Plugin) stepServerConfigureAppLink2() flow.Step {
 	return flow.NewStep(stepServerConfigureAppLink2).
 		WithTitle("Configure Incoming Application Link.").
-		WithText("1. In Jira's second **Link Applications** screen enter the following values:\n" +
+		WithText("Complete the following steps, then come back here and select **Continue**:\n\n" +
+			"1. In Jira's second **Link Applications** screen enter the following values, leave all other fields blank.\n" +
 			"  - **Consumer Key**: `{{.MattermostKey}}`\n" +
 			"  - **Consumer Name**: `Mattermost`\n" +
 			"  - **Public Key**:\n```\n{{ .PublicKey }}\n```\n" +
-			"  - **Consumer Callback URL**: _leave blank_\n" +
-			"  - **Allow 2-legged OAuth**: off (unchecked) \n" +
-			"2. Select **Continue**\n").
+			"2. Select **Continue**.\n").
 		WithButton(continueButton(stepConnect)).
 		WithButton(cancelButton)
 }
@@ -257,8 +259,8 @@ func (p *Plugin) stepCloudEnableDeveloperMode() flow.Step {
 		WithPretext("##### :white_check_mark: Configure the Mattermost app in Jira").
 		WithTitle("Enable development mode.").
 		WithText("Mattermost Jira Cloud integration requires setting your Jira to _development mode_. " +
-			"Enabling the development mode allows you to install apps like Mattermost, from outside the Atlassian Marketplace." +
-			"Complete the following steps, then select **Continue**:\n\n" +
+			"Enabling the development mode allows you to install apps like Mattermost, from outside the Atlassian Marketplace.\n" +
+			"Complete the following steps, then come back here and select **Continue**:\n\n" +
 			"1. Navigate to [**Settings > Apps > Manage Apps**]({{.JiraURL}}/plugins/servlet/upm?source=side_nav_manage_addons).\n" +
 			"2. Select **Settings** at the bottom of the page.\n" +
 			"3. Select **Enable development mode**, then select **Apply**.\n").
@@ -270,7 +272,8 @@ func (p *Plugin) stepCloudEnableDeveloperMode() flow.Step {
 func (p *Plugin) stepCloudUploadApp() flow.Step {
 	return flow.NewStep(stepCloudUploadApp).
 		WithTitle("Upload the Mattermost app (atlassian-config) to Jira.").
-		WithText("To finish the configuration, create a new app in your Jira instance by following these steps:\n\n" +
+		WithText("To finish the configuration, create a new app in your Jira instance.\n" +
+			"Complete the following steps, then come back here and select **Continue**:\n\n" +
 			"1. From [**Settings > Apps > Manage Apps**]({{.JiraURL}}/plugins/servlet/upm?source=side_nav_manage_addons) select **Upload app**.\n" +
 			"2. In the **From this URL field**, enter: `{{.ACURL}}`, then select **Upload**\n" +
 			"3. Wait for the app to install. Once completed, you should see an \"Installed and ready to go!\" message.\n").
@@ -284,7 +287,7 @@ func (p *Plugin) stepCloudUploadApp() flow.Step {
 func (p *Plugin) stepCloudInstalledApp() flow.Step {
 	next := func(to flow.Name) func(*flow.Flow) (flow.Name, flow.State, error) {
 		return func(f *flow.Flow) (flow.Name, flow.State, error) {
-			jiraURL := f.State[keyJiraURL]
+			jiraURL := f.State.GetString(keyJiraURL)
 			instanceID := types.ID(jiraURL)
 			return to, flow.State{
 				keyConnectURL:        p.GetPluginURL() + "/" + instancePath(routeUserConnect, instanceID),
@@ -343,8 +346,8 @@ func (p *Plugin) stepWebhook() flow.Step {
 				SubmitLabel:      "Continue",
 			},
 			OnDialogSubmit: func(f *flow.Flow, _ map[string]interface{}) (flow.Name, flow.State, map[string]string, error) {
-				delegatedFrom, ok := f.State[keyDelegatedFromUserID]
-				if ok {
+				delegatedFrom := f.State.GetString(keyDelegatedFromUserID)
+				if delegatedFrom != "" {
 					_ = p.setupFlow.ForUser(delegatedFrom).Go(stepDelegateComplete)
 				}
 				return stepWebhookDone, nil, nil, nil
@@ -447,7 +450,7 @@ func (p *Plugin) submitCreateServerInstance(f *flow.Flow, submission map[string]
 		keyJiraURL:           jiraURL,
 		keyPluginURL:         p.GetPluginURL(),
 		keyMattermostKey:     si.GetMattermostKey(),
-		keyPublicKey:         strings.TrimSpace(string(pkey)),
+		keyPublicKey:         pkey,
 		keyConnectURL:        p.GetPluginURL() + "/" + instancePath(routeUserConnect, si.InstanceID),
 		keyWebhookURL:        p.getSubscriptionsWebhookURL(si.InstanceID),
 		keyManageWebhooksURL: si.GetManageWebhooksURL(),

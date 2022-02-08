@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/jarcoal/httpmock v1.0.8
-	github.com/mattermost/mattermost-plugin-api v0.0.24-0.20220204173116-7f1472843aa6
+	github.com/mattermost/mattermost-plugin-api v0.0.25-0.20220207141835-e7e9a13518c4
 	github.com/mattermost/mattermost-plugin-autolink v1.2.2-0.20210709183311-c8fa30db649f
 	github.com/mattermost/mattermost-server/v6 v6.3.0
 	github.com/mholt/archiver/v3 v3.5.1

@@ -818,7 +818,7 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 		"JiraURL":       jiraURL,
 		"PluginURL":     p.GetPluginURL(),
 		"MattermostKey": instance.GetMattermostKey(),
-		"PublicKey":     strings.TrimSpace(string(pkey)),
+		"PublicKey":     pkey,
 	})
 }
 
