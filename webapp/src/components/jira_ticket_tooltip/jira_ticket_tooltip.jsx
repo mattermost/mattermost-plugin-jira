@@ -29,7 +29,7 @@ export default class TicketPopover extends PureComponent {
         if (num > str.length) {
             return str;
         }
-        return str.substring(0, num) + '...';
+        return `${str.substring(0, num)}...`;
     }
 
     async init() {
@@ -60,27 +60,17 @@ export default class TicketPopover extends PureComponent {
 
     fixVersionLabel(fixVersion) {
         if (fixVersion) {
-            return (<div
-                className='fix-version-label'
-                style={{
-                    color: '#333',
-                    margin: '16px 0px',
-                    textAlign: 'left',
-                    fontFamily: 'open sans',
-                    fontSize: '10px',
-                    padding: '0px 0px 2px 0px',
-                }}>Fix Version: <span className="fix-version-label-value" style={{
-                backgroundColor: 'rgba(63, 67, 80, 0.08)',
-                padding: '1px 8px',
-                fontWeight: '600',
-                borderRadius: '2px',
-            }}>{fixVersion}
-            </span></div>);
+            let fixVersionString = 'Fix Version :'
+            return (
+                <div className='fix-version-label' style={{color: '#333', margin: '16px 0px', textAlign: 'left', fontFamily: 'open sans', fontSize: '10px', padding: '0px 0px 2px 0px',}}>
+                    {fixVersionString}<span className="fix-version-label-value" style={{backgroundColor: 'rgba(63, 67, 80, 0.08)', padding: '1px 8px', fontWeight: '600', borderRadius: '2px'}}>{fixVersion}</span>
+                </div>
+                );
         }
         return(<span></span>);
     }
 
-    tagTicketStatus(ticketStatus, ticketStatusKey) {
+    tagTicketStatus(ticketStatus, ticketStatusKlabelListey) {
         const defaultStyle = {
             fontFamily: 'open sans',
             fontStyle: 'normal',
@@ -143,6 +133,7 @@ export default class TicketPopover extends PureComponent {
                 </Fragment>
             )
         }
+        return (<span></span>);
     }
 
 
