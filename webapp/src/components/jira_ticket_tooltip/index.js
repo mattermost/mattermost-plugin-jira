@@ -1,10 +1,9 @@
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 
-
 import {isUserConnected, getUserConnectedInstances, getInstalledInstances, getIssue, getDefaultUserInstanceID} from 'selectors';
 
-import {getIssueByKey, getConnected} from 'actions'
+import {getIssueByKey, getConnected} from 'actions';
 
 import TicketPopover from './jira_ticket_tooltip';
 

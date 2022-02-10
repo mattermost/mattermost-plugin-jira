@@ -90,10 +90,10 @@ export const getIssueByKey = (issueKey: string, instanceID: string) => {
                 method: 'get',
             });
             if (data.error) {
-                let err = new Error(data.error);
+                const err = new Error(data.error);
                 dispatch({
                     type: ActionTypes.RECEIVED_JIRA_TICKETS_ERROR,
-                    error:err,
+                    error: err,
                 });
                 return {data};
             }
@@ -102,14 +102,14 @@ export const getIssueByKey = (issueKey: string, instanceID: string) => {
                 data,
             });
             return {data};
-        } catch(error) {
+        } catch (error) {
             dispatch({
                 type: ActionTypes.RECEIVED_JIRA_TICKETS_ERROR,
-                 error
+                error,
             });
             return {error};
-        }
-    }
+        };
+    };
 }
 
 export const fetchJiraIssueMetadataForProjects = (projectKeys: string[], instanceID: string) => {
