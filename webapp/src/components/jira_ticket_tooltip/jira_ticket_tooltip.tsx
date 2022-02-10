@@ -20,11 +20,10 @@ export type Props = {
     defaultUserInstanceID: string;
     installedInstances: Instance[];
     connectedInstances: Instance[];
-    getIssueByKey:(ticketId: string, instanceID: string) => void;
+    getIssueByKey: (ticketId: string, instanceID: string) => void;
     getConnected: () => Promise<GetConnectedResponse>;
 }
-export default class TicketPopover extends React.PureComponent<Props>{
-
+export default class TicketPopover extends React.PureComponent<Props> {
     truncateString(str: string, num: number) {
         if (num > str.length) {
             return str;
@@ -63,20 +62,19 @@ export default class TicketPopover extends React.PureComponent<Props>{
             const fixVersionString = 'Fix Version :';
             return (
                 <div className='fix-version-label'
-                    style={{color: '#333', margin: '16px 0px', textAlign: 'left', fontFamily: 'open sans', fontSize: '10px', padding: '0px 0px 2px 0px'}}
-                >
+                    style={{color: '#333', margin: '16px 0px', textAlign: 'left', fontFamily: 'open sans', fontSize: '10px', padding: '0px 0px 2px 0px'}}>
                     {fixVersionString}
-                    <span className='fix-version-label-value' 
-                        style={{backgroundColor: 'rgba(63, 67, 80, 0.08)', padding: '1px 8px', fontWeight: 600, borderRadius: '2px'}}>
+                    <span 
+                        className='fix-version-label-value' style={{backgroundColor: 'rgba(63, 67, 80, 0.08)', padding: '1px 8px', fontWeight: 600, borderRadius: '2px'}}>
                         {fixVersion}
                     </span>
-                </div>
+            </div>
                 );
         }
-        return(<span/>);
+        return (<span/>);
     }
 
-    tagTicketStatus(ticketStatus:string) {
+    tagTicketStatus(ticketStatus: string) {
         const defaultStyle = {
             fontFamily: 'open sans',
             fontStyle: 'normal',
@@ -91,10 +89,10 @@ export default class TicketPopover extends React.PureComponent<Props>{
         };
 
         if (ticketStatus.toLowerCase() === 'indeterminate') {
-            return (<span  style={{...defaultStyle, color: '#FFFFFF', backgroundColor: '#1C58D9', borderRadius: '2px'}}>{ticketStatus}</span>);
+            return (<span style={{...defaultStyle, color: '#FFFFFF', backgroundColor: '#1C58D9', borderRadius: '2px'}}>{ticketStatus}</span>);
         }
 
-        if (ticketStatus.toLowerCase() === "done") {
+        if (ticketStatus.toLowerCase() === 'done') {
             return (<span style={{...defaultStyle, color: '#FFFFFF', backgroundColor: '#3DB887'}}>{ticketStatus}</span>);
         }
 
@@ -111,16 +109,17 @@ export default class TicketPopover extends React.PureComponent<Props>{
                     return null;
                 }
                 totalString += label.length + 3;
-                return <span  key={key} className='jiraticket-popover-label-list'>{label}</span>;
-            })
-            const moreLabels = `+${totalHide}more`
+                return <span key={key} 
+                    className='jiraticket-popover-label-list'>{label}</span>;
+            });
+            const moreLabels = `+${totalHide}more`;
             return (
                 <Fragment>
                     <div className={'ticket-popover-label'}>
                         {labelList}
                     </div>
                     {
-                        totalHide !== 0 ? (<div className={'jiraticket-popover-total-hide-label'}> moreLabels</div>) : null 
+                        totalHide !== 0 ? (<div className={'jiraticket-popover-total-hide-label'}> moreLabels</div>) : null
                     }
 
                 </Fragment>
@@ -130,7 +129,7 @@ export default class TicketPopover extends React.PureComponent<Props>{
     }
 
     render() {
-        if (!this.props.isloaded){
+        if (!this.props.isloaded) {
             return (<p/>);
         }
         const jiraTicketURI = this.props.href;
