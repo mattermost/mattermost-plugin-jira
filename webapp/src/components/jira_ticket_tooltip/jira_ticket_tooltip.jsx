@@ -7,10 +7,22 @@ export default class TicketPopover extends PureComponent {
     static PropTypes = {
         href: PropTypes.string.isRequired,
         connected: PropTypes.bool.isRequired,
-    }
-
-    constructor(props) {
-        super(props);
+        isloaded: PropTypes.string.isRequired,
+        assigneeName: PropTypes.string.isRequired,
+        assigneeAvatar: PropTypes.string.isRequired,
+        labels: PropTypes.array.isRequired,
+        versions: PropTypes.array.isRequired,
+        description: PropTypes.string.isRequired,
+        summary: PropTypes.string.isRequired,
+        ticketId: PropTypes.string.isRequired,
+        jiraIcon: PropTypes.string.isRequired,
+        statusKey: PropTypes.string.isRequired,
+        issueIcon: PropTypes.string.isRequired,
+        defaultUserInstanceID: PropTypes.string.isRequired,
+        installedInstances: PropTypes.any,
+        connectedInstances: PropTypes.any,
+        getIssueByKey:PropTypes.func.isRequired,
+        getConnected:PropTypes.func.isRequired,
     }
 
     truncateString(str, num) {
@@ -24,31 +36,25 @@ export default class TicketPopover extends PureComponent {
         let ticketId = '';
         if (this.props.href.includes('atlassian.net/browse')) {
             ticketId = this.props.href.split('|')[0].split('/browse/')[1];
-        }else if (this.href.includes("atlassian.net/jira/software")) {
-            const urlParams = new URLSearchParams(fi);
+        } else if (this.props.href.includes('atlassian.net/jira/software')) {
+            const urlParams = new URLSearchParams(this.props.href);
             ticketId = urlParams.get('selectedIssue');
         }
-        var instanceID = ""
+        var instanceID = '';
         if (this.props.connectedInstances.length === 1) {
             instanceID = this.props.connectedInstances[0].instance_id;
         } else if (this.props.defaultUserInstanceID) {
             instanceID = this.props.defaultUserInstanceID;
         }
-        if (ticketId != '') {
-            this.props.getIssueByKey(ticketId,instanceID)
+        if (ticketId !== '') {
+            this.props.getIssueByKey(ticketId,instanceID);
         }
     }
 
     componentDidMount() {
-        this.props.getConnected()
+        this.props.getConnected();
         if (this.props.connected && !this.props.isloaded) {
             this.init();
-        }
-    }
-
-    componentDidUpdate(prevProps, prevState) {
-        if (this.props.connected !== prevProps.connected) {
-            this.setState({connected: this.props.connected}); 
         }
     }
 
@@ -71,6 +77,7 @@ export default class TicketPopover extends PureComponent {
             }}>{fixVersion}
             </span></div>);
         }
+        return(<span></span>);
     }
 
     tagTicketStatus(ticketStatus, ticketStatusKey) {

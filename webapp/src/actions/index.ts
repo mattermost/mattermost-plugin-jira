@@ -15,7 +15,7 @@ import {
     CreateIssueRequest,
     InstanceType,
     ProjectMetadata,
-    SearchIssueParams
+    SearchIssueParams,
 } from 'types/model';
 
 export const openConnectModal = () => {
@@ -81,7 +81,7 @@ export const closeAttachCommentToIssueModal = () => {
 };
 
 export const getIssueByKey = (issueKey: string, instanceID: string) => {
-    return async (dispatch , getState) => {
+    return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         let data = null;
         const params = `issue_key=${issueKey}&instance_id=${instanceID}`;
@@ -90,12 +90,11 @@ export const getIssueByKey = (issueKey: string, instanceID: string) => {
                 method: 'get',
             });
             if (data.error) {
-               var error = new Error(data.error)
-
+                let err = new Error(data.error);
                 dispatch({
                     type: ActionTypes.RECEIVED_JIRA_TICKETS_ERROR,
-                    error,
-                }); 
+                    error:err,
+                });
                 return {data};
             }
             dispatch({
@@ -103,15 +102,13 @@ export const getIssueByKey = (issueKey: string, instanceID: string) => {
                 data,
             });
             return {data};
-        } catch (error) {
-
+        } catch(error) {
             dispatch({
                 type: ActionTypes.RECEIVED_JIRA_TICKETS_ERROR,
                  error
-            });        
+            });
             return {error};
         }
-        
     }
 }
 
@@ -551,5 +548,3 @@ export function sendEphemeralPost(message: string, channelId?: string) {
         });
     };
 }
-
-
