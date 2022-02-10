@@ -102,23 +102,25 @@ export default class TicketPopover extends React.PureComponent<Props>{
     }
 
     labelList(labels: string[]) {
-        if (labels.length > 0 && labels !== null) {
+        if (labels.length > 0) {
             let totalString = 0;
             let totalHide = 0;
+            let labelList = labels.map((label: any, key: any) => {
+                if (totalString >= 45 || totalString + label.length >= 45) {
+                    totalHide++;
+                    return null;
+                }
+                totalString += label.length + 3;
+                return <span  key={key} className='jiraticket-popover-label-list'>{label}</span>;
+            })
+            const moreLabels = `+${totalHide}more`
             return (
                 <Fragment>
                     <div className={'ticket-popover-label'}>
-                        {labels.map((label: any, key: any) => {
-                            if (totalString >= 45 || totalString + label.length >= 45) {
-                                totalHide++;
-                                return null;
-                            }
-                            totalString += label.length + 3;
-                            return <span className='jiraticket-popover-label-list'>{label}</span>;
-                        })}
+                        {labelList}
                     </div>
                     {
-                        totalHide !== 0 ? (<div className={'jiraticket-popover-total-hide-label'}>+{totalHide}more</div>) : null 
+                        totalHide !== 0 ? (<div className={'jiraticket-popover-total-hide-label'}> moreLabels</div>) : null 
                     }
 
                 </Fragment>
