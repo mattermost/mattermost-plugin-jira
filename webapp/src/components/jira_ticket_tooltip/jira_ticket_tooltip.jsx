@@ -194,10 +194,6 @@ export default class TicketPopover extends PureComponent {
                         </a>
                         {this.tagTicketStatus(jiraTicketStatusName, jiraTicketStatusName)}
                     </div>
-                    {/* <div
-                        className={'ticket-popover-description'}
-                        dangerouslySetInnerHTML={{__html: jiraTicketDescription}}
-                    /> */}
                     <div
                         className={'ticket-popover-description'} >
                         {jiraTicketDescription}
