@@ -4,31 +4,28 @@ import './ticketStyle.scss';
 import {Instance, GetConnectedResponse} from 'types/model';
 
 export type Props = {
-    href: string,
-    connected: boolean,
-    isloaded: string,
-    assigneeName: string,
-    assigneeAvatar: string,
-    labels: any[],
-    versions: string,
-    description: string,
-    summary: string,
-    ticketId: string,
-    jiraIcon: string,
-    statusKey: string,
-    issueIcon: string,
-    defaultUserInstanceID: string,
-    installedInstances: Instance[],
-    connectedInstances: Instance[],
-    getIssueByKey:(ticketId: string,instanceID: string) => void,
-    getConnected: () => Promise<GetConnectedResponse>,
+    href: string;
+    connected: boolean;
+    isloaded: string;
+    assigneeName: string;
+    assigneeAvatar: string;
+    labels: any[];
+    versions: string;
+    description: string;
+    summary: string;
+    ticketId: string;
+    jiraIcon: string;
+    statusKey: string;
+    issueIcon: string;
+    defaultUserInstanceID: string;
+    installedInstances: Instance[];
+    connectedInstances: Instance[];
+    getIssueByKey:(ticketId: string, instanceID: string) => void;
+    getConnected: () => Promise<GetConnectedResponse>;
 }
 export default class TicketPopover extends React.PureComponent<Props>{
 
-    constructor(props: Props) {
-        super(props);
-    }
-    truncateString(str:string, num:number) {
+    truncateString(str: string, num: number) {
         if (num > str.length) {
             return str;
         }
@@ -36,18 +33,18 @@ export default class TicketPopover extends React.PureComponent<Props>{
     }
 
     async init() {
-        var instanceID = '';
+        let instanceID = '';
         if (this.props.connectedInstances.length === 1) {
             instanceID = this.props.connectedInstances[0].instance_id;
         } else if (this.props.defaultUserInstanceID) {
             instanceID = this.props.defaultUserInstanceID;
         }
-    
+
         if (this.props.href.includes('atlassian.net/browse')) {
             this.props.getIssueByKey(this.props.href.split('|')[0].split('/browse/')[1], instanceID);
         } else if (this.props.href.includes('atlassian.net/jira/software')) {
             const urlParams = new URLSearchParams(this.props.href);
-            const selectedIssue = urlParams.get('selectedIssue')
+            const selectedIssue = urlParams.get('selectedIssue');
             if (selectedIssue != null) {
                 this.props.getIssueByKey(selectedIssue, instanceID);
             }
@@ -61,7 +58,7 @@ export default class TicketPopover extends React.PureComponent<Props>{
         }
     }
 
-    fixVersionLabel(fixVersion:string) {
+    fixVersionLabel(fixVersion: string) {
         if (fixVersion) {
             const fixVersionString = 'Fix Version :';
             return (
@@ -104,14 +101,14 @@ export default class TicketPopover extends React.PureComponent<Props>{
         return (<span style={{...defaultStyle, color: '#3F4350', backgroundColor: 'rgba(63, 67, 80, 0.16)'}}>{ticketStatus}</span>);
     }
 
-    labelList(labels:string[]) {
+    labelList(labels: string[]) {
         if (labels.length > 0 && labels !== null) {
             let totalString = 0;
             let totalHide = 0;
             return (
                 <Fragment>
                     <div className={'ticket-popover-label'}>
-                        {labels.map(function (label:any,key:any) {
+                        {labels.map((label: any, key: any) => {
                             if (totalString >= 45 || totalString + label.length >= 45) {
                                 totalHide++;
                                 return null;
@@ -121,8 +118,7 @@ export default class TicketPopover extends React.PureComponent<Props>{
                         })}
                     </div>
                     {
-                        totalHide !== 0 ? (
-                            <div className={'jiraticket-popover-total-hide-label'}>+{totalHide}more</div>) : null 
+                        totalHide !== 0 ? (<div className={'jiraticket-popover-total-hide-label'}>+{totalHide}more</div>) : null 
                     }
 
                 </Fragment>
@@ -133,7 +129,7 @@ export default class TicketPopover extends React.PureComponent<Props>{
 
     render() {
         if (!this.props.isloaded){
-            return <p/>
+            return (<p/>);
         }
         const jiraTicketURI = this.props.href;
         const jiraAvatar = this.props.jiraIcon;
@@ -184,8 +180,7 @@ export default class TicketPopover extends React.PureComponent<Props>{
                         </a>
                         {this.tagTicketStatus(jiraTicketStatusName)}
                     </div>
-                    <div
-                        className={'ticket-popover-description'} >
+                    <div className={'ticket-popover-description'}>
                         {jiraTicketDescription}
                     </div>
                     <div className={'ticket-popover-labels'}>
