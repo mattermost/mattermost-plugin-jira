@@ -1,31 +1,34 @@
 import React, {Fragment, PureComponent} from 'react';
 import './ticketStyle.scss';
 
-import PropTypes from 'prop-types';
+import {Instance, GetConnectedResponse} from 'types/model';
 
-export default class TicketPopover extends PureComponent {
-    static PropTypes = {
-        href: PropTypes.string.isRequired,
-        connected: PropTypes.bool.isRequired,
-        isloaded: PropTypes.string.isRequired,
-        assigneeName: PropTypes.string.isRequired,
-        assigneeAvatar: PropTypes.string.isRequired,
-        labels: PropTypes.array.isRequired,
-        versions: PropTypes.array.isRequired,
-        description: PropTypes.string.isRequired,
-        summary: PropTypes.string.isRequired,
-        ticketId: PropTypes.string.isRequired,
-        jiraIcon: PropTypes.string.isRequired,
-        statusKey: PropTypes.string.isRequired,
-        issueIcon: PropTypes.string.isRequired,
-        defaultUserInstanceID: PropTypes.string.isRequired,
-        installedInstances: PropTypes.any,
-        connectedInstances: PropTypes.any,
-        getIssueByKey: PropTypes.func.isRequired,
-        getConnected: PropTypes.func.isRequired,
+export type Props = {
+    href: string,
+    connected: boolean,
+    isloaded: string,
+    assigneeName: string,
+    assigneeAvatar: string,
+    labels: any[],
+    versions: string,
+    description: string,
+    summary: string,
+    ticketId: string,
+    jiraIcon: string,
+    statusKey: string,
+    issueIcon: string,
+    defaultUserInstanceID: string,
+    installedInstances: Instance[],
+    connectedInstances: Instance[],
+    getIssueByKey:(ticketId: string,instanceID: string) => void,
+    getConnected: () => Promise<GetConnectedResponse>,
+}
+export default class TicketPopover extends React.PureComponent<Props>{
+
+    constructor(props: Props) {
+        super(props);
     }
-
-    truncateString(str, num) {
+    truncateString(str:string, num:number) {
         if (num > str.length) {
             return str;
         }
@@ -33,21 +36,21 @@ export default class TicketPopover extends PureComponent {
     }
 
     async init() {
-        let ticketId = '';
-        if (this.props.href.includes('atlassian.net/browse')) {
-            ticketId = this.props.href.split('|')[0].split('/browse/')[1];
-        } else if (this.props.href.includes('atlassian.net/jira/software')) {
-            const urlParams = new URLSearchParams(this.props.href);
-            ticketId = urlParams.get('selectedIssue');
-        }
         var instanceID = '';
         if (this.props.connectedInstances.length === 1) {
             instanceID = this.props.connectedInstances[0].instance_id;
         } else if (this.props.defaultUserInstanceID) {
             instanceID = this.props.defaultUserInstanceID;
         }
-        if (ticketId !== '') {
-            this.props.getIssueByKey(ticketId, instanceID);
+    
+        if (this.props.href.includes('atlassian.net/browse')) {
+            this.props.getIssueByKey(this.props.href.split('|')[0].split('/browse/')[1], instanceID);
+        } else if (this.props.href.includes('atlassian.net/jira/software')) {
+            const urlParams = new URLSearchParams(this.props.href);
+            const selectedIssue = urlParams.get('selectedIssue')
+            if (selectedIssue != null) {
+                this.props.getIssueByKey(selectedIssue, instanceID);
+            }
         }
     }
 
@@ -58,7 +61,7 @@ export default class TicketPopover extends PureComponent {
         }
     }
 
-    fixVersionLabel(fixVersion) {
+    fixVersionLabel(fixVersion:string) {
         if (fixVersion) {
             const fixVersionString = 'Fix Version :';
             return (
@@ -67,7 +70,7 @@ export default class TicketPopover extends PureComponent {
                 >
                     {fixVersionString}
                     <span className='fix-version-label-value' 
-                        style={{backgroundColor: 'rgba(63, 67, 80, 0.08)', padding: '1px 8px', fontWeight: '600', borderRadius: '2px'}}>
+                        style={{backgroundColor: 'rgba(63, 67, 80, 0.08)', padding: '1px 8px', fontWeight: 600, borderRadius: '2px'}}>
                         {fixVersion}
                     </span>
                 </div>
@@ -76,11 +79,11 @@ export default class TicketPopover extends PureComponent {
         return(<span/>);
     }
 
-    tagTicketStatus(ticketStatus) {
+    tagTicketStatus(ticketStatus:string) {
         const defaultStyle = {
             fontFamily: 'open sans',
             fontStyle: 'normal',
-            fontWeight: '600',
+            fontWeight: 600,
             fontSize: '12px',
             marginTop: '4px',
             padding: '0px 8px',
@@ -91,7 +94,7 @@ export default class TicketPopover extends PureComponent {
         };
 
         if (ticketStatus.toLowerCase() === 'indeterminate') {
-            return (<span style={{...defaultStyle, color: '#FFFFFF', backgroundColor: '#1C58D9', borderRadius: '2px'}}>{ticketStatus}</span>);
+            return (<span  style={{...defaultStyle, color: '#FFFFFF', backgroundColor: '#1C58D9', borderRadius: '2px'}}>{ticketStatus}</span>);
         }
 
         if (ticketStatus.toLowerCase() === "done") {
@@ -101,14 +104,14 @@ export default class TicketPopover extends PureComponent {
         return (<span style={{...defaultStyle, color: '#3F4350', backgroundColor: 'rgba(63, 67, 80, 0.16)'}}>{ticketStatus}</span>);
     }
 
-    labelList(labels) {
+    labelList(labels:string[]) {
         if (labels !== undefined && labels !== null) {
             let totalString = 0;
             let totalHide = 0;
             return (
                 <Fragment>
                     <div className={'ticket-popover-label'}>
-                        {labels.map(function (key,label) {
+                        {labels.map(function (label:any) {
                             if (totalString >= 45 || totalString + label.length >= 45) {
                                 totalHide++;
                                 return null;
@@ -132,7 +135,6 @@ export default class TicketPopover extends PureComponent {
         if (!this.props.isloaded){
             return <p/>
         }
-
         const jiraTicketURI = this.props.href;
         const jiraAvatar = this.props.jiraIcon;
         const jiraIssueIconURI = this.props.issueIcon;
