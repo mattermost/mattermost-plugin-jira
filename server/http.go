@@ -55,8 +55,7 @@ const (
 	routeUserConnect                            = "/user/connect"
 	routeUserDisconnect                         = "/user/disconnect"
 	routeSharePublicly                          = "/api/v2/share-issue-publicly"
-	routeGetIssueByKey 							= "/api/v2/get-isse-by-key"
-	
+	routeGetIssueByKey                          = "/api/v2/get-isse-by-key"
 )
 
 const routePrefixInstance = "instance"
@@ -129,7 +128,7 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	case routeSharePublicly:
 		return p.httpShareIssuePublicly(w, r)
 	case routeGetIssueByKey:
-		return p.httpGetIssueByKey(w,r)
+		return p.httpGetIssueByKey(w, r)
 
 	// User APIs
 	case routeAPIUserInfo:

@@ -1063,7 +1063,6 @@ func (p *Plugin) httpGetIssueByKey(w http.ResponseWriter, r *http.Request) (int,
 }
 
 func (p *Plugin) GetIssueByKey(instanceID, mattermostUserID types.ID, issueKey string) (*jira.Issue, error) {
-
 	client, _, _, err := p.getClient(instanceID, mattermostUserID)
 	if err != nil {
 		return nil, err
