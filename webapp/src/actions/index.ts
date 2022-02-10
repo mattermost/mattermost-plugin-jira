@@ -51,11 +51,6 @@ export const openCreateModal = (postId) => {
     };
 };
 
-export const getJiraTickets = (ticketID: any) => {
-    console.log(ticketID);
-    return null;
-};
-
 export const openCreateModalWithoutPost = (description, channelId) => (dispatch) => dispatch({
     type: ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST,
     data: {
@@ -84,6 +79,41 @@ export const closeAttachCommentToIssueModal = () => {
         type: ActionTypes.CLOSE_ATTACH_COMMENT_TO_ISSUE_MODAL,
     };
 };
+
+export const getIssueByKey = (issueKey: string, instanceID: string) => {
+    return async (dispatch , getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        let data = null;
+        const params = `issue_key=${issueKey}&instance_id=${instanceID}`;
+        try {
+            data = await doFetch(`${baseUrl}/api/v2/get-isse-by-key?${params}`, {
+                method: 'get',
+            });
+            if (data.error) {
+               var error = new Error(data.error)
+
+                dispatch({
+                    type: ActionTypes.RECEIVED_JIRA_TICKETS_ERROR,
+                    error,
+                }); 
+                return {data};
+            }
+            dispatch({
+                type: ActionTypes.RECEIVED_JIRA_TICKETS,
+                data,
+            });
+            return {data};
+        } catch (error) {
+
+            dispatch({
+                type: ActionTypes.RECEIVED_JIRA_TICKETS_ERROR,
+                 error
+            });        
+            return {error};
+        }
+        
+    }
+}
 
 export const fetchJiraIssueMetadataForProjects = (projectKeys: string[], instanceID: string) => {
     return async (dispatch, getState) => {
@@ -522,9 +552,4 @@ export function sendEphemeralPost(message: string, channelId?: string) {
     };
 }
 
-export function GetIssueByKey(issueKey: string) {
-    return async (dispatch, getState) => {
-        const url = getPluginServerRoute(getState()) + '/api/v2/get-isse-by-key';
-        return doFetchWithResponse(`${url}${buildQueryString(params)}`);
-    };
-}
+

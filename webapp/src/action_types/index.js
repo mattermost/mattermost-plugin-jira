@@ -34,4 +34,5 @@ export default {
     DELETED_CHANNEL_SUBSCRIPTION: `${PluginId}_deleted_channel_subscription`,
 
     RECEIVED_JIRA_TICKETS: `${PluginId}_received_jira_tickets`,
+    RECEIVED_JIRA_TICKETS_ERROR: `${PluginId}_received_jira_tickets_error`,
 };

@@ -109,11 +109,12 @@
     font-style: normal;
     overflow: hidden;
     font-weight: normal;
-    min-height: 28px;
-    max-height: 58px;
+    max-height: 200px;
     margin: 0px 24px;
     font-size: 12px;
     line-height: 1.5;
+    width:300px;
+    text-overflow: ellipsis;
 }
 
 .ticket-popover-description > p {

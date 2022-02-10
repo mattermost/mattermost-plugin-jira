@@ -4,9 +4,13 @@ import './ticketStyle.scss';
 import PropTypes from 'prop-types';
 
 export default class TicketPopover extends PureComponent {
-    static propTypes = {
-        href: PropTypes.string,
-        connected: PropTypes.any,
+    static PropTypes = {
+        href: PropTypes.string.isRequired,
+        connected: PropTypes.bool.isRequired,
+    }
+
+    constructor(props) {
+        super(props);
     }
 
     truncateString(str, num) {
@@ -18,26 +22,36 @@ export default class TicketPopover extends PureComponent {
 
     async init() {
         let ticketId = '';
-        if (this.href.includes('attlasian.net/browse')) {
-            ticketId = href.split('/browse/')[1].split('/');
-            this.props.value = await getTicket(ticketId);
-        }
-
-        if (this.href.includes("atlassian.net/jira/software")) {
+        if (this.props.href.includes('atlassian.net/browse')) {
+            ticketId = this.props.href.split('|')[0].split('/browse/')[1];
+        }else if (this.href.includes("atlassian.net/jira/software")) {
             const urlParams = new URLSearchParams(fi);
             ticketId = urlParams.get('selectedIssue');
-            this.props.value = await getTicket(ticketId);
+        }
+        var instanceID = ""
+        if (this.props.connectedInstances.length === 1) {
+            instanceID = this.props.connectedInstances[0].instance_id;
+        } else if (this.props.defaultUserInstanceID) {
+            instanceID = this.props.defaultUserInstanceID;
+        }
+        if (ticketId != '') {
+            this.props.getIssueByKey(ticketId,instanceID)
         }
     }
 
     componentDidMount() {
-        if (this.connected) {
+        this.props.getConnected()
+        if (this.props.connected && !this.props.isloaded) {
             this.init();
         }
     }
 
-    //
-    // eslint-disable-next-line consistent-return
+    componentDidUpdate(prevProps, prevState) {
+        if (this.props.connected !== prevProps.connected) {
+            this.setState({connected: this.props.connected}); 
+        }
+    }
+
     fixVersionLabel(fixVersion) {
         if (fixVersion) {
             return (<div
@@ -126,18 +140,21 @@ export default class TicketPopover extends PureComponent {
 
 
     render() {
-        const jiraTicketURI = 'www.facebook.com';//this.props.value.self
-        const jiraAvatar = 'https://icons.iconarchive.com/icons/hopstarter/superhero-avatar/128/Avengers-Hulk-icon.png'; //
-        const jiraStatusIconURI = 'https://digitalcenter.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium';//this.props.value.fields.status.iconUrl
-        const jiraTicketKey = 'MM-37566';//this.props.value.key
-        const jiraTicketTitle = 'RN: Mobile V2: In-App Notifications';//this.props.value.names
-        const jiraTicketAssigneeAvatarURI = 'https://icons.iconarchive.com/icons/hopstarter/superhero-avatar/128/Avengers-Hulk-icon.png';//this.props.value.fields.assignee.avatarUrls["48x48"]
-        const jiraTicketAssigneeName = 'Leonard Riley';//this.props.value.fields.assignee.name
-        const jiraTicketStatusName = 'Open';//this.value.fields.status.name
-        const jiraTicketTagStatusKey = 'Open';//this.value.fields.status.statusCategory.key
-        const jiraTicketDescription = 'As a user i want to see a preview of message notifications that come in while viewing another screen or channel. current solution: in-app notifications display as banner asdasdas';//this.props.value.fields.description
-        const jiraTicketVersions = 'Mobile v2.0';//this.props.value.fields.fixVersions
-        const jiraTicketLabels = ['UX Needed', 'Beta'];//this.props.value.fields.labels
+        if (!this.props.isloaded){
+            return <p></p>
+        }
+
+        const jiraTicketURI = this.props.href
+        const jiraAvatar = this.props.jiraIcon
+        const jiraIssueIconURI = this.props.issueIcon
+        const jiraTicketKey = this.props.ticketId
+        const jiraTicketTitle = this.props.summary
+        const jiraTicketAssigneeAvatarURI = this.props.assigneeAvatar
+        const jiraTicketAssigneeName = this.props.assigneeName
+        const jiraTicketStatusName = this.props.statusKey
+        const jiraTicketDescription = this.props.description
+        const jiraTicketVersions = this.props.versions
+        const jiraTicketLabels = this.props.labels 
 
 
         return (
@@ -165,7 +182,7 @@ export default class TicketPopover extends PureComponent {
                                 alt={'jira-issue-icon'}
                                 width='14'
                                 height='14'
-                                src={jiraStatusIconURI}
+                                src={jiraIssueIconURI}
                             />
                         </a>
                     </div>
@@ -175,12 +192,16 @@ export default class TicketPopover extends PureComponent {
                         <a href={jiraTicketURI}>
                             <h5>{this.truncateString(jiraTicketTitle, 80)}</h5>
                         </a>
-                        {this.tagTicketStatus(jiraTicketStatusName, jiraTicketTagStatusKey)}
+                        {this.tagTicketStatus(jiraTicketStatusName, jiraTicketStatusName)}
                     </div>
-                    <div
+                    {/* <div
                         className={'ticket-popover-description'}
                         dangerouslySetInnerHTML={{__html: jiraTicketDescription}}
-                    />
+                    /> */}
+                    <div
+                        className={'ticket-popover-description'} >
+                        {jiraTicketDescription}
+                    </div>
                     <div className={'ticket-popover-labels'}>
                         {this.fixVersionLabel(jiraTicketVersions)}
                         {this.labelList(jiraTicketLabels)}

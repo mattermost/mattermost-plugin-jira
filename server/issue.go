@@ -1041,7 +1041,7 @@ func (p *Plugin) getClient(instanceID, mattermostUserID types.ID) (Client, Insta
 	return client, instance, connection, nil
 }
 
-func (p *Plugin) httpGetIssueByKey(w http.ResponseWriter, r *http.Request) (int,error){
+func (p *Plugin) httpGetIssueByKey(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return respondErr(w, http.StatusMethodNotAllowed,
 			errors.New("Request: "+r.Method+" is not allowed, must be GET"))
@@ -1054,22 +1054,22 @@ func (p *Plugin) httpGetIssueByKey(w http.ResponseWriter, r *http.Request) (int,
 
 	instanceID := r.FormValue("instance_id")
 	issueKey := r.FormValue("issue_key")
-	issue,err := p.GetIssueByKey(types.ID(instanceID), types.ID(mattermostUserID),issueKey)
-	if err != nil{
+	issue, err := p.GetIssueByKey(types.ID(instanceID), types.ID(mattermostUserID), issueKey)
+	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	return respondJSON(w, issue)
 }
 
-func (p *Plugin) GetIssueByKey(instanceID,mattermostUserID types.ID,issueKey string) (*jira.Issue, error) {
+func (p *Plugin) GetIssueByKey(instanceID, mattermostUserID types.ID, issueKey string) (*jira.Issue, error) {
 
 	client, _, _, err := p.getClient(instanceID, mattermostUserID)
 	if err != nil {
 		return nil, err
 	}
 
-	exact,err := client.GetIssue(issueKey,nil)
+	exact, err := client.GetIssue(issueKey, nil)
 	if err != nil {
 		switch StatusCode(err) {
 		case http.StatusNotFound:
