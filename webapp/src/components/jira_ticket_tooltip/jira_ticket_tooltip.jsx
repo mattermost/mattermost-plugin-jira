@@ -91,28 +91,14 @@ export default class TicketPopover extends PureComponent {
         };
 
         if (ticketStatus.toLowerCase() === 'indeterminate') {
-            return (<span style={{
-                ...defaultStyle,
-                color: '#FFFFFF',
-                backgroundColor: '#1C58D9',
-                borderRadius: '2px',
-            }}>{ticketStatus}</span>);
+            return (<span style={{...defaultStyle, color: '#FFFFFF', backgroundColor: '#1C58D9', borderRadius: '2px'}}>{ticketStatus}</span>);
         }
 
         if (ticketStatus.toLowerCase() === "done") {
-            return (<span style={{
-                ...defaultStyle,
-                color: '#FFFFFF',
-                backgroundColor: '#3DB887',
-
-            }}>{ticketStatus}</span>);
+            return (<span style={{...defaultStyle, color: '#FFFFFF', backgroundColor: '#3DB887'}}>{ticketStatus}</span>);
         }
 
-        return (<span style={{
-            ...defaultStyle,
-            color: '#3F4350',
-            backgroundColor: 'rgba(63, 67, 80, 0.16)',
-        }}>{ticketStatus}</span>);
+        return (<span style={{...defaultStyle, color: '#3F4350', backgroundColor: 'rgba(63, 67, 80, 0.16)'}}>{ticketStatus}</span>);
     }
 
     labelList(labels) {

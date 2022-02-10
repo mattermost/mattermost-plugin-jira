@@ -196,7 +196,7 @@ const channelSubscriptions = (state = {}, action) => {
 const getIssueByKey = (state = {}, action) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_JIRA_TICKETS :
-        const version = action.data.fields.versions.lenght > 0 ? action.data.fields.versions.versions[0] : ''
+        let version = action.data.fields.versions.lenght > 0 ? action.data.fields.versions.versions[0] : ''
         return {
             ...state,
             isloaded: true,
