@@ -108,9 +108,9 @@ export const getIssueByKey = (issueKey: string, instanceID: string) => {
                 error,
             });
             return {error};
-        };
+        }
     };
-}
+};
 
 export const fetchJiraIssueMetadataForProjects = (projectKeys: string[], instanceID: string) => {
     return async (dispatch, getState) => {
