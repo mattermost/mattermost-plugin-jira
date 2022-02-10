@@ -47,7 +47,7 @@ export default class TicketPopover extends PureComponent {
             instanceID = this.props.defaultUserInstanceID;
         }
         if (ticketId !== '') {
-            this.props.getIssueByKey(ticketId,instanceID);
+            this.props.getIssueByKey(ticketId, instanceID);
         }
     }
 
@@ -62,10 +62,14 @@ export default class TicketPopover extends PureComponent {
         if (fixVersion) {
             const fixVersionString = 'Fix Version :';
             return (
-                <div className='fix-version-label' 
-                    style={{color: '#333', margin: '16px 0px', textAlign: 'left', fontFamily: 'open sans', fontSize: '10px', padding: '0px 0px 2px 0px'}}>
-                    {fixVersionString}<span className='fix-version-label-value' 
-                        style={{backgroundColor: 'rgba(63, 67, 80, 0.08)', padding: '1px 8px', fontWeight: '600', borderRadius: '2px'}}>{fixVersion}</span>
+                <div className='fix-version-label'
+                    style={{color: '#333', margin: '16px 0px', textAlign: 'left', fontFamily: 'open sans', fontSize: '10px', padding: '0px 0px 2px 0px'}}
+                >
+                    {fixVersionString}
+                    <span className='fix-version-label-value' 
+                        style={{backgroundColor: 'rgba(63, 67, 80, 0.08)', padding: '1px 8px', fontWeight: '600', borderRadius: '2px'}}>
+                        {fixVersion}
+                    </span>
                 </div>
                 );
         }
@@ -113,18 +117,18 @@ export default class TicketPopover extends PureComponent {
 
     labelList(labels) {
         if (labels !== undefined && labels !== null) {
-            let totalString = 0
+            let totalString = 0;
             let totalHide = 0;
             return (
                 <Fragment>
                     <div className={'ticket-popover-label'}>
-                        {labels.map(function (label) {
+                        {labels.map(function (key,label) {
                             if (totalString >= 45 || totalString + label.length >= 45) {
                                 totalHide++;
                                 return null;
                             }
                             totalString += label.length + 3;
-                            return <span className="jiraticket-popover-label-list">{label}</span>;
+                            return <span className='jiraticket-popover-label-list'>{label}</span>;
                         })}
                     </div>
                     {
@@ -143,17 +147,17 @@ export default class TicketPopover extends PureComponent {
             return <p/>
         }
 
-        const jiraTicketURI = this.props.href
-        const jiraAvatar = this.props.jiraIcon
-        const jiraIssueIconURI = this.props.issueIcon
-        const jiraTicketKey = this.props.ticketId
-        const jiraTicketTitle = this.props.summary
-        const jiraTicketAssigneeAvatarURI = this.props.assigneeAvatar
-        const jiraTicketAssigneeName = this.props.assigneeName
-        const jiraTicketStatusName = this.props.statusKey
-        const jiraTicketDescription = this.props.description
-        const jiraTicketVersions = this.props.versions
-        const jiraTicketLabels = this.props.labels
+        const jiraTicketURI = this.props.href;
+        const jiraAvatar = this.props.jiraIcon;
+        const jiraIssueIconURI = this.props.issueIcon;
+        const jiraTicketKey = this.props.ticketId;
+        const jiraTicketTitle = this.props.summary;
+        const jiraTicketAssigneeAvatarURI = this.props.assigneeAvatar;
+        const jiraTicketAssigneeName = this.props.assigneeName;
+        const jiraTicketStatusName = this.props.statusKey;
+        const jiraTicketDescription = this.props.description;
+        const jiraTicketVersions = this.props.versions;
+        const jiraTicketLabels = this.props.labels;
 
         return (
             <div className={'ticket-popover'}>

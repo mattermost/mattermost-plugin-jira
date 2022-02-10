@@ -196,17 +196,17 @@ const channelSubscriptions = (state = {}, action) => {
 const getIssueByKey = (state = {}, action) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_JIRA_TICKETS :
-        var version = action.data.fields.versions.lenght > 0 ? versions[0]: ""
+        const version = action.data.fields.versions.lenght > 0 ? action.data.fields.versions.versions[0] : ''
         return {
             ...state,
             isloaded: true,
-            assigneeName:action.data.fields.assignee.displayName,
-            assigneeAvatar:action.data.fields.assignee.avatarUrls["48x48"],
-            labels:action.data.fields.labels,
-            description:action.data.fields.description,
-            summary:action.data.fields.summary,
+            assigneeName: action.data.fields.assignee.displayName,
+            assigneeAvatar: action.data.fields.assignee.avatarUrls['48x48'],
+            labels: action.data.fields.labels,
+            description: action.data.fields.description,
+            summary: action.data.fields.summary,
             ticketId : action.data.key,
-            jiraIcon: action.data.fields.project.avatarUrls["48x48"],
+            jiraIcon: action.data.fields.project.avatarUrls['48x48'],
             versions: version,
             statusKey: action.data.fields.status.name,
             issueIcon: action.data.fields.issuetype.iconUrl,
@@ -217,9 +217,9 @@ const getIssueByKey = (state = {}, action) => {
             error:action.error,
         };
     default:
-        return state; 
+        return state;
     }
-}
+};
 
 export default combineReducers({
     userConnected,
