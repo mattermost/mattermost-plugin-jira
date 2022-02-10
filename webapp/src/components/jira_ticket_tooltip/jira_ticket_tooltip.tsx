@@ -105,13 +105,13 @@ export default class TicketPopover extends React.PureComponent<Props>{
     }
 
     labelList(labels:string[]) {
-        if (labels !== undefined && labels !== null) {
+        if (labels.length > 0 && labels !== null) {
             let totalString = 0;
             let totalHide = 0;
             return (
                 <Fragment>
                     <div className={'ticket-popover-label'}>
-                        {labels.map(function (label:any) {
+                        {labels.map(function (label:any,key:any) {
                             if (totalString >= 45 || totalString + label.length >= 45) {
                                 totalHide++;
                                 return null;
@@ -146,7 +146,7 @@ export default class TicketPopover extends React.PureComponent<Props>{
         const jiraTicketDescription = this.props.description;
         const jiraTicketVersions = this.props.versions;
         const jiraTicketLabels = this.props.labels;
-
+        const isAssigned = 'is assigned';
         return (
             <div className={'ticket-popover'}>
                 <div className={'ticket-popover-header'}>
@@ -203,11 +203,10 @@ export default class TicketPopover extends React.PureComponent<Props>{
                         {jiraTicketAssigneeName}
                     </span>
                     <span className={'ticket-popover-footer-assigner-is-assigned'}>
-                        is assigned
+                        {isAssigned}
                     </span>
                 </div>
             </div>
         );
     }
 }
-
