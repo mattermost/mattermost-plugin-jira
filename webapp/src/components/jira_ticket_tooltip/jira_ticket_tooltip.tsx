@@ -121,7 +121,6 @@ export default class TicketPopover extends React.PureComponent<Props> {
                 </Fragment>
             );
         }
-        return (<span/>);
     }
 
     render() {
