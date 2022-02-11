@@ -160,15 +160,7 @@ export default class BackendSelector extends React.PureComponent<Props, State> {
 
             // option's label hasn't been fetched yet
             return {
-                label: (
-                    <span>
-                        <img
-                            src={v.avatarUrls[AvatarSize.SMALL]}
-                            style={{width: '24px', marginRight: '10px'}}
-                        />
-                        <span>{v.displayName}</span>
-                    </span>
-                ),
+                label: v.displayName,
                 value: v,
             };
         };
