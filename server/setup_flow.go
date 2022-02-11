@@ -77,7 +77,7 @@ func (p *Plugin) NewSetupFlow() *flow.Flow {
 			p.stepCancel(),
 			p.stepDone(),
 		).
-		WithDebugLog().
+		// WithDebugLog().
 		InitHTTP(p.gorillaRouter)
 }
 
