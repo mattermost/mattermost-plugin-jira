@@ -95,14 +95,6 @@ func continueButton(next flow.Name) flow.Button {
 	}
 }
 
-func skipButton(next flow.Name) flow.Button {
-	return flow.Button{
-		Name:    "DEBUG Skip",
-		Color:   flow.ColorWarning,
-		OnClick: flow.Goto(next),
-	}
-}
-
 func (p *Plugin) stepWelcome() flow.Step {
 	return flow.NewStep(stepSetupWelcome).
 		WithPretext("##### :wave: Welcome to Jira integration! [Learn more](https://github.com/mattermost/mattermost-plugin-jira#readme)").
@@ -115,7 +107,7 @@ func (p *Plugin) stepWelcome() flow.Step {
 			"Configuring the integration requires administrator access to Jira. If you aren't a Jira admin, " +
 			"select **I need someone else** to ask another Mattermost user to do it.\n" +
 			"\n" +
-			"You can **Cancel** these steps at any time and use the `/jira` command to finish the configuration later. " +
+			"You can **Cancel** these steps at any time and use `/jira` command to finish the configuration later. " +
 			"See [documentation](https://mattermost.gitbook.io/plugin-jira/setting-up/configuration) for more.").
 		WithButton(continueButton(stepChooseEdition)).
 		WithButton(flow.Button{
@@ -272,7 +264,6 @@ func (p *Plugin) stepCloudEnableDeveloperMode() flow.Step {
 			"3. Select **Enable development mode**, then select **Apply**.\n").
 		WithImage(p.GetPluginURL(), "public/cloud-enable-dev-mode.png").
 		WithButton(continueButton(stepCloudUploadApp)).
-		WithButton(skipButton(stepCloudInstalledApp)).
 		WithButton(cancelButton)
 }
 
