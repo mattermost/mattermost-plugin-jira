@@ -115,9 +115,7 @@ export default class TicketPopover extends React.PureComponent<Props> {
             const moreLabels = `+${totalHide}more`;
             return (
                 <Fragment>
-                    <div className={'ticket-popover-label'}>
-                {labelList}
-                    </div>
+                    <div className={'ticket-popover-label'}>{labelList}</div>
                     {
                         totalHide !== 0 ? (<div className={'jiraticket-popover-total-hide-label'}> moreLabels</div>) : null
                     }
