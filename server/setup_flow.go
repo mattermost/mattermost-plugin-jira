@@ -21,7 +21,7 @@ const (
 	stepCloudAddedInstance       flow.Name = "cloud-added"
 	stepCloudEnableDeveloperMode flow.Name = "cloud-enable-dev"
 	stepCloudUploadApp           flow.Name = "cloud-upload-app"
-	stepCloudInstalledApp        flow.Name = "cloud-installed"
+	stepInstalledJiraApp         flow.Name = "installed-app"
 	stepServerAddAppLink         flow.Name = "server-add-link"
 	stepServerConfirmAppLink     flow.Name = "server-confirm-link"
 	stepServerConfigureAppLink1  flow.Name = "server-configure-link1"
@@ -62,7 +62,6 @@ func (p *Plugin) NewSetupFlow() *flow.Flow {
 			p.stepCloudAddedInstance(),
 			p.stepCloudEnableDeveloperMode(),
 			p.stepCloudUploadApp(),
-			p.stepCloudInstalledApp(),
 
 			// Jira server steps
 			p.stepServerAddAppLink(),
@@ -70,6 +69,7 @@ func (p *Plugin) NewSetupFlow() *flow.Flow {
 			p.stepServerConfigureAppLink1(),
 			p.stepServerConfigureAppLink2(),
 
+			p.stepInstalledJiraApp(),
 			p.stepWebhook(),
 			p.stepWebhookDone(),
 			p.stepConnect(),
@@ -109,6 +109,11 @@ func (p *Plugin) stepWelcome() flow.Step {
 			"\n" +
 			"You can **Cancel** these steps at any time and use `/jira` command to finish the configuration later. " +
 			"See [documentation](https://mattermost.gitbook.io/plugin-jira/setting-up/configuration) for more.").
+		OnRender(func(f *flow.Flow) {
+			p.trackSetupWizard("setup_wizard_start", map[string]interface{}{
+				"from_invite": f.GetState().GetString(keyDelegatedFromUserID) != "",
+			})(f)
+		}).
 		WithButton(continueButton(stepChooseEdition)).
 		WithButton(flow.Button{
 			Name:  "I need someone else",
@@ -140,12 +145,14 @@ func (p *Plugin) stepDelegated() flow.Step {
 			Color:    flow.ColorDefault,
 			Disabled: true,
 		}).
+		OnRender(p.trackSetupWizard("setup_wizard_delegated", nil)).
 		WithButton(cancelButton)
 }
 
 func (p *Plugin) stepDelegateComplete() flow.Step {
 	return flow.NewStep(stepDelegateComplete).
 		WithText("{{.Delegated}} completed configuring the integration.").
+		OnRender(p.trackSetupWizard("setup_wizard_delegate_complete", nil)).
 		Next(stepConnect)
 }
 
@@ -205,6 +212,9 @@ func (p *Plugin) stepServerAddAppLink() flow.Step {
 			"1. Navigate to [**Settings > Applications > Application Links**]({{.JiraURL}}/plugins/servlet/applinks/listApplicationLinks) (see _screenshot_).\n"+
 			"2. Enter `{{.PluginURL}}` [link]({{.PluginURL}})as the application link, then select **Create new link**.").
 		WithImage(p.GetPluginURL(), "public/server-create-applink.png").
+		OnRender(p.trackSetupWizard("setup_wizard_jira_config_start", map[string]interface{}{
+			keyEdition: ServerInstanceType,
+		})).
 		WithButton(continueButton(stepServerConfirmAppLink)).
 		WithButton(cancelButton)
 }
@@ -242,7 +252,7 @@ func (p *Plugin) stepServerConfigureAppLink2() flow.Step {
 			"  - **Public Key**:\n```\n{{ .PublicKey }}\n```\n"+
 			"2. Select **Continue**.\n").
 		WithImage(p.GetPluginURL(), "public/server-configure-applink-2.png").
-		WithButton(continueButton(stepWebhook)).
+		WithButton(continueButton(stepInstalledJiraApp)).
 		WithButton(cancelButton)
 }
 
@@ -263,6 +273,9 @@ func (p *Plugin) stepCloudEnableDeveloperMode() flow.Step {
 			"2. Select **Settings** at the bottom of the page.\n"+
 			"3. Select **Enable development mode**, then select **Apply**.\n").
 		WithImage(p.GetPluginURL(), "public/cloud-enable-dev-mode.png").
+		OnRender(p.trackSetupWizard("setup_wizard_jira_config_start", map[string]interface{}{
+			keyEdition: CloudInstanceType,
+		})).
 		WithButton(continueButton(stepCloudUploadApp)).
 		WithButton(cancelButton)
 }
@@ -283,7 +296,7 @@ func (p *Plugin) stepCloudUploadApp() flow.Step {
 		})
 }
 
-func (p *Plugin) stepCloudInstalledApp() flow.Step {
+func (p *Plugin) stepInstalledJiraApp() flow.Step {
 	next := func(to flow.Name) func(*flow.Flow) (flow.Name, flow.State, error) {
 		return func(f *flow.Flow) (flow.Name, flow.State, error) {
 			jiraURL := f.GetState().GetString(keyJiraURL)
@@ -295,9 +308,14 @@ func (p *Plugin) stepCloudInstalledApp() flow.Step {
 			}, nil
 		}
 	}
-	return flow.NewStep(stepCloudInstalledApp).
+	return flow.NewStep(stepInstalledJiraApp).
 		WithTitle("Confirmed.").
 		WithText("You've finished configuring the Mattermost App in Jira. Select **Continue** to setup the subscription webhook.").
+		OnRender(func(f *flow.Flow) {
+			p.trackSetupWizard("setup_wizard_jira_config_complete", map[string]interface{}{
+				keyEdition: f.GetState().GetString(keyEdition),
+			})(f)
+		}).
 		WithButton(flow.Button{
 			Name:    "Continue",
 			Color:   flow.ColorPrimary,
@@ -325,6 +343,7 @@ func (p *Plugin) stepWebhook() flow.Step {
 			"6. Leave all other checkboxes blank.\n"+
 			"7. Select **View URL** to see the secret **URL** to enter in Jira, and continue.\n").
 		WithImage(p.GetPluginURL(), "public/configure-webhook.png").
+		OnRender(p.trackSetupWizard("setup_wizard_webhook_start", nil)).
 		WithButton(flow.Button{
 			Name:  "View URL",
 			Color: flow.ColorPrimary,
@@ -346,8 +365,9 @@ func (p *Plugin) stepWebhook() flow.Step {
 
 func (p *Plugin) stepWebhookDone() flow.Step {
 	return flow.NewStep(stepWebhookDone).
-		WithTitle("Webhook setup.").
+		WithTitle("Webhook is setup.").
 		WithText("<>/<> TODO how to subscribe.").
+		OnRender(p.trackSetupWizard("setup_wizard_webhook_complete", nil)).
 		Next(stepConnect)
 }
 
@@ -355,6 +375,7 @@ func (p *Plugin) stepConnect() flow.Step {
 	return flow.NewStep(stepConnect).
 		WithPretext("##### :white_check_mark: Step 4: connect your Jira user account").
 		WithText("Go **[here]({{.ConnectURL}})** to connect your account.").
+		OnRender(p.trackSetupWizard("setup_wizard_user_connect_start", nil)).
 		WithButton(flow.Button{
 			Name:     "Waiting for confirmation...",
 			Color:    flow.ColorDefault,
@@ -366,6 +387,7 @@ func (p *Plugin) stepConnected() flow.Step {
 	return flow.NewStep(stepConnected).
 		WithTitle("Connected Jira user account.").
 		WithText("You've connected your user account to Jira.").
+		OnRender(p.trackSetupWizard("setup_wizard_user_connect_complete", nil)).
 		Next(stepDone)
 }
 
@@ -373,7 +395,8 @@ func (p *Plugin) stepCancel() flow.Step {
 	return flow.NewStep(stepCancel).
 		Terminal().
 		WithPretext("##### :no_entry_sign: Canceled").
-		WithText("<>/<> TODO how to finish manually.")
+		WithText("<>/<> TODO how to finish manually.").
+		OnRender(p.trackSetupWizard("setup_wizard_canceled", nil))
 }
 
 func (p *Plugin) stepDone() flow.Step {
@@ -381,7 +404,8 @@ func (p *Plugin) stepDone() flow.Step {
 		Terminal().
 		WithPretext("##### :wave: All done!").
 		WithTitle("The Jira integration is now fully configured.").
-		WithText("<>/<> TODO next steps.")
+		WithText("<>/<> TODO next steps.").
+		OnRender(p.trackSetupWizard("setup_wizard_complete", nil))
 }
 
 func (p *Plugin) submitDelegateSelection(f *flow.Flow, submission map[string]interface{}) (flow.Name, flow.State, map[string]string, error) {
@@ -461,4 +485,14 @@ func (p *Plugin) submitCreateServerInstance(f *flow.Flow, submission map[string]
 		keyWebhookURL:        p.getSubscriptionsWebhookURL(si.InstanceID),
 		keyManageWebhooksURL: si.GetManageWebhooksURL(),
 	}, nil, nil
+}
+
+func (p *Plugin) trackSetupWizard(key string, args map[string]interface{}) func(f *flow.Flow) {
+	return func(f *flow.Flow) {
+		if args == nil {
+			args = map[string]interface{}{}
+		}
+		args["time"] = model.GetMillis()
+		p.tracker.TrackUserEvent(key, f.UserID, args)
+	}
 }

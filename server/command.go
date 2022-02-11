@@ -673,7 +673,7 @@ If you ran |v2revert| unintentionally and would like to continue using the curre
 	message = preMessage + message
 	message = strings.ReplaceAll(message, "|", "`")
 
-	p.Tracker.TrackV2Revert(header.UserId)
+	p.tracker.TrackUserEvent("v2RevertSubmitted", header.UserId, nil)
 
 	return p.responsef(header, message)
 }
