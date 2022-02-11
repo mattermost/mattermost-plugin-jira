@@ -61,14 +61,15 @@ export default class TicketPopover extends React.PureComponent<Props> {
         if (fixVersion) {
             const fixVersionString = 'Fix Version :';
             return (
-            <div className='fix-version-label'
-                style={{color: '#333', margin: '16px 0px', textAlign: 'left', fontFamily: 'open sans', fontSize: '10px', padding: '0px 0px 2px 0px'}}>{fixVersionString}
-                <span className='fix-version-label-value'
-                    style={{backgroundColor: 'rgba(63, 67, 80, 0.08)', padding: '1px 8px', fontWeight: 600, borderRadius: '2px'}}>
-                    {fixVersion}
-                </span>
-            </div>
-                );
+                <div className='fix-version-label'
+                    style={{color: '#333', margin: '16px 0px', textAlign: 'left', fontFamily: 'open sans', fontSize: '10px', padding: '0px 0px 2px 0px'}}>
+                    {fixVersionString}
+                        <span className='fix-version-label-value'
+                        style={{backgroundColor: 'rgba(63, 67, 80, 0.08)', padding: '1px 8px', fontWeight: 600, borderRadius: '2px'}}>
+                        {fixVersion}
+                    </span>
+                </div>
+            );
         }
         return (<span/>);
     }
@@ -121,7 +122,7 @@ export default class TicketPopover extends React.PureComponent<Props> {
                 </Fragment>
             );
         }
-        return 
+        return null;
     }
 
     render() {
