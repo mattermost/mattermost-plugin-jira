@@ -385,7 +385,7 @@ func (p *Plugin) stepConnect() flow.Step {
 
 func (p *Plugin) stepConnected() flow.Step {
 	return flow.NewStep(stepConnected).
-		WithTitle("Connected Jira user account.").
+		WithTitle("Confirmed.").
 		WithText("You've connected your user account to Jira.").
 		OnRender(p.trackSetupWizard("setup_wizard_user_connect_complete", nil)).
 		Next(stepDone)
