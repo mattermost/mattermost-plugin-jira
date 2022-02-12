@@ -20,7 +20,6 @@ import (
 	"golang.org/x/oauth2"
 	oauth2_jira "golang.org/x/oauth2/jira"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -226,8 +225,6 @@ func (ci *cloudInstance) getClientForConnection(connection *Connection) (*jira.C
 	httpClient = utils.WrapHTTPClient(httpClient,
 		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
 		utils.WithResponseSizeLimit(conf.maxAttachmentSize))
-	httpClient = expvar.WrapHTTPClient(httpClient,
-		conf.stats, endpointNameFromRequest)
 
 	jiraClient, err := jira.NewClient(httpClient, oauth2Conf.BaseURL)
 	return jiraClient, httpClient, err
@@ -247,8 +244,6 @@ func (ci *cloudInstance) getClientForBot() (*jira.Client, error) {
 	httpClient = utils.WrapHTTPClient(httpClient,
 		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
 		utils.WithResponseSizeLimit(conf.maxAttachmentSize))
-	httpClient = expvar.WrapHTTPClient(httpClient,
-		conf.stats, endpointNameFromRequest)
 
 	return jira.NewClient(httpClient, jwtConf.BaseURL)
 }

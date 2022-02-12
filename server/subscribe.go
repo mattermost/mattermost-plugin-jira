@@ -698,13 +698,6 @@ func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]by
 
 func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, instanceID types.ID) (status int, err error) {
 	conf := p.getConfig()
-	size := utils.ByteSize(0)
-	start := time.Now()
-	defer func() {
-		if conf.stats != nil {
-			conf.stats.EnsureEndpoint("jira/subscribe/response").Record(size, 0, time.Since(start), err != nil, false)
-		}
-	}()
 
 	if r.Method != http.MethodPost {
 		return respondErr(w, http.StatusMethodNotAllowed,
@@ -721,11 +714,6 @@ func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, in
 	}
 
 	bb, err := ioutil.ReadAll(r.Body)
-	size = utils.ByteSize(len(bb))
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
-	}
-
 	if conf.EnableWebhookEventLogging {
 		p.API.LogDebug("Webhook Event Log", "event", string(bb))
 	}

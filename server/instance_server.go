@@ -11,7 +11,6 @@ import (
 	"github.com/dghubble/oauth1"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -118,8 +117,6 @@ func (si *serverInstance) GetClient(connection *Connection) (client Client, retu
 	httpClient = utils.WrapHTTPClient(httpClient,
 		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
 		utils.WithResponseSizeLimit(conf.maxAttachmentSize))
-	httpClient = expvar.WrapHTTPClient(httpClient,
-		conf.stats, endpointNameFromRequest)
 
 	jiraClient, err := jira.NewClient(httpClient, si.GetURL())
 	if err != nil {

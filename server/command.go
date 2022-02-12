@@ -13,7 +13,6 @@ import (
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -25,9 +24,6 @@ var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
 		"assign":                  executeAssign,
 		"connect":                 executeConnect,
-		"debug/stats/expvar":      executeDebugStatsExpvar,
-		"debug/stats/reset":       executeDebugStatsReset,
-		"debug/stats/save":        executeDebugStatsSave,
 		"disconnect":              executeDisconnect,
 		"help":                    executeHelp,
 		"info":                    executeInfo,
@@ -48,7 +44,6 @@ var jiraCommandHandler = CommandHandler{
 		"issue/unassign":          executeUnassign,
 		"issue/view":              executeView,
 		"settings":                executeSettings,
-		"stats":                   executeStats,
 		"subscribe/list":          executeSubscribeList,
 		"transition":              executeTransition,
 		"unassign":                executeUnassign,
@@ -93,7 +88,6 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"* `/jira instance alias [URL] [alias-name]` - assign an alias to an instance\n" +
 	"* `/jira instance unalias [alias-name]` - remve an alias from an instance\n" +
 	"* `/jira instance v2 <jiraURL>` - Set the Jira instance to process \"v2\" webhooks and subscriptions (not prefixed with the instance ID)\n" +
-	"* `/jira stats` - Display usage statistics\n" +
 	"* `/jira webhook [--instance=<jiraURL>]` -  Show the Mattermost webhook to receive JQL queries\n" +
 	"* `/jira v2revert ` - Revert to V2 jira plugin data model\n" +
 	""
@@ -1027,91 +1021,6 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	}
 
 	return p.responsef(header, resp)
-}
-
-func executeStats(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
-	return executeStatsImpl(p, c, commandArgs, false, args...)
-}
-
-func executeDebugStatsExpvar(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
-	return executeStatsImpl(p, c, commandArgs, true, args...)
-}
-
-func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, useExpvar bool, args ...string) *model.CommandResponse {
-	authorized, err := authorizedSysAdmin(p, commandArgs.UserId)
-	if err != nil {
-		return p.responsef(commandArgs, "%v", err)
-	}
-	if !authorized {
-		return p.responsef(commandArgs, "`/jira stats` can only be run by a system administrator.")
-	}
-	if len(args) < 1 {
-		return p.help(commandArgs)
-	}
-	resp := fmt.Sprintf("Mattermost Jira plugin version: %s, "+
-		"[%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s), built %s\n",
-		manifest.Version, BuildHashShort, BuildHash, BuildDate)
-
-	pattern := strings.Join(args, " ")
-	print := expvar.PrintExpvars
-	if !useExpvar {
-		var stats *expvar.Stats
-		var keys []string
-		stats, keys, err = p.consolidatedStoredStats()
-		if err != nil {
-			return p.responsef(commandArgs, "%v", err)
-		}
-		resp += fmt.Sprintf("Consolidated from stored keys `%s`\n", keys)
-		print = stats.PrintConsolidated
-	}
-
-	rstats, err := print(pattern)
-	if err != nil {
-		return p.responsef(commandArgs, "%v", err)
-	}
-
-	return p.responsef(commandArgs, resp+rstats)
-}
-
-func executeDebugStatsReset(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
-	authorized, err := authorizedSysAdmin(p, commandArgs.UserId)
-	if err != nil {
-		return p.responsef(commandArgs, "%v", err)
-	}
-	if !authorized {
-		return p.responsef(commandArgs, "`/jira stats` can only be run by a system administrator.")
-	}
-	if len(args) != 0 {
-		return p.help(commandArgs)
-	}
-
-	err = p.debugResetStats()
-	if err != nil {
-		return p.responsef(commandArgs, err.Error())
-	}
-	return p.responsef(commandArgs, "Reset stats")
-}
-
-func executeDebugStatsSave(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
-	authorized, err := authorizedSysAdmin(p, commandArgs.UserId)
-	if err != nil {
-		return p.responsef(commandArgs, "%v", err)
-	}
-	if !authorized {
-		return p.responsef(commandArgs, "`/jira stats` can only be run by a system administrator.")
-	}
-	if len(args) != 0 {
-		return p.help(commandArgs)
-	}
-	stats := p.getConfig().stats
-	if stats == nil {
-		return p.responsef(commandArgs, "No stats to save")
-	}
-	err = p.saveStats()
-	if err != nil {
-		return p.responsef(commandArgs, "%v", err)
-	}
-	return p.responsef(commandArgs, "Saved stats")
 }
 
 func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
