@@ -210,7 +210,7 @@ func (p *Plugin) stepServerAddAppLink() flow.Step {
 			"To finish the configuration add and configure an Application Link in your Jira instance.\n"+
 			"Complete the following steps, then come back here and select **Continue**.\n\n"+
 			"1. Navigate to [**Settings > Applications > Application Links**]({{.JiraURL}}/plugins/servlet/applinks/listApplicationLinks) (see _screenshot_).\n"+
-			"2. Enter `{{.PluginURL}}` [link]({{.PluginURL}})as the application link, then select **Create new link**.").
+			"2. Enter `{{.PluginURL}}` [link]({{.PluginURL}}) as the application link, then select **Create new link**.").
 		WithImage(p.GetPluginURL(), "public/server-create-applink.png").
 		OnRender(p.trackSetupWizard("setup_wizard_jira_config_start", map[string]interface{}{
 			keyEdition: ServerInstanceType,
@@ -489,10 +489,6 @@ func (p *Plugin) submitCreateServerInstance(f *flow.Flow, submission map[string]
 
 func (p *Plugin) trackSetupWizard(key string, args map[string]interface{}) func(f *flow.Flow) {
 	return func(f *flow.Flow) {
-		if args == nil {
-			args = map[string]interface{}{}
-		}
-		args["time"] = model.GetMillis()
-		p.tracker.TrackUserEvent(key, f.UserID, args)
+		p.trackWithArgs(key, f.UserID, args)
 	}
 }

@@ -517,3 +517,15 @@ func (p *Plugin) setDefaultConfiguration() error {
 
 	return nil
 }
+
+func (p *Plugin) track(name, userID string) {
+	p.trackWithArgs(name, userID, nil)
+}
+
+func (p *Plugin) trackWithArgs(name, userID string, args map[string]interface{}) {
+	if args == nil {
+		args = map[string]interface{}{}
+	}
+	args["time"] = model.GetMillis()
+	p.tracker.TrackUserEvent(name, userID, args)
+}
