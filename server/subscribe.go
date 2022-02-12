@@ -714,6 +714,9 @@ func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, in
 	}
 
 	bb, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
 	if conf.EnableWebhookEventLogging {
 		p.API.LogDebug("Webhook Event Log", "event", string(bb))
 	}

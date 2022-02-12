@@ -507,7 +507,7 @@ func (p *Plugin) trackWithArgs(name, userID string, args map[string]interface{})
 		args = map[string]interface{}{}
 	}
 	args["time"] = model.GetMillis()
-	p.tracker.TrackUserEvent(name, userID, args)
+	_ = p.tracker.TrackUserEvent(name, userID, args)
 }
 
 func (p *Plugin) SendDailyTelemetry() {
