@@ -335,17 +335,17 @@ func (p *Plugin) stepWebhook() flow.Step {
 			"2. Give your webhook a symbolic **Name** of your choice.\n"+
 			"3. **Status**: Enabled.\n"+
 			"4. Leave **URL** blank for the moment. Once you are done configuring the webhook options, come back "+
-			"here and select **View URL** to see the confidential URL.\n"+
+			"here and select **View Webhook URL** to see the confidential URL.\n"+
 			"5. **Issue related events**: we recommend leaving the query at **All Issues**. Check **Comment**, "+
 			"**Attachment**, and **Issue** events. We recommend checking all of these boxes. These events will be "+
 			"further filtered by Mattermost subscriptions. Leave **Entity property**, **Worklog**, and **Issue "+
 			"link** events unchecked, they are not yet supported.\n"+
 			"6. Leave all other checkboxes blank.\n"+
-			"7. Select **View URL** to see the secret **URL** to enter in Jira, and continue.\n").
+			"7. Select **View Webhook URL** to see the secret **URL** to enter in Jira, and continue.\n").
 		WithImage(p.GetPluginURL(), "public/configure-webhook.png").
 		OnRender(p.trackSetupWizard("setup_wizard_webhook_start", nil)).
 		WithButton(flow.Button{
-			Name:  "View URL",
+			Name:  "View Webhook URL",
 			Color: flow.ColorPrimary,
 			Dialog: &model.Dialog{
 				Title:            "Jira Webhook URL",
@@ -360,7 +360,7 @@ func (p *Plugin) stepWebhook() flow.Step {
 func (p *Plugin) stepWebhookDone() flow.Step {
 	return flow.NewStep(stepWebhookDone).
 		WithTitle("Webhook is setup.").
-		WithText("<>/<> TODO how to subscribe.").
+		WithText("You can now use `/jira subscribe` from a specific channel to receive change notifications from Jira there.").
 		OnRender(p.trackSetupWizard("setup_wizard_webhook_complete", nil)).
 		Next(stepConnect)
 }
@@ -389,7 +389,12 @@ func (p *Plugin) stepCancel() flow.Step {
 	return flow.NewStep(stepCancel).
 		Terminal().
 		WithPretext("##### :no_entry_sign: Canceled").
-		WithText("<>/<> TODO how to finish manually.").
+		WithText("You can finish configuring the Jira integration later using the `/jira` command.\n" +
+			"- `/jira setup` to run the setup wizard again.\n" +
+			"- `/jira instance install` to add a Jira instance.\n" +
+			"- `/jira instance connect` to connect your user account to an installed instance.\n" +
+			"- `/jira webhook` to view the secret URL for the subscription webhook.\n" +
+			"See [documentation](https://mattermost.gitbook.io/plugin-jira/setting-up) for more.\n").
 		OnRender(p.trackSetupWizard("setup_wizard_canceled", nil))
 }
 
@@ -398,7 +403,12 @@ func (p *Plugin) stepDone() flow.Step {
 		Terminal().
 		WithPretext("##### :wave: All done!").
 		WithTitle("The Jira integration is now fully configured.").
-		WithText("<>/<> TODO next steps.").
+		WithText("You can now:\n" +
+			"- Set up a channel subscription to updates from Jira with `/jira subscribe` command (navigate to the target channel first).\n" +
+			"- Create a Jira issue from a post in Mattermost by selecting **Create Jira Issue** from the **...** post menu.\n" +
+			"- Attach a Mattermost post to a Jira issue as a comment by selecting **Attach to Jira Issue** from the **...** post menu.\n" +
+			"- Control your personal notifications from Jira with `/jira instance settings` command.\n" +
+			"See [documentation](https://mattermost.gitbook.io/plugin-jira) for more.\n").
 		OnRender(func(f *flow.Flow) {
 			delegatedFrom := f.GetState().GetString(keyDelegatedFromUserID)
 			if delegatedFrom != "" {
