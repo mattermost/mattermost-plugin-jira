@@ -72,7 +72,6 @@ export default class TicketPopover extends React.PureComponent<Props> {
 
     componentDidMount() {
         console.log("componentDidMount" , this.props)
-
         this.props.getConnected();
         if (this.props.connected && !this.state.isloaded) {
             this.init();
