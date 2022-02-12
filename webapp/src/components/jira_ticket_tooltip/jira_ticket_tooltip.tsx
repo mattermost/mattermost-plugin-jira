@@ -6,18 +6,18 @@ import {Instance, GetConnectedResponse} from 'types/model';
 export type Props = {
     href: string;
     connected: boolean;
-    isloaded: string;
-    assigneeName: string;
-    assigneeAvatar: string;
-    labels: any[];
-    versions: string;
-    description: string;
-    summary: string;
-    ticketId: string;
-    jiraIcon: string;
-    statusKey: string;
-    issueIcon: string;
-    defaultUserInstanceID: string;
+    isloaded?: boolean;
+    assigneeName?: string;
+    assigneeAvatar?: string;
+    labels?: any[];
+    versions?: string;
+    description?: string;
+    summary?: string;
+    ticketId?: string;
+    jiraIcon?: string;
+    statusKey?: string;
+    issueIcon?: string;
+    defaultUserInstanceID?: string;
     installedInstances: Instance[];
     connectedInstances: Instance[];
     getIssueByKey: (ticketId: string, instanceID: string) => void;
@@ -31,7 +31,27 @@ export default class TicketPopover extends React.PureComponent<Props> {
         return `${str.substring(0, num)}...`;
     }
 
+    constructor(Props) {
+        super(Props);
+        console.log("constructor " , this.props.href)
+        this.state = {
+            href: this.props.href,
+            isloaded:false,
+            assigneeName:this.props.assigneeName,
+            assigneeAvatar:this.props.assigneeAvatar,
+            labels:this.props.labels,
+            versions:this.props.versions,
+            description:this.props.description,
+            summary:this.props.summary,
+            ticketId:this.props.ticketId,
+            jiraIcon:this.props.jiraIcon,
+            statusKey:this.props.statusKey,
+            issueIcon:this.props.issueIcon,
+        };
+    }
+
     async init() {
+        console.log("init called")
         let instanceID = '';
         if (this.props.connectedInstances.length === 1) {
             instanceID = this.props.connectedInstances[0].instance_id;
@@ -51,9 +71,35 @@ export default class TicketPopover extends React.PureComponent<Props> {
     }
 
     componentDidMount() {
+        console.log("componentDidMount" , this.props)
+
         this.props.getConnected();
-        if (this.props.connected && !this.props.isloaded) {
+        if (this.props.connected && !this.state.isloaded) {
             this.init();
+        }
+    }
+
+    componentDidUpdate(prevProps: Props , prevState: Props): void {
+        console.log("componentDidUpdate",prevProps, prevState,this.props)
+        if (prevProps.href !== prevState.href) {
+            this.setState({isloaded:false ,href: prevProps.href})
+            this.init()
+        }
+        if (this.props.isloaded && !this.state.isloaded) {
+            console.log("componentDidUpdate update state with res")
+            this.setState({
+                isloaded:true,
+                assigneeName:this.props.assigneeName,
+                assigneeAvatar:this.props.assigneeAvatar,
+                labels:this.props.labels,
+                versions:this.props.versions,
+                description:this.props.description,
+                summary:this.props.summary,
+                ticketId:this.props.ticketId,
+                jiraIcon:this.props.jiraIcon,
+                statusKey:this.props.statusKey,
+                issueIcon:this.props.issueIcon,
+            })
         }
     }
 
@@ -126,20 +172,20 @@ export default class TicketPopover extends React.PureComponent<Props> {
     }
 
     render() {
-        if (!this.props.isloaded) {
+        if (!this.state.isloaded) {
             return (<p/>);
         }
-        const jiraTicketURI = this.props.href;
-        const jiraAvatar = this.props.jiraIcon;
-        const jiraIssueIconURI = this.props.issueIcon;
-        const jiraTicketKey = this.props.ticketId;
-        const jiraTicketTitle = this.props.summary;
-        const jiraTicketAssigneeAvatarURI = this.props.assigneeAvatar;
-        const jiraTicketAssigneeName = this.props.assigneeName;
-        const jiraTicketStatusName = this.props.statusKey;
-        const jiraTicketDescription = this.props.description;
-        const jiraTicketVersions = this.props.versions;
-        const jiraTicketLabels = this.props.labels;
+        const jiraTicketURI = this.state.href;
+        const jiraAvatar = this.state.jiraIcon;
+        const jiraIssueIconURI = this.state.issueIcon;
+        const jiraTicketKey = this.state.ticketId;
+        const jiraTicketTitle = this.state.summary;
+        const jiraTicketAssigneeAvatarURI = this.state.assigneeAvatar;
+        const jiraTicketAssigneeName = this.state.assigneeName;
+        const jiraTicketStatusName = this.state.statusKey;
+        const jiraTicketDescription = this.state.description;
+        const jiraTicketVersions = this.state.versions;
+        const jiraTicketLabels = this.state.labels;
         const isAssigned = 'is assigned';
         return (
             <div className={'ticket-popover'}>
