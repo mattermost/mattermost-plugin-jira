@@ -153,7 +153,7 @@ func (p *Plugin) stepDelegateComplete() flow.Step {
 	return flow.NewStep(stepDelegateComplete).
 		WithText("{{.Delegated}} completed configuring the integration.").
 		OnRender(p.trackSetupWizard("setup_wizard_delegate_complete", nil)).
-		Next(stepConnect)
+		Next(stepDone)
 }
 
 func (p *Plugin) stepChooseEdition() flow.Step {
@@ -352,13 +352,7 @@ func (p *Plugin) stepWebhook() flow.Step {
 				IntroductionText: "Please scroll to select the entire URL if necessary. [link]({{.WebhookURL}})\n```\n{{.WebhookURL}}\n```\nOnce you have entered all options and the webhook URL, select **Create Webhook**",
 				SubmitLabel:      "Continue",
 			},
-			OnDialogSubmit: func(f *flow.Flow, _ map[string]interface{}) (flow.Name, flow.State, map[string]string, error) {
-				delegatedFrom := f.GetState().GetString(keyDelegatedFromUserID)
-				if delegatedFrom != "" {
-					_ = p.setupFlow.ForUser(delegatedFrom).Go(stepDelegateComplete)
-				}
-				return stepWebhookDone, nil, nil, nil
-			},
+			OnDialogSubmit: flow.DialogGoto(stepWebhookDone),
 		}).
 		WithButton(cancelButton)
 }
@@ -405,7 +399,13 @@ func (p *Plugin) stepDone() flow.Step {
 		WithPretext("##### :wave: All done!").
 		WithTitle("The Jira integration is now fully configured.").
 		WithText("<>/<> TODO next steps.").
-		OnRender(p.trackSetupWizard("setup_wizard_complete", nil))
+		OnRender(func(f *flow.Flow) {
+			delegatedFrom := f.GetState().GetString(keyDelegatedFromUserID)
+			if delegatedFrom != "" {
+				_ = p.setupFlow.ForUser(delegatedFrom).Go(stepDelegateComplete)
+			}
+			p.trackSetupWizard("setup_wizard_complete", nil)
+		})
 }
 
 func (p *Plugin) submitDelegateSelection(f *flow.Flow, submission map[string]interface{}) (flow.Name, flow.State, map[string]string, error) {
