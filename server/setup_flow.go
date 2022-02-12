@@ -30,6 +30,8 @@ const (
 	stepConnected                flow.Name = "connected"
 	stepWebhook                  flow.Name = "webhook"
 	stepWebhookDone              flow.Name = "webhook-done"
+	stepAnnouncementQuestion     flow.Name = "announcement-question"
+	stepAnnouncementConfirmation flow.Name = "announcement-confirmation"
 	stepCancel                   flow.Name = "cancel"
 	stepDone                     flow.Name = "done"
 )
@@ -74,6 +76,8 @@ func (p *Plugin) NewSetupFlow() *flow.Flow {
 			p.stepWebhookDone(),
 			p.stepConnect(),
 			p.stepConnected(),
+			p.stepAnnouncementQuestion(),
+			p.stepAnnouncementConfirmation(),
 			p.stepCancel(),
 			p.stepDone(),
 		).
@@ -382,6 +386,92 @@ func (p *Plugin) stepConnected() flow.Step {
 		WithTitle("Confirmed.").
 		WithText("You've connected your user account to Jira.").
 		OnRender(p.trackSetupWizard("setup_wizard_user_connect_complete", nil)).
+		Next(stepAnnouncementQuestion)
+}
+
+func (p *Plugin) stepAnnouncementQuestion() flow.Step {
+	defaultMessage := "Hi team,\n" +
+		"\n" +
+		"We've set up the Mattermost Jira plugin. To get started, run the `/jira connect` slash command from any channel within Mattermost to connect your user account. See the [documentation](https://mattermost.gitbook.io/plugin-jira) for details on using the Jira plugin."
+
+	return flow.NewStep(stepAnnouncementQuestion).
+		WithText("Want to let your team know?").
+		OnRender(p.trackSetupWizard("setup_wizard_announcement_start", nil)).
+		WithButton(flow.Button{
+			Name:  "Send Message",
+			Color: flow.ColorPrimary,
+			Dialog: &model.Dialog{
+				Title:       "Notify your team",
+				SubmitLabel: "Send message",
+				Elements: []model.DialogElement{
+					{
+						DisplayName: "To",
+						Name:        "channel_id",
+						Type:        "select",
+						Placeholder: "Select channel",
+						DataSource:  "channels",
+					},
+					{
+						DisplayName: "Message",
+						Name:        "message",
+						Type:        "textarea",
+						Default:     defaultMessage,
+						HelpText:    "You can edit this message before sending it.",
+					},
+				},
+			},
+			OnDialogSubmit: p.submitChannelAnnouncement,
+		}).
+		WithButton(flow.Button{
+			Name:    "Not now",
+			Color:   flow.ColorDefault,
+			OnClick: flow.Goto(stepDone),
+		})
+}
+
+func (p *Plugin) submitChannelAnnouncement(f *flow.Flow, submitted map[string]interface{}) (flow.Name, flow.State, map[string]string, error) {
+	channelIDRaw, ok := submitted["channel_id"]
+	if !ok {
+		return "", nil, nil, errors.New("channel_id missing")
+	}
+	channelID, ok := channelIDRaw.(string)
+	if !ok {
+		return "", nil, nil, errors.New("channel_id is not a string")
+	}
+
+	channel, err := p.client.Channel.Get(channelID)
+	if err != nil {
+		return "", nil, nil, errors.Wrap(err, "failed to get channel")
+	}
+
+	messageRaw, ok := submitted["message"]
+	if !ok {
+		return "", nil, nil, errors.New("message is not a string")
+	}
+	message, ok := messageRaw.(string)
+	if !ok {
+		return "", nil, nil, errors.New("message is not a string")
+	}
+
+	post := &model.Post{
+		UserId:    f.UserID,
+		ChannelId: channel.Id,
+		Message:   message,
+	}
+	err = p.client.Post.CreatePost(post)
+	if err != nil {
+		return "", nil, nil, errors.Wrap(err, "failed to create announcement post")
+	}
+
+	return stepAnnouncementConfirmation, flow.State{
+		"ChannelName": channel.Name,
+	}, nil, nil
+}
+
+func (p *Plugin) stepAnnouncementConfirmation() flow.Step {
+	return flow.NewStep(stepAnnouncementConfirmation).
+		WithText("Message to ~{{ .ChannelName }} was sent.").
+		OnRender(p.trackSetupWizard("setup_wizard_announcement_complete", nil)).
 		Next(stepDone)
 }
 
@@ -404,9 +494,9 @@ func (p *Plugin) stepDone() flow.Step {
 		WithPretext("##### :wave: All done!").
 		WithTitle("The Jira integration is now fully configured.").
 		WithText("You can now:\n" +
-			"- Set up a channel subscription to updates from Jira with `/jira subscribe` command (navigate to the target channel first).\n" +
-			"- Create a Jira issue from a post in Mattermost by selecting **Create Jira Issue** from the **...** post menu.\n" +
-			"- Attach a Mattermost post to a Jira issue as a comment by selecting **Attach to Jira Issue** from the **...** post menu.\n" +
+			"- Subscribe channels in Mattermost to receive updates from Jira with `/jira subscribe` command (navigate to the target channel first).\n" +
+			"- Create Jira issues from posts in Mattermost by selecting **Create Jira Issue** from the **...** menu of the relevant post.\n" +
+			"- Attach Mattermost posts to Jira issues as comments by selecting **Attach to Jira Issue** from the **...** menu.\n" +
 			"- Control your personal notifications from Jira with `/jira instance settings` command.\n" +
 			"See [documentation](https://mattermost.gitbook.io/plugin-jira) for more.\n").
 		OnRender(func(f *flow.Flow) {
