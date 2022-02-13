@@ -22,6 +22,7 @@ export type Props = {
     connectedInstances: Instance[];
     getIssueByKey: (ticketId: string, instanceID: string) => void;
     getConnected: () => Promise<GetConnectedResponse>;
+    setTicket?: (ticketDetails:{}) => void;
 }
 export default class TicketPopover extends React.PureComponent<Props> {
     truncateString(str: string, num: number) {
@@ -85,22 +86,25 @@ export default class TicketPopover extends React.PureComponent<Props> {
     }
 
     componentDidUpdate(): void {
-        if (this.props.isloaded && !this.state.isloaded && this.props.ticketId == this.state.ticketId) {
-            this.setState({
-                isloaded:true,
-                assigneeName:this.props.assigneeName,
-                assigneeAvatar:this.props.assigneeAvatar,
-                labels:this.props.labels,
-                versions:this.props.versions,
-                description:this.props.description,
-                summary:this.props.summary,
-                jiraIcon:this.props.jiraIcon,
-                statusKey:this.props.statusKey,
-                issueIcon:this.props.issueIcon,
-            })
+        if (this.props.isloaded && !this.state.isloaded && this.props.ticketId === this.state.ticketId) {
+            this.setTicket(this.props)
         }
     }
 
+    setTicket(ticketDetails: {}): void{
+        this.setState({
+            isloaded: true,
+            assigneeName: this.props.assigneeName,
+            assigneeAvatar: this.props.assigneeAvatar,
+            labels: this.props.labels,
+            versions: this.props.versions,
+            description: this.props.description,
+            summary: this.props.summary,
+            jiraIcon: this.props.jiraIcon,
+            statusKey: this.props.statusKey,
+            issueIcon: this.props.issueIcon,
+        })
+    }
     fixVersionLabel(fixVersion: string) {
         if (fixVersion) {
             const fixVersionString = 'Fix Version :';
@@ -234,7 +238,7 @@ export default class TicketPopover extends React.PureComponent<Props> {
                     </div>
                 </div>
                 <div className={'ticket-popover-footer'}>
-                    { jiraTicketAssigneeAvatarURI != '' ?
+                    { jiraTicketAssigneeAvatarURI !== '' ?
                         (<img className={'ticket-popover-footer-assigner-profile'} src={jiraTicketAssigneeAvatarURI} alt={'jira assigner profile'}/>):
                         (<span style={{backgroundColor:'slategrey', borderRadius:'50%', marginRight:'5px', padding:'1px'}}>    
                             <svg width='18' height='18' viewBox='0 0 18 18' role='presentation'><g fill='white' fillRule='evenodd'><path d='M3.5 14c0-1.105.902-2 2.009-2h7.982c1.11 0 2.009.894 2.009 2.006v4.44c0 3.405-12 3.405-12 0V14z'></path><circle cx='9' cy='6' r='3.5'></circle></g></svg>
