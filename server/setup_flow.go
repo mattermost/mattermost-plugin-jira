@@ -208,7 +208,7 @@ func (p *Plugin) stepChooseEdition() flow.Step {
 
 func (p *Plugin) stepServerAddAppLink() flow.Step {
 	return flow.NewStep(stepServerAddAppLink).
-		WithPretext("##### :white_check_mark: Step 2: configure the Mattermost application link in Jira").
+		WithPretext("##### :white_check_mark: Step 2: Configure Mattermost Application Link in Jira").
 		WithTitle("Create Application Link.").
 		WithText("Jira server {{.JiraURL}} has been successfully added. "+
 			"To finish the configuration add and configure an Application Link in your Jira instance.\n"+
@@ -330,7 +330,7 @@ func (p *Plugin) stepInstalledJiraApp() flow.Step {
 
 func (p *Plugin) stepWebhook() flow.Step {
 	return flow.NewStep(stepWebhook).
-		WithPretext("##### :white_check_mark: Step 3: setup Jira subscriptions webhook").
+		WithPretext("##### :white_check_mark: Step 3: Setup Jira Subscriptions Webhook").
 		WithText(`To receive Jira event notifications in Mattermost you need to set up a single "firehose" `+
 			"webhook, configured for all possible event triggers that you would like to be pushed into "+
 			"Mattermost. The plugin's Channel Subscription feature processes the firehose of data and "+
@@ -371,7 +371,7 @@ func (p *Plugin) stepWebhookDone() flow.Step {
 
 func (p *Plugin) stepConnect() flow.Step {
 	return flow.NewStep(stepConnect).
-		WithPretext("##### :white_check_mark: Step 4: connect your Jira user account").
+		WithPretext("##### :white_check_mark: Step 4: Connect Your Jira User Account").
 		WithText("Go **[here]({{.ConnectURL}})** to connect your account.").
 		OnRender(p.trackSetupWizard("setup_wizard_user_connect_start", nil)).
 		WithButton(flow.Button{
