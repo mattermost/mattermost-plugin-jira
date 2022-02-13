@@ -200,7 +200,7 @@ const getIssueByKey = (state = {}, action) => {
             ...state,
             isloaded: true,
             assigneeName: action.data.fields.assignee && action.data.fields.assignee.displayName ? action.data.fields.assignee.displayName : '',
-            assigneeAvatar: action.data.fields.assignee && action.data.fields.assignee.avatarUrls && action.data.fields.assignee.avatarUrls['48x48'] ?action.data.fields.assignee.avatarUrls['48x48'] : '',
+            assigneeAvatar: action.data.fields.assignee && action.data.fields.assignee.avatarUrls && action.data.fields.assignee.avatarUrls['48x48'] ? action.data.fields.assignee.avatarUrls['48x48'] : '',
             labels: action.data.fields.labels,
             description: action.data.fields.description,
             summary: action.data.fields.summary,
@@ -213,7 +213,7 @@ const getIssueByKey = (state = {}, action) => {
     case ActionTypes.RECEIVED_JIRA_TICKETS_ERROR :
         return {
             ...state,
-            error:action.error,
+            error: action.error,
         };
     default:
         return state;
