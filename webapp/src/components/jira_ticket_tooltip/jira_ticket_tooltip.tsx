@@ -113,9 +113,9 @@ export default class TicketPopover extends React.PureComponent<Props> {
                     style={{color: '#333', margin: '16px 0px', textAlign: 'left', fontFamily: 'open sans', fontSize: '10px', padding: '0px 0px 2px 0px'}}>
                     {fixVersionString}
                         <span className='fix-version-label-value'
-                        style={{backgroundColor: 'rgba(63, 67, 80, 0.08)', padding: '1px 8px', fontWeight: 600, borderRadius: '2px'}}>
-                        {fixVersion}
-                    </span>
+                            style={{backgroundColor: 'rgba(63, 67, 80, 0.08)', padding: '1px 8px', fontWeight: 600, borderRadius: '2px'}}>
+                            {fixVersion}
+                        </span>
                 </div>
             );
         }
@@ -153,11 +153,11 @@ export default class TicketPopover extends React.PureComponent<Props> {
             let totalHide = 0;
             const labelList = labels.map((label: any, key: any) => {
                 if (totalString < 3){
-                totalString++
+                totalString++;
                     return (<span key={key} 
                         className='jiraticket-popover-label-list'>{label}</span>);
-                }else{
-                    totalHide++
+                } else {
+                    totalHide++;
                     if (key === labels.length - 1 ){
                         const moreLabels = `+${totalHide}more`;
                         return (<span key={key} 
@@ -166,11 +166,7 @@ export default class TicketPopover extends React.PureComponent<Props> {
                 }
             });
             
-            return (
-                <Fragment>
-                    <div className={'ticket-popover-label'}>{labelList}</div>
-                </Fragment>
-            );
+            return (<div className={'ticket-popover-label'}>{labelList}</div>)
         }
         return null;
     }
@@ -191,7 +187,7 @@ export default class TicketPopover extends React.PureComponent<Props> {
         const jiraTicketVersions = this.state.versions;
         const jiraTicketLabels = this.state.labels;
         const isAssigned = 'is assigned';
-        const unAssigned = 'Unassigned'
+        const unAssigned = 'Unassigned';
         return (
             <div className={'ticket-popover'}>
                 <div className={'ticket-popover-header'}>
@@ -239,9 +235,13 @@ export default class TicketPopover extends React.PureComponent<Props> {
                 </div>
                 <div className={'ticket-popover-footer'}>
                     { jiraTicketAssigneeAvatarURI !== '' ?
-                        (<img className={'ticket-popover-footer-assigner-profile'} src={jiraTicketAssigneeAvatarURI} alt={'jira assigner profile'}/>):
-                        (<span style={{backgroundColor: 'slategrey', borderRadius: '50%', marginRight:' 5px', padding: '1px'}}>    
-                            <svg width='18' height='18' viewBox='0 0 18 18' role='presentation'><g fill='white' fillRule='evenodd'><path d='M3.5 14c0-1.105.902-2 2.009-2h7.982c1.11 0 2.009.894 2.009 2.006v4.44c0 3.405-12 3.405-12 0V14z'></path><circle cx='9' cy='6' r='3.5'></circle></g></svg>
+                        (<img className={'ticket-popover-footer-assigner-profile'} 
+                            src={jiraTicketAssigneeAvatarURI} alt={'jira assigner profile'}/>) :
+                        (<span style={{backgroundColor: 'slategrey', borderRadius: '50%', marginRight: '5px', padding: '1px'}}>    
+                            <svg width='18'
+                                height='18' viewBox='0 0 18 18' role='presentation'><g fill='white' 
+                                    fillRule='evenodd'><path d='M3.5 14c0-1.105.902-2 2.009-2h7.982c1.11 0 2.009.894 2.009 2.006v4.44c0 3.405-12 3.405-12 0V14z'/><circle cx='9' 
+                                cy='6' r='3.5'></circle></g></svg>
                         </span>)
                     }
                     { jiraTicketAssigneeName !== '' ?
