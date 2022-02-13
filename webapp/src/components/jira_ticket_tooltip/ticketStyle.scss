@@ -4,7 +4,6 @@
     width:380px;
     flex-direction: column;
     align-items: center;
-    /// position: absolute;/
     left: 0;
     right: 0;
     top: calc(50% - 311px / 2);
@@ -12,7 +11,6 @@
     border: 1px solid rgba(63, 67, 80, 0.16);
     border-radius: 4px;
 }
-
 
 .ticket-popover-keyword:hover {
     color: #0645AD;
@@ -125,7 +123,7 @@
 .ticket-popover-label {
     display: flex;
     flex-direction: row;
-    overflow: hidden;
+    flex-wrap: wrap;
 }
 
 .ticket-popover-labels {
@@ -166,57 +164,9 @@
     font-weight: 600;
 }
 
-.ticket-popover-footer-arrow {
-    display: flex;
-    position: absolute;
-    flex-direction: column;
-    width: 72px;
-    height: 28px;
-    left: 0px;
-    bottom: -27px;
-}
-
-.ticket-popover-footer-arrow-vector {
-    position: absolute;
-    width: 26px;
-    height: 13px;
-    left: 25px;
-    top: 0px;
-    border: 1px solid rgba(63, 67, 80, 0.16);
-}
-
-.ticket-popover-footer-arrow-bottom {
-    position: absolute;
-    width: 24px;
-    height: 12px;
-    left: calc(50% - 24px / 2 + 26px);
-    top: 12px;
-    background-color: red;
-    transform: rotate(120deg);
-}
-
-.ticket-popover-footer-arrow-bottom > span {
-    position: absolute;
-    left: 100%;
-    right: -100%;
-    top: 50%;
-    bottom: -100%;
-    background-color: #0645AD;
-    transform: rotate(120deg);
-}
-
 .jiraticket-popover-label-list {
     font-size: 10px;
-    font-style: normal;
-    line-height: 16px;
-    display: flex;
-    height: 16px;
-    background: rgba(63, 67, 80, 0.08);
+    font-weight: 600;
     margin: 5px 5px 5px 0px;
     padding: 0px 8px;
-}
-
-.jiraticket-popover-total-hide-label {
-    text-align: left;
-    font-size: 12px;
 }

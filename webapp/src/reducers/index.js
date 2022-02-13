@@ -199,8 +199,8 @@ const getIssueByKey = (state = {}, action) => {
         return {
             ...state,
             isloaded: true,
-            assigneeName: action.data.fields.assignee.displayName,
-            assigneeAvatar: action.data.fields.assignee.avatarUrls['48x48'],
+            assigneeName: action.data.fields.assignee && action.data.fields.assignee.displayName ? action.data.fields.assignee.displayName : '',
+            assigneeAvatar: action.data.fields.assignee && action.data.fields.assignee.avatarUrls && action.data.fields.assignee.avatarUrls['48x48'] ?action.data.fields.assignee.avatarUrls['48x48'] : '',
             labels: action.data.fields.labels,
             description: action.data.fields.description,
             summary: action.data.fields.summary,
