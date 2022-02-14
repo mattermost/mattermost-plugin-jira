@@ -101,7 +101,7 @@ func continueButton(next flow.Name) flow.Button {
 
 func (p *Plugin) stepWelcome() flow.Step {
 	return flow.NewStep(stepSetupWelcome).
-		WithPretext("##### :wave: Welcome to the Jira integration! [Learn more](https://github.com/mattermost/mattermost-plugin-jira#readme)").
+		WithPretext("##### :wave: Welcome to Jira integration! [Learn more](https://github.com/mattermost/mattermost-plugin-jira#readme)").
 		WithTitle("Configure the integration.").
 		WithText("Just a few steps to go!\n" +
 			"1. Choose the Jira edition (cloud or server) you will connect to.\n" +
