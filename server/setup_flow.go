@@ -101,18 +101,18 @@ func continueButton(next flow.Name) flow.Button {
 
 func (p *Plugin) stepWelcome() flow.Step {
 	return flow.NewStep(stepSetupWelcome).
-		WithPretext("##### :wave: Welcome to Jira integration! [Learn more](https://github.com/mattermost/mattermost-plugin-jira#readme)").
-		WithTitle("Configure the integration.").
-		WithText("Just a few steps to go!\n" +
+		WithPretext("##### :wave: Welcome to the Jira integration! [Learn more](https://github.com/mattermost/mattermost-plugin-jira#readme)").
+		WithTitle("Let's Configure the connection with Jira.").
+		WithText("There's just a few steps!\n" +
 			"1. Choose the Jira edition (cloud or server) you will connect to.\n" +
-			"2. Configure the Mattermost integration (app) in Jira.\n" +
+			"2. Configure the Mattermost integration (app) within Jira.\n" +
 			"3. Configure the subscriptions webhook in Jira.\n" +
 			"4. Connect your user account.\n" +
-			"Configuring the integration requires administrator access to Jira. If you aren't a Jira admin, " +
-			"select **I need someone else** to ask another Mattermost user to do it.\n" +
+			"Note: Configuring the integration requires administrator access to Jira. If you aren't a Jira admin, " +
+			"select **I need someone else** to ask another Mattermost user to perform this configuration. \n" +
 			"\n" +
-			"You can **Cancel** these steps at any time and use `/jira` command to finish the configuration later. " +
-			"See [documentation](https://mattermost.gitbook.io/plugin-jira/setting-up/configuration) for more.").
+			"You can **Cancel** these steps at any time and use `/jira` command to complete the configuration later. " +
+			"See [documentation](https://mattermost.gitbook.io/plugin-jira/setting-up/configuration) for more details.").
 		OnRender(func(f *flow.Flow) {
 			p.trackSetupWizard("setup_wizard_start", map[string]interface{}{
 				"from_invite": f.GetState().GetString(keyDelegatedFromUserID) != "",
@@ -143,7 +143,7 @@ func (p *Plugin) stepWelcome() flow.Step {
 
 func (p *Plugin) stepDelegated() flow.Step {
 	return flow.NewStep(stepDelegated).
-		WithText("Asked {{.Delegated}} to finish configuring the integration.").
+		WithText("Asked {{.Delegated}} to finish configuring the integration. They will get a notification and be able to go through the wizard.").
 		WithButton(flow.Button{
 			Name:     "Waiting for {{.Delegated}}...",
 			Color:    flow.ColorDefault,
@@ -155,23 +155,23 @@ func (p *Plugin) stepDelegated() flow.Step {
 
 func (p *Plugin) stepDelegateComplete() flow.Step {
 	return flow.NewStep(stepDelegateComplete).
-		WithText("{{.Delegated}} completed configuring the integration.").
+	WithText("{{.Delegated}} completed configuring the integration. :tada:").
 		OnRender(p.trackSetupWizard("setup_wizard_delegate_complete", nil)).
 		Next(stepDone)
 }
 
 func (p *Plugin) stepChooseEdition() flow.Step {
 	return flow.NewStep(stepChooseEdition).
-		WithPretext("##### :white_check_mark: Step 1: Choose Jira Edition.").
+		WithPretext("##### :white_check_mark: Step 1: Which Jira edition do you use?").
 		WithTitle("Cloud or Server (on-premise).").
-		WithText("Please choose whether you use the Jira Cloud or Server (on-premise) edition. " +
+		WithText("Please choose whether you use the Jira Cloud or Server (on-premise/DC) edition. " +
 			"If you need to integrate with more than one Jira instance, please refer to the [documentation](https://mattermost.gitbook.io/plugin-jira/)").
 		WithButton(flow.Button{
 			Name:  "Jira Cloud",
 			Color: flow.ColorPrimary,
 			Dialog: &model.Dialog{
 				Title:            "Enter Jira Cloud Organization",
-				IntroductionText: "Enter Jira Cloud URL (usually, `https://yourorg.atlassian.net`), or just the organization part, `yourorg`.",
+				IntroductionText: "Enter Jira Cloud URL (usually, `https://yourorg.atlassian.net`), or just the organization part, `yourorg`",
 				SubmitLabel:      "Continue",
 				Elements: []model.DialogElement{
 					{
@@ -208,10 +208,10 @@ func (p *Plugin) stepChooseEdition() flow.Step {
 
 func (p *Plugin) stepServerAddAppLink() flow.Step {
 	return flow.NewStep(stepServerAddAppLink).
-		WithPretext("##### :white_check_mark: Step 2: Configure Mattermost Application Link in Jira").
+		WithPretext("##### :white_check_mark: Step 2: Configure the Mattermost Application Link in Jira").
 		WithTitle("Create Application Link.").
 		WithText("Jira server {{.JiraURL}} has been successfully added. "+
-			"To finish the configuration add and configure an Application Link in your Jira instance.\n"+
+			"To finish the configuration, we'll need to add and configure an Application Link in your Jira instance.\n"+
 			"Complete the following steps, then come back here and select **Continue**.\n\n"+
 			"1. Navigate to [**Settings > Applications > Application Links**]({{.JiraURL}}/plugins/servlet/applinks/listApplicationLinks) (see _screenshot_).\n"+
 			"2. Enter `{{.PluginURL}}` [link]({{.PluginURL}}) as the application link, then select **Create new link**.").
@@ -235,7 +235,7 @@ func (p *Plugin) stepServerConfirmAppLink() flow.Step {
 func (p *Plugin) stepServerConfigureAppLink1() flow.Step {
 	return flow.NewStep(stepServerConfigureAppLink1).
 		WithTitle("Create Incoming Application Link.").
-		WithText("Complete the following steps, then come back here and select **Continue**.\n\n"+
+		WithText("Complete the following steps in Jira, then come back here and select **Continue**.\n\n"+
 			"1. In Jira's **Link Applications** screen (see _screenshot_) enter the following values, leave all other fields blank.\n"+
 			"  - **Application Name**:  `Mattermost`\n"+
 			"  - **Application Type**: **Generic Application**\n"+
@@ -249,7 +249,7 @@ func (p *Plugin) stepServerConfigureAppLink1() flow.Step {
 func (p *Plugin) stepServerConfigureAppLink2() flow.Step {
 	return flow.NewStep(stepServerConfigureAppLink2).
 		WithTitle("Configure Incoming Application Link.").
-		WithText("Complete the following steps, then come back here and select **Continue**.\n\n"+
+		WithText("Complete the following steps in Jira, then come back here and select **Continue**.\n\n"+
 			"1. In Jira's second **Link Applications** screen (see _screenshot_) enter the following values, leave all other fields blank.\n"+
 			"  - **Consumer Key**: `{{.MattermostKey}}`\n"+
 			"  - **Consumer Name**: `Mattermost`\n"+
