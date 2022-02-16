@@ -335,7 +335,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		},
 		"install non secure cloud instance": {
 			commandArgs:       &model.CommandArgs{Command: "/jira install cloud http://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "a secure https URL is required",
+			expectedMsgPrefix: "a secure HTTPS URL is required",
 		},
 	}
 	for name, tt := range tests {
