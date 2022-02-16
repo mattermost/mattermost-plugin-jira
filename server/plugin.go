@@ -339,43 +339,31 @@ func (p *Plugin) OnActivate() error {
 }
 
 func (p *Plugin) AddAutolinksForCloudInstance(ci *cloudInstance) error {
-	client, err := ci.getClientForBot()
+	err := p.AddAutolinks(ci.BaseURL)
 	if err != nil {
-		return fmt.Errorf("unable to get jira client for server: %w", err)
-	}
-
-	keys, err := JiraClient{Jira: client}.GetAllProjectKeys()
-	if err != nil {
-		return fmt.Errorf("unable to get project keys: %w", err)
-	}
-
-	for _, key := range keys {
-		err = p.AddAutolinks(key, ci.BaseURL)
-	}
-	if err != nil {
-		return fmt.Errorf("some keys were not installed: %w", err)
+		return fmt.Errorf("some were not installed: %w", err)
 	}
 
 	return nil
 }
 
-func (p *Plugin) AddAutolinks(key, baseURL string) error {
+func (p *Plugin) AddAutolinks(baseURL string) error {
 	baseURL = strings.TrimRight(baseURL, "/")
 	installList := []autolink.Autolink{
 		{
-			Name:     key + " key to link for " + baseURL,
-			Pattern:  `(` + key + `)(-)(?P<jira_id>\d+)`,
-			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
+			Name:     "Key to link for " + baseURL,
+			Pattern:  `(?P<project_id>\w+)(-)(?P<jira_id>\d+)`,
+			Template: `[${project_id}-${jira_id}](` + baseURL + `/browse/${project_id}-${jira_id})`,
 		},
 		{
-			Name:     key + " link to key for " + baseURL,
-			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)`,
-			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
+			Name:     "Jump to comment for " + baseURL,
+			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(?P<project_id>\w+)(-)(?P<jira_id>\d+)[?](focusedCommentId)(=)(?P<comment_id>\d+)`,
+			Template: `[${project_id}-${jira_id} With Comment #${comment_id}](` + baseURL + `/browse/${project_id}-${jira_id}?focusedCommentId=${comment_id})`,
 		},
 		{
-			Name:     key + " jump to comment for " + baseURL,
-			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)[?](focusedCommentId)(=)(?P<comment_id>\d+)`,
-			Template: `[` + key + `-${jira_id} With Comment($comment_id)](` + baseURL + `/browse/` + key + `-${jira_id}?focusedCommentId=$comment_id)`,
+			Name:     "Link to key for " + baseURL,
+			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(?P<project_id>\w+)(-)(?P<jira_id>\d+)`,
+			Template: `[${project_id}-${jira_id}](` + baseURL + `/browse/${project_id}-${jira_id})`,
 		},
 	}
 
