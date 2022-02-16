@@ -260,7 +260,7 @@ func (p *Plugin) stepServerConfigureAppLink1() flow.Step {
 func (p *Plugin) stepServerConfigureAppLink2() flow.Step {
 	return flow.NewStep(stepServerConfigureAppLink2).
 		WithTitle("Configure Incoming Application Link.").
-		WithText("Complete the following steps in Jira, then come back here and select **Continue**.\n\n"+
+		WithText("Complete the following steps in Jira, then come back here to select **Continue**.\n\n"+
 			"1. In Jira's second **Link Applications** screen (see _screenshot_) enter the following values, leave all other fields blank.\n"+
 			"  - **Consumer Key**: `{{.MattermostKey}}`\n"+
 			"  - **Consumer Name**: `Mattermost`\n"+
