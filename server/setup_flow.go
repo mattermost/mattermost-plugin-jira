@@ -272,7 +272,7 @@ func (p *Plugin) stepCloudEnableDeveloperMode() flow.Step {
 		WithTitle("Enable development mode.").
 		WithText("Mattermost Jira Cloud integration requires setting your Jira to _development mode_ (see _screenshot_). "+
 			"Enabling the development mode allows you to install apps like Mattermost, from outside the Atlassian Marketplace.\n"+
-			"Complete the following steps in Jira, then come back here and select **Continue**.\n\n"+
+			"Complete the following steps in Jira, then come back here to select **Continue**.\n\n"+
 			"1. Navigate to [**Settings > Apps > Manage Apps**]({{.JiraURL}}/plugins/servlet/upm?source=side_nav_manage_addons).\n"+
 			"2. Select **Settings** at the bottom of the page.\n"+
 			"3. Select **Enable development mode**, then select **Apply**.\n").
