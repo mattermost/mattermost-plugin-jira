@@ -247,7 +247,7 @@ func (p *Plugin) stepServerConfigureAppLink1() flow.Step {
 	return flow.NewStep(stepServerConfigureAppLink1).
 		WithTitle("Create Incoming Application Link.").
 		WithText("Complete the following steps in Jira, then come back here to select **Continue**.\n\n"+
-			"1. In Jira's **Link Applications** screen (see _screenshot_) enter the following values, leave all other fields blank.\n"+
+			"1. In Jira's **Link Applications** screen (see _screenshot_) enter the following values, and leave all other fields blank.\n"+
 			"  - **Application Name**:  `Mattermost`\n"+
 			"  - **Application Type**: **Generic Application**\n"+
 			"  - **Create incoming link**: :heavy_check_mark: **(important)**\n"+
