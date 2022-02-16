@@ -182,7 +182,7 @@ func (p *Plugin) stepChooseEdition() flow.Step {
 			Color: flow.ColorPrimary,
 			Dialog: &model.Dialog{
 				Title:            "Enter Jira Cloud Organization",
-				IntroductionText: "Enter Jira Cloud URL (usually, `https://yourorg.atlassian.net`), or just the organization part, `yourorg`",
+				IntroductionText: "Enter a Jira Cloud URL (typically, `https://yourorg.atlassian.net`), or just the organization part, `yourorg`",
 				SubmitLabel:      "Continue",
 				Elements: []model.DialogElement{
 					{
@@ -247,7 +247,7 @@ func (p *Plugin) stepServerConfigureAppLink1() flow.Step {
 	return flow.NewStep(stepServerConfigureAppLink1).
 		WithTitle("Create Incoming Application Link.").
 		WithText("Complete the following steps in Jira, then come back here to select **Continue**.\n\n"+
-			"1. In Jira's **Link Applications** screen (see _screenshot_) enter the following values, leave all other fields blank.\n"+
+			"1. In Jira's **Link Applications** screen (see _screenshot_) enter the following values, and leave all other fields blank.\n"+
 			"  - **Application Name**:  `Mattermost`\n"+
 			"  - **Application Type**: **Generic Application**\n"+
 			"  - **Create incoming link**: :heavy_check_mark: **(important)**\n"+
@@ -260,7 +260,7 @@ func (p *Plugin) stepServerConfigureAppLink1() flow.Step {
 func (p *Plugin) stepServerConfigureAppLink2() flow.Step {
 	return flow.NewStep(stepServerConfigureAppLink2).
 		WithTitle("Configure Incoming Application Link.").
-		WithText("Complete the following steps in Jira, then come back here and select **Continue**.\n\n"+
+		WithText("Complete the following steps in Jira, then come back here to select **Continue**.\n\n"+
 			"1. In Jira's second **Link Applications** screen (see _screenshot_) enter the following values, leave all other fields blank.\n"+
 			"  - **Consumer Key**: `{{.MattermostKey}}`\n"+
 			"  - **Consumer Name**: `Mattermost`\n"+
