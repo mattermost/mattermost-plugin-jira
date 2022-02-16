@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	stepSetupWelcome             flow.Name = "setup-welcome"
+	stepWelcome                  flow.Name = "welcome"
+	stepDelegate                 flow.Name = "delegate"
 	stepDelegateComplete         flow.Name = "delegate-complete"
 	stepDelegated                flow.Name = "delegated"
 	stepChooseEdition            flow.Name = "choose-edition"
@@ -56,6 +57,7 @@ func (p *Plugin) NewSetupFlow() *flow.Flow {
 	return flow.NewFlow("setup-wizard", p.client, pluginURL, conf.botUserID).
 		WithSteps(
 			p.stepWelcome(),
+			p.stepDelegate(),
 			p.stepDelegated(),
 			p.stepDelegateComplete(),
 			p.stepChooseEdition(),
@@ -86,7 +88,7 @@ func (p *Plugin) NewSetupFlow() *flow.Flow {
 }
 
 var cancelButton = flow.Button{
-	Name:    "Cancel",
+	Name:    "Cancel setup",
 	Color:   flow.ColorDanger,
 	OnClick: flow.Goto(stepCancel),
 }
@@ -100,16 +102,13 @@ func continueButton(next flow.Name) flow.Button {
 }
 
 func (p *Plugin) stepWelcome() flow.Step {
-	return flow.NewStep(stepSetupWelcome).
-		WithPretext("##### :wave: Welcome to Jira integration! [Learn more](https://github.com/mattermost/mattermost-plugin-jira#readme)").
-		WithTitle("Configure the integration.").
-		WithText("Just a few steps to go!\n" +
+	return flow.NewStep(stepWelcome).
+		WithPretext(":wave: Welcome to Jira integration! [Learn more](https://github.com/mattermost/mattermost-plugin-jira#readme)").
+		WithText("Just a few more configuration steps to go!\n" +
 			"1. Choose the Jira edition (cloud or server) you will connect to.\n" +
 			"2. Configure the Mattermost integration (app) in Jira.\n" +
 			"3. Configure the subscriptions webhook in Jira.\n" +
 			"4. Connect your user account.\n" +
-			"Configuring the integration requires administrator access to Jira. If you aren't a Jira admin, " +
-			"select **I need someone else** to ask another Mattermost user to do it.\n" +
 			"\n" +
 			"You can **Cancel** these steps at any time and use `/jira` command to finish the configuration later. " +
 			"See [documentation](https://mattermost.gitbook.io/plugin-jira/setting-up/configuration) for more.").
@@ -118,7 +117,19 @@ func (p *Plugin) stepWelcome() flow.Step {
 				"from_invite": f.GetState().GetString(keyDelegatedFromUserID) != "",
 			})(f)
 		}).
-		WithButton(continueButton(stepChooseEdition)).
+		WithButton(continueButton(stepDelegate)).
+		WithButton(cancelButton)
+}
+
+func (p *Plugin) stepDelegate() flow.Step {
+	return flow.NewStep(stepDelegate).
+		WithText(
+			"Configuring the integration requires administrator access to Jira. Are you setting this Jira integration up yourself, or is someone else?").
+		WithButton(flow.Button{
+			Name:    "I'll do it myself",
+			Color:   flow.ColorPrimary,
+			OnClick: flow.Goto(stepChooseEdition),
+		}).
 		WithButton(flow.Button{
 			Name:  "I need someone else",
 			Color: flow.ColorDefault,
@@ -349,7 +360,7 @@ func (p *Plugin) stepWebhook() flow.Step {
 		WithImage(p.GetPluginURL(), "public/configure-webhook.png").
 		OnRender(p.trackSetupWizard("setup_wizard_webhook_start", nil)).
 		WithButton(flow.Button{
-			Name:  "View Webhook URL",
+			Name:  "View webhook URL",
 			Color: flow.ColorPrimary,
 			Dialog: &model.Dialog{
 				Title:            "Jira Webhook URL",
@@ -398,7 +409,7 @@ func (p *Plugin) stepAnnouncementQuestion() flow.Step {
 		WithText("Want to let your team know?").
 		OnRender(p.trackSetupWizard("setup_wizard_announcement_start", nil)).
 		WithButton(flow.Button{
-			Name:  "Send Message",
+			Name:  "Send message",
 			Color: flow.ColorPrimary,
 			Dialog: &model.Dialog{
 				Title:       "Notify your team",
