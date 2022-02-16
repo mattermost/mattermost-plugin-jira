@@ -332,7 +332,7 @@ func (p *Plugin) stepInstalledJiraApp() flow.Step {
 func (p *Plugin) stepWebhook() flow.Step {
 	return flow.NewStep(stepWebhook).
 		WithPretext("##### :white_check_mark: Step 3: Setup Jira Subscriptions Webhook").
-		WithText(`To receive Jira event notifications in Mattermost Channels you need to set up a single "firehose" `+
+		WithText(`To receive Jira event notifications in Mattermost Channels, you need to set up a single "firehose" `+
 			"webhook, configured for all possible event triggers that you would like to be pushed into "+
 			"Mattermost. The plugin's Channel Subscription feature processes the firehose of data and "+
 			"then routes the events to channels and users based on your subscriptions.\n\n"+
