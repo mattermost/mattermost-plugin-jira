@@ -365,7 +365,7 @@ func (p *Plugin) stepWebhook() flow.Step {
 func (p *Plugin) stepWebhookDone() flow.Step {
 	return flow.NewStep(stepWebhookDone).
 		WithTitle("Webhook is setup. :tada:").
-		WithText("You can now use the command `/jira subscribe` from a specific channel to receive notifications from Jira there.").
+		WithText("You can now use the command `/jira subscribe` from a specific channel to receive Jira notifications in that channel.").
 		OnRender(p.trackSetupWizard("setup_wizard_webhook_complete", nil)).
 		Next(stepConnect)
 }
