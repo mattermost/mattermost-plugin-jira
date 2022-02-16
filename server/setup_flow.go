@@ -314,7 +314,7 @@ func (p *Plugin) stepInstalledJiraApp() flow.Step {
 	}
 	return flow.NewStep(stepInstalledJiraApp).
 		WithTitle("Confirmed.").
-		WithText("You've finished configuring the Mattermost App in Jira. Select **Continue** to setup the subscription webhook" +
+		WithText("You've finished configuring the Mattermost App in Jira. Select **Continue** to set up the subscription webhook" +
 			"for sending notifications to Mattermost").
 		OnRender(func(f *flow.Flow) {
 			p.trackSetupWizard("setup_wizard_jira_config_complete", map[string]interface{}{
