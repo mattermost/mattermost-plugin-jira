@@ -104,7 +104,7 @@ func (p *Plugin) stepWelcome() flow.Step {
 		WithPretext("##### :wave: Welcome to the Jira integration! [Learn more](https://github.com/mattermost/mattermost-plugin-jira#readme)").
 		WithTitle("Let's Configure the connection with Jira.").
 		WithText("There's just a few steps!\n" +
-			"1. Choose the Jira edition (cloud or server) you will connect to.\n" +
+			"1. Choose the Jira edition (cloud or server) you'll connect to.\n" +
 			"2. Configure the Mattermost integration (app) within Jira.\n" +
 			"3. Configure the subscriptions webhook in Jira.\n" +
 			"4. Connect your user account.\n" +
