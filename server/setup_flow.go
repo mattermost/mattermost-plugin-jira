@@ -109,7 +109,7 @@ func (p *Plugin) stepWelcome() flow.Step {
 			"3. Configure the subscriptions webhook in Jira.\n" +
 			"4. Connect your user account.\n" +
 			"Note: Configuring the integration requires administrator access to Jira. If you aren't a Jira admin, " +
-			"select **I need someone else** to ask another Mattermost user to perform this configuration. \n" +
+			"select **I need someone else** to ask another Mattermost user to complete this configuration. \n" +
 			"\n" +
 			"You can **Cancel** these steps at any time and use `/jira` command to complete the configuration later. " +
 			"See [documentation](https://mattermost.gitbook.io/plugin-jira/setting-up/configuration) for more details.").
