@@ -143,7 +143,7 @@ func (p *Plugin) stepWelcome() flow.Step {
 
 func (p *Plugin) stepDelegated() flow.Step {
 	return flow.NewStep(stepDelegated).
-		WithText("Asked {{.Delegated}} to finish configuring the integration. They will get a notification and be able to go through the wizard.").
+		WithText("Asked {{.Delegated}} to finish configuring the integration. They will receive a notification to complete the configuration.").
 		WithButton(flow.Button{
 			Name:     "Waiting for {{.Delegated}}...",
 			Color:    flow.ColorDefault,
