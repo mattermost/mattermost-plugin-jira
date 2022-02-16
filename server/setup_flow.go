@@ -106,7 +106,7 @@ func (p *Plugin) stepWelcome() flow.Step {
 		WithPretext(":wave: Welcome to Jira integration! [Learn more](https://github.com/mattermost/mattermost-plugin-jira#readme)").
 		WithText("Just a few more configuration steps to go!\n" +
 			"1. Choose the Jira edition (cloud or server) you'll connect to.\n" +
-			"2. Configure the Mattermost integration (app) within Jira.\n" +
+			"2. Configure the Mattermost integration within Jira.\n" +
 			"3. Configure the subscriptions webhook in Jira.\n" +
 			"4. Connect your user account.\n" +
 			"\n" +
@@ -175,7 +175,7 @@ func (p *Plugin) stepChooseEdition() flow.Step {
 	return flow.NewStep(stepChooseEdition).
 		WithPretext("##### :white_check_mark: Step 1: Which Jira edition do you use?").
 		WithTitle("Cloud or Server (on-premise).").
-		WithText("Please choose whether you use the Jira Cloud or Server (on-premise/DC) edition. " +
+		WithText("Please choose whether you use the Jira Cloud or Server (on-premise/Data Center) edition. " +
 			"If you need to integrate with more than one Jira instance, please refer to the [documentation](https://mattermost.gitbook.io/plugin-jira/)").
 		WithButton(flow.Button{
 			Name:  "Jira Cloud",
