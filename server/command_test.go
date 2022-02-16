@@ -301,7 +301,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		"install inaccessible cloud instance": {
 			numInstances:      0,
 			commandArgs:       &model.CommandArgs{Command: "/jira install cloud https://non-existing-jira-page.atlassian.net", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: `it looks like we couldn't validate the connection to your Jira server. Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. If you intend to have a one way integration from Jira to Mattermost this is not an issue: Jira server returned http status code "404" when checking for availability: "https://non-existing-jira-page.atlassian.net"`,
+			expectedMsgPrefix: `we couldn't validate the connection to your Jira server. This could be because of existing firewall or proxy rules, or because the URL was entered incorrectly. If you intend to have a one-way integration from Jira to Mattermost this is not an issue: Jira server returned http status code "404" when checking for availability: "https://non-existing-jira-page.atlassian.net"`,
 		},
 		"install valid cloud instance with broken json response": {
 			numInstances:      0,
