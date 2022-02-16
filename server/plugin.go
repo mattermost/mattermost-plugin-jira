@@ -372,6 +372,11 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)`,
 			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
 		},
+		{
+			Name:     key + " jump to comment for " + baseURL,
+			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)[?](focusedCommentId)(=)(?P<comment_id>\d+)`,
+			Template: `[` + key + `-${jira_id} With Focused Comment($comment_id)](` + baseURL + `/browse/` + key + `-${jira_id}?focusedCommentId=$comment_id)`,
+		},
 	}
 
 	client := autolinkclient.NewClientPlugin(p.API)
