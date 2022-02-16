@@ -82,7 +82,7 @@ func CheckJiraURL(mattermostSiteURL, jiraURL string, requireHTTPS bool) (_ strin
 
 	defer func() {
 		if err != nil {
-			err = errors.Wrap(err, "it looks like we couldn't validate the connection to your Jira server. "+
+			err = errors.Wrap(err, "we couldn't validate the connection to your Jira server. "+
 				"Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. "+
 				"If you intend to have a one way integration from Jira to Mattermost this is not an issue")
 		}
