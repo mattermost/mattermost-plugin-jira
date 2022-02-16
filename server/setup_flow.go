@@ -155,7 +155,7 @@ func (p *Plugin) stepDelegated() flow.Step {
 
 func (p *Plugin) stepDelegateComplete() flow.Step {
 	return flow.NewStep(stepDelegateComplete).
-	WithText("{{.Delegated}} completed configuring the integration. :tada:").
+		WithText("{{.Delegated}} completed configuring the integration. :tada:").
 		OnRender(p.trackSetupWizard("setup_wizard_delegate_complete", nil)).
 		Next(stepDone)
 }
@@ -315,7 +315,7 @@ func (p *Plugin) stepInstalledJiraApp() flow.Step {
 	return flow.NewStep(stepInstalledJiraApp).
 		WithTitle("Confirmed.").
 		WithText("You've finished configuring the Mattermost App in Jira. Select **Continue** to setup the subscription webhook" +
-			 "for sending notifications to Mattermost").
+			"for sending notifications to Mattermost").
 		OnRender(func(f *flow.Flow) {
 			p.trackSetupWizard("setup_wizard_jira_config_complete", map[string]interface{}{
 				keyEdition: f.GetState().GetString(keyEdition),
@@ -364,7 +364,7 @@ func (p *Plugin) stepWebhook() flow.Step {
 
 func (p *Plugin) stepWebhookDone() flow.Step {
 	return flow.NewStep(stepWebhookDone).
-	WithTitle("Webhook is setup. :tada:").
+		WithTitle("Webhook is setup. :tada:").
 		WithText("You can now use the command `/jira subscribe` from a specific channel to receive notifications from Jira there.").
 		OnRender(p.trackSetupWizard("setup_wizard_webhook_complete", nil)).
 		Next(stepConnect)
