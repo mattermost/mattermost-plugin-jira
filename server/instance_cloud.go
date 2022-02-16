@@ -70,7 +70,7 @@ func (p *Plugin) installInactiveCloudInstance(rawURL string, actingUserID string
 		return "", err
 	}
 	if !strings.HasPrefix(jiraURL, "https://") {
-		return "", errors.New("a secure https URL is required")
+		return "", errors.New("a secure HTTPS URL is required")
 	}
 
 	instances, _ := p.instanceStore.LoadInstances()
