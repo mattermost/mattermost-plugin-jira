@@ -112,7 +112,7 @@ func (p *Plugin) stepWelcome() flow.Step {
 			"select **I need someone else** to ask another Mattermost user to complete this configuration. \n" +
 			"\n" +
 			"You can **Cancel** these steps at any time and use `/jira` command to complete the configuration later. " +
-			"See [documentation](https://mattermost.gitbook.io/plugin-jira/setting-up/configuration) for more details.").
+			"See [documentation](https://mattermost.gitbook.io/plugin-jira/setting-up/configuration) for details.").
 		OnRender(func(f *flow.Flow) {
 			p.trackSetupWizard("setup_wizard_start", map[string]interface{}{
 				"from_invite": f.GetState().GetString(keyDelegatedFromUserID) != "",
