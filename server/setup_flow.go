@@ -168,7 +168,7 @@ func (p *Plugin) stepDelegateComplete() flow.Step {
 	return flow.NewStep(stepDelegateComplete).
 		WithText("{{.Delegated}} completed configuring the integration. :tada:").
 		OnRender(p.trackSetupWizard("setup_wizard_delegate_complete", nil)).
-		Next(stepDone)
+		Next(stepAnnouncementQuestion)
 }
 
 func (p *Plugin) stepChooseEdition() flow.Step {
@@ -325,8 +325,8 @@ func (p *Plugin) stepInstalledJiraApp() flow.Step {
 	}
 	return flow.NewStep(stepInstalledJiraApp).
 		WithTitle("Confirmed.").
-		WithText("You've finished configuring the Mattermost App in Jira. Select **Continue** to set up the subscription webhook" +
-			"for sending notifications to Mattermost").
+		WithText("You've finished configuring the Mattermost App in Jira. Select **Continue** to set up the subscription webhook " +
+			"for sending notifications to Mattermost.").
 		OnRender(func(f *flow.Flow) {
 			p.trackSetupWizard("setup_wizard_jira_config_complete", map[string]interface{}{
 				keyEdition: f.GetState().GetString(keyEdition),
@@ -402,12 +402,14 @@ func (p *Plugin) stepConnected() flow.Step {
 }
 
 func (p *Plugin) stepAnnouncementQuestion() flow.Step {
-	defaultMessage := "Hi team,\n" +
-		"\n" +
-		"We've added an integration that connects Jira and Mattermost.  You can get notified when you are mentioned in Jira comments, or quickly change a message in Mattermost into a ticket in Jira. It's easy to get started, run the `/jira connect` slash command from any channel within Mattermost to connect your user account. See the [documentation](https://mattermost.gitbook.io/plugin-jira/end-user-guide/getting-started) for details on using the Jira plugin."
-
 	return flow.NewStep(stepAnnouncementQuestion).
-		WithText("Now, let your team know how they can use it").
+		WithPretext("##### :tada: Success! You've successfully set up your Mattermost Jira integration!").
+		WithText("You can now:\n" +
+			"- Subscribe channels in Mattermost to receive updates from Jira with `/jira subscribe` command (navigate to the target channel first).\n" +
+			"- Create Jira issues from posts in Mattermost by selecting **Create Jira Issue** from the **...** menu of the relevant post.\n" +
+			"- Attach Mattermost posts to Jira issues as comments by selecting **Attach to Jira Issue** from the **...** menu.\n" +
+			"- Control your personal notifications from Jira with `/jira instance settings` command.\n\n" +
+			"Want to let your team know?\n").
 		OnRender(p.trackSetupWizard("setup_wizard_announcement_start", nil)).
 		WithButton(flow.Button{
 			Name:  "Send message",
@@ -427,8 +429,12 @@ func (p *Plugin) stepAnnouncementQuestion() flow.Step {
 						DisplayName: "Message",
 						Name:        "message",
 						Type:        "textarea",
-						Default:     defaultMessage,
-						HelpText:    "You can edit this message before sending it.",
+						Default: "Hi team,\n\n" +
+							"We've added an integration that connects Jira and Mattermost. You can get notified when you are mentioned in Jira comments, " +
+							"or quickly change a message in Mattermost into a ticket in Jira. It's easy to get started, run the `/jira connect` slash " +
+							"command from any channel within Mattermost to connect your user account. See the " +
+							"[documentation](https://mattermost.gitbook.io/plugin-jira/end-user-guide/getting-started) for details on using the Jira plugin.",
+						HelpText: "You can edit this message before sending it.",
 					},
 				},
 			},
@@ -482,7 +488,7 @@ func (p *Plugin) submitChannelAnnouncement(f *flow.Flow, submitted map[string]in
 
 func (p *Plugin) stepAnnouncementConfirmation() flow.Step {
 	return flow.NewStep(stepAnnouncementConfirmation).
-		WithText("Message to ~{{ .ChannelName }} was sent.").
+		WithText("Sent the announcement to ~{{ .ChannelName }}.").
 		OnRender(p.trackSetupWizard("setup_wizard_announcement_complete", nil)).
 		Next(stepDone)
 }
@@ -490,25 +496,18 @@ func (p *Plugin) stepAnnouncementConfirmation() flow.Step {
 func (p *Plugin) stepCancel() flow.Step {
 	return flow.NewStep(stepCancel).
 		Terminal().
-		WithPretext("##### :no_entry_sign: Canceled").
-		WithText("You can finish configuring the Jira integration later using the `/jira` command.\n" +
-			"- `/jira setup` to run the setup wizard again.\n" +
-			"- `/jira webhook` to view the secret URL for the subscription webhook.\n" +
-			"See [documentation](https://mattermost.gitbook.io/plugin-jira/setting-up) for adding multiple instances of Jira and more.\n").
+		WithColor(flow.ColorDanger).
+		// WithPretext("##### :no_entry_sign: Canceled").
+		WithText("Jira integration set up has been canceled. You can run it again later using the `/jira setup` command, " +
+			"or refer to the [documentation](https://mattermost.gitbook.io/plugin-jira/setting-up) " +
+			"for how to configure manually.\n").
 		OnRender(p.trackSetupWizard("setup_wizard_canceled", nil))
 }
 
 func (p *Plugin) stepDone() flow.Step {
 	return flow.NewStep(stepDone).
 		Terminal().
-		WithPretext("##### :wave: All done!").
-		WithTitle("The Jira integration is now fully configured").
-		WithText("You can now:\n" +
-			"- Subscribe channels in Mattermost to receive updates from Jira with `/jira subscribe` command (navigate to the target channel first)\n" +
-			"- Create Jira issues from posts in Mattermost by selecting **Create Jira Issue** from the **...** menu of the relevant post\n" +
-			"- Attach Mattermost posts to Jira issues as comments by selecting **Attach to Jira Issue** from the **...** menu\n" +
-			"- Control your personal notifications from Jira with `/jira instance settings` command\n" +
-			"See [documentation](https://mattermost.gitbook.io/plugin-jira) for more\n").
+		WithText(":wave: All done!").
 		OnRender(func(f *flow.Flow) {
 			delegatedFrom := f.GetState().GetString(keyDelegatedFromUserID)
 			if delegatedFrom != "" {
