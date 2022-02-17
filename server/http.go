@@ -5,7 +5,6 @@ package main
 
 import (
 	"encoding/json"
-	goexpvar "expvar"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -39,7 +38,6 @@ const (
 	routeAPISubscribeWebhook                    = "/api/v2/webhook"
 	routeAPISubscriptionsChannel                = "/api/v2/subscriptions/channel"
 	routeAPISettingsInfo                        = "/api/v2/settingsinfo"
-	routeAPIStats                               = "/api/v2/stats"
 	routeIssueTransition                        = "/api/v2/transition"
 	routeAPIUserDisconnect                      = "/api/v3/disconnect"
 	routeACInstalled                            = "/ac/installed"
@@ -139,11 +137,7 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	case routeAPISettingsInfo:
 		return p.httpGetSettingsInfo(w, r)
 
-	// Stats
-	case routeAPIStats:
-		return p.httpAPIStats(w, r)
-
-		// Atlassian Connect application
+	// Atlassian Connect application
 	case routeACJSON:
 		return p.httpACJSON(w, r, callbackInstanceID)
 	case routeACInstalled:
@@ -190,11 +184,6 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:
 		return p.httpSubscribeWebhook(w, r, callbackInstanceID)
-
-	// expvar
-	case "/debug/vars":
-		goexpvar.Handler().ServeHTTP(w, r)
-		return 0, nil
 	}
 
 	if strings.HasPrefix(path, routeAPISubscriptionsChannel) {

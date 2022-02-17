@@ -23,6 +23,7 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
+	"github.com/mattermost/mattermost-plugin-api/experimental/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
@@ -30,9 +31,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
-	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/telemetry"
 )
 
 const (
@@ -59,9 +58,6 @@ type externalConfig struct {
 	// Webhook secret
 	Secret string `json:"secret"`
 
-	// Stats API secret
-	StatsSecret string `json:"stats_secret"`
-
 	// What MM roles that can create subscriptions
 	RolesAllowedToEditJiraSubscriptions string
 
@@ -71,9 +67,6 @@ type externalConfig struct {
 	// Maximum attachment size allowed to be uploaded to Jira, can be a
 	// number, optionally followed by one of [b, kb, mb, gb, tb]
 	MaxAttachmentSize string
-
-	// Disable statistics gathering
-	DisableStats bool `json:"disable_stats"`
 
 	// Additional Help Text to be shown in the output of '/jira help' command
 	JiraAdminAdditionalHelpText string
@@ -102,9 +95,6 @@ type config struct {
 
 	// Maximum attachment size allowed to be uploaded to Jira
 	maxAttachmentSize utils.ByteSize
-
-	stats             *expvar.Stats
-	statsStopAutosave chan bool
 
 	mattermostSiteURL string
 	rsaKey            *rsa.PrivateKey
@@ -213,6 +203,7 @@ func (p *Plugin) OnConfigurationChange() error {
 		p.API.GetServerVersion(),
 		manifest.ID,
 		manifest.Version,
+		"jira",
 		diagnostics,
 	)
 
@@ -313,8 +304,6 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	p.enterpriseChecker = enterprise.NewEnterpriseChecker(p.API)
-
-	go p.initStats()
 
 	go func() {
 		for _, url := range instances.IDs() {
@@ -489,15 +478,6 @@ func (c *externalConfig) setDefaults() (bool, error) {
 		changed = true
 	}
 
-	if c.StatsSecret == "" {
-		secret, err := generateSecret()
-		if err != nil {
-			return false, err
-		}
-		c.StatsSecret = secret
-		changed = true
-	}
-
 	return changed, nil
 }
 
@@ -527,5 +507,51 @@ func (p *Plugin) trackWithArgs(name, userID string, args map[string]interface{})
 		args = map[string]interface{}{}
 	}
 	args["time"] = model.GetMillis()
-	p.tracker.TrackUserEvent(name, userID, args)
+	_ = p.tracker.TrackUserEvent(name, userID, args)
+}
+
+func (p *Plugin) SendDailyTelemetry() {
+	args := map[string]interface{}{}
+
+	// Jira instances
+	server, cloud := 0, 0
+	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		p.API.LogWarn("Failed to get instances for telemetry", "error", err)
+	}
+	for _, id := range instances.IDs() {
+		switch instances.Get(id).Type {
+		case ServerInstanceType:
+			server++
+		case CloudInstanceType:
+			cloud++
+		}
+	}
+	args["instance_count"] = server + cloud
+	if server > 0 {
+		args["server_instance_count"] = server
+	}
+	if cloud > 0 {
+		args["cloud_instance_count"] = cloud
+	}
+
+	// Connected users
+	connected, err := p.userStore.CountUsers()
+	if err != nil {
+		p.API.LogWarn("Failed to get the number of connected users for telemetry", "error", err)
+	}
+	args["connected_user_count"] = connected
+
+	// Subscriptions
+	subscriptions := 0
+	for _, id := range instances.IDs() {
+		subs, err := p.getSubscriptions(id)
+		if err != nil {
+			p.API.LogWarn("Failed to get subscriptions for telemetry", "error", err)
+		}
+		subscriptions += len(subs.Channel.ByID)
+	}
+	args["subscriptions"] = subscriptions
+
+	_ = p.tracker.TrackEvent("stats", args)
 }

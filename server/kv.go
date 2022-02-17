@@ -27,7 +27,6 @@ const (
 	keyTokenSecret      = "token_secret"
 	prefixInstance      = "jira_instance_"
 	prefixOneTimeSecret = "ots_" // + unique key that will be deleted after the first verification
-	prefixStats         = "stats_"
 	prefixUser          = "user_"
 )
 

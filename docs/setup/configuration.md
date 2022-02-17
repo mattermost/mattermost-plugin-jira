@@ -4,7 +4,7 @@
 
 1. Go to **Plugins Marketplace > Jira**.
    1. Click **Configure**.
-   2. Generate a **Secret** for `Webhook Secret` and `Stats API Secret`.
+   2. Generate a **Secret** for `Webhook Secret`.
    3. Optionally change settings for **Notifications permissions** and **Issue Creation** capabilities.
    4. Click **Save**.
 2. At the top of the page set **Enable Plugin** to **True**.
