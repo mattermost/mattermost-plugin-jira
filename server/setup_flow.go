@@ -343,12 +343,12 @@ func (p *Plugin) stepInstalledJiraApp() flow.Step {
 func (p *Plugin) stepWebhook() flow.Step {
 	return flow.NewStep(stepWebhook).
 		WithPretext("##### :white_check_mark: Step 3: Setup Jira Subscriptions Webhook").
-		WithText(`To receive Jira event notifications in Mattermost Channels, you need to set up a single "firehose" `+
+		WithText(`To receive Jira event notifications in Mattermost Channels, you need to set up a single global `+
 			"webhook, configured for all possible event triggers that you would like to be pushed into "+
-			"Mattermost. The plugin's Channel Subscription feature processes the firehose of data and "+
+			"Mattermost. The plugin's Channel Subscription feature processes all the data from the global webhook and "+
 			"then routes the events to channels and users based on your subscriptions.\n\n"+
 			"1. Navigate to [Jira System Settings/Webhooks]({{.ManageWebhooksURL}}) (see _screenshot_), select **Create a WebHook** in the top right corner.\n"+
-			"2. Give your webhook a symbolic **Name** of your choice.\n"+
+			"2. Give your webhook a meaningful **Name** of your choice.\n"+
 			"3. **Status**: Enabled.\n"+
 			"4. Leave **URL** blank for the moment. Once you are done configuring the webhook options, come back "+
 			"here and select **View Webhook URL** to see the confidential URL.\n"+
@@ -365,7 +365,7 @@ func (p *Plugin) stepWebhook() flow.Step {
 			Color: flow.ColorPrimary,
 			Dialog: &model.Dialog{
 				Title:            "Jira Webhook URL",
-				IntroductionText: "Please scroll to select the entire URL if necessary. [link]({{.WebhookURL}})\n```\n{{.WebhookURL}}\n```\nOnce you have entered all options and the webhook URL, select **Create Webhook**",
+				IntroductionText: "Please scroll to select the entire URL if necessary. [link]({{.WebhookURL}})\n```\n{{.WebhookURL}}\n```\nOnce you have entered all options and the webhook URL, select **Create**",
 				SubmitLabel:      "Continue",
 			},
 			OnDialogSubmit: flow.DialogGoto(stepWebhookDone),
