@@ -510,7 +510,7 @@ func (p *Plugin) trackWithArgs(name, userID string, args map[string]interface{})
 	_ = p.tracker.TrackUserEvent(name, userID, args)
 }
 
-func (p *Plugin) SendDailyTelemetry() {
+func (p *Plugin) OnSendDailyTelemetry() {
 	args := map[string]interface{}{}
 
 	// Jira instances
@@ -554,4 +554,17 @@ func (p *Plugin) SendDailyTelemetry() {
 	args["subscriptions"] = subscriptions
 
 	_ = p.tracker.TrackEvent("stats", args)
+}
+
+func (p *Plugin) OnInstall(c *plugin.Context, event model.OnInstallEvent) error {
+	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return err
+	}
+
+	if instances.Len() == 0 {
+		return p.setupFlow.ForUser(event.UserId).Start(nil)
+	}
+
+	return nil
 }
