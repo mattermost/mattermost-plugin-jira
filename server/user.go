@@ -43,28 +43,35 @@ func (c *Connection) JiraAccountID() types.ID {
 }
 
 type ConnectionSettings struct {
-	SendNotificationsForMention  bool `json:"send_notifications_for_mention"`
-	SendNotificationsForAssignee bool `json:"send_notifications_for_assignee"`
-	SendNotificationsForReporter bool `json:"send_notifications_for_reporter"`
+	Notifications                *bool `json:"notifications"`
+	SendNotificationsForMention  *bool `json:"send_notifications_for_mention"`
+	SendNotificationsForAssignee *bool `json:"send_notifications_for_assignee"`
+	SendNotificationsForReporter *bool `json:"send_notifications_for_reporter"`
 }
 
 func (s *ConnectionSettings) String() string {
 	assigneeNotifications := "Notifications for assignee : off"
 	mentionNotifications := "Notifications for mention : off"
 	reporterNotifications := "Notifications for reporter : off"
-	if s != nil && s.SendNotificationsForAssignee {
+	notifications := "Notifications : off"
+
+	if s != nil && *s.SendNotificationsForAssignee {
 		assigneeNotifications = "Notifications for assignee : on"
 	}
 
-	if s != nil && s.SendNotificationsForMention {
+	if s != nil && *s.SendNotificationsForMention {
 		mentionNotifications = "Notifications for mention : on"
 	}
 
-	if s != nil && s.SendNotificationsForReporter {
+	if s != nil && *s.SendNotificationsForReporter {
 		reporterNotifications = "Notifications for reporter : on"
 	}
 
-	return fmt.Sprintf("\tNotifications Status:\n\t- %s \n\t- %s \n\t- %s", assigneeNotifications, mentionNotifications, reporterNotifications)
+	if s != nil && *s.Notifications {
+		notifications = "Notifications : on"
+	}
+
+	return fmt.Sprintf("\tNotifications Status:\n\t- %s \n\t- %s \n\t- %s \n\t- %s", notifications, assigneeNotifications, mentionNotifications, reporterNotifications)
 }
 
 func NewUser(mattermostUserID types.ID) *User {

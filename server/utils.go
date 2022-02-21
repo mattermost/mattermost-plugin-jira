@@ -15,7 +15,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
-func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message, postType, recipientType string) (post *model.Post, returnErr error) {
+func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message, postType string) (post *model.Post, returnErr error) {
 	defer func() {
 		if returnErr != nil {
 			returnErr = errors.WithMessage(returnErr,
@@ -33,23 +33,6 @@ func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message,
 		return nil, nil
 	}
 
-	p.API.LogInfo("info message ", "post type", postType, "recipientType", recipientType)
-	switch postType {
-	case PostTypeComment:
-		if recipientType == recipientTypeAssignee {
-			if !c.Settings.SendNotificationsForAssignee {
-				return nil, nil
-			}
-		} else if recipientType == recipientTypeReporter {
-			if !c.Settings.SendNotificationsForReporter {
-				return nil, nil
-			}
-		}
-	case PostTypeMention:
-		if !c.Settings.SendNotificationsForMention {
-			return nil, nil
-		}
-	}
 	conf := p.getConfig()
 	channel, appErr := p.API.GetDirectChannel(mattermostUserID.String(), conf.botUserID)
 	if appErr != nil {
