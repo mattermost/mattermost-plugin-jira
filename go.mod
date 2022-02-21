@@ -7,7 +7,7 @@ require (
 	github.com/circonus-labs/circonusllhist v0.1.3
 	github.com/dghubble/oauth1 v0.5.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.2.0
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/mattermost/mattermost-plugin-api v0.0.21
 	github.com/mattermost/mattermost-plugin-autolink v1.2.2-0.20210709183311-c8fa30db649f
