@@ -249,6 +249,7 @@ func (wh *webhook) checkNotificationAlreadyExist(username, accountID string) boo
 }
 
 func (wh *webhook) GetUserSetting(p *Plugin, instanceID types.ID, jiraAccountID, jiraUsername string) (*Connection, error) {
+	var err error
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		return nil, err
@@ -260,10 +261,13 @@ func (wh *webhook) GetUserSetting(p *Plugin, instanceID types.ID, jiraAccountID,
 		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), jiraUsername)
 	}
 
+	if err != nil {
+		return nil, err
+	}
+
 	c, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
 	if err != nil {
-		fmt.Println(err, "error   ")
-		return nil, nil
+		return nil, err
 	}
 
 	return c, nil

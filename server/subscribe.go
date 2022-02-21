@@ -24,7 +24,6 @@ import (
 
 const (
 	JiraSubscriptionsKey = "jirasub"
-	MockMattermostUserID = "testMattermostUserId012345"
 	FilterIncludeAny     = "include_any"
 	FilterIncludeAll     = "include_all"
 	FilterExcludeAny     = "exclude_any"
