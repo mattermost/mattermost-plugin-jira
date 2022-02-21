@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
+
 	"github.com/mattermost/mattermost-server/v6/model"
 )
 
