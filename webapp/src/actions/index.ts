@@ -6,10 +6,17 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
 import PluginId from 'plugin_id';
 import ActionTypes from 'action_types';
-import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
-import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances} from 'selectors';
+import {buildQueryString, doFetch, doFetchWithResponse} from 'client';
+import {getInstalledInstances, getPluginServerRoute, getUserConnectedInstances} from 'selectors';
 import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
-import {ChannelSubscription, CreateIssueRequest, SearchIssueParams, InstanceType, ProjectMetadata, APIResponse} from 'types/model';
+import {
+    APIResponse,
+    ChannelSubscription,
+    CreateIssueRequest,
+    InstanceType,
+    ProjectMetadata,
+    SearchIssueParams,
+} from 'types/model';
 
 export const openConnectModal = () => {
     return {
@@ -70,6 +77,38 @@ export const openAttachCommentToIssueModal = (postId) => {
 export const closeAttachCommentToIssueModal = () => {
     return {
         type: ActionTypes.CLOSE_ATTACH_COMMENT_TO_ISSUE_MODAL,
+    };
+};
+
+export const getIssueByKey = (issueKey: string, instanceID: string) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        let data = null;
+        const params = `issue_key=${issueKey}&instance_id=${instanceID}`;
+        try {
+            data = await doFetch(`${baseUrl}/api/v2/get-isse-by-key?${params}`, {
+                method: 'get',
+            });
+            if (data.error) {
+                const err = new Error(data.error);
+                dispatch({
+                    type: ActionTypes.RECEIVED_JIRA_TICKETS_ERROR,
+                    error: err,
+                });
+                return {data};
+            }
+            dispatch({
+                type: ActionTypes.RECEIVED_JIRA_TICKETS,
+                data,
+            });
+            return {data};
+        } catch (error) {
+            dispatch({
+                type: ActionTypes.RECEIVED_JIRA_TICKETS_ERROR,
+                error,
+            });
+            return {error};
+        }
     };
 };
 
