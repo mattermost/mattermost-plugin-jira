@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,7 +21,13 @@ func TestMarkdown(t *testing.T) {
 	defer f.Close()
 	bb, err := ioutil.ReadAll(f)
 	require.Nil(t, err)
-	wh, err := ParseWebhook(bb)
+	instanceID := testInstance1.InstanceID
+	p := &Plugin{}
+	api := &plugintest.API{}
+	p.SetAPI(api)
+	p.instanceStore = p.getMockInstanceStoreKV(1)
+	p.userStore = getMockUserStoreKV()
+	wh, err := ParseWebhook(bb, p, instanceID)
 	require.NoError(t, err)
 	w := wh.(*webhook)
 	require.NotNil(t, w)
@@ -50,7 +57,13 @@ func TestEventTypeFormat(t *testing.T) {
 		defer f.Close()
 		bb, err := ioutil.ReadAll(f)
 		require.Nil(t, err)
-		wh, err := ParseWebhook(bb)
+		instanceID := testInstance1.InstanceID
+		p := &Plugin{}
+		api := &plugintest.API{}
+		p.SetAPI(api)
+		p.instanceStore = p.getMockInstanceStoreKV(1)
+		p.userStore = getMockUserStoreKV()
+		wh, err := ParseWebhook(bb, p, instanceID)
 		require.NoError(t, err)
 		w := wh.(*webhook)
 		require.NotNil(t, w)
@@ -70,7 +83,13 @@ func TestNotificationsFormat(t *testing.T) {
 		defer f.Close()
 		bb, err := ioutil.ReadAll(f)
 		require.Nil(t, err)
-		wh, err := ParseWebhook(bb)
+		instanceID := testInstance1.InstanceID
+		p := &Plugin{}
+		api := &plugintest.API{}
+		p.SetAPI(api)
+		p.instanceStore = p.getMockInstanceStoreKV(1)
+		p.userStore = getMockUserStoreKV()
+		wh, err := ParseWebhook(bb, p, instanceID)
 		require.NoError(t, err)
 		w := wh.(*webhook)
 		require.NotNil(t, w)
@@ -129,7 +148,13 @@ func TestWebhookQuotedComment(t *testing.T) {
 		defer f.Close()
 		bb, err := ioutil.ReadAll(f)
 		require.Nil(t, err)
-		wh, err := ParseWebhook(bb)
+		instanceID := testInstance1.InstanceID
+		p := &Plugin{}
+		api := &plugintest.API{}
+		p.SetAPI(api)
+		p.instanceStore = p.getMockInstanceStoreKV(1)
+		p.userStore = getMockUserStoreKV()
+		wh, err := ParseWebhook(bb, p, instanceID)
 		require.NoError(t, err)
 		w := wh.(*webhook)
 		require.NotNil(t, w)

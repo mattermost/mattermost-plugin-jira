@@ -390,6 +390,11 @@ func (p *Plugin) help(args *model.CommandArgs) *model.CommandResponse {
 }
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
+	err := p.CheckSiteURL()
+	if err != nil {
+		return p.responsef(commandArgs, err.Error()), nil
+	}
+
 	args := strings.Fields(commandArgs.Command)
 	if len(args) == 0 || args[0] != "/jira" {
 		return p.help(commandArgs), nil
@@ -607,7 +612,10 @@ func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 
 	switch args[0] {
 	case "list":
-		return p.responsef(header, "Current settings:\n%s", conn.Settings.String())
+		if conn.Settings != nil {
+			return p.responsef(header, "Current settings:\n%s", conn.Settings.String())
+		}
+		return p.responsef(header, "Please connect to jira account `/jira connect`")
 	case "notifications":
 		return p.settingsNotifications(header, instance.GetID(), user.MattermostUserID, conn, args)
 	default:

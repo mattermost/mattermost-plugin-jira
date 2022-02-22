@@ -62,3 +62,16 @@ func (client jiraServerClient) GetUserGroups(connection *Connection) ([]*jira.Us
 	}
 	return result.Groups.Items, nil
 }
+
+// func (client jiraServerClient) GetWatchers(connection *Connection, issuekey string) (*jira.Watches, error) {
+
+// 	var result *jira.Watches
+// 	params := map[string]string{
+// 		"accountId": connection.AccountID,
+// 	}
+// 	err := client.RESTGet("/rest/api/3/issue/{"+issuekey+"}/watchers", params, result)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return result, nil
+// }

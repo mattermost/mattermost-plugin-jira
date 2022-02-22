@@ -52,7 +52,7 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 		}
 	}()
 
-	wh, err := ParseWebhook(msg.Data)
+	wh, err := ParseWebhook(msg.Data, ww.p, msg.InstanceID)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 		return err
 	}
 	v.checkIssueWatchers(ww.p, msg.InstanceID)
-	v.applyReporterNotification(v.Issue.Fields.Reporter)
+	v.applyReporterNotification(ww.p, msg.InstanceID, v.Issue.Fields.Reporter)
 
 	if _, _, err = wh.PostNotifications(ww.p, msg.InstanceID); err != nil {
 		ww.p.errorf("WebhookWorker id: %d, error posting notifications, err: %v", ww.id, err)

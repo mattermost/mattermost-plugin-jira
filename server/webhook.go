@@ -4,7 +4,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/andygrunwald/go-jira"
@@ -20,11 +22,6 @@ const (
 	commentDeleted = "comment_deleted"
 	commentUpdated = "comment_updated"
 	commentCreated = "comment_created"
-)
-
-const (
-	recipientTypeAssignee = "assignee"
-	recipientTypeReporter = "reporter"
 )
 
 type Webhook interface {
@@ -56,7 +53,6 @@ type webhookUserNotification struct {
 	message       string
 	postType      string
 	commentSelf   string
-	recipientType string
 }
 
 func (wh *webhook) Events() StringSet {
@@ -160,7 +156,7 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 
 		notification.message = p.replaceJiraAccountIds(instance.GetID(), notification.message)
 
-		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType, notification.recipientType)
+		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType)
 		if err != nil {
 			p.errorf("PostNotifications: failed to create notification post, err: %v", err)
 			continue
@@ -186,10 +182,16 @@ func (wh *webhook) checkIssueWatchers(p *Plugin, instanceID types.ID) {
 	if err != nil {
 		return
 	}
-
-	watcherUsers, resp, err := client.Issue.GetWatchers(wh.Issue.ID)
+	fmt.Println("wh.Issue", wh.Issue.ID, wh.Issue.Key)
+	file, _ := json.MarshalIndent(wh.Issue, "", " ")
+	fmt.Println("erreeee", err)
+	_ = ioutil.WriteFile("test.json", file, 0644)
+	fmt.Println("erreeee", err)
+	watcherUsers, err := JiraClient{Jira: client}.GetWatchers(wh.Issue.Key)
+	// fmt.Println("watcherUsers", watcherUsers, "		resp", resp, "		err", err)
+	fmt.Println("watcherUsers", watcherUsers, "err", err)
 	if err != nil {
-		err = userFriendlyJiraError(resp, err)
+		// err = userFriendlyJiraError("resp", err)
 		return
 	}
 
@@ -220,7 +222,7 @@ func (wh *webhook) checkIssueWatchers(p *Plugin, instanceID types.ID) {
 	}
 }
 
-func (wh *webhook) applyReporterNotification(reporter *jira.User) {
+func (wh *webhook) applyReporterNotification(p *Plugin, instanceID types.ID, reporter *jira.User) {
 	if !wh.eventTypes.ContainsAny("event_created_comment") {
 		return
 	}
@@ -240,13 +242,17 @@ func (wh *webhook) applyReporterNotification(reporter *jira.User) {
 
 	commentMessage := fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body)
 
+	c, err := wh.GetUserSetting(p, instanceID, reporter.Name, reporter.AccountID)
+	if err != nil || c.Settings == nil || !c.Settings.ShouldReceiveReporterNotifications() {
+		return
+	}
+
 	wh.notifications = append(wh.notifications, webhookUserNotification{
 		jiraUsername:  reporter.Name,
 		jiraAccountID: reporter.AccountID,
 		message:       commentMessage,
 		postType:      PostTypeComment,
 		commentSelf:   jwhook.Comment.Self,
-		recipientType: recipientTypeReporter,
 	})
 }
 
@@ -258,4 +264,56 @@ func (wh *webhook) checkNotificationAlreadyExist(username, accountID string) boo
 	}
 
 	return false
+}
+
+func (wh *webhook) GetUserSetting(p *Plugin, instanceID types.ID, jiraAccountID, jiraUsername string) (*Connection, error) {
+	var err error
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return nil, err
+	}
+	var mattermostUserID types.ID
+	if jiraAccountID != "" {
+		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), jiraAccountID)
+	} else {
+		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), jiraUsername)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
+
+func (s *ConnectionSettings) ShouldReceiveAssigneeNotifications() bool {
+	if s.SendNotificationsForAssignee != nil {
+		return *s.SendNotificationsForAssignee
+	}
+
+	// Check old setting for backwards compatibility
+	return *s.Notifications
+}
+
+func (s *ConnectionSettings) ShouldReceiveReporterNotifications() bool {
+	if s.SendNotificationsForReporter != nil {
+		return *s.SendNotificationsForReporter
+	}
+
+	// Check old setting for backwards compatibility
+	return *s.Notifications
+}
+
+func (s *ConnectionSettings) ShouldReceiveMentionNotifications() bool {
+	if s.SendNotificationsForMention != nil {
+		return *s.SendNotificationsForMention
+	}
+
+	// Check old setting for backwards compatibility
+	return *s.Notifications
 }

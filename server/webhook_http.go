@@ -113,7 +113,7 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 		return respondErr(w, appErr.StatusCode, appErr)
 	}
 
-	wh, err := ParseWebhook(bb)
+	wh, err := ParseWebhook(bb, p, instanceID)
 	if err == ErrWebhookIgnored {
 		return respondErr(w, http.StatusOK, err)
 	}

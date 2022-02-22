@@ -55,6 +55,7 @@ type UserService interface {
 type ProjectService interface {
 	GetProject(key string) (*jira.Project, error)
 	GetAllProjectKeys() ([]string, error)
+	GetWatchers(connection *Connection, issueKey string) (*jira.Watches, error)
 }
 
 // SearchService is the interface for search-related APIs.
@@ -69,8 +70,6 @@ type SearchService interface {
 type IssueService interface {
 	GetIssue(key string, options *jira.GetQueryOptions) (*jira.Issue, error)
 	CreateIssue(issue *jira.Issue) (*jira.Issue, error)
-	GetWatchers(issueKey string) (*[]jira.User, error)
-
 	AddAttachment(api plugin.API, issueKey, fileID string, maxSize utils.ByteSize) (mattermostName, jiraName, mime string, err error)
 	AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
 	DoTransition(issueKey, transitionID string) error
@@ -200,16 +199,17 @@ func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (*j
 	return issue, nil
 }
 
-// GetWatchers returns an array of Jira users watching for a given issue.
-func (client JiraClient) GetWatchers(issueKey string) (*[]jira.User, error) {
-	fmt.Println("_______________", issueKey)
-	watchers, resp, err := client.Jira.Issue.GetWatchers(issueKey)
-	respBypte, _ := json.Marshal(resp.Body)
-	if err != nil {
-		fmt.Println("_______________1", string(respBypte), "err", err)
-		return nil, userFriendlyJiraError(resp, err)
+//GetWatchers returns an array of Jira users watching for a given issue.
+func (client JiraClient) GetWatchers(connection *Connection, issueKey string) (*jira.Watches, error) {
+	var result *jira.Watches
+	params := map[string]string{
+		"accountId": connection.AccountID,
 	}
-	return watchers, nil
+	err := client.RESTGet("/rest/api/3/issue/{"+issueKey+"}/watchers", params, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // GetTransitions returns transitions for an issue with issueKey.

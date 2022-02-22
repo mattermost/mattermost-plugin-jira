@@ -21,7 +21,7 @@ const (
 )
 
 func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, mattermostUserID types.ID, connection *Connection, args []string) *model.CommandResponse {
-	const helpText = "`/jira settings notifications [assignee/mention/reporter/watching] [value]`\n* Invalid value. Accepted values are: `on` or `off`."
+	const helpText = "`/jira settings notifications [assignee|mention|reporter|watching] [value]`\n* Invalid value. Accepted values are: `on` or `off`."
 
 	if len(args) != 3 {
 		return p.responsef(header, helpText)
@@ -42,13 +42,13 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	}
 	switch args[1] {
 	case subCommandAssignee:
-		connection.Settings.SendNotificationsForAssignee = value
+		connection.Settings.SendNotificationsForAssignee = &value
 	case subCommandMention:
-		connection.Settings.SendNotificationsForMention = value
+		connection.Settings.SendNotificationsForMention = &value
 	case subCommandReporter:
-		connection.Settings.SendNotificationsForReporter = value
+		connection.Settings.SendNotificationsForReporter = &value
 	case subCommandWatching:
-		connection.Settings.SendNotificationsForWatching = value
+		connection.Settings.SendNotificationsForWatching = &value
 	default:
 		return p.responsef(header, helpText)
 	}
@@ -66,19 +66,19 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	notifications := settingOff
 	switch args[1] {
 	case subCommandAssignee:
-		if updatedConnection.Settings.SendNotificationsForAssignee {
+		if *updatedConnection.Settings.SendNotificationsForAssignee {
 			notifications = settingOn
 		}
 	case subCommandMention:
-		if updatedConnection.Settings.SendNotificationsForMention {
+		if *updatedConnection.Settings.SendNotificationsForMention {
 			notifications = settingOn
 		}
 	case subCommandReporter:
-		if updatedConnection.Settings.SendNotificationsForReporter {
+		if *updatedConnection.Settings.SendNotificationsForReporter {
 			notifications = settingOn
 		}
 	case subCommandWatching:
-		if updatedConnection.Settings.SendNotificationsForWatching {
+		if *updatedConnection.Settings.SendNotificationsForWatching {
 			notifications = settingOn
 		}
 	}

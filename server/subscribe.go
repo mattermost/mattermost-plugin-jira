@@ -24,11 +24,10 @@ import (
 
 const (
 	JiraSubscriptionsKey = "jirasub"
-
-	FilterIncludeAny = "include_any"
-	FilterIncludeAll = "include_all"
-	FilterExcludeAny = "exclude_any"
-	FilterEmpty      = "empty"
+	FilterIncludeAny     = "include_any"
+	FilterIncludeAll     = "include_all"
+	FilterExcludeAny     = "exclude_any"
+	FilterEmpty          = "empty"
 
 	MaxSubscriptionNameLength = 100
 )

@@ -79,10 +79,17 @@ func (store mockUserStore) StoreConnection(types.ID, types.ID, *Connection) erro
 	return nil
 }
 func (store mockUserStore) LoadConnection(types.ID, types.ID) (*Connection, error) {
-	return &Connection{}, nil
+	valueTrue := true
+	return &Connection{
+		Settings: &ConnectionSettings{
+			SendNotificationsForMention:  &valueTrue,
+			SendNotificationsForAssignee: &valueTrue,
+			SendNotificationsForReporter: &valueTrue,
+		},
+	}, nil
 }
 func (store mockUserStore) LoadMattermostUserID(instanceID types.ID, jiraUserName string) (types.ID, error) {
-	return "testMattermostUserId012345", nil
+	return mockMattermostIDWithNotifications, nil
 }
 func (store mockUserStore) DeleteConnection(instanceID, mattermostUserID types.ID) error {
 	return nil

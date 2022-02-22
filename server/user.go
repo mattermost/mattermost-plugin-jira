@@ -43,10 +43,11 @@ func (c *Connection) JiraAccountID() types.ID {
 }
 
 type ConnectionSettings struct {
-	SendNotificationsForMention  bool `json:"send_notifications_for_mention"`
-	SendNotificationsForAssignee bool `json:"send_notifications_for_assignee"`
-	SendNotificationsForReporter bool `json:"send_notifications_for_reporter"`
-	SendNotificationsForWatching bool `json:"send_notifications_for_watching"`
+	Notifications                *bool `json:"notifications"`
+	SendNotificationsForMention  *bool `json:"send_notifications_for_mention"`
+	SendNotificationsForAssignee *bool `json:"send_notifications_for_assignee"`
+	SendNotificationsForReporter *bool `json:"send_notifications_for_reporter"`
+	SendNotificationsForWatching *bool `json:"send_notifications_for_watching"`
 }
 
 func (s *ConnectionSettings) String() string {
@@ -54,23 +55,29 @@ func (s *ConnectionSettings) String() string {
 	mentionNotifications := "Notifications for mention : off"
 	reporterNotifications := "Notifications for reporter : off"
 	watchingNotifications := "Notifications for watching : off"
-	if s != nil && s.SendNotificationsForAssignee {
+	notifications := "Notifications : off"
+
+	if s != nil && *s.SendNotificationsForAssignee {
 		assigneeNotifications = "Notifications for assignee : on"
 	}
 
-	if s != nil && s.SendNotificationsForMention {
+	if s != nil && *s.SendNotificationsForMention {
 		mentionNotifications = "Notifications for mention : on"
 	}
 
-	if s != nil && s.SendNotificationsForReporter {
+	if s != nil && *s.SendNotificationsForReporter {
 		reporterNotifications = "Notifications for reporter : on"
 	}
 
-	if s != nil && s.SendNotificationsForWatching {
+	if s != nil && *s.SendNotificationsForWatching {
 		watchingNotifications = "Notifications for watching : on"
 	}
 
-	return fmt.Sprintf("\tNotifications Status:\n\t- %s \n\t- %s \n\t- %s \n\t- %s", assigneeNotifications, mentionNotifications, reporterNotifications, watchingNotifications)
+	if s != nil && *s.Notifications {
+		notifications = "Notifications : on"
+	}
+
+	return fmt.Sprintf("\tNotifications Status:\n\t- %s \n\t- %s \n\t- %s \n\t- %s \n\t- %s", notifications, assigneeNotifications, mentionNotifications, reporterNotifications, watchingNotifications)
 }
 
 func NewUser(mattermostUserID types.ID) *User {

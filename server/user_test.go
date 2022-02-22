@@ -11,25 +11,29 @@ import (
 )
 
 func TestUserSettings_String(t *testing.T) {
+	valueTrue := true
+	valueFalse := false
 	tests := map[string]struct {
 		settings       ConnectionSettings
 		expectedOutput string
 	}{
 		"notifications on": {
 			settings: ConnectionSettings{
-				SendNotificationsForMention:  true,
-				SendNotificationsForAssignee: true,
-				SendNotificationsForReporter: true,
+				Notifications:                &valueTrue,
+				SendNotificationsForMention:  &valueTrue,
+				SendNotificationsForAssignee: &valueTrue,
+				SendNotificationsForReporter: &valueTrue,
 			},
-			expectedOutput: "\tNotifications Status:\n\t- Notifications for assignee : on \n\t- Notifications for mention : on \n\t- Notifications for reporter : on",
+			expectedOutput: "\tNotifications Status:\n\t- Notifications : on \n\t- Notifications for assignee : on \n\t- Notifications for mention : on \n\t- Notifications for reporter : on",
 		},
 		"notifications off": {
 			settings: ConnectionSettings{
-				SendNotificationsForMention:  false,
-				SendNotificationsForAssignee: false,
-				SendNotificationsForReporter: false,
+				Notifications:                &valueFalse,
+				SendNotificationsForMention:  &valueFalse,
+				SendNotificationsForAssignee: &valueFalse,
+				SendNotificationsForReporter: &valueFalse,
 			},
-			expectedOutput: "\tNotifications Status:\n\t- Notifications for assignee : off \n\t- Notifications for mention : off \n\t- Notifications for reporter : off",
+			expectedOutput: "\tNotifications Status:\n\t- Notifications : off \n\t- Notifications for assignee : off \n\t- Notifications for mention : off \n\t- Notifications for reporter : off",
 		},
 	}
 	for name, tt := range tests {
