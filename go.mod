@@ -18,8 +18,6 @@ require (
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 )
 
-// replace github.com/mattermost/mattermost-plugin-api => ../mattermost-plugin-api
-
 // Until github.com/mattermost/mattermost-server/v6 v6.5.0 is releated,
 // this replacement is needed to also import github.com/mattermost/mattermost-plugin-api,
 // which uses a different server version.
