@@ -4,9 +4,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/andygrunwald/go-jira"
@@ -167,31 +165,37 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 }
 
 func (wh *webhook) checkIssueWatchers(p *Plugin, instanceID types.ID) {
-	instance, err := p.instanceStore.LoadInstance(instanceID)
-	if err != nil && instance == nil {
+	var err error
+	var instance Instance
+	instance, err = p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
 		// This isn't an internal server error. There's just no instance installed.
+		p.errorf("error while loading instance, err: %v", err)
+		return
+	}
+
+	if instance == nil {
+		p.errorf("error : no instance found")
 		return
 	}
 
 	ci, ok := instance.(*cloudInstance)
 	if !ok {
+		p.errorf("error : no cloud instance found")
 		return
 	}
+
 	client, err := ci.getClientForBot()
 	// client, err := instance.GetClient(c)
 	if err != nil {
+		p.errorf("error while geting client for bot , err : %v", err)
 		return
 	}
-	fmt.Println("wh.Issue", wh.Issue.ID, wh.Issue.Key)
-	file, _ := json.MarshalIndent(wh.Issue, "", " ")
-	fmt.Println("erreeee", err)
-	_ = ioutil.WriteFile("test.json", file, 0644)
-	fmt.Println("erreeee", err)
-	watcherUsers, err := JiraClient{Jira: client}.GetWatchers(wh.Issue.Key)
-	// fmt.Println("watcherUsers", watcherUsers, "		resp", resp, "		err", err)
-	fmt.Println("watcherUsers", watcherUsers, "err", err)
+
+	watcherUsers, resp, err := client.Issue.GetWatchers(wh.Issue.Key)
 	if err != nil {
-		// err = userFriendlyJiraError("resp", err)
+		err = userFriendlyJiraError(resp, err)
+		p.errorf("error while geting watchers for issue , err : %v", err)
 		return
 	}
 
