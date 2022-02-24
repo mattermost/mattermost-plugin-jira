@@ -30,18 +30,11 @@
         "default": true
       },
       {
-        "key": "Secret",
+        "key": "secret",
         "display_name": "Webhook Secret:",
         "type": "generated",
         "help_text": "The secret used to authenticate the webhook to Mattermost.",
         "regenerate_help_text": "Regenerates the secret for the webhook URL endpoint. Regenerating the secret invalidates your existing Jira integrations."
-      },
-      {
-        "key": "StatsSecret",
-        "display_name": "Stats API Secret:",
-        "type": "generated",
-        "help_text": "The secret used to access plugin's stats API.",
-        "regenerate_help_text": "Regenerates the secret for the stats API endpoint. Regenerating the secret invalidates your existing stats API clients."
       },
       {
         "key": "RolesAllowedToEditJiraSubscriptions",
