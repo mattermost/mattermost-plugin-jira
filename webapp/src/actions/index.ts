@@ -119,7 +119,7 @@ export const fetchJiraProjectMetadataForAllInstances = () => {
     return async (dispatch, getState) => {
         const instances = getInstalledInstances(getState());
         const promises = instances.map((instance) => dispatch(fetchJiraProjectMetadata(instance.instance_id)));
-        const responses = await Promise.all(promises) as APIResponse<ProjectMetadata>[];
+        const responses = (await Promise.all(promises)) as APIResponse<ProjectMetadata>[];
 
         const errors = [];
         const metadata = [];
@@ -426,8 +426,9 @@ export function handleConnectFlow(instanceID?: string) {
 
 export function redirectConnect(instanceID: string) {
     return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
         const instancePrefix = '/instance/' + btoa(instanceID);
-        const target = '/plugins/' + PluginId + instancePrefix + '/user/connect';
+        const target = `${baseUrl}${instancePrefix}/user/connect`;
         window.open(target, '_blank');
     };
 }
