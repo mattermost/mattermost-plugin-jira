@@ -5,7 +5,6 @@ package main
 
 import (
 	"encoding/json"
-	goexpvar "expvar"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -40,7 +39,6 @@ const (
 	routeAPISubscriptionsChannel                = "/api/v2/subscriptions/channel"
 	routeAPISubscriptionTemplates               = "/api/v2/subscriptionTemplates"
 	routeAPISettingsInfo                        = "/api/v2/settingsinfo"
-	routeAPIStats                               = "/api/v2/stats"
 	routeIssueTransition                        = "/api/v2/transition"
 	routeAPIUserDisconnect                      = "/api/v3/disconnect"
 	routeACInstalled                            = "/ac/installed"
@@ -74,10 +72,16 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	status, err := p.serveHTTP(c, w, r)
-	if err != nil {
-		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
+	switch {
+	case err == nil && status == http.StatusOK:
+		p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
+	case status == 0:
+		p.API.LogDebug("Passed to another router: ", "Path", r.URL.Path, "Method", r.Method)
+	case err != nil:
+		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
+	default:
+		p.API.LogDebug("unexpected plugin response", "Status", strconv.Itoa(status), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
 	}
-	p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Host", r.Host, "RequestURI", r.RequestURI, "Method", r.Method, "query", r.URL.Query().Encode())
 }
 
 func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -134,11 +138,7 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	case routeAPISettingsInfo:
 		return p.httpGetSettingsInfo(w, r)
 
-	// Stats
-	case routeAPIStats:
-		return p.httpAPIStats(w, r)
-
-		// Atlassian Connect application
+	// Atlassian Connect application
 	case routeACJSON:
 		return p.httpACJSON(w, r, callbackInstanceID)
 	case routeACInstalled:
@@ -185,11 +185,6 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	// Firehose webhook setup for channel subscriptions
 	case routeAPISubscribeWebhook:
 		return p.httpSubscribeWebhook(w, r, callbackInstanceID)
-
-	// expvar
-	case "/debug/vars":
-		goexpvar.Handler().ServeHTTP(w, r)
-		return 0, nil
 	}
 
 	if strings.HasPrefix(path, routeAPISubscriptionsChannel) {
@@ -200,7 +195,9 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return p.httpChannelSubscriptionTemplates(w, r)
 	}
 
+	p.gorillaRouter.ServeHTTP(w, r)
 	return respondErr(w, http.StatusNotFound, errors.New("not found"))
+
 }
 
 func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {

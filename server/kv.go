@@ -27,7 +27,6 @@ const (
 	keyTokenSecret      = "token_secret"
 	prefixInstance      = "jira_instance_"
 	prefixOneTimeSecret = "ots_" // + unique key that will be deleted after the first verification
-	prefixStats         = "stats_"
 	prefixUser          = "user_"
 )
 
@@ -46,7 +45,7 @@ type SecretsStore interface {
 }
 
 type InstanceStore interface {
-	CreateInactiveCloudInstance(types.ID) error
+	CreateInactiveCloudInstance(_ types.ID, actingUserID string) error
 	DeleteInstance(types.ID) error
 	LoadInstance(types.ID) (Instance, error)
 	LoadInstanceFullKey(string) (Instance, error)
@@ -450,10 +449,12 @@ func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserID string) (*OAu
 	return &credentials, nil
 }
 
-func (store *store) CreateInactiveCloudInstance(jiraURL types.ID) (returnErr error) {
+func (store *store) CreateInactiveCloudInstance(jiraURL types.ID, actingUserID string) (returnErr error) {
 	ci := newCloudInstance(store.plugin, jiraURL, false,
 		fmt.Sprintf(`{"BaseURL": "%s"}`, jiraURL),
 		&AtlassianSecurityContext{BaseURL: jiraURL.String()})
+	ci.SetupWizardUserID = actingUserID
+
 	data, err := json.Marshal(ci)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to store new Jira Cloud instance:%s", jiraURL)
