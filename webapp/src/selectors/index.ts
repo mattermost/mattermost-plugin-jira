@@ -52,6 +52,7 @@ export const getAttachCommentToIssueModalForPostId = (state) => getPluginState(s
 export const getChannelIdWithSettingsOpen = (state) => getPluginState(state).channelIdWithSettingsOpen;
 
 export const getChannelSubscriptions = (state) => getPluginState(state).channelSubscriptions;
+export const getSubscriptionTemplates = (state) => getPluginState(state).subscriptionTemplates;
 
 export const isUserConnected = (state) => getUserConnectedInstances(state).length > 0;
 

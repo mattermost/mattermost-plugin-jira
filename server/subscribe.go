@@ -24,13 +24,15 @@ import (
 
 const (
 	JiraSubscriptionsKey = "jirasub"
+	templateKey          = "templates"
 
 	FilterIncludeAny = "include_any"
 	FilterIncludeAll = "include_all"
 	FilterExcludeAny = "exclude_any"
 	FilterEmpty      = "empty"
 
-	MaxSubscriptionNameLength = 100
+	MaxSubscriptionNameLength         = 100
+	MaxSubscriptionTemplateNameLength = 100
 )
 
 type FieldFilter struct {
@@ -49,6 +51,13 @@ type SubscriptionFilters struct {
 type ChannelSubscription struct {
 	ID         string              `json:"id"`
 	ChannelID  string              `json:"channel_id"`
+	Filters    SubscriptionFilters `json:"filters"`
+	Name       string              `json:"name"`
+	InstanceID types.ID            `json:"instance_id"`
+}
+
+type SubscriptionTemplate struct {
+	ID         string              `json:"id"`
 	Filters    SubscriptionFilters `json:"filters"`
 	Name       string              `json:"name"`
 	InstanceID types.ID            `json:"instance_id"`
@@ -91,10 +100,22 @@ type Subscriptions struct {
 	Channel       *ChannelSubscriptions
 }
 
+type Templates struct {
+	PluginVersion         string
+	SubscriptionTemplates []*SubscriptionTemplate
+}
+
 func NewSubscriptions() *Subscriptions {
 	return &Subscriptions{
 		PluginVersion: manifest.Version,
 		Channel:       NewChannelSubscriptions(),
+	}
+}
+
+func NewTemplates() *Templates {
+	return &Templates{
+		PluginVersion:         manifest.Version,
+		SubscriptionTemplates: []*SubscriptionTemplate{},
 	}
 }
 
@@ -116,6 +137,20 @@ func SubscriptionsFromJSON(bytes []byte, instanceID types.ID) (*Subscriptions, e
 		subs.Channel.ByID[subID] = sub
 	}
 
+	return subs, nil
+}
+
+func SubscriptionTemplatesFromJSON(bytes []byte) (*Templates, error) {
+	var subs *Templates
+	if len(bytes) != 0 {
+		unmarshalErr := json.Unmarshal(bytes, &subs)
+		if unmarshalErr != nil {
+			return nil, unmarshalErr
+		}
+		subs.PluginVersion = manifest.Version
+	} else {
+		subs = NewTemplates()
+	}
 	return subs, nil
 }
 
@@ -199,6 +234,14 @@ func (p *Plugin) getSubscriptions(instanceID types.ID) (*Subscriptions, error) {
 	}
 	return SubscriptionsFromJSON(data, instanceID)
 }
+func (p *Plugin) getTemplates(instanceID types.ID) (*Templates, error) {
+	subKey := keyWithInstanceID(instanceID, templateKey)
+	data, appErr := p.API.KVGet(subKey)
+	if appErr != nil {
+		return nil, appErr
+	}
+	return SubscriptionTemplatesFromJSON(data)
+}
 
 func (p *Plugin) getSubscriptionsForChannel(instanceID types.ID, channelID string) ([]ChannelSubscription, error) {
 	subs, err := p.getSubscriptions(instanceID)
@@ -212,6 +255,15 @@ func (p *Plugin) getSubscriptionsForChannel(instanceID types.ID, channelID strin
 	}
 
 	return channelSubscriptions, nil
+}
+
+func (p *Plugin) getSubscriptionTemplatesForInstance(instanceID types.ID) (*Templates, error) {
+	subs, err := p.getTemplates(instanceID)
+	if err != nil {
+		return nil, err
+	}
+
+	return subs, nil
 }
 
 func (p *Plugin) getChannelSubscription(instanceID types.ID, subscriptionID string) (*ChannelSubscription, error) {
@@ -275,6 +327,80 @@ func (p *Plugin) addChannelSubscription(instanceID types.ID, newSubscription *Ch
 
 		return modifiedBytes, nil
 	})
+}
+
+func (p *Plugin) addSubscriptionTemplate(instanceID types.ID, newSubscriptionTemplate *SubscriptionTemplate) error {
+	subKey := keyWithInstanceID(instanceID, templateKey)
+	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
+		oldSubscriptionTemplates, err := SubscriptionTemplatesFromJSON(initialBytes)
+		if err != nil {
+			return nil, err
+		}
+
+		err = p.validateSubscriptionTemplate(newSubscriptionTemplate)
+		if err != nil {
+			return nil, err
+		}
+
+		newSubscriptionTemplate.ID = model.NewId()
+		oldSubscriptionTemplates.SubscriptionTemplates = append(oldSubscriptionTemplates.SubscriptionTemplates, newSubscriptionTemplate)
+
+		modifiedBytes, marshalErr := json.Marshal(&oldSubscriptionTemplates)
+		if marshalErr != nil {
+			return nil, marshalErr
+		}
+
+		return modifiedBytes, nil
+	})
+}
+
+func (p *Plugin) removeSubscriptionTemplate(instanceID types.ID, subscriptionTemplateID string) error {
+	subKey := keyWithInstanceID(instanceID, templateKey)
+	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
+		oldSubscriptionTemplates, err := SubscriptionTemplatesFromJSON(initialBytes)
+		if err != nil {
+			return nil, err
+		}
+
+		var newList []*SubscriptionTemplate
+		for _, template := range oldSubscriptionTemplates.SubscriptionTemplates {
+			if template.ID != subscriptionTemplateID {
+				newList = append(newList, template)
+			}
+		}
+		oldSubscriptionTemplates.SubscriptionTemplates = newList
+
+		modifiedBytes, marshalErr := json.Marshal(&oldSubscriptionTemplates)
+		if marshalErr != nil {
+			return nil, marshalErr
+		}
+
+		return modifiedBytes, nil
+	})
+}
+
+func (p *Plugin) validateSubscriptionTemplate(subscription *SubscriptionTemplate) error {
+	if len(subscription.Name) == 0 {
+		return errors.New("please provide a name for the subscription")
+	}
+
+	if len(subscription.Name) > MaxSubscriptionTemplateNameLength {
+		return errors.Errorf("please provide a name less than %d characters", MaxSubscriptionTemplateNameLength)
+	}
+
+	if len(subscription.Filters.Events) == 0 {
+		return errors.New("please provide at least one event type")
+	}
+
+	if len(subscription.Filters.IssueTypes) == 0 {
+		return errors.New("please provide at least one issue type")
+	}
+
+	if (len(subscription.Filters.Projects)) == 0 {
+		return errors.New("please provide a project identifier")
+	}
+	// TODO make sure other template with same name doesn't exist
+	return nil
 }
 
 func (p *Plugin) validateSubscription(instanceID types.ID, subscription *ChannelSubscription, client Client) error {
@@ -942,6 +1068,73 @@ func (p *Plugin) httpChannelGetSubscriptions(w http.ResponseWriter, r *http.Requ
 	return respondJSON(w, subscriptions)
 }
 
+func (p *Plugin) httpGetSubscriptionTemplates(w http.ResponseWriter, r *http.Request, mattermostUserID string) (int, error) {
+	instanceID := types.ID(r.FormValue("instance_id"))
+
+	if len(instanceID) < 2 {
+		return respondErr(w, http.StatusBadRequest,
+			errors.New("bad or missing instance id"))
+	}
+
+	subscriptionTemplates, err := p.getSubscriptionTemplatesForInstance(instanceID)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError,
+			errors.Wrap(err, "unable to get channel subscription templates"))
+	}
+
+	return respondJSON(w, subscriptionTemplates)
+}
+
+func (p *Plugin) httpCreateSubscriptionTemplate(w http.ResponseWriter, r *http.Request, mattermostUserID string) (int, error) {
+	subscriptionTemplate := SubscriptionTemplate{}
+	err := json.NewDecoder(r.Body).Decode(&subscriptionTemplate)
+	if err != nil {
+		return respondErr(w, http.StatusBadRequest,
+			errors.WithMessage(err, "failed to decode incoming request"))
+	}
+
+	// TODO implement ability to specify config and check if current user has sufficient permissions just like when creating subscriptions keeping open for now in view of https://github.com/mattermost/mattermost-plugin-jira/issues/604#issuecomment-872620201
+
+	err = p.addSubscriptionTemplate(subscriptionTemplate.InstanceID, &subscriptionTemplate)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	code, err := respondJSON(w, &subscriptionTemplate)
+	if err != nil {
+		return code, err
+	}
+
+	return http.StatusOK, nil
+}
+
+func (p *Plugin) httpDeleteSubscriptionTemplate(w http.ResponseWriter, r *http.Request, mattermostUserID string) (int, error) {
+	subscriptionTemplateID := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionTemplates+"/")
+	if len(subscriptionTemplateID) != 26 {
+		return respondErr(w, http.StatusBadRequest,
+			errors.New("bad subscription id"))
+	}
+
+	instanceID := types.ID(r.FormValue("instance_id"))
+	if len(instanceID) < 2 {
+		return respondErr(w, http.StatusBadRequest,
+			errors.New("bad or missing instance id"))
+	}
+
+	err := p.removeSubscriptionTemplate(instanceID, subscriptionTemplateID)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError,
+			errors.Wrap(err, "unable to remove channel subscription template"))
+	}
+
+	code, err := respondJSON(w, map[string]interface{}{"status": "OK"})
+	if err != nil {
+		return code, err
+	}
+
+	return http.StatusOK, nil
+}
+
 func (p *Plugin) httpChannelSubscriptions(w http.ResponseWriter, r *http.Request) (int, error) {
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	if mattermostUserID == "" {
@@ -957,6 +1150,24 @@ func (p *Plugin) httpChannelSubscriptions(w http.ResponseWriter, r *http.Request
 		return p.httpChannelGetSubscriptions(w, r, mattermostUserID)
 	case http.MethodPut:
 		return p.httpChannelEditSubscription(w, r, mattermostUserID)
+	default:
+		return respondErr(w, http.StatusMethodNotAllowed, fmt.Errorf("Request: "+r.Method+" is not allowed."))
+	}
+}
+
+func (p *Plugin) httpChannelSubscriptionTemplates(w http.ResponseWriter, r *http.Request) (int, error) {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserID == "" {
+		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
+	}
+
+	switch r.Method {
+	case http.MethodPost:
+		return p.httpCreateSubscriptionTemplate(w, r, mattermostUserID)
+	case http.MethodDelete:
+		return p.httpDeleteSubscriptionTemplate(w, r, mattermostUserID)
+	case http.MethodGet:
+		return p.httpGetSubscriptionTemplates(w, r, mattermostUserID)
 	default:
 		return respondErr(w, http.StatusMethodNotAllowed, fmt.Errorf("Request: "+r.Method+" is not allowed."))
 	}
