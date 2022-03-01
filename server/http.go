@@ -196,7 +196,7 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	p.gorillaRouter.ServeHTTP(w, r)
-	return respondErr(w, http.StatusNotFound, errors.New("not found"))
+	return 0, nil
 }
 
 func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {
