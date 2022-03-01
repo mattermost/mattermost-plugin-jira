@@ -20,7 +20,6 @@ import (
 	"golang.org/x/oauth2"
 	oauth2_jira "golang.org/x/oauth2/jira"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -62,6 +61,32 @@ func newCloudInstance(p *Plugin, key types.ID, installed bool, rawASC string, as
 		RawAtlassianSecurityContext: rawASC,
 		AtlassianSecurityContext:    asc,
 	}
+}
+
+func (p *Plugin) installInactiveCloudInstance(rawURL string, actingUserID string) (string, error) {
+	jiraURL, err := utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
+	if err != nil {
+		return "", err
+	}
+	if !strings.HasPrefix(jiraURL, "https://") {
+		return "", errors.New("a secure HTTPS URL is required")
+	}
+
+	instances, _ := p.instanceStore.LoadInstances()
+	if !p.enterpriseChecker.HasEnterpriseFeatures() {
+		if instances != nil && len(instances.IDs()) > 0 {
+			return "", errors.New(licenseErrorString)
+		}
+	}
+
+	// Create an "uninitialized" instance of Jira Cloud that will
+	// receive the /installed callback
+	err = p.instanceStore.CreateInactiveCloudInstance(types.ID(jiraURL), actingUserID)
+	if err != nil {
+		return "", err
+	}
+
+	return jiraURL, err
 }
 
 func (ci *cloudInstance) GetMattermostKey() string {
@@ -165,7 +190,11 @@ func (ci *cloudInstance) GetManageAppsURL() string {
 }
 
 func (ci *cloudInstance) GetManageWebhooksURL() string {
-	return fmt.Sprintf("%s/plugins/servlet/webhooks", ci.GetURL())
+	return cloudManageWebhooksURL(ci.GetURL())
+}
+
+func cloudManageWebhooksURL(jiraURL string) string {
+	return fmt.Sprintf("%s/plugins/servlet/webhooks", jiraURL)
 }
 
 func (ci *cloudInstance) GetClient(connection *Connection) (Client, error) {
@@ -196,8 +225,6 @@ func (ci *cloudInstance) getClientForConnection(connection *Connection) (*jira.C
 	httpClient = utils.WrapHTTPClient(httpClient,
 		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
 		utils.WithResponseSizeLimit(conf.maxAttachmentSize))
-	httpClient = expvar.WrapHTTPClient(httpClient,
-		conf.stats, endpointNameFromRequest)
 
 	jiraClient, err := jira.NewClient(httpClient, oauth2Conf.BaseURL)
 	return jiraClient, httpClient, err
@@ -217,8 +244,6 @@ func (ci *cloudInstance) getClientForBot() (*jira.Client, error) {
 	httpClient = utils.WrapHTTPClient(httpClient,
 		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
 		utils.WithResponseSizeLimit(conf.maxAttachmentSize))
-	httpClient = expvar.WrapHTTPClient(httpClient,
-		conf.stats, endpointNameFromRequest)
 
 	return jira.NewClient(httpClient, jwtConf.BaseURL)
 }
