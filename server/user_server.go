@@ -118,7 +118,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	}{
 		JiraDisplayName:       juser.DisplayName + " (" + juser.Name + ")",
 		MattermostDisplayName: mmuser.GetDisplayName(model.ShowNicknameFullName),
-		RevokeURL:             path.Join(p.GetPluginURLPath(), instancePath(routeUserDisconnect, instance.GetID())),
+		RevokeURL:             p.GetSiteURL() + path.Join(p.GetPluginURLPath(), instancePath(routeUserDisconnect, instance.GetID())),
 	})
 }
 

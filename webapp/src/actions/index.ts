@@ -424,13 +424,19 @@ export function handleConnectFlow(instanceID?: string) {
     };
 }
 
+
 export function redirectConnect(instanceID: string) {
     return async (dispatch, getState) => {
-        const baseUrl = getPluginServerRoute(getState());
+        let baseUrl = getState().entities.general.config.SiteURL;
+
+        if (baseUrl && baseUrl[baseUrl.length - 1] === '/') {
+            baseUrl = baseUrl.substr(0, baseUrl.length - 1);
+        }
         const instancePrefix = '/instance/' + btoa(instanceID);
-        const target = `${baseUrl}${instancePrefix}/user/connect`;
+        const target = baseUrl + '/plugins/' + PluginId + instancePrefix + '/user/connect';
+        
         window.open(target, '_blank');
-    };
+    }
 }
 
 export function handleConnectChange(store) {
