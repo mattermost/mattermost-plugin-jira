@@ -14,6 +14,7 @@ const getPluginState = (state) => state['plugins-' + PluginId] || {};
 export const getPluginServerRoute = (state) => {
     const config = getConfig(state);
     let basePath = '';
+    let finalPath = '';
     
     if (config && config.SiteURL) {
         basePath = new URL(config.SiteURL).pathname;
@@ -22,8 +23,9 @@ export const getPluginServerRoute = (state) => {
         }
         const origin = new URL(config.SiteURL).origin;
 
-        return `${origin}${basePath}/plugins/${PluginId}`;
+        finalPath = `${origin}${basePath}/plugins/${PluginId}`;
     }
+    return finalPath;
 };
 
 export const getCurrentUserLocale = createSelector(

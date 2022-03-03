@@ -424,7 +424,6 @@ export function handleConnectFlow(instanceID?: string) {
     };
 }
 
-
 export function redirectConnect(instanceID: string) {
     return async (dispatch, getState) => {
         let baseUrl = getState().entities.general.config.SiteURL;
@@ -434,9 +433,9 @@ export function redirectConnect(instanceID: string) {
         }
         const instancePrefix = '/instance/' + btoa(instanceID);
         const target = baseUrl + '/plugins/' + PluginId + instancePrefix + '/user/connect';
-        
+
         window.open(target, '_blank');
-    }
+    };
 }
 
 export function handleConnectChange(store) {
