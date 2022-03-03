@@ -15,7 +15,7 @@ export const getPluginServerRoute = (state) => {
     const config = getConfig(state);
     let basePath = '';
     let finalPath = '';
-    
+
     if (config && config.SiteURL) {
         basePath = new URL(config.SiteURL).pathname;
         if (basePath && basePath[basePath.length - 1] === '/') {
