@@ -8,7 +8,7 @@ import AsyncSelect from 'react-select/async';
 
 import {Theme} from 'mattermost-redux/types/preferences';
 
-import {IssueMetadata, ReactSelectOption, JiraIssue, SearchIssueParams, APIResponse, AvatarSize} from 'types/model';
+import {IssueMetadata, ReactSelectOption} from 'types/model';
 
 import {getStyleForReactSelect} from 'utils/styles';
 import {isEpicNameField, isEpicIssueType} from 'utils/jira_issue_metadata';
@@ -25,7 +25,7 @@ export type Props = ReactSelectSettingProps & {
     fetchInitialSelectedValues: () => Promise<ReactSelectOption[]>;
     search: (searchTerm: string) => Promise<ReactSelectOption[]>;
     theme: Theme;
-    isMulti?: boolean;
+    isMulti?: boolean;gitl
     addValidate: (isValid: () => boolean) => void;
     removeValidate: (isValid: () => boolean) => void;
     issueMetadata: IssueMetadata;
