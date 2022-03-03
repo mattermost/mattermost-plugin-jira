@@ -38,6 +38,8 @@ type InstanceCommon struct {
 	Alias      string
 	Type       InstanceType
 	IsV2Legacy bool
+
+	SetupWizardUserID string
 }
 
 func newInstanceCommon(p *Plugin, instanceType InstanceType, instanceID types.ID) *InstanceCommon {

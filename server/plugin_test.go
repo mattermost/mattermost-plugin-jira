@@ -12,6 +12,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
@@ -135,6 +136,7 @@ func TestPlugin(t *testing.T) {
 			})
 			p.SetAPI(api)
 			p.instanceStore = p.getMockInstanceStoreKV(1)
+			p.gorillaRouter = mux.NewRouter()
 
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, tc.Request)

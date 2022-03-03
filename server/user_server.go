@@ -148,14 +148,15 @@ func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, i
 		})
 }
 
-func publicKeyString(p *Plugin) ([]byte, error) {
+func (p *Plugin) publicKeyString() (string, error) {
 	rsaKey := p.getConfig().rsaKey
 	b, err := x509.MarshalPKIXPublicKey(&rsaKey.PublicKey)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to encode public key")
+		return "", errors.WithMessage(err, "failed to encode public key")
 	}
-	return pem.EncodeToMemory(&pem.Block{
+	pkey := pem.EncodeToMemory(&pem.Block{
 		Type:  "PUBLIC KEY",
 		Bytes: b,
-	}), nil
+	})
+	return strings.TrimSpace(string(pkey)), nil
 }
