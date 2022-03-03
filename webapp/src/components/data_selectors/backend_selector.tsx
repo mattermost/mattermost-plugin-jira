@@ -8,7 +8,7 @@ import AsyncSelect from 'react-select/async';
 
 import {Theme} from 'mattermost-redux/types/preferences';
 
-import {IssueMetadata, ReactSelectOption, JiraIssue, SearchIssueParams, APIResponse} from 'types/model';
+import {IssueMetadata, ReactSelectOption, JiraIssue, SearchIssueParams, APIResponse, AvatarSize} from 'types/model';
 
 import {getStyleForReactSelect} from 'utils/styles';
 import {isEpicNameField, isEpicIssueType} from 'utils/jira_issue_metadata';
@@ -160,7 +160,7 @@ export default class BackendSelector extends React.PureComponent<Props, State> {
 
             // option's label hasn't been fetched yet
             return {
-                label: v,
+                label: v.displayName,
                 value: v,
             };
         };
