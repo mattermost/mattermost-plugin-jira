@@ -44,7 +44,7 @@ func (p *Plugin) httpACUserRedirect(w http.ResponseWriter, r *http.Request, inst
 		return respondErr(w, http.StatusBadRequest, err)
 	}
 
-	submitURL := p.GetSiteURL() + path.Join(ci.Plugin.GetPluginURLPath(), instancePath(routeACUserConfirm, instanceID))
+	submitURL := path.Join(p.GetPluginURL(), instancePath(routeACUserConfirm, instanceID))
 
 	return ci.Plugin.respondTemplate(w, r, "text/html", struct {
 		SubmitURL  string
