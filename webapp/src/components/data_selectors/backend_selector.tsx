@@ -11,7 +11,6 @@ import {Theme} from 'mattermost-redux/types/preferences';
 import {IssueMetadata, ReactSelectOption} from 'types/model';
 
 import {getStyleForReactSelect} from 'utils/styles';
-import {isEpicNameField, isEpicIssueType} from 'utils/jira_issue_metadata';
 
 import {Props as ReactSelectSettingProps} from 'components/react_select_setting';
 import Setting from 'components/setting';
@@ -160,7 +159,7 @@ export default class BackendSelector extends React.PureComponent<Props, State> {
 
             // option's label hasn't been fetched yet
             return {
-                label: v.displayName,
+                label: v,
                 value: v,
             };
         };
