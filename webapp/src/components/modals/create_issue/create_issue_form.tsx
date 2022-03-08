@@ -99,6 +99,9 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                 issuetype: {
                     id: '',
                 },
+                assignee: {
+                    accountId: '',
+                }
             } as CreateIssueFields,
         };
     }
