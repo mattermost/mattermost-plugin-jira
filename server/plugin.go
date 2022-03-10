@@ -339,22 +339,27 @@ func (p *Plugin) OnActivate() error {
 }
 
 func (p *Plugin) AddAutolinksForCloudInstance(ci *cloudInstance) error {
-	err := p.AddAutolinks(ci.BaseURL)
+	client, err := ci.getClientForBot()
 	if err != nil {
-		return fmt.Errorf("some were not installed: %w", err)
+		return fmt.Errorf("unable to get jira client for server: %w", err)
+	}
+
+	keys, err := JiraClient{Jira: client}.GetAllProjectKeys()
+	if err != nil {
+		return fmt.Errorf("unable to get project keys: %w", err)
+	}
+
+	err = p.AddAutolinks(keys, ci.BaseURL)
+	if err != nil {
+		return fmt.Errorf("some keys were not installed: %w", err)
 	}
 
 	return nil
 }
 
-func (p *Plugin) AddAutolinks(baseURL string) error {
+func (p *Plugin) AddAutolinks(keys []string, baseURL string) error {
 	baseURL = strings.TrimRight(baseURL, "/")
 	installList := []autolink.Autolink{
-		{
-			Name:     "Key to link for " + baseURL,
-			Pattern:  `(?P<project_id>\w+)(-)(?P<jira_id>\d+)`,
-			Template: `[${project_id}-${jira_id}](` + baseURL + `/browse/${project_id}-${jira_id})`,
-		},
 		{
 			Name:     "Jump to comment for " + baseURL,
 			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(?P<project_id>\w+)(-)(?P<jira_id>\d+)[?](focusedCommentId)(=)(?P<comment_id>\d+)`,
@@ -365,6 +370,14 @@ func (p *Plugin) AddAutolinks(baseURL string) error {
 			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(?P<project_id>\w+)(-)(?P<jira_id>\d+)`,
 			Template: `[${project_id}-${jira_id}](` + baseURL + `/browse/${project_id}-${jira_id})`,
 		},
+	}
+
+	for _, key := range keys {
+		installList = append(installList, autolink.Autolink{
+			Name:     key + " key to link for " + baseURL,
+			Pattern:  `(` + key + `)(-)(?P<jira_id>\d+)`,
+			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
+		})
 	}
 
 	client := autolinkclient.NewClientPlugin(p.API)
