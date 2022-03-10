@@ -278,7 +278,7 @@ func (s *ConnectionSettings) ShouldReceiveAssigneeNotifications() bool {
 	}
 
 	// Check old setting for backwards compatibility
-	return *s.Notifications
+	return s.Notifications
 }
 
 func (s *ConnectionSettings) ShouldReceiveReporterNotifications() bool {
@@ -287,7 +287,7 @@ func (s *ConnectionSettings) ShouldReceiveReporterNotifications() bool {
 	}
 
 	// Check old setting for backwards compatibility
-	return *s.Notifications
+	return s.Notifications
 }
 
 func (s *ConnectionSettings) ShouldReceiveMentionNotifications() bool {
@@ -296,7 +296,7 @@ func (s *ConnectionSettings) ShouldReceiveMentionNotifications() bool {
 	}
 
 	// Check old setting for backwards compatibility
-	return *s.Notifications
+	return s.Notifications
 }
 
 func (p *Plugin) getSubscriptionsWebhookURL(instanceID types.ID) string {

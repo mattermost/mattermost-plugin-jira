@@ -19,7 +19,7 @@ func TestUserSettings_String(t *testing.T) {
 	}{
 		"notifications on": {
 			settings: ConnectionSettings{
-				Notifications:                &valueTrue,
+				Notifications:                valueTrue,
 				SendNotificationsForMention:  &valueTrue,
 				SendNotificationsForAssignee: &valueTrue,
 				SendNotificationsForReporter: &valueTrue,
@@ -28,7 +28,7 @@ func TestUserSettings_String(t *testing.T) {
 		},
 		"notifications off": {
 			settings: ConnectionSettings{
-				Notifications:                &valueFalse,
+				Notifications:                valueFalse,
 				SendNotificationsForMention:  &valueFalse,
 				SendNotificationsForAssignee: &valueFalse,
 				SendNotificationsForReporter: &valueFalse,
