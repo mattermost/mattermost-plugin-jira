@@ -440,47 +440,6 @@ func (p *Plugin) CheckSiteURL() error {
 	return nil
 }
 
-func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL, legacyURL string, err error) {
-	cf := p.getConfig()
-
-	instanceID, err := p.ResolveWebhookInstanceURL(jiraURL)
-	if err != nil {
-		p.API.LogError("error while getting instance ID", "error", err)
-		return "", "", err
-	}
-
-	team, appErr := p.API.GetTeam(teamID)
-	if appErr != nil {
-		p.API.LogError("error while getting team", "error", err)
-		return "", "", appErr
-	}
-
-	channel, appErr := p.API.GetChannel(channelID)
-	if appErr != nil {
-		p.API.LogError("error while getting channel", "error", err)
-		return "", "", appErr
-	}
-
-	v := url.Values{}
-	secret, _ := url.QueryUnescape(cf.Secret)
-	v.Add("secret", secret)
-	subURL = p.GetPluginURL() + instancePath(routeAPISubscribeWebhook, instanceID) + "?" + v.Encode()
-
-	// For the legacy URL, add team and channel. Secret is already in the map.
-	v.Add("team", team.Name)
-	v.Add("channel", channel.Name)
-	legacyURL = p.GetPluginURL() + instancePath(routeIncomingWebhook, instanceID) + "?" + v.Encode()
-
-	return subURL, legacyURL, nil
-}
-func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...interface{}) *webhook {
-	return &webhook{
-		JiraWebhook: jwh,
-		eventTypes:  NewStringSet(eventType),
-		headline:    jwh.mdUser() + " " + fmt.Sprintf(format, args...) + " " + jwh.mdKeySummaryLink(),
-	}
-}
-
 func (p *Plugin) getConnection(instance Instance, notification webhookUserNotification) (conn *Connection, err error) {
 	var mattermostUserID types.ID
 
@@ -636,11 +595,4 @@ func (p *Plugin) OnInstall(c *plugin.Context, event model.OnInstallEvent) error 
 	}
 
 	return nil
-}
-
-func (p *Plugin) getSubscriptionsWebhookURL(instanceID types.ID) string {
-	cf := p.getConfig()
-	v := url.Values{}
-	v.Add("secret", cf.Secret)
-	return p.GetPluginURL() + instancePath(routeAPISubscribeWebhook, instanceID) + "?" + v.Encode()
 }
