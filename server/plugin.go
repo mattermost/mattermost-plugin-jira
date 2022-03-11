@@ -452,7 +452,7 @@ func (p *Plugin) getConnection(instance Instance, notification webhookUserNotifi
 	if err != nil {
 		return
 	}
-	fmt.Println("+++++++++++++++++", mattermostUserID)
+
 	if mattermostUserID == "" {
 		mattermostUserID = ""
 	}

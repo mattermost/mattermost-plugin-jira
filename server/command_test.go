@@ -25,12 +25,12 @@ import (
 
 const (
 	mockUserIDWithNotifications       = "1"
-	mockMattermostIDWithNotifications = "testMattermostUserId012345"
 	mockUserIDWithoutNotifications    = "2"
 	mockUserIDUnknown                 = "3"
 	mockUserIDSysAdmin                = "4"
 	mockUserIDNonSysAdmin             = "5"
 	mattermostSiteURL                 = "https://somelink.com"
+	mockMattermostIDWithNotifications = "testMattermostUserId012345"
 )
 
 type mockUserStoreKV struct {
