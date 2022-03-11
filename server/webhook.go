@@ -295,6 +295,7 @@ func (wh *webhook) GetUserSetting(p *Plugin, instanceID types.ID, jiraAccountID,
 	return c, nil
 }
 
+
 func (s *ConnectionSettings) ShouldReceiveAssigneeNotifications() bool {
 	if s.SendNotificationsForAssignee != nil {
 		return *s.SendNotificationsForAssignee

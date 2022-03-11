@@ -13,7 +13,6 @@ import (
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -25,9 +24,6 @@ var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
 		"assign":                  executeAssign,
 		"connect":                 executeConnect,
-		"debug/stats/expvar":      executeDebugStatsExpvar,
-		"debug/stats/reset":       executeDebugStatsReset,
-		"debug/stats/save":        executeDebugStatsSave,
 		"disconnect":              executeDisconnect,
 		"help":                    executeHelp,
 		"info":                    executeInfo,
@@ -48,7 +44,6 @@ var jiraCommandHandler = CommandHandler{
 		"issue/unassign":          executeUnassign,
 		"issue/view":              executeView,
 		"settings":                executeSettings,
-		"stats":                   executeStats,
 		"subscribe/list":          executeSubscribeList,
 		"transition":              executeTransition,
 		"unassign":                executeUnassign,
@@ -56,6 +51,7 @@ var jiraCommandHandler = CommandHandler{
 		"view":                    executeView,
 		"v2revert":                executeV2Revert,
 		"webhook":                 executeWebhookURL,
+		"setup":                   executeSetup,
 	},
 	defaultHandler: executeJiraDefault,
 }
@@ -92,14 +88,9 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"* `/jira instance alias [URL] [alias-name]` - assign an alias to an instance\n" +
 	"* `/jira instance unalias [alias-name]` - remve an alias from an instance\n" +
 	"* `/jira instance v2 <jiraURL>` - Set the Jira instance to process \"v2\" webhooks and subscriptions (not prefixed with the instance ID)\n" +
-	"* `/jira stats` - Display usage statistics\n" +
 	"* `/jira webhook [--instance=<jiraURL>]` -  Show the Mattermost webhook to receive JQL queries\n" +
 	"* `/jira v2revert ` - Revert to V2 jira plugin data model\n" +
 	""
-
-const jiraConnectionErrorText = "It looks like we couldn't validate the connection to your Jira server. " +
-	"Please make sure the URL was entered correctly. This could also be because of existing firewall or proxy rules. " +
-	"If you intend to have a one way integration from Jira to Mattermost this is not an issue."
 
 func (p *Plugin) registerJiraCommand(enableAutocomplete, enableOptInstance bool) error {
 	// Optimistically unregister what was registered before
@@ -699,7 +690,7 @@ If you ran |v2revert| unintentionally and would like to continue using the curre
 	message = preMessage + message
 	message = strings.ReplaceAll(message, "|", "`")
 
-	p.Tracker.TrackV2Revert(header.UserId)
+	p.track("v2RevertSubmitted", header.UserId)
 
 	return p.responsef(header, message)
 }
@@ -807,30 +798,8 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 	if len(args) != 1 {
 		return p.help(header)
 	}
-	jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
-	if err != nil {
-		return p.responsef(header, err.Error())
-	}
 
-	accessible, errMsg := checkIfJiraIsAccessible(jiraURL)
-	if !accessible {
-		return p.responsef(header, errMsg)
-	}
-	if strings.Contains(jiraURL, "http:") {
-		jiraURL = strings.ReplaceAll(jiraURL, "http:", "https:")
-		return p.responsef(header, "`/jira install cloud` requires a secure connection (HTTPS). Please run the following command:\n```\n/jira install cloud %s\n```", jiraURL)
-	}
-
-	instances, _ := p.instanceStore.LoadInstances()
-	if !p.enterpriseChecker.HasEnterpriseFeatures() {
-		if instances != nil && len(instances.IDs()) > 0 {
-			return p.responsef(header, licenseErrorString)
-		}
-	}
-
-	// Create an "uninitialized" instance of Jira Cloud that will
-	// receive the /installed callback
-	err = p.instanceStore.CreateInactiveCloudInstance(types.ID(jiraURL))
+	jiraURL, err := p.installInactiveCloudInstance(args[0], header.UserId)
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -853,28 +822,11 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 	if len(args) != 1 {
 		return p.help(header)
 	}
-	jiraURL, err := utils.NormalizeInstallURL(p.GetSiteURL(), args[0])
+	jiraURL, instance, err := p.installServerInstance(args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
-	isJiraCloudURL, err := utils.IsJiraCloudURL(jiraURL)
-	if err != nil {
-		return p.responsef(header, err.Error())
-	}
-	if isJiraCloudURL {
-		return p.responsef(header, "The Jira URL you provided looks like a Jira Cloud URL - install it with:\n```\n/jira install cloud %s\n```", jiraURL)
-	}
-
-	accessible, errMsg := checkIfJiraIsAccessible(jiraURL)
-	if !accessible {
-		return p.responsef(header, errMsg)
-	}
-	instance := newServerInstance(p, jiraURL)
-	err = p.InstallInstance(instance)
-	if err != nil {
-		return p.responsef(header, err.Error())
-	}
-	pkey, err := publicKeyString(p)
+	pkey, err := p.publicKeyString()
 	if err != nil {
 		return p.responsef(header, "Failed to load public key: %v", err)
 	}
@@ -883,19 +835,8 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 		"JiraURL":       jiraURL,
 		"PluginURL":     p.GetPluginURL(),
 		"MattermostKey": instance.GetMattermostKey(),
-		"PublicKey":     strings.TrimSpace(string(pkey)),
+		"PublicKey":     pkey,
 	})
-}
-
-func checkIfJiraIsAccessible(jiraURL string) (bool, string) {
-	jiraIsAccessible, err := utils.IsJiraAccessible(jiraURL)
-	if err != nil {
-		return false, err.Error()
-	}
-	if !jiraIsAccessible {
-		return false, jiraConnectionErrorText
-	}
-	return true, ""
 }
 
 // executeUninstall will uninstall the jira instance if the url matches, and then update all connected clients
@@ -915,7 +856,7 @@ func executeInstanceUninstall(p *Plugin, c *plugin.Context, header *model.Comman
 	instanceType := InstanceType(args[0])
 	instanceURL := args[1]
 
-	id, err := utils.NormalizeInstallURL(p.GetSiteURL(), instanceURL)
+	id, err := utils.NormalizeJiraURL(instanceURL)
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -1105,91 +1046,6 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	return p.responsef(header, resp)
 }
 
-func executeStats(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
-	return executeStatsImpl(p, c, commandArgs, false, args...)
-}
-
-func executeDebugStatsExpvar(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
-	return executeStatsImpl(p, c, commandArgs, true, args...)
-}
-
-func executeStatsImpl(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, useExpvar bool, args ...string) *model.CommandResponse {
-	authorized, err := authorizedSysAdmin(p, commandArgs.UserId)
-	if err != nil {
-		return p.responsef(commandArgs, "%v", err)
-	}
-	if !authorized {
-		return p.responsef(commandArgs, "`/jira stats` can only be run by a system administrator.")
-	}
-	if len(args) < 1 {
-		return p.help(commandArgs)
-	}
-	resp := fmt.Sprintf("Mattermost Jira plugin version: %s, "+
-		"[%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s), built %s\n",
-		manifest.Version, BuildHashShort, BuildHash, BuildDate)
-
-	pattern := strings.Join(args, " ")
-	print := expvar.PrintExpvars
-	if !useExpvar {
-		var stats *expvar.Stats
-		var keys []string
-		stats, keys, err = p.consolidatedStoredStats()
-		if err != nil {
-			return p.responsef(commandArgs, "%v", err)
-		}
-		resp += fmt.Sprintf("Consolidated from stored keys `%s`\n", keys)
-		print = stats.PrintConsolidated
-	}
-
-	rstats, err := print(pattern)
-	if err != nil {
-		return p.responsef(commandArgs, "%v", err)
-	}
-
-	return p.responsef(commandArgs, resp+rstats)
-}
-
-func executeDebugStatsReset(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
-	authorized, err := authorizedSysAdmin(p, commandArgs.UserId)
-	if err != nil {
-		return p.responsef(commandArgs, "%v", err)
-	}
-	if !authorized {
-		return p.responsef(commandArgs, "`/jira stats` can only be run by a system administrator.")
-	}
-	if len(args) != 0 {
-		return p.help(commandArgs)
-	}
-
-	err = p.debugResetStats()
-	if err != nil {
-		return p.responsef(commandArgs, err.Error())
-	}
-	return p.responsef(commandArgs, "Reset stats")
-}
-
-func executeDebugStatsSave(p *Plugin, c *plugin.Context, commandArgs *model.CommandArgs, args ...string) *model.CommandResponse {
-	authorized, err := authorizedSysAdmin(p, commandArgs.UserId)
-	if err != nil {
-		return p.responsef(commandArgs, "%v", err)
-	}
-	if !authorized {
-		return p.responsef(commandArgs, "`/jira stats` can only be run by a system administrator.")
-	}
-	if len(args) != 0 {
-		return p.help(commandArgs)
-	}
-	stats := p.getConfig().stats
-	if stats == nil {
-		return p.responsef(commandArgs, "No stats to save")
-	}
-	err = p.saveStats()
-	if err != nil {
-		return p.responsef(commandArgs, "%v", err)
-	}
-	return p.responsef(commandArgs, "Saved stats")
-}
-
 func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
@@ -1234,6 +1090,22 @@ func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 			" Visit the [Legacy Webhooks](https://mattermost.gitbook.io/plugin-jira/administrator-guide/notification-management#legacy-webhooks) page to learn more about this feature.\n"+
 			"",
 		instanceID, instance.GetManageWebhooksURL(), subWebhookURL, subWebhookURL, legacyWebhookURL, legacyWebhookURL)
+}
+
+func executeSetup(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(header, "`/jira setup` can only be run by a system administrator.")
+	}
+
+	err = p.setupFlow.ForUser(header.UserId).Start(nil)
+	if err != nil {
+		return p.responsef(header, errors.Wrap(err, "Failed to start setup wizard").Error())
+	}
+	return p.responsef(header, "continue in the direct conversation with @jira bot.")
 }
 
 func (p *Plugin) postCommandResponse(args *model.CommandArgs, text string) {

@@ -4,9 +4,6 @@
 package main
 
 import (
-	"time"
-
-	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
@@ -31,24 +28,10 @@ func (ww webhookWorker) work() {
 }
 
 func (ww webhookWorker) process(msg *webhookMessage) (err error) {
-	conf := ww.p.getConfig()
-	start := time.Now()
 	defer func() {
-		isError, isIgnored := false, false
-		switch err {
-		case nil:
-			break
-		case ErrWebhookIgnored:
+		if err == ErrWebhookIgnored {
 			// ignore ErrWebhookIgnored - from here up it's a success
-			isIgnored = true
 			err = nil
-		default:
-			// TODO save the payload here
-			isError = true
-		}
-		if conf.stats != nil {
-			path := instancePath("jira/subscribe/processing", msg.InstanceID)
-			conf.stats.EnsureEndpoint(path).Record(utils.ByteSize(len(msg.Data)), 0, time.Since(start), isError, isIgnored)
 		}
 	}()
 

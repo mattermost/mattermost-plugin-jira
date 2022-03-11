@@ -276,6 +276,8 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, conne
 		return err
 	}
 
+	_ = p.setupFlow.ForUser(string(mattermostUserID)).Go(stepConnected)
+
 	info, err := p.GetUserInfo(mattermostUserID, user)
 	if err != nil {
 		return err
@@ -285,7 +287,7 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, conne
 		&model.WebsocketBroadcast{UserId: mattermostUserID.String()},
 	)
 
-	p.Tracker.TrackUserConnected(mattermostUserID.String())
+	p.track("userConnected", mattermostUserID.String())
 
 	return nil
 }
@@ -329,7 +331,7 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 	p.API.PublishWebSocketEvent(websocketEventDisconnect, info.AsConfigMap(),
 		&model.WebsocketBroadcast{UserId: user.MattermostUserID.String()})
 
-	p.Tracker.TrackUserDisconnected(user.MattermostUserID.String())
+	p.track("userDisconnected", user.MattermostUserID.String())
 
 	return conn, nil
 }
