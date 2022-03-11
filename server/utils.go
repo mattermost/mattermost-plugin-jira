@@ -29,7 +29,7 @@ func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message,
 		// not connected to Jira, so no need to send a DM, and no need to report an error
 		return nil, nil
 	}
-	if c.Settings == nil {
+	if c.Settings == nil || !c.Settings.Notifications {
 		return nil, nil
 	}
 

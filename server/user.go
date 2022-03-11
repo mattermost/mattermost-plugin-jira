@@ -43,7 +43,7 @@ func (c *Connection) JiraAccountID() types.ID {
 }
 
 type ConnectionSettings struct {
-	Notifications                *bool `json:"notifications"`
+	Notifications                bool  `json:"notifications"`
 	SendNotificationsForMention  *bool `json:"send_notifications_for_mention"`
 	SendNotificationsForAssignee *bool `json:"send_notifications_for_assignee"`
 	SendNotificationsForReporter *bool `json:"send_notifications_for_reporter"`
@@ -57,23 +57,23 @@ func (s *ConnectionSettings) String() string {
 	watchingNotifications := "Notifications for watching : off"
 	notifications := "Notifications : off"
 
-	if s != nil && *s.SendNotificationsForAssignee {
+	if s != nil && s.SendNotificationsForAssignee != nil && *s.SendNotificationsForAssignee {
 		assigneeNotifications = "Notifications for assignee : on"
 	}
 
-	if s != nil && *s.SendNotificationsForMention {
+	if s != nil && s.SendNotificationsForMention != nil && *s.SendNotificationsForMention {
 		mentionNotifications = "Notifications for mention : on"
 	}
 
-	if s != nil && *s.SendNotificationsForReporter {
+	if s != nil && s.SendNotificationsForReporter != nil && *s.SendNotificationsForReporter {
 		reporterNotifications = "Notifications for reporter : on"
 	}
 
-	if s != nil && *s.SendNotificationsForWatching {
+	if s != nil && s.SendNotificationsForWatching != nil && *s.SendNotificationsForWatching {
 		watchingNotifications = "Notifications for watching : on"
 	}
 
-	if s != nil && *s.Notifications {
+	if s != nil && s.Notifications {
 		notifications = "Notifications : on"
 	}
 

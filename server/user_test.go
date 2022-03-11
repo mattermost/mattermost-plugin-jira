@@ -19,21 +19,23 @@ func TestUserSettings_String(t *testing.T) {
 	}{
 		"notifications on": {
 			settings: ConnectionSettings{
-				Notifications:                &valueTrue,
+				Notifications:                valueTrue,
 				SendNotificationsForMention:  &valueTrue,
 				SendNotificationsForAssignee: &valueTrue,
 				SendNotificationsForReporter: &valueTrue,
+				SendNotificationsForWatching: &valueTrue,
 			},
-			expectedOutput: "\tNotifications Status:\n\t- Notifications : on \n\t- Notifications for assignee : on \n\t- Notifications for mention : on \n\t- Notifications for reporter : on",
+			expectedOutput: "\tNotifications Status:\n\t- Notifications : on \n\t- Notifications for assignee : on \n\t- Notifications for mention : on \n\t- Notifications for reporter : on \n\t- Notifications for watching : on",
 		},
 		"notifications off": {
 			settings: ConnectionSettings{
-				Notifications:                &valueFalse,
+				Notifications:                valueFalse,
 				SendNotificationsForMention:  &valueFalse,
 				SendNotificationsForAssignee: &valueFalse,
 				SendNotificationsForReporter: &valueFalse,
+				SendNotificationsForWatching: &valueFalse,
 			},
-			expectedOutput: "\tNotifications Status:\n\t- Notifications : off \n\t- Notifications for assignee : off \n\t- Notifications for mention : off \n\t- Notifications for reporter : off",
+			expectedOutput: "\tNotifications Status:\n\t- Notifications : off \n\t- Notifications for assignee : off \n\t- Notifications for mention : off \n\t- Notifications for reporter : off \n\t- Notifications for watching : off",
 		},
 	}
 	for name, tt := range tests {

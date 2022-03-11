@@ -475,17 +475,9 @@ func (store *store) LoadInstance(instanceID types.ID) (Instance, error) {
 	if instanceID == "" {
 		return nil, errors.Wrap(kvstore.ErrNotFound, "no instance specified")
 	}
-	hashedKey := hashkey(prefixInstance, instanceID.String())
-	instance, err := store.LoadInstanceFullKey(hashedKey)
+	instance, err := store.LoadInstanceFullKey(hashkey(prefixInstance, instanceID.String()))
 	if err != nil {
-		if errors.Is(errors.Wrap(kvstore.ErrNotFound, hashedKey), err) {
-			return nil, nil
-		}
-		store.plugin.API.LogError("error while load instance", "error", err)
 		return nil, errors.Wrap(err, instanceID.String())
-	}
-	if instance == nil {
-		return nil, nil
 	}
 	return instance, nil
 }
