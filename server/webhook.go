@@ -215,60 +215,34 @@ func (p *Plugin) getSubscriptionsWebhookURL(instanceID types.ID) string {
 }
 
 func (wh *webhook) checkIssueWatchers(p *Plugin, instanceID types.ID) {
-	var err error
-	var instance Instance
-	instance, err = p.instanceStore.LoadInstance(instanceID)
+	if !wh.eventTypes.ContainsAny("event_created_comment") {
+		return
+	}
+
+	jwhook := wh.JiraWebhook
+	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
+	commentMessage := fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body)
+	client, connection, err := wh.fetchConnectedUser(p, instanceID)
+	if err != nil || client == nil {
+		return
+	}
+
+	watcherUsers, err := client.GetWatchers(instanceID.String(), wh.Issue.ID, connection)
 	if err != nil {
-		// This isn't an internal server error. There's just no instance installed.
-		p.errorf("error while loading instance, err: %v", err)
-		return
-	}
-
-	if instance == nil {
-		p.errorf("error : no instance found")
-		return
-	}
-
-	ci, ok := instance.(*cloudInstance)
-	if !ok {
-		p.errorf("error : no cloud instance found")
-		return
-	}
-
-	client, err := ci.getClientForBot()
-	// client, err := instance.GetClient(c)
-	if err != nil {
-		p.errorf("error while geting client for bot , err : %v", err)
-		return
-	}
-
-	watcherUsers, resp, err := client.Issue.GetWatchers(wh.Issue.Key)
-	if err != nil {
-		err = userFriendlyJiraError(resp, err)
 		p.errorf("error while geting watchers for issue , err : %v", err)
 		return
 	}
 
-	for _, watcherUser := range *watcherUsers {
-		postType := ""
-		message := ""
-		var shouldNotReceiveNotification bool
-		for _, notification := range wh.notifications {
-			if notification.jiraAccountID == watcherUser.AccountID || (notification.jiraUsername != "" && notification.jiraUsername == watcherUser.Name) {
-				shouldNotReceiveNotification = true
-				break
-			}
-			postType = notification.postType
-			message = notification.message
+	for _, watcherUser := range watcherUsers.Watchers {
+		if wh.checkNotificationAlreadyExist(watcherUser.DisplayName, watcherUser.AccountID) {
+			return
 		}
-		if shouldNotReceiveNotification {
-			continue
-		}
+
 		whUserNotification := webhookUserNotification{
-			jiraUsername:  watcherUser.Name,
+			jiraUsername:  watcherUser.DisplayName,
 			jiraAccountID: watcherUser.AccountID,
-			message:       message,
-			postType:      postType,
+			message:       commentMessage,
+			postType:      PostTypeComment,
 			commentSelf:   wh.JiraWebhook.Comment.Self,
 		}
 
@@ -370,4 +344,61 @@ func (s *ConnectionSettings) ShouldReceiveMentionNotifications() bool {
 
 	// Check old setting for backwards compatibility
 	return s.Notifications
+}
+
+func (wh *webhook) fetchConnectedUser(p *Plugin, instanceID types.ID) (Client, *Connection, error) {
+	var accountInformation []map[string]string
+
+	if wh.Issue.Fields != nil && wh.Issue.Fields.Creator != nil {
+		accountInformation = append(accountInformation, map[string]string{
+			"AccountID": wh.Issue.Fields.Creator.AccountID,
+			"Username":  wh.Issue.Fields.Creator.AccountID,
+		})
+	}
+
+	if wh.Issue.Fields != nil && wh.Issue.Fields.Assignee != nil {
+		accountInformation = append(accountInformation, map[string]string{
+			"AccountID": wh.Issue.Fields.Assignee.AccountID,
+			"Username":  wh.Issue.Fields.Assignee.AccountID,
+		})
+	}
+
+	if wh.Issue.Fields != nil && wh.Issue.Fields.Reporter != nil {
+		accountInformation = append(accountInformation, map[string]string{
+			"AccountID": wh.Issue.Fields.Reporter.AccountID,
+			"Username":  wh.Issue.Fields.Reporter.AccountID,
+		})
+	}
+
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, account := range accountInformation {
+		var mattermostUserID types.ID
+		if account["AccountID"] != "" {
+			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), account["AccountID"])
+		} else {
+			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), account["Username"])
+		}
+
+		if err != nil {
+			continue
+		}
+
+		c, err2 := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
+		if err2 != nil {
+			continue
+		}
+
+		client, err2 := instance.GetClient(c)
+		if err2 != nil {
+			continue
+		}
+
+		return client, c, nil
+	}
+
+	return nil, nil, nil
 }

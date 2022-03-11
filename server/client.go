@@ -55,7 +55,6 @@ type UserService interface {
 type ProjectService interface {
 	GetProject(key string) (*jira.Project, error)
 	GetAllProjectKeys() ([]string, error)
-	GetWatchers(connection *Connection, issueKey string) (*jira.Watches, error)
 }
 
 // SearchService is the interface for search-related APIs.
@@ -77,12 +76,30 @@ type IssueService interface {
 	GetTransitions(issueKey string) ([]jira.Transition, error)
 	UpdateAssignee(issueKey string, user *jira.User) error
 	UpdateComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
+	GetWatchers(instanceID, issueKey string, connection *Connection) (*JiraWatcher, error)
 }
 
 // JiraClient is the common implementation of most Jira APIs, except those that are
 // Jira Server or Jira Cloud specific.
 type JiraClient struct {
 	Jira *jira.Client
+}
+
+type JiraWatcher struct {
+	Self       string `json:"self"`
+	IsWatching bool   `json:"isWatching"`
+	WatchCount int    `json:"watchCount"`
+	Watchers   []struct {
+		Self         string `json:"self,omitempty"`
+		AccountID    string `json:"accountId,omitempty"`
+		EmailAddress string `json:"emailAddress,omitempty"`
+		AvatarUrls   struct {
+		} `json:"avatarUrls,omitempty"`
+		DisplayName string `json:"displayName,omitempty"`
+		Active      bool   `json:"active,omitempty"`
+		TimeZone    string `json:"timeZone,omitempty"`
+		AccountType string `json:"accountType,omitempty"`
+	} `json:"watchers"`
 }
 
 // RESTGet calls a specified HTTP point with a GET method. endpoint must be an absolute URL, or a
@@ -200,16 +217,17 @@ func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (*j
 }
 
 //GetWatchers returns an array of Jira users watching for a given issue.
-func (client JiraClient) GetWatchers(connection *Connection, issueKey string) (*jira.Watches, error) {
-	var result *jira.Watches
+func (client JiraClient) GetWatchers(instanceID, issueKey string, connection *Connection) (*JiraWatcher, error) {
+	var watchers JiraWatcher
 	params := map[string]string{
 		"accountId": connection.AccountID,
 	}
-	err := client.RESTGet("/rest/api/3/issue/{"+issueKey+"}/watchers", params, result)
+
+	err := client.RESTGet(instanceID+"/rest/api/2/issue/"+issueKey+"/watchers", params, &watchers)
 	if err != nil {
 		return nil, err
 	}
-	return result, nil
+	return &watchers, nil
 }
 
 // GetTransitions returns transitions for an issue with issueKey.
