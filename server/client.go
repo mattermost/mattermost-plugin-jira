@@ -217,7 +217,7 @@ func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (*j
 	return issue, nil
 }
 
-//GetWatchers returns an array of Jira users watching for a given issue.
+// GetWatchers returns an array of Jira users watching for a given issue.
 func (client JiraClient) GetWatchers(instanceID, issueKey string, connection *Connection) (*JiraWatcher, error) {
 	var watchers JiraWatcher
 	params := map[string]string{

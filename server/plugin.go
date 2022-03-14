@@ -32,7 +32,6 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (
@@ -438,33 +437,6 @@ func (p *Plugin) CheckSiteURL() error {
 		return errors.Errorf("Using %s as your Mattermost SiteURL is not permitted, as the URL is not reachable from Jira. If you are using Jira Cloud, please make sure your URL is reachable from the public internet.", ustr)
 	}
 	return nil
-}
-
-func (p *Plugin) getConnection(instance Instance, notification webhookUserNotification) (conn *Connection, err error) {
-	var mattermostUserID types.ID
-
-	// prefer accountId to username when looking up UserIds
-	if notification.jiraAccountID != "" {
-		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), notification.jiraAccountID)
-	} else {
-		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), notification.jiraUsername)
-	}
-	if err != nil {
-		return
-	}
-
-	if mattermostUserID == "" {
-		mattermostUserID = ""
-	}
-	// Check if the user has permissions.
-	conn, err = p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
-	if err != nil {
-		p.API.LogError("error while load connection", "error", err)
-		// Not connected to Jira, so can't check permissions
-		return
-	}
-
-	return
 }
 
 func (p *Plugin) storeConfig(ec externalConfig) error {

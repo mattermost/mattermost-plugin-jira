@@ -229,7 +229,7 @@ func (wh *webhook) checkIssueWatchers(p *Plugin, instanceID types.ID) {
 
 	watcherUsers, err := client.GetWatchers(instanceID.String(), wh.Issue.ID, connection)
 	if err != nil {
-		p.errorf("error while geting watchers for issue , err : %v", err)
+		p.errorf("error while getting watchers for issue , err : %v", err)
 		return
 	}
 
