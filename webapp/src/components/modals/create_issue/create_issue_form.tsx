@@ -220,10 +220,10 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
         if (Object.keys(available).length === 0) {
             return fields;
         }
-
+        
         const result = {} as CreateIssueFields;
         for (const key of Object.keys(fields)) {
-            if (available[key] || key === 'project' || key === 'issuetype') {
+            if ((available[key] || key === 'project' || key === 'issuetype') && key !== 'assignee') {
                 result[key] = fields[key];
             }
         }
