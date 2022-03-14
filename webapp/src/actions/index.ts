@@ -86,7 +86,7 @@ export const getIssueByKey = (issueKey: string, instanceID: string) => {
         let data = null;
         const params = `issue_key=${issueKey}&instance_id=${instanceID}`;
         try {
-            data = await doFetch(`${baseUrl}/api/v2/get-isse-by-key?${params}`, {
+            data = await doFetch(`${baseUrl}/api/v2/get-issue-by-key?${params}`, {
                 method: 'get',
             });
             if (data.error) {

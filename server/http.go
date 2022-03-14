@@ -55,7 +55,7 @@ const (
 	routeUserConnect                            = "/user/connect"
 	routeUserDisconnect                         = "/user/disconnect"
 	routeSharePublicly                          = "/api/v2/share-issue-publicly"
-	routeGetIssueByKey                          = "/api/v2/get-isse-by-key"
+	routeGetIssueByKey                          = "/api/v2/get-issue-by-key"
 )
 
 const routePrefixInstance = "instance"
