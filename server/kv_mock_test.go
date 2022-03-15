@@ -79,12 +79,9 @@ func (store mockUserStore) StoreConnection(types.ID, types.ID, *Connection) erro
 	return nil
 }
 func (store mockUserStore) LoadConnection(types.ID, types.ID) (*Connection, error) {
-	valueTrue := true
 	return &Connection{
 		Settings: &ConnectionSettings{
-			SendNotificationsForMention:  &valueTrue,
-			SendNotificationsForAssignee: &valueTrue,
-			SendNotificationsForReporter: &valueTrue,
+			Notifications: true,
 		},
 	}, nil
 }

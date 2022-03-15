@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -121,7 +120,6 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		} else {
 			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), notification.jiraUsername)
 		}
-
 		if err != nil {
 			continue
 		}
@@ -132,7 +130,6 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 			// Not connected to Jira, so can't check permissions
 			continue
 		}
-
 		client, err2 := instance.GetClient(c)
 		if err2 != nil {
 			p.errorf("PostNotifications: error while getting jiraClient, err: %v", err2)
@@ -147,7 +144,6 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		} else {
 			_, err = client.GetIssue(wh.Issue.ID, nil)
 		}
-
 		if err != nil {
 			p.errorf("PostNotifications: failed to get self: %v", err)
 			continue
@@ -178,25 +174,21 @@ func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL
 
 	instanceID, err := p.ResolveWebhookInstanceURL(jiraURL)
 	if err != nil {
-		p.API.LogError("error while getting instance ID", "error", err)
 		return "", "", err
 	}
 
 	team, appErr := p.API.GetTeam(teamID)
 	if appErr != nil {
-		p.API.LogError("error while getting team", "error", err)
 		return "", "", appErr
 	}
 
 	channel, appErr := p.API.GetChannel(channelID)
 	if appErr != nil {
-		p.API.LogError("error while getting channel", "error", err)
 		return "", "", appErr
 	}
 
 	v := url.Values{}
-	secret, _ := url.QueryUnescape(cf.Secret)
-	v.Add("secret", secret)
+	v.Add("secret", cf.Secret)
 	subURL = p.GetPluginURL() + instancePath(routeAPISubscribeWebhook, instanceID) + "?" + v.Encode()
 
 	// For the legacy URL, add team and channel. Secret is already in the map.
@@ -212,193 +204,4 @@ func (p *Plugin) getSubscriptionsWebhookURL(instanceID types.ID) string {
 	v := url.Values{}
 	v.Add("secret", cf.Secret)
 	return p.GetPluginURL() + instancePath(routeAPISubscribeWebhook, instanceID) + "?" + v.Encode()
-}
-
-func (wh *webhook) checkIssueWatchers(p *Plugin, instanceID types.ID) {
-	if !wh.eventTypes.ContainsAny("event_created_comment") {
-		return
-	}
-
-	jwhook := wh.JiraWebhook
-	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
-	commentMessage := fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body)
-	client, connection, err := wh.fetchConnectedUser(p, instanceID)
-	if err != nil || client == nil {
-		return
-	}
-
-	watcherUsers, err := client.GetWatchers(instanceID.String(), wh.Issue.ID, connection)
-	if err != nil {
-		p.errorf("error while getting watchers for issue , err : %v", err)
-		return
-	}
-
-	for _, watcherUser := range watcherUsers.Watchers {
-		if wh.checkNotificationAlreadyExist(watcherUser.DisplayName, watcherUser.AccountID) {
-			return
-		}
-
-		whUserNotification := webhookUserNotification{
-			jiraUsername:  watcherUser.DisplayName,
-			jiraAccountID: watcherUser.AccountID,
-			message:       commentMessage,
-			postType:      PostTypeComment,
-			commentSelf:   wh.JiraWebhook.Comment.Self,
-		}
-
-		wh.notifications = append(wh.notifications, whUserNotification)
-	}
-}
-
-func (wh *webhook) applyReporterNotification(p *Plugin, instanceID types.ID, reporter *jira.User) {
-	if !wh.eventTypes.ContainsAny("event_created_comment") {
-		return
-	}
-
-	jwhook := wh.JiraWebhook
-	if reporter == nil ||
-		(reporter.Name != "" && reporter.Name == jwhook.User.Name) ||
-		(reporter.AccountID != "" && reporter.AccountID == jwhook.Comment.UpdateAuthor.AccountID) {
-		return
-	}
-
-	if wh.checkNotificationAlreadyExist(reporter.Name, reporter.AccountID) {
-		return
-	}
-
-	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
-
-	commentMessage := fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body)
-
-	c, err := wh.GetUserSetting(p, instanceID, reporter.Name, reporter.AccountID)
-	if err != nil || c.Settings == nil || !c.Settings.ShouldReceiveReporterNotifications() {
-		return
-	}
-
-	wh.notifications = append(wh.notifications, webhookUserNotification{
-		jiraUsername:  reporter.Name,
-		jiraAccountID: reporter.AccountID,
-		message:       commentMessage,
-		postType:      PostTypeComment,
-		commentSelf:   jwhook.Comment.Self,
-	})
-}
-
-func (wh *webhook) checkNotificationAlreadyExist(username, accountID string) bool {
-	for _, val := range wh.notifications {
-		if val.jiraUsername == username && val.jiraAccountID == accountID {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (wh *webhook) GetUserSetting(p *Plugin, instanceID types.ID, jiraAccountID, jiraUsername string) (*Connection, error) {
-	var err error
-	instance, err := p.instanceStore.LoadInstance(instanceID)
-	if err != nil {
-		return nil, err
-	}
-	var mattermostUserID types.ID
-	if jiraAccountID != "" {
-		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), jiraAccountID)
-	} else {
-		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), jiraUsername)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	c, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
-	if err != nil {
-		return nil, err
-	}
-
-	return c, nil
-}
-
-func (s *ConnectionSettings) ShouldReceiveAssigneeNotifications() bool {
-	if s.SendNotificationsForAssignee != nil {
-		return *s.SendNotificationsForAssignee
-	}
-
-	// Check old setting for backwards compatibility
-	return s.Notifications
-}
-
-func (s *ConnectionSettings) ShouldReceiveReporterNotifications() bool {
-	if s.SendNotificationsForReporter != nil {
-		return *s.SendNotificationsForReporter
-	}
-
-	// Check old setting for backwards compatibility
-	return s.Notifications
-}
-
-func (s *ConnectionSettings) ShouldReceiveMentionNotifications() bool {
-	if s.SendNotificationsForMention != nil {
-		return *s.SendNotificationsForMention
-	}
-
-	// Check old setting for backwards compatibility
-	return s.Notifications
-}
-
-func (wh *webhook) fetchConnectedUser(p *Plugin, instanceID types.ID) (Client, *Connection, error) {
-	var accountInformation []map[string]string
-
-	if wh.Issue.Fields != nil && wh.Issue.Fields.Creator != nil {
-		accountInformation = append(accountInformation, map[string]string{
-			"AccountID": wh.Issue.Fields.Creator.AccountID,
-			"Username":  wh.Issue.Fields.Creator.AccountID,
-		})
-	}
-
-	if wh.Issue.Fields != nil && wh.Issue.Fields.Assignee != nil {
-		accountInformation = append(accountInformation, map[string]string{
-			"AccountID": wh.Issue.Fields.Assignee.AccountID,
-			"Username":  wh.Issue.Fields.Assignee.AccountID,
-		})
-	}
-
-	if wh.Issue.Fields != nil && wh.Issue.Fields.Reporter != nil {
-		accountInformation = append(accountInformation, map[string]string{
-			"AccountID": wh.Issue.Fields.Reporter.AccountID,
-			"Username":  wh.Issue.Fields.Reporter.AccountID,
-		})
-	}
-
-	instance, err := p.instanceStore.LoadInstance(instanceID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	for _, account := range accountInformation {
-		var mattermostUserID types.ID
-		if account["AccountID"] != "" {
-			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), account["AccountID"])
-		} else {
-			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), account["Username"])
-		}
-
-		if err != nil {
-			continue
-		}
-
-		c, err2 := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
-		if err2 != nil {
-			continue
-		}
-
-		client, err2 := instance.GetClient(c)
-		if err2 != nil {
-			continue
-		}
-
-		return client, c, nil
-	}
-
-	return nil, nil, nil
 }

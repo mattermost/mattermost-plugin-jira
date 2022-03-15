@@ -51,33 +51,28 @@ type ConnectionSettings struct {
 }
 
 func (s *ConnectionSettings) String() string {
-	assigneeNotifications := "Notifications for assignee : off"
-	mentionNotifications := "Notifications for mention : off"
-	reporterNotifications := "Notifications for reporter : off"
-	watchingNotifications := "Notifications for watching : off"
-	notifications := "Notifications : off"
+	assigneeNotifications := "Notifications for assignee: off"
+	mentionNotifications := "Notifications for mention: off"
+	reporterNotifications := "Notifications for reporter: off"
+	watchingNotifications := "Notifications for watching: off"
 
-	if s != nil && s.SendNotificationsForAssignee != nil && *s.SendNotificationsForAssignee {
-		assigneeNotifications = "Notifications for assignee : on"
+	if s != nil && s.ShouldReceiveNotificationsForAssignee() {
+		assigneeNotifications = "Notifications for assignee: on"
 	}
 
-	if s != nil && s.SendNotificationsForMention != nil && *s.SendNotificationsForMention {
-		mentionNotifications = "Notifications for mention : on"
+	if s != nil && s.ShouldReceiveNotificationsForMention() {
+		mentionNotifications = "Notifications for mention: on"
 	}
 
-	if s != nil && s.SendNotificationsForReporter != nil && *s.SendNotificationsForReporter {
-		reporterNotifications = "Notifications for reporter : on"
+	if s != nil && s.ShouldReceiveNotificationsForReporter() {
+		reporterNotifications = "Notifications for reporter: on"
 	}
 
-	if s != nil && s.SendNotificationsForWatching != nil && *s.SendNotificationsForWatching {
-		watchingNotifications = "Notifications for watching : on"
+	if s != nil && s.ShouldReceiveNotificationsForWatching() {
+		watchingNotifications = "Notifications for watching: on"
 	}
 
-	if s != nil && s.Notifications {
-		notifications = "Notifications : on"
-	}
-
-	return fmt.Sprintf("\tNotifications Status:\n\t- %s \n\t- %s \n\t- %s \n\t- %s \n\t- %s", notifications, assigneeNotifications, mentionNotifications, reporterNotifications, watchingNotifications)
+	return fmt.Sprintf("\tNotifications Status:\n\t- %s \n\t- %s \n\t- %s \n\t- %s", assigneeNotifications, mentionNotifications, reporterNotifications, watchingNotifications)
 }
 
 func NewUser(mattermostUserID types.ID) *User {

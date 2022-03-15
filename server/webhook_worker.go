@@ -43,8 +43,8 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 	if err = v.JiraWebhook.expandIssue(ww.p, msg.InstanceID); err != nil {
 		return err
 	}
-	v.checkIssueWatchers(ww.p, msg.InstanceID)
-	v.applyReporterNotification(ww.p, msg.InstanceID, v.Issue.Fields.Reporter)
+	ww.p.checkIssueWatchers(v, msg.InstanceID)
+	ww.p.applyReporterNotification(v, msg.InstanceID, v.Issue.Fields.Reporter)
 
 	if _, _, err = wh.PostNotifications(ww.p, msg.InstanceID); err != nil {
 		ww.p.errorf("WebhookWorker id: %d, error posting notifications, err: %v", ww.id, err)

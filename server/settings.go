@@ -83,5 +83,5 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 		}
 	}
 
-	return p.responsef(header, "Settings updated.\n\t%s %s.", strings.Title(args[1]), notifications)
+	return p.responsef(header, "Settings updated.\n\t%s notifications %s.", strings.Title(args[1]), notifications)
 }

@@ -287,8 +287,8 @@ func appendCommentNotifications(wh *webhook, instanceID types.ID, p *Plugin, ver
 			notification.jiraUsername = u
 		}
 
-		c, err := wh.GetUserSetting(p, instanceID, notification.jiraUsername, notification.jiraAccountID)
-		if err != nil || c.Settings == nil || !c.Settings.ShouldReceiveMentionNotifications() {
+		c, err := p.GetUserSetting(wh, instanceID, notification.jiraUsername, notification.jiraAccountID)
+		if err != nil || c.Settings == nil || !c.Settings.ShouldReceiveNotificationsForMention() {
 			continue
 		}
 
@@ -304,8 +304,8 @@ func appendCommentNotifications(wh *webhook, instanceID types.ID, p *Plugin, ver
 		return
 	}
 
-	c, err := wh.GetUserSetting(p, instanceID, jwh.Issue.Fields.Assignee.Name, jwh.Issue.Fields.Assignee.AccountID)
-	if err != nil || c.Settings == nil || !c.Settings.ShouldReceiveAssigneeNotifications() {
+	c, err := p.GetUserSetting(wh, instanceID, jwh.Issue.Fields.Assignee.Name, jwh.Issue.Fields.Assignee.AccountID)
+	if err != nil || c.Settings == nil || !c.Settings.ShouldReceiveNotificationsForAssignee() {
 		return
 	}
 
@@ -390,8 +390,8 @@ func appendNotificationForAssignee(wh *webhook, p *Plugin, instanceID types.ID) 
 		return
 	}
 
-	c, err := wh.GetUserSetting(p, instanceID, jwh.Issue.Fields.Assignee.Name, jwh.Issue.Fields.Assignee.AccountID)
-	if err != nil || c.Settings == nil || !c.Settings.ShouldReceiveAssigneeNotifications() {
+	c, err := p.GetUserSetting(wh, instanceID, jwh.Issue.Fields.Assignee.Name, jwh.Issue.Fields.Assignee.AccountID)
+	if err != nil || c.Settings == nil || !c.Settings.ShouldReceiveNotificationsForAssignee() {
 		return
 	}
 

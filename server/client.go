@@ -77,30 +77,13 @@ type IssueService interface {
 	GetTransitions(issueKey string) ([]jira.Transition, error)
 	UpdateAssignee(issueKey string, user *jira.User) error
 	UpdateComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
-	GetWatchers(instanceID, issueKey string, connection *Connection) (*JiraWatcher, error)
+	GetWatchers(instanceID, issueKey string, connection *Connection) (*jira.Watches, error)
 }
 
 // JiraClient is the common implementation of most Jira APIs, except those that are
 // Jira Server or Jira Cloud specific.
 type JiraClient struct {
 	Jira *jira.Client
-}
-
-type JiraWatcher struct {
-	Self       string `json:"self"`
-	IsWatching bool   `json:"isWatching"`
-	WatchCount int    `json:"watchCount"`
-	Watchers   []struct {
-		Self         string `json:"self,omitempty"`
-		AccountID    string `json:"accountId,omitempty"`
-		EmailAddress string `json:"emailAddress,omitempty"`
-		AvatarUrls   struct {
-		} `json:"avatarUrls,omitempty"`
-		DisplayName string `json:"displayName,omitempty"`
-		Active      bool   `json:"active,omitempty"`
-		TimeZone    string `json:"timeZone,omitempty"`
-		AccountType string `json:"accountType,omitempty"`
-	} `json:"watchers"`
 }
 
 // RESTGet calls a specified HTTP point with a GET method. endpoint must be an absolute URL, or a
@@ -218,8 +201,8 @@ func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (*j
 }
 
 // GetWatchers returns an array of Jira users watching for a given issue.
-func (client JiraClient) GetWatchers(instanceID, issueKey string, connection *Connection) (*JiraWatcher, error) {
-	var watchers JiraWatcher
+func (client JiraClient) GetWatchers(instanceID, issueKey string, connection *Connection) (*jira.Watches, error) {
+	var watchers jira.Watches
 	params := map[string]string{
 		"accountId": connection.AccountID,
 	}

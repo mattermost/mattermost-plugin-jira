@@ -252,8 +252,8 @@ func createSettingsCommand(optInstance bool) *model.AutocompleteData {
 	settings.AddCommand(list)
 
 	setting := []model.AutocompleteListItem{
-		{HelpText: "Turn on notification on", Item: "on"},
-		{HelpText: "Turn on notification off", Item: "off"},
+		{HelpText: "Turn notifications on", Item: "on"},
+		{HelpText: "Turn notifications off", Item: "off"},
 	}
 
 	notifications := model.NewAutocompleteData(
@@ -271,10 +271,13 @@ func createSettingsCommand(optInstance bool) *model.AutocompleteData {
 		subCommandReporter, "", "manage reporter notifications")
 	reporterNotifications.AddStaticListArgument("value", true, setting)
 
+	watchingNotifications := model.NewAutocompleteData(
+		subCommandWatching, "", "manage watching notifications")
+	reporterNotifications.AddStaticListArgument("value", true, setting)
 	notifications.AddCommand(assigneeNotifications)
 	notifications.AddCommand(mentionNotifications)
 	notifications.AddCommand(reporterNotifications)
-
+	notifications.AddCommand(watchingNotifications)
 	withFlagInstance(notifications, optInstance, routeAutocompleteInstalledInstanceWithAlias)
 	settings.AddCommand(notifications)
 
