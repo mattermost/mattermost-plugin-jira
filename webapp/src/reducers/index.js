@@ -196,19 +196,21 @@ const channelSubscriptions = (state = {}, action) => {
 const getIssueByKey = (state = {}, action) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_JIRA_TICKETS :
+        const assignee = action.data.fields.assignee;
+        const ticketData = action.data;
         return {
             ...state,
             isloaded: true,
-            assigneeName: action.data.fields.assignee && action.data.fields.assignee.displayName ? action.data.fields.assignee.displayName : '',
-            assigneeAvatar: action.data.fields.assignee && action.data.fields.assignee.avatarUrls && action.data.fields.assignee.avatarUrls['48x48'] ? action.data.fields.assignee.avatarUrls['48x48'] : '',
-            labels: action.data.fields.labels,
-            description: action.data.fields.description,
-            summary: action.data.fields.summary,
-            ticketId: action.data.key,
-            jiraIcon: action.data.fields.project.avatarUrls['48x48'],
-            versions: action.data.fields.versions.lenght > 0 ? action.data.fields.versions.versions[0] : '',
-            statusKey: action.data.fields.status.name,
-            issueIcon: action.data.fields.issuetype.iconUrl,
+            assigneeName: assignee && assignee.displayName ? assignee.displayName : '',
+            assigneeAvatar: assignee && assignee.avatarUrls && assignee.avatarUrls['48x48'] ? assignee.avatarUrls['48x48'] : '',
+            labels: ticketData.fields.labels,
+            description: ticketData.fields.description,
+            summary: ticketData.fields.summary,
+            ticketId: ticketData.key,
+            jiraIcon: ticketData.fields.project.avatarUrls['48x48'],
+            versions: ticketData.fields.versions.lenght > 0 ? ticketData.fields.versions.versions[0] : '',
+            statusKey: ticketData.fields.status.name,
+            issueIcon: ticketData.fields.issuetype.iconUrl,
         };
     case ActionTypes.RECEIVED_JIRA_TICKETS_ERROR :
         return {
