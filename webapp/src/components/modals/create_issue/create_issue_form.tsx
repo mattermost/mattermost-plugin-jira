@@ -134,7 +134,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
 
             this.setState(state);
         });
-        
+
         let fields = {
             summary: this.state.fields.summary,
             description: this.state.fields.description,
