@@ -43,7 +43,7 @@ func (p *Plugin) httpACUserRedirect(w http.ResponseWriter, r *http.Request, inst
 		return respondErr(w, http.StatusBadRequest, err)
 	}
 
-	submitURL := p.GetPluginURL() + instancePath(routeACUserConfirm, instanceID)
+	submitURL := p.CreateFullURLPath(instancePath(routeACUserConfirm, instanceID))
 
 	return ci.Plugin.respondTemplate(w, r, "text/html", struct {
 		SubmitURL  string
@@ -168,8 +168,8 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 	}
 
 	// This set of props should work for all relevant routes/templates
-	connectSubmitURL := p.GetPluginURL() + instancePath(routeACUserConnected, instanceID)
-	disconnectSubmitURL := p.GetPluginURL() + instancePath(routeACUserDisconnected, instanceID)
+	connectSubmitURL := p.CreateFullURLPath(instancePath(routeACUserConnected, instanceID))
+	disconnectSubmitURL := p.CreateFullURLPath(instancePath(routeACUserDisconnected, instanceID))
 	return ci.Plugin.respondTemplate(w, r, "text/html", struct {
 		ConnectSubmitURL      string
 		DisconnectSubmitURL   string
