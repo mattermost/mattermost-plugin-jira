@@ -23,7 +23,7 @@ Use the `/jira webhook` command to get your webhook URL to copy into Jira.
 To control Mattermost channel subscriptions, use the `/jira subscribe` command in the channel in which you want to receive subscriptions. Then select the project and event triggers that will post to the channel. To manage all channel subscriptions as an administrator see [Notification Management](../administrator-guide/notification-management.md).
 
 
-1. To get the appropriate webhook URL, post `/jira webhhok <your-jira-url>` to a Mattermost channel as a Mattermost System Admin.
+1. To get the appropriate webhook URL, post `/jira webhhook <your-jira-url>` to a Mattermost channel as a Mattermost System Admin.
 2. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
    * For older versions of Jira, click the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
 3. Click **Create a WebHook** to create a new webhook. 
@@ -56,7 +56,7 @@ For granular control of how issues are sent to certain channels in your Mattermo
 
 You can create multiple webhooks in Jira to point to the same endpoint on your Mattermost instance. This is useful when you only want issues from certain projects, or issues that fit a specific JQL criteria to be sent to your Mattermost instance. Larger organizations may want to filter the webhooks by project to minimize load on their Jira server, if they only need specific projects used for the webhook feature.
 
-### Step 3: Install the plugin as an application in Jira
+### Step 4: Install the plugin as an application in Jira
 
 To control Mattermost channel subscriptions, use the command `/jira subscribe` in the channel in which you want to receive subscriptions. Then select the project and event triggers that will post to the channel. To manage all channel subscriptions as an administrator see [Notification Management](../admininstrator-guide/notification-management.md).
 
