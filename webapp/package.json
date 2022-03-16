@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "run": "webpack --progress --watch",
-    "build": "webpack --mode=production",
+    "build": "webpack --mode=development",
     "lint": "eslint --ignore-pattern node_modules --ignore-pattern dist --ignore-pattern tests --ext .js --ext .jsx --ext .ts --ext .tsx . --quiet",
     "fix": "eslint --ignore-pattern node_modules --ignore-pattern dist --ignore-pattern tests --ext .js --ext .jsx --ext .ts --ext .tsx . --quiet --fix",
     "test": "jest --forceExit --detectOpenHandles",
