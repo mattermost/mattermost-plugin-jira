@@ -72,7 +72,7 @@ func (s *ConnectionSettings) String() string {
 		watchingNotifications = "Notifications for watching: on"
 	}
 
-	return fmt.Sprintf("\tNotifications Status:\n\t- %s \n\t- %s \n\t- %s \n\t- %s", assigneeNotifications, mentionNotifications, reporterNotifications, watchingNotifications)
+	return fmt.Sprintf("\t- %s \n\t- %s \n\t- %s \n\t- %s", assigneeNotifications, mentionNotifications, reporterNotifications, watchingNotifications)
 }
 
 func NewUser(mattermostUserID types.ID) *User {

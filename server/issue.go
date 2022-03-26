@@ -1061,16 +1061,17 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 	}
 
 	for _, watcherUser := range watcherUsers.Watchers {
-		if wh.checkNotificationAlreadyExist(watcherUser.DisplayName, watcherUser.AccountID) {
+		if wh.checkNotificationAlreadyExist(watcherUser.Name, watcherUser.AccountID) {
 			return
 		}
 
 		whUserNotification := webhookUserNotification{
-			jiraUsername:  watcherUser.DisplayName,
-			jiraAccountID: watcherUser.AccountID,
-			message:       commentMessage,
-			postType:      PostTypeComment,
-			commentSelf:   wh.JiraWebhook.Comment.Self,
+			jiraUsername:     watcherUser.Name,
+			jiraAccountID:    watcherUser.AccountID,
+			message:          commentMessage,
+			postType:         PostTypeComment,
+			commentSelf:      wh.JiraWebhook.Comment.Self,
+			notificationType: "watching",
 		}
 
 		wh.notifications = append(wh.notifications, whUserNotification)
@@ -1103,11 +1104,12 @@ func (p *Plugin) applyReporterNotification(wh *webhook, instanceID types.ID, rep
 	}
 
 	wh.notifications = append(wh.notifications, webhookUserNotification{
-		jiraUsername:  reporter.Name,
-		jiraAccountID: reporter.AccountID,
-		message:       commentMessage,
-		postType:      PostTypeComment,
-		commentSelf:   jwhook.Comment.Self,
+		jiraUsername:     reporter.Name,
+		jiraAccountID:    reporter.AccountID,
+		message:          commentMessage,
+		postType:         PostTypeComment,
+		commentSelf:      jwhook.Comment.Self,
+		notificationType: "reporter",
 	})
 }
 
@@ -1185,21 +1187,21 @@ func (wh *webhook) fetchConnectedUser(p *Plugin, instanceID types.ID) (Client, *
 	if wh.Issue.Fields != nil && wh.Issue.Fields.Creator != nil {
 		accountInformation = append(accountInformation, map[string]string{
 			"AccountID": wh.Issue.Fields.Creator.AccountID,
-			"Username":  wh.Issue.Fields.Creator.AccountID,
+			"Name":      wh.Issue.Fields.Creator.Name,
 		})
 	}
 
 	if wh.Issue.Fields != nil && wh.Issue.Fields.Assignee != nil {
 		accountInformation = append(accountInformation, map[string]string{
 			"AccountID": wh.Issue.Fields.Assignee.AccountID,
-			"Username":  wh.Issue.Fields.Assignee.AccountID,
+			"Name":      wh.Issue.Fields.Assignee.Name,
 		})
 	}
 
 	if wh.Issue.Fields != nil && wh.Issue.Fields.Reporter != nil {
 		accountInformation = append(accountInformation, map[string]string{
 			"AccountID": wh.Issue.Fields.Reporter.AccountID,
-			"Username":  wh.Issue.Fields.Reporter.AccountID,
+			"Name":      wh.Issue.Fields.Reporter.Name,
 		})
 	}
 
@@ -1207,13 +1209,12 @@ func (wh *webhook) fetchConnectedUser(p *Plugin, instanceID types.ID) (Client, *
 	if err != nil {
 		return nil, nil, err
 	}
-
 	for _, account := range accountInformation {
 		var mattermostUserID types.ID
 		if account["AccountID"] != "" {
 			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), account["AccountID"])
 		} else {
-			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), account["Username"])
+			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), account["Name"])
 		}
 
 		if err != nil {

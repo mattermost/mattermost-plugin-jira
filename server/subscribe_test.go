@@ -1381,10 +1381,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			r := bytes.NewReader(data)
 			bb, err := ioutil.ReadAll(r)
 			require.Nil(t, err)
-			instanceID := testInstance1.InstanceID
-			p := &Plugin{}
-			p.SetAPI(api)
-			wh, err := ParseWebhook(bb, p, instanceID)
+			wh, err := ParseWebhook(bb)
 			assert.Nil(t, err)
 
 			actual, err := p.getChannelsSubscribed(wh.(*webhook), testInstance1.InstanceID)

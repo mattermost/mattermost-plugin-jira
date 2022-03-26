@@ -46,11 +46,12 @@ type webhook struct {
 }
 
 type webhookUserNotification struct {
-	jiraUsername  string
-	jiraAccountID string
-	message       string
-	postType      string
-	commentSelf   string
+	jiraUsername     string
+	jiraAccountID    string
+	message          string
+	postType         string
+	commentSelf      string
+	notificationType string
 }
 
 func (wh *webhook) Events() StringSet {
@@ -138,6 +139,24 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		// If this is a comment-related webhook, we need to check if they have permissions to read that.
 		// Otherwise, check if they can view the issue.
 
+		switch notification.notificationType {
+		case "assignee":
+			if !c.Settings.ShouldReceiveNotificationsForAssignee() {
+				continue
+			}
+		case "mention":
+			if !c.Settings.ShouldReceiveNotificationsForMention() {
+				continue
+			}
+		case "reporter":
+			if !c.Settings.ShouldReceiveNotificationsForReporter() {
+				continue
+			}
+		case "watching":
+			if !c.Settings.ShouldReceiveNotificationsForWatching() {
+				continue
+			}
+		}
 		isCommentEvent := wh.Events().Intersection(commentEvents).Len() > 0
 		if isCommentEvent {
 			err = client.RESTGet(notification.commentSelf, nil, &struct{}{})

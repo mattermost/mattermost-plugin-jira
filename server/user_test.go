@@ -25,7 +25,7 @@ func TestUserSettings_String(t *testing.T) {
 				SendNotificationsForReporter: nil,
 				SendNotificationsForWatching: nil,
 			},
-			expectedOutput: "\tNotifications Status:\n\t- Notifications for assignee: on \n\t- Notifications for mention: on \n\t- Notifications for reporter: on \n\t- Notifications for watching: on",
+			expectedOutput: "\t- Notifications for assignee: on \n\t- Notifications for mention: on \n\t- Notifications for reporter: on \n\t- Notifications for watching: on",
 		},
 		"notifications off": {
 			settings: ConnectionSettings{
@@ -35,7 +35,7 @@ func TestUserSettings_String(t *testing.T) {
 				SendNotificationsForReporter: nil,
 				SendNotificationsForWatching: nil,
 			},
-			expectedOutput: "\tNotifications Status:\n\t- Notifications for assignee: off \n\t- Notifications for mention: off \n\t- Notifications for reporter: off \n\t- Notifications for watching: off",
+			expectedOutput: "\t- Notifications for assignee: off \n\t- Notifications for mention: off \n\t- Notifications for reporter: off \n\t- Notifications for watching: off",
 		},
 	}
 	for name, tt := range tests {

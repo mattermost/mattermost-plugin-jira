@@ -13,14 +13,12 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
-
 	"github.com/mattermost/mattermost-server/v6/model"
 )
 
 var webhookWrapperFunc func(wh Webhook) Webhook
 
-func ParseWebhook(bb []byte, p *Plugin, instanceID types.ID) (wh Webhook, err error) {
+func ParseWebhook(bb []byte) (wh Webhook, err error) {
 	defer func() {
 		if err == nil || err == ErrWebhookIgnored {
 			return
@@ -53,28 +51,28 @@ func ParseWebhook(bb []byte, p *Plugin, instanceID types.ID) (wh Webhook, err er
 
 	switch jwh.WebhookEvent {
 	case "jira:issue_created":
-		wh = parseWebhookCreated(jwh, p, instanceID)
+		wh = parseWebhookCreated(jwh)
 	case "jira:issue_deleted":
 		wh = parseWebhookDeleted(jwh)
 	case "jira:issue_updated":
 		switch jwh.IssueEventTypeName {
 		case "issue_assigned":
-			wh = parseWebhookAssigned(jwh, p, instanceID, jwh.ChangeLog.Items[0].FromString, jwh.ChangeLog.Items[0].ToString)
+			wh = parseWebhookAssigned(jwh, jwh.ChangeLog.Items[0].FromString, jwh.ChangeLog.Items[0].ToString)
 		case "issue_updated", "issue_generic", "issue_resolved", "issue_closed", "issue_work_started", "issue_reopened":
-			wh = parseWebhookChangeLog(jwh, p, instanceID)
+			wh = parseWebhookChangeLog(jwh)
 		case "issue_commented":
-			wh, err = parseWebhookCommentCreated(jwh, instanceID, p)
+			wh, err = parseWebhookCommentCreated(jwh)
 		case "issue_comment_edited":
-			wh, err = parseWebhookCommentUpdated(jwh, p, instanceID)
+			wh, err = parseWebhookCommentUpdated(jwh)
 		case "issue_comment_deleted":
 			wh, err = parseWebhookCommentDeleted(jwh)
 		default:
-			wh, err = parseWebhookUnspecified(jwh, p, instanceID)
+			wh, err = parseWebhookUnspecified(jwh)
 		}
 	case commentCreated:
-		wh, err = parseWebhookCommentCreated(jwh, instanceID, p)
+		wh, err = parseWebhookCommentCreated(jwh)
 	case commentUpdated:
-		wh, err = parseWebhookCommentUpdated(jwh, p, instanceID)
+		wh, err = parseWebhookCommentUpdated(jwh)
 	case commentDeleted:
 		wh, err = parseWebhookCommentDeleted(jwh)
 	default:
@@ -94,22 +92,22 @@ func ParseWebhook(bb []byte, p *Plugin, instanceID types.ID) (wh Webhook, err er
 	return wh, nil
 }
 
-func parseWebhookUnspecified(jwh *JiraWebhook, p *Plugin, instanceID types.ID) (Webhook, error) {
+func parseWebhookUnspecified(jwh *JiraWebhook) (Webhook, error) {
 	if len(jwh.ChangeLog.Items) > 0 {
-		return parseWebhookChangeLog(jwh, p, instanceID), nil
+		return parseWebhookChangeLog(jwh), nil
 	}
 
 	if jwh.Comment.ID != "" {
 		if jwh.Comment.Updated == jwh.Comment.Created {
-			return parseWebhookCommentCreated(jwh, instanceID, p)
+			return parseWebhookCommentCreated(jwh)
 		}
-		return parseWebhookCommentUpdated(jwh, p, instanceID)
+		return parseWebhookCommentUpdated(jwh)
 	}
 
 	return nil, errors.Errorf("Unsupported webhook event: %v", jwh.WebhookEvent)
 }
 
-func parseWebhookChangeLog(jwh *JiraWebhook, p *Plugin, instanceID types.ID) Webhook {
+func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 	var events []*webhook
 	for _, item := range jwh.ChangeLog.Items {
 		field := item.Field
@@ -152,7 +150,7 @@ func parseWebhookChangeLog(jwh *JiraWebhook, p *Plugin, instanceID types.ID) Web
 		case field == labelsField:
 			event = parseWebhookUpdatedLabels(jwh, from, to, fromWithDefault, toWithDefault)
 		case field == "assignee":
-			event = parseWebhookAssigned(jwh, p, instanceID, from, to)
+			event = parseWebhookAssigned(jwh, from, to)
 		case field == "issuetype":
 			event = parseWebhookUpdatedField(jwh, eventUpdatedIssuetype, field, fieldID, fromWithDefault, toWithDefault)
 		case field == "Fix Version":
@@ -183,7 +181,7 @@ func parseWebhookChangeLog(jwh *JiraWebhook, p *Plugin, instanceID types.ID) Web
 	}
 }
 
-func parseWebhookCreated(jwh *JiraWebhook, p *Plugin, instanceID types.ID) Webhook {
+func parseWebhookCreated(jwh *JiraWebhook) Webhook {
 	wh := newWebhook(jwh, eventCreated, "**created**")
 	wh.text = jwh.mdIssueDescription()
 
@@ -210,7 +208,7 @@ func parseWebhookCreated(jwh *JiraWebhook, p *Plugin, instanceID types.ID) Webho
 		wh.fields = fields
 	}
 
-	appendNotificationForAssignee(wh, p, instanceID)
+	appendNotificationForAssignee(wh)
 
 	return wh
 }
@@ -223,7 +221,7 @@ func parseWebhookDeleted(jwh *JiraWebhook) Webhook {
 	return wh
 }
 
-func parseWebhookCommentCreated(jwh *JiraWebhook, instanceID types.ID, p *Plugin) (Webhook, error) {
+func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 	// The "comment_xxx" events from Jira Server come incomplete,
 	// i.e. with just minimal metadata. We toss them out since they
 	// are rather useless for our use case. Instead the Jira server
@@ -244,13 +242,13 @@ func parseWebhookCommentCreated(jwh *JiraWebhook, instanceID types.ID, p *Plugin
 		text:        truncate(quoteIssueComment(jwh.Comment.Body), 3000),
 	}
 
-	appendCommentNotifications(wh, instanceID, p, "**mentioned** you in a new comment on")
+	appendCommentNotifications(wh, "**mentioned** you in a new comment on")
 
 	return wh, nil
 }
 
 // appendCommentNotifications modifies wh
-func appendCommentNotifications(wh *webhook, instanceID types.ID, p *Plugin, verb string) {
+func appendCommentNotifications(wh *webhook, verb string) {
 	jwh := wh.JiraWebhook
 	commentAuthor := mdUser(&jwh.Comment.UpdateAuthor)
 
@@ -276,20 +274,16 @@ func appendCommentNotifications(wh *webhook, instanceID types.ID, p *Plugin, ver
 		}
 
 		notification := webhookUserNotification{
-			message:     message,
-			postType:    PostTypeMention,
-			commentSelf: jwh.Comment.Self,
+			message:          message,
+			postType:         PostTypeMention,
+			commentSelf:      jwh.Comment.Self,
+			notificationType: "mention",
 		}
 
 		if isAccountID {
 			notification.jiraAccountID = u
 		} else {
 			notification.jiraUsername = u
-		}
-
-		c, err := p.GetUserSetting(wh, instanceID, notification.jiraUsername, notification.jiraAccountID)
-		if err != nil || c.Settings == nil || !c.Settings.ShouldReceiveNotificationsForMention() {
-			continue
 		}
 
 		wh.notifications = append(wh.notifications, notification)
@@ -304,17 +298,13 @@ func appendCommentNotifications(wh *webhook, instanceID types.ID, p *Plugin, ver
 		return
 	}
 
-	c, err := p.GetUserSetting(wh, instanceID, jwh.Issue.Fields.Assignee.Name, jwh.Issue.Fields.Assignee.AccountID)
-	if err != nil || c.Settings == nil || !c.Settings.ShouldReceiveNotificationsForAssignee() {
-		return
-	}
-
 	wh.notifications = append(wh.notifications, webhookUserNotification{
-		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
-		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
-		message:       fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
-		postType:      PostTypeComment,
-		commentSelf:   jwh.Comment.Self,
+		jiraUsername:     jwh.Issue.Fields.Assignee.Name,
+		jiraAccountID:    jwh.Issue.Fields.Assignee.AccountID,
+		message:          fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
+		postType:         PostTypeComment,
+		commentSelf:      jwh.Comment.Self,
+		notificationType: "assignee",
 	})
 }
 
@@ -345,7 +335,7 @@ func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
 	}, nil
 }
 
-func parseWebhookCommentUpdated(jwh *JiraWebhook, p *Plugin, instanceID types.ID) (Webhook, error) {
+func parseWebhookCommentUpdated(jwh *JiraWebhook) (Webhook, error) {
 	if jwh.Issue.ID == "" {
 		return nil, ErrWebhookIgnored
 	}
@@ -360,7 +350,7 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook, p *Plugin, instanceID types.ID
 	return wh, nil
 }
 
-func parseWebhookAssigned(jwh *JiraWebhook, p *Plugin, instanceID types.ID, from, to string) *webhook {
+func parseWebhookAssigned(jwh *JiraWebhook, from, to string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedAssignee, "**assigned** %s to", jwh.mdIssueAssignee())
 	fromFixed := from
 	if fromFixed == "" {
@@ -372,13 +362,13 @@ func parseWebhookAssigned(jwh *JiraWebhook, p *Plugin, instanceID types.ID, from
 	}
 	wh.fieldInfo = webhookField{"assignee", "assignee", fromFixed, toFixed}
 
-	appendNotificationForAssignee(wh, p, instanceID)
+	appendNotificationForAssignee(wh)
 
 	return wh
 }
 
 // appendNotificationForAssignee modifies wh
-func appendNotificationForAssignee(wh *webhook, p *Plugin, instanceID types.ID) {
+func appendNotificationForAssignee(wh *webhook) {
 	jwh := wh.JiraWebhook
 	if jwh.Issue.Fields.Assignee == nil {
 		return
@@ -390,15 +380,11 @@ func appendNotificationForAssignee(wh *webhook, p *Plugin, instanceID types.ID) 
 		return
 	}
 
-	c, err := p.GetUserSetting(wh, instanceID, jwh.Issue.Fields.Assignee.Name, jwh.Issue.Fields.Assignee.AccountID)
-	if err != nil || c.Settings == nil || !c.Settings.ShouldReceiveNotificationsForAssignee() {
-		return
-	}
-
 	wh.notifications = append(wh.notifications, webhookUserNotification{
-		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
-		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
-		message:       fmt.Sprintf("%s **assigned** you to %s", jwh.mdUser(), jwh.mdKeySummaryLink()),
+		jiraUsername:     jwh.Issue.Fields.Assignee.Name,
+		jiraAccountID:    jwh.Issue.Fields.Assignee.AccountID,
+		message:          fmt.Sprintf("%s **assigned** you to %s", jwh.mdUser(), jwh.mdKeySummaryLink()),
+		notificationType: "assignee",
 	})
 }
 

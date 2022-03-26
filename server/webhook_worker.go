@@ -35,7 +35,7 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 		}
 	}()
 
-	wh, err := ParseWebhook(msg.Data, ww.p, msg.InstanceID)
+	wh, err := ParseWebhook(msg.Data)
 	if err != nil {
 		return err
 	}
