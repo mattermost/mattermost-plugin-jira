@@ -140,19 +140,19 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		// Otherwise, check if they can view the issue.
 
 		switch notification.notificationType {
-		case "assignee":
+		case subCommandAssignee:
 			if !c.Settings.ShouldReceiveNotificationsForAssignee() {
 				continue
 			}
-		case "mention":
+		case subCommandMention:
 			if !c.Settings.ShouldReceiveNotificationsForMention() {
 				continue
 			}
-		case "reporter":
+		case subCommandReporter:
 			if !c.Settings.ShouldReceiveNotificationsForReporter() {
 				continue
 			}
-		case "watching":
+		case subCommandWatching:
 			if !c.Settings.ShouldReceiveNotificationsForWatching() {
 				continue
 			}
