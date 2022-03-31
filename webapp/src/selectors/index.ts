@@ -13,7 +13,7 @@ const getPluginState = (state) => state['plugins-' + PluginId] || {};
 
 export const getPluginServerRoute = (state) => {
     const config = getConfig(state);
-    
+
     let basePath = '';
     let finalPath = '';
 
