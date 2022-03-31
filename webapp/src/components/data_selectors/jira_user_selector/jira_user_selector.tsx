@@ -9,7 +9,7 @@ import BackendSelector, {Props as BackendSelectorProps} from '../backend_selecto
 
 type Props = BackendSelectorProps & {
     projectKey: string;
-    searchUsers: (params: {project: string; q: string}) => Promise<{data: JiraUser[]; error?: Error}>;
+    searchUsers: (params: {project: string; q: string}) => Promise<{data: { label: string, value: JiraUser[] }; error?: Error}>;
 };
 
 export default class JiraUserSelector extends React.PureComponent<Props> {
