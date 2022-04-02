@@ -195,8 +195,8 @@ const channelSubscriptions = (state = {}, action) => {
 
 const getIssueByKey = (state = {}, action) => {
     switch (action.type) {
-    case ActionTypes.RECEIVED_JIRA_TICKETS :
-        const  assignee = action.data && action.data.fields && action.data.fields.assignee ? action.data.fields.assignee : null;
+    case ActionTypes.RECEIVED_JIRA_TICKETS : {
+        const assignee = action.data && action.data.fields && action.data.fields.assignee ? action.data.fields.assignee : null;
         const ticketData = action.data;
         return {
             ...state,
@@ -212,6 +212,7 @@ const getIssueByKey = (state = {}, action) => {
             statusKey: ticketData.fields.status.name,
             issueIcon: ticketData.fields.issuetype.iconUrl,
         };
+    };
     case ActionTypes.RECEIVED_JIRA_TICKETS_ERROR :
         return {
             ...state,
