@@ -212,7 +212,7 @@ const getIssueByKey = (state = {}, action) => {
             statusKey: ticketData.fields.status.name,
             issueIcon: ticketData.fields.issuetype.iconUrl,
         };
-    };
+    }
     case ActionTypes.RECEIVED_JIRA_TICKETS_ERROR :
         return {
             ...state,
