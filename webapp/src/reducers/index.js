@@ -194,10 +194,10 @@ const channelSubscriptions = (state = {}, action) => {
 };
 
 const getIssueByKey = (state = {}, action) => {
-    const assignee = action.data.fields.assignee;
-    const ticketData = action.data;
     switch (action.type) {
     case ActionTypes.RECEIVED_JIRA_TICKETS :
+        const  assignee = action.data && action.data.fields && action.data.fields.assignee ? action.data.fields.assignee : null;
+        const ticketData = action.data;
         return {
             ...state,
             isloaded: true,

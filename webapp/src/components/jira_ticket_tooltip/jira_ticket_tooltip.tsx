@@ -200,7 +200,7 @@ export default class TicketPopover extends React.PureComponent<Props> {
         const jiraTicketDescription = this.state.description;
         const jiraTicketVersions = this.state.versions;
         const jiraTicketLabels = this.state.labels;
-        const isAssigned = 'is assigned';
+        const isAssigned = ' is assigned';
         const unAssigned = 'Unassigned';
         return (
             <div className={'ticket-popover'}>
