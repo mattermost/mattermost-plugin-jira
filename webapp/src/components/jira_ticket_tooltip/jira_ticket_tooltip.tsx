@@ -133,9 +133,8 @@ export default class TicketPopover extends React.PureComponent<Props> {
             fontWeight: 600,
             fontSize: '12px',
             marginTop: '10px',
-            padding: '0px 8px',
+            padding: '4px 8px',
             align: 'center',
-            height: 20,
             marginBottom: '8px',
             borderRadius: '4px',
         };

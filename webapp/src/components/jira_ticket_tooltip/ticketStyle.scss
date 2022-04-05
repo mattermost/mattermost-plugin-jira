@@ -10,6 +10,7 @@
     background: #FFFFFF;
     border: 1px solid rgba(63, 67, 80, 0.16);
     border-radius: 4px;
+    box-shadow: 0px 12px 32px 0 rgba(0, 0 ,0, 0.12);
 }
 
 .ticket-popover-keyword:hover {
@@ -33,10 +34,12 @@
 
 .ticket-popover-header-avatar {
     background-color: #282c34;
-    width: 18px;
+    width: 20px;
     position: absolute;
     margin-left: 300px;
-    height: 18px;
+    right: 24px;
+    top: 24px;
+    height: 20px;
     border-radius: 50px;
 }
 
@@ -56,7 +59,6 @@
 .ticket-popover-keyword > span {
     position: static;
     font-style: normal;
-    font-family: Metropolis, system-ui;
     font-weight: normal;
     line-height: 12px;
     color: rgba(63, 67, 80, 0.72);
@@ -93,6 +95,8 @@
     flex-grow: 1;
     color: #3F4350;
     text-decoration: none;
+    font-weight: 600;
+    font-size: 16px;    
 }
 
 .ticket-popover-title > a > h5 {
@@ -107,8 +111,8 @@
     font-style: normal;
     overflow: hidden;
     font-weight: normal;
-    max-height: 200px;
-    margin: 0px 24px;
+    max-height: 50px;
+    margin: 0px 24px 8px 24px;
     font-size: 12px;
     line-height: 1.5;
     width:300px;
@@ -168,6 +172,8 @@
     font-size: 10px;
     font-weight: 600;
     margin: 5px 5px 5px 0px;
-    padding: 0px 8px;
+    padding: 0px 4px;
     background: rgba(63, 67, 80, 0.08);
+    border-radius: 2px;
+    line-height: 16px;
 }
