@@ -5,10 +5,10 @@ import {Instance, GetConnectedResponse} from 'types/model';
 
 export type Props = {
     href: string;
-    show:boolean;
+    show: boolean;
     connected: boolean;
     isloaded?: boolean;
-    ticketDetails:any;
+    ticketDetails: any;
     defaultUserInstanceID?: string;
     connectedInstances: Instance[];
     getIssueByKey: (ticketId: string, instanceID: string) => Promise<{data: any; error?: Error}>;
@@ -58,32 +58,31 @@ export default class TicketPopover extends React.PureComponent<Props> {
         }
 
         let ticketID = '';
-        let ticketData = null ;
         if (this.props.href.includes('selectedIssue')) {
             ticketID = this.props.href.split('selectedIssue=')[1].split('&')[0];
-            this.props.getIssueByKey(ticketID, instanceID).then(({data,error})=>{
-                if (error){
-                    return
+            this.props.getIssueByKey(ticketID, instanceID).then(({data, error}) => {
+                if (error) {
+                    return;
                 }
 
-                this.setTicket(data)
+                this.setTicket(data);
             });
         }
 
         if (ticketID === '' && this.props.href.includes('atlassian.net/browse')) {
-            this.props.getIssueByKey(this.props.href.split('|')[0].split('?')[0].split('/browse/')[1], instanceID).then(({data,error})=>{
-                if (error){
-                    return
+            this.props.getIssueByKey(this.props.href.split('|')[0].split('?')[0].split('/browse/')[1], instanceID).then(({data, error}) => {
+                if (error) {
+                    return;
                 }
 
-                this.setTicket(data)
+                this.setTicket(data);
             });
         }
     }
 
-    componentDidUpdate(prevProps:Props): void {
-        if (!this.props.connected){
-            return
+    componentDidUpdate(prevProps: Props): void {
+        if (!this.props.connected) {
+            return;
         }
 
         if (!(this.props.show && !prevProps.show)) {
@@ -93,14 +92,14 @@ export default class TicketPopover extends React.PureComponent<Props> {
         if (this.state.isLoaded) {
             return;
         }
-    
+
         this.init();
     }
 
-    setTicket(ticketDetails:any): void{
+    setTicket(data: any): void{
         this.setState({
             isloaded: true,
-            ticketDetails:ticketDetails,
+            ticketDetails: data,
         });
     }
 
@@ -204,12 +203,12 @@ export default class TicketPopover extends React.PureComponent<Props> {
         const unAssigned = 'Unassigned';
         const Tippy = window.Tippy.default;
 
-        const Tooltip = ({ children, ...rest }) => <Tippy {...rest}>{children}</Tippy>;
+        const Tooltip = ({children, ...rest}) => <Tippy {...rest}>{children}</Tippy>;
         Tooltip.defaultProps = {
-          animation: "fade",
-          arrow: true
+            animation: 'fade',
+            arrow: true,
         };
-        
+
         return (
             <Tippy >
                 <div className={'ticket-popover'}>

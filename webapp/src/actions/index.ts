@@ -517,18 +517,15 @@ export function sendEphemeralPost(message: string, channelId?: string) {
     };
 }
 
-
-export const getIssueByKey = (issueKey:string, instanceID:string) => {
+export const getIssueByKey = (issueKey: string, instanceID: string) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         const params = `issue_key=${issueKey}&instance_id=${instanceID}`;
-        console.log(baseUrl ,"baseUrl ========")
         let data = null;
         try {
             data = await doFetch(`${baseUrl}/api/v2/get-issue-by-key?${params}`, {
                 method: 'get',
             });
-            console.log("data ======",data)
         } catch (error) {
             return {error};
         }
@@ -538,5 +535,5 @@ export const getIssueByKey = (issueKey:string, instanceID:string) => {
         }
 
         return {data};
-    }
+    };
 };
