@@ -13,20 +13,21 @@ const getPluginState = (state) => state['plugins-' + PluginId] || {};
 
 export const getPluginServerRoute = (state) => {
     const config = getConfig(state);
-
     let basePath = '';
-    let finalPath = '';
+    let url;
 
     if (config && config.SiteURL) {
-        basePath = new URL(config.SiteURL).pathname;
-        if (basePath && basePath[basePath.length - 1] === '/') {
-            basePath = basePath.substr(0, basePath.length - 1);
-        }
-        const origin = new URL(config.SiteURL).origin;
-
-        finalPath = `${origin}${basePath}/plugins/${PluginId}`;
+        url = new URL(config.SiteURL);
+    } else {
+        url = new URL(window.location.href);
     }
-    return finalPath;
+    
+    basePath = url.pathname;
+    if (basePath && basePath[basePath.length - 1] === '/') {
+        basePath = basePath.substr(0, basePath.length - 1);
+    }
+
+    return `${url.origin}${basePath}/plugins/${PluginId}`;
 };
 
 export const getCurrentUserLocale = createSelector(
