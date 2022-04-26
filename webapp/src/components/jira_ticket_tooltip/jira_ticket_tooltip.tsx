@@ -1,4 +1,4 @@
-import React, {Fragment, PureComponent} from 'react';
+import React, {Fragment, PureComponent,Component} from 'react';
 import './ticketStyle.scss';
 
 import {Instance, GetConnectedResponse} from 'types/model';
@@ -8,13 +8,20 @@ export type Props = {
     show: boolean;
     connected: boolean;
     isloaded?: boolean;
-    ticketDetails: any;
+    ticketDetails?: any;
     defaultUserInstanceID?: string;
     connectedInstances: Instance[];
     getIssueByKey: (ticketId: string, instanceID: string) => Promise<{data: any; error?: Error}>;
     setTicket?: (ticketDetails: {}) => void;
 }
-export default class TicketPopover extends React.PureComponent<Props> {
+
+export type  State = {
+    href: string;
+    isloaded: boolean,
+    ticketId: string,
+    ticketDetails?: any;
+};
+export default class TicketPopover extends React.PureComponent<Props,State> {
     truncateString(str: string, num: number) {
         if (num > str.length) {
             return str;
@@ -36,16 +43,7 @@ export default class TicketPopover extends React.PureComponent<Props> {
         this.state = {
             href: this.props.href,
             isloaded: false,
-            assigneeName: '',
-            assigneeAvatar: '',
-            labels: '',
-            versions: '',
-            description: '',
-            summary: '',
             ticketId: ticketID,
-            jiraIcon: '',
-            statusKey: '',
-            issueIcon: '',
         };
     }
 
@@ -80,7 +78,8 @@ export default class TicketPopover extends React.PureComponent<Props> {
         }
     }
 
-    componentDidUpdate(prevProps: Props): void {
+    componentDidUpdate(prevProps: Props,prevState:State): void {
+        console.log("=========== componentDidUpdate =============")
         if (!this.props.connected) {
             return;
         }
@@ -94,6 +93,10 @@ export default class TicketPopover extends React.PureComponent<Props> {
         }
 
         this.init();
+    }
+
+    componentDidMount(){
+        console.log(this.props,"=== state")
     }
 
     setTicket(data: any): void{
@@ -210,7 +213,7 @@ export default class TicketPopover extends React.PureComponent<Props> {
         };
 
         return (
-            <Tippy >
+            <Tippy arrow={true} >
                 <div className={'ticket-popover'}>
                     <div className={'ticket-popover-header'}>
                         <div className={'ticket-popover-header-container'}>
