@@ -209,11 +209,11 @@ const getIssueByKey = (state = {}, action) => {
             versions: ticketData.fields.versions.lenght > 0 ? ticketData.fields.versions.versions[0] : '',
             statusKey: ticketData.fields.status.name,
             issueIcon: ticketData.fields.issuetype.iconUrl,
-        }
+        };
         return {
             ...state,
             isLoaded: true,
-            ticketDetails: ticketDetails,
+            ticketDetails,
         };
     }
     case ActionTypes.RECEIVED_JIRA_TICKETS_ERROR :

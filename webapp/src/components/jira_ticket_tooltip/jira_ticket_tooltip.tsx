@@ -15,14 +15,13 @@ export type Props = {
     setTicket?: (ticketDetails: {}) => void;
 }
 
-export type  State = {
+export type State = {
     href: string;
-    isLoaded: boolean,
-    ticketId: string,
+    isLoaded: boolean;
+    ticketId: string;
     ticketDetails?: any;
-
 };
-export default class TicketPopover extends React.PureComponent<Props,State> {
+export default class TicketPopover extends React.PureComponent<Props, State> {
     truncateString(str: string, num: number) {
         if (num > str.length) {
             return str;
@@ -68,10 +67,10 @@ export default class TicketPopover extends React.PureComponent<Props,State> {
     }
 
     componentDidMount() {
-        if (this.props.connected && !this.state.isLoaded && ((this.props.ticketDetails && this.props.ticketDetails.ticketId !== this.state.ticketId ) || !this.props.isLoaded)) {
+        if (this.props.connected && !this.state.isLoaded && ((this.props.ticketDetails && this.props.ticketDetails.ticketId !== this.state.ticketId) || !this.props.isLoaded)) {
             this.init();
-        }else if (this.props.connected && !this.state.isLoaded && this.props.ticketDetails && this.props.ticketDetails.ticketId === this.state.ticketId ){
-            this.setTicket(this.props)
+        } else if (this.props.connected && !this.state.isLoaded && this.props.ticketDetails && this.props.ticketDetails.ticketId === this.state.ticketId) {
+            this.setTicket(this.props);
         }
     }
 
@@ -166,7 +165,6 @@ export default class TicketPopover extends React.PureComponent<Props,State> {
         }
         return null;
     }
-
 
     render() {
         if (!this.state.isLoaded) {

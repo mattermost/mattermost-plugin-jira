@@ -10,8 +10,8 @@ import TicketPopover from './jira_ticket_tooltip';
 const mapStateToProps = (state) => {
     return {
         connected: isUserConnected(state),
-        ticketDetails:getIssue(state).ticketDetails,
-        isLoaded:getIssue(state).isLoaded,
+        ticketDetails: getIssue(state).ticketDetails,
+        isLoaded: getIssue(state).isLoaded,
         defaultUserInstanceID: getDefaultUserInstanceID(state),
         connectedInstances: getUserConnectedInstances(state),
     };
