@@ -363,7 +363,7 @@ func (p *Plugin) AddAutolinks(keys []string, baseURL string) error {
 		{
 			Name:     "Jump to comment for " + baseURL,
 			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(?P<project_id>\w+)(-)(?P<jira_id>\d+)[?](focusedCommentId)(=)(?P<comment_id>\d+)`,
-			Template: `[${project_id}-${jira_id} With Comment #${comment_id}](` + baseURL + `/browse/${project_id}-${jira_id}?focusedCommentId=${comment_id})`,
+			Template: `[${project_id}-${jira_id} (comment)](` + baseURL + `/browse/${project_id}-${jira_id}?focusedCommentId=${comment_id})`,
 		},
 		{
 			Name:     "Link to key for " + baseURL,
