@@ -1,4 +1,4 @@
-import React, {Fragment, PureComponent,Component} from 'react';
+import React from 'react';
 import './ticketStyle.scss';
 
 import {Instance, GetConnectedResponse} from 'types/model';
@@ -7,7 +7,7 @@ export type Props = {
     href: string;
     show: boolean;
     connected: boolean;
-    isloaded?: boolean;
+    isLoaded?: boolean;
     ticketDetails?: any;
     defaultUserInstanceID?: string;
     connectedInstances: Instance[];
@@ -17,9 +17,10 @@ export type Props = {
 
 export type  State = {
     href: string;
-    isloaded: boolean,
+    isLoaded: boolean,
     ticketId: string,
     ticketDetails?: any;
+
 };
 export default class TicketPopover extends React.PureComponent<Props,State> {
     truncateString(str: string, num: number) {
@@ -42,7 +43,7 @@ export default class TicketPopover extends React.PureComponent<Props,State> {
 
         this.state = {
             href: this.props.href,
-            isloaded: false,
+            isLoaded: false,
             ticketId: ticketID,
         };
     }
@@ -58,51 +59,32 @@ export default class TicketPopover extends React.PureComponent<Props,State> {
         let ticketID = '';
         if (this.props.href.includes('selectedIssue')) {
             ticketID = this.props.href.split('selectedIssue=')[1].split('&')[0];
-            this.props.getIssueByKey(ticketID, instanceID).then(({data, error}) => {
-                if (error) {
-                    return;
-                }
-
-                this.setTicket(data);
-            });
+            this.props.getIssueByKey(ticketID, instanceID);
         }
 
         if (ticketID === '' && this.props.href.includes('atlassian.net/browse')) {
-            this.props.getIssueByKey(this.props.href.split('|')[0].split('?')[0].split('/browse/')[1], instanceID).then(({data, error}) => {
-                if (error) {
-                    return;
-                }
-
-                this.setTicket(data);
-            });
+            this.props.getIssueByKey(this.props.href.split('|')[0].split('?')[0].split('/browse/')[1], instanceID);
         }
     }
 
-    componentDidUpdate(prevProps: Props,prevState:State): void {
-        console.log("=========== componentDidUpdate =============")
-        if (!this.props.connected) {
-            return;
+    componentDidMount() {
+        if (this.props.connected && !this.state.isLoaded && ((this.props.ticketDetails && this.props.ticketDetails.ticketId !== this.state.ticketId ) || !this.props.isLoaded)) {
+            this.init();
+        }else if (this.props.connected && !this.state.isLoaded && this.props.ticketDetails && this.props.ticketDetails.ticketId === this.state.ticketId ){
+            this.setTicket(this.props)
         }
-
-        if (!(this.props.show && !prevProps.show)) {
-            return;
-        }
-
-        if (this.state.isLoaded) {
-            return;
-        }
-
-        this.init();
     }
 
-    componentDidMount(){
-        console.log(this.props,"=== state")
+    componentDidUpdate(): void {
+        if (this.props.isLoaded && !this.state.isLoaded && this.props.ticketDetails.ticketId === this.state.ticketId) {
+            this.setTicket(this.props);
+        }
     }
 
     setTicket(data: any): void{
         this.setState({
-            isloaded: true,
-            ticketDetails: data,
+            isLoaded: true,
+            ticketDetails: data.ticketDetails,
         });
     }
 
@@ -185,23 +167,23 @@ export default class TicketPopover extends React.PureComponent<Props,State> {
         return null;
     }
 
+
     render() {
-        if (!this.state.isloaded) {
+        if (!this.state.isLoaded) {
             return (<p/>);
         }
         const ticketDetails = this.state.ticketDetails;
-        const assignee = ticketDetails && ticketDetails.fields && ticketDetails.fields.assignee ? ticketDetails.fields.assignee : null;
         const jiraTicketURI = this.state.href;
-        const jiraAvatar = ticketDetails.fields.project.avatarUrls['48x48'];
-        const jiraIssueIconURI = ticketDetails.fields.issuetype.iconUrl;
+        const jiraAvatar = ticketDetails.jiraIcon;
+        const jiraIssueIconURI = ticketDetails.issueIcon;
         const jiraTicketKey = ticketDetails.key;
-        const jiraTicketTitle = ticketDetails.fields.summary;
-        const jiraTicketAssigneeAvatarURI = assignee && assignee.avatarUrls && assignee.avatarUrls['48x48'] ? assignee.avatarUrls['48x48'] : '';
-        const jiraTicketAssigneeName = assignee && assignee.displayName ? assignee.displayName : '';
-        const jiraTicketStatusName = ticketDetails.fields.status.name;
-        const jiraTicketDescription = ticketDetails.fields.description;
-        const jiraTicketVersions = ticketDetails.fields.versions.lenght > 0 ? ticketDetails.fields.versions.versions[0] : '';
-        const jiraTicketLabels = ticketDetails.fields.labels;
+        const jiraTicketTitle = ticketDetails.summary;
+        const jiraTicketAssigneeAvatarURI = ticketDetails.assigneeAvatar;
+        const jiraTicketAssigneeName = ticketDetails.assigneeName;
+        const jiraTicketStatusName = ticketDetails.statusKey;
+        const jiraTicketDescription = ticketDetails.description;
+        const jiraTicketVersions = ticketDetails.versions;
+        const jiraTicketLabels = ticketDetails.labels;
         const isAssigned = ' is assigned';
         const unAssigned = 'Unassigned';
         const Tippy = window.Tippy.default;

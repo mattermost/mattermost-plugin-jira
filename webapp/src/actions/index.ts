@@ -520,20 +520,31 @@ export function sendEphemeralPost(message: string, channelId?: string) {
 export const getIssueByKey = (issueKey: string, instanceID: string) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
-        const params = `issue_key=${issueKey}&instance_id=${instanceID}`;
         let data = null;
+        const params = `issue_key=${issueKey}&instance_id=${instanceID}`;
         try {
             data = await doFetch(`${baseUrl}/api/v2/get-issue-by-key?${params}`, {
                 method: 'get',
             });
+            if (data.error) {
+                const err = new Error(data.error);
+                dispatch({
+                    type: ActionTypes.RECEIVED_JIRA_TICKETS_ERROR,
+                    error: err,
+                });
+                return {data};
+            }
+            dispatch({
+                type: ActionTypes.RECEIVED_JIRA_TICKETS,
+                data,
+            });
+            return {data};
         } catch (error) {
+            dispatch({
+                type: ActionTypes.RECEIVED_JIRA_TICKETS_ERROR,
+                error,
+            });
             return {error};
         }
-
-        if (data.error) {
-            return {error: new Error(data.error)};
-        }
-
-        return {data};
     };
 };
