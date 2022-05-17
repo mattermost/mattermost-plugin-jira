@@ -15,6 +15,7 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
+	"github.com/trivago/tgo/tcontainer"
 
 	"github.com/mattermost/mattermost-server/v6/model"
 
@@ -141,24 +142,28 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		return false
 	}
 
-	if filters.IssueTypes.Len() != 0 && !filters.IssueTypes.ContainsAny(wh.JiraWebhook.Issue.Fields.Type.ID) {
+	issue := &wh.JiraWebhook.Issue
+
+	if filters.IssueTypes.Len() != 0 && !filters.IssueTypes.ContainsAny(issue.Fields.Type.ID) {
 		return false
 	}
 
-	if filters.Projects.Len() != 0 && !filters.Projects.ContainsAny(wh.JiraWebhook.Issue.Fields.Project.Key) {
+	if filters.Projects.Len() != 0 && !filters.Projects.ContainsAny(issue.Fields.Project.Key) {
 		return false
 	}
 
-	validFilter := true
-
+	containsSecurityLevelFilter := false
 	for _, field := range filters.Fields {
 		// Broken filter, values must be provided
 		if field.Inclusion == "" || (field.Values.Len() == 0 && field.Inclusion != FilterEmpty) {
-			validFilter = false
-			break
+			return false
 		}
 
-		value := getIssueFieldValue(&wh.JiraWebhook.Issue, field.Key)
+		if field.Key == securityLevelField {
+			containsSecurityLevelFilter = true
+		}
+
+		value := getIssueFieldValue(issue, field.Key)
 		containsAny := value.ContainsAny(field.Values.Elems()...)
 		containsAll := value.ContainsAll(field.Values.Elems()...)
 
@@ -166,12 +171,18 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 			(field.Inclusion == FilterIncludeAll && !containsAll) ||
 			(field.Inclusion == FilterExcludeAny && containsAny) ||
 			(field.Inclusion == FilterEmpty && value.Len() > 0) {
-			validFilter = false
-			break
+			return false
 		}
 	}
 
-	return validFilter
+	if !containsSecurityLevelFilter {
+		securityLevel := getIssueFieldValue(issue, securityLevelField)
+		if securityLevel.Len() > 0 {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) ([]ChannelSubscription, error) {

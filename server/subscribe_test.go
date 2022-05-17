@@ -19,6 +19,171 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestValidateSubscription(t *testing.T) {
+	p := &Plugin{}
+
+	p.instanceStore = p.getMockInstanceStoreKV(0)
+
+	api := &plugintest.API{}
+	p.SetAPI(api)
+
+	for name, tc := range map[string]struct {
+		subscription *ChannelSubscription
+		errorMessage string
+	}{
+		"no event selected": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet(),
+					Projects:   NewStringSet("project"),
+					IssueTypes: NewStringSet("10001"),
+				},
+			},
+			errorMessage: "please provide at least one event type",
+		},
+		"no project selected": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet(),
+					IssueTypes: NewStringSet("10001"),
+				},
+			},
+			errorMessage: "please provide a project identifier",
+		},
+		"no issue type selected": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet("project"),
+					IssueTypes: NewStringSet(),
+				},
+			},
+			errorMessage: "please provide at least one issue type",
+		},
+		"valid subscription": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet("project"),
+					IssueTypes: NewStringSet("10001"),
+				},
+			},
+			errorMessage: "",
+		},
+		"valid subscription with security level": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet("TEST"),
+					IssueTypes: NewStringSet("10001"),
+					Fields: []FieldFilter{
+						{
+							Key:       "security",
+							Inclusion: FilterIncludeAll,
+							Values:    NewStringSet("10001"),
+						},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+		"invalid 'Exclude' of security level": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet("TEST"),
+					IssueTypes: NewStringSet("10001"),
+					Fields: []FieldFilter{
+						{
+							Key:       "security",
+							Inclusion: FilterExcludeAny,
+							Values:    NewStringSet("10001"),
+						},
+					},
+				},
+			},
+			errorMessage: "security level does not allow for an \"Exclude\" clause",
+		},
+		"invalid access to security level": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet("TEST"),
+					IssueTypes: NewStringSet("10001"),
+					Fields: []FieldFilter{
+						{
+							Key:       "security",
+							Inclusion: FilterIncludeAll,
+							Values:    NewStringSet("10002"),
+						},
+					},
+				},
+			},
+			errorMessage: "invalid access to security level",
+		},
+		"user does not have read access to the project": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet(nonExistantProjectKey),
+					IssueTypes: NewStringSet("10001"),
+				},
+			},
+			errorMessage: "failed to get project \"FP\": Project FP not found",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+			p.SetAPI(api)
+
+			api.On("KVGet", testSubKey).Return(nil, nil)
+
+			client := testClient{}
+			err := p.validateSubscription(testInstance1.InstanceID, tc.subscription, client)
+
+			if tc.errorMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				require.Equal(t, tc.errorMessage, err.Error())
+			}
+		})
+	}
+}
+
 func TestListChannelSubscriptions(t *testing.T) {
 	p := &Plugin{}
 	p.updateConfig(func(conf *config) {
@@ -1352,6 +1517,66 @@ func TestGetChannelsSubscribed(t *testing.T) {
 						Projects:   NewStringSet("KT"),
 						IssueTypes: NewStringSet("10002"),
 						Fields:     []FieldFilter{},
+					},
+				},
+			}),
+			ChannelSubscriptions: []ChannelSubscription{{ChannelID: "sampleChannelId"}},
+		},
+		"no security level provided in subscription, but security level is present in issue": {
+			WebhookTestData: "webhook-issue-created-with-security-level.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				{
+					ID:        "rg86cd65efdjdjezgisgxaitzh",
+					ChannelID: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+						Fields:     []FieldFilter{},
+					},
+				},
+			}),
+			ChannelSubscriptions: []ChannelSubscription{},
+		},
+		"security level provided in subscription, but different security level is present in issue": {
+			WebhookTestData: "webhook-issue-created-with-security-level.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				{
+					ID:        "rg86cd65efdjdjezgisgxaitzh",
+					ChannelID: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+						Fields: []FieldFilter{
+							{
+								Key:       "security",
+								Inclusion: FilterIncludeAll,
+								Values:    NewStringSet("10002"),
+							},
+						},
+					},
+				},
+			}),
+			ChannelSubscriptions: []ChannelSubscription{},
+		},
+		"security level provided in subscription, and same security level is present in issue": {
+			WebhookTestData: "webhook-issue-created-with-security-level.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				{
+					ID:        "rg86cd65efdjdjezgisgxaitzh",
+					ChannelID: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+						Fields: []FieldFilter{
+							{
+								Key:       "security",
+								Inclusion: FilterIncludeAll,
+								Values:    NewStringSet("10001"),
+							},
+						},
 					},
 				},
 			}),
