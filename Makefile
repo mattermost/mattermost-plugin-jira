@@ -65,7 +65,7 @@ endif
 ## Ensures NPM dependencies are installed without having to run this all the time.
 webapp/.npminstall:
 ifneq ($(HAS_WEBAPP),)
-	git config --global url."ssh://git@".insteadOf git://
+	git config url."ssh://git@".insteadOf git://
 	cd webapp && $(NPM) install
 	touch $@
 endif
