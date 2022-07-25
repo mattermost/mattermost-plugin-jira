@@ -154,23 +154,28 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 
 	containsSecurityLevelFilter := false
 	for _, field := range filters.Fields {
+		inclusion := field.Inclusion
+
 		// Broken filter, values must be provided
-		if field.Inclusion == "" || (field.Values.Len() == 0 && field.Inclusion != FilterEmpty) {
+		if inclusion == "" || (field.Values.Len() == 0 && inclusion != FilterEmpty) {
 			return false
 		}
 
 		if field.Key == securityLevelField {
 			containsSecurityLevelFilter = true
+			if inclusion == FilterExcludeAny {
+				inclusion = FilterEmpty
+			}
 		}
 
 		value := getIssueFieldValue(issue, field.Key)
 		containsAny := value.ContainsAny(field.Values.Elems()...)
 		containsAll := value.ContainsAll(field.Values.Elems()...)
 
-		if (field.Inclusion == FilterIncludeAny && !containsAny) ||
-			(field.Inclusion == FilterIncludeAll && !containsAll) ||
-			(field.Inclusion == FilterExcludeAny && containsAny) ||
-			(field.Inclusion == FilterEmpty && value.Len() > 0) {
+		if (inclusion == FilterIncludeAny && !containsAny) ||
+			(inclusion == FilterIncludeAll && !containsAll) ||
+			(inclusion == FilterExcludeAny && containsAny) ||
+			(inclusion == FilterEmpty && value.Len() > 0) {
 			return false
 		}
 	}
