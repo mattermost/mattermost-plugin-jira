@@ -864,7 +864,7 @@ func (p *Plugin) UnassignIssue(instance Instance, mattermostUserID types.ID, iss
 
 const MinUserSearchQueryLength = 3
 
-func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issueKey, userSearch string) (string, error) {
+func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issueKey, userSearch string, jiraUser *jira.User) (string, error) {
 	connection, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
 	if err != nil {
 		return "", err
@@ -888,12 +888,17 @@ func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issue
 	}
 
 	// Get list of assignable users
-	jiraUsers, err := client.SearchUsersAssignableToIssue(issueKey, userSearch, 10)
-	if StatusCode(err) == 401 {
-		return "You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.", nil
-	}
-	if err != nil {
-		return "", err
+	jiraUsers := []jira.User{}
+	if jiraUser != nil {
+		jiraUsers = append(jiraUsers, *jiraUser)
+	} else {
+		jiraUsers, err = client.SearchUsersAssignableToIssue(issueKey, userSearch, 10)
+		if StatusCode(err) == 401 {
+			return "You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.", nil
+		}
+		if err != nil {
+			return "", err
+		}
 	}
 
 	// handle number of returned jira users

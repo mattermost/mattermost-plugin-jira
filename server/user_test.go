@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
@@ -60,4 +62,48 @@ func TestRouteUserStart(t *testing.T) {
 			assert.Equal(t, tc.statusCode, w.Result().StatusCode)
 		})
 	}
+}
+
+func TestGetJiraUserFromMentions(t *testing.T) {
+	p := Plugin{}
+	p.userStore = getMockUserStoreKV()
+	p.instanceStore = p.getMockInstanceStoreKV(1)
+
+	tests := map[string]struct {
+		mentions   *model.UserMentionMap
+		userSearch string
+	}{
+		"if no mentions, no users are returned": {
+			mentions: &model.UserMentionMap{}, userSearch: "join"},
+		"non connected user won't appear when mentioned": {
+			mentions: &model.UserMentionMap{
+				"non_connected_user": "non_connected_user",
+			}, userSearch: "non_connected_user"},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			user := p.GetJiraUserFromMentions(
+				testInstance1.InstanceID, *tc.mentions, tc.userSearch)
+			assert.Nil(t, user)
+		})
+	}
+}
+
+func TestGetJiraUserFromMentionsConnectReturnValidUser(t *testing.T) {
+	p := Plugin{}
+	p.userStore = getMockUserStoreKV()
+	p.instanceStore = p.getMockInstanceStoreKV(1)
+	testUser, _ := p.userStore.LoadUser(types.ID("connected_user"))
+	mentions := model.UserMentionMap{
+		"connected_user": string(testUser.MattermostUserID)}
+
+	t.Run(
+		"Connected users are shown and returned as JiraUsers when mentioned",
+		func(t *testing.T) {
+			user := p.GetJiraUserFromMentions(
+				testInstance1.InstanceID, mentions, "connected_user")
+
+			assert.NotNil(t, user)
+		})
 }
