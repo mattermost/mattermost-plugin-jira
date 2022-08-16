@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
@@ -68,42 +69,38 @@ func TestGetJiraUserFromMentions(t *testing.T) {
 	p := Plugin{}
 	p.userStore = getMockUserStoreKV()
 	p.instanceStore = p.getMockInstanceStoreKV(1)
+	testUser, _ := p.userStore.LoadUser(types.ID("connected_user"))
 
 	tests := map[string]struct {
-		mentions   *model.UserMentionMap
-		userSearch string
+		mentions       *model.UserMentionMap
+		userSearch     string
+		expectedResult *jira.User
 	}{
 		"if no mentions, no users are returned": {
-			mentions: &model.UserMentionMap{}, userSearch: "join"},
+			mentions:       &model.UserMentionMap{},
+			userSearch:     "join",
+			expectedResult: nil,
+		},
 		"non connected user won't appear when mentioned": {
 			mentions: &model.UserMentionMap{
 				"non_connected_user": "non_connected_user",
-			}, userSearch: "non_connected_user"},
+			},
+			userSearch:     "non_connected_user",
+			expectedResult: nil,
+		},
+		"Connected users are shown and returned as JiraUsers when mentioned": {
+			mentions: &model.UserMentionMap{
+				"connected_user": string(testUser.MattermostUserID)},
+			userSearch:     "connected_user",
+			expectedResult: &jira.User{AccountID: "test"},
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			user := p.GetJiraUserFromMentions(
 				testInstance1.InstanceID, *tc.mentions, tc.userSearch)
-			assert.Nil(t, user)
+			assert.Equal(t, tc.expectedResult, user)
 		})
 	}
-}
-
-func TestGetJiraUserFromMentionsConnectReturnValidUser(t *testing.T) {
-	p := Plugin{}
-	p.userStore = getMockUserStoreKV()
-	p.instanceStore = p.getMockInstanceStoreKV(1)
-	testUser, _ := p.userStore.LoadUser(types.ID("connected_user"))
-	mentions := model.UserMentionMap{
-		"connected_user": string(testUser.MattermostUserID)}
-
-	t.Run(
-		"Connected users are shown and returned as JiraUsers when mentioned",
-		func(t *testing.T) {
-			user := p.GetJiraUserFromMentions(
-				testInstance1.InstanceID, mentions, "connected_user")
-
-			assert.NotNil(t, user)
-		})
 }

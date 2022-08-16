@@ -864,7 +864,7 @@ func (p *Plugin) UnassignIssue(instance Instance, mattermostUserID types.ID, iss
 
 const MinUserSearchQueryLength = 3
 
-func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issueKey, userSearch string, jiraUser *jira.User) (string, error) {
+func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issueKey, userSearch string, assignee *jira.User) (string, error) {
 	connection, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
 	if err != nil {
 		return "", err
@@ -889,8 +889,8 @@ func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issue
 
 	// Get list of assignable users
 	jiraUsers := []jira.User{}
-	if jiraUser != nil {
-		jiraUsers = append(jiraUsers, *jiraUser)
+	if assignee != nil {
+		jiraUsers = append(jiraUsers, *assignee)
 	} else {
 		jiraUsers, err = client.SearchUsersAssignableToIssue(issueKey, userSearch, 10)
 		if StatusCode(err) == 401 {
