@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
@@ -69,7 +68,7 @@ func TestGetJiraUserFromMentions(t *testing.T) {
 	p := Plugin{}
 	p.userStore = getMockUserStoreKV()
 	p.instanceStore = p.getMockInstanceStoreKV(1)
-	testUser, _ := p.userStore.LoadUser(types.ID("connected_user"))
+	testUser, _ := p.userStore.LoadUser("connected_user")
 
 	tests := map[string]struct {
 		mentions       *model.UserMentionMap
