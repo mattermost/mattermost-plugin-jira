@@ -153,6 +153,7 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 	}
 
 	containsSecurityLevelFilter := false
+	useEmptySecurityLevel := p.getConfig().SecurityLevelEmptyForJiraSubscriptions
 	for _, field := range filters.Fields {
 		inclusion := field.Inclusion
 
@@ -163,7 +164,7 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 
 		if field.Key == securityLevelField {
 			containsSecurityLevelFilter = true
-			if inclusion == FilterExcludeAny {
+			if inclusion == FilterExcludeAny && useEmptySecurityLevel {
 				inclusion = FilterEmpty
 			}
 		}
@@ -180,7 +181,7 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		}
 	}
 
-	if !containsSecurityLevelFilter {
+	if !containsSecurityLevelFilter && useEmptySecurityLevel {
 		securityLevel := getIssueFieldValue(issue, securityLevelField)
 		if securityLevel.Len() > 0 {
 			return false
@@ -317,6 +318,7 @@ func (p *Plugin) validateSubscription(instanceID types.ID, subscription *Channel
 	projectKey := subscription.Filters.Projects.Elems()[0]
 
 	var securityLevels StringSet
+	useEmptySecurityLevel := p.getConfig().SecurityLevelEmptyForJiraSubscriptions
 	for _, field := range subscription.Filters.Fields {
 		if field.Key != securityLevelField {
 			continue
@@ -326,7 +328,7 @@ func (p *Plugin) validateSubscription(instanceID types.ID, subscription *Channel
 			continue
 		}
 
-		if field.Inclusion == FilterExcludeAny {
+		if field.Inclusion == FilterExcludeAny && useEmptySecurityLevel {
 			return errors.New("security level does not allow for an \"Exclude\" clause")
 		}
 

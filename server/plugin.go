@@ -71,6 +71,9 @@ type externalConfig struct {
 	// Additional Help Text to be shown in the output of '/jira help' command
 	JiraAdminAdditionalHelpText string
 
+	// When enabled, a subscription without security level rules will filter out an issue that has a security level assigned
+	SecurityLevelEmptyForJiraSubscriptions bool
+
 	// Hide issue descriptions and comments in Webhook and Subscription messages
 	HideDecriptionComment bool
 
