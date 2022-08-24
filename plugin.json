@@ -107,6 +107,14 @@
                 "help_text": "Display subscription name in post when a subscription posts to a channel",
                 "placeholder": "",
                 "default": false
+            },
+            {
+                "key": "JiraSiteURL",
+                "display_name": "URL for JIRA",
+                "type": "text",
+                "help_text": "Configure Jira plugin url",
+                "placeholder": "",
+                "default": ""
             }
         ]
     }
