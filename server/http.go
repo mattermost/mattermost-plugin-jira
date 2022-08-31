@@ -104,6 +104,10 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		routeUserStart,
 		routeAPISubscribeWebhook:
 
+		if path == routeIncomingWebhook && instanceURL == "" {
+			break
+		}
+
 		callbackInstanceID, err = p.ResolveWebhookInstanceURL(instanceURL)
 		if err != nil {
 			return respondErr(w, http.StatusInternalServerError, err)
