@@ -28,8 +28,9 @@ func TestValidateSubscription(t *testing.T) {
 	p.SetAPI(api)
 
 	for name, tc := range map[string]struct {
-		subscription *ChannelSubscription
-		errorMessage string
+		subscription          *ChannelSubscription
+		errorMessage          string
+		disableSecurityConfig bool
 	}{
 		"no event selected": {
 			subscription: &ChannelSubscription{
@@ -129,6 +130,28 @@ func TestValidateSubscription(t *testing.T) {
 			},
 			errorMessage: "security level does not allow for an \"Exclude\" clause",
 		},
+		"security config disabled, valid 'Exclude' of security level": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet("TEST"),
+					IssueTypes: NewStringSet("10001"),
+					Fields: []FieldFilter{
+						{
+							Key:       "security",
+							Inclusion: FilterExcludeAny,
+							Values:    NewStringSet("10001"),
+						},
+					},
+				},
+			},
+			disableSecurityConfig: true,
+			errorMessage:          "",
+		},
 		"invalid access to security level": {
 			subscription: &ChannelSubscription{
 				ID:         "id",
@@ -170,6 +193,10 @@ func TestValidateSubscription(t *testing.T) {
 			p.SetAPI(api)
 
 			api.On("KVGet", testSubKey).Return(nil, nil)
+
+			p.updateConfig(func(conf *config) {
+				conf.SecurityLevelEmptyForJiraSubscriptions = !tc.disableSecurityConfig
+			})
 
 			client := testClient{}
 			err := p.validateSubscription(testInstance1.InstanceID, tc.subscription, client)
@@ -440,9 +467,10 @@ func TestGetChannelsSubscribed(t *testing.T) {
 	p.instanceStore = p.getMockInstanceStoreKV(0)
 
 	for name, tc := range map[string]struct {
-		WebhookTestData      string
-		Subs                 *Subscriptions
-		ChannelSubscriptions []ChannelSubscription
+		WebhookTestData       string
+		Subs                  *Subscriptions
+		ChannelSubscriptions  []ChannelSubscription
+		disableSecurityConfig bool
 	}{
 		"no filters selected": {
 			WebhookTestData: "webhook-issue-created.json",
@@ -1538,6 +1566,23 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			}),
 			ChannelSubscriptions: []ChannelSubscription{},
 		},
+		"security config disabled, no security level provided in subscription, but security level is present in issue": {
+			WebhookTestData: "webhook-issue-created-with-security-level.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				{
+					ID:        "rg86cd65efdjdjezgisgxaitzh",
+					ChannelID: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+						Fields:     []FieldFilter{},
+					},
+				},
+			}),
+			ChannelSubscriptions:  []ChannelSubscription{{ChannelID: "sampleChannelId"}},
+			disableSecurityConfig: true,
+		},
 		"security level provided in subscription, but different security level is present in issue": {
 			WebhookTestData: "webhook-issue-created-with-security-level.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
@@ -1588,6 +1633,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 
 			p.updateConfig(func(conf *config) {
 				conf.Secret = someSecret
+				conf.SecurityLevelEmptyForJiraSubscriptions = !tc.disableSecurityConfig
 			})
 			p.SetAPI(api)
 
