@@ -6,9 +6,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
@@ -314,14 +314,11 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 func (p *Plugin) GetJiraUserFromMentions(
 	instanceID types.ID, mentions model.UserMentionMap, userKey string,
 ) (*jira.User, error) {
-	if strings.HasPrefix(userKey, "@") {
-		userKey = userKey[1:]
-	}
-
+	userKey = strings.TrimPrefix(userKey, "@")
 	mentionUser, found := mentions[userKey]
 
 	if !found {
-		return nil, errors.New("The user mentioned was not found")
+		return nil, errors.New("the user mentioned was not found")
 	}
 
 	connection, err := p.userStore.LoadConnection(instanceID, types.ID(mentionUser))
@@ -329,5 +326,5 @@ func (p *Plugin) GetJiraUserFromMentions(
 		return &connection.User, nil
 	}
 
-	return nil, errors.New("The user mentioned is not connected to Jira")
+	return nil, errors.New("the user mentioned is not connected to Jira")
 }
