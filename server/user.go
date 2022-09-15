@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"io/ioutil"
 	"net/http"
 
@@ -311,6 +312,10 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 }
 
 func (p *Plugin) GetJiraUserFromMentions(instanceID types.ID, mentions model.UserMentionMap, userKey string) *jira.User {
+	if strings.HasPrefix(userKey, "@") {
+		userKey = userKey[1:]
+	}
+
 	mentionUser, found := mentions[userKey]
 
 	if !found {
