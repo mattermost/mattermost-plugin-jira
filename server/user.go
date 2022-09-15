@@ -311,7 +311,9 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 	return conn, nil
 }
 
-func (p *Plugin) GetJiraUserFromMentions(instanceID types.ID, mentions model.UserMentionMap, userKey string) *jira.User {
+func (p *Plugin) GetJiraUserFromMentions(
+	instanceID types.ID, mentions model.UserMentionMap, userKey string,
+) (*jira.User, error) {
 	if strings.HasPrefix(userKey, "@") {
 		userKey = userKey[1:]
 	}
@@ -319,13 +321,13 @@ func (p *Plugin) GetJiraUserFromMentions(instanceID types.ID, mentions model.Use
 	mentionUser, found := mentions[userKey]
 
 	if !found {
-		return nil
+		return nil, errors.New("The user mentioned was not found")
 	}
 
 	connection, err := p.userStore.LoadConnection(instanceID, types.ID(mentionUser))
 	if err == nil {
-		return &connection.User
+		return &connection.User, nil
 	}
 
-	return nil
+	return nil, errors.New("The user mentioned is not connected to Jira")
 }

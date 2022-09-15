@@ -878,7 +878,10 @@ func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args
 	}
 	issueKey := strings.ToUpper(args[0])
 	userSearch := strings.Join(args[1:], " ")
-	jiraUser := p.GetJiraUserFromMentions(instance.GetID(), header.UserMentions, userSearch)
+	jiraUser, err := p.GetJiraUserFromMentions(instance.GetID(), header.UserMentions, userSearch)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
 
 	msg, err := p.AssignIssue(instance, types.ID(header.UserId), issueKey, userSearch, jiraUser)
 	if err != nil {
