@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"math"
 	"net/url"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -411,6 +412,10 @@ func (p *Plugin) GetPluginURL() string {
 
 func (p *Plugin) GetSiteURL() string {
 	return p.getConfig().mattermostSiteURL
+}
+
+func (p *Plugin) CreateFullURLPath(extensionPath string) string {
+	return path.Join(p.GetSiteURL(), p.GetPluginURLPath(), extensionPath)
 }
 
 func (p *Plugin) debugf(f string, args ...interface{}) {
