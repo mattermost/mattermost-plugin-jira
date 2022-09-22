@@ -5,7 +5,6 @@ package main
 
 import (
 	"encoding/json"
-	"strconv"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
@@ -66,51 +65,4 @@ func (client jiraCloudClient) GetUserGroups(connection *Connection) ([]*jira.Use
 		return nil, err
 	}
 	return groups, nil
-}
-
-func (client jiraCloudClient) ListProjects(query string, limit int) (jira.ProjectList, error) {
-	type searchResult struct {
-		Values     jira.ProjectList `json:"values"`
-		StartAt    int              `json:"startAt"`
-		MaxResults int              `json:"maxResults"`
-		Total      int              `json:"total"`
-		IsLast     bool             `json:"isLast"`
-	}
-
-	remaining := 50
-	fetchAll := false
-	if limit > 0 {
-		remaining = limit
-	}
-	if limit < 0 {
-		fetchAll = true
-	}
-
-	var out jira.ProjectList
-	for {
-		opts := map[string]string{
-			"startAt":    strconv.Itoa(len(out)),
-			"maxResults": strconv.Itoa(remaining),
-			"expand":     "issueTypes",
-		}
-		var result searchResult
-		err := client.RESTGet("/3/project/search", opts, &result)
-		if err != nil {
-			return nil, err
-		}
-		if len(result.Values) > remaining {
-			result.Values = result.Values[:remaining]
-		}
-		out = append(out, result.Values...)
-		remaining -= len(result.Values)
-
-		if !fetchAll && remaining == 0 {
-			// Got enough.
-			return out, nil
-		}
-		if len(result.Values) == 0 || result.IsLast {
-			// Ran out of results.
-			return out, nil
-		}
-	}
 }

@@ -11,17 +11,31 @@ import (
 )
 
 func TestUserSettings_String(t *testing.T) {
+	valueTrue := true
+	valueFalse := false
 	tests := map[string]struct {
 		settings       ConnectionSettings
 		expectedOutput string
 	}{
 		"notifications on": {
-			settings:       ConnectionSettings{Notifications: false},
-			expectedOutput: "\tNotifications: off",
+			settings: ConnectionSettings{
+				Notifications:                valueTrue,
+				SendNotificationsForMention:  nil,
+				SendNotificationsForAssignee: nil,
+				SendNotificationsForReporter: nil,
+				SendNotificationsForWatching: nil,
+			},
+			expectedOutput: "\t- Notifications for assignee: on \n\t- Notifications for mention: on \n\t- Notifications for reporter: on \n\t- Notifications for watching: on",
 		},
 		"notifications off": {
-			settings:       ConnectionSettings{Notifications: true},
-			expectedOutput: "\tNotifications: on",
+			settings: ConnectionSettings{
+				Notifications:                valueFalse,
+				SendNotificationsForMention:  nil,
+				SendNotificationsForAssignee: nil,
+				SendNotificationsForReporter: nil,
+				SendNotificationsForWatching: nil,
+			},
+			expectedOutput: "\t- Notifications for assignee: off \n\t- Notifications for mention: off \n\t- Notifications for reporter: off \n\t- Notifications for watching: off",
 		},
 	}
 	for name, tt := range tests {

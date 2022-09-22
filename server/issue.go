@@ -22,12 +22,15 @@ import (
 )
 
 const (
-	labelsField      = "labels"
-	statusField      = "status"
-	reporterField    = "reporter"
-	priorityField    = "priority"
-	descriptionField = "description"
-	resolutionField  = "resolution"
+	labelsField              = "labels"
+	statusField              = "status"
+	reporterField            = "reporter"
+	priorityField            = "priority"
+	descriptionField         = "description"
+	resolutionField          = "resolution"
+	createdCommentEvent      = "event_created_comment"
+	notificationTypeReporter = "reporter"
+	notificationTypeWatching = "watching"
 )
 
 func makePost(userID, channelID, message string) *model.Post {
@@ -502,13 +505,13 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 
 	instanceID := r.FormValue("instance_id")
 
-	plist, connection, err := p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID))
+	metaInfo, connection, err := p.GetJiraProjectMetadata(types.ID(instanceID), types.ID(mattermostUserID))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to GetProjectMetadata"))
 	}
 
-	if len(plist) == 0 {
+	if len(metaInfo.Projects) == 0 {
 		_, err = respondJSON(w, map[string]interface{}{
 			"error": "You do not have permission to create issues in any projects. Please contact your Jira admin.",
 		})
@@ -518,24 +521,25 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	projects := []utils.ReactSelectOption{}
-	issues := map[string][]utils.ReactSelectOption{}
-	for _, prj := range plist {
-		projects = append(projects, utils.ReactSelectOption{
-			Value: prj.Key,
-			Label: prj.Name,
-		})
-		issueTypes := []utils.ReactSelectOption{}
-		for _, issue := range prj.IssueTypes {
-			if issue.Subtask {
+	type option = utils.ReactSelectOption
+	projects := make([]option, len(metaInfo.Projects))
+	issues := make(map[string][]option, len(metaInfo.Projects))
+	for index, project := range metaInfo.Projects {
+		projects[index] = option{
+			Value: project.Key,
+			Label: project.Name,
+		}
+		issueTypes := make([]option, len(project.IssueTypes))
+		for index, issueType := range project.IssueTypes {
+			if issueType.Subtasks {
 				continue
 			}
-			issueTypes = append(issueTypes, utils.ReactSelectOption{
-				Value: issue.ID,
-				Label: issue.Name,
-			})
+			issueTypes[index] = option{
+				Value: issueType.Id,
+				Label: issueType.Name,
+			}
 		}
-		issues[prj.Key] = issueTypes
+		issues[project.Key] = issueTypes
 	}
 
 	return respondJSON(w, OutProjectMetadata{
@@ -545,16 +549,16 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-func (p *Plugin) ListJiraProjects(instanceID, mattermostUserID types.ID) (jira.ProjectList, *Connection, error) {
+func (p *Plugin) GetJiraProjectMetadata(instanceID, mattermostUserID types.ID) (*jira.CreateMetaInfo, *Connection, error) {
 	client, _, connection, err := p.getClient(instanceID, mattermostUserID)
 	if err != nil {
 		return nil, nil, err
 	}
-	plist, err := client.ListProjects("", -1)
+	metainfo, err := client.GetCreateMeta(nil)
 	if err != nil {
 		return nil, nil, err
 	}
-	return plist, connection, nil
+	return metainfo, connection, nil
 }
 
 var reJiraIssueKey = regexp.MustCompile(`^([[:alnum:]]+)-([[:digit:]]+)$`)
@@ -1038,4 +1042,179 @@ func (p *Plugin) getClient(instanceID, mattermostUserID types.ID) (Client, Insta
 		return nil, nil, nil, err
 	}
 	return client, instance, connection, nil
+}
+
+func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
+	if !wh.eventTypes.ContainsAny(createdCommentEvent) {
+		return
+	}
+
+	jwhook := wh.JiraWebhook
+	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
+	commentMessage := fmt.Sprintf("%s **commented** on %s:\n> %s", commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body)
+	client, connection, err := wh.fetchConnectedUser(p, instanceID)
+	if err != nil || client == nil {
+		p.errorf("error while fetching connected users for the instanceID %v , Error : %v", instanceID, err)
+		return
+	}
+
+	watchers, err := client.GetWatchers(instanceID.String(), wh.Issue.ID, connection)
+	if err != nil {
+		p.errorf("error while getting watchers for the issue id %v , err : %v", wh.Issue.ID, err)
+		return
+	}
+
+	for _, watcherUser := range watchers.Watchers {
+		whUserNotification := webhookUserNotification{
+			jiraUsername:     watcherUser.Name,
+			jiraAccountID:    watcherUser.AccountID,
+			message:          commentMessage,
+			postType:         PostTypeComment,
+			commentSelf:      wh.JiraWebhook.Comment.Self,
+			notificationType: notificationTypeWatching,
+		}
+
+		wh.notifications = append(wh.notifications, whUserNotification)
+	}
+}
+
+func (p *Plugin) applyReporterNotification(wh *webhook, instanceID types.ID, reporter *jira.User) {
+	if !wh.eventTypes.ContainsAny(createdCommentEvent) {
+		return
+	}
+
+	jwhook := wh.JiraWebhook
+	if reporter == nil ||
+		(reporter.Name != "" && reporter.Name == jwhook.User.Name) ||
+		(reporter.AccountID != "" && reporter.AccountID == jwhook.Comment.UpdateAuthor.AccountID) {
+		return
+	}
+
+	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
+	commentMessage := fmt.Sprintf("%s **commented** on %s:\n> %s", commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body)
+
+	connection, err := p.GetUserSetting(wh, instanceID, reporter.Name, reporter.AccountID)
+	if err != nil || connection.Settings == nil || !connection.Settings.ShouldReceiveNotificationsForReporter() {
+		return
+	}
+
+	wh.notifications = append(wh.notifications, webhookUserNotification{
+		jiraUsername:     reporter.Name,
+		jiraAccountID:    reporter.AccountID,
+		message:          commentMessage,
+		postType:         PostTypeComment,
+		commentSelf:      jwhook.Comment.Self,
+		notificationType: notificationTypeReporter,
+	})
+}
+
+func (p *Plugin) GetUserSetting(wh *webhook, instanceID types.ID, jiraAccountID, jiraUsername string) (*Connection, error) {
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return nil, err
+	}
+	var mattermostUserID types.ID
+	if jiraAccountID != "" {
+		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), jiraAccountID)
+	} else {
+		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), jiraUsername)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	connection, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return connection, nil
+}
+
+func (s *ConnectionSettings) ShouldReceiveNotificationsForAssignee() bool {
+	if s.SendNotificationsForAssignee != nil {
+		return *s.SendNotificationsForAssignee
+	}
+
+	// Check old setting for backwards compatibility
+	return s.Notifications
+}
+
+func (s *ConnectionSettings) ShouldReceiveNotificationsForReporter() bool {
+	if s.SendNotificationsForReporter != nil {
+		return *s.SendNotificationsForReporter
+	}
+
+	return s.Notifications
+}
+
+func (s *ConnectionSettings) ShouldReceiveNotificationsForMention() bool {
+	if s.SendNotificationsForMention != nil {
+		return *s.SendNotificationsForMention
+	}
+
+	return s.Notifications
+}
+
+func (s *ConnectionSettings) ShouldReceiveNotificationsForWatching() bool {
+	if s.SendNotificationsForWatching != nil {
+		return *s.SendNotificationsForWatching
+	}
+
+	return s.Notifications
+}
+
+func (wh *webhook) fetchConnectedUser(p *Plugin, instanceID types.ID) (Client, *Connection, error) {
+	var accountInformation []map[string]string
+
+	if wh.Issue.Fields != nil && wh.Issue.Fields.Creator != nil {
+		accountInformation = append(accountInformation, map[string]string{
+			"AccountID": wh.Issue.Fields.Creator.AccountID,
+			"Name":      wh.Issue.Fields.Creator.Name,
+		})
+	}
+
+	if wh.Issue.Fields != nil && wh.Issue.Fields.Assignee != nil {
+		accountInformation = append(accountInformation, map[string]string{
+			"AccountID": wh.Issue.Fields.Assignee.AccountID,
+			"Name":      wh.Issue.Fields.Assignee.Name,
+		})
+	}
+
+	if wh.Issue.Fields != nil && wh.Issue.Fields.Reporter != nil {
+		accountInformation = append(accountInformation, map[string]string{
+			"AccountID": wh.Issue.Fields.Reporter.AccountID,
+			"Name":      wh.Issue.Fields.Reporter.Name,
+		})
+	}
+
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, account := range accountInformation {
+		var mattermostUserID types.ID
+		if account["AccountID"] != "" {
+			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), account["AccountID"])
+		} else {
+			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), account["Name"])
+		}
+		if err != nil {
+			continue
+		}
+
+		connection, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
+		if err != nil {
+			continue
+		}
+
+		client, err := instance.GetClient(connection)
+		if err != nil {
+			continue
+		}
+
+		return client, connection, nil
+	}
+
+	return nil, nil, nil
 }

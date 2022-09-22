@@ -46,11 +46,12 @@ type webhook struct {
 }
 
 type webhookUserNotification struct {
-	jiraUsername  string
-	jiraAccountID string
-	message       string
-	postType      string
-	commentSelf   string
+	jiraUsername     string
+	jiraAccountID    string
+	message          string
+	postType         string
+	commentSelf      string
+	notificationType string
 }
 
 func (wh *webhook) Events() StringSet {
@@ -101,7 +102,6 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 	if len(wh.notifications) == 0 {
 		return nil, http.StatusOK, nil
 	}
-
 	// We will only send webhook events if we have a connected instance.
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
@@ -110,6 +110,7 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 	}
 
 	posts := []*model.Post{}
+	var mapForNotification = make(map[types.ID]int)
 	for _, notification := range wh.notifications {
 		var mattermostUserID types.ID
 		var err error
@@ -137,7 +138,29 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		}
 		// If this is a comment-related webhook, we need to check if they have permissions to read that.
 		// Otherwise, check if they can view the issue.
-
+		switch notification.notificationType {
+		case subCommandAssignee:
+			if !c.Settings.ShouldReceiveNotificationsForAssignee() {
+				continue
+			}
+		case subCommandMention:
+			if !c.Settings.ShouldReceiveNotificationsForMention() {
+				continue
+			}
+		case subCommandReporter:
+			if !c.Settings.ShouldReceiveNotificationsForReporter() {
+				continue
+			}
+		case subCommandWatching:
+			if !c.Settings.ShouldReceiveNotificationsForWatching() {
+				continue
+			}
+		}
+		if _, ok := mapForNotification[mattermostUserID]; ok {
+			continue
+		} else {
+			mapForNotification[mattermostUserID] = 1
+		}
 		isCommentEvent := wh.Events().Intersection(commentEvents).Len() > 0
 		if isCommentEvent {
 			err = client.RESTGet(notification.commentSelf, nil, &struct{}{})
