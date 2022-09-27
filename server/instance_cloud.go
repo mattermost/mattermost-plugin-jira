@@ -63,6 +63,28 @@ func newCloudInstance(p *Plugin, key types.ID, installed bool, rawASC string, as
 	}
 }
 
+func (p *Plugin) installCloudInstance(rawURL string) (string, *serverInstance, error) {
+	jiraURL, err := utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
+	if err != nil {
+		return "", nil, err
+	}
+	if !utils.IsJiraCloudURL(jiraURL) {
+		return "", nil, errors.Errorf("`%s` is a Jira server URL, not a Jira Cloud", jiraURL)
+	}
+
+	instance := &serverInstance{
+		InstanceCommon: newInstanceCommon(p, ServerInstanceType, types.ID(jiraURL)),
+		MattermostKey:  p.GetPluginKey(),
+	}
+
+	err = p.InstallInstance(instance)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return jiraURL, instance, err
+}
+
 func (p *Plugin) installInactiveCloudInstance(rawURL string, actingUserID string) (string, error) {
 	jiraURL, err := utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
 	if err != nil {
