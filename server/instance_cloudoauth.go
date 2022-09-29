@@ -69,6 +69,23 @@ func (ci *cloudOAuthInstance) GetClient(connection *Connection) (Client, error) 
 	return newCloudClient(jiraClient), nil
 }
 
+func (ci *cloudOAuthInstance) GetDisplayDetails() map[string]string {
+	return map[string]string{
+		"Jira Cloud Mattermost Key": ci.MattermostKey,
+	}
+}
+
+func (ci *cloudOAuthInstance) GetUserConnectURL(mattermostUserID string) (string, *http.Cookie, error) {
+	ci.Plugin.OAuther = oauther.NewFromClient(
+		ci.Plugin.client,
+		ci.getOAuthConfig(),
+		ci.onConnect,
+		logger.New(ci.Plugin.API),
+	)
+
+	return ci.Plugin.OAuther.GetConnectURL(), nil, nil
+}
+
 func (ci *cloudOAuthInstance) getOAuthConfig() oauth2.Config {
 	return oauth2.Config{
 		ClientID:     ci.AtlassianSecurityContext.OAuthClientID,
@@ -81,25 +98,8 @@ func (ci *cloudOAuthInstance) getOAuthConfig() oauth2.Config {
 }
 
 func (ci *cloudOAuthInstance) onConnect(userID string, token oauth2.Token, payload []byte) {
-	// TODO
-}
-
-func (ci *cloudOAuthInstance) GetDisplayDetails() map[string]string {
-	return map[string]string{
-		"Jira Cloud Mattermost Key": ci.MattermostKey,
-	}
-}
-
-func (ci *cloudOAuthInstance) GetUserConnectURL(mattermostUserID string) (string, *http.Cookie, error) {
-	// TODO
-	ci.Plugin.OAuther = oauther.NewFromClient(
-		ci.Plugin.client,
-		ci.getOAuthConfig(),
-		ci.onConnect,
-		logger.New(ci.Plugin.API),
-	)
-
-	return "", &http.Cookie{}, nil
+	// TODO How to store in OAuther store?
+	ci.Plugin.client.KV.Set(ci.Plugin.OAuther.getTokenKey())
 }
 
 func (ci *cloudOAuthInstance) GetURL() string {
