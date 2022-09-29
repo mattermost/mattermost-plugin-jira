@@ -503,13 +503,13 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 
 	instanceID := r.FormValue("instance_id")
 
-	cimd, connection, err := p.GetJiraProjectMetadata(types.ID(instanceID), types.ID(mattermostUserID))
+	plist, connection, err := p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to GetProjectMetadata"))
 	}
 
-	if len(cimd.Projects) == 0 {
+	if len(plist) == 0 {
 		_, err = respondJSON(w, map[string]interface{}{
 			"error": "You do not have permission to create issues in any projects. Please contact your Jira admin.",
 		})
@@ -519,21 +519,20 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	type option = utils.ReactSelectOption
-	projects := make([]option, 0, len(cimd.Projects))
-	issues := make(map[string][]option, len(cimd.Projects))
-	for _, prj := range cimd.Projects {
-		projects = append(projects, option{
+	projects := []utils.ReactSelectOption{}
+	issues := map[string][]utils.ReactSelectOption{}
+	for _, prj := range plist {
+		projects = append(projects, utils.ReactSelectOption{
 			Value: prj.Key,
 			Label: prj.Name,
 		})
-		issueTypes := make([]option, 0, len(prj.IssueTypes))
+		issueTypes := []utils.ReactSelectOption{}
 		for _, issue := range prj.IssueTypes {
-			if issue.Subtasks {
+			if issue.Subtask {
 				continue
 			}
-			issueTypes = append(issueTypes, option{
-				Value: issue.Id,
+			issueTypes = append(issueTypes, utils.ReactSelectOption{
+				Value: issue.ID,
 				Label: issue.Name,
 			})
 		}
@@ -547,16 +546,16 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-func (p *Plugin) GetJiraProjectMetadata(instanceID, mattermostUserID types.ID) (*jira.CreateMetaInfo, *Connection, error) {
+func (p *Plugin) ListJiraProjects(instanceID, mattermostUserID types.ID) (jira.ProjectList, *Connection, error) {
 	client, _, connection, err := p.getClient(instanceID, mattermostUserID)
 	if err != nil {
 		return nil, nil, err
 	}
-	metainfo, err := client.GetCreateMeta(nil)
+	plist, err := client.ListProjects("", -1)
 	if err != nil {
 		return nil, nil, err
 	}
-	return metainfo, connection, nil
+	return plist, connection, nil
 }
 
 var reJiraIssueKey = regexp.MustCompile(`^([[:alnum:]]+)-([[:digit:]]+)$`)
