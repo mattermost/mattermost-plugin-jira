@@ -1,5 +1,7 @@
 version: '3'
 
+# IMPORTANT! Check the instructions and recommendations @
+# https://mattermost.gitbook.io/plugin-jira/development/jira-server
 services:
   jira:
     depends_on:

@@ -1,5 +1,5 @@
 FROM ubuntu:latest
-ARG VERSION=8.22.0
+ARG VERSION=7.13.1
 WORKDIR /home
 RUN apt update
 RUN apt --assume-yes install openjdk-11-jdk curl
