@@ -1,8 +1,9 @@
 FROM ubuntu:latest
 ARG VERSION=7.13.1
+ARG JDK_VERSION=8
 WORKDIR /home
 RUN apt update
-RUN apt --assume-yes install openjdk-11-jdk curl
+RUN apt --assume-yes install openjdk-${JDK_VERSION}-jdk curl
 RUN mkdir -p downloads
 RUN cd downloads
 RUN mkdir -p jirahome

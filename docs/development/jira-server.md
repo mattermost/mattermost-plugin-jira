@@ -20,10 +20,21 @@ You might want to change the Postgres password before running it [here](https://
 
 First we build the image in the project root folder:
 
-The default version is 7.13.1, you can change it through the `VERSION ENVVAR`.
+The default version is 7.13.1, you can change it through the `VERSION ENVVAR`. When using version 7, by default it's using `JDK_VERSION=8`.
 
 Keep in mind the current Mattermost JIRA Plugin covers version 7 and 8 of JIRA Server now.
 
 ```bash
-VERSION=7.13.1 docker-compose -f docker-compose-jiraserver.yml up
+JDK_VERSION=8 VERSION=7.13.1 docker-compose -f docker-compose-jiraserver.yml up
+```
+
+If you want to run JIRA server version 8
+
+```bash
+# In case you have used if before to build 7, you need to rebuild it without the cache
+# to get the parameters
+export JDK_VERSION=11
+export VERSION=8.22.0
+docker-compose -f docker-compose-jiraserver.yml build --no-cache
+docker-compose -f docker-compose-jiraserver.yml up
 ```
