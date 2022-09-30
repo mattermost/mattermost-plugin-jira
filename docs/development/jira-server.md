@@ -18,8 +18,6 @@ You might want to change the Postgres password before running it [here](https://
 
 ## Installation
 
-First we build the image in the project root folder:
-
 The default version is 7.13.1, you can change it through the `VERSION ENVVAR`. When using version 7, by default it's using `JDK_VERSION=8`.
 
 Keep in mind the current Mattermost JIRA Plugin covers version 7 and 8 of JIRA Server now.
