@@ -43,11 +43,8 @@ func (c *Connection) JiraAccountID() types.ID {
 }
 
 type ConnectionSettings struct {
-	Notifications                bool  `json:"notifications"`
-	SendNotificationsForMention  *bool `json:"send_notifications_for_mention"`
-	SendNotificationsForAssignee *bool `json:"send_notifications_for_assignee"`
-	SendNotificationsForReporter *bool `json:"send_notifications_for_reporter"`
-	SendNotificationsForWatching *bool `json:"send_notifications_for_watching"`
+	Notifications          bool `json:"notifications"`
+	RolesForDMNotification map[string]*bool
 }
 
 func (s *ConnectionSettings) String() string {
@@ -56,19 +53,19 @@ func (s *ConnectionSettings) String() string {
 	reporterNotifications := "Notifications for reporter: off"
 	watchingNotifications := "Notifications for watching: off"
 
-	if s != nil && s.ShouldReceiveNotificationsForAssignee() {
+	if s != nil && s.ShouldReceiveNotification(subCommandAssignee) {
 		assigneeNotifications = "Notifications for assignee: on"
 	}
 
-	if s != nil && s.ShouldReceiveNotificationsForMention() {
+	if s != nil && s.ShouldReceiveNotification(subCommandMention) {
 		mentionNotifications = "Notifications for mention: on"
 	}
 
-	if s != nil && s.ShouldReceiveNotificationsForReporter() {
+	if s != nil && s.ShouldReceiveNotification(subCommandReporter) {
 		reporterNotifications = "Notifications for reporter: on"
 	}
 
-	if s != nil && s.ShouldReceiveNotificationsForWatching() {
+	if s != nil && s.ShouldReceiveNotification(subCommandWatching) {
 		watchingNotifications = "Notifications for watching: on"
 	}
 

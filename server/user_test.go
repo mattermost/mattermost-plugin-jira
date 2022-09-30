@@ -19,21 +19,25 @@ func TestUserSettings_String(t *testing.T) {
 	}{
 		"notifications on": {
 			settings: ConnectionSettings{
-				Notifications:                valueTrue,
-				SendNotificationsForMention:  nil,
-				SendNotificationsForAssignee: nil,
-				SendNotificationsForReporter: nil,
-				SendNotificationsForWatching: nil,
+				Notifications: valueTrue,
+				RolesForDMNotification: map[string]*bool{
+					subCommandAssignee: nil,
+					subCommandMention:  nil,
+					subCommandReporter: nil,
+					subCommandWatching: nil,
+				},
 			},
 			expectedOutput: "\t- Notifications for assignee: on \n\t- Notifications for mention: on \n\t- Notifications for reporter: on \n\t- Notifications for watching: on",
 		},
 		"notifications off": {
 			settings: ConnectionSettings{
-				Notifications:                valueFalse,
-				SendNotificationsForMention:  nil,
-				SendNotificationsForAssignee: nil,
-				SendNotificationsForReporter: nil,
-				SendNotificationsForWatching: nil,
+				Notifications: valueFalse,
+				RolesForDMNotification: map[string]*bool{
+					subCommandAssignee: nil,
+					subCommandMention:  nil,
+					subCommandReporter: nil,
+					subCommandWatching: nil,
+				},
 			},
 			expectedOutput: "\t- Notifications for assignee: off \n\t- Notifications for mention: off \n\t- Notifications for reporter: off \n\t- Notifications for watching: off",
 		},

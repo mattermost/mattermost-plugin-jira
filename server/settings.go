@@ -20,6 +20,13 @@ const (
 	subCommandWatching  = "watching"
 )
 
+func (connection *Connection) sendNotification(role string, hasNotification bool) bool {
+	if role != subCommandAssignee && role != subCommandMention && role != subCommandReporter && role != subCommandWatching {
+		return false
+	}
+	connection.Settings.RolesForDMNotification[role] = &hasNotification
+	return true
+}
 func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, mattermostUserID types.ID, connection *Connection, args []string) *model.CommandResponse {
 	const helpText = "`/jira settings notifications [assignee|mention|reporter|watching] [value]`\n* Invalid value. Accepted values are: `on` or `off`."
 
@@ -40,16 +47,7 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	if connection.Settings == nil {
 		connection.Settings = &ConnectionSettings{}
 	}
-	switch args[1] {
-	case subCommandAssignee:
-		connection.Settings.SendNotificationsForAssignee = &value
-	case subCommandMention:
-		connection.Settings.SendNotificationsForMention = &value
-	case subCommandReporter:
-		connection.Settings.SendNotificationsForReporter = &value
-	case subCommandWatching:
-		connection.Settings.SendNotificationsForWatching = &value
-	default:
+	if !connection.sendNotification(args[1], value) {
 		return p.responsef(header, helpText)
 	}
 
@@ -64,23 +62,8 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 		return p.responsef(header, errConnectToJira, err)
 	}
 	notifications := settingOff
-	switch args[1] {
-	case subCommandAssignee:
-		if *updatedConnection.Settings.SendNotificationsForAssignee {
-			notifications = settingOn
-		}
-	case subCommandMention:
-		if *updatedConnection.Settings.SendNotificationsForMention {
-			notifications = settingOn
-		}
-	case subCommandReporter:
-		if *updatedConnection.Settings.SendNotificationsForReporter {
-			notifications = settingOn
-		}
-	case subCommandWatching:
-		if *updatedConnection.Settings.SendNotificationsForWatching {
-			notifications = settingOn
-		}
+	if *updatedConnection.Settings.RolesForDMNotification[args[1]] {
+		notifications = settingOn
 	}
 
 	return p.responsef(header, "Settings updated.\n\t%s notifications %s.", strings.Title(args[1]), notifications)
