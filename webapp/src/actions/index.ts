@@ -428,7 +428,7 @@ export function redirectConnect(instanceID: string) {
     return async (dispatch, getState) => {
         const serverUrl = getPluginServerRoute(getState());
         const instancePrefix = '/instance/' + btoa(instanceID);
-        const target = serverUrl + instancePrefix + '/user/connect';
+        const target = `${serverUrl}${instancePrefix}/user/connect`;
 
         window.open(target, '_blank');
     };
