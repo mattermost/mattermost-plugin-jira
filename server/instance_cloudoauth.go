@@ -22,7 +22,8 @@ type cloudOAuthInstance struct {
 	MattermostKey string
 
 	// TODO Not sure if this is also necessary for OAuth or only for Atlassian Connect
-	*AtlassianSecurityContext `json:"-"`
+	RawAtlassianSecurityContext string
+	*AtlassianSecurityContext   `json:"-"`
 }
 
 var _ Instance = (*cloudOAuthInstance)(nil)

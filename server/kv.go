@@ -513,6 +513,10 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 		}
 		ci.Plugin = store.plugin
 		return &ci, nil
+	case CloudOAuthInstanceType:
+		ci := cloudOAuthInstance{}
+		ci.Plugin = store.plugin
+		return &ci, nil
 
 	case ServerInstanceType:
 		si.Plugin = store.plugin
@@ -568,13 +572,13 @@ func UpdateInstances(store InstanceStore, updatef func(instances *Instances) err
 
 // MigrateV2Instances migrates instance record(s) from the V2 data model.
 //
-// - v2keyKnownJiraInstances ("known_jira_instances") was stored as a
-//   map[string]string (InstanceID->Type), needs to be stored as Instances.
-//   https://github.com/mattermost/mattermost-plugin-jira/blob/885efe8eb70c92bcea64d1ced6e67710eda77b6e/server/kv.go#L375
-// - v2keyCurrentJIRAInstance ("current_jira_instance") stored an Instance; will
-//   be used to set the default instance.
-// - The instances themselves should be forward-compatible, including
-// 	 CurrentInstance.
+//   - v2keyKnownJiraInstances ("known_jira_instances") was stored as a
+//     map[string]string (InstanceID->Type), needs to be stored as Instances.
+//     https://github.com/mattermost/mattermost-plugin-jira/blob/885efe8eb70c92bcea64d1ced6e67710eda77b6e/server/kv.go#L375
+//   - v2keyCurrentJIRAInstance ("current_jira_instance") stored an Instance; will
+//     be used to set the default instance.
+//   - The instances themselves should be forward-compatible, including
+//     CurrentInstance.
 func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	// Check if V3 instances exist and return them if found
 	instances, err := p.instanceStore.LoadInstances()
@@ -646,7 +650,7 @@ func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	return instances, nil
 }
 
-//  MigrateV3ToV2 performs necessary migrations when reverting from V3 to  V2
+// MigrateV3ToV2 performs necessary migrations when reverting from V3 to  V2
 func MigrateV3ToV2(p *Plugin) string {
 	// migrate V3 instances to v2
 	v2Instances, msg := MigrateV3InstancesToV2(p)
@@ -675,10 +679,10 @@ func MigrateV3ToV2(p *Plugin) string {
 
 // MigrateV3InstancesToV2 migrates instance record(s) from the V3 data model.
 //
-// - v3 instances need to be stored as v2keyKnownJiraInstances
-//   (known_jira_instances)  map[string]string (InstanceID->Type),
-// - v2keyCurrentJIRAInstance ("current_jira_instance") stored an Instance; will
-//   be used to set the default instance.
+//   - v3 instances need to be stored as v2keyKnownJiraInstances
+//     (known_jira_instances)  map[string]string (InstanceID->Type),
+//   - v2keyCurrentJIRAInstance ("current_jira_instance") stored an Instance; will
+//     be used to set the default instance.
 func MigrateV3InstancesToV2(p *Plugin) (JiraV2Instances, string) {
 	v3instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
