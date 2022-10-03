@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
+	oauth2_jira "golang.org/x/oauth2/jira"
 )
 
 type cloudOAuthInstance struct {
@@ -45,28 +47,40 @@ func (p *Plugin) installCloudOAuthInstance(rawURL string) (string, *cloudOAuthIn
 	return jiraURL, instance, err
 }
 
+type ExternalClient struct {
+	token *oauth2.Token
+}
+
 func (ci *cloudOAuthInstance) GetClient(connection *Connection) (Client, error) {
-	ci.Plugin.OAuther = oauther.NewFromClient(
-		ci.Plugin.client,
-		ci.getOAuthConfig(),
-		ci.onConnect,
-		logger.New(ci.Plugin.API),
-	)
-
-	// TODO I think this part is wrong, review the entire flow
-	_, err := ci.Plugin.OAuther.GetToken(connection.AccountID) // TODO I don't think this AccountID is the right one
+	client, _, err := ci.getClientForConnection(connection)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithMessage(err, "failed to get Jira client for user "+connection.DisplayName)
+	}
+	return newCloudClient(client), nil
+}
+
+func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*jira.Client, *http.Client, error) {
+	oauth2Conf := oauth2_jira.Config{
+		BaseURL: ci.GetURL(),
+		Subject: connection.AccountID,
+		Config: oauth2.Config{
+			ClientID:     ci.AtlassianSecurityContext.OAuthClientID,
+			ClientSecret: ci.AtlassianSecurityContext.SharedSecret,
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  "https://auth.atlassian.io",
+				TokenURL: "https://auth.atlassian.io/oauth2/token",
+			},
+		},
 	}
 
-	httpClient := &http.Client{}
+	conf := ci.getConfig()
+	httpClient := oauth2Conf.Client(context.Background())
+	httpClient = utils.WrapHTTPClient(httpClient,
+		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
+		utils.WithResponseSizeLimit(conf.maxAttachmentSize))
 
-	jiraClient, err := jira.NewClient(httpClient, ci.GetURL())
-	if err != nil {
-		return nil, err
-	}
-
-	return newCloudClient(jiraClient), nil
+	jiraClient, err := jira.NewClient(httpClient, oauth2Conf.BaseURL)
+	return jiraClient, httpClient, err
 }
 
 func (ci *cloudOAuthInstance) GetDisplayDetails() map[string]string {
@@ -98,8 +112,8 @@ func (ci *cloudOAuthInstance) getOAuthConfig() oauth2.Config {
 }
 
 func (ci *cloudOAuthInstance) onConnect(userID string, token oauth2.Token, payload []byte) {
-	// TODO How to store in OAuther store?
-	ci.Plugin.client.KV.Set(ci.Plugin.OAuther.getTokenKey())
+	tokenKey := fmt.Sprintf("oauthcloud_token_%s", userID)
+	ci.Plugin.client.KV.Set(tokenKey, token.AccessToken)
 }
 
 func (ci *cloudOAuthInstance) GetURL() string {
@@ -112,4 +126,8 @@ func (ci *cloudOAuthInstance) GetManageAppsURL() string {
 
 func (ci *cloudOAuthInstance) GetManageWebhooksURL() string {
 	return fmt.Sprintf("%s/plugins/servlet/webhooks", ci.GetURL())
+}
+
+func (ci *cloudOAuthInstance) GetMattermostKey() string {
+	return ci.AtlassianSecurityContext.Key
 }
