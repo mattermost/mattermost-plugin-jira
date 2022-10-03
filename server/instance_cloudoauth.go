@@ -37,7 +37,7 @@ func (p *Plugin) installCloudOAuthInstance(rawURL string) (string, *cloudOAuthIn
 	}
 
 	instance := &cloudOAuthInstance{
-		InstanceCommon: newInstanceCommon(p, ServerInstanceType, types.ID(jiraURL)),
+		InstanceCommon: newInstanceCommon(p, CloudOAuthInstanceType, types.ID(jiraURL)),
 		MattermostKey:  p.GetPluginKey(),
 	}
 

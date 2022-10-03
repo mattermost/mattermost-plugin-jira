@@ -12,8 +12,9 @@ import (
 type InstanceType string
 
 const (
-	CloudInstanceType  = InstanceType("cloud")
-	ServerInstanceType = InstanceType("server")
+	CloudInstanceType      = InstanceType("cloud")
+	ServerInstanceType     = InstanceType("server")
+	CloudOAuthInstanceType = InstanceType("cloudoauth")
 )
 
 type Instance interface {
