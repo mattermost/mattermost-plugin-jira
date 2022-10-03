@@ -528,6 +528,8 @@ func (p *Plugin) OnSendDailyTelemetry() {
 			server++
 		case CloudInstanceType:
 			cloud++
+		case CloudOAuthInstanceType:
+			cloud++
 		}
 	}
 	args["instance_count"] = server + cloud

@@ -20,10 +20,6 @@ type cloudOAuthInstance struct {
 
 	// The SiteURL may change as we go, so we store the PluginKey when as it was installed
 	MattermostKey string
-
-	// TODO Not sure if this is also necessary for OAuth or only for Atlassian Connect
-	RawAtlassianSecurityContext string
-	*AtlassianSecurityContext   `json:"-"`
 }
 
 var _ Instance = (*cloudOAuthInstance)(nil)
@@ -63,8 +59,8 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 		BaseURL: ci.GetURL(),
 		Subject: connection.AccountID,
 		Config: oauth2.Config{
-			ClientID:     ci.AtlassianSecurityContext.OAuthClientID,
-			ClientSecret: ci.AtlassianSecurityContext.SharedSecret,
+			ClientID:     "",
+			ClientSecret: "",
 			Endpoint: oauth2.Endpoint{
 				AuthURL:  "https://auth.atlassian.io",
 				TokenURL: "https://auth.atlassian.io/oauth2/token",
@@ -101,8 +97,8 @@ func (ci *cloudOAuthInstance) GetUserConnectURL(mattermostUserID string) (string
 
 func (ci *cloudOAuthInstance) getOAuthConfig() oauth2.Config {
 	return oauth2.Config{
-		ClientID:     ci.AtlassianSecurityContext.OAuthClientID,
-		ClientSecret: ci.AtlassianSecurityContext.SharedSecret,
+		ClientID:     "",
+		ClientSecret: "",
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://auth.atlassian.io",
 			TokenURL: "https://auth.atlassian.io/oauth2/token",

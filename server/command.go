@@ -973,6 +973,10 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 			return sbullet(id, fmt.Sprintf("Cloud, connected as **%s** (AccountID: `%s`)",
 				connection.User.DisplayName,
 				connection.User.AccountID))
+		case CloudOAuthInstanceType:
+			return sbullet(id, fmt.Sprintf("Cloud with OAuth2, connected as **%s** (AccountID: `%s`)",
+				connection.User.DisplayName,
+				connection.User.AccountID))
 		case ServerInstanceType:
 			return sbullet(id, fmt.Sprintf("Server, connected as **%s** (Name:%s, Key:%s, EmailAddress:%s)",
 				connection.User.DisplayName,
