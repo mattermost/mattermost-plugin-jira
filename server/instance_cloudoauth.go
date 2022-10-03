@@ -25,6 +25,8 @@ type cloudOAuthInstance struct {
 	*AtlassianSecurityContext `json:"-"`
 }
 
+var _ Instance = (*cloudOAuthInstance)(nil)
+
 func (p *Plugin) installCloudOAuthInstance(rawURL string) (string, *cloudOAuthInstance, error) {
 	jiraURL, err := utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
 	if err != nil {
@@ -45,10 +47,6 @@ func (p *Plugin) installCloudOAuthInstance(rawURL string) (string, *cloudOAuthIn
 	}
 
 	return jiraURL, instance, err
-}
-
-type ExternalClient struct {
-	token *oauth2.Token
 }
 
 func (ci *cloudOAuthInstance) GetClient(connection *Connection) (Client, error) {
@@ -129,5 +127,5 @@ func (ci *cloudOAuthInstance) GetManageWebhooksURL() string {
 }
 
 func (ci *cloudOAuthInstance) GetMattermostKey() string {
-	return ci.AtlassianSecurityContext.Key
+	return ci.MattermostKey
 }
