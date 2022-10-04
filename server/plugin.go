@@ -86,7 +86,6 @@ type externalConfig struct {
 	// OAuth app configuration
 	JiraAuthAppClientID     string
 	JiraAuthAppClientSecret string
-	JiraAuthAppURL          string
 }
 
 const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb

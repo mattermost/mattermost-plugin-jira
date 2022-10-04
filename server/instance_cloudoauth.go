@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -72,14 +71,6 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 		},
 	}
 
-	// TODO Not necessary?
-	// tokenKey := fmt.Sprintf("oauthcloud_token_%s", connection.AccountID)
-	// token := &OAuth2Token{}
-	// err := ci.Plugin.client.KV.Get(tokenKey, &token)
-	// if err != nil {
-	// 	return nil, nil, err
-	// }
-
 	httpClient := oauth2Conf.Client(context.Background())
 	httpClient = utils.WrapHTTPClient(httpClient,
 		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
@@ -97,11 +88,26 @@ func (ci *cloudOAuthInstance) GetDisplayDetails() map[string]string {
 
 func (ci *cloudOAuthInstance) GetUserConnectURL(mattermostUserID string) (string, *http.Cookie, error) {
 	conf := ci.getConfig()
-	const USER_BOUND_STRING = "${YOUR_USER_BOUND_VALUE}"
-	// TODO encrypt mattermostUserID?
-	connectURL := strings.Replace(
-		conf.JiraAuthAppURL, USER_BOUND_STRING, mattermostUserID, 1)
-	return connectURL, nil, nil
+
+	oauthConf := &oauth2.Config{
+		ClientID:     conf.JiraAuthAppClientID,
+		ClientSecret: conf.JiraAuthAppClientSecret,
+		Scopes:       []string{"read:jira-work", "write:jira-work"},
+		RedirectURL:  fmt.Sprintf("%s/oauth/connect", ci.Plugin.GetPluginURL()),
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "https://auth.atlassian.com/authorize",
+			TokenURL: "https://auth.atlassian.com/oauth/token",
+		},
+	}
+
+	url := oauthConf.AuthCodeURL(
+		"dummystate", // TODO
+		oauth2.SetAuthURLParam("audience", "api.atlassian.com"),
+		oauth2.SetAuthURLParam("state", mattermostUserID),
+		oauth2.SetAuthURLParam("response_type", "code"),
+		oauth2.SetAuthURLParam("prompt", "consent"),
+	)
+	return url, nil, nil
 }
 
 func (ci *cloudOAuthInstance) GetURL() string {

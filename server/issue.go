@@ -86,25 +86,25 @@ func (p *Plugin) httpOAuthConnect(w http.ResponseWriter, r *http.Request, instan
 
 	// TODO Too much code here
 	// Check the token works with the code
-	instance, err := p.instanceStore.LoadInstance(instanceID)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	connection := &Connection{
-		PluginVersion: manifest.Version,
-		OAuth2Token:   token.AccessToken,
-	}
+	// instance, err := p.instanceStore.LoadInstance(instanceID)
+	// if err != nil {
+	// 	return http.StatusInternalServerError, err
+	// }
+	// connection := &Connection{
+	// 	PluginVersion: manifest.Version,
+	// 	OAuth2Token:   token.AccessToken,
+	// }
 
-	pluginClient, err := instance.GetClient(connection)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
+	// pluginClient, err := instance.GetClient(connection)
+	// if err != nil {
+	// 	return http.StatusInternalServerError, err
+	// }
 
-	juser, err := pluginClient.GetSelf()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	connection.User = *juser
+	// juser, err := pluginClient.GetSelf()
+	// if err != nil {
+	// 	return http.StatusInternalServerError, err
+	// }
+	// connection.User = *juser
 
 	// // Set default settings the first time a user connects
 	// connection.Settings = &ConnectionSettings{Notifications: true}
@@ -130,7 +130,11 @@ func (p *Plugin) httpOAuthConnect(w http.ResponseWriter, r *http.Request, instan
 	// 	RevokeURL:             path.Join(p.GetPluginURLPath(), instancePath(routeUserDisconnect, instance.GetID())),
 	// })
 	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write([]byte(`{statusField: "OK"}`))
+	jsonData, _ = json.Marshal(map[string]string{
+		"message": "OK",
+		"token":   token.AccessToken,
+	})
+	_, err = w.Write(jsonData)
 	return http.StatusOK, err
 }
 
