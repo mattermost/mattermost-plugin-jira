@@ -123,6 +123,14 @@
                 "help_text": "Jira App Secret key given when you create the app on JIRA. You can get it on Settings -> Authenticathion credentials",
                 "placeholder": "",
                 "default": false
+            },
+            {
+                "key": "JiraAuthAppURL",
+                "display_name": "Jira Auth App URL (Classic Jira platform REST API authorization URL from your JIRA App -> Authorization",
+                "type": "string",
+                "help_text": "Jira App Secret key given when you create the app on JIRA. You can get it on Settings -> Authenticathion credentials",
+                "placeholder": "",
+                "default": false
             }
 
         ]

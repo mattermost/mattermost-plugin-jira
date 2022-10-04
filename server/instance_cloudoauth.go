@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/mattermost/mattermost-plugin-api/experimental/bot/logger"
-	"github.com/mattermost/mattermost-plugin-api/experimental/oauther"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/pkg/errors"
@@ -85,32 +84,12 @@ func (ci *cloudOAuthInstance) GetDisplayDetails() map[string]string {
 }
 
 func (ci *cloudOAuthInstance) GetUserConnectURL(mattermostUserID string) (string, *http.Cookie, error) {
-	ci.Plugin.OAuther = oauther.NewFromClient(
-		ci.Plugin.client,
-		ci.getOAuthConfig(),
-		ci.onConnect,
-		logger.New(ci.Plugin.API),
-	)
-
-	// TODO Finish configuring the URL
-	return ci.Plugin.OAuther.GetConnectURL(), nil, nil
-}
-
-func (ci *cloudOAuthInstance) getOAuthConfig() oauth2.Config {
 	conf := ci.getConfig()
-	return oauth2.Config{
-		ClientID:     conf.JiraAuthAppClientID,
-		ClientSecret: conf.JiraAuthAppClientSecret,
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://auth.atlassian.com",
-			TokenURL: "https://auth.atlassian.io/oauth2/token",
-		},
-	}
-}
-
-func (ci *cloudOAuthInstance) onConnect(userID string, token oauth2.Token, payload []byte) {
-	tokenKey := fmt.Sprintf("oauthcloud_token_%s", userID)
-	ci.Plugin.client.KV.Set(tokenKey, token.AccessToken)
+	const USER_BOUND_STRING = "${YOUR_USER_BOUND_VALUE}"
+	// TODO encrypt mattermostUserID?
+	connectURL := strings.Replace(
+		conf.JiraAuthAppURL, USER_BOUND_STRING, mattermostUserID, 1)
+	return connectURL, nil, nil
 }
 
 func (ci *cloudOAuthInstance) GetURL() string {

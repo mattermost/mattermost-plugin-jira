@@ -4,8 +4,10 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -39,10 +41,52 @@ func makePost(userID, channelID, message string) *model.Post {
 }
 
 func (p *Plugin) httpOAuthConnect(w http.ResponseWriter, r *http.Request) (int, error) {
-	// TODO Get code and state and send to retrieve a token
-	_, err := w.Write([]byte(`{statusField: "OK"}`))
+	if r.Method == "POST" {
+		_, err := w.Write([]byte(`{ "message": "THIS IS A POST" }`))
+		return http.StatusOK, err
+	}
+
+	code := r.URL.Query().Get("code")
+	// state := r.URL.Query().Get("state")
+
+	conf := p.getConfig()
+	jsonData, _ := json.Marshal(map[string]string{
+		"grant_type":    "authorization_code",
+		"client_id":     conf.JiraAuthAppClientID,
+		"client_secret": conf.JiraAuthAppClientSecret,
+		"code":          code,
+		"redirect_uri":  fmt.Sprintf("%s/oauth/connect", p.GetPluginURL()),
+	})
+
+	request, err := http.NewRequest(
+		"POST",
+		"https://auth.atlassian.com/oauth/token",
+		bytes.NewBuffer(jsonData),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	request.Header.Set("Content-type", "application/json; charset=UTF-8")
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		panic(err)
+	}
+	defer response.Body.Close()
+
+	// TODO Get data and persist token?
+	body, _ := ioutil.ReadAll(response.Body)
+
+	_, err = w.Write([]byte(body))
 	return http.StatusOK, err
 }
+
+// func (p *Plugin) onConnect(userID string, token oauth2.Token, payload []byte) {
+// 	tokenKey := fmt.Sprintf("oauthcloud_token_%s", userID)
+// 	p.client.KV.Set(tokenKey, token.AccessToken)
+// }
 
 func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) (int, error) {
 	var requestData model.PostActionIntegrationRequest
