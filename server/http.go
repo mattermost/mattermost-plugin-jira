@@ -103,6 +103,7 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		routeUserDisconnect,
 		routeUserConnect,
 		routeUserStart,
+		routeOAuthConnect,
 		routeAPISubscribeWebhook:
 
 		callbackInstanceID, err = p.ResolveWebhookInstanceURL(instanceURL)

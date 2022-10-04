@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -42,11 +41,6 @@ func makePost(userID, channelID, message string) *model.Post {
 }
 
 func (p *Plugin) httpOAuthConnect(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
-	if r.Method == "POST" {
-		_, err := w.Write([]byte(`{ "message": "THIS IS A POST" }`))
-		return http.StatusOK, err
-	}
-
 	code := r.URL.Query().Get("code")
 	userID := r.URL.Query().Get("state")
 
@@ -112,29 +106,32 @@ func (p *Plugin) httpOAuthConnect(w http.ResponseWriter, r *http.Request, instan
 	}
 	connection.User = *juser
 
-	// Set default settings the first time a user connects
-	connection.Settings = &ConnectionSettings{Notifications: true}
+	// // Set default settings the first time a user connects
+	// connection.Settings = &ConnectionSettings{Notifications: true}
 
-	err = p.connectUser(instance, types.ID(userID), connection)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	mmuser, appErr := p.API.GetUser(userID)
-	if appErr != nil {
-		return http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to load user "+userID)
-	}
+	// err = p.connectUser(instance, types.ID(userID), connection)
+	// if err != nil {
+	// 	return http.StatusInternalServerError, err
+	// }
+	// mmuser, appErr := p.API.GetUser(userID)
+	// if appErr != nil {
+	// 	return http.StatusInternalServerError,
+	// 		errors.WithMessage(appErr, "failed to load user "+userID)
+	// }
 
-	// TODO The revoke is not valid yet
-	return p.respondTemplate(w, r, "text/html", struct {
-		MattermostDisplayName string
-		JiraDisplayName       string
-		RevokeURL             string
-	}{
-		JiraDisplayName:       juser.DisplayName + " (" + juser.Name + ")",
-		MattermostDisplayName: mmuser.GetDisplayName(model.ShowNicknameFullName),
-		RevokeURL:             path.Join(p.GetPluginURLPath(), instancePath(routeUserDisconnect, instance.GetID())),
-	})
+	// // // TODO The revoke is not valid yet
+	// return p.respondTemplate(w, r, "text/html", struct {
+	// 	MattermostDisplayName string
+	// 	JiraDisplayName       string
+	// 	RevokeURL             string
+	// }{
+	// 	JiraDisplayName:       juser.DisplayName + " (" + juser.Name + ")",
+	// 	MattermostDisplayName: mmuser.GetDisplayName(model.ShowNicknameFullName),
+	// 	RevokeURL:             path.Join(p.GetPluginURLPath(), instancePath(routeUserDisconnect, instance.GetID())),
+	// })
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write([]byte(`{statusField: "OK"}`))
+	return http.StatusOK, err
 }
 
 func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) (int, error) {
