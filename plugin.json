@@ -111,26 +111,26 @@
             {
                 "key": "JiraAuthAppClientID",
                 "display_name": "Jira App client ID",
-                "type": "string",
+                "type": "text",
                 "help_text": "Jira App Client ID given when you create the app on JIRA. You can get it on Settings -> Authenticathion credentials",
                 "placeholder": "",
-                "default": false
+                "default": ""
             },
             {
                 "key": "JiraAuthAppClientSecret",
                 "display_name": "Jira App secret key",
-                "type": "string",
+                "type": "text",
                 "help_text": "Jira App Secret key given when you create the app on JIRA. You can get it on Settings -> Authenticathion credentials",
                 "placeholder": "",
-                "default": false
+                "default": ""
             },
             {
                 "key": "JiraAuthAppURL",
                 "display_name": "Jira Auth App URL (Classic Jira platform REST API authorization URL from your JIRA App -> Authorization",
-                "type": "string",
+                "type": "text",
                 "help_text": "Jira App Secret key given when you create the app on JIRA. You can get it on Settings -> Authenticathion credentials",
                 "placeholder": "",
-                "default": false
+                "default": ""
             }
 
         ]
