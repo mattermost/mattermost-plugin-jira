@@ -72,6 +72,13 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 		},
 	}
 
+	tokenKey := fmt.Sprintf("oauthcloud_token_%s", connection.AccountID)
+	token := &OAuth2Token{}
+	err := ci.Plugin.client.KV.Get(tokenKey, &token)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	httpClient := oauth2Conf.Client(context.Background())
 	httpClient = utils.WrapHTTPClient(httpClient,
 		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
