@@ -38,6 +38,12 @@ func makePost(userID, channelID, message string) *model.Post {
 	}
 }
 
+func (p *Plugin) httpOAuthConnect(w http.ResponseWriter, r *http.Request) (int, error) {
+	// TODO Get code and state and send to retrieve a token
+	_, err := w.Write([]byte(`{statusField: "OK"}`))
+	return http.StatusOK, err
+}
+
 func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) (int, error) {
 	var requestData model.PostActionIntegrationRequest
 	err := json.NewDecoder(r.Body).Decode(&requestData)

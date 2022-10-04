@@ -107,7 +107,24 @@
                 "help_text": "Display subscription name in post when a subscription posts to a channel",
                 "placeholder": "",
                 "default": false
+            },
+            {
+                "key": "JiraAuthAppClientID",
+                "display_name": "Jira App client ID",
+                "type": "string",
+                "help_text": "Jira App Client ID given when you create the app on JIRA. You can get it on Settings -> Authenticathion credentials",
+                "placeholder": "",
+                "default": false
+            },
+            {
+                "key": "JiraAuthAppClientSecret",
+                "display_name": "Jira App secret key",
+                "type": "string",
+                "help_text": "Jira App Secret key given when you create the app on JIRA. You can get it on Settings -> Authenticathion credentials",
+                "placeholder": "",
+                "default": false
             }
+
         ]
     }
 }

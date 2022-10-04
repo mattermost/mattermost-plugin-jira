@@ -83,6 +83,10 @@ type externalConfig struct {
 
 	// Display subscription name in notifications
 	DisplaySubscriptionNameInNotifications bool
+
+	// OAuth app configuration
+	JiraAuthAppClientID     string
+	JiraAuthAppClientSecret string
 }
 
 const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb

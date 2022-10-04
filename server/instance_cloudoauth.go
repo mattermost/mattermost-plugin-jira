@@ -92,15 +92,17 @@ func (ci *cloudOAuthInstance) GetUserConnectURL(mattermostUserID string) (string
 		logger.New(ci.Plugin.API),
 	)
 
+	// TODO Finish configuring the URL
 	return ci.Plugin.OAuther.GetConnectURL(), nil, nil
 }
 
 func (ci *cloudOAuthInstance) getOAuthConfig() oauth2.Config {
+	conf := ci.getConfig()
 	return oauth2.Config{
-		ClientID:     "",
-		ClientSecret: "",
+		ClientID:     conf.JiraAuthAppClientID,
+		ClientSecret: conf.JiraAuthAppClientSecret,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://auth.atlassian.io",
+			AuthURL:  "https://auth.atlassian.com",
 			TokenURL: "https://auth.atlassian.io/oauth2/token",
 		},
 	}

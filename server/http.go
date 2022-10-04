@@ -53,6 +53,7 @@ const (
 	routeUserConnect                            = "/user/connect"
 	routeUserDisconnect                         = "/user/disconnect"
 	routeSharePublicly                          = "/api/v2/share-issue-publicly"
+	routeOAuthConnect                           = "/oauth/connect"
 )
 
 const routePrefixInstance = "instance"
@@ -130,6 +131,8 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return p.httpTransitionIssuePostAction(w, r)
 	case routeSharePublicly:
 		return p.httpShareIssuePublicly(w, r)
+	case routeOAuthConnect:
+		return p.httpOAuthConnect(w, r)
 
 	// User APIs
 	case routeAPIUserInfo:
