@@ -21,6 +21,10 @@ type cloudOAuthInstance struct {
 	MattermostKey string
 }
 
+type OAuth2Token struct {
+	AccessToken string `json:"access_token"`
+}
+
 var _ Instance = (*cloudOAuthInstance)(nil)
 
 func (p *Plugin) installCloudOAuthInstance(rawURL string) (string, *cloudOAuthInstance, error) {
@@ -54,20 +58,20 @@ func (ci *cloudOAuthInstance) GetClient(connection *Connection) (Client, error) 
 }
 
 func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*jira.Client, *http.Client, error) {
+	conf := ci.getConfig()
 	oauth2Conf := oauth2_jira.Config{
 		BaseURL: ci.GetURL(),
 		Subject: connection.AccountID,
 		Config: oauth2.Config{
-			ClientID:     "",
-			ClientSecret: "",
+			ClientID:     conf.JiraAuthAppClientID,
+			ClientSecret: conf.JiraAuthAppClientSecret,
 			Endpoint: oauth2.Endpoint{
-				AuthURL:  "https://auth.atlassian.io",
-				TokenURL: "https://auth.atlassian.io/oauth2/token",
+				AuthURL:  "https://auth.atlassian.com",
+				TokenURL: "https://auth.atlassian.com/oauth/token",
 			},
 		},
 	}
 
-	conf := ci.getConfig()
 	httpClient := oauth2Conf.Client(context.Background())
 	httpClient = utils.WrapHTTPClient(httpClient,
 		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
