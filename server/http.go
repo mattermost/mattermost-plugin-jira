@@ -132,7 +132,7 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	case routeSharePublicly:
 		return p.httpShareIssuePublicly(w, r)
 	case routeOAuthConnect:
-		return p.httpOAuthConnect(w, r)
+		return p.httpOAuthConnect(w, r, callbackInstanceID)
 
 	// User APIs
 	case routeAPIUserInfo:

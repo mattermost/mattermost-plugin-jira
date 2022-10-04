@@ -30,6 +30,7 @@ type Connection struct {
 	PluginVersion      string
 	Oauth1AccessToken  string `json:",omitempty"`
 	Oauth1AccessSecret string `json:",omitempty"`
+	OAuth2Token        string `json:",omitempty"`
 	Settings           *ConnectionSettings
 	DefaultProjectKey  string `json:"default_project_key,omitempty"`
 }

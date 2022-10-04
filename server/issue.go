@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -40,7 +41,7 @@ func makePost(userID, channelID, message string) *model.Post {
 	}
 }
 
-func (p *Plugin) httpOAuthConnect(w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) httpOAuthConnect(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
 	if r.Method == "POST" {
 		_, err := w.Write([]byte(`{ "message": "THIS IS A POST" }`))
 		return http.StatusOK, err
@@ -89,9 +90,51 @@ func (p *Plugin) httpOAuthConnect(w http.ResponseWriter, r *http.Request) (int, 
 	}
 	p.client.KV.Set(tokenKey, token.AccessToken)
 
-	// TODO redirect?
-	_, err = w.Write([]byte(body))
-	return http.StatusOK, err
+	// TODO Too much code here
+	// Check the token works with the code
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	connection := &Connection{
+		PluginVersion: manifest.Version,
+		OAuth2Token:   token.AccessToken,
+	}
+
+	pluginClient, err := instance.GetClient(connection)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	juser, err := pluginClient.GetSelf()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	connection.User = *juser
+
+	// Set default settings the first time a user connects
+	connection.Settings = &ConnectionSettings{Notifications: true}
+
+	err = p.connectUser(instance, types.ID(userID), connection)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	mmuser, appErr := p.API.GetUser(userID)
+	if appErr != nil {
+		return http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to load user "+userID)
+	}
+
+	// TODO The revoke is not valid yet
+	return p.respondTemplate(w, r, "text/html", struct {
+		MattermostDisplayName string
+		JiraDisplayName       string
+		RevokeURL             string
+	}{
+		JiraDisplayName:       juser.DisplayName + " (" + juser.Name + ")",
+		MattermostDisplayName: mmuser.GetDisplayName(model.ShowNicknameFullName),
+		RevokeURL:             path.Join(p.GetPluginURLPath(), instancePath(routeUserDisconnect, instance.GetID())),
+	})
 }
 
 func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) (int, error) {
