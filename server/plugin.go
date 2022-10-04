@@ -23,7 +23,6 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
-	"github.com/mattermost/mattermost-plugin-api/experimental/oauther"
 	"github.com/mattermost/mattermost-plugin-api/experimental/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
@@ -108,8 +107,7 @@ type config struct {
 
 type Plugin struct {
 	plugin.MattermostPlugin
-	client  *pluginapi.Client
-	OAuther oauther.OAuther
+	client *pluginapi.Client
 
 	// configuration and a muttex to control concurrent access
 	conf     config
