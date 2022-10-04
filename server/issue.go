@@ -47,7 +47,7 @@ func (p *Plugin) httpOAuthConnect(w http.ResponseWriter, r *http.Request) (int, 
 	}
 
 	code := r.URL.Query().Get("code")
-	// state := r.URL.Query().Get("state")
+	userID := r.URL.Query().Get("state")
 
 	conf := p.getConfig()
 	jsonData, _ := json.Marshal(map[string]string{
@@ -64,7 +64,8 @@ func (p *Plugin) httpOAuthConnect(w http.ResponseWriter, r *http.Request) (int, 
 		bytes.NewBuffer(jsonData),
 	)
 	if err != nil {
-		panic(err)
+		return respondErr(w, http.StatusBadRequest,
+			errors.Wrap(err, "Error creating get token request onauth2"))
 	}
 
 	request.Header.Set("Content-type", "application/json; charset=UTF-8")
@@ -72,21 +73,26 @@ func (p *Plugin) httpOAuthConnect(w http.ResponseWriter, r *http.Request) (int, 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		panic(err)
+		return respondErr(w, http.StatusBadRequest,
+			errors.Wrap(err, "Error requesting token with Bearer"))
 	}
 	defer response.Body.Close()
 
-	// TODO Get data and persist token?
 	body, _ := ioutil.ReadAll(response.Body)
 
+	tokenKey := fmt.Sprintf("oauthcloud_token_%s", userID)
+	token := &OAuth2Token{}
+	err = json.Unmarshal(body, token)
+	if err != nil {
+		return respondErr(w, http.StatusBadRequest,
+			errors.Wrap(err, "No access token present when getting token from JIRA"))
+	}
+	p.client.KV.Set(tokenKey, token.AccessToken)
+
+	// TODO redirect?
 	_, err = w.Write([]byte(body))
 	return http.StatusOK, err
 }
-
-// func (p *Plugin) onConnect(userID string, token oauth2.Token, payload []byte) {
-// 	tokenKey := fmt.Sprintf("oauthcloud_token_%s", userID)
-// 	p.client.KV.Set(tokenKey, token.AccessToken)
-// }
 
 func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) (int, error) {
 	var requestData model.PostActionIntegrationRequest
