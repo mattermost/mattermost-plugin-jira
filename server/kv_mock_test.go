@@ -96,7 +96,7 @@ func (store mockUserStore) MapUsers(func(*User) error) error {
 
 type mockInstanceStore struct{}
 
-func (store mockInstanceStore) CreateInactiveCloudInstance(types.ID) error {
+func (store mockInstanceStore) CreateInactiveCloudInstance(types.ID, string) error {
 	return nil
 }
 func (store mockInstanceStore) DeleteInstance(types.ID) error {

@@ -62,3 +62,18 @@ func (client jiraServerClient) GetUserGroups(connection *Connection) ([]*jira.Us
 	}
 	return result.Groups.Items, nil
 }
+
+func (client jiraServerClient) ListProjects(query string, limit int) (jira.ProjectList, error) {
+	plist, resp, err := client.Jira.Project.GetList()
+	if err != nil {
+		return nil, userFriendlyJiraError(resp, err)
+	}
+	if plist == nil {
+		return jira.ProjectList{}, nil
+	}
+	result := *plist
+	if limit > 0 && len(result) > limit {
+		result = result[:limit]
+	}
+	return result, nil
+}

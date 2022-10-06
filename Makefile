@@ -65,6 +65,7 @@ endif
 ## Ensures NPM dependencies are installed without having to run this all the time.
 webapp/.npminstall:
 ifneq ($(HAS_WEBAPP),)
+	git config --global url."ssh://git@".insteadOf git://
 	cd webapp && $(NPM) install
 	touch $@
 endif
@@ -94,7 +95,7 @@ ifneq ($(wildcard $(ASSETS_DIR)/.),)
 	cp -r $(ASSETS_DIR) dist/$(PLUGIN_ID)/
 endif
 ifneq ($(HAS_PUBLIC),)
-	cp -r public/ dist/$(PLUGIN_ID)/
+	cp -r public dist/$(PLUGIN_ID)/
 endif
 ifneq ($(HAS_SERVER),)
 	mkdir -p dist/$(PLUGIN_ID)/server/dist;

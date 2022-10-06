@@ -4,7 +4,10 @@
 package main
 
 import (
+	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -15,9 +18,12 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
+	"github.com/mattermost/mattermost-plugin-api/experimental/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
@@ -25,10 +31,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
-	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
-	"github.com/mattermost/mattermost-plugin-jira/server/tracker"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/telemetry"
 )
 
 const (
@@ -52,11 +55,8 @@ type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
 	EnableJiraUI bool `json:"enablejiraui"`
 
-	// Legacy 1.x Webhook secret
+	// Webhook secret
 	Secret string `json:"secret"`
-
-	// Stats API secret
-	StatsSecret string `json:"stats_secret"`
 
 	// What MM roles that can create subscriptions
 	RolesAllowedToEditJiraSubscriptions string
@@ -68,9 +68,6 @@ type externalConfig struct {
 	// number, optionally followed by one of [b, kb, mb, gb, tb]
 	MaxAttachmentSize string
 
-	// Disable statistics gathering
-	DisableStats bool `json:"disable_stats"`
-
 	// Additional Help Text to be shown in the output of '/jira help' command
 	JiraAdminAdditionalHelpText string
 
@@ -79,6 +76,9 @@ type externalConfig struct {
 
 	// Enable slash command autocomplete
 	EnableAutocomplete bool
+
+	// Enable Webhook Event Logging
+	EnableWebhookEventLogging bool
 
 	// Display subscription name in notifications
 	DisplaySubscriptionNameInNotifications bool
@@ -95,9 +95,6 @@ type config struct {
 
 	// Maximum attachment size allowed to be uploaded to Jira
 	maxAttachmentSize utils.ByteSize
-
-	stats             *expvar.Stats
-	statsStopAutosave chan bool
 
 	mattermostSiteURL string
 	rsaKey            *rsa.PrivateKey
@@ -116,6 +113,12 @@ type Plugin struct {
 	otsStore      OTSStore
 	secretsStore  SecretsStore
 
+	setupFlow *flow.Flow
+
+	// Most of ServeHTTP does not use an http router, but we need one to support
+	// the setup wizard flow. Introducing it here incrementally.
+	gorillaRouter *mux.Router
+
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
 
@@ -129,7 +132,7 @@ type Plugin struct {
 	telemetryClient telemetry.Client
 
 	// telemetry Tracker
-	Tracker tracker.Tracker
+	tracker telemetry.Tracker
 
 	// service that determines if this Mattermost instance has access to
 	// enterprise features
@@ -194,14 +197,15 @@ func (p *Plugin) OnConfigurationChange() error {
 	}
 
 	// create new tracker on each configuration change
-	p.Tracker = tracker.New(telemetry.NewTracker(
+	p.tracker = telemetry.NewTracker(
 		p.telemetryClient,
 		p.API.GetDiagnosticId(),
 		p.API.GetServerVersion(),
 		manifest.ID,
 		manifest.Version,
+		"jira",
 		diagnostics,
-	))
+	)
 
 	return nil
 }
@@ -224,6 +228,7 @@ func (p *Plugin) OnActivate() error {
 	p.secretsStore = store
 	p.otsStore = store
 	p.client = pluginapi.NewClient(p.API, p.Driver)
+	p.gorillaRouter = mux.NewRouter()
 
 	botUserID, err := p.client.Bot.EnsureBot(&model.Bot{
 		Username:    botUserName,
@@ -238,6 +243,11 @@ func (p *Plugin) OnActivate() error {
 	ptr := p.API.GetConfig().ServiceSettings.SiteURL
 	if ptr != nil {
 		mattermostSiteURL = *ptr
+	}
+
+	err = p.setDefaultConfiguration()
+	if err != nil {
+		return errors.Wrap(err, "failed to set default configuration")
 	}
 
 	rsaKey, err := p.secretsStore.EnsureRSAKey()
@@ -276,6 +286,8 @@ func (p *Plugin) OnActivate() error {
 	}
 	p.templates = templates
 
+	p.setupFlow = p.NewSetupFlow()
+
 	// Register /jira command and stash the loaded list of known instances for
 	// later (autolink registration).
 	err = p.registerJiraCommand(p.getConfig().EnableAutocomplete, instances.Len() > 1)
@@ -292,8 +304,6 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	p.enterpriseChecker = enterprise.NewEnterpriseChecker(p.API)
-
-	go p.initStats()
 
 	go func() {
 		for _, url := range instances.IDs() {
@@ -341,12 +351,13 @@ func (p *Plugin) AddAutolinksForCloudInstance(ci *cloudInstance) error {
 		return fmt.Errorf("unable to get jira client for server: %w", err)
 	}
 
-	keys, err := JiraClient{Jira: client}.GetAllProjectKeys()
+	plist, err := jiraCloudClient{JiraClient{Jira: client}}.ListProjects("", -1)
 	if err != nil {
 		return fmt.Errorf("unable to get project keys: %w", err)
 	}
 
-	for _, key := range keys {
+	for _, proj := range plist {
+		key := proj.Key
 		err = p.AddAutolinks(key, ci.BaseURL)
 	}
 	if err != nil {
@@ -426,5 +437,135 @@ func (p *Plugin) CheckSiteURL() error {
 	if u.Hostname() == "localhost" {
 		return errors.Errorf("Using %s as your Mattermost SiteURL is not permitted, as the URL is not reachable from Jira. If you are using Jira Cloud, please make sure your URL is reachable from the public internet.", ustr)
 	}
+	return nil
+}
+
+func (p *Plugin) storeConfig(ec externalConfig) error {
+	var out map[string]interface{}
+	data, err := json.Marshal(ec)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(data, &out)
+	if err != nil {
+		return err
+	}
+
+	return p.client.Configuration.SavePluginConfig(out)
+}
+
+func generateSecret() (string, error) {
+	b := make([]byte, 256)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	s := base64.RawStdEncoding.EncodeToString(b)
+
+	s = s[:32]
+
+	return s, nil
+}
+
+func (c *externalConfig) setDefaults() (bool, error) {
+	changed := false
+
+	if c.Secret == "" {
+		secret, err := generateSecret()
+		if err != nil {
+			return false, err
+		}
+		c.Secret = secret
+		changed = true
+	}
+
+	return changed, nil
+}
+
+func (p *Plugin) setDefaultConfiguration() error {
+	ec := p.getConfig().externalConfig
+	changed, err := ec.setDefaults()
+	if err != nil {
+		return err
+	}
+
+	if changed {
+		err := p.storeConfig(ec)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (p *Plugin) track(name, userID string) {
+	p.trackWithArgs(name, userID, nil)
+}
+
+func (p *Plugin) trackWithArgs(name, userID string, args map[string]interface{}) {
+	if args == nil {
+		args = map[string]interface{}{}
+	}
+	args["time"] = model.GetMillis()
+	_ = p.tracker.TrackUserEvent(name, userID, args)
+}
+
+func (p *Plugin) OnSendDailyTelemetry() {
+	args := map[string]interface{}{}
+
+	// Jira instances
+	server, cloud := 0, 0
+	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		p.API.LogWarn("Failed to get instances for telemetry", "error", err)
+	}
+	for _, id := range instances.IDs() {
+		switch instances.Get(id).Type {
+		case ServerInstanceType:
+			server++
+		case CloudInstanceType:
+			cloud++
+		}
+	}
+	args["instance_count"] = server + cloud
+	if server > 0 {
+		args["server_instance_count"] = server
+	}
+	if cloud > 0 {
+		args["cloud_instance_count"] = cloud
+	}
+
+	// Connected users
+	connected, err := p.userStore.CountUsers()
+	if err != nil {
+		p.API.LogWarn("Failed to get the number of connected users for telemetry", "error", err)
+	}
+	args["connected_user_count"] = connected
+
+	// Subscriptions
+	subscriptions := 0
+	for _, id := range instances.IDs() {
+		subs, err := p.getSubscriptions(id)
+		if err != nil {
+			p.API.LogWarn("Failed to get subscriptions for telemetry", "error", err)
+		}
+		subscriptions += len(subs.Channel.ByID)
+	}
+	args["subscriptions"] = subscriptions
+
+	_ = p.tracker.TrackEvent("stats", args)
+}
+
+func (p *Plugin) OnInstall(c *plugin.Context, event model.OnInstallEvent) error {
+	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return err
+	}
+
+	if instances.Len() == 0 {
+		return p.setupFlow.ForUser(event.UserId).Start(nil)
+	}
+
 	return nil
 }
