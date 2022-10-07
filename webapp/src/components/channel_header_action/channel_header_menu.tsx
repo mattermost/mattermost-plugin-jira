@@ -22,20 +22,17 @@ export default class ChannelHeaderMenuAction extends React.PureComponent<Props> 
         const {isInstanceInstalled, userConnected} = this.props;
 
         if (!isInstanceInstalled || !userConnected) {
-            console.log(' IN HERE ');
             return null;
         }
         return (
-            <React.Fragment>
-                <button
-                    className='style--none'
-                    role='presentation'
-                    onClick={this.handleClick}
-                >
-                    <JiraIcon type='menu'/>
-                    {'Jira Subscriptions'}
-                </button>
-            </React.Fragment>
+            <button
+                className='style--none'
+                role='presentation'
+                onClick={this.handleClick}
+            >
+                <JiraIcon type='menu'/>
+                {'Jira Subscriptions'}
+            </button>
         );
     }
 }
