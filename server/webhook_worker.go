@@ -4,74 +4,61 @@
 package main
 
 import (
-	"time"
-
-	"github.com/mattermost/mattermost-plugin-jira/server/utils"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 type webhookWorker struct {
 	id        int
 	p         *Plugin
-	workQueue <-chan []byte
+	workQueue <-chan *webhookMessage
+}
+
+type webhookMessage struct {
+	InstanceID types.ID
+	Data       []byte
 }
 
 func (ww webhookWorker) work() {
-	for rawData := range ww.workQueue {
-		err := ww.process(rawData)
+	for msg := range ww.workQueue {
+		err := ww.process(msg)
 		if err != nil {
 			ww.p.errorf("WebhookWorker id: %d, error processing, err: %v", ww.id, err)
 		}
-
 	}
 }
 
-func (ww webhookWorker) process(rawData []byte) (err error) {
-	conf := ww.p.getConfig()
-	start := time.Now()
+func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 	defer func() {
-		isError, isIgnored := false, false
-		switch err {
-		case nil:
-			break
-		case ErrWebhookIgnored:
+		if err == ErrWebhookIgnored {
 			// ignore ErrWebhookIgnored - from here up it's a success
-			isIgnored = true
 			err = nil
-		default:
-			// TODO save the payload here
-			isError = true
-		}
-		if conf.stats != nil {
-			conf.stats.EnsureEndpoint("jira/subscribe/processing").Record(utils.ByteSize(len(rawData)), 0, time.Since(start), isError, isIgnored)
 		}
 	}()
 
-	wh, err := ParseWebhook(rawData)
+	wh, err := ParseWebhook(msg.Data)
 	if err != nil {
 		return err
 	}
 
-	if _, _, err = wh.PostNotifications(ww.p); err != nil {
+	if _, _, err = wh.PostNotifications(ww.p, msg.InstanceID); err != nil {
 		ww.p.errorf("WebhookWorker id: %d, error posting notifications, err: %v", ww.id, err)
 	}
 
-	if err = wh.(*webhook).JiraWebhook.expandIssue(ww.p); err != nil {
+	v := wh.(*webhook)
+	if err = v.JiraWebhook.expandIssue(ww.p, msg.InstanceID); err != nil {
 		return err
 	}
 
-	channelIds, err := ww.p.getChannelsSubscribed(wh.(*webhook))
+	channelsSubscribed, err := ww.p.getChannelsSubscribed(v, msg.InstanceID)
 	if err != nil {
 		return err
 	}
-	botUserId := ww.p.getUserID()
-	for _, channelId := range channelIds.Elems() {
-		if _, _, err1 := wh.PostToChannel(ww.p, channelId, botUserId); err1 != nil {
-			ww.p.errorf("WebhookWorker id: %d, error posting to channel, err: %v", ww.id, err)
-		}
-	}
 
-	if err := ww.p.NotifyWorkflow(wh.(*webhook)); err != nil {
-		ww.p.errorf("WebhookWorker id: %d, error notifying workflow, err: %v", ww.id, err)
+	botUserID := ww.p.getUserID()
+	for _, channelSubscribed := range channelsSubscribed {
+		if _, _, err1 := wh.PostToChannel(ww.p, msg.InstanceID, channelSubscribed.ChannelID, botUserID, channelSubscribed.Name); err1 != nil {
+			ww.p.errorf("WebhookWorker id: %d, error posting to channel, err: %v", ww.id, err1)
+		}
 	}
 
 	return nil

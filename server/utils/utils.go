@@ -4,6 +4,9 @@
 package utils
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
@@ -11,12 +14,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+const NotAvailable = "n/a"
+
 type ReactSelectOption struct {
 	Label string `json:"label"`
 	Value string `json:"value"`
 }
 
-func NormalizeInstallURL(mattermostSiteURL, jiraURL string) (string, error) {
+func NormalizeJiraURL(jiraURL string) (string, error) {
 	u, err := url.Parse(jiraURL)
 	if err != nil {
 		return "", err
@@ -40,10 +45,6 @@ func NormalizeInstallURL(mattermostSiteURL, jiraURL string) (string, error) {
 	}
 
 	jiraURL = strings.TrimSuffix(u.String(), "/")
-	if jiraURL == strings.TrimSuffix(mattermostSiteURL, "/") {
-		return "", errors.Errorf("%s is the Mattermost site URL. Please use your Jira URL with `/jira install`.", jiraURL)
-	}
-
 	return jiraURL, nil
 }
 
@@ -56,10 +57,57 @@ func Map(vs []string, f func(string) string) []string {
 	return vsm
 }
 
-func IsJiraCloudURL(jiraURL string) (bool, error) {
+func IsJiraCloudURL(jiraURL string) bool {
 	u, err := url.Parse(jiraURL)
 	if err != nil {
-		return false, err
+		return false
 	}
-	return strings.HasSuffix(u.Hostname(), ".atlassian.net"), nil
+	return strings.HasSuffix(u.Hostname(), ".atlassian.net")
+}
+
+type JiraStatus struct {
+	State string `json:"state"`
+}
+
+// CheckJiraURL checks if `/status` endpoint of the Jira URL is accessible
+// and responding with the correct state which is "RUNNING"
+func CheckJiraURL(mattermostSiteURL, jiraURL string, requireHTTPS bool) (_ string, err error) {
+	jiraURL, err = NormalizeJiraURL(jiraURL)
+	if err != nil {
+		return "", err
+	}
+	if jiraURL == strings.TrimSuffix(mattermostSiteURL, "/") {
+		return "", errors.Errorf("%s is the Mattermost site URL. Please use your Jira URL", jiraURL)
+	}
+
+	defer func() {
+		if err != nil {
+			err = errors.Wrap(err, "we couldn't validate the connection to your Jira server. "+
+				"This could be because of existing firewall or proxy rules, or because the URL was entered incorrectly")
+		}
+	}()
+
+	resp, err := http.Get(jiraURL + "/status")
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.Errorf("Jira server returned http status code %q when checking for availability: %q", resp.Status, jiraURL)
+	}
+
+	resBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	var status JiraStatus
+	err = json.Unmarshal(resBody, &status)
+	if err != nil {
+		return "", err
+	}
+	if status.State != "RUNNING" {
+		return "", errors.Errorf("Jira server is not in correct state, it should be up and running: %q", jiraURL)
+	}
+	return jiraURL, nil
 }

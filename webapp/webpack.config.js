@@ -64,12 +64,14 @@ const config = {
     },
     externals: {
         react: 'React',
+        'react-dom': 'ReactDOM',
         redux: 'Redux',
         'react-redux': 'ReactRedux',
         'prop-types': 'PropTypes',
         'react-bootstrap': 'ReactBootstrap',
     },
     output: {
+        devtoolNamespace: 'jira',
         path: path.join(__dirname, '/dist'),
         publicPath: '/',
         filename: 'main.js',

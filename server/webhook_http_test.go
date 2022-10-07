@@ -10,13 +10,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
-	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
-	"github.com/mattermost/mattermost-server/v5/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 func testWebhookRequest(filename string) *http.Request {
@@ -39,15 +40,15 @@ func (wh testWebhookWrapper) Events() StringSet {
 	return wh.Webhook.Events()
 }
 
-func (wh *testWebhookWrapper) PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error) {
-	post, status, err := wh.Webhook.PostToChannel(p, channelId, fromUserId)
+func (wh *testWebhookWrapper) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error) {
+	post, status, err := wh.Webhook.PostToChannel(p, "", channelID, fromUserID, subscriptionName)
 	if post != nil {
 		wh.postedToChannel = post
 	}
 	return post, status, err
 }
-func (wh *testWebhookWrapper) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
-	posts, status, err := wh.Webhook.PostNotifications(p)
+func (wh *testWebhookWrapper) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.Post, int, error) {
+	posts, status, err := wh.Webhook.PostNotifications(p, instanceID)
 	if len(posts) != 0 {
 		wh.postedNotifications = append(wh.postedNotifications, posts...)
 	}
@@ -77,7 +78,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			ExpectedText:            "Unit test description, not that long",
 			ExpectedFields: []*model.SlackAttachmentField{
-				&model.SlackAttachmentField{
+				{
 					Title: "Priority",
 					Value: "High",
 					Short: true,
@@ -101,7 +102,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			// ExpectedText:            "Unit test description, not that long",
 			ExpectedFields: []*model.SlackAttachmentField{
-				&model.SlackAttachmentField{
+				{
 					Title: "Priority",
 					Value: "High",
 					Short: true,
@@ -331,6 +332,13 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedText:            "> unik",
 			CurrentInstance:         true,
 		},
+		"SERVER issue comment created indentation": {
+			Request:                 testWebhookRequest("webhook-issue-comment-created-indentation.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "User **commented** on story [TEST-4: unit testing](http://localhost:8082/browse/TEST-4)",
+			ExpectedText:            "> [~Test] creating a test comment\r\n> \r\n> a second line for the test comment",
+			CurrentInstance:         true,
+		},
 		"SERVER (old version) issue commented (no issue_event_type_name)": {
 			Request:                 testWebhookRequest("webhook-server-old-issue-updated-no-event-type-commented.json"),
 			ExpectedSlackAttachment: true,
@@ -393,7 +401,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			ExpectedText:            "Unit test description, not that long",
 			ExpectedFields: []*model.SlackAttachmentField{
-				&model.SlackAttachmentField{
+				{
 					Title: "Priority",
 					Value: "High",
 					Short: true,
@@ -417,7 +425,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			// ExpectedText:            "Unit test description, not that long",
 			ExpectedFields: []*model.SlackAttachmentField{
-				&model.SlackAttachmentField{
+				{
 					Title: "Priority",
 					Value: "High",
 					Short: true,
@@ -595,43 +603,9 @@ func TestWebhookHTTP(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
-			api.On("LogDebug",
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string")).Return(nil)
-			api.On("LogError",
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string")).Return(nil)
-			api.On("LogError",
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string"),
-				mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
+			api.On("LogError", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
+			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
 				Id: "theuserid",
@@ -650,13 +624,8 @@ func TestWebhookHTTP(t *testing.T) {
 			})
 			p.SetAPI(api)
 
-			if tc.CurrentInstance {
-				p.currentInstanceStore = mockCurrentInstanceStore{&p}
-			} else {
-				p.currentInstanceStore = mockCurrentInstanceStoreNoInstance{&p}
-			}
-
 			p.userStore = mockUserStore{}
+			p.instanceStore = p.getMockInstanceStoreKV(1)
 
 			w := httptest.NewRecorder()
 			recorder := &testWebhookWrapper{}

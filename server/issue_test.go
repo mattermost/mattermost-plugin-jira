@@ -9,12 +9,14 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
-	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
-	"github.com/mattermost/mattermost-server/v5/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 )
 
 const (
@@ -50,9 +52,9 @@ func (client testClient) GetTransitions(issueKey string) ([]jira.Transition, err
 	}
 
 	return []jira.Transition{
-		jira.Transition{To: jira.Status{Name: "To Do"}},
-		jira.Transition{To: jira.Status{Name: "In Progress"}},
-		jira.Transition{To: jira.Status{Name: "In Testing"}},
+		{To: jira.Status{Name: "To Do"}},
+		{To: jira.Status{Name: "In Progress"}},
+		{To: jira.Status{Name: "In Testing"}},
 	}, nil
 }
 
@@ -60,20 +62,35 @@ func (client testClient) DoTransition(issueKey string, transitionID string) erro
 	return nil
 }
 
+func (client testClient) GetIssue(issueKey string, options *jira.GetQueryOptions) (*jira.Issue, error) {
+	if issueKey == nonExistantIssueKey {
+		return nil, kvstore.ErrNotFound
+	}
+	return &jira.Issue{
+		Fields: &jira.IssueFields{
+			Reporter: &jira.User{},
+			Status:   &jira.Status{},
+		},
+	}, nil
+}
+
 func (client testClient) AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error) {
 	if issueKey == noPermissionsIssueKey {
 		return nil, errors.New("you do not have the permission to comment on this issue")
 	} else if issueKey == attachCommentErrorKey {
-		return nil, errors.New("Unanticipated error")
+		return nil, errors.New("unanticipated error")
 	}
 
 	return nil, nil
 }
 
 func TestTransitionJiraIssue(t *testing.T) {
+	api := &plugintest.API{}
+	api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
 	p := Plugin{}
+	p.SetAPI(api)
 	p.userStore = getMockUserStoreKV()
-	p.currentInstanceStore = mockCurrentInstanceStore{&p}
+	p.instanceStore = p.getMockInstanceStoreKV(1)
 
 	tests := map[string]struct {
 		issueKey    string
@@ -81,7 +98,7 @@ func TestTransitionJiraIssue(t *testing.T) {
 		expectedMsg string
 		expectedErr error
 	}{
-		"Transitioning a non existant issue": {
+		"Transitioning a non existent issue": {
 			issueKey:    nonExistantIssueKey,
 			toState:     "To Do",
 			expectedMsg: "",
@@ -108,14 +125,19 @@ func TestTransitionJiraIssue(t *testing.T) {
 		"Successfully transitioning to new state": {
 			issueKey:    existingIssueKey,
 			toState:     "inprog",
-			expectedMsg: fmt.Sprintf("[%s](%s/browse/%s) transitioned to `In Progress`", existingIssueKey, mockCurrentInstanceURL, existingIssueKey),
+			expectedMsg: fmt.Sprintf("[%s](%s/browse/%s) transitioned to `In Progress`", existingIssueKey, mockInstance1URL, existingIssueKey),
 			expectedErr: nil,
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			actual, err := p.transitionJiraIssue("connected_user", tt.issueKey, tt.toState)
+			actual, err := p.TransitionIssue(&InTransitionIssue{
+				InstanceID:       testInstance1.InstanceID,
+				mattermostUserID: "connected_user",
+				IssueKey:         tt.issueKey,
+				ToState:          tt.toState,
+			})
 			assert.Equal(t, tt.expectedMsg, actual)
 			if tt.expectedErr != nil {
 				assert.Error(t, tt.expectedErr, err)
@@ -127,33 +149,9 @@ func TestTransitionJiraIssue(t *testing.T) {
 func TestRouteIssueTransition(t *testing.T) {
 	api := &plugintest.API{}
 
-	api.On("LogError",
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string")).Return(nil)
+	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
-	api.On("LogDebug",
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string")).Return(nil)
+	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 
 	api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
 
@@ -161,7 +159,6 @@ func TestRouteIssueTransition(t *testing.T) {
 	p.SetAPI(api)
 
 	p.userStore = getMockUserStoreKV()
-	p.currentInstanceStore = mockCurrentInstanceStore{&p}
 
 	tests := map[string]struct {
 		bb           []byte
@@ -170,9 +167,9 @@ func TestRouteIssueTransition(t *testing.T) {
 	}{
 		"No request data": {
 			request:      nil,
-			expectedCode: http.StatusBadRequest,
+			expectedCode: http.StatusUnauthorized,
 		},
-		"No UserId": {
+		"No UserID": {
 			request: &model.PostActionIntegrationRequest{
 				UserId: "",
 			},
@@ -203,42 +200,91 @@ func TestRouteIssueTransition(t *testing.T) {
 			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "no request data")
 		})
 	}
+}
 
+func TestRouteShareIssuePublicly(t *testing.T) {
+	validUserID := "1"
+	api := &plugintest.API{}
+	p := Plugin{}
+	api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
+	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
+	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
+	api.On("DeleteEphemeralPost", validUserID, "").Return()
+	p.SetAPI(api)
+	p.instanceStore = p.getMockInstanceStoreKV(1)
+	p.userStore = getMockUserStoreKV()
+
+	tests := map[string]struct {
+		bb           []byte
+		request      *model.PostActionIntegrationRequest
+		expectedCode int
+	}{
+		"No request data": {
+			request:      nil,
+			expectedCode: http.StatusUnauthorized,
+		},
+		"No UserID": {
+			request: &model.PostActionIntegrationRequest{
+				UserId: "",
+			},
+			expectedCode: http.StatusUnauthorized,
+		},
+		"No issueKey": {
+			request: &model.PostActionIntegrationRequest{
+				UserId: "userID",
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+		"No instanceId": {
+			request: &model.PostActionIntegrationRequest{
+				UserId: "userID",
+				Context: map[string]interface{}{
+					"issue_key": "TEST-10",
+				},
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+		"No connection": {
+			request: &model.PostActionIntegrationRequest{
+				UserId: "userID",
+				Context: map[string]interface{}{
+					"issue_key":   "TEST-10",
+					"instance_id": "id",
+				},
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+		"Happy Path": {
+			request: &model.PostActionIntegrationRequest{
+				UserId: validUserID,
+				Context: map[string]interface{}{
+					"issue_key":   "TEST-10",
+					"instance_id": testInstance1.InstanceID.String(),
+				},
+			},
+			expectedCode: http.StatusOK,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			bb, err := json.Marshal(tt.request)
+			assert.Nil(t, err)
+
+			request := httptest.NewRequest("POST", routeSharePublicly, strings.NewReader(string(bb)))
+			w := httptest.NewRecorder()
+			p.ServeHTTP(&plugin.Context{}, w, request)
+			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "no request data")
+		})
+	}
 }
 
 func TestRouteAttachCommentToIssue(t *testing.T) {
 	api := &plugintest.API{}
 
-	api.On("LogError",
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string")).Return(nil)
+	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
-	api.On("LogDebug",
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string"),
-		mock.AnythingOfTypeArgument("string")).Return(nil)
-
-	siteURL := "https://somelink.com"
-	api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
+	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 
 	api.On("GetPost", "error_post").Return(nil, &model.AppError{Id: "1"})
 	api.On("GetPost", "post_not_found").Return(nil, (*model.AppError)(nil))
@@ -251,14 +297,11 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(nil, (*model.AppError)(nil))
 
-	p := Plugin{}
-	p.SetAPI(api)
-
-	p.userStore = getMockUserStoreKV()
-	p.currentInstanceStore = mockCurrentInstanceStore{&p}
+	api.On("PublishWebSocketEvent", "update_defaults", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.WebsocketBroadcast"))
 
 	type requestStruct struct {
-		PostId      string `json:"post_id"`
+		PostID      string `json:"post_id"`
+		InstanceID  string `json:"instance_id"`
 		CurrentTeam string `json:"current_team"`
 		IssueKey    string `json:"issueKey"`
 	}
@@ -291,7 +334,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostId: "error_post",
+				PostID: "error_post",
 			},
 			expectedCode: http.StatusInternalServerError,
 		},
@@ -299,7 +342,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostId: "post_not_found",
+				PostID: "post_not_found",
 			},
 			expectedCode: http.StatusInternalServerError,
 		},
@@ -307,7 +350,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostId: "0",
+				PostID: "0",
 			},
 			expectedCode: http.StatusInternalServerError,
 		},
@@ -315,25 +358,25 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostId:   "1",
+				PostID:   "1",
 				IssueKey: noPermissionsIssueKey,
 			},
-			expectedCode: http.StatusNotFound,
+			expectedCode: http.StatusInternalServerError,
 		},
 		"Failed to attach the comment": {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostId:   "1",
+				PostID:   "1",
 				IssueKey: attachCommentErrorKey,
 			},
 			expectedCode: http.StatusInternalServerError,
 		},
-		"Succesfully created notification post": {
+		"Successfully created notification post": {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostId:   "1",
+				PostID:   "1",
 				IssueKey: existingIssueKey,
 			},
 			expectedCode: http.StatusOK,
@@ -341,6 +384,15 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			p := Plugin{}
+			p.SetAPI(api)
+			p.updateConfig(func(conf *config) {
+				conf.mattermostSiteURL = "https://somelink.com"
+			})
+			p.userStore = getMockUserStoreKV()
+			p.instanceStore = p.getMockInstanceStoreKV(1)
+
+			tt.request.InstanceID = testInstance1.InstanceID.String()
 			bb, err := json.Marshal(tt.request)
 			assert.Nil(t, err)
 

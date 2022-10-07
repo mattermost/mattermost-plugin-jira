@@ -2,15 +2,19 @@
 // See LICENSE.txt for license information.
 
 import {Store, Action} from 'redux';
-import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
+
+import ConnectModal from 'components/modals/connect_modal';
+import DisconnectModal from 'components/modals/disconnect_modal';
 
 import ChannelHeaderMenuAction from 'components/channel_header_action';
 import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue';
+
 import CreateIssueModal from 'components/modals/create_issue';
-import ChannelSettingsModal from 'components/modals/channel_settings';
+
+import ChannelSubscriptionsModal from 'components/modals/channel_subscriptions';
 
 import AttachCommentToIssuePostMenuAction from 'components/post_menu_actions/attach_comment_to_issue';
-import AttachCommentToIssueModal from 'components/modals/attach_comment_to_issue';
+import AttachCommentToIssueModal from 'components/modals/attach_comment_modal';
 import SetupUI from 'components/setup_ui';
 
 import PluginId from 'plugin_id';
@@ -19,7 +23,7 @@ import reducers from './reducers';
 import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings} from './actions';
 import Hooks from './hooks/hooks';
 
-const setupUILater = (registry: PluginRegistry, store: Store<object, Action<object>>): () => Promise<void> => async () => {
+const setupUILater = (registry: any, store: Store<object, Action<object>>): () => Promise<void> => async () => {
     registry.registerReducer(reducers);
 
     const settings = await store.dispatch(getSettings());
@@ -28,19 +32,23 @@ const setupUILater = (registry: PluginRegistry, store: Store<object, Action<obje
         await getConnected()(store.dispatch, store.getState);
 
         if (settings.ui_enabled) {
+            registry.registerRootComponent(ConnectModal);
+            registry.registerRootComponent(DisconnectModal);
             registry.registerRootComponent(CreateIssueModal);
             registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
             registry.registerRootComponent(AttachCommentToIssueModal);
             registry.registerPostDropdownMenuComponent(AttachCommentToIssuePostMenuAction);
         }
+
         registry.registerChannelHeaderMenuAction(ChannelHeaderMenuAction);
-        registry.registerRootComponent(ChannelSettingsModal);
+        registry.registerRootComponent(ChannelSubscriptionsModal);
 
         const hooks = new Hooks(store, settings);
         registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);
     } finally {
         registry.registerWebSocketEventHandler(`custom_${PluginId}_connect`, handleConnectChange(store));
         registry.registerWebSocketEventHandler(`custom_${PluginId}_disconnect`, handleConnectChange(store));
+        registry.registerWebSocketEventHandler(`custom_${PluginId}_update_defaults`, handleConnectChange(store));
         registry.registerWebSocketEventHandler(`custom_${PluginId}_instance_status`, handleInstanceStatusChange(store));
     }
 };

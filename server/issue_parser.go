@@ -10,7 +10,9 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 var jiraLinkWithTextRegex = regexp.MustCompile(`\[([^\[]+)\|([^\]]+)\]`)
@@ -34,15 +36,16 @@ func reporterSummary(issue *jira.Issue) string {
 	return reporterSummary
 }
 
-func getTransitionActions(client Client, issue *jira.Issue) ([]*model.PostAction, error) {
+func getActions(instanceID types.ID, client Client, issue *jira.Issue) ([]*model.PostAction, error) {
 	var actions []*model.PostAction
 
 	ctx := map[string]interface{}{
-		"issueKey": issue.ID,
+		"issue_key":   issue.ID,
+		"instance_id": instanceID.String(),
 	}
 
 	integration := &model.PostActionIntegration{
-		URL:     fmt.Sprintf("/plugins/%s%s", manifest.Id, routeIssueTransition),
+		URL:     fmt.Sprintf("/plugins/%s%s", manifest.ID, routeIssueTransition),
 		Context: ctx,
 	}
 
@@ -70,10 +73,19 @@ func getTransitionActions(client Client, issue *jira.Issue) ([]*model.PostAction
 		Integration: integration,
 	})
 
+	actions = append(actions, &model.PostAction{
+		Name: "Share publicly",
+		Type: "button",
+		Integration: &model.PostActionIntegration{
+			URL:     fmt.Sprintf("/plugins/%s%s", manifest.ID, routeSharePublicly),
+			Context: ctx,
+		},
+	})
+
 	return actions, nil
 }
 
-func parseIssue(client Client, issue *jira.Issue) ([]*model.SlackAttachment, error) {
+func asSlackAttachment(instanceID types.ID, client Client, issue *jira.Issue, showActions bool) ([]*model.SlackAttachment, error) {
 	text := mdKeySummaryLink(issue)
 	desc := truncate(issue.Fields.Description, 3000)
 	desc = parseJiraLinksToMarkdown(desc)
@@ -103,9 +115,13 @@ func parseIssue(client Client, issue *jira.Issue) ([]*model.SlackAttachment, err
 		Short: true,
 	})
 
-	actions, err := getTransitionActions(client, issue)
-	if err != nil {
-		return []*model.SlackAttachment{}, err
+	var actions []*model.PostAction
+	var err error
+	if showActions {
+		actions, err = getActions(instanceID, client, issue)
+		if err != nil {
+			return []*model.SlackAttachment{}, err
+		}
 	}
 
 	return []*model.SlackAttachment{

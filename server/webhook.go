@@ -10,13 +10,22 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
+)
+
+const (
+	Nobody         = "_nobody_"
+	commentDeleted = "comment_deleted"
+	commentUpdated = "comment_updated"
+	commentCreated = "comment_created"
 )
 
 type Webhook interface {
 	Events() StringSet
-	PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error)
-	PostNotifications(p *Plugin) ([]*model.Post, int, error)
+	PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error)
+	PostNotifications(p *Plugin, instanceID types.ID) ([]*model.Post, int, error)
 }
 
 type webhookField struct {
@@ -32,11 +41,11 @@ type webhook struct {
 	headline      string
 	text          string
 	fields        []*model.SlackAttachmentField
-	notifications []webhookNotification
+	notifications []webhookUserNotification
 	fieldInfo     webhookField
 }
 
-type webhookNotification struct {
+type webhookUserNotification struct {
 	jiraUsername  string
 	jiraAccountID string
 	message       string
@@ -48,24 +57,21 @@ func (wh *webhook) Events() StringSet {
 	return wh.eventTypes
 }
 
-func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model.Post, int, error) {
+func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error) {
 	if wh.headline == "" {
 		return nil, http.StatusBadRequest, errors.Errorf("unsupported webhook")
+	} else if p.getConfig().DisplaySubscriptionNameInNotifications && subscriptionName != "" {
+		wh.headline = fmt.Sprintf("%s\nSubscription: **%s**", wh.headline, subscriptionName)
 	}
 
 	post := &model.Post{
-		ChannelId: channelId,
-		UserId:    fromUserId,
+		ChannelId: channelID,
+		UserId:    fromUserID,
 	}
 
 	text := ""
 	if wh.text != "" && !p.getConfig().HideDecriptionComment {
-		text = wh.text
-		// Get instance for replacing accountids in text. If no instance is available, just skip it.
-		ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
-		if err == nil {
-			text = replaceJiraAccountIds(ji, text)
-		}
+		text = p.replaceJiraAccountIds(instanceID, wh.text)
 	}
 
 	if text != "" || len(wh.fields) != 0 {
@@ -91,13 +97,13 @@ func (wh webhook) PostToChannel(p *Plugin, channelId, fromUserId string) (*model
 	return post, http.StatusOK, nil
 }
 
-func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
+func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.Post, int, error) {
 	if len(wh.notifications) == 0 {
 		return nil, http.StatusOK, nil
 	}
 
 	// We will only send webhook events if we have a connected instance.
-	ji, err := p.currentInstanceStore.LoadCurrentJIRAInstance()
+	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		// This isn't an internal server error. There's just no instance installed.
 		return nil, http.StatusOK, nil
@@ -105,26 +111,26 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 
 	posts := []*model.Post{}
 	for _, notification := range wh.notifications {
-		var mattermostUserId string
+		var mattermostUserID types.ID
 		var err error
 
 		// prefer accountId to username when looking up UserIds
 		if notification.jiraAccountID != "" {
-			mattermostUserId, err = p.userStore.LoadMattermostUserId(ji, notification.jiraAccountID)
+			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), notification.jiraAccountID)
 		} else {
-			mattermostUserId, err = p.userStore.LoadMattermostUserId(ji, notification.jiraUsername)
+			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), notification.jiraUsername)
 		}
 		if err != nil {
 			continue
 		}
 
 		// Check if the user has permissions.
-		jiraUser, err2 := p.userStore.LoadJIRAUser(ji, mattermostUserId)
+		c, err2 := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
 		if err2 != nil {
 			// Not connected to Jira, so can't check permissions
 			continue
 		}
-		client, err2 := ji.GetClient(jiraUser)
+		client, err2 := instance.GetClient(c)
 		if err2 != nil {
 			p.errorf("PostNotifications: error while getting jiraClient, err: %v", err2)
 			continue
@@ -143,9 +149,9 @@ func (wh *webhook) PostNotifications(p *Plugin) ([]*model.Post, int, error) {
 			continue
 		}
 
-		notification.message = replaceJiraAccountIds(ji, notification.message)
+		notification.message = p.replaceJiraAccountIds(instance.GetID(), notification.message)
 
-		post, err := ji.GetPlugin().CreateBotDMPost(ji, mattermostUserId, notification.message, notification.postType)
+		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType)
 		if err != nil {
 			p.errorf("PostNotifications: failed to create notification post, err: %v", err)
 			continue
@@ -163,23 +169,39 @@ func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...inter
 	}
 }
 
-func (p *Plugin) GetWebhookURL(teamId, channelId string) (string, error) {
+func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL, legacyURL string, err error) {
 	cf := p.getConfig()
 
-	team, appErr := p.API.GetTeam(teamId)
-	if appErr != nil {
-		return "", appErr
+	instanceID, err := p.ResolveWebhookInstanceURL(jiraURL)
+	if err != nil {
+		return "", "", err
 	}
 
-	channel, appErr := p.API.GetChannel(channelId)
+	team, appErr := p.API.GetTeam(teamID)
 	if appErr != nil {
-		return "", appErr
+		return "", "", appErr
+	}
+
+	channel, appErr := p.API.GetChannel(channelID)
+	if appErr != nil {
+		return "", "", appErr
 	}
 
 	v := url.Values{}
-	secret, _ := url.QueryUnescape(cf.Secret)
-	v.Add("secret", secret)
+	v.Add("secret", cf.Secret)
+	subURL = p.GetPluginURL() + instancePath(routeAPISubscribeWebhook, instanceID) + "?" + v.Encode()
+
+	// For the legacy URL, add team and channel. Secret is already in the map.
 	v.Add("team", team.Name)
 	v.Add("channel", channel.Name)
-	return p.GetPluginURL() + routeIncomingWebhook + "?" + v.Encode(), nil
+	legacyURL = p.GetPluginURL() + instancePath(routeIncomingWebhook, instanceID) + "?" + v.Encode()
+
+	return subURL, legacyURL, nil
+}
+
+func (p *Plugin) getSubscriptionsWebhookURL(instanceID types.ID) string {
+	cf := p.getConfig()
+	v := url.Values{}
+	v.Add("secret", cf.Secret)
+	return p.GetPluginURL() + instancePath(routeAPISubscribeWebhook, instanceID) + "?" + v.Encode()
 }

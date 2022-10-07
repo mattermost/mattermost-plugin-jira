@@ -5,6 +5,17 @@ import {combineReducers} from 'redux';
 
 import ActionTypes from 'action_types';
 
+function installedInstances(state = [], action) {
+    // We're notified of the instance status at startup (through getConnected)
+    // and when we get a websocket instance_status event
+    switch (action.type) {
+    case ActionTypes.RECEIVED_INSTANCE_STATUS:
+        return action.data.instances ? action.data.instances : [];
+    default:
+        return state;
+    }
+}
+
 function userConnected(state = false, action) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
@@ -14,25 +25,34 @@ function userConnected(state = false, action) {
     }
 }
 
-function instanceInstalled(state = false, action) {
-    // We're notified of the instance status at startup (through getConnected)
-    // and when we get a websocket instance_status event
+function userCanConnect(state = false, action) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
-        return action.data.instance_installed ? action.data.instance_installed : state;
-    case ActionTypes.RECEIVED_INSTANCE_STATUS:
-        return action.data.instance_installed;
+        return action.data.can_connect;
     default:
         return state;
     }
 }
 
-function instanceType(state = '', action) {
+function defaultUserInstanceID(state = '', action) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
-        return action.data.instance_type ? action.data.instance_type : state;
-    case ActionTypes.RECEIVED_INSTANCE_STATUS:
-        return action.data.instance_type;
+        if (action.data.user_info && action.data.user_info.default_instance_id) {
+            return action.data.user_info.default_instance_id;
+        }
+        return state;
+    default:
+        return state;
+    }
+}
+
+function userConnectedInstances(state = [], action) {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_CONNECTED:
+        if (action.data.user_info) {
+            return action.data.user_info.connected_instances ? action.data.user_info.connected_instances : [];
+        }
+        return state;
     default:
         return state;
     }
@@ -46,6 +66,28 @@ function pluginSettings(state = null, action) {
         return state;
     }
 }
+
+const connectModalVisible = (state = false, action) => {
+    switch (action.type) {
+    case ActionTypes.OPEN_CONNECT_MODAL:
+        return true;
+    case ActionTypes.CLOSE_CONNECT_MODAL:
+        return false;
+    default:
+        return state;
+    }
+};
+
+const disconnectModalVisible = (state = false, action) => {
+    switch (action.type) {
+    case ActionTypes.OPEN_DISCONNECT_MODAL:
+        return true;
+    case ActionTypes.CLOSE_DISCONNECT_MODAL:
+        return false;
+    default:
+        return state;
+    }
+};
 
 const createModalVisible = (state = false, action) => {
     switch (action.type) {
@@ -93,30 +135,6 @@ const attachCommentToIssueModalForPostId = (state = '', action) => {
         return action.data.postId;
     case ActionTypes.CLOSE_ATTACH_COMMENT_TO_ISSUE_MODAL:
         return '';
-    default:
-        return state;
-    }
-};
-
-const jiraIssueMetadata = (state = null, action) => {
-    switch (action.type) {
-    case ActionTypes.RECEIVED_JIRA_ISSUE_METADATA:
-        return action.data;
-    case ActionTypes.CLEAR_JIRA_ISSUE_METADATA:
-        return null;
-    case ActionTypes.CLOSE_CHANNEL_SETTINGS:
-        return null;
-    default:
-        return state;
-    }
-};
-
-const jiraProjectMetadata = (state = null, action) => {
-    switch (action.type) {
-    case ActionTypes.RECEIVED_JIRA_PROJECT_METADATA:
-        return action.data;
-    case ActionTypes.CLOSE_CHANNEL_SETTINGS:
-        return null;
     default:
         return state;
     }
@@ -177,15 +195,17 @@ const channelSubscriptions = (state = {}, action) => {
 
 export default combineReducers({
     userConnected,
-    instanceInstalled,
-    instanceType,
+    userCanConnect,
+    userConnectedInstances,
+    installedInstances,
+    defaultUserInstanceID,
     pluginSettings,
+    connectModalVisible,
+    disconnectModalVisible,
     createModalVisible,
     createModal,
     attachCommentToIssueModalVisible,
     attachCommentToIssueModalForPostId,
-    jiraIssueMetadata,
-    jiraProjectMetadata,
     channelIdWithSettingsOpen,
     channelSubscriptions,
 });

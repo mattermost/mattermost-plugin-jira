@@ -41,7 +41,7 @@ function sortByName<T>(arr: (T & {name: string})[]): T[] {
     });
 }
 
-export function getProjectValues(metadata: ProjectMetadata): ReactSelectOption[] {
+export function getProjectValues(metadata: ProjectMetadata | null): ReactSelectOption[] {
     if (!metadata || !metadata.projects) {
         return [];
     }
@@ -49,7 +49,7 @@ export function getProjectValues(metadata: ProjectMetadata): ReactSelectOption[]
     return metadata.projects;
 }
 
-export function getIssueTypes(metadata: IssueMetadata, projectKey: string): IssueType[] {
+export function getIssueTypes(metadata: IssueMetadata | null, projectKey: string | null): IssueType[] {
     if (!metadata || !metadata.projects) {
         return [];
     }
@@ -84,7 +84,7 @@ export function getIssueValuesForMultipleProjects(metadata: ProjectMetadata, pro
     return Object.values(issueTypeHash);
 }
 
-export function getFields(metadata: IssueMetadata, projectKey: string, issueTypeId: string): {[key: string]: JiraField} {
+export function getFields(metadata: IssueMetadata | null, projectKey: string | null, issueTypeId: string | null): {[key: string]: JiraField} {
     if (!metadata || !projectKey || !issueTypeId) {
         return {};
     }
@@ -169,6 +169,7 @@ const avoidedCustomTypesForFilters: string[] = [
 
 const acceptedCustomTypesForFilters: string[] = [
     JiraFieldCustomTypeEnums.EPIC_LINK,
+    JiraFieldCustomTypeEnums.CASCADING_SELECT,
 ];
 
 function isValidFieldForFilter(field: JiraField): boolean {
@@ -259,12 +260,20 @@ export function isEpicLinkField(field: JiraField | FilterField): boolean {
     return field.schema && field.schema.custom === JiraFieldCustomTypeEnums.EPIC_LINK;
 }
 
+export function isLabelField(field: JiraField | FilterField): boolean {
+    return field.schema.system === 'labels' || field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:labels';
+}
+
 export function isEpicIssueType(issueType: IssueType): boolean {
     return issueType.name === 'Epic';
 }
 
 export function isMultiSelectField(field: FilterField): boolean {
     return field.schema.type === 'array';
+}
+
+export function isTextField(field: JiraField | FilterField): boolean {
+    return field.schema.type === 'string';
 }
 
 // Some Jira fields have special names for JQL

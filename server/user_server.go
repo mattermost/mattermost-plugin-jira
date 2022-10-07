@@ -13,7 +13,9 @@ import (
 	"github.com/dghubble/oauth1"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 type OAuth1aTemporaryCredentials struct {
@@ -21,7 +23,7 @@ type OAuth1aTemporaryCredentials struct {
 	Secret string
 }
 
-func httpOAuth1aComplete(jsi *jiraServerInstance, w http.ResponseWriter, r *http.Request) (status int, err error) {
+func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, instanceID types.ID) (status int, err error) {
 	// Prettify error output
 	defer func() {
 		if err == nil {
@@ -32,7 +34,7 @@ func httpOAuth1aComplete(jsi *jiraServerInstance, w http.ResponseWriter, r *http
 		if len(errtext) > 0 {
 			errtext = strings.ToUpper(errtext[:1]) + errtext[1:]
 		}
-		status, err = jsi.Plugin.respondSpecialTemplate(w, "/other/message.html", status, "text/html", struct {
+		status, err = p.respondSpecialTemplate(w, "/other/message.html", status, "text/html", struct {
 			Header  string
 			Message string
 		}{
@@ -41,98 +43,102 @@ func httpOAuth1aComplete(jsi *jiraServerInstance, w http.ResponseWriter, r *http
 		})
 	}()
 
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	si, ok := instance.(*serverInstance)
+	if !ok {
+		return http.StatusInternalServerError,
+			errors.Errorf("Not supported for instance type %s", instance.Common().Type)
+	}
+
 	requestToken, verifier, err := oauth1.ParseAuthorizationCallback(r)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to parse callback request from Jira"))
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to parse callback request from Jira")
 	}
 
-	mattermostUserId := r.Header.Get("Mattermost-User-ID")
-	if mattermostUserId == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserID == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
 	}
-	mmuser, appErr := jsi.Plugin.API.GetUser(mattermostUserId)
+	mmuser, appErr := p.API.GetUser(mattermostUserID)
 	if appErr != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to load user "+mattermostUserId))
+		return http.StatusInternalServerError,
+			errors.WithMessage(appErr, "failed to load user "+mattermostUserID)
 	}
 
-	oauthTmpCredentials, err := jsi.Plugin.otsStore.OneTimeLoadOauth1aTemporaryCredentials(mattermostUserId)
-	if err != nil || oauthTmpCredentials == nil || len(oauthTmpCredentials.Token) <= 0 {
-		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to get temporary credentials for "+mattermostUserId))
+	oauthTmpCredentials, err := p.otsStore.OneTimeLoadOauth1aTemporaryCredentials(mattermostUserID)
+	if err != nil || oauthTmpCredentials == nil || oauthTmpCredentials.Token == "" {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to get temporary credentials for "+mattermostUserID)
 	}
 
 	if oauthTmpCredentials.Token != requestToken {
-		return respondErr(w, http.StatusUnauthorized, errors.New("request token mismatch"))
-	}
-
-	oauth1Config, err := jsi.GetOAuth1Config()
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to obtain oauth1 config"))
+		return http.StatusUnauthorized, errors.New("request token mismatch")
 	}
 
 	// Although we pass the oauthTmpCredentials as required here. The JIRA server does not appar to validate it.
-	// We perform the check above for reuse so this is irrelavent to the security from our end.
-	accessToken, accessSecret, err := oauth1Config.AccessToken(requestToken, oauthTmpCredentials.Secret, verifier)
+	// We perform the check above for reuse so this is irrelevant to the security from our end.
+	accessToken, accessSecret, err := si.getOAuth1Config().AccessToken(requestToken, oauthTmpCredentials.Secret, verifier)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to obtain oauth1 access token"))
+		return http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to obtain oauth1 access token")
 	}
 
-	jiraUser := JIRAUser{
+	connection := &Connection{
 		PluginVersion:      manifest.Version,
 		Oauth1AccessToken:  accessToken,
 		Oauth1AccessSecret: accessSecret,
 	}
 
-	client, err := jsi.GetClient(jiraUser)
+	client, err := instance.GetClient(connection)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return http.StatusInternalServerError, err
 	}
 
 	juser, err := client.GetSelf()
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return http.StatusInternalServerError, err
 	}
-	jiraUser.User = *juser
+	connection.User = *juser
 
 	// Set default settings the first time a user connects
-	jiraUser.Settings = &UserSettings{Notifications: true}
+	connection.Settings = &ConnectionSettings{Notifications: true}
 
-	err = jsi.Plugin.StoreUserInfoNotify(jsi, mattermostUserId, jiraUser)
+	err = p.connectUser(instance, types.ID(mattermostUserID), connection)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return http.StatusInternalServerError, err
 	}
 
-	return jsi.Plugin.respondTemplate(w, r, "text/html", struct {
+	return p.respondTemplate(w, r, "text/html", struct {
 		MattermostDisplayName string
 		JiraDisplayName       string
 		RevokeURL             string
 	}{
 		JiraDisplayName:       juser.DisplayName + " (" + juser.Name + ")",
-		MattermostDisplayName: mmuser.GetDisplayName(model.SHOW_NICKNAME_FULLNAME),
-		RevokeURL:             path.Join(jsi.Plugin.GetPluginURLPath(), routeUserDisconnect),
+		MattermostDisplayName: mmuser.GetDisplayName(model.ShowNicknameFullName),
+		RevokeURL:             path.Join(p.GetPluginURLPath(), instancePath(routeUserDisconnect, instance.GetID())),
 	})
 }
 
-func httpOAuth1aDisconnect(ji *jiraServerInstance, w http.ResponseWriter, r *http.Request) (int, error) {
+func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
 	if r.Method != http.MethodGet {
 		return respondErr(w, http.StatusMethodNotAllowed,
 			errors.New("method "+r.Method+" is not allowed, must be GET"))
 	}
 
-	mattermostUserId := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserId == "" {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	if mattermostUserID == "" {
 		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
 	}
 
-	err := ji.GetPlugin().userDisconnect(ji, mattermostUserId)
+	_, err := p.DisconnectUser(instanceID.String(), types.ID(mattermostUserID))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	return ji.GetPlugin().respondSpecialTemplate(w, "/other/message.html", http.StatusOK,
+	return p.respondSpecialTemplate(w, "/other/message.html", http.StatusOK,
 		"text/html", struct {
 			Header  string
 			Message string
@@ -142,48 +148,15 @@ func httpOAuth1aDisconnect(ji *jiraServerInstance, w http.ResponseWriter, r *htt
 		})
 }
 
-func httpOAuth1aPublicKey(p *Plugin, w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be GET"))
-	}
-
-	userID := r.Header.Get("Mattermost-User-Id")
-	if userID == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
-	}
-
-	if !p.API.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
-		return respondErr(w, http.StatusForbidden, errors.New("forbidden"))
-	}
-
-	w.Header().Set("Content-Type", "text/plain")
-	pkey, err := publicKeyString(p)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to load public key"))
-	}
-	_, err = w.Write(pkey)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to write response"))
-	}
-	return http.StatusOK, nil
-}
-
-func publicKeyString(p *Plugin) ([]byte, error) {
-	rsaKey, err := p.secretsStore.EnsureRSAKey()
-	if err != nil {
-		return nil, err
-	}
-
+func (p *Plugin) publicKeyString() (string, error) {
+	rsaKey := p.getConfig().rsaKey
 	b, err := x509.MarshalPKIXPublicKey(&rsaKey.PublicKey)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to encode public key")
+		return "", errors.WithMessage(err, "failed to encode public key")
 	}
-
-	return pem.EncodeToMemory(&pem.Block{
+	pkey := pem.EncodeToMemory(&pem.Block{
 		Type:  "PUBLIC KEY",
 		Bytes: b,
-	}), nil
+	})
+	return strings.TrimSpace(string(pkey)), nil
 }

@@ -4,8 +4,6 @@
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 
-import PluginId from 'plugin_id';
-import {isDesktopApp} from 'utils/user_agent';
 import JiraIcon from 'components/icon';
 
 export default class CreateIssuePostMenuAction extends PureComponent {
@@ -15,9 +13,9 @@ export default class CreateIssuePostMenuAction extends PureComponent {
         open: PropTypes.func.isRequired,
         postId: PropTypes.string,
         userConnected: PropTypes.bool.isRequired,
-        installedInstanceType: PropTypes.string.isRequired,
-        isInstanceInstalled: PropTypes.bool.isRequired,
-        sendEphemeralPost: PropTypes.func.isRequired,
+        userCanConnect: PropTypes.bool.isRequired,
+        installedInstances: PropTypes.array.isRequired,
+        handleConnectFlow: PropTypes.func.isRequired,
     };
 
     static defaultTypes = {
@@ -41,15 +39,11 @@ export default class CreateIssuePostMenuAction extends PureComponent {
     };
 
     connectClick = () => {
-        if (this.props.isInstanceInstalled && this.props.installedInstanceType === 'server' && isDesktopApp()) {
-            this.props.sendEphemeralPost('Please use your browser to connect to Jira.');
-            return;
-        }
-        window.open('/plugins/' + PluginId + '/user/connect', '_blank');
+        this.props.handleConnectFlow();
     };
 
     render() {
-        if (this.props.isSystemMessage || !this.props.isInstanceInstalled) {
+        if (this.props.isSystemMessage || !this.props.installedInstances.length) {
             return null;
         }
 
@@ -65,7 +59,7 @@ export default class CreateIssuePostMenuAction extends PureComponent {
                     {this.getLocalizedTitle()}
                 </button>
             );
-        } else {
+        } else if (this.props.userCanConnect) {
             content = (
                 <button
                     className='style--none'
@@ -76,6 +70,8 @@ export default class CreateIssuePostMenuAction extends PureComponent {
                     {'Connect to Jira'}
                 </button>
             );
+        } else {
+            return null;
         }
 
         return (

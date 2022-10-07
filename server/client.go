@@ -12,6 +12,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,10 +20,14 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/mattermost/mattermost-server/v6/plugin"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
+
+const autocompleteSearchRoute = "2/jql/autocompletedata/suggestions"
+const userSearchRoute = "2/user/assignable/search"
+const unrecognizedEndpoint = "_unrecognized"
 
 // Client is the combined interface for all upstream APIs and convenience methods.
 type Client interface {
@@ -44,19 +49,21 @@ type RESTService interface {
 // UserService is the interface for user-related APIs.
 type UserService interface {
 	GetSelf() (*jira.User, error)
-	GetUserGroups(user JIRAUser) ([]*jira.UserGroup, error)
+	GetUserGroups(connection *Connection) ([]*jira.UserGroup, error)
 }
 
 // ProjectService is the interface for project-related APIs.
 type ProjectService interface {
 	GetProject(key string) (*jira.Project, error)
-	GetAllProjectKeys() ([]string, error)
+	ListProjects(query string, limit int) (jira.ProjectList, error)
 }
 
 // SearchService is the interface for search-related APIs.
 type SearchService interface {
 	SearchIssues(jql string, options *jira.SearchOptions) ([]jira.Issue, error)
 	SearchUsersAssignableToIssue(issueKey, query string, maxResults int) ([]jira.User, error)
+	SearchUsersAssignableInProject(projectKey, query string, maxResults int) ([]jira.User, error)
+	SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error)
 }
 
 // IssueService is the interface for issue-related APIs.
@@ -161,20 +168,6 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 	return attachments[0], nil
 }
 
-func (client JiraClient) GetAllProjectKeys() ([]string, error) {
-	projectlist, resp, err := client.Jira.Project.GetList()
-	if err != nil {
-		return nil, userFriendlyJiraError(resp, err)
-	}
-
-	keys := make([]string, 0, len(*projectlist))
-	for _, project := range *projectlist {
-		keys = append(keys, project.Key)
-	}
-
-	return keys, nil
-}
-
 // GetProject returns a Project by key.
 func (client JiraClient) GetProject(key string) (*jira.Project, error) {
 	project, resp, err := client.Jira.Project.Get(key)
@@ -250,6 +243,27 @@ func (client JiraClient) SearchIssues(jql string, options *jira.SearchOptions) (
 	return found, nil
 }
 
+type Result struct {
+	Value       string `json:"value"`
+	DisplayName string `json:"displayName"`
+}
+
+type AutoCompleteResult struct {
+	Results []Result `json:"results"`
+}
+
+// SearchAutoCompleteFields searches fieldValue specified in the params and returns autocomplete suggestions
+// for that fieldValue
+func (client JiraClient) SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error) {
+	result := &AutoCompleteResult{}
+	err := client.RESTGet(autocompleteSearchRoute, params, result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // DoTransition executes a transition on an issue.
 func (client JiraClient) DoTransition(issueKey, transitionID string) error {
 	resp, err := client.Jira.Issue.DoTransition(issueKey, transitionID)
@@ -262,7 +276,6 @@ func (client JiraClient) DoTransition(issueKey, transitionID string) error {
 // AddAttachment uploads a file attachment
 func (client JiraClient) AddAttachment(api plugin.API, issueKey, fileID string, maxSize utils.ByteSize) (
 	mattermostName, jiraName, mime string, err error) {
-
 	fileinfo, appErr := api.GetFileInfo(fileID)
 	if appErr != nil {
 		return "", "", "", appErr
@@ -295,8 +308,8 @@ func (client JiraClient) GetSelf() (*jira.User, error) {
 
 // MakeCreateIssueURL makes a URL that would take a browser to a pre-filled form
 // to file a new issue in Jira.
-func MakeCreateIssueURL(ji Instance, project *jira.Project, issue *jira.Issue) string {
-	u, err := url.Parse(fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", ji.GetURL()))
+func MakeCreateIssueURL(instance Instance, project *jira.Project, issue *jira.Issue) string {
+	u, err := url.Parse(fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", instance.GetURL()))
 	if err != nil {
 		return ""
 	}
@@ -308,7 +321,7 @@ func MakeCreateIssueURL(ji Instance, project *jira.Project, issue *jira.Issue) s
 	q.Add("description", issue.Fields.Description)
 
 	// Add reporter for only server instances
-	if ji.GetType() == JIRATypeServer && issue.Fields.Reporter != nil {
+	if instance.Common().Type == ServerInstanceType && issue.Fields.Reporter != nil {
 		q.Add("reporter", issue.Fields.Reporter.Name)
 	}
 
@@ -346,7 +359,26 @@ func SearchUsersAssignableToIssue(client Client, issueKey, queryKey, queryValue 
 	if maxResults > 0 {
 		params["maxResults"] = strconv.Itoa(maxResults)
 	}
-	err := client.RESTGet("2/user/assignable/search", params, &users)
+	err := client.RESTGet(userSearchRoute, params, &users)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+// SearchUsersAssignableInProject finds all users that can be assigned to some issue in a given project.
+// This is the shared implementation between the Server and the Cloud versions
+// which use different queryKey's.
+func SearchUsersAssignableInProject(client Client, projectKey, queryKey, queryValue string, maxResults int) ([]jira.User, error) {
+	users := []jira.User{}
+	params := map[string]string{
+		"project": projectKey,
+		queryKey:  queryValue,
+	}
+	if maxResults > 0 {
+		params["maxResults"] = strconv.Itoa(maxResults)
+	}
+	err := client.RESTGet(userSearchRoute, params, &users)
 	if err != nil {
 		return nil, err
 	}
@@ -360,24 +392,28 @@ func endpointURL(endpoint string) (string, error) {
 	}
 	if parsedURL.Scheme == "" {
 		// relative path
-		endpoint = fmt.Sprintf("/rest/api/%s", endpoint)
+		endpoint = path.Join("/rest/api", endpoint)
 	}
 	return endpoint, nil
 }
 
-var keyOrIDRegex = regexp.MustCompile("(^[[:alpha:]]+-)?[[:digit:]]+$")
+var keyOrIDRegex = regexp.MustCompile("(^[[:alnum:]]+-)?[[:digit:]]+$")
 
 func endpointNameFromRequest(r *http.Request) string {
-	l := strings.ToLower(r.URL.Path)
-	s := strings.TrimLeft(l, "/rest/api")
+	_, path := splitInstancePath(r.URL.Path)
+	l := strings.ToLower(path)
+	s := strings.TrimPrefix(l, "/rest/api")
+	s = strings.Trim(s, "/")
+
 	if s == l {
 		return "_unrecognized"
 	}
+
 	parts := strings.Split(s, "/")
 	n := len(parts)
 
 	if n < 2 {
-		return "_unrecognized"
+		return unrecognizedEndpoint
 	}
 	var out = []string{"api/jira", parts[0], parts[1]}
 	context := parts[1]

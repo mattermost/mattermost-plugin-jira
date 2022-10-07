@@ -1,2 +1,0 @@
-# Administrator Slash Commands
-

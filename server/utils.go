@@ -8,32 +8,33 @@ import (
 	"regexp"
 	"strings"
 
-	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
-func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) (post *model.Post, returnErr error) {
+func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message, postType string) (post *model.Post, returnErr error) {
 	defer func() {
 		if returnErr != nil {
 			returnErr = errors.WithMessage(returnErr,
-				fmt.Sprintf("failed to create direct post to user %v: ", userId))
+				fmt.Sprintf("failed to create direct post to user %v: ", mattermostUserID))
 		}
 	}()
 
 	// Don't send DMs to users who have turned off notifications
-	jiraUser, err := p.userStore.LoadJIRAUser(ji, userId)
+	c, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
 	if err != nil {
 		// not connected to Jira, so no need to send a DM, and no need to report an error
 		return nil, nil
 	}
-	if jiraUser.Settings == nil || !jiraUser.Settings.Notifications {
+	if c.Settings == nil || !c.Settings.Notifications {
 		return nil, nil
 	}
 
 	conf := p.getConfig()
-	channel, appErr := p.API.GetDirectChannel(userId, conf.botUserID)
+	channel, appErr := p.API.GetDirectChannel(mattermostUserID.String(), conf.botUserID)
 	if appErr != nil {
 		return nil, appErr
 	}
@@ -53,16 +54,16 @@ func (p *Plugin) CreateBotDMPost(ji Instance, userId, message, postType string) 
 	return post, nil
 }
 
-func (p *Plugin) CreateBotDMtoMMUserId(mattermostUserId, format string, args ...interface{}) (post *model.Post, returnErr error) {
+func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...interface{}) (post *model.Post, returnErr error) {
 	defer func() {
 		if returnErr != nil {
 			returnErr = errors.WithMessage(returnErr,
-				fmt.Sprintf("failed to create DMError to user %v: ", mattermostUserId))
+				fmt.Sprintf("failed to create DMError to user %v: ", mattermostUserID))
 		}
 	}()
 
 	conf := p.getConfig()
-	channel, appErr := p.API.GetDirectChannel(mattermostUserId, conf.botUserID)
+	channel, appErr := p.API.GetDirectChannel(mattermostUserID, conf.botUserID)
 	if appErr != nil {
 		return nil, appErr
 	}
@@ -81,24 +82,7 @@ func (p *Plugin) CreateBotDMtoMMUserId(mattermostUserId, format string, args ...
 	return post, nil
 }
 
-func (p *Plugin) StoreCurrentJIRAInstanceAndNotify(ji Instance) error {
-	appErr := p.currentInstanceStore.StoreCurrentJIRAInstance(ji)
-	if appErr != nil {
-		return appErr
-	}
-	// Notify users we have installed an instance
-	p.API.PublishWebSocketEvent(
-		wSEventInstanceStatus,
-		map[string]interface{}{
-			"instance_installed": true,
-			"instance_type":      ji.GetType(),
-		},
-		&model.WebsocketBroadcast{},
-	)
-	return nil
-}
-
-func replaceJiraAccountIds(ji Instance, body string) string {
+func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string {
 	result := body
 
 	for _, uname := range parseJIRAUsernamesFromText(body) {
@@ -107,30 +91,21 @@ func replaceJiraAccountIds(ji Instance, body string) string {
 		}
 
 		jiraUserID := uname[len("accountid:"):]
-		jiraUser, err := ji.GetPlugin().userStore.LoadJIRAUserByAccountId(ji, jiraUserID)
+		mattermostUserID, err := p.userStore.LoadMattermostUserID(instanceID, jiraUserID)
+		if err != nil {
+			continue
+		}
+		c, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
 		if err != nil {
 			continue
 		}
 
-		if jiraUser.DisplayName != "" {
-			result = strings.ReplaceAll(result, uname, jiraUser.DisplayName)
+		if c.DisplayName != "" {
+			result = strings.ReplaceAll(result, uname, c.DisplayName)
 		}
 	}
 
 	return result
-}
-
-func (p *Plugin) loadJIRAProjectKeys(jiraClient *jira.Client) ([]string, error) {
-	list, _, err := jiraClient.Project.GetList()
-	if err != nil {
-		return nil, errors.WithMessage(err, "Error requesting list of Jira projects")
-	}
-
-	projectKeys := []string{}
-	for _, proj := range *list {
-		projectKeys = append(projectKeys, proj.Key)
-	}
-	return projectKeys, nil
 }
 
 func parseJIRAUsernamesFromText(text string) []string {
@@ -148,23 +123,6 @@ func parseJIRAUsernamesFromText(text string) []string {
 	}
 
 	return usernames
-}
-
-func parseJIRAIssuesFromText(text string, keys []string) []string {
-	issueMap := map[string]bool{}
-	issues := []string{}
-
-	for _, key := range keys {
-		var re = regexp.MustCompile(fmt.Sprintf(`(?m)%s-[0-9]+`, key))
-		for _, match := range re.FindAllString(text, -1) {
-			if !issueMap[match] {
-				issues = append(issues, match)
-				issueMap[match] = true
-			}
-		}
-	}
-
-	return issues
 }
 
 func isImageMIME(mime string) bool {

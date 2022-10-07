@@ -4,6 +4,11 @@
 import PluginId from 'plugin_id';
 
 export default {
+    OPEN_CONNECT_MODAL: `${PluginId}_open_connect_modal`,
+    CLOSE_CONNECT_MODAL: `${PluginId}_close_connect_modal`,
+    OPEN_DISCONNECT_MODAL: `${PluginId}_open_disconnect_modal`,
+    CLOSE_DISCONNECT_MODAL: `${PluginId}_close_disconnect_modal`,
+
     CLOSE_CREATE_ISSUE_MODAL: `${PluginId}_close_create_modal`,
     OPEN_CREATE_ISSUE_MODAL: `${PluginId}_open_create_modal`,
     OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST: `${PluginId}_open_create_modal_without_post`,

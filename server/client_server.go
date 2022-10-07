@@ -44,8 +44,13 @@ func (client jiraServerClient) SearchUsersAssignableToIssue(issueKey, query stri
 	return SearchUsersAssignableToIssue(client, issueKey, "username", query, maxResults)
 }
 
+// SearchUsersAssignableInProject finds all users that can be assigned to some issue in a given project.
+func (client jiraServerClient) SearchUsersAssignableInProject(projectKey, query string, maxResults int) ([]jira.User, error) {
+	return SearchUsersAssignableInProject(client, projectKey, "username", query, maxResults)
+}
+
 // GetUserGroups returns the list of groups that a user belongs to.
-func (client jiraServerClient) GetUserGroups(user JIRAUser) ([]*jira.UserGroup, error) {
+func (client jiraServerClient) GetUserGroups(connection *Connection) ([]*jira.UserGroup, error) {
 	var result struct {
 		Groups struct {
 			Items []*jira.UserGroup
@@ -56,4 +61,19 @@ func (client jiraServerClient) GetUserGroups(user JIRAUser) ([]*jira.UserGroup, 
 		return nil, err
 	}
 	return result.Groups.Items, nil
+}
+
+func (client jiraServerClient) ListProjects(query string, limit int) (jira.ProjectList, error) {
+	plist, resp, err := client.Jira.Project.GetList()
+	if err != nil {
+		return nil, userFriendlyJiraError(resp, err)
+	}
+	if plist == nil {
+		return jira.ProjectList{}, nil
+	}
+	result := *plist
+	if limit > 0 && len(result) > limit {
+		result = result[:limit]
+	}
+	return result, nil
 }
