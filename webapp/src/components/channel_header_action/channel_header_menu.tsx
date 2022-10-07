@@ -18,7 +18,7 @@ export default class ChannelHeaderMenuAction extends React.PureComponent<Props> 
         open(channelId);
     };
 
-    render(): React.ReactElement {
+    render(): React.ReactElement | null {
         const {isInstanceInstalled, userConnected} = this.props;
 
         if (!isInstanceInstalled || !userConnected) {
