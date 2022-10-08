@@ -215,7 +215,7 @@ func (p *Plugin) OnDeactivate() error {
 	if p.telemetryClient != nil {
 		err := p.telemetryClient.Close()
 		if err != nil {
-			return errors.Wrap(err, "OnDeactivate: Failed to close telemetryClient.")
+			return errors.Wrap(err, "OnDeactivate: Failed to close telemetryClient")
 		}
 	}
 	return nil
@@ -428,14 +428,14 @@ func (p *Plugin) errorf(f string, args ...interface{}) {
 func (p *Plugin) CheckSiteURL() error {
 	ustr := p.GetSiteURL()
 	if ustr == "" {
-		return errors.Errorf("Mattermost SITEURL must not be empty.")
+		return errors.New("Mattermost SITEURL must not be empty.") //nolint:revive
 	}
 	u, err := url.Parse(ustr)
 	if err != nil {
 		return errors.WithMessage(err, "invalid SITEURL")
 	}
 	if u.Hostname() == "localhost" {
-		return errors.Errorf("Using %s as your Mattermost SiteURL is not permitted, as the URL is not reachable from Jira. If you are using Jira Cloud, please make sure your URL is reachable from the public internet.", ustr)
+		return errors.Errorf("Using %s as your Mattermost SiteURL is not permitted, as the URL is not reachable from Jira. If you are using Jira Cloud, please make sure your URL is reachable from the public internet.", ustr) //nolint:revive
 	}
 	return nil
 }
