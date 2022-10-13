@@ -92,7 +92,6 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 	}
 
 	mmToken := r.FormValue(argMMToken)
-	trueValue := true
 	connection := &Connection{
 		PluginVersion: manifest.Version,
 		User: jira.User{
@@ -103,12 +102,12 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		},
 		// Set default settings the first time a user connects
 		Settings: &ConnectionSettings{
-			Notifications: trueValue,
-			RolesForDMNotification: map[string]*bool{
-				subCommandMention:  &trueValue,
-				subCommandAssignee: &trueValue,
-				subCommandReporter: &trueValue,
-				subCommandWatching: &trueValue,
+			Notifications: true,
+			RolesForDMNotification: map[string]bool{
+				subCommandMention:  true,
+				subCommandAssignee: true,
+				subCommandReporter: true,
+				subCommandWatching: true,
 			},
 		},
 	}

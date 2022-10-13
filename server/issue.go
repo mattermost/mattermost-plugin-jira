@@ -1133,11 +1133,36 @@ func (p *Plugin) GetUserSetting(wh *webhook, instanceID types.ID, jiraAccountID,
 
 func (s *ConnectionSettings) ShouldReceiveNotification(role string) bool {
 	if val, ok := s.RolesForDMNotification[role]; ok {
-		return *val
+		return val
 	}
 
 	// Check old setting for backwards compatibility
 	return s.Notifications
+}
+
+func (p *Plugin) fetchConnectedUserFromAccount(account map[string]string, instance Instance) (Client, *Connection, error) {
+	var mattermostUserID types.ID
+	var err error
+	if account["AccountID"] != "" {
+		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), account["AccountID"])
+	} else {
+		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), account["Name"])
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+
+	connection, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	client, err := instance.GetClient(connection)
+	if err != nil {
+		return nil, connection, err
+	}
+
+	return client, connection, nil
 }
 
 func (wh *webhook) fetchConnectedUser(p *Plugin, instanceID types.ID) (Client, *Connection, error) {
@@ -1169,22 +1194,7 @@ func (wh *webhook) fetchConnectedUser(p *Plugin, instanceID types.ID) (Client, *
 		return nil, nil, err
 	}
 	for _, account := range accountInformation {
-		var mattermostUserID types.ID
-		if account["AccountID"] != "" {
-			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), account["AccountID"])
-		} else {
-			mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), account["Name"])
-		}
-		if err != nil {
-			continue
-		}
-
-		connection, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
-		if err != nil {
-			continue
-		}
-
-		client, err := instance.GetClient(connection)
+		client, connection, err := p.fetchConnectedUserFromAccount(account, instance)
 		if err != nil {
 			continue
 		}

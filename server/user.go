@@ -34,17 +34,17 @@ type Connection struct {
 	DefaultProjectKey  string `json:"default_project_key,omitempty"`
 }
 
-func (c *Connection) JiraAccountID() types.ID {
-	if c.AccountID != "" {
-		return types.ID(c.AccountID)
+func (connection *Connection) JiraAccountID() types.ID {
+	if connection.AccountID != "" {
+		return types.ID(connection.AccountID)
 	}
 
-	return types.ID(c.Name)
+	return types.ID(connection.Name)
 }
 
 type ConnectionSettings struct {
 	Notifications          bool `json:"notifications"`
-	RolesForDMNotification map[string]*bool
+	RolesForDMNotification map[string]bool
 }
 
 func (s *ConnectionSettings) String() string {

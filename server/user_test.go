@@ -11,32 +11,30 @@ import (
 )
 
 func TestUserSettings_String(t *testing.T) {
-	valueTrue := true
-	valueFalse := false
 	tests := map[string]struct {
 		settings       ConnectionSettings
 		expectedOutput string
 	}{
 		"notifications on": {
 			settings: ConnectionSettings{
-				Notifications: valueTrue,
-				RolesForDMNotification: map[string]*bool{
-					subCommandAssignee: nil,
-					subCommandMention:  nil,
-					subCommandReporter: nil,
-					subCommandWatching: nil,
+				Notifications: true,
+				RolesForDMNotification: map[string]bool{
+					subCommandAssignee: true,
+					subCommandMention:  true,
+					subCommandReporter: true,
+					subCommandWatching: true,
 				},
 			},
 			expectedOutput: "\t- Notifications for assignee: on \n\t- Notifications for mention: on \n\t- Notifications for reporter: on \n\t- Notifications for watching: on",
 		},
 		"notifications off": {
 			settings: ConnectionSettings{
-				Notifications: valueFalse,
-				RolesForDMNotification: map[string]*bool{
-					subCommandAssignee: nil,
-					subCommandMention:  nil,
-					subCommandReporter: nil,
-					subCommandWatching: nil,
+				Notifications: false,
+				RolesForDMNotification: map[string]bool{
+					subCommandAssignee: false,
+					subCommandMention:  false,
+					subCommandReporter: false,
+					subCommandWatching: false,
 				},
 			},
 			expectedOutput: "\t- Notifications for assignee: off \n\t- Notifications for mention: off \n\t- Notifications for reporter: off \n\t- Notifications for watching: off",
@@ -59,9 +57,9 @@ func TestRouteUserStart(t *testing.T) {
 	}
 	api := &plugintest.API{}
 
-	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return()
 
-	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
+	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return()
 
 	p := Plugin{}
 	p.SetAPI(api)

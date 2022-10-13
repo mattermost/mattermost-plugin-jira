@@ -24,7 +24,10 @@ func (connection *Connection) sendNotification(role string, hasNotification bool
 	if role != subCommandAssignee && role != subCommandMention && role != subCommandReporter && role != subCommandWatching {
 		return false
 	}
-	connection.Settings.RolesForDMNotification[role] = &hasNotification
+	if connection.Settings.RolesForDMNotification == nil {
+		connection.Settings.RolesForDMNotification = make(map[string]bool)
+	}
+	connection.Settings.RolesForDMNotification[role] = hasNotification
 	return true
 }
 func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, mattermostUserID types.ID, connection *Connection, args []string) *model.CommandResponse {
@@ -62,7 +65,7 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 		return p.responsef(header, errConnectToJira, err)
 	}
 	notifications := settingOff
-	if *updatedConnection.Settings.RolesForDMNotification[args[1]] {
+	if updatedConnection.Settings.RolesForDMNotification[args[1]] {
 		notifications = settingOn
 	}
 

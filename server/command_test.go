@@ -65,19 +65,18 @@ func getMockUserStoreKV() mockUserStoreKV {
 
 	connection := Connection{
 		User: jira.User{
-			AccountID: "test",
+			AccountID: "test-AccountID",
 		},
 	}
 
-	trueValue := true
 	withNotifications := connection // copy
 	withNotifications.Settings = &ConnectionSettings{
-		Notifications: trueValue,
-		RolesForDMNotification: map[string]*bool{
-			subCommandAssignee: &trueValue,
-			subCommandMention:  &trueValue,
-			subCommandReporter: &trueValue,
-			subCommandWatching: &trueValue,
+		Notifications: true,
+		RolesForDMNotification: map[string]bool{
+			subCommandAssignee: true,
+			subCommandMention:  true,
+			subCommandReporter: true,
+			subCommandWatching: true,
 		},
 	}
 
@@ -264,7 +263,7 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 	api := &plugintest.API{}
 	api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
-	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
+	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return()
 	api.On("KVSet", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
 	api.On("KVSetWithExpiry", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
 	api.On("KVGet", keyInstances).Return(nil, nil)
