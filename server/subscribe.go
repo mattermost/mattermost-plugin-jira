@@ -306,7 +306,7 @@ func (p *Plugin) validateSubscription(instanceID types.ID, subscription *Channel
 
 	for subID := range subs {
 		if subs[subID].Name == subscription.Name && subs[subID].ID != subscription.ID {
-			return errors.Errorf("Subscription name, '%s', already exists. Please choose another name.", subs[subID].Name) //nolint:revive
+			return errors.Errorf("Subscription name, '%s', already exists. Please choose another name.", subs[subID].Name)
 		}
 	}
 

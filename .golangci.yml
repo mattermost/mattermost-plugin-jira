@@ -17,6 +17,10 @@ linters-settings:
       - fieldalignment
   misspell:
     locale: US
+  revive:
+    rules:
+      - name: error-strings
+        disabled: true
 
 linters:
   disable-all: true
