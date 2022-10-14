@@ -130,12 +130,13 @@ func (p *Plugin) httpUserDisconnect(w http.ResponseWriter, r *http.Request) (int
 	_, err = p.DisconnectUser(disconnectPayload.InstanceID, types.ID(mattermostUserID))
 	if errors.Cause(err) == kvstore.ErrNotFound {
 		return respondErr(w, http.StatusNotFound,
-			errors.Errorf("Could not complete the **disconnection** request. You do not currently have a Jira account at %q linked to your Mattermost account.",
+			errors.Errorf(
+				"could not complete the **disconnection** request. You do not currently have a Jira account at %q linked to your Mattermost account",
 				disconnectPayload.InstanceID))
 	}
 	if err != nil {
 		return respondErr(w, http.StatusNotFound,
-			errors.Errorf("Could not complete the **disconnection** request. Error: %v", err))
+			errors.Errorf("could not complete the **disconnection** request. Error: %v", err))
 	}
 
 	_, err = w.Write([]byte(`{"success": true}`))
