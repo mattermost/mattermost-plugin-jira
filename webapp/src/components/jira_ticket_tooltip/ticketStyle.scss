@@ -1,0 +1,180 @@
+.ticket-popover {
+    display: flex;
+    max-width: 380px;
+    width:380px;
+    flex-direction: column;
+    align-items: center;
+    left: 0;
+    right: 0;
+    color:#000000;
+    top: calc(50% - 311px / 2);
+    background: #FFFFFF;
+    border: 1px solid rgba(63, 67, 80, 0.16);
+    border-radius: 4px;
+    box-shadow: 0px 12px 32px 0 rgba(0, 0 ,0, 0.12);
+}
+
+.ticket-popover-keyword:hover {
+    color: #0645AD;
+    text-decoration-line: underline;
+}
+
+.ticket-popover-header {
+    height: 56px;
+    display: flex;
+    flex-direction: row;
+    align-self: stretch;
+}
+
+.ticket-popover-header-container {
+    display: flex;
+    margin: 24px 24px;
+    height: 20px;
+    align-items: center;
+}
+
+.ticket-popover-header-avatar {
+    background-color: #282c34;
+    width: 20px;
+    position: absolute;
+    margin-left: 300px;
+    right: 24px;
+    top: 24px;
+    height: 20px;
+    border-radius: 50px;
+}
+
+.ticket-popover-keyword {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    font-weight: 600;
+    text-align: left;
+    font-size: 16px;
+    height: 16px;
+    line-height: 24px;
+    color: rgba(63, 67, 80, 0.72);
+    text-decoration: none;
+}
+
+.ticket-popover-keyword > span {
+    position: static;
+    font-style: normal;
+    font-weight: normal;
+    line-height: 12px;
+    color: rgba(63, 67, 80, 0.72);
+    display: flex;
+    order: 1;
+    flex: none;
+    flex-grow: 0;
+    margin: 0px 6px;
+
+}
+
+.ticket-popover-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    align-self: stretch;
+}
+
+.ticket-popover-title {
+    display: flex;
+    margin: 0px 24px;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.ticket-popover-title > a:hover > h5 {
+    color: #0645AD;
+    text-decoration-line: underline;
+}
+
+.ticket-popover-title > a > h5{
+    font-family: Metropolis, system-ui;
+    text-align: left;
+    flex-grow: 1;
+    color: #3F4350;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 16px;    
+}
+
+.ticket-popover-title > a > h5 {
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-family: Metropolis, system-ui;
+}
+
+.ticket-popover-description {
+    text-align: left;
+    font-family: 'Open Sans', system-ui;
+    font-style: normal;
+    overflow: hidden;
+    font-weight: normal;
+    max-height: 50px;
+    margin: 0px 24px 8px 24px;
+    font-size: 12px;
+    line-height: 1.5;
+    width:300px;
+    text-overflow: ellipsis;
+}
+
+.ticket-popover-description > p {
+    margin-block-start: 0;
+    color: #282c34;
+}
+
+.ticket-popover-label {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.ticket-popover-labels {
+    margin: 0px 24px;
+}
+
+.ticket-popover-footer {
+    display: flex;
+    height: 60px;
+    flex-direction: row;
+    align-items: center;
+    position: static;
+    flex: none;
+    order: 3;
+    flex-grow: 0;
+    margin-top: 16px;
+    align-self: stretch;
+    border-top: 1px solid rgba(63, 67, 80, 0.16);
+    font-family: Open Sans;
+    padding: 0px 24px;
+    font-size: 12px;
+    line-height: 16px;
+}
+
+.ticket-popover-footer > span:nth-child(3) {
+    margin-left: 4px;
+}
+
+.ticket-popover-footer-assigner-profile {
+    width: 20px;
+    height: 20px;
+    border-radius: 50px;
+    flex: none;
+}
+
+.ticket-popover-footer-assigner-name {
+    margin-left: 6px;
+    font-weight: 600;
+}
+
+.jiraticket-popover-label-list {
+    font-size: 10px;
+    font-weight: 600;
+    margin: 5px 5px 5px 0px;
+    padding: 0px 4px;
+    background: rgba(63, 67, 80, 0.08);
+    border-radius: 2px;
+    line-height: 16px;
+}
