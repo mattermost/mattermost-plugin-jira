@@ -519,7 +519,7 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 		return &si, nil
 	}
 
-	return nil, errors.New(fmt.Sprintf("Jira instance %s has unsupported type: %s", fullkey, si.Type))
+	return nil, errors.Errorf("Jira instance %s has unsupported type: %s", fullkey, si.Type)
 }
 
 func (store *store) StoreInstance(instance Instance) error {

@@ -850,12 +850,12 @@ func (p *Plugin) UnassignIssue(instance Instance, mattermostUserID types.ID, iss
 	// check for valid issue key
 	_, err = client.GetIssue(issueKey, nil)
 	if err != nil {
-		return "", errors.Errorf("We couldn't find the issue key `%s`.  Please confirm the issue key and try again.", issueKey)
+		return "", errors.Errorf("We couldn't find the issue key `%s`. Please confirm the issue key and try again.", issueKey)
 	}
 
 	if err := client.UpdateAssignee(issueKey, &jira.User{}); err != nil {
 		if StatusCode(err) == http.StatusForbidden {
-			return "", errors.New("you do not have the appropriate permissions to perform this action. Please contact your Jira administrator")
+			return "", errors.New("You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.")
 		}
 		return "", err
 	}

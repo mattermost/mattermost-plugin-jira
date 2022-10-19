@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/mattermost/mattermost-server/v6/model"
 )
@@ -442,7 +444,8 @@ func mergeWebhookEvents(events []*webhook) Webhook {
 		if event.fieldInfo.name == descriptionField || strings.HasPrefix(event.fieldInfo.from, strike) {
 			strike = ""
 		}
-		msg := "**" + strings.Title(event.fieldInfo.name) + ":** " + strike +
+		// Use the english language for now. Using the server's local might be better.
+		msg := "**" + cases.Title(language.English, cases.NoLower).String(event.fieldInfo.name) + ":** " + strike +
 			event.fieldInfo.from + strike + " " + event.fieldInfo.to
 		merged.fields = append(merged.fields, &model.SlackAttachmentField{
 			Value: msg,
