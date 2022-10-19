@@ -136,7 +136,8 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
         });
 
         let fields = {
-            ...this.state.fields,
+            summary: this.state.fields.summary,
+            description: this.state.fields.description,
             project: {key: projectKey},
         } as CreateIssueFields;
 
@@ -160,7 +161,9 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
 
     handleIssueTypeChange = (_: string, issueType: string) => {
         let fields = {
-            ...this.state.fields,
+            summary: this.state.fields.summary,
+            description: this.state.fields.description,
+            project: {key: this.state.projectKey},
             issuetype: {id: issueType},
         } as CreateIssueFields;
 
