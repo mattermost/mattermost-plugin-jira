@@ -802,15 +802,18 @@ func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *mode
 	if len(args) != 1 {
 		return p.help(header)
 	}
+
 	jiraURL, instance, err := p.installCloudOAuthInstance(args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
+
 	pkey, err := p.publicKeyString()
 	if err != nil {
 		return p.responsef(header, "Failed to load public key: %v", err)
 	}
 
+	// TODO Review and change the instructions for this installation
 	return p.respondCommandTemplate(header, "/command/install_server.md", map[string]string{
 		"JiraURL":       jiraURL,
 		"PluginURL":     p.GetPluginURL(),
