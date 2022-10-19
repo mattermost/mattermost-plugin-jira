@@ -11,6 +11,7 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-server/v6/model"
 
@@ -28,9 +29,9 @@ type User struct {
 type Connection struct {
 	jira.User
 	PluginVersion      string
-	Oauth1AccessToken  string `json:",omitempty"`
-	Oauth1AccessSecret string `json:",omitempty"`
-	OAuth2Token        string `json:",omitempty"`
+	Oauth1AccessToken  string        `json:",omitempty"`
+	Oauth1AccessSecret string        `json:",omitempty"`
+	OAuth2Token        *oauth2.Token `json:",omitempty"`
 	Settings           *ConnectionSettings
 	DefaultProjectKey  string `json:"default_project_key,omitempty"`
 }

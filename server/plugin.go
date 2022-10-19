@@ -82,10 +82,6 @@ type externalConfig struct {
 
 	// Display subscription name in notifications
 	DisplaySubscriptionNameInNotifications bool
-
-	// OAuth app configuration
-	JiraAuthAppClientID     string
-	JiraAuthAppClientSecret string
 }
 
 const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb
@@ -519,7 +515,7 @@ func (p *Plugin) OnSendDailyTelemetry() {
 	args := map[string]interface{}{}
 
 	// Jira instances
-	server, cloud := 0, 0
+	server, cloud, cloudoauth := 0, 0, 0
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
 		p.API.LogWarn("Failed to get instances for telemetry", "error", err)
@@ -531,15 +527,18 @@ func (p *Plugin) OnSendDailyTelemetry() {
 		case CloudInstanceType:
 			cloud++
 		case CloudOAuthInstanceType:
-			cloud++
+			cloudoauth++
 		}
 	}
-	args["instance_count"] = server + cloud
+	args["instance_count"] = server + cloud + cloudoauth
 	if server > 0 {
 		args["server_instance_count"] = server
 	}
 	if cloud > 0 {
 		args["cloud_instance_count"] = cloud
+	}
+	if cloud > 0 {
+		args["cloudoauth_instance_count"] = cloudoauth
 	}
 
 	// Connected users
