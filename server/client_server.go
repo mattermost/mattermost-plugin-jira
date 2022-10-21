@@ -4,10 +4,18 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/hashicorp/go-version"
 	"github.com/pkg/errors"
+)
+
+const (
+	ServerInfoApiEndpoint = "rest/api/2/serverInfo"
+	CreateMetaAPIEndpoint = "rest/api/2/issue/createmeta/"
+	PivotVersion          = "8.4.0"
 )
 
 type jiraServerClient struct {
@@ -22,10 +30,120 @@ func newServerClient(jiraClient *jira.Client) Client {
 	}
 }
 
+type IssueInfo struct {
+	Values []*jira.MetaIssueType `json:"values,omitempty"`
+}
+
+type FieldInfo struct {
+	Values []interface{} `json:"values,omitempty"`
+}
+
+type FieldValues struct {
+	FieldID string `json:"fieldId,omitempty"`
+}
+
+type FieldID struct {
+	Values []FieldValues `json:"values,omitempty"`
+}
+
+type ServerVersion struct {
+	VersionInfo string `json:"version,omitempty"`
+}
+
+// GetIssueInfo returns the issues information based on project id.
+func (client jiraServerClient) GetIssueInfo(projectID string) (*IssueInfo, *jira.Response, error) {
+	apiEndpoint := fmt.Sprintf("%s%s/issuetypes", CreateMetaAPIEndpoint, projectID)
+	req, err := client.Jira.NewRequest(http.MethodGet, apiEndpoint, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	issues := new(IssueInfo)
+	response, err := client.Jira.Do(req, issues)
+	return issues, response, err
+}
+
 // GetCreateMeta returns the metadata needed to implement the UI and validation of
 // creating new Jira issues.
 func (client jiraServerClient) GetCreateMeta(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
-	cimd, resp, err := client.Jira.Issue.GetCreateMetaWithOptions(options)
+	v := new(ServerVersion)
+	req, err := client.Jira.NewRequest(http.MethodGet, ServerInfoApiEndpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err = client.Jira.Do(req, v); err != nil {
+		return nil, err
+	}
+
+	currentVersion, err := version.NewVersion(v.VersionInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	pivotVersion, err := version.NewVersion(PivotVersion)
+	if err != nil {
+		return nil, err
+	}
+
+	var info *jira.CreateMetaInfo
+	var resp *jira.Response
+	var issues *IssueInfo
+	var projectList *jira.ProjectList
+	if currentVersion.LessThan(pivotVersion) {
+		info, resp, err = client.Jira.Issue.GetCreateMetaWithOptions(options)
+	} else {
+		projectList, resp, err = client.Jira.Project.ListWithOptions(options)
+		meta := new(jira.CreateMetaInfo)
+
+		if err == nil {
+			for _, proj := range *projectList {
+				meta.Expand = proj.Expand
+				issues, resp, err = client.GetIssueInfo(proj.ID)
+				if err != nil {
+					break
+				}
+
+				project := &jira.MetaProject{
+					Expand:     proj.Expand,
+					Self:       proj.Self,
+					Id:         proj.ID,
+					Key:        proj.Key,
+					Name:       proj.Name,
+					IssueTypes: issues.Values,
+				}
+
+				for _, issue := range project.IssueTypes {
+					apiEndpoint := fmt.Sprintf("%s%s/issuetypes/%s", CreateMetaAPIEndpoint, proj.ID, issue.Id)
+					req, err = client.Jira.NewRequest(http.MethodGet, apiEndpoint, nil)
+					if err != nil {
+						break
+					}
+
+					field := new(FieldInfo)
+					resp, err = client.Jira.Do(req, field)
+					if err != nil {
+						break
+					}
+
+					fieldID := new(FieldID)
+					resp, err = client.Jira.Do(req, fieldID)
+					if err != nil {
+						break
+					}
+
+					fieldMap := make(map[string]interface{})
+					for index, fieldValue := range field.Values {
+						fieldMap[fieldID.Values[index].FieldID] = fieldValue
+					}
+					issue.Fields = fieldMap
+				}
+				meta.Projects = append(meta.Projects, project)
+			}
+		}
+		info = meta
+	}
+
 	if err != nil {
 		if resp == nil {
 			return nil, err
@@ -36,7 +154,7 @@ func (client jiraServerClient) GetCreateMeta(options *jira.GetQueryOptions) (*ji
 		}
 		return nil, RESTError{err, resp.StatusCode}
 	}
-	return cimd, nil
+	return info, nil
 }
 
 // SearchUsersAssignableToIssue finds all users that can be assigned to an issue.
