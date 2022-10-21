@@ -529,15 +529,15 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 			Value: project.Key,
 			Label: project.Name,
 		}
-		issueTypes := make([]option, len(project.IssueTypes))
-		for index, issueType := range project.IssueTypes {
+		issueTypes := []option{}
+		for _, issueType := range project.IssueTypes {
 			if issueType.Subtasks {
 				continue
 			}
-			issueTypes[index] = option{
+			issueTypes = append(issueTypes, option{
 				Value: issueType.Id,
 				Label: issueType.Name,
-			}
+			})
 		}
 		issues[project.Key] = issueTypes
 	}

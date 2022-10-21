@@ -104,10 +104,10 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		Settings: &ConnectionSettings{
 			Notifications: true,
 			RolesForDMNotification: map[string]bool{
-				subCommandMention:  true,
-				subCommandAssignee: true,
-				subCommandReporter: true,
-				subCommandWatching: true,
+				mentionRole:  true,
+				assigneeRole: true,
+				reporterRole: true,
+				watchingRole: true,
 			},
 		},
 	}

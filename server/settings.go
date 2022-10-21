@@ -1,9 +1,9 @@
 package main
 
 import (
-	"strings"
-
 	"github.com/mattermost/mattermost-server/v6/model"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -14,14 +14,15 @@ const (
 
 	errStoreNewSettings = "Could not store new settings. Please contact your system administrator. Error: %v"
 	errConnectToJira    = "Your account is not connected to Jira. Please type `/jira connect`. %v"
-	subCommandAssignee  = "assignee"
-	subCommandMention   = "mention"
-	subCommandReporter  = "reporter"
-	subCommandWatching  = "watching"
+
+	assigneeRole = "assignee"
+	mentionRole  = "mention"
+	reporterRole = "reporter"
+	watchingRole = "watching"
 )
 
-func (connection *Connection) sendNotification(role string, hasNotification bool) bool {
-	if role != subCommandAssignee && role != subCommandMention && role != subCommandReporter && role != subCommandWatching {
+func (connection *Connection) updateRolesForDMNotification(role string, hasNotification bool) bool {
+	if role != assigneeRole && role != mentionRole && role != reporterRole && role != watchingRole {
 		return false
 	}
 	if connection.Settings.RolesForDMNotification == nil {
@@ -50,7 +51,7 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	if connection.Settings == nil {
 		connection.Settings = &ConnectionSettings{}
 	}
-	if !connection.sendNotification(args[1], value) {
+	if !connection.updateRolesForDMNotification(args[1], value) {
 		return p.responsef(header, helpText)
 	}
 
@@ -69,5 +70,5 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 		notifications = settingOn
 	}
 
-	return p.responsef(header, "Settings updated.\n\t%s notifications %s.", strings.Title(args[1]), notifications)
+	return p.responsef(header, "Settings updated.\n\t%s notifications %s.", cases.Title(language.Und, cases.NoLower).String(args[1]), notifications)
 }

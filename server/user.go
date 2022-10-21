@@ -53,19 +53,19 @@ func (s *ConnectionSettings) String() string {
 	reporterNotifications := "Notifications for reporter: off"
 	watchingNotifications := "Notifications for watching: off"
 
-	if s != nil && s.ShouldReceiveNotification(subCommandAssignee) {
+	if s != nil && s.ShouldReceiveNotification(assigneeRole) {
 		assigneeNotifications = "Notifications for assignee: on"
 	}
 
-	if s != nil && s.ShouldReceiveNotification(subCommandMention) {
+	if s != nil && s.ShouldReceiveNotification(mentionRole) {
 		mentionNotifications = "Notifications for mention: on"
 	}
 
-	if s != nil && s.ShouldReceiveNotification(subCommandReporter) {
+	if s != nil && s.ShouldReceiveNotification(reporterRole) {
 		reporterNotifications = "Notifications for reporter: on"
 	}
 
-	if s != nil && s.ShouldReceiveNotification(subCommandWatching) {
+	if s != nil && s.ShouldReceiveNotification(watchingRole) {
 		watchingNotifications = "Notifications for watching: on"
 	}
 

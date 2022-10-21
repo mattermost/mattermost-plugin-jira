@@ -272,26 +272,26 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 func TestShouldReceiveNotification(t *testing.T) {
 	cs := ConnectionSettings{}
 	cs.RolesForDMNotification = make(map[string]bool)
-	cs.RolesForDMNotification[subCommandAssignee] = true
-	cs.RolesForDMNotification[subCommandMention] = true
+	cs.RolesForDMNotification[assigneeRole] = true
+	cs.RolesForDMNotification[mentionRole] = true
 	for name, tt := range map[string]struct {
 		role         string
 		notification bool
 	}{
-		subCommandAssignee: {
-			role:         subCommandAssignee,
+		assigneeRole: {
+			role:         assigneeRole,
 			notification: true,
 		},
-		subCommandMention: {
-			role:         subCommandMention,
+		mentionRole: {
+			role:         mentionRole,
 			notification: true,
 		},
-		subCommandReporter: {
-			role:         subCommandReporter,
+		reporterRole: {
+			role:         reporterRole,
 			notification: false,
 		},
-		subCommandWatching: {
-			role:         subCommandWatching,
+		watchingRole: {
+			role:         watchingRole,
 			notification: false,
 		},
 	} {
@@ -319,10 +319,10 @@ func TestFetchConnectedUser(t *testing.T) {
 				Settings: &ConnectionSettings{
 					Notifications: true,
 					RolesForDMNotification: map[string]bool{
-						subCommandAssignee: true,
-						subCommandMention:  true,
-						subCommandReporter: true,
-						subCommandWatching: true,
+						assigneeRole: true,
+						mentionRole:  true,
+						reporterRole: true,
+						watchingRole: true,
 					},
 				},
 				User: jira.User{
@@ -427,7 +427,6 @@ func TestApplyReporterNotification(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestGetUserSetting(t *testing.T) {
@@ -450,10 +449,10 @@ func TestGetUserSetting(t *testing.T) {
 				Settings: &ConnectionSettings{
 					Notifications: true,
 					RolesForDMNotification: (map[string]bool{
-						subCommandAssignee: true,
-						subCommandMention:  true,
-						subCommandReporter: true,
-						subCommandWatching: true,
+						assigneeRole: true,
+						mentionRole:  true,
+						reporterRole: true,
+						watchingRole: true,
 					}),
 				},
 			},
