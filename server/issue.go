@@ -1042,8 +1042,7 @@ func (p *Plugin) getClient(instanceID, mattermostUserID types.ID) (Client, Insta
 
 func (p *Plugin) httpGetIssueByKey(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("Request: "+r.Method+" is not allowed, must be GET"))
+		return respondErr(w, http.StatusMethodNotAllowed, fmt.Errorf("request: %s is not allowed, must be GET", r.Method))
 	}
 
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
@@ -1072,10 +1071,8 @@ func (p *Plugin) GetIssueByKey(instanceID, mattermostUserID types.ID, issueKey s
 		switch StatusCode(err) {
 		case http.StatusNotFound:
 			return nil, errors.New("we couldn't find the issue key, or you do not have the appropriate permissions to view the issue. Please try again or contact your Jira administrator")
-
 		case http.StatusUnauthorized:
 			return nil, errors.New("you do not have the appropriate permissions to view the issue. Please contact your Jira administrator")
-
 		default:
 			return nil, errors.WithMessage(err, "request to Jira failed")
 		}

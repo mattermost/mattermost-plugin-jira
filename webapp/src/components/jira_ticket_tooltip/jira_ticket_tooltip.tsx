@@ -234,7 +234,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                     </div>
                 </div>
                 <div className={'ticket-popover-footer'}>
-                    { jiraTicketAssigneeAvatarURI === '' ?
+                    {jiraTicketAssigneeAvatarURI === '' ?
                         (
                             <span style={{backgroundColor: 'slategrey', borderRadius: '50%', marginRight: '5px', padding: '1px'}}>
                                 <svg
@@ -267,7 +267,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                             />
                         )
                     }
-                    { jiraTicketAssigneeName === '' ?
+                    {jiraTicketAssigneeName === '' ?
                         (
                             <span className={'ticket-popover-footer-assigner-is-assigned'}>
                                 {unAssigned}
