@@ -1,13 +1,13 @@
 import {connect} from 'react-redux';
-import {bindActionCreators} from 'redux';
+import {bindActionCreators, Dispatch} from 'redux';
 
 import {isUserConnected, getIssue, getUserConnectedInstances, getDefaultUserInstanceID} from 'selectors';
-
-import {getIssueByKey, getConnected} from 'actions';
+import {getIssueByKey} from 'actions';
 
 import TicketPopover from './jira_ticket_tooltip';
+import {GlobalState} from 'mattermost-redux/types/store';
 
-const mapStateToProps = (state) => {
+const mapStateToProps = (state: GlobalState) => {
     return {
         connected: isUserConnected(state),
         ticketDetails: getIssue(state).ticketDetails,
@@ -17,7 +17,7 @@ const mapStateToProps = (state) => {
     };
 };
 
-const mapDispatchToProps = (dispatch) => bindActionCreators({
+const mapDispatchToProps = (dispatch: Dispatch) => bindActionCreators({
     getIssueByKey,
 }, dispatch);
 
