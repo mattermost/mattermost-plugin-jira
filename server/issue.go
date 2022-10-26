@@ -4,10 +4,9 @@
 package main
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -16,6 +15,7 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-server/v6/model"
 
@@ -42,95 +42,81 @@ func makePost(userID, channelID, message string) *model.Post {
 
 func (p *Plugin) httpOAuthConnect(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
 	code := r.URL.Query().Get("code")
-	userID := r.URL.Query().Get("state")
+	mattermostUserID := r.URL.Query().Get("state")
 
-	conf := p.getConfig()
-	jsonData, _ := json.Marshal(map[string]string{
-		"grant_type":    "authorization_code",
-		"client_id":     conf.JiraAuthAppClientID,
-		"client_secret": conf.JiraAuthAppClientSecret,
-		"code":          code,
-		"redirect_uri":  fmt.Sprintf("%s/oauth/connect", p.GetPluginURL()),
-	})
+	// TODO Get the random state code and test it against this code
 
-	request, err := http.NewRequest(
-		"POST",
-		"https://auth.atlassian.com/oauth/token",
-		bytes.NewBuffer(jsonData),
-	)
+	// TODO DRY
+	oauthConf := &oauth2.Config{
+		// TODO Use client_id and secret per instance
+		ClientID:     "",
+		ClientSecret: "",
+		Scopes:       strings.Split(JIRA_SCOPES, ","),
+		RedirectURL:  fmt.Sprintf("%s/oauth/connect", p.GetPluginURL()),
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "https://auth.atlassian.com/authorize",
+			TokenURL: "https://auth.atlassian.com/oauth/token",
+		},
+	}
+
+	token, err := oauthConf.Exchange(context.Background(), code)
 	if err != nil {
 		return respondErr(w, http.StatusBadRequest,
 			errors.Wrap(err, "Error creating get token request onauth2"))
 	}
 
-	request.Header.Set("Content-type", "application/json; charset=UTF-8")
+	tokenKey := fmt.Sprintf(
+		"oauthcloud_token_instance_%s_userid_%s",
+		instanceID,
+		mattermostUserID)
+	p.client.KV.Set(tokenKey, token)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
+	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
-		return respondErr(w, http.StatusBadRequest,
-			errors.Wrap(err, "Error requesting token with Bearer"))
+		return http.StatusInternalServerError, err
 	}
-	defer response.Body.Close()
+	connection := &Connection{
+		PluginVersion: manifest.Version,
+		OAuth2Token:   token,
+	}
 
-	body, _ := ioutil.ReadAll(response.Body)
-
-	tokenKey := fmt.Sprintf("oauthcloud_token_%s", userID)
-	token := &OAuth2Token{}
-	err = json.Unmarshal(body, token)
+	_, err = instance.GetClient(connection)
 	if err != nil {
-		return respondErr(w, http.StatusBadRequest,
-			errors.Wrap(err, "No access token present when getting token from JIRA"))
+		fmt.Println("ERROR CLIENT")
+		return http.StatusInternalServerError, err
 	}
-	p.client.KV.Set(tokenKey, token.AccessToken)
+	fmt.Println("JIRA ID")
+	// JiraID, err := ci.GetJiraCloudResourceID()
 
-	// TODO Too much code here
-	// Check the token works with the code
-	// instance, err := p.instanceStore.LoadInstance(instanceID)
+	// TODO Save it somewhere?
+	// fmt.Println(JiraID)
+
+	// jiraUser, err := pluginClient.GetSelf()
 	// if err != nil {
+	// 	fmt.Println("ERROR SELF")
+	// 	fmt.Println("err")
 	// 	return http.StatusInternalServerError, err
 	// }
-	// connection := &Connection{
-	// 	PluginVersion: manifest.Version,
-	// 	OAuth2Token:   token.AccessToken,
-	// }
-
-	// pluginClient, err := instance.GetClient(connection)
-	// if err != nil {
-	// 	return http.StatusInternalServerError, err
-	// }
-
-	// juser, err := pluginClient.GetSelf()
-	// if err != nil {
-	// 	return http.StatusInternalServerError, err
-	// }
-	// connection.User = *juser
+	// fmt.Println("JIRA USER")
+	// fmt.Println(jiraUser)
 
 	// // Set default settings the first time a user connects
 	// connection.Settings = &ConnectionSettings{Notifications: true}
 
-	// err = p.connectUser(instance, types.ID(userID), connection)
+	// err = p.connectUser(instance, types.ID(mattermostUserID), connection)
 	// if err != nil {
 	// 	return http.StatusInternalServerError, err
 	// }
-	// mmuser, appErr := p.API.GetUser(userID)
+	// mmuser, appErr := p.API.GetUser(mattermostUserID)
 	// if appErr != nil {
 	// 	return http.StatusInternalServerError,
-	// 		errors.WithMessage(appErr, "failed to load user "+userID)
+	// 		errors.WithMessage(appErr, "failed to load user "+mattermostUserID)
 	// }
+	// fmt.Println("SHINY USER")
+	// fmt.Println(mmuser)
 
-	// // // TODO The revoke is not valid yet
-	// return p.respondTemplate(w, r, "text/html", struct {
-	// 	MattermostDisplayName string
-	// 	JiraDisplayName       string
-	// 	RevokeURL             string
-	// }{
-	// 	JiraDisplayName:       juser.DisplayName + " (" + juser.Name + ")",
-	// 	MattermostDisplayName: mmuser.GetDisplayName(model.ShowNicknameFullName),
-	// 	RevokeURL:             path.Join(p.GetPluginURLPath(), instancePath(routeUserDisconnect, instance.GetID())),
-	// })
 	w.Header().Set("Content-Type", "application/json")
-	jsonData, _ = json.Marshal(map[string]string{
+	jsonData, _ := json.Marshal(map[string]string{
 		"message": "OK",
 		"token":   token.AccessToken,
 	})
