@@ -23,7 +23,9 @@ type cloudOAuthInstance struct {
 	// The SiteURL may change as we go, so we store the PluginKey when as it was installed
 	MattermostKey string
 
-	JiraResourceID string
+	JiraResourceID   string
+	JiraClientID     string
+	JiraClientSecret string
 }
 
 type JiraAccessibleResources []struct {
@@ -34,7 +36,7 @@ var _ Instance = (*cloudOAuthInstance)(nil)
 
 const JIRA_SCOPES = "read:me,read:jira-work,write:jira-work"
 
-func (p *Plugin) installCloudOAuthInstance(rawURL string) (string, *cloudOAuthInstance, error) {
+func (p *Plugin) installCloudOAuthInstance(rawURL string, clientID string, clientSecret string) (string, *cloudOAuthInstance, error) {
 	jiraURL, err := utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
 	if err != nil {
 		return "", nil, err
@@ -44,8 +46,10 @@ func (p *Plugin) installCloudOAuthInstance(rawURL string) (string, *cloudOAuthIn
 	}
 
 	instance := &cloudOAuthInstance{
-		InstanceCommon: newInstanceCommon(p, CloudOAuthInstanceType, types.ID(jiraURL)),
-		MattermostKey:  p.GetPluginKey(),
+		InstanceCommon:   newInstanceCommon(p, CloudOAuthInstanceType, types.ID(jiraURL)),
+		MattermostKey:    p.GetPluginKey(),
+		JiraClientID:     clientID,
+		JiraClientSecret: clientSecret,
 	}
 
 	err = p.InstallInstance(instance)
@@ -109,8 +113,8 @@ func (ci *cloudOAuthInstance) generateRandomState() string {
 
 func (ci *cloudOAuthInstance) GetOAuthConfig() *oauth2.Config {
 	return &oauth2.Config{
-		ClientID:     "",
-		ClientSecret: "",
+		ClientID:     ci.JiraClientID,
+		ClientSecret: ci.JiraClientSecret,
 		Scopes:       strings.Split(JIRA_SCOPES, ","),
 		RedirectURL:  fmt.Sprintf("%s/oauth/connect", ci.Plugin.GetPluginURL()),
 		Endpoint: oauth2.Endpoint{

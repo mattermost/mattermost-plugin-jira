@@ -799,26 +799,22 @@ func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *mode
 	if !authorized {
 		return p.responsef(header, "`/jira install` can only be run by a system administrator.")
 	}
-	if len(args) != 1 {
+
+	if len(args) != 3 {
 		return p.help(header)
 	}
 
-	jiraURL, instance, err := p.installCloudOAuthInstance(args[0])
+	clientID := args[1]
+	clientSecret := args[2]
+	jiraURL, instance, err := p.installCloudOAuthInstance(args[0], clientID, clientSecret)
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
 
-	pkey, err := p.publicKeyString()
-	if err != nil {
-		return p.responsef(header, "Failed to load public key: %v", err)
-	}
-
-	// TODO Review and change the instructions for this installation
-	return p.respondCommandTemplate(header, "/command/install_server.md", map[string]string{
+	return p.respondCommandTemplate(header, "/command/install_cloudoauth.md", map[string]string{
 		"JiraURL":       jiraURL,
 		"PluginURL":     p.GetPluginURL(),
 		"MattermostKey": instance.GetMattermostKey(),
-		"PublicKey":     pkey,
 	})
 }
 
