@@ -206,7 +206,7 @@ const getIssueByKey = (state = {}, action) => {
             summary: ticketData.fields.summary,
             ticketId: ticketData.key,
             jiraIcon: ticketData.fields.project.avatarUrls['48x48'],
-            versions: ticketData.fields.versions.lenght > 0 ? ticketData.fields.versions.versions[0] : '',
+            versions: ticketData.fields.versions.length ? ticketData.fields.versions[0] : '',
             statusKey: ticketData.fields.status.name,
             issueIcon: ticketData.fields.issuetype.iconUrl,
         };

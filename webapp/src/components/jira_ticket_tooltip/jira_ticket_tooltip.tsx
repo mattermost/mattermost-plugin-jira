@@ -1,6 +1,8 @@
 import React from 'react';
 import './ticketStyle.scss';
 
+import {Dispatch} from 'redux';
+
 import {Instance} from 'types/model';
 
 export type Props = {
@@ -8,11 +10,11 @@ export type Props = {
     show: boolean;
     connected: boolean;
     isLoaded?: boolean;
-    ticketDetails?: any;
+    ticketDetails?: TicketDetails;
     defaultUserInstanceID?: string;
     connectedInstances: Instance[];
-    getIssueByKey: (issueKey: string, instanceID: string) => (dispatch: any, getState: any) => Promise<{
-        data?: any;
+    getIssueByKey: (issueKey: string, instanceID: string) => (dispatch: Dispatch, getState: any) => Promise<{
+        data?: TicketData;
         error?: any;
     }>;
     setTicket?: (ticketDetails: {}) => void;
@@ -22,8 +24,9 @@ export type State = {
     href: string;
     isLoaded: boolean;
     ticketId: string;
-    ticketDetails?: any;
+    ticketDetails?: TicketDetails;
 };
+
 export default class TicketPopover extends React.PureComponent<Props, State> {
     truncateString(str: string, num: number) {
         if (num > str.length) {
@@ -65,7 +68,10 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         }
 
         if (ticketID === '' && this.props.href.includes('atlassian.net/browse')) {
-            this.props.getIssueByKey(this.props.href.split('|')[0].split('?')[0].split('/browse/')[1], instanceID);
+            ticketID = this.props.href.split('|')[0].split('?')[0].split('/browse/')[1];
+            if (ticketID) {
+                this.props.getIssueByKey(ticketID, instanceID);
+            }
         }
     }
 
@@ -78,12 +84,12 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
     }
 
     componentDidUpdate(): void {
-        if (this.props.isLoaded && !this.state.isLoaded && this.props.ticketDetails.ticketId === this.state.ticketId) {
+        if (this.props.isLoaded && !this.state.isLoaded && this.props.ticketDetails && this.props.ticketDetails.ticketId === this.state.ticketId) {
             this.setTicket(this.props);
         }
     }
 
-    setTicket(data: any): void{
+    setTicket(data: Props): void{
         this.setState({
             isLoaded: true,
             ticketDetails: data.ticketDetails,
@@ -94,15 +100,9 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         if (fixVersion) {
             const fixVersionString = 'Fix Version :';
             return (
-                <div
-                    className='fix-version-label'
-                    style={{color: '#333', margin: '16px 0px', textAlign: 'left', fontFamily: 'open sans', fontSize: '10px', padding: '0px 0px 2px 0px'}}
-                >
+                <div className='fix-version-label'>
                     {fixVersionString}
-                    <span
-                        className='fix-version-label-value'
-                        style={{backgroundColor: 'rgba(63, 67, 80, 0.08)', padding: '1px 8px', fontWeight: 600, borderRadius: '2px'}}
-                    >
+                    <span className='fix-version-label-value'>
                         {fixVersion}
                     </span>
                 </div>
@@ -112,34 +112,22 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
     }
 
     tagTicketStatus(ticketStatus: string) {
-        const defaultStyle = {
-            fontFamily: 'open sans',
-            fontStyle: 'normal',
-            fontWeight: 600,
-            fontSize: '12px',
-            marginTop: '10px',
-            padding: '4px 8px',
-            align: 'center',
-            marginBottom: '8px',
-            borderRadius: '4px',
-        };
-
         if (ticketStatus.toLowerCase() === 'indeterminate') {
-            return (<span style={{...defaultStyle, color: '#FFFFFF', backgroundColor: '#1C58D9', borderRadius: '2px'}}>{ticketStatus}</span>);
+            return (<span className='ticket-status-indeterminate default-style'>{ticketStatus}</span>);
         }
 
         if (ticketStatus.toLowerCase() === 'done') {
-            return (<span style={{...defaultStyle, color: '#FFFFFF', backgroundColor: '#3DB887'}}>{ticketStatus}</span>);
+            return (<span className='ticket-status-done default-style'>{ticketStatus}</span>);
         }
 
-        return (<span style={{...defaultStyle, color: '#3F4350', backgroundColor: 'rgba(63, 67, 80, 0.16)'}}>{ticketStatus}</span>);
+        return (<span className='ticket-status-default default-style'>{ticketStatus}</span>);
     }
 
     labelList(labels: string[]) {
-        if (labels.length > 0) {
+        if (labels.length) {
             let totalString = 0;
             let totalHide = 0;
-            const labelList = labels.map((label: any, key: any): any => {
+            const labelList = labels.map((label: string, key: number): JSX.Element => {
                 if (totalString < 3) {
                     totalString++;
                     return (
@@ -161,7 +149,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                             {moreLabels}
                         </span>);
                 }
-                return null;
+                return <></>;
             });
 
             return (<div className={'ticket-popover-label'}>{labelList}</div>);
@@ -175,16 +163,16 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         }
         const ticketDetails = this.state.ticketDetails;
         const jiraTicketURI = this.state.href;
-        const jiraAvatar = ticketDetails.jiraIcon;
-        const jiraIssueIconURI = ticketDetails.issueIcon;
-        const jiraTicketKey = ticketDetails.key;
-        const jiraTicketTitle = ticketDetails.summary;
-        const jiraTicketAssigneeAvatarURI = ticketDetails.assigneeAvatar;
-        const jiraTicketAssigneeName = ticketDetails.assigneeName;
-        const jiraTicketStatusName = ticketDetails.statusKey;
-        const jiraTicketDescription = ticketDetails.description;
-        const jiraTicketVersions = ticketDetails.versions;
-        const jiraTicketLabels = ticketDetails.labels;
+        const jiraAvatar = ticketDetails && ticketDetails.jiraIcon;
+        const jiraIssueIconURI = ticketDetails && ticketDetails.issueIcon;
+        const jiraTicketKey = ticketDetails && ticketDetails.ticketId;
+        const jiraTicketTitle = ticketDetails && ticketDetails.summary;
+        const jiraTicketAssigneeAvatarURI = ticketDetails && ticketDetails.assigneeAvatar;
+        const jiraTicketAssigneeName = ticketDetails && ticketDetails.assigneeName;
+        const jiraTicketStatusName = ticketDetails && ticketDetails.statusKey;
+        const jiraTicketDescription = ticketDetails && ticketDetails.description;
+        const jiraTicketVersions = ticketDetails && ticketDetails.versions;
+        const jiraTicketLabels = ticketDetails && ticketDetails.labels;
         const isAssigned = ' is assigned';
         const unAssigned = 'Unassigned';
 
@@ -208,7 +196,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                             href={jiraTicketKey}
                             className={'ticket-popover-keyword'}
                         >
-                            <span style={{fontSize: 12}}>{jiraTicketKey}</span>
+                            <span className='jira-ticket-key'>{jiraTicketKey}</span>
                             <img
                                 alt={'jira-issue-icon'}
                                 width='14'
@@ -234,9 +222,16 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                     </div>
                 </div>
                 <div className={'ticket-popover-footer'}>
-                    {jiraTicketAssigneeAvatarURI === '' ?
+                    {jiraTicketAssigneeAvatarURI ?
                         (
-                            <span style={{backgroundColor: 'slategrey', borderRadius: '50%', marginRight: '5px', padding: '1px'}}>
+                            <img
+                                className={'ticket-popover-footer-assigner-profile'}
+                                src={jiraTicketAssigneeAvatarURI}
+                                alt={'jira assigner profile'}
+                            />
+                        ) :
+                        (
+                            <span className='default-avatar'>
                                 <svg
                                     width='18'
                                     height='18'
@@ -258,21 +253,9 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                                     </g>
                                 </svg>
                             </span>
-                        ) :
-                        (
-                            <img
-                                className={'ticket-popover-footer-assigner-profile'}
-                                src={jiraTicketAssigneeAvatarURI}
-                                alt={'jira assigner profile'}
-                            />
                         )
                     }
-                    {jiraTicketAssigneeName === '' ?
-                        (
-                            <span className={'ticket-popover-footer-assigner-is-assigned'}>
-                                {unAssigned}
-                            </span>
-                        ) :
+                    {jiraTicketAssigneeName ?
                         (
                             <span>
                                 <span className={'ticket-popover-footer-assigner-name'}>
@@ -281,6 +264,11 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                                 <span className={'ticket-popover-footer-assigner-is-assigned'}>
                                     {isAssigned}
                                 </span>
+                            </span>
+                        ) :
+                        (
+                            <span className={'ticket-popover-footer-assigner-is-assigned'}>
+                                {unAssigned}
                             </span>
                         )
                     }

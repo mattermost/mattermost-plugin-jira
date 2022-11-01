@@ -1,17 +1,17 @@
 .ticket-popover {
     display: flex;
     max-width: 380px;
-    width:380px;
+    width: 380px;
     flex-direction: column;
     align-items: center;
     left: 0;
     right: 0;
-    color:#000000;
+    color: #000000;
     top: calc(50% - 311px / 2);
     background: #FFFFFF;
     border: 1px solid rgba(63, 67, 80, 0.16);
     border-radius: 4px;
-    box-shadow: 0px 12px 32px 0 rgba(0, 0 ,0, 0.12);
+    box-shadow: 0px 12px 32px 0 rgba(0, 0, 0, 0.12);
 }
 
 .ticket-popover-keyword:hover {
@@ -90,14 +90,14 @@
     text-decoration-line: underline;
 }
 
-.ticket-popover-title > a > h5{
+.ticket-popover-title > a > h5 {
     font-family: Metropolis, system-ui;
     text-align: left;
     flex-grow: 1;
     color: #3F4350;
     text-decoration: none;
     font-weight: 600;
-    font-size: 16px;    
+    font-size: 16px;
 }
 
 .ticket-popover-title > a > h5 {
@@ -116,7 +116,7 @@
     margin: 0px 24px 8px 24px;
     font-size: 12px;
     line-height: 1.5;
-    width:300px;
+    width: 300px;
     text-overflow: ellipsis;
 }
 
@@ -177,4 +177,58 @@
     background: rgba(63, 67, 80, 0.08);
     border-radius: 2px;
     line-height: 16px;
+}
+
+.fix-version-label {
+    color: #333;
+    margin: 16px 0px;
+    text-align: left;
+    font-family: open sans;
+    font-size: 10px;
+    padding: 0px 0px 2px 0px;
+}
+
+.fix-version-label-value {
+    background-color: rgba(63, 67, 80, 0.08);
+    padding: 1px 8px;
+    font-weight: 600;
+    border-radius: 2px;
+}
+
+.default-style{
+    font-family: sans-serif;
+    font-style: normal;
+    font-weight: 600;
+    font-size: 12px;
+    margin: 10px 0 8px 0;
+    padding: 4px 8px;
+    text-align: center;
+    border-radius: 4px;
+};
+
+.ticket-status{
+    color: #FFFFFF; 
+    background-color: #1C58D9;
+    border-radius: 2px;
+}
+
+.ticket-status-done{
+    color: #FFFFFF;
+    background-color: #3DB887;
+}
+
+.ticket-status-default{
+    color: #3F4350;
+    background-color: rgba(63, 67, 80, 0.16);
+}
+
+.default-avatar{
+    background-color: 'slategrey'; 
+    border-radius: '50%'; 
+    margin-right: '5px'; 
+    padding: '1px';
+}
+
+.jira-ticket-key{
+    font-size: 12px;
 }
