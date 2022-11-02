@@ -13,7 +13,7 @@ const getPluginState = (state) => state['plugins-' + PluginId] || {};
 
 export const getPluginServerRoute = (state) => {
     const config = getConfig(state);
-    const baseUrl = new URL(config?.SiteURL ?? window.location.href);
+    const baseUrl = new URL((config && config.SiteURL) || window.location.href);
     let basePath = baseUrl.pathname;
 
     if (basePath && basePath[basePath.length - 1] === '/') {
