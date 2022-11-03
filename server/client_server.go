@@ -8,14 +8,14 @@ import (
 	"net/http"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/hashicorp/go-version"
+	"github.com/blang/semver/v4"
 	"github.com/pkg/errors"
 )
 
 const (
-	ServerInfoApiEndpoint = "rest/api/2/serverInfo"
-	CreateMetaAPIEndpoint = "rest/api/2/issue/createmeta/"
-	PivotVersion          = "8.4.0"
+	APIEndpointGetServerInfo           = "rest/api/2/serverInfo"
+	APIEndpointCreateIssueMeta         = "rest/api/2/issue/createmeta/"
+	JiraVersionWithOldIssueAPIBreaking = "9.0.0"
 )
 
 type jiraServerClient struct {
@@ -30,67 +30,48 @@ func newServerClient(jiraClient *jira.Client) Client {
 	}
 }
 
-type IssueInfo struct {
-	Values []*jira.MetaIssueType `json:"values,omitempty"`
+type ProjectIssueInfo struct {
+	Values []*jira.MetaIssueType `json:"values"`
 }
 
 type FieldInfo struct {
-	Values []interface{} `json:"values,omitempty"`
+	Values []map[string]interface{} `json:"values"`
 }
 
 type FieldValues struct {
-	FieldID string `json:"fieldId,omitempty"`
+	FieldID string `json:"fieldId"`
 }
 
 type FieldID struct {
-	Values []FieldValues `json:"values,omitempty"`
+	Values []FieldValues `json:"values"`
 }
 
-type ServerVersion struct {
-	VersionInfo string `json:"version,omitempty"`
+type JiraServerVersionInfo struct {
+	Version string `json:"version"`
 }
 
 // GetIssueInfo returns the issues information based on project id.
-func (client jiraServerClient) GetIssueInfo(projectID string) (*IssueInfo, *jira.Response, error) {
-	apiEndpoint := fmt.Sprintf("%s%s/issuetypes", CreateMetaAPIEndpoint, projectID)
+func (client jiraServerClient) GetIssueInfo(projectID string) (*ProjectIssueInfo, *jira.Response, error) {
+	apiEndpoint := fmt.Sprintf("%s%s/issuetypes", APIEndpointCreateIssueMeta, projectID)
 	req, err := client.Jira.NewRequest(http.MethodGet, apiEndpoint, nil)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	issues := new(IssueInfo)
-	response, err := client.Jira.Do(req, issues)
-	return issues, response, err
+	issues := ProjectIssueInfo{}
+	response, err := client.Jira.Do(req, &issues)
+	return &issues, response, err
 }
 
-// GetCreateMeta returns the metadata needed to implement the UI and validation of
-// creating new Jira issues.
-func (client jiraServerClient) GetCreateMeta(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
-	v := new(ServerVersion)
-	req, err := client.Jira.NewRequest(http.MethodGet, ServerInfoApiEndpoint, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err = client.Jira.Do(req, v); err != nil {
-		return nil, err
-	}
-
-	currentVersion, err := version.NewVersion(v.VersionInfo)
-	if err != nil {
-		return nil, err
-	}
-
-	pivotVersion, err := version.NewVersion(PivotVersion)
-	if err != nil {
-		return nil, err
-	}
-
+func (client jiraServerClient) GetProjectInfo(currentVersion semver.Version, pivotVersion semver.Version, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, *jira.Response, error) {
 	var info *jira.CreateMetaInfo
 	var resp *jira.Response
-	var issues *IssueInfo
+	var req *http.Request
+	var issueInfo *ProjectIssueInfo
 	var projectList *jira.ProjectList
-	if currentVersion.LessThan(pivotVersion) {
+	var err error
+
+	if currentVersion.LT(pivotVersion) {
 		info, resp, err = client.Jira.Issue.GetCreateMetaWithOptions(options)
 	} else {
 		projectList, resp, err = client.Jira.Project.ListWithOptions(options)
@@ -99,29 +80,20 @@ func (client jiraServerClient) GetCreateMeta(options *jira.GetQueryOptions) (*ji
 		if err == nil {
 			for _, proj := range *projectList {
 				meta.Expand = proj.Expand
-				issues, resp, err = client.GetIssueInfo(proj.ID)
+				issueInfo, resp, err = client.GetIssueInfo(proj.ID)
 				if err != nil {
 					break
 				}
 
-				project := &jira.MetaProject{
-					Expand:     proj.Expand,
-					Self:       proj.Self,
-					Id:         proj.ID,
-					Key:        proj.Key,
-					Name:       proj.Name,
-					IssueTypes: issues.Values,
-				}
-
-				for _, issue := range project.IssueTypes {
-					apiEndpoint := fmt.Sprintf("%s%s/issuetypes/%s", CreateMetaAPIEndpoint, proj.ID, issue.Id)
+				for _, issueType := range issueInfo.Values {
+					apiEndpoint := fmt.Sprintf("%s%s/issuetypes/%s", APIEndpointCreateIssueMeta, proj.ID, issueType.Id)
 					req, err = client.Jira.NewRequest(http.MethodGet, apiEndpoint, nil)
 					if err != nil {
 						break
 					}
 
-					field := new(FieldInfo)
-					resp, err = client.Jira.Do(req, field)
+					fieldInfo := FieldInfo{}
+					resp, err = client.Jira.Do(req, &fieldInfo)
 					if err != nil {
 						break
 					}
@@ -133,17 +105,52 @@ func (client jiraServerClient) GetCreateMeta(options *jira.GetQueryOptions) (*ji
 					}
 
 					fieldMap := make(map[string]interface{})
-					for index, fieldValue := range field.Values {
+					for index, fieldValue := range fieldInfo.Values {
 						fieldMap[fieldID.Values[index].FieldID] = fieldValue
 					}
-					issue.Fields = fieldMap
+					issueType.Fields = fieldMap
 				}
+				project := &jira.MetaProject{
+					Expand:     proj.Expand,
+					Self:       proj.Self,
+					Id:         proj.ID,
+					Key:        proj.Key,
+					Name:       proj.Name,
+					IssueTypes: issueInfo.Values,
+				}
+
 				meta.Projects = append(meta.Projects, project)
 			}
 		}
 		info = meta
 	}
+	return info, resp, err
+}
 
+// GetCreateMetaInfo returns the metadata needed to implement the UI and validation of
+// creating new Jira issues.
+func (client jiraServerClient) GetCreateMetaInfo(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
+	v := new(JiraServerVersionInfo)
+	req, err := client.Jira.NewRequest(http.MethodGet, APIEndpointGetServerInfo, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err = client.Jira.Do(req, v); err != nil {
+		return nil, errors.Wrap(err, "failed to fetch Jira server version")
+	}
+
+	currentVersion, err := semver.Make(v.Version)
+	if err != nil {
+		return nil, errors.Wrap(err, "error while parsing version")
+	}
+
+	pivotVersion, err := semver.Make(JiraVersionWithOldIssueAPIBreaking)
+	if err != nil {
+		return nil, errors.Wrap(err, "error while parsing version")
+	}
+
+	info, resp, err := client.GetProjectInfo(currentVersion, pivotVersion, options)
 	if err != nil {
 		if resp == nil {
 			return nil, err

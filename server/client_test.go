@@ -28,7 +28,7 @@ func TestEndpointNameFromRequest(t *testing.T) {
 		{"UpdateComment", "https://hostname/2/issue/XYZ-1234/comment/XXX", "PUT", "api/jira/2/issue/comment/PUT"},
 		{"SearchIssues", "https://hostname/2/search", "GET", "api/jira/2/search/GET"},
 		{"DoTransition", "https://hostname/2/issue/XYZ-4321/transitions", "POST", "api/jira/2/issue/transitions/POST"},
-		{"GetCreateMeta", "https://hostname/2/issue/createmeta", "GET", "api/jira/2/issue/createmeta/GET"},
+		{"GetCreateMetaInfo", "https://hostname/2/issue/createmeta", "GET", "api/jira/2/issue/createmeta/GET"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
