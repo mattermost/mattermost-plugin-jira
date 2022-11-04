@@ -38,14 +38,6 @@ type FieldInfo struct {
 	Values []map[string]interface{} `json:"values"`
 }
 
-type FieldValues struct {
-	FieldID string `json:"fieldId"`
-}
-
-type FieldID struct {
-	Values []FieldValues `json:"values"`
-}
-
 type JiraServerVersionInfo struct {
 	Version string `json:"version"`
 }
@@ -63,66 +55,64 @@ func (client jiraServerClient) GetIssueInfo(projectID string) (*ProjectIssueInfo
 	return &issues, response, err
 }
 
-func (client jiraServerClient) GetProjectInfo(currentVersion semver.Version, pivotVersion semver.Version, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, *jira.Response, error) {
+func (client jiraServerClient) GetProjectInfoForPivotJiraVersion(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, *jira.Response, error) {
+	var issueInfo *ProjectIssueInfo
+	var req *http.Request
+
+	projectList, resp, err := client.Jira.Project.ListWithOptions(options)
+	meta := new(jira.CreateMetaInfo)
+
+	if err == nil {
+		for _, proj := range *projectList {
+			meta.Expand = proj.Expand
+			issueInfo, resp, err = client.GetIssueInfo(proj.ID)
+			if err != nil {
+				break
+			}
+
+			for _, issueType := range issueInfo.Values {
+				apiEndpoint := fmt.Sprintf("%s%s/issuetypes/%s", APIEndpointCreateIssueMeta, proj.ID, issueType.Id)
+				req, err = client.Jira.NewRequest(http.MethodGet, apiEndpoint, nil)
+				if err != nil {
+					break
+				}
+
+				fieldInfo := FieldInfo{}
+				resp, err = client.Jira.Do(req, &fieldInfo)
+				if err != nil {
+					break
+				}
+
+				fieldMap := make(map[string]interface{})
+				for _, fieldValue := range fieldInfo.Values {
+					fieldMap[fmt.Sprintf("%v", fieldValue["fieldId"])] = fieldValue
+				}
+				issueType.Fields = fieldMap
+			}
+			project := &jira.MetaProject{
+				Expand:     proj.Expand,
+				Self:       proj.Self,
+				Id:         proj.ID,
+				Key:        proj.Key,
+				Name:       proj.Name,
+				IssueTypes: issueInfo.Values,
+			}
+
+			meta.Projects = append(meta.Projects, project)
+		}
+	}
+	return meta, resp, err
+}
+
+func (client jiraServerClient) GetProjectInfo(currentVersion, pivotVersion semver.Version, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, *jira.Response, error) {
 	var info *jira.CreateMetaInfo
 	var resp *jira.Response
-	var req *http.Request
-	var issueInfo *ProjectIssueInfo
-	var projectList *jira.ProjectList
 	var err error
 
 	if currentVersion.LT(pivotVersion) {
 		info, resp, err = client.Jira.Issue.GetCreateMetaWithOptions(options)
 	} else {
-		projectList, resp, err = client.Jira.Project.ListWithOptions(options)
-		meta := new(jira.CreateMetaInfo)
-
-		if err == nil {
-			for _, proj := range *projectList {
-				meta.Expand = proj.Expand
-				issueInfo, resp, err = client.GetIssueInfo(proj.ID)
-				if err != nil {
-					break
-				}
-
-				for _, issueType := range issueInfo.Values {
-					apiEndpoint := fmt.Sprintf("%s%s/issuetypes/%s", APIEndpointCreateIssueMeta, proj.ID, issueType.Id)
-					req, err = client.Jira.NewRequest(http.MethodGet, apiEndpoint, nil)
-					if err != nil {
-						break
-					}
-
-					fieldInfo := FieldInfo{}
-					resp, err = client.Jira.Do(req, &fieldInfo)
-					if err != nil {
-						break
-					}
-
-					fieldID := new(FieldID)
-					resp, err = client.Jira.Do(req, fieldID)
-					if err != nil {
-						break
-					}
-
-					fieldMap := make(map[string]interface{})
-					for index, fieldValue := range fieldInfo.Values {
-						fieldMap[fieldID.Values[index].FieldID] = fieldValue
-					}
-					issueType.Fields = fieldMap
-				}
-				project := &jira.MetaProject{
-					Expand:     proj.Expand,
-					Self:       proj.Self,
-					Id:         proj.ID,
-					Key:        proj.Key,
-					Name:       proj.Name,
-					IssueTypes: issueInfo.Values,
-				}
-
-				meta.Projects = append(meta.Projects, project)
-			}
-		}
-		info = meta
+		info, resp, err = client.GetProjectInfoForPivotJiraVersion(options)
 	}
 	return info, resp, err
 }
