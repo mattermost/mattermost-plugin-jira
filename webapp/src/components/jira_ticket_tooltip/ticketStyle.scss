@@ -195,7 +195,7 @@
     border-radius: 2px;
 }
 
-.default-style{
+.default-style {
     font-family: sans-serif;
     font-style: normal;
     font-weight: 600;
@@ -206,29 +206,29 @@
     border-radius: 4px;
 };
 
-.ticket-status{
+.ticket-status {
     color: #FFFFFF; 
     background-color: #1C58D9;
     border-radius: 2px;
 }
 
-.ticket-status-done{
+.ticket-status-done {
     color: #FFFFFF;
     background-color: #3DB887;
 }
 
-.ticket-status-default{
+.ticket-status-default {
     color: #3F4350;
     background-color: rgba(63, 67, 80, 0.16);
 }
 
-.default-avatar{
-    background-color: 'slategrey'; 
-    border-radius: '50%'; 
-    margin-right: '5px'; 
-    padding: '1px';
+.default-avatar {
+    background-color: #708090; 
+    border-radius: 50%; 
+    margin-right: 5px; 
+    padding: 1px;
 }
 
-.jira-ticket-key{
+.jira-ticket-key {
     font-size: 12px;
 }

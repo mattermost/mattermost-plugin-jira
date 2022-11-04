@@ -1,14 +1,14 @@
 type TicketDetails = {
     assigneeName: string;
-    assigneeAvatar: any;
-    labels: any;
+    assigneeAvatar: string;
+    labels: string[];
     description: string;
-    summary: any;
-    ticketId: any;
-    jiraIcon: any;
-    versions: any;
-    statusKey: any;
-    issueIcon: any;
+    summary: string;
+    ticketId: string;
+    jiraIcon: string;
+    versions: string;
+    statusKey: string;
+    issueIcon: string;
 }
 
 type TicketData = {
