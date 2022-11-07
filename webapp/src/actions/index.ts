@@ -526,7 +526,7 @@ export const getIssueByKey = (issueKey: string, instanceID: string) => {
             data = await doFetch(`${baseUrl}/api/v2/get-issue-by-key?${params}`, {
                 method: 'get',
             });
-            
+
             if (data.error) {
                 const err = new Error(data.error);
                 dispatch({
