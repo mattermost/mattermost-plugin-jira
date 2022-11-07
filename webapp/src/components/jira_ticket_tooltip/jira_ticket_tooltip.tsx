@@ -29,6 +29,9 @@ export type State = {
 
 const isAssigned = ' is assigned';
 const unAssigned = 'Unassigned';
+const jiraTicketTitleMaxLength = 80;
+const statusIndeterminate = 'indeterminate';
+const statusDone = 'done'
 
 export default class TicketPopover extends React.PureComponent<Props, State> {
     truncateString(str: string, num: number) {
@@ -45,7 +48,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
             ticketID = this.props.href.split('selectedIssue=')[1].split('&')[0];
         }
 
-        if (ticketID === '' && this.props.href.includes('atlassian.net/browse')) {
+        if (ticketID && this.props.href.includes('atlassian.net/browse')) {
             ticketID = this.props.href.split('|')[0].split('?')[0].split('/browse/')[1];
         }
 
@@ -70,7 +73,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
             this.props.getIssueByKey(ticketID, instanceID);
         }
 
-        if (ticketID === '' && this.props.href.includes('atlassian.net/browse')) {
+        if (ticketID && this.props.href.includes('atlassian.net/browse')) {
             ticketID = this.props.href.split('|')[0].split('?')[0].split('/browse/')[1];
             if (ticketID) {
                 this.props.getIssueByKey(ticketID, instanceID);
@@ -116,15 +119,16 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
     }
 
     tagTicketStatus(ticketStatus: string) {
-        if (ticketStatus.toLowerCase() === 'indeterminate') {
-            return (<span className='ticket-status-indeterminate default-style'>{ticketStatus}</span>);
+        let ticketStatusClass = 'ticket-status-default default-style'
+
+        switch(ticketStatus.toLowerCase()) {
+            case statusIndeterminate:
+                ticketStatusClass ='ticket-status-indeterminate default-style';
+            case statusDone:
+                ticketStatusClass ='ticket-status-done default-style'
         }
 
-        if (ticketStatus.toLowerCase() === 'done') {
-            return (<span className='ticket-status-done default-style'>{ticketStatus}</span>);
-        }
-
-        return (<span className='ticket-status-default default-style'>{ticketStatus}</span>);
+        return <span className={ticketStatusClass}>{ticketStatus}</span>
     }
 
     labelList(labels: string[]) {
@@ -213,7 +217,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                 <div className='ticket-popover-body'>
                     <div className='ticket-popover-title'>
                         <a href={jiraTicketURI}>
-                            <h5>{this.truncateString(jiraTicketTitle as string, 80)}</h5>
+                            <h5>{this.truncateString(jiraTicketTitle as string, jiraTicketTitleMaxLength)}</h5>
                         </a>
                         {this.tagTicketStatus(jiraTicketStatusName as string)}
                     </div>
