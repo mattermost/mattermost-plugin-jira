@@ -196,11 +196,11 @@ const channelSubscriptions = (state = {}, action) => {
 const getIssueByKey = (state = {}, action) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_JIRA_TICKETS : {
-        const assignee = action.data && action.data.fields && action.data.fields.assignee ? action.data.fields.assignee : null;
+        const assignee = action.data?.fields?.assignee ? action.data.fields.assignee : null;
         const ticketData = action.data;
         const ticketDetails = {
-            assigneeName: assignee && assignee.displayName ? assignee.displayName : '',
-            assigneeAvatar: assignee && assignee.avatarUrls && assignee.avatarUrls['48x48'] ? assignee.avatarUrls['48x48'] : '',
+            assigneeName: assignee?.displayName || '',
+            assigneeAvatar: assignee?.avatarUrls && assignee.avatarUrls['48x48'] ? assignee.avatarUrls['48x48'] : '',
             labels: ticketData.fields.labels,
             description: ticketData.fields.description,
             summary: ticketData.fields.summary,

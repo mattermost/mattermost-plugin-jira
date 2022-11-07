@@ -48,7 +48,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
             ticketID = this.props.href.split('selectedIssue=')[1].split('&')[0];
         }
 
-        if (ticketID && this.props.href.includes('atlassian.net/browse')) {
+        if (!ticketID && this.props.href.includes('atlassian.net/browse')) {
             ticketID = this.props.href.split('|')[0].split('?')[0].split('/browse/')[1];
         }
 
@@ -59,7 +59,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         };
     }
 
-    async init() {
+    init() {
         let instanceID = '';
         if (this.props.connectedInstances.length === 1) {
             instanceID = this.props.connectedInstances[0].instance_id;
@@ -73,7 +73,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
             this.props.getIssueByKey(ticketID, instanceID);
         }
 
-        if (ticketID && this.props.href.includes('atlassian.net/browse')) {
+        if (!ticketID && this.props.href.includes('atlassian.net/browse')) {            
             ticketID = this.props.href.split('|')[0].split('?')[0].split('/browse/')[1];
             if (ticketID) {
                 this.props.getIssueByKey(ticketID, instanceID);
@@ -82,15 +82,15 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
     }
 
     componentDidMount() {
-        if (this.props.connected && !this.state.isLoaded && ((this.props.ticketDetails && this.props.ticketDetails.ticketId !== this.state.ticketId) || !this.props.isLoaded)) {
+        if (this.props.connected && !this.state.isLoaded && (this.props.ticketDetails?.ticketId !== this.state.ticketId) || !this.props.isLoaded) {
             this.init();
-        } else if (this.props.connected && !this.state.isLoaded && this.props.ticketDetails && this.props.ticketDetails.ticketId === this.state.ticketId) {
+        } else if (this.props.connected && !this.state.isLoaded && this.props.ticketDetails?.ticketId === this.state.ticketId) {
             this.setTicket(this.props);
         }
     }
 
     componentDidUpdate() {
-        if (this.props.isLoaded && !this.state.isLoaded && this.props.ticketDetails && this.props.ticketDetails.ticketId === this.state.ticketId) {
+        if (this.props.isLoaded && !this.state.isLoaded && this.props.ticketDetails?.ticketId === this.state.ticketId) {
             this.setTicket(this.props);
         }
     }
@@ -173,16 +173,16 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         }
 
         const {ticketDetails, href: jiraTicketURI} = this.state;
-        const jiraAvatar = ticketDetails && ticketDetails.jiraIcon;
-        const jiraIssueIconURI = ticketDetails && ticketDetails.issueIcon;
-        const jiraTicketKey = ticketDetails && ticketDetails.ticketId;
-        const jiraTicketTitle = ticketDetails && ticketDetails.summary;
-        const jiraTicketAssigneeAvatarURI = ticketDetails && ticketDetails.assigneeAvatar;
-        const jiraTicketAssigneeName = ticketDetails && ticketDetails.assigneeName;
-        const jiraTicketStatusName = ticketDetails && ticketDetails.statusKey;
-        const jiraTicketDescription = ticketDetails && ticketDetails.description;
-        const jiraTicketVersions = ticketDetails && ticketDetails.versions;
-        const jiraTicketLabels = ticketDetails && ticketDetails.labels;
+        const jiraAvatar =  ticketDetails?.jiraIcon;
+        const jiraIssueIconURI = ticketDetails?.issueIcon;
+        const jiraTicketKey = ticketDetails?.ticketId;
+        const jiraTicketTitle = ticketDetails?.summary;
+        const jiraTicketAssigneeAvatarURI = ticketDetails?.assigneeAvatar;
+        const jiraTicketAssigneeName = ticketDetails?.assigneeName;
+        const jiraTicketStatusName = ticketDetails?.statusKey;
+        const jiraTicketDescription = ticketDetails?.description;
+        const jiraTicketVersions = ticketDetails?.versions;
+        const jiraTicketLabels = ticketDetails?.labels;
 
         return (
             <div className='ticket-popover'>
