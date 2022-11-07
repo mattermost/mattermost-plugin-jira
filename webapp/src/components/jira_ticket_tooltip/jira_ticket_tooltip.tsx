@@ -119,14 +119,17 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
     }
 
     tagTicketStatus(ticketStatus: string) {
-        let ticketStatusClass = 'ticket-status--default default-style';
+        let ticketStatusClass = 'default-style';
 
         switch (ticketStatus.toLowerCase()) {
         case statusIndeterminate:
-            ticketStatusClass = 'ticket-status--indeterminate default-style';
+            ticketStatusClass += ' ticket-status--indeterminate';
             break;
         case statusDone:
-            ticketStatusClass = 'ticket-status--done default-style';
+            ticketStatusClass += ' ticket-status--done';
+            break;
+        default:
+            ticketStatusClass += ' ticket-status--default';
             break;
         }
 
