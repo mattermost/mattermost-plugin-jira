@@ -38,6 +38,7 @@ export const getCurrentUserLocale = createSelector(
     }
 );
 
+export const isEnabled = (state) => getPluginState(state).enabled;
 export const isConnectModalVisible = (state) => getPluginState(state).connectModalVisible;
 export const isDisconnectModalVisible = (state) => getPluginState(state).disconnectModalVisible;
 
@@ -73,3 +74,5 @@ export const instanceIsInstalled = (state): boolean => getInstalledInstances(sta
 export const getDefaultUserInstanceID = (state) => getPluginState(state).defaultUserInstanceID;
 
 export const getPluginSettings = (state) => getPluginState(state).pluginSettings;
+
+export const getIssue = (state) => getPluginState(state).getIssueByKey;

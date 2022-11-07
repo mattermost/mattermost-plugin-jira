@@ -193,6 +193,39 @@ const channelSubscriptions = (state = {}, action) => {
     }
 };
 
+const getIssueByKey = (state = {}, action) => {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_JIRA_TICKETS : {
+        const assignee = action.data && action.data.fields && action.data.fields.assignee ? action.data.fields.assignee : null;
+        const ticketData = action.data;
+        const ticketDetails = {
+            assigneeName: assignee && assignee.displayName ? assignee.displayName : '',
+            assigneeAvatar: assignee && assignee.avatarUrls && assignee.avatarUrls['48x48'] ? assignee.avatarUrls['48x48'] : '',
+            labels: ticketData.fields.labels,
+            description: ticketData.fields.description,
+            summary: ticketData.fields.summary,
+            ticketId: ticketData.key,
+            jiraIcon: ticketData.fields.project.avatarUrls['48x48'],
+            versions: ticketData.fields.versions.length ? ticketData.fields.versions[0] : '',
+            statusKey: ticketData.fields.status.name,
+            issueIcon: ticketData.fields.issuetype.iconUrl,
+        };
+        return {
+            ...state,
+            isLoaded: true,
+            ticketDetails,
+        };
+    }
+    case ActionTypes.RECEIVED_JIRA_TICKETS_ERROR :
+        return {
+            ...state,
+            error: action.error,
+        };
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     userConnected,
     userCanConnect,
@@ -208,4 +241,5 @@ export default combineReducers({
     attachCommentToIssueModalForPostId,
     channelIdWithSettingsOpen,
     channelSubscriptions,
+    getIssueByKey,
 });
