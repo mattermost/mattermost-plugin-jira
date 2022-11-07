@@ -27,6 +27,9 @@ export type State = {
     ticketDetails?: TicketDetails;
 };
 
+const isAssigned = ' is assigned';
+const unAssigned = 'Unassigned';
+
 export default class TicketPopover extends React.PureComponent<Props, State> {
     truncateString(str: string, num: number) {
         if (num > str.length) {
@@ -83,13 +86,13 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         }
     }
 
-    componentDidUpdate(): void {
+    componentDidUpdate() {
         if (this.props.isLoaded && !this.state.isLoaded && this.props.ticketDetails && this.props.ticketDetails.ticketId === this.state.ticketId) {
             this.setTicket(this.props);
         }
     }
 
-    setTicket(data: Props): void{
+    setTicket(data: Props) {
         this.setState({
             isLoaded: true,
             ticketDetails: data.ticketDetails,
@@ -108,6 +111,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                 </div>
             );
         }
+
         return (<span/>);
     }
 
@@ -124,45 +128,47 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
     }
 
     labelList(labels: string[]) {
-        if (labels.length) {
-            let totalString = 0;
-            let totalHide = 0;
-            const labelList = labels.map((label: string, key: number): JSX.Element => {
-                if (totalString < 3) {
-                    totalString++;
-                    return (
-                        <span
-                            key={key}
-                            className='jiraticket-popover-label-list'
-                        >
-                            {label}
-                        </span>);
-                }
-                totalHide++;
-                if (key === labels.length - 1) {
-                    const moreLabels = `+${totalHide}more`;
-                    return (
-                        <span
-                            key={key}
-                            className='jiraticket-popover-label-list'
-                        >
-                            {moreLabels}
-                        </span>);
-                }
-                return <></>;
-            });
-
-            return (<div className={'ticket-popover-label'}>{labelList}</div>);
+        if (!labels.length) {
+            return null
         }
-        return null;
+
+        let totalString = 0;
+        let totalHide = 0;
+        const labelList = labels.map((label: string, key: number): JSX.Element => {
+            if (totalString < 3) {
+                totalString++;
+                return (
+                    <span
+                        key={key}
+                        className='jiraticket-popover-label-list'
+                    >
+                        {label}
+                    </span>);
+            }
+
+            totalHide++;
+            if (key === labels.length - 1) {
+                const moreLabels = `+${totalHide}more`;
+                return (
+                    <span
+                        key={key}
+                        className='jiraticket-popover-label-list'
+                    >
+                        {moreLabels}
+                    </span>);
+            }
+
+            return <></>;
+        });
+        return (<div className='ticket-popover-label'>{labelList}</div>);
     }
 
     render() {
         if (!this.state.isLoaded) {
             return (<p/>);
         }
-        const ticketDetails = this.state.ticketDetails;
-        const jiraTicketURI = this.state.href;
+
+        const {ticketDetails, href: jiraTicketURI} = this.state;
         const jiraAvatar = ticketDetails && ticketDetails.jiraIcon;
         const jiraIssueIconURI = ticketDetails && ticketDetails.issueIcon;
         const jiraTicketKey = ticketDetails && ticketDetails.ticketId;
@@ -173,32 +179,30 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         const jiraTicketDescription = ticketDetails && ticketDetails.description;
         const jiraTicketVersions = ticketDetails && ticketDetails.versions;
         const jiraTicketLabels = ticketDetails && ticketDetails.labels;
-        const isAssigned = ' is assigned';
-        const unAssigned = 'Unassigned';
 
         return (
-            <div className={'ticket-popover'}>
-                <div className={'ticket-popover-header'}>
-                    <div className={'ticket-popover-header-container'}>
+            <div className='ticket-popover'>
+                <div className='ticket-popover-header'>
+                    <div className='ticket-popover-header-container'>
                         <a
                             href={jiraTicketURI}
-                            title={'goto ticket'}
+                            title='Go to ticket'
                         >
                             <img
                                 src={jiraAvatar}
                                 width={14}
                                 height={14}
-                                alt={'jira-avatar'}
-                                className={'ticket-popover-header-avatar'}
+                                alt='jira-avatar'
+                                className='ticket-popover-header-avatar'
                             />
                         </a>
                         <a
                             href={jiraTicketKey}
-                            className={'ticket-popover-keyword'}
+                            className='ticket-popover-keyword'
                         >
                             <span className='jira-ticket-key'>{jiraTicketKey}</span>
                             <img
-                                alt={'jira-issue-icon'}
+                                alt='jira-issue-icon'
                                 width='14'
                                 height='14'
                                 src={jiraIssueIconURI}
@@ -206,31 +210,29 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                         </a>
                     </div>
                 </div>
-                <div className={'ticket-popover-body'}>
-                    <div className={'ticket-popover-title'}>
+                <div className='ticket-popover-body'>
+                    <div className='ticket-popover-title'>
                         <a href={jiraTicketURI}>
-                            <h5>{this.truncateString(jiraTicketTitle, 80)}</h5>
+                            <h5>{this.truncateString(jiraTicketTitle as string, 80)}</h5>
                         </a>
-                        {this.tagTicketStatus(jiraTicketStatusName)}
+                        {this.tagTicketStatus(jiraTicketStatusName as string)}
                     </div>
-                    <div className={'ticket-popover-description'}>
+                    <div className='ticket-popover-description'>
                         {jiraTicketDescription}
                     </div>
-                    <div className={'ticket-popover-labels'}>
-                        {this.fixVersionLabel(jiraTicketVersions)}
-                        {this.labelList(jiraTicketLabels)}
+                    <div className='ticket-popover-labels'>
+                        {this.fixVersionLabel(jiraTicketVersions as string)}
+                        {this.labelList(jiraTicketLabels as string[])}
                     </div>
                 </div>
-                <div className={'ticket-popover-footer'}>
-                    {jiraTicketAssigneeAvatarURI ?
-                        (
+                <div className='ticket-popover-footer'>
+                    {jiraTicketAssigneeAvatarURI ? (
                             <img
-                                className={'ticket-popover-footer-assigner-profile'}
+                                className='ticket-popover-footer-assigner-profile'
                                 src={jiraTicketAssigneeAvatarURI}
-                                alt={'jira assigner profile'}
+                                alt='jira assigner profile'
                             />
-                        ) :
-                        (
+                        ) : (
                             <span className='default-avatar'>
                                 <svg
                                     width='18'
@@ -255,19 +257,17 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                             </span>
                         )
                     }
-                    {jiraTicketAssigneeName ?
-                        (
+                    {jiraTicketAssigneeName ? (
                             <span>
-                                <span className={'ticket-popover-footer-assigner-name'}>
+                                <span className='ticket-popover-footer-assigner-name'>
                                     {jiraTicketAssigneeName}
                                 </span>
-                                <span className={'ticket-popover-footer-assigner-is-assigned'}>
+                                <span className='ticket-popover-footer-assigner-is-assigned'>
                                     {isAssigned}
                                 </span>
                             </span>
-                        ) :
-                        (
-                            <span className={'ticket-popover-footer-assigner-is-assigned'}>
+                        ) : (
+                            <span className='ticket-popover-footer-assigner-is-assigned'>
                                 {unAssigned}
                             </span>
                         )
