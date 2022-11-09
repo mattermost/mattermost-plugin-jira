@@ -62,59 +62,55 @@ func (client jiraServerClient) GetProjectInfoForPivotJiraVersion(options *jira.G
 	projectList, resp, err := client.Jira.Project.ListWithOptions(options)
 	meta := new(jira.CreateMetaInfo)
 
-	if err == nil {
-		for _, proj := range *projectList {
-			meta.Expand = proj.Expand
-			issueInfo, resp, err = client.GetIssueInfo(proj.ID)
+	if err != nil {
+		return nil, resp, errors.Wrap(err, "failed to list projects")
+	}
+
+	for _, proj := range *projectList {
+		meta.Expand = proj.Expand
+		issueInfo, resp, err = client.GetIssueInfo(proj.ID)
+		if err != nil {
+			break
+		}
+
+		for _, issueType := range issueInfo.Values {
+			apiEndpoint := fmt.Sprintf("%s%s/issuetypes/%s", APIEndpointCreateIssueMeta, proj.ID, issueType.Id)
+			req, err = client.Jira.NewRequest(http.MethodGet, apiEndpoint, nil)
 			if err != nil {
 				break
 			}
 
-			for _, issueType := range issueInfo.Values {
-				apiEndpoint := fmt.Sprintf("%s%s/issuetypes/%s", APIEndpointCreateIssueMeta, proj.ID, issueType.Id)
-				req, err = client.Jira.NewRequest(http.MethodGet, apiEndpoint, nil)
-				if err != nil {
-					break
-				}
-
-				fieldInfo := FieldInfo{}
-				resp, err = client.Jira.Do(req, &fieldInfo)
-				if err != nil {
-					break
-				}
-
-				fieldMap := make(map[string]interface{})
-				for _, fieldValue := range fieldInfo.Values {
-					fieldMap[fmt.Sprintf("%v", fieldValue["fieldId"])] = fieldValue
-				}
-				issueType.Fields = fieldMap
-			}
-			project := &jira.MetaProject{
-				Expand:     proj.Expand,
-				Self:       proj.Self,
-				Id:         proj.ID,
-				Key:        proj.Key,
-				Name:       proj.Name,
-				IssueTypes: issueInfo.Values,
+			fieldInfo := FieldInfo{}
+			resp, err = client.Jira.Do(req, &fieldInfo)
+			if err != nil {
+				break
 			}
 
-			meta.Projects = append(meta.Projects, project)
+			fieldMap := make(map[string]interface{})
+			for _, fieldValue := range fieldInfo.Values {
+				fieldMap[fmt.Sprintf("%v", fieldValue["fieldId"])] = fieldValue
+			}
+			issueType.Fields = fieldMap
 		}
+		project := &jira.MetaProject{
+			Expand:     proj.Expand,
+			Self:       proj.Self,
+			Id:         proj.ID,
+			Key:        proj.Key,
+			Name:       proj.Name,
+			IssueTypes: issueInfo.Values,
+		}
+
+		meta.Projects = append(meta.Projects, project)
 	}
 	return meta, resp, err
 }
 
 func (client jiraServerClient) GetProjectInfo(currentVersion, pivotVersion semver.Version, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, *jira.Response, error) {
-	var info *jira.CreateMetaInfo
-	var resp *jira.Response
-	var err error
-
 	if currentVersion.LT(pivotVersion) {
-		info, resp, err = client.Jira.Issue.GetCreateMetaWithOptions(options)
-	} else {
-		info, resp, err = client.GetProjectInfoForPivotJiraVersion(options)
+		return client.Jira.Issue.GetCreateMetaWithOptions(options)
 	}
-	return info, resp, err
+	return client.GetProjectInfoForPivotJiraVersion(options)
 }
 
 // GetCreateMetaInfo returns the metadata needed to implement the UI and validation of
