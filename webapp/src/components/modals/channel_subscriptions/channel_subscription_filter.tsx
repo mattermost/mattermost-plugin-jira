@@ -5,7 +5,7 @@ import {Theme} from 'mattermost-redux/types/preferences';
 import ReactSelectSetting from 'components/react_select_setting';
 import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
-import {isEpicLinkField, isMultiSelectField, isLabelField} from 'utils/jira_issue_metadata';
+import {isEpicLinkField, isMultiSelectField, isLabelField, isUserField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
 import JiraAutoCompleteSelector from 'components/data_selectors/jira_autocomplete_selector';
@@ -254,6 +254,15 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                 />
             );
         } else if (isLabelField(field)) {
+            valueSelector = (
+                <JiraAutoCompleteSelector
+                    {...selectProps}
+                    fieldName={field.name}
+                    value={value.values}
+                    onChange={this.handleEpicLinkChange}
+                />
+            );
+        }  if (isUserField(field)) {
             valueSelector = (
                 <JiraAutoCompleteSelector
                     {...selectProps}

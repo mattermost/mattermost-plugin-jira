@@ -1,0 +1,33 @@
+name: Stuff to do CI for mattermost plugins
+
+on:
+  push:
+    branches:
+      - release-3.2.1-custom
+  pull_request:
+    branches:
+      - release-3.2.1-custom
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.16
+
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14
+
+      - name: Build
+        run: make dist
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: ${{ github.workspace }}/dist/jira-3.2.0.tar.gz
