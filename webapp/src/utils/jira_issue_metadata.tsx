@@ -277,7 +277,7 @@ export function isLabelField(field: JiraField | FilterField): boolean {
 }
 
 export function isUserField(field: JiraField | FilterField): boolean {
-    return field.schema.type === 'user';
+    return field.schema.type === 'user' || field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:userpicker';
 }
 
 export function isEpicIssueType(issueType: IssueType): boolean {
