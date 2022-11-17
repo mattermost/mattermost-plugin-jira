@@ -78,6 +78,8 @@ export type ProjectMetadata = {
 export enum JiraFieldTypeEnums {
     PROJECT = 'project',
     ISSUE_TYPE = 'issuetype',
+  
+    REPORTER = 'reporter',
     PRIORITY = 'priority',
     DESCRIPTION = 'description',
     SUMMARY = 'summary',
