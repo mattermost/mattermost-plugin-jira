@@ -785,7 +785,7 @@ func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 	case priorityField:
 		return NewStringSet(issue.Fields.Priority.ID)
 	case reporterField:
-		return NewStringSet(issue.Fields.Reporter.AccountID)
+		return NewStringSet(issue.Fields.MarshalJSON().AccountID)
 	case assigneeField:
 		return NewStringSet(issue.Fields.Assignee.AccountID)
 	case "fixversions":
