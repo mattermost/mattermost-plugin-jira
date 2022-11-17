@@ -262,7 +262,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                     onChange={this.handleEpicLinkChange}
                 />
             );
-        }  if (isUserField(field)) {
+        }  else if (isUserField(field)) {
             valueSelector = (
                 <JiraAutoCompleteSelector
                     {...selectProps}
