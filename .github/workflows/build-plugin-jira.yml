@@ -30,4 +30,4 @@ jobs:
       - name: Archive production artifacts
         uses: actions/upload-artifact@v3
         with:
-          path: ${{ github.workspace }}/dist/jira-3.2.0.tar.gz
+          path: ${{ github.workspace }}/dist/jira-3.2.1.tar.gz
