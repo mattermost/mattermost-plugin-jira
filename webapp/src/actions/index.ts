@@ -6,8 +6,8 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
 import PluginId from 'plugin_id';
 import ActionTypes from 'action_types';
-import {buildQueryString, doFetch, doFetchWithResponse} from 'client';
-import {getInstalledInstances, getPluginServerRoute, getUserConnectedInstances} from 'selectors';
+import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
+import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances} from 'selectors';
 import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
 import {
     APIResponse,
