@@ -190,16 +190,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
 
         const {ticketDetails, href: jiraTicketURI} = this.state;
 
-        let jiraAvatar = null;
-        let jiraIssueIconURI = null;
-        let jiraTicketKey = null;
-        let jiraTicketTitle = null;
-        let jiraTicketAssigneeAvatarURI = null;
-        let jiraTicketAssigneeName = null;
-        let jiraTicketStatusName = null;
-        let jiraTicketDescription = null;
-        let jiraTicketVersions = null;
-        let jiraTicketLabels = null;
+        let jiraAvatar, jiraIssueIconURI, jiraTicketKey, jiraTicketTitle, jiraTicketAssigneeAvatarURI, jiraTicketAssigneeName, jiraTicketStatusName, jiraTicketDescription, jiraTicketVersions, jiraTicketLabels;
         if (ticketDetails) {
             jiraAvatar = ticketDetails.jiraIcon;
             jiraIssueIconURI = ticketDetails.issueIcon;
