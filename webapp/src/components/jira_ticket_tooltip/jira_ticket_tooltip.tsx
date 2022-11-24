@@ -30,8 +30,16 @@ export type State = {
 const isAssigned = ' is assigned';
 const unAssigned = 'Unassigned';
 const jiraTicketTitleMaxLength = 80;
-const statusIndeterminate = 'indeterminate';
-const statusDone = 'done';
+
+enum myStatus {
+    INDETERMINATE = 'indeterminate',
+    DONE = 'done',
+}
+
+const myStatusClasses: Record<string, string> = {
+    [myStatus.INDETERMINATE]: ' ticket-status--indeterminate',
+    [myStatus.DONE]: ' ticket-status--done',
+};
 
 export default class TicketPopover extends React.PureComponent<Props, State> {
     truncateString(str: string, num: number) {
@@ -59,38 +67,46 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         };
     }
 
-    init() {
-        let instanceID = '';
-        if (this.props.connectedInstances.length === 1) {
-            instanceID = this.props.connectedInstances[0].instance_id;
-        } else if (this.props.defaultUserInstanceID) {
-            instanceID = this.props.defaultUserInstanceID;
-        }
-
+    getIssueKey = () => {
         let ticketID = '';
         if (this.props.href.includes('selectedIssue')) {
             ticketID = this.props.href.split('selectedIssue=')[1].split('&')[0];
-            this.props.getIssueByKey(ticketID, instanceID);
         }
 
         if (!ticketID && this.props.href.includes('atlassian.net/browse')) {
             ticketID = this.props.href.split('|')[0].split('?')[0].split('/browse/')[1];
-            if (ticketID) {
-                this.props.getIssueByKey(ticketID, instanceID);
-            }
+        }
+
+        return ticketID;
+    }
+
+    init() {
+        let instanceID = this.props.defaultUserInstanceID || '';
+
+        if (this.props.connectedInstances.length === 1) {
+            instanceID = this.props.connectedInstances[0].instance_id;
+        }
+
+        const ticketID = this.getIssueKey();
+        if (ticketID) {
+            this.props.getIssueByKey(ticketID, instanceID);
         }
     }
 
     componentDidMount() {
-        if (this.props.connected && !this.state.isLoaded && ((this.props.ticketDetails && this.props.ticketDetails.ticketId) !== this.state.ticketId || !this.props.isLoaded)) {
+        const {connected, ticketDetails, isLoaded: isPropsLoaded} = this.props;
+        const {ticketId, isLoaded: isStateLoaded} = this.state;
+        if (connected && !isStateLoaded && ((ticketDetails && ticketDetails.ticketId) !== ticketId || !isPropsLoaded)) {
             this.init();
-        } else if (this.props.connected && !this.state.isLoaded && this.props.ticketDetails && this.props.ticketDetails.ticketId === this.state.ticketId) {
+        } else if (connected && !isStateLoaded && ticketDetails && ticketDetails.ticketId === ticketId) {
             this.setTicket(this.props);
         }
     }
 
     componentDidUpdate() {
-        if (this.props.isLoaded && !this.state.isLoaded && this.props.ticketDetails && this.props.ticketDetails.ticketId === this.state.ticketId) {
+        const {isLoaded: isPropsLoaded, ticketDetails} = this.props;
+        const {ticketId, isLoaded: isStateLoaded} = this.state;
+        if (isPropsLoaded && !isStateLoaded && ticketDetails && ticketDetails.ticketId === ticketId) {
             this.setTicket(this.props);
         }
     }
@@ -121,16 +137,11 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
     tagTicketStatus(ticketStatus: string) {
         let ticketStatusClass = 'default-style';
 
-        switch (ticketStatus.toLowerCase()) {
-        case statusIndeterminate:
-            ticketStatusClass += ' ticket-status--indeterminate';
-            break;
-        case statusDone:
-            ticketStatusClass += ' ticket-status--done';
-            break;
-        default:
+        const myStatusClass = myStatusClasses[ticketStatus.toLowerCase()];
+        if (myStatusClass) {
+            ticketStatusClass += myStatusClass;
+        } else {
             ticketStatusClass += ' ticket-status--default';
-            break;
         }
 
         return <span className={ticketStatusClass}>{ticketStatus}</span>;
@@ -178,16 +189,29 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         }
 
         const {ticketDetails, href: jiraTicketURI} = this.state;
-        const jiraAvatar = ticketDetails && ticketDetails.jiraIcon;
-        const jiraIssueIconURI = ticketDetails && ticketDetails.issueIcon;
-        const jiraTicketKey = ticketDetails && ticketDetails.ticketId;
-        const jiraTicketTitle = ticketDetails && ticketDetails.summary;
-        const jiraTicketAssigneeAvatarURI = ticketDetails && ticketDetails.assigneeAvatar;
-        const jiraTicketAssigneeName = ticketDetails && ticketDetails.assigneeName;
-        const jiraTicketStatusName = ticketDetails && ticketDetails.statusKey;
-        const jiraTicketDescription = ticketDetails && ticketDetails.description;
-        const jiraTicketVersions = ticketDetails && ticketDetails.versions;
-        const jiraTicketLabels = ticketDetails && ticketDetails.labels;
+
+        let jiraAvatar;
+        let jiraIssueIconURI;
+        let jiraTicketKey;
+        let jiraTicketTitle;
+        let jiraTicketAssigneeAvatarURI;
+        let jiraTicketAssigneeName;
+        let jiraTicketStatusName;
+        let jiraTicketDescription;
+        let jiraTicketVersions;
+        let jiraTicketLabels;
+        if (ticketDetails) {
+            jiraAvatar = ticketDetails.jiraIcon;
+            jiraIssueIconURI = ticketDetails.issueIcon;
+            jiraTicketKey = ticketDetails.ticketId;
+            jiraTicketTitle = ticketDetails.summary;
+            jiraTicketAssigneeAvatarURI = ticketDetails.assigneeAvatar;
+            jiraTicketAssigneeName = ticketDetails.assigneeName;
+            jiraTicketStatusName = ticketDetails.statusKey;
+            jiraTicketDescription = ticketDetails.description;
+            jiraTicketVersions = ticketDetails.versions;
+            jiraTicketLabels = ticketDetails.labels;
+        }
 
         return (
             <div className='ticket-popover'>
@@ -206,7 +230,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                             />
                         </a>
                         <a
-                            href={jiraTicketKey}
+                            href={jiraTicketURI}
                             className='popover-header__keyword'
                         >
                             <span className='jira-ticket-key'>{jiraTicketKey}</span>
