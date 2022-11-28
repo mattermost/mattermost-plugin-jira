@@ -1385,7 +1385,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			wh, err := ParseWebhook(bb)
 			assert.Nil(t, err)
 
-			actual, err := p.getChannelsSubscribed(wh.(*webhook), testInstance1.InstanceID)
+			actual, err := p.getChannelsSubscribed(wh.(*webhook), testInstance1.InstanceID, "")
 			assert.Nil(t, err)
 			assert.Equal(t, len(tc.ChannelSubscriptions), len(actual))
 			actualChannelIDs := NewStringSet()

@@ -4,6 +4,8 @@
 package main
 
 import (
+	jira "github.com/andygrunwald/go-jira"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
@@ -49,7 +51,30 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 		return err
 	}
 
-	channelsSubscribed, err := ww.p.getChannelsSubscribed(v, msg.InstanceID)
+	// To check if this is a comment-related webhook payload
+	isCommentEvent := wh.Events().Intersection(commentEvents).Len() > 0
+	visibilityAttribute := ""
+	if isCommentEvent {
+		mattermostUserID, er := ww.p.userStore.LoadMattermostUserID(msg.InstanceID, v.JiraWebhook.Comment.Author.AccountID)
+		if er != nil {
+			ww.p.API.LogInfo("Commentator is not connected with the mattermost", "Error", er.Error())
+			return er
+		}
+
+		client, _, _, er := ww.p.getClient(msg.InstanceID, mattermostUserID)
+		if er != nil {
+			return er
+		}
+
+		comment := jira.Comment{}
+		if er = client.RESTGet(v.JiraWebhook.Comment.Self, nil, &comment); er != nil {
+			return er
+		}
+
+		visibilityAttribute = comment.Visibility.Value
+	}
+
+	channelsSubscribed, err := ww.p.getChannelsSubscribed(v, msg.InstanceID, visibilityAttribute)
 	if err != nil {
 		return err
 	}

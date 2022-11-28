@@ -22,12 +22,16 @@ import (
 )
 
 const (
-	labelsField      = "labels"
-	statusField      = "status"
-	reporterField    = "reporter"
-	priorityField    = "priority"
-	descriptionField = "description"
-	resolutionField  = "resolution"
+	labelsField            = "labels"
+	statusField            = "status"
+	reporterField          = "reporter"
+	priorityField          = "priority"
+	descriptionField       = "description"
+	resolutionField        = "resolution"
+	headerMattermostUserID = "Mattermost-User-ID"
+	instanceIDQueryParam   = "instance_id"
+	fieldValueQueryParam   = "fieldValue"
+	expandQueryParam       = "expand"
 )
 
 func makePost(userID, channelID, message string) *model.Post {
@@ -402,6 +406,47 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 		Expand:      "projects.issuetypes.fields",
 		ProjectKeys: projectKeys,
 	})
+}
+
+func (p *Plugin) httpGetCommentVisibilityFields(w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed, fmt.Errorf("Request: " + r.Method + " is not allowed, must be GET")
+	}
+
+	mattermostUserID := r.Header.Get(headerMattermostUserID)
+	if mattermostUserID == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	instanceID := r.FormValue(instanceIDQueryParam)
+	client, _, connection, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	params := map[string]string{
+		"fieldValue": r.FormValue(fieldValueQueryParam),
+		"expand":     r.FormValue(expandQueryParam),
+		"accountId":  connection.AccountID,
+	}
+	response, err := client.SearchCommentVisibilityFields(params)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	if response == nil {
+		return http.StatusInternalServerError, errors.New("failed to return the response")
+	}
+
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal the response")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err = w.Write(jsonResponse); err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write the response")
+	}
+	return http.StatusOK, nil
 }
 
 func (p *Plugin) httpGetSearchIssues(w http.ResponseWriter, r *http.Request) (int, error) {

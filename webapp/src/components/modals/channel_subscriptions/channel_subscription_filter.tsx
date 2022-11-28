@@ -5,10 +5,11 @@ import {Theme} from 'mattermost-redux/types/preferences';
 import ReactSelectSetting from 'components/react_select_setting';
 import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
-import {isEpicLinkField, isMultiSelectField, isLabelField} from 'utils/jira_issue_metadata';
+import {isEpicLinkField, isMultiSelectField, isLabelField, isCommentVisibilityField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
 import JiraAutoCompleteSelector from 'components/data_selectors/jira_autocomplete_selector';
+import JiraCommentVisibilitySelector from 'components/data_selectors/jira_commentvisibility_selector';
 
 export type Props = {
     fields: FilterField[];
@@ -244,7 +245,16 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         };
 
         let valueSelector;
-        if (isEpicLinkField(this.props.field)) {
+        if (isCommentVisibilityField(field)) {
+            valueSelector = (
+                <JiraCommentVisibilitySelector
+                    {...selectProps}
+                    fieldName={field.name}
+                    value={value.values}
+                    onChange={this.handleEpicLinkChange}
+                />
+            );
+        } else if (isEpicLinkField(this.props.field)) {
             valueSelector = (
                 <JiraEpicSelector
                     {...selectProps}

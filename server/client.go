@@ -26,8 +26,10 @@ import (
 )
 
 const autocompleteSearchRoute = "2/jql/autocompletedata/suggestions"
+const commentVisibilityRoute = "2/user"
 const userSearchRoute = "2/user/assignable/search"
 const unrecognizedEndpoint = "_unrecognized"
+const visibleToAllUsers = "visible-to-all-users"
 
 // Client is the combined interface for all upstream APIs and convenience methods.
 type Client interface {
@@ -64,6 +66,7 @@ type SearchService interface {
 	SearchUsersAssignableToIssue(issueKey, query string, maxResults int) ([]jira.User, error)
 	SearchUsersAssignableInProject(projectKey, query string, maxResults int) ([]jira.User, error)
 	SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error)
+	SearchCommentVisibilityFields(params map[string]string) (*CommentVisibilityResult, error)
 }
 
 // IssueService is the interface for issue-related APIs.
@@ -252,6 +255,18 @@ type AutoCompleteResult struct {
 	Results []Result `json:"results"`
 }
 
+type Item struct {
+	Name string `json:"name"`
+}
+
+type Group struct {
+	Items []Item `json:"items"`
+}
+
+type CommentVisibilityResult struct {
+	Groups Group `json:"groups"`
+}
+
 // SearchAutoCompleteFields searches fieldValue specified in the params and returns autocomplete suggestions
 // for that fieldValue
 func (client JiraClient) SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error) {
@@ -261,6 +276,17 @@ func (client JiraClient) SearchAutoCompleteFields(params map[string]string) (*Au
 		return nil, err
 	}
 
+	return result, nil
+}
+
+// SearchCommentVisibilityFields searches fieldValue specified in the params and returns the comment visibility suggestions
+// for that fieldValue
+func (client JiraClient) SearchCommentVisibilityFields(params map[string]string) (*CommentVisibilityResult, error) {
+	result := &CommentVisibilityResult{}
+	if err := client.RESTGet(commentVisibilityRoute, params, result); err != nil {
+		return nil, err
+	}
+	result.Groups.Items = append(result.Groups.Items, Item{visibleToAllUsers})
 	return result, nil
 }
 

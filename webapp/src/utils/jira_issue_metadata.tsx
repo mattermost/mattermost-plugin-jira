@@ -210,7 +210,19 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
         } as FilterField;
     });
 
-    const result = populatedFields.concat(userDefinedFields);
+    const commentVisibility = selectFields.map((field) => {
+        return {
+            key: 'commentVisibility',
+            name: 'Comment Visibility',
+            schema: {
+                type: 'commentVisibility',
+            },
+            values: [],
+            issueTypes: field.validIssueTypes,
+        } as FilterField;
+    });
+
+    const result = populatedFields.concat(userDefinedFields, commentVisibility);
     const epicLinkField = fields.find(isEpicLinkField);
     if (epicLinkField) {
         result.unshift({
@@ -262,6 +274,10 @@ export function isEpicLinkField(field: JiraField | FilterField): boolean {
 
 export function isLabelField(field: JiraField | FilterField): boolean {
     return field.schema.system === 'labels' || field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:labels';
+}
+
+export function isCommentVisibilityField(field: JiraField | FilterField): boolean {
+    return field.key === 'commentVisibility';
 }
 
 export function isEpicIssueType(issueType: IssueType): boolean {
