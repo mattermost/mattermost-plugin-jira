@@ -4,9 +4,9 @@
     "description": "Atlassian Jira plugin for Mattermost.",
     "homepage_url": "https://github.com/mattermost/mattermost-plugin-jira",
     "support_url": "https://github.com/mattermost/mattermost-plugin-jira/issues",
-    "release_notes_url": "https://github.com/mattermost/mattermost-plugin-jira/releases/tag/v3.2.1",
+    "release_notes_url": "https://github.com/mattermost/mattermost-plugin-jira/releases/tag/v3.2.2",
     "icon_path": "assets/icon.svg",
-    "version": "3.2.1",
+    "version": "3.2.2",
     "min_server_version": "6.5.0",
     "server": {
         "executables": {
