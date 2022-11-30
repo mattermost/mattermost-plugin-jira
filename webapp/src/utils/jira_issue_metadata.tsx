@@ -23,6 +23,8 @@ type FieldWithInfo = JiraField & {
     issueTypeMeta: IssueTypeIdentifier;
 }
 
+const commentVisibilityFieldKey = 'commentVisibility';
+
 // This is a replacement for the Array.flat() function which will be polyfilled by Babel
 // in our 5.16 release. Remove this and replace with .flat() then.
 const flatten = (arr: any[]) => {
@@ -212,7 +214,7 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
 
     const commentVisibility = selectFields.map((field) => {
         return {
-            key: 'commentVisibility',
+            key: commentVisibilityFieldKey,
             name: 'Comment Visibility',
             schema: {
                 type: 'commentVisibility',
@@ -277,7 +279,7 @@ export function isLabelField(field: JiraField | FilterField): boolean {
 }
 
 export function isCommentVisibilityField(field: JiraField | FilterField): boolean {
-    return field.key === 'commentVisibility';
+    return field.key === commentVisibilityFieldKey;
 }
 
 export function isEpicIssueType(issueType: IssueType): boolean {

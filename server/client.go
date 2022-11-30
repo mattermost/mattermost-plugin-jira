@@ -255,16 +255,16 @@ type AutoCompleteResult struct {
 	Results []Result `json:"results"`
 }
 
-type Item struct {
+type GroupItem struct {
 	Name string `json:"name"`
 }
 
-type Group struct {
-	Items []Item `json:"items"`
+type GroupsInfo struct {
+	GroupsItem []GroupItem `json:"items"`
 }
 
 type CommentVisibilityResult struct {
-	Groups Group `json:"groups"`
+	Groups GroupsInfo `json:"groups"`
 }
 
 // SearchAutoCompleteFields searches fieldValue specified in the params and returns autocomplete suggestions
@@ -286,7 +286,7 @@ func (client JiraClient) SearchCommentVisibilityFields(params map[string]string)
 	if err := client.RESTGet(commentVisibilityRoute, params, result); err != nil {
 		return nil, err
 	}
-	result.Groups.Items = append(result.Groups.Items, Item{visibleToAllUsers})
+	result.Groups.GroupsItem = append(result.Groups.GroupsItem, GroupItem{visibleToAllUsers})
 	return result, nil
 }
 
