@@ -4,6 +4,7 @@ import {Theme} from 'mattermost-redux/types/preferences';
 
 import ReactSelectSetting from 'components/react_select_setting';
 import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
+import JiraRoleSelector from 'components/data_selectors/jira_role_selector';
 
 import {isEpicLinkField, isMultiSelectField, isLabelField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
@@ -114,7 +115,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
 
     checkFieldConflictError = (): string | null => {
         const conflictIssueTypes = this.getConflictingIssueTypes().map((it) => it.name);
-        if (conflictIssueTypes.length) {
+        if (conflictIssueTypes.length && this.props.field.name !== 'comment_security') {
             return `${this.props.field.name} does not exist for issue type(s): ${conflictIssueTypes.join(', ')}.`;
         }
         return null;
@@ -164,7 +165,11 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         const fieldTypeOptions = fields.map((f) => ({
             value: f.key,
             label: f.name,
-        }));
+        })).concat([{
+            value: 'comment_security',
+            label: 'Comment Security',
+        }]);
+
         let chosenFieldType = null;
 
         const inclusionSelectOptions: ReactSelectOption[] = [
@@ -262,6 +267,15 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                     onChange={this.handleEpicLinkChange}
                 />
             );
+        } else if (field.schema.type === 'comment_security') {
+            valueSelector = (
+                <JiraRoleSelector
+                    {...selectProps}
+                    fieldName={field.name}
+                    value={value.values}
+                    onChange={this.handleEpicLinkChange}
+                />
+            );
         } else {
             valueSelector = (
                 <ReactSelectSetting
@@ -350,6 +364,65 @@ type EmptyChannelSubscriptionFilterProps = {
     onChange: (f1: FilterValue | null, f2: FilterValue) => void;
     cancelAdd: () => void;
 };
+
+export function CommentSecurityChannelSubscriptionFilter(props: EmptyChannelSubscriptionFilterProps): JSX.Element {
+    const handleFieldTypeChange = (name: string, choice: string): void => {
+        const {onChange} = props;
+
+        onChange(null, {values: [], key: choice, inclusion: FilterFieldInclusion.INCLUDE_ANY});
+    };
+
+    const {fields, theme} = props;
+    const style = getStyle(theme);
+
+    const fieldTypeOptions = fields.map((f) => ({
+        value: f.key,
+        label: f.name,
+    }));
+
+    return (
+        <div className='row'>
+            <div className='col-md-11 col-sm-12'>
+                <div className='row'>
+                    <div className='col-md-4 col-sm-12'>
+                        <ReactSelectSetting
+                            name={'fieldtype'}
+                            options={fieldTypeOptions}
+                            onChange={handleFieldTypeChange}
+                            theme={theme}
+                        />
+                    </div>
+                    <div className='col-md-4 col-sm-12'>
+                        <ReactSelectSetting
+                            name={'exclude'}
+                            options={[]}
+                            isDisabled={true}
+                            theme={theme}
+                        />
+                    </div>
+                    <div className='col-md-4 col-sm-12'>
+                        <ReactSelectSetting
+                            name={'values'}
+                            options={[]}
+                            isDisabled={true}
+                            theme={theme}
+                        />
+                    </div>
+                </div>
+            </div>
+            <div className='col-md-1 col-sm-12 text-center'>
+                <button
+                    onClick={props.cancelAdd}
+                    className='style--none'
+                    style={style.trashIcon}
+                    type='button'
+                >
+                    <i className='fa fa-trash'/>
+                </button>
+            </div>
+        </div>
+    );
+}
 
 export function EmptyChannelSubscriptionFilter(props: EmptyChannelSubscriptionFilterProps): JSX.Element {
     const handleFieldTypeChange = (name: string, choice: string): void => {

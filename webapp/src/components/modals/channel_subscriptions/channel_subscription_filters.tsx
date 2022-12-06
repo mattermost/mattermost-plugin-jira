@@ -77,6 +77,19 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
             return !conflictingFields.find((conf) => conf.field.key === f.key);
         });
 
+        // const commentSecurityField: FilterField = {
+        //     issueTypes: [
+
+        //     ],
+        //     key: 'comment_security',
+        //     name: 'comment_security',
+        //     schema: {
+        //         type: 'comment_security',
+        //     },
+        // };
+
+        // nonConflictingFields = nonConflictingFields.concat([commentSecurityField]);
+
         return (
             <div className='margin-bottom'>
                 <label

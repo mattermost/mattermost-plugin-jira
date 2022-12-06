@@ -157,6 +157,13 @@ export const searchAutoCompleteFields = (params) => {
     };
 };
 
+export const getProjectRoles = (params) => {
+    return async (dispatch, getState) => {
+        const url = getPluginServerRoute(getState()) + '/api/v2/get-project-roles';
+        return doFetchWithResponse(`${url}${buildQueryString(params)}`);
+    };
+};
+
 export const searchUsers = (params) => {
     return async (dispatch, getState) => {
         const url = getPluginServerRoute(getState()) + '/api/v2/get-search-users';

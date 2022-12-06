@@ -21,7 +21,7 @@ import {
     getIssueTypes,
 } from 'utils/jira_issue_metadata';
 
-import {ChannelSubscription, ChannelSubscriptionFilters as ChannelSubscriptionFiltersModel, ReactSelectOption, FilterValue, IssueMetadata} from 'types/model';
+import {ChannelSubscription, ChannelSubscriptionFilters as ChannelSubscriptionFiltersModel, ReactSelectOption, FilterValue, IssueMetadata, JiraField, FilterField} from 'types/model';
 
 import ChannelSubscriptionFilters from './channel_subscription_filters';
 import {SharedProps} from './shared_props';
@@ -336,7 +336,18 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         const issueOptions = issueTypes.map((it) => ({label: it.name, value: it.id}));
 
         const customFields = getCustomFieldValuesForEvents(this.state.jiraIssueMetadata, this.state.filters.projects);
-        const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects);
+        let filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects);
+        const commentSecurityField: FilterField = {
+            issueTypes: [
+
+            ],
+            key: 'comment_security',
+            name: 'comment_security',
+            schema: {
+                type: 'comment_security',
+            },
+        };
+        filterFields = filterFields.concat(commentSecurityField);
 
         const eventOptions = JiraEventOptions.concat(customFields);
 
