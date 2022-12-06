@@ -276,6 +276,10 @@ export function isTextField(field: JiraField | FilterField): boolean {
     return field.schema.type === 'string';
 }
 
+export function isSecurityLevelField(field: JiraField | FilterField): boolean {
+    return field.schema.type === 'securitylevel';
+}
+
 // Some Jira fields have special names for JQL
 function getFieldNameForJQL(field: FilterField) {
     switch (field.key) {

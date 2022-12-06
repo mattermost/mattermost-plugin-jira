@@ -392,6 +392,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
                             instanceID={this.state.instanceID}
+                            securityLevelEmptyForJiraSubscriptions={this.props.securityLevelEmptyForJiraSubscriptions}
                         />
                         <div>
                             <label className='control-label margin-bottom'>

@@ -3544,6 +3544,7 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
         }
         onChange={[Function]}
         removeValidate={[Function]}
+        securityLevelEmptyForJiraSubscriptions={true}
         theme={
           Object {
             "awayIndicator": "#ffbc42",
