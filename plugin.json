@@ -78,9 +78,9 @@
             },
             {
                 "key": "SecurityLevelEmptyForJiraSubscriptions",
-                "display_name": "When enabled, a subscription without security level rules will filter out an issue that has a security level assigned:",
+                "display_name": "Default Subscription Security Level to Empty:",
                 "type": "bool",
-                "help_text": "",
+                "help_text": "When enabled, a subscription without security level rules will filter out an issue that has a security level assigned",
                 "placeholder": "",
                 "default": true
             },
