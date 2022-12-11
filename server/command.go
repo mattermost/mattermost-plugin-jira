@@ -148,6 +148,7 @@ func addSubCommands(jira *model.AutocompleteData, optInstance bool) {
 	// Admin commands
 	jira.AddCommand(createSubscribeCommand(optInstance))
 	jira.AddCommand(createWebhookCommand(optInstance))
+	Jira.AddCommand(createSetupCommand(optInstance))
 
 	// Help and info
 	jira.AddCommand(model.NewAutocompleteData("info", "", "Display information about the current user and the Jira plug-in"))
@@ -211,6 +212,7 @@ func withFlagInstance(cmd *model.AutocompleteData, optInstance bool, route strin
 }
 
 func withParamIssueKey(cmd *model.AutocompleteData) {
+	setup
 	// TODO: Implement dynamic autocomplete for Jira issue (search)
 	cmd.AddTextArgument("Jira issue key", "", "")
 }
@@ -318,6 +320,12 @@ func createWebhookCommand(optInstance bool) *model.AutocompleteData {
 	webhook.RoleID = model.SystemAdminRoleId
 	withFlagInstance(webhook, optInstance, routeAutocompleteInstalledInstanceWithAlias)
 	return webhook
+}
+
+func createSetupCommand(optInstance bool) *model.AutocompleteData {
+	setup := model.NewAutocompleteData(
+		"Setup", "", "Start Jira Plugin setup assistant")
+	return setup
 }
 
 type CommandHandlerFunc func(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse
