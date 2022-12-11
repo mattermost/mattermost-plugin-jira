@@ -148,7 +148,7 @@ func addSubCommands(jira *model.AutocompleteData, optInstance bool) {
 	// Admin commands
 	jira.AddCommand(createSubscribeCommand(optInstance))
 	jira.AddCommand(createWebhookCommand(optInstance))
-	Jira.AddCommand(createSetupCommand(optInstance))
+	jira.AddCommand(createSetupCommand(optInstance))
 
 	// Help and info
 	jira.AddCommand(model.NewAutocompleteData("info", "", "Display information about the current user and the Jira plug-in"))
@@ -212,7 +212,6 @@ func withFlagInstance(cmd *model.AutocompleteData, optInstance bool, route strin
 }
 
 func withParamIssueKey(cmd *model.AutocompleteData) {
-	setup
 	// TODO: Implement dynamic autocomplete for Jira issue (search)
 	cmd.AddTextArgument("Jira issue key", "", "")
 }
