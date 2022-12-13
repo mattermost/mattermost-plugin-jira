@@ -217,6 +217,27 @@ export const createChannelSubscription = (subscription: ChannelSubscription) => 
     };
 };
 
+export const createSubscriptionTemplate = (subscription: ChannelSubscription) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        try {
+            const data = await doFetch(`${baseUrl}/api/v2/subscriptionTemplates?channel_id=${subscription.channel_id}`, {
+                method: 'post',
+                body: JSON.stringify(subscription),
+            });
+
+            dispatch({
+                type: ActionTypes.CREATED_SUBSCRIPTION_TEMPLATE,
+                data,
+            });
+
+            return {data};
+        } catch (error) {
+            return {error};
+        }
+    };
+};
+
 export const editChannelSubscription = (subscription: ChannelSubscription) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
@@ -248,6 +269,25 @@ export const deleteChannelSubscription = (subscription: ChannelSubscription) => 
 
             dispatch({
                 type: ActionTypes.DELETED_CHANNEL_SUBSCRIPTION,
+                data: subscription,
+            });
+
+            return {data: subscription};
+        } catch (error) {
+            return {error};
+        }
+    };
+};
+
+export const deleteSubscriptionTemplate = (subscription: ChannelSubscription) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        try {
+            await doFetch(`${baseUrl}/api/v2/subscriptionTemplates/${subscription.id}?instance_id=${subscription.instance_id}`, {
+                method: 'delete',
+            });
+            dispatch({
+                type: ActionTypes.DELETED_SUBSCRIPTION_TEMPLATE,
                 data: subscription,
             });
 
@@ -294,6 +334,48 @@ export const fetchChannelSubscriptions = (channelId: string) => {
         dispatch({
             type: ActionTypes.RECEIVED_CHANNEL_SUBSCRIPTIONS,
             channelId,
+            data,
+        });
+
+        return {data};
+    };
+};
+
+export const fetchAllSubscriptionTemplates = () => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        const connectedInstances = getUserConnectedInstances(getState());
+
+        const promises = connectedInstances.map((instance) => {
+            return doFetch(`${baseUrl}/api/v2/subscriptionTemplates?instance_id=${instance.instance_id}`, {
+                method: 'get',
+            });
+        });
+
+        let allResponses;
+        try {
+            allResponses = await Promise.allSettled(promises);
+        } catch (error) {
+            return {error};
+        }
+
+        const errors: string[] = [];
+        let data: ChannelSubscription[] = [];
+
+        for (const res of allResponses) {
+            if (res.status === 'rejected') {
+                errors.push(res.reason);
+            } else {
+                data = data.concat(res.value.SubscriptionTemplates);
+            }
+        }
+
+        if (errors.length > 0 && allResponses.length === errors.length) {
+            return {error: new Error(errors[0])};
+        }
+
+        dispatch({
+            type: ActionTypes.RECEIVED_SUBSCRIPTION_TEMPLATES,
             data,
         });
 

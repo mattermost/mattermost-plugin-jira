@@ -37,6 +37,7 @@ const (
 	routeAPIUserInfo                            = "/api/v2/userinfo"
 	routeAPISubscribeWebhook                    = "/api/v2/webhook"
 	routeAPISubscriptionsChannel                = "/api/v2/subscriptions/channel"
+	routeAPISubscriptionTemplates               = "/api/v2/subscription-templates"
 	routeAPISettingsInfo                        = "/api/v2/settingsinfo"
 	routeIssueTransition                        = "/api/v2/transition"
 	routeAPIUserDisconnect                      = "/api/v3/disconnect"
@@ -192,6 +193,10 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 	if strings.HasPrefix(path, routeAPISubscriptionsChannel) {
 		return p.httpChannelSubscriptions(w, r)
+	}
+
+	if strings.HasPrefix(path, routeAPISubscriptionTemplates) {
+		return p.httpChannelSubscriptionTemplates(w, r)
 	}
 
 	p.gorillaRouter.ServeHTTP(w, r)
