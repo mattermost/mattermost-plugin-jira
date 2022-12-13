@@ -127,8 +127,6 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
 
             if (error) {
                 state.error = error.message;
-            } else {
-                state.fields = fields;
             }
 
             this.setState(state);
