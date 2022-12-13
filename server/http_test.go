@@ -1001,6 +1001,7 @@ func TestDeleteSubscriptionTemplate(t *testing.T) {
 			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 			api.On("GetChannelMember", mockAnythingOfTypeBatch("string", 2)...).Return(&model.ChannelMember{}, (*model.AppError)(nil))
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
+			api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
@@ -1177,6 +1178,7 @@ func TestEditSubscriptionTemplate(t *testing.T) {
 			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 			api.On("GetChannelMember", mockAnythingOfTypeBatch("string", 2)...).Return(&model.ChannelMember{}, (*model.AppError)(nil))
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
+			api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
@@ -1314,6 +1316,7 @@ func TestCreateSubscriptionTemplate(t *testing.T) {
 			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 			api.On("GetChannelMember", mockAnythingOfTypeBatch("string", 2)...).Return(&model.ChannelMember{}, (*model.AppError)(nil))
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
+			api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)

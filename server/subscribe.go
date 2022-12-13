@@ -63,6 +63,7 @@ type ChannelSubscription struct {
 
 type SubscriptionTemplate struct {
 	ID         string               `json:"id"`
+	ChannelID  string               `json:"channel_id"`
 	Filters    *SubscriptionFilters `json:"filters"`
 	Name       string               `json:"name"`
 	InstanceID types.ID             `json:"instance_id"`
@@ -284,6 +285,16 @@ func (p *Plugin) getSubscriptionTemplatesForInstance(instanceID types.ID) (*Temp
 	}
 
 	return subs, nil
+}
+
+func (p *Plugin) getSubscriptionTemplatesByID(instanceID, templateID types.ID) (*SubscriptionTemplate, error) {
+	subs, err := p.getTemplates(instanceID)
+	if err != nil {
+		return nil, err
+	}
+
+	sub := subs.Templates.ByID[string(templateID)]
+	return &sub, nil
 }
 
 func (p *Plugin) getChannelSubscription(instanceID types.ID, subscriptionID string) (*ChannelSubscription, error) {
@@ -1192,7 +1203,7 @@ func (p *Plugin) httpEditSubscriptionTemplates(w http.ResponseWriter, r *http.Re
 		return respondErr(w, http.StatusBadRequest, errors.WithMessage(err, "failed to decode the incoming request"))
 	}
 
-	client, _, _, err := p.getClient(subscriptionTemplate.InstanceID, types.ID(mattermostUserID))
+	client, _, connection, err := p.getClient(subscriptionTemplate.InstanceID, types.ID(mattermostUserID))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -1200,6 +1211,12 @@ func (p *Plugin) httpEditSubscriptionTemplates(w http.ResponseWriter, r *http.Re
 	if err = p.editSubscriptionTemplate(subscriptionTemplate.InstanceID, &subscriptionTemplate, client); err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
+
+	_ = p.API.SendEphemeralPost(mattermostUserID, &model.Post{
+		UserId:    p.getConfig().botUserID,
+		ChannelId: subscriptionTemplate.ChannelID,
+		Message:   fmt.Sprintf("Jira subscription template, %q, was updated by %s", subscriptionTemplate.Name, connection.DisplayName),
+	})
 
 	code, err := respondJSON(w, &subscriptionTemplate)
 	if err != nil {
@@ -1215,7 +1232,7 @@ func (p *Plugin) httpCreateSubscriptionTemplate(w http.ResponseWriter, r *http.R
 		return respondErr(w, http.StatusBadRequest, errors.WithMessage(err, "failed to decode incoming request"))
 	}
 
-	client, _, _, err := p.getClient(subscriptionTemplate.InstanceID, types.ID(mattermostUserID))
+	client, _, connection, err := p.getClient(subscriptionTemplate.InstanceID, types.ID(mattermostUserID))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
@@ -1223,6 +1240,12 @@ func (p *Plugin) httpCreateSubscriptionTemplate(w http.ResponseWriter, r *http.R
 	if err = p.addSubscriptionTemplate(subscriptionTemplate.InstanceID, &subscriptionTemplate, client); err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
+
+	_ = p.API.SendEphemeralPost(mattermostUserID, &model.Post{
+		UserId:    p.getConfig().botUserID,
+		ChannelId: subscriptionTemplate.ChannelID,
+		Message:   fmt.Sprintf("Jira subscription template, %q, was added by %s", subscriptionTemplate.Name, connection.DisplayName),
+	})
 
 	code, err := respondJSON(w, &subscriptionTemplate)
 	if err != nil {
@@ -1248,9 +1271,25 @@ func (p *Plugin) httpDeleteSubscriptionTemplate(w http.ResponseWriter, r *http.R
 		return respondErr(w, http.StatusBadRequest, errors.New("missing project key"))
 	}
 
+	subscriptionTemplate, err := p.getSubscriptionTemplatesByID(instanceID, types.ID(subscriptionTemplateID))
+	if err != nil {
+		respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "unable to find the subscription template"))
+	}
+
+	_, _, connection, err := p.getClient(instanceID, types.ID(mattermostUserID))
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
 	if err := p.removeSubscriptionTemplate(instanceID, subscriptionTemplateID, projectKey); err != nil {
 		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "unable to remove channel subscription template"))
 	}
+
+	_ = p.API.SendEphemeralPost(mattermostUserID, &model.Post{
+		UserId:    p.getConfig().botUserID,
+		ChannelId: subscriptionTemplate.ChannelID,
+		Message:   fmt.Sprintf("Jira subscription template, %q, was removed by %s", subscriptionTemplate.Name, connection.DisplayName),
+	})
 
 	code, err := respondJSON(w, map[string]interface{}{model.STATUS: model.StatusOk})
 	if err != nil {
