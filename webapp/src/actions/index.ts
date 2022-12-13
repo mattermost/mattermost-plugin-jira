@@ -9,7 +9,7 @@ import ActionTypes from 'action_types';
 import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
 import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances} from 'selectors';
 import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
-import {ChannelSubscription, CreateIssueRequest, SearchIssueParams, InstanceType, ProjectMetadata, APIResponse} from 'types/model';
+import {ChannelSubscription, CreateIssueRequest, SearchIssueParams, InstanceType, ProjectMetadata, APIResponse, SubscriptionTemplate} from 'types/model';
 
 export const openConnectModal = () => {
     return {
@@ -217,17 +217,38 @@ export const createChannelSubscription = (subscription: ChannelSubscription) => 
     };
 };
 
-export const createSubscriptionTemplate = (subscription: ChannelSubscription) => {
+export const createSubscriptionTemplate = (subscriptionTemplate: SubscriptionTemplate) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            const data = await doFetch(`${baseUrl}/api/v2/subscriptionTemplates?channel_id=${subscription.channel_id}`, {
+            const data = await doFetch(`${baseUrl}/api/v2/subscription-templates?channel_id=${subscriptionTemplate.channel_id}`, {
                 method: 'post',
-                body: JSON.stringify(subscription),
+                body: JSON.stringify(subscriptionTemplate),
             });
 
             dispatch({
                 type: ActionTypes.CREATED_SUBSCRIPTION_TEMPLATE,
+                data,
+            });
+
+            return {data};
+        } catch (error) {
+            return {error};
+        }
+    };
+};
+
+export const editSubscriptionTemplate = (subscriptionTemplate: SubscriptionTemplate) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        try {
+            const data = await doFetch(`${baseUrl}/api/v2/subscription-templates`, {
+                method: 'put',
+                body: JSON.stringify(subscriptionTemplate),
+            });
+
+            dispatch({
+                type: ActionTypes.EDITED_SUBSCRIPTION_TEMPLATE,
                 data,
             });
 
@@ -279,19 +300,20 @@ export const deleteChannelSubscription = (subscription: ChannelSubscription) => 
     };
 };
 
-export const deleteSubscriptionTemplate = (subscription: ChannelSubscription) => {
+export const deleteSubscriptionTemplate = (subscriptionTemplate: SubscriptionTemplate) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            await doFetch(`${baseUrl}/api/v2/subscriptionTemplates/${subscription.id}?instance_id=${subscription.instance_id}`, {
+            await doFetch(`${baseUrl}/api/v2/subscription-templates/${subscriptionTemplate.id}?instance_id=${subscriptionTemplate.instance_id}&project_key=${subscriptionTemplate.filters.projects[0]}`, {
                 method: 'delete',
             });
+
             dispatch({
                 type: ActionTypes.DELETED_SUBSCRIPTION_TEMPLATE,
-                data: subscription,
+                data: subscriptionTemplate,
             });
 
-            return {data: subscription};
+            return {data: subscriptionTemplate};
         } catch (error) {
             return {error};
         }
@@ -327,7 +349,7 @@ export const fetchChannelSubscriptions = (channelId: string) => {
             }
         }
 
-        if (errors.length > 0 && allResponses.length === errors.length) {
+        if (errors.length && allResponses.length === errors.length) {
             return {error: new Error(errors[0])};
         }
 
@@ -345,32 +367,30 @@ export const fetchAllSubscriptionTemplates = () => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         const connectedInstances = getUserConnectedInstances(getState());
-
-        const promises = connectedInstances.map((instance) => {
-            return doFetch(`${baseUrl}/api/v2/subscriptionTemplates?instance_id=${instance.instance_id}`, {
+        const instances = connectedInstances.map((instance) => {
+            return doFetch(`${baseUrl}/api/v2/subscription-templates?instance_id=${instance.instance_id}`, {
                 method: 'get',
             });
         });
 
         let allResponses;
         try {
-            allResponses = await Promise.allSettled(promises);
+            allResponses = await Promise.allSettled(instances);
         } catch (error) {
             return {error};
         }
 
         const errors: string[] = [];
         let data: ChannelSubscription[] = [];
-
         for (const res of allResponses) {
             if (res.status === 'rejected') {
                 errors.push(res.reason);
             } else {
-                data = data.concat(res.value.SubscriptionTemplates);
+                data = data.concat(res.value);
             }
         }
 
-        if (errors.length > 0 && allResponses.length === errors.length) {
+        if (errors.length && allResponses.length === errors.length) {
             return {error: new Error(errors[0])};
         }
 
@@ -380,6 +400,26 @@ export const fetchAllSubscriptionTemplates = () => {
         });
 
         return {data};
+    };
+};
+
+export const fetchSubscriptionTemplatesForProjectKey = (instanceId: string, projectKey: string) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        try {
+            const data = await doFetch(`${baseUrl}/api/v2/subscription-templates?instance_id=${instanceId}&project_key=${projectKey}`, {
+                method: 'get',
+            });
+
+            dispatch({
+                type: ActionTypes.RECEIVED_SUBSCRIPTION_TEMPLATES_PROJECT_KEY,
+                data,
+            });
+
+            return {data};
+        } catch (error) {
+            return {error};
+        }
     };
 };
 

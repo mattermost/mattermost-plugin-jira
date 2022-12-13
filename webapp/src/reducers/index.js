@@ -171,8 +171,34 @@ const subscriptionTemplates = (state = '', action) => {
     case ActionTypes.CREATED_SUBSCRIPTION_TEMPLATE: {
         const subTemplate = action.data;
         const nextState = {...state};
-        nextState.subscriptionTemplates = [...nextState.subscriptionTemplates,subTemplate];
+        nextState.subscriptionTemplates = [...nextState.subscriptionTemplates, subTemplate];
 
+        return nextState;
+    }
+    case ActionTypes.EDITED_SUBSCRIPTION_TEMPLATE: {
+        const subTemplate = action.data;
+        const nextState = {...state};
+
+        const index = nextState.subscriptionTemplates.findIndex((template) => template.id === subTemplate.id);
+
+        const newArray = [...nextState.subscriptionTemplates];
+        newArray[index] = subTemplate;
+
+        return {
+            ...nextState,
+            subscriptionTemplates: newArray,
+        };
+    }
+    default:
+        return state;
+    }
+};
+
+const subscriptionTemplatesForProjectKey = (state = '', action) => {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_SUBSCRIPTION_TEMPLATES_PROJECT_KEY: {
+        const nextState = {...state};
+        nextState.subscriptionTemplatesForProjectKey = action.data;
         return nextState;
     }
     default:
@@ -237,5 +263,6 @@ export default combineReducers({
     attachCommentToIssueModalForPostId,
     channelIdWithSettingsOpen,
     subscriptionTemplates,
+    subscriptionTemplatesForProjectKey,
     channelSubscriptions,
 });

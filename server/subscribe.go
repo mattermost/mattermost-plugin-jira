@@ -1156,7 +1156,7 @@ func (p *Plugin) httpGetSubscriptionTemplates(w http.ResponseWriter, r *http.Req
 		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "unable to get subscription templates"))
 	}
 
-	var subTemplates []*SubscriptionTemplate
+	subTemplates := make([]*SubscriptionTemplate, 0)
 
 	projectKey := r.FormValue(QueryParamProjectKey)
 	if len(projectKey) < 1 {

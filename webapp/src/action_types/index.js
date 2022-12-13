@@ -32,6 +32,8 @@ export default {
 
     CREATED_SUBSCRIPTION_TEMPLATE: `${PluginId}_created_subscription_template`,
     DELETED_SUBSCRIPTION_TEMPLATE: `${PluginId}_deleted_subscription_template`,
+    EDITED_SUBSCRIPTION_TEMPLATE: `${PluginId}_edited_subscription_template`,
+    RECEIVED_SUBSCRIPTION_TEMPLATES_PROJECT_KEY: `${PluginId}_received_subscription_templates_project_key`,
 
     RECEIVED_CHANNEL_SUBSCRIPTIONS: `${PluginId}_recevied_channel_subscriptions`,
     RECEIVED_SUBSCRIPTION_TEMPLATES: `${PluginId}_recevied_subscription_templates`,

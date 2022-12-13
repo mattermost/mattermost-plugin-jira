@@ -12,7 +12,7 @@ import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.jso
 import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project-many-fields.json';
 import testChannel from 'testdata/channel.json';
 
-import {IssueMetadata, ProjectMetadata, FilterFieldInclusion} from 'types/model';
+import {IssueMetadata, ProjectMetadata, FilterFieldInclusion, AllProjectMetadata, APIResponse, ChannelSubscription, GetConnectedResponse} from 'types/model';
 
 import EditChannelSubscription from './edit_channel_subscription';
 
@@ -22,6 +22,14 @@ describe('components/EditChannelSubscription', () => {
         deleteChannelSubscription: jest.fn().mockResolvedValue({}),
         editChannelSubscription: jest.fn().mockResolvedValue({}),
         fetchChannelSubscriptions: jest.fn().mockResolvedValue({}),
+        createSubscriptionTemplate: jest.fn().mockResolvedValue({}),
+        deleteSubscriptionTemplate: jest.fn().mockResolvedValue({}),
+        editSubscriptionTemplate: jest.fn().mockResolvedValue({}),
+        fetchAllSubscriptionTemplates: jest.fn().mockResolvedValue({}),
+        fetchSubscriptionTemplatesForProjectKey: jest.fn().mockResolvedValue({}),
+        sendEphemeralPost: jest.fn().mockResolvedValue({}),
+        getConnected: jest.fn().mockResolvedValue({}),
+        fetchJiraProjectMetadataForAllInstances: jest.fn().mockResolvedValue({}),
         fetchJiraIssueMetadataForProjects: jest.fn().mockResolvedValue({data: cloudIssueMetadata}),
     };
 
@@ -80,7 +88,7 @@ describe('components/EditChannelSubscription', () => {
         close: jest.fn(),
         selectedSubscription: channelSubscriptionForCloud,
         creatingSubscription: false,
-        subscriptionTemplates: [],
+        creatingSubscriptionTemplate: false,
     };
 
     const baseState = {

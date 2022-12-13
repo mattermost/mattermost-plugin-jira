@@ -9,7 +9,10 @@ import (
 	"path/filepath"
 )
 
-const someSecret = "somesecret"
+const (
+	someSecret     = "somesecret"
+	mockProjectKey = "myproject"
+)
 
 func getJiraTestData(filename string) ([]byte, error) {
 	f, err := os.Open(filepath.Join("testdata", filename))
@@ -27,6 +30,15 @@ func withExistingChannelSubscriptions(subscriptions []ChannelSubscription) *Subs
 	for i := range subscriptions {
 		subscriptions[i].InstanceID = testInstance1.GetID()
 		ret.Channel.add(&subscriptions[i])
+	}
+	return ret
+}
+
+func withExistingChannelSubscriptionTemplates(templates []SubscriptionTemplate) *Templates {
+	ret := NewTemplates()
+	for i, sub := range templates {
+		sub.InstanceID = testInstance1.GetID()
+		ret.Templates.add(mockProjectKey, &templates[i])
 	}
 	return ret
 }

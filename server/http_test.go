@@ -22,6 +22,7 @@ import (
 const TestDataLongSubscriptionName = `aaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbccccccccccdddddddddd`
 
 var testSubKey = keyWithInstanceID(mockInstance1URL, JiraSubscriptionsKey)
+var testTemplateKey = keyWithInstanceID(mockInstance1URL, templateKey)
 
 func checkSubscriptionsEqual(t *testing.T, ls1 []ChannelSubscription, ls2 []ChannelSubscription) {
 	assert.Equal(t, len(ls1), len(ls2))
@@ -40,6 +41,27 @@ func checkSubscriptionsEqual(t *testing.T, ls1 []ChannelSubscription, ls2 []Chan
 		}
 		if !match {
 			assert.Fail(t, "Subscription arrays are not equal")
+		}
+	}
+}
+
+func checkSubscriptionTemplatesEqual(t *testing.T, st1 []SubscriptionTemplate, st2 []SubscriptionTemplate) {
+	assert.Equal(t, len(st1), len(st2))
+
+	for _, a := range st1 {
+		match := false
+		for _, b := range st2 {
+			if a.ID == b.ID {
+				match = true
+				assert.True(t, a.Filters.Projects.Equals(b.Filters.Projects))
+				assert.True(t, a.Filters.IssueTypes.Equals(b.Filters.IssueTypes))
+				assert.True(t, a.Filters.Events.Equals(b.Filters.Events))
+				break
+			}
+		}
+
+		if !match {
+			assert.Fail(t, "Subscription template arrays are not equal")
 		}
 	}
 }
@@ -65,6 +87,36 @@ func checkNotSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 			for _, subToCheck := range subsToCheck {
 				for _, savedSub := range savedSubs.Channel.ByID {
 					if subToCheck.ID == savedSub.ID {
+						return false
+					}
+				}
+			}
+
+			return true
+		})).Return(true, nil)
+	}
+}
+
+func checkNotSubscriptionTemplates(templatesToCheck []SubscriptionTemplate, existing *Templates, t *testing.T) func(api *plugintest.API) {
+	return func(api *plugintest.API) {
+		var existingBytes []byte
+		if existing != nil {
+			var err error
+			existingBytes, err = json.Marshal(existing)
+			assert.Nil(t, err)
+		}
+
+		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
+		api.On("KVGet", testTemplateKey).Return(existingBytes, nil)
+		api.On("KVCompareAndSet", testTemplateKey, existingBytes, mock.MatchedBy(func(data []byte) bool {
+			t.Log(string(data))
+			var savedTemplates Templates
+			err := json.Unmarshal(data, &savedTemplates)
+			assert.Nil(t, err)
+
+			for _, templateToCheck := range templatesToCheck {
+				for _, savedSub := range savedTemplates.Templates.ByID {
+					if templateToCheck.ID == savedSub.ID {
 						return false
 					}
 				}
@@ -124,6 +176,46 @@ func checkHasSubscriptions(subsToCheck []ChannelSubscription, existing *Subscrip
 	}
 }
 
+func checkHasSubscriptionTemplates(templatesToCheck []SubscriptionTemplate, existing *Templates, t *testing.T) func(api *plugintest.API) {
+	return func(api *plugintest.API) {
+		var existingBytes []byte
+		if existing != nil {
+			var err error
+			existingBytes, err = json.Marshal(existing)
+			assert.Nil(t, err)
+		}
+
+		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
+		api.On("KVGet", testTemplateKey).Return(existingBytes, nil)
+		api.On("KVCompareAndSet", testTemplateKey, existingBytes, mock.MatchedBy(func(data []byte) bool {
+			t.Log(string(data))
+			var savedTemplates Templates
+			err := json.Unmarshal(data, &savedTemplates)
+			assert.Nil(t, err)
+
+			for _, templateToCheck := range templatesToCheck {
+				var foundSub *SubscriptionTemplate
+				for _, savedSub := range savedTemplates.Templates.ByID {
+					if templateToCheck.Filters.Projects.Equals(savedSub.Filters.Projects) &&
+						templateToCheck.Filters.IssueTypes.Equals(savedSub.Filters.IssueTypes) &&
+						templateToCheck.Filters.Events.Equals(savedSub.Filters.Events) {
+						savedSub := savedSub // fix gosec G601
+						foundSub = &savedSub
+						break
+					}
+				}
+
+				// Check subscription exists
+				if foundSub == nil {
+					return false
+				}
+			}
+
+			return true
+		})).Return(true, nil)
+	}
+}
+
 func hasSubscriptions(subscriptions []ChannelSubscription, t *testing.T) func(api *plugintest.API) {
 	return func(api *plugintest.API) {
 		subs := withExistingChannelSubscriptions(subscriptions)
@@ -134,6 +226,26 @@ func hasSubscriptions(subscriptions []ChannelSubscription, t *testing.T) func(ap
 		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
 
 		api.On("KVGet", testSubKey).Return(existingBytes, nil)
+	}
+}
+
+func hasSubscriptionTemplates(templates []SubscriptionTemplate, t *testing.T) func(api *plugintest.API) {
+	return func(api *plugintest.API) {
+		templates := withExistingChannelSubscriptionTemplates(templates)
+
+		existingBytes, err := json.Marshal(&templates)
+		assert.Nil(t, err)
+
+		api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
+		api.On("KVGet", testTemplateKey).Return(existingBytes, nil)
+	}
+}
+
+func getMockSubscriptionFilter(event string) *SubscriptionFilters {
+	return &SubscriptionFilters{
+		Events:     NewStringSet(event),
+		Projects:   NewStringSet("myproject"),
+		IssueTypes: NewStringSet("10001"),
 	}
 }
 
@@ -838,6 +950,480 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 				err := json.NewDecoder(bytes.NewReader(body)).Decode(&subscriptions)
 				assert.Nil(t, err)
 				checkSubscriptionsEqual(t, tc.returnedSubscriptions, subscriptions)
+			}
+		})
+	}
+}
+
+func TestDeleteSubscriptionTemplate(t *testing.T) {
+	for name, tc := range map[string]struct {
+		templateID         string
+		expectedStatusCode int
+		skipAuthorize      bool
+		apiCalls           func(*plugintest.API)
+	}{
+		"Invalid": {
+			templateID:         "mockTemplateID1",
+			expectedStatusCode: http.StatusBadRequest,
+		},
+		"Not Authorized": {
+			templateID:         model.NewId(),
+			expectedStatusCode: http.StatusUnauthorized,
+			skipAuthorize:      true,
+		},
+		"Successful delete": {
+			templateID:         "mockTemplateID1___________",
+			expectedStatusCode: http.StatusOK,
+			apiCalls: checkNotSubscriptionTemplates([]SubscriptionTemplate{
+				{
+					ID:      "mockTemplateID1___________",
+					Filters: getMockSubscriptionFilter("jira:issue_created"),
+				},
+			},
+				withExistingChannelSubscriptionTemplates(
+					[]SubscriptionTemplate{
+						{
+							ID:      "mockTemplateID1___________",
+							Filters: getMockSubscriptionFilter("jira:issue_created"),
+						},
+						{
+							ID:      "mockTemplateID2___________",
+							Filters: getMockSubscriptionFilter("jira:issue_created"),
+						},
+					}), t),
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+			p := Plugin{}
+
+			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
+			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+			api.On("GetChannelMember", mockAnythingOfTypeBatch("string", 2)...).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
+
+			if tc.apiCalls != nil {
+				tc.apiCalls(api)
+			}
+
+			p.updateConfig(func(conf *config) {
+				conf.Secret = someSecret
+			})
+
+			p.SetAPI(api)
+			p.userStore = mockUserStore{}
+			p.instanceStore = p.getMockInstanceStoreKV(1)
+
+			w := httptest.NewRecorder()
+
+			request := httptest.NewRequest(http.MethodDelete,
+				"/api/v2/subscription-templates/"+tc.templateID+"?instance_id="+testInstance1.GetID().String()+"&project_key=myproject",
+				nil)
+
+			if !tc.skipAuthorize {
+				request.Header.Set(HeaderMattermostUserID, model.NewId())
+			}
+
+			p.ServeHTTP(&plugin.Context{}, w, request)
+			body, _ := ioutil.ReadAll(w.Result().Body)
+			t.Log(string(body))
+			assert.Equal(t, tc.expectedStatusCode, w.Result().StatusCode)
+		})
+	}
+}
+
+func TestEditSubscriptionTemplate(t *testing.T) {
+	count := 0
+	for name, tc := range map[string]struct {
+		subscriptionTemplate string
+		expectedStatusCode   int
+		skipAuthorize        bool
+		apiCalls             func(*plugintest.API)
+	}{
+		"Not Authorized": {
+			subscriptionTemplate: "{}",
+			expectedStatusCode:   http.StatusUnauthorized,
+			skipAuthorize:        true,
+		},
+		"Won't Decode": {
+			subscriptionTemplate: "{test",
+			expectedStatusCode:   http.StatusBadRequest,
+		},
+		"Editing subscription template": {
+			subscriptionTemplate: `{
+				"instance_id": "jiraurl1",
+				"name": "mockName",
+				"id": "mockTemplateID1___________",
+				"filters": {
+				  "events": [
+					"jira:issue_created"
+				  ],
+				  "projects": [
+					"myproject"
+				  ],
+				  "issue_types": [
+					"10001"
+				  ],
+				  "fields": []
+				}
+			  }`,
+			expectedStatusCode: http.StatusOK,
+			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{
+				{
+					ID:      "mockTemplateID1___________",
+					Filters: getMockSubscriptionFilter("jira:issue_created"),
+				},
+			},
+				withExistingChannelSubscriptionTemplates(
+					[]SubscriptionTemplate{
+						{
+							ID:      "mockTemplateID1___________",
+							Filters: getMockSubscriptionFilter("jira:issue_created"),
+						},
+					}), t),
+		},
+		"Editing subscription template, no name provided": {
+			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "", "id": "mockTemplateID1___________", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
+			expectedStatusCode:   http.StatusInternalServerError,
+			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{},
+				withExistingChannelSubscriptionTemplates(
+					[]SubscriptionTemplate{
+						{
+							ID:      "mockTemplateID1___________",
+							Filters: getMockSubscriptionFilter("jira:issue_created"),
+						},
+					}), t),
+		},
+		"Editing subscription template, name too long": {
+			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "` + TestDataLongSubscriptionName + `", "id": "mockTemplateID1___________", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
+			expectedStatusCode:   http.StatusInternalServerError,
+			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{},
+				withExistingChannelSubscriptionTemplates(
+					[]SubscriptionTemplate{
+						{
+							ID:      "mockTemplateID1___________",
+							Filters: getMockSubscriptionFilter("jira:issue_created"),
+						},
+					}), t),
+		},
+		"Editing subscription template, no project provided": {
+			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "mockName", "id": "mockTemplateID1___________", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": [], "issue_types": ["10001"]}}`,
+			expectedStatusCode:   http.StatusInternalServerError,
+			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{},
+				withExistingChannelSubscriptionTemplates(
+					[]SubscriptionTemplate{
+						{
+							ID:      "mockTemplateID1___________",
+							Filters: getMockSubscriptionFilter("jira:issue_created"),
+						},
+					}), t),
+		},
+		"Editing subscription template, no events provided": {
+			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "mockName", "id": "mockTemplateID1___________", "channel_id": "mockChannelID_____________", "filters": {"events": [], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
+			expectedStatusCode:   http.StatusInternalServerError,
+			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{},
+				withExistingChannelSubscriptionTemplates(
+					[]SubscriptionTemplate{
+						{
+							ID:      "mockTemplateID1___________",
+							Filters: getMockSubscriptionFilter("jira:issue_created"),
+						},
+					}), t),
+		},
+		"Editing subscription template, no issue types provided": {
+			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "mockName", "id": "mockTemplateID1___________", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": []}}`,
+			expectedStatusCode:   http.StatusInternalServerError,
+			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{},
+				withExistingChannelSubscriptionTemplates(
+					[]SubscriptionTemplate{
+						{
+							ID:      "mockTemplateID1___________",
+							Filters: getMockSubscriptionFilter("jira:issue_created"),
+						},
+					}), t),
+		},
+		"Editing subscription template, GetProject mocked error. Existing subscription has a non-existent project.": {
+			subscriptionTemplate: fmt.Sprintf(`{"instance_id": "jiraurl1", "id": "mockTemplateID2___________", "name": "subscription name", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
+			expectedStatusCode:   http.StatusInternalServerError,
+			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{},
+				withExistingChannelSubscriptionTemplates(
+					[]SubscriptionTemplate{
+						{
+							ID:      "mockTemplateID2___________",
+							Filters: getMockSubscriptionFilter("jira:issue_updated"),
+						},
+					}), t),
+		},
+		"Editing subscription template, GetProject mocked error. Existing subscription has existing project.": {
+			subscriptionTemplate: fmt.Sprintf(`{"instance_id": "jiraurl1", "id": "mockTemplateID2___________", "name": "subscription name", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
+			expectedStatusCode:   http.StatusInternalServerError,
+			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{},
+				withExistingChannelSubscriptionTemplates(
+					[]SubscriptionTemplate{
+						{
+							ID:      "mockTemplateID2___________",
+							Filters: getMockSubscriptionFilter("jira:issue_updated"),
+						},
+					}), t),
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			count++
+			fmt.Print(count)
+			api := &plugintest.API{}
+			p := Plugin{}
+
+			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
+			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+			api.On("GetChannelMember", mockAnythingOfTypeBatch("string", 2)...).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
+
+			if tc.apiCalls != nil {
+				tc.apiCalls(api)
+			}
+
+			p.updateConfig(func(conf *config) {
+				conf.Secret = someSecret
+			})
+			p.SetAPI(api)
+			p.userStore = mockUserStore{}
+			p.instanceStore = p.getMockInstanceStoreKV(1)
+
+			w := httptest.NewRecorder()
+			request := httptest.NewRequest(http.MethodPut, "/api/v2/subscription-templates", ioutil.NopCloser(bytes.NewBufferString(tc.subscriptionTemplate)))
+			if !tc.skipAuthorize {
+				request.Header.Set(HeaderMattermostUserID, model.NewId())
+			}
+			p.ServeHTTP(&plugin.Context{}, w, request)
+			assert.Equal(t, tc.expectedStatusCode, w.Result().StatusCode)
+		})
+	}
+}
+
+func TestCreateSubscriptionTemplate(t *testing.T) {
+	for name, tc := range map[string]struct {
+		subscriptionTemplate string
+		expectedStatusCode   int
+		skipAuthorize        bool
+		apiCalls             func(*plugintest.API)
+	}{
+		"Invalid": {
+			subscriptionTemplate: "{}",
+			expectedStatusCode:   http.StatusInternalServerError,
+		},
+		"Not Authorized": {
+			subscriptionTemplate: "{}",
+			expectedStatusCode:   http.StatusUnauthorized,
+			skipAuthorize:        true,
+		},
+		"Initial Subscription Template": {
+			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "some name", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			expectedStatusCode:   http.StatusOK,
+			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{
+				{
+					Filters: getMockSubscriptionFilter("jira:issue_created"),
+				},
+			}, nil, t),
+		},
+		"Initial Subscription Template, GetProject mocked error": {
+			subscriptionTemplate: fmt.Sprintf(`{"instance_id": "jiraurl1", "name": "some name", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
+			expectedStatusCode:   http.StatusInternalServerError,
+			apiCalls:             hasSubscriptionTemplates([]SubscriptionTemplate{}, t),
+		},
+		"Initial Subscription Template, empty name provided": {
+			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			expectedStatusCode:   http.StatusInternalServerError,
+			apiCalls:             hasSubscriptionTemplates([]SubscriptionTemplate{}, t),
+		},
+		"Initial Subscription Template, long name provided": {
+			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "` + TestDataLongSubscriptionName + `", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			expectedStatusCode:   http.StatusInternalServerError,
+			apiCalls:             hasSubscriptionTemplates([]SubscriptionTemplate{}, t),
+		},
+		"Initial Subscription Template, no project provided": {
+			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "mockName", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": [], "issue_types": ["10001"]}}`,
+			expectedStatusCode:   http.StatusInternalServerError,
+			apiCalls:             hasSubscriptionTemplates([]SubscriptionTemplate{}, t),
+		},
+		"Initial Subscription Template, no issue types provided": {
+			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "mockName", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": []}}`,
+			expectedStatusCode:   http.StatusInternalServerError,
+			apiCalls:             hasSubscriptionTemplates([]SubscriptionTemplate{}, t),
+		},
+		"Adding to existing templates in a different channel": {
+			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "some name", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			expectedStatusCode:   http.StatusOK,
+			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{
+				{
+					Filters: getMockSubscriptionFilter("jira:issue_created"),
+				},
+				{
+					Filters: getMockSubscriptionFilter("jira:issue_created"),
+				},
+			},
+				withExistingChannelSubscriptionTemplates(
+					[]SubscriptionTemplate{
+						{
+							ID:      model.NewId(),
+							Filters: getMockSubscriptionFilter("jira:issue_created"),
+						},
+					}), t),
+		},
+		"Adding to existing templates in the same channel": {
+			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "subscription name", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			expectedStatusCode:   http.StatusOK,
+			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{
+				{
+					Filters: getMockSubscriptionFilter("jira:issue_created"),
+				},
+				{
+					Filters: getMockSubscriptionFilter("jira:issue_updated"),
+				},
+			},
+				withExistingChannelSubscriptionTemplates(
+					[]SubscriptionTemplate{
+						{
+							ID:      model.NewId(),
+							Filters: getMockSubscriptionFilter("jira:issue_updated"),
+						},
+					}), t),
+		},
+		"Adding to existing templates with same name in the same channel": {
+			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "SubscriptionName", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			expectedStatusCode:   http.StatusInternalServerError,
+			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{
+				{
+					Filters: getMockSubscriptionFilter("jira:issue_created"),
+				},
+			},
+				withExistingChannelSubscriptionTemplates(
+					[]SubscriptionTemplate{
+						{
+							Name:    "SubscriptionName",
+							ID:      model.NewId(),
+							Filters: getMockSubscriptionFilter("jira:issue_updated"),
+						},
+					}), t),
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+			p := Plugin{}
+
+			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
+			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+			api.On("GetChannelMember", mockAnythingOfTypeBatch("string", 2)...).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
+
+			if tc.apiCalls != nil {
+				tc.apiCalls(api)
+			}
+
+			p.updateConfig(func(conf *config) {
+				conf.Secret = someSecret
+			})
+			p.SetAPI(api)
+			p.userStore = mockUserStore{}
+			p.instanceStore = p.getMockInstanceStoreKV(1)
+
+			w := httptest.NewRecorder()
+			request := httptest.NewRequest(http.MethodPost, "/api/v2/subscription-templates", ioutil.NopCloser(bytes.NewBufferString(tc.subscriptionTemplate)))
+			if !tc.skipAuthorize {
+				request.Header.Set(HeaderMattermostUserID, model.NewId())
+			}
+			p.ServeHTTP(&plugin.Context{}, w, request)
+			body, _ := ioutil.ReadAll(w.Result().Body)
+			t.Log(string(body))
+			assert.Equal(t, tc.expectedStatusCode, w.Result().StatusCode)
+		})
+	}
+}
+
+func TestGetSubscriptionTemplate(t *testing.T) {
+	for name, tc := range map[string]struct {
+		expectedStatusCode            int
+		skipAuthorize                 bool
+		apiCalls                      func(*plugintest.API)
+		returnedSubscriptionTemplates []SubscriptionTemplate
+	}{
+		"Not Authorized": {
+			expectedStatusCode: http.StatusUnauthorized,
+			skipAuthorize:      true,
+		},
+		"Only Subscription": {
+			expectedStatusCode: http.StatusOK,
+			returnedSubscriptionTemplates: []SubscriptionTemplate{
+				{
+					ID:      "mockTemplateID1___________",
+					Filters: getMockSubscriptionFilter("jira:issue_created"),
+				},
+			},
+			apiCalls: hasSubscriptionTemplates(
+				[]SubscriptionTemplate{
+					{
+						ID:      "mockTemplateID1___________",
+						Filters: getMockSubscriptionFilter("jira:issue_created"),
+					},
+				}, t),
+		},
+		"Multiple subscriptions": {
+			expectedStatusCode: http.StatusOK,
+			returnedSubscriptionTemplates: []SubscriptionTemplate{
+				{
+					ID:      "mockTemplateID1___________",
+					Filters: getMockSubscriptionFilter("jira:issue_created"),
+				},
+				{
+					ID:      "mockTemplateID2___________",
+					Filters: getMockSubscriptionFilter("jira:issue_created"),
+				},
+			},
+			apiCalls: hasSubscriptionTemplates(
+				[]SubscriptionTemplate{
+					{
+						ID:      "mockTemplateID1___________",
+						Filters: getMockSubscriptionFilter("jira:issue_created"),
+					},
+					{
+						ID:      "mockTemplateID2___________",
+						Filters: getMockSubscriptionFilter("jira:issue_created"),
+					},
+				}, t),
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+			p := Plugin{}
+
+			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
+			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+			api.On("GetChannelMember", mockAnythingOfTypeBatch("string", 2)...).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+
+			if tc.apiCalls != nil {
+				tc.apiCalls(api)
+			}
+
+			p.updateConfig(func(conf *config) {
+				conf.Secret = someSecret
+			})
+			p.SetAPI(api)
+			p.userStore = mockUserStore{}
+			p.instanceStore = p.getMockInstanceStoreKV(1)
+
+			w := httptest.NewRecorder()
+			request := httptest.NewRequest(http.MethodGet, "/api/v2/subscription-templates?instance_id="+testInstance1.GetID().String()+"&project_key=myproject", nil)
+			if !tc.skipAuthorize {
+				request.Header.Set(HeaderMattermostUserID, model.NewId())
+			}
+			p.ServeHTTP(&plugin.Context{}, w, request)
+			assert.Equal(t, tc.expectedStatusCode, w.Result().StatusCode)
+
+			if tc.returnedSubscriptionTemplates != nil {
+				subscriptions := []SubscriptionTemplate{}
+				body, _ := ioutil.ReadAll(w.Result().Body)
+				err := json.NewDecoder(bytes.NewReader(body)).Decode(&subscriptions)
+				assert.Nil(t, err)
+				checkSubscriptionTemplatesEqual(t, tc.returnedSubscriptionTemplates, subscriptions)
 			}
 		})
 	}
