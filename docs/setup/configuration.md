@@ -10,6 +10,8 @@
 2. At the top of the page set **Enable Plugin** to **True**.
 3. Choose **Save** to enable the Jira plugin.
 
+Once you have the plugin configured, you may continue the process by typing `/jira setup` on any channel. This will prompt a direct message from jira bot, which will guide you through the next setup steps as described below.
+
 ### Step 2: Install the plugin as an application in Jira
 
 To allow users to [create and manage Jira issues across Mattermost channels](../end-user-guide/using-jira-commands.md), install the plugin as an application in your Jira instance. For Jira Server or Data Center instances, post `/jira instance install server <your-jira-url>` to a Mattermost channel as a Mattermost System Admin, and follow the steps posted to the channel. For Jira Cloud, post `/jira instance install cloud <your-jira-url>`.
