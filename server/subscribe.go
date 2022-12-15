@@ -1273,7 +1273,7 @@ func (p *Plugin) httpDeleteSubscriptionTemplate(w http.ResponseWriter, r *http.R
 
 	subscriptionTemplate, err := p.getSubscriptionTemplatesByID(instanceID, types.ID(subscriptionTemplateID))
 	if err != nil {
-		respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "unable to find the subscription template"))
+		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "unable to find the subscription template"))
 	}
 
 	_, _, connection, err := p.getClient(instanceID, types.ID(mattermostUserID))
@@ -1281,7 +1281,7 @@ func (p *Plugin) httpDeleteSubscriptionTemplate(w http.ResponseWriter, r *http.R
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	if err := p.removeSubscriptionTemplate(instanceID, subscriptionTemplateID, projectKey); err != nil {
+	if rErr := p.removeSubscriptionTemplate(instanceID, subscriptionTemplateID, projectKey); rErr != nil {
 		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "unable to remove channel subscription template"))
 	}
 

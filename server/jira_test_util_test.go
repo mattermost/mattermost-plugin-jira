@@ -36,8 +36,7 @@ func withExistingChannelSubscriptions(subscriptions []ChannelSubscription) *Subs
 
 func withExistingChannelSubscriptionTemplates(templates []SubscriptionTemplate) *Templates {
 	ret := NewTemplates()
-	for i, sub := range templates {
-		sub.InstanceID = testInstance1.GetID()
+	for i := range templates {
 		ret.Templates.add(mockProjectKey, &templates[i])
 	}
 	return ret
