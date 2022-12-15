@@ -162,7 +162,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             project: {key: this.state.projectKey},
             issuetype: {id: issueType},
         } as CreateIssueFields;
-        
+
         this.setState({
             issueType,
             fields,
