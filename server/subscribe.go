@@ -1187,7 +1187,6 @@ func (p *Plugin) httpGetSubscriptionTemplates(w http.ResponseWriter, r *http.Req
 				subTemplates = append(subTemplates, subTemplate)
 			}
 		}
-
 	} else {
 		for _, subTemplate := range subscriptionTemplates.Templates.ByProjectID[projectKey] {
 			subTemplates = append(subTemplates, subTemplate)
