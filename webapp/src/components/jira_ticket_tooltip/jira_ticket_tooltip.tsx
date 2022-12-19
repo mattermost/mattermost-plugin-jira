@@ -213,7 +213,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         }
 
         return (
-            <div className='ticket-popover'>
+            <div className='ticket-popover' id='jira-issue-tooltip'>
                 <div className='popover-header'>
                     <div className='popover-header__container'>
                         <a
