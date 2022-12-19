@@ -15,7 +15,6 @@ export type Props = {
     connectedInstances: Instance[];
     getIssueByKey: (issueKey: string, instanceID: string) => (dispatch: Dispatch, getState: any) => Promise<{
         data?: TicketData;
-        error?: any;
     }>;
     setTicket?: (ticketDetails: {}) => void;
 }

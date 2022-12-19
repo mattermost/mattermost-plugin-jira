@@ -211,16 +211,10 @@ const getIssueByKey = (state = {}, action) => {
             issueIcon: ticketData.fields.issuetype.iconUrl,
         };
         return {
-            ...state,
             isLoaded: true,
             ticketDetails,
         };
     }
-    case ActionTypes.RECEIVED_JIRA_TICKETS_ERROR :
-        return {
-            ...state,
-            error: action.error,
-        };
     default:
         return state;
     }
