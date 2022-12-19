@@ -27,8 +27,8 @@ export type State = {
     ticketDetails?: TicketDetails;
 };
 
-const isAssigned = ' is assigned';
-const unAssigned = 'Unassigned';
+const isAssignedLabel = ' is assigned';
+const unAssignedLabel = 'Unassigned';
 const jiraTicketTitleMaxLength = 80;
 
 enum myStatus {
@@ -51,14 +51,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
 
     constructor(Props: Props) {
         super(Props);
-        let ticketID = '';
-        if (this.props.href.includes('selectedIssue')) {
-            ticketID = this.props.href.split('selectedIssue=')[1].split('&')[0];
-        }
-
-        if (!ticketID && this.props.href.includes('atlassian.net/browse')) {
-            ticketID = this.props.href.split('|')[0].split('?')[0].split('/browse/')[1];
-        }
+        const ticketID = this.getIssueKey();
 
         this.state = {
             href: this.props.href,
@@ -93,12 +86,19 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         }
     }
 
+    isUserConnected() {
+        const {connected} = this.props;
+        const {isLoaded} = this.state;
+
+        return connected && !isLoaded;
+    }
+
     componentDidMount() {
-        const {connected, ticketDetails, isLoaded: isPropsLoaded} = this.props;
-        const {ticketId, isLoaded: isStateLoaded} = this.state;
-        if (connected && !isStateLoaded && ((ticketDetails && ticketDetails.ticketId) !== ticketId || !isPropsLoaded)) {
+        const {ticketDetails, isLoaded: isPropsLoaded} = this.props;
+        const {ticketId} = this.state;
+        if (this.isUserConnected() && ((ticketDetails && ticketDetails.ticketId) !== ticketId || !isPropsLoaded)) {
             this.init();
-        } else if (connected && !isStateLoaded && ticketDetails && ticketDetails.ticketId === ticketId) {
+        } else if (this.isUserConnected() && ticketDetails && ticketDetails.ticketId === ticketId) {
             this.setTicket(this.props);
         }
     }
@@ -147,7 +147,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         return <span className={ticketStatusClass}>{ticketStatus}</span>;
     }
 
-    labelList(labels: string[]) {
+    renderLabelList(labels: string[]) {
         if (!labels.length) {
             return null;
         }
@@ -255,7 +255,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                     </div>
                     <div className='popover-body__labels'>
                         {this.fixVersionLabel(jiraTicketVersions as string)}
-                        {this.labelList(jiraTicketLabels as string[])}
+                        {this.renderLabelList(jiraTicketLabels as string[])}
                     </div>
                 </div>
                 <div className='popover-footer'>
@@ -296,12 +296,12 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                                 {jiraTicketAssigneeName}
                             </span>
                             <span className='popover-footer__assigner--assigned'>
-                                {isAssigned}
+                                {isAssignedLabel}
                             </span>
                         </span>
                     ) : (
                         <span className='popover-footer__assigner--assigned'>
-                            {unAssigned}
+                            {unAssignedLabel}
                         </span>
                     )
                     }
