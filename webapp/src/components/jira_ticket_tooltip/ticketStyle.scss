@@ -11,7 +11,7 @@
     background: #FFFFFF;
     border: 1px solid rgba(63, 67, 80, 0.16);
     border-radius: 4px;
-    box-shadow: 0px 12px 32px 0 rgba(0, 0, 0, 0.12);
+    box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.12);
 
     .popover-header__keyword:hover {
         color: #0645AD;
@@ -66,7 +66,7 @@
         order: 1;
         flex: none;
         flex-grow: 0;
-        margin: 0px 6px;
+        margin: 0 6px;
 
     }
 
@@ -79,7 +79,7 @@
 
     .popover-body__title {
         display: flex;
-        margin: 0px 24px;
+        margin: 0 24px;
         flex-direction: column;
         align-items: flex-start;
     }
@@ -112,7 +112,7 @@
         overflow: hidden;
         font-weight: normal;
         max-height: 50px;
-        margin: 0px 24px 8px 24px;
+        margin: 0 24px 8px 24px;
         font-size: 12px;
         line-height: 1.5;
         width: 300px;
@@ -131,7 +131,7 @@
     }
 
     .popover-body__labels {
-        margin: 0px 24px;
+        margin: 0 24px;
     }
 
     .popover-footer {
@@ -147,7 +147,7 @@
         align-self: stretch;
         border-top: 1px solid rgba(63, 67, 80, 0.16);
         font-family: Open Sans;
-        padding: 0px 24px;
+        padding: 0 24px;
         font-size: 12px;
         line-height: 16px;
     }
@@ -171,8 +171,8 @@
     .popover-labels__label-list {
         font-size: 10px;
         font-weight: 600;
-        margin: 5px 5px 5px 0px;
-        padding: 0px 4px;
+        margin: 5px 5px 5px 0;
+        padding: 0 4px;
         background: rgba(63, 67, 80, 0.08);
         border-radius: 2px;
         line-height: 16px;
@@ -180,11 +180,11 @@
 
     .fix-version-label {
         color: #333;
-        margin: 16px 0px;
+        margin: 16px 0;
         text-align: left;
         font-family: open sans;
         font-size: 10px;
-        padding: 0px 0px 2px 0px;
+        padding: 0 0 2px 0;
     }
 
     .fix-version-label-value {
