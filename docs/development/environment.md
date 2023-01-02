@@ -10,6 +10,8 @@ This plugin supports both Jira Server (self-hosted) and Jira Cloud instances. Th
 
 To test your changes against a local instance of Jira Server, you need [Docker](https://docs.docker.com/install) installed, then you can use the `docker-compose.yml` file in this repository to create a Jira instance. Simply run `docker-compose up` in the directory of the repository, and a new Jira server should start up and be available at http://localhost:8080. It can take a few minutes to start up due to Jira Server's startup processes. If the container fails to start with `exit code 137`, you may need to increase the amount of RAM you are allowing docker to use.
 
-If you are contributing to a feature that requires multiple Jira instances to be installed, please enable [ServiceSettings.EnableDeveloper](https://docs.mattermost.com/configure/configuration-settings.html#enable-developer-mode) in your server's config in order to circumvent the Enterprise license requirement.
+If you are contributing to a feature that requires multiple Jira instances to be installed, please enable [ServiceSettings.EnableDeveloper](https://docs.mattermost.com/configure/configuration-settings.html#enable-developer-mode) in your server's config in order to circumvent the Enterprise license requirement. 
+
+**Note:** You cannot use LOCALHOST to connect the Jira plugin to your server, you can use a proxy if needed.
 
 To test your changes against a Jira Cloud instance, we recommend starting a 14-day trial, if you don't have a Jira project to test against. More information can be found here: https://www.atlassian.com/software/jira/try.
