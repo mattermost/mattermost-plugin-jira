@@ -527,25 +527,12 @@ export const getIssueByKey = (issueKey: string, instanceID: string) => {
                 method: 'get',
             });
 
-            if (data.error) {
-                const err = new Error(data.error);
-                dispatch({
-                    type: ActionTypes.RECEIVED_JIRA_TICKETS_ERROR,
-                    error: err,
-                });
-                return {data};
-            }
-
             dispatch({
                 type: ActionTypes.RECEIVED_JIRA_TICKETS,
                 data,
             });
             return {data};
         } catch (error) {
-            dispatch({
-                type: ActionTypes.RECEIVED_JIRA_TICKETS_ERROR,
-                error,
-            });
             return {error};
         }
     };
