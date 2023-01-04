@@ -10,7 +10,7 @@
 2. At the top of the page set **Enable Plugin** to **True**.
 3. Choose **Save** to enable the Jira plugin.
 
-Once you have the plugin configured, you may continue the process by typing `/jira setup` on any channel. This will prompt a direct message from jira bot, which will guide you through the next setup steps as described below.
+Once you have the plugin configured, you may continue the process by typing `/jira setup` in any channel. This will prompt a direct message from Jira bot, which will guide you through the next setup steps as described below.
 
 ### Step 2: Install the plugin as an application in Jira
 
