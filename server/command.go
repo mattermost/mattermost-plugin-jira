@@ -150,9 +150,6 @@ func addSubCommands(jira *model.AutocompleteData, optInstance bool) {
 	jira.AddCommand(createWebhookCommand(optInstance))
 	jira.AddCommand(createSetupCommand(optInstance))
 
-	//setup := jira.AddCommand(model.NewAutocompleteData("setup", "", "Start Jira plugin setup flow"))
-	//setup.RoleID = model.SystemAdminRoleId
-
 	// Help and info
 	jira.AddCommand(model.NewAutocompleteData("info", "", "Display information about the current user and the Jira plug-in"))
 	jira.AddCommand(model.NewAutocompleteData("help", "", "Display help for `/jira` command"))
