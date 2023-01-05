@@ -148,7 +148,7 @@ func addSubCommands(jira *model.AutocompleteData, optInstance bool) {
 	// Admin commands
 	jira.AddCommand(createSubscribeCommand(optInstance))
 	jira.AddCommand(createWebhookCommand(optInstance))
-	jira.AddCommand(createSetupCommand(optInstance))
+	jira.AddCommand(createSetupCommand())
 
 	// Help and info
 	jira.AddCommand(model.NewAutocompleteData("info", "", "Display information about the current user and the Jira plug-in"))
@@ -321,11 +321,10 @@ func createWebhookCommand(optInstance bool) *model.AutocompleteData {
 	return webhook
 }
 
-func createSetupCommand(optInstance bool) *model.AutocompleteData {
+func createSetupCommand() *model.AutocompleteData {
 	setup := model.NewAutocompleteData(
 		"setup", "", "Start Jira plugin setup flow")
 	setup.RoleID = model.SystemAdminRoleId
-	withFlagInstance(setup, optInstance, routeAutocompleteInstalledInstanceWithAlias)
 	return setup
 }
 
