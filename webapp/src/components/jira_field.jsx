@@ -175,7 +175,7 @@ export default class JiraField extends React.Component {
                 }
 
                 const onChange = (id, val) => {
-                    const newValue = val.map((v) => ({id: v}));
+                    const newValue = val ? val.map((v) => ({id: v})) : [];
                     this.props.onChange(id, newValue);
                 };
 
