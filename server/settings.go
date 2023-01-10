@@ -38,8 +38,9 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 		return p.responsef(header, helpText)
 	}
 
+	role, roleStatus := args[1], args[2]
 	var value bool
-	switch args[2] {
+	switch roleStatus {
 	case settingOn:
 		value = true
 	case settingOff:
@@ -51,7 +52,7 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	if connection.Settings == nil {
 		connection.Settings = &ConnectionSettings{}
 	}
-	if !connection.updateRolesForDMNotification(args[1], value) {
+	if !connection.updateRolesForDMNotification(role, value) {
 		return p.responsef(header, helpText)
 	}
 
@@ -66,9 +67,9 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 		return p.responsef(header, errConnectToJira, err)
 	}
 	notifications := settingOff
-	if updatedConnection.Settings.RolesForDMNotification[args[1]] {
+	if updatedConnection.Settings.RolesForDMNotification[role] {
 		notifications = settingOn
 	}
 
-	return p.responsef(header, "Settings updated.\n\t%s notifications %s.", cases.Title(language.Und, cases.NoLower).String(args[1]), notifications)
+	return p.responsef(header, "Settings updated.\n\t%s notifications %s.", cases.Title(language.Und, cases.NoLower).String(role), notifications)
 }
