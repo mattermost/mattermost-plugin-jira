@@ -193,9 +193,9 @@ const channelSubscriptions = (state = {}, action) => {
     }
 };
 
-const getIssueByKey = (state = {}, action) => {
+const getIssue = (state = {}, action) => {
     switch (action.type) {
-    case ActionTypes.RECEIVED_JIRA_TICKETS : {
+    case ActionTypes.RECEIVED_JIRA_TICKET : {
         const assignee = action.data && action.data.fields && action.data.fields.assignee ? action.data.fields.assignee : null;
         const ticketData = action.data;
         const ticketDetails = {
@@ -211,7 +211,6 @@ const getIssueByKey = (state = {}, action) => {
             issueIcon: ticketData.fields.issuetype.iconUrl,
         };
         return {
-            isLoaded: true,
             ticketDetails,
         };
     }
@@ -235,5 +234,5 @@ export default combineReducers({
     attachCommentToIssueModalForPostId,
     channelIdWithSettingsOpen,
     channelSubscriptions,
-    getIssueByKey,
+    getIssue,
 });

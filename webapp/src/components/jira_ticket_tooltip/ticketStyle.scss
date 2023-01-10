@@ -156,14 +156,14 @@
         margin-left: 4px;
     }
 
-    .popover-footer__assigner-profile {
+    .popover-footer__assignee-profile {
         width: 20px;
         height: 20px;
         border-radius: 50px;
         flex: none;
     }
 
-    .popover-footer__assigner-name {
+    .popover-footer__assignee-name {
         margin-left: 6px;
         font-weight: 600;
     }
@@ -221,13 +221,6 @@
     .ticket-status--default {
         color: #3F4350;
         background-color: rgba(63, 67, 80, 0.16);
-    }
-
-    .default-avatar {
-        background-color: #708090;
-        border-radius: 50%;
-        margin-right: 5px;
-        padding: 1px;
     }
 
     .jira-ticket-key {
