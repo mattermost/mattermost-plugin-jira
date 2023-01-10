@@ -517,7 +517,7 @@ export function sendEphemeralPost(message: string, channelId?: string) {
     };
 }
 
-export const getIssueByKey = (issueKey: string, instanceID: string) => {
+export const fetchIssueByKey = (issueKey: string, instanceID: string) => {
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         let data = null;
@@ -528,7 +528,7 @@ export const getIssueByKey = (issueKey: string, instanceID: string) => {
             });
 
             dispatch({
-                type: ActionTypes.RECEIVED_JIRA_TICKETS,
+                type: ActionTypes.RECEIVED_JIRA_TICKET,
                 data,
             });
             return {data};
