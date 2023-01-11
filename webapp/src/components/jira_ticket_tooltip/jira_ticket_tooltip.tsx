@@ -33,8 +33,8 @@ enum myStatus {
 }
 
 const myStatusClasses: Record<string, string> = {
-    [myStatus.INDETERMINATE]: ' ticket-status--indeterminate',
-    [myStatus.DONE]: ' ticket-status--done',
+    [myStatus.INDETERMINATE]: 'ticket-status--indeterminate',
+    [myStatus.DONE]: 'ticket-status--done',
 };
 
 export default class TicketPopover extends React.PureComponent<Props, State> {
@@ -148,13 +148,14 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
             <div className='popover-labels__label'>
                 {
                     labels.map((label: string, key: number): ReactNode => {
-                        if (key < 3 || (key === labels.length - 1 && labels.length - 3 > 0)) {
+                        // Return an element for the first three labels and if there are more than three labels, then return a combined label for the remaining labels
+                        if (key < 3 || (key === labels.length - 1 && labels.length > 3)) {
                             return (
                                 <span
                                     key={key}
                                     className='popover-labels__label-list'
                                 >
-                                    {key === labels.length - 1 && labels.length - 3 > 0 ? `+${labels.length - 3} more` : label}
+                                    {key === labels.length - 1 && labels.length > 3 ? `+${labels.length - 3} more` : label}
                                 </span>);
                         }
 
