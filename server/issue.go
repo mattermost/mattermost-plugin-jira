@@ -1115,12 +1115,14 @@ func (p *Plugin) GetUserSetting(wh *webhook, instanceID types.ID, jiraAccountID,
 	if err != nil {
 		return nil, err
 	}
+
 	var mattermostUserID types.ID
-	if jiraAccountID != "" {
-		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), jiraAccountID)
-	} else {
-		mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), jiraUsername)
+	jiraUserID := jiraAccountID
+	if jiraUserID == "" {
+		jiraUserID = jiraUsername
 	}
+
+	mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), jiraUserID)
 	if err != nil {
 		return nil, err
 	}
