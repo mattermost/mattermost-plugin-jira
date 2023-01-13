@@ -55,14 +55,18 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         for (const instance of this.props.connectedInstances) {
             instanceID = instance.instance_id;
 
+            if (!this.props.href.includes(instanceID)) {
+                continue;
+            }
+
             try {
                 if (this.props.href.includes(instanceID)) {
-                    if (this.props.href.includes('selectedIssue=')) {
-                        ticketID = this.props.href.split('selectedIssue=')[1].split('&')[0];
-                        break;
+                    const regex = /https:\/\/.*\/.*\?.*selectedIssue=([\w-]+)&?.*|https:\/\/.*\/browse\/([\w-]+)?.*/;
+                    const result = regex.exec(this.props.href);
+                    if (result) {
+                        ticketID = result[1] || result[2];
                     }
 
-                    ticketID = this.props.href.split('?')[0].split('/browse/')[1];
                     break;
                 }
             } catch {
