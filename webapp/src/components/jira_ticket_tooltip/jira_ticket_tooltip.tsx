@@ -64,7 +64,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                     const regex = /https:\/\/.*\/.*\?.*selectedIssue=([\w-]+)&?.*|https:\/\/.*\/browse\/([\w-]+)?.*/;
                     const result = regex.exec(this.props.href);
                     if (result) {
-                        ticketID = result[1] ? result[1] : result[2];
+                        ticketID = result[1] || result[2];
                     }
 
                     break;
