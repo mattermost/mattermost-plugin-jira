@@ -18,6 +18,9 @@ export const getBaseStyles = (theme: Theme) => {
 };
 
 export const getModalStyles = (theme) => ({
+    learnMore: {
+        marginTop: '1em',
+    },
     modalBody: {
         padding: '2em 2em 3em',
         color: theme.centerChannelColor,
