@@ -3620,6 +3620,21 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
             Project = KT AND IssueType IN (Bug) AND "MJK - Radio Buttons" IN (1) AND affectedVersion IN (d) AND "Epic Link" IN (IDT-24)
           </span>
         </div>
+        <div
+          style={
+            Object {
+              "marginTop": "1em",
+            }
+          }
+        >
+          <a
+            href="https://github.com/mattermost/mattermost-plugin-jira/blob/master/docs/administrator-guide/notification-management.md#how-to-create-and-use-the-subscription-modal"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Learn More
+          </a>
+        </div>
       </div>
     </div>
     <ConfirmModal
