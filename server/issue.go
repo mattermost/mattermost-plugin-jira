@@ -551,7 +551,7 @@ func (p *Plugin) GetJiraProjectMetadata(instanceID, mattermostUserID types.ID) (
 	if err != nil {
 		return nil, nil, err
 	}
-	metainfo, err := client.GetCreateMeta(nil)
+	metainfo, err := client.GetCreateMetaInfo(nil)
 	if err != nil {
 		return nil, nil, err
 	}
