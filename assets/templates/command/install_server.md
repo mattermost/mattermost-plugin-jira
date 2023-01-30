@@ -6,7 +6,7 @@
    link**.
 3. In **Configure Application URL** screen, confirm {{ .PluginURL }} as both
    "Entered URL" and "New URL". Ignore any displayed errors and click
-   **Continue**. note: For Jira 9.x - Ensure "Atlassian product" is selected as the Application type.
+   **Continue**. Note: For Jira 9.x - Ensure "Atlassian product" is selected as the Application type.
 4. In **Link Applications** screen, set the following values:
   - **Application Name**: Mattermost
   - **Application Type**: Generic Application
