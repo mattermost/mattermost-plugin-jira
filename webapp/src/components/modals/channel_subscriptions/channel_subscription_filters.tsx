@@ -64,20 +64,6 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
         this.props.onChange(newValues);
     };
 
-    shouldShowSecurityLevelMessage = (): boolean => {
-        if (!this.props.securityLevelEmptyForJiraSubscriptions) {
-            return false;
-        }
-
-        for (const v of this.props.values) {
-            if (v.key === 'securitylevel') {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     render(): JSX.Element {
         const {fields, values} = this.props;
         const {showCreateRow} = this.state;
@@ -91,11 +77,6 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
         const nonConflictingFields = fields.filter((f) => {
             return !conflictingFields.find((conf) => conf.field.key === f.key);
         });
-
-        let securityLevelMessage = '';
-        if (this.shouldShowSecurityLevelMessage()) {
-            securityLevelMessage = 'Note that since you have not selected a security level filter, the subscription will only allow issues that have no security level assigned';
-        }
 
         return (
             <div className='margin-bottom'>
@@ -151,7 +132,6 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
                         {'Add Filter'}
                     </button>
                 </div>
-                {securityLevelMessage}
             </div>
         );
     }

@@ -15,6 +15,7 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
+
 	"github.com/trivago/tgo/tcontainer"
 
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -367,7 +368,7 @@ func (p *Plugin) validateSubscription(instanceID types.ID, subscription *Channel
 }
 
 func getSecurityLevelsForProject(client Client, projectKey string) ([]string, error) {
-	createMeta, err := client.GetCreateMeta(&jira.GetQueryOptions{
+	createMeta, err := client.GetCreateMetaInfo(&jira.GetQueryOptions{
 		Expand:      "projects.issuetypes.fields",
 		ProjectKeys: projectKey,
 	})
