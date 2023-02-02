@@ -218,7 +218,7 @@ func (p *Plugin) OnDeactivate() error {
 	if p.telemetryClient != nil {
 		err := p.telemetryClient.Close()
 		if err != nil {
-			return errors.Wrap(err, "OnDeactivate: Failed to close telemetryClient.")
+			return errors.Wrap(err, "OnDeactivate: Failed to close telemetryClient")
 		}
 	}
 	return nil
@@ -431,7 +431,7 @@ func (p *Plugin) errorf(f string, args ...interface{}) {
 func (p *Plugin) CheckSiteURL() error {
 	ustr := p.GetSiteURL()
 	if ustr == "" {
-		return errors.Errorf("Mattermost SITEURL must not be empty.")
+		return errors.New("Mattermost SITEURL must not be empty.")
 	}
 	u, err := url.Parse(ustr)
 	if err != nil {
