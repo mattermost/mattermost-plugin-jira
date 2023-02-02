@@ -123,7 +123,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         const inclusion = this.props.value && this.props.value.inclusion;
 
         if (isSecurityLevelField(this.props.field) && inclusion === FilterFieldInclusion.EXCLUDE_ANY && this.props.securityLevelEmptyForJiraSubscriptions) {
-            return 'Security level inclusion cannot be "Exclude Any"';
+            return 'Security level inclusion cannot be "Exclude Any". Note that the default value is now "Empty".';
         }
 
         return null;

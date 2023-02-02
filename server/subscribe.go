@@ -375,6 +375,10 @@ func getSecurityLevelsForProject(client Client, projectKey string) ([]string, er
 		return nil, errors.Wrap(err, "error fetching user security levels")
 	}
 
+	if len(createMeta.Projects) == 0 || len(createMeta.Projects[0].IssueTypes) == 0 {
+		return nil, errors.Wrapf(err, "no project found for project key %s", projectKey)
+	}
+
 	securityLevels1, err := createMeta.Projects[0].IssueTypes[0].Fields.MarshalMap(securityLevelField)
 	if err != nil {
 		return nil, errors.Wrap(err, "error parsing user security levels")

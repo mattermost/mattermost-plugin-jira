@@ -172,6 +172,6 @@ describe('components/ChannelSubscriptionFilter', () => {
 
         isValid = wrapper.instance().isValid();
         expect(isValid).toBe(false);
-        expect(wrapper.find('.error-text').text()).toEqual('Security level inclusion cannot be "Exclude Any"');
+        expect(wrapper.find('.error-text').text()).toEqual('Security level inclusion cannot be "Exclude Any". Note that the default value is now "Empty".');
     });
 });
