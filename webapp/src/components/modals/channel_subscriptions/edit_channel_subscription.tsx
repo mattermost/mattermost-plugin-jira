@@ -400,7 +400,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                             <div style={getBaseStyles(this.props.theme).codeBlock}>
                                 <span>{generateJQLStringFromSubscriptionFilters(this.state.jiraIssueMetadata, filterFields, this.state.filters)}</span>
                             </div>
-                            <div style={style.learnMore}>
+                            <div className='channel-subscriptions-modal__learnMore'>
                                 <a
                                     href='https://github.com/mattermost/mattermost-plugin-jira/blob/master/docs/administrator-guide/notification-management.md#how-to-create-and-use-the-subscription-modal'
                                     target='_blank'

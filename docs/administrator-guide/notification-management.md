@@ -61,10 +61,19 @@ If you’d like to see support for additional events, [let us know](https://matt
 3. Write the name of the subscription in the **Subscription Name** field.
 4. Select the project name to which you want to subscribe.
 5. Select the events and issue types for which you want to receive the notifications in the Mattermost channel.
-6. To be more specific, you can add filters as well. You can either include or exclude the particular filter by adding its type or name. For now, we have 3 types of filters :
+6. To be more specific, you can add filters as well. You can either include or exclude the particular filter by adding its type or name. We have many types of filters including some custom fields as well :
+   * Affects versions
    * Epic Link
+   * Fix versions
    * Labels
    * Priority
+
+    **Few custom fields :**
+   * Checkboxes
+   * Labels
+   * Radio Buttons
+   * Select List (multiple choices)
+   * Select List (single choice)
 7. Based on the above given constraints in **Issue Type** and **Filters** fields an **Approximate JQL Output** is generated.
 8. Click on the **Add Subscription** button to add the subscription to that channel with the specific constraints that you have selected above.
 
