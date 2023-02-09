@@ -538,16 +538,17 @@ func (p *Plugin) OnSendDailyTelemetry() {
 		
 		
 		// Subscriptions
-		subscriptions := 0
+		numSubscriptions := 0
+		var subs *Subscriptions
 		for _, id := range instances.IDs() {
-			subs, err := p.getSubscriptions(id)
+			subs, err = p.getSubscriptions(id)
 			if err != nil {
 				p.API.LogWarn("Failed to get subscriptions for telemetry", "error", err)
 			}
-			subscriptions += len(subs.Channel.ByID)
+			numSubscriptions += len(subs.Channel.ByID)
 		}
 	
-		args["subscriptions"] = subscriptions
+		args["subscriptions"] = numSubscriptions
 	}
 
 	// Connected users
