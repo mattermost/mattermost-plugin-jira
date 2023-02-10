@@ -535,7 +535,7 @@ func (p *Plugin) OnSendDailyTelemetry() {
 		if cloud > 0 {
 			args["cloud_instance_count"] = cloud
 		}
-		
+
 		// Subscriptions
 		numSubscriptions := 0
 		var subs *Subscriptions
@@ -546,7 +546,7 @@ func (p *Plugin) OnSendDailyTelemetry() {
 			}
 			numSubscriptions += len(subs.Channel.ByID)
 		}
-	
+
 		args["subscriptions"] = numSubscriptions
 	}
 
