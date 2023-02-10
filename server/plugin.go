@@ -536,7 +536,6 @@ func (p *Plugin) OnSendDailyTelemetry() {
 			args["cloud_instance_count"] = cloud
 		}
 		
-		
 		// Subscriptions
 		numSubscriptions := 0
 		var subs *Subscriptions
