@@ -5,6 +5,7 @@ package main
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
@@ -173,6 +174,13 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 			var err error
 			instance, err = p.instanceStore.LoadInstance(instanceID)
 			if err != nil {
+				if strings.Contains(err.Error(), "not found") {
+					instances.Delete(instanceID)
+					updated = instances
+					if err = p.instanceStore.StoreInstances(instances); err != nil {
+						return err
+					}
+				}
 				return err
 			}
 			if instanceType != instance.Common().Type {
