@@ -181,7 +181,7 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 						return err
 					}
 				}
-				return err
+				return nil
 			}
 			if instanceType != instance.Common().Type {
 				return errors.Errorf("%s did not match instance %s type %s", instanceType, instanceID, instance.Common().Type)
