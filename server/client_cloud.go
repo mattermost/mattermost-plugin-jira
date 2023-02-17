@@ -91,7 +91,6 @@ func (client jiraCloudClient) ListProjects(query string, limit int) (jira.Projec
 		opts := map[string]string{
 			"startAt":    strconv.Itoa(len(out)),
 			"maxResults": strconv.Itoa(remaining),
-			"expand":     "issueTypes",
 		}
 		var result searchResult
 		err := client.RESTGet("/3/project/search", opts, &result)
@@ -113,4 +112,17 @@ func (client jiraCloudClient) ListProjects(query string, limit int) (jira.Projec
 			return out, nil
 		}
 	}
+}
+
+func (client jiraCloudClient) GetIssueTypes(projectID string) ([]*jira.IssueType, error) {
+	var result []*jira.IssueType
+	opts := map[string]string{
+		"projectId": projectID,
+	}
+
+	if err := client.RESTGet("3/issuetype/project", opts, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

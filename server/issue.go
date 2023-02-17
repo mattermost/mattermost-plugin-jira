@@ -521,12 +521,18 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 	projects := []utils.ReactSelectOption{}
 	issues := map[string][]utils.ReactSelectOption{}
 	for _, prj := range plist {
+		issueTypeList, err := p.GetIssueTypes(types.ID(instanceID), types.ID(mattermostUserID), prj.ID)
+		if err != nil {
+			p.API.LogError("Failed to get issue types for project.", "ProjectKey", prj.Key, "Error", err.Error())
+			continue
+		}
+
 		projects = append(projects, utils.ReactSelectOption{
 			Value: prj.Key,
 			Label: prj.Name,
 		})
 		issueTypes := []utils.ReactSelectOption{}
-		for _, issue := range prj.IssueTypes {
+		for _, issue := range issueTypeList {
 			if issue.Subtask {
 				continue
 			}
@@ -555,6 +561,20 @@ func (p *Plugin) ListJiraProjects(instanceID, mattermostUserID types.ID) (jira.P
 		return nil, nil, err
 	}
 	return plist, connection, nil
+}
+
+func (p *Plugin) GetIssueTypes(instanceID, mattermostUserID types.ID, projectID string) ([]*jira.IssueType, error) {
+	client, _, _, err := p.getClient(instanceID, mattermostUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	issueTypes, err := client.GetIssueTypes(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	return issueTypes, nil
 }
 
 var reJiraIssueKey = regexp.MustCompile(`^([[:alnum:]]+)-([[:digit:]]+)$`)

@@ -22,6 +22,10 @@ type jiraServerClient struct {
 	JiraClient
 }
 
+type searchResult struct {
+	IssueTypes []*jira.IssueType `json:"issueTypes"`
+}
+
 func newServerClient(jiraClient *jira.Client) Client {
 	return &jiraServerClient{
 		JiraClient: JiraClient{
@@ -175,16 +179,29 @@ func (client jiraServerClient) GetUserGroups(connection *Connection) ([]*jira.Us
 }
 
 func (client jiraServerClient) ListProjects(query string, limit int) (jira.ProjectList, error) {
-	plist, resp, err := client.Jira.Project.GetList()
+	pList, resp, err := client.Jira.Project.ListWithOptions(&jira.GetQueryOptions{})
 	if err != nil {
 		return nil, userFriendlyJiraError(resp, err)
 	}
-	if plist == nil {
+	if pList == nil {
 		return jira.ProjectList{}, nil
 	}
-	result := *plist
+	result := *pList
 	if limit > 0 && len(result) > limit {
 		result = result[:limit]
 	}
 	return result, nil
+}
+
+func (client jiraServerClient) GetIssueTypes(projectID string) ([]*jira.IssueType, error) {
+	var result searchResult
+	opts := map[string]string{
+		"expand": "issueTypes",
+	}
+
+	if err := client.RESTGet(fmt.Sprintf("2/project/%s", projectID), opts, &result); err != nil {
+		return nil, err
+	}
+
+	return result.IssueTypes, nil
 }
