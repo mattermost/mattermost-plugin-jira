@@ -48,7 +48,7 @@ The supported Jira fields are:
 
 Keep all information in one place by attaching parts of Mattermost conversations in Jira issues as comments. To attach a message, hover over the relevant message and select **\(...\) > More Actions > Attach to Jira Issue**.
 
-![You can attach a message to an existing Jira ticket](../.gitbook/assets/restrict-jira-users.png)
+![You can attach a message to an existing Jira ticket](../.gitbook/assets/attach-from-post.png)
 
 Then, on the resulting dialog, select the issue you want to attach it to. You may search for issues containing specific text or just the issue number.
 
