@@ -12,7 +12,7 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -130,12 +130,13 @@ func (p *Plugin) httpUserDisconnect(w http.ResponseWriter, r *http.Request) (int
 	_, err = p.DisconnectUser(disconnectPayload.InstanceID, types.ID(mattermostUserID))
 	if errors.Cause(err) == kvstore.ErrNotFound {
 		return respondErr(w, http.StatusNotFound,
-			errors.Errorf("Could not complete the **disconnection** request. You do not currently have a Jira account at %q linked to your Mattermost account.",
+			errors.Errorf(
+				"could not complete the **disconnection** request. You do not currently have a Jira account at %q linked to your Mattermost account",
 				disconnectPayload.InstanceID))
 	}
 	if err != nil {
 		return respondErr(w, http.StatusNotFound,
-			errors.Errorf("Could not complete the **disconnection** request. Error: %v", err))
+			errors.Errorf("could not complete the **disconnection** request. Error: %v", err))
 	}
 
 	_, err = w.Write([]byte(`{"success": true}`))
@@ -250,6 +251,8 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, conne
 		return err
 	}
 
+	_ = p.setupFlow.ForUser(string(mattermostUserID)).Go(stepConnected)
+
 	info, err := p.GetUserInfo(mattermostUserID, user)
 	if err != nil {
 		return err
@@ -259,7 +262,7 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, conne
 		&model.WebsocketBroadcast{UserId: mattermostUserID.String()},
 	)
 
-	p.Tracker.TrackUserConnected(mattermostUserID.String())
+	p.track("userConnected", mattermostUserID.String())
 
 	return nil
 }
@@ -303,7 +306,7 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 	p.API.PublishWebSocketEvent(websocketEventDisconnect, info.AsConfigMap(),
 		&model.WebsocketBroadcast{UserId: user.MattermostUserID.String()})
 
-	p.Tracker.TrackUserDisconnected(user.MattermostUserID.String())
+	p.track("userDisconnected", user.MattermostUserID.String())
 
 	return conn, nil
 }

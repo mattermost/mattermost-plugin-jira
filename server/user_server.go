@@ -13,7 +13,7 @@ import (
 	"github.com/dghubble/oauth1"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -117,7 +117,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 		RevokeURL             string
 	}{
 		JiraDisplayName:       juser.DisplayName + " (" + juser.Name + ")",
-		MattermostDisplayName: mmuser.GetDisplayName(model.SHOW_NICKNAME_FULLNAME),
+		MattermostDisplayName: mmuser.GetDisplayName(model.ShowNicknameFullName),
 		RevokeURL:             path.Join(p.GetPluginURLPath(), instancePath(routeUserDisconnect, instance.GetID())),
 	})
 }
@@ -148,14 +148,15 @@ func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, i
 		})
 }
 
-func publicKeyString(p *Plugin) ([]byte, error) {
+func (p *Plugin) publicKeyString() (string, error) {
 	rsaKey := p.getConfig().rsaKey
 	b, err := x509.MarshalPKIXPublicKey(&rsaKey.PublicKey)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to encode public key")
+		return "", errors.WithMessage(err, "failed to encode public key")
 	}
-	return pem.EncodeToMemory(&pem.Block{
+	pkey := pem.EncodeToMemory(&pem.Block{
 		Type:  "PUBLIC KEY",
 		Bytes: b,
-	}), nil
+	})
+	return strings.TrimSpace(string(pkey)), nil
 }

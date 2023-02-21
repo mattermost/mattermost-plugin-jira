@@ -6,7 +6,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -236,7 +236,7 @@ func (p *Plugin) StoreV2LegacyInstance(id types.ID) error {
 func (p *Plugin) ResolveWebhookInstanceURL(instanceURL string) (types.ID, error) {
 	var err error
 	if instanceURL != "" {
-		instanceURL, err = utils.NormalizeInstallURL(p.GetSiteURL(), instanceURL)
+		instanceURL, err = utils.NormalizeJiraURL(instanceURL)
 		if err != nil {
 			return "", err
 		}
@@ -295,7 +295,7 @@ func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.I
 
 	var err error
 	if instanceURL != "" {
-		instanceURL, err = utils.NormalizeInstallURL(p.GetSiteURL(), instanceURL)
+		instanceURL, err = utils.NormalizeJiraURL(instanceURL)
 		if err != nil {
 			return "", err
 		}

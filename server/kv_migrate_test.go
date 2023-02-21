@@ -3,8 +3,8 @@ package main
 import (
 	"testing"
 
-	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
-	"github.com/mattermost/mattermost-server/v5/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,8 +25,8 @@ func TestMigrateV2Instances(t *testing.T) {
 				"JIRAServerURL":"http://localhost:8080",
 				"MattermostKey":"mattermost_https_levb_ngrok_io"
 			}`,
-			expectInstance:       `{"PluginVersion":"3.0.0","InstanceID":"http://localhost:8080","Alias":"","Type":"server","IsV2Legacy":true,"MattermostKey":"mattermost_https_levb_ngrok_io","JIRAServerURL":"http://localhost:8080"}`,
-			expectInstances:      `[{"PluginVersion":"3.0.0","InstanceID":"http://localhost:8080","Alias":"","Type":"server","IsV2Legacy":true}]`,
+			expectInstance:       `{"PluginVersion":"3.0.0","InstanceID":"http://localhost:8080","Alias":"","Type":"server","IsV2Legacy":true,"SetupWizardUserID":"","MattermostKey":"mattermost_https_levb_ngrok_io","JIRAServerURL":"http://localhost:8080"}`,
+			expectInstances:      `[{"PluginVersion":"3.0.0","InstanceID":"http://localhost:8080","Alias":"","Type":"server","IsV2Legacy":true,"SetupWizardUserID":""}]`,
 			numExpectedInstances: 1,
 		},
 		"Cloud": {
@@ -38,8 +38,8 @@ func TestMigrateV2Instances(t *testing.T) {
 				"Installed": true,
 				"RawAtlassianSecurityContext": "{\"BaseURL\":\"https://mmtest.atlassian.net\"}"
 			}`,
-			expectInstance:       `{"PluginVersion":"3.0.0","InstanceID":"https://mmtest.atlassian.net","Alias":"","Type":"cloud","IsV2Legacy":true,"Installed":true,"RawAtlassianSecurityContext":"{\"BaseURL\":\"https://mmtest.atlassian.net\"}"}`,
-			expectInstances:      `[{"PluginVersion":"3.0.0","InstanceID":"https://mmtest.atlassian.net","Alias":"","Type":"cloud","IsV2Legacy":true}]`,
+			expectInstance:       `{"PluginVersion":"3.0.0","InstanceID":"https://mmtest.atlassian.net","Alias":"","Type":"cloud","IsV2Legacy":true,"SetupWizardUserID":"","Installed":true,"RawAtlassianSecurityContext":"{\"BaseURL\":\"https://mmtest.atlassian.net\"}"}`,
+			expectInstances:      `[{"PluginVersion":"3.0.0","InstanceID":"https://mmtest.atlassian.net","Alias":"","Type":"cloud","IsV2Legacy":true,"SetupWizardUserID":""}]`,
 			numExpectedInstances: 1,
 		},
 		"No Instance Installed": {

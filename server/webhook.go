@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -188,8 +188,7 @@ func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL
 	}
 
 	v := url.Values{}
-	secret, _ := url.QueryUnescape(cf.Secret)
-	v.Add("secret", secret)
+	v.Add("secret", cf.Secret)
 	subURL = p.GetPluginURL() + instancePath(routeAPISubscribeWebhook, instanceID) + "?" + v.Encode()
 
 	// For the legacy URL, add team and channel. Secret is already in the map.
@@ -198,4 +197,11 @@ func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL
 	legacyURL = p.GetPluginURL() + instancePath(routeIncomingWebhook, instanceID) + "?" + v.Encode()
 
 	return subURL, legacyURL, nil
+}
+
+func (p *Plugin) getSubscriptionsWebhookURL(instanceID types.ID) string {
+	cf := p.getConfig()
+	v := url.Values{}
+	v.Add("secret", cf.Secret)
+	return p.GetPluginURL() + instancePath(routeAPISubscribeWebhook, instanceID) + "?" + v.Encode()
 }

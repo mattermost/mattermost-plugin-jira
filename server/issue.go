@@ -15,7 +15,7 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -39,10 +39,11 @@ func makePost(userID, channelID, message string) *model.Post {
 }
 
 func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) (int, error) {
-	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
-	if requestData == nil {
+	var requestData model.PostActionIntegrationRequest
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
 		return respondErr(w, http.StatusBadRequest,
-			errors.New("missing request data"))
+			errors.Wrap(err, "unmarshall the body"))
 	}
 
 	jiraBotID := p.getUserID()
@@ -99,10 +100,11 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 }
 
 func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Request) (int, error) {
-	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
-	if requestData == nil {
+	var requestData model.PostActionIntegrationRequest
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
 		return respondErr(w, http.StatusBadRequest,
-			errors.New("missing request data"))
+			errors.New("unmarshall the body"))
 	}
 
 	jiraBotID := p.getUserID()
@@ -135,7 +137,7 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 			"No instance id was found in context data"), w, http.StatusInternalServerError)
 	}
 
-	_, err := p.TransitionIssue(&InTransitionIssue{
+	_, err = p.TransitionIssue(&InTransitionIssue{
 		mattermostUserID: types.ID(mattermostUserID),
 		InstanceID:       types.ID(instanceID),
 		IssueKey:         issueKey,
@@ -272,7 +274,6 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 			Message:   fmt.Sprintf("[Please create your Jira issue manually](%v). %v\n%v", createURL, message, fieldsString),
 			ChannelId: channelID,
 			RootId:    rootID,
-			ParentId:  rootID,
 			UserId:    instance.Common().getConfig().botUserID,
 		}
 		_ = p.API.SendEphemeralPost(in.mattermostUserID.String(), reply)
@@ -295,7 +296,6 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 				Message:   message,
 				ChannelId: channelID,
 				RootId:    rootID,
-				ParentId:  rootID,
 				UserId:    instance.Common().getConfig().botUserID,
 			})
 			return nil, errors.Errorf("issue can not be created via API: %s", message)
@@ -311,7 +311,6 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 		Message:   msg,
 		ChannelId: channelID,
 		RootId:    rootID,
-		ParentId:  rootID,
 		UserId:    instance.Common().getConfig().botUserID,
 	}
 
@@ -337,7 +336,6 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 		Message:   fmt.Sprintf("Created a Jira issue: %s", mdKeySummaryLink(createdIssue)),
 		ChannelId: channelID,
 		RootId:    rootID,
-		ParentId:  rootID,
 		UserId:    in.mattermostUserID.String(),
 	}
 	_, appErr = p.API.CreatePost(publicReply)
@@ -400,7 +398,7 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 		return nil, err
 	}
 
-	return client.GetCreateMeta(&jira.GetQueryOptions{
+	return client.GetCreateMetaInfo(&jira.GetQueryOptions{
 		Expand:      "projects.issuetypes.fields",
 		ProjectKeys: projectKeys,
 	})
@@ -504,13 +502,13 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 
 	instanceID := r.FormValue("instance_id")
 
-	cimd, connection, err := p.GetJiraProjectMetadata(types.ID(instanceID), types.ID(mattermostUserID))
+	plist, connection, err := p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to GetProjectMetadata"))
 	}
 
-	if len(cimd.Projects) == 0 {
+	if len(plist) == 0 {
 		_, err = respondJSON(w, map[string]interface{}{
 			"error": "You do not have permission to create issues in any projects. Please contact your Jira admin.",
 		})
@@ -520,21 +518,20 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	type option = utils.ReactSelectOption
-	projects := make([]option, 0, len(cimd.Projects))
-	issues := make(map[string][]option, len(cimd.Projects))
-	for _, prj := range cimd.Projects {
-		projects = append(projects, option{
+	projects := []utils.ReactSelectOption{}
+	issues := map[string][]utils.ReactSelectOption{}
+	for _, prj := range plist {
+		projects = append(projects, utils.ReactSelectOption{
 			Value: prj.Key,
 			Label: prj.Name,
 		})
-		issueTypes := make([]option, 0, len(prj.IssueTypes))
+		issueTypes := []utils.ReactSelectOption{}
 		for _, issue := range prj.IssueTypes {
-			if issue.Subtasks {
+			if issue.Subtask {
 				continue
 			}
-			issueTypes = append(issueTypes, option{
-				Value: issue.Id,
+			issueTypes = append(issueTypes, utils.ReactSelectOption{
+				Value: issue.ID,
 				Label: issue.Name,
 			})
 		}
@@ -548,16 +545,16 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-func (p *Plugin) GetJiraProjectMetadata(instanceID, mattermostUserID types.ID) (*jira.CreateMetaInfo, *Connection, error) {
+func (p *Plugin) ListJiraProjects(instanceID, mattermostUserID types.ID) (jira.ProjectList, *Connection, error) {
 	client, _, connection, err := p.getClient(instanceID, mattermostUserID)
 	if err != nil {
 		return nil, nil, err
 	}
-	metainfo, err := client.GetCreateMeta(nil)
+	plist, err := client.ListProjects("", -1)
 	if err != nil {
 		return nil, nil, err
 	}
-	return metainfo, connection, nil
+	return plist, connection, nil
 }
 
 var reJiraIssueKey = regexp.MustCompile(`^([[:alnum:]]+)-([[:digit:]]+)$`)
@@ -678,7 +675,6 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 		Message:   msg,
 		ChannelId: post.ChannelId,
 		RootId:    rootID,
-		ParentId:  rootID,
 		UserId:    in.mattermostUserID.String(),
 	}
 	_, appErr = p.API.CreatePost(reply)
@@ -852,12 +848,12 @@ func (p *Plugin) UnassignIssue(instance Instance, mattermostUserID types.ID, iss
 	// check for valid issue key
 	_, err = client.GetIssue(issueKey, nil)
 	if err != nil {
-		return "", errors.Errorf("We couldn't find the issue key `%s`.  Please confirm the issue key and try again.", issueKey)
+		return "", errors.Errorf("We couldn't find the issue key `%s`. Please confirm the issue key and try again.", issueKey)
 	}
 
 	if err := client.UpdateAssignee(issueKey, &jira.User{}); err != nil {
 		if StatusCode(err) == http.StatusForbidden {
-			return "", errors.New("you do not have the appropriate permissions to perform this action. Please contact your Jira administrator")
+			return "", errors.New("You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.")
 		}
 		return "", err
 	}

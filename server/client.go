@@ -12,6 +12,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,7 +20,7 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/mattermost/mattermost-server/v6/plugin"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
@@ -54,7 +55,7 @@ type UserService interface {
 // ProjectService is the interface for project-related APIs.
 type ProjectService interface {
 	GetProject(key string) (*jira.Project, error)
-	GetAllProjectKeys() ([]string, error)
+	ListProjects(query string, limit int) (jira.ProjectList, error)
 }
 
 // SearchService is the interface for search-related APIs.
@@ -73,7 +74,7 @@ type IssueService interface {
 	AddAttachment(api plugin.API, issueKey, fileID string, maxSize utils.ByteSize) (mattermostName, jiraName, mime string, err error)
 	AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
 	DoTransition(issueKey, transitionID string) error
-	GetCreateMeta(*jira.GetQueryOptions) (*jira.CreateMetaInfo, error)
+	GetCreateMetaInfo(*jira.GetQueryOptions) (*jira.CreateMetaInfo, error)
 	GetTransitions(issueKey string) ([]jira.Transition, error)
 	UpdateAssignee(issueKey string, user *jira.User) error
 	UpdateComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
@@ -165,20 +166,6 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 	}
 
 	return attachments[0], nil
-}
-
-func (client JiraClient) GetAllProjectKeys() ([]string, error) {
-	projectlist, resp, err := client.Jira.Project.GetList()
-	if err != nil {
-		return nil, userFriendlyJiraError(resp, err)
-	}
-
-	keys := make([]string, 0, len(*projectlist))
-	for _, project := range *projectlist {
-		keys = append(keys, project.Key)
-	}
-
-	return keys, nil
 }
 
 // GetProject returns a Project by key.
@@ -405,7 +392,7 @@ func endpointURL(endpoint string) (string, error) {
 	}
 	if parsedURL.Scheme == "" {
 		// relative path
-		endpoint = fmt.Sprintf("/rest/api/%s", endpoint)
+		endpoint = path.Join("/rest/api", endpoint)
 	}
 	return endpoint, nil
 }

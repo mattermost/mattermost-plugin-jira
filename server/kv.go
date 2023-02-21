@@ -27,7 +27,6 @@ const (
 	keyTokenSecret      = "token_secret"
 	prefixInstance      = "jira_instance_"
 	prefixOneTimeSecret = "ots_" // + unique key that will be deleted after the first verification
-	prefixStats         = "stats_"
 	prefixUser          = "user_"
 )
 
@@ -46,7 +45,7 @@ type SecretsStore interface {
 }
 
 type InstanceStore interface {
-	CreateInactiveCloudInstance(types.ID) error
+	CreateInactiveCloudInstance(_ types.ID, actingUserID string) error
 	DeleteInstance(types.ID) error
 	LoadInstance(types.ID) (Instance, error)
 	LoadInstanceFullKey(string) (Instance, error)
@@ -450,10 +449,12 @@ func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserID string) (*OAu
 	return &credentials, nil
 }
 
-func (store *store) CreateInactiveCloudInstance(jiraURL types.ID) (returnErr error) {
+func (store *store) CreateInactiveCloudInstance(jiraURL types.ID, actingUserID string) (returnErr error) {
 	ci := newCloudInstance(store.plugin, jiraURL, false,
 		fmt.Sprintf(`{"BaseURL": "%s"}`, jiraURL),
 		&AtlassianSecurityContext{BaseURL: jiraURL.String()})
+	ci.SetupWizardUserID = actingUserID
+
 	data, err := json.Marshal(ci)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to store new Jira Cloud instance:%s", jiraURL)
@@ -518,7 +519,7 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 		return &si, nil
 	}
 
-	return nil, errors.New(fmt.Sprintf("Jira instance %s has unsupported type: %s", fullkey, si.Type))
+	return nil, errors.Errorf("Jira instance %s has unsupported type: %s", fullkey, si.Type)
 }
 
 func (store *store) StoreInstance(instance Instance) error {
@@ -567,13 +568,13 @@ func UpdateInstances(store InstanceStore, updatef func(instances *Instances) err
 
 // MigrateV2Instances migrates instance record(s) from the V2 data model.
 //
-// - v2keyKnownJiraInstances ("known_jira_instances") was stored as a
-//   map[string]string (InstanceID->Type), needs to be stored as Instances.
-//   https://github.com/mattermost/mattermost-plugin-jira/blob/885efe8eb70c92bcea64d1ced6e67710eda77b6e/server/kv.go#L375
-// - v2keyCurrentJIRAInstance ("current_jira_instance") stored an Instance; will
-//   be used to set the default instance.
-// - The instances themselves should be forward-compatible, including
-// 	 CurrentInstance.
+//   - v2keyKnownJiraInstances ("known_jira_instances") was stored as a
+//     map[string]string (InstanceID->Type), needs to be stored as Instances.
+//     https://github.com/mattermost/mattermost-plugin-jira/blob/885efe8eb70c92bcea64d1ced6e67710eda77b6e/server/kv.go#L375
+//   - v2keyCurrentJIRAInstance ("current_jira_instance") stored an Instance; will
+//     be used to set the default instance.
+//   - The instances themselves should be forward-compatible, including
+//     CurrentInstance.
 func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	// Check if V3 instances exist and return them if found
 	instances, err := p.instanceStore.LoadInstances()
@@ -645,7 +646,7 @@ func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	return instances, nil
 }
 
-//  MigrateV3ToV2 performs necessary migrations when reverting from V3 to  V2
+// MigrateV3ToV2 performs necessary migrations when reverting from V3 to  V2
 func MigrateV3ToV2(p *Plugin) string {
 	// migrate V3 instances to v2
 	v2Instances, msg := MigrateV3InstancesToV2(p)
@@ -674,10 +675,10 @@ func MigrateV3ToV2(p *Plugin) string {
 
 // MigrateV3InstancesToV2 migrates instance record(s) from the V3 data model.
 //
-// - v3 instances need to be stored as v2keyKnownJiraInstances
-//   (known_jira_instances)  map[string]string (InstanceID->Type),
-// - v2keyCurrentJIRAInstance ("current_jira_instance") stored an Instance; will
-//   be used to set the default instance.
+//   - v3 instances need to be stored as v2keyKnownJiraInstances
+//     (known_jira_instances)  map[string]string (InstanceID->Type),
+//   - v2keyCurrentJIRAInstance ("current_jira_instance") stored an Instance; will
+//     be used to set the default instance.
 func MigrateV3InstancesToV2(p *Plugin) (JiraV2Instances, string) {
 	v3instances, err := p.instanceStore.LoadInstances()
 	if err != nil {

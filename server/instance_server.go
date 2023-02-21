@@ -11,7 +11,6 @@ import (
 	"github.com/dghubble/oauth1"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/expvar"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -27,11 +26,26 @@ type serverInstance struct {
 
 var _ Instance = (*serverInstance)(nil)
 
-func newServerInstance(p *Plugin, jiraURL string) *serverInstance {
-	return &serverInstance{
+func (p *Plugin) installServerInstance(rawURL string) (string, *serverInstance, error) {
+	jiraURL, err := utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
+	if err != nil {
+		return "", nil, err
+	}
+	if utils.IsJiraCloudURL(jiraURL) {
+		return "", nil, errors.Errorf("`%s` is not a Jira server URL, it refers to Jira Cloud", jiraURL)
+	}
+
+	instance := &serverInstance{
 		InstanceCommon: newInstanceCommon(p, ServerInstanceType, types.ID(jiraURL)),
 		MattermostKey:  p.GetPluginKey(),
 	}
+
+	err = p.InstallInstance(instance)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return jiraURL, instance, err
 }
 
 func (si *serverInstance) GetURL() string {
@@ -103,8 +117,6 @@ func (si *serverInstance) GetClient(connection *Connection) (client Client, retu
 	httpClient = utils.WrapHTTPClient(httpClient,
 		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
 		utils.WithResponseSizeLimit(conf.maxAttachmentSize))
-	httpClient = expvar.WrapHTTPClient(httpClient,
-		conf.stats, endpointNameFromRequest)
 
 	jiraClient, err := jira.NewClient(httpClient, si.GetURL())
 	if err != nil {

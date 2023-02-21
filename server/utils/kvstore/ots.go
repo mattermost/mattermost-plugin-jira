@@ -6,7 +6,7 @@ package kvstore
 import (
 	"time"
 
-	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/mattermost/mattermost-server/v6/plugin"
 )
 
 // OneTimeStore is a KV store that deletes each record after the first load,

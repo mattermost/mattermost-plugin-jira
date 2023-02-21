@@ -9,10 +9,10 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
-	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
-	"github.com/mattermost/mattermost-server/v5/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 
@@ -167,7 +167,7 @@ func TestRouteIssueTransition(t *testing.T) {
 	}{
 		"No request data": {
 			request:      nil,
-			expectedCode: http.StatusBadRequest,
+			expectedCode: http.StatusUnauthorized,
 		},
 		"No UserID": {
 			request: &model.PostActionIntegrationRequest{
@@ -222,7 +222,7 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 	}{
 		"No request data": {
 			request:      nil,
-			expectedCode: http.StatusBadRequest,
+			expectedCode: http.StatusUnauthorized,
 		},
 		"No UserID": {
 			request: &model.PostActionIntegrationRequest{
