@@ -3621,11 +3621,7 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
           </span>
         </div>
         <div
-          style={
-            Object {
-              "marginTop": "1em",
-            }
-          }
+          className="channel-subscriptions-modal__learnMore"
         >
           <a
             href="https://github.com/mattermost/mattermost-plugin-jira/blob/master/docs/administrator-guide/notification-management.md#how-to-create-and-use-the-subscription-modal"
