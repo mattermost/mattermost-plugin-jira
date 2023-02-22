@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/andygrunwald/go-jira v1.15.1
+	github.com/blang/semver/v4 v4.0.0
 	github.com/dghubble/oauth1 v0.5.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gorilla/mux v1.8.0

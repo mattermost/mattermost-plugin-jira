@@ -22,9 +22,9 @@ func newCloudClient(jiraClient *jira.Client) Client {
 	}
 }
 
-// GetCreateMeta returns the metadata needed to implement the UI and validation of
+// GetCreateMetaInfo returns the metadata needed to implement the UI and validation of
 // creating new Jira issues.
-func (client jiraCloudClient) GetCreateMeta(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
+func (client jiraCloudClient) GetCreateMetaInfo(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
 	cimd, resp, err := client.Jira.Issue.GetCreateMetaWithOptions(options)
 	if err != nil {
 		if resp == nil {
