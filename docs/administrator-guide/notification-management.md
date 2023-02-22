@@ -54,10 +54,10 @@ If you’d like to see support for additional events, [let us know](https://matt
 
 ![This is the Channel Subscription modal](../.gitbook/assets/channel-subscriptions-modal.png)
 
-## How to create and use the subscription modal?
+## Create a channel subscription
 
 1. Type the `/jira subscribe` command to open the "Create subscription" modal in the particular channel.
-2. Click on the **Create Subscription** button to create the subscription and receive the Jira issue notifications.
+2. Click on the **Create Subscription** button to create a subscription to receive Jira issue notifications in the current channel.
 3. Write the name of the subscription in the **Subscription Name** field.
 4. Select the project name to which you want to subscribe.
 5. Select the events and issue types for which you want to receive the notifications in the Mattermost channel.
