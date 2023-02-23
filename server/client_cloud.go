@@ -68,7 +68,7 @@ func (client jiraCloudClient) GetUserGroups(connection *Connection) ([]*jira.Use
 	return groups, nil
 }
 
-func (client jiraCloudClient) ListProjects(query string, limit int) (jira.ProjectList, error) {
+func (client jiraCloudClient) ListProjects(query string, limit int, expandIssueTypes bool) (jira.ProjectList, error) {
 	type searchResult struct {
 		Values     jira.ProjectList `json:"values"`
 		StartAt    int              `json:"startAt"`
@@ -92,6 +92,11 @@ func (client jiraCloudClient) ListProjects(query string, limit int) (jira.Projec
 			"startAt":    strconv.Itoa(len(out)),
 			"maxResults": strconv.Itoa(remaining),
 		}
+
+		if expandIssueTypes {
+			opts["expand"] = QueryParamIssueTypes
+		}
+
 		var result searchResult
 		err := client.RESTGet("/3/project/search", opts, &result)
 		if err != nil {
@@ -114,8 +119,8 @@ func (client jiraCloudClient) ListProjects(query string, limit int) (jira.Projec
 	}
 }
 
-func (client jiraCloudClient) GetIssueTypes(projectID string) ([]*jira.IssueType, error) {
-	var result []*jira.IssueType
+func (client jiraCloudClient) GetIssueTypes(projectID string) ([]jira.IssueType, error) {
+	var result []jira.IssueType
 	opts := map[string]string{
 		"projectId": projectID,
 	}

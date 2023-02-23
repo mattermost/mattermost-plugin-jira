@@ -502,10 +502,31 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 
 	instanceID := r.FormValue("instance_id")
 
-	plist, connection, err := p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID))
+	plist, connection, err := p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID), true)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to GetProjectMetadata"))
+		// Getting the issue Types separately only when the status code returned is 400
+		if strings.Contains(err.Error(), "400") {
+			plist, connection, err = p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID), false)
+			if err != nil {
+				return respondErr(w, http.StatusInternalServerError,
+					errors.WithMessage(err, "failed to get the list of Jira Projects"))
+			}
+
+			var projectList jira.ProjectList
+			for _, prj := range plist {
+				issueTypeList, iErr := p.GetIssueTypes(types.ID(instanceID), types.ID(mattermostUserID), prj.ID)
+				if iErr != nil {
+					p.API.LogError("Failed to get issue types for project.", "ProjectKey", prj.Key, "Error", iErr.Error())
+					continue
+				}
+				prj.IssueTypes = issueTypeList
+				projectList = append(projectList, prj)
+			}
+			plist = projectList
+		} else {
+			return respondErr(w, http.StatusInternalServerError,
+				errors.WithMessage(err, "failed to GetProjectMetadata"))
+		}
 	}
 
 	if len(plist) == 0 {
@@ -521,18 +542,12 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 	projects := []utils.ReactSelectOption{}
 	issues := map[string][]utils.ReactSelectOption{}
 	for _, prj := range plist {
-		issueTypeList, err := p.GetIssueTypes(types.ID(instanceID), types.ID(mattermostUserID), prj.ID)
-		if err != nil {
-			p.API.LogError("Failed to get issue types for project.", "ProjectKey", prj.Key, "Error", err.Error())
-			continue
-		}
-
 		projects = append(projects, utils.ReactSelectOption{
 			Value: prj.Key,
 			Label: prj.Name,
 		})
 		issueTypes := []utils.ReactSelectOption{}
-		for _, issue := range issueTypeList {
+		for _, issue := range prj.IssueTypes {
 			if issue.Subtask {
 				continue
 			}
@@ -551,19 +566,19 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-func (p *Plugin) ListJiraProjects(instanceID, mattermostUserID types.ID) (jira.ProjectList, *Connection, error) {
+func (p *Plugin) ListJiraProjects(instanceID, mattermostUserID types.ID, expandIssueTypes bool) (jira.ProjectList, *Connection, error) {
 	client, _, connection, err := p.getClient(instanceID, mattermostUserID)
 	if err != nil {
 		return nil, nil, err
 	}
-	plist, err := client.ListProjects("", -1)
+	plist, err := client.ListProjects("", -1, expandIssueTypes)
 	if err != nil {
 		return nil, nil, err
 	}
 	return plist, connection, nil
 }
 
-func (p *Plugin) GetIssueTypes(instanceID, mattermostUserID types.ID, projectID string) ([]*jira.IssueType, error) {
+func (p *Plugin) GetIssueTypes(instanceID, mattermostUserID types.ID, projectID string) ([]jira.IssueType, error) {
 	client, _, _, err := p.getClient(instanceID, mattermostUserID)
 	if err != nil {
 		return nil, err
