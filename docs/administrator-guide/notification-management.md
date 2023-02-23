@@ -66,7 +66,7 @@ If your organization's infrastructure is set up in such a way that your Mattermo
    - For older versions of Jira, select the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
 2. Select **Create a WebHook** to create a new webhook. Enter a **Name** for the webhook and add the Jira webhook URL [https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL](https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL) \(for Jira 2.1\) as the **URL**.
 
-   - Replace `TEAMURL` and `CHANNELURL` with the Mattermost team URL and channel URL you want the Jira events to post to. The values should be in lower case.
+   - Replace `TEAMURL` and `CHANNELURL` with the Mattermost team URL and channel URL where you want to receive the Jira notifications. For example, if your Mattermost channel's full URL is `https://mattermost.example.com/myteam/channels/mychannel`, the `TEAMURL` would be `myteam`, and the `CHANNELURL` would be `mychannel`.
    - Replace `SITEURL` with the site URL of your Mattermost instance, and `WEBHOOKSECRET` with the secret generated in Mattermost via **System Console > Plugins > Jira**.
 
    For instance, if the team URL is `contributors`, channel URL is `town-square`, site URL is `https://community.mattermost.com`, and the generated webhook secret is `MYSECRET`, then the final webhook URL would be:
