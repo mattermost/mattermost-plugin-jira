@@ -47,10 +47,6 @@ const (
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
 )
 
-var BuildHash = ""
-var BuildHashShort = ""
-var BuildDate = ""
-
 type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
 	EnableJiraUI bool `json:"enablejiraui"`
@@ -231,6 +227,7 @@ func (p *Plugin) OnActivate() error {
 	p.gorillaRouter = mux.NewRouter()
 
 	botUserID, err := p.client.Bot.EnsureBot(&model.Bot{
+		OwnerId:     manifest.ID, // Workaround to support older server version affected by https://github.com/mattermost/mattermost-server/pull/21560
 		Username:    botUserName,
 		DisplayName: botDisplayName,
 		Description: botDescription,
