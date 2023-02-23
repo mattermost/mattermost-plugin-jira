@@ -85,7 +85,7 @@ func (client testClient) AddComment(issueKey string, comment *jira.Comment) (*ji
 	return nil, nil
 }
 
-func (client testClient) GetCreateMeta(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
+func (client testClient) GetCreateMetaInfo(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
 	return &jira.CreateMetaInfo{
 		Projects: []*jira.MetaProject{
 			{

@@ -171,13 +171,7 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		}
 
 		value := getIssueFieldValue(issue, field.Key)
-		containsAny := value.ContainsAny(field.Values.Elems()...)
-		containsAll := value.ContainsAll(field.Values.Elems()...)
-
-		if (inclusion == FilterIncludeAny && !containsAny) ||
-			(inclusion == FilterIncludeAll && !containsAll) ||
-			(inclusion == FilterExcludeAny && containsAny) ||
-			(inclusion == FilterEmpty && value.Len() > 0) {
+		if !isValidFieldInclusion(field, value) {
 			return false
 		}
 	}
@@ -187,6 +181,21 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		if securityLevel.Len() > 0 {
 			return false
 		}
+	}
+
+	return true
+}
+
+func isValidFieldInclusion(field FieldFilter, value StringSet) bool {
+	inclusion := field.Inclusion
+	containsAny := value.ContainsAny(field.Values.Elems()...)
+	containsAll := value.ContainsAll(field.Values.Elems()...)
+
+	if (inclusion == FilterIncludeAny && !containsAny) ||
+		(inclusion == FilterIncludeAll && !containsAll) ||
+		(inclusion == FilterExcludeAny && containsAny) ||
+		(inclusion == FilterEmpty && value.Len() > 0) {
+		return false
 	}
 
 	return true
