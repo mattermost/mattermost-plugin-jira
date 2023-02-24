@@ -571,7 +571,7 @@ func (p *Plugin) ListJiraProjects(instanceID, mattermostUserID types.ID, expandI
 	if err != nil {
 		return nil, nil, err
 	}
-	plist, err := client.ListProjects("", -1, expandIssueTypes)
+	plist, _, err := client.ListProjects("", -1, expandIssueTypes)
 	if err != nil {
 		return nil, nil, err
 	}

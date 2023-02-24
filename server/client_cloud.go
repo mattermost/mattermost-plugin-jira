@@ -68,7 +68,7 @@ func (client jiraCloudClient) GetUserGroups(connection *Connection) ([]*jira.Use
 	return groups, nil
 }
 
-func (client jiraCloudClient) ListProjects(query string, limit int, expandIssueTypes bool) (jira.ProjectList, error) {
+func (client jiraCloudClient) ListProjects(query string, limit int, expandIssueTypes bool) (jira.ProjectList, *jira.Response, error) {
 	type searchResult struct {
 		Values     jira.ProjectList `json:"values"`
 		StartAt    int              `json:"startAt"`
@@ -100,7 +100,7 @@ func (client jiraCloudClient) ListProjects(query string, limit int, expandIssueT
 		var result searchResult
 		err := client.RESTGet("/3/project/search", opts, &result)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if len(result.Values) > remaining {
 			result.Values = result.Values[:remaining]
@@ -110,11 +110,11 @@ func (client jiraCloudClient) ListProjects(query string, limit int, expandIssueT
 
 		if !fetchAll && remaining == 0 {
 			// Got enough.
-			return out, nil
+			return out, nil, nil
 		}
 		if len(result.Values) == 0 || result.IsLast {
 			// Ran out of results.
-			return out, nil
+			return out, nil, nil
 		}
 	}
 }

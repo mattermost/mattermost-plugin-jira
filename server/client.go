@@ -55,7 +55,7 @@ type UserService interface {
 // ProjectService is the interface for project-related APIs.
 type ProjectService interface {
 	GetProject(key string) (*jira.Project, error)
-	ListProjects(query string, limit int, expandIssueTypes bool) (jira.ProjectList, error)
+	ListProjects(query string, limit int, expandIssueTypes bool) (jira.ProjectList, *jira.Response, error)
 	GetIssueTypes(projectID string) ([]jira.IssueType, error)
 }
 

@@ -64,14 +64,15 @@ func (client jiraServerClient) GetProjectInfoForPivotJiraVersion(options *jira.G
 	var issueInfo *ProjectIssueInfo
 	var req *http.Request
 
-	projectList, resp, err := client.Jira.Project.ListWithOptions(options)
+	projectList, resp, err := client.ListProjects("", -1, false)
+	// projectList, resp, err := client.Jira.Project.ListWithOptions(options)
 	meta := new(jira.CreateMetaInfo)
 
 	if err != nil {
 		return nil, resp, errors.Wrap(err, "failed to list projects")
 	}
 
-	for _, proj := range *projectList {
+	for _, proj := range projectList {
 		meta.Expand = proj.Expand
 		issueInfo, resp, err = client.GetIssueInfo(proj.ID)
 		if err != nil {
@@ -108,7 +109,8 @@ func (client jiraServerClient) GetProjectInfoForPivotJiraVersion(options *jira.G
 
 		meta.Projects = append(meta.Projects, project)
 	}
-	return meta, resp, err
+	// should we be returning nil for overall error handling? meaning one error for one project doesn't mean we should return error
+	return meta, resp, nil
 }
 
 func (client jiraServerClient) GetProjectInfo(currentVersion, pivotVersion semver.Version, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, *jira.Response, error) {
@@ -179,7 +181,7 @@ func (client jiraServerClient) GetUserGroups(connection *Connection) ([]*jira.Us
 	return result.Groups.Items, nil
 }
 
-func (client jiraServerClient) ListProjects(query string, limit int, expandIssueTypes bool) (jira.ProjectList, error) {
+func (client jiraServerClient) ListProjects(query string, limit int, expandIssueTypes bool) (jira.ProjectList, *jira.Response, error) {
 	queryOptions := &jira.GetQueryOptions{}
 	if expandIssueTypes {
 		queryOptions.Expand = QueryParamIssueTypes
@@ -187,16 +189,16 @@ func (client jiraServerClient) ListProjects(query string, limit int, expandIssue
 
 	pList, resp, err := client.Jira.Project.ListWithOptions(queryOptions)
 	if err != nil {
-		return nil, userFriendlyJiraError(resp, err)
+		return nil, resp, userFriendlyJiraError(resp, err)
 	}
 	if pList == nil {
-		return jira.ProjectList{}, nil
+		return jira.ProjectList{}, resp, nil
 	}
 	result := *pList
 	if limit > 0 && len(result) > limit {
 		result = result[:limit]
 	}
-	return result, nil
+	return result, resp, nil
 }
 
 func (client jiraServerClient) GetIssueTypes(projectID string) ([]jira.IssueType, error) {
