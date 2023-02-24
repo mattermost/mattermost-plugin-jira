@@ -505,28 +505,28 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 	plist, connection, err := p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID), true)
 	if err != nil {
 		// Getting the issue Types separately only when the status code returned is 400
-		if strings.Contains(err.Error(), "400") {
-			plist, connection, err = p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID), false)
-			if err != nil {
-				return respondErr(w, http.StatusInternalServerError,
-					errors.WithMessage(err, "failed to get the list of Jira Projects"))
-			}
-
-			var projectList jira.ProjectList
-			for _, prj := range plist {
-				issueTypeList, iErr := p.GetIssueTypes(types.ID(instanceID), types.ID(mattermostUserID), prj.ID)
-				if iErr != nil {
-					p.API.LogError("Failed to get issue types for project.", "ProjectKey", prj.Key, "Error", iErr.Error())
-					continue
-				}
-				prj.IssueTypes = issueTypeList
-				projectList = append(projectList, prj)
-			}
-			plist = projectList
-		} else {
+		if !strings.Contains(err.Error(), "400") {
 			return respondErr(w, http.StatusInternalServerError,
 				errors.WithMessage(err, "failed to GetProjectMetadata"))
 		}
+
+		plist, connection, err = p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID), false)
+		if err != nil {
+			return respondErr(w, http.StatusInternalServerError,
+				errors.WithMessage(err, "failed to get the list of Jira Projects"))
+		}
+
+		var projectList jira.ProjectList
+		for _, prj := range plist {
+			issueTypeList, iErr := p.GetIssueTypes(types.ID(instanceID), types.ID(mattermostUserID), prj.ID)
+			if iErr != nil {
+				p.API.LogDebug("Failed to get issue types for project.", "ProjectKey", prj.Key, "Error", iErr.Error())
+				continue
+			}
+			prj.IssueTypes = issueTypeList
+			projectList = append(projectList, prj)
+		}
+		plist = projectList
 	}
 
 	if len(plist) == 0 {
