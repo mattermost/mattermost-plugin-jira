@@ -6,9 +6,9 @@
     align-items: center;
     left: 0;
     right: 0;
-    color: #000000;
+    color: var(--center-channel-color);
     top: calc(50% - 311px / 2);
-    background: #FFFFFF;
+    background: var(--center-channel-bg);
     border: 1px solid rgba(63, 67, 80, 0.16);
     border-radius: 4px;
     box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.12);
@@ -52,7 +52,6 @@
         font-size: 16px;
         height: 16px;
         line-height: 24px;
-        color: rgba(63, 67, 80, 0.72);
         text-decoration: none;
     }
 
@@ -61,7 +60,6 @@
         font-style: normal;
         font-weight: normal;
         line-height: 12px;
-        color: rgba(63, 67, 80, 0.72);
         display: flex;
         order: 1;
         flex: none;
@@ -93,7 +91,6 @@
         font-family: Metropolis, system-ui;
         text-align: left;
         flex-grow: 1;
-        color: #3F4350;
         text-decoration: none;
         font-weight: 600;
         font-size: 16px;
@@ -121,7 +118,6 @@
 
     .popover-body__description>p {
         margin-block-start: 0;
-        color: #282c34;
     }
 
     .popover__labels__label {
@@ -179,7 +175,6 @@
     }
 
     .fix-version-label {
-        color: #333;
         margin: 16px 0;
         text-align: left;
         font-family: open sans;
@@ -188,7 +183,6 @@
     }
 
     .fix-version-label-value {
-        background-color: rgba(63, 67, 80, 0.08);
         padding: 1px 8px;
         font-weight: 600;
         border-radius: 2px;
@@ -225,5 +219,32 @@
 
     .jira-ticket-key {
         font-size: 12px;
+    }
+
+
+    .skeleton-loader {
+        &:empty {
+            max-height: 50px;
+            max-width: 300px;
+            display: block;
+            background: linear-gradient(to right, rgba(var(--sys-center-channel-bg-rgb), 0), rgba(var(--sys-center-channel-bg-rgb), 0.5) 60%, rgba(var(--sys-center-channel-bg-rgb), 0) 90%), lightgray;
+            background-repeat: repeat-y;
+            background-size: 30% 2px;
+            background-position: 0 0;
+            animation: shine 1s infinite;
+            background-color: rgba(var(--center-channel-color-rgb), 0.15);
+            clip-path: inset(1px);
+        }
+
+        @keyframes shine {
+            to {
+              background-position: 100% 0, /* move highlight to right */ 0 0;
+            }
+        }
+
+        &--text {
+            height: 15px;
+            width: 100%;
+        }
     }
 }

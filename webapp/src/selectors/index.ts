@@ -74,4 +74,4 @@ export const getDefaultUserInstanceID = (state) => getPluginState(state).default
 
 export const getPluginSettings = (state) => getPluginState(state).pluginSettings;
 
-export const getIssue = (state) => getPluginState(state).getIssue;
+export const getStoredLinkTooltipIssue = (state) => getPluginState(state).storedLinkTooltipIssue;

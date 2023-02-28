@@ -16,16 +16,27 @@ type TicketData = {
     fields: TicketDataFields;
 }
 
+type AvatarUrls = {
+    '48x48': string;
+}
+
+type Assignee = {
+    displayName: string;
+    avatarUrls: AvatarUrls;
+}
+
 type TicketDataFields = {
+    assignee: Assignee | null;
     labels: string[];
     description: string;
     summary: string;
-    project: any;
+    project: {avatarUrls: AvatarUrls};
     versions: string[];
-    status: {
-        name: string;
-    };
-    issuetype: {
-        iconUrl: string;
-    };
+    status: {name: string};
+    issuetype: {iconUrl: string};
+}
+
+type Action = {
+    type: string;
+    data: TicketData;
 }

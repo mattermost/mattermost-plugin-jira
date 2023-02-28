@@ -4,6 +4,7 @@
 import {combineReducers} from 'redux';
 
 import ActionTypes from 'action_types';
+import {jiraIssueToReducer} from 'utils/jira_issue_metadata';
 
 function installedInstances(state = [], action) {
     // We're notified of the instance status at startup (through getConnected)
@@ -193,23 +194,10 @@ const channelSubscriptions = (state = {}, action) => {
     }
 };
 
-const getIssue = (state = {}, action) => {
+const storedLinkTooltipIssue = (state = {}, action) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_JIRA_TICKET : {
-        const assignee = action.data && action.data.fields && action.data.fields.assignee ? action.data.fields.assignee : null;
-        const ticketData = action.data;
-        const ticketDetails = {
-            assigneeName: assignee && assignee.displayName ? assignee.displayName : '',
-            assigneeAvatar: assignee && assignee.avatarUrls && assignee.avatarUrls['48x48'] ? assignee.avatarUrls['48x48'] : '',
-            labels: ticketData.fields.labels,
-            description: ticketData.fields.description,
-            summary: ticketData.fields.summary,
-            ticketId: ticketData.key,
-            jiraIcon: ticketData.fields.project.avatarUrls['48x48'],
-            versions: ticketData.fields.versions.length ? ticketData.fields.versions[0] : '',
-            statusKey: ticketData.fields.status.name,
-            issueIcon: ticketData.fields.issuetype.iconUrl,
-        };
+        const ticketDetails = jiraIssueToReducer(action);
         return {
             ticketDetails,
         };
@@ -234,5 +222,5 @@ export default combineReducers({
     attachCommentToIssueModalForPostId,
     channelIdWithSettingsOpen,
     channelSubscriptions,
-    getIssue,
+    storedLinkTooltipIssue,
 });

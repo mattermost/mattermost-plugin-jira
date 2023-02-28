@@ -356,3 +356,21 @@ export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMet
 
     return [projectJQL, issueTypesJQL, filterFieldsJQL].filter(Boolean).join(' AND ');
 }
+
+export function jiraIssueToReducer(action: Action): TicketDetails {
+    const assignee = action.data && action.data.fields && action.data.fields.assignee ? action.data.fields.assignee : null;
+    const ticketData = action.data;
+    const ticketDetails: TicketDetails = {
+        assigneeName: assignee && assignee.displayName ? assignee.displayName : '',
+        assigneeAvatar: assignee && assignee.avatarUrls && assignee.avatarUrls['48x48'] ? assignee.avatarUrls['48x48'] : '',
+        labels: ticketData.fields.labels,
+        description: ticketData.fields.description,
+        summary: ticketData.fields.summary,
+        ticketId: ticketData.key,
+        jiraIcon: ticketData.fields.project.avatarUrls['48x48'],
+        versions: ticketData.fields.versions.length ? ticketData.fields.versions[0] : '',
+        statusKey: ticketData.fields.status.name,
+        issueIcon: ticketData.fields.issuetype.iconUrl,
+    };
+    return ticketDetails;
+}
