@@ -1380,8 +1380,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 
 			r := bytes.NewReader(data)
 			bb, err := ioutil.ReadAll(r)
-			require.Nil(t, err)
 
+			require.Nil(t, err)
 			wh, err := ParseWebhook(bb)
 			assert.Nil(t, err)
 

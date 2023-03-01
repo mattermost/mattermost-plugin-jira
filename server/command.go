@@ -69,8 +69,9 @@ const commonHelpText = "\n" +
 	"* `/jira help` - Launch the Jira plugin command line help syntax\n" +
 	"* `/jira info` - Display information about the current user and the Jira plug-in\n" +
 	"* `/jira instance list` - List installed Jira instances\n" +
-	"* `/jira instance settings [setting] [value]` - Update your user settings\n" +
+	"* `/jira instance settings [setting] [role] [value]` - Update your user settings\n" +
 	"  * [setting] can be `notifications`\n" +
+	"  * [role] can be `assignee` , `mention` , `reporter` or `watching`\n" +
 	"  * [value] can be `on` or `off`\n" +
 	""
 
@@ -252,12 +253,29 @@ func createSettingsCommand(optInstance bool) *model.AutocompleteData {
 		"list", "", "View your current settings")
 	settings.AddCommand(list)
 
-	notifications := model.NewAutocompleteData(
-		"notifications", "[on|off]", "Update your user notifications settings")
-	notifications.AddStaticListArgument("value", true, []model.AutocompleteListItem{
+	setting := []model.AutocompleteListItem{
 		{HelpText: "Turn notifications on", Item: "on"},
 		{HelpText: "Turn notifications off", Item: "off"},
-	})
+	}
+
+	notifications := model.NewAutocompleteData(
+		"notifications", "[assignee|mention|reporter|watching]", "manage notifications")
+
+	assigneeNotifications := model.NewAutocompleteData(assigneeRole, "", "manage assignee notifications")
+	assigneeNotifications.AddStaticListArgument("value", true, setting)
+
+	mentionNotifications := model.NewAutocompleteData(mentionRole, "", "manage mention notifications")
+	mentionNotifications.AddStaticListArgument("value", true, setting)
+
+	reporterNotifications := model.NewAutocompleteData(reporterRole, "", "manage reporter notifications")
+	reporterNotifications.AddStaticListArgument("value", true, setting)
+
+	watchingNotifications := model.NewAutocompleteData(watchingRole, "", "manage watching notifications")
+	reporterNotifications.AddStaticListArgument("value", true, setting)
+	notifications.AddCommand(assigneeNotifications)
+	notifications.AddCommand(mentionNotifications)
+	notifications.AddCommand(reporterNotifications)
+	notifications.AddCommand(watchingNotifications)
 	withFlagInstance(notifications, optInstance, routeAutocompleteInstalledInstanceWithAlias)
 	settings.AddCommand(notifications)
 
@@ -375,10 +393,12 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArg
 	if err != nil {
 		return p.responsef(commandArgs, err.Error()), nil
 	}
+
 	args := strings.Fields(commandArgs.Command)
 	if len(args) == 0 || args[0] != "/jira" {
 		return p.help(commandArgs), nil
 	}
+
 	return jiraCommandHandler.Handle(p, c, commandArgs, args[1:]...), nil
 }
 
@@ -591,7 +611,10 @@ func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 
 	switch args[0] {
 	case "list":
-		return p.responsef(header, "Current settings:\n%s", conn.Settings.String())
+		if conn.Settings != nil {
+			return p.responsef(header, "Current settings:\n%s", conn.Settings.String())
+		}
+		return p.responsef(header, "Please connect to Jira account using the command `/jira connect`")
 	case "notifications":
 		return p.settingsNotifications(header, instance.GetID(), user.MattermostUserID, conn, args)
 	default:
