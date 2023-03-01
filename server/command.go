@@ -69,8 +69,9 @@ const commonHelpText = "\n" +
 	"* `/jira help` - Launch the Jira plugin command line help syntax\n" +
 	"* `/jira info` - Display information about the current user and the Jira plug-in\n" +
 	"* `/jira instance list` - List installed Jira instances\n" +
-	"* `/jira instance settings [setting] [value]` - Update your user settings\n" +
+	"* `/jira instance settings [setting] [role] [value]` - Update your user settings\n" +
 	"  * [setting] can be `notifications`\n" +
+	"  * [role] can be `assignee` , `mention` , `reporter` or `watching`\n" +
 	"  * [value] can be `on` or `off`\n" +
 	""
 
