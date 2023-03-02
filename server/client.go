@@ -75,7 +75,7 @@ type IssueService interface {
 	AddAttachment(api plugin.API, issueKey, fileID string, maxSize utils.ByteSize) (mattermostName, jiraName, mime string, err error)
 	AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
 	DoTransition(issueKey, transitionID string) error
-	GetCreateMetaInfo(*jira.GetQueryOptions) (*jira.CreateMetaInfo, error)
+	GetCreateMetaInfo(api plugin.API, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error)
 	GetTransitions(issueKey string) ([]jira.Transition, error)
 	UpdateAssignee(issueKey string, user *jira.User) error
 	UpdateComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)

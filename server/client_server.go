@@ -9,6 +9,7 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/blang/semver/v4"
+	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/pkg/errors"
 )
 
@@ -60,67 +61,63 @@ func (client jiraServerClient) GetIssueInfo(projectID string) (*ProjectIssueInfo
 	return &issues, response, err
 }
 
-func (client jiraServerClient) GetProjectInfoForPivotJiraVersion(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, *jira.Response, error) {
-	var issueInfo *ProjectIssueInfo
-	var req *http.Request
-
-	projectList, resp, err := client.Jira.Project.ListWithOptions(options)
-	meta := new(jira.CreateMetaInfo)
-
+func (client jiraServerClient) GetCreateMetaInfoForPivotJiraVersion(api plugin.API, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, *jira.Response, error) {
+	projectID := options.ProjectKeys
+	proj, resp, err := client.Jira.Project.Get(projectID)
 	if err != nil {
-		return nil, resp, errors.Wrap(err, "failed to list projects")
+		return nil, resp, errors.Wrap(err, "failed to get project for CreateMetaInfo")
 	}
 
-	for _, proj := range *projectList {
-		meta.Expand = proj.Expand
-		issueInfo, resp, err = client.GetIssueInfo(proj.ID)
+	issueInfo, resp, err := client.GetIssueInfo(proj.ID)
+	if err != nil {
+		return nil, resp, errors.Wrap(err, "failed to get create meta info")
+	}
+
+	for _, issueType := range issueInfo.Values {
+		apiEndpoint := fmt.Sprintf("%s%s/issuetypes/%s", APIEndpointCreateIssueMeta, proj.ID, issueType.Id)
+		req, rErr := client.Jira.NewRequest(http.MethodGet, apiEndpoint, nil)
 		if err != nil {
-			break
+			api.LogDebug("Failed to get the issue type.", "IssueType", issueType, "Error", rErr.Error())
+			continue
 		}
 
-		for _, issueType := range issueInfo.Values {
-			apiEndpoint := fmt.Sprintf("%s%s/issuetypes/%s", APIEndpointCreateIssueMeta, proj.ID, issueType.Id)
-			req, err = client.Jira.NewRequest(http.MethodGet, apiEndpoint, nil)
-			if err != nil {
-				break
-			}
-
-			fieldInfo := FieldInfo{}
-			resp, err = client.Jira.Do(req, &fieldInfo)
-			if err != nil {
-				break
-			}
-
-			fieldMap := make(map[string]interface{})
-			for _, fieldValue := range fieldInfo.Values {
-				fieldMap[fmt.Sprintf("%v", fieldValue["fieldId"])] = fieldValue
-			}
-			issueType.Fields = fieldMap
-		}
-		project := &jira.MetaProject{
-			Expand:     proj.Expand,
-			Self:       proj.Self,
-			Id:         proj.ID,
-			Key:        proj.Key,
-			Name:       proj.Name,
-			IssueTypes: issueInfo.Values,
+		fieldInfo := FieldInfo{}
+		resp, err = client.Jira.Do(req, &fieldInfo)
+		if err != nil {
+			api.LogDebug("Failed to get the response for field info.", "Error", err.Error())
+			continue
 		}
 
-		meta.Projects = append(meta.Projects, project)
+		fieldMap := make(map[string]interface{})
+		for _, fieldValue := range fieldInfo.Values {
+			fieldMap[fmt.Sprintf("%v", fieldValue["fieldId"])] = fieldValue
+		}
+		issueType.Fields = fieldMap
 	}
+	project := &jira.MetaProject{
+		Expand:     proj.Expand,
+		Self:       proj.Self,
+		Id:         proj.ID,
+		Key:        proj.Key,
+		Name:       proj.Name,
+		IssueTypes: issueInfo.Values,
+	}
+
+	meta := new(jira.CreateMetaInfo)
+	meta.Projects = append(meta.Projects, project)
 	return meta, resp, err
 }
 
-func (client jiraServerClient) GetProjectInfo(currentVersion, pivotVersion semver.Version, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, *jira.Response, error) {
+func (client jiraServerClient) GetCreateMetaInfoForSpecificJiraVersion(api plugin.API, currentVersion, pivotVersion semver.Version, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, *jira.Response, error) {
 	if currentVersion.LT(pivotVersion) {
 		return client.Jira.Issue.GetCreateMetaWithOptions(options)
 	}
-	return client.GetProjectInfoForPivotJiraVersion(options)
+	return client.GetCreateMetaInfoForPivotJiraVersion(api, options)
 }
 
 // GetCreateMetaInfo returns the metadata needed to implement the UI and validation of
 // creating new Jira issues.
-func (client jiraServerClient) GetCreateMetaInfo(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
+func (client jiraServerClient) GetCreateMetaInfo(api plugin.API, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
 	v := new(JiraServerVersionInfo)
 	req, err := client.Jira.NewRequest(http.MethodGet, APIEndpointGetServerInfo, nil)
 	if err != nil {
@@ -141,7 +138,7 @@ func (client jiraServerClient) GetCreateMetaInfo(options *jira.GetQueryOptions) 
 		return nil, errors.Wrap(err, "error while parsing version")
 	}
 
-	info, resp, err := client.GetProjectInfo(currentVersion, pivotVersion, options)
+	info, resp, err := client.GetCreateMetaInfoForSpecificJiraVersion(api, currentVersion, pivotVersion, options)
 	if err != nil {
 		if resp == nil {
 			return nil, err

@@ -398,7 +398,7 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 		return nil, err
 	}
 
-	return client.GetCreateMetaInfo(&jira.GetQueryOptions{
+	return client.GetCreateMetaInfo(p.API, &jira.GetQueryOptions{
 		Expand:      "projects.issuetypes.fields",
 		ProjectKeys: projectKeys,
 	})

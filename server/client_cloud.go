@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/pkg/errors"
 )
 
@@ -25,7 +26,7 @@ func newCloudClient(jiraClient *jira.Client) Client {
 
 // GetCreateMetaInfo returns the metadata needed to implement the UI and validation of
 // creating new Jira issues.
-func (client jiraCloudClient) GetCreateMetaInfo(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
+func (client jiraCloudClient) GetCreateMetaInfo(api plugin.API, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
 	cimd, resp, err := client.Jira.Issue.GetCreateMetaWithOptions(options)
 	if err != nil {
 		if resp == nil {
