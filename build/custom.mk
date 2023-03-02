@@ -13,3 +13,7 @@ LDFLAGS += -X "main.BuildHash=$(BUILD_HASH)"
 LDFLAGS += -X "main.BuildHashShort=$(BUILD_HASH_SHORT)"
 
 GO_BUILD_FLAGS = -ldflags '$(LDFLAGS)'
+
+.PHONY: jira
+jira:
+	docker-compose up

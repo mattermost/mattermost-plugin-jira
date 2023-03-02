@@ -1,7 +1,12 @@
 version: '3'
 services:
   jira:
-    image: atlassian/jira-software:7 # It is recommended to test with version 7. Most, if not all, compatibility issues between Jira Server/Cloud exist in version 7.
-    # image: atlassian/jira-software:8 # Test with version 8 as well when adding new webhook handling logic, or introducing a new Jira API call.
+    container_name: mattermost-jira
+    image: atlassian/jira-software:8 # It is recommended to test with version 8. Most, if not all, compatibility issues between Jira Server/Cloud exist in version 8. 
+    # image: atlassian/jira-software:latest # Alternatively you can test with latest version as well (version 9)
     ports:
       - "8080:8080"
+    environment:
+      - JVM_MINIMUM_MEMORY=4096m
+      - JVM_MAXIMUM_MEMORY=8192m
+      - JVM_RESERVED_CODE_CACHE_SIZE=1024m
