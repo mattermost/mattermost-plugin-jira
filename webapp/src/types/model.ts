@@ -214,6 +214,7 @@ export type AllProjectMetadata = {
 
 export type CreateIssueFields = {
     description: string;
+    summary?: string;
     project: {key: string};
     issuetype: {id: string};
 } & {[key: string]: JiraField};

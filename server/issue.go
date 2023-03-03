@@ -399,7 +399,7 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 		return nil, err
 	}
 
-	return client.GetCreateMeta(&jira.GetQueryOptions{
+	return client.GetCreateMetaInfo(p.API, &jira.GetQueryOptions{
 		Expand:      "projects.issuetypes.fields",
 		ProjectKeys: projectKeys,
 	})
@@ -503,13 +503,34 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 
 	instanceID := r.FormValue("instance_id")
 
-	cimd, connection, err := p.GetJiraProjectMetadata(types.ID(instanceID), types.ID(mattermostUserID))
+	plist, connection, err := p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID), true)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to GetProjectMetadata"))
+		// Getting the issue Types separately only when the status code returned is 400
+		if !strings.Contains(err.Error(), "400") {
+			return respondErr(w, http.StatusInternalServerError,
+				errors.WithMessage(err, "failed to GetProjectMetadata"))
+		}
+
+		plist, connection, err = p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID), false)
+		if err != nil {
+			return respondErr(w, http.StatusInternalServerError,
+				errors.WithMessage(err, "failed to get the list of Jira Projects"))
+		}
+
+		var projectList jira.ProjectList
+		for _, prj := range plist {
+			issueTypeList, iErr := p.GetIssueTypes(types.ID(instanceID), types.ID(mattermostUserID), prj.ID)
+			if iErr != nil {
+				p.API.LogDebug("Failed to get issue types for project.", "ProjectKey", prj.Key, "Error", iErr.Error())
+				continue
+			}
+			prj.IssueTypes = issueTypeList
+			projectList = append(projectList, prj)
+		}
+		plist = projectList
 	}
 
-	if len(cimd.Projects) == 0 {
+	if len(plist) == 0 {
 		_, err = respondJSON(w, map[string]interface{}{
 			"error": "You do not have permission to create issues in any projects. Please contact your Jira admin.",
 		})
@@ -519,21 +540,20 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	type option = utils.ReactSelectOption
-	projects := make([]option, 0, len(cimd.Projects))
-	issues := make(map[string][]option, len(cimd.Projects))
-	for _, prj := range cimd.Projects {
-		projects = append(projects, option{
+	projects := []utils.ReactSelectOption{}
+	issues := map[string][]utils.ReactSelectOption{}
+	for _, prj := range plist {
+		projects = append(projects, utils.ReactSelectOption{
 			Value: prj.Key,
 			Label: prj.Name,
 		})
-		issueTypes := make([]option, 0, len(prj.IssueTypes))
+		issueTypes := []utils.ReactSelectOption{}
 		for _, issue := range prj.IssueTypes {
-			if issue.Subtasks {
+			if issue.Subtask {
 				continue
 			}
-			issueTypes = append(issueTypes, option{
-				Value: issue.Id,
+			issueTypes = append(issueTypes, utils.ReactSelectOption{
+				Value: issue.ID,
 				Label: issue.Name,
 			})
 		}
@@ -547,16 +567,30 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-func (p *Plugin) GetJiraProjectMetadata(instanceID, mattermostUserID types.ID) (*jira.CreateMetaInfo, *Connection, error) {
+func (p *Plugin) ListJiraProjects(instanceID, mattermostUserID types.ID, expandIssueTypes bool) (jira.ProjectList, *Connection, error) {
 	client, _, connection, err := p.getClient(instanceID, mattermostUserID)
 	if err != nil {
 		return nil, nil, err
 	}
-	metainfo, err := client.GetCreateMeta(nil)
+	plist, err := client.ListProjects("", -1, expandIssueTypes)
 	if err != nil {
 		return nil, nil, err
 	}
-	return metainfo, connection, nil
+	return plist, connection, nil
+}
+
+func (p *Plugin) GetIssueTypes(instanceID, mattermostUserID types.ID, projectID string) ([]jira.IssueType, error) {
+	client, _, _, err := p.getClient(instanceID, mattermostUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	issueTypes, err := client.GetIssueTypes(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	return issueTypes, nil
 }
 
 var reJiraIssueKey = regexp.MustCompile(`^([[:alnum:]]+)-([[:digit:]]+)$`)
@@ -778,16 +812,19 @@ func getIssueCustomFieldValue(issue *jira.Issue, key string) StringSet {
 func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 	key = strings.ToLower(key)
 	switch key {
-	case statusField:
+  case statusField:
 		return NewStringSet(issue.Fields.Status.ID)
-	case labelsField:
+  case labelsField:
 		return NewStringSet(issue.Fields.Labels...)
-	case priorityField:
+  case priorityField:
 		return NewStringSet(issue.Fields.Priority.ID)
-	case reporterField:
+  case reporterField:
 		return NewStringSet(issue.Fields.Reporter.AccountID)
-	case assigneeField:
+  case assigneeField:
 		return NewStringSet(issue.Fields.Assignee.AccountID)
+  if issue.Fields.Priority != nil {
+			return NewStringSet(issue.Fields.Priority.ID)
+		}
 	case "fixversions":
 		result := NewStringSet()
 		for _, v := range issue.Fields.FixVersions {

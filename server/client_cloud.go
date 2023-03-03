@@ -5,8 +5,10 @@ package main
 
 import (
 	"encoding/json"
+	"strconv"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/pkg/errors"
 )
 
@@ -22,9 +24,9 @@ func newCloudClient(jiraClient *jira.Client) Client {
 	}
 }
 
-// GetCreateMeta returns the metadata needed to implement the UI and validation of
+// GetCreateMetaInfo returns the metadata needed to implement the UI and validation of
 // creating new Jira issues.
-func (client jiraCloudClient) GetCreateMeta(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
+func (client jiraCloudClient) GetCreateMetaInfo(api plugin.API, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
 	cimd, resp, err := client.Jira.Issue.GetCreateMetaWithOptions(options)
 	if err != nil {
 		if resp == nil {
@@ -65,4 +67,68 @@ func (client jiraCloudClient) GetUserGroups(connection *Connection) ([]*jira.Use
 		return nil, err
 	}
 	return groups, nil
+}
+
+func (client jiraCloudClient) ListProjects(query string, limit int, expandIssueTypes bool) (jira.ProjectList, error) {
+	type searchResult struct {
+		Values     jira.ProjectList `json:"values"`
+		StartAt    int              `json:"startAt"`
+		MaxResults int              `json:"maxResults"`
+		Total      int              `json:"total"`
+		IsLast     bool             `json:"isLast"`
+	}
+
+	remaining := 50
+	fetchAll := false
+	if limit > 0 {
+		remaining = limit
+	}
+	if limit < 0 {
+		fetchAll = true
+	}
+
+	var out jira.ProjectList
+	for {
+		opts := map[string]string{
+			"startAt":    strconv.Itoa(len(out)),
+			"maxResults": strconv.Itoa(remaining),
+		}
+
+		if expandIssueTypes {
+			opts["expand"] = QueryParamIssueTypes
+		}
+
+		var result searchResult
+		err := client.RESTGet("/3/project/search", opts, &result)
+		if err != nil {
+			return nil, err
+		}
+		if len(result.Values) > remaining {
+			result.Values = result.Values[:remaining]
+		}
+		out = append(out, result.Values...)
+		remaining -= len(result.Values)
+
+		if !fetchAll && remaining == 0 {
+			// Got enough.
+			return out, nil
+		}
+		if len(result.Values) == 0 || result.IsLast {
+			// Ran out of results.
+			return out, nil
+		}
+	}
+}
+
+func (client jiraCloudClient) GetIssueTypes(projectID string) ([]jira.IssueType, error) {
+	var result []jira.IssueType
+	opts := map[string]string{
+		"projectId": projectID,
+	}
+
+	if err := client.RESTGet("3/issuetype/project", opts, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
