@@ -55,7 +55,8 @@ type UserService interface {
 // ProjectService is the interface for project-related APIs.
 type ProjectService interface {
 	GetProject(key string) (*jira.Project, error)
-	ListProjects(query string, limit int) (jira.ProjectList, error)
+	ListProjects(query string, limit int, expandIssueTypes bool) (jira.ProjectList, error)
+	GetIssueTypes(projectID string) ([]jira.IssueType, error)
 }
 
 // SearchService is the interface for search-related APIs.
@@ -74,7 +75,7 @@ type IssueService interface {
 	AddAttachment(api plugin.API, issueKey, fileID string, maxSize utils.ByteSize) (mattermostName, jiraName, mime string, err error)
 	AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
 	DoTransition(issueKey, transitionID string) error
-	GetCreateMetaInfo(*jira.GetQueryOptions) (*jira.CreateMetaInfo, error)
+	GetCreateMetaInfo(api plugin.API, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error)
 	GetTransitions(issueKey string) ([]jira.Transition, error)
 	UpdateAssignee(issueKey string, user *jira.User) error
 	UpdateComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)

@@ -351,7 +351,7 @@ func (p *Plugin) AddAutolinksForCloudInstance(ci *cloudInstance) error {
 		return fmt.Errorf("unable to get jira client for server: %w", err)
 	}
 
-	plist, err := jiraCloudClient{JiraClient{Jira: client}}.ListProjects("", -1)
+	plist, err := jiraCloudClient{JiraClient{Jira: client}}.ListProjects("", -1, false)
 	if err != nil {
 		return fmt.Errorf("unable to get project keys: %w", err)
 	}
