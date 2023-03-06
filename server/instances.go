@@ -189,7 +189,18 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 				return errors.Errorf("%s did not match instance %s type %s", instanceType, instanceID, instance.Common().Type)
 			}
 
-			if err = p.disconnectUsers(instance); err != nil {
+			err = p.userStore.MapUsers(func(user *User) error {
+				if !user.ConnectedInstances.Contains(instance.GetID()) {
+					return nil
+				}
+
+				_, err = p.disconnectUser(instance, user)
+				if err != nil {
+					p.infof("UninstallInstance: failed to disconnect user: %v", err)
+				}
+				return nil
+			})
+			if err != nil {
 				return err
 			}
 
@@ -211,24 +222,6 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 	// Notify users we have uninstalled an instance
 	p.wsInstancesChanged(updated)
 	return instance, nil
-}
-
-func (p *Plugin) disconnectUsers(instance Instance) error {
-	err := p.userStore.MapUsers(func(user *User) error {
-		if !user.ConnectedInstances.Contains(instance.GetID()) {
-			return nil
-		}
-
-		_, err := p.disconnectUser(instance, user)
-		if err != nil {
-			p.infof("UninstallInstance: failed to disconnect user: %v", err)
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (p *Plugin) wsInstancesChanged(instances *Instances) {
