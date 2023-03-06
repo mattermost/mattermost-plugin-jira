@@ -634,7 +634,7 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	}
 	post.AddProp("attachments", attachment)
 
-	_ = p.client.Post.SendEphemeralPost(header.UserId, post)
+	p.client.Post.SendEphemeralPost(header.UserId, post)
 
 	return &model.CommandResponse{}
 }
@@ -659,7 +659,7 @@ func executeV2Revert(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 		preMessage = `#### Successfully reverted the V3 Jira plugin database to V2. The Jira plugin has been disabled.` + "\n"
 
 		go func() {
-			_ = p.client.Plugins.Disable(manifest.ID)
+			_ = p.client.Plugin.Disable(manifest.ID)
 		}()
 	}
 	message := `**Please note that if you have multiple configured Jira instances this command will result in all non-legacy instances being removed.**
@@ -1100,7 +1100,7 @@ func (p *Plugin) postCommandResponse(args *model.CommandArgs, text string) {
 		RootId:    args.RootId,
 		Message:   text,
 	}
-	_ = p.client.Post.SendEphemeralPost(args.UserId, post)
+	p.client.Post.SendEphemeralPost(args.UserId, post)
 }
 
 func (p *Plugin) responsef(commandArgs *model.CommandArgs, format string, args ...interface{}) *model.CommandResponse {

@@ -20,6 +20,7 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -43,7 +44,7 @@ type Client interface {
 // or a fully-qualified URL, with a non-empty Scheme.
 type RESTService interface {
 	RESTGet(endpoint string, params map[string]string, dest interface{}) error
-	RESTPostAttachment(issueID string, data []byte, name string) (*jira.Attachment, error)
+	RESTPostAttachment(issueID string, data io.Reader, name string) (*jira.Attachment, error)
 }
 
 // UserService is the interface for user-related APIs.
@@ -72,7 +73,7 @@ type IssueService interface {
 	GetIssue(key string, options *jira.GetQueryOptions) (*jira.Issue, error)
 	CreateIssue(issue *jira.Issue) (*jira.Issue, error)
 
-	AddAttachment(client plugin.client, issueKey, fileID string, maxSize utils.ByteSize) (mattermostName, jiraName, mime string, err error)
+	AddAttachment(p *pluginapi.Client, issueKey, fileID string, maxSize utils.ByteSize) (mattermostName, jiraName, mime string, err error)
 	AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
 	DoTransition(issueKey, transitionID string) error
 	GetCreateMetaInfo(api plugin.API, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error)
@@ -118,7 +119,7 @@ func (client JiraClient) RESTGet(endpoint string, params map[string]string, dest
 // `issue/%s/attachments` endpoint returns some errors as JSON ("You do not have permission to
 // create attachments for this issue"), and some as plain text ("The field file exceeds its maximum
 // permitted size of 1024 bytes"). This implementation handles both.
-func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name string) (*jira.Attachment, error) {
+func (client JiraClient) RESTPostAttachment(issueID string, data io.Reader, name string) (*jira.Attachment, error) {
 	endpointURL, err := endpointURL(fmt.Sprintf("2/issue/%s/attachments", issueID))
 	if err != nil {
 		return nil, err
@@ -131,7 +132,7 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 	if err != nil {
 		return nil, err
 	}
-	if _, err = io.Copy(fw, bytes.NewReader(data)); err != nil {
+	if _, err = io.Copy(fw, data); err != nil {
 		return nil, err
 	}
 	writer.Close()
@@ -275,9 +276,9 @@ func (client JiraClient) DoTransition(issueKey, transitionID string) error {
 }
 
 // AddAttachment uploads a file attachment
-func (client JiraClient) AddAttachment(client plugin.client, issueKey, fileID string, maxSize utils.ByteSize) (
+func (client JiraClient) AddAttachment(mmClient *pluginapi.Client, issueKey, fileID string, maxSize utils.ByteSize) (
 	mattermostName, jiraName, mime string, err error) {
-	fileinfo, err := client.File.GetInfo(fileID)
+	fileinfo, err := mmClient.File.GetInfo(fileID)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -286,7 +287,7 @@ func (client JiraClient) AddAttachment(client plugin.client, issueKey, fileID st
 			errors.Errorf("Maximum attachment size %v exceeded, file size %v", maxSize, utils.ByteSize(fileinfo.Size))
 	}
 
-	fileBytes, err := client.File.GetByPath(fileinfo.Path)
+	fileBytes, err := mmClient.File.GetByPath(fileinfo.Path)
 	if err != nil {
 		return "", "", "", err
 	}

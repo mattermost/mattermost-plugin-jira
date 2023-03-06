@@ -63,7 +63,7 @@ func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...
 	}()
 
 	conf := p.getConfig()
-	channel, err := p.client.Channel.Get(mattermostUserID, conf.botUserID)
+	channel, err := p.client.Channel.GetDirect(mattermostUserID, conf.botUserID)
 	if err != nil {
 		return nil, err
 	}

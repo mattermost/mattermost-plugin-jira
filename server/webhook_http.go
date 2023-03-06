@@ -91,7 +91,7 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 	bb, err := ioutil.ReadAll(r.Body)
 	channel, err := p.client.Channel.GetByNameForTeamName(teamName, channelName, false)
 	if err != nil {
-		return respondErr(w, err.StatusCode, err)
+		return respondErr(w, http.StatusBadRequest, err)
 	}
 
 	wh, err := ParseWebhook(bb)

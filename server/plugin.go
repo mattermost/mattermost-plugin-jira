@@ -9,7 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"math"
 	"net/url"
 	"path/filepath"
@@ -199,7 +199,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	// create new tracker on each configuration change
 	p.tracker = telemetry.NewTracker(
 		p.telemetryClient,
-		p.client.System.GetDiagnosticId(),
+		p.client.System.GetDiagnosticID(),
 		p.client.System.GetServerVersion(),
 		manifest.ID,
 		manifest.Version,
@@ -266,7 +266,7 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrap(err, "couldn't get bundle path")
 	}
 
-	profileImage, err := ioutil.ReadFile(filepath.Join(bundlePath, "assets", "profile.png"))
+	profileImage, err := os.Open(filepath.Join(bundlePath, "assets", "profile.png"))
 	if err != nil {
 		return errors.Wrap(err, "couldn't read profile image")
 	}
@@ -318,8 +318,7 @@ func (p *Plugin) OnActivate() error {
 				p.client.Log.Info("only cloud instances supported for autolink", "err", err)
 				continue
 			}
-
-			status, err := p.client.Plugins.GetPluginStatus(autolinkPluginID)
+			status, err := p.client.Plugin.GetPluginStatus(autolinkPluginID)
 			if err != nil {
 				p.client.Log.Warn("OnActivate: Autolink plugin unavailable. API returned error", "error", err.Error())
 				continue

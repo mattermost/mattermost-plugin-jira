@@ -193,7 +193,8 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) ([]Chan
 
 func (p *Plugin) getSubscriptions(instanceID types.ID) (*Subscriptions, error) {
 	subKey := keyWithInstanceID(instanceID, JiraSubscriptionsKey)
-	data, err := p.client.KV.Get(subKey)
+	var data []byte
+	err := p.client.KV.Get(subKey, data)
 	if err != nil {
 		return nil, err
 	}
@@ -649,7 +650,8 @@ func (p *Plugin) hasPermissionToManageSubscription(instanceID types.ID, userID, 
 
 func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]byte, error)) error {
 	readModify := func() ([]byte, []byte, error) {
-		initialBytes, err := p.client.KV.Get(key)
+		var initialBytes []byte
+		err := p.client.KV.Get(key, initialBytes)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "unable to read initial value")
 		}
@@ -747,7 +749,7 @@ func (p *Plugin) httpChannelCreateSubscription(w http.ResponseWriter, r *http.Re
 			fmt.Errorf("channel subscription invalid"))
 	}
 
-	err := p.client.Channel.GetMember(subscription.ChannelID, mattermostUserID)
+	_, err = p.client.Channel.GetMember(subscription.ChannelID, mattermostUserID)
 	if err != nil {
 		return respondErr(w, http.StatusForbidden,
 			errors.New("not a member of the channel specified"))
@@ -813,7 +815,7 @@ func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Requ
 			errors.Wrap(err, "you don't have permission to manage subscriptions"))
 	}
 
-	err := p.client.Channel.GetMember(subscription.ChannelID, mattermostUserID)
+	_, err = p.client.Channel.GetMember(subscription.ChannelID, mattermostUserID)
 	if err != nil {
 		return respondErr(w, http.StatusForbidden,
 			errors.New("not a member of the channel specified"))
@@ -872,7 +874,7 @@ func (p *Plugin) httpChannelDeleteSubscription(w http.ResponseWriter, r *http.Re
 			errors.Wrap(err, "you don't have permission to manage subscriptions"))
 	}
 
-	err = p.client.Channel.GetMember(subscription.ChannelID, mattermostUserID)
+	_, err = p.client.Channel.GetMember(subscription.ChannelID, mattermostUserID)
 	if err != nil {
 		return respondErr(w, http.StatusForbidden,
 			errors.New("not a member of the channel specified"))
@@ -913,7 +915,7 @@ func (p *Plugin) httpChannelGetSubscriptions(w http.ResponseWriter, r *http.Requ
 	}
 	instanceID := types.ID(r.FormValue("instance_id"))
 
-	if err := p.client.Channel.GetMember(channelID, mattermostUserID); err != nil {
+	if _, err := p.client.Channel.GetMember(channelID, mattermostUserID); err != nil {
 		return respondErr(w, http.StatusForbidden,
 			errors.New("not a member of the channel specified"))
 	}

@@ -91,7 +91,7 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 
 	err := p.client.Post.CreatePost(post)
 	if err != nil {
-		return nil, err.StatusCode, err
+		return nil, http.StatusBadRequest, err
 	}
 
 	return post, http.StatusOK, nil

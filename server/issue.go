@@ -144,7 +144,7 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 		ToState:          toState,
 	})
 	if err != nil {
-		_ = p.client.Post.SendEphemeralPost(mattermostUserID, makePost(jiraBotID, channelID, "Failed to transition this issue."))
+		p.client.Post.SendEphemeralPost(mattermostUserID, makePost(jiraBotID, channelID, "Failed to transition this issue."))
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
@@ -154,7 +154,7 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 }
 
 func (p *Plugin) respondErrWithFeedback(mattermostUserID string, post *model.Post, w http.ResponseWriter, status int) (int, error) {
-	_ = p.client.Post.SendEphemeralPost(mattermostUserID, post)
+	p.client.Post.SendEphemeralPost(mattermostUserID, post)
 	return respondErr(w, status, errors.New(post.Message))
 }
 
@@ -275,7 +275,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 			RootId:    rootID,
 			UserId:    instance.Common().getConfig().botUserID,
 		}
-		_ = p.client.Post.SendEphemeralPost(in.mattermostUserID.String(), reply)
+		p.client.Post.SendEphemeralPost(in.mattermostUserID.String(), reply)
 		return nil, errors.Errorf("issue can not be created via API: %s", message)
 	}
 
@@ -291,7 +291,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 				MakeCreateIssueURL(instance, project, issue),
 				err)
 
-			_ = p.client.Post.SendEphemeralPost(in.mattermostUserID.String(), &model.Post{
+			p.client.Post.SendEphemeralPost(in.mattermostUserID.String(), &model.Post{
 				Message:   message,
 				ChannelId: channelID,
 				RootId:    rootID,
@@ -319,7 +319,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 	}
 
 	reply.AddProp("attachments", attachment)
-	_ = p.client.Post.SendEphemeralPost(in.mattermostUserID.String(), reply)
+	p.client.Post.SendEphemeralPost(in.mattermostUserID.String(), reply)
 
 	// Fetching issue details as Jira only returns the issue id and issue key at the time of
 	// issue creation. We will not have issue summary in the creation response.
@@ -1055,7 +1055,7 @@ func (p *Plugin) TransitionIssue(in *InTransitionIssue) (string, error) {
 
 	post := makePost(p.getUserID(), in.PostToChannelID, msg)
 	post.AddProp("attachments", attachments)
-	_ = p.client.Post.SendEphemeralPost(in.mattermostUserID.String(), post)
+	p.client.Post.SendEphemeralPost(in.mattermostUserID.String(), post)
 
 	return msg, nil
 }
