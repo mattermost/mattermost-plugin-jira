@@ -84,7 +84,7 @@ func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, e
 	// Setup autolink
 	err = p.AddAutolinksForCloudInstance(newInstance)
 	if err != nil {
-		p.API.LogInfo("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
+		p.client.Log.Info("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 	}
 
 	_ = p.setupFlow.ForUser(ci.SetupWizardUserID).Go(stepInstalledJiraApp)

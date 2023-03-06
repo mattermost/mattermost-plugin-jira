@@ -89,9 +89,9 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 		post.Message = wh.headline
 	}
 
-	_, appErr := p.API.CreatePost(post)
-	if appErr != nil {
-		return nil, appErr.StatusCode, appErr
+	err := p.client.Post.CreatePost(post)
+	if err != nil {
+		return nil, err.StatusCode, err
 	}
 
 	return post, http.StatusOK, nil
@@ -177,14 +177,14 @@ func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL
 		return "", "", err
 	}
 
-	team, appErr := p.API.GetTeam(teamID)
-	if appErr != nil {
-		return "", "", appErr
+	team, err := p.client.Team.Get(teamID)
+	if err != nil {
+		return "", "", err
 	}
 
-	channel, appErr := p.API.GetChannel(channelID)
-	if appErr != nil {
-		return "", "", appErr
+	channel, err := p.client.Channel.Get(channelID)
+	if err != nil {
+		return "", "", err
 	}
 
 	v := url.Values{}

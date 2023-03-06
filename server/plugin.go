@@ -157,7 +157,7 @@ func (p *Plugin) updateConfig(f func(conf *config)) config {
 func (p *Plugin) OnConfigurationChange() error {
 	// Load the public configuration fields from the Mattermost server configuration.
 	ec := externalConfig{}
-	err := p.API.LoadPluginConfiguration(&ec)
+	err := p.client.Configuration.LoadPluginConfiguration(&ec)
 	if err != nil {
 		return errors.WithMessage(err, "failed to load plugin configuration")
 	}
@@ -192,15 +192,15 @@ func (p *Plugin) OnConfigurationChange() error {
 	}
 
 	diagnostics := false
-	if p.API.GetConfig().LogSettings.EnableDiagnostics != nil {
-		diagnostics = *p.API.GetConfig().LogSettings.EnableDiagnostics
+	if p.client.Configuration.GetConfig().LogSettings.EnableDiagnostics != nil {
+		diagnostics = *p.client.Configuration.GetConfig().LogSettings.EnableDiagnostics
 	}
 
 	// create new tracker on each configuration change
 	p.tracker = telemetry.NewTracker(
 		p.telemetryClient,
-		p.API.GetDiagnosticId(),
-		p.API.GetServerVersion(),
+		p.client.System.GetDiagnosticId(),
+		p.client.System.GetServerVersion(),
 		manifest.ID,
 		manifest.Version,
 		"jira",
@@ -240,7 +240,7 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	mattermostSiteURL := ""
-	ptr := p.API.GetConfig().ServiceSettings.SiteURL
+	ptr := p.client.Configuration.GetConfig().ServiceSettings.SiteURL
 	if ptr != nil {
 		mattermostSiteURL = *ptr
 	}
@@ -261,7 +261,7 @@ func (p *Plugin) OnActivate() error {
 		conf.rsaKey = rsaKey
 	})
 
-	bundlePath, err := p.API.GetBundlePath()
+	bundlePath, err := p.client.System.GetBundlePath()
 	if err != nil {
 		return errors.Wrap(err, "couldn't get bundle path")
 	}
@@ -271,8 +271,8 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrap(err, "couldn't read profile image")
 	}
 
-	if appErr := p.API.SetProfileImage(botUserID, profileImage); appErr != nil {
-		return errors.Wrap(appErr, "couldn't set profile image")
+	if err := p.client.User.SetProfileImage(botUserID, profileImage); err != nil {
+		return errors.Wrap(err, "couldn't set profile image")
 	}
 
 	instances, err := MigrateV2Instances(p)
@@ -315,22 +315,22 @@ func (p *Plugin) OnActivate() error {
 
 			ci, ok := instance.(*cloudInstance)
 			if !ok {
-				p.API.LogInfo("only cloud instances supported for autolink", "err", err)
+				p.client.Log.Info("only cloud instances supported for autolink", "err", err)
 				continue
 			}
 
-			status, apiErr := p.API.GetPluginStatus(autolinkPluginID)
-			if apiErr != nil {
-				p.API.LogWarn("OnActivate: Autolink plugin unavailable. API returned error", "error", apiErr.Error())
+			status, err := p.client.Plugins.GetPluginStatus(autolinkPluginID)
+			if err != nil {
+				p.client.Log.Warn("OnActivate: Autolink plugin unavailable. API returned error", "error", err.Error())
 				continue
 			}
 			if status.State != model.PluginStateRunning {
-				p.API.LogWarn("OnActivate: Autolink plugin unavailable. Plugin is not running", "status", status)
+				p.client.Log.Warn("OnActivate: Autolink plugin unavailable. Plugin is not running", "status", status)
 				continue
 			}
 
 			if err = p.AddAutolinksForCloudInstance(ci); err != nil {
-				p.API.LogInfo("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
+				p.client.Log.Info("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 				continue
 			}
 		}
@@ -339,7 +339,7 @@ func (p *Plugin) OnActivate() error {
 	// initialize the rudder client once on activation
 	p.telemetryClient, err = telemetry.NewRudderClient()
 	if err != nil {
-		p.API.LogError("Cannot create telemetry client. err=%v", err)
+		p.client.Log.Error("Cannot create telemetry client. err=%v", err)
 	}
 
 	return nil
@@ -414,15 +414,15 @@ func (p *Plugin) GetSiteURL() string {
 }
 
 func (p *Plugin) debugf(f string, args ...interface{}) {
-	p.API.LogDebug(fmt.Sprintf(f, args...))
+	p.client.Log.Debug(fmt.Sprintf(f, args...))
 }
 
 func (p *Plugin) infof(f string, args ...interface{}) {
-	p.API.LogInfo(fmt.Sprintf(f, args...))
+	p.client.Log.Info(fmt.Sprintf(f, args...))
 }
 
 func (p *Plugin) errorf(f string, args ...interface{}) {
-	p.API.LogError(fmt.Sprintf(f, args...))
+	p.client.Log.Error(fmt.Sprintf(f, args...))
 }
 
 func (p *Plugin) CheckSiteURL() error {
@@ -518,7 +518,7 @@ func (p *Plugin) OnSendDailyTelemetry() {
 	server, cloud := 0, 0
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
-		p.API.LogWarn("Failed to get instances for telemetry", "error", err)
+		p.client.Log.Warn("Failed to get instances for telemetry", "error", err)
 	} else {
 		for _, id := range instances.IDs() {
 			switch instances.Get(id).Type {
@@ -542,7 +542,7 @@ func (p *Plugin) OnSendDailyTelemetry() {
 		for _, id := range instances.IDs() {
 			subs, err = p.getSubscriptions(id)
 			if err != nil {
-				p.API.LogWarn("Failed to get subscriptions for telemetry", "error", err)
+				p.client.Log.Warn("Failed to get subscriptions for telemetry", "error", err)
 			}
 			numSubscriptions += len(subs.Channel.ByID)
 		}
@@ -553,7 +553,7 @@ func (p *Plugin) OnSendDailyTelemetry() {
 	// Connected users
 	connected, err := p.userStore.CountUsers()
 	if err != nil {
-		p.API.LogWarn("Failed to get the number of connected users for telemetry", "error", err)
+		p.client.Log.Warn("Failed to get the number of connected users for telemetry", "error", err)
 	} else {
 		args["connected_user_count"] = connected
 	}

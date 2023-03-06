@@ -31,8 +31,8 @@ const (
 )
 
 func (e *enterpriseChecker) HasEnterpriseFeatures() bool {
-	config := e.api.GetConfig()
-	license := e.api.GetLicense()
+	config := e.client.Configuration.GetConfig()
+	license := e.client.System.GetLicense()
 
 	if license != nil && (license.SkuShortName == e20 || license.SkuShortName == enterprise || license.SkuShortName == professional) {
 		return true

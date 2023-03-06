@@ -67,7 +67,7 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 		if eventErr != nil {
 			return respondErr(w, status, eventErr)
 		}
-		p.API.LogDebug("Webhook Event Log", "event", string(parsedRequest))
+		p.client.Log.Debug("Webhook Event Log", "event", string(parsedRequest))
 	}
 	teamName := r.FormValue("team")
 	if teamName == "" {
@@ -89,9 +89,9 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 	}
 
 	bb, err := ioutil.ReadAll(r.Body)
-	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelName, false)
-	if appErr != nil {
-		return respondErr(w, appErr.StatusCode, appErr)
+	channel, err := p.client.Channel.GetByNameForTeamName(teamName, channelName, false)
+	if err != nil {
+		return respondErr(w, err.StatusCode, err)
 	}
 
 	wh, err := ParseWebhook(bb)

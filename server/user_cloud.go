@@ -120,10 +120,10 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		return respondErr(w, http.StatusUnauthorized, err)
 	}
 
-	mmuser, appErr := p.API.GetUser(mattermostUserID)
-	if appErr != nil {
+	mmuser, err := p.client.User.Get(mattermostUserID)
+	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to load user "+mattermostUserID))
+			errors.WithMessage(err, "failed to load user "+mattermostUserID))
 	}
 
 	_, urlpath := splitInstancePath(r.URL.Path)
@@ -145,7 +145,7 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		}
 		// TODO For https://github.com/mattermost/mattermost-plugin-jira/issues/149, need a channel ID
 		// msg := fmt.Sprintf("You have successfully connected your Jira account (**%s**).", connection.DisplayName)
-		// _ = p.API.SendEphemeralPost(mattermostUserID, makePost(p.getUserID(), channelID, msg))
+		// _ = p.client.Post.SendEphemeralPost(mattermostUserID, makePost(p.getUserID(), channelID, msg))
 
 	case routeACUserDisconnected:
 		_, err = p.DisconnectUser(ci.InstanceID.String(), types.ID(mattermostUserID))

@@ -94,14 +94,14 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 
 func (p *Plugin) registerJiraCommand(enableAutocomplete, enableOptInstance bool) error {
 	// Optimistically unregister what was registered before
-	_ = p.API.UnregisterCommand("", commandTrigger)
+	_ = p.client.SlashCommand.Unregister("", commandTrigger)
 
 	command, err := p.createJiraCommand(enableAutocomplete, enableOptInstance)
 	if err != nil {
 		return errors.Wrap(err, "failed to get command")
 	}
 
-	err = p.API.RegisterCommand(command)
+	err = p.client.SlashCommand.Register(command)
 	if err != nil {
 		return errors.Wrapf(err, "failed to register /%s command", commandTrigger)
 	}
@@ -634,7 +634,7 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	}
 	post.AddProp("attachments", attachment)
 
-	_ = p.API.SendEphemeralPost(header.UserId, post)
+	_ = p.client.Post.SendEphemeralPost(header.UserId, post)
 
 	return &model.CommandResponse{}
 }
@@ -659,7 +659,7 @@ func executeV2Revert(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 		preMessage = `#### Successfully reverted the V3 Jira plugin database to V2. The Jira plugin has been disabled.` + "\n"
 
 		go func() {
-			_ = p.API.DisablePlugin(manifest.ID)
+			_ = p.client.Plugins.Disable(manifest.ID)
 		}()
 	}
 	message := `**Please note that if you have multiple configured Jira instances this command will result in all non-legacy instances being removed.**
@@ -762,9 +762,9 @@ func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArg
 }
 
 func authorizedSysAdmin(p *Plugin, userID string) (bool, error) {
-	user, appErr := p.API.GetUser(userID)
-	if appErr != nil {
-		return false, appErr
+	user, err := p.client.User.Get(userID)
+	if err != nil {
+		return false, err
 	}
 	if !strings.Contains(user.Roles, "system_admin") {
 		return false, nil
@@ -1100,7 +1100,7 @@ func (p *Plugin) postCommandResponse(args *model.CommandArgs, text string) {
 		RootId:    args.RootId,
 		Message:   text,
 	}
-	_ = p.API.SendEphemeralPost(args.UserId, post)
+	_ = p.client.Post.SendEphemeralPost(args.UserId, post)
 }
 
 func (p *Plugin) responsef(commandArgs *model.CommandArgs, format string, args ...interface{}) *model.CommandResponse {

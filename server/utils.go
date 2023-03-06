@@ -34,9 +34,9 @@ func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message,
 	}
 
 	conf := p.getConfig()
-	channel, appErr := p.API.GetDirectChannel(mattermostUserID.String(), conf.botUserID)
-	if appErr != nil {
-		return nil, appErr
+	channel, err := p.client.Channel.GetDirect(mattermostUserID.String(), conf.botUserID)
+	if err != nil {
+		return nil, err
 	}
 
 	post = &model.Post{
@@ -46,9 +46,9 @@ func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message,
 		Type:      postType,
 	}
 
-	_, appErr = p.API.CreatePost(post)
-	if appErr != nil {
-		return nil, appErr
+	err = p.client.Post.CreatePost(post)
+	if err != nil {
+		return nil, err
 	}
 
 	return post, nil
@@ -63,9 +63,9 @@ func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...
 	}()
 
 	conf := p.getConfig()
-	channel, appErr := p.API.GetDirectChannel(mattermostUserID, conf.botUserID)
-	if appErr != nil {
-		return nil, appErr
+	channel, err := p.client.Channel.Get(mattermostUserID, conf.botUserID)
+	if err != nil {
+		return nil, err
 	}
 
 	post = &model.Post{
@@ -74,9 +74,9 @@ func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...
 		Message:   fmt.Sprintf(format, args...),
 	}
 
-	_, appErr = p.API.CreatePost(post)
-	if appErr != nil {
-		return nil, appErr
+	err = p.client.Post.CreatePost(post)
+	if err != nil {
+		return nil, err
 	}
 
 	return post, nil
