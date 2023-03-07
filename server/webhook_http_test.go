@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
@@ -623,6 +624,7 @@ func TestWebhookHTTP(t *testing.T) {
 				conf.Secret = validConfiguration.Secret
 			})
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 
 			p.userStore = mockUserStore{}
 			p.instanceStore = p.getMockInstanceStoreKV(1)

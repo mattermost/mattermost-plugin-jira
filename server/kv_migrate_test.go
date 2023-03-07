@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
 	"github.com/stretchr/testify/require"
@@ -82,6 +83,7 @@ func TestMigrateV2Instances(t *testing.T) {
 
 			p := &Plugin{}
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 			store := NewStore(p)
 			p.instanceStore = store
 			manifest.Version = "3.0.0"

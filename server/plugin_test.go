@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
@@ -91,9 +92,9 @@ func TestPlugin(t *testing.T) {
 		},
 		"CreatePostError": {
 			Configuration:      validConfiguration,
-			CreatePostError:    model.NewAppError("foo", "bar", nil, "", http.StatusInternalServerError),
+			CreatePostError:    model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest),
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
-			ExpectedStatusCode: http.StatusInternalServerError,
+			ExpectedStatusCode: http.StatusBadRequest,
 		},
 		"WrongMethod": {
 			Configuration:      validConfiguration,
@@ -135,6 +136,7 @@ func TestPlugin(t *testing.T) {
 				conf.Secret = tc.Configuration.Secret
 			})
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 			p.instanceStore = p.getMockInstanceStoreKV(1)
 			p.gorillaRouter = mux.NewRouter()
 

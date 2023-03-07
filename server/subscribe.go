@@ -4,14 +4,12 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sort"
 	"strings"
-	"time"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
@@ -194,7 +192,7 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) ([]Chan
 func (p *Plugin) getSubscriptions(instanceID types.ID) (*Subscriptions, error) {
 	subKey := keyWithInstanceID(instanceID, JiraSubscriptionsKey)
 	var data []byte
-	err := p.client.KV.Get(subKey, data)
+	err := p.client.KV.Get(subKey, &data)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +229,7 @@ func (p *Plugin) getChannelSubscription(instanceID types.ID, subscriptionID stri
 
 func (p *Plugin) removeChannelSubscription(instanceID types.ID, subscriptionID string) error {
 	subKey := keyWithInstanceID(instanceID, JiraSubscriptionsKey)
-	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
+	return p.atomicModify(subKey, func(initialBytes []byte) (interface{}, error) {
 		subs, err := SubscriptionsFromJSON(initialBytes, instanceID)
 		if err != nil {
 			return nil, err
@@ -255,7 +253,7 @@ func (p *Plugin) removeChannelSubscription(instanceID types.ID, subscriptionID s
 
 func (p *Plugin) addChannelSubscription(instanceID types.ID, newSubscription *ChannelSubscription, client Client) error {
 	subKey := keyWithInstanceID(instanceID, JiraSubscriptionsKey)
-	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
+	return p.atomicModify(subKey, func(initialBytes []byte) (interface{}, error) {
 		subs, err := SubscriptionsFromJSON(initialBytes, instanceID)
 		if err != nil {
 			return nil, err
@@ -322,7 +320,7 @@ func (p *Plugin) validateSubscription(instanceID types.ID, subscription *Channel
 
 func (p *Plugin) editChannelSubscription(instanceID types.ID, modifiedSubscription *ChannelSubscription, client Client) error {
 	subKey := keyWithInstanceID(instanceID, JiraSubscriptionsKey)
-	return p.atomicModify(subKey, func(initialBytes []byte) ([]byte, error) {
+	return p.atomicModify(subKey, func(initialBytes []byte) (interface{}, error) {
 		subs, err := SubscriptionsFromJSON(initialBytes, instanceID)
 		if err != nil {
 			return nil, err
@@ -648,50 +646,10 @@ func (p *Plugin) hasPermissionToManageSubscription(instanceID types.ID, userID, 
 	return nil
 }
 
-func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) ([]byte, error)) error {
-	readModify := func() ([]byte, []byte, error) {
-		var initialBytes []byte
-		err := p.client.KV.Get(key, initialBytes)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "unable to read initial value")
-		}
-
-		modifiedBytes, err := modify(initialBytes)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "modification error")
-		}
-
-		return initialBytes, modifiedBytes, nil
-	}
-
-	var (
-		retryLimit     = 5
-		retryWait      = 30 * time.Millisecond
-		success        = false
-		currentAttempt = 0
-	)
-	for !success {
-		initialBytes, newValue, err := readModify()
-
-		if err != nil {
-			return err
-		}
-
-		success, err = p.client.KV.CompareAndSet(key, initialBytes, newValue)
-		if err != nil {
-			return errors.Wrap(err, "problem writing value")
-		}
-
-		if currentAttempt == 0 && bytes.Equal(initialBytes, newValue) {
-			return nil
-		}
-
-		currentAttempt++
-		if currentAttempt >= retryLimit {
-			return errors.New("reached write attempt limit")
-		}
-
-		time.Sleep(retryWait)
+func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) (interface{}, error)) error {
+	err := p.client.KV.SetAtomicWithRetries(key, modify)
+	if err != nil {
+		return errors.Wrap(err, "unable to read initial value")
 	}
 
 	return nil

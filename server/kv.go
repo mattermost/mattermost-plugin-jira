@@ -13,6 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -305,7 +306,7 @@ func (store store) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr erro
 	}()
 
 	// nil, nil == NOT_FOUND, if we don't already have a key, try to generate one.
-	err := store.plugin.client.KV.Get(keyTokenSecret, secret)
+	err := store.plugin.client.KV.Get(keyTokenSecret, &secret)
 	if err != nil {
 		return nil, err
 	}
@@ -328,7 +329,7 @@ func (store store) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr erro
 	// If we weren't able to save a new key above, another server must have beat us to it. Get the
 	// key from the database, and if that fails, error out.
 	if secret == nil {
-		err = store.plugin.client.KV.Get(keyTokenSecret, secret)
+		err = store.plugin.client.KV.Get(keyTokenSecret, &secret)
 		if err != nil {
 			return nil, err
 		}
@@ -379,8 +380,8 @@ func (store store) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
 
 func (store store) StoreOneTimeSecret(token, secret string) error {
 	// Expire in 15 minutes
-	err := store.plugin.client.KV.SetWithExpiry(
-		hashkey(prefixOneTimeSecret, token), []byte(secret), 15*60)
+	_, err := store.plugin.client.KV.Set(
+		hashkey(prefixOneTimeSecret, token), []byte(secret), pluginapi.SetExpiry(15*60))
 	if err != nil {
 		return errors.WithMessage(err, "failed to store one-ttime secret "+token)
 	}
@@ -407,7 +408,7 @@ func (store store) StoreOauth1aTemporaryCredentials(mmUserID string, credentials
 		return err
 	}
 	// Expire in 15 minutes
-	err = store.plugin.client.KV.SetWithExpiry(hashkey(prefixOneTimeSecret, mmUserID), data, 15*60)
+	_, err = store.plugin.client.KV.Set(hashkey(prefixOneTimeSecret, mmUserID), data, pluginapi.SetExpiry(15*60))
 	if err != nil {
 		return errors.WithMessage(err, "failed to store oauth temporary credentials for "+mmUserID)
 	}
@@ -416,7 +417,7 @@ func (store store) StoreOauth1aTemporaryCredentials(mmUserID string, credentials
 
 func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserID string) (*OAuth1aTemporaryCredentials, error) {
 	var credentials OAuth1aTemporaryCredentials
-	err := store.plugin.client.KV.Get(hashkey(prefixOneTimeSecret, mmUserID), credentials)
+	err := store.plugin.client.KV.Get(hashkey(prefixOneTimeSecret, mmUserID), &credentials)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to load temporary credentials for "+mmUserID)
 	}
@@ -441,7 +442,7 @@ func (store *store) CreateInactiveCloudInstance(jiraURL types.ID, actingUserID s
 
 	// Expire in 15 minutes
 	key := hashkey(prefixInstance, ci.GetURL())
-	err = store.plugin.client.KV.SetWithExpiry(key, data, 15*60)
+	_, err = store.plugin.client.KV.Set(key, data, pluginapi.SetExpiry(15*60))
 	if err != nil {
 		return errors.WithMessagef(err, "failed to store new Jira Cloud instance:%s", jiraURL)
 	}
@@ -461,16 +462,18 @@ func (store *store) LoadInstance(instanceID types.ID) (Instance, error) {
 }
 
 func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
-	var si serverInstance
-	err := store.plugin.client.KV.Get(fullkey, si)
+	si := serverInstance{}
+	err := store.plugin.client.KV.Get(fullkey, &si)
 	if err != nil {
 		return nil, err
 	}
-
+	if si.InstanceCommon == nil {
+		return nil, nil
+	}
 	switch si.Type {
 	case CloudInstanceType:
-		var ci cloudInstance
-		err := store.plugin.client.KV.Get(fullkey, ci)
+		ci := cloudInstance{}
+		err := store.plugin.client.KV.Get(fullkey, &ci)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
 		}
@@ -488,7 +491,7 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 		return &si, nil
 	}
 
-	return nil, errors.Errorf("Jira instance %s has unsupported type: %s", fullkey, si.Type)
+	return nil, errors.Errorf("Jira instance %s has unsupported type %s", fullkey, si.Type)
 }
 
 func (store *store) StoreInstance(instance Instance) error {
@@ -557,8 +560,8 @@ func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	// The V3 "instances" key does not exist. Migrate. Note that KVGet returns
 	// empty data and no error when no key exists, so the V3 key always gets
 	// initialized unless there is an actual DB/network error.
-	var v2instances JiraV2Instances
-	err = p.client.KV.Get(v2keyKnownJiraInstances, v2instances)
+	v2instances := JiraV2Instances{}
+	err = p.client.KV.Get(v2keyKnownJiraInstances, &v2instances)
 	if err != nil {
 		return nil, err
 	}
