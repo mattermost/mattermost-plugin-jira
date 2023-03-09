@@ -6,7 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -115,7 +115,7 @@ func (p *Plugin) httpUserDisconnect(w http.ResponseWriter, r *http.Request) (int
 		InstanceID string `json:"instance_id"`
 	}{}
 
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to decode request"))

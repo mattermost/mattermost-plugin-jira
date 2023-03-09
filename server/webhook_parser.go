@@ -6,7 +6,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -28,7 +27,7 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		if os.Getenv("MM_PLUGIN_JIRA_DEBUG_WEBHOOKS") == "" {
 			return
 		}
-		f, _ := ioutil.TempFile(os.TempDir(),
+		f, _ := os.CreateTemp(os.TempDir(),
 			fmt.Sprintf("jira_plugin_webhook_%s_*.json",
 				time.Now().Format("2006-01-02-15-04")))
 		if f == nil {

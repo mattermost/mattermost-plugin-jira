@@ -6,7 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sort"
 	"strings"
@@ -672,7 +672,7 @@ func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, in
 		return respondErr(w, status, err)
 	}
 
-	bb, err := ioutil.ReadAll(r.Body)
+	bb, err := io.ReadAll(r.Body)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}

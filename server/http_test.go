@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -338,12 +338,12 @@ func TestSubscribe(t *testing.T) {
 			p.instanceStore = p.getMockInstanceStoreKV(1)
 
 			w := httptest.NewRecorder()
-			request := httptest.NewRequest("POST", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
+			request := httptest.NewRequest("POST", "/api/v2/subscriptions/channel", io.NopCloser(bytes.NewBufferString(tc.subscription)))
 			if !tc.skipAuthorize {
 				request.Header.Set("Mattermost-User-Id", model.NewId())
 			}
 			p.ServeHTTP(&plugin.Context{}, w, request)
-			body, _ := ioutil.ReadAll(w.Result().Body)
+			body, _ := io.ReadAll(w.Result().Body)
 			t.Log(string(body))
 			assert.Equal(t, tc.expectedStatusCode, w.Result().StatusCode)
 		})
@@ -458,7 +458,7 @@ func TestDeleteSubscription(t *testing.T) {
 				request.Header.Set("Mattermost-User-Id", model.NewId())
 			}
 			p.ServeHTTP(&plugin.Context{}, w, request)
-			body, _ := ioutil.ReadAll(w.Result().Body)
+			body, _ := io.ReadAll(w.Result().Body)
 			t.Log(string(body))
 			assert.Equal(t, tc.expectedStatusCode, w.Result().StatusCode)
 		})
@@ -672,12 +672,12 @@ func TestEditSubscription(t *testing.T) {
 			p.instanceStore = p.getMockInstanceStoreKV(1)
 
 			w := httptest.NewRecorder()
-			request := httptest.NewRequest("PUT", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
+			request := httptest.NewRequest("PUT", "/api/v2/subscriptions/channel", io.NopCloser(bytes.NewBufferString(tc.subscription)))
 			if !tc.skipAuthorize {
 				request.Header.Set("Mattermost-User-Id", model.NewId())
 			}
 			p.ServeHTTP(&plugin.Context{}, w, request)
-			body, _ := ioutil.ReadAll(w.Result().Body)
+			body, _ := io.ReadAll(w.Result().Body)
 			t.Log(string(body))
 			assert.Equal(t, tc.expectedStatusCode, w.Result().StatusCode)
 		})
@@ -842,7 +842,7 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 
 			if tc.returnedSubscriptions != nil {
 				subscriptions := []ChannelSubscription{}
-				body, _ := ioutil.ReadAll(w.Result().Body)
+				body, _ := io.ReadAll(w.Result().Body)
 				err := json.NewDecoder(bytes.NewReader(body)).Decode(&subscriptions)
 				assert.Nil(t, err)
 				checkSubscriptionsEqual(t, tc.returnedSubscriptions, subscriptions)

@@ -6,7 +6,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"regexp"
 	"strings"
 	"testing"
@@ -1384,7 +1384,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			assert.Nil(t, err)
 
 			r := bytes.NewReader(data)
-			bb, err := ioutil.ReadAll(r)
+			bb, err := io.ReadAll(r)
 			require.Nil(t, err)
 
 			wh, err := ParseWebhook(bb)

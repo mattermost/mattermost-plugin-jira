@@ -6,7 +6,6 @@ package main
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -67,12 +66,12 @@ func TestPlugin(t *testing.T) {
 		},
 		"InvalidBody": {
 			Configuration:      validConfiguration,
-			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", ioutil.NopCloser(bytes.NewBufferString("foo"))),
+			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", io.NopCloser(bytes.NewBufferString("foo"))),
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
 		"UnknownJSONPayload": {
 			Configuration:      validConfiguration,
-			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", ioutil.NopCloser(bytes.NewBufferString("{}"))),
+			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", io.NopCloser(bytes.NewBufferString("{}"))),
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
 		"InvalidChannel": {

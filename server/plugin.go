@@ -9,9 +9,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
 	"math"
 	"net/url"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -271,7 +271,7 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrap(err, "couldn't read profile image")
 	}
 
-	if err := p.client.User.SetProfileImage(botUserID, profileImage); err != nil {
+	if err = p.client.User.SetProfileImage(botUserID, profileImage); err != nil {
 		return errors.Wrap(err, "couldn't set profile image")
 	}
 
@@ -318,7 +318,8 @@ func (p *Plugin) OnActivate() error {
 				p.client.Log.Info("only cloud instances supported for autolink", "err", err)
 				continue
 			}
-			status, err := p.client.Plugin.GetPluginStatus(autolinkPluginID)
+			var status *model.PluginStatus
+			status, err = p.client.Plugin.GetPluginStatus(autolinkPluginID)
 			if err != nil {
 				p.client.Log.Warn("OnActivate: Autolink plugin unavailable. API returned error", "error", err.Error())
 				continue

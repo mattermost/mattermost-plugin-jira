@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -151,7 +150,7 @@ func (client JiraClient) RESTPostAttachment(issueID string, data io.Reader, name
 			return nil, err
 		}
 
-		bb, _ := ioutil.ReadAll(resp.Body)
+		bb, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
 
 		jerr := jira.Error{}

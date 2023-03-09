@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -313,7 +314,7 @@ func (store store) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr erro
 
 	if len(secret) == 0 {
 		newSecret := make([]byte, 32)
-		_, err := rand.Reader.Read(newSecret)
+		_, err = rand.Reader.Read(newSecret)
 		if err != nil {
 			return nil, err
 		}
@@ -399,7 +400,7 @@ func (store store) LoadOneTimeSecret(key string) (string, error) {
 	if err != nil {
 		return "", errors.WithMessage(err, "failed to delete one-time secret "+key)
 	}
-	return string(secret), nil
+	return secret, nil
 }
 
 func (store store) StoreOauth1aTemporaryCredentials(mmUserID string, credentials *OAuth1aTemporaryCredentials) error {

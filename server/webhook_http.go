@@ -6,7 +6,7 @@ package main
 import (
 	"crypto/subtle"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -88,7 +88,7 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 		selectedEvents = selectedEvents.Union(paramMask)
 	}
 
-	bb, err := ioutil.ReadAll(r.Body)
+	bb, err := io.ReadAll(r.Body)
 	channel, err := p.client.Channel.GetByNameForTeamName(teamName, channelName, false)
 	if err != nil {
 		return respondErr(w, http.StatusBadRequest, err)
