@@ -612,12 +612,22 @@ func TestWebhookHTTP(t *testing.T) {
 				Id: "theuserid",
 			}, (*model.AppError)(nil))
 			api.On("GetChannelByNameForTeamName", "theteam", "thechannel",
-				false).Run(func(args mock.Arguments) {
-				api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, (*model.AppError)(nil))
-			}).Return(&model.Channel{
+				false).Return(&model.Channel{
 				Id:     "thechannelid",
 				TeamId: "theteamid",
 			}, (*model.AppError)(nil))
+
+			rPost := &model.Post{}
+			rPost.Message = tc.ExpectedHeadline
+			rAttachments := []*model.SlackAttachment{
+				{
+					Pretext: tc.ExpectedHeadline,
+					Text:    tc.ExpectedText,
+					Fields:  tc.ExpectedFields,
+				},
+			}
+			model.ParseSlackAttachment(rPost, rAttachments)
+			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(rPost, nil)
 
 			p := Plugin{}
 			p.updateConfig(func(conf *config) {
