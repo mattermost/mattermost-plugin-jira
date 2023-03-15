@@ -384,8 +384,8 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			p.userStore = getMockUserStoreKV()
 			p.enterpriseChecker = enterprise.NewEnterpriseChecker(api)
 
-			cmdResponse, appError := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
-			require.Nil(t, appError)
+			cmdResponse, err := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
+			require.Nil(t, err)
 			require.NotNil(t, cmdResponse)
 			assert.True(t, isSendEphemeralPostCalled)
 		})
@@ -450,8 +450,8 @@ func TestPlugin_ExecuteCommand_Uninstall(t *testing.T) {
 			p.SetAPI(currentTestAPI)
 			p.client = pluginapi.NewClient(p.API, p.Driver)
 
-			cmdResponse, appError := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
-			require.Nil(t, appError)
+			cmdResponse, err := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
+			require.Nil(t, err)
 			require.NotNil(t, cmdResponse)
 			assert.True(t, isSendEphemeralPostCalled)
 		})

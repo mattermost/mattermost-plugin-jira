@@ -370,7 +370,7 @@ func (p *Plugin) help(args *model.CommandArgs) *model.CommandResponse {
 	return &model.CommandResponse{}
 }
 
-func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
+func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, error) {
 	err := p.CheckSiteURL()
 	if err != nil {
 		return p.responsef(commandArgs, err.Error()), nil
