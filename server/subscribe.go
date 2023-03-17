@@ -171,7 +171,7 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		}
 
 		value := getIssueFieldValue(issue, field.Key)
-		if !isValidFieldInclusion(field, value) {
+		if !isValidFieldInclusion(field, value, inclusion) {
 			return false
 		}
 	}
@@ -186,8 +186,7 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 	return true
 }
 
-func isValidFieldInclusion(field FieldFilter, value StringSet) bool {
-	inclusion := field.Inclusion
+func isValidFieldInclusion(field FieldFilter, value StringSet, inclusion string) bool {
 	containsAny := value.ContainsAny(field.Values.Elems()...)
 	containsAll := value.ContainsAll(field.Values.Elems()...)
 
