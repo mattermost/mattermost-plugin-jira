@@ -40,7 +40,7 @@ const (
 	routeAPIUserInfo                            = "/userinfo"
 	routeAPISubscribeWebhook                    = "/webhook"
 	routeAPISubscriptionsChannel                = "/subscriptions/channel"
-	routeAPISubscriptionsChannelWithId          = routeAPISubscriptionsChannel + "/{id:[A-Za-z0-9]+}"
+	routeAPISubscriptionsChannelWithID          = routeAPISubscriptionsChannel + "/{id:[A-Za-z0-9]+}"
 	routeAPISettingsInfo                        = "/settingsinfo"
 	routeIssueTransition                        = "/transition"
 	routeAPIUserDisconnect                      = "/api/v3/disconnect"
@@ -120,11 +120,10 @@ func (p *Plugin) initializeRouter() {
 	apiRouter.HandleFunc(routeAPISubscribeWebhook, p.handleResponseWithCallbackInstance(p.httpSubscribeWebhook)).Methods(http.MethodPost)
 
 	// Channel Subscriptions
-	apiRouter.HandleFunc(routeAPISubscriptionsChannelWithId, p.handleResponse(p.httpChannelSubscriptions)).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.handleResponse(p.httpChannelSubscriptions)).Methods(http.MethodGet)
 	apiRouter.HandleFunc(routeAPISubscriptionsChannel, p.handleResponse(p.httpChannelSubscriptions)).Methods(http.MethodPost)
 	apiRouter.HandleFunc(routeAPISubscriptionsChannel, p.handleResponse(p.httpChannelSubscriptions)).Methods(http.MethodPut)
-	apiRouter.HandleFunc(routeAPISubscriptionsChannelWithId, p.handleResponse(p.httpChannelSubscriptions)).Methods(http.MethodDelete)
-
+	apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.handleResponse(p.httpChannelSubscriptions)).Methods(http.MethodDelete)
 }
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
@@ -254,20 +253,11 @@ func (p *Plugin) handleResponse(fn func(w http.ResponseWriter, r *http.Request) 
 
 func (p *Plugin) handleResponseWithCallbackInstance(fn func(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
-		instanceURL := ""
-		instanceURL, path = splitInstancePath(path)
-		callbackInstanceID := types.ID("")
-
-		/*TODO: Logic to be decoded
-		if path == routeIncomingWebhook && instanceURL == "" {
-			callbackInstanceID := types.ID("")
-		}
-		*/
+		instanceURL, _ := splitInstancePath(r.URL.Path)
 
 		callbackInstanceID, err := p.ResolveWebhookInstanceURL(instanceURL)
 		if err != nil {
-			respondErr(w, http.StatusInternalServerError, err)
+			_, _ = respondErr(w, http.StatusInternalServerError, err)
 			return
 		}
 
