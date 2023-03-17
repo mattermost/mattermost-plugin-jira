@@ -342,7 +342,7 @@ func (p *Plugin) validateSubscription(instanceID types.ID, subscription *Channel
 		}
 
 		if securityLevels == nil {
-			securityLevelsArray, err := getSecurityLevelsForProject(client, projectKey)
+			securityLevelsArray, err := p.getSecurityLevelsForProject(client, projectKey)
 			if err != nil {
 				return errors.Wrap(err, "failed to get security levels for project")
 			}
@@ -375,8 +375,8 @@ func (p *Plugin) validateSubscription(instanceID types.ID, subscription *Channel
 	return nil
 }
 
-func getSecurityLevelsForProject(client Client, projectKey string) ([]string, error) {
-	createMeta, err := client.GetCreateMetaInfo(&jira.GetQueryOptions{
+func (p *Plugin) getSecurityLevelsForProject(client Client, projectKey string) ([]string, error) {
+	createMeta, err := client.GetCreateMetaInfo(p.API, &jira.GetQueryOptions{
 		Expand:      "projects.issuetypes.fields",
 		ProjectKeys: projectKey,
 	})

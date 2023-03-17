@@ -5,6 +5,7 @@ import React from 'react';
 import {shallow} from 'enzyme';
 
 import Preferences from 'mattermost-redux/constants/preferences';
+import {Channel} from 'mattermost-redux/types/channels';
 
 import cloudIssueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.json';
@@ -14,7 +15,6 @@ import testChannel from 'testdata/channel.json';
 import {IssueMetadata, ProjectMetadata, FilterFieldInclusion} from 'types/model';
 
 import EditChannelSubscription, {Props} from './edit_channel_subscription';
-import {Channel} from 'mattermost-redux/types/channels';
 
 describe('components/EditChannelSubscription', () => {
     const baseActions = {
