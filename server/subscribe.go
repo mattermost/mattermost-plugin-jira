@@ -14,6 +14,7 @@ import (
 	"time"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -854,7 +855,8 @@ func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Requ
 }
 
 func (p *Plugin) httpChannelDeleteSubscription(w http.ResponseWriter, r *http.Request, mattermostUserID string) (int, error) {
-	subscriptionID := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionsChannel+"/")
+	params := mux.Vars(r)
+	subscriptionID := params["id"]
 	if len(subscriptionID) != 26 {
 		return respondErr(w, http.StatusBadRequest,
 			errors.New("bad subscription id"))
@@ -907,7 +909,8 @@ func (p *Plugin) httpChannelDeleteSubscription(w http.ResponseWriter, r *http.Re
 }
 
 func (p *Plugin) httpChannelGetSubscriptions(w http.ResponseWriter, r *http.Request, mattermostUserID string) (int, error) {
-	channelID := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionsChannel+"/")
+	params := mux.Vars(r)
+	channelID := params["id"]
 	if len(channelID) != 26 {
 		return respondErr(w, http.StatusBadRequest,
 			errors.New("bad channel id"))

@@ -622,6 +622,7 @@ func TestWebhookHTTP(t *testing.T) {
 			p.updateConfig(func(conf *config) {
 				conf.Secret = validConfiguration.Secret
 			})
+			p.initializeRouter()
 			p.SetAPI(api)
 
 			p.userStore = mockUserStore{}

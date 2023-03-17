@@ -330,6 +330,7 @@ func TestSubscribe(t *testing.T) {
 			p.updateConfig(func(conf *config) {
 				conf.Secret = someSecret
 			})
+			p.initializeRouter()
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
 			p.instanceStore = p.getMockInstanceStoreKV(1)
@@ -441,6 +442,7 @@ func TestDeleteSubscription(t *testing.T) {
 			p.updateConfig(func(conf *config) {
 				conf.Secret = someSecret
 			})
+			p.initializeRouter()
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
 			p.instanceStore = p.getMockInstanceStoreKV(1)
@@ -660,6 +662,7 @@ func TestEditSubscription(t *testing.T) {
 			p.updateConfig(func(conf *config) {
 				conf.Secret = someSecret
 			})
+			p.initializeRouter()
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
 			p.instanceStore = p.getMockInstanceStoreKV(1)
@@ -820,6 +823,7 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 			p.updateConfig(func(conf *config) {
 				conf.Secret = someSecret
 			})
+			p.initializeRouter()
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
 			p.instanceStore = p.getMockInstanceStoreKV(1)
