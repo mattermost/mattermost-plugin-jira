@@ -399,7 +399,7 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 		return nil, err
 	}
 
-	return client.GetCreateMetaInfo(&jira.GetQueryOptions{
+	return client.GetCreateMetaInfo(p.API, &jira.GetQueryOptions{
 		Expand:      "projects.issuetypes.fields",
 		ProjectKeys: projectKeys,
 	})
@@ -503,10 +503,31 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 
 	instanceID := r.FormValue("instance_id")
 
-	plist, connection, err := p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID))
+	plist, connection, err := p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID), true)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to GetProjectMetadata"))
+		// Getting the issue Types separately only when the status code returned is 400
+		if !strings.Contains(err.Error(), "400") {
+			return respondErr(w, http.StatusInternalServerError,
+				errors.WithMessage(err, "failed to GetProjectMetadata"))
+		}
+
+		plist, connection, err = p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID), false)
+		if err != nil {
+			return respondErr(w, http.StatusInternalServerError,
+				errors.WithMessage(err, "failed to get the list of Jira Projects"))
+		}
+
+		var projectList jira.ProjectList
+		for _, prj := range plist {
+			issueTypeList, iErr := p.GetIssueTypes(types.ID(instanceID), types.ID(mattermostUserID), prj.ID)
+			if iErr != nil {
+				p.API.LogDebug("Failed to get issue types for project.", "ProjectKey", prj.Key, "Error", iErr.Error())
+				continue
+			}
+			prj.IssueTypes = issueTypeList
+			projectList = append(projectList, prj)
+		}
+		plist = projectList
 	}
 
 	if len(plist) == 0 {
@@ -546,16 +567,30 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-func (p *Plugin) ListJiraProjects(instanceID, mattermostUserID types.ID) (jira.ProjectList, *Connection, error) {
+func (p *Plugin) ListJiraProjects(instanceID, mattermostUserID types.ID, expandIssueTypes bool) (jira.ProjectList, *Connection, error) {
 	client, _, connection, err := p.getClient(instanceID, mattermostUserID)
 	if err != nil {
 		return nil, nil, err
 	}
-	plist, err := client.ListProjects("", -1)
+	plist, err := client.ListProjects("", -1, expandIssueTypes)
 	if err != nil {
 		return nil, nil, err
 	}
 	return plist, connection, nil
+}
+
+func (p *Plugin) GetIssueTypes(instanceID, mattermostUserID types.ID, projectID string) ([]jira.IssueType, error) {
+	client, _, _, err := p.getClient(instanceID, mattermostUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	issueTypes, err := client.GetIssueTypes(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	return issueTypes, nil
 }
 
 var reJiraIssueKey = regexp.MustCompile(`^([[:alnum:]]+)-([[:digit:]]+)$`)
@@ -782,7 +817,9 @@ func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 	case labelsField:
 		return NewStringSet(issue.Fields.Labels...)
 	case priorityField:
-		return NewStringSet(issue.Fields.Priority.ID)
+		if issue.Fields.Priority != nil {
+			return NewStringSet(issue.Fields.Priority.ID)
+		}
 	case "fixversions":
 		result := NewStringSet()
 		for _, v := range issue.Fields.FixVersions {
