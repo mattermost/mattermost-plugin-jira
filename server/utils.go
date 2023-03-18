@@ -112,7 +112,7 @@ func parseJIRAUsernamesFromText(text string) []string {
 	usernameMap := map[string]bool{}
 	usernames := []string{}
 
-	var re = regexp.MustCompile(`(?m)\[~([a-zA-Z0-9-_.:\+]+)\]`)
+	var re = regexp.MustCompile(`(?m)\[~([a-zA-Z0-9-_@.:\+]+)\]`)
 	for _, match := range re.FindAllString(text, -1) {
 		name := match[:len(match)-1]
 		name = name[2:]
