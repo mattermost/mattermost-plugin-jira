@@ -594,8 +594,8 @@ func (p *Plugin) submitCreateServerInstance(f *flow.Flow, submission map[string]
 	}, nil, nil
 }
 
-func (p *Plugin) trackSetupWizard(key string, args map[string]interface{}) func(f *flow.Flow) {
+func (p *Plugin) trackSetupWizard(event string, args map[string]interface{}) func(f *flow.Flow) {
 	return func(f *flow.Flow) {
-		p.trackWithArgs(key, f.UserID, args)
+		p.TrackUserEvent(event, f.UserID, args)
 	}
 }
