@@ -22,36 +22,38 @@ const commandTrigger = "jira"
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
-		"assign":                  executeAssign,
-		"connect":                 executeConnect,
-		"disconnect":              executeDisconnect,
-		"help":                    executeHelp,
-		"info":                    executeInfo,
-		"install/cloud":           executeInstanceInstallCloud,
-		"install/server":          executeInstanceInstallServer,
-		"instance/alias":          executeInstanceAlias,
-		"instance/unalias":        executeInstanceUnalias,
-		"instance/connect":        executeConnect,
-		"instance/disconnect":     executeDisconnect,
-		"instance/install/cloud":  executeInstanceInstallCloud,
-		"instance/install/server": executeInstanceInstallServer,
-		"instance/list":           executeInstanceList,
-		"instance/settings":       executeSettings,
-		"instance/uninstall":      executeInstanceUninstall,
-		"instance/v2":             executeInstanceV2Legacy,
-		"issue/assign":            executeAssign,
-		"issue/transition":        executeTransition,
-		"issue/unassign":          executeUnassign,
-		"issue/view":              executeView,
-		"settings":                executeSettings,
-		"subscribe/list":          executeSubscribeList,
-		"transition":              executeTransition,
-		"unassign":                executeUnassign,
-		"uninstall":               executeInstanceUninstall,
-		"view":                    executeView,
-		"v2revert":                executeV2Revert,
-		"webhook":                 executeWebhookURL,
-		"setup":                   executeSetup,
+		"assign":                       executeAssign,
+		"connect":                      executeConnect,
+		"disconnect":                   executeDisconnect,
+		"help":                         executeHelp,
+		"info":                         executeInfo,
+		"install/cloud":                executeInstanceInstallCloud,
+		"install/cloud-oauth":          executeInstanceInstallCloudOAuth,
+		"install/server":               executeInstanceInstallServer,
+		"instance/alias":               executeInstanceAlias,
+		"instance/unalias":             executeInstanceUnalias,
+		"instance/connect":             executeConnect,
+		"instance/disconnect":          executeDisconnect,
+		"instance/install/cloud":       executeInstanceInstallCloud,
+		"instance/install/cloud-oauth": executeInstanceInstallCloudOAuth,
+		"instance/install/server":      executeInstanceInstallServer,
+		"instance/list":                executeInstanceList,
+		"instance/settings":            executeSettings,
+		"instance/uninstall":           executeInstanceUninstall,
+		"instance/v2":                  executeInstanceV2Legacy,
+		"issue/assign":                 executeAssign,
+		"issue/transition":             executeTransition,
+		"issue/unassign":               executeUnassign,
+		"issue/view":                   executeView,
+		"settings":                     executeSettings,
+		"subscribe/list":               executeSubscribeList,
+		"transition":                   executeTransition,
+		"unassign":                     executeUnassign,
+		"uninstall":                    executeInstanceUninstall,
+		"view":                         executeView,
+		"v2revert":                     executeV2Revert,
+		"webhook":                      executeWebhookURL,
+		"setup":                        executeSetup,
 	},
 	defaultHandler: executeJiraDefault,
 }
@@ -77,9 +79,11 @@ const commonHelpText = "\n" +
 const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"Install Jira instances:\n" +
 	"* `/jira instance install cloud [jiraURL]` - Connect Mattermost to a Jira Cloud instance located at <jiraURL>\n" +
+	"* `/jira instance install cloud-oauth [jiraURL]` - Connect Mattermost to a Jira Cloud instance using OAuth 2.0 located at <jiraURL>\n" +
 	"* `/jira instance install server [jiraURL]` - Connect Mattermost to a Jira Server or Data Center instance located at <jiraURL>\n" +
 	"Uninstall Jira instances:\n" +
 	"* `/jira instance uninstall cloud [jiraURL]` - Disconnect Mattermost from a Jira Cloud instance located at <jiraURL>\n" +
+	"* `/jira instance uninstall cloud-oauth [jiraURL]` - Disconnect Mattermost from a Jira Cloud instance using OAuth 2.0 located at <jiraURL>\n" +
 	"* `/jira instance uninstall server [jiraURL]` - Disconnect Mattermost from a Jira Server or Data Center instance located at <jiraURL>\n" +
 	"Manage channel subscriptions:\n" +
 	"* `/jira subscribe ` - Configure the Jira notifications sent to this channel\n" +
@@ -167,17 +171,18 @@ func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 	jiraTypes := []model.AutocompleteListItem{
 		{HelpText: "Jira Server or Datacenter", Item: "server"},
 		{HelpText: "Jira Cloud (atlassian.net)", Item: "cloud"},
+		{HelpText: "Jira Cloud OAuth 2.0 (atlassian.net)", Item: "cloud-oauth"},
 	}
 
 	install := model.NewAutocompleteData(
-		"install", "[cloud|server] [URL]", "Connect Mattermost to a Jira instance")
-	install.AddStaticListArgument("Jira type: server or cloud", true, jiraTypes)
+		"install", "[cloud|server|cloud-oauth] [URL]", "Connect Mattermost to a Jira instance")
+	install.AddStaticListArgument("Jira type: server, cloud or cloud-oauth", true, jiraTypes)
 	install.AddTextArgument("Jira URL", "Enter the Jira URL, e.g. https://mattermost.atlassian.net", "")
 	install.RoleID = model.SystemAdminRoleId
 
 	uninstall := model.NewAutocompleteData(
-		"uninstall", "[cloud|server] [URL]", "Disconnect Mattermost from a Jira instance")
-	uninstall.AddStaticListArgument("Jira type: server or cloud", true, jiraTypes)
+		"uninstall", "[cloud|server|cloud-oauth] [URL]", "Disconnect Mattermost from a Jira instance")
+	uninstall.AddStaticListArgument("Jira type: server, cloud or cloud-oauth", true, jiraTypes)
 	uninstall.AddDynamicListArgument("Jira instance", routeAutocompleteInstalledInstance, true)
 	uninstall.RoleID = model.SystemAdminRoleId
 
@@ -793,6 +798,33 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 		"JiraURL":                 jiraURL,
 		"PluginURL":               p.GetPluginURL(),
 		"AtlassianConnectJSONURL": p.GetPluginURL() + instancePath(routeACJSON, types.ID(jiraURL)),
+	})
+}
+
+func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(header, "`/jira install` can only be run by a system administrator.")
+	}
+	if len(args) != 3 {
+		return p.help(header)
+	}
+
+	clientID := args[1]
+	clientSecret := args[2]
+
+	jiraURL, instance, err := p.installCloudOAuthInstance(args[0], clientID, clientSecret)
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
+
+	return p.respondCommandTemplate(header, "/command/install_cloud_oath.md", map[string]string{
+		"JiraURL":       jiraURL,
+		"PluginURL":     p.GetPluginURL(),
+		"MattermostKey": instance.GetMattermostKey(),
 	})
 }
 

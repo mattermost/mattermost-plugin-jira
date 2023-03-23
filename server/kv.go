@@ -514,6 +514,15 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 		ci.Plugin = store.plugin
 		return &ci, nil
 
+	case CloudOAuthInstanceType:
+		ci := cloudOAuthInstance{}
+		err = json.Unmarshal(data, &ci)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+		}
+		ci.Plugin = store.plugin
+		return &ci, nil
+
 	case ServerInstanceType:
 		si.Plugin = store.plugin
 		return &si, nil

@@ -53,6 +53,7 @@ const (
 	routeUserConnect                            = "/user/connect"
 	routeUserDisconnect                         = "/user/disconnect"
 	routeSharePublicly                          = "/api/v2/share-issue-publicly"
+	routeOAuth2Complete                         = "/oauth2/complete.html"
 )
 
 const routePrefixInstance = "instance"
@@ -102,6 +103,7 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		routeUserDisconnect,
 		routeUserConnect,
 		routeUserStart,
+		routeOAuth2Complete,
 		routeAPISubscribeWebhook:
 
 		if path == routeIncomingWebhook && instanceURL == "" {
@@ -176,6 +178,10 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		return p.httpOAuth1aComplete(w, r, callbackInstanceID)
 	case routeUserDisconnect:
 		return p.httpOAuth1aDisconnect(w, r, callbackInstanceID)
+
+	// OAuth2 (Jira Cloud)
+	case routeOAuth2Complete:
+		return p.httpOAuth2Complete(w, r, callbackInstanceID)
 
 	// User connect/disconnect links
 	case routeUserConnect:
