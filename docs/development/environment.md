@@ -36,4 +36,4 @@ Note: It can take a few minutes to start up due to Jira Server's startup process
 - You will then be redirected to setup Administrator account. Enter all the details and click Next.
 - Now sit back while the set up completes. It might take a few minutes to complete.
 
-**Note:** You cannot use `localhost` to connect the Jira plugin to your server, you can use a proxy if needed.
+**Note:** It's important to note that the Jira Server can use localhost, but your MM Site URL cannot be localhost
