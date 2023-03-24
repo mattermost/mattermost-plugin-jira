@@ -671,9 +671,9 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 		conf := instance.Common().getConfig()
 		extraText := ""
 		for _, fileID := range post.FileIds {
-			mattermostName, jiraName, mime, err := client.AddAttachment(*p.client, in.IssueKey, fileID, conf.maxAttachmentSize)
-			if err != nil {
-				notifyOnFailedAttachment(instance, in.mattermostUserID.String(), in.IssueKey, err, "file: %s", mattermostName)
+			mattermostName, jiraName, mime, e := client.AddAttachment(*p.client, in.IssueKey, fileID, conf.maxAttachmentSize)
+			if e != nil {
+				notifyOnFailedAttachment(instance, in.mattermostUserID.String(), in.IssueKey, e, "file: %s", mattermostName)
 				continue
 			}
 			if isImageMIME(mime) || isEmbbedableMIME(mime) {
