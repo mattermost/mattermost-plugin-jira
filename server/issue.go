@@ -346,9 +346,9 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 		go func() {
 			conf := instance.Common().getConfig()
 			for _, fileID := range post.FileIds {
-				mattermostName, _, _, e := client.AddAttachment(*p.client, created.ID, fileID, conf.maxAttachmentSize)
-				if e != nil {
-					notifyOnFailedAttachment(instance, in.mattermostUserID.String(), created.Key, e, "file: %s", mattermostName)
+				mattermostName, _, _, err := client.AddAttachment(*p.client, created.ID, fileID, conf.maxAttachmentSize)
+				if err != nil {
+					notifyOnFailedAttachment(instance, in.mattermostUserID.String(), created.Key, err, "file: %s", mattermostName)
 				}
 			}
 		}()
@@ -671,9 +671,9 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 		conf := instance.Common().getConfig()
 		extraText := ""
 		for _, fileID := range post.FileIds {
-			mattermostName, jiraName, mime, e := client.AddAttachment(*p.client, in.IssueKey, fileID, conf.maxAttachmentSize)
-			if e != nil {
-				notifyOnFailedAttachment(instance, in.mattermostUserID.String(), in.IssueKey, e, "file: %s", mattermostName)
+			mattermostName, jiraName, mime, err := client.AddAttachment(*p.client, in.IssueKey, fileID, conf.maxAttachmentSize)
+			if err != nil {
+				notifyOnFailedAttachment(instance, in.mattermostUserID.String(), in.IssueKey, err, "file: %s", mattermostName)
 				continue
 			}
 			if isImageMIME(mime) || isEmbbedableMIME(mime) {

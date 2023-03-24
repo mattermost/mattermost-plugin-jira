@@ -91,9 +91,9 @@ func TestPlugin(t *testing.T) {
 		},
 		"CreatePostError": {
 			Configuration:      validConfiguration,
-			CreatePostError:    model.NewAppError("foo", "bar", nil, "", http.StatusBadRequest),
+			CreatePostError:    model.NewAppError("foo", "bar", nil, "", http.StatusInternalServerError),
 			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", validRequestBody()),
-			ExpectedStatusCode: http.StatusBadRequest,
+			ExpectedStatusCode: http.StatusInternalServerError,
 		},
 		"WrongMethod": {
 			Configuration:      validConfiguration,

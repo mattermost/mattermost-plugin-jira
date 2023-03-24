@@ -229,7 +229,7 @@ func (p *Plugin) getChannelSubscription(instanceID types.ID, subscriptionID stri
 
 func (p *Plugin) removeChannelSubscription(instanceID types.ID, subscriptionID string) error {
 	subKey := keyWithInstanceID(instanceID, JiraSubscriptionsKey)
-	return p.atomicModify(subKey, func(initialBytes []byte) (interface{}, error) {
+	return p.client.KV.SetAtomicWithRetries(subKey, func(initialBytes []byte) (interface{}, error) {
 		subs, err := SubscriptionsFromJSON(initialBytes, instanceID)
 		if err != nil {
 			return nil, err
@@ -253,7 +253,7 @@ func (p *Plugin) removeChannelSubscription(instanceID types.ID, subscriptionID s
 
 func (p *Plugin) addChannelSubscription(instanceID types.ID, newSubscription *ChannelSubscription, client Client) error {
 	subKey := keyWithInstanceID(instanceID, JiraSubscriptionsKey)
-	return p.atomicModify(subKey, func(initialBytes []byte) (interface{}, error) {
+	return p.client.KV.SetAtomicWithRetries(subKey, func(initialBytes []byte) (interface{}, error) {
 		subs, err := SubscriptionsFromJSON(initialBytes, instanceID)
 		if err != nil {
 			return nil, err
@@ -320,7 +320,7 @@ func (p *Plugin) validateSubscription(instanceID types.ID, subscription *Channel
 
 func (p *Plugin) editChannelSubscription(instanceID types.ID, modifiedSubscription *ChannelSubscription, client Client) error {
 	subKey := keyWithInstanceID(instanceID, JiraSubscriptionsKey)
-	return p.atomicModify(subKey, func(initialBytes []byte) (interface{}, error) {
+	return p.client.KV.SetAtomicWithRetries(subKey, func(initialBytes []byte) (interface{}, error) {
 		subs, err := SubscriptionsFromJSON(initialBytes, instanceID)
 		if err != nil {
 			return nil, err
@@ -641,15 +641,6 @@ func (p *Plugin) hasPermissionToManageSubscription(instanceID types.ID, userID, 
 	allowedGroups = utils.Map(allowedGroups, strings.TrimSpace)
 	if !inAllowedGroup(groups, allowedGroups) {
 		return errors.New("not in allowed jira user groups")
-	}
-
-	return nil
-}
-
-func (p *Plugin) atomicModify(key string, modify func(initialValue []byte) (interface{}, error)) error {
-	err := p.client.KV.SetAtomicWithRetries(key, modify)
-	if err != nil {
-		return errors.Wrap(err, "unable to read initial value")
 	}
 
 	return nil

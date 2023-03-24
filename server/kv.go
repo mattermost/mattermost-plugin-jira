@@ -106,7 +106,7 @@ func (store store) get(key string, v interface{}) (returnErr error) {
 		returnErr = errors.WithMessage(returnErr, "failed to get from store")
 	}()
 
-	err := store.plugin.client.KV.Get(key, &v)
+	err := store.plugin.client.KV.Get(key, v)
 	if err != nil {
 		return err
 	}
@@ -391,7 +391,7 @@ func (store store) StoreOneTimeSecret(token, secret string) error {
 
 func (store store) LoadOneTimeSecret(key string) (string, error) {
 	var secret string
-	err := store.get(hashkey(prefixOneTimeSecret, key), secret)
+	err := store.plugin.client.KV.Get(hashkey(prefixOneTimeSecret, key), &secret)
 	if err != nil {
 		return "", errors.WithMessage(err, "failed to load one-time secret "+key)
 	}
@@ -469,7 +469,7 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 		return nil, err
 	}
 	if si.InstanceCommon == nil {
-		return nil, nil
+		return nil, errors.Wrap(kvstore.ErrNotFound, fullkey)
 	}
 	switch si.Type {
 	case CloudInstanceType:
