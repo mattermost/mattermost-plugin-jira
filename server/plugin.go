@@ -156,6 +156,9 @@ func (p *Plugin) updateConfig(f func(conf *config)) config {
 func (p *Plugin) OnConfigurationChange() error {
 	// Load the public configuration fields from the Mattermost server configuration.
 	ec := externalConfig{}
+	if p.client == nil {
+		p.client = pluginapi.NewClient(p.API, p.Driver)
+	}
 	err := p.client.Configuration.LoadPluginConfiguration(&ec)
 	if err != nil {
 		return errors.WithMessage(err, "failed to load plugin configuration")
@@ -226,7 +229,6 @@ func (p *Plugin) OnActivate() error {
 	p.userStore = store
 	p.secretsStore = store
 	p.otsStore = store
-	p.client = pluginapi.NewClient(p.API, p.Driver)
 	p.gorillaRouter = mux.NewRouter()
 
 	bundlePath, err := p.client.System.GetBundlePath()
@@ -238,7 +240,7 @@ func (p *Plugin) OnActivate() error {
 		Username:    botUserName,
 		DisplayName: botDisplayName,
 		Description: botDescription,
-	}, pluginapi.ProfileImagePath(filepath.Join(bundlePath, "assets", "profile.png")))
+	}, pluginapi.ProfileImagePath(filepath.Join("assets", "profile.png")))
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure bot account")
 	}
