@@ -1,4 +1,7 @@
 # Include custom targets and environment variables here
+
+.DEFAULT_GOAL := all
+
 ifndef MM_RUDDER_WRITE_KEY
 	MM_RUDDER_WRITE_KEY = 1d5bMvdrfWClLxgK1FvV3s4U1tg
 endif
@@ -13,3 +16,7 @@ LDFLAGS += -X "main.BuildHash=$(BUILD_HASH)"
 LDFLAGS += -X "main.BuildHashShort=$(BUILD_HASH_SHORT)"
 
 GO_BUILD_FLAGS = -ldflags '$(LDFLAGS)'
+
+.PHONY: jira
+jira:
+	docker-compose up
