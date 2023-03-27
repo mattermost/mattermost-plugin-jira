@@ -67,7 +67,7 @@ func TestMigrateV2Instances(t *testing.T) {
 
 			storedInstancePayload := []byte{}
 			storedInstancesPayload := []byte{}
-			api.On("KVSet", mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("[]uint8")).Return(nil).Run(
+			api.On("KVSetWithOptions", mock.AnythingOfType("string"), mock.Anything, mock.AnythingOfType("model.PluginKVSetOptions")).Return(true, nil).Run(
 				func(args mock.Arguments) {
 					key := args.Get(0).(string)
 					switch key {
@@ -136,6 +136,7 @@ func TestMigrateV3InstancesToV2(t *testing.T) {
 
 			p := &Plugin{}
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 			store := NewStore(p)
 			p.instanceStore = store
 

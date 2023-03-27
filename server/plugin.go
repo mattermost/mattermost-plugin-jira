@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"math"
 	"net/url"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -230,11 +229,16 @@ func (p *Plugin) OnActivate() error {
 	p.client = pluginapi.NewClient(p.API, p.Driver)
 	p.gorillaRouter = mux.NewRouter()
 
+	bundlePath, err := p.client.System.GetBundlePath()
+	if err != nil {
+		return errors.Wrap(err, "couldn't get bundle path")
+	}
+
 	botUserID, err := p.client.Bot.EnsureBot(&model.Bot{
 		Username:    botUserName,
 		DisplayName: botDisplayName,
 		Description: botDescription,
-	})
+	}, pluginapi.ProfileImagePath(filepath.Join(bundlePath, "assets", "profile.png")))
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure bot account")
 	}
@@ -260,20 +264,6 @@ func (p *Plugin) OnActivate() error {
 		conf.mattermostSiteURL = mattermostSiteURL
 		conf.rsaKey = rsaKey
 	})
-
-	bundlePath, err := p.client.System.GetBundlePath()
-	if err != nil {
-		return errors.Wrap(err, "couldn't get bundle path")
-	}
-
-	profileImage, err := os.Open(filepath.Join(bundlePath, "assets", "profile.png"))
-	if err != nil {
-		return errors.Wrap(err, "couldn't read profile image")
-	}
-
-	if err = p.client.User.SetProfileImage(botUserID, profileImage); err != nil {
-		return errors.Wrap(err, "couldn't set profile image")
-	}
 
 	instances, err := MigrateV2Instances(p)
 	if err != nil {

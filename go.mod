@@ -9,7 +9,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gorilla/mux v1.8.0
 	github.com/jarcoal/httpmock v1.0.8
-	github.com/mattermost/mattermost-plugin-api v0.1.2-0.20230302185923-1714af2b0110
+	github.com/mattermost/mattermost-plugin-api v0.1.2
 	github.com/mattermost/mattermost-plugin-autolink v1.2.2-0.20210709183311-c8fa30db649f
 	// mmgoget: github.com/mattermost/mattermost-server/v6@v7.5.0 is replaced by -> github.com/mattermost/mattermost-server/v6@21aec2741b
 	github.com/mattermost/mattermost-server/v6 v6.0.0-20221109191448-21aec2741bfe

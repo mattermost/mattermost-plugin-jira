@@ -496,18 +496,18 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 }
 
 func (store *store) StoreInstance(instance Instance) error {
-	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
+	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.client))
 	instance.Common().PluginVersion = manifest.Version
 	return kv.Entity(prefixInstance).Store(instance.GetID(), instance)
 }
 
 func (store *store) DeleteInstance(id types.ID) error {
-	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
+	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.client))
 	return kv.Entity(prefixInstance).Delete(id)
 }
 
 func (store *store) LoadInstances() (*Instances, error) {
-	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
+	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.client))
 	vs, err := kv.ValueIndex(keyInstances, &instancesArray{}).Load()
 	if errors.Cause(err) == kvstore.ErrNotFound {
 		return NewInstances(), nil
@@ -521,7 +521,7 @@ func (store *store) LoadInstances() (*Instances, error) {
 }
 
 func (store *store) StoreInstances(instances *Instances) error {
-	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
+	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.client))
 	return kv.ValueIndex(keyInstances, &instancesArray{}).Store(instances.ValueSet)
 }
 
