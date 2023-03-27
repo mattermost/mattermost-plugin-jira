@@ -390,7 +390,7 @@ func (store store) StoreOneTimeSecret(token, secret string) error {
 }
 
 func (store store) LoadOneTimeSecret(key string) (string, error) {
-	var secret string
+	var secret []byte
 	err := store.plugin.client.KV.Get(hashkey(prefixOneTimeSecret, key), &secret)
 	if err != nil {
 		return "", errors.WithMessage(err, "failed to load one-time secret "+key)
@@ -400,7 +400,7 @@ func (store store) LoadOneTimeSecret(key string) (string, error) {
 	if err != nil {
 		return "", errors.WithMessage(err, "failed to delete one-time secret "+key)
 	}
-	return secret, nil
+	return string(secret), nil
 }
 
 func (store store) StoreOauth1aTemporaryCredentials(mmUserID string, credentials *OAuth1aTemporaryCredentials) error {
