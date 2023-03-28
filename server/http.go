@@ -6,11 +6,11 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"text/template"
@@ -70,31 +70,32 @@ const (
 
 func (p *Plugin) initializeRouter() {
 	p.router = mux.NewRouter()
+	p.router.Use(p.withRecovery)
 
 	p.router.HandleFunc(routeIncomingWebhook, p.handleResponseWithCallbackInstance(p.httpWebhook)).Methods(http.MethodPost)
 
 	// Command autocomplete
 	autocompleteRouter := p.router.PathPrefix(routeAutocomplete).Subrouter()
-	autocompleteRouter.HandleFunc(routeAutocompleteConnect, p.handleResponse(p.httpAutocompleteConnect)).Methods(http.MethodPost)
-	autocompleteRouter.HandleFunc(routeAutocompleteUserInstance, p.handleResponse(p.httpAutocompleteUserInstance)).Methods(http.MethodPost)
-	autocompleteRouter.HandleFunc(routeAutocompleteInstalledInstance, p.handleResponse(p.httpAutocompleteInstalledInstance)).Methods(http.MethodPost)
-	autocompleteRouter.HandleFunc(routeAutocompleteInstalledInstanceWithAlias, p.handleResponse(p.httpAutocompleteInstalledInstanceWithAlias)).Methods(http.MethodPost)
+	autocompleteRouter.HandleFunc(routeAutocompleteConnect, p.checkAuth(p.handleResponse(p.httpAutocompleteConnect))).Methods(http.MethodGet)
+	autocompleteRouter.HandleFunc(routeAutocompleteUserInstance, p.checkAuth(p.handleResponse(p.httpAutocompleteUserInstance))).Methods(http.MethodGet)
+	autocompleteRouter.HandleFunc(routeAutocompleteInstalledInstance, p.checkAuth(p.handleResponse(p.httpAutocompleteInstalledInstance))).Methods(http.MethodGet)
+	autocompleteRouter.HandleFunc(routeAutocompleteInstalledInstanceWithAlias, p.checkAuth(p.handleResponse(p.httpAutocompleteInstalledInstanceWithAlias))).Methods(http.MethodGet)
 
 	apiRouter := p.router.PathPrefix(routeAPI).Subrouter()
 
-	apiRouter.HandleFunc(routeAPIGetAutoCompleteFields, p.handleResponse(p.httpGetAutoCompleteFields)).Methods(http.MethodGet)
-	apiRouter.HandleFunc(routeAPICreateIssue, p.handleResponse(p.httpCreateIssue)).Methods(http.MethodPost)
-	apiRouter.HandleFunc(routeAPIGetCreateIssueMetadata, p.handleResponse(p.httpGetCreateIssueMetadataForProjects)).Methods(http.MethodGet)
-	apiRouter.HandleFunc(routeAPIGetJiraProjectMetadata, p.handleResponse(p.httpGetJiraProjectMetadata)).Methods(http.MethodGet)
-	apiRouter.HandleFunc(routeAPIGetSearchIssues, p.handleResponse(p.httpGetSearchIssues)).Methods(http.MethodGet)
-	apiRouter.HandleFunc(routeAPIGetSearchUsers, p.handleResponse(p.httpGetSearchUsers)).Methods(http.MethodGet)
-	apiRouter.HandleFunc(routeAPIAttachCommentToIssue, p.handleResponse(p.httpAttachCommentToIssue)).Methods(http.MethodPost)
+	apiRouter.HandleFunc(routeAPIGetAutoCompleteFields, p.checkAuth(p.handleResponse(p.httpGetAutoCompleteFields))).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPICreateIssue, p.checkAuth(p.handleResponse(p.httpCreateIssue))).Methods(http.MethodPost)
+	apiRouter.HandleFunc(routeAPIGetCreateIssueMetadata, p.checkAuth(p.handleResponse(p.httpGetCreateIssueMetadataForProjects))).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPIGetJiraProjectMetadata, p.checkAuth(p.handleResponse(p.httpGetJiraProjectMetadata))).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPIGetSearchIssues, p.checkAuth(p.handleResponse(p.httpGetSearchIssues))).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPIGetSearchUsers, p.checkAuth(p.handleResponse(p.httpGetSearchUsers))).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPIAttachCommentToIssue, p.checkAuth(p.handleResponse(p.httpAttachCommentToIssue))).Methods(http.MethodPost)
 	apiRouter.HandleFunc(routeIssueTransition, p.handleResponse(p.httpTransitionIssuePostAction)).Methods(http.MethodPost)
 	apiRouter.HandleFunc(routeSharePublicly, p.handleResponse(p.httpShareIssuePublicly)).Methods(http.MethodPost)
 
 	// User APIs
-	apiRouter.HandleFunc(routeAPIUserInfo, p.handleResponse(p.httpGetUserInfo)).Methods(http.MethodGet)
-	apiRouter.HandleFunc(routeAPISettingsInfo, p.handleResponse(p.httpGetSettingsInfo)).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPIUserInfo, p.checkAuth(p.handleResponse(p.httpGetUserInfo))).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPISettingsInfo, p.checkAuth(p.handleResponse(p.httpGetSettingsInfo))).Methods(http.MethodGet)
 
 	// Atlassian Connect application
 	p.router.HandleFunc(routeACJSON, p.handleResponseWithCallbackInstance(p.httpACJSON)).Methods(http.MethodPost)
@@ -102,35 +103,31 @@ func (p *Plugin) initializeRouter() {
 	p.router.HandleFunc(routeACUninstalled, p.handleResponse(p.httpACUninstalled)).Methods(http.MethodPost)
 
 	// Atlassian Connect user mapping
-	p.router.HandleFunc(routeACUserRedirectWithToken, p.handleResponseWithCallbackInstance(p.httpACUserRedirect)).Methods(http.MethodPost)
+	p.router.HandleFunc(routeACUserRedirectWithToken, p.handleResponseWithCallbackInstance(p.httpACUserRedirect)).Methods(http.MethodGet)
 	p.router.HandleFunc(routeACUserConfirm, p.handleResponseWithCallbackInstance(p.httpACUserInteractive)).Methods(http.MethodPost)
 	p.router.HandleFunc(routeACUserConnected, p.handleResponseWithCallbackInstance(p.httpACUserInteractive)).Methods(http.MethodPost)
 	p.router.HandleFunc(routeACUserDisconnected, p.handleResponseWithCallbackInstance(p.httpACUserInteractive)).Methods(http.MethodPost)
 
 	// Oauth1 (Jira Server)
-	p.router.HandleFunc(routeOAuth1Complete, p.handleResponseWithCallbackInstance(p.httpOAuth1aComplete)).Methods(http.MethodPost)
-	p.router.HandleFunc(routeUserDisconnect, p.handleResponseWithCallbackInstance(p.httpOAuth1aDisconnect)).Methods(http.MethodPost)
+	p.router.HandleFunc(routeOAuth1Complete, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpOAuth1aComplete))).Methods(http.MethodPost)
+	p.router.HandleFunc(routeUserDisconnect, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpOAuth1aDisconnect))).Methods(http.MethodGet)
 
 	// User connect/disconnect links
-	p.router.HandleFunc(routeUserConnect, p.handleResponseWithCallbackInstance(p.httpUserConnect)).Methods(http.MethodPost)
-	p.router.HandleFunc(routeUserStart, p.handleResponseWithCallbackInstance(p.httpUserStart)).Methods(http.MethodGet)
-	p.router.HandleFunc(routeAPIUserDisconnect, p.handleResponse(p.httpUserDisconnect)).Methods(http.MethodPost)
+	p.router.HandleFunc(routeUserConnect, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpUserConnect))).Methods(http.MethodGet)
+	p.router.HandleFunc(routeUserStart, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpUserStart))).Methods(http.MethodGet)
+	p.router.HandleFunc(routeAPIUserDisconnect, p.checkAuth(p.handleResponse(p.httpUserDisconnect))).Methods(http.MethodPost)
 
 	// Firehose webhook setup for channel subscriptions
 	apiRouter.HandleFunc(routeAPISubscribeWebhook, p.handleResponseWithCallbackInstance(p.httpSubscribeWebhook)).Methods(http.MethodPost)
 
 	// Channel Subscriptions
-	apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.handleResponse(p.httpChannelSubscriptions)).Methods(http.MethodGet)
-	apiRouter.HandleFunc(routeAPISubscriptionsChannel, p.handleResponse(p.httpChannelSubscriptions)).Methods(http.MethodPost)
-	apiRouter.HandleFunc(routeAPISubscriptionsChannel, p.handleResponse(p.httpChannelSubscriptions)).Methods(http.MethodPut)
-	apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.handleResponse(p.httpChannelSubscriptions)).Methods(http.MethodDelete)
+	apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.checkAuth(p.handleResponse(p.httpChannelGetSubscriptions))).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPISubscriptionsChannel, p.checkAuth(p.handleResponse(p.httpChannelCreateSubscription))).Methods(http.MethodPost)
+	apiRouter.HandleFunc(routeAPISubscriptionsChannel, p.checkAuth(p.handleResponse(p.httpChannelEditSubscription))).Methods(http.MethodPut)
+	apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.checkAuth(p.handleResponse(p.httpChannelDeleteSubscription))).Methods(http.MethodDelete)
 }
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	if strings.HasPrefix(r.URL.Path, "/plugins/servlet") {
-		body, _ := httputil.DumpRequest(r, true)
-		p.errorf("Received an unknown request as a Jira plugin:\n%s", string(body))
-	}
 	p.router.ServeHTTP(w, r)
 }
 
@@ -235,17 +232,51 @@ func splitInstancePath(route string) (instanceURL string, remainingPath string) 
 	return string(id), leadingSlash + strings.Join(ss[2:], "/")
 }
 
+func (p *Plugin) withRecovery(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if x := recover(); x != nil {
+				p.client.Log.Warn("Recovered from a panic",
+					"url", r.URL.String(),
+					"error", x,
+					"stack", string(debug.Stack()))
+			}
+		}()
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func makeAutocompleteRoute(path string) string {
+	return routeAutocomplete + path
+}
+
+func makeAPIRoute(path string) string {
+	return routeAPI + path
+}
+
+func (p *Plugin) checkAuth(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Header.Get("Mattermost-User-ID")
+		if userID == "" {
+			http.Error(w, "Not authorized", http.StatusUnauthorized)
+			return
+		}
+		handler(w, r)
+	}
+}
+
 func (p *Plugin) handleResponse(fn func(w http.ResponseWriter, r *http.Request) (int, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		status, err := fn(w, r)
-		switch {
-		case err == nil && status == http.StatusOK:
-			p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
-		case status == 0:
-			p.API.LogDebug("Passed to another router: ", "Path", r.URL.Path, "Method", r.Method)
-		case err != nil:
-			p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
-		default:
+		if status == 0 || status == http.StatusOK {
+			return
+		}
+		if err != nil {
+			p.API.LogWarn("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
+		}
+
+		if status != http.StatusOK {
 			p.API.LogDebug("unexpected plugin response", "Status", strconv.Itoa(status), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
 		}
 	}
@@ -262,14 +293,11 @@ func (p *Plugin) handleResponseWithCallbackInstance(fn func(w http.ResponseWrite
 		}
 
 		status, err := fn(w, r, callbackInstanceID)
-		switch {
-		case err == nil && status == http.StatusOK:
-			p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
-		case status == 0:
-			p.API.LogDebug("Passed to another router: ", "Path", r.URL.Path, "Method", r.Method)
-		case err != nil:
-			p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
-		default:
+		if err != nil {
+			p.API.LogWarn("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
+		}
+
+		if status > 0 && status != http.StatusOK {
 			p.API.LogDebug("unexpected plugin response", "Status", strconv.Itoa(status), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
 		}
 	}
