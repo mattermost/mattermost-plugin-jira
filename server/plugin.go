@@ -351,7 +351,7 @@ func (p *Plugin) AddAutolinksForCloudInstance(ci *cloudInstance) error {
 		return fmt.Errorf("unable to get jira client for server: %w", err)
 	}
 
-	plist, err := jiraCloudClient{JiraClient{Jira: client}}.ListProjects("", -1)
+	plist, err := jiraCloudClient{JiraClient{Jira: client}}.ListProjects("", -1, false)
 	if err != nil {
 		return fmt.Errorf("unable to get project keys: %w", err)
 	}
@@ -497,64 +497,6 @@ func (p *Plugin) setDefaultConfiguration() error {
 	}
 
 	return nil
-}
-
-func (p *Plugin) track(name, userID string) {
-	p.trackWithArgs(name, userID, nil)
-}
-
-func (p *Plugin) trackWithArgs(name, userID string, args map[string]interface{}) {
-	if args == nil {
-		args = map[string]interface{}{}
-	}
-	args["time"] = model.GetMillis()
-	_ = p.tracker.TrackUserEvent(name, userID, args)
-}
-
-func (p *Plugin) OnSendDailyTelemetry() {
-	args := map[string]interface{}{}
-
-	// Jira instances
-	server, cloud := 0, 0
-	instances, err := p.instanceStore.LoadInstances()
-	if err != nil {
-		p.API.LogWarn("Failed to get instances for telemetry", "error", err)
-	}
-	for _, id := range instances.IDs() {
-		switch instances.Get(id).Type {
-		case ServerInstanceType:
-			server++
-		case CloudInstanceType:
-			cloud++
-		}
-	}
-	args["instance_count"] = server + cloud
-	if server > 0 {
-		args["server_instance_count"] = server
-	}
-	if cloud > 0 {
-		args["cloud_instance_count"] = cloud
-	}
-
-	// Connected users
-	connected, err := p.userStore.CountUsers()
-	if err != nil {
-		p.API.LogWarn("Failed to get the number of connected users for telemetry", "error", err)
-	}
-	args["connected_user_count"] = connected
-
-	// Subscriptions
-	subscriptions := 0
-	for _, id := range instances.IDs() {
-		subs, err := p.getSubscriptions(id)
-		if err != nil {
-			p.API.LogWarn("Failed to get subscriptions for telemetry", "error", err)
-		}
-		subscriptions += len(subs.Channel.ByID)
-	}
-	args["subscriptions"] = subscriptions
-
-	_ = p.tracker.TrackEvent("stats", args)
 }
 
 func (p *Plugin) OnInstall(c *plugin.Context, event model.OnInstallEvent) error {

@@ -12,7 +12,7 @@ Notify your team of the latest updates by sending notifications from your Jira p
 
 Each user in Mattermost is connected with their own personal Jira account and notifications for issues where someone is mentioned or assigned an issue is mentioned in your own personal Jira notification bot to help everyone stay on top of their assigned issues.
 
-![A personal JiraBot helps keep you on top of your relevant Jira activities](.gitbook/assets/image%20%287%29.png)
+![A personal JiraBot helps keep you on top of your relevant Jira activities](.gitbook/assets/ticket-created.png)
 
 ## Manage Jira issues in Mattermost
 
@@ -25,7 +25,7 @@ Each user in Mattermost is connected with their own personal Jira account and no
 
 ### Attach Messages to Jira Issues
 
-Keep all information in one place by attaching parts of Mattermost conversations in Jira issues as comments.  Then, on the resulting dialog, select the Jira issue you want to attach it to. You may search for issues containing specific text.
+Keep all information in one place by attaching parts of Mattermost conversations in Jira issues as comments. Then, on the resulting dialog, select the Jira issue you want to attach it to. You may search for issues containing specific text.
 
 ![image](https://user-images.githubusercontent.com/13119842/59113267-b627f780-8912-11e9-90ec-417d430de7e6.png)
 

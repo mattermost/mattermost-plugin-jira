@@ -148,6 +148,7 @@ func addSubCommands(jira *model.AutocompleteData, optInstance bool) {
 	// Admin commands
 	jira.AddCommand(createSubscribeCommand(optInstance))
 	jira.AddCommand(createWebhookCommand(optInstance))
+	jira.AddCommand(createSetupCommand())
 
 	// Help and info
 	jira.AddCommand(model.NewAutocompleteData("info", "", "Display information about the current user and the Jira plug-in"))
@@ -318,6 +319,13 @@ func createWebhookCommand(optInstance bool) *model.AutocompleteData {
 	webhook.RoleID = model.SystemAdminRoleId
 	withFlagInstance(webhook, optInstance, routeAutocompleteInstalledInstanceWithAlias)
 	return webhook
+}
+
+func createSetupCommand() *model.AutocompleteData {
+	setup := model.NewAutocompleteData(
+		"setup", "", "Start Jira plugin setup flow")
+	setup.RoleID = model.SystemAdminRoleId
+	return setup
 }
 
 type CommandHandlerFunc func(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse
@@ -667,7 +675,7 @@ If you ran |v2revert| unintentionally and would like to continue using the curre
 	message = preMessage + message
 	message = strings.ReplaceAll(message, "|", "`")
 
-	p.track("v2RevertSubmitted", header.UserId)
+	p.TrackUserEvent("v2RevertSubmitted", header.UserId, nil)
 
 	return p.responsef(header, message)
 }
