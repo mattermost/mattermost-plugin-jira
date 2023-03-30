@@ -1,8 +1,14 @@
 # Include custom targets and environment variables here
-ifndef MM_RUDDER_WRITE_KEY
-	MM_RUDDER_WRITE_KEY = 1d5bMvdrfWClLxgK1FvV3s4U1tg
+
+.DEFAULT_GOAL := all
+
+# If there's no MM_RUDDER_PLUGINS_PROD, add DEV data
+RUDDER_WRITE_KEY = 1d5bMvdrfWClLxgK1FvV3s4U1tg
+ifdef MM_RUDDER_PLUGINS_PROD
+	RUDDER_WRITE_KEY = $(MM_RUDDER_PLUGINS_PROD)
 endif
-LDFLAGS += -X "github.com/mattermost/mattermost-plugin-jira/server/utils/telemetry.rudderWriteKey=$(MM_RUDDER_WRITE_KEY)"
+LDFLAGS += -X "github.com/mattermost/mattermost-plugin-api/experimental/telemetry.rudderWriteKey=$(RUDDER_WRITE_KEY)"
+
 
 # Build info
 BUILD_DATE = $(shell date -u)
