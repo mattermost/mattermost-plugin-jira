@@ -53,6 +53,7 @@ const (
 	routeUserConnect                            = "/user/connect"
 	routeUserDisconnect                         = "/user/disconnect"
 	routeSharePublicly                          = "/api/v2/share-issue-publicly"
+	routeCloudOAuthConfigure                    = "/api/v2/cloud-oauth2"
 	routeOAuth2Complete                         = "/oauth2/complete.html"
 )
 
@@ -159,7 +160,7 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 		routeACUserDisconnected:
 		return p.httpACUserInteractive(w, r, callbackInstanceID)
 
-		// Command autocomplete
+	// Command autocomplete
 	case routeAutocompleteConnect:
 		return p.httpAutocompleteConnect(w, r)
 	case routeAutocompleteUserInstance:
@@ -182,6 +183,8 @@ func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	// OAuth2 (Jira Cloud)
 	case routeOAuth2Complete:
 		return p.httpOAuth2Complete(w, r, callbackInstanceID)
+	case routeCloudOAuthConfigure:
+		return p.httpOAuth2Configure(w, r)
 
 	// User connect/disconnect links
 	case routeUserConnect:

@@ -509,3 +509,42 @@ export function sendEphemeralPost(message: string, channelId?: string) {
         });
     };
 }
+
+export const openOAuthConfigModal = () => {
+    return {
+        type: ActionTypes.OPEN_OAUTH_CONFIG_MODAL,
+    };
+};
+
+export const closeOAuthConfigModal = () => {
+    return {
+        type: ActionTypes.CLOSE_OAUTH_CONFIG_MODAL,
+    };
+};
+
+export function handleInstallOAuthFlow(instanceID?: string) {
+    return async (dispatch) => {
+        dispatch(openOAuthConfigModal());
+    };
+}
+
+export const configureCloudOAuthInstance = (payload) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        try {
+            const data = await doFetch(`${baseUrl}/api/v2/cloud-oauth2`, {
+                method: 'post',
+                body: JSON.stringify(payload),
+            });
+
+            if (data.error) {
+                return {error: new Error(data.error)};
+            }
+
+            dispatch(sendEphemeralPost('You\'ve finished installing the Jira Cloud OAuth2 instance.'));
+            return {data};
+        } catch (error) {
+            return {error};
+        }
+    };
+};

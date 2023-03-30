@@ -9,11 +9,12 @@ import (
 	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 type cloudOAuthInstance struct {
@@ -27,16 +28,22 @@ type cloudOAuthInstance struct {
 	JiraClientSecret string
 }
 
+type CloudOAuthConfigure struct {
+	InstanceURL  string `json:"instance_url"`
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+}
+
 type JiraAccessibleResources []struct {
-	Id string
+	ID string
 }
 
 var _ Instance = (*cloudOAuthInstance)(nil)
 
 const (
-	JIRA_SCOPES        = "read:jira-user,read:jira-work,write:jira-work"
-	JIRA_RESPONSE_TYPE = "code"
-	JIRA_CONSENT       = "consent"
+	JiraScopes       = "read:jira-user,read:jira-work,write:jira-work"
+	JiraResponseType = "code"
+	JiraConsent      = "consent"
 )
 
 func (p *Plugin) installCloudOAuthInstance(rawURL string, clientID string, clientSecret string) (string, *cloudOAuthInstance, error) {
@@ -115,7 +122,7 @@ func (ci *cloudOAuthInstance) GetOAuthConfig() *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     ci.JiraClientID,
 		ClientSecret: ci.JiraClientSecret,
-		Scopes:       strings.Split(JIRA_SCOPES, ","),
+		Scopes:       strings.Split(JiraScopes, ","),
 		RedirectURL:  fmt.Sprintf("%s%s", ci.Plugin.GetPluginURL(), instancePath(routeOAuth2Complete, ci.InstanceID)),
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://auth.atlassian.com/authorize",
@@ -175,5 +182,5 @@ func (ci *cloudOAuthInstance) getJiraCloudResourceID(client http.Client) (string
 		return "", errors.New("No resources available for this Jira Cloud Account")
 	}
 
-	return resources[0].Id, nil
+	return resources[0].ID, nil
 }

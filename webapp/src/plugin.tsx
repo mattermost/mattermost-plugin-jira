@@ -6,6 +6,8 @@ import {Store, Action} from 'redux';
 import ConnectModal from 'components/modals/connect_modal';
 import DisconnectModal from 'components/modals/disconnect_modal';
 
+import OAuthConfigModal from 'components/modals/oauth_config_modal';
+
 import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue';
 
 import CreateIssueModal from 'components/modals/create_issue';
@@ -34,6 +36,7 @@ const setupUILater = (registry: any, store: Store<object, Action<object>>): () =
             registry.registerRootComponent(ConnectModal);
             registry.registerRootComponent(DisconnectModal);
             registry.registerRootComponent(CreateIssueModal);
+            registry.registerRootComponent(OAuthConfigModal);
             registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
             registry.registerRootComponent(AttachCommentToIssueModal);
             registry.registerPostDropdownMenuComponent(AttachCommentToIssuePostMenuAction);

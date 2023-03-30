@@ -157,6 +157,7 @@ export type ChannelSubscription = {
 export enum InstanceType {
     CLOUD = 'cloud',
     SERVER = 'server',
+    CLOUD_OATH = 'cloud_oauth'
 }
 export type Instance = {
     alias?: string;
@@ -216,3 +217,9 @@ export type CreateIssueFields = {
     project: {key: string};
     issuetype: {id: string};
 } & {[key: string]: JiraField};
+
+export type OAuthConfig = {
+    instance_url: string;
+    client_id: string;
+    client_secret: string;
+}

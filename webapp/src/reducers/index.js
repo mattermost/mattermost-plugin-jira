@@ -193,6 +193,17 @@ const channelSubscriptions = (state = {}, action) => {
     }
 };
 
+const oauthConfigModalVisible = (state = false, action) => {
+    switch (action.type) {
+    case ActionTypes.OPEN_OAUTH_CONFIG_MODAL:
+        return true;
+    case ActionTypes.CLOSE_OAUTH_CONFIG_MODAL:
+        return false;
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     userConnected,
     userCanConnect,
@@ -208,4 +219,5 @@ export default combineReducers({
     attachCommentToIssueModalForPostId,
     channelIdWithSettingsOpen,
     channelSubscriptions,
+    oauthConfigModalVisible,
 });

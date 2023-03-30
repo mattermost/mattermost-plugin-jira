@@ -22,7 +22,6 @@ const (
 	stepCloudAddedInstance       flow.Name = "cloud-added"
 	stepCloudOAuthConfigure      flow.Name = "cloud-oauth-configure"
 	stepCloudOAuthSetCallbackURL flow.Name = "cloud-oauth-callback"
-	stepCloudOAuthConnect        flow.Name = "cloud-oauth-connect"
 	stepCloudEnableDeveloperMode flow.Name = "cloud-enable-dev"
 	stepCloudUploadApp           flow.Name = "cloud-upload-app"
 	stepInstalledJiraApp         flow.Name = "installed-app"
@@ -75,7 +74,6 @@ func (p *Plugin) NewSetupFlow() *flow.Flow {
 			// Jira Cloud OAuth steps
 			p.stepCloudOAuthConfigure(),
 			p.stepCloudOAuthSetCallbackURL(),
-			p.stepCloudOAuthConnect(),
 
 			// Jira server steps
 			p.stepServerAddAppLink(),
@@ -329,7 +327,7 @@ func (p *Plugin) stepCloudUploadApp() flow.Step {
 
 func (p *Plugin) stepCloudOAuthConfigure() flow.Step {
 	return flow.NewStep(stepCloudOAuthConfigure).
-		WithPretext("##### :white_check_mark: Step 2: Register an OAuth 2.0 Application in Jira").
+		WithPretext("##### :white_check_mark: Step 2(a): Register an OAuth 2.0 Application in Jira").
 		WithText(fmt.Sprintf("Complete the following steps, then come back here to select **Configure**.\n\n"+
 			"1. Follow [these instructions](https://developer.atlassian.com/cloud/confluence/oauth-2-3lo-apps/#enabling-oauth-2-0--3lo-) to register an OAuth 2.0 application in Jira.\n"+
 			"2. Set the following values:\n"+
@@ -337,7 +335,7 @@ func (p *Plugin) stepCloudOAuthConfigure() flow.Step {
 			"3. Select **Permissions** in the left menu. Next to the JIRA API, select **Add**\n"+
 			"4. Then select **Configure** and ensure following scopes are selected:\n"+
 			"   - Scopes: `%s`\n"+
-			"3. Copy the **Client ID** and **Secret** from the registed 0Auth Application's **Settings** page and keep it handy.\n", JIRA_SCOPES)).
+			"3. Copy the **Client ID** and **Secret** from the registered 0Auth Application's **Settings** page and keep it handy.\n", JiraScopes)).
 		WithButton(flow.Button{
 			Name:  "Configure",
 			Color: flow.ColorPrimary,
@@ -377,24 +375,13 @@ func (p *Plugin) stepCloudOAuthConfigure() flow.Step {
 
 func (p *Plugin) stepCloudOAuthSetCallbackURL() flow.Step {
 	return flow.NewStep(stepCloudOAuthSetCallbackURL).
-		WithPretext("##### :white_check_mark: Step 3: Set Callback URL in the Jira OAuth 2.0 app").
+		WithPretext("##### :white_check_mark: Step 2(b): Set Callback URL in the Jira OAuth 2.0 app").
 		WithText("It is important that you correctly set the Callback URL in the Jira OAuth 2.0 app. Follow the below instructions:\n\n" +
 			"1. In the Jira Developer console, click on the OAuth 2.0 app you had created and select **Authorization** in the left menu.\n" +
 			"2. Next to OAuth 2.0 (3LO), select **Configure** and set the Callback URL as follows:\n" +
 			"	`{{.OAuthCompleteURL}}`\n" +
 			"3. Click **Save Changes**.\n").
-		WithButton(continueButton(stepCloudOAuthConnect))
-}
-
-func (p *Plugin) stepCloudOAuthConnect() flow.Step {
-	return flow.NewStep(stepCloudOAuthConnect).
-		WithPretext("##### :white_check_mark: Step 4: Connect your Jira account").
-		WithText("Go [here]({{.ConnectURL}}) to connect your Jira account\n").
-		OnRender(func(f *flow.Flow) {
-			p.trackSetupWizard("oauth_wizard_complete", map[string]interface{}{
-				keyEdition: f.GetState().GetString(keyEdition),
-			})(f)
-		})
+		WithButton(continueButton(stepInstalledJiraApp))
 }
 
 func (p *Plugin) stepInstalledJiraApp() flow.Step {

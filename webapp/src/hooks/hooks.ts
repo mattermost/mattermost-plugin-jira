@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {openCreateModalWithoutPost, openChannelSettings, sendEphemeralPost, openDisconnectModal, handleConnectFlow, getConnected} from '../actions';
+import {openCreateModalWithoutPost, openChannelSettings, sendEphemeralPost, openDisconnectModal, handleConnectFlow, getConnected, handleInstallOAuthFlow} from '../actions';
 import {isUserConnected, getInstalledInstances, getPluginSettings, getUserConnectedInstances, instanceIsInstalled} from '../selectors';
 
 type ContextArgs = {channel_id: string};
@@ -12,6 +12,7 @@ const disconnectCommand = '/jira disconnect';
 const issueCreateCommand = '/jira issue create';
 const instanceConnectCommand = '/jira instance connect';
 const instanceDisconnectCommand = '/jira instance disconnect';
+const instanceInstallOAuthCommand = '/jira instance install cloud-oauth';
 const subscribeCommand = '/jira subscribe';
 const subscribeEditCommand = '/jira subscribe edit';
 
@@ -53,6 +54,10 @@ export default class Hooks {
 
         if (message.startsWith(disconnectCommand) || message.startsWith(instanceDisconnectCommand)) {
             return this.handleDisconnectSlashCommand(message, contextArgs);
+        }
+
+        if (message.startsWith(instanceInstallOAuthCommand)) {
+            return this.handleInstallOAuthCommand();
         }
 
         if (message === subscribeCommand || message === subscribeEditCommand) {
@@ -146,6 +151,11 @@ export default class Hooks {
             instanceID = message.slice(instanceConnectCommand.length).trim();
         }
         this.store.dispatch(handleConnectFlow(instanceID));
+        return Promise.resolve({});
+    }
+
+    handleInstallOAuthCommand = () => {
+        this.store.dispatch(handleInstallOAuthFlow());
         return Promise.resolve({});
     }
 }
