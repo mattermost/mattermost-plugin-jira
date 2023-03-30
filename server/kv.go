@@ -422,6 +422,11 @@ func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserID string) (*OAu
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to load temporary credentials for "+mmUserID)
 	}
+	// If the key expired, appErr is nil, but the data is also nil
+	if len(credentials.Token) == 0 {
+		return nil, errors.Wrapf(kvstore.ErrNotFound, "temporary credentials for %s not found or expired, try to connect again"+mmUserID)
+	}
+
 	err = store.plugin.client.KV.Delete(hashkey(prefixOneTimeSecret, mmUserID))
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to delete temporary credentials for "+mmUserID)
@@ -463,18 +468,24 @@ func (store *store) LoadInstance(instanceID types.ID) (Instance, error) {
 }
 
 func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
-	si := serverInstance{}
-	err := store.plugin.client.KV.Get(fullkey, &si)
+	var data []byte
+	err := store.plugin.client.KV.Get(fullkey, &data)
 	if err != nil {
 		return nil, err
 	}
-	if si.InstanceCommon == nil {
+	if data == nil {
 		return nil, errors.Wrap(kvstore.ErrNotFound, fullkey)
+	}
+
+	si := serverInstance{}
+	err = json.Unmarshal(data, &si)
+	if err != nil {
+		return nil, err
 	}
 	switch si.Type {
 	case CloudInstanceType:
 		ci := cloudInstance{}
-		err := store.plugin.client.KV.Get(fullkey, &ci)
+		err = json.Unmarshal(data, &ci)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
 		}
