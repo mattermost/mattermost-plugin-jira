@@ -15,6 +15,7 @@ import {
     FilterFieldInclusion,
     JiraFieldCustomTypeEnums,
 } from 'types/model';
+import {IssueAction, TicketDetails} from 'types/tooltip';
 
 type FieldWithInfo = JiraField & {
     changeLogID: string;
@@ -357,12 +358,12 @@ export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMet
     return [projectJQL, issueTypesJQL, filterFieldsJQL].filter(Boolean).join(' AND ');
 }
 
-export function jiraIssueToReducer(action: Action): TicketDetails {
+export function jiraIssueToReducer(action: IssueAction): TicketDetails {
     const assignee = action.data && action.data.fields && action.data.fields.assignee ? action.data.fields.assignee : null;
     const ticketData = action.data;
     const ticketDetails: TicketDetails = {
-        assigneeName: assignee && assignee.displayName ? assignee.displayName : '',
-        assigneeAvatar: assignee && assignee.avatarUrls && assignee.avatarUrls['48x48'] ? assignee.avatarUrls['48x48'] : '',
+        assigneeName: (assignee && assignee.displayName) || '',
+        assigneeAvatar: (assignee && assignee.avatarUrls && assignee.avatarUrls['48x48']) || '',
         labels: ticketData.fields.labels,
         description: ticketData.fields.description,
         summary: ticketData.fields.summary,

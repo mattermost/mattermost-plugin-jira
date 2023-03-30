@@ -1,4 +1,6 @@
-type TicketDetails = {
+import {JiraUser} from './model';
+
+export type TicketDetails = {
     assigneeName: string;
     assigneeAvatar: string;
     labels: string[];
@@ -11,22 +13,17 @@ type TicketDetails = {
     issueIcon: string;
 }
 
-type TicketData = {
+export type TicketData = {
     key: string;
     fields: TicketDataFields;
 }
 
-type AvatarUrls = {
+export type AvatarUrls = {
     '48x48': string;
 }
 
-type Assignee = {
-    displayName: string;
-    avatarUrls: AvatarUrls;
-}
-
-type TicketDataFields = {
-    assignee: Assignee | null;
+export type TicketDataFields = {
+    assignee: JiraUser | null;
     labels: string[];
     description: string;
     summary: string;
@@ -36,7 +33,7 @@ type TicketDataFields = {
     issuetype: {iconUrl: string};
 }
 
-type Action = {
+export type IssueAction = {
     type: string;
     data: TicketData;
 }
