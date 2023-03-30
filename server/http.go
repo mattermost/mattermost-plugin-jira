@@ -68,6 +68,14 @@ const (
 	websocketEventUpdateDefaults = "update_defaults"
 )
 
+func makeAutocompleteRoute(path string) string {
+	return routeAutocomplete + path
+}
+
+func makeAPIRoute(path string) string {
+	return routeAPI + path
+}
+
 func (p *Plugin) initializeRouter() {
 	p.router = mux.NewRouter()
 	p.router.Use(p.withRecovery)
@@ -247,14 +255,6 @@ func (p *Plugin) withRecovery(next http.Handler) http.Handler {
 	})
 }
 
-func makeAutocompleteRoute(path string) string {
-	return routeAutocomplete + path
-}
-
-func makeAPIRoute(path string) string {
-	return routeAPI + path
-}
-
 func (p *Plugin) checkAuth(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Header.Get("Mattermost-User-ID")
@@ -292,13 +292,8 @@ func (p *Plugin) handleResponseWithCallbackInstance(fn func(w http.ResponseWrite
 			return
 		}
 
-		status, err := fn(w, r, callbackInstanceID)
-		if err != nil {
-			p.API.LogWarn("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
-		}
-
-		if status > 0 && status != http.StatusOK {
-			p.API.LogDebug("unexpected plugin response", "Status", strconv.Itoa(status), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
-		}
+		p.handleResponse(func(w http.ResponseWriter, r *http.Request) (int, error) {
+			return fn(w, r, callbackInstanceID)
+		})
 	}
 }
