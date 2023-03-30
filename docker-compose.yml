@@ -1,7 +1,14 @@
 version: '3'
 services:
   jira:
-    image: atlassian/jira-software:9 # It is recommended to test with version 7. Most, if not all, compatibility issues between Jira Server/Cloud exist in version 7.
-    # image: atlassian/jira-software:8 # Test with version 8 as well when adding new webhook handling logic, or introducing a new Jira API call.
+    container_name: mattermost-jira
+    image: atlassian/jira-software:latest # It is recommended to test with the latest version 9, as most of the customers are using this version.
+    # image: atlassian/jira-software:8 # Alternatively you can test with the previous stable version 8 as well.
     ports:
       - "8080:8080"
+    environment:
+      - JVM_MINIMUM_MEMORY=4096m
+      - JVM_MAXIMUM_MEMORY=8192m
+      - JVM_RESERVED_CODE_CACHE_SIZE=1024m
+      # - ATL_TOMCAT_SCHEME='https' # Enable this in case the Jira Server is being hosted with https
+      # - ATL_TOMCAT_SECURE='true' # Set 'true' if ATL_TOMCAT_SCHEME is 'https'.

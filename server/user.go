@@ -265,7 +265,7 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, conne
 		&model.WebsocketBroadcast{UserId: mattermostUserID.String()},
 	)
 
-	p.track("userConnected", mattermostUserID.String())
+	p.TrackUserEvent("userConnected", mattermostUserID.String(), nil)
 
 	return nil
 }
@@ -309,7 +309,7 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 	p.API.PublishWebSocketEvent(websocketEventDisconnect, info.AsConfigMap(),
 		&model.WebsocketBroadcast{UserId: user.MattermostUserID.String()})
 
-	p.track("userDisconnected", user.MattermostUserID.String())
+	p.TrackUserEvent("userDisconnected", user.MattermostUserID.String(), nil)
 
 	return conn, nil
 }

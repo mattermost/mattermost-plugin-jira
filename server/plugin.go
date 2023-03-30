@@ -502,68 +502,6 @@ func (p *Plugin) setDefaultConfiguration() error {
 	return nil
 }
 
-func (p *Plugin) track(name, userID string) {
-	p.trackWithArgs(name, userID, nil)
-}
-
-func (p *Plugin) trackWithArgs(name, userID string, args map[string]interface{}) {
-	if args == nil {
-		args = map[string]interface{}{}
-	}
-	args["time"] = model.GetMillis()
-	_ = p.tracker.TrackUserEvent(name, userID, args)
-}
-
-func (p *Plugin) OnSendDailyTelemetry() {
-	args := map[string]interface{}{}
-
-	// Jira instances
-	server, cloud := 0, 0
-	instances, err := p.instanceStore.LoadInstances()
-	if err != nil {
-		p.API.LogWarn("Failed to get instances for telemetry", "error", err)
-	} else {
-		for _, id := range instances.IDs() {
-			switch instances.Get(id).Type {
-			case ServerInstanceType:
-				server++
-			case CloudInstanceType:
-				cloud++
-			}
-		}
-		args["instance_count"] = server + cloud
-		if server > 0 {
-			args["server_instance_count"] = server
-		}
-		if cloud > 0 {
-			args["cloud_instance_count"] = cloud
-		}
-
-		// Subscriptions
-		numSubscriptions := 0
-		var subs *Subscriptions
-		for _, id := range instances.IDs() {
-			subs, err = p.getSubscriptions(id)
-			if err != nil {
-				p.API.LogWarn("Failed to get subscriptions for telemetry", "error", err)
-			}
-			numSubscriptions += len(subs.Channel.ByID)
-		}
-
-		args["subscriptions"] = numSubscriptions
-	}
-
-	// Connected users
-	connected, err := p.userStore.CountUsers()
-	if err != nil {
-		p.API.LogWarn("Failed to get the number of connected users for telemetry", "error", err)
-	} else {
-		args["connected_user_count"] = connected
-	}
-
-	_ = p.tracker.TrackEvent("stats", args)
-}
-
 func (p *Plugin) OnInstall(c *plugin.Context, event model.OnInstallEvent) error {
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
