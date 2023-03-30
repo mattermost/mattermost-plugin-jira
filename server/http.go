@@ -269,16 +269,8 @@ func (p *Plugin) checkAuth(handler http.HandlerFunc) http.HandlerFunc {
 func (p *Plugin) handleResponse(fn func(w http.ResponseWriter, r *http.Request) (int, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		status, err := fn(w, r)
-		if status == 0 || status == http.StatusOK {
-			return
-		}
-		if err != nil {
-			p.API.LogWarn("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
-		}
 
-		if status != http.StatusOK {
-			p.API.LogDebug("unexpected plugin response", "Status", strconv.Itoa(status), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
-		}
+		p.logResponse(r, status, err)
 	}
 }
 
@@ -292,8 +284,21 @@ func (p *Plugin) handleResponseWithCallbackInstance(fn func(w http.ResponseWrite
 			return
 		}
 
-		p.handleResponse(func(w http.ResponseWriter, r *http.Request) (int, error) {
-			return fn(w, r, callbackInstanceID)
-		})
+		status, err := fn(w, r, callbackInstanceID)
+
+		p.logResponse(r, status, err)
+	}
+}
+
+func (p *Plugin) logResponse(r *http.Request, status int, err error) {
+	if status == 0 || status == http.StatusOK {
+		return
+	}
+	if err != nil {
+		p.API.LogWarn("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
+	}
+
+	if status != http.StatusOK {
+		p.API.LogDebug("unexpected plugin response", "Status", strconv.Itoa(status), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
 	}
 }
