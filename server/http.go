@@ -30,6 +30,7 @@ const (
 	routeAutocompleteInstalledInstance          = "/installed-instance"
 	routeAutocompleteInstalledInstanceWithAlias = "/installed-instance-with-alias"
 	routeAPI                                    = "/api/v2"
+	routeInstancePath                           = "/instance/{id}"
 	routeAPICreateIssue                         = "/create-issue"
 	routeAPIGetCreateIssueMetadata              = "/get-create-issue-metadata-for-project"
 	routeAPIGetJiraProjectMetadata              = "/get-jira-project-metadata"
@@ -80,6 +81,7 @@ func (p *Plugin) initializeRouter() {
 	p.router = mux.NewRouter()
 	p.router.Use(p.withRecovery)
 
+	instanceRouter := p.router.PathPrefix(routeInstancePath).Subrouter()
 	p.router.HandleFunc(routeIncomingWebhook, p.handleResponseWithCallbackInstance(p.httpWebhook)).Methods(http.MethodPost)
 
 	// Command autocomplete
@@ -106,27 +108,27 @@ func (p *Plugin) initializeRouter() {
 	apiRouter.HandleFunc(routeAPISettingsInfo, p.checkAuth(p.handleResponse(p.httpGetSettingsInfo))).Methods(http.MethodGet)
 
 	// Atlassian Connect application
-	p.router.HandleFunc(routeACJSON, p.handleResponseWithCallbackInstance(p.httpACJSON)).Methods(http.MethodGet)
+	instanceRouter.HandleFunc(routeACJSON, p.handleResponseWithCallbackInstance(p.httpACJSON)).Methods(http.MethodGet)
 	p.router.HandleFunc(routeACInstalled, p.handleResponse(p.httpACInstalled)).Methods(http.MethodPost)
 	p.router.HandleFunc(routeACUninstalled, p.handleResponse(p.httpACUninstalled)).Methods(http.MethodPost)
 
 	// Atlassian Connect user mapping
-	p.router.HandleFunc(routeACUserRedirectWithToken, p.handleResponseWithCallbackInstance(p.httpACUserRedirect)).Methods(http.MethodGet)
-	p.router.HandleFunc(routeACUserConfirm, p.handleResponseWithCallbackInstance(p.httpACUserInteractive)).Methods(http.MethodGet)
-	p.router.HandleFunc(routeACUserConnected, p.handleResponseWithCallbackInstance(p.httpACUserInteractive)).Methods(http.MethodGet)
-	p.router.HandleFunc(routeACUserDisconnected, p.handleResponseWithCallbackInstance(p.httpACUserInteractive)).Methods(http.MethodGet)
+	instanceRouter.HandleFunc(routeACUserRedirectWithToken, p.handleResponseWithCallbackInstance(p.httpACUserRedirect)).Methods(http.MethodGet)
+	instanceRouter.HandleFunc(routeACUserConfirm, p.handleResponseWithCallbackInstance(p.httpACUserInteractive)).Methods(http.MethodGet)
+	instanceRouter.HandleFunc(routeACUserConnected, p.handleResponseWithCallbackInstance(p.httpACUserInteractive)).Methods(http.MethodGet)
+	instanceRouter.HandleFunc(routeACUserDisconnected, p.handleResponseWithCallbackInstance(p.httpACUserInteractive)).Methods(http.MethodGet)
 
 	// Oauth1 (Jira Server)
-	p.router.HandleFunc(routeOAuth1Complete, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpOAuth1aComplete))).Methods(http.MethodPost)
-	p.router.HandleFunc(routeUserDisconnect, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpOAuth1aDisconnect))).Methods(http.MethodGet)
+	instanceRouter.HandleFunc(routeOAuth1Complete, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpOAuth1aComplete))).Methods(http.MethodPost)
+	instanceRouter.HandleFunc(routeUserDisconnect, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpOAuth1aDisconnect))).Methods(http.MethodGet)
 
 	// User connect/disconnect links
-	p.router.HandleFunc(routeUserConnect, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpUserConnect))).Methods(http.MethodGet)
+	instanceRouter.HandleFunc(routeUserConnect, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpUserConnect))).Methods(http.MethodGet)
 	p.router.HandleFunc(routeUserStart, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpUserStart))).Methods(http.MethodGet)
 	p.router.HandleFunc(routeAPIUserDisconnect, p.checkAuth(p.handleResponse(p.httpUserDisconnect))).Methods(http.MethodPost)
 
 	// Firehose webhook setup for channel subscriptions
-	apiRouter.HandleFunc(routeAPISubscribeWebhook, p.handleResponseWithCallbackInstance(p.httpSubscribeWebhook)).Methods(http.MethodPost)
+	instanceRouter.HandleFunc(makeAPIRoute(routeAPISubscribeWebhook), p.handleResponseWithCallbackInstance(p.httpSubscribeWebhook)).Methods(http.MethodPost)
 
 	// Channel Subscriptions
 	apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.checkAuth(p.handleResponse(p.httpChannelGetSubscriptions))).Methods(http.MethodGet)
