@@ -340,7 +340,7 @@ func (p *Plugin) stepCloudOAuthConfigure() flow.Step {
 			Name:  "Configure",
 			Color: flow.ColorPrimary,
 			Dialog: &model.Dialog{
-				Title:            "Configure your Jira Cloud OAuth",
+				Title:            "Configure your Jira Cloud OAuth 2.0",
 				IntroductionText: "Enter a Jira Cloud URL (typically, `https://yourorg.atlassian.net`), or just the organization part, `yourorg`",
 				SubmitLabel:      "Continue",
 				Elements: []model.DialogElement{

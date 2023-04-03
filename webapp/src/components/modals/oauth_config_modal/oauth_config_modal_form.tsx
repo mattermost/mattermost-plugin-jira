@@ -126,7 +126,7 @@ export default class OAuthConfigModalForm extends PureComponent<Props, State> {
                     <Input
                         addValidate={this.validator.addComponent}
                         removeValidate={this.validator.removeComponent}
-                        label='Jira Cloud URL'
+                        label='Jira Cloud organization'
                         helpText='Enter a Jira Cloud URL (typically, `https://yourorg.atlassian.net`), or just the organization part, `yourorg`'
                         type='input'
                         placeholder='https://yourorg.atlassian.net'
@@ -138,7 +138,7 @@ export default class OAuthConfigModalForm extends PureComponent<Props, State> {
                     <Input
                         addValidate={this.validator.addComponent}
                         removeValidate={this.validator.removeComponent}
-                        label='Jira Client ID'
+                        label='Jira OAuth Client ID'
                         helpText='The client ID for the OAuth app registered with Jira'
                         type='input'
                         disabled={false}
@@ -149,7 +149,7 @@ export default class OAuthConfigModalForm extends PureComponent<Props, State> {
                     <Input
                         addValidate={this.validator.addComponent}
                         removeValidate={this.validator.removeComponent}
-                        label='Jira Client Secret'
+                        label='Jira OAuth Client Secret'
                         helpText='The client secret for the OAuth app registered with Jira'
                         type='input'
                         disabled={false}

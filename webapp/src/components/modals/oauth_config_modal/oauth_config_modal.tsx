@@ -27,7 +27,7 @@ export default function OAuthConfigModal(props: Props) {
         >
             <Modal.Header closeButton={true}>
                 <Modal.Title>
-                    {'Configure Jira OAuth 2.0'}
+                    {'Configure your Jira Cloud OAuth 2.0'}
                 </Modal.Title>
             </Modal.Header>
             {content}
