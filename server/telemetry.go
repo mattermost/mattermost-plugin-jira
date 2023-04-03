@@ -89,7 +89,7 @@ func (p *Plugin) initializeTelemetry() {
 		p.API.GetServerVersion(),
 		manifest.ID,
 		manifest.Version,
-		"github",
+		"jira",
 		telemetry.NewTrackerConfig(p.API.GetConfig()),
 		logger.New(p.API),
 	)
