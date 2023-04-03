@@ -370,6 +370,7 @@ func (p *Plugin) stepCloudOAuthConfigure() flow.Step {
 			},
 			OnDialogSubmit: p.submitCreateCloudOAuthInstance,
 		}).
+		OnRender(p.trackSetupWizard("setup_wizard_cloud_oauth2_start", nil)).
 		WithButton(cancelButton)
 }
 
@@ -381,6 +382,7 @@ func (p *Plugin) stepCloudOAuthSetCallbackURL() flow.Step {
 			"2. Next to OAuth 2.0 (3LO), select **Configure** and set the Callback URL as follows:\n" +
 			"	`{{.OAuthCompleteURL}}`\n" +
 			"3. Click **Save Changes**.\n").
+		OnRender(p.trackSetupWizard("setup_wizard_cloud_oauth2_comple", nil)).
 		WithButton(continueButton(stepInstalledJiraApp))
 }
 
