@@ -92,7 +92,7 @@ func (p *Plugin) NewSetupFlow() *flow.Flow {
 			p.stepDone(),
 		).
 		// WithDebugLog().
-		InitHTTP(p.gorillaRouter)
+		InitHTTP(p.router)
 }
 
 var cancelButton = flow.Button{

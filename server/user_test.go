@@ -41,11 +41,12 @@ func TestRouteUserStart(t *testing.T) {
 	}
 	api := &plugintest.API{}
 
-	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
 	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 
 	p := Plugin{}
+	p.initializeRouter()
 	p.SetAPI(api)
 
 	p.userStore = getMockUserStoreKV()

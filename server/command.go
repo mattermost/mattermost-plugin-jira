@@ -181,7 +181,7 @@ func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 	uninstall := model.NewAutocompleteData(
 		"uninstall", "[cloud|server|cloud-oauth] [URL]", "Disconnect Mattermost from a Jira instance")
 	uninstall.AddStaticListArgument("Jira type: server, cloud or cloud-oauth", true, jiraTypes)
-	uninstall.AddDynamicListArgument("Jira instance", routeAutocompleteInstalledInstance, true)
+	uninstall.AddDynamicListArgument("Jira instance", makeAutocompleteRoute(routeAutocompleteInstalledInstance), true)
 	uninstall.RoleID = model.SystemAdminRoleId
 
 	list := model.NewAutocompleteData(
@@ -222,28 +222,28 @@ func withParamIssueKey(cmd *model.AutocompleteData) {
 func createConnectCommand() *model.AutocompleteData {
 	connect := model.NewAutocompleteData(
 		"connect", "", "Connect your Mattermost account to your Jira account")
-	connect.AddDynamicListArgument("Jira URL", routeAutocompleteConnect, false)
+	connect.AddDynamicListArgument("Jira URL", makeAutocompleteRoute(routeAutocompleteConnect), false)
 	return connect
 }
 
 func createAliasCommand() *model.AutocompleteData {
 	alias := model.NewAutocompleteData(
 		"alias", "", "Create an alias to your Jira instance")
-	alias.AddDynamicListArgument("Jira URL", routeAutocompleteInstalledInstanceWithAlias, false)
+	alias.AddDynamicListArgument("Jira URL", makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias), false)
 	return alias
 }
 
 func createUnAliasCommand() *model.AutocompleteData {
 	alias := model.NewAutocompleteData(
 		"unalias", "", "Remove an alias from a Jira instance")
-	alias.AddDynamicListArgument("Jira URL", routeAutocompleteInstalledInstanceWithAlias, false)
+	alias.AddDynamicListArgument("Jira URL", makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias), false)
 	return alias
 }
 
 func createDisconnectCommand() *model.AutocompleteData {
 	disconnect := model.NewAutocompleteData(
 		"disconnect", "[Jira URL]", "Disconnect your Mattermost account from your Jira account")
-	disconnect.AddDynamicListArgument("Jira URL", routeAutocompleteInstalledInstanceWithAlias, false)
+	disconnect.AddDynamicListArgument("Jira URL", makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias), false)
 	return disconnect
 }
 
@@ -261,7 +261,7 @@ func createSettingsCommand(optInstance bool) *model.AutocompleteData {
 		{HelpText: "Turn notifications on", Item: "on"},
 		{HelpText: "Turn notifications off", Item: "off"},
 	})
-	withFlagInstance(notifications, optInstance, routeAutocompleteInstalledInstanceWithAlias)
+	withFlagInstance(notifications, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 	settings.AddCommand(notifications)
 
 	return settings
@@ -271,7 +271,7 @@ func createViewCommand(optInstance bool) *model.AutocompleteData {
 	view := model.NewAutocompleteData(
 		"view", "[issue]", "Display a Jira issue")
 	withParamIssueKey(view)
-	withFlagInstance(view, optInstance, routeAutocompleteInstalledInstanceWithAlias)
+	withFlagInstance(view, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 	return view
 }
 
@@ -281,7 +281,7 @@ func createTransitionCommand(optInstance bool) *model.AutocompleteData {
 	withParamIssueKey(transition)
 	// TODO: Implement dynamic transition autocomplete
 	transition.AddTextArgument("To state", "", "")
-	withFlagInstance(transition, optInstance, routeAutocompleteInstalledInstanceWithAlias)
+	withFlagInstance(transition, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 	return transition
 }
 
@@ -291,7 +291,7 @@ func createAssignCommand(optInstance bool) *model.AutocompleteData {
 	withParamIssueKey(assign)
 	// TODO: Implement dynamic Jira user search autocomplete
 	assign.AddTextArgument("User", "", "")
-	withFlagInstance(assign, optInstance, routeAutocompleteInstalledInstanceWithAlias)
+	withFlagInstance(assign, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 	return assign
 }
 
@@ -299,7 +299,7 @@ func createUnassignCommand(optInstance bool) *model.AutocompleteData {
 	unassign := model.NewAutocompleteData(
 		"unassign", "[Jira issue]", "Unassign a Jira issue")
 	withParamIssueKey(unassign)
-	withFlagInstance(unassign, optInstance, routeAutocompleteInstalledInstanceWithAlias)
+	withFlagInstance(unassign, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 	return unassign
 }
 
@@ -311,7 +311,7 @@ func createSubscribeCommand(optInstance bool) *model.AutocompleteData {
 
 	list := model.NewAutocompleteData(
 		"list", "", "List the Jira notifications sent to this channel")
-	withFlagInstance(list, optInstance, routeAutocompleteInstalledInstanceWithAlias)
+	withFlagInstance(list, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 	subscribe.AddCommand(list)
 	return subscribe
 }
@@ -320,7 +320,7 @@ func createWebhookCommand(optInstance bool) *model.AutocompleteData {
 	webhook := model.NewAutocompleteData(
 		"webhook", "[Jira URL]", "Display the webhook URLs to set up on Jira")
 	webhook.RoleID = model.SystemAdminRoleId
-	withFlagInstance(webhook, optInstance, routeAutocompleteInstalledInstanceWithAlias)
+	withFlagInstance(webhook, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 	return webhook
 }
 

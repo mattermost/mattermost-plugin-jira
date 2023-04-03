@@ -48,11 +48,6 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 		}
 	}()
 
-	// Validate the request and extract params
-	if r.Method != http.MethodPost {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			fmt.Errorf("Request: "+r.Method+" is not allowed, must be POST"))
-	}
 	if conf.Secret == "" {
 		return respondErr(w, http.StatusForbidden,
 			fmt.Errorf("JIRA plugin not configured correctly; must provide Secret"))
