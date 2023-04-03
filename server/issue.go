@@ -169,11 +169,6 @@ type InCreateIssue struct {
 }
 
 func (p *Plugin) httpCreateIssue(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodPost {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be POST"))
-	}
-
 	in := InCreateIssue{}
 	err := json.NewDecoder(r.Body).Decode(&in)
 	if err != nil {
@@ -182,11 +177,6 @@ func (p *Plugin) httpCreateIssue(w http.ResponseWriter, r *http.Request) (int, e
 	}
 
 	in.mattermostUserID = types.ID(r.Header.Get("Mattermost-User-Id"))
-	if in.mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized,
-			errors.New("not authorized"))
-	}
-
 	created, err := p.CreateIssue(&in)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
@@ -359,17 +349,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 }
 
 func (p *Plugin) httpGetCreateIssueMetadataForProjects(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("Request: "+r.Method+" is not allowed, must be GET"))
-	}
-
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized,
-			errors.New("not authorized"))
-	}
-
 	projectKeys := r.FormValue("project-keys")
 	if projectKeys == "" {
 		return respondErr(w, http.StatusBadRequest,
@@ -405,14 +385,7 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 }
 
 func (p *Plugin) httpGetSearchIssues(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("Request: "+r.Method+" is not allowed, must be GET"))
-	}
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
-	}
 	instanceID := r.FormValue("instance_id")
 	q := r.FormValue("q")
 	jqlString := r.FormValue("jql")
@@ -490,16 +463,7 @@ type OutProjectMetadata struct {
 }
 
 func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("Request: "+r.Method+" is not allowed, must be GET"))
-	}
-
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
-	}
-
 	instanceID := r.FormValue("instance_id")
 
 	plist, connection, err := p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID), true)
@@ -595,11 +559,6 @@ func (p *Plugin) GetIssueTypes(instanceID, mattermostUserID types.ID, projectID 
 var reJiraIssueKey = regexp.MustCompile(`^([[:alnum:]]+)-([[:digit:]]+)$`)
 
 func (p *Plugin) httpAttachCommentToIssue(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodPost {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be POST"))
-	}
-
 	in := InAttachCommentToIssue{}
 	err := json.NewDecoder(r.Body).Decode(&in)
 	if err != nil {
@@ -608,11 +567,6 @@ func (p *Plugin) httpAttachCommentToIssue(w http.ResponseWriter, r *http.Request
 	}
 
 	in.mattermostUserID = types.ID(r.Header.Get("Mattermost-User-Id"))
-	if in.mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized,
-			errors.New("not authorized"))
-	}
-
 	added, err := p.AttachCommentToIssue(&in)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,

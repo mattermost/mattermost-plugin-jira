@@ -317,8 +317,8 @@ func TestSubscribe(t *testing.T) {
 			p := Plugin{}
 
 			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
 			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
@@ -330,6 +330,7 @@ func TestSubscribe(t *testing.T) {
 			p.updateConfig(func(conf *config) {
 				conf.Secret = someSecret
 			})
+			p.initializeRouter()
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
 			p.instanceStore = p.getMockInstanceStoreKV(1)
@@ -428,8 +429,8 @@ func TestDeleteSubscription(t *testing.T) {
 			p := Plugin{}
 
 			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
 			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
@@ -441,6 +442,7 @@ func TestDeleteSubscription(t *testing.T) {
 			p.updateConfig(func(conf *config) {
 				conf.Secret = someSecret
 			})
+			p.initializeRouter()
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
 			p.instanceStore = p.getMockInstanceStoreKV(1)
@@ -647,8 +649,8 @@ func TestEditSubscription(t *testing.T) {
 			p := Plugin{}
 
 			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
 			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
@@ -660,6 +662,7 @@ func TestEditSubscription(t *testing.T) {
 			p.updateConfig(func(conf *config) {
 				conf.Secret = someSecret
 			})
+			p.initializeRouter()
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
 			p.instanceStore = p.getMockInstanceStoreKV(1)
@@ -808,8 +811,8 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 			p := Plugin{}
 
 			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
 			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
 
@@ -820,6 +823,7 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 			p.updateConfig(func(conf *config) {
 				conf.Secret = someSecret
 			})
+			p.initializeRouter()
 			p.SetAPI(api)
 			p.userStore = mockUserStore{}
 			p.instanceStore = p.getMockInstanceStoreKV(1)

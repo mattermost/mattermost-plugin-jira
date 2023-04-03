@@ -604,8 +604,8 @@ func TestWebhookHTTP(t *testing.T) {
 			api := &plugintest.API{}
 
 			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
 				Id: "theuserid",
@@ -622,6 +622,7 @@ func TestWebhookHTTP(t *testing.T) {
 			p.updateConfig(func(conf *config) {
 				conf.Secret = validConfiguration.Secret
 			})
+			p.initializeRouter()
 			p.SetAPI(api)
 
 			p.userStore = mockUserStore{}
