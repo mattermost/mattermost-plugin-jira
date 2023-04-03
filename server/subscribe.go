@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -649,10 +650,6 @@ func (p *Plugin) hasPermissionToManageSubscription(instanceID types.ID, userID, 
 func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, instanceID types.ID) (status int, err error) {
 	conf := p.getConfig()
 
-	if r.Method != http.MethodPost {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			fmt.Errorf("Request: "+r.Method+" is not allowed, must be POST"))
-	}
 	if conf.Secret == "" {
 		return respondErr(w, http.StatusForbidden,
 			fmt.Errorf("JIRA plugin not configured correctly; must provide Secret"))
@@ -684,7 +681,8 @@ func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, in
 	}
 }
 
-func (p *Plugin) httpChannelCreateSubscription(w http.ResponseWriter, r *http.Request, mattermostUserID string) (int, error) {
+func (p *Plugin) httpChannelCreateSubscription(w http.ResponseWriter, r *http.Request) (int, error) {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	subscription := ChannelSubscription{}
 	err := json.NewDecoder(r.Body).Decode(&subscription)
 	if err != nil {
@@ -744,7 +742,8 @@ func (p *Plugin) httpChannelCreateSubscription(w http.ResponseWriter, r *http.Re
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Request, mattermostUserID string) (int, error) {
+func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Request) (int, error) {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	subscription := ChannelSubscription{}
 	err := json.NewDecoder(r.Body).Decode(&subscription)
 	if err != nil {
@@ -803,8 +802,10 @@ func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Requ
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) httpChannelDeleteSubscription(w http.ResponseWriter, r *http.Request, mattermostUserID string) (int, error) {
-	subscriptionID := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionsChannel+"/")
+func (p *Plugin) httpChannelDeleteSubscription(w http.ResponseWriter, r *http.Request) (int, error) {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	params := mux.Vars(r)
+	subscriptionID := params["id"]
 	if len(subscriptionID) != 26 {
 		return respondErr(w, http.StatusBadRequest,
 			errors.New("bad subscription id"))
@@ -856,8 +857,10 @@ func (p *Plugin) httpChannelDeleteSubscription(w http.ResponseWriter, r *http.Re
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) httpChannelGetSubscriptions(w http.ResponseWriter, r *http.Request, mattermostUserID string) (int, error) {
-	channelID := strings.TrimPrefix(r.URL.Path, routeAPISubscriptionsChannel+"/")
+func (p *Plugin) httpChannelGetSubscriptions(w http.ResponseWriter, r *http.Request) (int, error) {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	params := mux.Vars(r)
+	channelID := params["id"]
 	if len(channelID) != 26 {
 		return respondErr(w, http.StatusBadRequest,
 			errors.New("bad channel id"))
@@ -881,24 +884,4 @@ func (p *Plugin) httpChannelGetSubscriptions(w http.ResponseWriter, r *http.Requ
 	}
 
 	return respondJSON(w, subscriptions)
-}
-
-func (p *Plugin) httpChannelSubscriptions(w http.ResponseWriter, r *http.Request) (int, error) {
-	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
-	}
-
-	switch r.Method {
-	case http.MethodPost:
-		return p.httpChannelCreateSubscription(w, r, mattermostUserID)
-	case http.MethodDelete:
-		return p.httpChannelDeleteSubscription(w, r, mattermostUserID)
-	case http.MethodGet:
-		return p.httpChannelGetSubscriptions(w, r, mattermostUserID)
-	case http.MethodPut:
-		return p.httpChannelEditSubscription(w, r, mattermostUserID)
-	default:
-		return respondErr(w, http.StatusMethodNotAllowed, fmt.Errorf("Request: "+r.Method+" is not allowed."))
-	}
 }

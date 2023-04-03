@@ -11,7 +11,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gorilla/mux"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
@@ -110,8 +109,8 @@ func TestPlugin(t *testing.T) {
 			api := &plugintest.API{}
 
 			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
 			api.On("KVGet", mock.AnythingOfTypeArgument("string")).Return(make([]byte, 0), (*model.AppError)(nil))
 			api.On("GetDirectChannel", mockAnythingOfTypeBatch("string", 2)...).Return(
@@ -137,7 +136,7 @@ func TestPlugin(t *testing.T) {
 			p.SetAPI(api)
 			p.client = pluginapi.NewClient(api, p.Driver)
 			p.instanceStore = p.getMockInstanceStoreKV(1)
-			p.gorillaRouter = mux.NewRouter()
+			p.initializeRouter()
 
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, tc.Request)

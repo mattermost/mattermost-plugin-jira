@@ -114,9 +114,7 @@ type Plugin struct {
 
 	setupFlow *flow.Flow
 
-	// Most of ServeHTTP does not use an http router, but we need one to support
-	// the setup wizard flow. Introducing it here incrementally.
-	gorillaRouter *mux.Router
+	router *mux.Router
 
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
@@ -229,7 +227,9 @@ func (p *Plugin) OnActivate() error {
 	p.userStore = store
 	p.secretsStore = store
 	p.otsStore = store
-	p.gorillaRouter = mux.NewRouter()
+	p.client = pluginapi.NewClient(p.API, p.Driver)
+
+	p.initializeRouter()
 
 	bundlePath, err := p.client.System.GetBundlePath()
 	if err != nil {

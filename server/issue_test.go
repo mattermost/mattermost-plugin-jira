@@ -89,6 +89,7 @@ func TestTransitionJiraIssue(t *testing.T) {
 	api := &plugintest.API{}
 	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
 	p := Plugin{}
+	p.initializeRouter()
 	p.SetAPI(api)
 	p.client = pluginapi.NewClient(api, p.Driver)
 	p.userStore = getMockUserStoreKV()
@@ -151,13 +152,14 @@ func TestTransitionJiraIssue(t *testing.T) {
 func TestRouteIssueTransition(t *testing.T) {
 	api := &plugintest.API{}
 
-	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
 	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 
 	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
 
 	p := Plugin{}
+	p.initializeRouter()
 	p.SetAPI(api)
 	p.client = pluginapi.NewClient(api, p.Driver)
 	p.userStore = getMockUserStoreKV()
@@ -196,7 +198,7 @@ func TestRouteIssueTransition(t *testing.T) {
 			bb, err := json.Marshal(tt.request)
 			assert.Nil(t, err)
 
-			request := httptest.NewRequest("POST", routeIssueTransition, strings.NewReader(string(bb)))
+			request := httptest.NewRequest("POST", makeAPIRoute(routeIssueTransition), strings.NewReader(string(bb)))
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)
 			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "no request data")
@@ -208,8 +210,9 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 	validUserID := "1"
 	api := &plugintest.API{}
 	p := Plugin{}
+	p.initializeRouter()
 	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
-	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
 	api.On("DeleteEphemeralPost", validUserID, "").Return()
@@ -274,7 +277,7 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 			bb, err := json.Marshal(tt.request)
 			assert.Nil(t, err)
 
-			request := httptest.NewRequest("POST", routeSharePublicly, strings.NewReader(string(bb)))
+			request := httptest.NewRequest("POST", makeAPIRoute(routeSharePublicly), strings.NewReader(string(bb)))
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)
 			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "no request data")
@@ -285,7 +288,7 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 func TestRouteAttachCommentToIssue(t *testing.T) {
 	api := &plugintest.API{}
 
-	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
 	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 
@@ -387,6 +390,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			p := Plugin{}
+			p.initializeRouter()
 			p.SetAPI(api)
 			p.client = pluginapi.NewClient(api, p.Driver)
 			p.updateConfig(func(conf *config) {
@@ -399,7 +403,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			bb, err := json.Marshal(tt.request)
 			assert.Nil(t, err)
 
-			request := httptest.NewRequest(tt.method, routeAPIAttachCommentToIssue, strings.NewReader(string(bb)))
+			request := httptest.NewRequest(tt.method, makeAPIRoute(routeAPIAttachCommentToIssue), strings.NewReader(string(bb)))
 			request.Header.Add("Mattermost-User-Id", tt.header)
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)

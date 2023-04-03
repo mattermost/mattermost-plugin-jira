@@ -60,11 +60,8 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	}
 
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-	mmuser, err := p.client.User.Get(mattermostUserID)
-	if err != nil {
+	mmuser, appErr := p.API.GetUser(mattermostUserID)
+	if appErr != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to load user "+mattermostUserID)
 	}
@@ -123,16 +120,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 }
 
 func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be GET"))
-	}
-
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
-	}
-
 	_, err := p.DisconnectUser(instanceID.String(), types.ID(mattermostUserID))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
