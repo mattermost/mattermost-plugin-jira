@@ -11,7 +11,7 @@ export type Props = {
     href: string;
     show: boolean;
     connected: boolean;
-    ticketDetails?: TicketDetails;
+    ticketDetails?: TicketDetails | null;
     connectedInstances: Instance[];
     fetchIssueByKey: (issueKey: string, instanceID: string) => (dispatch: Dispatch, getState: any) => Promise<{
         data?: TicketData;
@@ -21,7 +21,7 @@ export type Props = {
 export type State = {
     isLoaded: boolean;
     ticketId: string;
-    ticketDetails?: TicketDetails;
+    ticketDetails?: TicketDetails | null;
 };
 
 const isAssignedLabel = ' is assigned';
@@ -206,7 +206,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                             rel='noopener noreferrer'
                         >
                             <img
-                                src={ticketDetails && ticketDetails.jiraIcon}
+                                src={ticketDetails ? ticketDetails.jiraIcon : ''}
                                 width={14}
                                 height={14}
                                 alt={ticketDetails ? 'jira-avatar' : ''}
@@ -224,7 +224,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                                 alt={ticketDetails ? 'jira-issue-icon' : ''}
                                 width='14'
                                 height='14'
-                                src={ticketDetails && ticketDetails.issueIcon}
+                                src={ticketDetails ? ticketDetails.issueIcon : ''}
                                 className={`${!ticketDetails && 'skeleton-loader'}`}
                             />
                         </a>
@@ -262,7 +262,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                     {!ticketDetails || ticketDetails.assigneeAvatar ? (
                         <img
                             className={`popover-footer__assignee-profile ${ticketDetails || 'skeleton-loader'}`}
-                            src={ticketDetails && ticketDetails.assigneeAvatar}
+                            src={ticketDetails ? ticketDetails.assigneeAvatar : ''}
                             alt={ticketDetails ? 'jira assignee profile' : ''}
                         />
                     ) : <DefaultAvatar/>
