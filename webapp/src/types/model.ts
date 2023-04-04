@@ -157,7 +157,7 @@ export type ChannelSubscription = {
 export enum InstanceType {
     CLOUD = 'cloud',
     SERVER = 'server',
-    CLOUD_OATH = 'cloud_oauth'
+    CLOUD_OAUTH = 'cloud_oauth'
 }
 export type Instance = {
     alias?: string;

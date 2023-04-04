@@ -17,7 +17,7 @@ describe('components/OAuthConfigModalForm', () => {
         installedInstances: [
             {
                 instance_id: 'https://something.atlassian.net',
-                type: InstanceType.CLOUD_OATH,
+                type: InstanceType.CLOUD_OAUTH,
             },
         ],
     };

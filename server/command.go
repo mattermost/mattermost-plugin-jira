@@ -77,7 +77,7 @@ const commonHelpText = "\n" +
 const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"Install Jira instances:\n" +
 	"* `/jira instance install cloud [jiraURL]` - Connect Mattermost to a Jira Cloud instance located at <jiraURL>\n" +
-	"* `/jira instance install cloud-oauth` - Connect Mattermost to a Jira Cloud instance using OAuth 2.0 located at <jiraURL>\n" +
+	"* `/jira instance install cloud-oauth [jiraURL]` - Connect Mattermost to a Jira Cloud instance using OAuth 2.0 located at <jiraURL>\n" +
 	"* `/jira instance install server [jiraURL]` - Connect Mattermost to a Jira Server or Data Center instance located at <jiraURL>\n" +
 	"Uninstall Jira instances:\n" +
 	"* `/jira instance uninstall cloud [jiraURL]` - Disconnect Mattermost from a Jira Cloud instance located at <jiraURL>\n" +

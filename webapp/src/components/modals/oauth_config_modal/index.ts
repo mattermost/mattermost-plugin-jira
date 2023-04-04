@@ -6,7 +6,7 @@ import {bindActionCreators} from 'redux';
 
 import {isOAuthConfigModalVisible} from 'selectors';
 
-import {openOAuthConfigModal, closeOAuthConfigModal, configureCloudOAuthInstance, handleInstallOAuthFlow} from 'actions';
+import {closeOAuthConfigModal, configureCloudOAuthInstance, handleInstallOAuthFlow} from 'actions';
 
 import OAuthConfigModal from './oauth_config_modal';
 
@@ -17,7 +17,6 @@ const mapStateToProps = (state) => {
 };
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
-    open: openOAuthConfigModal,
     closeModal: closeOAuthConfigModal,
     configure: configureCloudOAuthInstance,
     handleInstallOAuthFlow,

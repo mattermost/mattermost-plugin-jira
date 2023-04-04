@@ -174,12 +174,12 @@ func (ci *cloudOAuthInstance) getJiraCloudResourceID(client http.Client) (string
 	err = json.Unmarshal(contents, &resources)
 
 	if err != nil {
-		return "", fmt.Errorf("failed marshall: %s", err.Error())
+		return "", errors.Wrap(err, "failed to unmarshal JiraAccessibleResources")
 	}
 
 	// We return the first resource ID only
 	if len(resources) < 1 {
-		return "", errors.New("No resources available for this Jira Cloud Account")
+		return "", errors.New("No resources are available for this Jira Cloud Account.")
 	}
 
 	return resources[0].ID, nil
