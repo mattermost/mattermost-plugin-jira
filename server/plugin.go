@@ -189,21 +189,10 @@ func (p *Plugin) OnConfigurationChange() error {
 		}
 	}
 
-	diagnostics := false
-	if p.API.GetConfig().LogSettings.EnableDiagnostics != nil {
-		diagnostics = *p.API.GetConfig().LogSettings.EnableDiagnostics
-	}
-
 	// create new tracker on each configuration change
-	p.tracker = telemetry.NewTracker(
-		p.telemetryClient,
-		p.API.GetDiagnosticId(),
-		p.API.GetServerVersion(),
-		manifest.ID,
-		manifest.Version,
-		"jira",
-		diagnostics,
-	)
+	if p.tracker != nil {
+		p.tracker.ReloadConfig(telemetry.NewTrackerConfig(p.API.GetConfig()))
+	}
 
 	return nil
 }
@@ -335,11 +324,7 @@ func (p *Plugin) OnActivate() error {
 		}
 	}()
 
-	// initialize the rudder client once on activation
-	p.telemetryClient, err = telemetry.NewRudderClient()
-	if err != nil {
-		p.API.LogError("Cannot create telemetry client. err=%v", err)
-	}
+	p.initializeTelemetry()
 
 	return nil
 }

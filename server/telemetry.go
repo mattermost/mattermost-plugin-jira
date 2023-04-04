@@ -1,5 +1,10 @@
 package main
 
+import (
+	"github.com/mattermost/mattermost-plugin-api/experimental/bot/logger"
+	"github.com/mattermost/mattermost-plugin-api/experimental/telemetry"
+)
+
 func (p *Plugin) TrackEvent(event string, properties map[string]interface{}) {
 	err := p.tracker.TrackEvent(event, properties)
 	if err != nil {
@@ -62,4 +67,30 @@ func (p *Plugin) OnSendDailyTelemetry() {
 	}
 
 	p.TrackEvent("stats", args)
+}
+
+// Initialize telemetry setups the tracker/clients needed to send telemetry data.
+// The telemetry.NewTrackerConfig(...) param will take care of extract/parse the config to set the right settings.
+// If you don't want the default behavior you still can pass a different telemetry.TrackerConfig data.
+func (p *Plugin) initializeTelemetry() {
+	var err error
+
+	// Telemetry client
+	p.telemetryClient, err = telemetry.NewRudderClient()
+	if err != nil {
+		p.API.LogWarn("Telemetry client not started", "error", err.Error())
+		return
+	}
+
+	// Get config values
+	p.tracker = telemetry.NewTracker(
+		p.telemetryClient,
+		p.API.GetDiagnosticId(),
+		p.API.GetServerVersion(),
+		manifest.ID,
+		manifest.Version,
+		"jira",
+		telemetry.NewTrackerConfig(p.API.GetConfig()),
+		logger.New(p.API),
+	)
 }
