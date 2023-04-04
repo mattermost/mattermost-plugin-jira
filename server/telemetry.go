@@ -70,7 +70,7 @@ func (p *Plugin) OnSendDailyTelemetry() {
 }
 
 // Initialize telemetry setups the tracker/clients needed to send telemetry data.
-// The telemetry.NewTrackerConfig(...) param will take care of extract/parse the config to set rge right settings.
+// The telemetry.NewTrackerConfig(...) param will take care of extract/parse the config to set the right settings.
 // If you don't want the default behavior you still can pass a different telemetry.TrackerConfig data.
 func (p *Plugin) initializeTelemetry() {
 	var err error
