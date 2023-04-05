@@ -60,10 +60,10 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	}
 
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	mmuser, appErr := p.API.GetUser(mattermostUserID)
+	mmuser, appErr := p.client.User.Get(mattermostUserID)
 	if appErr != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to load user "+mattermostUserID)
+			errors.WithMessage(err, "failed to load user "+mattermostUserID)
 	}
 
 	oauthTmpCredentials, err := p.otsStore.OneTimeLoadOauth1aTemporaryCredentials(mattermostUserID)

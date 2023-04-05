@@ -8,14 +8,14 @@ import (
 func (p *Plugin) TrackEvent(event string, properties map[string]interface{}) {
 	err := p.tracker.TrackEvent(event, properties)
 	if err != nil {
-		p.API.LogDebug("Error sending telemetry event", "event", event, "error", err.Error())
+		p.client.Log.Debug("Error sending telemetry event", "event", event, "error", err.Error())
 	}
 }
 
 func (p *Plugin) TrackUserEvent(event, userID string, properties map[string]interface{}) {
 	err := p.tracker.TrackUserEvent(event, userID, properties)
 	if err != nil {
-		p.API.LogDebug("Error sending user telemetry event", "event", event, "error", err.Error())
+		p.client.Log.Debug("Error sending user telemetry event", "event", event, "error", err.Error())
 	}
 }
 
@@ -26,7 +26,7 @@ func (p *Plugin) OnSendDailyTelemetry() {
 	server, cloud := 0, 0
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
-		p.API.LogWarn("Failed to get instances for telemetry", "error", err)
+		p.client.Log.Warn("Failed to get instances for telemetry", "error", err)
 	} else {
 		for _, id := range instances.IDs() {
 			switch instances.Get(id).Type {
@@ -50,7 +50,7 @@ func (p *Plugin) OnSendDailyTelemetry() {
 		for _, id := range instances.IDs() {
 			subs, err = p.getSubscriptions(id)
 			if err != nil {
-				p.API.LogWarn("Failed to get subscriptions for telemetry", "error", err)
+				p.client.Log.Warn("Failed to get subscriptions for telemetry", "error", err)
 			}
 			numSubscriptions += len(subs.Channel.ByID)
 		}
@@ -61,7 +61,7 @@ func (p *Plugin) OnSendDailyTelemetry() {
 	// Connected users
 	connected, err := p.userStore.CountUsers()
 	if err != nil {
-		p.API.LogWarn("Failed to get the number of connected users for telemetry", "error", err)
+		p.client.Log.Warn("Failed to get the number of connected users for telemetry", "error", err)
 	} else {
 		args["connected_user_count"] = connected
 	}

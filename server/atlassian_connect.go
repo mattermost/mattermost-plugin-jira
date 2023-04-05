@@ -5,7 +5,7 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -29,7 +29,7 @@ func (p *Plugin) httpACJSON(w http.ResponseWriter, r *http.Request, instanceID t
 }
 
 func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, error) {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to decode request"))
@@ -74,7 +74,7 @@ func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, e
 	// Setup autolink
 	err = p.AddAutolinksForCloudInstance(newInstance)
 	if err != nil {
-		p.API.LogInfo("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
+		p.client.Log.Info("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 	}
 
 	_ = p.setupFlow.ForUser(ci.SetupWizardUserID).Go(stepInstalledJiraApp)
