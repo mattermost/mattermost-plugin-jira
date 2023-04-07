@@ -28,8 +28,8 @@ import (
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
-	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
-	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
+	"github.com/brightscout/mattermost-plugin-autolink/server/autolink"
+	"github.com/brightscout/mattermost-plugin-autolink/server/autolinkclient"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -399,6 +399,18 @@ func (p *Plugin) AddAutolinks(projectList jira.ProjectList, baseURL string) erro
 	}
 
 	client := autolinkclient.NewClientPlugin(p.API)
+	
+	var keys []string
+	for _,autolink:= range installList {
+		keys = append(keys,autolink.Name)
+	}
+
+	// Deleting the old autolinks if already present
+	if err := client.Delete(keys...); err != nil {
+		return fmt.Errorf("unable to add autolinks: %w", err)
+	}
+
+	// Creating the new autolinks  
 	if err := client.Add(installList...); err != nil {
 		return fmt.Errorf("unable to add autolinks: %w", err)
 	}
