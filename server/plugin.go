@@ -407,7 +407,7 @@ func (p *Plugin) AddAutolinks(projectList jira.ProjectList, baseURL string) erro
 
 	// Deleting the old autolinks if already present
 	if err := client.Delete(keys...); err != nil {
-		return fmt.Errorf("unable to add autolinks: %w", err)
+		return fmt.Errorf("unable to delete autolinks: %w", err)
 	}
 
 	// Creating the new autolinks  
