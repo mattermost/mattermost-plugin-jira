@@ -196,9 +196,8 @@ const channelSubscriptions = (state = {}, action) => {
 const storedLinkTooltipIssue = (state = {}, action) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_JIRA_TICKET : {
-        const ticket = action.data;
         return {
-            ticket,
+            ticket: action.data,
         };
     }
     default:
