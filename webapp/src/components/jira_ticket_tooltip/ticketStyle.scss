@@ -14,7 +14,7 @@
     box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.12);
 
     .popover-header__keyword:hover {
-        color: #0645AD;
+        color: var(--link-color);
         text-decoration-line: underline;
     }
 
@@ -83,7 +83,6 @@
     }
 
     .popover-body__title>a:hover>h5 {
-        color: #0645AD;
         text-decoration-line: underline;
     }
 
@@ -169,7 +168,7 @@
         font-weight: 600;
         margin: 5px 5px 5px 0;
         padding: 0 4px;
-        background: rgba(63, 67, 80, 0.08);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
         border-radius: 2px;
         line-height: 16px;
     }
@@ -209,12 +208,12 @@
 
     .ticket-status--done {
         color: #FFFFFF;
-        background-color: #3DB887;
+        background-color: var(--online-indicator);
     }
 
     .ticket-status--default {
-        color: #3F4350;
-        background-color: rgba(63, 67, 80, 0.16);
+        color: var(--center-channel-color-rgb);
+        background-color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
     .jira-ticket-key {

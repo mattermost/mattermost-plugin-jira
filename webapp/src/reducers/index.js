@@ -4,7 +4,6 @@
 import {combineReducers} from 'redux';
 
 import ActionTypes from 'action_types';
-import {jiraIssueToReducer} from 'utils/jira_issue_metadata';
 
 function installedInstances(state = [], action) {
     // We're notified of the instance status at startup (through getConnected)
@@ -197,9 +196,8 @@ const channelSubscriptions = (state = {}, action) => {
 const storedLinkTooltipIssue = (state = {}, action) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_JIRA_TICKET : {
-        const ticketDetails = jiraIssueToReducer(action);
         return {
-            ticketDetails,
+            ticket: action.data,
         };
     }
     default:

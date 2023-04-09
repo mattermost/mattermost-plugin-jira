@@ -5,6 +5,7 @@ import createMeta from 'testdata/cloud-get-create-issue-metadata-for-project-man
 import {useFieldForIssueMetadata} from 'testdata/jira-issue-metadata-helpers';
 
 import {IssueMetadata, JiraField, FilterField, ChannelSubscriptionFilters, FilterFieldInclusion, IssueType, Project} from 'types/model';
+import {IssueAction, TicketDetails} from 'types/tooltip';
 
 import {getCustomFieldFiltersForProjects, generateJQLStringFromSubscriptionFilters, getConflictingFields, jiraIssueToReducer} from './jira_issue_metadata';
 
@@ -593,7 +594,7 @@ describe('utils/jira_issue_metadata', () => {
 
     describe('jiraIssueToReducer', () => {
         it('should return the ticket details with all fields', () => {
-            const action: Action = {
+            const action: IssueAction = {
                 data: {
                     key: 'ABC-123',
                     fields: {
@@ -636,13 +637,13 @@ describe('utils/jira_issue_metadata', () => {
                 issueIcon: 'https://something.atlassian.net/issuetype.png',
             };
 
-            const result = jiraIssueToReducer(action);
+            const result = jiraIssueToReducer(action.data);
 
             expect(result).toEqual(expectedTicketDetails);
         });
 
         it('should return the ticket details with empty assignee fields when assignee is null', () => {
-            const action: Action = {
+            const action: IssueAction = {
                 data: {
                     key: 'ABC-123',
                     fields: {
@@ -680,7 +681,7 @@ describe('utils/jira_issue_metadata', () => {
                 issueIcon: 'http://example.com/issuetype.png',
             };
 
-            const result = jiraIssueToReducer(action);
+            const result = jiraIssueToReducer(action.data);
 
             expect(result).toEqual(expectedTicketDetails);
         });
