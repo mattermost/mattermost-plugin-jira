@@ -9,7 +9,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"net/url"
 	"path/filepath"
@@ -115,9 +114,7 @@ type Plugin struct {
 
 	setupFlow *flow.Flow
 
-	// Most of ServeHTTP does not use an http router, but we need one to support
-	// the setup wizard flow. Introducing it here incrementally.
-	gorillaRouter *mux.Router
+	router *mux.Router
 
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
@@ -157,7 +154,10 @@ func (p *Plugin) updateConfig(f func(conf *config)) config {
 func (p *Plugin) OnConfigurationChange() error {
 	// Load the public configuration fields from the Mattermost server configuration.
 	ec := externalConfig{}
-	err := p.API.LoadPluginConfiguration(&ec)
+	if p.client == nil {
+		p.client = pluginapi.NewClient(p.API, p.Driver)
+	}
+	err := p.client.Configuration.LoadPluginConfiguration(&ec)
 	if err != nil {
 		return errors.WithMessage(err, "failed to load plugin configuration")
 	}
@@ -191,21 +191,10 @@ func (p *Plugin) OnConfigurationChange() error {
 		}
 	}
 
-	diagnostics := false
-	if p.API.GetConfig().LogSettings.EnableDiagnostics != nil {
-		diagnostics = *p.API.GetConfig().LogSettings.EnableDiagnostics
-	}
-
 	// create new tracker on each configuration change
-	p.tracker = telemetry.NewTracker(
-		p.telemetryClient,
-		p.API.GetDiagnosticId(),
-		p.API.GetServerVersion(),
-		manifest.ID,
-		manifest.Version,
-		"jira",
-		diagnostics,
-	)
+	if p.tracker != nil {
+		p.tracker.ReloadConfig(telemetry.NewTrackerConfig(p.API.GetConfig()))
+	}
 
 	return nil
 }
@@ -228,19 +217,25 @@ func (p *Plugin) OnActivate() error {
 	p.secretsStore = store
 	p.otsStore = store
 	p.client = pluginapi.NewClient(p.API, p.Driver)
-	p.gorillaRouter = mux.NewRouter()
+
+	p.initializeRouter()
+
+	bundlePath, err := p.client.System.GetBundlePath()
+	if err != nil {
+		return errors.Wrap(err, "couldn't get bundle path")
+	}
 
 	botUserID, err := p.client.Bot.EnsureBot(&model.Bot{
 		Username:    botUserName,
 		DisplayName: botDisplayName,
 		Description: botDescription,
-	})
+	}, pluginapi.ProfileImagePath(filepath.Join("assets", "profile.png")))
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure bot account")
 	}
 
 	mattermostSiteURL := ""
-	ptr := p.API.GetConfig().ServiceSettings.SiteURL
+	ptr := p.client.Configuration.GetConfig().ServiceSettings.SiteURL
 	if ptr != nil {
 		mattermostSiteURL = *ptr
 	}
@@ -260,20 +255,6 @@ func (p *Plugin) OnActivate() error {
 		conf.mattermostSiteURL = mattermostSiteURL
 		conf.rsaKey = rsaKey
 	})
-
-	bundlePath, err := p.API.GetBundlePath()
-	if err != nil {
-		return errors.Wrap(err, "couldn't get bundle path")
-	}
-
-	profileImage, err := ioutil.ReadFile(filepath.Join(bundlePath, "assets", "profile.png"))
-	if err != nil {
-		return errors.Wrap(err, "couldn't read profile image")
-	}
-
-	if appErr := p.API.SetProfileImage(botUserID, profileImage); appErr != nil {
-		return errors.Wrap(appErr, "couldn't set profile image")
-	}
 
 	instances, err := MigrateV2Instances(p)
 	if err != nil {
@@ -315,32 +296,28 @@ func (p *Plugin) OnActivate() error {
 
 			ci, ok := instance.(*cloudInstance)
 			if !ok {
-				p.API.LogInfo("only cloud instances supported for autolink", "err", err)
+				p.client.Log.Info("only cloud instances supported for autolink", "err", err)
 				continue
 			}
-
-			status, apiErr := p.API.GetPluginStatus(autolinkPluginID)
-			if apiErr != nil {
-				p.API.LogWarn("OnActivate: Autolink plugin unavailable. API returned error", "error", apiErr.Error())
+			var status *model.PluginStatus
+			status, err = p.client.Plugin.GetPluginStatus(autolinkPluginID)
+			if err != nil {
+				p.client.Log.Warn("OnActivate: Autolink plugin unavailable. API returned error", "error", err.Error())
 				continue
 			}
 			if status.State != model.PluginStateRunning {
-				p.API.LogWarn("OnActivate: Autolink plugin unavailable. Plugin is not running", "status", status)
+				p.client.Log.Warn("OnActivate: Autolink plugin unavailable. Plugin is not running", "status", status)
 				continue
 			}
 
 			if err = p.AddAutolinksForCloudInstance(ci); err != nil {
-				p.API.LogInfo("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
+				p.client.Log.Info("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 				continue
 			}
 		}
 	}()
 
-	// initialize the rudder client once on activation
-	p.telemetryClient, err = telemetry.NewRudderClient()
-	if err != nil {
-		p.API.LogError("Cannot create telemetry client. err=%v", err)
-	}
+	p.initializeTelemetry()
 
 	return nil
 }
@@ -414,15 +391,15 @@ func (p *Plugin) GetSiteURL() string {
 }
 
 func (p *Plugin) debugf(f string, args ...interface{}) {
-	p.API.LogDebug(fmt.Sprintf(f, args...))
+	p.client.Log.Debug(fmt.Sprintf(f, args...))
 }
 
 func (p *Plugin) infof(f string, args ...interface{}) {
-	p.API.LogInfo(fmt.Sprintf(f, args...))
+	p.client.Log.Info(fmt.Sprintf(f, args...))
 }
 
 func (p *Plugin) errorf(f string, args ...interface{}) {
-	p.API.LogError(fmt.Sprintf(f, args...))
+	p.client.Log.Error(fmt.Sprintf(f, args...))
 }
 
 func (p *Plugin) CheckSiteURL() error {
