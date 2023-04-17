@@ -73,4 +73,3 @@ export const instanceIsInstalled = (state): boolean => getInstalledInstances(sta
 export const getDefaultUserInstanceID = (state) => getPluginState(state).defaultUserInstanceID;
 
 export const getPluginSettings = (state) => getPluginState(state).pluginSettings;
-export const isOAuthConfigModalVisible = (state) => getPluginState(state).oauthConfigModalVisible;

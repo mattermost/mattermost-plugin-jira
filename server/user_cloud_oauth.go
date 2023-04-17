@@ -5,8 +5,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"path"
 	"strings"
@@ -16,49 +14,6 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
-
-func (p *Plugin) httpOAuth2Configure(w http.ResponseWriter, r *http.Request) (status int, err error) {
-	if r.Method != http.MethodPost {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be POST"))
-	}
-
-	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized,
-			errors.New("not authorized"))
-	}
-
-	authorized, err := authorizedSysAdmin(p, mattermostUserID)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
-	}
-	if !authorized {
-		return respondErr(w, http.StatusUnauthorized,
-			errors.New("not authorized"))
-	}
-
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to decode request"))
-	}
-
-	var config CloudOAuthConfigure
-	err = json.Unmarshal(body, &config)
-	if err != nil {
-		return respondErr(w, http.StatusBadRequest,
-			errors.WithMessage(err, "failed to unmarshal request"))
-	}
-
-	_, _, err = p.installCloudOAuthInstance(config.InstanceURL, config.ClientID, config.ClientSecret)
-	if err != nil {
-		return respondErr(w, http.StatusBadRequest,
-			errors.WithMessage(err, "unable to configure cloud oauth"))
-	}
-
-	return respondJSON(w, []string{"OK"})
-}
 
 func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, instanceID types.ID) (status int, err error) {
 	code := r.URL.Query().Get("code")

@@ -113,7 +113,8 @@ type Plugin struct {
 	otsStore      OTSStore
 	secretsStore  SecretsStore
 
-	setupFlow *flow.Flow
+	setupFlow  *flow.Flow
+	oauth2Flow *flow.Flow
 
 	router *mux.Router
 
@@ -286,6 +287,7 @@ func (p *Plugin) OnActivate() error {
 	p.templates = templates
 
 	p.setupFlow = p.NewSetupFlow()
+	p.oauth2Flow = p.NewOAuth2Flow()
 
 	// Register /jira command and stash the loaded list of known instances for
 	// later (autolink registration).

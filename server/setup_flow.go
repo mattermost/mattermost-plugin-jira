@@ -93,6 +93,26 @@ func (p *Plugin) NewSetupFlow() *flow.Flow {
 		InitHTTP(p.router)
 }
 
+func (p *Plugin) NewOAuth2Flow() *flow.Flow {
+	pluginURL := *p.client.Configuration.GetConfig().ServiceSettings.SiteURL + "/" + "plugins" + "/" + manifest.ID
+	conf := p.getConfig()
+	return flow.NewFlow("setup-oauth2", p.client, pluginURL, conf.botUserID).
+		WithSteps(
+			p.stepCloudOAuthConfigure(),
+			p.stepInstalledJiraApp(),
+			p.stepWebhook(),
+			p.stepWebhookDone(),
+			p.stepConnect(),
+			p.stepConnected(),
+			p.stepAnnouncementQuestion(),
+			p.stepAnnouncementConfirmation(),
+			p.stepCancel(),
+			p.stepDone(),
+		).
+		// WithDebugLog().
+		InitHTTP(p.router)
+}
+
 var cancelButton = flow.Button{
 	Name:    "Cancel setup",
 	Color:   flow.ColorDanger,
