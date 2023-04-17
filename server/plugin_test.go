@@ -6,12 +6,12 @@ package main
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
@@ -65,12 +65,12 @@ func TestPlugin(t *testing.T) {
 		},
 		"InvalidBody": {
 			Configuration:      validConfiguration,
-			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", ioutil.NopCloser(bytes.NewBufferString("foo"))),
+			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", io.NopCloser(bytes.NewBufferString("foo"))),
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
 		"UnknownJSONPayload": {
 			Configuration:      validConfiguration,
-			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", ioutil.NopCloser(bytes.NewBufferString("{}"))),
+			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", io.NopCloser(bytes.NewBufferString("{}"))),
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
 		"InvalidChannel": {
@@ -134,6 +134,7 @@ func TestPlugin(t *testing.T) {
 				conf.Secret = tc.Configuration.Secret
 			})
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 			p.instanceStore = p.getMockInstanceStoreKV(1)
 			p.initializeRouter()
 
