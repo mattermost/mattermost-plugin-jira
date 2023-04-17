@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -165,7 +165,7 @@ func (ci *cloudOAuthInstance) getJiraCloudResourceID(client http.Client) (string
 	}
 
 	defer response.Body.Close()
-	contents, err := ioutil.ReadAll(response.Body)
+	contents, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", fmt.Errorf("failed read accesible resources response: %s", err.Error())
 	}
