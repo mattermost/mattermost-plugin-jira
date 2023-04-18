@@ -125,7 +125,7 @@ func (p *Plugin) initializeRouter() {
 	instanceRouter.HandleFunc(routeUserDisconnect, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpOAuth1aDisconnect))).Methods(http.MethodGet)
 
 	// OAuth2 (Jira Cloud)
-	instanceRouter.HandleFunc(routeOAuth2Complete, p.handleResponseWithCallbackInstance(p.httpOAuth2Complete)).Methods(http.MethodPost)
+	instanceRouter.HandleFunc(routeOAuth2Complete, p.handleResponseWithCallbackInstance(p.httpOAuth2Complete)).Methods(http.MethodGet)
 	apiRouter.HandleFunc(routeCloudOAuthConfigure, p.handleResponse(p.httpOAuth2Configure)).Methods(http.MethodPost)
 
 	// User connect/disconnect links

@@ -1,52 +1,99 @@
 import express from 'express';
 
-export enum ExpiryAlgorithms {
-    NO_EXPIRY = 'no_expiry',
+export type OAuthToken = {
+    access_token: string;
+    token_type: 'bearer';
+    refresh_token?: string;
+    expiry: string;
 }
+
+export enum ExpiryAlgorithm {
+    NO_EXPIRY = 'no_expiry',
+    ONE_HOUR = 'one_hour',
+}
+
+const ONE_HOUR_MILLIS = 60 * 60 * 1000;
 
 export type OAuthServerOptions = {
     mattermostSiteURL: string;
     pluginId: string;
-    mockOAuthAccessToken: string;
-    authorizeURLPrefix: string;
-    expiryAlgorithm: ExpiryAlgorithms;
+    encodedOAuthToken: string;
+    authorizeURL: string;
+    tokenURL: string;
+    expiryAlgorithm: ExpiryAlgorithm;
+    redirectUriQueryParameter?: string;
 }
 
 export const makeOAuthServer = ({
     mattermostSiteURL,
     pluginId,
-    mockOAuthAccessToken,
-    authorizeURLPrefix,
+    encodedOAuthToken,
+    authorizeURL,
+    tokenURL,
     expiryAlgorithm,
+    redirectUriQueryParameter,
 }: OAuthServerOptions): express.Express => {
-    if (!mockOAuthAccessToken) {
+    if (!encodedOAuthToken) {
         throw new Error(`MockOAuthServer: Please provide an OAuth access token to use`);
     }
 
-    if (expiryAlgorithm !== ExpiryAlgorithms.NO_EXPIRY) {
-        throw new Error(`MockOAuthServer: Unsupported OAuth token expiry algorithm: ${expiryAlgorithm}`);
-    }
+    const originalToken = oauthTokenFromBase64(encodedOAuthToken);
 
     const app = express();
 
-    const oauthRouter = express.Router();
+    app.get(authorizeURL, function (req, res) {
+        let redirectUri: string;
+        if (redirectUriQueryParameter) {
+            redirectUri = req.query[redirectUriQueryParameter] as string;
+        } else {
+            redirectUri = `${mattermostSiteURL}/plugins/${pluginId}/oauth/complete`;
+        }
 
-    oauthRouter.get('/authorize', function (req, res) {
-        const query = req.url.split('?')[1];
-        res.redirect(`${mattermostSiteURL}/plugins/${pluginId}/oauth/complete?${query}&code=1234`);
+        const state = req.query.state;
+        const fullRedirectURL = `${redirectUri}?code=1234&state=${state}`
+
+        res.redirect(fullRedirectURL);
     });
 
-    oauthRouter.post('/access_token', function (req, res) {
-        const token = {
-            access_token: mockOAuthAccessToken,
-            token_type: 'bearer',
-            expiry: '0001-01-01T00:00:00Z',
-        };
+    app.post(tokenURL, function (req, res) {
+        let token: OAuthToken;
+        switch (expiryAlgorithm) {
+            case ExpiryAlgorithm.NO_EXPIRY:
+                token = makeTokenWithNoExpiry(originalToken);
+                break;
+            case ExpiryAlgorithm.ONE_HOUR:
+                token = makeTokenWithExpiry(ONE_HOUR_MILLIS, originalToken);
+                break;
+            default:
+                throw new Error(`MockOAuthServer: Unsupported OAuth token expiry algorithm: ${expiryAlgorithm}`);
+        }
 
         res.json(token);
     });
 
-    app.use(authorizeURLPrefix, oauthRouter);
-
     return app;
+}
+
+const makeTokenWithNoExpiry = (token: OAuthToken): OAuthToken => {
+    return {
+        access_token: token.access_token,
+        token_type: 'bearer',
+        expiry: '0001-01-01T00:00:00Z',
+    };
+}
+
+const makeTokenWithExpiry = (expiry: number, token: OAuthToken): OAuthToken => {
+    const newExpiry = new Date(new Date().getTime() + expiry).toISOString();
+
+    return {
+        access_token: token.access_token,
+        refresh_token: token.refresh_token,
+        token_type: 'bearer',
+        expiry: newExpiry,
+    };
+}
+
+const oauthTokenFromBase64 = (base64Token: string): OAuthToken => {
+    const decoded = Buffer.from(base64Token, 'base64').toString();
+    return JSON.parse(decoded);
 }

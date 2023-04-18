@@ -11,7 +11,7 @@ const SCREENSHOTS_DIR = path.join(__dirname, '../screenshots');
 export const DEFAULT_WAIT_MILLIS = 500;
 
 export const fillTextField = async (name: string, value: string, page: Page) => {
-    await page.getByTestId(`${name}input`).fill(value);
+    await page.locator(`#${name}`).fill(value);
 }
 
 export const submitDialog = async (page: Page) => {

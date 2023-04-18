@@ -4,6 +4,7 @@ dist
 bin
 vendor
 .npminstall
+node_modules
 
 # Dev
 *.code-workspace

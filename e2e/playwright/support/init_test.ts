@@ -14,7 +14,7 @@ import {AdminConfig} from '@mattermost/types/config';
 import {runOAuthServer} from './init_mock_oauth_server';
 
 const pluginDistPath = path.join(__dirname, '../../../dist');
-const pluginId = 'github';
+const pluginId = 'jira';
 
 // # Clear plugin's KV store
 test.beforeAll(async () => {
@@ -51,37 +51,42 @@ test.beforeEach(async ({pw}) => {
     await cleanUpBotDMs(adminClient, adminUser!.id, pluginId);
 });
 
-type GithubPluginSettings = {
-    connecttoprivatebydefault: string | null;
-    enablecodepreview: string;
-    enableleftsidebar: boolean;
-    enableprivaterepo: boolean | null;
-    enablewebhookeventlogging: boolean;
-    encryptionkey: string;
-    enterprisebaseurl: string;
-    enterpriseuploadurl: string;
-    githuboauthclientid: string;
-    githuboauthclientsecret: string;
-    githuborg: string | null;
-    usepreregisteredapplication: boolean;
-    webhooksecret: string;
-}
+type JiraPluginSettings = {
+    DisplaySubscriptionNameInNotifications: boolean;
+    EnableAutocomplete: boolean;
+    EnableWebhookEventLogging: boolean;
+    GroupsAllowedToEditJiraSubscriptions: string;
+    HideDecriptionComment: boolean;
+    JiraAdminAdditionalHelpText: string;
+    MaxAttachmentSize: string;
+    RolesAllowedToEditJiraSubscriptions: string;
+    displaysubscriptionnameinnotifications: boolean;
+    enableautocomplete: boolean;
+    enablejiraui: boolean;
+    groupsallowedtoeditjirasubscriptions: string;
+    hidedecriptioncomment: boolean;
+    jiraadminadditionalhelptext: string;
+    rolesallowedtoeditjirasubscriptions: string;
+    secret: string;
+};
 
-const githubConfig: GithubPluginSettings = {
-    githuboauthclientid: '',
-    githuboauthclientsecret: '',
-
-    connecttoprivatebydefault: null,
-    enablecodepreview: 'public',
-    enableleftsidebar: true,
-    enableprivaterepo: null,
-    enablewebhookeventlogging: false,
-    encryptionkey: '',
-    enterprisebaseurl: '',
-    enterpriseuploadurl: '',
-    githuborg: null,
-    usepreregisteredapplication: false,
-    webhooksecret: '',
+const pluginConfig: JiraPluginSettings = {
+    DisplaySubscriptionNameInNotifications: false,
+    EnableAutocomplete: true,
+    EnableWebhookEventLogging: false,
+    GroupsAllowedToEditJiraSubscriptions: '',
+    HideDecriptionComment: false,
+    JiraAdminAdditionalHelpText: '',
+    MaxAttachmentSize: '',
+    RolesAllowedToEditJiraSubscriptions: 'system_admin',
+    displaysubscriptionnameinnotifications: false,
+    enableautocomplete: true,
+    enablejiraui: true,
+    groupsallowedtoeditjirasubscriptions: '',
+    hidedecriptioncomment: false,
+    jiraadminadditionalhelptext: '',
+    rolesallowedtoeditjirasubscriptions: 'system_admin',
+    secret: '',
 };
 
 // # Set plugin settings
@@ -98,7 +103,7 @@ test.beforeAll(async ({pw}) => {
             ...config.PluginSettings,
             Plugins: {
                 ...config.PluginSettings.Plugins,
-                [pluginId]: githubConfig as any,
+                [pluginId]: pluginConfig as any,
             },
         },
     };
@@ -107,7 +112,7 @@ test.beforeAll(async ({pw}) => {
 });
 
 // # Log in
-test.beforeEach(async ({pw, pages, page}) => {
+test.beforeEach(async ({pw}) => {
     const {adminClient, adminUser} = await pw.getAdminClient();
     if (!adminUser) {
         throw new Error('Failed to get admin user');

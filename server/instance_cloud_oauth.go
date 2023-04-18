@@ -119,10 +119,12 @@ func (ci *cloudOAuthInstance) GetUserConnectURL(mattermostUserID string) (string
 }
 
 func (ci *cloudOAuthInstance) GetOAuthConfig() *oauth2.Config {
+	scopes := strings.Split(JiraScopes, ",")
+	scopes = append(scopes, "offline_access")
 	return &oauth2.Config{
 		ClientID:     ci.JiraClientID,
 		ClientSecret: ci.JiraClientSecret,
-		Scopes:       strings.Split(JiraScopes, ","),
+		Scopes:       scopes,
 		RedirectURL:  fmt.Sprintf("%s%s", ci.Plugin.GetPluginURL(), instancePath(routeOAuth2Complete, ci.InstanceID)),
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://auth.atlassian.com/authorize",

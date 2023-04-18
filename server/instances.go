@@ -135,7 +135,7 @@ func (p *Plugin) InstallInstance(instance Instance) error {
 	err := UpdateInstances(p.instanceStore,
 		func(instances *Instances) error {
 			if !p.enterpriseChecker.HasEnterpriseFeatures() {
-				if instances != nil && len(instances.IDs()) > 0 {
+				if instances != nil && len(instances.IDs()) > 0 && instances.IDs()[0] != instance.Common().InstanceID {
 					return errors.Errorf(licenseErrorString)
 				}
 			}
