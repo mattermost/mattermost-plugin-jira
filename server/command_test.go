@@ -11,6 +11,7 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/jarcoal/httpmock"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
@@ -125,8 +126,10 @@ func (p *Plugin) getMockInstanceStoreKV(n int) *mockInstanceStoreKV {
 			break
 		}
 		instance := *ti
+		p.client = pluginapi.NewClient(p.API, p.Driver)
 		instance.Plugin = p
 		instances.Set(instance.Common())
+
 		kv.Store(instance.GetID(), &instance)
 	}
 
@@ -211,6 +214,7 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 			}).Once().Return(&model.Post{})
 
 			p.SetAPI(currentTestAPI)
+			p.client = pluginapi.NewClient(p.API, p.Driver)
 			p.instanceStore = p.getMockInstanceStoreKV(tt.numInstances)
 			p.userStore = getMockUserStoreKV()
 
@@ -368,6 +372,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			api.On("GetBundlePath").Return(path, nil)
 
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(p.API, p.Driver)
 			_, filename, _, _ := runtime.Caller(0)
 			templates, err := p.loadTemplates(filepath.Dir(filename) + "/../assets/templates")
 			require.NoError(t, err)
@@ -379,8 +384,8 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			p.userStore = getMockUserStoreKV()
 			p.enterpriseChecker = enterprise.NewEnterpriseChecker(api)
 
-			cmdResponse, appError := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
-			require.Nil(t, appError)
+			cmdResponse, err := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
+			require.Nil(t, err)
 			require.NotNil(t, cmdResponse)
 			assert.True(t, isSendEphemeralPostCalled)
 		})
@@ -443,9 +448,10 @@ func TestPlugin_ExecuteCommand_Uninstall(t *testing.T) {
 			}).Once().Return(&model.Post{})
 
 			p.SetAPI(currentTestAPI)
+			p.client = pluginapi.NewClient(p.API, p.Driver)
 
-			cmdResponse, appError := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
-			require.Nil(t, appError)
+			cmdResponse, err := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
+			require.Nil(t, err)
 			require.NotNil(t, cmdResponse)
 			assert.True(t, isSendEphemeralPostCalled)
 		})

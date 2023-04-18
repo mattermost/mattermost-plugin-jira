@@ -7,11 +7,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
@@ -322,6 +323,7 @@ func TestSubscribe(t *testing.T) {
 
 			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
+			api.On("KVSetWithOptions", mock.AnythingOfType("string"), mock.Anything, mock.AnythingOfType("model.PluginKVSetOptions")).Return(true, nil)
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
@@ -332,16 +334,17 @@ func TestSubscribe(t *testing.T) {
 			})
 			p.initializeRouter()
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 			p.userStore = mockUserStore{}
 			p.instanceStore = p.getMockInstanceStoreKV(1)
 
 			w := httptest.NewRecorder()
-			request := httptest.NewRequest("POST", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
+			request := httptest.NewRequest("POST", "/api/v2/subscriptions/channel", io.NopCloser(bytes.NewBufferString(tc.subscription)))
 			if !tc.skipAuthorize {
 				request.Header.Set("Mattermost-User-Id", model.NewId())
 			}
 			p.ServeHTTP(&plugin.Context{}, w, request)
-			body, _ := ioutil.ReadAll(w.Result().Body)
+			body, _ := io.ReadAll(w.Result().Body)
 			t.Log(string(body))
 			assert.Equal(t, tc.expectedStatusCode, w.Result().StatusCode)
 		})
@@ -434,6 +437,7 @@ func TestDeleteSubscription(t *testing.T) {
 
 			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
+			api.On("KVSetWithOptions", mock.AnythingOfType("string"), mock.Anything, mock.AnythingOfType("model.PluginKVSetOptions")).Return(true, nil)
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
@@ -444,6 +448,7 @@ func TestDeleteSubscription(t *testing.T) {
 			})
 			p.initializeRouter()
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 			p.userStore = mockUserStore{}
 			p.instanceStore = p.getMockInstanceStoreKV(1)
 
@@ -455,7 +460,7 @@ func TestDeleteSubscription(t *testing.T) {
 				request.Header.Set("Mattermost-User-Id", model.NewId())
 			}
 			p.ServeHTTP(&plugin.Context{}, w, request)
-			body, _ := ioutil.ReadAll(w.Result().Body)
+			body, _ := io.ReadAll(w.Result().Body)
 			t.Log(string(body))
 			assert.Equal(t, tc.expectedStatusCode, w.Result().StatusCode)
 		})
@@ -654,6 +659,7 @@ func TestEditSubscription(t *testing.T) {
 
 			api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, (*model.AppError)(nil))
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
+			api.On("KVSetWithOptions", mock.AnythingOfType("string"), mock.Anything, mock.AnythingOfType("model.PluginKVSetOptions")).Return(true, nil)
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
@@ -664,16 +670,17 @@ func TestEditSubscription(t *testing.T) {
 			})
 			p.initializeRouter()
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 			p.userStore = mockUserStore{}
 			p.instanceStore = p.getMockInstanceStoreKV(1)
 
 			w := httptest.NewRecorder()
-			request := httptest.NewRequest("PUT", "/api/v2/subscriptions/channel", ioutil.NopCloser(bytes.NewBufferString(tc.subscription)))
+			request := httptest.NewRequest("PUT", "/api/v2/subscriptions/channel", io.NopCloser(bytes.NewBufferString(tc.subscription)))
 			if !tc.skipAuthorize {
 				request.Header.Set("Mattermost-User-Id", model.NewId())
 			}
 			p.ServeHTTP(&plugin.Context{}, w, request)
-			body, _ := ioutil.ReadAll(w.Result().Body)
+			body, _ := io.ReadAll(w.Result().Body)
 			t.Log(string(body))
 			assert.Equal(t, tc.expectedStatusCode, w.Result().StatusCode)
 		})
@@ -825,6 +832,7 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 			})
 			p.initializeRouter()
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 			p.userStore = mockUserStore{}
 			p.instanceStore = p.getMockInstanceStoreKV(1)
 
@@ -838,7 +846,7 @@ func TestGetSubscriptionsForChannel(t *testing.T) {
 
 			if tc.returnedSubscriptions != nil {
 				subscriptions := []ChannelSubscription{}
-				body, _ := ioutil.ReadAll(w.Result().Body)
+				body, _ := io.ReadAll(w.Result().Body)
 				err := json.NewDecoder(bytes.NewReader(body)).Decode(&subscriptions)
 				assert.Nil(t, err)
 				checkSubscriptionsEqual(t, tc.returnedSubscriptions, subscriptions)

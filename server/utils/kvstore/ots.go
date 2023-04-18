@@ -6,7 +6,7 @@ package kvstore
 import (
 	"time"
 
-	"github.com/mattermost/mattermost-server/v6/plugin"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 // OneTimeStore is a KV store that deletes each record after the first load,
@@ -16,9 +16,9 @@ type ots struct {
 	KVStore
 }
 
-func NewOneTimePluginStore(api plugin.API, ttl time.Duration) OneTimeStore {
+func NewOneTimePluginStore(client *pluginapi.Client, ttl time.Duration) OneTimeStore {
 	return &ots{
-		KVStore: NewPluginStoreWithExpiry(api, ttl),
+		KVStore: NewPluginStoreWithExpiry(client, ttl),
 	}
 }
 
