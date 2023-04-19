@@ -144,7 +144,7 @@ jobs:
           cd e2e/playwright
           npm run test-ci
         env:
-          PLUGIN_E2E_MOCK_OAUTH_TOKEN: ${{ secrets.MM_JIRA_PLUGIN_E2E_TOKEN }}
+          JIRA_OAUTH_CREDENTIALS: ${{ secrets.JIRA_OAUTH_CREDENTIALS }}
           PW_BASE_URL: ${{ env.MM_SERVICESETTINGS_SITEURL }}
 
       - name: ci/move-artifacts
