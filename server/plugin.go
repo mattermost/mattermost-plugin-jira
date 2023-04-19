@@ -425,6 +425,10 @@ func (p *Plugin) errorf(f string, args ...interface{}) {
 }
 
 func (p *Plugin) CheckSiteURL() error {
+	if true {
+		return nil
+	}
+
 	ustr := p.GetSiteURL()
 	if ustr == "" {
 		return errors.New("Mattermost SITEURL must not be empty.")

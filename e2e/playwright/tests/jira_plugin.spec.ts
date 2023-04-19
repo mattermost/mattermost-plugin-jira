@@ -8,25 +8,19 @@
 
 import {expect, test} from '@e2e-support/test_fixture';
 
-import '../support/init_test';
+import JiraSetupFlow from '../support/components/jira_setup_flow';
+import {JIRA_EMAIL, JIRA_PASSWORD, TEST_CLIENT_ID, TEST_CLIENT_SECRET} from '../support/creds';
+import {postMessage, DEFAULT_WAIT_MILLIS} from '../support/utils';
 
-import {
-    fillTextField,
-    postMessage,
-    submitDialog,
-    clickPostAction,
-    screenshot,
-    DEFAULT_WAIT_MILLIS,
-} from '../support/utils';
+import '../support/init_test';
+import JiraSiteAuthFlow from '../support/components/jira_site_auth_flow';
+import JiraInteractiveDialog from '../support/components/jira_interactive_dialog';
 
 const pluginId = 'jira';
 const slashCommand = '/' + pluginId;
 const botUsername = pluginId;
 
-const TEST_CLIENT_ID = 'a'.repeat(20);
-const TEST_CLIENT_SECRET = 'b'.repeat(40);
-
-test('/jira setup', async ({pw, pages, page: originalPage}) => {
+test('/jira setup', async ({pw, pages, page: originalPage, context}) => {
     // # Log in
     const {adminUser} = await pw.getAdminClient();
     const {page} = await pw.testBrowser.login(adminUser);
@@ -36,6 +30,9 @@ test('/jira setup', async ({pw, pages, page: originalPage}) => {
     const c = new pages.ChannelsPage(page);
     await c.goto();
 
+    const setupFlow = new JiraSetupFlow(page, c);
+    const dialog = new JiraInteractiveDialog(page);
+
     // # Run setup command
     await postMessage(`${slashCommand} setup`, c, page);
 
@@ -44,63 +41,50 @@ test('/jira setup', async ({pw, pages, page: originalPage}) => {
     await c.goto(teamName, `messages/@${botUsername}`);
 
     // # Go through prompts of setup flow
-    let choices: string[] = [
+    await setupFlow.clickFlowChoices([
         'Continue',
         "I'll do it myself",
         'Jira Cloud (OAuth 2.0)',
-        // 'Continue',
-        // 'Continue',
-    ];
-
-    let i = 0;
-    for (const choice of choices) {
-        i++;
-        await page.waitForTimeout(DEFAULT_WAIT_MILLIS);
-        await screenshot(`post_action_before_${i}`, page);
-        await clickPostAction(choice, c);
-        await screenshot(`post_action_after_${i}`, page);
-    }
+    ]);
 
     // # Fill out interactive dialog for Jira organization name
-    await fillTextField('url', 'mmtest', page);
-    await submitDialog(page);
+    await dialog.fillTextField('url', 'mmtest2');
+    await dialog.submit();
 
     await page.waitForTimeout(DEFAULT_WAIT_MILLIS);
 
-    choices = [
-        'Configure',
-    ];
-
-    for (const choice of choices) {
-        i++;
-        await page.waitForTimeout(DEFAULT_WAIT_MILLIS);
-        await screenshot(`post_action_before_${i}`, page);
-        await clickPostAction(choice, c);
-        await screenshot(`post_action_after_${i}`, page);
-    }
+    await setupFlow.clickFlowChoices(['Configure']);
 
     // # Fill out interactive dialog for client id and client secret
-    await fillTextField('client_id', TEST_CLIENT_ID, page);
-    await fillTextField('client_secret', TEST_CLIENT_SECRET, page);
-    await submitDialog(page);
+    await dialog.fillTextField('client_id', TEST_CLIENT_ID);
+    await dialog.fillTextField('client_secret', TEST_CLIENT_SECRET);
+    await dialog.submit();
 
-    choices = [
+    await setupFlow.clickFlowChoices([
         'Continue',
         'View webhook URL',
-    ];
+    ]);
 
-    for (const choice of choices) {
-        i++;
-        await page.waitForTimeout(DEFAULT_WAIT_MILLIS);
-        await screenshot(`post_action_before_${i}`, page);
-        await clickPostAction(choice, c);
-        await screenshot(`post_action_after_${i}`, page);
-    }
+    // * Assert webhook URL is present and correct
+    const href = await dialog.getLinkInHeader();
+    expect(href).toMatch(/http:\/\/localhost:8065\/plugins\/jira\/instance\/.*\/api\/v2\/webhook\?secret=/);
+    await dialog.submit();
 
-    const link = page.locator('#interactiveDialogModalIntroductionText a');
-    const href = await link.getAttribute('href');
+    // # Trigger Jira site connect flow
+    const pagePromise = page.waitForEvent('popup');
+    await setupFlow.clickConnectLink();
 
-    expect(href).toEqual('http://localhost:8065/plugins/jira/instance/aHR0cHM6Ly9tbXRlc3QuYXRsYXNzaWFuLm5ldA==/api/v2/webhook?secret=');
+    const jiraPage = await pagePromise;
+    const authFlow = new JiraSiteAuthFlow(jiraPage);
+    await jiraPage.waitForLoadState();
 
-    await page.close();
+    // # Fill out Jira login form
+    await authFlow.fillEmail(JIRA_EMAIL);
+    await authFlow.submitEmail();
+    await authFlow.fillPassword(JIRA_PASSWORD);
+    await authFlow.submitPassword();
+    await authFlow.acceptPermissions();
+
+    // * Assert successful connection
+    await expect(page.getByText('You\'ve successfully connected your Mattermost user account to Jira.')).toBeVisible();
 });

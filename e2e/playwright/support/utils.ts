@@ -10,22 +10,9 @@ const SCREENSHOTS_DIR = path.join(__dirname, '../screenshots');
 
 export const DEFAULT_WAIT_MILLIS = 500;
 
-export const fillTextField = async (name: string, value: string, page: Page) => {
-    await page.locator(`#${name}`).fill(value);
-}
-
-export const submitDialog = async (page: Page) => {
-    await page.click('#interactiveDialogSubmit');
-}
-
 export const postMessage = async (message: string, c: ChannelsPage, page: Page) => {
     await c.postMessage(message);
     await page.getByTestId('SendMessageButton').click();
-};
-
-export const clickPostAction = async (name: string, c: ChannelsPage) => {
-    const postElement = await c.getLastPost();
-    await postElement.container.getByText(name).last().click();
 };
 
 export const getLastPostText = async (c: ChannelsPage, page: Page): Promise<string> => {
