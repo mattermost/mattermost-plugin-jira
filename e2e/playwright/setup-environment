@@ -1,5 +1,3 @@
-PWD=$(pwd)
-
 cd ../../../
 git clone https://github.com/mattermost/mattermost-server.git
 cd mattermost-server
@@ -15,5 +13,5 @@ cd ../e2e-tests/playwright
 npm i
 npx playwright install --with-deps
 
-cd $PWD
+cd ../../../mattermost-plugin-jira/e2e/playwright
 npm i
