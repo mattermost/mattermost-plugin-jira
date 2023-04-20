@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import createMeta from 'testdata/cloud-get-create-issue-metadata-for-project-many-fields.json';
+import {ticketData} from 'testdata/get-ticket-metadata-for-tooltip';
 import {useFieldForIssueMetadata} from 'testdata/jira-issue-metadata-helpers';
 
 import {IssueMetadata, JiraField, FilterField, ChannelSubscriptionFilters, FilterFieldInclusion, IssueType, Project} from 'types/model';
@@ -594,35 +595,7 @@ describe('utils/jira_issue_metadata', () => {
 
     describe('jiraIssueToReducer', () => {
         it('should return the ticket details with all fields', () => {
-            const action: IssueAction = {
-                data: {
-                    key: 'ABC-123',
-                    fields: {
-                        assignee: {
-                            displayName: 'Mock Name',
-                            avatarUrls: {
-                                '48x48': 'https://something.atlassian.net/avatar.png',
-                            },
-                        },
-                        labels: ['label1', 'label2'],
-                        description: 'This is a test description',
-                        summary: 'This is a test summary',
-                        project: {
-                            avatarUrls: {
-                                '48x48': 'https://something.atlassian.net/project.png',
-                            },
-                        },
-                        versions: ['Version 1.0', 'Version 2.0'],
-                        status: {
-                            name: 'In Progress',
-                        },
-                        issuetype: {
-                            iconUrl: 'https://something.atlassian.net/issuetype.png',
-                        },
-                    },
-                },
-                type: 'mockType',
-            };
+            const action: IssueAction = ticketData('Mock Name');
 
             const expectedTicketDetails: TicketDetails = {
                 assigneeName: 'Mock Name',
@@ -643,30 +616,7 @@ describe('utils/jira_issue_metadata', () => {
         });
 
         it('should return the ticket details with empty assignee fields when assignee is null', () => {
-            const action: IssueAction = {
-                data: {
-                    key: 'ABC-123',
-                    fields: {
-                        assignee: null,
-                        labels: ['label1', 'label2'],
-                        description: 'This is a test description',
-                        summary: 'This is a test summary',
-                        project: {
-                            avatarUrls: {
-                                '48x48': 'http://example.com/project.png',
-                            },
-                        },
-                        versions: ['Version 1.0', 'Version 2.0'],
-                        status: {
-                            name: 'In Progress',
-                        },
-                        issuetype: {
-                            iconUrl: 'http://example.com/issuetype.png',
-                        },
-                    },
-                },
-                type: 'mockType',
-            };
+            const action: IssueAction = ticketData(null);
 
             const expectedTicketDetails: TicketDetails = {
                 assigneeName: '',
@@ -675,10 +625,10 @@ describe('utils/jira_issue_metadata', () => {
                 description: 'This is a test description',
                 summary: 'This is a test summary',
                 ticketId: 'ABC-123',
-                jiraIcon: 'http://example.com/project.png',
+                jiraIcon: 'https://something.atlassian.net/project.png',
                 versions: 'Version 1.0',
                 statusKey: 'In Progress',
-                issueIcon: 'http://example.com/issuetype.png',
+                issueIcon: 'https://something.atlassian.net/issuetype.png',
             };
 
             const result = jiraIssueToReducer(action.data);

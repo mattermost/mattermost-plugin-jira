@@ -194,6 +194,29 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         }
 
         const {ticketDetails} = this.state;
+        if (!ticketDetails) {
+            // Display the skeleton loader while ticket details are being fetched
+            return (
+                <div className='jira-issue-tooltip'>
+                    <div className='popover-header'>
+                        <div className='popover-header__container'>
+                            <div className='popover-header__avatar skeleton-loader'/>
+                            <div className='jira-ticket-key-icon-loader skeleton-loader skeleton-loader--text'/>
+                            <div className='jira-ticket-key-loader skeleton-loader skeleton-loader--text'/>
+                        </div>
+                    </div>
+                    <div className='popover-body'>
+                        <div className='popover-body__title skeleton-loader skeleton-loader--text'/>
+                        <div className='popover-body__description skeleton-loader mt-2 skeleton-loader--text'/>
+                        <div className='popover-body__labels skeleton-loader skeleton-loader--text'/>
+                    </div>
+                    <div className='popover-footer'>
+                        <div className='popover-footer__assignee-profile skeleton-loader'/>
+                        <div className='skeleton-loader skeleton-loader--text'/>
+                    </div>
+                </div>
+            );
+        }
 
         return (
             <div className='jira-issue-tooltip'>
@@ -206,11 +229,11 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                             rel='noopener noreferrer'
                         >
                             <img
-                                src={ticketDetails ? ticketDetails.jiraIcon : ''}
+                                src={ticketDetails.jiraIcon}
                                 width={14}
                                 height={14}
-                                alt={ticketDetails ? 'jira-avatar' : ''}
-                                className={`popover-header__avatar ${ticketDetails || 'skeleton-loader'}`}
+                                alt='jira-avatar'
+                                className='popover-header__avatar'
                             />
                         </a>
                         <a
@@ -219,66 +242,56 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                             target='_blank'
                             rel='noopener noreferrer'
                         >
-                            {ticketDetails ? <span className='jira-ticket-key'>{ticketDetails && ticketDetails.ticketId}</span> : <span className='jira-ticket-key skeleton-loader'/>}
+                            <span className='jira-ticket-key'>{ticketDetails.ticketId}</span>
                             <img
-                                alt={ticketDetails ? 'jira-issue-icon' : ''}
+                                alt='jira-issue-icon'
                                 width='14'
                                 height='14'
-                                src={ticketDetails ? ticketDetails.issueIcon : ''}
-                                className={`${!ticketDetails && 'skeleton-loader'}`}
+                                src={ticketDetails.issueIcon}
                             />
                         </a>
                     </div>
                 </div>
-                {ticketDetails ? (
-                    <div className='popover-body'>
-                        <div className='popover-body__title'>
-                            <a
-                                href={this.props.href}
-                                target='_blank'
-                                rel='noopener noreferrer'
-                            >
-                                <h5>{ticketDetails && ticketDetails.summary.substring(0, jiraTicketTitleMaxLength)}</h5>
-                            </a>
-                            {ticketDetails ? this.tagTicketStatus(ticketDetails.statusKey) : <span className='skeleton-loader'/>}
-                        </div>
-                        <div className='popover-body__description'>
-                            {ticketDetails && ticketDetails.description}
-                        </div>
-                        <div className='popover-body__labels'>
-                            {ticketDetails && this.fixVersionLabel(ticketDetails.versions)}
-                            {ticketDetails && this.renderLabelList(ticketDetails.labels)}
-                        </div>
+                <div className='popover-body'>
+                    <div className='popover-body__title'>
+                        <a
+                            href={this.props.href}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                        >
+                            <h5>{ticketDetails && ticketDetails.summary.substring(0, jiraTicketTitleMaxLength)}</h5>
+                        </a>
+                        {this.tagTicketStatus(ticketDetails.statusKey)}
                     </div>
-                ) : (
-                    <div className='popover-body'>
-                        <div className='popover-body__title skeleton-loader skeleton-loader--text'/>
-                        <div className='popover-body__description skeleton-loader mt-2 skeleton-loader--text'/>
-                        <div className='popover-body__labels skeleton-loader skeleton-loader--text'/>
+                    <div className='popover-body__description'>
+                        {ticketDetails && ticketDetails.description}
                     </div>
-                )
-                }
+                    <div className='popover-body__labels'>
+                        {ticketDetails && this.fixVersionLabel(ticketDetails.versions)}
+                        {ticketDetails && this.renderLabelList(ticketDetails.labels)}
+                    </div>
+                </div>
                 <div className='popover-footer'>
-                    {!ticketDetails || ticketDetails.assigneeAvatar ? (
+                    {ticketDetails.assigneeAvatar ? (
                         <img
-                            className={`popover-footer__assignee-profile ${ticketDetails || 'skeleton-loader'}`}
-                            src={ticketDetails ? ticketDetails.assigneeAvatar : ''}
-                            alt={ticketDetails ? 'jira assignee profile' : ''}
+                            className='popover-footer__assignee-profile'
+                            src={ticketDetails.assigneeAvatar}
+                            alt='jira assignee profile'
                         />
                     ) : <DefaultAvatar/>
                     }
-                    {ticketDetails && ticketDetails.assigneeName ? (
+                    {ticketDetails.assigneeName ? (
                         <span>
                             <span className='popover-footer__assignee-name'>
                                 {ticketDetails.assigneeName}
                             </span>
-                            <span className='popover-footer__assignee--assigned'>
+                            <span>
                                 {isAssignedLabel}
                             </span>
                         </span>
                     ) : (
-                        <span className={`popover-footer__assignee--assigned ${ticketDetails || 'skeleton-loader skeleton-loader--text'}`}>
-                            {ticketDetails ? unAssignedLabel : ''}
+                        <span>
+                            {unAssignedLabel}
                         </span>
                     )
                     }

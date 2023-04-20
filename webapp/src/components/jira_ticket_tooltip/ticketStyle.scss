@@ -27,7 +27,7 @@
 
     .popover-header__container {
         display: flex;
-        margin: 24px 24px;
+        margin: 24px;
         height: 20px;
         align-items: center;
     }
@@ -40,7 +40,7 @@
         right: 24px;
         top: 24px;
         height: 20px;
-        border-radius: 50px;
+        border-radius: 50%;
     }
 
     .popover-header__keyword {
@@ -156,10 +156,10 @@
         height: 20px;
         border-radius: 50px;
         flex: none;
+        margin-right: 6px;
     }
 
     .popover-footer__assignee-name {
-        margin-left: 6px;
         font-weight: 600;
     }
 
@@ -198,8 +198,6 @@
         border-radius: 4px;
     }
 
-    ;
-
     .ticket-status--indeterminate {
         color: #FFFFFF;
         background-color: #1C58D9;
@@ -216,10 +214,18 @@
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
+    .jira-ticket-key-icon-loader {
+        min-width: 15px;
+        margin-right: 5px;
+    }
+
+    .jira-ticket-key-loader {
+        min-width: 50px;
+    }
+
     .jira-ticket-key {
         font-size: 12px;
     }
-
 
     .skeleton-loader {
         &:empty {
@@ -232,7 +238,6 @@
             background-position: 0 0;
             animation: shine 1s infinite;
             background-color: rgba(var(--center-channel-color-rgb), 0.15);
-            clip-path: inset(1px);
         }
 
         @keyframes shine {

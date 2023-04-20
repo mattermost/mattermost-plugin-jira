@@ -371,7 +371,7 @@ export function jiraIssueToReducer(data: TicketData): TicketDetails | null {
         description: data.fields.description,
         summary: data.fields.summary,
         ticketId: data.key,
-        jiraIcon: data.fields.project.avatarUrls['48x48'],
+        jiraIcon: data.fields.project.avatarUrls && data.fields.project.avatarUrls['48x48'],
         versions: data.fields.versions.length ? data.fields.versions[0] : '',
         statusKey: data.fields.status.name,
         issueIcon: data.fields.issuetype.iconUrl,
