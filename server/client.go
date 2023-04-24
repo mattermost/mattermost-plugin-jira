@@ -310,7 +310,7 @@ func (client JiraClient) GetSelf() (*jira.User, error) {
 // MakeCreateIssueURL makes a URL that would take a browser to a pre-filled form
 // to file a new issue in Jira.
 func MakeCreateIssueURL(instance Instance, project *jira.Project, issue *jira.Issue) string {
-	u, err := url.Parse(fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", instance.GetURL()))
+	u, err := url.Parse(fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", instance.GetJiraBaseURL()))
 	if err != nil {
 		return ""
 	}

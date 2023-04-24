@@ -8,12 +8,16 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
+
+const TokenExpiryTimeBufferInMinutes = 5
 
 func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, instanceID types.ID) (status int, err error) {
 	code := r.URL.Query().Get("code")
@@ -28,17 +32,6 @@ func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, inst
 	if len(strings.Split(state, "_")) != 2 || strings.Split(state, "_")[1] == "" {
 		return respondErr(w, http.StatusBadRequest, errors.New("Bad request: invalid state"))
 	}
-
-	instance, err := p.instanceStore.LoadInstance(instanceID)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	oAuthInstance, ok := instance.(*cloudOAuthInstance)
-	if !ok {
-		return respondErr(w, http.StatusInternalServerError, errors.Errorf("Not supported for instance type %s", instance.Common().Type))
-	}
-
-	oAuthConf := oAuthInstance.GetOAuthConfig()
 
 	stateSecret := strings.Split(state, "_")[0]
 	mattermostUserID := strings.Split(state, "_")[1]
@@ -56,15 +49,14 @@ func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, inst
 		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(appErr, "failed to load user "+mattermostUserID))
 	}
 
-	token, err := oAuthConf.Exchange(context.Background(), code)
+	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
-		p.client.Log.Error("error while exchanging authorization code for access token", "error", err)
-		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "error while exchanging authorization code for access token"))
+		return http.StatusInternalServerError, err
 	}
 
-	connection := &Connection{
-		PluginVersion: manifest.Version,
-		OAuth2Token:   token,
+	connection, err := p.GenerateOAuthToken(mattermostUserID, instanceID, code)
+	if err != nil {
+		return http.StatusInternalServerError, err
 	}
 
 	client, err := instance.GetClient(connection)
@@ -80,6 +72,7 @@ func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, inst
 
 	// Set default settings the first time a user connects
 	connection.Settings = &ConnectionSettings{Notifications: true}
+	connection.MattermostUserID = types.ID(mattermostUserID)
 
 	err = p.connectUser(instance, types.ID(mattermostUserID), connection)
 	if err != nil {
@@ -95,4 +88,38 @@ func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, inst
 		MattermostDisplayName: mmUser.GetDisplayName(model.ShowNicknameFullName),
 		RevokeURL:             path.Join(p.GetPluginURLPath(), instancePath(routeUserDisconnect, instance.GetID())),
 	})
+}
+
+func (p *Plugin) GenerateOAuthToken(mattermostUserID string, instanceID types.ID, code string) (*Connection, error) {
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return nil, err
+	}
+	oAuthInstance, ok := instance.(*cloudOAuthInstance)
+	if !ok {
+		return nil, errors.Errorf("Not supported for instance type %s", instance.Common().Type)
+	}
+
+	oAuthConf := oAuthInstance.GetOAuthConfig()
+
+	token, err := oAuthConf.Exchange(context.Background(), code)
+	if err != nil {
+		p.client.Log.Error("error while exchanging authorization code for access token", "error", err)
+		return nil, errors.WithMessage(err, "error while exchanging authorization code for access token")
+	}
+
+	connection, err := p.userStore.LoadConnection(instanceID, types.ID(mattermostUserID))
+	if err != nil {
+		return nil, err
+	}
+
+	connection.OAuth2Token = token
+	return connection, nil
+}
+
+// checks if a user's access token is expired
+func (p *Plugin) IsAccessTokenExpired(token *oauth2.Token) bool {
+	// Consider some buffer for comparing expiry time
+	localExpiryTime := time.Unix(token.Expiry.Unix(), 0).Local()
+	return time.Until(localExpiryTime) <= time.Minute*TokenExpiryTimeBufferInMinutes
 }

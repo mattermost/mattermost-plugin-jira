@@ -24,6 +24,7 @@ type Instance interface {
 	GetManageAppsURL() string
 	GetManageWebhooksURL() string
 	GetURL() string
+	GetJiraBaseURL() string
 
 	Common() *InstanceCommon
 	types.Value

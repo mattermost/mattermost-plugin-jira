@@ -294,7 +294,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 	}
 
 	// Reply with an ephemeral post with the Jira issue formatted as slack attachment.
-	msg := fmt.Sprintf("Created Jira issue [%s](%s/browse/%s)", created.Key, instance.GetURL(), created.Key)
+	msg := fmt.Sprintf("Created Jira issue [%s](%s/browse/%s)", created.Key, instance.GetJiraBaseURL(), created.Key)
 
 	reply := &model.Post{
 		Message:   msg,
@@ -322,7 +322,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 
 	// Create a public post for all the channel members
 	publicReply := &model.Post{
-		Message:   fmt.Sprintf("Created a Jira issue: %s", mdKeySummaryLink(createdIssue)),
+		Message:   fmt.Sprintf("Created a Jira issue: %s", mdKeySummaryLink(createdIssue, instance)),
 		ChannelId: channelID,
 		RootId:    rootID,
 		UserId:    in.mattermostUserID.String(),
@@ -656,7 +656,7 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 
 	p.UpdateUserDefaults(in.mattermostUserID, in.InstanceID, "")
 
-	msg := fmt.Sprintf("Message attached to [%s](%s/browse/%s)", in.IssueKey, instance.GetURL(), in.IssueKey)
+	msg := fmt.Sprintf("Message attached to [%s](%s/browse/%s)", in.IssueKey, instance.GetJiraBaseURL(), in.IssueKey)
 
 	// Reply to the post with the issue link that was created
 	reply := &model.Post{
@@ -820,7 +820,7 @@ func (p *Plugin) getIssueAsSlackAttachment(instance Instance, connection *Connec
 		}
 	}
 
-	return asSlackAttachment(instance.GetID(), client, issue, showActions)
+	return asSlackAttachment(instance, client, issue, showActions)
 }
 
 func (p *Plugin) UnassignIssue(instance Instance, mattermostUserID types.ID, issueKey string) (string, error) {
@@ -846,7 +846,7 @@ func (p *Plugin) UnassignIssue(instance Instance, mattermostUserID types.ID, iss
 		return "", err
 	}
 
-	permalink := fmt.Sprintf("%v/browse/%v", instance.GetURL(), issueKey)
+	permalink := fmt.Sprintf("%v/browse/%v", instance.GetJiraBaseURL(), issueKey)
 
 	msg := fmt.Sprintf("Unassigned Jira issue [%s](%s)", issueKey, permalink)
 	return msg, nil
@@ -925,7 +925,7 @@ func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issue
 		return "", err
 	}
 
-	permalink := fmt.Sprintf("%v/browse/%v", instance.GetURL(), issueKey)
+	permalink := fmt.Sprintf("%v/browse/%v", instance.GetJiraBaseURL(), issueKey)
 
 	msg := fmt.Sprintf("`%s` assigned to Jira issue [%s](%s)", user.DisplayName, issueKey, permalink)
 	return msg, nil
@@ -986,7 +986,7 @@ func (p *Plugin) TransitionIssue(in *InTransitionIssue) (string, error) {
 	}
 
 	msg := fmt.Sprintf("[%s](%v/browse/%v) transitioned to `%s`",
-		in.IssueKey, instance.GetURL(), in.IssueKey, transition.To.Name)
+		in.IssueKey, instance.GetJiraBaseURL(), in.IssueKey, transition.To.Name)
 
 	issue, err := client.GetIssue(in.IssueKey, nil)
 	if err != nil {
@@ -1002,7 +1002,7 @@ func (p *Plugin) TransitionIssue(in *InTransitionIssue) (string, error) {
 		}
 	}
 
-	attachments, err := asSlackAttachment(instance.GetID(), client, issue, true)
+	attachments, err := asSlackAttachment(instance, client, issue, true)
 	if err != nil {
 		return "", err
 	}

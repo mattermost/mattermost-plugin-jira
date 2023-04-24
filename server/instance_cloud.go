@@ -185,6 +185,10 @@ func (ci *cloudInstance) GetURL() string {
 	return ci.AtlassianSecurityContext.BaseURL
 }
 
+func (ci *cloudInstance) GetJiraBaseURL() string {
+	return ci.GetURL()
+}
+
 func (ci *cloudInstance) GetManageAppsURL() string {
 	return fmt.Sprintf("%s/plugins/servlet/upm", ci.GetURL())
 }

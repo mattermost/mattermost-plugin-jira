@@ -33,7 +33,8 @@ type Connection struct {
 	Oauth1AccessSecret string        `json:",omitempty"`
 	OAuth2Token        *oauth2.Token `json:",omitempty"`
 	Settings           *ConnectionSettings
-	DefaultProjectKey  string `json:"default_project_key,omitempty"`
+	DefaultProjectKey  string   `json:"default_project_key,omitempty"`
+	MattermostUserID   types.ID `json:"mattermost_user_id"`
 }
 
 func (c *Connection) JiraAccountID() types.ID {
