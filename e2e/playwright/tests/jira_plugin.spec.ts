@@ -70,6 +70,8 @@ test('/jira setup', async ({pw, pages, page: originalPage, context}) => {
     expect(href).toMatch(/http:\/\/localhost:8065\/plugins\/jira\/instance\/.*\/api\/v2\/webhook\?secret=/);
     await dialog.submit();
 
+    page.on('console', msg => console.log(msg.text()))
+
     // # Trigger Jira site connect flow
     const pagePromise = page.waitForEvent('popup');
     await setupFlow.clickConnectLink();
