@@ -5,6 +5,8 @@ import {Page} from '@playwright/test';
 
 import {ChannelsPage} from '@e2e-support/ui/pages';
 
+import {getSlackAttachmentLocatorId} from '../utils';
+
 import SetupFlow from './base/setup_flow';
 
 export default class JiraSetupFlow extends SetupFlow {
@@ -13,7 +15,11 @@ export default class JiraSetupFlow extends SetupFlow {
     }
 
     clickConnectLink = async () => {
-        const link = this.page.getByRole('link', { name: 'here' });
-        return link.click();
+        const post = await this.channelsPage.getLastPost();
+        const postId = await post.getId();
+        const locatorId = getSlackAttachmentLocatorId(postId);
+
+        const connectLinkLocator = `${locatorId} a`;
+        await this.page.click(connectLinkLocator);
     }
 }
