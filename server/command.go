@@ -79,7 +79,7 @@ const commonHelpText = "\n" +
 
 const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"Install Jira instances:\n" +
-	"* `/jira instance install cloud [jiraURL]` - Connect Mattermost to a Jira Cloud instance located at <jiraURL>\n" +
+	"* `/jira instance install cloud [jiraURL]` - Deprecated: Connect Mattermost to a Jira Cloud instance located at <jiraURL>\n" +
 	"* `/jira instance install cloud-oauth [jiraURL]` - Connect Mattermost to a Jira Cloud instance using OAuth 2.0 located at <jiraURL>\n" +
 	"* `/jira instance install server [jiraURL]` - Connect Mattermost to a Jira Server or Data Center instance located at <jiraURL>\n" +
 	"Uninstall Jira instances:\n" +
@@ -171,7 +171,7 @@ func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 
 	jiraTypes := []model.AutocompleteListItem{
 		{HelpText: "Jira Server or Datacenter", Item: "server"},
-		{HelpText: "Jira Cloud (atlassian.net)", Item: "cloud"},
+		{HelpText: "(Deprecated) Jira Cloud (atlassian.net)", Item: "cloud"},
 		{HelpText: "Jira Cloud OAuth 2.0 (atlassian.net)", Item: "cloud-oauth"},
 	}
 
@@ -832,7 +832,12 @@ func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *mode
 		return p.responsef(header, err.Error())
 	}
 
-	return p.responsef(header, "continue in the direct conversation with @jira bot.")
+	channel, _ := p.client.Channel.GetDirect(header.UserId, p.conf.botUserID)
+	if channel != nil && channel.Id != header.ChannelId {
+		return p.responsef(header, "continue in the direct conversation with @jira bot.")
+	}
+
+	return &model.CommandResponse{}
 }
 
 func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -1129,7 +1134,13 @@ func executeSetup(p *Plugin, c *plugin.Context, header *model.CommandArgs, args 
 	if err != nil {
 		return p.responsef(header, errors.Wrap(err, "Failed to start setup wizard").Error())
 	}
-	return p.responsef(header, "continue in the direct conversation with @jira bot.")
+
+	channel, _ := p.client.Channel.GetDirect(header.UserId, p.conf.botUserID)
+	if channel != nil && channel.Id != header.ChannelId {
+		return p.responsef(header, "continue in the direct conversation with @jira bot.")
+	}
+
+	return &model.CommandResponse{}
 }
 
 func (p *Plugin) postCommandResponse(args *model.CommandArgs, text string) {

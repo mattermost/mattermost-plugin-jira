@@ -19,10 +19,7 @@ const (
 	stepDelegateComplete         flow.Name = "delegate-complete"
 	stepDelegated                flow.Name = "delegated"
 	stepChooseEdition            flow.Name = "choose-edition"
-	stepCloudAddedInstance       flow.Name = "cloud-added"
 	stepCloudOAuthConfigure      flow.Name = "cloud-oauth-configure"
-	stepCloudEnableDeveloperMode flow.Name = "cloud-enable-dev"
-	stepCloudUploadApp           flow.Name = "cloud-upload-app"
 	stepInstalledJiraApp         flow.Name = "installed-app"
 	stepServerAddAppLink         flow.Name = "server-add-link"
 	stepServerConfirmAppLink     flow.Name = "server-confirm-link"
@@ -64,11 +61,6 @@ func (p *Plugin) NewSetupFlow() *flow.Flow {
 			p.stepDelegated(),
 			p.stepDelegateComplete(),
 			p.stepChooseEdition(),
-
-			// Jira Cloud steps
-			p.stepCloudAddedInstance(),
-			p.stepCloudEnableDeveloperMode(),
-			p.stepCloudUploadApp(),
 
 			// Jira Cloud OAuth steps
 			p.stepCloudOAuthConfigure(),
@@ -200,29 +192,9 @@ func (p *Plugin) stepDelegateComplete() flow.Step {
 func (p *Plugin) stepChooseEdition() flow.Step {
 	return flow.NewStep(stepChooseEdition).
 		WithPretext("##### :white_check_mark: Step 1: Which Jira edition do you use?").
-		WithTitle("Cloud, Cloud (OAuth 2.0) or Server (on-premise).").
-		WithText("Choose whether you're using Jira Cloud, Jira Cloud with OAuth 2.0 or Jira Server (on-premise/Data Center) edition. " +
+		WithTitle("Cloud (OAuth 2.0) or Server (on-premise).").
+		WithText("Choose whether you're using Jira Cloud (OAuth 2.0) or Jira Server (on-premise/Data Center) edition. " +
 			"To integrate with more than one Jira instance, see the [documentation](https://mattermost.gitbook.io/plugin-jira/)").
-		WithButton(flow.Button{
-			Name:  "Jira Cloud",
-			Color: flow.ColorPrimary,
-			Dialog: &model.Dialog{
-				Title:            "Enter your Jira Cloud URL",
-				IntroductionText: "Enter a Jira Cloud URL (typically, `https://yourorg.atlassian.net`), or just the organization part, `yourorg`",
-				SubmitLabel:      "Continue",
-				Elements: []model.DialogElement{
-					{
-						DisplayName: "Jira Cloud organization",
-						Name:        "url",
-						Type:        "text",
-						// text, not URL since normally just the org name needs
-						// to be entered.
-						SubType: "text",
-					},
-				},
-			},
-			OnDialogSubmit: p.submitCreateCloudInstance,
-		}).
 		WithButton(
 			flow.Button{
 				Name:  "Jira Cloud (OAuth 2.0)",
@@ -318,62 +290,22 @@ func (p *Plugin) stepServerConfigureAppLink2() flow.Step {
 		WithButton(cancelButton)
 }
 
-func (p *Plugin) stepCloudAddedInstance() flow.Step {
-	return flow.NewStep(stepCloudAddedInstance).
-		WithText("Jira cloud {{.JiraURL}} has been added and is ready to configure.").
-		Next(stepCloudEnableDeveloperMode)
-}
-
-func (p *Plugin) stepCloudEnableDeveloperMode() flow.Step {
-	return flow.NewStep(stepCloudEnableDeveloperMode).
-		WithPretext("##### :white_check_mark: Step 2: Configure the Mattermost app in Jira").
-		WithTitle("Enable development mode.").
-		WithText("Integrating Mattermost with Jira Cloud requires setting your Jira instance to development mode (see _screenshot_). " +
-			"Enabling development mode allows you to install apps like Mattermost from outside the Atlassian Marketplace.\n" +
-			"Complete the following steps in Jira, then come back here to select **Continue**.\n\n" +
-			"1. Navigate to [**Settings > Apps > Manage Apps**]({{.JiraURL}}/plugins/servlet/upm?source=side_nav_manage_addons).\n" +
-			"2. Select **Settings** at the bottom of the page.\n" +
-			"3. Select **Enable development mode**, then select **Apply**.\n").
-		WithImage("public/cloud-enable-dev-mode.png").
-		OnRender(p.trackSetupWizard("setup_wizard_jira_config_start", map[string]interface{}{
-			keyEdition: CloudInstanceType,
-		})).
-		WithButton(continueButton(stepCloudUploadApp)).
-		WithButton(cancelButton)
-}
-
-func (p *Plugin) stepCloudUploadApp() flow.Step {
-	return flow.NewStep(stepCloudUploadApp).
-		WithTitle("Upload the Mattermost app to Jira.").
-		WithText("To finish the configuration, create a new app in your Jira instance.\n" +
-			"Complete the following steps, then come back here to select **Continue**.\n\n" +
-			"1. From [**Settings > Apps > Manage Apps**]({{.JiraURL}}/plugins/servlet/upm?source=side_nav_manage_addons) select **Upload app** (see _screenshot_).\n" +
-			"2. In the **From this URL field**, enter: `{{.ACURL}}` [link]({{.ACURL}}), then select **Upload**.\n" +
-			"3. Wait for the app to install. Once completed, you should see an \"Installed and ready to go!\" message.\n").
-		WithImage("public/cloud-upload-app.png").
-		WithButton(flow.Button{
-			Name:     "Waiting for confirmation...",
-			Color:    flow.ColorDefault,
-			Disabled: true,
-		})
-}
-
 func (p *Plugin) stepCloudOAuthConfigure() flow.Step {
 	return flow.NewStep(stepCloudOAuthConfigure).
 		WithPretext("##### :white_check_mark: Step 2: Register an OAuth 2.0 Application in Jira").
 		WithText(fmt.Sprintf("Complete the following steps, then come back here to select **Configure**.\n\n"+
-			"1. Follow [these instructions](https://developer.atlassian.com/cloud/confluence/oauth-2-3lo-apps/#enabling-oauth-2-0--3lo-) to register an OAuth 2.0 application in Jira.\n"+
-			"2. Set the following values:\n"+
-			"	- Name: `Mattermost Jira Plugin - <your company name>`\n"+
-			"3. Select **Permissions** in the left menu. Next to the JIRA API, select **Add**\n"+
-			"4. Then select **Configure** and ensure following scopes are selected:\n"+
-			"   - Scopes: `%s`\n"+
-			"5. Select **Authorization** in the left menu.\n"+
-			"6. Next to OAuth 2.0 (3LO), select **Configure** and set the Callback URL as follows:\n"+
-			"		{{.OAuthCompleteURL}}\n"+
-			"7. Click **Save Changes**.\n"+
+			"1. Create an OAuth 2.0 application in Jira from the [Developer console](https://developer.atlassian.com/console/myapps/create-3lo-app/).\n"+
+			"2. Name your app according to its purpose, for example:  `Mattermost Jira Plugin - <your company name>`.\n"+
+			"3. Accept the **Terms** and click **Create**.\n"+
+			"4. Select **Permissions** in the left menu. Next to the JIRA API, select **Add**.\n"+
+			"5. Then select **Configure** and ensure following scopes are selected:\n"+
+			"       %s\n"+
+			"6. Select **Authorization** in the left menu.\n"+
+			"7. Next to OAuth 2.0 (3LO), select **Add** and set the Callback URL as follows and click **Save Changes**:\n"+
+			"       {{.OAuthCompleteURL}}\n"+
 			"8. Select **Settings** in the left menu.\n"+
-			"9. Copy the **Client ID** and **Secret** and keep it handy.\n", JiraScopes)).
+			"9. Copy the **Client ID** and **Secret** and keep it handy.\n"+
+			"10. Click on the **Configure** button below, enter these details and then **Continue**.", JiraScopes)).
 		WithButton(flow.Button{
 			Name:  "Configure",
 			Color: flow.ColorPrimary,
@@ -399,7 +331,7 @@ func (p *Plugin) stepCloudOAuthConfigure() flow.Step {
 						DisplayName: "Jira OAuth Client Secret",
 						Name:        "client_secret",
 						Type:        "text",
-						SubType:     "password",
+						SubType:     "text",
 						HelpText:    "The client secret for the OAuth app registered with Jira",
 					},
 				},
@@ -463,7 +395,7 @@ func (p *Plugin) stepWebhook() flow.Step {
 			Color: flow.ColorPrimary,
 			Dialog: &model.Dialog{
 				Title:            "Jira Webhook URL",
-				IntroductionText: "Please scroll to select the entire URL if necessary. [link]({{.WebhookURL}})\n```\n{{.WebhookURL}}\n```\nOnce you have entered all options and the webhook URL, select **Create**",
+				IntroductionText: "Please scroll to select the entire URL if necessary.\n\n```{{.WebhookURL}}```\n\nOnce you have entered all options and the webhook URL, select **Create**",
 				SubmitLabel:      "Continue",
 			},
 			OnDialogSubmit: flow.DialogGoto(stepWebhookDone),
@@ -642,28 +574,6 @@ func (p *Plugin) submitDelegateSelection(f *flow.Flow, submission map[string]int
 }
 
 var jiraOrgRegexp = regexp.MustCompile(`^[\w-]+$`)
-
-func (p *Plugin) submitCreateCloudInstance(f *flow.Flow, submission map[string]interface{}) (flow.Name, flow.State, map[string]string, error) {
-	jiraURL, _ := submission["url"].(string)
-	if jiraURL == "" {
-		return "", nil, nil, errors.New("no Jira cloud URL in the request")
-	}
-	jiraURL = strings.TrimSpace(jiraURL)
-	if jiraOrgRegexp.MatchString(jiraURL) {
-		jiraURL = fmt.Sprintf("https://%s.atlassian.net", jiraURL)
-	}
-
-	jiraURL, err := p.installInactiveCloudInstance(jiraURL, f.UserID)
-	if err != nil {
-		return "", nil, nil, err
-	}
-
-	return stepCloudAddedInstance, flow.State{
-		keyEdition:             string(CloudInstanceType),
-		keyJiraURL:             jiraURL,
-		keyAtlassianConnectURL: p.GetPluginURL() + instancePath(routeACJSON, types.ID(jiraURL)),
-	}, nil, nil
-}
 
 func (p *Plugin) initCreateCloudOAuthInstance(f *flow.Flow, submission map[string]interface{}) (flow.Name, flow.State, map[string]string, error) {
 	jiraURL, _ := submission["url"].(string)
