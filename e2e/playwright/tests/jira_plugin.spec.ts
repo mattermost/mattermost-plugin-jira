@@ -10,7 +10,7 @@ import {expect, test} from '@e2e-support/test_fixture';
 
 import JiraSetupFlow from '../support/components/jira_setup_flow';
 import {JIRA_EMAIL, JIRA_PASSWORD, TEST_CLIENT_ID, TEST_CLIENT_SECRET} from '../support/creds';
-import {postMessage, DEFAULT_WAIT_MILLIS} from '../support/utils';
+import {DEFAULT_WAIT_MILLIS} from '../support/utils';
 
 import '../support/init_test';
 import JiraSiteAuthFlow from '../support/components/jira_site_auth_flow';
@@ -34,7 +34,8 @@ test('/jira setup', async ({pw, pages, page: originalPage, context}) => {
     const dialog = new JiraInteractiveDialog(page);
 
     // # Run setup command
-    await postMessage(`${slashCommand} setup`, c, page);
+    await c.postMessage(`${slashCommand} setup`);
+    await c.sendMessage();
 
     // # Go to bot DM channel
     const teamName = page.url().split('/')[3];

@@ -1,34 +1,7 @@
-import path from 'node:path';
-
-import type {Page} from '@playwright/test';
-
-import {ChannelsPage} from '@e2e-support/ui/pages';
 import {UserProfile} from '@mattermost/types/users';
 import Client4 from '@mattermost/client/client4';
 
-const SCREENSHOTS_DIR = path.join(__dirname, '../screenshots');
-
 export const DEFAULT_WAIT_MILLIS = 500;
-
-export const postMessage = async (message: string, c: ChannelsPage, page: Page) => {
-    await c.postMessage(message);
-    await page.getByTestId('SendMessageButton').click();
-};
-
-export const getLastPostText = async (c: ChannelsPage, page: Page): Promise<string> => {
-    await page.waitForTimeout(DEFAULT_WAIT_MILLIS);
-
-    const post = await c.getLastPost();
-    const postId = await post.getId();
-
-    const locatorId = `#post_${postId} .post-message`;
-    return page.locator(locatorId).innerText();
-}
-
-export const screenshot = async(name: string, page: Page) => {
-    await page.screenshot({path: path.join(SCREENSHOTS_DIR, name + '.png')});
-    console.log(`Created screenshot ${name}`);
-}
 
 export const cleanUpBotDMs = async (client: Client4, userId: UserProfile['id'], botUsername: string) => {
     const bot = await client.getUserByUsername(botUsername);

@@ -5,7 +5,7 @@ import {Page} from '@playwright/test';
 
 import {ChannelsPage} from '@e2e-support/ui/pages';
 
-import {DEFAULT_WAIT_MILLIS, screenshot} from '../../utils';
+import {DEFAULT_WAIT_MILLIS} from '../../utils';
 
 export default class SetupFlow {
     constructor(protected readonly page: Page, protected readonly channelsPage: ChannelsPage) {}
@@ -13,9 +13,7 @@ export default class SetupFlow {
     clickFlowChoices = async (choices: string[]) => {
         for (const choice of choices) {
             await this.page.waitForTimeout(DEFAULT_WAIT_MILLIS);
-            await screenshot(`post_action_before_${choice}`, this.page);
             await this.clickPostAction(choice);
-            await screenshot(`post_action_after_${choice}`, this.page);
         }
     }
 
