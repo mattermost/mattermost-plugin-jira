@@ -9,7 +9,7 @@
 import {expect, test} from '@e2e-support/test_fixture';
 
 import JiraSetupFlow from '../support/components/jira_setup_flow';
-import {JIRA_EMAIL, JIRA_PASSWORD, TEST_CLIENT_ID, TEST_CLIENT_SECRET} from '../support/creds';
+import {JIRA_SITE_URL, JIRA_EMAIL, JIRA_PASSWORD, JIRA_CLIENT_ID, JIRA_CLIENT_SECRET} from '../support/creds';
 import {DEFAULT_WAIT_MILLIS} from '../support/utils';
 
 import '../support/init_test';
@@ -49,7 +49,7 @@ test('/jira setup', async ({pw, pages, page: originalPage, context}) => {
     ]);
 
     // # Fill out interactive dialog for Jira organization name
-    await dialog.fillTextField('url', 'mmtest2');
+    await dialog.fillTextField('url', JIRA_SITE_URL);
     await dialog.submit();
 
     await page.waitForTimeout(DEFAULT_WAIT_MILLIS);
@@ -57,8 +57,8 @@ test('/jira setup', async ({pw, pages, page: originalPage, context}) => {
     await setupFlow.clickFlowChoices(['Configure']);
 
     // # Fill out interactive dialog for client id and client secret
-    await dialog.fillTextField('client_id', TEST_CLIENT_ID);
-    await dialog.fillTextField('client_secret', TEST_CLIENT_SECRET);
+    await dialog.fillTextField('client_id', JIRA_CLIENT_ID);
+    await dialog.fillTextField('client_secret', JIRA_CLIENT_SECRET);
     await dialog.submit();
 
     await setupFlow.clickFlowChoices([
