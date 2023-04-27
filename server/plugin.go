@@ -22,7 +22,6 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
-	"github.com/mattermost/mattermost-plugin-api/experimental/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
@@ -30,6 +29,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
+	"github.com/mattermost/mattermost-plugin-jira/server/telemetry"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
@@ -125,15 +125,18 @@ type Plugin struct {
 	// channel to distribute work to the webhook processors
 	webhookQueue chan *webhookMessage
 
+	// service that determines if this Mattermost instance has access to
+	// enterprise features
+	enterpriseChecker enterprise.Checker
+
+	// Telemetry package copied inside repository, should be changed
+	// to pluginapi's one (0.1.3+) when min_server_version is safe to point at 7.x
+
 	// telemetry client
 	telemetryClient telemetry.Client
 
 	// telemetry Tracker
 	tracker telemetry.Tracker
-
-	// service that determines if this Mattermost instance has access to
-	// enterprise features
-	enterpriseChecker enterprise.Checker
 }
 
 func (p *Plugin) getConfig() config {
