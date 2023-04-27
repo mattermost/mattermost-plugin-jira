@@ -1,8 +1,7 @@
 package main
 
 import (
-	"github.com/mattermost/mattermost-plugin-api/experimental/bot/logger"
-	"github.com/mattermost/mattermost-plugin-api/experimental/telemetry"
+	"github.com/mattermost/mattermost-plugin-jira/server/telemetry"
 )
 
 func (p *Plugin) TrackEvent(event string, properties map[string]interface{}) {
@@ -91,6 +90,6 @@ func (p *Plugin) initializeTelemetry() {
 		manifest.Version,
 		"jira",
 		telemetry.NewTrackerConfig(p.API.GetConfig()),
-		logger.New(p.API),
+		telemetry.NewLogger(p.API),
 	)
 }
