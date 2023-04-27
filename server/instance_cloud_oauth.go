@@ -88,24 +88,14 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 	client := oauth2.NewClient(ctx, tokenSource)
 
 	// Get a new token if Access Token has expired
-	if ci.Plugin.IsAccessTokenExpired(connection.OAuth2Token) {
-		ci.client.Log.Debug("AccessToken is about to expire (or) has expired. Refreshing the accessToken.")
+	currentToken := connection.OAuth2Token
+	updatedToken, err := tokenSource.Token()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "error getting token from token source")
+	}
 
-		// Set the AccessToken to empty in order for refresh to happen forcefully
-		token := connection.OAuth2Token
-		token.AccessToken = ""
-		tokenSource := oauth2Conf.TokenSource(ctx, token)
-
-		// Refresh the Token with its own mutex.
-		newToken, err := tokenSource.Token()
-		if err != nil {
-			ci.client.Log.Warn("Error while refreshing the Jira Access Token", "error", err)
-			return nil, nil, err
-		}
-
-		connection.OAuth2Token = newToken
-		tokenSource = oauth2Conf.TokenSource(ctx, newToken)
-		client = oauth2.NewClient(ctx, tokenSource)
+	if updatedToken.RefreshToken != currentToken.RefreshToken {
+		connection.OAuth2Token = updatedToken
 
 		// Store this new access token & refresh token to get a new access token in future when it has expired
 		err = ci.Plugin.userStore.StoreConnection(ci.Common().InstanceID, connection.MattermostUserID, connection)

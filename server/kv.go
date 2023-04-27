@@ -138,6 +138,7 @@ func (store store) StoreConnection(instanceID, mattermostUserID types.ID, connec
 	}()
 
 	connection.PluginVersion = manifest.Version
+	connection.MattermostUserID = mattermostUserID
 
 	err := store.set(keyWithInstanceID(instanceID, mattermostUserID), connection)
 	if err != nil {

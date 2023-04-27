@@ -101,7 +101,6 @@ func (p *Plugin) NewOAuth2Flow() *flow.Flow {
 			p.stepCancel(),
 			p.stepDone(),
 		).
-		// WithDebugLog().
 		InitHTTP(p.router)
 }
 

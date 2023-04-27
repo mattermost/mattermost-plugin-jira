@@ -79,7 +79,7 @@ const commonHelpText = "\n" +
 
 const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"Install Jira instances:\n" +
-	"* `/jira instance install cloud [jiraURL]` - Deprecated: Connect Mattermost to a Jira Cloud instance located at <jiraURL>\n" +
+	"* `/jira instance install cloud [jiraURL]` - Connect Mattermost to a Jira Cloud instance located at <jiraURL>. (Deprecated. Please use `cloud-oauth` instead.)\n" +
 	"* `/jira instance install cloud-oauth [jiraURL]` - Connect Mattermost to a Jira Cloud instance using OAuth 2.0 located at <jiraURL>\n" +
 	"* `/jira instance install server [jiraURL]` - Connect Mattermost to a Jira Server or Data Center instance located at <jiraURL>\n" +
 	"Uninstall Jira instances:\n" +
@@ -171,7 +171,7 @@ func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 
 	jiraTypes := []model.AutocompleteListItem{
 		{HelpText: "Jira Server or Datacenter", Item: "server"},
-		{HelpText: "(Deprecated) Jira Cloud (atlassian.net)", Item: "cloud"},
+		{HelpText: "Jira Cloud (atlassian.net) (Deprecated. Please use cloud-oauth instead.)", Item: "cloud"},
 		{HelpText: "Jira Cloud OAuth 2.0 (atlassian.net)", Item: "cloud-oauth"},
 	}
 
@@ -808,7 +808,7 @@ func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *mode
 		return p.responsef(header, "%v", err)
 	}
 	if !authorized {
-		return p.responsef(header, "`/jira install` can only be run by a system administrator.")
+		return p.responsef(header, "`/jira install` can only be run by a Mattermost system administrator.")
 	}
 	if len(args) != 1 {
 		return p.help(header)

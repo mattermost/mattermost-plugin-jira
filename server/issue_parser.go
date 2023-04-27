@@ -21,7 +21,7 @@ func parseJiraLinksToMarkdown(text string) string {
 }
 
 func mdKeySummaryLink(issue *jira.Issue, instance Instance) string {
-	return fmt.Sprintf("[%s](%s%s)", issue.Key+": "+issue.Fields.Summary+" ("+issue.Fields.Status.Name+")", instance.GetJiraBaseURL(), "/browse/"+issue.Key)
+	return fmt.Sprintf("[%s: %s (%s)](%s%s)", issue.Key, issue.Fields.Summary, issue.Fields.Status.Name, instance.GetJiraBaseURL(), "/browse/"+issue.Key)
 }
 
 func reporterSummary(issue *jira.Issue) string {

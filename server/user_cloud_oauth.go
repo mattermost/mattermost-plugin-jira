@@ -8,11 +8,9 @@ import (
 	"net/http"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
-	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -54,7 +52,7 @@ func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, inst
 		return http.StatusInternalServerError, err
 	}
 
-	connection, err := p.GenerateOAuthToken(mattermostUserID, instanceID, code)
+	connection, err := p.GenerateInitialOAuthToken(mattermostUserID, instanceID, code)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -90,7 +88,7 @@ func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, inst
 	})
 }
 
-func (p *Plugin) GenerateOAuthToken(mattermostUserID string, instanceID types.ID, code string) (*Connection, error) {
+func (p *Plugin) GenerateInitialOAuthToken(mattermostUserID string, instanceID types.ID, code string) (*Connection, error) {
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		return nil, err
@@ -115,11 +113,4 @@ func (p *Plugin) GenerateOAuthToken(mattermostUserID string, instanceID types.ID
 
 	connection.OAuth2Token = token
 	return connection, nil
-}
-
-// checks if a user's access token is expired
-func (p *Plugin) IsAccessTokenExpired(token *oauth2.Token) bool {
-	// Consider some buffer for comparing expiry time
-	localExpiryTime := time.Unix(token.Expiry.Unix(), 0).Local()
-	return time.Until(localExpiryTime) <= time.Minute*TokenExpiryTimeBufferInMinutes
 }
