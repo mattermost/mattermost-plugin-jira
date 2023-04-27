@@ -28,6 +28,7 @@ const (
 	priorityField    = "priority"
 	descriptionField = "description"
 	resolutionField  = "resolution"
+	assigneeField    = "assignee"
 )
 
 func makePost(userID, channelID, message string) *model.Post {
@@ -764,12 +765,17 @@ func getIssueCustomFieldValue(issue *jira.Issue, key string) StringSet {
 func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 	key = strings.ToLower(key)
 	switch key {
-	case statusField:
+  case statusField:
 		return NewStringSet(issue.Fields.Status.ID)
-	case labelsField:
+  case labelsField:
 		return NewStringSet(issue.Fields.Labels...)
-	case priorityField:
-		if issue.Fields.Priority != nil {
+  case priorityField:
+		return NewStringSet(issue.Fields.Priority.ID)
+  case reporterField:
+		return NewStringSet(issue.Fields.Reporter.AccountID)
+  case assigneeField:
+		return NewStringSet(issue.Fields.Assignee.AccountID)
+  if issue.Fields.Priority != nil {
 			return NewStringSet(issue.Fields.Priority.ID)
 		}
 	case "fixversions":
