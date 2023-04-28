@@ -6,13 +6,14 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
@@ -191,6 +192,7 @@ func TestValidateSubscription(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(p.API, p.Driver)
 
 			api.On("KVGet", testSubKey).Return(nil, nil)
 
@@ -216,6 +218,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 	p.updateConfig(func(conf *config) {
 		conf.Secret = someSecret
 	})
+	p.client = pluginapi.NewClient(p.API, p.Driver)
 	p.instanceStore = p.getMockInstanceStoreKV(0)
 
 	for name, tc := range map[string]struct {
@@ -450,6 +453,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 				return true
 			})).Return(nil)
 
+			p.client = pluginapi.NewClient(api, p.Driver)
 			actual, err := p.listChannelSubscriptions(testInstance1.InstanceID, team1.Id)
 			assert.Nil(t, err)
 			assert.NotNil(t, actual)
@@ -1646,11 +1650,13 @@ func TestGetChannelsSubscribed(t *testing.T) {
 				return true
 			})).Return(nil)
 
+			p.client = pluginapi.NewClient(api, p.Driver)
+
 			data, err := getJiraTestData(tc.WebhookTestData)
 			assert.Nil(t, err)
 
 			r := bytes.NewReader(data)
-			bb, err := ioutil.ReadAll(r)
+			bb, err := io.ReadAll(r)
 			require.Nil(t, err)
 
 			wh, err := ParseWebhook(bb)

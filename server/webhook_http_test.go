@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
@@ -604,25 +605,37 @@ func TestWebhookHTTP(t *testing.T) {
 			api := &plugintest.API{}
 
 			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
 				Id: "theuserid",
 			}, (*model.AppError)(nil))
 			api.On("GetChannelByNameForTeamName", "theteam", "thechannel",
-				false).Run(func(args mock.Arguments) {
-				api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, (*model.AppError)(nil))
-			}).Return(&model.Channel{
+				false).Return(&model.Channel{
 				Id:     "thechannelid",
 				TeamId: "theteamid",
 			}, (*model.AppError)(nil))
+
+			rPost := &model.Post{}
+			rPost.Message = tc.ExpectedHeadline
+			rAttachments := []*model.SlackAttachment{
+				{
+					Pretext: tc.ExpectedHeadline,
+					Text:    tc.ExpectedText,
+					Fields:  tc.ExpectedFields,
+				},
+			}
+			model.ParseSlackAttachment(rPost, rAttachments)
+			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(rPost, nil)
 
 			p := Plugin{}
 			p.updateConfig(func(conf *config) {
 				conf.Secret = validConfiguration.Secret
 			})
+			p.initializeRouter()
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 
 			p.userStore = mockUserStore{}
 			p.instanceStore = p.getMockInstanceStoreKV(1)

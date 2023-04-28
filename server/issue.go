@@ -87,13 +87,13 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 	}
 	post.AddProp("attachments", attachment)
 
-	_, appErr := p.API.CreatePost(post)
-	if appErr != nil {
+	err = p.client.Post.CreatePost(post)
+	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to create notification post"))
+			errors.WithMessage(err, "failed to create notification post"))
 	}
 
-	p.API.DeleteEphemeralPost(mattermostUserID, requestData.PostId)
+	p.client.Post.DeleteEphemeralPost(mattermostUserID, requestData.PostId)
 
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write([]byte(`{statusField: "OK"}`))
@@ -145,7 +145,7 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 		ToState:          toState,
 	})
 	if err != nil {
-		_ = p.API.SendEphemeralPost(mattermostUserID, makePost(jiraBotID, channelID, "Failed to transition this issue."))
+		p.client.Post.SendEphemeralPost(mattermostUserID, makePost(jiraBotID, channelID, "Failed to transition this issue."))
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
@@ -155,7 +155,7 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 }
 
 func (p *Plugin) respondErrWithFeedback(mattermostUserID string, post *model.Post, w http.ResponseWriter, status int) (int, error) {
-	_ = p.API.SendEphemeralPost(mattermostUserID, post)
+	p.client.Post.SendEphemeralPost(mattermostUserID, post)
 	return respondErr(w, status, errors.New(post.Message))
 }
 
@@ -170,11 +170,6 @@ type InCreateIssue struct {
 }
 
 func (p *Plugin) httpCreateIssue(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodPost {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be POST"))
-	}
-
 	in := InCreateIssue{}
 	err := json.NewDecoder(r.Body).Decode(&in)
 	if err != nil {
@@ -183,11 +178,6 @@ func (p *Plugin) httpCreateIssue(w http.ResponseWriter, r *http.Request) (int, e
 	}
 
 	in.mattermostUserID = types.ID(r.Header.Get("Mattermost-User-Id"))
-	if in.mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized,
-			errors.New("not authorized"))
-	}
-
 	created, err := p.CreateIssue(&in)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
@@ -203,13 +193,12 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 	}
 
 	var post *model.Post
-	var appErr *model.AppError
 
 	// If this issue is attached to a post, lets add a permalink to the post in the Jira Description
 	if in.PostID != "" {
-		post, appErr = p.API.GetPost(in.PostID)
-		if appErr != nil {
-			return nil, errors.WithMessage(appErr, "failed to load post "+in.PostID)
+		post, err = p.client.Post.GetPost(in.PostID)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to load post "+in.PostID)
 		}
 		if post == nil {
 			return nil, errors.New("failed to load post " + in.PostID + ": not found")
@@ -277,7 +266,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 			RootId:    rootID,
 			UserId:    instance.Common().getConfig().botUserID,
 		}
-		_ = p.API.SendEphemeralPost(in.mattermostUserID.String(), reply)
+		p.client.Post.SendEphemeralPost(in.mattermostUserID.String(), reply)
 		return nil, errors.Errorf("issue can not be created via API: %s", message)
 	}
 
@@ -293,7 +282,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 				MakeCreateIssueURL(instance, project, issue),
 				err)
 
-			_ = p.API.SendEphemeralPost(in.mattermostUserID.String(), &model.Post{
+			p.client.Post.SendEphemeralPost(in.mattermostUserID.String(), &model.Post{
 				Message:   message,
 				ChannelId: channelID,
 				RootId:    rootID,
@@ -321,7 +310,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 	}
 
 	reply.AddProp("attachments", attachment)
-	_ = p.API.SendEphemeralPost(in.mattermostUserID.String(), reply)
+	p.client.Post.SendEphemeralPost(in.mattermostUserID.String(), reply)
 
 	// Fetching issue details as Jira only returns the issue id and issue key at the time of
 	// issue creation. We will not have issue summary in the creation response.
@@ -339,18 +328,18 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 		RootId:    rootID,
 		UserId:    in.mattermostUserID.String(),
 	}
-	_, appErr = p.API.CreatePost(publicReply)
-	if appErr != nil {
-		return nil, errors.WithMessage(appErr, "failed to create notification post "+in.PostID)
+	err = p.client.Post.CreatePost(publicReply)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to create notification post "+in.PostID)
 	}
 
 	if post != nil && len(post.FileIds) > 0 {
 		go func() {
 			conf := instance.Common().getConfig()
 			for _, fileID := range post.FileIds {
-				mattermostName, _, _, e := client.AddAttachment(p.API, created.ID, fileID, conf.maxAttachmentSize)
-				if e != nil {
-					notifyOnFailedAttachment(instance, in.mattermostUserID.String(), created.Key, e, "file: %s", mattermostName)
+				mattermostName, _, _, err := client.AddAttachment(*p.client, created.ID, fileID, conf.maxAttachmentSize)
+				if err != nil {
+					notifyOnFailedAttachment(instance, in.mattermostUserID.String(), created.Key, err, "file: %s", mattermostName)
 				}
 			}
 		}()
@@ -360,17 +349,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 }
 
 func (p *Plugin) httpGetCreateIssueMetadataForProjects(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("Request: "+r.Method+" is not allowed, must be GET"))
-	}
-
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized,
-			errors.New("not authorized"))
-	}
-
 	projectKeys := r.FormValue("project-keys")
 	if projectKeys == "" {
 		return respondErr(w, http.StatusBadRequest,
@@ -406,14 +385,7 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 }
 
 func (p *Plugin) httpGetSearchIssues(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("Request: "+r.Method+" is not allowed, must be GET"))
-	}
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
-	}
 	instanceID := r.FormValue("instance_id")
 	q := r.FormValue("q")
 	jqlString := r.FormValue("jql")
@@ -491,16 +463,7 @@ type OutProjectMetadata struct {
 }
 
 func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("Request: "+r.Method+" is not allowed, must be GET"))
-	}
-
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
-	}
-
 	instanceID := r.FormValue("instance_id")
 
 	plist, connection, err := p.ListJiraProjects(types.ID(instanceID), types.ID(mattermostUserID), true)
@@ -521,7 +484,7 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 		for _, prj := range plist {
 			issueTypeList, iErr := p.GetIssueTypes(types.ID(instanceID), types.ID(mattermostUserID), prj.ID)
 			if iErr != nil {
-				p.API.LogDebug("Failed to get issue types for project.", "ProjectKey", prj.Key, "Error", iErr.Error())
+				p.client.Log.Debug("Failed to get issue types for project.", "ProjectKey", prj.Key, "Error", iErr.Error())
 				continue
 			}
 			prj.IssueTypes = issueTypeList
@@ -596,11 +559,6 @@ func (p *Plugin) GetIssueTypes(instanceID, mattermostUserID types.ID, projectID 
 var reJiraIssueKey = regexp.MustCompile(`^([[:alnum:]]+)-([[:digit:]]+)$`)
 
 func (p *Plugin) httpAttachCommentToIssue(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodPost {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be POST"))
-	}
-
 	in := InAttachCommentToIssue{}
 	err := json.NewDecoder(r.Body).Decode(&in)
 	if err != nil {
@@ -609,11 +567,6 @@ func (p *Plugin) httpAttachCommentToIssue(w http.ResponseWriter, r *http.Request
 	}
 
 	in.mattermostUserID = types.ID(r.Header.Get("Mattermost-User-Id"))
-	if in.mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized,
-			errors.New("not authorized"))
-	}
-
 	added, err := p.AttachCommentToIssue(&in)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
@@ -638,16 +591,16 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 	}
 
 	// Lets add a permalink to the post in the Jira Description
-	post, appErr := p.API.GetPost(in.PostID)
-	if appErr != nil {
-		return nil, errors.WithMessage(appErr, "failed to load post "+in.PostID)
+	post, err := p.client.Post.GetPost(in.PostID)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to load post "+in.PostID)
 	}
 	if post == nil {
 		return nil, errors.New("failed to load post " + in.PostID + ": not found")
 	}
 
-	commentUser, appErr := p.API.GetUser(post.UserId)
-	if appErr != nil {
+	commentUser, err := p.client.User.Get(post.UserId)
+	if err != nil {
 		return nil, errors.New("failed to load post.UserID " + post.UserId + ": not found")
 	}
 
@@ -673,7 +626,7 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 		conf := instance.Common().getConfig()
 		extraText := ""
 		for _, fileID := range post.FileIds {
-			mattermostName, jiraName, mime, e := client.AddAttachment(p.API, in.IssueKey, fileID, conf.maxAttachmentSize)
+			mattermostName, jiraName, mime, e := client.AddAttachment(*p.client, in.IssueKey, fileID, conf.maxAttachmentSize)
 			if e != nil {
 				notifyOnFailedAttachment(instance, in.mattermostUserID.String(), in.IssueKey, e, "file: %s", mattermostName)
 				continue
@@ -713,9 +666,9 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 		RootId:    rootID,
 		UserId:    in.mattermostUserID.String(),
 	}
-	_, appErr = p.API.CreatePost(reply)
-	if appErr != nil {
-		return nil, errors.WithMessage(appErr, "failed to create notification post "+in.PostID)
+	err = p.client.Post.CreatePost(reply)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to create notification post "+in.PostID)
 	}
 
 	return added, nil
@@ -724,7 +677,7 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 func notifyOnFailedAttachment(instance Instance, mattermostUserID, issueKey string, err error, format string, args ...interface{}) {
 	msg := "Failed to attach to issue: " + issueKey + ", " + fmt.Sprintf(format, args...)
 
-	instance.Common().Plugin.API.LogError(fmt.Sprintf("%s: %v", msg, err), "issue", issueKey)
+	instance.Common().Plugin.client.Log.Error(fmt.Sprintf("%s: %v", msg, err), "issue", issueKey)
 	errMsg := err.Error()
 	if len(errMsg) > 2048 {
 		errMsg = errMsg[:2048]
@@ -1057,7 +1010,7 @@ func (p *Plugin) TransitionIssue(in *InTransitionIssue) (string, error) {
 
 	post := makePost(p.getUserID(), in.PostToChannelID, msg)
 	post.AddProp("attachments", attachments)
-	_ = p.API.SendEphemeralPost(in.mattermostUserID.String(), post)
+	p.client.Post.SendEphemeralPost(in.mattermostUserID.String(), post)
 
 	return msg, nil
 }
