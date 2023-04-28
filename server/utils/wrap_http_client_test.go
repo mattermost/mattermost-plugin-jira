@@ -3,7 +3,6 @@ package utils
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -17,7 +16,7 @@ func TestWrapHTTPClient(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/echo":
-			body, _ := ioutil.ReadAll(r.Body)
+			body, _ := io.ReadAll(r.Body)
 			fmt.Fprintln(w, string(body))
 		case "/hello":
 			fmt.Fprintln(w, "1234 Hello")
@@ -48,7 +47,7 @@ func TestWrapHTTPClient(t *testing.T) {
 
 		res, err := client.Do(newRequest("/hello", "6789"))
 		require.Nil(t, err)
-		got, err := ioutil.ReadAll(res.Body)
+		got, err := io.ReadAll(res.Body)
 		res.Body.Close()
 		require.Nil(t, err)
 		require.True(t, closed)
@@ -72,7 +71,7 @@ func TestWrapHTTPClient(t *testing.T) {
 		req.ContentLength = -1
 		res, err := client.Do(req)
 		require.Nil(t, err)
-		got, err := ioutil.ReadAll(res.Body)
+		got, err := io.ReadAll(res.Body)
 		res.Body.Close()
 		require.Nil(t, err)
 		require.True(t, closed)

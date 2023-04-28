@@ -6,7 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -33,7 +33,8 @@ type Connection struct {
 	Oauth1AccessSecret string        `json:",omitempty"`
 	OAuth2Token        *oauth2.Token `json:",omitempty"`
 	Settings           *ConnectionSettings
-	DefaultProjectKey  string `json:"default_project_key,omitempty"`
+	DefaultProjectKey  string   `json:"default_project_key,omitempty"`
+	MattermostUserID   types.ID `json:"mattermost_user_id"`
 }
 
 func (c *Connection) JiraAccountID() types.ID {
@@ -97,7 +98,7 @@ func (p *Plugin) httpUserDisconnect(w http.ResponseWriter, r *http.Request) (int
 		InstanceID string `json:"instance_id"`
 	}{}
 
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to decode request"))
@@ -186,7 +187,7 @@ func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, proje
 		return
 	}
 
-	p.API.PublishWebSocketEvent(websocketEventUpdateDefaults, info.AsConfigMap(),
+	p.client.Frontend.PublishWebSocketEvent(websocketEventUpdateDefaults, info.AsConfigMap(),
 		&model.WebsocketBroadcast{UserId: mattermostUserID.String()},
 	)
 }
@@ -225,7 +226,7 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, conne
 		return err
 	}
 
-	p.API.PublishWebSocketEvent(websocketEventConnect, info.AsConfigMap(),
+	p.client.Frontend.PublishWebSocketEvent(websocketEventConnect, info.AsConfigMap(),
 		&model.WebsocketBroadcast{UserId: mattermostUserID.String()},
 	)
 
@@ -270,7 +271,7 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 	if err != nil {
 		return nil, err
 	}
-	p.API.PublishWebSocketEvent(websocketEventDisconnect, info.AsConfigMap(),
+	p.client.Frontend.PublishWebSocketEvent(websocketEventDisconnect, info.AsConfigMap(),
 		&model.WebsocketBroadcast{UserId: user.MattermostUserID.String()})
 
 	p.TrackUserEvent("userDisconnected", user.MattermostUserID.String(), nil)

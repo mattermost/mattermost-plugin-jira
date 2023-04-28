@@ -37,6 +37,7 @@ func (jwh *JiraWebhook) mdJiraLink(title, suffix string) string {
 	if pos < 0 {
 		return ""
 	}
+	// TODO: For Jira OAuth, the Self URL is sent as https://api.atlassian.com/ instead of the Jira Instance URL - to check this and handle accordingly
 	return fmt.Sprintf("[%s](%s%s)", title, jwh.Issue.Self[:pos], suffix)
 }
 

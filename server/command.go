@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-api/experimental/command"
+	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
@@ -22,36 +23,38 @@ const commandTrigger = "jira"
 
 var jiraCommandHandler = CommandHandler{
 	handlers: map[string]CommandHandlerFunc{
-		"assign":                  executeAssign,
-		"connect":                 executeConnect,
-		"disconnect":              executeDisconnect,
-		"help":                    executeHelp,
-		"info":                    executeInfo,
-		"install/cloud":           executeInstanceInstallCloud,
-		"install/server":          executeInstanceInstallServer,
-		"instance/alias":          executeInstanceAlias,
-		"instance/unalias":        executeInstanceUnalias,
-		"instance/connect":        executeConnect,
-		"instance/disconnect":     executeDisconnect,
-		"instance/install/cloud":  executeInstanceInstallCloud,
-		"instance/install/server": executeInstanceInstallServer,
-		"instance/list":           executeInstanceList,
-		"instance/settings":       executeSettings,
-		"instance/uninstall":      executeInstanceUninstall,
-		"instance/v2":             executeInstanceV2Legacy,
-		"issue/assign":            executeAssign,
-		"issue/transition":        executeTransition,
-		"issue/unassign":          executeUnassign,
-		"issue/view":              executeView,
-		"settings":                executeSettings,
-		"subscribe/list":          executeSubscribeList,
-		"transition":              executeTransition,
-		"unassign":                executeUnassign,
-		"uninstall":               executeInstanceUninstall,
-		"view":                    executeView,
-		"v2revert":                executeV2Revert,
-		"webhook":                 executeWebhookURL,
-		"setup":                   executeSetup,
+		"assign":                       executeAssign,
+		"connect":                      executeConnect,
+		"disconnect":                   executeDisconnect,
+		"help":                         executeHelp,
+		"info":                         executeInfo,
+		"install/cloud":                executeInstanceInstallCloud,
+		"install/cloud-oauth":          executeInstanceInstallCloudOAuth,
+		"install/server":               executeInstanceInstallServer,
+		"instance/alias":               executeInstanceAlias,
+		"instance/unalias":             executeInstanceUnalias,
+		"instance/connect":             executeConnect,
+		"instance/disconnect":          executeDisconnect,
+		"instance/install/cloud":       executeInstanceInstallCloud,
+		"instance/install/cloud-oauth": executeInstanceInstallCloudOAuth,
+		"instance/install/server":      executeInstanceInstallServer,
+		"instance/list":                executeInstanceList,
+		"instance/settings":            executeSettings,
+		"instance/uninstall":           executeInstanceUninstall,
+		"instance/v2":                  executeInstanceV2Legacy,
+		"issue/assign":                 executeAssign,
+		"issue/transition":             executeTransition,
+		"issue/unassign":               executeUnassign,
+		"issue/view":                   executeView,
+		"settings":                     executeSettings,
+		"subscribe/list":               executeSubscribeList,
+		"transition":                   executeTransition,
+		"unassign":                     executeUnassign,
+		"uninstall":                    executeInstanceUninstall,
+		"view":                         executeView,
+		"v2revert":                     executeV2Revert,
+		"webhook":                      executeWebhookURL,
+		"setup":                        executeSetup,
 	},
 	defaultHandler: executeJiraDefault,
 }
@@ -76,7 +79,7 @@ const commonHelpText = "\n" +
 
 const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"Install Jira instances:\n" +
-	"* `/jira instance install cloud [jiraURL]` - Connect Mattermost to a Jira Cloud instance located at <jiraURL>\n" +
+	"* `/jira instance install cloud [jiraURL]` - Connect Mattermost to a Jira Cloud instance located at <jiraURL>. (Deprecated. Please use `cloud-oauth` instead.)\n" +
 	"* `/jira instance install cloud-oauth [jiraURL]` - Connect Mattermost to a Jira Cloud instance using OAuth 2.0 located at <jiraURL>\n" +
 	"* `/jira instance install server [jiraURL]` - Connect Mattermost to a Jira Server or Data Center instance located at <jiraURL>\n" +
 	"Uninstall Jira instances:\n" +
@@ -96,14 +99,14 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 
 func (p *Plugin) registerJiraCommand(enableAutocomplete, enableOptInstance bool) error {
 	// Optimistically unregister what was registered before
-	_ = p.API.UnregisterCommand("", commandTrigger)
+	_ = p.client.SlashCommand.Unregister("", commandTrigger)
 
 	command, err := p.createJiraCommand(enableAutocomplete, enableOptInstance)
 	if err != nil {
 		return errors.Wrap(err, "failed to get command")
 	}
 
-	err = p.API.RegisterCommand(command)
+	err = p.client.SlashCommand.Register(command)
 	if err != nil {
 		return errors.Wrapf(err, "failed to register /%s command", commandTrigger)
 	}
@@ -168,7 +171,7 @@ func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 
 	jiraTypes := []model.AutocompleteListItem{
 		{HelpText: "Jira Server or Datacenter", Item: "server"},
-		{HelpText: "Jira Cloud (atlassian.net)", Item: "cloud"},
+		{HelpText: "Jira Cloud (atlassian.net) (Deprecated. Please use cloud-oauth instead.)", Item: "cloud"},
 		{HelpText: "Jira Cloud OAuth 2.0 (atlassian.net)", Item: "cloud-oauth"},
 	}
 
@@ -637,7 +640,7 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	}
 	post.AddProp("attachments", attachment)
 
-	_ = p.API.SendEphemeralPost(header.UserId, post)
+	p.client.Post.SendEphemeralPost(header.UserId, post)
 
 	return &model.CommandResponse{}
 }
@@ -662,7 +665,7 @@ func executeV2Revert(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 		preMessage = `#### Successfully reverted the V3 Jira plugin database to V2. The Jira plugin has been disabled.` + "\n"
 
 		go func() {
-			_ = p.API.DisablePlugin(manifest.ID)
+			_ = p.client.Plugin.Disable(manifest.ID)
 		}()
 	}
 	message := `**Please note that if you have multiple configured Jira instances this command will result in all non-legacy instances being removed.**
@@ -765,9 +768,9 @@ func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArg
 }
 
 func authorizedSysAdmin(p *Plugin, userID string) (bool, error) {
-	user, appErr := p.API.GetUser(userID)
-	if appErr != nil {
-		return false, appErr
+	user, err := p.client.User.Get(userID)
+	if err != nil {
+		return false, err
 	}
 	if !strings.Contains(user.Roles, "system_admin") {
 		return false, nil
@@ -797,6 +800,44 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 		"PluginURL":               p.GetPluginURL(),
 		"AtlassianConnectJSONURL": p.GetPluginURL() + instancePath(routeACJSON, types.ID(jiraURL)),
 	})
+}
+
+func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	authorized, err := authorizedSysAdmin(p, header.UserId)
+	if err != nil {
+		return p.responsef(header, "%v", err)
+	}
+	if !authorized {
+		return p.responsef(header, "`/jira install` can only be run by a Mattermost system administrator.")
+	}
+	if len(args) != 1 {
+		return p.help(header)
+	}
+
+	jiraURL, instance, err := p.installCloudOAuthInstance(args[0], "", "")
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
+
+	state := flow.State{
+		keyEdition:          string(CloudOAuthInstanceType),
+		keyJiraURL:          jiraURL,
+		keyInstance:         instance,
+		keyOAuthCompleteURL: p.GetPluginURL() + instancePath(routeOAuth2Complete, types.ID(jiraURL)),
+		keyConnectURL:       p.GetPluginURL() + instancePath(routeUserConnect, types.ID(jiraURL)),
+	}
+
+	err = p.oauth2Flow.ForUser(header.UserId).Start(state)
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
+
+	channel, _ := p.client.Channel.GetDirect(header.UserId, p.conf.botUserID)
+	if channel != nil && channel.Id != header.ChannelId {
+		return p.responsef(header, "continue in the direct conversation with @jira bot.")
+	}
+
+	return &model.CommandResponse{}
 }
 
 func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -1093,7 +1134,13 @@ func executeSetup(p *Plugin, c *plugin.Context, header *model.CommandArgs, args 
 	if err != nil {
 		return p.responsef(header, errors.Wrap(err, "Failed to start setup wizard").Error())
 	}
-	return p.responsef(header, "continue in the direct conversation with @jira bot.")
+
+	channel, _ := p.client.Channel.GetDirect(header.UserId, p.conf.botUserID)
+	if channel != nil && channel.Id != header.ChannelId {
+		return p.responsef(header, "continue in the direct conversation with @jira bot.")
+	}
+
+	return &model.CommandResponse{}
 }
 
 func (p *Plugin) postCommandResponse(args *model.CommandArgs, text string) {
@@ -1103,7 +1150,7 @@ func (p *Plugin) postCommandResponse(args *model.CommandArgs, text string) {
 		RootId:    args.RootId,
 		Message:   text,
 	}
-	_ = p.API.SendEphemeralPost(args.UserId, post)
+	p.client.Post.SendEphemeralPost(args.UserId, post)
 }
 
 func (p *Plugin) responsef(commandArgs *model.CommandArgs, format string, args ...interface{}) *model.CommandResponse {

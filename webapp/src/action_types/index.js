@@ -32,7 +32,4 @@ export default {
 
     RECEIVED_CHANNEL_SUBSCRIPTIONS: `${PluginId}_recevied_channel_subscriptions`,
     DELETED_CHANNEL_SUBSCRIPTION: `${PluginId}_deleted_channel_subscription`,
-
-    OPEN_OAUTH_CONFIG_MODAL: `${PluginId}_open_oauth_config_modal`,
-    CLOSE_OAUTH_CONFIG_MODAL: `${PluginId}_close_oauth_config_modal`,
 };

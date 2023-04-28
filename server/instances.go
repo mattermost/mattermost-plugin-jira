@@ -219,7 +219,7 @@ func (p *Plugin) wsInstancesChanged(instances *Instances) {
 		"instances": instances.AsConfigMap(),
 	}
 	// Notify users we have uninstalled an instance
-	p.API.PublishWebSocketEvent(websocketEventInstanceStatus, msg, &model.WebsocketBroadcast{})
+	p.client.Frontend.PublishWebSocketEvent(websocketEventInstanceStatus, msg, &model.WebsocketBroadcast{})
 }
 
 func (p *Plugin) StoreV2LegacyInstance(id types.ID) error {

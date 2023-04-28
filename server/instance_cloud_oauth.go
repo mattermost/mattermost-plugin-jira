@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -26,6 +26,7 @@ type cloudOAuthInstance struct {
 	JiraResourceID   string
 	JiraClientID     string
 	JiraClientSecret string
+	JiraBaseURL      string
 }
 
 type CloudOAuthConfigure struct {
@@ -41,9 +42,10 @@ type JiraAccessibleResources []struct {
 var _ Instance = (*cloudOAuthInstance)(nil)
 
 const (
-	JiraScopes       = "read:jira-user,read:jira-work,write:jira-work"
-	JiraResponseType = "code"
-	JiraConsent      = "consent"
+	JiraScopes        = "read:jira-user,read:jira-work,write:jira-work"
+	JiraScopesOffline = JiraScopes + ",offline_access"
+	JiraResponseType  = "code"
+	JiraConsent       = "consent"
 )
 
 func (p *Plugin) installCloudOAuthInstance(rawURL string, clientID string, clientSecret string) (string, *cloudOAuthInstance, error) {
@@ -60,6 +62,7 @@ func (p *Plugin) installCloudOAuthInstance(rawURL string, clientID string, clien
 		MattermostKey:    p.GetPluginKey(),
 		JiraClientID:     clientID,
 		JiraClientSecret: clientSecret,
+		JiraBaseURL:      rawURL,
 	}
 
 	err = p.InstallInstance(instance)
@@ -80,10 +83,26 @@ func (ci *cloudOAuthInstance) GetClient(connection *Connection) (Client, error) 
 
 func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*jira.Client, *http.Client, error) {
 	oauth2Conf := ci.GetOAuthConfig()
-
 	ctx := context.Background()
 	tokenSource := oauth2Conf.TokenSource(ctx, connection.OAuth2Token)
 	client := oauth2.NewClient(ctx, tokenSource)
+
+	// Get a new token if Access Token has expired
+	currentToken := connection.OAuth2Token
+	updatedToken, err := tokenSource.Token()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "error getting token from token source")
+	}
+
+	if updatedToken.RefreshToken != currentToken.RefreshToken {
+		connection.OAuth2Token = updatedToken
+
+		// Store this new access token & refresh token to get a new access token in future when it has expired
+		err = ci.Plugin.userStore.StoreConnection(ci.Common().InstanceID, connection.MattermostUserID, connection)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
 
 	// TODO Get resource ID if not in the KV Store?
 	jiraID, err := ci.getJiraCloudResourceID(*client)
@@ -119,12 +138,10 @@ func (ci *cloudOAuthInstance) GetUserConnectURL(mattermostUserID string) (string
 }
 
 func (ci *cloudOAuthInstance) GetOAuthConfig() *oauth2.Config {
-	scopes := strings.Split(JiraScopes, ",")
-	scopes = append(scopes, "offline_access")
 	return &oauth2.Config{
 		ClientID:     ci.JiraClientID,
 		ClientSecret: ci.JiraClientSecret,
-		Scopes:       scopes,
+		Scopes:       strings.Split(JiraScopesOffline, ","),
 		RedirectURL:  fmt.Sprintf("%s%s", ci.Plugin.GetPluginURL(), instancePath(routeOAuth2Complete, ci.InstanceID)),
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://auth.atlassian.com/authorize",
@@ -135,6 +152,10 @@ func (ci *cloudOAuthInstance) GetOAuthConfig() *oauth2.Config {
 
 func (ci *cloudOAuthInstance) GetURL() string {
 	return "https://api.atlassian.com/ex/jira/" + ci.JiraResourceID
+}
+
+func (ci *cloudOAuthInstance) GetJiraBaseURL() string {
+	return ci.JiraBaseURL
 }
 
 func (ci *cloudOAuthInstance) GetManageAppsURL() string {
@@ -167,7 +188,7 @@ func (ci *cloudOAuthInstance) getJiraCloudResourceID(client http.Client) (string
 	}
 
 	defer response.Body.Close()
-	contents, err := ioutil.ReadAll(response.Body)
+	contents, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", fmt.Errorf("failed read accesible resources response: %s", err.Error())
 	}
