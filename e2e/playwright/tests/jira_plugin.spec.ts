@@ -71,6 +71,8 @@ test('/jira setup', async ({pw, pages, page: originalPage, context}) => {
     expect(href).toMatch(/http:\/\/localhost:8065\/plugins\/jira\/instance\/.*\/api\/v2\/webhook\?secret=/);
     await dialog.submit();
 
+    await page.waitForTimeout(500);
+
     // # Trigger Jira site connect flow
     const pagePromise = page.waitForEvent('popup');
     await setupFlow.clickConnectLink();
@@ -80,12 +82,49 @@ test('/jira setup', async ({pw, pages, page: originalPage, context}) => {
     await jiraPage.waitForLoadState();
 
     // # Fill out Jira login form
-    await authFlow.fillEmail(JIRA_EMAIL);
-    await authFlow.submitEmail();
-    await authFlow.fillPassword(JIRA_PASSWORD);
-    await authFlow.submitPassword();
-    await authFlow.acceptPermissions();
+    await authFlow.login(JIRA_EMAIL, JIRA_PASSWORD);
 
     // * Assert successful connection
     await expect(page.getByText('You\'ve successfully connected your Mattermost user account to Jira.')).toBeVisible();
+});
+
+test('/jira connect', async ({pw, pages, page: originalPage, context}) => {
+    // # Log in
+    const {adminUser} = await pw.getAdminClient();
+    const {page} = await pw.testBrowser.login(adminUser);
+    await originalPage.close();
+
+    // # Navigate to Channels
+    const c = new pages.ChannelsPage(page);
+    await c.goto();
+
+    // # Run disconnect command
+    await c.postMessage(`${slashCommand} disconnect`);
+    await c.sendMessage();
+
+    await page.waitForTimeout(500);
+    let post = await c.getLastPost();
+    let postText = await post.container.innerText();
+    expect(postText).toMatch('You have successfully disconnected your Jira account');
+
+    // # Trigger Jira site connect flow
+    const pagePromise = page.waitForEvent('popup');
+
+    await page.waitForTimeout(500);
+
+    // # Run connect command
+    await c.postMessage(`${slashCommand} connect`);
+    await c.sendMessage();
+
+    const jiraPage = await pagePromise;
+    const authFlow = new JiraSiteAuthFlow(jiraPage);
+    await jiraPage.waitForLoadState();
+
+    // # Fill out Jira login form
+    await authFlow.login(JIRA_EMAIL, JIRA_PASSWORD);
+
+    await page.waitForTimeout(3000);
+    post = await c.getLastPost();
+    postText = await post.container.innerText();
+    expect(postText).toMatch('You have successfully connected your Jira account. Type in /jira to get started.');
 });

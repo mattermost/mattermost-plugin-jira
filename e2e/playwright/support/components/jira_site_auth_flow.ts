@@ -6,23 +6,31 @@ import {Page} from '@playwright/test';
 export default class JiraSiteAuthFlow {
     constructor(private readonly page: Page) {}
 
-    fillEmail = async (email: string) => {
+    login = async (email: string, password: string) => {
+        await this.fillEmail(email);
+        await this.submitEmail();
+        await this.fillPassword(password);
+        await this.submitPassword();
+        await this.acceptPermissions();
+    }
+
+    private fillEmail = async (email: string) => {
         await this.page.getByPlaceholder('Enter your email').fill(email);
     }
 
-    submitEmail = async () => {
+    private submitEmail = async () => {
         await this.page.getByRole('button', {name: 'Continue', exact: true}).click();
     }
 
-    fillPassword = async (password: string) => {
+    private fillPassword = async (password: string) => {
         await this.page.getByPlaceholder('Enter password').fill(password);
     }
 
-    submitPassword = async () => {
+    private submitPassword = async () => {
         await this.page.getByRole('button', {name: 'Log in', exact: true}).click();
     }
 
-    acceptPermissions = async () => {
+    private acceptPermissions = async () => {
         await this.page.getByRole('button', {name: 'Accept', exact: true}).click();
     }
 }
