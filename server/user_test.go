@@ -10,7 +10,6 @@ import (
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestUserSettings_String(t *testing.T) {
@@ -74,7 +73,7 @@ func TestGetJiraUserFromMentions(t *testing.T) {
 	assert.Nil(t, err)
 
 	api := &plugintest.API{}
-	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"))
+	api.On("LogWarn", mockAnythingOfTypeBatch("string", 5)...)
 	p.SetAPI(api)
 
 	tests := map[string]struct {

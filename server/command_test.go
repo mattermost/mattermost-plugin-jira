@@ -468,7 +468,7 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 
 	api := &plugintest.API{}
 	api.On("LogError", mock.AnythingOfTypeArgument("string"))
-	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"))
+	api.On("LogWarn", mockAnythingOfTypeBatch("string", 5)...).Return(nil)
 
 	tests := map[string]struct {
 		commandArgs       *model.CommandArgs
