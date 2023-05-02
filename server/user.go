@@ -285,10 +285,13 @@ func (p *Plugin) GetJiraUserFromMentions(instanceID types.ID, mentions model.Use
 	}
 
 	connection, err := p.userStore.LoadConnection(instanceID, types.ID(mentionUser))
-	if err == nil {
-		if connection.AccountID != "" {
-			return &connection.User, nil
-		}
+	if err != nil {
+		p.API.LogWarn("Error occurred while loading connection", "User", mentionUser, err.Error())
+		return nil, errors.New("the mentioned user is not connected to Jira")
+	}
+
+	if connection.AccountID != "" {
+		return &connection.User, nil
 	}
 
 	return nil, errors.New("the mentioned user is not connected to Jira")

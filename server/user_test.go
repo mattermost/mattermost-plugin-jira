@@ -10,6 +10,7 @@ import (
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestUserSettings_String(t *testing.T) {
@@ -69,7 +70,12 @@ func TestGetJiraUserFromMentions(t *testing.T) {
 	p := Plugin{}
 	p.userStore = getMockUserStoreKV()
 	p.instanceStore = p.getMockInstanceStoreKV(1)
-	testUser, _ := p.userStore.LoadUser("connected_user")
+	testUser, err := p.userStore.LoadUser("connected_user")
+	assert.Nil(t, err)
+
+	api := &plugintest.API{}
+	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"))
+	p.SetAPI(api)
 
 	tests := map[string]struct {
 		mentions       *model.UserMentionMap
@@ -78,36 +84,36 @@ func TestGetJiraUserFromMentions(t *testing.T) {
 		expectedError  string
 	}{
 		"if no mentions, no users are returned": {
-			mentions:       &model.UserMentionMap{},
-			userSearch:     "join",
-			expectedResult: nil,
-			expectedError:  "the mentioned user was not found",
+			mentions:      &model.UserMentionMap{},
+			userSearch:    "join",
+			expectedError: "the mentioned user was not found",
 		},
 		"non connected user won't appear when mentioned": {
 			mentions: &model.UserMentionMap{
 				"non_connected_user": "non_connected_user",
 			},
-			userSearch:     "non_connected_user",
-			expectedResult: nil,
-			expectedError:  "the mentioned user is not connected to Jira",
+			userSearch:    "non_connected_user",
+			expectedError: "the mentioned user is not connected to Jira",
 		},
-		"Connected users are shown and returned as JiraUsers when mentioned": {
+		"Connected users are shown and returned as Jira Users when mentioned": {
 			mentions: &model.UserMentionMap{
 				"connected_user": string(testUser.MattermostUserID)},
 			userSearch:     "connected_user",
 			expectedResult: &jira.User{AccountID: "test"},
-			expectedError:  "",
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			user, err := p.GetJiraUserFromMentions(testInstance1.InstanceID, *tc.mentions, tc.userSearch)
-			if err != nil {
+			if tc.expectedError != "" {
 				assert.Equal(t, tc.expectedError, err.Error())
+				assert.Nil(t, user)
+				return
 			}
 
 			assert.Equal(t, tc.expectedResult, user)
+			assert.Nil(t, err)
 		})
 	}
 }

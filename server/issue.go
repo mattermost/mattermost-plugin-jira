@@ -883,7 +883,7 @@ func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issue
 		jiraUsers = append(jiraUsers, *assignee)
 	} else {
 		jiraUsers, err = client.SearchUsersAssignableToIssue(issueKey, userSearch, 10)
-		if StatusCode(err) == 401 {
+		if StatusCode(err) == http.StatusUnauthorized {
 			return "You do not have the appropriate permissions to perform this action. Please contact your Jira administrator.", nil
 		}
 		if err != nil {

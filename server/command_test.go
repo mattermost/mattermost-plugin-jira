@@ -467,7 +467,8 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 	})
 
 	api := &plugintest.API{}
-	api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
+	api.On("LogError", mock.AnythingOfTypeArgument("string"))
+	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"))
 
 	tests := map[string]struct {
 		commandArgs       *model.CommandArgs
@@ -480,21 +481,21 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 			},
 			expectedMsgPrefix: "Please specify an issue key and an assignee search string, in the form `/jira assign <issue-key> <assignee>`",
 		},
-		"assign with valid issue but no user": {
+		"assign to valid issue but no user": {
 			commandArgs: &model.CommandArgs{
 				Command: "/jira assign INVALID",
 				UserId:  mockUserIDWithNotifications,
 			},
 			expectedMsgPrefix: "Please specify an issue key and an assignee search string, in the form `/jira assign <issue-key> <assignee>`",
 		},
-		"assign valid issue non existing user": {
+		"assign valid issue but non existing user": {
 			commandArgs: &model.CommandArgs{
 				Command: "/jira assign VALID @unknownUser",
 				UserId:  mockUserIDWithNotifications,
 			},
 			expectedMsgPrefix: "the mentioned user was not found",
 		},
-		"assign valid issue non connected user": {
+		"assign valid issue but non connected user": {
 			commandArgs: &model.CommandArgs{
 				Command: "/jira assign VALID @non_connected_user",
 				UserId:  mockUserIDWithNotifications,
@@ -509,8 +510,7 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			isSendEphemeralPostCalled := false
-			currentTestAPI := api
-			currentTestAPI.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
+			api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
 				isSendEphemeralPostCalled = true
 
 				post := args.Get(1).(*model.Post)
@@ -521,7 +521,7 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 					"Expected returned message to start with: \n %s\nActual:\n%s", tt.expectedMsgPrefix, actual)
 			}).Once().Return(&model.Post{})
 
-			p.SetAPI(currentTestAPI)
+			p.SetAPI(api)
 			p.instanceStore = p.getMockInstanceStoreKV(1)
 			p.userStore = getMockUserStoreKV()
 
@@ -529,7 +529,6 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 			require.Nil(t, appError)
 			require.NotNil(t, cmdResponse)
 			assert.True(t, isSendEphemeralPostCalled)
-			assert.True(t, true)
 		})
 	}
 }
