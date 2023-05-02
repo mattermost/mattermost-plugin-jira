@@ -492,7 +492,7 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 				Command: "/jira assign VALID @unknownUser",
 				UserId:  mockUserIDWithNotifications,
 			},
-			expectedMsgPrefix: "the user mentioned was not found",
+			expectedMsgPrefix: "the mentioned user was not found",
 		},
 		"assign valid issue non connected user": {
 			commandArgs: &model.CommandArgs{
@@ -502,7 +502,7 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 					"non_connected_user": "non_connected_user",
 				},
 			},
-			expectedMsgPrefix: "the user mentioned is not connected to Jira",
+			expectedMsgPrefix: "the mentioned user is not connected to Jira",
 		},
 	}
 

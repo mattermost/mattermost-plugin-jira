@@ -81,7 +81,7 @@ func TestGetJiraUserFromMentions(t *testing.T) {
 			mentions:       &model.UserMentionMap{},
 			userSearch:     "join",
 			expectedResult: nil,
-			expectedError:  "the user mentioned was not found",
+			expectedError:  "the mentioned user was not found",
 		},
 		"non connected user won't appear when mentioned": {
 			mentions: &model.UserMentionMap{
@@ -89,7 +89,7 @@ func TestGetJiraUserFromMentions(t *testing.T) {
 			},
 			userSearch:     "non_connected_user",
 			expectedResult: nil,
-			expectedError:  "the user mentioned is not connected to Jira",
+			expectedError:  "the mentioned user is not connected to Jira",
 		},
 		"Connected users are shown and returned as JiraUsers when mentioned": {
 			mentions: &model.UserMentionMap{
@@ -102,9 +102,7 @@ func TestGetJiraUserFromMentions(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			user, err := p.GetJiraUserFromMentions(
-				testInstance1.InstanceID, *tc.mentions, tc.userSearch)
-
+			user, err := p.GetJiraUserFromMentions(testInstance1.InstanceID, *tc.mentions, tc.userSearch)
 			if err != nil {
 				assert.Equal(t, tc.expectedError, err.Error())
 			}
