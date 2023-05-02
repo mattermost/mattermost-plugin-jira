@@ -488,14 +488,14 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 			},
 			expectedMsgPrefix: "Please specify an issue key and an assignee search string, in the form `/jira assign <issue-key> <assignee>`",
 		},
-		"assign valid issue but non existing user": {
+		"assign the valid issue to a non-existing user": {
 			commandArgs: &model.CommandArgs{
 				Command: "/jira assign VALID @unknownUser",
 				UserId:  mockUserIDWithNotifications,
 			},
 			expectedMsgPrefix: "the mentioned user was not found",
 		},
-		"assign valid issue but non connected user": {
+		"assign the valid issue to a non-connected user": {
 			commandArgs: &model.CommandArgs{
 				Command: "/jira assign VALID @non_connected_user",
 				UserId:  mockUserIDWithNotifications,
