@@ -22,12 +22,13 @@ import (
 )
 
 const (
-	labelsField      = "labels"
-	statusField      = "status"
-	reporterField    = "reporter"
-	priorityField    = "priority"
-	descriptionField = "description"
-	resolutionField  = "resolution"
+	labelsField        = "labels"
+	statusField        = "status"
+	reporterField      = "reporter"
+	priorityField      = "priority"
+	descriptionField   = "description"
+	resolutionField    = "resolution"
+	securityLevelField = "security"
 )
 
 func makePost(userID, channelID, message string) *model.Post {

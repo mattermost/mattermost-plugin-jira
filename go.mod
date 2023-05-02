@@ -17,6 +17,7 @@ require (
 	github.com/rbriski/atlassian-jwt v0.0.0-20180307182949-7bb4ae273058
 	github.com/rudderlabs/analytics-go v3.3.2+incompatible
 	github.com/stretchr/testify v1.8.0
+	github.com/trivago/tgo v1.0.1
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/text v0.3.7
 )
@@ -75,7 +76,6 @@ require (
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tinylib/msgp v1.1.6 // indirect
-	github.com/trivago/tgo v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect

@@ -12,6 +12,7 @@ export const getBaseStyles = (theme: Theme) => {
             background: changeOpacity(theme.centerChannelColor, 0.08),
             borderRadius: '4px',
             marginTop: '8px',
+            marginBottom: '8px',
             fontSize: '13px',
         }),
     };

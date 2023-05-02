@@ -58,6 +58,7 @@ describe('components/ChannelSubscriptionFilters', () => {
         removeValidate: jest.fn(),
         onChange: jest.fn(),
         instanceID: 'https://something.atlassian.net',
+        securityLevelEmptyForJiraSubscriptions: true,
     };
 
     test('should match snapshot', () => {
