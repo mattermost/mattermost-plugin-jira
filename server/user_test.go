@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	jira "github.com/andygrunwald/go-jira"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
@@ -59,6 +61,55 @@ func TestRouteUserStart(t *testing.T) {
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)
 			assert.Equal(t, tc.statusCode, w.Result().StatusCode)
+		})
+	}
+}
+
+func TestGetJiraUserFromMentions(t *testing.T) {
+	p := Plugin{}
+	p.userStore = getMockUserStoreKV()
+	p.instanceStore = p.getMockInstanceStoreKV(1)
+	testUser, _ := p.userStore.LoadUser("connected_user")
+
+	tests := map[string]struct {
+		mentions       *model.UserMentionMap
+		userSearch     string
+		expectedResult *jira.User
+		expectedError  string
+	}{
+		"if no mentions, no users are returned": {
+			mentions:       &model.UserMentionMap{},
+			userSearch:     "join",
+			expectedResult: nil,
+			expectedError:  "the user mentioned was not found",
+		},
+		"non connected user won't appear when mentioned": {
+			mentions: &model.UserMentionMap{
+				"non_connected_user": "non_connected_user",
+			},
+			userSearch:     "non_connected_user",
+			expectedResult: nil,
+			expectedError:  "the user mentioned is not connected to Jira",
+		},
+		"Connected users are shown and returned as JiraUsers when mentioned": {
+			mentions: &model.UserMentionMap{
+				"connected_user": string(testUser.MattermostUserID)},
+			userSearch:     "connected_user",
+			expectedResult: &jira.User{AccountID: "test"},
+			expectedError:  "",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			user, err := p.GetJiraUserFromMentions(
+				testInstance1.InstanceID, *tc.mentions, tc.userSearch)
+
+			if err != nil {
+				assert.Equal(t, tc.expectedError, err.Error())
+			}
+
+			assert.Equal(t, tc.expectedResult, user)
 		})
 	}
 }
