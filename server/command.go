@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-api/experimental/command"
@@ -886,9 +887,12 @@ func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args
 	}
 	issueKey := strings.ToUpper(args[0])
 	userSearch := strings.Join(args[1:], " ")
-	assignee, err := p.GetJiraUserFromMentions(instance.GetID(), header.UserMentions, userSearch)
-	if err != nil {
-		return p.responsef(header, "%v", err)
+	var assignee *jira.User
+	if strings.HasPrefix(userSearch, "@") {
+		assignee, err = p.GetJiraUserFromMentions(instance.GetID(), header.UserMentions, userSearch)
+		if err != nil {
+			return p.responsef(header, "%v", err)
+		}
 	}
 
 	msg, err := p.AssignIssue(instance, types.ID(header.UserId), issueKey, userSearch, assignee)

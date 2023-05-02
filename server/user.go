@@ -287,7 +287,9 @@ func (p *Plugin) GetJiraUserFromMentions(instanceID types.ID, mentions model.Use
 
 	connection, err := p.userStore.LoadConnection(instanceID, types.ID(mentionUser))
 	if err == nil {
-		return &connection.User, nil
+		if connection.AccountID != "" {
+			return &connection.User, nil
+		}
 	}
 
 	return nil, errors.New("the user mentioned is not connected to Jira")
