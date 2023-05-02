@@ -95,7 +95,7 @@ func TestGetJiraUserFromMentions(t *testing.T) {
 			userSearch:    "non_connected_user",
 			expectedError: "the mentioned user is not connected to Jira",
 		},
-		"Connected users are shown and returned as Jira Users when mentioned": {
+		"Connected users are shown and returned as Jira Users, when mentioned": {
 			mentions: &model.UserMentionMap{
 				"connected_user": string(testUser.MattermostUserID)},
 			userSearch:     "connected_user",
