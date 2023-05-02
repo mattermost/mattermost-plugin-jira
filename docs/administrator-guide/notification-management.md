@@ -10,7 +10,7 @@ Jira notifications are messages sent to a Mattermost channel when a particular e
 
 Notifications and webhooks can be used together or you can opt for one of them.
 
-![This is a channel notification of a new bug that was created in Jira](../.gitbook/assets/image%20%281%29.png)
+![This is a channel notification of a new bug that was created in Jira](../.gitbook/assets/ticket-created.png)
 
 When any webhook event is received from Jira the plugin reviews all the notification subscriptions. If it matches a rule it will post a notification to the channel. If there are no subscription matches, the webhook event is discarded.
 
@@ -28,11 +28,11 @@ An approximate JQL query is output as well. This is not guaranteed to be valid J
 
 You can specify who can set up a notification subscription in the plugin configuration. First, set which **Mattermost** user roles are allowed to access the subscription functionality:
 
-![](../.gitbook/assets/image%20%282%29.png)
+![](../.gitbook/assets/restrict-mattermost-users.png)
 
 You can also specify a comma-separated list of Jira groups the user needs to be a member of to be able to create/edit subscriptions. The user editing a subscription only needs to be a member of one of the listed groups. If this is left blank there will be no restriction on Jira groups.
 
-![](../.gitbook/assets/image%20%286%29.png)
+![](../.gitbook/assets/restrict-jira-users.png)
 
 A user must meet the criteria of both the Mattermost user settings and Jira group settings in order to edit subscriptions.
 
@@ -44,11 +44,11 @@ While logged in as a System Admin type `/jira subscribe list` in a Mattermost ch
 
 The following Jira event notifications are supported:
 
-* An issue is created
-* Certain fields of an issue issue are updated, configurable per subscription
-* An issue is reopened or resolved
-* An issue is deleted, when not yet resolved
-* Comments created, updated, or deleted
+- An issue is created
+- Certain fields of an issue issue are updated, configurable per subscription
+- An issue is reopened or resolved
+- An issue is deleted, when not yet resolved
+- Comments created, updated, or deleted
 
 If you’d like to see support for additional events, [let us know](https://mattermost.uservoice.com/forums/306457-general).
 
@@ -63,22 +63,23 @@ In order to have Jira post events to your Mattermost instance, you'll need to se
 If your organization's infrastructure is set up in such a way that your Mattermost instance can't connect to your Jira instance, you won't be able to use the Channel Subscriptions feature. Instead, you'll need to use the Legacy Webhooks feature (the first iteration of the webhooks feature supported by the Jira plugin).
 
 1. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
-   * For older versions of Jira, select the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
+   - For older versions of Jira, select the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
 2. Select **Create a WebHook** to create a new webhook. Enter a **Name** for the webhook and add the Jira webhook URL [https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL](https://SITEURL/plugins/jira/webhook?secret=WEBHOOKSECRET&team=TEAMURL&channel=CHANNELURL) \(for Jira 2.1\) as the **URL**.
 
-   * Replace `TEAMURL` and `CHANNELURL` with the Mattermost team URL and channel URL you want the Jira events to post to. The values should be in lower case.
-   * Replace `SITEURL` with the site URL of your Mattermost instance, and `WEBHOOKSECRET` with the secret generated in Mattermost via **System Console > Plugins > Jira**.
+   - Replace `TEAMURL` and `CHANNELURL` with the Mattermost team URL and channel URL where you want to receive the Jira notifications. For example, if your Mattermost channel's full URL is `https://mattermost.example.com/myteam/channels/mychannel`, the `TEAMURL` would be `myteam`, and the `CHANNELURL` would be `mychannel`.
+   - Replace `SITEURL` with the site URL of your Mattermost instance, and `WEBHOOKSECRET` with the secret generated in Mattermost via **System Console > Plugins > Jira**.
 
    For instance, if the team URL is `contributors`, channel URL is `town-square`, site URL is `https://community.mattermost.com`, and the generated webhook secret is `MYSECRET`, then the final webhook URL would be:
 
    ```text
    https://community.mattermost.com/plugins/jira/webhook?secret=MYSECRET&team=contributors&channel=town-square
    ```
+
 3. \(Optional\) Set a description and a custom JQL query to determine which tickets trigger events. For more information on JQL queries, refer to the [Atlassian help documentation](https://confluence.atlassian.com/jirasoftwarecloud/advanced-searching-764478330.html).
 4. Finally, set which issue events send messages to Mattermost channels, then select **Save**. The following issue events are supported:
-   * Issue Created
-   * Issue Deleted
-   * Issue Updated, including when an issue is reopened or resolved, or when the assignee is changed. Optionally send notifications for comments, see below.
+   - Issue Created
+   - Issue Deleted
+   - Issue Updated, including when an issue is reopened or resolved, or when the assignee is changed. Optionally send notifications for comments, see below.
 
 By default, the legacy webhook integration publishes notifications for issue create, resolve, unresolve, reopen, and assign events. To post more events, use the following extra `&`-separated parameters:
 

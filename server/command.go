@@ -94,14 +94,14 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 
 func (p *Plugin) registerJiraCommand(enableAutocomplete, enableOptInstance bool) error {
 	// Optimistically unregister what was registered before
-	_ = p.API.UnregisterCommand("", commandTrigger)
+	_ = p.client.SlashCommand.Unregister("", commandTrigger)
 
 	command, err := p.createJiraCommand(enableAutocomplete, enableOptInstance)
 	if err != nil {
 		return errors.Wrap(err, "failed to get command")
 	}
 
-	err = p.API.RegisterCommand(command)
+	err = p.client.SlashCommand.Register(command)
 	if err != nil {
 		return errors.Wrapf(err, "failed to register /%s command", commandTrigger)
 	}
@@ -148,6 +148,7 @@ func addSubCommands(jira *model.AutocompleteData, optInstance bool) {
 	// Admin commands
 	jira.AddCommand(createSubscribeCommand(optInstance))
 	jira.AddCommand(createWebhookCommand(optInstance))
+	jira.AddCommand(createSetupCommand())
 
 	// Help and info
 	jira.AddCommand(model.NewAutocompleteData("info", "", "Display information about the current user and the Jira plug-in"))
@@ -177,7 +178,7 @@ func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 	uninstall := model.NewAutocompleteData(
 		"uninstall", "[cloud|server] [URL]", "Disconnect Mattermost from a Jira instance")
 	uninstall.AddStaticListArgument("Jira type: server or cloud", true, jiraTypes)
-	uninstall.AddDynamicListArgument("Jira instance", routeAutocompleteInstalledInstance, true)
+	uninstall.AddDynamicListArgument("Jira instance", makeAutocompleteRoute(routeAutocompleteInstalledInstance), true)
 	uninstall.RoleID = model.SystemAdminRoleId
 
 	list := model.NewAutocompleteData(
@@ -218,28 +219,28 @@ func withParamIssueKey(cmd *model.AutocompleteData) {
 func createConnectCommand() *model.AutocompleteData {
 	connect := model.NewAutocompleteData(
 		"connect", "", "Connect your Mattermost account to your Jira account")
-	connect.AddDynamicListArgument("Jira URL", routeAutocompleteConnect, false)
+	connect.AddDynamicListArgument("Jira URL", makeAutocompleteRoute(routeAutocompleteConnect), false)
 	return connect
 }
 
 func createAliasCommand() *model.AutocompleteData {
 	alias := model.NewAutocompleteData(
 		"alias", "", "Create an alias to your Jira instance")
-	alias.AddDynamicListArgument("Jira URL", routeAutocompleteInstalledInstanceWithAlias, false)
+	alias.AddDynamicListArgument("Jira URL", makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias), false)
 	return alias
 }
 
 func createUnAliasCommand() *model.AutocompleteData {
 	alias := model.NewAutocompleteData(
 		"unalias", "", "Remove an alias from a Jira instance")
-	alias.AddDynamicListArgument("Jira URL", routeAutocompleteInstalledInstanceWithAlias, false)
+	alias.AddDynamicListArgument("Jira URL", makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias), false)
 	return alias
 }
 
 func createDisconnectCommand() *model.AutocompleteData {
 	disconnect := model.NewAutocompleteData(
 		"disconnect", "[Jira URL]", "Disconnect your Mattermost account from your Jira account")
-	disconnect.AddDynamicListArgument("Jira URL", routeAutocompleteInstalledInstanceWithAlias, false)
+	disconnect.AddDynamicListArgument("Jira URL", makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias), false)
 	return disconnect
 }
 
@@ -257,7 +258,7 @@ func createSettingsCommand(optInstance bool) *model.AutocompleteData {
 		{HelpText: "Turn notifications on", Item: "on"},
 		{HelpText: "Turn notifications off", Item: "off"},
 	})
-	withFlagInstance(notifications, optInstance, routeAutocompleteInstalledInstanceWithAlias)
+	withFlagInstance(notifications, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 	settings.AddCommand(notifications)
 
 	return settings
@@ -267,7 +268,7 @@ func createViewCommand(optInstance bool) *model.AutocompleteData {
 	view := model.NewAutocompleteData(
 		"view", "[issue]", "Display a Jira issue")
 	withParamIssueKey(view)
-	withFlagInstance(view, optInstance, routeAutocompleteInstalledInstanceWithAlias)
+	withFlagInstance(view, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 	return view
 }
 
@@ -277,7 +278,7 @@ func createTransitionCommand(optInstance bool) *model.AutocompleteData {
 	withParamIssueKey(transition)
 	// TODO: Implement dynamic transition autocomplete
 	transition.AddTextArgument("To state", "", "")
-	withFlagInstance(transition, optInstance, routeAutocompleteInstalledInstanceWithAlias)
+	withFlagInstance(transition, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 	return transition
 }
 
@@ -287,7 +288,7 @@ func createAssignCommand(optInstance bool) *model.AutocompleteData {
 	withParamIssueKey(assign)
 	// TODO: Implement dynamic Jira user search autocomplete
 	assign.AddTextArgument("User", "", "")
-	withFlagInstance(assign, optInstance, routeAutocompleteInstalledInstanceWithAlias)
+	withFlagInstance(assign, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 	return assign
 }
 
@@ -295,7 +296,7 @@ func createUnassignCommand(optInstance bool) *model.AutocompleteData {
 	unassign := model.NewAutocompleteData(
 		"unassign", "[Jira issue]", "Unassign a Jira issue")
 	withParamIssueKey(unassign)
-	withFlagInstance(unassign, optInstance, routeAutocompleteInstalledInstanceWithAlias)
+	withFlagInstance(unassign, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 	return unassign
 }
 
@@ -307,7 +308,7 @@ func createSubscribeCommand(optInstance bool) *model.AutocompleteData {
 
 	list := model.NewAutocompleteData(
 		"list", "", "List the Jira notifications sent to this channel")
-	withFlagInstance(list, optInstance, routeAutocompleteInstalledInstanceWithAlias)
+	withFlagInstance(list, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 	subscribe.AddCommand(list)
 	return subscribe
 }
@@ -316,8 +317,15 @@ func createWebhookCommand(optInstance bool) *model.AutocompleteData {
 	webhook := model.NewAutocompleteData(
 		"webhook", "[Jira URL]", "Display the webhook URLs to set up on Jira")
 	webhook.RoleID = model.SystemAdminRoleId
-	withFlagInstance(webhook, optInstance, routeAutocompleteInstalledInstanceWithAlias)
+	withFlagInstance(webhook, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 	return webhook
+}
+
+func createSetupCommand() *model.AutocompleteData {
+	setup := model.NewAutocompleteData(
+		"setup", "", "Start Jira plugin setup flow")
+	setup.RoleID = model.SystemAdminRoleId
+	return setup
 }
 
 type CommandHandlerFunc func(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse
@@ -626,7 +634,7 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	}
 	post.AddProp("attachments", attachment)
 
-	_ = p.API.SendEphemeralPost(header.UserId, post)
+	p.client.Post.SendEphemeralPost(header.UserId, post)
 
 	return &model.CommandResponse{}
 }
@@ -651,7 +659,7 @@ func executeV2Revert(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 		preMessage = `#### Successfully reverted the V3 Jira plugin database to V2. The Jira plugin has been disabled.` + "\n"
 
 		go func() {
-			_ = p.API.DisablePlugin(manifest.ID)
+			_ = p.client.Plugin.Disable(manifest.ID)
 		}()
 	}
 	message := `**Please note that if you have multiple configured Jira instances this command will result in all non-legacy instances being removed.**
@@ -667,7 +675,7 @@ If you ran |v2revert| unintentionally and would like to continue using the curre
 	message = preMessage + message
 	message = strings.ReplaceAll(message, "|", "`")
 
-	p.track("v2RevertSubmitted", header.UserId)
+	p.TrackUserEvent("v2RevertSubmitted", header.UserId, nil)
 
 	return p.responsef(header, message)
 }
@@ -754,9 +762,9 @@ func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArg
 }
 
 func authorizedSysAdmin(p *Plugin, userID string) (bool, error) {
-	user, appErr := p.API.GetUser(userID)
-	if appErr != nil {
-		return false, appErr
+	user, err := p.client.User.Get(userID)
+	if err != nil {
+		return false, err
 	}
 	if !strings.Contains(user.Roles, "system_admin") {
 		return false, nil
@@ -1092,7 +1100,7 @@ func (p *Plugin) postCommandResponse(args *model.CommandArgs, text string) {
 		RootId:    args.RootId,
 		Message:   text,
 	}
-	_ = p.API.SendEphemeralPost(args.UserId, post)
+	p.client.Post.SendEphemeralPost(args.UserId, post)
 }
 
 func (p *Plugin) responsef(commandArgs *model.CommandArgs, format string, args ...interface{}) *model.CommandResponse {
