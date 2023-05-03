@@ -49,6 +49,7 @@ const (
 var BuildHash = ""
 var BuildHashShort = ""
 var BuildDate = ""
+var isE2eTesting = ""
 
 type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
@@ -405,10 +406,6 @@ func (p *Plugin) errorf(f string, args ...interface{}) {
 }
 
 func (p *Plugin) CheckSiteURL() error {
-	if true {
-		return nil
-	}
-
 	ustr := p.GetSiteURL()
 	if ustr == "" {
 		return errors.New("Mattermost SITEURL must not be empty.")
@@ -417,7 +414,7 @@ func (p *Plugin) CheckSiteURL() error {
 	if err != nil {
 		return errors.WithMessage(err, "invalid SITEURL")
 	}
-	if u.Hostname() == "localhost" {
+	if isE2eTesting != "true" && u.Hostname() == "localhost" {
 		return errors.Errorf("Using %s as your Mattermost SiteURL is not permitted, as the URL is not reachable from Jira. If you are using Jira Cloud, please make sure your URL is reachable from the public internet.", ustr)
 	}
 	return nil
