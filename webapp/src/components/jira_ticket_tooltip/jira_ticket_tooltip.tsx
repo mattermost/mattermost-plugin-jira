@@ -195,25 +195,13 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
 
         const {ticketDetails} = this.state;
         if (!ticketDetails) {
-            // Display the skeleton loader while ticket details are being fetched
+            // Display the spinner loader while ticket details are being fetched
             return (
-                <div className='jira-issue-tooltip'>
-                    <div className='popover-header'>
-                        <div className='popover-header__container'>
-                            <div className='popover-header__avatar skeleton-loader'/>
-                            <div className='jira-ticket-key-icon-loader skeleton-loader skeleton-loader--text'/>
-                            <div className='jira-ticket-key-loader skeleton-loader skeleton-loader--text'/>
-                        </div>
-                    </div>
-                    <div className='popover-body'>
-                        <div className='popover-body__title skeleton-loader skeleton-loader--text'/>
-                        <div className='popover-body__description skeleton-loader mt-2 skeleton-loader--text'/>
-                        <div className='popover-body__labels skeleton-loader skeleton-loader--text'/>
-                    </div>
-                    <div className='popover-footer'>
-                        <div className='popover-footer__assignee-profile skeleton-loader'/>
-                        <div className='skeleton-loader skeleton-loader--text'/>
-                    </div>
+                <div className='jira-issue-tooltip jira-issue-tooltip-loading'>
+                    <span
+                        className='spinn fa fa-spin fa-spinner'
+                        title={'Loading Icon'}
+                    />
                 </div>
             );
         }
