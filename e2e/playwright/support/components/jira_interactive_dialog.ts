@@ -10,8 +10,8 @@ export default class JiraInteractiveDialog extends InteractiveDialog {
         super(page);
     }
 
-    getLinkInHeader = async () => {
-        const link = this.page.locator('#interactiveDialogModalIntroductionText a');
-        return link.getAttribute('href');
+    getWebhookURL = async () => {
+        const url = this.page.locator('#interactiveDialogModalIntroductionText code');
+        return url.innerText();
     }
 }

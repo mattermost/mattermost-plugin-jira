@@ -67,7 +67,7 @@ test('/jira setup', async ({pw, pages, page: originalPage, context}) => {
     ]);
 
     // * Assert webhook URL is present and correct
-    const href = await dialog.getLinkInHeader();
+    const href = await dialog.getWebhookURL();
     expect(href).toMatch(/http:\/\/localhost:8065\/plugins\/jira\/instance\/.*\/api\/v2\/webhook\?secret=/);
     await dialog.submit();
 
