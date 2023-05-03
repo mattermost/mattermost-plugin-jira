@@ -26,3 +26,7 @@ GO_BUILD_FLAGS = -ldflags '$(LDFLAGS)'
 .PHONY: jira
 jira:
 	docker-compose up
+
+.PHONY: deploy-e2e
+deploy-e2e: dist
+	E2E_TESTING=true make deploy
