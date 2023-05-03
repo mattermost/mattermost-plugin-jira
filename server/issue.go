@@ -539,7 +539,6 @@ func (p *Plugin) httpGetJiraProjectMetadata(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	type option = utils.ReactSelectOption
 	projects := []utils.ReactSelectOption{}
 	issues := map[string][]utils.ReactSelectOption{}
 	for _, prj := range plist {
