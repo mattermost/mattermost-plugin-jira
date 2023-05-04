@@ -467,8 +467,6 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 	})
 
 	api := &plugintest.API{}
-	api.On("LogError", mock.AnythingOfTypeArgument("string"))
-	api.On("LogWarn", mockAnythingOfTypeBatch("string", 5)...).Return(nil)
 
 	tests := map[string]struct {
 		commandArgs       *model.CommandArgs
@@ -509,6 +507,11 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			defer api.AssertExpectations(t)
+			if tt.expectedMsgPrefix != "" {
+				api.On("LogWarn", mockAnythingOfTypeBatch("string", 5)...).Return(nil)
+			}
+
 			isSendEphemeralPostCalled := false
 			api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
 				isSendEphemeralPostCalled = true
