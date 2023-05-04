@@ -230,6 +230,10 @@
 
 .jira-issue-tooltip-loading {
     height: 210px;
-    font-size: 40px;
+    font-size: 28px;
     justify-content: center;
+
+    .jira-issue-spinner {
+        opacity: 0.72;
+    }
 }

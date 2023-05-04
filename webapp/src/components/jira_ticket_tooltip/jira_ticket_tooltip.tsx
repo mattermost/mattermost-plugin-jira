@@ -199,7 +199,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
             return (
                 <div className='jira-issue-tooltip jira-issue-tooltip-loading'>
                     <span
-                        className='spinn fa fa-spin fa-spinner'
+                        className='jira-issue-spinner fa fa-spin fa-spinner'
                         title={'Loading Icon'}
                     />
                 </div>
