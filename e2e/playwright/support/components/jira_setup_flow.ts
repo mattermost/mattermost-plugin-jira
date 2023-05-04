@@ -20,7 +20,6 @@ export default class JiraSetupFlow extends SetupFlow {
         const locatorId = getSlackAttachmentLocatorId(postId);
 
         const connectLink = this.page.locator(`${locatorId} a`).getByText('here');
-        await this.page.pause();
         await connectLink.click();
     }
 }
