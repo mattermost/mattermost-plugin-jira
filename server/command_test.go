@@ -466,11 +466,10 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 		conf.mattermostSiteURL = mattermostSiteURL
 	})
 
-	api := &plugintest.API{}
-
 	tests := map[string]struct {
 		commandArgs       *model.CommandArgs
 		expectedMsgPrefix string
+		SetupAPI          func(api *plugintest.API)
 	}{
 		"assign with no issue": {
 			commandArgs: &model.CommandArgs{
@@ -478,6 +477,7 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 				UserId:  mockUserIDWithNotifications,
 			},
 			expectedMsgPrefix: "Please specify an issue key and an assignee search string, in the form `/jira assign <issue-key> <assignee>`",
+			SetupAPI:          func(api *plugintest.API) {},
 		},
 		"assign to valid issue but no user": {
 			commandArgs: &model.CommandArgs{
@@ -485,6 +485,7 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 				UserId:  mockUserIDWithNotifications,
 			},
 			expectedMsgPrefix: "Please specify an issue key and an assignee search string, in the form `/jira assign <issue-key> <assignee>`",
+			SetupAPI:          func(api *plugintest.API) {},
 		},
 		"assign the valid issue to a non-existing user": {
 			commandArgs: &model.CommandArgs{
@@ -492,6 +493,7 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 				UserId:  mockUserIDWithNotifications,
 			},
 			expectedMsgPrefix: "the mentioned user was not found",
+			SetupAPI:          func(api *plugintest.API) {},
 		},
 		"assign the valid issue to a non-connected user": {
 			commandArgs: &model.CommandArgs{
@@ -502,16 +504,18 @@ func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 				},
 			},
 			expectedMsgPrefix: "the mentioned user is not connected to Jira",
+			SetupAPI: func(api *plugintest.API) {
+				api.On("LogWarn", mockAnythingOfTypeBatch("string", 5)...).Return(nil)
+			},
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
 			defer api.AssertExpectations(t)
-			if tt.expectedMsgPrefix != "" {
-				api.On("LogWarn", mockAnythingOfTypeBatch("string", 5)...).Return(nil)
-			}
 
+			tt.SetupAPI(api)
 			isSendEphemeralPostCalled := false
 			api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
 				isSendEphemeralPostCalled = true
