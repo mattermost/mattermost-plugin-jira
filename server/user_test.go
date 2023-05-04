@@ -72,20 +72,18 @@ func TestGetJiraUserFromMentions(t *testing.T) {
 	testUser, err := p.userStore.LoadUser("connected_user")
 	assert.Nil(t, err)
 
-	api := &plugintest.API{}
-	api.On("LogWarn", mockAnythingOfTypeBatch("string", 5)...)
-	p.SetAPI(api)
-
 	tests := map[string]struct {
 		mentions       *model.UserMentionMap
 		userSearch     string
 		expectedResult *jira.User
 		expectedError  string
+		SetupAPI       func(api *plugintest.API)
 	}{
 		"if no mentions, no users are returned": {
 			mentions:      &model.UserMentionMap{},
 			userSearch:    "join",
 			expectedError: "the mentioned user was not found",
+			SetupAPI:      func(api *plugintest.API) {},
 		},
 		"non connected user won't appear when mentioned": {
 			mentions: &model.UserMentionMap{
@@ -93,17 +91,27 @@ func TestGetJiraUserFromMentions(t *testing.T) {
 			},
 			userSearch:    "non_connected_user",
 			expectedError: "the mentioned user is not connected to Jira",
+			SetupAPI: func(api *plugintest.API) {
+				api.On("LogWarn", mockAnythingOfTypeBatch("string", 5)...)
+			},
 		},
 		"Connected users are shown and returned as Jira Users, when mentioned": {
 			mentions: &model.UserMentionMap{
 				"connected_user": string(testUser.MattermostUserID)},
 			userSearch:     "connected_user",
 			expectedResult: &jira.User{AccountID: "test"},
+			SetupAPI:       func(api *plugintest.API) {},
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+			defer api.AssertExpectations(t)
+
+			tc.SetupAPI(api)
+			p.SetAPI(api)
+
 			user, err := p.GetJiraUserFromMentions(testInstance1.InstanceID, *tc.mentions, tc.userSearch)
 			if tc.expectedError != "" {
 				assert.Equal(t, tc.expectedError, err.Error())
