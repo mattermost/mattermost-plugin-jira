@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
@@ -274,4 +275,24 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 	p.TrackUserEvent("userDisconnected", user.MattermostUserID.String(), nil)
 
 	return conn, nil
+}
+
+func (p *Plugin) GetJiraUserFromMentions(instanceID types.ID, mentions model.UserMentionMap, userKey string) (*jira.User, error) {
+	userKey = strings.TrimPrefix(userKey, "@")
+	mentionUser, found := mentions[userKey]
+	if !found {
+		return nil, errors.New("the mentioned user was not found")
+	}
+
+	connection, err := p.userStore.LoadConnection(instanceID, types.ID(mentionUser))
+	if err != nil {
+		p.API.LogWarn("Error occurred while loading connection", "User", mentionUser, "Error", err.Error())
+		return nil, errors.New("the mentioned user is not connected to Jira")
+	}
+
+	if connection.AccountID != "" {
+		return &connection.User, nil
+	}
+
+	return nil, errors.New("the mentioned user is not connected to Jira")
 }

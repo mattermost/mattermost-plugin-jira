@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	jira "github.com/andygrunwald/go-jira"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
@@ -59,6 +61,66 @@ func TestRouteUserStart(t *testing.T) {
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)
 			assert.Equal(t, tc.statusCode, w.Result().StatusCode)
+		})
+	}
+}
+
+func TestGetJiraUserFromMentions(t *testing.T) {
+	p := Plugin{}
+	p.userStore = getMockUserStoreKV()
+	p.instanceStore = p.getMockInstanceStoreKV(1)
+	testUser, err := p.userStore.LoadUser("connected_user")
+	assert.Nil(t, err)
+
+	tests := map[string]struct {
+		mentions       *model.UserMentionMap
+		userSearch     string
+		expectedResult *jira.User
+		expectedError  string
+		SetupAPI       func(api *plugintest.API)
+	}{
+		"if no mentions, no users are returned": {
+			mentions:      &model.UserMentionMap{},
+			userSearch:    "join",
+			expectedError: "the mentioned user was not found",
+			SetupAPI:      func(api *plugintest.API) {},
+		},
+		"non connected user won't appear when mentioned": {
+			mentions: &model.UserMentionMap{
+				"non_connected_user": "non_connected_user",
+			},
+			userSearch:    "non_connected_user",
+			expectedError: "the mentioned user is not connected to Jira",
+			SetupAPI: func(api *plugintest.API) {
+				api.On("LogWarn", mockAnythingOfTypeBatch("string", 5)...)
+			},
+		},
+		"Connected users are shown and returned as Jira Users, when mentioned": {
+			mentions: &model.UserMentionMap{
+				"connected_user": string(testUser.MattermostUserID)},
+			userSearch:     "connected_user",
+			expectedResult: &jira.User{AccountID: "test"},
+			SetupAPI:       func(api *plugintest.API) {},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+			defer api.AssertExpectations(t)
+
+			tc.SetupAPI(api)
+			p.SetAPI(api)
+
+			user, err := p.GetJiraUserFromMentions(testInstance1.InstanceID, *tc.mentions, tc.userSearch)
+			if tc.expectedError != "" {
+				assert.Equal(t, tc.expectedError, err.Error())
+				assert.Nil(t, user)
+				return
+			}
+
+			assert.Equal(t, tc.expectedResult, user)
+			assert.Nil(t, err)
 		})
 	}
 }
