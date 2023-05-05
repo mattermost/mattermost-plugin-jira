@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
@@ -111,6 +112,7 @@ func TestGetJiraUserFromMentions(t *testing.T) {
 
 			tc.SetupAPI(api)
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 
 			user, err := p.GetJiraUserFromMentions(testInstance1.InstanceID, *tc.mentions, tc.userSearch)
 			if tc.expectedError != "" {
