@@ -102,6 +102,8 @@ test.beforeAll(async ({pw}) => {
     };
 
     await adminClient.patchConfig(newConfig);
+    await adminClient.disablePlugin(pluginId);
+    await adminClient.enablePlugin(pluginId);
 });
 
 // # Log in
