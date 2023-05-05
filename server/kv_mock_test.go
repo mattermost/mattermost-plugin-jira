@@ -22,6 +22,7 @@ var _ Instance = (*testInstance)(nil)
 const (
 	mockInstance1URL = "jiraurl1"
 	mockInstance2URL = "jiraurl2"
+	mockInstance3URL = "jiraurl3"
 )
 
 var testInstance1 = &testInstance{
