@@ -226,29 +226,14 @@
     .jira-ticket-key {
         font-size: 12px;
     }
+}
 
-    .skeleton-loader {
-        &:empty {
-            max-height: 50px;
-            max-width: 300px;
-            display: block;
-            background: linear-gradient(to right, rgba(var(--sys-center-channel-bg-rgb), 0), rgba(var(--sys-center-channel-bg-rgb), 0.5) 60%, rgba(var(--sys-center-channel-bg-rgb), 0) 90%), lightgray;
-            background-repeat: repeat-y;
-            background-size: 30% 2px;
-            background-position: 0 0;
-            animation: shine 1s infinite;
-            background-color: rgba(var(--center-channel-color-rgb), 0.15);
-        }
+.jira-issue-tooltip-loading {
+    height: 210px;
+    font-size: 28px;
+    justify-content: center;
 
-        @keyframes shine {
-            to {
-              background-position: 100% 0, /* move highlight to right */ 0 0;
-            }
-        }
-
-        &--text {
-            height: 15px;
-            width: 100%;
-        }
+    .jira-issue-spinner {
+        opacity: 0.72;
     }
 }
