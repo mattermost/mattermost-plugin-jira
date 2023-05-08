@@ -15,7 +15,8 @@ require (
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/pkg/errors v0.9.1
 	github.com/rbriski/atlassian-jwt v0.0.0-20180307182949-7bb4ae273058
-	github.com/stretchr/testify v1.7.0
+	github.com/rudderlabs/analytics-go v3.3.2+incompatible
+	github.com/stretchr/testify v1.8.0
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/text v0.3.7
 )

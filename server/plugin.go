@@ -23,7 +23,6 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
-	"github.com/mattermost/mattermost-plugin-api/experimental/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
@@ -31,6 +30,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
+	"github.com/mattermost/mattermost-plugin-jira/server/telemetry"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
@@ -128,15 +128,18 @@ type Plugin struct {
 	// channel to distribute work to the webhook processors
 	webhookQueue chan *webhookMessage
 
+	// service that determines if this Mattermost instance has access to
+	// enterprise features
+	enterpriseChecker enterprise.Checker
+
+	// Telemetry package copied inside repository, should be changed
+	// to pluginapi's one (0.1.3+) when min_server_version is safe to point at 7.x
+
 	// telemetry client
 	telemetryClient telemetry.Client
 
 	// telemetry Tracker
 	tracker telemetry.Tracker
-
-	// service that determines if this Mattermost instance has access to
-	// enterprise features
-	enterpriseChecker enterprise.Checker
 }
 
 func (p *Plugin) getConfig() config {
@@ -191,21 +194,10 @@ func (p *Plugin) OnConfigurationChange() error {
 		}
 	}
 
-	diagnostics := false
-	if p.API.GetConfig().LogSettings.EnableDiagnostics != nil {
-		diagnostics = *p.API.GetConfig().LogSettings.EnableDiagnostics
-	}
-
 	// create new tracker on each configuration change
-	p.tracker = telemetry.NewTracker(
-		p.telemetryClient,
-		p.API.GetDiagnosticId(),
-		p.API.GetServerVersion(),
-		manifest.ID,
-		manifest.Version,
-		"jira",
-		diagnostics,
-	)
+	if p.tracker != nil {
+		p.tracker.ReloadConfig(telemetry.NewTrackerConfig(p.API.GetConfig()))
+	}
 
 	return nil
 }
@@ -336,11 +328,7 @@ func (p *Plugin) OnActivate() error {
 		}
 	}()
 
-	// initialize the rudder client once on activation
-	p.telemetryClient, err = telemetry.NewRudderClient()
-	if err != nil {
-		p.API.LogError("Cannot create telemetry client. err=%v", err)
-	}
+	p.initializeTelemetry()
 
 	return nil
 }
@@ -508,52 +496,6 @@ func (p *Plugin) trackWithArgs(name, userID string, args map[string]interface{})
 	}
 	args["time"] = model.GetMillis()
 	_ = p.tracker.TrackUserEvent(name, userID, args)
-}
-
-func (p *Plugin) OnSendDailyTelemetry() {
-	args := map[string]interface{}{}
-
-	// Jira instances
-	server, cloud := 0, 0
-	instances, err := p.instanceStore.LoadInstances()
-	if err != nil {
-		p.API.LogWarn("Failed to get instances for telemetry", "error", err)
-	}
-	for _, id := range instances.IDs() {
-		switch instances.Get(id).Type {
-		case ServerInstanceType:
-			server++
-		case CloudInstanceType:
-			cloud++
-		}
-	}
-	args["instance_count"] = server + cloud
-	if server > 0 {
-		args["server_instance_count"] = server
-	}
-	if cloud > 0 {
-		args["cloud_instance_count"] = cloud
-	}
-
-	// Connected users
-	connected, err := p.userStore.CountUsers()
-	if err != nil {
-		p.API.LogWarn("Failed to get the number of connected users for telemetry", "error", err)
-	}
-	args["connected_user_count"] = connected
-
-	// Subscriptions
-	subscriptions := 0
-	for _, id := range instances.IDs() {
-		subs, err := p.getSubscriptions(id)
-		if err != nil {
-			p.API.LogWarn("Failed to get subscriptions for telemetry", "error", err)
-		}
-		subscriptions += len(subs.Channel.ByID)
-	}
-	args["subscriptions"] = subscriptions
-
-	_ = p.tracker.TrackEvent("stats", args)
 }
 
 func (p *Plugin) OnInstall(c *plugin.Context, event model.OnInstallEvent) error {
