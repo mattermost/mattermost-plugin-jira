@@ -119,6 +119,12 @@
         margin-block-start: 0;
     }
 
+    .popover-body__see-more-link {
+        margin: 0 24px 8px 24px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
     .popover__labels__label {
         display: flex;
         flex-direction: row;

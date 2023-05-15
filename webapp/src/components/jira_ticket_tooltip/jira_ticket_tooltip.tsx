@@ -19,14 +19,14 @@ export type Props = {
 }
 
 export type State = {
-    isLoaded: boolean;
     ticketId: string;
     ticketDetails?: TicketDetails | null;
 };
 
 const isAssignedLabel = ' is assigned';
 const unAssignedLabel = 'Unassigned';
-const jiraTicketTitleMaxLength = 80;
+const jiraTicketSummaryMaxLength = 80;
+const maxTicketDescriptionLength = 80;
 
 enum myStatus {
     INDETERMINATE = 'indeterminate',
@@ -48,7 +48,6 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         }
 
         this.state = {
-            isLoaded: false,
             ticketId: ticketID,
         };
     }
@@ -83,9 +82,9 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
 
     isUserConnectedAndStateNotLoaded() {
         const {connected} = this.props;
-        const {isLoaded} = this.state;
+        const {ticketDetails} = this.state;
 
-        return connected && !isLoaded;
+        return connected && ticketDetails;
     }
 
     componentDidMount() {
@@ -108,18 +107,17 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
 
         const {instanceID} = issueKey;
         const {ticketDetails} = this.props;
-        const {ticketId, isLoaded: isStateLoaded} = this.state;
+        const {ticketId, ticketDetails: localTicketDetails} = this.state;
 
-        if (!isStateLoaded && ticketDetails && ticketDetails.ticketId === ticketId) {
+        if (!localTicketDetails && ticketDetails && ticketDetails.ticketId === ticketId) {
             this.setTicket(this.props);
-        } else if (!isStateLoaded && this.props.show && ticketId) {
+        } else if (!localTicketDetails && this.props.show && ticketId) {
             this.props.fetchIssueByKey(ticketId, instanceID);
         }
     }
 
     setTicket(data: Props) {
         this.setState({
-            isLoaded: true,
             ticketDetails: data.ticketDetails,
         });
     }
@@ -189,7 +187,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
     }
 
     render() {
-        if (!this.state.ticketId || (!this.state.isLoaded && !this.props.show)) {
+        if (!this.state.ticketId || (!this.state.ticketDetails && !this.props.show)) {
             return null;
         }
 
@@ -247,16 +245,25 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                             target='_blank'
                             rel='noopener noreferrer'
                         >
-                            <h5>{ticketDetails && ticketDetails.summary.substring(0, jiraTicketTitleMaxLength)}</h5>
+                            <h5>{ticketDetails.summary.substring(0, jiraTicketSummaryMaxLength)}</h5>
                         </a>
                         {this.tagTicketStatus(ticketDetails.statusKey)}
                     </div>
                     <div className='popover-body__description'>
-                        {ticketDetails && ticketDetails.description}
+                        {ticketDetails.description && `${ticketDetails.description.substring(0, maxTicketDescriptionLength).trim()}${ticketDetails.description.length > maxTicketDescriptionLength && '...'}`}
+                    </div>
+                    <div className='popover-body__see-more-link'>
+                        <a
+                            href={this.props.href}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                        >
+                            {'See more'}
+                        </a>
                     </div>
                     <div className='popover-body__labels'>
-                        {ticketDetails && this.fixVersionLabel(ticketDetails.versions)}
-                        {ticketDetails && this.renderLabelList(ticketDetails.labels)}
+                        {this.fixVersionLabel(ticketDetails.versions)}
+                        {this.renderLabelList(ticketDetails.labels)}
                     </div>
                 </div>
                 <div className='popover-footer'>
