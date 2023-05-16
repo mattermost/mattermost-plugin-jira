@@ -77,6 +77,14 @@
                 "default": ""
             },
             {
+                "key": "SecurityLevelEmptyForJiraSubscriptions",
+                "display_name": "Default Subscription Security Level to Empty:",
+                "type": "bool",
+                "help_text": "Subscriptions will only include issues that have a security level assigned if the appropriate security level has been included as a filter",
+                "placeholder": "",
+                "default": true
+            },
+            {
                 "key": "JiraAdminAdditionalHelpText",
                 "display_name": "Additional Help Text to be shown with Jira Help:",
                 "type": "text",

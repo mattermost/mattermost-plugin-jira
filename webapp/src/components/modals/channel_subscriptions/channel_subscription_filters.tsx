@@ -16,6 +16,7 @@ export type Props = {
     removeValidate: (isValid: () => boolean) => void;
     onChange: (f: FilterValue[]) => void;
     instanceID: string;
+    securityLevelEmptyForJiraSubscriptions: boolean;
 };
 
 type State = {
@@ -32,7 +33,7 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
         const index = newValues.findIndex((f) => f === oldValue);
 
         if (index === -1) {
-            newValues.push({inclusion: FilterFieldInclusion.INCLUDE_ANY, values: [], ...newValue});
+            newValues.push({...newValue, inclusion: FilterFieldInclusion.INCLUDE_ANY, values: []});
             this.setState({showCreateRow: false});
         } else {
             newValues.splice(index, 1, newValue);
@@ -104,6 +105,7 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
                                     addValidate={this.props.addValidate}
                                     removeValidate={this.props.removeValidate}
                                     instanceID={this.props.instanceID}
+                                    securityLevelEmptyForJiraSubscriptions={this.props.securityLevelEmptyForJiraSubscriptions}
                                 />
                             </div>
                         );
