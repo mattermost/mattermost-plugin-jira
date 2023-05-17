@@ -26,7 +26,7 @@ export type State = {
 const isAssignedLabel = ' is assigned';
 const unAssignedLabel = 'Unassigned';
 const jiraTicketSummaryMaxLength = 80;
-const maxTicketDescriptionLength = 80;
+const maxTicketDescriptionLength = 160;
 
 enum myStatus {
     INDETERMINATE = 'indeterminate',
@@ -250,7 +250,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                         {this.tagTicketStatus(ticketDetails.statusKey)}
                     </div>
                     <div className='popover-body__description'>
-                        {ticketDetails.description && `${ticketDetails.description.substring(0, maxTicketDescriptionLength).trim()}${ticketDetails.description.length > maxTicketDescriptionLength && '...'}`}
+                        {ticketDetails.description && `${ticketDetails.description.substring(0, maxTicketDescriptionLength).trim()}${ticketDetails.description.length > maxTicketDescriptionLength ? '...' : ''}`}
                     </div>
                     <div className='popover-body__see-more-link'>
                         <a
