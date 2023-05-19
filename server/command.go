@@ -26,7 +26,7 @@ var jiraCommandHandler = CommandHandler{
 		"connect":                 executeConnect,
 		"disconnect":              executeDisconnect,
 		"help":                    executeHelp,
-		"info":                    executeInfo,
+		"me":                      executeMe,
 		"about":                   executeAbout,
 		"install/cloud":           executeInstanceInstallCloud,
 		"install/server":          executeInstanceInstallServer,
@@ -68,7 +68,7 @@ const commonHelpText = "\n" +
 	"* `/jira [issue] unassign [issue-key]` - Unassign the Jira issue\n" +
 	"* `/jira [issue] view [issue-key]` - View the details of a specific Jira issue\n" +
 	"* `/jira help` - Launch the Jira plugin command line help syntax\n" +
-	"* `/jira info` - Display information about the current user\n" +
+	"* `/jira me` - Display information about the current user\n" +
 	"* `/jira about` - Display build info\n" +
 	"* `/jira instance list` - List installed Jira instances\n" +
 	"* `/jira instance settings [setting] [value]` - Update your user settings\n" +
@@ -113,7 +113,7 @@ func (p *Plugin) registerJiraCommand(enableAutocomplete, enableOptInstance bool)
 
 func (p *Plugin) createJiraCommand(enableAutocomplete, enableOptInstance bool) (*model.Command, error) {
 	jira := model.NewAutocompleteData(
-		commandTrigger, "[issue|instance|help|info|about]", "Connect to and interact with Jira")
+		commandTrigger, "[issue|instance|help|me|about]", "Connect to and interact with Jira")
 
 	if enableAutocomplete {
 		addSubCommands(jira, enableOptInstance)
@@ -154,7 +154,7 @@ func addSubCommands(jira *model.AutocompleteData, optInstance bool) {
 
 	// Help and info
 	jira.AddCommand(model.NewAutocompleteData("help", "", "Display help for `/jira` command"))
-	jira.AddCommand(model.NewAutocompleteData("info", "", "Display information about the current user"))
+	jira.AddCommand(model.NewAutocompleteData("me", "", "Display information about the current user"))
 	jira.AddCommand(command.BuildInfoAutocomplete("about"))
 }
 
@@ -929,7 +929,7 @@ func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	return p.responsef(header, msg)
 }
 
-func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeMe(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 0 {
 		return p.help(header)
 	}
