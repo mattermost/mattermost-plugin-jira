@@ -662,7 +662,7 @@ func executeV2Revert(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 		preMessage = `#### Successfully reverted the V3 Jira plugin database to V2. The Jira plugin has been disabled.` + "\n"
 
 		go func() {
-			_ = p.client.Plugin.Disable(manifest.ID)
+			_ = p.client.Plugin.Disable(Manifest.Id)
 		}()
 	}
 	message := `**Please note that if you have multiple configured Jira instances this command will result in all non-legacy instances being removed.**
@@ -1031,7 +1031,7 @@ func executeMe(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...
 }
 
 func executeAbout(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	text, err := command.BuildInfo(model.Manifest{Name: "Jira", Version: manifest.Version}) // TODO: Replace with the manifest from file
+	text, err := command.BuildInfo(Manifest)
 	if err != nil {
 		text = errors.Wrap(err, "failed to get build info").Error()
 	}
