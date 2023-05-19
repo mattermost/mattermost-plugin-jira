@@ -105,9 +105,7 @@
         text-align: left;
         font-family: 'Open Sans', system-ui;
         font-style: normal;
-        overflow: hidden;
         font-weight: normal;
-        max-height: 50px;
         margin: 0 24px 8px 24px;
         font-size: 12px;
         line-height: 1.5;
@@ -117,6 +115,12 @@
 
     .popover-body__description>p {
         margin-block-start: 0;
+    }
+
+    .popover-body__see-more-link {
+        margin: 0 24px 8px 24px;
+        font-size: 12px;
+        font-weight: bold;
     }
 
     .popover__labels__label {
