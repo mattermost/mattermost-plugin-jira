@@ -13,9 +13,7 @@ export type Props = {
     connected: boolean;
     ticketDetails?: TicketDetails | null;
     connectedInstances: Instance[];
-    fetchIssueByKey: (issueKey: string, instanceID: string) => (dispatch: Dispatch, getState: any) => Promise<{
-        data?: TicketData;
-    }>;
+    fetchIssueByKey: (issueKey: string, instanceID: string) => Promise<void>;
 }
 
 export type State = {
@@ -84,7 +82,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         const {connected} = this.props;
         const {ticketDetails} = this.state;
 
-        return connected && ticketDetails;
+        return Boolean(connected && ticketDetails);
     }
 
     componentDidMount() {
