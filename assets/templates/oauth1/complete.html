@@ -57,8 +57,20 @@
 		</style>
 		<script>
 			const handleDisconnect = () => {
+				const token = ('; '+document.cookie).split(`; MMCSRF=`).pop().split(';')[0];
+
 				fetch("{{ .RevokeURL }}", {
-					method: "POST"
+					method: "POST",
+					headers: {
+						'X-CSRF-Token': token,
+					},
+				}).then(res => {
+					let element = document.getElementsByTagName("body")[0]
+					if(!res.ok) {
+						element.style.margin = "10px"
+      				}
+
+					return res.text().then(text => element.innerHTML=text)
 				})
 			}
 		</script>
@@ -76,7 +88,7 @@
 				<div>Mattermost account: {{ .MattermostDisplayName }}</div>
 				<div>Jira account: {{ .JiraDisplayName }}</div>
 			</div>
-			<button onclick="handleDisconnect" class="btn btn-link">Disconnect</button>
+			<button onclick="handleDisconnect()" class="btn btn-link">Disconnect</button>
 		</div>
 	</body>
 </html>
