@@ -26,7 +26,8 @@ var jiraCommandHandler = CommandHandler{
 		"connect":                 executeConnect,
 		"disconnect":              executeDisconnect,
 		"help":                    executeHelp,
-		"info":                    executeInfo,
+		"me":                      executeMe,
+		"about":                   executeAbout,
 		"install/cloud":           executeInstanceInstallCloud,
 		"install/server":          executeInstanceInstallServer,
 		"instance/alias":          executeInstanceAlias,
@@ -67,7 +68,8 @@ const commonHelpText = "\n" +
 	"* `/jira [issue] unassign [issue-key]` - Unassign the Jira issue\n" +
 	"* `/jira [issue] view [issue-key]` - View the details of a specific Jira issue\n" +
 	"* `/jira help` - Launch the Jira plugin command line help syntax\n" +
-	"* `/jira info` - Display information about the current user and the Jira plug-in\n" +
+	"* `/jira me` - Display information about the current user\n" +
+	"* `/jira about` - Display build info\n" +
 	"* `/jira instance list` - List installed Jira instances\n" +
 	"* `/jira instance settings [setting] [value]` - Update your user settings\n" +
 	"  * [setting] can be `notifications`\n" +
@@ -111,7 +113,7 @@ func (p *Plugin) registerJiraCommand(enableAutocomplete, enableOptInstance bool)
 
 func (p *Plugin) createJiraCommand(enableAutocomplete, enableOptInstance bool) (*model.Command, error) {
 	jira := model.NewAutocompleteData(
-		commandTrigger, "[issue|instance|info|help]", "Connect to and interact with Jira")
+		commandTrigger, "[issue|instance|help|me|about]", "Connect to and interact with Jira")
 
 	if enableAutocomplete {
 		addSubCommands(jira, enableOptInstance)
@@ -151,8 +153,9 @@ func addSubCommands(jira *model.AutocompleteData, optInstance bool) {
 	jira.AddCommand(createSetupCommand())
 
 	// Help and info
-	jira.AddCommand(model.NewAutocompleteData("info", "", "Display information about the current user and the Jira plug-in"))
 	jira.AddCommand(model.NewAutocompleteData("help", "", "Display help for `/jira` command"))
+	jira.AddCommand(model.NewAutocompleteData("me", "", "Display information about the current user"))
+	jira.AddCommand(command.BuildInfoAutocomplete("about"))
 }
 
 func createInstanceCommand(optInstance bool) *model.AutocompleteData {
@@ -659,7 +662,7 @@ func executeV2Revert(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 		preMessage = `#### Successfully reverted the V3 Jira plugin database to V2. The Jira plugin has been disabled.` + "\n"
 
 		go func() {
-			_ = p.client.Plugin.Disable(manifest.ID)
+			_ = p.client.Plugin.Disable(Manifest.Id)
 		}()
 	}
 	message := `**Please note that if you have multiple configured Jira instances this command will result in all non-legacy instances being removed.**
@@ -926,7 +929,7 @@ func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 	return p.responsef(header, msg)
 }
 
-func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+func executeMe(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) != 0 {
 		return p.help(header)
 	}
@@ -965,11 +968,7 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 		return p.responsef(header, err.Error())
 	}
 
-	resp := fmt.Sprintf("Mattermost Jira plugin version: %s, "+
-		"[%s](https://github.com/mattermost/mattermost-plugin-jira/commit/%s), built %s.\n",
-		manifest.Version, BuildHashShort, BuildHash, BuildDate)
-
-	resp += sbullet("Mattermost site URL", p.GetSiteURL())
+	resp := sbullet("Mattermost site URL", p.GetSiteURL())
 	resp += sbullet("Mattermost user ID", fmt.Sprintf("`%s`", mattermostUserID))
 
 	switch {
@@ -1029,6 +1028,15 @@ func executeInfo(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 	}
 
 	return p.responsef(header, resp)
+}
+
+func executeAbout(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	text, err := command.BuildInfo(Manifest)
+	if err != nil {
+		text = errors.Wrap(err, "failed to get build info").Error()
+	}
+
+	return p.responsef(header, text)
 }
 
 func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

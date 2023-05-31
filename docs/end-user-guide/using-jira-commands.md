@@ -15,7 +15,8 @@ The available commands are listed below.
 **Note:** [setting] can be `notifications` and [value] can be `on` or `off`
 
 - `/jira help` - Launch the Jira plugin command line help syntax
-- `/jira info` - Display information about the current user and the Jira plugin
+- `/jira me` - Display information about the current user
+- `/jira about` - Display build info
 - `/jira instance list` - List installed Jira instances
 - `/jira connect [jiraURL]` - Connect your Mattermost account to your Jira account
 - `/jira disconnect [jiraURL]` - Disconnect your Mattermost account from your Jira account

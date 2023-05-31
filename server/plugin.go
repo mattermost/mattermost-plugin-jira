@@ -28,6 +28,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
 
+	root "github.com/mattermost/mattermost-plugin-jira"
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/telemetry"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -46,9 +47,9 @@ const (
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
 )
 
-var BuildHash = ""
-var BuildHashShort = ""
-var BuildDate = ""
+var (
+	Manifest model.Manifest = root.Manifest
+)
 
 type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
@@ -232,6 +233,7 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	botUserID, err := p.client.Bot.EnsureBot(&model.Bot{
+		OwnerId:     Manifest.Id, // Workaround to support older server version affected by https://github.com/mattermost/mattermost-server/pull/21560
 		Username:    botUserName,
 		DisplayName: botDisplayName,
 		Description: botDescription,
@@ -385,7 +387,7 @@ func (p *Plugin) GetPluginKey() string {
 }
 
 func (p *Plugin) GetPluginURLPath() string {
-	return "/plugins/" + manifest.ID
+	return "/plugins/" + Manifest.Id
 }
 
 func (p *Plugin) GetPluginURL() string {
