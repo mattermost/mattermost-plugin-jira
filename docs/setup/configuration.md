@@ -9,6 +9,7 @@
    4. Click **Save**.
 2. At the top of the page set **Enable Plugin** to **True**.
 3. Choose **Save** to enable the Jira plugin.
+4. Run `/jira setup` to start configuring the plugin.
 
 ### Step 2: Install the plugin as an application in Jira
 
