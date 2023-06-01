@@ -9,6 +9,7 @@
    4. Click **Save**.
 2. At the top of the page set **Enable Plugin** to **True**.
 3. Choose **Save** to enable the Jira plugin.
+4. Run `/jira setup` to start configuring the plugin.
 
 ### Step 2: Install the plugin as an application in Jira
 
@@ -28,10 +29,6 @@ To control Mattermost channel subscriptions, use the `/jira subscribe` command i
 3. Click **Create a WebHook** to create a new webhook. 
 4. Enter a **Name** for the webhook and add the Jira webhook URL retrieved above as the **URL**.
 5. Finally, set which issue events send messages to Mattermost channels and select all of the following:
-   * Worklog
-      * created
-      * updated
-      * deleted
    * Comment
       * created
       * updated
