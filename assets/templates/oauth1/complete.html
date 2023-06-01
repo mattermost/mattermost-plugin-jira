@@ -57,13 +57,12 @@
 		</style>
 		<script>
 			const handleDisconnect = () => {
-				const token = ('; '+document.cookie).split(`; MMCSRF=`).pop().split(';')[0];
+				// Splitting the cookies string on the basis of cookie name and then popping out the first value.
+				const token = ('; ' + document.cookie).split('; MMCSRF=').pop().split(';')[0];
 
 				fetch("{{ .RevokeURL }}", {
 					method: "POST",
-					headers: {
-						'X-CSRF-Token': token,
-					},
+					headers: {'X-CSRF-Token': token},
 				}).then(res => {
 					let element = document.getElementsByTagName("body")[0]
 					if(!res.ok) {
