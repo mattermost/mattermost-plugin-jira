@@ -31,6 +31,7 @@ describe('components/ChannelSubscriptionFilter', () => {
         onChange: jest.fn(),
         removeFilter: jest.fn(),
         instanceID: 'https://something.atlassian.net',
+        securityLevelEmptyForJiraSubscriptions: true,
     };
 
     test('should match snapshot', () => {
@@ -115,5 +116,62 @@ describe('components/ChannelSubscriptionFilter', () => {
 
         result = wrapper.instance().checkFieldConflictError();
         expect(result).toEqual('FieldName does not exist for issue type(s): Task.');
+    });
+
+    test('checkInclusionError should return an error string when there is an invalid inclusion value', () => {
+        const props: Props = {
+            ...baseProps,
+            field: {
+                ...baseProps.field,
+                schema: {
+                    ...baseProps.field.schema,
+                    type: 'securitylevel',
+                },
+            },
+        };
+        const wrapper = shallow<ChannelSubscriptionFilter>(
+            <ChannelSubscriptionFilter {...props}/>
+        );
+
+        let isValid;
+        isValid = wrapper.instance().isValid();
+        expect(isValid).toBe(true);
+
+        wrapper.setProps({
+            ...props,
+            value: {
+                inclusion: FilterFieldInclusion.EMPTY,
+                key: 'securitylevel',
+                values: [],
+            },
+        });
+
+        isValid = wrapper.instance().isValid();
+        expect(isValid).toBe(true);
+
+        wrapper.setProps({
+            ...props,
+            value: {
+                inclusion: FilterFieldInclusion.INCLUDE_ANY,
+                key: 'securitylevel',
+                values: [],
+            },
+        });
+
+        isValid = wrapper.instance().isValid();
+        expect(isValid).toBe(true);
+
+        wrapper.setProps({
+            ...props,
+            value: {
+                inclusion: FilterFieldInclusion.EXCLUDE_ANY,
+                key: 'securitylevel',
+                values: [],
+            },
+        });
+
+        isValid = wrapper.instance().isValid();
+        expect(isValid).toBe(false);
+        expect(wrapper.find('.error-text').text()).toEqual('Security level inclusion cannot be "Exclude Any". Note that the default value is now "Empty".');
     });
 });

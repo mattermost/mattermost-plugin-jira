@@ -84,7 +84,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	}
 
 	connection := &Connection{
-		PluginVersion:      manifest.Version,
+		PluginVersion:      Manifest.Version,
 		Oauth1AccessToken:  accessToken,
 		Oauth1AccessSecret: accessSecret,
 	}

@@ -7,7 +7,7 @@
     "release_notes_url": "https://github.com/mattermost/mattermost-plugin-jira/releases/tag/v3.2.0",
     "icon_path": "assets/icon.svg",
     "version": "3.2.0",
-    "min_server_version": "6.5.0",
+    "min_server_version": "7.8.0",
     "server": {
         "executables": {
             "darwin-amd64": "server/dist/plugin-darwin-amd64",
@@ -75,6 +75,14 @@
                 "help_text": "Comma separated list of Group Names. List the Jira user groups who can create subscriptions. If none are specified, any Jira user can create a subscription. Jira groups restrictions are only applicable for a legacy instance installed on Jira 2.4 or earlier.",
                 "placeholder": "",
                 "default": ""
+            },
+            {
+                "key": "SecurityLevelEmptyForJiraSubscriptions",
+                "display_name": "Default Subscription Security Level to Empty:",
+                "type": "bool",
+                "help_text": "Subscriptions will only include issues that have a security level assigned if the appropriate security level has been included as a filter",
+                "placeholder": "",
+                "default": true
             },
             {
                 "key": "JiraAdminAdditionalHelpText",
