@@ -86,7 +86,7 @@ func (p *Plugin) NewSetupFlow() *flow.Flow {
 }
 
 func (p *Plugin) NewOAuth2Flow() *flow.Flow {
-	pluginURL := *p.client.Configuration.GetConfig().ServiceSettings.SiteURL + "/" + "plugins" + "/" + manifest.ID
+	pluginURL := *p.client.Configuration.GetConfig().ServiceSettings.SiteURL + "/" + "plugins" + "/" + Manifest.ID
 	conf := p.getConfig()
 	return flow.NewFlow("setup-oauth2", p.client, pluginURL, conf.botUserID).
 		WithSteps(

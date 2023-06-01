@@ -137,7 +137,7 @@ func (store store) StoreConnection(instanceID, mattermostUserID types.ID, connec
 			fmt.Sprintf("failed to store connection, mattermostUserID:%s, Jira user:%s", mattermostUserID, connection.DisplayName))
 	}()
 
-	connection.PluginVersion = manifest.Version
+	connection.PluginVersion = Manifest.Version
 	connection.MattermostUserID = mattermostUserID
 
 	err := store.set(keyWithInstanceID(instanceID, mattermostUserID), connection)
