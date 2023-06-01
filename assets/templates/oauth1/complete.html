@@ -67,9 +67,9 @@
 					let element = document.getElementsByTagName("body")[0]
 					if(!res.ok) {
 						element.style.margin = "10px"
-      				}
+      				        }
 
-					return res.text().then(text => element.innerHTML=text)
+					return res.text().then(text => element.innerHTML = text)
 				})
 			}
 		</script>
