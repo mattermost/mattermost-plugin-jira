@@ -115,6 +115,17 @@ func (instances Instances) isAliasUnique(instanceID types.ID, alias string) (boo
 	return true, ""
 }
 
+// checkIfExists returns true if the specified instance id already exists
+func (instances Instances) checkIfExists(instanceID types.ID) bool {
+	for _, id := range instances.IDs() {
+		if id == instanceID {
+			return true
+		}
+	}
+
+	return false
+}
+
 type instancesArray []*InstanceCommon
 
 func (p instancesArray) Len() int                   { return len(p) }
@@ -135,7 +146,7 @@ func (p *Plugin) InstallInstance(instance Instance) error {
 	err := UpdateInstances(p.instanceStore,
 		func(instances *Instances) error {
 			if !p.enterpriseChecker.HasEnterpriseFeatures() {
-				if instances != nil && len(instances.IDs()) > 0 && instances.IDs()[0] != instance.Common().InstanceID {
+				if instances != nil && len(instances.IDs()) > 0 && !instances.checkIfExists(instance.GetID()) {
 					return errors.Errorf(licenseErrorString)
 				}
 			}
