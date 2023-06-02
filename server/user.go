@@ -193,10 +193,13 @@ func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, proje
 }
 
 func (p *Plugin) httpGetSettingsInfo(w http.ResponseWriter, r *http.Request) (int, error) {
+	conf := p.getConfig()
 	return respondJSON(w, struct {
-		UIEnabled bool `json:"ui_enabled"`
+		UIEnabled                              bool `json:"ui_enabled"`
+		SecurityLevelEmptyForJiraSubscriptions bool `json:"security_level_empty_for_jira_subscriptions"`
 	}{
-		UIEnabled: p.getConfig().EnableJiraUI,
+		UIEnabled:                              conf.EnableJiraUI,
+		SecurityLevelEmptyForJiraSubscriptions: conf.SecurityLevelEmptyForJiraSubscriptions,
 	})
 }
 
