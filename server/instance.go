@@ -68,3 +68,7 @@ func (ic InstanceCommon) GetID() types.ID {
 func (ic *InstanceCommon) Common() *InstanceCommon {
 	return ic
 }
+
+func (ic InstanceCommon) IsCloudInstance() bool {
+	return ic.Type == CloudInstanceType || ic.Type == CloudOAuthInstanceType
+}
