@@ -164,7 +164,7 @@ Administrator slash commands are used to perform system-level functions that req
 
 ### Notification Management
 
-#### What are Notifications?
+#### What are notifications?
 
 Jira notifications are messages sent to a Mattermost channel when a particular event occurs in Jira. They can be subscribed to from a channel via `/jira subscribe` \(managed within Mattermost\). A webhook can be manually set up from Jira to send a message to a particular channel in Mattermost \(managed via Jira\).
 
