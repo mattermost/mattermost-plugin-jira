@@ -184,7 +184,7 @@ When a user is setting up a notification subscription they'll only see the proje
 
 An approximate JQL query is output as well. This is not guaranteed to be valid JQL and is only shown as a reference to what the query may look like if converted to JQL.
 
-#### Who can set up Notification Subscriptions for a channel?
+#### Who can set up notification subscriptions for a channel?
 
 You can specify who can set up a notification subscription in the plugin configuration. First, set which **Mattermost** user roles are allowed to access the subscription functionality:
 
