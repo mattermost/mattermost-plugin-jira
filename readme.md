@@ -297,7 +297,7 @@ Connecting an account between Mattermost and Jira is a key part of the installat
 
 ### Getting Started
 
-To get started with the Jira/Mattermost connector is easy.  You'll first need to connect your Jira account with your Mattermost account so the system can perform actions such as searching, viewing and creating Jira issues on your behalf.
+To get started with the Jira/Mattermost connector is easy. You'll first need to connect your Jira account with your Mattermost account so the system can perform actions such as searching, viewing and creating Jira issues on your behalf.
 
 1. Go into any channel within Mattermost, and type `/jira connect`.
 2. Follow the link that gets presented to you - it will bring you to your Jira server.
