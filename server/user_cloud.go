@@ -88,7 +88,7 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 
 	mmToken := r.FormValue(argMMToken)
 	connection := &Connection{
-		PluginVersion: manifest.Version,
+		PluginVersion: Manifest.Version,
 		User: jira.User{
 			AccountID:   accountID,
 			Key:         jUser.Key,

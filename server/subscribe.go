@@ -15,6 +15,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
+	"github.com/trivago/tgo/tcontainer"
+
 	"github.com/mattermost/mattermost-server/v6/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -92,7 +94,7 @@ type Subscriptions struct {
 
 func NewSubscriptions() *Subscriptions {
 	return &Subscriptions{
-		PluginVersion: manifest.Version,
+		PluginVersion: Manifest.Version,
 		Channel:       NewChannelSubscriptions(),
 	}
 }
@@ -104,7 +106,7 @@ func SubscriptionsFromJSON(bytes []byte, instanceID types.ID) (*Subscriptions, e
 		if unmarshalErr != nil {
 			return nil, unmarshalErr
 		}
-		subs.PluginVersion = manifest.Version
+		subs.PluginVersion = Manifest.Version
 	} else {
 		subs = NewSubscriptions()
 	}
@@ -140,37 +142,61 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		return false
 	}
 
-	if filters.IssueTypes.Len() != 0 && !filters.IssueTypes.ContainsAny(wh.JiraWebhook.Issue.Fields.Type.ID) {
+	issue := &wh.JiraWebhook.Issue
+
+	if filters.IssueTypes.Len() != 0 && !filters.IssueTypes.ContainsAny(issue.Fields.Type.ID) {
 		return false
 	}
 
-	if filters.Projects.Len() != 0 && !filters.Projects.ContainsAny(wh.JiraWebhook.Issue.Fields.Project.Key) {
+	if filters.Projects.Len() != 0 && !filters.Projects.ContainsAny(issue.Fields.Project.Key) {
 		return false
 	}
 
-	validFilter := true
-
+	containsSecurityLevelFilter := false
+	useEmptySecurityLevel := p.getConfig().SecurityLevelEmptyForJiraSubscriptions
 	for _, field := range filters.Fields {
+		inclusion := field.Inclusion
+
 		// Broken filter, values must be provided
-		if field.Inclusion == "" || (field.Values.Len() == 0 && field.Inclusion != FilterEmpty) {
-			validFilter = false
-			break
+		if inclusion == "" || (field.Values.Len() == 0 && inclusion != FilterEmpty) {
+			return false
 		}
 
-		value := getIssueFieldValue(&wh.JiraWebhook.Issue, field.Key)
-		containsAny := value.ContainsAny(field.Values.Elems()...)
-		containsAll := value.ContainsAll(field.Values.Elems()...)
+		if field.Key == securityLevelField {
+			containsSecurityLevelFilter = true
+			if inclusion == FilterExcludeAny && useEmptySecurityLevel {
+				inclusion = FilterEmpty
+			}
+		}
 
-		if (field.Inclusion == FilterIncludeAny && !containsAny) ||
-			(field.Inclusion == FilterIncludeAll && !containsAll) ||
-			(field.Inclusion == FilterExcludeAny && containsAny) ||
-			(field.Inclusion == FilterEmpty && value.Len() > 0) {
-			validFilter = false
-			break
+		value := getIssueFieldValue(issue, field.Key)
+		if !isValidFieldInclusion(field, value, inclusion) {
+			return false
 		}
 	}
 
-	return validFilter
+	if !containsSecurityLevelFilter && useEmptySecurityLevel {
+		securityLevel := getIssueFieldValue(issue, securityLevelField)
+		if securityLevel.Len() > 0 {
+			return false
+		}
+	}
+
+	return true
+}
+
+func isValidFieldInclusion(field FieldFilter, value StringSet, inclusion string) bool {
+	containsAny := value.ContainsAny(field.Values.Elems()...)
+	containsAll := value.ContainsAll(field.Values.Elems()...)
+
+	if (inclusion == FilterIncludeAny && !containsAny) ||
+		(inclusion == FilterIncludeAll && !containsAll) ||
+		(inclusion == FilterExcludeAny && containsAny) ||
+		(inclusion == FilterEmpty && value.Len() > 0) {
+		return false
+	}
+
+	return true
 }
 
 func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) ([]ChannelSubscription, error) {
@@ -298,6 +324,37 @@ func (p *Plugin) validateSubscription(instanceID types.ID, subscription *Channel
 		return errors.New("please provide a project identifier")
 	}
 
+	projectKey := subscription.Filters.Projects.Elems()[0]
+
+	var securityLevels StringSet
+	useEmptySecurityLevel := p.getConfig().SecurityLevelEmptyForJiraSubscriptions
+	for _, field := range subscription.Filters.Fields {
+		if field.Key != securityLevelField {
+			continue
+		}
+
+		if field.Inclusion == FilterEmpty {
+			continue
+		}
+
+		if field.Inclusion == FilterExcludeAny && useEmptySecurityLevel {
+			return errors.New("security level does not allow for an \"Exclude\" clause")
+		}
+
+		if securityLevels == nil {
+			securityLevelsArray, err := p.getSecurityLevelsForProject(client, projectKey)
+			if err != nil {
+				return errors.Wrap(err, "failed to get security levels for project")
+			}
+
+			securityLevels = NewStringSet(securityLevelsArray...)
+		}
+
+		if !securityLevels.ContainsAll(field.Values.Elems()...) {
+			return errors.New("invalid access to security level")
+		}
+	}
+
 	channelID := subscription.ChannelID
 	subs, err := p.getSubscriptionsForChannel(instanceID, channelID)
 	if err != nil {
@@ -310,13 +367,53 @@ func (p *Plugin) validateSubscription(instanceID types.ID, subscription *Channel
 		}
 	}
 
-	projectKey := subscription.Filters.Projects.Elems()[0]
 	_, err = client.GetProject(projectKey)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get project %q", projectKey)
 	}
 
 	return nil
+}
+
+func (p *Plugin) getSecurityLevelsForProject(client Client, projectKey string) ([]string, error) {
+	createMeta, err := client.GetCreateMetaInfo(p.API, &jira.GetQueryOptions{
+		Expand:      "projects.issuetypes.fields",
+		ProjectKeys: projectKey,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "error fetching user security levels")
+	}
+
+	if len(createMeta.Projects) == 0 || len(createMeta.Projects[0].IssueTypes) == 0 {
+		return nil, errors.Wrapf(err, "no project found for project key %s", projectKey)
+	}
+
+	securityLevels1, err := createMeta.Projects[0].IssueTypes[0].Fields.MarshalMap(securityLevelField)
+	if err != nil {
+		return nil, errors.Wrap(err, "error parsing user security levels")
+	}
+
+	allowed, ok := securityLevels1["allowedValues"].([]interface{})
+	if !ok {
+		return nil, errors.New("error parsing user security levels: failed to type assertion on array")
+	}
+
+	out := []string{}
+	for _, level := range allowed {
+		value, ok := level.(tcontainer.MarshalMap)
+		if !ok {
+			return nil, errors.New("error parsing user security levels: failed to type assertion on map")
+		}
+
+		id, ok := value["id"].(string)
+		if !ok {
+			return nil, errors.New("error parsing user security levels: failed to type assertion on string")
+		}
+
+		out = append(out, id)
+	}
+
+	return out, nil
 }
 
 func (p *Plugin) editChannelSubscription(instanceID types.ID, modifiedSubscription *ChannelSubscription, client Client) error {

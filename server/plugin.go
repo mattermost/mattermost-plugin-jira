@@ -22,14 +22,15 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
-	"github.com/mattermost/mattermost-plugin-api/experimental/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
 
+	root "github.com/mattermost/mattermost-plugin-jira"
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
+	"github.com/mattermost/mattermost-plugin-jira/server/telemetry"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
@@ -46,9 +47,9 @@ const (
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
 )
 
-var BuildHash = ""
-var BuildHashShort = ""
-var BuildDate = ""
+var (
+	Manifest model.Manifest = root.Manifest
+)
 
 type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
@@ -69,6 +70,9 @@ type externalConfig struct {
 
 	// Additional Help Text to be shown in the output of '/jira help' command
 	JiraAdminAdditionalHelpText string
+
+	// When enabled, a subscription without security level rules will filter out an issue that has a security level assigned
+	SecurityLevelEmptyForJiraSubscriptions bool
 
 	// Hide issue descriptions and comments in Webhook and Subscription messages
 	HideDecriptionComment bool
@@ -125,15 +129,18 @@ type Plugin struct {
 	// channel to distribute work to the webhook processors
 	webhookQueue chan *webhookMessage
 
+	// service that determines if this Mattermost instance has access to
+	// enterprise features
+	enterpriseChecker enterprise.Checker
+
+	// Telemetry package copied inside repository, should be changed
+	// to pluginapi's one (0.1.3+) when min_server_version is safe to point at 7.x
+
 	// telemetry client
 	telemetryClient telemetry.Client
 
 	// telemetry Tracker
 	tracker telemetry.Tracker
-
-	// service that determines if this Mattermost instance has access to
-	// enterprise features
-	enterpriseChecker enterprise.Checker
 }
 
 func (p *Plugin) getConfig() config {
@@ -226,6 +233,7 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	botUserID, err := p.client.Bot.EnsureBot(&model.Bot{
+		OwnerId:     Manifest.Id, // Workaround to support older server version affected by https://github.com/mattermost/mattermost-server/pull/21560
 		Username:    botUserName,
 		DisplayName: botDisplayName,
 		Description: botDescription,
@@ -379,7 +387,7 @@ func (p *Plugin) GetPluginKey() string {
 }
 
 func (p *Plugin) GetPluginURLPath() string {
-	return "/plugins/" + manifest.ID
+	return "/plugins/" + Manifest.Id
 }
 
 func (p *Plugin) GetPluginURL() string {

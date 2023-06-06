@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import PluginId from 'plugin_id';
+import {id as PluginId} from '../manifest';
 
 export default {
     OPEN_CONNECT_MODAL: `${PluginId}_open_connect_modal`,
