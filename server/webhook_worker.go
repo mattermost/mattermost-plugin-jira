@@ -45,10 +45,6 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 	}
 
 	v := wh.(*webhook)
-	if err = v.JiraWebhook.expandIssue(ww.p, msg.InstanceID); err != nil {
-		return err
-	}
-
 	channelsSubscribed, err := ww.p.getChannelsSubscribed(v, msg.InstanceID)
 	if err != nil {
 		return err
