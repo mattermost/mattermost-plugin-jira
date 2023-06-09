@@ -4,6 +4,9 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"regexp"
 	"strings"
@@ -158,4 +161,24 @@ func isEmbbedableMIME(mime string) bool {
 		}
 	}
 	return false
+}
+
+func getS256PKCEParams() (*PKCEParams, error) {
+	buf := make([]byte, PKCEByteArrayLength)
+	_, err := rand.Read(buf)
+	if err != nil {
+		return nil, err
+	}
+
+	verifier := base64.RawURLEncoding.EncodeToString(buf)
+
+	h := sha256.New()
+	h.Write([]byte(verifier))
+	challenge := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
+
+	return &PKCEParams{
+		CodeChanllenge:      challenge,
+		CodeVerifier:        verifier,
+		CodeChallengeMethod: "S256",
+	}, nil
 }

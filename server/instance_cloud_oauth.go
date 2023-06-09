@@ -23,10 +23,13 @@ type cloudOAuthInstance struct {
 	// The SiteURL may change as we go, so we store the PluginKey when as it was installed
 	MattermostKey string
 
-	JiraResourceID   string
-	JiraClientID     string
-	JiraClientSecret string
-	JiraBaseURL      string
+	JiraResourceID      string
+	JiraClientID        string
+	JiraClientSecret    string
+	JiraBaseURL         string
+	CodeVerifier        string
+	CodeChanllenge      string
+	CodeChallengeMethod string
 }
 
 type CloudOAuthConfigure struct {
@@ -39,13 +42,20 @@ type JiraAccessibleResources []struct {
 	ID string
 }
 
+type PKCEParams struct {
+	CodeVerifier        string
+	CodeChanllenge      string
+	CodeChallengeMethod string
+}
+
 var _ Instance = (*cloudOAuthInstance)(nil)
 
 const (
-	JiraScopes        = "read:jira-user,read:jira-work,write:jira-work"
-	JiraScopesOffline = JiraScopes + ",offline_access"
-	JiraResponseType  = "code"
-	JiraConsent       = "consent"
+	JiraScopes          = "read:jira-user,read:jira-work,write:jira-work"
+	JiraScopesOffline   = JiraScopes + ",offline_access"
+	JiraResponseType    = "code"
+	JiraConsent         = "consent"
+	PKCEByteArrayLength = 32
 )
 
 func (p *Plugin) installCloudOAuthInstance(rawURL string, clientID string, clientSecret string) (string, *cloudOAuthInstance, error) {
@@ -57,12 +67,20 @@ func (p *Plugin) installCloudOAuthInstance(rawURL string, clientID string, clien
 		return "", nil, errors.Errorf("`%s` is a Jira server URL, not a Jira Cloud", jiraURL)
 	}
 
+	params, err := getS256PKCEParams()
+	if err != nil {
+		return "", nil, err
+	}
+
 	instance := &cloudOAuthInstance{
-		InstanceCommon:   newInstanceCommon(p, CloudOAuthInstanceType, types.ID(jiraURL)),
-		MattermostKey:    p.GetPluginKey(),
-		JiraClientID:     clientID,
-		JiraClientSecret: clientSecret,
-		JiraBaseURL:      rawURL,
+		InstanceCommon:      newInstanceCommon(p, CloudOAuthInstanceType, types.ID(jiraURL)),
+		MattermostKey:       p.GetPluginKey(),
+		JiraClientID:        clientID,
+		JiraClientSecret:    clientSecret,
+		JiraBaseURL:         rawURL,
+		CodeVerifier:        params.CodeVerifier,
+		CodeChanllenge:      params.CodeChanllenge,
+		CodeChallengeMethod: params.CodeChallengeMethod,
 	}
 
 	err = p.InstallInstance(instance)
@@ -130,6 +148,8 @@ func (ci *cloudOAuthInstance) GetUserConnectURL(mattermostUserID string) (string
 		oauth2.SetAuthURLParam("state", state),
 		oauth2.SetAuthURLParam("response_type", "code"),
 		oauth2.SetAuthURLParam("prompt", "consent"),
+		oauth2.SetAuthURLParam("code_challenge_method", ci.CodeChallengeMethod),
+		oauth2.SetAuthURLParam("code_challenge", ci.CodeChanllenge),
 	)
 	if err := ci.Plugin.otsStore.StoreOneTimeSecret(mattermostUserID, state); err != nil {
 		return "", nil, err

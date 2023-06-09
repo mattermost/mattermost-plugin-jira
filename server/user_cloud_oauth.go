@@ -11,6 +11,7 @@ import (
 
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -100,7 +101,7 @@ func (p *Plugin) GenerateInitialOAuthToken(mattermostUserID string, instanceID t
 
 	oAuthConf := oAuthInstance.GetOAuthConfig()
 
-	token, err := oAuthConf.Exchange(context.Background(), code)
+	token, err := oAuthConf.Exchange(context.Background(), code, oauth2.SetAuthURLParam("code_verifier", oAuthInstance.CodeVerifier))
 	if err != nil {
 		p.client.Log.Error("error while exchanging authorization code for access token", "error", err)
 		return nil, errors.WithMessage(err, "error while exchanging authorization code for access token")
