@@ -48,13 +48,13 @@ const (
 	JiraConsent       = "consent"
 )
 
-func (p *Plugin) installCloudOAuthInstance(rawURL string, clientID string, clientSecret string) (string, *cloudOAuthInstance, error) {
+func (p *Plugin) installCloudOAuthInstance(rawURL, clientID, clientSecret string) (string, *cloudOAuthInstance, error) {
 	jiraURL, err := utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
 	if err != nil {
 		return "", nil, err
 	}
 	if !utils.IsJiraCloudURL(jiraURL) {
-		return "", nil, errors.Errorf("`%s` is a Jira server URL, not a Jira Cloud", jiraURL)
+		return "", nil, errors.Errorf("`%s` is a Jira server URL instead of a Jira Cloud URL", jiraURL)
 	}
 
 	instance := &cloudOAuthInstance{
@@ -65,8 +65,7 @@ func (p *Plugin) installCloudOAuthInstance(rawURL string, clientID string, clien
 		JiraBaseURL:      rawURL,
 	}
 
-	err = p.InstallInstance(instance)
-	if err != nil {
+	if err = p.InstallInstance(instance); err != nil {
 		return "", nil, err
 	}
 
@@ -98,8 +97,7 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 		connection.OAuth2Token = updatedToken
 
 		// Store this new access token & refresh token to get a new access token in future when it has expired
-		err = ci.Plugin.userStore.StoreConnection(ci.Common().InstanceID, connection.MattermostUserID, connection)
-		if err != nil {
+		if err = ci.Plugin.userStore.StoreConnection(ci.Common().InstanceID, connection.MattermostUserID, connection); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -179,24 +177,22 @@ func (ci *cloudOAuthInstance) getJiraCloudResourceID(client http.Client) (string
 		nil,
 	)
 	if err != nil {
-		return "", fmt.Errorf("failed getting request")
+		return "", fmt.Errorf("failed to get the request")
 	}
 
 	response, err := client.Do(request)
 	if err != nil {
-		return "", fmt.Errorf("failed getting accessible resources: %s", err.Error())
+		return "", fmt.Errorf("failed to get the accessible resources: %s", err.Error())
 	}
 
 	defer response.Body.Close()
 	contents, err := io.ReadAll(response.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed read accesible resources response: %s", err.Error())
+		return "", fmt.Errorf("failed to read accessible resources response: %s", err.Error())
 	}
 
 	var resources JiraAccessibleResources
-	err = json.Unmarshal(contents, &resources)
-
-	if err != nil {
+	if err = json.Unmarshal(contents, &resources); err != nil {
 		return "", errors.Wrap(err, "failed to unmarshal JiraAccessibleResources")
 	}
 
