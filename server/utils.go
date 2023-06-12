@@ -165,8 +165,7 @@ func isEmbbedableMIME(mime string) bool {
 
 func getS256PKCEParams() (*PKCEParams, error) {
 	buf := make([]byte, PKCEByteArrayLength)
-	_, err := rand.Read(buf)
-	if err != nil {
+	if _, err := rand.Read(buf); err != nil {
 		return nil, err
 	}
 
@@ -177,7 +176,7 @@ func getS256PKCEParams() (*PKCEParams, error) {
 	challenge := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
 
 	return &PKCEParams{
-		CodeChanllenge:      challenge,
+		CodeChallenge:       challenge,
 		CodeVerifier:        verifier,
 		CodeChallengeMethod: "S256",
 	}, nil

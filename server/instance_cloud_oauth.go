@@ -28,7 +28,7 @@ type cloudOAuthInstance struct {
 	JiraClientSecret    string
 	JiraBaseURL         string
 	CodeVerifier        string
-	CodeChanllenge      string
+	CodeChallenge       string
 	CodeChallengeMethod string
 }
 
@@ -44,7 +44,7 @@ type JiraAccessibleResources []struct {
 
 type PKCEParams struct {
 	CodeVerifier        string
-	CodeChanllenge      string
+	CodeChallenge       string
 	CodeChallengeMethod string
 }
 
@@ -79,7 +79,7 @@ func (p *Plugin) installCloudOAuthInstance(rawURL string, clientID string, clien
 		JiraClientSecret:    clientSecret,
 		JiraBaseURL:         rawURL,
 		CodeVerifier:        params.CodeVerifier,
-		CodeChanllenge:      params.CodeChanllenge,
+		CodeChallenge:       params.CodeChallenge,
 		CodeChallengeMethod: params.CodeChallengeMethod,
 	}
 
@@ -149,7 +149,7 @@ func (ci *cloudOAuthInstance) GetUserConnectURL(mattermostUserID string) (string
 		oauth2.SetAuthURLParam("response_type", "code"),
 		oauth2.SetAuthURLParam("prompt", "consent"),
 		oauth2.SetAuthURLParam("code_challenge_method", ci.CodeChallengeMethod),
-		oauth2.SetAuthURLParam("code_challenge", ci.CodeChanllenge),
+		oauth2.SetAuthURLParam("code_challenge", ci.CodeChallenge),
 	)
 	if err := ci.Plugin.otsStore.StoreOneTimeSecret(mattermostUserID, state); err != nil {
 		return "", nil, err
