@@ -20,7 +20,7 @@ import (
 type cloudOAuthInstance struct {
 	*InstanceCommon
 
-	// The SiteURL may change as we go, so we store the PluginKey when as it was installed
+	// The SiteURL may change as we go, so we store the PluginKey when it was installed
 	MattermostKey string
 
 	JiraResourceID   string
@@ -75,7 +75,7 @@ func (p *Plugin) installCloudOAuthInstance(rawURL, clientID, clientSecret string
 func (ci *cloudOAuthInstance) GetClient(connection *Connection) (Client, error) {
 	client, _, err := ci.getClientForConnection(connection)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get Jira client for user "+connection.DisplayName)
+		return nil, errors.WithMessage(err, fmt.Sprintf("failed to get Jira client for the user %s", connection.DisplayName))
 	}
 	return newCloudClient(client), nil
 }
@@ -86,11 +86,11 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 	tokenSource := oauth2Conf.TokenSource(ctx, connection.OAuth2Token)
 	client := oauth2.NewClient(ctx, tokenSource)
 
-	// Get a new token if Access Token has expired
+	// Get a new token, if Access Token has expired
 	currentToken := connection.OAuth2Token
 	updatedToken, err := tokenSource.Token()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "error getting token from token source")
+		return nil, nil, errors.Wrap(err, "error in getting token from token source")
 	}
 
 	if updatedToken.RefreshToken != currentToken.RefreshToken {
@@ -126,8 +126,8 @@ func (ci *cloudOAuthInstance) GetUserConnectURL(mattermostUserID string) (string
 		state,
 		oauth2.SetAuthURLParam("audience", "api.atlassian.com"),
 		oauth2.SetAuthURLParam("state", state),
-		oauth2.SetAuthURLParam("response_type", "code"),
-		oauth2.SetAuthURLParam("prompt", "consent"),
+		oauth2.SetAuthURLParam("response_type", JiraResponseType),
+		oauth2.SetAuthURLParam("prompt", JiraConsent),
 	)
 	if err := ci.Plugin.otsStore.StoreOneTimeSecret(mattermostUserID, state); err != nil {
 		return "", nil, err
@@ -172,7 +172,7 @@ func (ci *cloudOAuthInstance) GetMattermostKey() string {
 
 func (ci *cloudOAuthInstance) getJiraCloudResourceID(client http.Client) (string, error) {
 	request, err := http.NewRequest(
-		"GET",
+		http.MethodGet,
 		"https://api.atlassian.com/oauth/token/accessible-resources",
 		nil,
 	)

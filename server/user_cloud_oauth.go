@@ -51,12 +51,12 @@ func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, inst
 
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	connection, err := p.GenerateInitialOAuthToken(mattermostUserID, code, instanceID)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	client, err := instance.GetClient(connection)
@@ -70,7 +70,7 @@ func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, inst
 	}
 	connection.User = *jiraUser
 
-	// Set default settings the first time a user connects
+	// Set default settings when the user connects for the first time
 	connection.Settings = &ConnectionSettings{Notifications: true}
 	connection.MattermostUserID = types.ID(mattermostUserID)
 
