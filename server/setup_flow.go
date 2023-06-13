@@ -51,6 +51,12 @@ const (
 	keyOAuthCompleteURL    = "OAuthCompleteURL"
 )
 
+const (
+	NameClientID     = "client_id"
+	NameCLientSecret = "client_secret"
+	NameURL          = "url"
+)
+
 func (p *Plugin) NewSetupFlow() *flow.Flow {
 	pluginURL := *p.client.Configuration.GetConfig().ServiceSettings.SiteURL + "/" + "plugins" + "/" + Manifest.Id
 	conf := p.getConfig()
@@ -86,7 +92,7 @@ func (p *Plugin) NewSetupFlow() *flow.Flow {
 }
 
 func (p *Plugin) NewOAuth2Flow() *flow.Flow {
-	pluginURL := *p.client.Configuration.GetConfig().ServiceSettings.SiteURL + "/" + "plugins" + "/" + Manifest.Id
+	pluginURL := fmt.Sprintf("%s/plugins/%s", *p.client.Configuration.GetConfig().ServiceSettings.SiteURL, Manifest.Id)
 	conf := p.getConfig()
 	return flow.NewFlow("setup-oauth2", p.client, pluginURL, conf.botUserID).
 		WithSteps(
@@ -314,21 +320,21 @@ func (p *Plugin) stepCloudOAuthConfigure() flow.Step {
 				Elements: []model.DialogElement{
 					{
 						DisplayName: "Jira Cloud organization",
-						Name:        "url",
+						Name:        NameURL,
 						Type:        "text",
 						Default:     `{{.JiraURL}}`,
 						SubType:     "text",
 					},
 					{
 						DisplayName: "Jira OAuth Client ID",
-						Name:        "client_id",
+						Name:        NameClientID,
 						Type:        "text",
 						SubType:     "text",
 						HelpText:    "The client ID for the OAuth app registered with Jira",
 					},
 					{
 						DisplayName: "Jira OAuth Client Secret",
-						Name:        "client_secret",
+						Name:        NameCLientSecret,
 						Type:        "text",
 						SubType:     "text",
 						HelpText:    "The client secret for the OAuth app registered with Jira",
@@ -599,23 +605,23 @@ func (p *Plugin) initCreateCloudOAuthInstance(f *flow.Flow, submission map[strin
 }
 
 func (p *Plugin) submitCreateCloudOAuthInstance(f *flow.Flow, submission map[string]interface{}) (flow.Name, flow.State, map[string]string, error) {
-	jiraURL, _ := submission["url"].(string)
+	jiraURL, _ := submission[NameURL].(string)
 	if jiraURL == "" {
-		return "", nil, nil, errors.New("no Jira cloud URL in the request")
+		return "", nil, nil, errors.New("no Jira cloud URL is present in the request")
 	}
 	jiraURL = strings.TrimSpace(jiraURL)
 	if jiraOrgRegexp.MatchString(jiraURL) {
 		jiraURL = fmt.Sprintf("https://%s.atlassian.net", jiraURL)
 	}
 
-	clientID, _ := submission["client_id"].(string)
+	clientID, _ := submission[NameClientID].(string)
 	if clientID == "" {
-		return "", nil, nil, errors.New("no Jira OAuth Client ID in the request")
+		return "", nil, nil, errors.New("no Jira OAuth Client ID is present in the request")
 	}
 
-	clientSecret, _ := submission["client_secret"].(string)
+	clientSecret, _ := submission[NameCLientSecret].(string)
 	if clientSecret == "" {
-		return "", nil, nil, errors.New("no Jira OAuth Client Secret in the request")
+		return "", nil, nil, errors.New("no Jira OAuth Client Secret is present in the request")
 	}
 
 	jiraURL, instance, err := p.installCloudOAuthInstance(jiraURL, clientID, clientSecret)

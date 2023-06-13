@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"path"
 	"strings"
@@ -28,12 +29,13 @@ func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, inst
 		return respondErr(w, http.StatusBadRequest, errors.New("Bad request: missing state"))
 	}
 
-	if len(strings.Split(state, "_")) != 2 || strings.Split(state, "_")[1] == "" {
+	stateArray := strings.Split(state, "_")
+	if len(stateArray) != 2 || stateArray[1] == "" {
 		return respondErr(w, http.StatusBadRequest, errors.New("Bad request: invalid state"))
 	}
 
-	stateSecret := strings.Split(state, "_")[0]
-	mattermostUserID := strings.Split(state, "_")[1]
+	stateSecret := stateArray[0]
+	mattermostUserID := stateArray[1]
 	storedSecret, err := p.otsStore.LoadOneTimeSecret(mattermostUserID)
 	if err != nil {
 		return respondErr(w, http.StatusUnauthorized, errors.New("state not found or might be expired"))
@@ -45,17 +47,17 @@ func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, inst
 
 	mmUser, appErr := p.API.GetUser(mattermostUserID)
 	if appErr != nil {
-		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(appErr, "failed to load user "+mattermostUserID))
+		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(appErr, fmt.Sprintf("failed to load user %s", mattermostUserID)))
 	}
 
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	connection, err := p.GenerateInitialOAuthToken(mattermostUserID, instanceID, code)
+	connection, err := p.GenerateInitialOAuthToken(mattermostUserID, code, instanceID)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	client, err := instance.GetClient(connection)
@@ -63,18 +65,17 @@ func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, inst
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	juser, err := client.GetSelf()
+	jiraUser, err := client.GetSelf()
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
-	connection.User = *juser
+	connection.User = *jiraUser
 
-	// Set default settings the first time a user connects
+	// Set default settings when the user connects for the first time
 	connection.Settings = &ConnectionSettings{Notifications: true}
 	connection.MattermostUserID = types.ID(mattermostUserID)
 
-	err = p.connectUser(instance, types.ID(mattermostUserID), connection)
-	if err != nil {
+	if err := p.connectUser(instance, types.ID(mattermostUserID), connection); err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
@@ -83,13 +84,13 @@ func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, inst
 		JiraDisplayName       string
 		RevokeURL             string
 	}{
-		JiraDisplayName:       juser.DisplayName + " (" + juser.Name + ")",
+		JiraDisplayName:       jiraUser.DisplayName + " (" + jiraUser.Name + ")",
 		MattermostDisplayName: mmUser.GetDisplayName(model.ShowNicknameFullName),
 		RevokeURL:             path.Join(p.GetPluginURLPath(), instancePath(routeUserDisconnect, instance.GetID())),
 	})
 }
 
-func (p *Plugin) GenerateInitialOAuthToken(mattermostUserID string, instanceID types.ID, code string) (*Connection, error) {
+func (p *Plugin) GenerateInitialOAuthToken(mattermostUserID, code string, instanceID types.ID) (*Connection, error) {
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		return nil, err

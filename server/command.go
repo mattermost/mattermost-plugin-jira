@@ -784,7 +784,7 @@ func authorizedSysAdmin(p *Plugin, userID string) (bool, error) {
 func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
-		return p.responsef(header, "%v", err)
+		return p.responsef(header, err.Error())
 	}
 	if !authorized {
 		return p.responsef(header, "`/jira install` can only be run by a system administrator.")
@@ -808,7 +808,7 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
-		return p.responsef(header, "%v", err)
+		return p.responsef(header, err.Error())
 	}
 	if !authorized {
 		return p.responsef(header, "`/jira install` can only be run by a Mattermost system administrator.")
@@ -830,12 +830,14 @@ func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *mode
 		keyConnectURL:       p.GetPluginURL() + instancePath(routeUserConnect, types.ID(jiraURL)),
 	}
 
-	err = p.oauth2Flow.ForUser(header.UserId).Start(state)
-	if err != nil {
+	if err = p.oauth2Flow.ForUser(header.UserId).Start(state); err != nil {
 		return p.responsef(header, err.Error())
 	}
 
-	channel, _ := p.client.Channel.GetDirect(header.UserId, p.conf.botUserID)
+	channel, err := p.client.Channel.GetDirect(header.UserId, p.conf.botUserID)
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
 	if channel != nil && channel.Id != header.ChannelId {
 		return p.responsef(header, "continue in the direct conversation with @jira bot.")
 	}
@@ -846,7 +848,7 @@ func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *mode
 func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
-		return p.responsef(header, "%v", err)
+		return p.responsef(header, err.Error())
 	}
 	if !authorized {
 		return p.responsef(header, "`/jira install` can only be run by a system administrator.")
@@ -876,7 +878,7 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 func executeInstanceUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
-		return p.responsef(header, "%v", err)
+		return p.responsef(header, err.Error())
 	}
 	if !authorized {
 		return p.responsef(header, "`/jira uninstall` can only be run by a System Administrator.")
@@ -1138,12 +1140,14 @@ func executeSetup(p *Plugin, c *plugin.Context, header *model.CommandArgs, args 
 		return p.responsef(header, "`/jira setup` can only be run by a system administrator.")
 	}
 
-	err = p.setupFlow.ForUser(header.UserId).Start(nil)
-	if err != nil {
+	if err = p.setupFlow.ForUser(header.UserId).Start(nil); err != nil {
 		return p.responsef(header, errors.Wrap(err, "Failed to start setup wizard").Error())
 	}
 
-	channel, _ := p.client.Channel.GetDirect(header.UserId, p.conf.botUserID)
+	channel, err := p.client.Channel.GetDirect(header.UserId, p.conf.botUserID)
+	if err != nil {
+		return p.responsef(header, err.Error())
+	}
 	if channel != nil && channel.Id != header.ChannelId {
 		return p.responsef(header, "continue in the direct conversation with @jira bot.")
 	}
