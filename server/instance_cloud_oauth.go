@@ -23,13 +23,12 @@ type cloudOAuthInstance struct {
 	// The SiteURL may change as we go, so we store the PluginKey when as it was installed
 	MattermostKey string
 
-	JiraResourceID      string
-	JiraClientID        string
-	JiraClientSecret    string
-	JiraBaseURL         string
-	CodeVerifier        string
-	CodeChallenge       string
-	CodeChallengeMethod string
+	JiraResourceID   string
+	JiraClientID     string
+	JiraClientSecret string
+	JiraBaseURL      string
+	CodeVerifier     string
+	CodeChallenge    string
 }
 
 type CloudOAuthConfigure struct {
@@ -43,9 +42,8 @@ type JiraAccessibleResources []struct {
 }
 
 type PKCEParams struct {
-	CodeVerifier        string
-	CodeChallenge       string
-	CodeChallengeMethod string
+	CodeVerifier  string
+	CodeChallenge string
 }
 
 var _ Instance = (*cloudOAuthInstance)(nil)
@@ -73,14 +71,13 @@ func (p *Plugin) installCloudOAuthInstance(rawURL string, clientID string, clien
 	}
 
 	instance := &cloudOAuthInstance{
-		InstanceCommon:      newInstanceCommon(p, CloudOAuthInstanceType, types.ID(jiraURL)),
-		MattermostKey:       p.GetPluginKey(),
-		JiraClientID:        clientID,
-		JiraClientSecret:    clientSecret,
-		JiraBaseURL:         rawURL,
-		CodeVerifier:        params.CodeVerifier,
-		CodeChallenge:       params.CodeChallenge,
-		CodeChallengeMethod: params.CodeChallengeMethod,
+		InstanceCommon:   newInstanceCommon(p, CloudOAuthInstanceType, types.ID(jiraURL)),
+		MattermostKey:    p.GetPluginKey(),
+		JiraClientID:     clientID,
+		JiraClientSecret: clientSecret,
+		JiraBaseURL:      rawURL,
+		CodeVerifier:     params.CodeVerifier,
+		CodeChallenge:    params.CodeChallenge,
 	}
 
 	err = p.InstallInstance(instance)
@@ -148,7 +145,7 @@ func (ci *cloudOAuthInstance) GetUserConnectURL(mattermostUserID string) (string
 		oauth2.SetAuthURLParam("state", state),
 		oauth2.SetAuthURLParam("response_type", "code"),
 		oauth2.SetAuthURLParam("prompt", "consent"),
-		oauth2.SetAuthURLParam("code_challenge_method", ci.CodeChallengeMethod),
+		oauth2.SetAuthURLParam("code_challenge_method", "S256"),
 		oauth2.SetAuthURLParam("code_challenge", ci.CodeChallenge),
 	)
 	if err := ci.Plugin.otsStore.StoreOneTimeSecret(mattermostUserID, state); err != nil {
