@@ -36,12 +36,6 @@ Each user in Mattermost is connected with their own personal Jira account and no
 
   ![image](https://user-images.githubusercontent.com/13119842/59113188-985a9280-8912-11e9-9def-9a7382b4137e.png)
 
-#### Attach Messages to Jira Issues
-
-Keep all information in one place by attaching parts of Mattermost conversations in Jira issues as comments.  Then, on the resulting dialog, select the Jira issue you want to attach it to. You may search for issues containing specific text.
-
-![image](https://user-images.githubusercontent.com/13119842/59113267-b627f780-8912-11e9-90ec-417d430de7e6.png)
-
 #### Transition Jira issues
 
 Transition issues without the need to switch to your Jira project. To transition an issue, use the `/jira transition <issue-key> <state>` command.
@@ -80,10 +74,10 @@ If your server doesn't have access to the internet, you can download the latest 
 #### Step 1: Configure the plugin in Mattermost
 
 1. Go to **Plugins Marketplace > Jira**.
-   1. Click **Configure**.
+   1. Select **Configure**.
    2. Generate a **Secret** for `Webhook Secret` and `Stats API Secret`.
    3. Optionally change settings for **Notifications permissions** and **Issue Creation** capabilities.
-   4. Click **Save**.
+   4. Select **Save**.
 2. At the top of the page set **Enable Plugin** to **True**.
 3. Choose **Save** to enable the Jira plugin.
 4. Run `/jira setup` to start configuring the plugin.
@@ -102,14 +96,10 @@ To control Mattermost channel subscriptions, use the `/jira subscribe` command i
 
 1. To get the appropriate webhook URL, post `/jira webhook <your-jira-url>` to a Mattermost channel as a Mattermost System Admin.
 2. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
-   * For older versions of Jira, click the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
-3. Click **Create a WebHook** to create a new webhook. 
+   * For older versions of Jira, select the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
+3. Select **Create a WebHook** to create a new webhook. 
 4. Enter a **Name** for the webhook and add the Jira webhook URL retrieved above as the **URL**.
 5. Finally, set which issue events send messages to Mattermost channels and select all of the following:
-   * Worklog
-      * created
-      * updated
-      * deleted
    * Comment
       * created
       * updated
@@ -118,13 +108,7 @@ To control Mattermost channel subscriptions, use the `/jira subscribe` command i
       * created
       * updated
       * deleted
-   * Issue link
-      * created
-      * deleted
-   * Attachment
-      * created
-      * deleted
-
+  
 6. Choose **Save**.
 
 Previously configured webhooks that point to specific channels are still supported and will continue to work.
@@ -246,7 +230,6 @@ By default, the legacy webhook integration publishes notifications for issue cre
 
 - `updated_all=1`: all events
 - `updated_comments=1`: all comment events
-- `updated_attachment=1`: updated issue attachments
 - `updated_description=1`: updated issue description
 - `updated_labels=1`: updated issue labels
 - `updated_prioity=1`: updated issue priority
