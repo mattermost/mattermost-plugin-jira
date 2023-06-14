@@ -485,11 +485,11 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 	case CloudInstanceType:
 		ci := cloudInstance{}
 		if err := json.Unmarshal(data, &ci); err != nil {
-			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+			return nil, errors.WithMessage(err, fmt.Sprintf("failed to unmarshal stored instance %s", fullkey))
 		}
 		if len(ci.RawAtlassianSecurityContext) > 0 {
 			if err := json.Unmarshal([]byte(ci.RawAtlassianSecurityContext), &ci.AtlassianSecurityContext); err != nil {
-				return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+				return nil, errors.WithMessage(err, fmt.Sprintf("failed to unmarshal stored instance %s", fullkey))
 			}
 		}
 		ci.Plugin = store.plugin
@@ -498,7 +498,7 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 	case CloudOAuthInstanceType:
 		ci := cloudOAuthInstance{}
 		if err := json.Unmarshal(data, &ci); err != nil {
-			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+			return nil, errors.WithMessage(err, fmt.Sprintf("failed to unmarshal stored instance %s", fullkey))
 		}
 		ci.Plugin = store.plugin
 		return &ci, nil

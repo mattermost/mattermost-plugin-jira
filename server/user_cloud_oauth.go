@@ -51,22 +51,22 @@ func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, inst
 
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "Error occurred while loading instance"))
 	}
 
 	connection, err := p.GenerateInitialOAuthToken(mattermostUserID, code, instanceID)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "Error occurred while generating initial oauth token"))
 	}
 
 	client, err := instance.GetClient(connection)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "Error occurred while getting client"))
 	}
 
 	jiraUser, err := client.GetSelf()
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "Error occurred while getting Jira user"))
 	}
 	connection.User = *jiraUser
 
@@ -75,7 +75,7 @@ func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, inst
 	connection.MattermostUserID = types.ID(mattermostUserID)
 
 	if err := p.connectUser(instance, types.ID(mattermostUserID), connection); err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, fmt.Sprintf("Error occurred while connecting user. UserID: %s", mattermostUserID)))
 	}
 
 	return p.respondTemplate(w, r, "text/html", struct {

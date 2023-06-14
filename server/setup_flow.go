@@ -605,7 +605,10 @@ func (p *Plugin) initCreateCloudOAuthInstance(f *flow.Flow, submission map[strin
 }
 
 func (p *Plugin) submitCreateCloudOAuthInstance(f *flow.Flow, submission map[string]interface{}) (flow.Name, flow.State, map[string]string, error) {
-	jiraURL, _ := submission[NameURL].(string)
+	jiraURL, ok := submission[NameURL].(string)
+	if !ok {
+		return "", nil, nil, errors.New("invalid Jira cloud URL")
+	}
 	if jiraURL == "" {
 		return "", nil, nil, errors.New("no Jira cloud URL is present in the request")
 	}
@@ -614,12 +617,18 @@ func (p *Plugin) submitCreateCloudOAuthInstance(f *flow.Flow, submission map[str
 		jiraURL = fmt.Sprintf("https://%s.atlassian.net", jiraURL)
 	}
 
-	clientID, _ := submission[NameClientID].(string)
+	clientID, ok := submission[NameClientID].(string)
+	if !ok {
+		return "", nil, nil, errors.New("invalid Jira OAuth Client ID")
+	}
 	if clientID == "" {
 		return "", nil, nil, errors.New("no Jira OAuth Client ID is present in the request")
 	}
 
-	clientSecret, _ := submission[NameCLientSecret].(string)
+	clientSecret, ok := submission[NameCLientSecret].(string)
+	if !ok {
+		return "", nil, nil, errors.New("invalid Jira OAuth Client Secret")
+	}
 	if clientSecret == "" {
 		return "", nil, nil, errors.New("no Jira OAuth Client Secret is present in the request")
 	}
@@ -633,8 +642,8 @@ func (p *Plugin) submitCreateCloudOAuthInstance(f *flow.Flow, submission map[str
 		keyEdition:          string(CloudOAuthInstanceType),
 		keyJiraURL:          jiraURL,
 		keyInstance:         instance,
-		keyOAuthCompleteURL: p.GetPluginURL() + instancePath(routeOAuth2Complete, types.ID(jiraURL)),
-		keyConnectURL:       p.GetPluginURL() + instancePath(routeUserConnect, types.ID(jiraURL)),
+		keyOAuthCompleteURL: fmt.Sprintf("%s%s", p.GetPluginURL(), instancePath(routeOAuth2Complete, types.ID(jiraURL))),
+		keyConnectURL:       fmt.Sprintf("%s%s", p.GetPluginURL(), instancePath(routeUserConnect, types.ID(jiraURL))),
 	}, nil, nil
 }
 

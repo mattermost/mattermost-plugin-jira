@@ -102,7 +102,7 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 		}
 	}
 
-	// TODO Get resource ID if not in the KV Store?
+	// TODO: Get resource ID if not in the KV Store?
 	jiraID, err := ci.getJiraCloudResourceID(*client)
 	ci.JiraResourceID = jiraID
 	if err != nil {
@@ -157,12 +157,10 @@ func (ci *cloudOAuthInstance) GetJiraBaseURL() string {
 }
 
 func (ci *cloudOAuthInstance) GetManageAppsURL() string {
-	// TODO
 	return fmt.Sprintf("%s/plugins/servlet/applinks/listApplicationLinks", ci.GetURL())
 }
 
 func (ci *cloudOAuthInstance) GetManageWebhooksURL() string {
-	// TODO
 	return fmt.Sprintf("%s/plugins/servlet/webhooks", ci.GetURL())
 }
 
