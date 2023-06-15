@@ -8,8 +8,6 @@ import (
 	"strings"
 
 	"github.com/andygrunwald/go-jira"
-
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 type JiraWebhook struct {
@@ -37,6 +35,7 @@ func (jwh *JiraWebhook) mdJiraLink(title, suffix string) string {
 	if pos < 0 {
 		return ""
 	}
+	// TODO: For Jira OAuth, the Self URL is sent as https://api.atlassian.com/ instead of the Jira Instance URL - to check this and handle accordingly
 	return fmt.Sprintf("[%s](%s%s)", title, jwh.Issue.Self[:pos], suffix)
 }
 
@@ -75,25 +74,6 @@ func (jwh *JiraWebhook) mdUser() string {
 
 func (jwh *JiraWebhook) mdIssueType() string {
 	return strings.ToLower(jwh.Issue.Fields.Type.Name)
-}
-
-func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
-	instance, err := p.instanceStore.LoadInstance(instanceID)
-	if err != nil {
-		return err
-	}
-
-	// Jira Cloud comment event. We need to fetch issue data because it is not expanded in webhook payload.
-	isCommentEvent := jwh.WebhookEvent == commentCreated || jwh.WebhookEvent == commentUpdated || jwh.WebhookEvent == commentDeleted
-	if isCommentEvent && instance.Common().Type == "cloud" {
-		issue, err := p.getIssueDataForCloudWebhook(instance, jwh.Issue.ID)
-		if err != nil {
-			return err
-		}
-		jwh.Issue = *issue
-	}
-
-	return nil
 }
 
 func mdAddRemove(from, to, add, remove string) string {
