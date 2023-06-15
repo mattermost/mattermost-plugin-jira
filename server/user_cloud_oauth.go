@@ -18,7 +18,7 @@ import (
 
 const TokenExpiryTimeBufferInMinutes = 5
 
-func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, instanceID types.ID) (status int, err error) {
+func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		return respondErr(w, http.StatusBadRequest, errors.New("Bad request: missing code"))
