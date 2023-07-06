@@ -64,12 +64,14 @@
 					method: "POST",
 					headers: {'X-CSRF-Token': token},
 				}).then(res => {
-					let element = document.getElementsByTagName("body")[0]
+					let element = document.body;
 					if(!res.ok) {
-						element.style.margin = "10px"
-      				        }
+						element.style.margin = "10px";
+      				} else {
+						window.close();
+					}
 
-					return res.text().then(text => element.innerHTML = text)
+					return res.text().then(text => element.innerHTML = text);
 				})
 			}
 		</script>
