@@ -100,16 +100,12 @@ Use the `/jira webhook` command to get your webhook URL to copy into Jira.
 
 To control Mattermost channel subscriptions, use the `/jira subscribe` command in the channel in which you want to receive subscriptions. Then select the project and event triggers that will post to the channel. To manage all channel subscriptions as an administrator see [Notification Management](../administrator-guide/notification-management.md).
 
-1. To get the appropriate webhook URL, post `/jira webhook <your-jira-url>` to a Mattermost channel as a Mattermost system admin.
-2. As a Jira system administrator, go to **Jira Settings > System > WebHooks**.
+1. To get the appropriate webhook URL, post `/jira webhook <your-jira-url>` to a Mattermost channel as a Mattermost System Admin.
+2. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
    * For older versions of Jira, select the gear icon in bottom left corner, then go to **Advanced > WebHooks**.
 3. Select **Create a WebHook** to create a new webhook. 
 4. Enter a **Name** for the webhook and add the Jira webhook URL retrieved above as the **URL**.
 5. Finally, set which issue events send messages to Mattermost channels and select all of the following:
-   * Worklog
-      * created
-      * updated
-      * deleted
    * Comment
       * created
       * updated
@@ -118,13 +114,7 @@ To control Mattermost channel subscriptions, use the `/jira subscribe` command i
       * created
       * updated
       * deleted
-   * Issue link
-      * created
-      * deleted
-   * Attachment
-      * created
-      * deleted
-
+  
 6. Choose **Save**.
 
 Previously configured webhooks that point to specific channels are still supported and will continue to work.
@@ -246,7 +236,6 @@ By default, the legacy webhook integration publishes notifications for issue cre
 
 - `updated_all=1`: all events
 - `updated_comments=1`: all comment events
-- `updated_attachment=1`: updated issue attachments
 - `updated_description=1`: updated issue description
 - `updated_labels=1`: updated issue labels
 - `updated_prioity=1`: updated issue priority
