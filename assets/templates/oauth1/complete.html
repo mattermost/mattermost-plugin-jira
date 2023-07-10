@@ -64,7 +64,7 @@
 					method: "POST",
 					headers: {'X-CSRF-Token': token},
 				}).then(res => {
-					let element = document.body;
+					const element = document.body;
 					if(!res.ok) {
 						element.style.margin = "10px";
       				} else {
