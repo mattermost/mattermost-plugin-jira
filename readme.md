@@ -7,7 +7,7 @@
 
 This plugin supports a two-way integration between Mattermost and Jira. Jira Core and Jira Software products, for Server, Data Center, and Cloud platforms are supported. It has been tested with versions 7 and 8.
 
-For versions v3.0 and later of this plugin, support for multiple Jira instances is offered for Mattermost E20, Professionsal, and Enterprise Edition configured using [Administrator Slash Commands](https://mattermost.gitbook.io/plugin-jira/administrator-guide/administrator-slash-commands). Note that for versions v3.0.0 and v3.0.1 of this plugin, an E20 license is required to set up multiple Jira instances. 
+For versions v3.0 and later of this plugin, support for multiple Jira instances is offered for Mattermost E20, Professional and Enterprise plans, configured using [Administrator Slash Commands](https://mattermost.gitbook.io/plugin-jira/administrator-guide/administrator-slash-commands). Note that for versions v3.0.0 and v3.0.1 of this plugin, an E20 license is required to set up multiple Jira instances. 
 
 **Maintainer:** [@mickmister](https://github.com/mickmister)
 
