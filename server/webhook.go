@@ -140,7 +140,7 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 
 		isCommentEvent := wh.Events().Intersection(commentEvents).Len() > 0
 		if isCommentEvent {
-			err = client.RESTGet(notification.commentSelf, nil, &struct{}{})
+			err = client.RESTGet(fmt.Sprintf("/2/issue/%s/comment/%s", wh.Issue.ID, wh.Comment.ID), nil, &struct{}{})
 		} else {
 			_, err = client.GetIssue(wh.Issue.ID, nil)
 		}

@@ -736,6 +736,30 @@ func getIssueCustomFieldValue(issue *jira.Issue, key string) StringSet {
 	return nil
 }
 
+func (p *Plugin) getIssueDataForCloudWebhook(instance Instance, issueKey string) (*jira.Issue, error) {
+	ci, ok := instance.(*cloudInstance)
+	if !ok {
+		return nil, errors.Errorf("must be a Jira cloud instance, is %s", instance.Common().Type)
+	}
+
+	jiraClient, err := ci.getClientForBot()
+	if err != nil {
+		return nil, err
+	}
+
+	issue, resp, err := jiraClient.Issue.Get(issueKey, nil)
+	if err != nil {
+		switch {
+		case resp == nil:
+			return nil, errors.WithMessage(userFriendlyJiraError(nil, err), "request to Jira failed")
+		case resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusUnauthorized:
+			return nil, errors.New(`we couldn't find the issue key, or the cloud "bot" client does not have the appropriate permissions to view the issue`)
+		}
+	}
+
+	return issue, nil
+}
+
 func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 	key = strings.ToLower(key)
 	switch key {

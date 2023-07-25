@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/andygrunwald/go-jira"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 type JiraWebhook struct {
@@ -27,6 +29,50 @@ type JiraWebhook struct {
 		}
 	} `json:"changelog,omitempty"`
 	IssueEventTypeName string `json:"issue_event_type_name"`
+}
+
+func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return err
+	}
+
+	// Jira Cloud comment event. We need to fetch issue data because it is not expanded in webhook payload.
+	isCommentEvent := jwh.WebhookEvent == commentCreated || jwh.WebhookEvent == commentUpdated || jwh.WebhookEvent == commentDeleted
+	if isCommentEvent && instance.Common().IsCloudInstance() {
+		if _, ok := instance.(*cloudInstance); ok {
+			issue, err := p.getIssueDataForCloudWebhook(instance, jwh.Issue.ID)
+			if err != nil {
+				return err
+			}
+
+			jwh.Issue = *issue
+		} else if _, ok := instance.(*cloudOAuthInstance); ok {
+			mmUserID, err := p.userStore.LoadMattermostUserID(instanceID, jwh.Comment.Author.AccountID)
+			if err != nil {
+				return err
+			}
+
+			conn, err := p.userStore.LoadConnection(instance.GetID(), mmUserID)
+			if err != nil {
+				return err
+			}
+
+			client, err := instance.GetClient(conn)
+			if err != nil {
+				return err
+			}
+
+			issue, err := client.GetIssue(jwh.Issue.ID, nil)
+			if err != nil {
+				return err
+			}
+
+			jwh.Issue = *issue
+		}
+	}
+
+	return nil
 }
 
 func (jwh *JiraWebhook) mdJiraLink(title, suffix string) string {
