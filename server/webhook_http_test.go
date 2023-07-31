@@ -628,6 +628,9 @@ func TestWebhookHTTP(t *testing.T) {
 			}
 			model.ParseSlackAttachment(rPost, rAttachments)
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(rPost, nil)
+			api.On("GetUser", mock.AnythingOfType("string")).Return(&model.User{
+				Username: "test-username",
+			}, nil)
 
 			p := Plugin{}
 			p.updateConfig(func(conf *config) {
