@@ -600,6 +600,20 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedIgnored: true,
 			CurrentInstance: false,
 		},
+		"CLOUD comment created - user mentioned": {
+			Request:                 testWebhookRequest("webhook-cloud-comment-created-mention-user.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Test User **commented** on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
+			ExpectedText:            "> Added a comment with mentioned user [~test-mm-username]",
+			CurrentInstance:         false,
+		},
+		"SERVER issue commented - user mentioned": {
+			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-mention-user.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Lev Brouk **commented** on story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
+			ExpectedText:            "> unik with mentioned user [~test-mm-username] ",
+			CurrentInstance:         false,
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
@@ -629,7 +643,7 @@ func TestWebhookHTTP(t *testing.T) {
 			model.ParseSlackAttachment(rPost, rAttachments)
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(rPost, nil)
 			api.On("GetUser", mock.AnythingOfType("string")).Return(&model.User{
-				Username: "test-username",
+				Username: "test-mm-username",
 			}, nil)
 
 			p := Plugin{}

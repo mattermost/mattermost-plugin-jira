@@ -97,8 +97,8 @@ func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string 
 			continue
 		}
 
-		user, appErr := p.API.GetUser(string(mattermostUserID))
-		if appErr != nil {
+		user, err := p.client.User.Get(string(mattermostUserID))
+		if err != nil {
 			continue
 		}
 
