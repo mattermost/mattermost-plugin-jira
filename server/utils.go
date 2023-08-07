@@ -102,7 +102,8 @@ func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string 
 			continue
 		}
 
-		result = strings.ReplaceAll(result, uname, user.Username)
+		jiraUserName := "[~" + uname + "]"
+		result = strings.ReplaceAll(result, jiraUserName, "@"+user.Username)
 	}
 
 	return result

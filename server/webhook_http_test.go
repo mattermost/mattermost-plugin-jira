@@ -604,14 +604,14 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:                 testWebhookRequest("webhook-cloud-comment-created-mention-user.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **commented** on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
-			ExpectedText:            "> Added a comment with mentioned user [~test-mm-username]",
+			ExpectedText:            "> Added a comment with mentioned user @test-mm-username",
 			CurrentInstance:         false,
 		},
 		"SERVER issue commented - user mentioned": {
 			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-mention-user.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Lev Brouk **commented** on story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
-			ExpectedText:            "> unik with mentioned user [~test-mm-username] ",
+			ExpectedText:            "> unik with mentioned user @test-mm-username",
 			CurrentInstance:         false,
 		},
 	} {
