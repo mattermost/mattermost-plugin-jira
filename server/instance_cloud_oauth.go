@@ -20,13 +20,15 @@ import (
 type cloudOAuthInstance struct {
 	*InstanceCommon
 
-	// The SiteURL may change as we go, so we store the PluginKey when as it was installed
+	// The SiteURL may change as we go, so we store the PluginKey when it was installed
 	MattermostKey string
 
 	JiraResourceID   string
 	JiraClientID     string
 	JiraClientSecret string
 	JiraBaseURL      string
+	CodeVerifier     string
+	CodeChallenge    string
 }
 
 type CloudOAuthConfigure struct {
@@ -39,22 +41,33 @@ type JiraAccessibleResources []struct {
 	ID string
 }
 
+type PKCEParams struct {
+	CodeVerifier  string
+	CodeChallenge string
+}
+
 var _ Instance = (*cloudOAuthInstance)(nil)
 
 const (
-	JiraScopes        = "read:jira-user,read:jira-work,write:jira-work"
-	JiraScopesOffline = JiraScopes + ",offline_access"
-	JiraResponseType  = "code"
-	JiraConsent       = "consent"
+	JiraScopes          = "read:jira-user,read:jira-work,write:jira-work"
+	JiraScopesOffline   = JiraScopes + ",offline_access"
+	JiraResponseType    = "code"
+	JiraConsent         = "consent"
+	PKCEByteArrayLength = 32
 )
 
-func (p *Plugin) installCloudOAuthInstance(rawURL string, clientID string, clientSecret string) (string, *cloudOAuthInstance, error) {
+func (p *Plugin) installCloudOAuthInstance(rawURL, clientID, clientSecret string) (string, *cloudOAuthInstance, error) {
 	jiraURL, err := utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
 	if err != nil {
 		return "", nil, err
 	}
 	if !utils.IsJiraCloudURL(jiraURL) {
-		return "", nil, errors.Errorf("`%s` is a Jira server URL, not a Jira Cloud", jiraURL)
+		return "", nil, errors.Errorf("`%s` is a Jira server URL instead of a Jira Cloud URL", jiraURL)
+	}
+
+	params, err := getS256PKCEParams()
+	if err != nil {
+		return "", nil, err
 	}
 
 	instance := &cloudOAuthInstance{
@@ -63,10 +76,11 @@ func (p *Plugin) installCloudOAuthInstance(rawURL string, clientID string, clien
 		JiraClientID:     clientID,
 		JiraClientSecret: clientSecret,
 		JiraBaseURL:      rawURL,
+		CodeVerifier:     params.CodeVerifier,
+		CodeChallenge:    params.CodeChallenge,
 	}
 
-	err = p.InstallInstance(instance)
-	if err != nil {
+	if err = p.InstallInstance(instance); err != nil {
 		return "", nil, err
 	}
 
@@ -76,7 +90,7 @@ func (p *Plugin) installCloudOAuthInstance(rawURL string, clientID string, clien
 func (ci *cloudOAuthInstance) GetClient(connection *Connection) (Client, error) {
 	client, _, err := ci.getClientForConnection(connection)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get Jira client for user "+connection.DisplayName)
+		return nil, errors.WithMessage(err, fmt.Sprintf("failed to get Jira client for the user %s", connection.DisplayName))
 	}
 	return newCloudClient(client), nil
 }
@@ -87,24 +101,23 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 	tokenSource := oauth2Conf.TokenSource(ctx, connection.OAuth2Token)
 	client := oauth2.NewClient(ctx, tokenSource)
 
-	// Get a new token if Access Token has expired
+	// Get a new token, if Access Token has expired
 	currentToken := connection.OAuth2Token
 	updatedToken, err := tokenSource.Token()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "error getting token from token source")
+		return nil, nil, errors.Wrap(err, "error in getting token from token source")
 	}
 
 	if updatedToken.RefreshToken != currentToken.RefreshToken {
 		connection.OAuth2Token = updatedToken
 
 		// Store this new access token & refresh token to get a new access token in future when it has expired
-		err = ci.Plugin.userStore.StoreConnection(ci.Common().InstanceID, connection.MattermostUserID, connection)
-		if err != nil {
+		if err = ci.Plugin.userStore.StoreConnection(ci.Common().InstanceID, connection.MattermostUserID, connection); err != nil {
 			return nil, nil, err
 		}
 	}
 
-	// TODO Get resource ID if not in the KV Store?
+	// TODO: Get resource ID if not in the KV Store?
 	jiraID, err := ci.getJiraCloudResourceID(*client)
 	ci.JiraResourceID = jiraID
 	if err != nil {
@@ -130,6 +143,8 @@ func (ci *cloudOAuthInstance) GetUserConnectURL(mattermostUserID string) (string
 		oauth2.SetAuthURLParam("state", state),
 		oauth2.SetAuthURLParam("response_type", "code"),
 		oauth2.SetAuthURLParam("prompt", "consent"),
+		oauth2.SetAuthURLParam("code_challenge_method", "S256"),
+		oauth2.SetAuthURLParam("code_challenge", ci.CodeChallenge),
 	)
 	if err := ci.Plugin.otsStore.StoreOneTimeSecret(mattermostUserID, state); err != nil {
 		return "", nil, err
@@ -159,12 +174,10 @@ func (ci *cloudOAuthInstance) GetJiraBaseURL() string {
 }
 
 func (ci *cloudOAuthInstance) GetManageAppsURL() string {
-	// TODO
 	return fmt.Sprintf("%s/plugins/servlet/applinks/listApplicationLinks", ci.GetURL())
 }
 
 func (ci *cloudOAuthInstance) GetManageWebhooksURL() string {
-	// TODO
 	return fmt.Sprintf("%s/plugins/servlet/webhooks", ci.GetURL())
 }
 
@@ -174,29 +187,27 @@ func (ci *cloudOAuthInstance) GetMattermostKey() string {
 
 func (ci *cloudOAuthInstance) getJiraCloudResourceID(client http.Client) (string, error) {
 	request, err := http.NewRequest(
-		"GET",
+		http.MethodGet,
 		"https://api.atlassian.com/oauth/token/accessible-resources",
 		nil,
 	)
 	if err != nil {
-		return "", fmt.Errorf("failed getting request")
+		return "", fmt.Errorf("failed to get the request")
 	}
 
 	response, err := client.Do(request)
 	if err != nil {
-		return "", fmt.Errorf("failed getting accessible resources: %s", err.Error())
+		return "", fmt.Errorf("failed to get the accessible resources: %s", err.Error())
 	}
 
 	defer response.Body.Close()
 	contents, err := io.ReadAll(response.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed read accesible resources response: %s", err.Error())
+		return "", fmt.Errorf("failed to read accessible resources response: %s", err.Error())
 	}
 
 	var resources JiraAccessibleResources
-	err = json.Unmarshal(contents, &resources)
-
-	if err != nil {
+	if err = json.Unmarshal(contents, &resources); err != nil {
 		return "", errors.Wrap(err, "failed to unmarshal JiraAccessibleResources")
 	}
 

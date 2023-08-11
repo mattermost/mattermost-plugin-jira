@@ -4,6 +4,9 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"regexp"
 	"strings"
@@ -158,4 +161,23 @@ func isEmbbedableMIME(mime string) bool {
 		}
 	}
 	return false
+}
+
+// getS256PKCEParams creates the code_challenge and code_verifier params for oauth2
+func getS256PKCEParams() (*PKCEParams, error) {
+	buf := make([]byte, PKCEByteArrayLength)
+	if _, err := rand.Read(buf); err != nil {
+		return nil, err
+	}
+
+	verifier := base64.RawURLEncoding.EncodeToString(buf)
+
+	h := sha256.New()
+	h.Write([]byte(verifier))
+	challenge := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
+
+	return &PKCEParams{
+		CodeChallenge: challenge,
+		CodeVerifier:  verifier,
+	}, nil
 }

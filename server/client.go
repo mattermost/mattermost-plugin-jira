@@ -310,12 +310,12 @@ func (client JiraClient) GetSelf() (*jira.User, error) {
 // MakeCreateIssueURL makes a URL that would take a browser to a pre-filled form
 // to file a new issue in Jira.
 func MakeCreateIssueURL(instance Instance, project *jira.Project, issue *jira.Issue) string {
-	u, err := url.Parse(fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", instance.GetJiraBaseURL()))
+	url, err := url.Parse(fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", instance.GetJiraBaseURL()))
 	if err != nil {
 		return ""
 	}
 
-	q := u.Query()
+	q := url.Query()
 	q.Add("pid", project.ID)
 	q.Add("issuetype", issue.Fields.Type.ID)
 	q.Add("summary", issue.Fields.Summary)
@@ -344,8 +344,8 @@ func MakeCreateIssueURL(instance Instance, project *jira.Project, issue *jira.Is
 		}
 	}
 
-	u.RawQuery = q.Encode()
-	return u.String()
+	url.RawQuery = q.Encode()
+	return url.String()
 }
 
 // SearchUsersAssignableToIssue finds all users that can be assigned to an issue.

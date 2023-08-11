@@ -470,8 +470,7 @@ func (store *store) LoadInstance(instanceID types.ID) (Instance, error) {
 
 func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 	var data []byte
-	err := store.plugin.client.KV.Get(fullkey, &data)
-	if err != nil {
+	if err := store.plugin.client.KV.Get(fullkey, &data); err != nil {
 		return nil, err
 	}
 	if data == nil {
@@ -479,21 +478,18 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 	}
 
 	si := serverInstance{}
-	err = json.Unmarshal(data, &si)
-	if err != nil {
+	if err := json.Unmarshal(data, &si); err != nil {
 		return nil, err
 	}
 	switch si.Type {
 	case CloudInstanceType:
 		ci := cloudInstance{}
-		err = json.Unmarshal(data, &ci)
-		if err != nil {
-			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+		if err := json.Unmarshal(data, &ci); err != nil {
+			return nil, errors.WithMessage(err, fmt.Sprintf("failed to unmarshal stored instance %s", fullkey))
 		}
 		if len(ci.RawAtlassianSecurityContext) > 0 {
-			err = json.Unmarshal([]byte(ci.RawAtlassianSecurityContext), &ci.AtlassianSecurityContext)
-			if err != nil {
-				return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+			if err := json.Unmarshal([]byte(ci.RawAtlassianSecurityContext), &ci.AtlassianSecurityContext); err != nil {
+				return nil, errors.WithMessage(err, fmt.Sprintf("failed to unmarshal stored instance %s", fullkey))
 			}
 		}
 		ci.Plugin = store.plugin
@@ -501,9 +497,8 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 
 	case CloudOAuthInstanceType:
 		ci := cloudOAuthInstance{}
-		err = json.Unmarshal(data, &ci)
-		if err != nil {
-			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+		if err := json.Unmarshal(data, &ci); err != nil {
+			return nil, errors.WithMessage(err, fmt.Sprintf("failed to unmarshal stored instance %s", fullkey))
 		}
 		ci.Plugin = store.plugin
 		return &ci, nil

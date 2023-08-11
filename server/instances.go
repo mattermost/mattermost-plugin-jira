@@ -115,7 +115,7 @@ func (instances Instances) isAliasUnique(instanceID types.ID, alias string) (boo
 	return true, ""
 }
 
-// checkIfExists returns true if the specified instance id already exists
+// checkIfExists returns true if the specified instance ID already exists
 func (instances Instances) checkIfExists(instanceID types.ID) bool {
 	for _, id := range instances.IDs() {
 		if id == instanceID {
