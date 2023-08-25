@@ -78,7 +78,7 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		wh, err = parseWebhookCommentUpdated(jwh)
 	case commentDeleted:
 		wh, err = parseWebhookCommentDeleted(jwh)
-	case worklogUpdatd:
+	case worklogUpdated:
 		// not supported
 	default:
 		err = errors.Wrapf(errWebhookeventUnsupported, "event: %v", jwh.WebhookEvent)

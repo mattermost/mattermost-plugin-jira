@@ -21,7 +21,7 @@ const (
 	commentUpdated = "comment_updated"
 	commentCreated = "comment_created"
 
-	worklogUpdatd = "jira:worklog_updated"
+	worklogUpdated = "jira:worklog_updated"
 )
 
 type Webhook interface {
