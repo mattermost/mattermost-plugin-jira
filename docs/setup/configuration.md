@@ -6,11 +6,11 @@
 2. Click **Configure** next to the plugin's name.
 3. At the top of the page set **Enable Plugin** to **True**.
 4. Choose **Save** to enable the Jira plugin.
-5. In the Mattermost chat UI, run `/jira setup` to start configuring the plugin.
+5. In the Mattermost chat section, run `/jira setup` to start configuring the plugin.
 
 ### Step 2: Install the plugin as an application in Jira
 
-To allow users to [create and manage Jira issues across Mattermost channels](../end-user-guide/using-jira-commands.md), install the plugin as an application in your Jira instance. For Jira Server or Data Center instances, post `/jira instance install server <your-jira-url>` to a Mattermost channel as a Mattermost System Admin, and follow the steps posted to the channel. For Jira Cloud, post `/jira instance install cloud-oauth <your-jira-url>`.
+To allow users to [create and manage Jira issues across Mattermost channels](../end-user-guide/using-jira-commands.md), install the plugin as an application in your Jira instance. For Jira Server or Data Center instances, post `/jira instance install server <your-jira-url>` to a Mattermost channel as a Mattermost System Admin, and follow the steps posted in the channel. For Jira Cloud, post `/jira instance install cloud-oauth <your-jira-url>`.
 
 ### Step 3: Configure webhooks on the Jira server
 
