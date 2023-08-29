@@ -114,7 +114,6 @@ To control Mattermost channel subscriptions, use the `/jira subscribe` command i
       * created
       * updated
       * deleted
-  
 6. Choose **Save**.
 
 Previously configured webhooks that point to specific channels are still supported and will continue to work.
