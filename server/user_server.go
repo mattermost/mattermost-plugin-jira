@@ -121,8 +121,11 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 
 func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	_, err := p.DisconnectUser(instanceID.String(), types.ID(mattermostUserID))
+	conn, err := p.DisconnectUser(instanceID.String(), types.ID(mattermostUserID))
 	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+	if _, err := p.CreateBotDMtoMMUserID(mattermostUserID, "You have successfully disconnected your Jira account (**%s**).", conn.DisplayName); err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
