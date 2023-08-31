@@ -87,25 +87,26 @@ func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...
 
 func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string {
 	result := body
-
 	for _, uname := range parseJIRAUsernamesFromText(body) {
-		if !strings.HasPrefix(uname, "accountid:") {
-			continue
+		jiraUserIDOrName := ""
+		if strings.HasPrefix(uname, "accountid:") {
+			jiraUserIDOrName = uname[len("accountid:"):]
+		} else {
+			jiraUserIDOrName = uname
 		}
 
-		jiraUserID := uname[len("accountid:"):]
-		mattermostUserID, err := p.userStore.LoadMattermostUserID(instanceID, jiraUserID)
-		if err != nil {
-			continue
-		}
-		c, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
+		mattermostUserID, err := p.userStore.LoadMattermostUserID(instanceID, jiraUserIDOrName)
 		if err != nil {
 			continue
 		}
 
-		if c.DisplayName != "" {
-			result = strings.ReplaceAll(result, uname, c.DisplayName)
+		user, err := p.client.User.Get(string(mattermostUserID))
+		if err != nil {
+			continue
 		}
+
+		jiraUserName := "[~" + uname + "]"
+		result = strings.ReplaceAll(result, jiraUserName, "@"+user.Username)
 	}
 
 	return result
