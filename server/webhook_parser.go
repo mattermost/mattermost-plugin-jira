@@ -6,7 +6,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -18,6 +17,8 @@ import (
 	"github.com/mattermost/mattermost-server/v6/model"
 )
 
+var errWebhookeventUnsupported = errors.New("Unsupported webhook event")
+
 var webhookWrapperFunc func(wh Webhook) Webhook
 
 func ParseWebhook(bb []byte) (wh Webhook, err error) {
@@ -28,7 +29,7 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		if os.Getenv("MM_PLUGIN_JIRA_DEBUG_WEBHOOKS") == "" {
 			return
 		}
-		f, _ := ioutil.TempFile(os.TempDir(),
+		f, _ := os.CreateTemp(os.TempDir(),
 			fmt.Sprintf("jira_plugin_webhook_%s_*.json",
 				time.Now().Format("2006-01-02-15-04")))
 		if f == nil {
@@ -77,14 +78,16 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		wh, err = parseWebhookCommentUpdated(jwh)
 	case commentDeleted:
 		wh, err = parseWebhookCommentDeleted(jwh)
+	case worklogUpdated:
+		// not supported
 	default:
-		err = errors.Errorf("Unsupported webhook event: %v", jwh.WebhookEvent)
+		err = errors.Wrapf(errWebhookeventUnsupported, "event: %v", jwh.WebhookEvent)
 	}
 	if err != nil {
 		return nil, err
 	}
 	if wh == nil {
-		return nil, errors.Errorf("Unsupported webhook data: %v", jwh.WebhookEvent)
+		return nil, errors.Wrapf(errWebhookeventUnsupported, "event: %v", jwh.WebhookEvent)
 	}
 
 	// For HTTP testing, so we can capture the output of the interface

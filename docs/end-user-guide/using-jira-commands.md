@@ -14,17 +14,18 @@ The available commands are listed below.
 
 **Note:** [setting] can be `notifications` and [value] can be `on` or `off`
 
-* `/jira help` - Launch the Jira plugin command line help syntax
-* `/jira info` - Display information about the current user and the Jira plugin
-* `/jira instance list` - List installed Jira instances
-* `/jira connect [jiraURL]` - Connect your Mattermost account to your Jira account
-* `/jira disconnect [jiraURL]` - Disconnect your Mattermost account from your Jira account
-* `/jira [issue] assign [issue-key] [assignee]` - Change the assignee of a Jira issue
-* `/jira [issue] create [text]` - Create a new Issue with 'text' inserted into the description field
-* `/jira [issue] transition [issue-key] [state]` - Change the state of a Jira issue
-* `/jira [issue] unassign [issue-key]` - Unassign the Jira issue
-* `/jira [issue] view [issue-key]` - View the details of a specific Jira issue
-* `/jira instance settings [setting] [value]` - Update your user settings
+- `/jira help` - Launch the Jira plugin command line help syntax
+- `/jira me` - Display information about the current user
+- `/jira about` - Display build info
+- `/jira instance list` - List installed Jira instances
+- `/jira connect [jiraURL]` - Connect your Mattermost account to your Jira account
+- `/jira disconnect [jiraURL]` - Disconnect your Mattermost account from your Jira account
+- `/jira [issue] assign [issue-key] [assignee]` - Change the assignee of a Jira issue
+- `/jira [issue] create [text]` - Create a new Issue with 'text' inserted into the description field
+- `/jira [issue] transition [issue-key] [state]` - Change the state of a Jira issue
+- `/jira [issue] unassign [issue-key]` - Unassign the Jira issue
+- `/jira [issue] view [issue-key]` - View the details of a specific Jira issue
+- `/jira instance settings [setting] [value]` - Update your user settings
 
 Then select the project and issue type, add a summary, and a description.
 
@@ -38,17 +39,17 @@ Click **Create** to create the issue which includes any file attachments that we
 
 The supported Jira fields are:
 
-* **Project Picker:** Custom fields and the built-in **Project** field.
-* **Single-Line Text:** Custom fields, and built-in fields such as **Summary** and **Environment**.
-* **Multi-Line Text:** Custom fields, and built-in fields such as **Description**.
-* **Single-Choice Issue:** Custom fields, and built-in fields such as **Issue Type** and **Priority**. 
-* **Assignee:** System field.
+- **Project Picker:** Custom fields and the built-in **Project** field.
+- **Single-Line Text:** Custom fields, and built-in fields such as **Summary** and **Environment**.
+- **Multi-Line Text:** Custom fields, and built-in fields such as **Description**.
+- **Single-Choice Issue:** Custom fields, and built-in fields such as **Issue Type** and **Priority**.
+- **Assignee:** System field.
 
 ### Attach Messages to Jira issues
 
 Keep all information in one place by attaching parts of Mattermost conversations in Jira issues as comments. To attach a message, hover over the relevant message and select **\(...\) > More Actions > Attach to Jira Issue**.
 
-![You can attach a message to an existing Jira ticket](../.gitbook/assets/image%20%286%29.png)
+![You can attach a message to an existing Jira ticket](../.gitbook/assets/attach-from-post.png)
 
 Then, on the resulting dialog, select the issue you want to attach it to. You may search for issues containing specific text or just the issue number.
 
@@ -66,8 +67,8 @@ For instance, `/jira transition EXT-20 done` transitions the issue key **EXT-20*
 
 **Note:**
 
-* States and issue transitions are based on your Jira project workflow configuration. If an invalid state is entered, an ephemeral message is returned mentioning that the state couldn't be found.
-* Partial matches work. For example, typing `/jira transition EXT-20 in` will transition to `In Progress`.  However, if there are states of `In Review`, `In Progress`, the plugin bot will ask you to be more specific and display the partial matches.
+- States and issue transitions are based on your Jira project workflow configuration. If an invalid state is entered, an ephemeral message is returned mentioning that the state couldn't be found.
+- Partial matches work. For example, typing `/jira transition EXT-20 in` will transition to `In Progress`. However, if there are states of `In Review`, `In Progress`, the plugin bot will ask you to be more specific and display the partial matches.
 
 ### Assign Jira issues
 
@@ -75,4 +76,4 @@ Assign issues to other Jira users without the need to switch to your Jira projec
 
 **Note:**
 
-* Partial Matches work with Usernames and Firstname/Lastname
+- Partial Matches work with Usernames and Firstname/Lastname

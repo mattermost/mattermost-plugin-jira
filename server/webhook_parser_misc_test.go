@@ -4,7 +4,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -18,7 +18,7 @@ func TestMarkdown(t *testing.T) {
 	f, err := os.Open("testdata/webhook-issue-created.json")
 	require.NoError(t, err)
 	defer f.Close()
-	bb, err := ioutil.ReadAll(f)
+	bb, err := io.ReadAll(f)
 	require.Nil(t, err)
 	wh, err := ParseWebhook(bb)
 	require.NoError(t, err)
@@ -48,7 +48,7 @@ func TestEventTypeFormat(t *testing.T) {
 		f, err := os.Open(value.filename)
 		require.NoError(t, err)
 		defer f.Close()
-		bb, err := ioutil.ReadAll(f)
+		bb, err := io.ReadAll(f)
 		require.Nil(t, err)
 		wh, err := ParseWebhook(bb)
 		require.NoError(t, err)
@@ -68,7 +68,7 @@ func TestNotificationsFormat(t *testing.T) {
 		f, err := os.Open(value.filename)
 		require.NoError(t, err)
 		defer f.Close()
-		bb, err := ioutil.ReadAll(f)
+		bb, err := io.ReadAll(f)
 		require.Nil(t, err)
 		wh, err := ParseWebhook(bb)
 		require.NoError(t, err)
@@ -127,7 +127,7 @@ func TestWebhookQuotedComment(t *testing.T) {
 		f, err := os.Open(value)
 		require.NoError(t, err)
 		defer f.Close()
-		bb, err := ioutil.ReadAll(f)
+		bb, err := io.ReadAll(f)
 		require.Nil(t, err)
 		wh, err := ParseWebhook(bb)
 		require.NoError(t, err)

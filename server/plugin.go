@@ -9,7 +9,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"net/url"
 	"path/filepath"
@@ -29,6 +28,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
 
+	root "github.com/mattermost/mattermost-plugin-jira"
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/telemetry"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -47,9 +47,9 @@ const (
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
 )
 
-var BuildHash = ""
-var BuildHashShort = ""
-var BuildDate = ""
+var (
+	Manifest model.Manifest = root.Manifest
+)
 
 type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
@@ -70,6 +70,9 @@ type externalConfig struct {
 
 	// Additional Help Text to be shown in the output of '/jira help' command
 	JiraAdminAdditionalHelpText string
+
+	// When enabled, a subscription without security level rules will filter out an issue that has a security level assigned
+	SecurityLevelEmptyForJiraSubscriptions bool
 
 	// Hide issue descriptions and comments in Webhook and Subscription messages
 	HideDecriptionComment bool
@@ -113,11 +116,10 @@ type Plugin struct {
 	otsStore      OTSStore
 	secretsStore  SecretsStore
 
-	setupFlow *flow.Flow
+	setupFlow  *flow.Flow
+	oauth2Flow *flow.Flow
 
-	// Most of ServeHTTP does not use an http router, but we need one to support
-	// the setup wizard flow. Introducing it here incrementally.
-	gorillaRouter *mux.Router
+	router *mux.Router
 
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
@@ -160,7 +162,10 @@ func (p *Plugin) updateConfig(f func(conf *config)) config {
 func (p *Plugin) OnConfigurationChange() error {
 	// Load the public configuration fields from the Mattermost server configuration.
 	ec := externalConfig{}
-	err := p.API.LoadPluginConfiguration(&ec)
+	if p.client == nil {
+		p.client = pluginapi.NewClient(p.API, p.Driver)
+	}
+	err := p.client.Configuration.LoadPluginConfiguration(&ec)
 	if err != nil {
 		return errors.WithMessage(err, "failed to load plugin configuration")
 	}
@@ -220,19 +225,26 @@ func (p *Plugin) OnActivate() error {
 	p.secretsStore = store
 	p.otsStore = store
 	p.client = pluginapi.NewClient(p.API, p.Driver)
-	p.gorillaRouter = mux.NewRouter()
+
+	p.initializeRouter()
+
+	bundlePath, err := p.client.System.GetBundlePath()
+	if err != nil {
+		return errors.Wrap(err, "couldn't get bundle path")
+	}
 
 	botUserID, err := p.client.Bot.EnsureBot(&model.Bot{
+		OwnerId:     Manifest.Id, // Workaround to support older server version affected by https://github.com/mattermost/mattermost-server/pull/21560
 		Username:    botUserName,
 		DisplayName: botDisplayName,
 		Description: botDescription,
-	})
+	}, pluginapi.ProfileImagePath(filepath.Join("assets", "profile.png")))
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure bot account")
 	}
 
 	mattermostSiteURL := ""
-	ptr := p.API.GetConfig().ServiceSettings.SiteURL
+	ptr := p.client.Configuration.GetConfig().ServiceSettings.SiteURL
 	if ptr != nil {
 		mattermostSiteURL = *ptr
 	}
@@ -253,20 +265,6 @@ func (p *Plugin) OnActivate() error {
 		conf.rsaKey = rsaKey
 	})
 
-	bundlePath, err := p.API.GetBundlePath()
-	if err != nil {
-		return errors.Wrap(err, "couldn't get bundle path")
-	}
-
-	profileImage, err := ioutil.ReadFile(filepath.Join(bundlePath, "assets", "profile.png"))
-	if err != nil {
-		return errors.Wrap(err, "couldn't read profile image")
-	}
-
-	if appErr := p.API.SetProfileImage(botUserID, profileImage); appErr != nil {
-		return errors.Wrap(appErr, "couldn't set profile image")
-	}
-
 	instances, err := MigrateV2Instances(p)
 	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to migrate from previous version of the Jira plugin")
@@ -279,6 +277,7 @@ func (p *Plugin) OnActivate() error {
 	p.templates = templates
 
 	p.setupFlow = p.NewSetupFlow()
+	p.oauth2Flow = p.NewOAuth2Flow()
 
 	// Register /jira command and stash the loaded list of known instances for
 	// later (autolink registration).
@@ -307,22 +306,22 @@ func (p *Plugin) OnActivate() error {
 
 			ci, ok := instance.(*cloudInstance)
 			if !ok {
-				p.API.LogInfo("only cloud instances supported for autolink", "err", err)
+				p.client.Log.Info("only cloud instances supported for autolink", "err", err)
 				continue
 			}
-
-			status, apiErr := p.API.GetPluginStatus(autolinkPluginID)
-			if apiErr != nil {
-				p.API.LogWarn("OnActivate: Autolink plugin unavailable. API returned error", "error", apiErr.Error())
+			var status *model.PluginStatus
+			status, err = p.client.Plugin.GetPluginStatus(autolinkPluginID)
+			if err != nil {
+				p.client.Log.Warn("OnActivate: Autolink plugin unavailable. API returned error", "error", err.Error())
 				continue
 			}
 			if status.State != model.PluginStateRunning {
-				p.API.LogWarn("OnActivate: Autolink plugin unavailable. Plugin is not running", "status", status)
+				p.client.Log.Warn("OnActivate: Autolink plugin unavailable. Plugin is not running", "status", status)
 				continue
 			}
 
 			if err = p.AddAutolinksForCloudInstance(ci); err != nil {
-				p.API.LogInfo("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
+				p.client.Log.Info("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 				continue
 			}
 		}
@@ -389,7 +388,7 @@ func (p *Plugin) GetPluginKey() string {
 }
 
 func (p *Plugin) GetPluginURLPath() string {
-	return "/plugins/" + manifest.ID
+	return "/plugins/" + Manifest.Id
 }
 
 func (p *Plugin) GetPluginURL() string {
@@ -401,15 +400,15 @@ func (p *Plugin) GetSiteURL() string {
 }
 
 func (p *Plugin) debugf(f string, args ...interface{}) {
-	p.API.LogDebug(fmt.Sprintf(f, args...))
+	p.client.Log.Debug(fmt.Sprintf(f, args...))
 }
 
 func (p *Plugin) infof(f string, args ...interface{}) {
-	p.API.LogInfo(fmt.Sprintf(f, args...))
+	p.client.Log.Info(fmt.Sprintf(f, args...))
 }
 
 func (p *Plugin) errorf(f string, args ...interface{}) {
-	p.API.LogError(fmt.Sprintf(f, args...))
+	p.client.Log.Error(fmt.Sprintf(f, args...))
 }
 
 func (p *Plugin) CheckSiteURL() error {
@@ -484,18 +483,6 @@ func (p *Plugin) setDefaultConfiguration() error {
 	}
 
 	return nil
-}
-
-func (p *Plugin) track(name, userID string) {
-	p.trackWithArgs(name, userID, nil)
-}
-
-func (p *Plugin) trackWithArgs(name, userID string, args map[string]interface{}) {
-	if args == nil {
-		args = map[string]interface{}{}
-	}
-	args["time"] = model.GetMillis()
-	_ = p.tracker.TrackUserEvent(name, userID, args)
 }
 
 func (p *Plugin) OnInstall(c *plugin.Context, event model.OnInstallEvent) error {

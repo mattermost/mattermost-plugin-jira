@@ -5,7 +5,7 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -16,11 +16,6 @@ import (
 const userRedirectPageKey = "user-redirect"
 
 func (p *Plugin) httpACJSON(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be GET"))
-	}
-
 	return p.respondTemplate(w, r, "application/json", map[string]string{
 		"BaseURL":                      p.GetPluginURL(),
 		"RouteACJSON":                  instancePath(routeACJSON, instanceID),
@@ -34,12 +29,7 @@ func (p *Plugin) httpACJSON(w http.ResponseWriter, r *http.Request, instanceID t
 }
 
 func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodPost {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be POST"))
-	}
-
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to decode request"))
@@ -84,7 +74,7 @@ func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, e
 	// Setup autolink
 	err = p.AddAutolinksForCloudInstance(newInstance)
 	if err != nil {
-		p.API.LogInfo("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
+		p.client.Log.Info("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 	}
 
 	_ = p.setupFlow.ForUser(ci.SetupWizardUserID).Go(stepInstalledJiraApp)
@@ -93,11 +83,6 @@ func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, e
 }
 
 func (p *Plugin) httpACUninstalled(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodPost {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be POST"))
-	}
-
 	// Just send an ok to the Jira server, even though we're not doing anything.
 	return respondJSON(w, []string{"OK"})
 }

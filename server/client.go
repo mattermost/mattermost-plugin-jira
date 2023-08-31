@@ -8,10 +8,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,6 +19,7 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -42,7 +43,7 @@ type Client interface {
 // or a fully-qualified URL, with a non-empty Scheme.
 type RESTService interface {
 	RESTGet(endpoint string, params map[string]string, dest interface{}) error
-	RESTPostAttachment(issueID string, data []byte, name string) (*jira.Attachment, error)
+	RESTPostAttachment(issueID string, data io.Reader, name string) (*jira.Attachment, error)
 }
 
 // UserService is the interface for user-related APIs.
@@ -54,7 +55,6 @@ type UserService interface {
 // ProjectService is the interface for project-related APIs.
 type ProjectService interface {
 	GetProject(key string) (*jira.Project, error)
-	GetAllProjectKeys() ([]string, error)
 	ListProjects(query string, limit int, expandIssueTypes bool) (jira.ProjectList, error)
 	GetIssueTypes(projectID string) ([]jira.IssueType, error)
 }
@@ -72,7 +72,7 @@ type IssueService interface {
 	GetIssue(key string, options *jira.GetQueryOptions) (*jira.Issue, error)
 	CreateIssue(issue *jira.Issue) (*jira.Issue, error)
 
-	AddAttachment(api plugin.API, issueKey, fileID string, maxSize utils.ByteSize) (mattermostName, jiraName, mime string, err error)
+	AddAttachment(mmClient pluginapi.Client, issueKey, fileID string, maxSize utils.ByteSize) (mattermostName, jiraName, mime string, err error)
 	AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
 	DoTransition(issueKey, transitionID string) error
 	GetCreateMetaInfo(api plugin.API, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error)
@@ -118,7 +118,7 @@ func (client JiraClient) RESTGet(endpoint string, params map[string]string, dest
 // `issue/%s/attachments` endpoint returns some errors as JSON ("You do not have permission to
 // create attachments for this issue"), and some as plain text ("The field file exceeds its maximum
 // permitted size of 1024 bytes"). This implementation handles both.
-func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name string) (*jira.Attachment, error) {
+func (client JiraClient) RESTPostAttachment(issueID string, data io.Reader, name string) (*jira.Attachment, error) {
 	endpointURL, err := endpointURL(fmt.Sprintf("2/issue/%s/attachments", issueID))
 	if err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 	if err != nil {
 		return nil, err
 	}
-	if _, err = io.Copy(fw, bytes.NewReader(data)); err != nil {
+	if _, err = io.Copy(fw, data); err != nil {
 		return nil, err
 	}
 	writer.Close()
@@ -150,7 +150,7 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 			return nil, err
 		}
 
-		bb, _ := ioutil.ReadAll(resp.Body)
+		bb, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
 
 		jerr := jira.Error{}
@@ -167,20 +167,6 @@ func (client JiraClient) RESTPostAttachment(issueID string, data []byte, name st
 	}
 
 	return attachments[0], nil
-}
-
-func (client JiraClient) GetAllProjectKeys() ([]string, error) {
-	projectlist, resp, err := client.Jira.Project.GetList()
-	if err != nil {
-		return nil, userFriendlyJiraError(resp, err)
-	}
-
-	keys := make([]string, 0, len(*projectlist))
-	for _, project := range *projectlist {
-		keys = append(keys, project.Key)
-	}
-
-	return keys, nil
 }
 
 // GetProject returns a Project by key.
@@ -289,20 +275,20 @@ func (client JiraClient) DoTransition(issueKey, transitionID string) error {
 }
 
 // AddAttachment uploads a file attachment
-func (client JiraClient) AddAttachment(api plugin.API, issueKey, fileID string, maxSize utils.ByteSize) (
+func (client JiraClient) AddAttachment(mmClient pluginapi.Client, issueKey, fileID string, maxSize utils.ByteSize) (
 	mattermostName, jiraName, mime string, err error) {
-	fileinfo, appErr := api.GetFileInfo(fileID)
-	if appErr != nil {
-		return "", "", "", appErr
+	fileinfo, err := mmClient.File.GetInfo(fileID)
+	if err != nil {
+		return "", "", "", err
 	}
 	if utils.ByteSize(fileinfo.Size) > maxSize {
 		return fileinfo.Name, "", fileinfo.MimeType,
 			errors.Errorf("Maximum attachment size %v exceeded, file size %v", maxSize, utils.ByteSize(fileinfo.Size))
 	}
 
-	fileBytes, appErr := api.ReadFile(fileinfo.Path)
-	if appErr != nil {
-		return "", "", "", appErr
+	fileBytes, err := mmClient.File.GetByPath(fileinfo.Path)
+	if err != nil {
+		return "", "", "", err
 	}
 	attachment, err := client.RESTPostAttachment(issueKey, fileBytes, fileinfo.Name)
 	if err != nil {
@@ -324,12 +310,12 @@ func (client JiraClient) GetSelf() (*jira.User, error) {
 // MakeCreateIssueURL makes a URL that would take a browser to a pre-filled form
 // to file a new issue in Jira.
 func MakeCreateIssueURL(instance Instance, project *jira.Project, issue *jira.Issue) string {
-	u, err := url.Parse(fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", instance.GetURL()))
+	url, err := url.Parse(fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", instance.GetJiraBaseURL()))
 	if err != nil {
 		return ""
 	}
 
-	q := u.Query()
+	q := url.Query()
 	q.Add("pid", project.ID)
 	q.Add("issuetype", issue.Fields.Type.ID)
 	q.Add("summary", issue.Fields.Summary)
@@ -358,8 +344,8 @@ func MakeCreateIssueURL(instance Instance, project *jira.Project, issue *jira.Is
 		}
 	}
 
-	u.RawQuery = q.Encode()
-	return u.String()
+	url.RawQuery = q.Encode()
+	return url.String()
 }
 
 // SearchUsersAssignableToIssue finds all users that can be assigned to an issue.
@@ -407,7 +393,7 @@ func endpointURL(endpoint string) (string, error) {
 	}
 	if parsedURL.Scheme == "" {
 		// relative path
-		endpoint = fmt.Sprintf("/rest/api/%s", endpoint)
+		endpoint = path.Join("/rest/api", endpoint)
 	}
 	return endpoint, nil
 }
