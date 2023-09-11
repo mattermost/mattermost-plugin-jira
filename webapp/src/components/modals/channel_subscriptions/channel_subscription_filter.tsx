@@ -5,7 +5,7 @@ import {Theme} from 'mattermost-redux/types/preferences';
 import ReactSelectSetting from 'components/react_select_setting';
 import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
-import {isEpicLinkField, isMultiSelectField, isLabelField, isCommentVisibilityField} from 'utils/jira_issue_metadata';
+import {isEpicLinkField, isMultiSelectField, isLabelField, isSecurityLevelField, isCommentVisibilityField} from 'utils/jira_issue_metadata';
 import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
 import JiraAutoCompleteSelector from 'components/data_selectors/jira_autocomplete_selector';
@@ -23,6 +23,7 @@ export type Props = {
     addValidate: (isValid: () => boolean) => void;
     removeValidate: (isValid: () => boolean) => void;
     instanceID: string;
+    securityLevelEmptyForJiraSubscriptions: boolean;
 };
 
 export type State = {
@@ -104,13 +105,29 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
     };
 
     isValid = (): boolean => {
-        const error = this.checkFieldConflictError();
+        let error = this.checkFieldConflictError();
+        if (error) {
+            this.setState({error});
+            return false;
+        }
+
+        error = this.checkInclusionError();
         if (error) {
             this.setState({error});
             return false;
         }
 
         return true;
+    }
+
+    checkInclusionError = (): string | null => {
+        const inclusion = this.props.value && this.props.value.inclusion;
+
+        if (isSecurityLevelField(this.props.field) && inclusion === FilterFieldInclusion.EXCLUDE_ANY && this.props.securityLevelEmptyForJiraSubscriptions) {
+            return 'Security level inclusion cannot be "Exclude Any". Note that the default value is now "Empty".';
+        }
+
+        return null;
     }
 
     checkFieldConflictError = (): string | null => {
@@ -168,12 +185,20 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         }));
         let chosenFieldType = null;
 
-        const inclusionSelectOptions: ReactSelectOption[] = [
+        let inclusionSelectOptions: ReactSelectOption[] = [
             {label: 'Include', value: FilterFieldInclusion.INCLUDE_ANY},
             {label: 'Include All', value: FilterFieldInclusion.INCLUDE_ALL},
             {label: 'Exclude', value: FilterFieldInclusion.EXCLUDE_ANY},
             {label: 'Empty', value: FilterFieldInclusion.EMPTY},
         ];
+
+        if (isSecurityLevelField(field) && value.inclusion !== FilterFieldInclusion.EXCLUDE_ANY && this.props.securityLevelEmptyForJiraSubscriptions) {
+            inclusionSelectOptions = [
+                {label: 'Include', value: FilterFieldInclusion.INCLUDE_ANY},
+                {label: 'Include All', value: FilterFieldInclusion.INCLUDE_ALL},
+                {label: 'Empty', value: FilterFieldInclusion.EMPTY},
+            ];
+        }
 
         if (!isMultiSelectField(field)) {
             const includeAllIndex = inclusionSelectOptions.findIndex((opt) => opt.value === FilterFieldInclusion.INCLUDE_ALL);
@@ -306,7 +331,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                         className='help-text error-text'
                         style={style.conflictingError}
                     >
-                        {this.checkFieldConflictError()}
+                        {this.state.error}
                     </div>
                 </div>
                 <div className='col-md-11 col-sm-12'>

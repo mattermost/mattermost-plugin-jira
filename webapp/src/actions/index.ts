@@ -4,7 +4,7 @@
 import {PostTypes} from 'mattermost-redux/action_types';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
-import PluginId from 'plugin_id';
+import {id as PluginId} from '../manifest';
 import ActionTypes from 'action_types';
 import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
 import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances} from 'selectors';

@@ -19,6 +19,7 @@ import {
     getConflictingFields,
     generateJQLStringFromSubscriptionFilters,
     getIssueTypes,
+    filterValueIsSecurityField,
 } from 'utils/jira_issue_metadata';
 
 import {ChannelSubscription, ChannelSubscriptionFilters as ChannelSubscriptionFiltersModel, ReactSelectOption, FilterValue, IssueMetadata} from 'types/model';
@@ -170,6 +171,14 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
 
     clearConflictingErrorMessage = () => {
         this.setState({conflictingError: null});
+    }
+
+    shouldShowEmptySecurityLevelMessage = (): boolean => {
+        if (!this.props.securityLevelEmptyForJiraSubscriptions) {
+            return false;
+        }
+
+        return !this.state.filters.fields.some(filterValueIsSecurityField);
     }
 
     handleIssueChange = (id: keyof ChannelSubscriptionFiltersModel, value: string[] | null) => {
@@ -392,14 +401,23 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
                             instanceID={this.state.instanceID}
+                            securityLevelEmptyForJiraSubscriptions={this.props.securityLevelEmptyForJiraSubscriptions}
                         />
                         <div>
                             <label className='control-label margin-bottom'>
                                 {'Approximate JQL Output'}
                             </label>
                             <div style={getBaseStyles(this.props.theme).codeBlock}>
-                                <span>{generateJQLStringFromSubscriptionFilters(this.state.jiraIssueMetadata, filterFields, this.state.filters)}</span>
+                                <span>{generateJQLStringFromSubscriptionFilters(this.state.jiraIssueMetadata, filterFields, this.state.filters, this.props.securityLevelEmptyForJiraSubscriptions)}</span>
                             </div>
+                            {this.shouldShowEmptySecurityLevelMessage() && (
+                                <div>
+                                    <span>
+                                        <strong>{'Note'}</strong>
+                                        {' that since you have not selected a security level filter, the subscription will only allow issues that have no security level assigned.'}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     </React.Fragment>
                 );

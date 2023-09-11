@@ -8,12 +8,14 @@ import {
     IssueType,
     JiraField,
     FilterField,
+    FilterValue,
     SelectField,
     StringArrayField,
     IssueTypeIdentifier,
     ChannelSubscriptionFilters,
     FilterFieldInclusion,
     JiraFieldCustomTypeEnums,
+    JiraFieldTypeEnums,
 } from 'types/model';
 
 type FieldWithInfo = JiraField & {
@@ -294,6 +296,14 @@ export function isTextField(field: JiraField | FilterField): boolean {
     return field.schema.type === 'string';
 }
 
+export function isSecurityLevelField(field: JiraField | FilterField): boolean {
+    return field.schema.type === 'securitylevel';
+}
+
+export function filterValueIsSecurityField(value: FilterValue): boolean {
+    return value.key === JiraFieldTypeEnums.SECURITY;
+}
+
 // Some Jira fields have special names for JQL
 function getFieldNameForJQL(field: FilterField) {
     switch (field.key) {
@@ -314,7 +324,7 @@ function quoteGuard(s: string) {
     return s;
 }
 
-export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMetadata, fields: FilterField[], filters: ChannelSubscriptionFilters) {
+export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMetadata, fields: FilterField[], filters: ChannelSubscriptionFilters, securityLevelEmptyForJiraSubscriptions: boolean) {
     const projectJQL = `Project = ${quoteGuard(filters.projects[0]) || '?'}`;
 
     let issueTypeValueString = '?';
@@ -331,7 +341,7 @@ export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMet
     }
     const issueTypesJQL = `IssueType IN ${issueTypeValueString}`;
 
-    const filterFieldsJQL = filters.fields.map(({key, inclusion, values}): string => {
+    let filterFieldsJQL = filters.fields.map(({key, inclusion, values}): string => {
         const field = fields.find((f) => f.key === key);
         if (!field) {
             // broken filter
@@ -371,6 +381,14 @@ export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMet
         const valueString = `(${joinedValues})`;
         return `${quoteGuard(fieldName)} ${inclusionString} ${valueString}`;
     }).join(' AND ');
+
+    const shouldShowEmptySecurityLevel = securityLevelEmptyForJiraSubscriptions && !filters.fields.some(filterValueIsSecurityField);
+    if (shouldShowEmptySecurityLevel) {
+        if (filterFieldsJQL.length) {
+            filterFieldsJQL += ' AND ';
+        }
+        filterFieldsJQL += '"Security Level" IS EMPTY';
+    }
 
     return [projectJQL, issueTypesJQL, filterFieldsJQL].filter(Boolean).join(' AND ');
 }

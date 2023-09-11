@@ -24,11 +24,6 @@ const (
 )
 
 func (p *Plugin) httpACUserRedirect(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be GET"))
-	}
-
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
@@ -93,7 +88,7 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 
 	mmToken := r.FormValue(argMMToken)
 	connection := &Connection{
-		PluginVersion: manifest.Version,
+		PluginVersion: Manifest.Version,
 		User: jira.User{
 			AccountID:   accountID,
 			Key:         jUser.Key,
@@ -120,10 +115,10 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		return respondErr(w, http.StatusUnauthorized, err)
 	}
 
-	mmuser, appErr := p.API.GetUser(mattermostUserID)
-	if appErr != nil {
+	mmuser, err := p.client.User.Get(mattermostUserID)
+	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to load user "+mattermostUserID))
+			errors.WithMessage(err, "failed to load user "+mattermostUserID))
 	}
 
 	_, urlpath := splitInstancePath(r.URL.Path)
@@ -145,7 +140,7 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 		}
 		// TODO For https://github.com/mattermost/mattermost-plugin-jira/issues/149, need a channel ID
 		// msg := fmt.Sprintf("You have successfully connected your Jira account (**%s**).", connection.DisplayName)
-		// _ = p.API.SendEphemeralPost(mattermostUserID, makePost(p.getUserID(), channelID, msg))
+		// _ = p.client.Post.SendEphemeralPost(mattermostUserID, makePost(p.getUserID(), channelID, msg))
 
 	case routeACUserDisconnected:
 		_, err = p.DisconnectUser(ci.InstanceID.String(), types.ID(mattermostUserID))

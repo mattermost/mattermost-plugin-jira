@@ -13,6 +13,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -104,19 +106,10 @@ func (store store) get(key string, v interface{}) (returnErr error) {
 		returnErr = errors.WithMessage(returnErr, "failed to get from store")
 	}()
 
-	data, appErr := store.plugin.API.KVGet(key)
-	if appErr != nil {
-		return appErr
-	}
-	if data == nil {
-		return kvstore.ErrNotFound
-	}
-
-	err := json.Unmarshal(data, v)
+	err := store.plugin.client.KV.Get(key, v)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -128,14 +121,9 @@ func (store store) set(key string, v interface{}) (returnErr error) {
 		returnErr = errors.WithMessage(returnErr, "failed to store")
 	}()
 
-	data, err := json.Marshal(v)
+	_, err := store.plugin.client.KV.Set(key, v)
 	if err != nil {
 		return err
-	}
-
-	appErr := store.plugin.API.KVSet(key, data)
-	if appErr != nil {
-		return appErr
 	}
 	return nil
 }
@@ -149,7 +137,8 @@ func (store store) StoreConnection(instanceID, mattermostUserID types.ID, connec
 			fmt.Sprintf("failed to store connection, mattermostUserID:%s, Jira user:%s", mattermostUserID, connection.DisplayName))
 	}()
 
-	connection.PluginVersion = manifest.Version
+	connection.PluginVersion = Manifest.Version
+	connection.MattermostUserID = mattermostUserID
 
 	err := store.set(keyWithInstanceID(instanceID, mattermostUserID), connection)
 	if err != nil {
@@ -182,7 +171,7 @@ func (store store) LoadConnection(instanceID, mattermostUserID types.ID) (*Conne
 		return nil, errors.Wrapf(err,
 			"failed to load connection for Mattermost user ID:%q, Jira:%q", mattermostUserID, instanceID)
 	}
-	c.PluginVersion = manifest.Version
+	c.PluginVersion = Manifest.Version
 	return c, nil
 }
 
@@ -210,14 +199,14 @@ func (store store) DeleteConnection(instanceID, mattermostUserID types.ID) (retu
 		return err
 	}
 
-	appErr := store.plugin.API.KVDelete(keyWithInstanceID(instanceID, mattermostUserID))
-	if appErr != nil {
-		return appErr
+	err = store.plugin.client.KV.Delete(keyWithInstanceID(instanceID, mattermostUserID))
+	if err != nil {
+		return err
 	}
 
-	appErr = store.plugin.API.KVDelete(keyWithInstanceID(instanceID, c.JiraAccountID()))
-	if appErr != nil {
-		return appErr
+	err = store.plugin.client.KV.Delete(keyWithInstanceID(instanceID, c.JiraAccountID()))
+	if err != nil {
+		return err
 	}
 
 	store.plugin.debugf("Deleted: user, keys: %s(%s), %s(%s)",
@@ -235,7 +224,7 @@ func (store store) StoreUser(user *User) (returnErr error) {
 			fmt.Sprintf("failed to store user, mattermostUserId:%s", user.MattermostUserID))
 	}()
 
-	user.PluginVersion = manifest.Version
+	user.PluginVersion = Manifest.Version
 
 	key := hashkey(prefixUser, user.MattermostUserID.String())
 	err := store.set(key, user)
@@ -261,9 +250,9 @@ func (store store) LoadUser(mattermostUserID types.ID) (*User, error) {
 func (store store) CountUsers() (int, error) {
 	count := 0
 	for i := 0; ; i++ {
-		keys, appErr := store.plugin.API.KVList(i, listPerPage)
-		if appErr != nil {
-			return 0, appErr
+		keys, err := store.plugin.client.KV.ListKeys(i, listPerPage)
+		if err != nil {
+			return 0, err
 		}
 
 		for _, key := range keys {
@@ -281,9 +270,9 @@ func (store store) CountUsers() (int, error) {
 
 func (store store) MapUsers(f func(user *User) error) error {
 	for i := 0; ; i++ {
-		keys, appErr := store.plugin.API.KVList(i, listPerPage)
-		if appErr != nil {
-			return appErr
+		keys, err := store.plugin.client.KV.ListKeys(i, listPerPage)
+		if err != nil {
+			return err
 		}
 
 		for _, key := range keys {
@@ -319,21 +308,21 @@ func (store store) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr erro
 	}()
 
 	// nil, nil == NOT_FOUND, if we don't already have a key, try to generate one.
-	secret, appErr := store.plugin.API.KVGet(keyTokenSecret)
-	if appErr != nil {
-		return nil, appErr
+	err := store.plugin.client.KV.Get(keyTokenSecret, &secret)
+	if err != nil {
+		return nil, err
 	}
 
 	if len(secret) == 0 {
 		newSecret := make([]byte, 32)
-		_, err := rand.Reader.Read(newSecret)
+		_, err = rand.Reader.Read(newSecret)
 		if err != nil {
 			return nil, err
 		}
 
-		appErr = store.plugin.API.KVSet(keyTokenSecret, newSecret)
-		if appErr != nil {
-			return nil, appErr
+		_, err = store.plugin.client.KV.Set(keyTokenSecret, newSecret)
+		if err != nil {
+			return nil, err
 		}
 		secret = newSecret
 		store.plugin.debugf("Stored: auth token secret")
@@ -342,9 +331,9 @@ func (store store) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr erro
 	// If we weren't able to save a new key above, another server must have beat us to it. Get the
 	// key from the database, and if that fails, error out.
 	if secret == nil {
-		secret, appErr = store.plugin.API.KVGet(keyTokenSecret)
-		if appErr != nil {
-			return nil, appErr
+		err = store.plugin.client.KV.Get(keyTokenSecret, &secret)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -393,25 +382,26 @@ func (store store) EnsureRSAKey() (rsaKey *rsa.PrivateKey, returnErr error) {
 
 func (store store) StoreOneTimeSecret(token, secret string) error {
 	// Expire in 15 minutes
-	appErr := store.plugin.API.KVSetWithExpiry(
-		hashkey(prefixOneTimeSecret, token), []byte(secret), 15*60)
-	if appErr != nil {
-		return errors.WithMessage(appErr, "failed to store one-ttime secret "+token)
+	_, err := store.plugin.client.KV.Set(
+		hashkey(prefixOneTimeSecret, token), []byte(secret), pluginapi.SetExpiry(15*60))
+	if err != nil {
+		return errors.WithMessage(err, "failed to store one-ttime secret "+token)
 	}
 	return nil
 }
 
 func (store store) LoadOneTimeSecret(key string) (string, error) {
-	b, appErr := store.plugin.API.KVGet(hashkey(prefixOneTimeSecret, key))
-	if appErr != nil {
-		return "", errors.WithMessage(appErr, "failed to load one-time secret "+key)
+	var secret []byte
+	err := store.plugin.client.KV.Get(hashkey(prefixOneTimeSecret, key), &secret)
+	if err != nil {
+		return "", errors.WithMessage(err, "failed to load one-time secret "+key)
 	}
 
-	appErr = store.plugin.API.KVDelete(hashkey(prefixOneTimeSecret, key))
-	if appErr != nil {
-		return "", errors.WithMessage(appErr, "failed to delete one-time secret "+key)
+	err = store.plugin.client.KV.Delete(hashkey(prefixOneTimeSecret, key))
+	if err != nil {
+		return "", errors.WithMessage(err, "failed to delete one-time secret "+key)
 	}
-	return string(b), nil
+	return string(secret), nil
 }
 
 func (store store) StoreOauth1aTemporaryCredentials(mmUserID string, credentials *OAuth1aTemporaryCredentials) error {
@@ -420,31 +410,27 @@ func (store store) StoreOauth1aTemporaryCredentials(mmUserID string, credentials
 		return err
 	}
 	// Expire in 15 minutes
-	appErr := store.plugin.API.KVSetWithExpiry(hashkey(prefixOneTimeSecret, mmUserID), data, 15*60)
-	if appErr != nil {
-		return errors.WithMessage(appErr, "failed to store oauth temporary credentials for "+mmUserID)
+	_, err = store.plugin.client.KV.Set(hashkey(prefixOneTimeSecret, mmUserID), data, pluginapi.SetExpiry(15*60))
+	if err != nil {
+		return errors.WithMessage(err, "failed to store oauth temporary credentials for "+mmUserID)
 	}
 	return nil
 }
 
 func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserID string) (*OAuth1aTemporaryCredentials, error) {
-	b, appErr := store.plugin.API.KVGet(hashkey(prefixOneTimeSecret, mmUserID))
-	if appErr != nil {
-		return nil, errors.WithMessage(appErr, "failed to load temporary credentials for "+mmUserID)
+	var credentials OAuth1aTemporaryCredentials
+	err := store.plugin.client.KV.Get(hashkey(prefixOneTimeSecret, mmUserID), &credentials)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to load temporary credentials for "+mmUserID)
 	}
 	// If the key expired, appErr is nil, but the data is also nil
-	if len(b) == 0 {
+	if len(credentials.Token) == 0 {
 		return nil, errors.Wrapf(kvstore.ErrNotFound, "temporary credentials for %s not found or expired, try to connect again"+mmUserID)
 	}
 
-	var credentials OAuth1aTemporaryCredentials
-	err := json.Unmarshal(b, &credentials)
+	err = store.plugin.client.KV.Delete(hashkey(prefixOneTimeSecret, mmUserID))
 	if err != nil {
-		return nil, err
-	}
-	appErr = store.plugin.API.KVDelete(hashkey(prefixOneTimeSecret, mmUserID))
-	if appErr != nil {
-		return nil, errors.WithMessage(appErr, "failed to delete temporary credentials for "+mmUserID)
+		return nil, errors.WithMessage(err, "failed to delete temporary credentials for "+mmUserID)
 	}
 	return &credentials, nil
 }
@@ -459,13 +445,13 @@ func (store *store) CreateInactiveCloudInstance(jiraURL types.ID, actingUserID s
 	if err != nil {
 		return errors.WithMessagef(err, "failed to store new Jira Cloud instance:%s", jiraURL)
 	}
-	ci.PluginVersion = manifest.Version
+	ci.PluginVersion = Manifest.Version
 
 	// Expire in 15 minutes
 	key := hashkey(prefixInstance, ci.GetURL())
-	appErr := store.plugin.API.KVSetWithExpiry(key, data, 15*60)
-	if appErr != nil {
-		return errors.WithMessagef(appErr, "failed to store new Jira Cloud instance:%s", jiraURL)
+	_, err = store.plugin.client.KV.Set(key, data, pluginapi.SetExpiry(15*60))
+	if err != nil {
+		return errors.WithMessagef(err, "failed to store new Jira Cloud instance:%s", jiraURL)
 	}
 	store.plugin.debugf("Stored: new Jira Cloud instance: %s as %s", ci.GetURL(), key)
 	return nil
@@ -483,33 +469,36 @@ func (store *store) LoadInstance(instanceID types.ID) (Instance, error) {
 }
 
 func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
-	data, appErr := store.plugin.API.KVGet(fullkey)
-	if appErr != nil {
-		return nil, appErr
+	var data []byte
+	if err := store.plugin.client.KV.Get(fullkey, &data); err != nil {
+		return nil, err
 	}
 	if data == nil {
 		return nil, errors.Wrap(kvstore.ErrNotFound, fullkey)
 	}
 
-	// Unmarshal into any of the types just so that we can get the common data
 	si := serverInstance{}
-	err := json.Unmarshal(data, &si)
-	if err != nil {
+	if err := json.Unmarshal(data, &si); err != nil {
 		return nil, err
 	}
-
 	switch si.Type {
 	case CloudInstanceType:
 		ci := cloudInstance{}
-		err = json.Unmarshal(data, &ci)
-		if err != nil {
-			return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+		if err := json.Unmarshal(data, &ci); err != nil {
+			return nil, errors.WithMessage(err, fmt.Sprintf("failed to unmarshal stored instance %s", fullkey))
 		}
 		if len(ci.RawAtlassianSecurityContext) > 0 {
-			err = json.Unmarshal([]byte(ci.RawAtlassianSecurityContext), &ci.AtlassianSecurityContext)
-			if err != nil {
-				return nil, errors.WithMessage(err, "failed to unmarshal stored Instance "+fullkey)
+			if err := json.Unmarshal([]byte(ci.RawAtlassianSecurityContext), &ci.AtlassianSecurityContext); err != nil {
+				return nil, errors.WithMessage(err, fmt.Sprintf("failed to unmarshal stored instance %s", fullkey))
 			}
+		}
+		ci.Plugin = store.plugin
+		return &ci, nil
+
+	case CloudOAuthInstanceType:
+		ci := cloudOAuthInstance{}
+		if err := json.Unmarshal(data, &ci); err != nil {
+			return nil, errors.WithMessage(err, fmt.Sprintf("failed to unmarshal stored instance %s", fullkey))
 		}
 		ci.Plugin = store.plugin
 		return &ci, nil
@@ -519,22 +508,22 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 		return &si, nil
 	}
 
-	return nil, errors.Errorf("Jira instance %s has unsupported type: %s", fullkey, si.Type)
+	return nil, errors.Errorf("Jira instance %s has unsupported type %s", fullkey, si.Type)
 }
 
 func (store *store) StoreInstance(instance Instance) error {
-	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
-	instance.Common().PluginVersion = manifest.Version
+	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.client))
+	instance.Common().PluginVersion = Manifest.Version
 	return kv.Entity(prefixInstance).Store(instance.GetID(), instance)
 }
 
 func (store *store) DeleteInstance(id types.ID) error {
-	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
+	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.client))
 	return kv.Entity(prefixInstance).Delete(id)
 }
 
 func (store *store) LoadInstances() (*Instances, error) {
-	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
+	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.client))
 	vs, err := kv.ValueIndex(keyInstances, &instancesArray{}).Load()
 	if errors.Cause(err) == kvstore.ErrNotFound {
 		return NewInstances(), nil
@@ -548,7 +537,7 @@ func (store *store) LoadInstances() (*Instances, error) {
 }
 
 func (store *store) StoreInstances(instances *Instances) error {
-	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.API))
+	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.client))
 	return kv.ValueIndex(keyInstances, &instancesArray{}).Store(instances.ValueSet)
 }
 
@@ -588,23 +577,16 @@ func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	// The V3 "instances" key does not exist. Migrate. Note that KVGet returns
 	// empty data and no error when no key exists, so the V3 key always gets
 	// initialized unless there is an actual DB/network error.
-	data, appErr := p.API.KVGet(v2keyKnownJiraInstances)
-	if appErr != nil {
-		return nil, appErr
+	v2instances := JiraV2Instances{}
+	err = p.client.KV.Get(v2keyKnownJiraInstances, &v2instances)
+	if err != nil {
+		return nil, err
 	}
 
-	// Convert the V2 instances
-	var v2instances JiraV2Instances
-	if len(data) != 0 {
-		err = json.Unmarshal(data, &v2instances)
-		if err != nil {
-			return nil, err
-		}
-	}
 	instances = NewInstances()
 	for k, v := range v2instances {
 		instances.Set(&InstanceCommon{
-			PluginVersion: manifest.Version,
+			PluginVersion: Manifest.Version,
 			InstanceID:    types.ID(k),
 			Type:          InstanceType(v),
 		})
@@ -659,15 +641,15 @@ func MigrateV3ToV2(p *Plugin) string {
 		return err.Error()
 	}
 
-	appErr := p.API.KVSet(v2keyKnownJiraInstances, data)
-	if appErr != nil {
-		return appErr.Error()
+	_, err = p.client.KV.Set(v2keyKnownJiraInstances, data)
+	if err != nil {
+		return err.Error()
 	}
 
 	// delete instance/v3 key
-	appErr = p.API.KVDelete(keyInstances)
-	if appErr != nil {
-		return appErr.Error()
+	err = p.client.KV.Delete(keyInstances)
+	if err != nil {
+		return err.Error()
 	}
 
 	return msg

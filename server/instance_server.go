@@ -52,6 +52,10 @@ func (si *serverInstance) GetURL() string {
 	return si.InstanceID.String()
 }
 
+func (si *serverInstance) GetJiraBaseURL() string {
+	return si.GetURL()
+}
+
 func (si *serverInstance) GetManageAppsURL() string {
 	return fmt.Sprintf("%s/plugins/servlet/applinks/listApplicationLinks", si.GetURL())
 }
