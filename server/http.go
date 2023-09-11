@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	routeAPIGetCommentVisibilityFields          = "/api/v2/get-comment-visibility-fields"
+	routeAPIGetCommentVisibilityFields          = "/get-comment-visibility-fields"
 	routeAutocomplete                           = "/autocomplete"
 	routeAutocompleteConnect                    = "/connect"
 	routeAutocompleteUserInstance               = "/user-instance"
