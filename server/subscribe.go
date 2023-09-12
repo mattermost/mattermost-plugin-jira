@@ -819,7 +819,9 @@ func (p *Plugin) httpChannelCreateSubscription(w http.ResponseWriter, r *http.Re
 	if subscription.Filters.Projects.Len() == 1 {
 		projectKey = subscription.Filters.Projects.Elems()[0]
 	}
-	p.UpdateUserDefaults(types.ID(mattermostUserID), subscription.InstanceID, projectKey)
+	p.UpdateUserDefaults(types.ID(mattermostUserID), subscription.InstanceID, &SavedFieldValues{
+		ProjectKey: projectKey,
+	})
 
 	code, err := respondJSON(w, &subscription)
 	if err != nil {
@@ -879,7 +881,9 @@ func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Requ
 	if subscription.Filters.Projects.Len() == 1 {
 		projectKey = subscription.Filters.Projects.Elems()[0]
 	}
-	p.UpdateUserDefaults(types.ID(mattermostUserID), subscription.InstanceID, projectKey)
+	p.UpdateUserDefaults(types.ID(mattermostUserID), subscription.InstanceID, &SavedFieldValues{
+		ProjectKey: projectKey,
+	})
 
 	code, err := respondJSON(w, &subscription)
 	if err != nil {

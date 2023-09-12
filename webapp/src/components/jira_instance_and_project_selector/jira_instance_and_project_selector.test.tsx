@@ -26,7 +26,9 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}],
         defaultUserInstanceID: '',
         fetchJiraProjectMetadata: jest.fn().mockResolvedValue({data: {
-            default_project_key: 'TEST',
+            saved_field_values: {
+                project_key: 'TEST',
+            },
             projects: [
                 {value: 'TEST', label: 'Test Project'},
                 {value: 'AA', label: 'Apples Arrangement'},
@@ -120,7 +122,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         expect(props.onInstanceChange).not.toBeCalled();
     });
 
-    test('should use default project key after fetch', async () => {
+    test('should use default field values after fetch', async () => {
         const props = {
             ...baseProps,
             defaultUserInstanceID: 'instance2',
@@ -133,7 +135,9 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         expect(wrapper.state().fetchingProjectMetadata).toBe(true);
 
         await props.fetchJiraProjectMetadata('');
-        expect(props.onProjectChange).toBeCalledWith('TEST');
+        expect(props.onProjectChange).toBeCalledWith({
+            project_key: 'TEST',
+        });
     });
 
     test('should pass error on failed fetch', async () => {
