@@ -115,6 +115,17 @@ func (instances Instances) isAliasUnique(instanceID types.ID, alias string) (boo
 	return true, ""
 }
 
+// checkIfExists returns true if the specified instance ID already exists
+func (instances Instances) checkIfExists(instanceID types.ID) bool {
+	for _, id := range instances.IDs() {
+		if id == instanceID {
+			return true
+		}
+	}
+
+	return false
+}
+
 type instancesArray []*InstanceCommon
 
 func (p instancesArray) Len() int                   { return len(p) }
@@ -135,7 +146,7 @@ func (p *Plugin) InstallInstance(instance Instance) error {
 	err := UpdateInstances(p.instanceStore,
 		func(instances *Instances) error {
 			if !p.enterpriseChecker.HasEnterpriseFeatures() {
-				if instances != nil && len(instances.IDs()) > 0 {
+				if instances != nil && len(instances.IDs()) > 0 && !instances.checkIfExists(instance.GetID()) {
 					return errors.Errorf(licenseErrorString)
 				}
 			}
@@ -219,7 +230,7 @@ func (p *Plugin) wsInstancesChanged(instances *Instances) {
 		"instances": instances.AsConfigMap(),
 	}
 	// Notify users we have uninstalled an instance
-	p.API.PublishWebSocketEvent(websocketEventInstanceStatus, msg, &model.WebsocketBroadcast{})
+	p.client.Frontend.PublishWebSocketEvent(websocketEventInstanceStatus, msg, &model.WebsocketBroadcast{})
 }
 
 func (p *Plugin) StoreV2LegacyInstance(id types.ID) error {
@@ -323,15 +334,7 @@ func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.I
 }
 
 func (p *Plugin) httpAutocompleteConnect(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be GET"))
-	}
 	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-Id"))
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
-	}
-
 	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
@@ -347,15 +350,7 @@ func (p *Plugin) httpAutocompleteConnect(w http.ResponseWriter, r *http.Request)
 }
 
 func (p *Plugin) httpAutocompleteUserInstance(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be GET"))
-	}
 	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-Id"))
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
-	}
-
 	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
@@ -392,15 +387,7 @@ func (p *Plugin) httpAutocompleteUserInstance(w http.ResponseWriter, r *http.Req
 }
 
 func (p *Plugin) httpAutocompleteInstalledInstanceWithAlias(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be GET"))
-	}
 	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-Id"))
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
-	}
-
 	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
@@ -428,15 +415,7 @@ func (p *Plugin) httpAutocompleteInstalledInstanceWithAlias(w http.ResponseWrite
 	return respondJSON(w, out)
 }
 func (p *Plugin) httpAutocompleteInstalledInstance(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be GET"))
-	}
 	mattermostUserID := types.ID(r.Header.Get("Mattermost-User-Id"))
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
-	}
-
 	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)

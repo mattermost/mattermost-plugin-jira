@@ -127,16 +127,14 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
 
             if (error) {
                 state.error = error.message;
-            } else {
-                const fields = this.filterInvalidFields(this.state.projectKey, this.state.issueType, this.state.fields);
-                state.fields = fields;
             }
 
             this.setState(state);
         });
 
-        let fields = {
-            ...this.state.fields,
+        const fields = {
+            summary: this.state.fields.summary,
+            description: this.state.fields.description,
             project: {key: projectKey},
         } as CreateIssueFields;
 
@@ -146,7 +144,6 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             id: issueType,
         };
 
-        fields = this.filterInvalidFields(projectKey, issueType, fields);
         this.setState({
             projectKey,
             issueType,
@@ -159,12 +156,13 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
     }
 
     handleIssueTypeChange = (_: string, issueType: string) => {
-        let fields = {
-            ...this.state.fields,
+        const fields = {
+            summary: this.state.fields.summary,
+            description: this.state.fields.description,
+            project: {key: this.state.projectKey},
             issuetype: {id: issueType},
         } as CreateIssueFields;
 
-        fields = this.filterInvalidFields(this.state.projectKey, issueType, fields);
         this.setState({
             issueType,
             fields,
@@ -208,27 +206,6 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             }
         });
         return fieldsNotCovered;
-    }
-
-    filterInvalidFields = (projectKey: string | null, issueType: string | null, fields: CreateIssueFields) => {
-        if (!projectKey || !issueType || !this.state.jiraIssueMetadata) {
-            return fields;
-        }
-
-        const available = getFields(this.state.jiraIssueMetadata, projectKey, issueType);
-
-        if (Object.keys(available).length === 0) {
-            return fields;
-        }
-
-        const result = {} as CreateIssueFields;
-        for (const key of Object.keys(fields)) {
-            if (available[key] || key === 'project' || key === 'issuetype') {
-                result[key] = fields[key];
-            }
-        }
-
-        return result;
     }
 
     handleSubmit = (e?: React.FormEvent) => {

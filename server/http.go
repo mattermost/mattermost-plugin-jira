@@ -6,15 +6,16 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"text/template"
 
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v6/plugin"
@@ -23,23 +24,28 @@ import (
 )
 
 const (
-	routeAutocompleteConnect                    = "/autocomplete/connect"
-	routeAutocompleteUserInstance               = "/autocomplete/user-instance"
-	routeAutocompleteInstalledInstance          = "/autocomplete/installed-instance"
-	routeAutocompleteInstalledInstanceWithAlias = "/autocomplete/installed-instance-with-alias"
-	routeAPICreateIssue                         = "/api/v2/create-issue"
-	routeAPIGetCreateIssueMetadata              = "/api/v2/get-create-issue-metadata-for-project"
-	routeAPIGetJiraProjectMetadata              = "/api/v2/get-jira-project-metadata"
-	routeAPIGetSearchIssues                     = "/api/v2/get-search-issues"
-	routeAPIGetAutoCompleteFields               = "/api/v2/get-search-autocomplete-fields"
-	routeAPIGetSearchUsers                      = "/api/v2/get-search-users"
-	routeAPIAttachCommentToIssue                = "/api/v2/attach-comment-to-issue"
-	routeAPIUserInfo                            = "/api/v2/userinfo"
-	routeAPISubscribeWebhook                    = "/api/v2/webhook"
-	routeAPISubscriptionsChannel                = "/api/v2/subscriptions/channel"
-	routeAPISubscriptionTemplates               = "/api/v2/subscription-templates"
-	routeAPISettingsInfo                        = "/api/v2/settingsinfo"
-	routeIssueTransition                        = "/api/v2/transition"
+	routeAutocomplete                           = "/autocomplete"
+	routeAutocompleteConnect                    = "/connect"
+	routeAutocompleteUserInstance               = "/user-instance"
+	routeAutocompleteInstalledInstance          = "/installed-instance"
+	routeAutocompleteInstalledInstanceWithAlias = "/installed-instance-with-alias"
+	routeAPI                                    = "/api/v2"
+	routeInstancePath                           = "/instance/{id}"
+	routeAPICreateIssue                         = "/create-issue"
+	routeAPIGetCreateIssueMetadata              = "/get-create-issue-metadata-for-project"
+	routeAPIGetJiraProjectMetadata              = "/get-jira-project-metadata"
+	routeAPIGetSearchIssues                     = "/get-search-issues"
+	routeAPIGetAutoCompleteFields               = "/get-search-autocomplete-fields"
+	routeAPIGetSearchUsers                      = "/get-search-users"
+	routeAPIAttachCommentToIssue                = "/attach-comment-to-issue"
+	routeAPIUserInfo                            = "/userinfo"
+	routeAPISubscribeWebhook                    = "/webhook"
+	routeAPISubscriptionsChannel                = "/subscriptions/channel"
+	routeAPISubscriptionTemplates               = "/subscription-templates"
+	routeAPISubscriptionsChannelWithID          = routeAPISubscriptionsChannel + "/{id:[A-Za-z0-9]+}"
+	routeAPISubscriptionTemplatesWithID         = routeAPISubscriptionTemplates + "/{id:[A-Za-z0-9]+}"
+	routeAPISettingsInfo                        = "/settingsinfo"
+	routeIssueTransition                        = "/transition"
 	routeAPIUserDisconnect                      = "/api/v3/disconnect"
 	routeACInstalled                            = "/ac/installed"
 	routeACJSON                                 = "/ac/atlassian-connect.json"
@@ -53,7 +59,8 @@ const (
 	routeUserStart                              = "/user/start"
 	routeUserConnect                            = "/user/connect"
 	routeUserDisconnect                         = "/user/disconnect"
-	routeSharePublicly                          = "/api/v2/share-issue-publicly"
+	routeSharePublicly                          = "/share-issue-publicly"
+	routeOAuth2Complete                         = "/oauth2/complete.html"
 )
 
 const routePrefixInstance = "instance"
@@ -65,142 +72,110 @@ const (
 	websocketEventUpdateDefaults = "update_defaults"
 )
 
-func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	if strings.HasPrefix(r.URL.Path, "/plugins/servlet") {
-		body, _ := httputil.DumpRequest(r, true)
-		p.errorf("Received an unknown request as a Jira plugin:\n%s", string(body))
-	}
-
-	status, err := p.serveHTTP(c, w, r)
-	switch {
-	case err == nil && status == http.StatusOK:
-		p.API.LogDebug("OK: ", "Status", strconv.Itoa(status), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
-	case status == 0:
-		p.API.LogDebug("Passed to another router: ", "Path", r.URL.Path, "Method", r.Method)
-	case err != nil:
-		p.API.LogError("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
-	default:
-		p.API.LogDebug("unexpected plugin response", "Status", strconv.Itoa(status), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
-	}
+func makeAutocompleteRoute(path string) string {
+	return routeAutocomplete + path
 }
 
-func (p *Plugin) serveHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) (int, error) {
-	var err error
-	path := r.URL.Path
-	instanceURL := ""
-	instanceURL, path = splitInstancePath(path)
-	callbackInstanceID := types.ID("")
+func makeAPIRoute(path string) string {
+	return routeAPI + path
+}
 
-	// Add any "callback" URLs here so that the caller instance is properly identified
-	switch path {
-	case routeACJSON,
-		routeACUserRedirectWithToken,
-		routeACUserConfirm,
-		routeACUserConnected,
-		routeACUserDisconnected,
-		routeIncomingWebhook,
-		routeOAuth1Complete,
-		routeUserDisconnect,
-		routeUserConnect,
-		routeUserStart,
-		routeAPISubscribeWebhook:
+func (p *Plugin) initializeRouter() {
+	p.router = mux.NewRouter()
+	p.router.Use(p.withRecovery)
 
-		if path == routeIncomingWebhook && instanceURL == "" {
-			break
-		}
+	instanceRouter := p.router.PathPrefix(routeInstancePath).Subrouter()
+	p.router.HandleFunc(routeIncomingWebhook, p.handleResponseWithCallbackInstance(p.httpWebhook)).Methods(http.MethodPost)
 
-		callbackInstanceID, err = p.ResolveWebhookInstanceURL(instanceURL)
-		if err != nil {
-			return respondErr(w, http.StatusInternalServerError, err)
-		}
-	}
+	// Command autocomplete
+	autocompleteRouter := p.router.PathPrefix(routeAutocomplete).Subrouter()
+	autocompleteRouter.HandleFunc(routeAutocompleteConnect, p.checkAuth(p.handleResponse(p.httpAutocompleteConnect))).Methods(http.MethodGet)
+	autocompleteRouter.HandleFunc(routeAutocompleteUserInstance, p.checkAuth(p.handleResponse(p.httpAutocompleteUserInstance))).Methods(http.MethodGet)
+	autocompleteRouter.HandleFunc(routeAutocompleteInstalledInstance, p.checkAuth(p.handleResponse(p.httpAutocompleteInstalledInstance))).Methods(http.MethodGet)
+	autocompleteRouter.HandleFunc(routeAutocompleteInstalledInstanceWithAlias, p.checkAuth(p.handleResponse(p.httpAutocompleteInstalledInstanceWithAlias))).Methods(http.MethodGet)
 
-	switch path {
-	// Issue APIs
-	case routeAPICreateIssue:
-		return p.httpCreateIssue(w, r)
-	case routeAPIGetCreateIssueMetadata:
-		return p.httpGetCreateIssueMetadataForProjects(w, r)
-	case routeAPIGetJiraProjectMetadata:
-		return p.httpGetJiraProjectMetadata(w, r)
-	case routeAPIGetSearchIssues:
-		return p.httpGetSearchIssues(w, r)
-	case routeAPIGetAutoCompleteFields:
-		return p.httpGetAutoCompleteFields(w, r)
-	case routeAPIGetSearchUsers:
-		return p.httpGetSearchUsers(w, r)
-	case routeAPIAttachCommentToIssue:
-		return p.httpAttachCommentToIssue(w, r)
-	case routeIssueTransition:
-		return p.httpTransitionIssuePostAction(w, r)
-	case routeSharePublicly:
-		return p.httpShareIssuePublicly(w, r)
+	apiRouter := p.router.PathPrefix(routeAPI).Subrouter()
+
+	apiRouter.HandleFunc(routeAPIGetAutoCompleteFields, p.checkAuth(p.handleResponse(p.httpGetAutoCompleteFields))).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPICreateIssue, p.checkAuth(p.handleResponse(p.httpCreateIssue))).Methods(http.MethodPost)
+	apiRouter.HandleFunc(routeAPIGetCreateIssueMetadata, p.checkAuth(p.handleResponse(p.httpGetCreateIssueMetadataForProjects))).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPIGetJiraProjectMetadata, p.checkAuth(p.handleResponse(p.httpGetJiraProjectMetadata))).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPIGetSearchIssues, p.checkAuth(p.handleResponse(p.httpGetSearchIssues))).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPIGetSearchUsers, p.checkAuth(p.handleResponse(p.httpGetSearchUsers))).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPIAttachCommentToIssue, p.checkAuth(p.handleResponse(p.httpAttachCommentToIssue))).Methods(http.MethodPost)
+	apiRouter.HandleFunc(routeIssueTransition, p.handleResponse(p.httpTransitionIssuePostAction)).Methods(http.MethodPost)
+	apiRouter.HandleFunc(routeSharePublicly, p.handleResponse(p.httpShareIssuePublicly)).Methods(http.MethodPost)
 
 	// User APIs
-	case routeAPIUserInfo:
-		return p.httpGetUserInfo(w, r)
-	case routeAPISettingsInfo:
-		return p.httpGetSettingsInfo(w, r)
+	apiRouter.HandleFunc(routeAPIUserInfo, p.checkAuth(p.handleResponse(p.httpGetUserInfo))).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPISettingsInfo, p.checkAuth(p.handleResponse(p.httpGetSettingsInfo))).Methods(http.MethodGet)
 
 	// Atlassian Connect application
-	case routeACJSON:
-		return p.httpACJSON(w, r, callbackInstanceID)
-	case routeACInstalled:
-		return p.httpACInstalled(w, r)
-	case routeACUninstalled:
-		return p.httpACUninstalled(w, r)
+	instanceRouter.HandleFunc(routeACJSON, p.handleResponseWithCallbackInstance(p.httpACJSON)).Methods(http.MethodGet)
+	p.router.HandleFunc(routeACInstalled, p.handleResponse(p.httpACInstalled)).Methods(http.MethodPost)
+	p.router.HandleFunc(routeACUninstalled, p.handleResponse(p.httpACUninstalled)).Methods(http.MethodPost)
 
 	// Atlassian Connect user mapping
-	case routeACUserRedirectWithToken:
-		return p.httpACUserRedirect(w, r, callbackInstanceID)
-	case routeACUserConfirm,
-		routeACUserConnected,
-		routeACUserDisconnected:
-		return p.httpACUserInteractive(w, r, callbackInstanceID)
-
-		// Command autocomplete
-	case routeAutocompleteConnect:
-		return p.httpAutocompleteConnect(w, r)
-	case routeAutocompleteUserInstance:
-		return p.httpAutocompleteUserInstance(w, r)
-	case routeAutocompleteInstalledInstance:
-		return p.httpAutocompleteInstalledInstance(w, r)
-	case routeAutocompleteInstalledInstanceWithAlias:
-		return p.httpAutocompleteInstalledInstanceWithAlias(w, r)
-
-	// Incoming webhook
-	case routeIncomingWebhook:
-		return p.httpWebhook(w, r, callbackInstanceID)
+	instanceRouter.HandleFunc(routeACUserRedirectWithToken, p.handleResponseWithCallbackInstance(p.httpACUserRedirect)).Methods(http.MethodGet)
+	instanceRouter.HandleFunc(routeACUserConfirm, p.handleResponseWithCallbackInstance(p.httpACUserInteractive)).Methods(http.MethodGet)
+	instanceRouter.HandleFunc(routeACUserConnected, p.handleResponseWithCallbackInstance(p.httpACUserInteractive)).Methods(http.MethodGet)
+	instanceRouter.HandleFunc(routeACUserDisconnected, p.handleResponseWithCallbackInstance(p.httpACUserInteractive)).Methods(http.MethodGet)
 
 	// Oauth1 (Jira Server)
-	case routeOAuth1Complete:
-		return p.httpOAuth1aComplete(w, r, callbackInstanceID)
-	case routeUserDisconnect:
-		return p.httpOAuth1aDisconnect(w, r, callbackInstanceID)
+	instanceRouter.HandleFunc(routeOAuth1Complete, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpOAuth1aComplete))).Methods(http.MethodGet)
+	instanceRouter.HandleFunc(routeUserDisconnect, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpOAuth1aDisconnect))).Methods(http.MethodPost)
+
+	// OAuth2 (Jira Cloud)
+	instanceRouter.HandleFunc(routeOAuth2Complete, p.handleResponseWithCallbackInstance(p.httpOAuth2Complete)).Methods(http.MethodGet)
 
 	// User connect/disconnect links
-	case routeUserConnect:
-		return p.httpUserConnect(w, r, callbackInstanceID)
-	case routeUserStart:
-		return p.httpUserStart(w, r, callbackInstanceID)
-	case routeAPIUserDisconnect:
-		return p.httpUserDisconnect(w, r)
+	instanceRouter.HandleFunc(routeUserConnect, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpUserConnect))).Methods(http.MethodGet)
+	p.router.HandleFunc(routeUserStart, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpUserStart))).Methods(http.MethodGet)
+	p.router.HandleFunc(routeAPIUserDisconnect, p.checkAuth(p.handleResponse(p.httpUserDisconnect))).Methods(http.MethodPost)
 
 	// Firehose webhook setup for channel subscriptions
-	case routeAPISubscribeWebhook:
-		return p.httpSubscribeWebhook(w, r, callbackInstanceID)
-	}
+	instanceRouter.HandleFunc(makeAPIRoute(routeAPISubscribeWebhook), p.handleResponseWithCallbackInstance(p.httpSubscribeWebhook)).Methods(http.MethodPost)
 
-	if strings.HasPrefix(path, routeAPISubscriptionsChannel) {
-		return p.httpChannelSubscriptions(w, r)
-	}
+	// Channel Subscriptions
+	apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.checkAuth(p.handleResponse(p.httpChannelGetSubscriptions))).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPISubscriptionsChannel, p.checkAuth(p.handleResponse(p.httpChannelCreateSubscription))).Methods(http.MethodPost)
+	apiRouter.HandleFunc(routeAPISubscriptionsChannel, p.checkAuth(p.handleResponse(p.httpChannelEditSubscription))).Methods(http.MethodPut)
+	apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.checkAuth(p.handleResponse(p.httpChannelDeleteSubscription))).Methods(http.MethodDelete)
 
-	if strings.HasPrefix(path, routeAPISubscriptionTemplates) {
-		return p.httpChannelSubscriptionTemplates(w, r)
-	}
+	// Subscription Templates
 
-	p.gorillaRouter.ServeHTTP(w, r)
-	return 0, nil
+	// switch r.Method {
+	// case http.MethodPost:
+	// 	return p.httpCreateSubscriptionTemplate(w, r, mattermostUserID)
+	// case http.MethodDelete:
+	// 	return p.httpDeleteSubscriptionTemplate(w, r, mattermostUserID)
+	// case http.MethodGet:
+	// 	return p.httpGetSubscriptionTemplates(w, r, mattermostUserID)
+	// case http.MethodPut:
+	// 	return p.httpEditSubscriptionTemplates(w, r, mattermostUserID)
+	// default:
+	// 	return respondErr(w, http.StatusMethodNotAllowed, fmt.Errorf("Request: "+r.Method+" is not allowed."))
+	// }
+
+	// apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.checkAuth(p.handleResponse(p.httpChannelGetSubscriptions))).Methods(http.MethodGet)
+	// apiRouter.HandleFunc(routeAPISubscriptionsChannel, p.checkAuth(p.handleResponse(p.httpCreateSubscriptionTemplate))).Methods(http.MethodPost)
+	// apiRouter.HandleFunc(routeAPISubscriptionsChannel, p.checkAuth(p.handleResponse(p.httpChannelEditSubscription))).Methods(http.MethodPut)
+	// apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.checkAuth(p.handleResponse(p.httpChannelDeleteSubscription))).Methods(http.MethodDelete)
+
+	apiRouter.HandleFunc(routeAPISubscriptionTemplates, p.checkAuth(p.handleResponse(p.httpCreateSubscriptionTemplate))).Methods(http.MethodPost)
+	apiRouter.HandleFunc(routeAPISubscriptionTemplates, p.checkAuth(p.handleResponse(p.httpEditSubscriptionTemplates))).Methods(http.MethodPut)
+	apiRouter.HandleFunc(routeAPISubscriptionTemplatesWithID, p.checkAuth(p.handleResponse(p.httpDeleteSubscriptionTemplate))).Methods(http.MethodDelete)
+	apiRouter.HandleFunc(routeAPISubscriptionTemplates, p.checkAuth(p.handleResponse(p.httpGetSubscriptionTemplates))).Methods(http.MethodGet)
+}
+
+// if strings.HasPrefix(path, routeAPISubscriptionTemplates) {
+// 	return p.httpChannelSubscriptionTemplates(w, r)
+// }
+
+// p.gorillaRouter.ServeHTTP(w, r)
+// return 0, nil
+func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
+	p.router.ServeHTTP(w, r)
 }
 
 func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {
@@ -302,4 +277,67 @@ func splitInstancePath(route string) (instanceURL string, remainingPath string) 
 		return "", route
 	}
 	return string(id), leadingSlash + strings.Join(ss[2:], "/")
+}
+
+func (p *Plugin) withRecovery(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if x := recover(); x != nil {
+				p.client.Log.Warn("Recovered from a panic",
+					"url", r.URL.String(),
+					"error", x,
+					"stack", string(debug.Stack()))
+			}
+		}()
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (p *Plugin) checkAuth(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Header.Get("Mattermost-User-ID")
+		if userID == "" {
+			http.Error(w, "Not authorized", http.StatusUnauthorized)
+			return
+		}
+		handler(w, r)
+	}
+}
+
+func (p *Plugin) handleResponse(fn func(w http.ResponseWriter, r *http.Request) (int, error)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		status, err := fn(w, r)
+
+		p.logResponse(r, status, err)
+	}
+}
+
+func (p *Plugin) handleResponseWithCallbackInstance(fn func(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		instanceURL, _ := splitInstancePath(r.URL.Path)
+
+		callbackInstanceID, err := p.ResolveWebhookInstanceURL(instanceURL)
+		if err != nil {
+			_, _ = respondErr(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		status, err := fn(w, r, callbackInstanceID)
+
+		p.logResponse(r, status, err)
+	}
+}
+
+func (p *Plugin) logResponse(r *http.Request, status int, err error) {
+	if status == 0 || status == http.StatusOK {
+		return
+	}
+	if err != nil {
+		p.client.Log.Warn("ERROR: ", "Status", strconv.Itoa(status), "Error", err.Error(), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
+	}
+
+	if status != http.StatusOK {
+		p.client.Log.Debug("unexpected plugin response", "Status", strconv.Itoa(status), "Path", r.URL.Path, "Method", r.Method, "query", r.URL.Query().Encode())
+	}
 }

@@ -6,14 +6,21 @@ GOPATH ?= $(shell go env GOPATH)
 GO_TEST_FLAGS ?= -race
 GO_BUILD_FLAGS ?=
 MM_UTILITIES_DIR ?= ../mattermost-utilities
+DEFAULT_GOOS := $(shell go env GOOS)
+DEFAULT_GOARCH := $(shell go env GOARCH)
 
 export GO111MODULE=on
 
 # You can include assets this directory into the bundle. This can be e.g. used to include profile pictures.
 ASSETS_DIR ?= assets
 
+## Define the default target (make all)
+.PHONY: default
+default: all
+
 # Verify environment, and define PLUGIN_ID, PLUGIN_VERSION, HAS_SERVER and HAS_WEBAPP as needed.
 include build/setup.mk
+include build/legacy.mk
 
 BUNDLE_NAME ?= $(PLUGIN_ID)-$(PLUGIN_VERSION).tar.gz
 
@@ -22,13 +29,14 @@ ifneq ($(wildcard build/custom.mk),)
 	include build/custom.mk
 endif
 
+ifneq ($(MM_DEBUG),)
+	GO_BUILD_GCFLAGS = -gcflags "all=-N -l"
+else
+	GO_BUILD_GCFLAGS =
+endif
+
 ## Checks the code style, tests, builds and bundles the plugin.
 all: check-style test dist
-
-## Propagates plugin manifest information into the server/ and webapp/ folders as required.
-.PHONY: apply
-apply:
-	./build/bin/manifest apply
 
 ## Runs golangci-lint and eslint.
 .PHONY: check-style
@@ -50,22 +58,29 @@ golangci-lint:
 	@echo Running golangci-lint
 	golangci-lint run ./...
 
-## Builds the server, if it exists, including support for multiple architectures.
+## Builds the server, if it exists, for all supported architectures, unless MM_SERVICESETTINGS_ENABLEDEVELOPER is set
 .PHONY: server
 server:
 ifneq ($(HAS_SERVER),)
+ifneq ($(MM_DEBUG),)
+	$(info DEBUG mode is on; to disable, unset MM_DEBUG)
+endif
 	mkdir -p server/dist;
-	cd server && env GOOS=linux GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -trimpath -o dist/plugin-linux-amd64;
-	cd server && env GOOS=linux GOARCH=arm64 $(GO) build $(GO_BUILD_FLAGS) -trimpath -o dist/plugin-linux-arm64;
-	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -trimpath -o dist/plugin-darwin-amd64;
-	cd server && env GOOS=darwin GOARCH=arm64 $(GO) build $(GO_BUILD_FLAGS) -trimpath -o dist/plugin-darwin-arm64;
-	cd server && env GOOS=windows GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -trimpath -o dist/plugin-windows-amd64.exe;
+ifneq ($(MM_SERVICESETTINGS_ENABLEDEVELOPER),)
+	@echo Building plugin only for $(DEFAULT_GOOS)-$(DEFAULT_GOARCH) because MM_SERVICESETTINGS_ENABLEDEVELOPER is enabled
+	cd server && env CGO_ENABLED=0 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-$(DEFAULT_GOOS)-$(DEFAULT_GOARCH);
+else
+	cd server && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-linux-amd64;
+	cd server && env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-linux-arm64;
+	cd server && env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-darwin-amd64;
+	cd server && env CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-darwin-arm64;
+	cd server && env CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-windows-amd64.exe;
+endif
 endif
 
 ## Ensures NPM dependencies are installed without having to run this all the time.
 webapp/.npminstall:
 ifneq ($(HAS_WEBAPP),)
-	git config --global url."ssh://git@".insteadOf git://
 	cd webapp && $(NPM) install
 	touch $@
 endif
