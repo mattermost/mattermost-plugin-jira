@@ -1249,7 +1249,6 @@ func (p *Plugin) httpGetSubscriptionTemplates(w http.ResponseWriter, r *http.Req
 }
 
 func (p *Plugin) httpEditSubscriptionTemplates(w http.ResponseWriter, r *http.Request) (int, error) {
-	fmt.Print("\n httpEditSubscriptionTemplates")
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	subscriptionTemplate := SubscriptionTemplate{}
 	if err := json.NewDecoder(r.Body).Decode(&subscriptionTemplate); err != nil {
@@ -1280,7 +1279,6 @@ func (p *Plugin) httpEditSubscriptionTemplates(w http.ResponseWriter, r *http.Re
 }
 
 func (p *Plugin) httpCreateSubscriptionTemplate(w http.ResponseWriter, r *http.Request) (int, error) {
-	fmt.Print("\n httpCreateSubscriptionTemplate")
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	subscriptionTemplate := SubscriptionTemplate{}
 	if err := json.NewDecoder(r.Body).Decode(&subscriptionTemplate); err != nil {
@@ -1311,7 +1309,6 @@ func (p *Plugin) httpCreateSubscriptionTemplate(w http.ResponseWriter, r *http.R
 }
 
 func (p *Plugin) httpDeleteSubscriptionTemplate(w http.ResponseWriter, r *http.Request) (int, error) {
-	fmt.Print("\n httpDeleteSubscriptionTemplate")
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 
 	params := mux.Vars(r)

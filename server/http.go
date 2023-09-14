@@ -143,37 +143,12 @@ func (p *Plugin) initializeRouter() {
 	apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.checkAuth(p.handleResponse(p.httpChannelDeleteSubscription))).Methods(http.MethodDelete)
 
 	// Subscription Templates
-
-	// switch r.Method {
-	// case http.MethodPost:
-	// 	return p.httpCreateSubscriptionTemplate(w, r, mattermostUserID)
-	// case http.MethodDelete:
-	// 	return p.httpDeleteSubscriptionTemplate(w, r, mattermostUserID)
-	// case http.MethodGet:
-	// 	return p.httpGetSubscriptionTemplates(w, r, mattermostUserID)
-	// case http.MethodPut:
-	// 	return p.httpEditSubscriptionTemplates(w, r, mattermostUserID)
-	// default:
-	// 	return respondErr(w, http.StatusMethodNotAllowed, fmt.Errorf("Request: "+r.Method+" is not allowed."))
-	// }
-
-	// apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.checkAuth(p.handleResponse(p.httpChannelGetSubscriptions))).Methods(http.MethodGet)
-	// apiRouter.HandleFunc(routeAPISubscriptionsChannel, p.checkAuth(p.handleResponse(p.httpCreateSubscriptionTemplate))).Methods(http.MethodPost)
-	// apiRouter.HandleFunc(routeAPISubscriptionsChannel, p.checkAuth(p.handleResponse(p.httpChannelEditSubscription))).Methods(http.MethodPut)
-	// apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.checkAuth(p.handleResponse(p.httpChannelDeleteSubscription))).Methods(http.MethodDelete)
-
 	apiRouter.HandleFunc(routeAPISubscriptionTemplates, p.checkAuth(p.handleResponse(p.httpCreateSubscriptionTemplate))).Methods(http.MethodPost)
 	apiRouter.HandleFunc(routeAPISubscriptionTemplates, p.checkAuth(p.handleResponse(p.httpEditSubscriptionTemplates))).Methods(http.MethodPut)
 	apiRouter.HandleFunc(routeAPISubscriptionTemplatesWithID, p.checkAuth(p.handleResponse(p.httpDeleteSubscriptionTemplate))).Methods(http.MethodDelete)
 	apiRouter.HandleFunc(routeAPISubscriptionTemplates, p.checkAuth(p.handleResponse(p.httpGetSubscriptionTemplates))).Methods(http.MethodGet)
 }
 
-// if strings.HasPrefix(path, routeAPISubscriptionTemplates) {
-// 	return p.httpChannelSubscriptionTemplates(w, r)
-// }
-
-// p.gorillaRouter.ServeHTTP(w, r)
-// return 0, nil
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
 	p.router.ServeHTTP(w, r)
 }
