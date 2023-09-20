@@ -270,7 +270,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 		}
 
 		// don't mention the author of the comment
-		if u == jwh.User.Name || u == jwh.User.AccountID {
+		if u == jwh.User.Name || u == jwh.User.AccountID || u == jwh.Comment.Author.AccountID {
 			continue
 		}
 
