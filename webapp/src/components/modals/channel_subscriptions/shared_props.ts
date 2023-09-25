@@ -22,4 +22,5 @@ export type SharedProps = {
     getConnected: () => Promise<GetConnectedResponse>;
     close: () => void;
     sendEphemeralPost: (message: string) => void;
+    securityLevelEmptyForJiraSubscriptions: boolean;
 };

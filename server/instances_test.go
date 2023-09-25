@@ -110,7 +110,7 @@ func TestInstallInstance(t *testing.T) {
 
 			testInstance0 := &testInstance{
 				InstanceCommon: InstanceCommon{
-					InstanceID: mockInstance1URL,
+					InstanceID: mockInstance3URL,
 					IsV2Legacy: true,
 					Type:       "testInstanceType",
 				},

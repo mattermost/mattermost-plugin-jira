@@ -86,7 +86,7 @@ func TestMigrateV2Instances(t *testing.T) {
 			p.client = pluginapi.NewClient(api, p.Driver)
 			store := NewStore(p)
 			p.instanceStore = store
-			manifest.Version = "3.0.0"
+			Manifest.Version = "3.0.0"
 
 			instances, err := MigrateV2Instances(p)
 			require.NoError(t, err)

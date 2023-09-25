@@ -58,6 +58,7 @@ const (
 	routeUserConnect                            = "/user/connect"
 	routeUserDisconnect                         = "/user/disconnect"
 	routeSharePublicly                          = "/share-issue-publicly"
+	routeOAuth2Complete                         = "/oauth2/complete.html"
 )
 
 const routePrefixInstance = "instance"
@@ -120,7 +121,10 @@ func (p *Plugin) initializeRouter() {
 
 	// Oauth1 (Jira Server)
 	instanceRouter.HandleFunc(routeOAuth1Complete, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpOAuth1aComplete))).Methods(http.MethodGet)
-	instanceRouter.HandleFunc(routeUserDisconnect, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpOAuth1aDisconnect))).Methods(http.MethodGet)
+	instanceRouter.HandleFunc(routeUserDisconnect, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpOAuth1aDisconnect))).Methods(http.MethodPost)
+
+	// OAuth2 (Jira Cloud)
+	instanceRouter.HandleFunc(routeOAuth2Complete, p.handleResponseWithCallbackInstance(p.httpOAuth2Complete)).Methods(http.MethodGet)
 
 	// User connect/disconnect links
 	instanceRouter.HandleFunc(routeUserConnect, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpUserConnect))).Methods(http.MethodGet)

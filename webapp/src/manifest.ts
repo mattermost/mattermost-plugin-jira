@@ -1,2 +1,5 @@
-export const id = 'jira';
-export const version = '3.0.0';
+import manifest from '../../plugin.json';
+
+export default manifest;
+export const id = manifest.id;
+export const version = manifest.version;

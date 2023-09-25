@@ -12,6 +12,7 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-server/v6/model"
 
@@ -29,10 +30,12 @@ type User struct {
 type Connection struct {
 	jira.User
 	PluginVersion      string
-	Oauth1AccessToken  string `json:",omitempty"`
-	Oauth1AccessSecret string `json:",omitempty"`
+	Oauth1AccessToken  string        `json:",omitempty"`
+	Oauth1AccessSecret string        `json:",omitempty"`
+	OAuth2Token        *oauth2.Token `json:",omitempty"`
 	Settings           *ConnectionSettings
-	DefaultProjectKey  string `json:"default_project_key,omitempty"`
+	DefaultProjectKey  string   `json:"default_project_key,omitempty"`
+	MattermostUserID   types.ID `json:"mattermost_user_id"`
 }
 
 func (c *Connection) JiraAccountID() types.ID {
@@ -191,10 +194,13 @@ func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, proje
 }
 
 func (p *Plugin) httpGetSettingsInfo(w http.ResponseWriter, r *http.Request) (int, error) {
+	conf := p.getConfig()
 	return respondJSON(w, struct {
-		UIEnabled bool `json:"ui_enabled"`
+		UIEnabled                              bool `json:"ui_enabled"`
+		SecurityLevelEmptyForJiraSubscriptions bool `json:"security_level_empty_for_jira_subscriptions"`
 	}{
-		UIEnabled: p.getConfig().EnableJiraUI,
+		UIEnabled:                              conf.EnableJiraUI,
+		SecurityLevelEmptyForJiraSubscriptions: conf.SecurityLevelEmptyForJiraSubscriptions,
 	})
 }
 

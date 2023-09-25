@@ -5,8 +5,8 @@ import React from 'react';
 import {shallow} from 'enzyme';
 
 import Preferences from 'mattermost-redux/constants/preferences';
+import {Channel} from 'mattermost-redux/types/channels';
 
-import cloudProjectMetadata from 'testdata/cloud-get-jira-project-metadata.json';
 import cloudIssueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.json';
 import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project-many-fields.json';
@@ -14,7 +14,7 @@ import testChannel from 'testdata/channel.json';
 
 import {IssueMetadata, ProjectMetadata, FilterFieldInclusion} from 'types/model';
 
-import EditChannelSubscription from './edit_channel_subscription';
+import EditChannelSubscription, {Props} from './edit_channel_subscription';
 
 describe('components/EditChannelSubscription', () => {
     const baseActions = {
@@ -71,15 +71,16 @@ describe('components/EditChannelSubscription', () => {
         instance_id: 'https://something.atlassian.net',
     };
 
-    const baseProps = {
+    const baseProps: Props = {
         ...baseActions,
-        channel: testChannel,
+        channel: testChannel as unknown as Channel,
         theme: Preferences.THEMES.default,
         finishEditSubscription: jest.fn(),
         channelSubscriptions: [channelSubscriptionForCloud],
         close: jest.fn(),
         selectedSubscription: channelSubscriptionForCloud,
         creatingSubscription: false,
+        securityLevelEmptyForJiraSubscriptions: true,
     };
 
     const baseState = {

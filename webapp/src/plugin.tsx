@@ -16,7 +16,7 @@ import AttachCommentToIssuePostMenuAction from 'components/post_menu_actions/att
 import AttachCommentToIssueModal from 'components/modals/attach_comment_modal';
 import SetupUI from 'components/setup_ui';
 
-import PluginId from 'plugin_id';
+import {id as PluginId} from './manifest';
 
 import reducers from './reducers';
 import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings} from './actions';
