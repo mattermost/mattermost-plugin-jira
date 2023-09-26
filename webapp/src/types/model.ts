@@ -69,6 +69,17 @@ export type IssueMetadata = {
     projects: Project[];
 }
 
+export type ProjectStatuses = {
+    id: string;
+    name: string;
+    statuses: Status[];
+}
+
+export type Status = {
+    id: string;
+    name: string;
+}
+
 export type ProjectMetadata = {
     projects: ReactSelectOption[];
     issues_per_project: {[key: string]: ReactSelectOption[]};
@@ -144,6 +155,7 @@ export type ChannelSubscriptionFilters = {
     events: string[];
     issue_types: string[];
     fields: FilterValue[];
+    issue_statuses: string[];
 };
 
 export type ChannelSubscription = {

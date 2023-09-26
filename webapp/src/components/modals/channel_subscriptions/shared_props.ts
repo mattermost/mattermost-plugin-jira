@@ -4,7 +4,7 @@
 import {Theme} from 'mattermost-redux/types/preferences';
 import {Channel} from 'mattermost-redux/types/channels';
 
-import {IssueMetadata, ChannelSubscription, Instance, APIResponse, AllProjectMetadata, GetConnectedResponse} from 'types/model';
+import {IssueMetadata, ChannelSubscription, Instance, APIResponse, AllProjectMetadata, GetConnectedResponse, ProjectStatuses} from 'types/model';
 
 export type SharedProps = {
     channel: Channel | null;
@@ -18,6 +18,7 @@ export type SharedProps = {
     editChannelSubscription: (sub: ChannelSubscription) => Promise<APIResponse<{}>>;
     fetchJiraProjectMetadataForAllInstances: () => Promise<APIResponse<AllProjectMetadata>>;
     fetchJiraIssueMetadataForProjects: (projectKeys: string[], instanceID: string) => Promise<APIResponse<IssueMetadata>>;
+    getProjectStatuses: (instanceID: string, projectID: string) => Promise<APIResponse<ProjectStatuses[]>>;
     fetchChannelSubscriptions: (channelId: string) => Promise<APIResponse<ChannelSubscription[]>>;
     getConnected: () => Promise<GetConnectedResponse>;
     close: () => void;

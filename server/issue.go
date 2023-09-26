@@ -29,6 +29,9 @@ const (
 	descriptionField   = "description"
 	resolutionField    = "resolution"
 	securityLevelField = "security"
+
+	QueryParamInstanceID = "instance_id"
+	QueryParamProjectID  = "project_id"
 )
 
 func makePost(userID, channelID, message string) *model.Post {
@@ -540,6 +543,23 @@ func (p *Plugin) ListJiraProjects(instanceID, mattermostUserID types.ID, expandI
 		return nil, nil, err
 	}
 	return plist, connection, nil
+}
+
+func (p *Plugin) httpGetJiraProjectStatuses(w http.ResponseWriter, r *http.Request) (int, error) {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	instanceID := r.FormValue(QueryParamInstanceID)
+	projectID := r.FormValue(QueryParamProjectID)
+	client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to get client"))
+	}
+
+	projectStatuses, err := client.ListProjectStatuses(projectID)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to list project statuses"))
+	}
+
+	return respondJSON(w, projectStatuses)
 }
 
 func (p *Plugin) GetIssueTypes(instanceID, mattermostUserID types.ID, projectID string) ([]jira.IssueType, error) {

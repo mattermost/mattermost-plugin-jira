@@ -81,6 +81,7 @@ describe('components/EditChannelSubscription', () => {
         selectedSubscription: channelSubscriptionForCloud,
         creatingSubscription: false,
         securityLevelEmptyForJiraSubscriptions: true,
+        getProjectStatuses: jest.fn().mockResolvedValue({}),
     };
 
     const baseState = {
@@ -311,6 +312,7 @@ describe('components/EditChannelSubscription', () => {
                 events: ['event_updated_reopened'],
                 projects: ['KT'],
                 issue_types: ['10004'],
+                issue_statuses: [],
                 fields: [{
                     key: 'customfield_10099',
                     inclusion: 'include_any' as FilterFieldInclusion,

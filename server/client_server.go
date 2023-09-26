@@ -208,3 +208,12 @@ func (client jiraServerClient) GetIssueTypes(projectID string) ([]jira.IssueType
 
 	return result.IssueTypes, nil
 }
+
+func (client jiraServerClient) ListProjectStatuses(projectID string) ([]*IssueType, error) {
+	var result []*IssueType
+	if err := client.RESTGet(fmt.Sprintf("3/project/%s/statuses", projectID), nil, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
