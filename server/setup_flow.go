@@ -249,7 +249,7 @@ func (p *Plugin) stepServerAddAppLink() flow.Step {
 			"To finish the configuration, we'll need to add and configure an Application Link in your Jira instance.\n" +
 			"Complete the following steps, then come back here to select **Continue**.\n\n" +
 			"1. Navigate to [**Settings > Applications > Application Links**]({{.JiraURL}}/plugins/servlet/applinks/listApplicationLinks) (see _screenshot_).\n" +
-			"2. Keep checked the Atlassian Product Application Type and enter `{{.PluginURL}}` [link]({{.PluginURL}}) as the application link, then select **Create new link**.").
+			"2. Note: For Jira 9.x - Ensure 'Atlassian product' is selected as the Application type and enter `{{.PluginURL}}` [link]({{.PluginURL}}) as the application link, then select **Create new link**.").
 		WithImage("public/server-create-applink.png").
 		OnRender(p.trackSetupWizard("setup_wizard_jira_config_start", map[string]interface{}{
 			keyEdition: ServerInstanceType,
