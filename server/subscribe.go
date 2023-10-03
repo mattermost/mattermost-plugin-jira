@@ -125,30 +125,43 @@ func (p *Plugin) getUserID() string {
 }
 
 func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilters) bool {
+	requestId := model.NewId()
+	log := func(msg interface{}) {
+		p.client.Log.Debug("matchesSubsciptionFilters DEBUG LOG", "issue_id", wh.Issue.ID, "request_id", requestId, "msg", msg)
+	}
+
+	log(1)
+
 	webhookEvents := wh.Events()
 	foundEvent := false
 	eventTypes := filters.Events
 	if eventTypes.Intersection(webhookEvents).Len() > 0 {
+		log(2)
 		foundEvent = true
 	} else if eventTypes.ContainsAny(eventUpdatedAny) {
+		log(3)
 		for _, eventType := range webhookEvents.Elems() {
 			if strings.HasPrefix(eventType, "event_updated") || strings.HasSuffix(eventType, "comment") {
+				log(4)
 				foundEvent = true
 			}
 		}
 	}
 
 	if !foundEvent {
+		log(5)
 		return false
 	}
 
 	issue := &wh.JiraWebhook.Issue
 
 	if filters.IssueTypes.Len() != 0 && !filters.IssueTypes.ContainsAny(issue.Fields.Type.ID) {
+		log(6)
 		return false
 	}
 
 	if filters.Projects.Len() != 0 && !filters.Projects.ContainsAny(issue.Fields.Project.Key) {
+		log(7)
 		return false
 	}
 
@@ -159,28 +172,38 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 
 		// Broken filter, values must be provided
 		if inclusion == "" || (field.Values.Len() == 0 && inclusion != FilterEmpty) {
+			log(8)
 			return false
 		}
 
 		if field.Key == securityLevelField {
 			containsSecurityLevelFilter = true
+			log(9)
+
 			if inclusion == FilterExcludeAny && useEmptySecurityLevel {
+				log(10)
 				inclusion = FilterEmpty
 			}
 		}
 
 		value := getIssueFieldValue(issue, field.Key)
 		if !isValidFieldInclusion(field, value, inclusion) {
+			log(11)
+			log(fmt.Sprintf("field %s value %s inclusion %s", field.Key, value.Elems(), inclusion))
 			return false
 		}
 	}
 
 	if !containsSecurityLevelFilter && useEmptySecurityLevel {
 		securityLevel := getIssueFieldValue(issue, securityLevelField)
+		log(12)
 		if securityLevel.Len() > 0 {
+			log(13)
 			return false
 		}
 	}
+
+	log(14)
 
 	return true
 }
