@@ -127,9 +127,9 @@ func (p *Plugin) getUserID() string {
 func (p *Plugin) matchesSubsciptionFilters(wh *webhook, sub ChannelSubscription) bool {
 	filters := sub.Filters
 
-	subCheckId := model.NewId()
+	subCheckID := model.NewId()
 	log := func(msg interface{}) {
-		p.client.Log.Debug("matchesSubsciptionFilters DEBUG LOG", "issue_id", wh.Issue.ID, "sub_check_id", subCheckId, "msg", msg, "sub_name", sub.Name)
+		p.client.Log.Debug("matchesSubsciptionFilters DEBUG LOG", "issue_id", wh.Issue.ID, "sub_check_id", subCheckID, "msg", msg, "sub_name", sub.Name)
 	}
 
 	log(1)
