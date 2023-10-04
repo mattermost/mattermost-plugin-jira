@@ -247,6 +247,8 @@ func (p *Plugin) OnActivate() error {
 	ptr := p.client.Configuration.GetConfig().ServiceSettings.SiteURL
 	if ptr != nil {
 		mattermostSiteURL = *ptr
+	} else {
+		return errors.New("failed to read SiteURL configuration")
 	}
 
 	err = p.setDefaultConfiguration()
