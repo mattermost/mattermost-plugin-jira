@@ -124,10 +124,12 @@ func (p *Plugin) getUserID() string {
 	return p.getConfig().botUserID
 }
 
-func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilters) bool {
-	requestId := model.NewId()
+func (p *Plugin) matchesSubsciptionFilters(wh *webhook, sub ChannelSubscription) bool {
+	filters := sub.Filters
+
+	subCheckId := model.NewId()
 	log := func(msg interface{}) {
-		p.client.Log.Debug("matchesSubsciptionFilters DEBUG LOG", "issue_id", wh.Issue.ID, "request_id", requestId, "msg", msg)
+		p.client.Log.Debug("matchesSubsciptionFilters DEBUG LOG", "issue_id", wh.Issue.ID, "sub_check_id", subCheckId, "msg", msg, "sub_name", sub.Name)
 	}
 
 	log(1)
@@ -142,7 +144,7 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		log(3)
 		for _, eventType := range webhookEvents.Elems() {
 			if strings.HasPrefix(eventType, "event_updated") || strings.HasSuffix(eventType, "comment") {
-				log(4)
+				log("4 " + eventType)
 				foundEvent = true
 			}
 		}
@@ -223,19 +225,27 @@ func isValidFieldInclusion(field FieldFilter, value StringSet, inclusion string)
 }
 
 func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) ([]ChannelSubscription, error) {
+	p.API.LogDebug("getChannelsSubscribed 1")
 	subs, err := p.getSubscriptions(instanceID)
 	if err != nil {
+		p.API.LogDebug("getChannelsSubscribed 2")
 		return nil, err
 	}
+
+	p.API.LogDebug("getChannelsSubscribed 3", "lensubs", len(subs.Channel.ByID))
 
 	var channelSubscriptions []ChannelSubscription
 	subIds := subs.Channel.ByID
 	for _, sub := range subIds {
-		if p.matchesSubsciptionFilters(wh, sub.Filters) {
+		if p.matchesSubsciptionFilters(wh, sub) {
 			channelSubscriptions = append(channelSubscriptions, sub)
+			p.client.Log.Debug("matches for sub " + sub.Name)
+		} else {
+			p.client.Log.Debug("does not match for sub " + sub.Name)
 		}
 	}
 
+	p.API.LogDebug("getChannelsSubscribed 4")
 	return channelSubscriptions, nil
 }
 
@@ -770,15 +780,21 @@ func (p *Plugin) hasPermissionToManageSubscription(instanceID types.ID, userID, 
 func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, instanceID types.ID) (status int, err error) {
 	conf := p.getConfig()
 
+	p.client.Log.Debug("httpSubscribeWebhook 1")
+
 	if conf.Secret == "" {
 		return respondErr(w, http.StatusForbidden,
 			fmt.Errorf("JIRA plugin not configured correctly; must provide Secret"))
 	}
 
+	p.client.Log.Debug("httpSubscribeWebhook 2")
+
 	status, err = verifyHTTPSecret(conf.Secret, r.FormValue("secret"))
 	if err != nil {
 		return respondErr(w, status, err)
 	}
+
+	p.client.Log.Debug("httpSubscribeWebhook 3")
 
 	bb, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -788,6 +804,8 @@ func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, in
 		p.client.Log.Debug("Webhook Event Log", "event", string(bb))
 	}
 
+	p.client.Log.Debug("httpSubscribeWebhook 4")
+
 	// If there is space in the queue, immediately return a 200; we will process the webhook event async.
 	// If the queue is full, return a 503; we will not process that webhook event.
 	select {
@@ -795,8 +813,10 @@ func (p *Plugin) httpSubscribeWebhook(w http.ResponseWriter, r *http.Request, in
 		InstanceID: instanceID,
 		Data:       bb,
 	}:
+		p.client.Log.Debug("httpSubscribeWebhook webhook event queued")
 		return http.StatusOK, nil
 	default:
+		p.client.Log.Debug("httpSubscribeWebhook webhook event not queued")
 		return respondErr(w, http.StatusServiceUnavailable, nil)
 	}
 }
