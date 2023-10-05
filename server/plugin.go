@@ -248,7 +248,7 @@ func (p *Plugin) OnActivate() error {
 	if ptr != nil {
 		mattermostSiteURL = *ptr
 	} else {
-		return errors.New("failed to read SiteURL configuration")
+		return errors.New("please configure the Mattermost server's SiteURL, then restart the plugin.")
 	}
 
 	err = p.setDefaultConfiguration()
