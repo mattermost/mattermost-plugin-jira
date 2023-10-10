@@ -400,7 +400,7 @@ func (p *Plugin) stepWebhook() flow.Step {
 			Color: flow.ColorPrimary,
 			Dialog: &model.Dialog{
 				Title:            "Jira Webhook URL",
-				IntroductionText: "Please copy and use the link below as webhook URL. Once you have entered all options and the webhook URL, select **Create**. \n" + fmt.Sprintf("\n")+  fmt.Sprintf("\n [{{.WebhookURL}}]({{.WebhookURL}})"),
+				IntroductionText: "Please copy and use the link below as webhook URL. Once you have entered all options and the webhook URL, select **Create**. \n" + fmt.Sprintf("\n") + fmt.Sprintf("\n [{{.WebhookURL}}]({{.WebhookURL}})"),
 				SubmitLabel:      "Continue",
 			},
 			OnDialogSubmit: flow.DialogGoto(stepWebhookDone),
