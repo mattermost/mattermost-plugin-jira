@@ -58,8 +58,8 @@ const (
 )
 
 const (
-	lineBreak    = "\n"
-	webhookURL = "\n [{{.WebhookURL}}]({{.WebhookURL}})"
+	lineBreak  = "\n"
+	webhookURL = "[{{.WebhookURL}}]({{.WebhookURL}})"
 )
 
 func (p *Plugin) NewSetupFlow() *flow.Flow {
