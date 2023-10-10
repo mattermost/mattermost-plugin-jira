@@ -57,6 +57,11 @@ const (
 	NameURL          = "url"
 )
 
+const (
+	newline    = "\n"
+	webhookURL = "\n [{{.WebhookURL}}]({{.WebhookURL}})"
+)
+
 func (p *Plugin) NewSetupFlow() *flow.Flow {
 	pluginURL := *p.client.Configuration.GetConfig().ServiceSettings.SiteURL + "/" + "plugins" + "/" + Manifest.Id
 	conf := p.getConfig()
@@ -400,7 +405,7 @@ func (p *Plugin) stepWebhook() flow.Step {
 			Color: flow.ColorPrimary,
 			Dialog: &model.Dialog{
 				Title:            "Jira Webhook URL",
-				IntroductionText: "Please copy and use the link below as webhook URL. Once you have entered all options and the webhook URL, select **Create**. \n" + fmt.Sprintf("\n") + fmt.Sprintf("\n [{{.WebhookURL}}]({{.WebhookURL}})"),
+				IntroductionText: "Please copy and use the link below as webhook URL. Once you have entered all options and the webhook URL, select **Create**. \n" + fmt.Sprintf("%s %s", newline, webhookURL),
 				SubmitLabel:      "Continue",
 			},
 			OnDialogSubmit: flow.DialogGoto(stepWebhookDone),
