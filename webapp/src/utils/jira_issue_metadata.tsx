@@ -16,6 +16,7 @@ import {
     FilterFieldInclusion,
     JiraFieldCustomTypeEnums,
     JiraFieldTypeEnums,
+    Status,
 } from 'types/model';
 
 type FieldWithInfo = JiraField & {
@@ -24,6 +25,8 @@ type FieldWithInfo = JiraField & {
     validIssueTypes: IssueTypeIdentifier[];
     issueTypeMeta: IssueTypeIdentifier;
 }
+
+export const FIELD_KEY_STATUS = 'status';
 
 // This is a replacement for the Array.flat() function which will be polyfilled by Babel
 // in our 5.16 release. Remove this and replace with .flat() then.
@@ -185,7 +188,7 @@ function isValidFieldForFilter(field: JiraField): boolean {
     (type === 'array' && allowedArrayTypes.includes(items));
 }
 
-export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null, projectKeys: string[]): FilterField[] {
+export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null, projectKeys: string[], issueStatuses: Status[] | null, issueTypes: string[]): FilterField[] {
     const fields = getCustomFieldsForProjects(metadata, projectKeys).filter(isValidFieldForFilter);
     const selectFields = fields.filter((field) => Boolean(field.allowedValues && field.allowedValues.length)) as (SelectField & FieldWithInfo)[];
     const populatedFields = selectFields.map((field) => {
@@ -221,6 +224,26 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
             schema: epicLinkField.schema,
             values: [],
             issueTypes: epicLinkField.validIssueTypes,
+        } as FilterField);
+    }
+
+    if (issueStatuses) {
+        result.push({
+            key: FIELD_KEY_STATUS,
+            name: 'Status',
+            schema: {
+                type: 'array',
+            },
+            values: issueStatuses.map((value) => ({
+                label: value.name,
+                value: value.id,
+            })),
+            issueTypes: issueTypes.map((type) => {
+                return {
+                    id: type,
+                    name: type,
+                };
+            }),
         } as FilterField);
     }
 
