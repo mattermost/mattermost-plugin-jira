@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
 	"github.com/stretchr/testify/require"
@@ -66,7 +67,7 @@ func TestMigrateV2Instances(t *testing.T) {
 
 			storedInstancePayload := []byte{}
 			storedInstancesPayload := []byte{}
-			api.On("KVSet", mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("[]uint8")).Return(nil).Run(
+			api.On("KVSetWithOptions", mock.AnythingOfType("string"), mock.Anything, mock.AnythingOfType("model.PluginKVSetOptions")).Return(true, nil).Run(
 				func(args mock.Arguments) {
 					key := args.Get(0).(string)
 					switch key {
@@ -82,9 +83,10 @@ func TestMigrateV2Instances(t *testing.T) {
 
 			p := &Plugin{}
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 			store := NewStore(p)
 			p.instanceStore = store
-			manifest.Version = "3.0.0"
+			Manifest.Version = "3.0.0"
 
 			instances, err := MigrateV2Instances(p)
 			require.NoError(t, err)
@@ -134,6 +136,7 @@ func TestMigrateV3InstancesToV2(t *testing.T) {
 
 			p := &Plugin{}
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 			store := NewStore(p)
 			p.instanceStore = store
 

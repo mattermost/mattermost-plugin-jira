@@ -6,8 +6,6 @@ package main
 import (
 	"net/http"
 
-	"github.com/pkg/errors"
-
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
@@ -21,17 +19,7 @@ type UserInfo struct {
 }
 
 func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be GET"))
-	}
-
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized,
-			errors.New("not authorized"))
-	}
-
 	info, err := p.GetUserInfo(types.ID(mattermostUserID), nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)

@@ -3544,6 +3544,7 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
         }
         onChange={[Function]}
         removeValidate={[Function]}
+        securityLevelEmptyForJiraSubscriptions={true}
         theme={
           Object {
             "awayIndicator": "#ffbc42",
@@ -3611,13 +3612,22 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
               "background": "rgba(61,60,64,0.08)",
               "borderRadius": "4px",
               "fontSize": "13px",
+              "marginBottom": "8px",
               "marginTop": "8px",
               "padding": "10px 12px",
             }
           }
         >
           <span>
-            Project = KT AND IssueType IN (Bug) AND "MJK - Radio Buttons" IN (1) AND affectedVersion IN (d) AND "Epic Link" IN (IDT-24)
+            Project = KT AND IssueType IN (Bug) AND "MJK - Radio Buttons" IN (1) AND affectedVersion IN (d) AND "Epic Link" IN (IDT-24) AND "Security Level" IS EMPTY
+          </span>
+        </div>
+        <div>
+          <span>
+            <strong>
+              Note
+            </strong>
+             that since you have not selected a security level filter, the subscription will only allow issues that have no security level assigned.
           </span>
         </div>
       </div>

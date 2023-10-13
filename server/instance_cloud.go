@@ -185,6 +185,10 @@ func (ci *cloudInstance) GetURL() string {
 	return ci.AtlassianSecurityContext.BaseURL
 }
 
+func (ci *cloudInstance) GetJiraBaseURL() string {
+	return ci.GetURL()
+}
+
 func (ci *cloudInstance) GetManageAppsURL() string {
 	return fmt.Sprintf("%s/plugins/servlet/upm", ci.GetURL())
 }
@@ -260,8 +264,7 @@ func (ci *cloudInstance) parseHTTPRequestJWT(r *http.Request) (*jwt.Token, strin
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New(
-				fmt.Sprintf("unsupported signing method: %v", token.Header["alg"]))
+			return nil, errors.Errorf("unsupported signing method: %v", token.Header["alg"])
 		}
 		// HMAC secret is a []byte
 		return []byte(ci.AtlassianSecurityContext.SharedSecret), nil

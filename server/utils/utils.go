@@ -5,7 +5,7 @@ package utils
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -97,7 +97,7 @@ func CheckJiraURL(mattermostSiteURL, jiraURL string, requireHTTPS bool) (_ strin
 		return "", errors.Errorf("Jira server returned http status code %q when checking for availability: %q", resp.Status, jiraURL)
 	}
 
-	resBody, err := ioutil.ReadAll(resp.Body)
+	resBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}

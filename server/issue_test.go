@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
@@ -85,7 +86,7 @@ func (client testClient) AddComment(issueKey string, comment *jira.Comment) (*ji
 	return nil, nil
 }
 
-func (client testClient) GetCreateMeta(options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
+func (client testClient) GetCreateMetaInfo(api plugin.API, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
 	return &jira.CreateMetaInfo{
 		Projects: []*jira.MetaProject{
 			{
@@ -109,9 +110,11 @@ func (client testClient) GetCreateMeta(options *jira.GetQueryOptions) (*jira.Cre
 
 func TestTransitionJiraIssue(t *testing.T) {
 	api := &plugintest.API{}
-	api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
+	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
 	p := Plugin{}
+	p.initializeRouter()
 	p.SetAPI(api)
+	p.client = pluginapi.NewClient(api, p.Driver)
 	p.userStore = getMockUserStoreKV()
 	p.instanceStore = p.getMockInstanceStoreKV(1)
 
@@ -172,15 +175,16 @@ func TestTransitionJiraIssue(t *testing.T) {
 func TestRouteIssueTransition(t *testing.T) {
 	api := &plugintest.API{}
 
-	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
 	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 
-	api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
+	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
 
 	p := Plugin{}
+	p.initializeRouter()
 	p.SetAPI(api)
-
+	p.client = pluginapi.NewClient(api, p.Driver)
 	p.userStore = getMockUserStoreKV()
 
 	tests := map[string]struct {
@@ -217,7 +221,7 @@ func TestRouteIssueTransition(t *testing.T) {
 			bb, err := json.Marshal(tt.request)
 			assert.Nil(t, err)
 
-			request := httptest.NewRequest("POST", routeIssueTransition, strings.NewReader(string(bb)))
+			request := httptest.NewRequest("POST", makeAPIRoute(routeIssueTransition), strings.NewReader(string(bb)))
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)
 			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "no request data")
@@ -229,12 +233,14 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 	validUserID := "1"
 	api := &plugintest.API{}
 	p := Plugin{}
-	api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
-	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+	p.initializeRouter()
+	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
+	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
 	api.On("DeleteEphemeralPost", validUserID, "").Return()
 	p.SetAPI(api)
+	p.client = pluginapi.NewClient(api, p.Driver)
 	p.instanceStore = p.getMockInstanceStoreKV(1)
 	p.userStore = getMockUserStoreKV()
 
@@ -294,7 +300,7 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 			bb, err := json.Marshal(tt.request)
 			assert.Nil(t, err)
 
-			request := httptest.NewRequest("POST", routeSharePublicly, strings.NewReader(string(bb)))
+			request := httptest.NewRequest("POST", makeAPIRoute(routeSharePublicly), strings.NewReader(string(bb)))
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)
 			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "no request data")
@@ -305,7 +311,7 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 func TestRouteAttachCommentToIssue(t *testing.T) {
 	api := &plugintest.API{}
 
-	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
 	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 
@@ -317,8 +323,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 
 	api.On("GetPost", "1").Return(&model.Post{UserId: "1"}, (*model.AppError)(nil))
 	api.On("GetUser", "1").Return(&model.User{Username: "username"}, (*model.AppError)(nil))
-
-	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(nil, (*model.AppError)(nil))
+	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, (*model.AppError)(nil))
 
 	api.On("PublishWebSocketEvent", "update_defaults", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.WebsocketBroadcast"))
 
@@ -408,7 +413,9 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			p := Plugin{}
+			p.initializeRouter()
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 			p.updateConfig(func(conf *config) {
 				conf.mattermostSiteURL = "https://somelink.com"
 			})
@@ -419,7 +426,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			bb, err := json.Marshal(tt.request)
 			assert.Nil(t, err)
 
-			request := httptest.NewRequest(tt.method, routeAPIAttachCommentToIssue, strings.NewReader(string(bb)))
+			request := httptest.NewRequest(tt.method, makeAPIRoute(routeAPIAttachCommentToIssue), strings.NewReader(string(bb)))
 			request.Header.Add("Mattermost-User-Id", tt.header)
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)

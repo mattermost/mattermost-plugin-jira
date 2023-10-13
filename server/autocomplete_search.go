@@ -14,16 +14,7 @@ import (
 )
 
 func (p *Plugin) httpGetAutoCompleteFields(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("Request: " + r.Method + " is not allowed, must be GET")
-	}
-
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
 	instanceID := r.FormValue("instance_id")
 	params := map[string]string{
 		"fieldName":  r.FormValue("fieldName"),
@@ -60,16 +51,7 @@ func (p *Plugin) httpGetAutoCompleteFields(w http.ResponseWriter, r *http.Reques
 }
 
 func (p *Plugin) httpGetSearchUsers(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed,
-			errors.New("Request: " + r.Method + " is not allowed, must be GET")
-	}
-
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-
 	instanceID := r.FormValue("instance_id")
 	projectKey := r.FormValue("project")
 	userSearch := r.FormValue("q")
