@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"html/template"
 	"net/http"
 	"net/url"
 	"os"
@@ -13,7 +14,6 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
-	"text/template"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
