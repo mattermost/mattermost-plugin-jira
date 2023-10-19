@@ -134,8 +134,9 @@ func (p *Plugin) initializeRouter() {
 	// Firehose webhook setup for channel subscriptions
 	instanceRouter.HandleFunc(makeAPIRoute(routeAPISubscribeWebhook), p.handleResponseWithCallbackInstance(p.httpSubscribeWebhook)).Methods(http.MethodPost)
 
-	// To support Plugin v2.x webhook URL
+	// To support Plugin v2.x webhook URLs
 	apiRouter.HandleFunc(routeAPISubscribeWebhook, p.handleResponseWithCallbackInstance(p.httpSubscribeWebhook)).Methods(http.MethodPost)
+	instanceRouter.HandleFunc(routeIncomingWebhook, p.handleResponseWithCallbackInstance(p.httpWebhook)).Methods(http.MethodPost)
 
 	// Channel Subscriptions
 	apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.checkAuth(p.handleResponse(p.httpChannelGetSubscriptions))).Methods(http.MethodGet)
