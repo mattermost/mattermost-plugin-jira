@@ -34,7 +34,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 		if len(errtext) > 0 {
 			errtext = strings.ToUpper(errtext[:1]) + errtext[1:]
 		}
-		status, err = p.respondSpecialTemplate(w, "/other/message.html", status, "text/html", struct {
+		status, err = p.respondSpecialTemplate(w, "/other/message.html", status, ContentTypeHTML, struct {
 			Header  string
 			Message string
 		}{
@@ -108,7 +108,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 		return http.StatusInternalServerError, err
 	}
 
-	return p.respondTemplate(w, r, "text/html", struct {
+	return p.respondTemplate(w, r, ContentTypeHTML, struct {
 		MattermostDisplayName string
 		JiraDisplayName       string
 		RevokeURL             string
@@ -130,7 +130,7 @@ func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, i
 	}
 
 	return p.respondSpecialTemplate(w, "/other/message.html", http.StatusOK,
-		"text/html", struct {
+		ContentTypeHTML, struct {
 			Header  string
 			Message string
 		}{
