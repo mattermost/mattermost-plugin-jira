@@ -211,35 +211,14 @@ func respondJSON(w http.ResponseWriter, obj interface{}) (int, error) {
 
 func (p *Plugin) respondTemplate(w http.ResponseWriter, r *http.Request, contentType string, values interface{}) (int, error) {
 	_, path := splitInstancePath(r.URL.Path)
-	w.Header().Set("Content-Type", contentType)
-	if contentType == ContentTypeHTML {
-		t := p.htmlTemplates[path]
-		if t == nil {
-			return respondErr(w, http.StatusInternalServerError,
-				errors.New("no template found for "+path))
-		}
-
-		if err := t.Execute(w, values); err != nil {
-			return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-		}
-
-		return http.StatusOK, nil
-	}
-
-	t := p.textTemplates[path]
-	if t == nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.New("no template found for "+path))
-	}
-
-	if err := t.Execute(w, values); err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-	}
-
-	return http.StatusOK, nil
+	return p.executeTemplate(w, path, contentType, values)
 }
 
 func (p *Plugin) respondSpecialTemplate(w http.ResponseWriter, key string, status int, contentType string, values interface{}) (int, error) {
+	return p.executeTemplate(w, key, contentType, values)
+}
+
+func (p *Plugin) executeTemplate(w http.ResponseWriter, key string, contentType string, values interface{}) (int, error) {
 	w.Header().Set("Content-Type", contentType)
 	if contentType == ContentTypeHTML {
 		t := p.htmlTemplates[key]
@@ -253,7 +232,7 @@ func (p *Plugin) respondSpecialTemplate(w http.ResponseWriter, key string, statu
 				errors.WithMessage(err, "failed to write response")
 		}
 
-		return status, nil
+		return http.StatusOK, nil
 	}
 
 	t := p.textTemplates[key]
@@ -267,7 +246,7 @@ func (p *Plugin) respondSpecialTemplate(w http.ResponseWriter, key string, statu
 			errors.WithMessage(err, "failed to write response")
 	}
 
-	return status, nil
+	return http.StatusOK, nil
 }
 
 func instancePath(route string, instanceID types.ID) string {
