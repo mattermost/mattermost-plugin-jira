@@ -133,7 +133,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             this.setState(state);
         });
 
-        let fields = {
+        const fields = {
             summary: this.state.fields.summary,
             description: this.state.fields.description,
             project: {key: projectKey},
@@ -151,7 +151,6 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             };
         }
 
-        fields = {...fields};
         if (fieldValues) {
             fields.components = fieldValues.components as JiraField;
         }
