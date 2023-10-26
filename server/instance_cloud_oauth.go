@@ -29,6 +29,7 @@ type cloudOAuthInstance struct {
 	JiraBaseURL      string
 	CodeVerifier     string
 	CodeChallenge    string
+	JWTInstance      *cloudInstance
 }
 
 type CloudOAuthConfigure struct {
@@ -79,7 +80,6 @@ func (p *Plugin) installCloudOAuthInstance(rawURL, clientID, clientSecret string
 		CodeVerifier:     params.CodeVerifier,
 		CodeChallenge:    params.CodeChallenge,
 	}
-
 	if err = p.InstallInstance(instance); err != nil {
 		return "", nil, err
 	}
@@ -99,6 +99,11 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 	oauth2Conf := ci.GetOAuthConfig()
 	ctx := context.Background()
 	tokenSource := oauth2Conf.TokenSource(ctx, connection.OAuth2Token)
+	if ci.JWTInstance != nil && tokenSource == nil {
+		ci.Plugin.API.LogDebug("Returning a JWT token client in case the stored JWT instance is not nil and the user's oauth token is nil")
+		return ci.JWTInstance.getClientForConnection(connection)
+	}
+
 	client := oauth2.NewClient(ctx, tokenSource)
 
 	// Get a new token, if Access Token has expired
