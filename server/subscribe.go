@@ -41,11 +41,10 @@ type FieldFilter struct {
 }
 
 type SubscriptionFilters struct {
-	Events        StringSet     `json:"events"`
-	Projects      StringSet     `json:"projects"`
-	IssueStatuses StringSet     `json:"issue_statuses"`
-	IssueTypes    StringSet     `json:"issue_types"`
-	Fields        []FieldFilter `json:"fields"`
+	Events     StringSet     `json:"events"`
+	Projects   StringSet     `json:"projects"`
+	IssueTypes StringSet     `json:"issue_types"`
+	Fields     []FieldFilter `json:"fields"`
 }
 
 type ChannelSubscription struct {
@@ -146,10 +145,6 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 	issue := &wh.JiraWebhook.Issue
 
 	if filters.IssueTypes.Len() != 0 && !filters.IssueTypes.ContainsAny(issue.Fields.Type.ID) {
-		return false
-	}
-
-	if filters.IssueStatuses.Len() != 0 && !filters.IssueStatuses.ContainsAny(issue.Fields.Status.ID) {
 		return false
 	}
 

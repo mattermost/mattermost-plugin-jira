@@ -17,6 +17,7 @@ import {
     JiraFieldCustomTypeEnums,
     JiraFieldTypeEnums,
     Status,
+    IssueTypeWithStatuses,
 } from 'types/model';
 
 type FieldWithInfo = JiraField & {
@@ -188,7 +189,7 @@ function isValidFieldForFilter(field: JiraField): boolean {
     (type === 'array' && allowedArrayTypes.includes(items));
 }
 
-export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null, projectKeys: string[], issueStatuses: Status[] | null, issueTypes: string[]): FilterField[] {
+export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null, projectKeys: string[], issueTypes: string[]): FilterField[] {
     const fields = getCustomFieldsForProjects(metadata, projectKeys).filter(isValidFieldForFilter);
     const selectFields = fields.filter((field) => Boolean(field.allowedValues && field.allowedValues.length)) as (SelectField & FieldWithInfo)[];
     const populatedFields = selectFields.map((field) => {
@@ -227,21 +228,39 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
         } as FilterField);
     }
 
-    if (issueStatuses) {
+    // Filtering out the statuses on the basis of selected issue types
+    const issueTypesWithStatuses = metadata && metadata.issue_types;
+    const keys = new Set<string>();
+    const statuses: Status[] = [];
+
+    if (issueTypesWithStatuses) {
+        for (const element of issueTypesWithStatuses) {
+            if (issueTypes.includes(element.id) || !issueTypes.length) {
+                for (const status of element.statuses) {
+                    if (!keys.has(status.id)) {
+                        keys.add(status.id);
+                        statuses.push(status);
+                    }
+                }
+            }
+        }
+    }
+
+    if (statuses.length) {
         result.push({
             key: FIELD_KEY_STATUS,
             name: 'Status',
             schema: {
                 type: 'array',
             },
-            values: issueStatuses.map((value) => ({
+            values: statuses.map((value) => ({
                 label: value.name,
                 value: value.id,
             })),
-            issueTypes: issueTypes.map((type) => {
+            issueTypes: metadata && metadata.issue_types.map((type) => {
                 return {
-                    id: type,
-                    name: type,
+                    id: type.id,
+                    name: type.name,
                 };
             }),
         } as FilterField);

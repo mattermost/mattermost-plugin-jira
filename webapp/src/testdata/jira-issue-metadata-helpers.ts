@@ -15,5 +15,6 @@ export const useFieldForIssueMetadata = (field: JiraField, key: string): IssueMe
                 }],
             },
         ],
+        issue_types: [],
     };
 };

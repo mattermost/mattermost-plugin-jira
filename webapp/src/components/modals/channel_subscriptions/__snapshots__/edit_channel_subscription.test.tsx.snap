@@ -837,26 +837,17 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                 },
               ],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
-                  "id": "10004",
-                  "name": "10004",
-                },
-              ],
-              "key": "status",
-              "name": "Status",
-              "schema": Object {
-                "type": "array",
-              },
-              "values": Array [],
-            },
           ]
         }
         instanceID="https://something.atlassian.net"
         issueMetadata={
           Object {
             "expand": "projects",
+            "issue_types": Array [
+              Object {
+                "statuses": Array [],
+              },
+            ],
             "projects": Array [
               Object {
                 "expand": "issuetypes",

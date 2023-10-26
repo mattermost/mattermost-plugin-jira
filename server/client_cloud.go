@@ -17,6 +17,11 @@ type jiraCloudClient struct {
 	JiraClient
 }
 
+type IssueTypeWithStatuses struct {
+	*jira.IssueType
+	Statuses []*jira.Status `json:"statuses"`
+}
+
 func newCloudClient(jiraClient *jira.Client) Client {
 	return &jiraCloudClient{
 		JiraClient: JiraClient{
@@ -134,13 +139,8 @@ func (client jiraCloudClient) GetIssueTypes(projectID string) ([]jira.IssueType,
 	return result, nil
 }
 
-type IssueType struct {
-	*jira.IssueType
-	Statuses []*jira.Status `json:"statuses"`
-}
-
-func (client jiraCloudClient) ListProjectStatuses(projectID string) ([]*IssueType, error) {
-	var result []*IssueType
+func (client jiraCloudClient) ListProjectStatuses(projectID string) ([]*IssueTypeWithStatuses, error) {
+	var result []*IssueTypeWithStatuses
 	if err := client.RESTGet(fmt.Sprintf("3/project/%s/statuses", projectID), nil, &result); err != nil {
 		return nil, err
 	}

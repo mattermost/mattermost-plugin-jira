@@ -18,7 +18,6 @@ import {
     fetchJiraIssueMetadataForProjects,
     sendEphemeralPost,
     getConnected,
-    getProjectStatuses,
 } from 'actions';
 
 import {
@@ -68,7 +67,6 @@ const mapDispatchToProps = (dispatch) => bindActionCreators({
     deleteChannelSubscription,
     editChannelSubscription,
     getConnected,
-    getProjectStatuses,
     sendEphemeralPost,
 }, dispatch);
 

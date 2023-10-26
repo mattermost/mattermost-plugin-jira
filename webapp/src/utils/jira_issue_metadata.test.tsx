@@ -30,7 +30,7 @@ describe('utils/jira_issue_metadata', () => {
     test('should return a list of fields', () => {
         const projectKey = createMeta.projects[0].key;
 
-        const actual = getCustomFieldFiltersForProjects(createMeta, [projectKey]);
+        const actual = getCustomFieldFiltersForProjects(createMeta, [projectKey], []);
         expect(actual).not.toBe(null);
         expect(actual.length).toBeGreaterThan(0);
     });
@@ -55,7 +55,7 @@ describe('utils/jira_issue_metadata', () => {
         const metadata = useFieldForIssueMetadata(field, 'customfield_10021');
         const projectKey = metadata.projects[0].key;
 
-        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
+        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
         expect(actual.length).toBe(0);
     });
@@ -90,7 +90,7 @@ describe('utils/jira_issue_metadata', () => {
         const metadata = useFieldForIssueMetadata(field, 'custom1');
         const projectKey = metadata.projects[0].key;
 
-        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
+        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
         expect(actual.length).toBe(1);
 
@@ -130,7 +130,7 @@ describe('utils/jira_issue_metadata', () => {
         const metadata = useFieldForIssueMetadata(field, 'custom1');
         const projectKey = metadata.projects[0].key;
 
-        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
+        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
         expect(actual.length).toBe(1);
 
@@ -195,7 +195,7 @@ describe('utils/jira_issue_metadata', () => {
         const metadata = useFieldForIssueMetadata(field, 'priority');
         const projectKey = metadata.projects[0].key;
 
-        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
+        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
         expect(actual.length).toBe(1);
 
@@ -229,7 +229,7 @@ describe('utils/jira_issue_metadata', () => {
         const metadata = useFieldForIssueMetadata(field, 'fixVersions');
         const projectKey = metadata.projects[0].key;
 
-        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
+        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
         expect(actual.length).toBe(1);
 
@@ -282,7 +282,7 @@ describe('utils/jira_issue_metadata', () => {
         const metadata = useFieldForIssueMetadata(field, 'security');
         const projectKey = metadata.projects[0].key;
 
-        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
+        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
         expect(actual.length).toBe(1);
 
@@ -314,7 +314,7 @@ describe('utils/jira_issue_metadata', () => {
         const metadata = useFieldForIssueMetadata(field, 'custom1');
         const projectKey = metadata.projects[0].key;
 
-        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
+        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
         expect(actual.length).toBe(1);
 
@@ -386,6 +386,18 @@ describe('utils/jira_issue_metadata', () => {
         };
 
         const issueMetadata: IssueMetadata = {
+            issue_types: [
+                {
+                    id: '10001',
+                    name: 'Bug',
+                    statuses: [],
+                },
+                {
+                    id: '10002',
+                    name: 'Task',
+                    statuses: [],
+                },
+            ],
             projects: [{
                 key: 'KT',
                 issuetypes: [

@@ -9,6 +9,11 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
   issueMetadata={
     Object {
       "expand": "projects",
+      "issue_types": Array [
+        Object {
+          "statuses": Array [],
+        },
+      ],
       "projects": Array [
         Object {
           "expand": "issuetypes",

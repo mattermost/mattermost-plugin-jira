@@ -22,7 +22,7 @@ import {
     filterValueIsSecurityField,
 } from 'utils/jira_issue_metadata';
 
-import {ChannelSubscription, ChannelSubscriptionFilters as ChannelSubscriptionFiltersModel, ReactSelectOption, FilterValue, IssueMetadata, Status, ProjectStatuses} from 'types/model';
+import {ChannelSubscription, ChannelSubscriptionFilters as ChannelSubscriptionFiltersModel, ReactSelectOption, FilterValue, IssueMetadata} from 'types/model';
 
 import ChannelSubscriptionFilters from './channel_subscription_filters';
 import {SharedProps} from './shared_props';
@@ -66,13 +66,10 @@ export type State = {
     jiraIssueMetadata: IssueMetadata | null;
     error: string | null;
     getMetaDataErr: string | null;
-    getIssueStatusesErr: string | null;
     submitting: boolean;
     subscriptionName: string | null;
     showConfirmModal: boolean;
     conflictingError: string | null;
-    issue_statuses: Status[] | null;
-    projectStatuses: ProjectStatuses[] | null;
 };
 
 export default class EditChannelSubscription extends PureComponent<Props, State> {
@@ -86,7 +83,6 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             projects: [],
             issue_types: [],
             fields: [],
-            issue_statuses: [],
         };
 
         let subscriptionName = null;
@@ -106,13 +102,11 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         if (filters.projects.length && instanceID) {
             fetchingIssueMetadata = true;
             this.fetchIssueMetadata(filters.projects, instanceID);
-            this.fetchIssueStatuses(filters.projects[0], instanceID);
         }
 
         this.state = {
             error: null,
             getMetaDataErr: null,
-            getIssueStatusesErr: null,
             submitting: false,
             filters,
             fetchingIssueMetadata,
@@ -121,8 +115,6 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             showConfirmModal: false,
             conflictingError: null,
             instanceID,
-            issue_statuses: null,
-            projectStatuses: null,
         };
 
         this.validator = new Validator();
@@ -195,7 +187,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
 
         let conflictingFields = null;
         if (finalValue.length > this.state.filters.issue_types.length) {
-            const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects, this.state.issue_statuses, this.state.filters.issue_types);
+            const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects, this.state.filters.issue_types);
             conflictingFields = getConflictingFields(
                 filterFields,
                 finalValue,
@@ -219,29 +211,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             }
         }
 
-        const keys: string[] = [];
-        const statuses: Status[] = [];
-        if (this.state.projectStatuses) {
-            this.state.projectStatuses.forEach((element: ProjectStatuses) => {
-                if (this.state.filters.issue_types.includes(element.id) || !this.state.filters.issue_types.length) {
-                    element.statuses.forEach((status: Status) => {
-                        if (!keys.includes(status.id)) {
-                            keys.push(status.id);
-                            statuses.push(status);
-                        }
-                    });
-                }
-            });
-        }
-
-        this.setState({filters, issue_statuses: statuses, conflictingError: null});
-    };
-
-    handleIssueStatusChange = (id: keyof ChannelSubscriptionFiltersModel, value: string[] | null) => {
-        const finalValue = value || [];
-        const filters = {...this.state.filters, issue_statuses: finalValue};
-
-        this.setState({filters});
+        this.setState({filters, conflictingError: null});
     };
 
     fetchIssueMetadata = (projectKeys: string[], instanceID: string) => {
@@ -257,46 +227,12 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                 state.getMetaDataErr = `The project ${projectKeys[0]} is unavailable. Please contact your system administrator.`;
             }
 
-            const filterFields = getCustomFieldFiltersForProjects(jiraIssueMetadata, this.state.filters.projects, this.state.issue_statuses, this.state.filters.issue_types);
+            const filterFields = getCustomFieldFiltersForProjects(jiraIssueMetadata, this.state.filters.projects, this.state.filters.issue_types);
             for (const v of this.state.filters.fields) {
                 if (!filterFields.find((f) => f.key === v.key)) {
                     state.error = 'A field in this subscription has been removed from Jira, so the subscription is invalid. When this form is submitted, the configured field will be removed from the subscription to make the subscription valid again.';
                 }
             }
-
-            this.setState(state);
-        });
-    };
-
-    fetchIssueStatuses = (projectID: string, instanceID: string) => {
-        if (!instanceID) {
-            this.setState({getIssueStatusesErr: 'No Jira instance is selected.'});
-            return;
-        }
-
-        this.props.getProjectStatuses(instanceID, projectID).then(({data, error}) => {
-            if (error) {
-                this.setState({getIssueStatusesErr: 'Error occurred while getting the issue statuses.'});
-                return;
-            }
-
-            const projectStatuses = data as ProjectStatuses[];
-            const keys: string[] = [];
-            const statuses: Status[] = [];
-            if (projectStatuses) {
-                projectStatuses.forEach((element: ProjectStatuses) => {
-                    if (this.state.filters.issue_types.includes(element.id) || !this.state.filters.issue_types.length) {
-                        element.statuses.forEach((status) => {
-                            if (!keys.includes(status.id)) {
-                                keys.push(status.id);
-                                statuses.push(status);
-                            }
-                        });
-                    }
-                });
-            }
-
-            const state = {issue_statuses: statuses, projectStatuses} as State;
 
             this.setState(state);
         });
@@ -330,7 +266,6 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             issue_types: [],
             events: [],
             fields: [],
-            issue_statuses: [],
         };
 
         let fetchingIssueMetadata = false;
@@ -340,14 +275,9 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             this.fetchIssueMetadata(projects, this.state.instanceID);
         }
 
-        if (projects && projects.length) {
-            this.fetchIssueStatuses(projects[0], this.state.instanceID);
-        }
-
         this.setState({
             fetchingIssueMetadata,
             getMetaDataErr: null,
-            getIssueStatusesErr: null,
             filters,
         });
     };
@@ -366,7 +296,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             return;
         }
 
-        const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects, this.state.issue_statuses, this.state.filters.issue_types);
+        const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects, this.state.filters.issue_types);
         const configuredFields = this.state.filters.fields.concat([]);
         for (const v of this.state.filters.fields) {
             if (!filterFields.find((f) => f.key === v.key)) {
@@ -415,7 +345,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         const issueOptions = issueTypes.map((it) => ({label: it.name, value: it.id}));
 
         const customFields = getCustomFieldValuesForEvents(this.state.jiraIssueMetadata, this.state.filters.projects);
-        const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects, this.state.issue_statuses, this.state.filters.issue_types);
+        const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects, this.state.filters.issue_types);
 
         const eventOptions = JiraEventOptions.concat(customFields);
 
@@ -424,15 +354,6 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             conflictingErrorComponent = (
                 <p className='help-text error-text'>
                     <span>{this.state.conflictingError}</span>
-                </p>
-            );
-        }
-
-        let getIssueStatusesErrorComponent = null;
-        if (this.state.getIssueStatusesErr) {
-            getIssueStatusesErrorComponent = (
-                <p className='help-text error-text'>
-                    <span>{this.state.getIssueStatusesErr}</span>
                 </p>
             );
         }
@@ -482,7 +403,6 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                             instanceID={this.state.instanceID}
                             securityLevelEmptyForJiraSubscriptions={this.props.securityLevelEmptyForJiraSubscriptions}
                         />
-                        {getIssueStatusesErrorComponent}
                         <div>
                             <label className='control-label margin-bottom'>
                                 {'Approximate JQL Output'}

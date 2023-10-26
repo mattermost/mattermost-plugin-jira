@@ -34,6 +34,11 @@ const (
 	QueryParamProjectID  = "project_id"
 )
 
+type CreateMetaInfo struct {
+	*jira.CreateMetaInfo
+	IssueTypes []*IssueTypeWithStatuses `json:"issue_types"`
+}
+
 func makePost(userID, channelID, message string) *model.Post {
 	return &model.Post{
 		UserId:    userID,
@@ -375,16 +380,29 @@ func (p *Plugin) httpGetCreateIssueMetadataForProjects(w http.ResponseWriter, r 
 	return respondJSON(w, cimd)
 }
 
-func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID types.ID, projectKeys string) (*jira.CreateMetaInfo, error) {
+func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID types.ID, projectKeys string) (*CreateMetaInfo, error) {
 	client, _, _, err := p.getClient(instanceID, mattermostUserID)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.GetCreateMetaInfo(p.API, &jira.GetQueryOptions{
+	projectStatuses, err := client.ListProjectStatuses(projectKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	metaInfo, err := client.GetCreateMetaInfo(p.API, &jira.GetQueryOptions{
 		Expand:      "projects.issuetypes.fields",
 		ProjectKeys: projectKeys,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &CreateMetaInfo{
+		metaInfo,
+		projectStatuses,
+	}, nil
 }
 
 func (p *Plugin) httpGetSearchIssues(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -543,23 +561,6 @@ func (p *Plugin) ListJiraProjects(instanceID, mattermostUserID types.ID, expandI
 		return nil, nil, err
 	}
 	return plist, connection, nil
-}
-
-func (p *Plugin) httpGetJiraProjectStatuses(w http.ResponseWriter, r *http.Request) (int, error) {
-	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	instanceID := r.FormValue(QueryParamInstanceID)
-	projectID := r.FormValue(QueryParamProjectID)
-	client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to get client"))
-	}
-
-	projectStatuses, err := client.ListProjectStatuses(projectID)
-	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to list project statuses"))
-	}
-
-	return respondJSON(w, projectStatuses)
 }
 
 func (p *Plugin) GetIssueTypes(instanceID, mattermostUserID types.ID, projectID string) ([]jira.IssueType, error) {

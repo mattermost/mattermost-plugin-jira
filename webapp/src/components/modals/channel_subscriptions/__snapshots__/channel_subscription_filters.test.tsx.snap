@@ -101,6 +101,7 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
         instanceID="https://something.atlassian.net"
         issueMetadata={
           Object {
+            "issue_types": Array [],
             "projects": Array [
               Object {
                 "issuetypes": Array [
@@ -218,6 +219,7 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
         }
         issueMetadata={
           Object {
+            "issue_types": Array [],
             "projects": Array [
               Object {
                 "issuetypes": Array [

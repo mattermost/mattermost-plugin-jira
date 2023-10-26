@@ -781,6 +781,11 @@ exports[`components/CreateIssue should match snapshot with error 1`] = `
         issueMetadata={
           Object {
             "expand": "projects",
+            "issue_types": Array [
+              Object {
+                "statuses": Array [],
+              },
+            ],
             "projects": Array [
               Object {
                 "expand": "issuetypes",
@@ -4239,6 +4244,11 @@ exports[`components/CreateIssue should match snapshot with form filled 1`] = `
         issueMetadata={
           Object {
             "expand": "projects",
+            "issue_types": Array [
+              Object {
+                "statuses": Array [],
+              },
+            ],
             "projects": Array [
               Object {
                 "expand": "issuetypes",

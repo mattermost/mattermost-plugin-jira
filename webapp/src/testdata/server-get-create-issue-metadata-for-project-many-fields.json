@@ -1,5 +1,10 @@
 {
     "expand": "projects",
+    "issue_types": [
+      {
+        "statuses": []
+      }
+    ],
     "projects": [{
       "expand": "issuetypes",
       "self": "http://localhost:8080/rest/api/2/project/10401",

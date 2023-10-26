@@ -1,5 +1,10 @@
 {
   "expand": "projects",
+  "issue_types": [
+    {
+      "statuses": []
+    }
+  ],
   "projects": [
     {
       "expand": "issuetypes",

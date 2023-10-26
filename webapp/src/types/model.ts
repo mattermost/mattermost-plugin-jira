@@ -65,14 +65,15 @@ export type Project = {
     issuetypes: IssueType[];
 }
 
-export type IssueMetadata = {
-    projects: Project[];
-}
-
-export type ProjectStatuses = {
+export type IssueTypeWithStatuses = {
     id: string;
     name: string;
     statuses: Status[];
+}
+
+export type IssueMetadata = {
+    projects: Project[];
+    issue_types: IssueTypeWithStatuses[];
 }
 
 export type Status = {
@@ -155,7 +156,6 @@ export type ChannelSubscriptionFilters = {
     events: string[];
     issue_types: string[];
     fields: FilterValue[];
-    issue_statuses: string[];
 };
 
 export type ChannelSubscription = {
