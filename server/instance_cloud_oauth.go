@@ -98,12 +98,12 @@ func (ci *cloudOAuthInstance) GetClient(connection *Connection) (Client, error) 
 func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*jira.Client, *http.Client, error) {
 	oauth2Conf := ci.GetOAuthConfig()
 	ctx := context.Background()
-	tokenSource := oauth2Conf.TokenSource(ctx, connection.OAuth2Token)
-	if ci.JWTInstance != nil && tokenSource == nil {
-		ci.Plugin.API.LogDebug("Returning a JWT token client in case the stored JWT instance is not nil and the user's oauth token is nil")
+	if ci.JWTInstance != nil && connection.OAuth2Token == nil {
+		ci.Plugin.API.LogDebug("Returning a JWT token client since the stored JWT instance is not nil and the user's oauth token is nil")
 		return ci.JWTInstance.getClientForConnection(connection)
 	}
 
+	tokenSource := oauth2Conf.TokenSource(ctx, connection.OAuth2Token)
 	client := oauth2.NewClient(ctx, tokenSource)
 
 	// Get a new token, if Access Token has expired

@@ -141,44 +141,49 @@ func (p *instancesArray) Resize(n int) {
 	*p = make(instancesArray, n)
 }
 
-func (p *Plugin) InstallInstance(instance Instance) error {
+func (p *Plugin) InstallInstance(newInstance Instance) error {
 	var updated *Instances
 	err := UpdateInstances(p.instanceStore,
 		func(instances *Instances) error {
 			if !p.enterpriseChecker.HasEnterpriseFeatures() {
-				if instances != nil && len(instances.IDs()) > 0 && !instances.checkIfExists(instance.GetID()) {
+				if instances != nil && len(instances.IDs()) > 0 && !instances.checkIfExists(newInstance.GetID()) {
 					return errors.Errorf(licenseErrorString)
 				}
 			}
 
-			if instance.Common().Type == CloudOAuthInstanceType && len(instances.IDs()) > 0 && instances.checkIfExists(instance.GetID()) {
-				p.API.LogDebug("Getting the stored JWT instance data to store it inside the OAuth instance data.")
-				jwtInstance, err := p.instanceStore.LoadInstance(instance.GetID())
-				if err != nil {
-					p.API.LogError("Error occurred while fetching the instance", "ID", instance.GetID(), "Error", err.Error())
-					return err
-				}
-
-				// Storing the JWT instance data inside the OAuth instance data. We will use this to use the stored JWT token in case the user has not connected to OAuth yet.
-				p.API.LogDebug("Instance type stored in KV store", "ID", jwtInstance.GetID(), "Type", jwtInstance.Common().Type)
-				if jwtInstance.Common().Type == CloudInstanceType {
-					instance.(*cloudOAuthInstance).JWTInstance = jwtInstance.(*cloudInstance)
-				} else if jwtInstance.Common().Type == CloudOAuthInstanceType {
-					instance.(*cloudOAuthInstance).JWTInstance = jwtInstance.(*cloudOAuthInstance).JWTInstance
-				}
-
-				if instance.(*cloudOAuthInstance).JWTInstance != nil {
-					p.API.LogDebug("JWT instance is successfully stored inside cloud OAuth instance data.", "JWTInstance", instance.(*cloudOAuthInstance).JWTInstance)
+			if newInstance.Common().Type == CloudOAuthInstanceType && len(instances.IDs()) > 0 && instances.checkIfExists(newInstance.GetID()) {
+				oAuthInstance, ok := newInstance.(*cloudOAuthInstance)
+				if !ok {
+					p.API.LogError("Instance type is `cloud-oauth` but failed to assert instance.(*cloudOAuthInstance).", "ID", newInstance.GetID())
 				} else {
-					p.API.LogDebug("Failed to store JWT instance inside cloud OAuth instance data or there was no JWT instance installed previously.", "JWTInstance", instance.(*cloudOAuthInstance).JWTInstance)
+					p.API.LogDebug("Getting the stored JWT instance data to store it inside the OAuth instance data.")
+					previousInstance, err := p.instanceStore.LoadInstance(newInstance.GetID())
+					if err != nil {
+						p.API.LogError("Error occurred while fetching the instance", "ID", newInstance.GetID(), "Error", err.Error())
+						return err
+					}
+
+					// Storing the JWT instance data inside the OAuth instance data. We will use this to use the stored JWT token in case the user has not connected to OAuth yet.
+					p.API.LogDebug("Instance type stored in KV store", "ID", previousInstance.GetID(), "Type", previousInstance.Common().Type)
+					if previousInstance.Common().Type == CloudInstanceType {
+						oAuthInstance.JWTInstance = previousInstance.(*cloudInstance)
+					} else if previousInstance.Common().Type == CloudOAuthInstanceType {
+						oAuthInstance.JWTInstance = previousInstance.(*cloudOAuthInstance).JWTInstance
+					}
+
+					if oAuthInstance.JWTInstance != nil {
+						p.API.LogDebug("JWT instance is successfully stored inside cloud OAuth instance data.", "JWTInstance", oAuthInstance.JWTInstance)
+					} else {
+						p.API.LogDebug("No JWT instance inside cloud OAuth instance data.", "JWTInstance", oAuthInstance.JWTInstance)
+					}
 				}
 			}
 
-			err := p.instanceStore.StoreInstance(instance)
+			err := p.instanceStore.StoreInstance(newInstance)
 			if err != nil {
 				return err
 			}
-			instances.Set(instance.Common())
+			instances.Set(newInstance.Common())
 			updated = instances
 			return nil
 		})
