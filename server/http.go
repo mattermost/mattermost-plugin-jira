@@ -174,7 +174,7 @@ func (p *Plugin) loadTemplates(dir string) (map[string]*htmlTemplate.Template, m
 		} else {
 			template, err := textTemplate.ParseFiles(path)
 			if err != nil {
-				p.errorf("OnActivate: failed to parse template %s: %v", path, err)
+				p.errorf("OnActivate: failed to parse the template %s: %v", path, err)
 				return nil
 			}
 
