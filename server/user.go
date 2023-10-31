@@ -38,9 +38,8 @@ type Connection struct {
 }
 
 type SavedFieldValues struct {
-	ProjectKey string            `json:"project_key,omitempty"`
-	IssueType  string            `json:"issue_type,omitempty"`
-	Components []*jira.Component `json:"components,omitempty"`
+	ProjectKey string `json:"project_key,omitempty"`
+	IssueType  string `json:"issue_type,omitempty"`
 }
 
 func (c *Connection) JiraAccountID() types.ID {

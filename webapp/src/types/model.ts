@@ -78,7 +78,6 @@ export type ProjectMetadata = {
 export type SavedFieldValues = {
     project_key?: string;
     issue_type?: string;
-    components?: JiraField;
 }
 
 export enum JiraFieldTypeEnums {

@@ -321,7 +321,6 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 	p.UpdateUserDefaults(in.mattermostUserID, in.InstanceID, &SavedFieldValues{
 		ProjectKey: project.Key,
 		IssueType:  issue.Fields.Type.ID,
-		Components: issue.Fields.Components,
 	})
 
 	// Create a public post for all the channel members

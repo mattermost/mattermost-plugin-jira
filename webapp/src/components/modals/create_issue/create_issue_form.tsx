@@ -151,10 +151,6 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             };
         }
 
-        if (fieldValues) {
-            fields.components = fieldValues.components as JiraField;
-        }
-
         this.setState({
             projectKey,
             issueType: fieldValues.issue_type ? fieldValues.issue_type : '',
