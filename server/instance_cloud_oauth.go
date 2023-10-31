@@ -98,6 +98,8 @@ func (ci *cloudOAuthInstance) GetClient(connection *Connection) (Client, error) 
 func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*jira.Client, *http.Client, error) {
 	oauth2Conf := ci.GetOAuthConfig()
 	ctx := context.Background()
+
+	// Checking if this user's connection is for a JWT instance
 	if ci.JWTInstance != nil && connection.OAuth2Token == nil {
 		ci.Plugin.API.LogDebug("Returning a JWT token client since the stored JWT instance is not nil and the user's oauth token is nil")
 		return ci.JWTInstance.getClientForConnection(connection)

@@ -166,9 +166,17 @@ func (p *Plugin) InstallInstance(newInstance Instance) error {
 					// Storing the JWT instance data inside the OAuth instance data. We will use this to use the stored JWT token in case the user has not connected to OAuth yet.
 					p.API.LogDebug("Instance type stored in KV store", "ID", previousInstance.GetID(), "Type", previousInstance.Common().Type)
 					if previousInstance.Common().Type == CloudInstanceType {
-						oAuthInstance.JWTInstance = previousInstance.(*cloudInstance)
+						ci, ok := previousInstance.(*cloudInstance)
+						if !ok {
+							p.API.LogError("Instance type is `cloud` but failed to assert instance.(*cloudInstance).", "ID", newInstance.GetID())
+						}
+						oAuthInstance.JWTInstance = ci
 					} else if previousInstance.Common().Type == CloudOAuthInstanceType {
-						oAuthInstance.JWTInstance = previousInstance.(*cloudOAuthInstance).JWTInstance
+						ci, ok := previousInstance.(*cloudOAuthInstance)
+						if !ok {
+							p.API.LogError("Instance type is `cloud-oauth` but failed to assert instance.(*cloudOAuthInstance).", "ID", newInstance.GetID())
+						}
+						oAuthInstance.JWTInstance = ci.JWTInstance
 					}
 
 					if oAuthInstance.JWTInstance != nil {
