@@ -633,9 +633,23 @@ func (p *Plugin) submitCreateCloudOAuthInstance(f *flow.Flow, submission map[str
 		return "", nil, nil, errors.New("no Jira OAuth Client Secret is present in the request")
 	}
 
-	jiraURL, instance, err := p.installCloudOAuthInstance(jiraURL, clientID, clientSecret)
+	existingInstance, err := p.instanceStore.LoadInstance(types.ID(jiraURL))
 	if err != nil {
 		return "", nil, nil, err
+	}
+
+	instance, ok := existingInstance.(*cloudOAuthInstance)
+	if ok {
+		instance.JiraClientID = clientID
+		instance.JiraClientSecret = clientSecret
+		if err = p.instanceStore.StoreInstance(existingInstance); err != nil {
+			return "", nil, nil, err
+		}
+	} else {
+		jiraURL, instance, err = p.installCloudOAuthInstance(jiraURL, clientID, clientSecret)
+		if err != nil {
+			return "", nil, nil, err
+		}
 	}
 
 	return stepInstalledJiraApp, flow.State{

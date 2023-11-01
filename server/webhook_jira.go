@@ -55,18 +55,20 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 		} else if instance, ok := instance.(*cloudOAuthInstance); ok {
 			mmUserID, err := p.userStore.LoadMattermostUserID(instanceID, jwh.Comment.Author.AccountID)
 			if err != nil {
-				if instance.JWTInstance != nil {
-					var issue *jira.Issue
-					issue, err = p.getIssueDataForCloudWebhook(instance.JWTInstance, jwh.Issue.ID)
-					if err != nil {
-						return err
-					}
-
-					jwh.Issue = *issue
-					return nil
+				// User is not connected, so we try to fall back to JWT bot
+				if instance.JWTInstance == nil {
+					return errors.Wrap(err, "Cannot create subscription posts for this comment as the Jira comment author is not connected to Mattermost.")
 				}
 
-				return errors.Wrap(err, "Cannot create subscription posts for this comment as the Jira comment author is not connected to Mattermost.")
+				// Fetch issue details with bot JWT bot
+				var issue *jira.Issue
+				issue, err = p.getIssueDataForCloudWebhook(instance.JWTInstance, jwh.Issue.ID)
+				if err != nil {
+					return errors.Wrap(err, "failed to getIssueDataForCloudWebhook using bot account")
+				}
+
+				jwh.Issue = *issue
+				return nil
 			}
 
 			conn, err := p.userStore.LoadConnection(instance.GetID(), mmUserID)
