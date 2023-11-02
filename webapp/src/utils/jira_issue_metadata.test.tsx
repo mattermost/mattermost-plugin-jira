@@ -4,9 +4,9 @@
 import createMeta from 'testdata/cloud-get-create-issue-metadata-for-project-many-fields.json';
 import {useFieldForIssueMetadata} from 'testdata/jira-issue-metadata-helpers';
 
-import {IssueMetadata, JiraField, FilterField, ChannelSubscriptionFilters, FilterFieldInclusion, IssueType, Project} from 'types/model';
+import {IssueMetadata, JiraField, FilterField, ChannelSubscriptionFilters, FilterFieldInclusion, IssueType, Project, IssueTypeWithStatuses} from 'types/model';
 
-import {getCustomFieldFiltersForProjects, generateJQLStringFromSubscriptionFilters, getConflictingFields} from './jira_issue_metadata';
+import {getCustomFieldFiltersForProjects, generateJQLStringFromSubscriptionFilters, getConflictingFields, getStatusField} from './jira_issue_metadata';
 
 describe('utils/jira_issue_metadata', () => {
     const useField = (field: JiraField, key: string): IssueMetadata => {
@@ -291,6 +291,105 @@ describe('utils/jira_issue_metadata', () => {
         expect(actual[0].values).toEqual([{value: '10001', label: 'Admin only'}, {value: '10000', label: 'Everyone'}, {value: '10002', label: 'Staff'}]);
     });
 
+    test('getStatusField should return options for statuses for selected issue types only', () => {
+        const metadata: IssueMetadata = {
+            projects: [
+                {
+                    key: 'TEST',
+                    issuetypes: [],
+                },
+            ],
+            issue_types_with_statuses: [
+                {
+                    id: '10001',
+                    name: 'Task',
+                    statuses: [
+                        {
+                            id: '1001',
+                            name: 'TODO',
+                        },
+                    ],
+                },
+                {
+                    id: '10002',
+                    name: 'Story',
+                    statuses: [
+                        {
+                            id: '1002',
+                            name: 'In Progress',
+                        },
+                    ],
+                },
+            ],
+        };
+
+        const actual = getStatusField(metadata, ['10001']);
+        expect(actual).not.toBe(null);
+
+        if (actual) {
+            expect(actual.key).toEqual('status');
+            expect(actual.name).toEqual('Status');
+            expect(actual.values).toEqual([{value: '1001', label: 'TODO'}]);
+        }
+    });
+
+    test('getStatusField should return options for statuses for all issue types if no issue type is selected', () => {
+        const metadata: IssueMetadata = {
+            projects: [
+                {
+                    key: 'TEST',
+                    issuetypes: [],
+                },
+            ],
+            issue_types_with_statuses: [
+                {
+                    id: '10001',
+                    name: 'Task',
+                    statuses: [
+                        {
+                            id: '1001',
+                            name: 'TODO',
+                        },
+                    ],
+                },
+                {
+                    id: '10002',
+                    name: 'Story',
+                    statuses: [
+                        {
+                            id: '1002',
+                            name: 'In Progress',
+                        },
+                    ],
+                },
+            ],
+        };
+
+        const actual = getStatusField(metadata, []);
+        expect(actual).not.toBe(null);
+
+        if (actual) {
+            expect(actual.key).toEqual('status');
+            expect(actual.name).toEqual('Status');
+            expect(actual.values).toEqual([{value: '1001', label: 'TODO'}, {value: '1002', label: 'In Progress'}]);
+        }
+    });
+
+    test('getStatusField should return null for statuses if statuses information is empty', () => {
+        const metadata: IssueMetadata = {
+            projects: [
+                {
+                    key: 'TEST',
+                    issuetypes: [],
+                },
+            ],
+            issue_types_with_statuses: [],
+        };
+
+        const actual = getStatusField(metadata, []);
+        expect(actual).toBe(null);
+    });
+
     test('should return options with a `userDefined` flag for array of strings', () => {
         const field = {
             autoCompleteUrl: 'https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?customFieldId=10071&query=',
@@ -386,7 +485,7 @@ describe('utils/jira_issue_metadata', () => {
         };
 
         const issueMetadata: IssueMetadata = {
-            issue_types: [
+            issue_types_with_statuses: [
                 {
                     id: '10001',
                     name: 'Bug',

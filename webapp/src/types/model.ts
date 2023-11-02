@@ -73,7 +73,7 @@ export type IssueTypeWithStatuses = {
 
 export type IssueMetadata = {
     projects: Project[];
-    issue_types: IssueTypeWithStatuses[];
+    issue_types_with_statuses: IssueTypeWithStatuses[];
 }
 
 export type Status = {
