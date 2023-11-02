@@ -590,7 +590,7 @@ func (p *Plugin) initCreateCloudOAuthInstance(f *flow.Flow, submission map[strin
 		jiraURL = fmt.Sprintf("https://%s.atlassian.net", jiraURL)
 	}
 
-	jiraURL, instance, err := p.installCloudOAuthInstance(jiraURL, "", "")
+	jiraURL, instance, err := p.installCloudOAuthInstance(jiraURL)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -635,21 +635,18 @@ func (p *Plugin) submitCreateCloudOAuthInstance(f *flow.Flow, submission map[str
 
 	existingInstance, err := p.instanceStore.LoadInstance(types.ID(jiraURL))
 	if err != nil {
-		return "", nil, nil, err
+		return "", nil, nil, errors.Wrap(err, "failed to load existing cloud-oauth instance")
 	}
 
 	instance, ok := existingInstance.(*cloudOAuthInstance)
-	if ok {
-		instance.JiraClientID = clientID
-		instance.JiraClientSecret = clientSecret
-		if err = p.instanceStore.StoreInstance(existingInstance); err != nil {
-			return "", nil, nil, err
-		}
-	} else {
-		jiraURL, instance, err = p.installCloudOAuthInstance(jiraURL, clientID, clientSecret)
-		if err != nil {
-			return "", nil, nil, err
-		}
+	if !ok {
+		return "", nil, nil, errors.Errorf("existing instance is not a cloud-oauth instance. ID: %s", jiraURL)
+	}
+
+	instance.JiraClientID = clientID
+	instance.JiraClientSecret = clientSecret
+	if err = p.instanceStore.StoreInstance(instance); err != nil {
+		return "", nil, nil, errors.Wrap(err, "failed to store cloud-oauth instance")
 	}
 
 	return stepInstalledJiraApp, flow.State{

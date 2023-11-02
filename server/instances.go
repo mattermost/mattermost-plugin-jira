@@ -145,53 +145,19 @@ func (p *Plugin) InstallInstance(newInstance Instance) error {
 	var updated *Instances
 	err := UpdateInstances(p.instanceStore,
 		func(instances *Instances) error {
-			var previousInstance Instance
-			var err error
-			if instances != nil && len(instances.IDs()) > 0 && instances.checkIfExists(newInstance.GetID()) {
-				previousInstance, err = p.instanceStore.LoadInstance(newInstance.GetID())
-				if err != nil {
-					p.API.LogError("Error occurred while fetching the instance", "ID", newInstance.GetID(), "Error", err.Error())
-					return err
-				}
+			if instances == nil {
+				return errors.New("received nil 'instances' in UpdateInstances callback")
 			}
 
-			if !p.enterpriseChecker.HasEnterpriseFeatures() {
-				if instances != nil && len(instances.IDs()) > 0 {
-					// Override the enterprise check if a user is migrating from JWT to OAuth
-					if !(instances.checkIfExists(newInstance.GetID()) && previousInstance.Common().Type == CloudInstanceType && newInstance.Common().Type == CloudOAuthInstanceType) {
-						return errors.Errorf(licenseErrorString)
-					}
-				}
+			if !p.enterpriseChecker.HasEnterpriseFeatures() && len(instances.IDs()) > 0 && !instances.checkIfExists(newInstance.GetID()) {
+				return errors.New(licenseErrorString)
 			}
 
-			if newInstance.Common().Type == CloudOAuthInstanceType && len(instances.IDs()) > 0 && instances.checkIfExists(newInstance.GetID()) {
-				oAuthInstance, ok := newInstance.(*cloudOAuthInstance)
-				if !ok {
-					p.API.LogError("Instance type is `cloud-oauth` but failed to assert instance.(*cloudOAuthInstance).", "ID", newInstance.GetID())
-				} else {
-					// Storing the JWT instance data inside the OAuth instance data. We will use this to use the stored JWT token in case the user has not connected to OAuth yet.
-					p.API.LogDebug("Instance type stored in KV store", "ID", previousInstance.GetID(), "Type", previousInstance.Common().Type)
-					if previousInstance.Common().Type == CloudInstanceType {
-						ci, ok := previousInstance.(*cloudInstance)
-						if !ok {
-							p.API.LogError("Instance type is `cloud` but failed to assert instance.(*cloudInstance).", "ID", newInstance.GetID())
-							return errors.New("failed to assert instance.(*cloudInstance).")
-						}
-						oAuthInstance.JWTInstance = ci
-					}
-
-					if oAuthInstance.JWTInstance != nil {
-						p.API.LogDebug("JWT instance is successfully stored inside cloud OAuth instance data.", "JWTInstance", oAuthInstance.JWTInstance)
-					} else {
-						p.API.LogDebug("No JWT instance inside cloud OAuth instance data.", "JWTInstance", oAuthInstance.JWTInstance)
-					}
-				}
-			}
-
-			err = p.instanceStore.StoreInstance(newInstance)
+			err := p.instanceStore.StoreInstance(newInstance)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to store new instance")
 			}
+
 			instances.Set(newInstance.Common())
 			updated = instances
 			return nil
