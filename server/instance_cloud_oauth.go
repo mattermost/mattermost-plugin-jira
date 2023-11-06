@@ -99,9 +99,7 @@ func (p *Plugin) installCloudOAuthInstance(rawURL string) (string, *cloudOAuthIn
 			} else {
 				p.API.LogDebug("Installing cloud-oauth over existing cloud-oauth instance. There exists no previous JWT instance to carry over.")
 			}
-		}
-
-		if existingInstance.Common().Type == CloudInstanceType {
+		} else if existingInstance.Common().Type == CloudInstanceType {
 			jwtInstance, ok := existingInstance.(*cloudInstance)
 			if !ok {
 				return "", nil, errors.Wrapf(err, "failed to assert existing cloud instance as cloudInstance. ID: %s", jiraURL)
