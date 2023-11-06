@@ -157,8 +157,8 @@ func (store store) StoreConnection(instanceID, mattermostUserID types.ID, connec
 		return err
 	}
 
-	store.plugin.debugf("Stored: connection, keys:\n\t%s (%s): %+v\n\t%s (%s): %s",
-		keyWithInstanceID(instanceID, mattermostUserID), mattermostUserID, connection,
+	store.plugin.debugf("Stored: connection, keys:\n\t%s (%s): %s\n\t%s (%s): %s",
+		keyWithInstanceID(instanceID, mattermostUserID), mattermostUserID, connection.DisplayName,
 		keyWithInstanceID(instanceID, connection.JiraAccountID()), connection.JiraAccountID(), mattermostUserID)
 
 	return nil

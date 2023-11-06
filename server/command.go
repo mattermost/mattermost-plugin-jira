@@ -817,7 +817,7 @@ func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *mode
 		return p.help(header)
 	}
 
-	jiraURL, instance, err := p.installCloudOAuthInstance(args[0], "", "")
+	jiraURL, instance, err := p.installCloudOAuthInstance(args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
