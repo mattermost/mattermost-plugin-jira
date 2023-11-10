@@ -199,7 +199,7 @@ func (p *Plugin) stepChooseEdition() flow.Step {
 		WithPretext("##### :white_check_mark: Step 1: Which Jira edition do you use?").
 		WithTitle("Cloud (OAuth 2.0) or Server (on-premise).").
 		WithText("Choose whether you're using Jira Cloud (OAuth 2.0) or Jira Server (on-premise/Data Center) edition. " +
-			"To integrate with more than one Jira instance, see the [documentation](https://github.com/mattermost/mattermost-plugin-jira/#readme)").
+			"To integrate with more than one Jira instance, see the [documentation](https://mattermost.com/pl/mattermost-plugin-jira)").
 		WithButton(
 			flow.Button{
 				Name:  "Jira Cloud (OAuth 2.0)",
