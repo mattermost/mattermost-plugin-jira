@@ -533,7 +533,7 @@ func (p *Plugin) stepCancel() flow.Step {
 		WithColor(flow.ColorDanger).
 		// WithPretext("##### :no_entry_sign: Canceled").
 		WithText("Jira integration set up has been canceled. Run it again later using the `/jira setup` command, " +
-			"or refer to the [documentation](https://github.com/mattermost/mattermost-plugin-jira/#configuration) " +
+			"or refer to the [documentation](https://mattermost.com/pl/mattermost-plugin-jira) " +
 			"to configure it manually.\n").
 		OnRender(p.trackSetupWizard("setup_wizard_canceled", nil))
 }
