@@ -23,7 +23,7 @@
     },
     "settings_schema": {
         "header": "Please refer to the `/jira` command [**documentation**](https://mattermost.com/pl/mattermost-plugin-jira) to further configure the Jira plugin.",
-        "footer": "Please refer to the `/jira` command [**documentation**](https://github.com/mattermost/mattermost-plugin-jira/#administrator-slash-commands) to further configure the Jira plugin. Specifically, [`/jira instance [un-]install`](https://github.com/mattermost/mattermost-plugin-jira/#uninstall-jira-instances) and [`/jira webhook`](https://github.com/mattermost/mattermost-plugin-jira/#step-3-configure-webhooks-on-the-jira-server).",
+        "footer": "Please refer to the `/jira` command [**documentation**](https://mattermost.com/pl/mattermost-plugin-jira) to further configure the Jira plugin. Specifically, `/jira instance [un-]install` and `/jira webhook`.",
         "settings": [
             {
                 "key": "EnableJiraUI",
