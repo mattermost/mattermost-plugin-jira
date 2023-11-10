@@ -22,8 +22,8 @@
         "bundle_path": "webapp/dist/main.js"
     },
     "settings_schema": {
-        "header": "Please refer to the `/jira` command [**documentation**](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) to further configure the Jira plugin.",
-        "footer": "Please refer to the `/jira` command [**documentation**](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) to further configure the Jira plugin. Specifically, [`/jira instance [un-]install`](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) and [`/jira webhook`](https://mattermost.gitbook.io/plugin-jira/setup/configuration#step-4-required-setup-webhooks-from-jira).",
+        "header": "Please refer to the `/jira` command [**documentation**](https://github.com/mattermost/mattermost-plugin-jira/#administrator-slash-commands) to further configure the Jira plugin.",
+        "footer": "Please refer to the `/jira` command [**documentation**](https://github.com/mattermost/mattermost-plugin-jira/#administrator-slash-commands) to further configure the Jira plugin. Specifically, [`/jira instance [un-]install`](https://github.com/mattermost/mattermost-plugin-jira/#uninstall-jira-instances) and [`/jira webhook`](https://github.com/mattermost/mattermost-plugin-jira/#step-3-configure-webhooks-on-the-jira-server).",
         "settings": [
             {
                 "key": "EnableJiraUI",
