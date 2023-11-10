@@ -1126,7 +1126,7 @@ func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 			"Legacy webhook needs to be set up for each channel. For this channel:\n"+
 			"   - `%s`\n"+
 			"   - right-click on [link](%s) and \"Copy Link Address\" to copy\n"+
-			" Visit the [Legacy Webhooks](https://github.com/mattermost/mattermost-plugin-jira/#legacy-webhooks) page to learn more about this feature.\n"+
+			" Visit the [Legacy Webhooks](https://mattermost.com/pl/mattermost-plugin-jira) page to learn more about this feature.\n"+
 			"",
 		instanceID, instance.GetManageWebhooksURL(), subWebhookURL, subWebhookURL, legacyWebhookURL, legacyWebhookURL)
 }
