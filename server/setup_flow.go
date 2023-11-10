@@ -134,7 +134,7 @@ func (p *Plugin) stepWelcome() flow.Step {
 			"4. Connect your user account.\n" +
 			"\n" +
 			"You can **Cancel** setup at any time, and use `/jira` command to complete the configuration later. " +
-			"See the [documentation](https://github.com/mattermost/mattermost-plugin-jira/#configuration) for details.").
+			"See the [documentation](https://mattermost.com/pl/mattermost-plugin-jira) for details.").
 		OnRender(func(f *flow.Flow) {
 			p.trackSetupWizard("setup_wizard_start", map[string]interface{}{
 				"from_invite": f.GetState().GetString(keyDelegatedFromUserID) != "",
