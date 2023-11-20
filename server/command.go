@@ -1256,7 +1256,7 @@ func (p *Plugin) loadFlagUserInstance(mattermostUserID string, args []string) (*
 }
 
 func (p *Plugin) respondCommandTemplate(commandArgs *model.CommandArgs, path string, values interface{}) *model.CommandResponse {
-	t := p.templates[path]
+	t := p.textTemplates[path]
 	if t == nil {
 		return p.responsef(commandArgs, "no template found for "+path)
 	}

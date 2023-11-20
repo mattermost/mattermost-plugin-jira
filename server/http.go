@@ -5,6 +5,9 @@ package main
 
 import (
 	"encoding/json"
+	htmlTemplate "html/template"
+	textTemplate "text/template"
+
 	"net/http"
 	"net/url"
 	"os"
@@ -13,7 +16,6 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
-	"text/template"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -68,6 +70,8 @@ const (
 	websocketEventConnect        = "connect"
 	websocketEventDisconnect     = "disconnect"
 	websocketEventUpdateDefaults = "update_defaults"
+
+	ContentTypeHTML = "text/html"
 )
 
 func makeAutocompleteRoute(path string) string {
@@ -149,9 +153,10 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	p.router.ServeHTTP(w, r)
 }
 
-func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error) {
+func (p *Plugin) loadTemplates(dir string) (map[string]*htmlTemplate.Template, map[string]*textTemplate.Template, error) {
 	dir = filepath.Clean(dir)
-	templates := make(map[string]*template.Template)
+	htmlTemplates := make(map[string]*htmlTemplate.Template)
+	textTemplates := make(map[string]*textTemplate.Template)
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -159,20 +164,35 @@ func (p *Plugin) loadTemplates(dir string) (map[string]*template.Template, error
 		if info.IsDir() {
 			return nil
 		}
-		template, err := template.ParseFiles(path)
-		if err != nil {
-			p.errorf("OnActivate: failed to parse template %s: %v", path, err)
-			return nil
+
+		var key string
+		if strings.HasSuffix(info.Name(), ".html") { // Check if the content type of template is HTML
+			template, err := htmlTemplate.ParseFiles(path)
+			if err != nil {
+				p.errorf("OnActivate: failed to parse template %s: %v", path, err)
+				return nil
+			}
+
+			key = path[len(dir):]
+			htmlTemplates[key] = template
+		} else {
+			template, err := textTemplate.ParseFiles(path)
+			if err != nil {
+				p.errorf("OnActivate: failed to parse the template %s: %v", path, err)
+				return nil
+			}
+
+			key = path[len(dir):]
+			textTemplates[key] = template
 		}
-		key := path[len(dir):]
-		templates[key] = template
+
 		p.debugf("loaded template %s", key)
 		return nil
 	})
 	if err != nil {
-		return nil, errors.WithMessage(err, "OnActivate: failed to load templates")
+		return nil, nil, errors.WithMessage(err, "OnActivate: failed to load templates")
 	}
-	return templates, nil
+	return htmlTemplates, textTemplates, nil
 }
 
 func respondErr(w http.ResponseWriter, code int, err error) (int, error) {
@@ -195,32 +215,42 @@ func respondJSON(w http.ResponseWriter, obj interface{}) (int, error) {
 
 func (p *Plugin) respondTemplate(w http.ResponseWriter, r *http.Request, contentType string, values interface{}) (int, error) {
 	_, path := splitInstancePath(r.URL.Path)
-	w.Header().Set("Content-Type", contentType)
-	t := p.templates[path]
-	if t == nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.New("no template found for "+path))
-	}
-	err := t.Execute(w, values)
-	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-	}
-	return http.StatusOK, nil
+	return p.executeTemplate(w, path, contentType, values)
 }
 
 func (p *Plugin) respondSpecialTemplate(w http.ResponseWriter, key string, status int, contentType string, values interface{}) (int, error) {
+	return p.executeTemplate(w, key, contentType, values)
+}
+
+func (p *Plugin) executeTemplate(w http.ResponseWriter, key string, contentType string, values interface{}) (int, error) {
 	w.Header().Set("Content-Type", contentType)
-	t := p.templates[key]
+	if contentType == ContentTypeHTML {
+		t := p.htmlTemplates[key]
+		if t == nil {
+			return respondErr(w, http.StatusInternalServerError,
+				errors.New("no template found for "+key))
+		}
+
+		if err := t.Execute(w, values); err != nil {
+			return http.StatusInternalServerError,
+				errors.WithMessage(err, "failed to write response")
+		}
+
+		return http.StatusOK, nil
+	}
+
+	t := p.textTemplates[key]
 	if t == nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.New("no template found for "+key))
 	}
-	err := t.Execute(w, values)
-	if err != nil {
+
+	if err := t.Execute(w, values); err != nil {
 		return http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to write response")
 	}
-	return status, nil
+
+	return http.StatusOK, nil
 }
 
 func instancePath(route string, instanceID types.ID) string {
