@@ -99,7 +99,7 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"* `/jira v2revert ` - Revert to V2 jira plugin data model\n" +
 	""
 
-func (p *Plugin) registerJiraCommand(enableAutocomplete, enableOptInstance bool) error {
+func (p *Plugin) RegisterJiraCommand(enableAutocomplete, enableOptInstance bool) error {
 	// Optimistically unregister what was registered before
 	_ = p.client.SlashCommand.Unregister("", commandTrigger)
 

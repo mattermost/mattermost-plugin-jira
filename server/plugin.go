@@ -193,7 +193,7 @@ func (p *Plugin) OnConfigurationChange() error {
 		if err != nil {
 			return err
 		}
-		err = p.registerJiraCommand(ec.EnableAutocomplete, instances.Len() > 1)
+		err = p.RegisterJiraCommand(ec.EnableAutocomplete, instances.Len() > 1)
 		if err != nil {
 			return err
 		}
@@ -283,7 +283,7 @@ func (p *Plugin) OnActivate() error {
 
 	// Register /jira command and stash the loaded list of known instances for
 	// later (autolink registration).
-	err = p.registerJiraCommand(p.getConfig().EnableAutocomplete, instances.Len() > 1)
+	err = p.RegisterJiraCommand(p.getConfig().EnableAutocomplete, instances.Len() > 1)
 	if err != nil {
 		return errors.Wrap(err, "OnActivate")
 	}

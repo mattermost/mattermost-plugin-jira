@@ -167,12 +167,12 @@ func (p *Plugin) InstallInstance(newInstance Instance) error {
 	}
 
 	// Re-register the /jira command with the new number of instances.
-	err = p.registerJiraCommand(p.getConfig().EnableAutocomplete, updated.Len() > 1)
+	err = p.RegisterJiraCommand(p.getConfig().EnableAutocomplete, updated.Len() > 1)
 	if err != nil {
 		p.errorf("InstallInstance: failed to re-register `/%s` command; please re-activate the plugin using the System Console. Error: %s",
 			commandTrigger, err.Error())
 	}
-	p.wsInstancesChanged(updated)
+	p.WSInstancesChanged(updated)
 	return nil
 }
 
@@ -217,18 +217,18 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 	}
 
 	// Re-register the /jira command with the new number of instances.
-	err = p.registerJiraCommand(p.getConfig().EnableAutocomplete, updated.Len() > 1)
+	err = p.RegisterJiraCommand(p.getConfig().EnableAutocomplete, updated.Len() > 1)
 	if err != nil {
 		p.errorf("UninstallInstance: failed to re-register `/%s` command; please re-activate the plugin using the System Console. Error: %s",
 			commandTrigger, err.Error())
 	}
 
 	// Notify users we have uninstalled an instance
-	p.wsInstancesChanged(updated)
+	p.WSInstancesChanged(updated)
 	return instance, nil
 }
 
-func (p *Plugin) wsInstancesChanged(instances *Instances) {
+func (p *Plugin) WSInstancesChanged(instances *Instances) {
 	msg := map[string]interface{}{
 		"instances": instances.AsConfigMap(),
 	}

@@ -3,6 +3,7 @@ module github.com/mattermost/mattermost-plugin-jira
 go 1.18
 
 require (
+	bou.ke/monkey v1.0.2
 	github.com/andygrunwald/go-jira v1.10.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/dghubble/oauth1 v0.5.0
