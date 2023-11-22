@@ -9,13 +9,15 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 func TestCloudOAuthMigration(t *testing.T) {
@@ -186,7 +188,7 @@ func TestCloudOAuthMigration(t *testing.T) {
 					accessibleResources := JiraAccessibleResources{{
 						ID: "someid",
 					}}
-					json.NewEncoder(w).Encode(accessibleResources)
+					_ = json.NewEncoder(w).Encode(accessibleResources)
 				}))
 
 				defer fakeJiraResourcesServer.Close()
@@ -240,7 +242,7 @@ func TestCloudOAuthMigration(t *testing.T) {
 					accessibleResources := JiraAccessibleResources{{
 						ID: "someid",
 					}}
-					json.NewEncoder(w).Encode(accessibleResources)
+					_ = json.NewEncoder(w).Encode(accessibleResources)
 				}))
 
 				defer fakeJiraResourcesServer.Close()
@@ -315,7 +317,7 @@ func TestCloudOAuthMigration(t *testing.T) {
 					accessibleResources := JiraAccessibleResources{{
 						ID: "someid",
 					}}
-					json.NewEncoder(w).Encode(accessibleResources)
+					_ = json.NewEncoder(w).Encode(accessibleResources)
 				}))
 
 				defer fakeJiraResourcesServer.Close()
@@ -343,7 +345,7 @@ func TestCloudOAuthMigration(t *testing.T) {
 					jiraStatus := utils.JiraStatus{
 						State: "RUNNING",
 					}
-					json.NewEncoder(w).Encode(jiraStatus)
+					_ = json.NewEncoder(w).Encode(jiraStatus)
 				}))
 
 				defer fakeJiraServer.Close()
@@ -379,7 +381,7 @@ func TestCloudOAuthMigration(t *testing.T) {
 					jiraStatus := utils.JiraStatus{
 						State: "RUNNING",
 					}
-					json.NewEncoder(w).Encode(jiraStatus)
+					_ = json.NewEncoder(w).Encode(jiraStatus)
 				}))
 
 				defer fakeJiraServer.Close()
@@ -434,7 +436,7 @@ func TestCloudOAuthMigration(t *testing.T) {
 			err = os.Mkdir(tempDir+"/assets", 0777)
 			require.NoError(t, err)
 
-			err = os.WriteFile(tempDir+"/assets/icon.svg", []byte("<svg/>"), 0666)
+			err = os.WriteFile(tempDir+"/assets/icon.svg", []byte("<svg/>"), 0600)
 			require.NoError(t, err)
 
 			api.On("GetBundlePath").Return(tempDir, nil)
@@ -451,7 +453,8 @@ func TestCloudOAuthMigration(t *testing.T) {
 
 				connectedInstances := NewInstances(newInstanceCommon(p, tc.connectedInstanceType, types.ID(installedInstanceID)))
 				storeUser := User{ConnectedInstances: connectedInstances, MattermostUserID: types.ID(mmUserID)}
-				p.userStore.StoreUser(&storeUser)
+				err = p.userStore.StoreUser(&storeUser)
+				require.NoError(t, err)
 			}
 
 			tc.runAssertions(p, api, installedInstanceID)
