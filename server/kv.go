@@ -506,6 +506,9 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 			}
 		}
 		ci.Plugin = store.plugin
+		if ci.JWTInstance != nil {
+			ci.JWTInstance.Common().Plugin = ci.Plugin
+		}
 		return &ci, nil
 
 	case ServerInstanceType:
