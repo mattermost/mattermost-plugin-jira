@@ -155,6 +155,51 @@ func TestCloudOAuthMigration(t *testing.T) {
 				require.NotNil(t, conn)
 			},
 		},
+		"migrated JWT to oauth, and install oauth again. user is connected to JWT but not oauth. should return client for JWT": {
+			connection: &Connection{
+				User:               jira.User{},
+				PluginVersion:      "4.0.1",
+				Oauth1AccessToken:  "",
+				Oauth1AccessSecret: "",
+				OAuth2Token:        nil,
+				Settings:           &ConnectionSettings{},
+				DefaultProjectKey:  "",
+				MattermostUserID:   types.ID(mmUserID),
+			},
+			connectedInstanceType: CloudInstanceType,
+			setup: func(p *Plugin, api *plugintest.API) (instanceID string) {
+				api.On("LogDebug", "Stored: new Jira Cloud instance: https://mmtest.atlassian.net as jira_instance_b5f8e96862ed24709919a73271ae8851").Return(nil)
+				api.On("LogDebug", "Stored: user someuserid key:user_daa0ef689b843fada63e9f383fce33e1: connected to:[\"https://mmtest.atlassian.net\"]").Return(nil)
+				api.On("LogDebug", "Stored: connection, keys:\n\t6d03c97fdd1dee73b64caeca04e3e0d6 (someuserid): \n\t0f1a5629834c263cd6a3d59ce216c1f5 (): someuserid").Return(nil)
+
+				_, err := p.installInactiveCloudInstance(jiraCloudURL, mmUserID)
+				require.NoError(t, err)
+
+				api.On("LogDebug", "Installing cloud-oauth over existing cloud JWT instance. Carrying over existing saved JWT instance.").Return(nil)
+
+				jiraURL, oauthInstance, err := p.installCloudOAuthInstance(jiraCloudURL)
+				require.NoError(t, err)
+				require.NotEmpty(t, jiraURL)
+				require.NotNil(t, oauthInstance)
+
+				api.On("LogDebug", "Installing cloud-oauth over existing cloud-oauth instance. Carrying over existing saved JWT instance.").Return(nil)
+
+				jiraURL, oauthInstance, err = p.installCloudOAuthInstance(jiraCloudURL)
+				require.NoError(t, err)
+				require.NotEmpty(t, jiraURL)
+				require.NotNil(t, oauthInstance)
+
+				return jiraCloudURL
+			},
+			runAssertions: func(p *Plugin, api *plugintest.API, instanceID string) {
+				api.On("LogDebug", "Returning a JWT token client since the stored JWT instance is not nil and the user's oauth token is nil").Return(nil)
+				c, i, conn, err := p.getClient(types.ID(jiraCloudURL), types.ID(mmUserID))
+				require.NoError(t, err)
+				require.NotNil(t, c)
+				require.NotNil(t, i)
+				require.NotNil(t, conn)
+			},
+		},
 		"migrated JWT to oauth. user is connected to JWT and oauth. should return client for oauth": {
 			connection: &Connection{
 				User:               jira.User{},
@@ -306,6 +351,62 @@ func TestCloudOAuthMigration(t *testing.T) {
 
 				api.On("LogDebug", "Installing new cloud-oauth instance. There exists no previous JWT instance to carry over.").Return(nil)
 				jiraURL, oauthInstance, err := p.installCloudOAuthInstance(jiraCloudURL)
+				require.NoError(t, err)
+				require.NotEmpty(t, jiraURL)
+				require.NotNil(t, oauthInstance)
+
+				return jiraCloudURL
+			},
+			runAssertions: func(p *Plugin, api *plugintest.API, instanceID string) {
+				fakeJiraResourcesServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					accessibleResources := JiraAccessibleResources{{
+						ID: "someid",
+					}}
+					_ = json.NewEncoder(w).Encode(accessibleResources)
+				}))
+
+				defer fakeJiraResourcesServer.Close()
+
+				oldResourcesURL := jiraOAuthAccessibleResourcesURL
+				defer func() {
+					jiraOAuthAccessibleResourcesURL = oldResourcesURL
+				}()
+
+				jiraOAuthAccessibleResourcesURL = fakeJiraResourcesServer.URL
+
+				// Times(0) means this will not get logged
+				api.On("LogDebug", "Returning a JWT token client since the stored JWT instance is not nil and the user's oauth token is nil").Times(0).Return(nil)
+				c, i, conn, err := p.getClient(types.ID(jiraCloudURL), types.ID(mmUserID))
+				require.NoError(t, err)
+				require.NotNil(t, c)
+				require.NotNil(t, i)
+				require.NotNil(t, conn)
+			},
+		},
+		"oauth installed without JWT instance, and install oauth again. user is connected to oauth. should return client for oauth": {
+			connection: &Connection{
+				User:               jira.User{},
+				PluginVersion:      "4.0.1",
+				Oauth1AccessToken:  "",
+				Oauth1AccessSecret: "",
+				OAuth2Token:        &oauth2.Token{RefreshToken: "somerefreshtoken", AccessToken: "someaccesstoken"},
+				Settings:           &ConnectionSettings{},
+				DefaultProjectKey:  "",
+				MattermostUserID:   types.ID(mmUserID),
+			},
+			connectedInstanceType: CloudOAuthInstanceType,
+			setup: func(p *Plugin, api *plugintest.API) (instanceID string) {
+				api.On("LogDebug", "Stored: user someuserid key:user_daa0ef689b843fada63e9f383fce33e1: connected to:[\"https://mmtest.atlassian.net\"]").Return(nil)
+				api.On("LogDebug", "Stored: connection, keys:\n\t6d03c97fdd1dee73b64caeca04e3e0d6 (someuserid): \n\t0f1a5629834c263cd6a3d59ce216c1f5 (): someuserid").Return(nil)
+
+				api.On("LogDebug", "Installing new cloud-oauth instance. There exists no previous JWT instance to carry over.").Return(nil)
+				jiraURL, oauthInstance, err := p.installCloudOAuthInstance(jiraCloudURL)
+				require.NoError(t, err)
+				require.NotEmpty(t, jiraURL)
+				require.NotNil(t, oauthInstance)
+
+				api.On("LogDebug", "Installing cloud-oauth over existing cloud-oauth instance. There exists no previous JWT instance to carry over.").Return(nil)
+				jiraURL, oauthInstance, err = p.installCloudOAuthInstance(jiraCloudURL)
 				require.NoError(t, err)
 				require.NotEmpty(t, jiraURL)
 				require.NotNil(t, oauthInstance)
