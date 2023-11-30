@@ -516,7 +516,6 @@ func TestCloudOAuthMigration(t *testing.T) {
 
 			api := &plugintest.API{}
 			p.SetAPI(api)
-			p.client = pluginapi.NewClient(p.API, p.Driver)
 
 			testStore := makeTestKVStore(api, testKVStore{})
 			require.NotNil(t, testStore)
