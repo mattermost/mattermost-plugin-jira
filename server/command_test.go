@@ -374,9 +374,10 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			p.SetAPI(api)
 			p.client = pluginapi.NewClient(p.API, p.Driver)
 			_, filename, _, _ := runtime.Caller(0)
-			templates, err := p.loadTemplates(filepath.Dir(filename) + "/../assets/templates")
+			htmlTemplates, textTemplates, err := p.loadTemplates(filepath.Dir(filename) + "/../assets/templates")
 			require.NoError(t, err)
-			p.templates = templates
+			p.htmlTemplates = htmlTemplates
+			p.textTemplates = textTemplates
 
 			store := NewStore(&p)
 			p.instanceStore = p.getMockInstanceStoreKV(tt.numInstances)

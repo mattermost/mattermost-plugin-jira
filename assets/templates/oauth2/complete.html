@@ -18,8 +18,7 @@
 				-moz-transition: all 0.15s ease;
 				-o-transition: all 0.15s ease;
 				transition: all 0.15s ease false;
-				padding-right: 1em;
-				padding-left: 1em;
+				padding-right: 0 1em;
 				font-size: inherit;
 				border: none;
 				height: 2.4em;
@@ -38,13 +37,14 @@
 			}
 
 			.btn-link {
-				color: #505f79;
-				background: #f4f5f7;
+				color: rgb(80, 95, 121);
+				background: rgb(244, 245, 247);
+				padding: 10px;
 			}
 
 			.btn-link:hover,
 			.btn-link:active {
-				background: #ebecf0;
+				background: rgb(235, 236, 240);
 			}
 
 			.accounts-container {
@@ -55,26 +55,6 @@
 				margin-right: 4px;
 			}
 		</style>
-		<script>
-			const handleDisconnect = () => {
-				// Splitting the cookies string on the basis of cookie name and then popping out the first value.
-				const token = ('; ' + document.cookie).split('; MMCSRF=').pop().split(';')[0];
-
-				fetch("{{ .RevokeURL }}", {
-					method: "POST",
-					headers: {'X-CSRF-Token': token},
-				}).then(res => {
-					const element = document.body;
-					if(!res.ok) {
-						element.style.margin = "10px";
-      				} else {
-						window.close();
-					}
-
-					return res.text().then(text => element.innerHTML = text);
-				})
-			}
-		</script>
 		<link rel="stylesheet" href="https://unpkg.com/@atlaskit/css-reset@2.0.0/dist/bundle.css" media="all">
 	</head>
 	<body>
@@ -88,9 +68,10 @@
 			<div class="accounts-container">
 				<div>Mattermost account: {{ .MattermostDisplayName }}</div>
 				<div>Jira account: {{ .JiraDisplayName }}</div>
+				<div>It is now safe to close this browser window.</div>
 			</div>
-			<button onclick="handleDisconnect()" class="btn btn-link">Disconnect</button>
+			<a href="javascript:window.close();" class="btn btn-link">Close</a>
+			<a href="{{ .RevokeURL }}" class="btn btn-link">Disconnect</a>
 		</div>
 	</body>
 </html>
-

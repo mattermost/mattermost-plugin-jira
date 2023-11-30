@@ -22,6 +22,7 @@ var _ Instance = (*testInstance)(nil)
 const (
 	mockInstance1URL = "jiraurl1"
 	mockInstance2URL = "jiraurl2"
+	mockInstance3URL = "jiraurl3"
 )
 
 var testInstance1 = &testInstance{
@@ -41,6 +42,9 @@ var testInstance2 = &testInstance{
 
 func (ti testInstance) GetURL() string {
 	return ti.InstanceID.String()
+}
+func (ti testInstance) GetJiraBaseURL() string {
+	return ti.GetURL()
 }
 func (ti testInstance) GetManageAppsURL() string {
 	return fmt.Sprintf("%s/apps/manage", ti.InstanceID)

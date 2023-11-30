@@ -9,13 +9,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	htmlTemplate "html/template"
 	"math"
 	"net/url"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
-	"text/template"
+	textTemplate "text/template"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -116,7 +117,8 @@ type Plugin struct {
 	otsStore      OTSStore
 	secretsStore  SecretsStore
 
-	setupFlow *flow.Flow
+	setupFlow  *flow.Flow
+	oauth2Flow *flow.Flow
 
 	router *mux.Router
 
@@ -124,7 +126,8 @@ type Plugin struct {
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
 
 	// templates are loaded on startup
-	templates map[string]*template.Template
+	htmlTemplates map[string]*htmlTemplate.Template
+	textTemplates map[string]*textTemplate.Template
 
 	// channel to distribute work to the webhook processors
 	webhookQueue chan *webhookMessage
@@ -246,6 +249,8 @@ func (p *Plugin) OnActivate() error {
 	ptr := p.client.Configuration.GetConfig().ServiceSettings.SiteURL
 	if ptr != nil {
 		mattermostSiteURL = *ptr
+	} else {
+		return errors.New("please configure the Mattermost server's SiteURL, then restart the plugin.")
 	}
 
 	err = p.setDefaultConfiguration()
@@ -269,13 +274,15 @@ func (p *Plugin) OnActivate() error {
 		return errors.WithMessage(err, "OnActivate: failed to migrate from previous version of the Jira plugin")
 	}
 
-	templates, err := p.loadTemplates(filepath.Join(bundlePath, "assets", "templates"))
+	htmlTemplates, textTemplates, err := p.loadTemplates(filepath.Join(bundlePath, "assets", "templates"))
 	if err != nil {
 		return err
 	}
-	p.templates = templates
+	p.htmlTemplates = htmlTemplates
+	p.textTemplates = textTemplates
 
 	p.setupFlow = p.NewSetupFlow()
+	p.oauth2Flow = p.NewOAuth2Flow()
 
 	// Register /jira command and stash the loaded list of known instances for
 	// later (autolink registration).
