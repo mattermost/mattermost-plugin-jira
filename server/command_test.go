@@ -458,3 +458,85 @@ func TestPlugin_ExecuteCommand_Uninstall(t *testing.T) {
 		})
 	}
 }
+
+func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
+	p := &Plugin{}
+	tc := TestConfiguration{}
+	p.updateConfig(func(conf *config) {
+		conf.Secret = tc.Secret
+		conf.mattermostSiteURL = mattermostSiteURL
+	})
+
+	tests := map[string]struct {
+		commandArgs       *model.CommandArgs
+		expectedMsgPrefix string
+		SetupAPI          func(api *plugintest.API)
+	}{
+		"assign with no issue": {
+			commandArgs: &model.CommandArgs{
+				Command: "/jira assign",
+				UserId:  mockUserIDWithNotifications,
+			},
+			expectedMsgPrefix: "Please specify an issue key and an assignee search string, in the form `/jira assign <issue-key> <assignee>`",
+			SetupAPI:          func(api *plugintest.API) {},
+		},
+		"assign to valid issue but no user": {
+			commandArgs: &model.CommandArgs{
+				Command: "/jira assign INVALID",
+				UserId:  mockUserIDWithNotifications,
+			},
+			expectedMsgPrefix: "Please specify an issue key and an assignee search string, in the form `/jira assign <issue-key> <assignee>`",
+			SetupAPI:          func(api *plugintest.API) {},
+		},
+		"assign the valid issue to a non-existing user": {
+			commandArgs: &model.CommandArgs{
+				Command: "/jira assign VALID @unknownUser",
+				UserId:  mockUserIDWithNotifications,
+			},
+			expectedMsgPrefix: "the mentioned user was not found",
+			SetupAPI:          func(api *plugintest.API) {},
+		},
+		"assign the valid issue to a non-connected user": {
+			commandArgs: &model.CommandArgs{
+				Command: "/jira assign VALID @non_connected_user",
+				UserId:  mockUserIDWithNotifications,
+				UserMentions: model.UserMentionMap{
+					"non_connected_user": "non_connected_user",
+				},
+			},
+			expectedMsgPrefix: "the mentioned user is not connected to Jira",
+			SetupAPI: func(api *plugintest.API) {
+				api.On("LogWarn", mockAnythingOfTypeBatch("string", 5)...).Return(nil)
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+			defer api.AssertExpectations(t)
+
+			tt.SetupAPI(api)
+			isSendEphemeralPostCalled := false
+			api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
+				isSendEphemeralPostCalled = true
+
+				post := args.Get(1).(*model.Post)
+				actual := strings.TrimSpace(post.Message)
+				assert.True(
+					t,
+					strings.HasPrefix(actual, tt.expectedMsgPrefix),
+					"Expected returned message to start with: \n %s\nActual:\n%s", tt.expectedMsgPrefix, actual)
+			}).Once().Return(&model.Post{})
+
+			p.SetAPI(api)
+			p.instanceStore = p.getMockInstanceStoreKV(1)
+			p.userStore = getMockUserStoreKV()
+
+			cmdResponse, appError := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
+			require.Nil(t, appError)
+			require.NotNil(t, cmdResponse)
+			assert.True(t, isSendEphemeralPostCalled)
+		})
+	}
+}
