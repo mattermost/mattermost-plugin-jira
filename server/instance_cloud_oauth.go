@@ -49,6 +49,7 @@ type PKCEParams struct {
 }
 
 var _ Instance = (*cloudOAuthInstance)(nil)
+var jiraOAuthAccessibleResourcesURL = "https://api.atlassian.com/oauth/token/accessible-resources"
 
 const (
 	JiraScopes          = "read:jira-user,read:jira-work,write:jira-work"
@@ -132,9 +133,13 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 	ctx := context.Background()
 
 	// Checking if this user's connection is for a JWT instance
-	if ci.JWTInstance != nil && connection.OAuth2Token == nil {
-		ci.Plugin.API.LogDebug("Returning a JWT token client since the stored JWT instance is not nil and the user's oauth token is nil")
-		return ci.JWTInstance.getClientForConnection(connection)
+	if connection.OAuth2Token == nil {
+		if ci.JWTInstance != nil {
+			ci.Plugin.API.LogDebug("Returning a JWT token client since the stored JWT instance is not nil and the user's oauth token is nil")
+			return ci.JWTInstance.getClientForConnection(connection)
+		}
+
+		return nil, nil, errors.New("failed to create client for OAuth instance: no JWT instance found, and connection's OAuth token is missing")
 	}
 
 	tokenSource := oauth2Conf.TokenSource(ctx, connection.OAuth2Token)
@@ -227,7 +232,7 @@ func (ci *cloudOAuthInstance) GetMattermostKey() string {
 func (ci *cloudOAuthInstance) getJiraCloudResourceID(client http.Client) (string, error) {
 	request, err := http.NewRequest(
 		http.MethodGet,
-		"https://api.atlassian.com/oauth/token/accessible-resources",
+		jiraOAuthAccessibleResourcesURL,
 		nil,
 	)
 	if err != nil {

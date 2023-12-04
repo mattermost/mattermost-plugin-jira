@@ -500,6 +500,13 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 		if err := json.Unmarshal(data, &ci); err != nil {
 			return nil, errors.WithMessage(err, fmt.Sprintf("failed to unmarshal stored instance %s", fullkey))
 		}
+		if ci.JWTInstance != nil {
+			if err := json.Unmarshal([]byte(ci.JWTInstance.RawAtlassianSecurityContext), &ci.JWTInstance.AtlassianSecurityContext); err != nil {
+				return nil, errors.WithMessage(err, fmt.Sprintf("failed to unmarshal stored instance %s", fullkey))
+			}
+
+			ci.JWTInstance.Common().Plugin = store.plugin
+		}
 		ci.Plugin = store.plugin
 		return &ci, nil
 
