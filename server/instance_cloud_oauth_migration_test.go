@@ -55,8 +55,9 @@ func TestCloudOAuthMigration(t *testing.T) {
 				_, _, err := p.LoadUserInstance(types.ID(mmUserID), jiraCloudURL)
 				require.Error(t, err)
 
+				// this should return an error but doesn't, since we don't return an error if the user's "Connection" doesn't exist in the kv store
 				_, _, _, err = p.getClient(types.ID(jiraCloudURL), types.ID(mmUserID))
-				require.NoError(t, err) // this should return an error but doesn't, since we don't return an error if it doesn't exist in the kv store. doesn't seem to cause any issues with the plugin so maybe its okay. LoadUserInstance takes precedence when the plugin looks up the user's connection
+				require.NoError(t, err)
 			},
 		},
 		"JWT instance installed. user is connected. should return valid JWT client": {
@@ -113,8 +114,10 @@ func TestCloudOAuthMigration(t *testing.T) {
 				require.Error(t, err)
 
 				api.On("LogDebug", "Returning a JWT token client since the stored JWT instance is not nil and the user's oauth token is nil").Return(nil)
+
+				// this should return an error but doesn't, since we don't return an error if the user's "Connection" doesn't exist in the kv store
 				_, _, _, err = p.getClient(types.ID(jiraCloudURL), types.ID(mmUserID))
-				require.NoError(t, err) // this should return an error but doesn't, since we don't return an error if it doesn't exist in the kv store. doesn't seem to cause any issues with the plugin so maybe its okay. LoadUserInstance takes precedence when the plugin looks up the user's connection
+				require.NoError(t, err)
 			},
 		},
 		"migrated JWT to oauth. user is connected to JWT but not oauth. should return client for JWT": {
