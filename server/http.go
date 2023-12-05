@@ -59,6 +59,7 @@ const (
 	routeUserStart                              = "/user/start"
 	routeUserConnect                            = "/user/connect"
 	routeUserDisconnect                         = "/user/disconnect"
+	routeGetIssueByKey                          = "/get-issue-by-key"
 	routeSharePublicly                          = "/share-issue-publicly"
 	routeOAuth2Complete                         = "/oauth2/complete.html"
 )
@@ -98,6 +99,7 @@ func (p *Plugin) initializeRouter() {
 
 	apiRouter := p.router.PathPrefix(routeAPI).Subrouter()
 
+	// Issue APIs
 	apiRouter.HandleFunc(routeAPIGetAutoCompleteFields, p.checkAuth(p.handleResponse(p.httpGetAutoCompleteFields))).Methods(http.MethodGet)
 	apiRouter.HandleFunc(routeAPICreateIssue, p.checkAuth(p.handleResponse(p.httpCreateIssue))).Methods(http.MethodPost)
 	apiRouter.HandleFunc(routeAPIGetCreateIssueMetadata, p.checkAuth(p.handleResponse(p.httpGetCreateIssueMetadataForProjects))).Methods(http.MethodGet)
@@ -107,6 +109,7 @@ func (p *Plugin) initializeRouter() {
 	apiRouter.HandleFunc(routeAPIAttachCommentToIssue, p.checkAuth(p.handleResponse(p.httpAttachCommentToIssue))).Methods(http.MethodPost)
 	apiRouter.HandleFunc(routeIssueTransition, p.handleResponse(p.httpTransitionIssuePostAction)).Methods(http.MethodPost)
 	apiRouter.HandleFunc(routeSharePublicly, p.handleResponse(p.httpShareIssuePublicly)).Methods(http.MethodPost)
+	apiRouter.HandleFunc(routeGetIssueByKey, p.handleResponse(p.httpGetIssueByKey)).Methods(http.MethodGet)
 
 	// User APIs
 	apiRouter.HandleFunc(routeAPIUserInfo, p.checkAuth(p.handleResponse(p.httpGetUserInfo))).Methods(http.MethodGet)

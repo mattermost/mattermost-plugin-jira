@@ -17,6 +17,7 @@ import {
     JiraFieldCustomTypeEnums,
     JiraFieldTypeEnums,
 } from 'types/model';
+import {IssueAction, TicketData, TicketDetails} from 'types/tooltip';
 
 type FieldWithInfo = JiraField & {
     changeLogID: string;
@@ -373,4 +374,25 @@ export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMet
     }
 
     return [projectJQL, issueTypesJQL, filterFieldsJQL].filter(Boolean).join(' AND ');
+}
+
+export function jiraIssueToReducer(data: TicketData): TicketDetails | null {
+    if (!data) {
+        return null;
+    }
+
+    const assignee = data && data.fields && data.fields.assignee ? data.fields.assignee : null;
+    const ticketDetails: TicketDetails = {
+        assigneeName: (assignee && assignee.displayName) || '',
+        assigneeAvatar: (assignee && assignee.avatarUrls && assignee.avatarUrls['48x48']) || '',
+        labels: data.fields.labels,
+        description: data.fields.description,
+        summary: data.fields.summary,
+        ticketId: data.key,
+        jiraIcon: data.fields.project.avatarUrls && data.fields.project.avatarUrls['48x48'],
+        versions: data.fields.versions.length ? data.fields.versions[0] : '',
+        statusKey: data.fields.status.name,
+        issueIcon: data.fields.issuetype.iconUrl,
+    };
+    return ticketDetails;
 }

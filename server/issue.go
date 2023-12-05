@@ -1033,3 +1033,41 @@ func (p *Plugin) getClient(instanceID, mattermostUserID types.ID) (Client, Insta
 	}
 	return client, instance, connection, nil
 }
+
+func (p *Plugin) httpGetIssueByKey(w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return respondErr(w, http.StatusMethodNotAllowed, fmt.Errorf("request: %s is not allowed, must be GET", r.Method))
+	}
+
+	mattermostUserID := r.Header.Get(HeaderMattermostUserID)
+	if mattermostUserID == "" {
+		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
+	}
+
+	instanceID := r.FormValue(ParamInstanceID)
+	issueKey := r.FormValue(ParamIssueKey)
+	issue, err := p.GetIssueByKey(types.ID(instanceID), types.ID(mattermostUserID), issueKey)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	return respondJSON(w, issue)
+}
+
+func (p *Plugin) GetIssueByKey(instanceID, mattermostUserID types.ID, issueKey string) (*jira.Issue, error) {
+	client, _, _, err := p.getClient(instanceID, mattermostUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	issue, err := client.GetIssue(issueKey, nil)
+	if err != nil {
+		switch StatusCode(err) {
+		case http.StatusNotFound:
+			return nil, errors.New("we couldn't find the issue key, or you do not have the appropriate permissions to view the issue. Please try again or contact your Jira administrator")
+		default:
+			return nil, errors.WithMessage(err, "request to Jira failed")
+		}
+	}
+	return issue, nil
+}
