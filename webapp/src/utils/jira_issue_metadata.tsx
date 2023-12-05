@@ -25,6 +25,8 @@ type FieldWithInfo = JiraField & {
     issueTypeMeta: IssueTypeIdentifier;
 }
 
+const commentVisibilityFieldKey = 'commentVisibility';
+
 // This is a replacement for the Array.flat() function which will be polyfilled by Babel
 // in our 5.16 release. Remove this and replace with .flat() then.
 const flatten = (arr: any[]) => {
@@ -212,7 +214,19 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
         } as FilterField;
     });
 
-    const result = populatedFields.concat(userDefinedFields);
+    const commentVisibility = selectFields.map((field) => {
+        return {
+            key: commentVisibilityFieldKey,
+            name: 'Comment Visibility',
+            schema: {
+                type: 'commentVisibility',
+            },
+            values: [],
+            issueTypes: field.validIssueTypes,
+        } as FilterField;
+    });
+
+    const result = populatedFields.concat(userDefinedFields, commentVisibility);
     const epicLinkField = fields.find(isEpicLinkField);
     if (epicLinkField) {
         result.unshift({
@@ -264,6 +278,10 @@ export function isEpicLinkField(field: JiraField | FilterField): boolean {
 
 export function isLabelField(field: JiraField | FilterField): boolean {
     return field.schema.system === 'labels' || field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:labels';
+}
+
+export function isCommentVisibilityField(field: JiraField | FilterField): boolean {
+    return field.key === commentVisibilityFieldKey;
 }
 
 export function isEpicIssueType(issueType: IssueType): boolean {

@@ -32,6 +32,7 @@ const (
 	FilterEmpty      = "empty"
 
 	MaxSubscriptionNameLength = 100
+	CommentVisibility         = "commentVisibility"
 )
 
 type FieldFilter struct {
@@ -124,7 +125,7 @@ func (p *Plugin) getUserID() string {
 	return p.getConfig().botUserID
 }
 
-func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilters) bool {
+func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilters, visibilityAttribute string) bool {
 	webhookEvents := wh.Events()
 	foundEvent := false
 	eventTypes := filters.Events
@@ -170,6 +171,12 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		}
 
 		value := getIssueFieldValue(issue, field.Key)
+		if visibilityAttribute != "" {
+			value[visibilityAttribute] = true
+		} else if field.Key == CommentVisibility {
+			value[visibleToAllUsers] = true
+		}
+
 		if !isValidFieldInclusion(field, value, inclusion) {
 			return false
 		}
@@ -199,7 +206,7 @@ func isValidFieldInclusion(field FieldFilter, value StringSet, inclusion string)
 	return true
 }
 
-func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) ([]ChannelSubscription, error) {
+func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID, visibilityAttribute string) ([]ChannelSubscription, error) {
 	subs, err := p.getSubscriptions(instanceID)
 	if err != nil {
 		return nil, err
@@ -208,7 +215,7 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) ([]Chan
 	var channelSubscriptions []ChannelSubscription
 	subIds := subs.Channel.ByID
 	for _, sub := range subIds {
-		if p.matchesSubsciptionFilters(wh, sub.Filters) {
+		if p.matchesSubsciptionFilters(wh, sub.Filters, visibilityAttribute) {
 			channelSubscriptions = append(channelSubscriptions, sub)
 		}
 	}

@@ -92,11 +92,14 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(1);
+        expect(actual.length).toBe(2);
 
-        expect(actual[0].key).toEqual('custom1');
-        expect(actual[0].name).toEqual('MJK - Checkbox');
-        expect(actual[0].values).toEqual([{value: '10033', label: '1'}, {value: '10034', label: '2'}]);
+        expect(actual[0].key).toEqual('commentVisibility');
+        expect(actual[0].name).toEqual('Comment Visibility');
+        expect(actual[0].values).toEqual([]);
+        expect(actual[1].key).toEqual('custom1');
+        expect(actual[1].name).toEqual('MJK - Checkbox');
+        expect(actual[1].values).toEqual([{value: '10033', label: '1'}, {value: '10034', label: '2'}]);
     });
 
     test('should return options for single-select options', () => {
@@ -132,11 +135,14 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(1);
+        expect(actual.length).toBe(2);
 
-        expect(actual[0].key).toEqual('custom1');
-        expect(actual[0].name).toEqual('MJK - Radio Buttons');
-        expect(actual[0].values).toEqual([{value: '10035', label: '1'}, {value: '10036', label: '2'}]);
+        expect(actual[0].key).toEqual('commentVisibility');
+        expect(actual[0].name).toEqual('Comment Visibility');
+        expect(actual[0].values).toEqual([]);
+        expect(actual[1].key).toEqual('custom1');
+        expect(actual[1].name).toEqual('MJK - Radio Buttons');
+        expect(actual[1].values).toEqual([{value: '10035', label: '1'}, {value: '10036', label: '2'}]);
     });
 
     test('should return options for priority', () => {
@@ -197,11 +203,14 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(1);
+        expect(actual.length).toBe(2);
 
-        expect(actual[0].key).toEqual('priority');
-        expect(actual[0].name).toEqual('Priority');
-        expect(actual[0].values).toEqual([{value: '1', label: 'Highest'}, {value: '2', label: 'High'}, {value: '3', label: 'Medium'}, {value: '4', label: 'Low'}, {value: '5', label: 'Lowest'}]);
+        expect(actual[0].key).toEqual('commentVisibility');
+        expect(actual[0].name).toEqual('Comment Visibility');
+        expect(actual[0].values).toEqual([]);
+        expect(actual[1].key).toEqual('priority');
+        expect(actual[1].name).toEqual('Priority');
+        expect(actual[1].values).toEqual([{value: '1', label: 'Highest'}, {value: '2', label: 'High'}, {value: '3', label: 'Medium'}, {value: '4', label: 'Low'}, {value: '5', label: 'Lowest'}]);
     });
 
     test('should return options for fix version', () => {
@@ -231,11 +240,14 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(1);
+        expect(actual.length).toBe(2);
 
-        expect(actual[0].key).toEqual('fixVersions');
-        expect(actual[0].name).toEqual('Fix versions');
-        expect(actual[0].values).toEqual([{value: '10000', label: '5.14 (August 2019)'}]);
+        expect(actual[0].key).toEqual('commentVisibility');
+        expect(actual[0].name).toEqual('Comment Visibility');
+        expect(actual[0].values).toEqual([]);
+        expect(actual[1].key).toEqual('fixVersions');
+        expect(actual[1].name).toEqual('Fix versions');
+        expect(actual[1].values).toEqual([{value: '10000', label: '5.14 (August 2019)'}]);
     });
 
     test('should return options for security level', () => {
@@ -284,11 +296,14 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey]);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(1);
+        expect(actual.length).toBe(2);
 
-        expect(actual[0].key).toEqual('security');
-        expect(actual[0].name).toEqual('Security Level');
-        expect(actual[0].values).toEqual([{value: '10001', label: 'Admin only'}, {value: '10000', label: 'Everyone'}, {value: '10002', label: 'Staff'}]);
+        expect(actual[0].key).toEqual('commentVisibility');
+        expect(actual[0].name).toEqual('Comment Visibility');
+        expect(actual[0].values).toEqual([]);
+        expect(actual[1].key).toEqual('security');
+        expect(actual[1].name).toEqual('Security Level');
+        expect(actual[1].values).toEqual([{value: '10001', label: 'Admin only'}, {value: '10000', label: 'Everyone'}, {value: '10002', label: 'Staff'}]);
     });
 
     test('should return options with a `userDefined` flag for array of strings', () => {
