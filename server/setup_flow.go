@@ -57,6 +57,11 @@ const (
 	NameURL          = "url"
 )
 
+const (
+	lineBreak  = "\n"
+	webhookURL = "[{{.WebhookURL}}]({{.WebhookURL}})"
+)
+
 func (p *Plugin) NewSetupFlow() *flow.Flow {
 	pluginURL := *p.client.Configuration.GetConfig().ServiceSettings.SiteURL + "/" + "plugins" + "/" + Manifest.Id
 	conf := p.getConfig()
@@ -249,7 +254,7 @@ func (p *Plugin) stepServerAddAppLink() flow.Step {
 			"To finish the configuration, we'll need to add and configure an Application Link in your Jira instance.\n" +
 			"Complete the following steps, then come back here to select **Continue**.\n\n" +
 			"1. Navigate to [**Settings > Applications > Application Links**]({{.JiraURL}}/plugins/servlet/applinks/listApplicationLinks) (see _screenshot_).\n" +
-			"2. Keep checked the Atlassian Product Application Type and enter `{{.PluginURL}}` [link]({{.PluginURL}}) as the application link, then select **Create new link**.").
+			"2. Note: For Jira 9.x - Ensure 'Atlassian product' is selected as the Application type and enter `{{.PluginURL}}` [link]({{.PluginURL}}) as the application link, then select **Create new link**.").
 		WithImage("public/server-create-applink.png").
 		OnRender(p.trackSetupWizard("setup_wizard_jira_config_start", map[string]interface{}{
 			keyEdition: ServerInstanceType,
@@ -400,7 +405,7 @@ func (p *Plugin) stepWebhook() flow.Step {
 			Color: flow.ColorPrimary,
 			Dialog: &model.Dialog{
 				Title:            "Jira Webhook URL",
-				IntroductionText: "Please scroll to select the entire URL if necessary.\n\n```{{.WebhookURL}}```\n\nOnce you have entered all options and the webhook URL, select **Create**",
+				IntroductionText: fmt.Sprintf("Please copy and use the link below as webhook URL. Once you have entered all options and the webhook URL, select **Create**. %s", lineBreak) + fmt.Sprintf("%s %s", lineBreak, webhookURL),
 				SubmitLabel:      "Continue",
 			},
 			OnDialogSubmit: flow.DialogGoto(stepWebhookDone),
@@ -590,7 +595,7 @@ func (p *Plugin) initCreateCloudOAuthInstance(f *flow.Flow, submission map[strin
 		jiraURL = fmt.Sprintf("https://%s.atlassian.net", jiraURL)
 	}
 
-	jiraURL, instance, err := p.installCloudOAuthInstance(jiraURL, "", "")
+	jiraURL, instance, err := p.installCloudOAuthInstance(jiraURL)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -633,9 +638,20 @@ func (p *Plugin) submitCreateCloudOAuthInstance(f *flow.Flow, submission map[str
 		return "", nil, nil, errors.New("no Jira OAuth Client Secret is present in the request")
 	}
 
-	jiraURL, instance, err := p.installCloudOAuthInstance(jiraURL, clientID, clientSecret)
+	existingInstance, err := p.instanceStore.LoadInstance(types.ID(jiraURL))
 	if err != nil {
-		return "", nil, nil, err
+		return "", nil, nil, errors.Wrap(err, "failed to load existing cloud-oauth instance")
+	}
+
+	instance, ok := existingInstance.(*cloudOAuthInstance)
+	if !ok {
+		return "", nil, nil, errors.Errorf("existing instance is not a cloud-oauth instance. ID: %s", jiraURL)
+	}
+
+	instance.JiraClientID = clientID
+	instance.JiraClientSecret = clientSecret
+	if err = p.instanceStore.StoreInstance(instance); err != nil {
+		return "", nil, nil, errors.Wrap(err, "failed to store cloud-oauth instance")
 	}
 
 	return stepInstalledJiraApp, flow.State{

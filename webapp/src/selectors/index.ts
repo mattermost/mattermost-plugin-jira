@@ -73,3 +73,5 @@ export const instanceIsInstalled = (state): boolean => getInstalledInstances(sta
 export const getDefaultUserInstanceID = (state) => getPluginState(state).defaultUserInstanceID;
 
 export const getPluginSettings = (state) => getPluginState(state).pluginSettings;
+
+export const getStoredLinkTooltipIssue = (state) => getPluginState(state).storedLinkTooltipIssue;

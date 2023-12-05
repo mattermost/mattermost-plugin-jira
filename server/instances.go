@@ -141,21 +141,24 @@ func (p *instancesArray) Resize(n int) {
 	*p = make(instancesArray, n)
 }
 
-func (p *Plugin) InstallInstance(instance Instance) error {
+func (p *Plugin) InstallInstance(newInstance Instance) error {
 	var updated *Instances
 	err := UpdateInstances(p.instanceStore,
 		func(instances *Instances) error {
-			if !p.enterpriseChecker.HasEnterpriseFeatures() {
-				if instances != nil && len(instances.IDs()) > 0 && !instances.checkIfExists(instance.GetID()) {
-					return errors.Errorf(licenseErrorString)
-				}
+			if instances == nil {
+				return errors.New("received nil 'instances' in UpdateInstances callback")
 			}
 
-			err := p.instanceStore.StoreInstance(instance)
-			if err != nil {
-				return err
+			if !p.enterpriseChecker.HasEnterpriseFeatures() && len(instances.IDs()) > 0 && !instances.checkIfExists(newInstance.GetID()) {
+				return errors.New(licenseErrorString)
 			}
-			instances.Set(instance.Common())
+
+			err := p.instanceStore.StoreInstance(newInstance)
+			if err != nil {
+				return errors.Wrap(err, "failed to store new instance")
+			}
+
+			instances.Set(newInstance.Common())
 			updated = instances
 			return nil
 		})

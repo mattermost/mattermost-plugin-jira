@@ -53,6 +53,8 @@ export default class JiraUserSelector extends React.PureComponent<Props> {
                     label,
                 };
             });
+        }).catch((e) => {
+            throw new Error('Error fetching data');
         });
     };
 

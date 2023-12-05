@@ -14,6 +14,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
@@ -29,6 +30,7 @@ type cloudOAuthInstance struct {
 	JiraBaseURL      string
 	CodeVerifier     string
 	CodeChallenge    string
+	JWTInstance      *cloudInstance
 }
 
 type CloudOAuthConfigure struct {
@@ -47,6 +49,7 @@ type PKCEParams struct {
 }
 
 var _ Instance = (*cloudOAuthInstance)(nil)
+var jiraOAuthAccessibleResourcesURL = "https://api.atlassian.com/oauth/token/accessible-resources"
 
 const (
 	JiraScopes          = "read:jira-user,read:jira-work,write:jira-work"
@@ -56,7 +59,7 @@ const (
 	PKCEByteArrayLength = 32
 )
 
-func (p *Plugin) installCloudOAuthInstance(rawURL, clientID, clientSecret string) (string, *cloudOAuthInstance, error) {
+func (p *Plugin) installCloudOAuthInstance(rawURL string) (string, *cloudOAuthInstance, error) {
 	jiraURL, err := utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
 	if err != nil {
 		return "", nil, err
@@ -70,21 +73,51 @@ func (p *Plugin) installCloudOAuthInstance(rawURL, clientID, clientSecret string
 		return "", nil, err
 	}
 
-	instance := &cloudOAuthInstance{
-		InstanceCommon:   newInstanceCommon(p, CloudOAuthInstanceType, types.ID(jiraURL)),
-		MattermostKey:    p.GetPluginKey(),
-		JiraClientID:     clientID,
-		JiraClientSecret: clientSecret,
-		JiraBaseURL:      rawURL,
-		CodeVerifier:     params.CodeVerifier,
-		CodeChallenge:    params.CodeChallenge,
+	newInstance := &cloudOAuthInstance{
+		InstanceCommon: newInstanceCommon(p, CloudOAuthInstanceType, types.ID(jiraURL)),
+		MattermostKey:  p.GetPluginKey(),
+		JiraBaseURL:    rawURL,
+		CodeVerifier:   params.CodeVerifier,
+		CodeChallenge:  params.CodeChallenge,
 	}
 
-	if err = p.InstallInstance(instance); err != nil {
-		return "", nil, err
+	existingInstance, err := p.instanceStore.LoadInstance(types.ID(jiraURL))
+	if err != nil && !errors.Is(err, kvstore.ErrNotFound) {
+		return "", nil, errors.Wrapf(err, "failed to load existing jira instance. ID: %s", jiraURL)
 	}
 
-	return jiraURL, instance, err
+	// Handle backwards compatibility with existing JWT instance
+	if existingInstance != nil {
+		if existingInstance.Common().Type == CloudOAuthInstanceType {
+			oauthInstance, ok := existingInstance.(*cloudOAuthInstance)
+			if !ok {
+				return "", nil, errors.Wrapf(err, "failed to assert existing cloud-oauth instance as cloudOAuthInstance. ID: %s", jiraURL)
+			}
+
+			newInstance.JWTInstance = oauthInstance.JWTInstance
+			if newInstance.JWTInstance != nil {
+				p.API.LogDebug("Installing cloud-oauth over existing cloud-oauth instance. Carrying over existing saved JWT instance.")
+			} else {
+				p.API.LogDebug("Installing cloud-oauth over existing cloud-oauth instance. There exists no previous JWT instance to carry over.")
+			}
+		} else if existingInstance.Common().Type == CloudInstanceType {
+			jwtInstance, ok := existingInstance.(*cloudInstance)
+			if !ok {
+				return "", nil, errors.Wrapf(err, "failed to assert existing cloud instance as cloudInstance. ID: %s", jiraURL)
+			}
+
+			newInstance.JWTInstance = jwtInstance
+			p.API.LogDebug("Installing cloud-oauth over existing cloud JWT instance. Carrying over existing saved JWT instance.")
+		}
+	} else {
+		p.API.LogDebug("Installing new cloud-oauth instance. There exists no previous JWT instance to carry over.")
+	}
+
+	if err = p.InstallInstance(newInstance); err != nil {
+		return "", nil, errors.Wrapf(err, "failed to install cloud-oauth instance. ID: %s", jiraURL)
+	}
+
+	return jiraURL, newInstance, nil
 }
 
 func (ci *cloudOAuthInstance) GetClient(connection *Connection) (Client, error) {
@@ -98,6 +131,17 @@ func (ci *cloudOAuthInstance) GetClient(connection *Connection) (Client, error) 
 func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*jira.Client, *http.Client, error) {
 	oauth2Conf := ci.GetOAuthConfig()
 	ctx := context.Background()
+
+	// Checking if this user's connection is for a JWT instance
+	if connection.OAuth2Token == nil {
+		if ci.JWTInstance != nil {
+			ci.Plugin.API.LogDebug("Returning a JWT token client since the stored JWT instance is not nil and the user's oauth token is nil")
+			return ci.JWTInstance.getClientForConnection(connection)
+		}
+
+		return nil, nil, errors.New("failed to create client for OAuth instance: no JWT instance found, and connection's OAuth token is missing")
+	}
+
 	tokenSource := oauth2Conf.TokenSource(ctx, connection.OAuth2Token)
 	client := oauth2.NewClient(ctx, tokenSource)
 
@@ -188,7 +232,7 @@ func (ci *cloudOAuthInstance) GetMattermostKey() string {
 func (ci *cloudOAuthInstance) getJiraCloudResourceID(client http.Client) (string, error) {
 	request, err := http.NewRequest(
 		http.MethodGet,
-		"https://api.atlassian.com/oauth/token/accessible-resources",
+		jiraOAuthAccessibleResourcesURL,
 		nil,
 	)
 	if err != nil {
