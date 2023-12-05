@@ -55,6 +55,8 @@ export default class ChannelSubscriptionsModal extends PureComponent<Props> {
             return;
         }
 
+        const templatesResponse = await this.props.fetchAllSubscriptionTemplates();
+
         this.setState({showModal: true, allProjectMetadata: projectResponses.data});
     };
 

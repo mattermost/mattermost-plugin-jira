@@ -154,6 +154,8 @@ export type ChannelSubscription = {
     instance_id: string;
 }
 
+export type SubscriptionTemplate = ChannelSubscription
+
 export enum InstanceType {
     CLOUD = 'cloud',
     SERVER = 'server',
