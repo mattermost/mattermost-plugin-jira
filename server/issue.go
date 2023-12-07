@@ -36,7 +36,7 @@ const (
 
 type CreateMetaInfo struct {
 	*jira.CreateMetaInfo
-	IssueTypes []*IssueTypeWithStatuses `json:"issue_types_with_statuses"`
+	IssueTypesWithStatuses []*IssueTypeWithStatuses `json:"issue_types_with_statuses"`
 }
 
 func makePost(userID, channelID, message string) *model.Post {

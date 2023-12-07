@@ -190,14 +190,14 @@ function isValidFieldForFilter(field: JiraField): boolean {
     (type === 'array' && allowedArrayTypes.includes(items));
 }
 
-export function getStatusField(metadata: IssueMetadata | null, issueTypes: string[]): FilterField | null {
+export function getStatusField(metadata: IssueMetadata | null, selectedIssueTypes: string[]): FilterField | null {
     // Filtering out the statuses on the basis of selected issue types
     const issueTypesWithStatuses = metadata && metadata.issue_types_with_statuses;
     const keys = new Set<string>();
     const statuses: Status[] = [];
     if (issueTypesWithStatuses) {
         for (const issueType of issueTypesWithStatuses) {
-            if (issueTypes.includes(issueType.id) || !issueTypes.length) {
+            if (selectedIssueTypes.includes(issueType.id) || !selectedIssueTypes.length) {
                 for (const status of issueType.statuses) {
                     if (!keys.has(status.id)) {
                         keys.add(status.id);
