@@ -96,12 +96,42 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
                 },
               ],
             },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10001",
+                  "name": "Bug",
+                },
+              ],
+              "key": "status",
+              "name": "Status",
+              "schema": Object {
+                "type": "array",
+              },
+              "values": Array [
+                Object {
+                  "label": "TODO",
+                  "value": "1001",
+                },
+              ],
+            },
           ]
         }
         instanceID="https://something.atlassian.net"
         issueMetadata={
           Object {
-            "issue_types_with_statuses": Array [],
+            "issue_types_with_statuses": Array [
+              Object {
+                "id": "10001",
+                "name": "Bug",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                ],
+              },
+            ],
             "projects": Array [
               Object {
                 "issuetypes": Array [
@@ -215,11 +245,41 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
                 },
               ],
             },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10001",
+                  "name": "Bug",
+                },
+              ],
+              "key": "status",
+              "name": "Status",
+              "schema": Object {
+                "type": "array",
+              },
+              "values": Array [
+                Object {
+                  "label": "TODO",
+                  "value": "1001",
+                },
+              ],
+            },
           ]
         }
         issueMetadata={
           Object {
-            "issue_types_with_statuses": Array [],
+            "issue_types_with_statuses": Array [
+              Object {
+                "id": "10001",
+                "name": "Bug",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                ],
+              },
+            ],
             "projects": Array [
               Object {
                 "issuetypes": Array [

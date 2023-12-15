@@ -11,7 +11,74 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
       "expand": "projects",
       "issue_types_with_statuses": Array [
         Object {
-          "statuses": Array [],
+          "id": "10002",
+          "name": "Task",
+          "statuses": Array [
+            Object {
+              "id": "1001",
+              "name": "TODO",
+            },
+          ],
+        },
+        Object {
+          "id": "10003",
+          "name": "Sub-task",
+          "statuses": Array [
+            Object {
+              "id": "1001",
+              "name": "TODO",
+            },
+            Object {
+              "id": "1002",
+              "name": "In Progress",
+            },
+          ],
+        },
+        Object {
+          "id": "10001",
+          "name": "Story",
+          "statuses": Array [
+            Object {
+              "id": "1001",
+              "name": "TODO",
+            },
+            Object {
+              "id": "1002",
+              "name": "In Progress",
+            },
+          ],
+        },
+        Object {
+          "id": "10004",
+          "name": "Bug",
+          "statuses": Array [
+            Object {
+              "id": "1001",
+              "name": "TODO",
+            },
+            Object {
+              "id": "1002",
+              "name": "In Progress",
+            },
+          ],
+        },
+        Object {
+          "id": "10000",
+          "name": "Epic",
+          "statuses": Array [
+            Object {
+              "id": "1001",
+              "name": "TODO",
+            },
+            Object {
+              "id": "1002",
+              "name": "In Progress",
+            },
+            Object {
+              "id": "1003",
+              "name": "Bug",
+            },
+          ],
         },
       ],
       "projects": Array [

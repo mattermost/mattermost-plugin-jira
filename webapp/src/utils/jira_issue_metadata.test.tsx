@@ -37,7 +37,7 @@ describe('utils/jira_issue_metadata', () => {
         expect(actual.length).toBeGreaterThan(0);
     });
 
-    test('should return blank list if there are no available values', () => {
+    test('should return only the status field if there are no available values', () => {
         const field = {
             hasDefaultValue: false,
             key: 'customfield_10021',
@@ -59,7 +59,8 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(0);
+        expect(actual.length).toBe(1);
+        expect(actual[0].name).toBe('Status');
     });
 
     test('should return options for multi-select options', () => {
@@ -94,11 +95,12 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(1);
+        expect(actual.length).toBe(2);
 
         expect(actual[0].key).toEqual('custom1');
         expect(actual[0].name).toEqual('MJK - Checkbox');
         expect(actual[0].values).toEqual([{value: '10033', label: '1'}, {value: '10034', label: '2'}]);
+        expect(actual[1].name).toBe('Status');
     });
 
     test('should return options for single-select options', () => {
@@ -134,11 +136,12 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(1);
+        expect(actual.length).toBe(2);
 
         expect(actual[0].key).toEqual('custom1');
         expect(actual[0].name).toEqual('MJK - Radio Buttons');
         expect(actual[0].values).toEqual([{value: '10035', label: '1'}, {value: '10036', label: '2'}]);
+        expect(actual[1].name).toBe('Status');
     });
 
     test('should return options for priority', () => {
@@ -199,11 +202,12 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(1);
+        expect(actual.length).toBe(2);
 
         expect(actual[0].key).toEqual('priority');
         expect(actual[0].name).toEqual('Priority');
         expect(actual[0].values).toEqual([{value: '1', label: 'Highest'}, {value: '2', label: 'High'}, {value: '3', label: 'Medium'}, {value: '4', label: 'Low'}, {value: '5', label: 'Lowest'}]);
+        expect(actual[1].name).toBe('Status');
     });
 
     test('should return options for fix version', () => {
@@ -233,11 +237,12 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(1);
+        expect(actual.length).toBe(2);
 
         expect(actual[0].key).toEqual('fixVersions');
         expect(actual[0].name).toEqual('Fix versions');
         expect(actual[0].values).toEqual([{value: '10000', label: '5.14 (August 2019)'}]);
+        expect(actual[1].name).toBe('Status');
     });
 
     test('should return options for security level', () => {
@@ -286,94 +291,33 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(1);
+        expect(actual.length).toBe(2);
 
         expect(actual[0].key).toEqual('security');
         expect(actual[0].name).toEqual('Security Level');
         expect(actual[0].values).toEqual([{value: '10001', label: 'Admin only'}, {value: '10000', label: 'Everyone'}, {value: '10002', label: 'Staff'}]);
+        expect(actual[1].name).toBe('Status');
     });
 
     test('getStatusField should return options for statuses for selected issue types only', () => {
-        const metadata: IssueMetadata = {
-            projects: [
-                {
-                    key: 'TEST',
-                    issuetypes: [],
-                },
-            ],
-            issue_types_with_statuses: [
-                {
-                    id: '10001',
-                    name: 'Task',
-                    statuses: [
-                        {
-                            id: '1001',
-                            name: 'TODO',
-                        },
-                    ],
-                },
-                {
-                    id: '10002',
-                    name: 'Story',
-                    statuses: [
-                        {
-                            id: '1002',
-                            name: 'In Progress',
-                        },
-                    ],
-                },
-            ],
-        };
-
-        const actual = getStatusField(metadata, ['10001']);
-        expect(actual).not.toBe(null);
-
-        if (actual) {
-            expect(actual.key).toEqual('status');
-            expect(actual.name).toEqual('Status');
-            expect(actual.values).toEqual([{value: '1001', label: 'TODO'}]);
-        }
-    });
-
-    test('getStatusField should return options for statuses for all issue types if no issue type is selected', () => {
-        const metadata: IssueMetadata = {
-            projects: [
-                {
-                    key: 'TEST',
-                    issuetypes: [],
-                },
-            ],
-            issue_types_with_statuses: [
-                {
-                    id: '10001',
-                    name: 'Task',
-                    statuses: [
-                        {
-                            id: '1001',
-                            name: 'TODO',
-                        },
-                    ],
-                },
-                {
-                    id: '10002',
-                    name: 'Story',
-                    statuses: [
-                        {
-                            id: '1002',
-                            name: 'In Progress',
-                        },
-                    ],
-                },
-            ],
-        };
-
-        const actual = getStatusField(metadata, []);
+        const actual = getStatusField(createMeta, ['10001']);
         expect(actual).not.toBe(null);
 
         if (actual) {
             expect(actual.key).toEqual('status');
             expect(actual.name).toEqual('Status');
             expect(actual.values).toEqual([{value: '1001', label: 'TODO'}, {value: '1002', label: 'In Progress'}]);
+        }
+    });
+
+    test('getStatusField should return options for statuses for all issue types if no issue type is selected', () => {
+        const actual = getStatusField(createMeta, []);
+        expect(actual).not.toBe(null);
+
+        if (actual) {
+            expect(actual.key).toEqual('status');
+            expect(actual.name).toEqual('Status');
+            expect(actual.values).toEqual([{value: '1001', label: 'TODO'}, {value: '1002', label: 'In Progress'}, {value: '1003', label: 'Bug'}]);
         }
     });
 
@@ -417,11 +361,12 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(1);
+        expect(actual.length).toBe(2);
 
         expect(actual[0].key).toEqual('custom1');
         expect(actual[0].name).toEqual('MJK - Labels');
         expect(actual[0].userDefined).toEqual(true);
+        expect(actual[1].name).toBe('Status');
     });
 
     test('getConflictingFields should return a list of fields with conflicts', () => {

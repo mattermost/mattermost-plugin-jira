@@ -2,7 +2,74 @@
   "expand": "projects",
   "issue_types_with_statuses": [
     {
-      "statuses": []
+      "id": "10002",
+      "name": "Task",
+      "statuses": [
+        {
+          "id": "1001",
+          "name": "TODO"
+        }
+      ]
+    },
+    {
+      "id": "10003",
+      "name": "Sub-task",
+      "statuses": [
+        {
+          "id": "1001",
+          "name": "TODO"
+        },
+        {
+          "id": "1002",
+          "name": "In Progress"
+        }
+      ]
+    },
+    {
+      "id": "10001",
+      "name": "Story",
+      "statuses": [
+        {
+          "id": "1001",
+          "name": "TODO"
+        },
+        {
+          "id": "1002",
+          "name": "In Progress"
+        }
+      ]
+    },
+    {
+      "id": "10004",
+      "name": "Bug",
+      "statuses": [
+        {
+          "id": "1001",
+          "name": "TODO"
+        },
+        {
+          "id": "1002",
+          "name": "In Progress"
+        }
+      ]
+    },
+    {
+      "id": "10000",
+      "name": "Epic",
+      "statuses": [
+        {
+          "id": "1001",
+          "name": "TODO"
+        },
+        {
+          "id": "1002",
+          "name": "In Progress"
+        },
+        {
+          "id": "1003",
+          "name": "Bug"
+        }
+      ]
     }
   ],
   "projects": [
