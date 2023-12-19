@@ -193,6 +193,18 @@ const channelSubscriptions = (state = {}, action) => {
     }
 };
 
+const storedLinkTooltipIssue = (state = {}, action) => {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_JIRA_TICKET : {
+        return {
+            ticket: action.data,
+        };
+    }
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     userConnected,
     userCanConnect,
@@ -208,4 +220,5 @@ export default combineReducers({
     attachCommentToIssueModalForPostId,
     channelIdWithSettingsOpen,
     channelSubscriptions,
+    storedLinkTooltipIssue,
 });

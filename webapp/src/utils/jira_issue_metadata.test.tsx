@@ -2,11 +2,13 @@
 // See LICENSE.txt for license information.
 
 import createMeta from 'testdata/cloud-get-create-issue-metadata-for-project-many-fields.json';
+import {ticketData} from 'testdata/get-ticket-metadata-for-tooltip';
 import {useFieldForIssueMetadata} from 'testdata/jira-issue-metadata-helpers';
 
 import {IssueMetadata, JiraField, FilterField, ChannelSubscriptionFilters, FilterFieldInclusion, IssueType, Project} from 'types/model';
+import {IssueAction, TicketDetails} from 'types/tooltip';
 
-import {getCustomFieldFiltersForProjects, generateJQLStringFromSubscriptionFilters, getConflictingFields} from './jira_issue_metadata';
+import {getCustomFieldFiltersForProjects, generateJQLStringFromSubscriptionFilters, getConflictingFields, jiraIssueToReducer} from './jira_issue_metadata';
 
 describe('utils/jira_issue_metadata', () => {
     const useField = (field: JiraField, key: string): IssueMetadata => {
@@ -588,6 +590,50 @@ describe('utils/jira_issue_metadata', () => {
 
             const actual = generateJQLStringFromSubscriptionFilters(issueMetadata, fields, filters);
             expect(actual).toEqual('Project = KT AND IssueType IN (Bug) AND Priority IS EMPTY');
+        });
+    });
+
+    describe('jiraIssueToReducer', () => {
+        it('should return the ticket details with all fields', () => {
+            const action: IssueAction = ticketData('Mock Name');
+
+            const expectedTicketDetails: TicketDetails = {
+                assigneeName: 'Mock Name',
+                assigneeAvatar: 'https://something.atlassian.net/avatar.png',
+                labels: ['label1', 'label2'],
+                description: 'This is a test description',
+                summary: 'This is a test summary',
+                ticketId: 'ABC-123',
+                jiraIcon: 'https://something.atlassian.net/project.png',
+                versions: 'Version 1.0',
+                statusKey: 'In Progress',
+                issueIcon: 'https://something.atlassian.net/issuetype.png',
+            };
+
+            const result = jiraIssueToReducer(action.data);
+
+            expect(result).toEqual(expectedTicketDetails);
+        });
+
+        it('should return the ticket details with empty assignee fields when assignee is null', () => {
+            const action: IssueAction = ticketData(null);
+
+            const expectedTicketDetails: TicketDetails = {
+                assigneeName: '',
+                assigneeAvatar: '',
+                labels: ['label1', 'label2'],
+                description: 'This is a test description',
+                summary: 'This is a test summary',
+                ticketId: 'ABC-123',
+                jiraIcon: 'https://something.atlassian.net/project.png',
+                versions: 'Version 1.0',
+                statusKey: 'In Progress',
+                issueIcon: 'https://something.atlassian.net/issuetype.png',
+            };
+
+            const result = jiraIssueToReducer(action.data);
+
+            expect(result).toEqual(expectedTicketDetails);
         });
     });
 });
