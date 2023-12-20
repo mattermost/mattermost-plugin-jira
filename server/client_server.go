@@ -9,7 +9,7 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/blang/semver/v4"
-	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/pkg/errors"
 )
 

@@ -10,10 +10,10 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-api/experimental/command"
-	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin"
+	"github.com/mattermost/mattermost/server/public/pluginapi/experimental/command"
+	"github.com/mattermost/mattermost/server/public/pluginapi/experimental/flow"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"

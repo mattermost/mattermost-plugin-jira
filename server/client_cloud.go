@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/pkg/errors"
 )
 
