@@ -42,8 +42,9 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 		return nil
 	}
 
+	// TODO: The data sent for "Status" field is invalid in case of issue created event, so we are fetching it again here. This can be updated when the issue is fixed from Jira side.
 	// Jira Cloud comment event. We need to fetch issue data because it is not expanded in webhook payload.
-	isCommentEvent := jwh.WebhookEvent == commentCreated || jwh.WebhookEvent == commentUpdated || jwh.WebhookEvent == commentDeleted
+	isCommentEvent := jwh.WebhookEvent == commentCreated || jwh.WebhookEvent == commentUpdated || jwh.WebhookEvent == commentDeleted || jwh.WebhookEvent == issueCreated
 	if isCommentEvent {
 		if _, ok := instance.(*cloudInstance); ok {
 			issue, err := p.getIssueDataForCloudWebhook(instance, jwh.Issue.ID)
@@ -53,7 +54,12 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 
 			jwh.Issue = *issue
 		} else if instance, ok := instance.(*cloudOAuthInstance); ok {
-			mmUserID, err := p.userStore.LoadMattermostUserID(instanceID, jwh.Comment.Author.AccountID)
+			accountID := jwh.Comment.Author.AccountID
+			if jwh.WebhookEvent == issueCreated {
+				accountID = jwh.Issue.Fields.Creator.AccountID
+			}
+
+			mmUserID, err := p.userStore.LoadMattermostUserID(instanceID, accountID)
 			if err != nil {
 				// User is not connected, so we try to fall back to JWT bot
 				if instance.JWTInstance == nil {
