@@ -155,6 +155,7 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
         onChange={[Function]}
         removeFilter={[Function]}
         removeValidate={[MockFunction]}
+        securityLevelEmptyForJiraSubscriptions={true}
         theme={Object {}}
         value={
           Object {

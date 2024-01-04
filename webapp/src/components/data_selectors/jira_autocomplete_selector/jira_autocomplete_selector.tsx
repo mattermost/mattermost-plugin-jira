@@ -44,6 +44,8 @@ export default class JiraAutoCompleteSelector extends React.PureComponent<Props>
                 value: suggestion.value,
                 label: stripHTML(suggestion.displayName),
             }));
+        }).catch((e) => {
+            throw new Error('Error fetching data');
         });
     };
 

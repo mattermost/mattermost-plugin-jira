@@ -9,28 +9,29 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	htmlTemplate "html/template"
 	"math"
 	"net/url"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
-	"text/template"
+	textTemplate "text/template"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
-	"github.com/mattermost/mattermost-plugin-api/experimental/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
 
+	root "github.com/mattermost/mattermost-plugin-jira"
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
+	"github.com/mattermost/mattermost-plugin-jira/server/telemetry"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
 
@@ -47,9 +48,9 @@ const (
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
 )
 
-var BuildHash = ""
-var BuildHashShort = ""
-var BuildDate = ""
+var (
+	Manifest model.Manifest = root.Manifest
+)
 
 type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
@@ -70,6 +71,9 @@ type externalConfig struct {
 
 	// Additional Help Text to be shown in the output of '/jira help' command
 	JiraAdminAdditionalHelpText string
+
+	// When enabled, a subscription without security level rules will filter out an issue that has a security level assigned
+	SecurityLevelEmptyForJiraSubscriptions bool
 
 	// Hide issue descriptions and comments in Webhook and Subscription messages
 	HideDecriptionComment bool
@@ -113,30 +117,33 @@ type Plugin struct {
 	otsStore      OTSStore
 	secretsStore  SecretsStore
 
-	setupFlow *flow.Flow
+	setupFlow  *flow.Flow
+	oauth2Flow *flow.Flow
 
-	// Most of ServeHTTP does not use an http router, but we need one to support
-	// the setup wizard flow. Introducing it here incrementally.
-	gorillaRouter *mux.Router
+	router *mux.Router
 
 	// Generated once, then cached in the database, and here deserialized
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
 
 	// templates are loaded on startup
-	templates map[string]*template.Template
+	htmlTemplates map[string]*htmlTemplate.Template
+	textTemplates map[string]*textTemplate.Template
 
 	// channel to distribute work to the webhook processors
 	webhookQueue chan *webhookMessage
+
+	// service that determines if this Mattermost instance has access to
+	// enterprise features
+	enterpriseChecker enterprise.Checker
+
+	// Telemetry package copied inside repository, should be changed
+	// to pluginapi's one (0.1.3+) when min_server_version is safe to point at 7.x
 
 	// telemetry client
 	telemetryClient telemetry.Client
 
 	// telemetry Tracker
 	tracker telemetry.Tracker
-
-	// service that determines if this Mattermost instance has access to
-	// enterprise features
-	enterpriseChecker enterprise.Checker
 }
 
 func (p *Plugin) getConfig() config {
@@ -157,7 +164,10 @@ func (p *Plugin) updateConfig(f func(conf *config)) config {
 func (p *Plugin) OnConfigurationChange() error {
 	// Load the public configuration fields from the Mattermost server configuration.
 	ec := externalConfig{}
-	err := p.API.LoadPluginConfiguration(&ec)
+	if p.client == nil {
+		p.client = pluginapi.NewClient(p.API, p.Driver)
+	}
+	err := p.client.Configuration.LoadPluginConfiguration(&ec)
 	if err != nil {
 		return errors.WithMessage(err, "failed to load plugin configuration")
 	}
@@ -191,21 +201,10 @@ func (p *Plugin) OnConfigurationChange() error {
 		}
 	}
 
-	diagnostics := false
-	if p.API.GetConfig().LogSettings.EnableDiagnostics != nil {
-		diagnostics = *p.API.GetConfig().LogSettings.EnableDiagnostics
-	}
-
 	// create new tracker on each configuration change
-	p.tracker = telemetry.NewTracker(
-		p.telemetryClient,
-		p.API.GetDiagnosticId(),
-		p.API.GetServerVersion(),
-		manifest.ID,
-		manifest.Version,
-		"jira",
-		diagnostics,
-	)
+	if p.tracker != nil {
+		p.tracker.ReloadConfig(telemetry.NewTrackerConfig(p.API.GetConfig()))
+	}
 
 	return nil
 }
@@ -228,21 +227,30 @@ func (p *Plugin) OnActivate() error {
 	p.secretsStore = store
 	p.otsStore = store
 	p.client = pluginapi.NewClient(p.API, p.Driver)
-	p.gorillaRouter = mux.NewRouter()
+
+	p.initializeRouter()
+
+	bundlePath, err := p.client.System.GetBundlePath()
+	if err != nil {
+		return errors.Wrap(err, "couldn't get bundle path")
+	}
 
 	botUserID, err := p.client.Bot.EnsureBot(&model.Bot{
+		OwnerId:     Manifest.Id, // Workaround to support older server version affected by https://github.com/mattermost/mattermost-server/pull/21560
 		Username:    botUserName,
 		DisplayName: botDisplayName,
 		Description: botDescription,
-	})
+	}, pluginapi.ProfileImagePath(filepath.Join("assets", "profile.png")))
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure bot account")
 	}
 
 	mattermostSiteURL := ""
-	ptr := p.API.GetConfig().ServiceSettings.SiteURL
+	ptr := p.client.Configuration.GetConfig().ServiceSettings.SiteURL
 	if ptr != nil {
 		mattermostSiteURL = *ptr
+	} else {
+		return errors.New("please configure the Mattermost server's SiteURL, then restart the plugin.")
 	}
 
 	err = p.setDefaultConfiguration()
@@ -261,32 +269,20 @@ func (p *Plugin) OnActivate() error {
 		conf.rsaKey = rsaKey
 	})
 
-	bundlePath, err := p.API.GetBundlePath()
-	if err != nil {
-		return errors.Wrap(err, "couldn't get bundle path")
-	}
-
-	profileImage, err := ioutil.ReadFile(filepath.Join(bundlePath, "assets", "profile.png"))
-	if err != nil {
-		return errors.Wrap(err, "couldn't read profile image")
-	}
-
-	if appErr := p.API.SetProfileImage(botUserID, profileImage); appErr != nil {
-		return errors.Wrap(appErr, "couldn't set profile image")
-	}
-
 	instances, err := MigrateV2Instances(p)
 	if err != nil {
 		return errors.WithMessage(err, "OnActivate: failed to migrate from previous version of the Jira plugin")
 	}
 
-	templates, err := p.loadTemplates(filepath.Join(bundlePath, "assets", "templates"))
+	htmlTemplates, textTemplates, err := p.loadTemplates(filepath.Join(bundlePath, "assets", "templates"))
 	if err != nil {
 		return err
 	}
-	p.templates = templates
+	p.htmlTemplates = htmlTemplates
+	p.textTemplates = textTemplates
 
 	p.setupFlow = p.NewSetupFlow()
+	p.oauth2Flow = p.NewOAuth2Flow()
 
 	// Register /jira command and stash the loaded list of known instances for
 	// later (autolink registration).
@@ -315,32 +311,28 @@ func (p *Plugin) OnActivate() error {
 
 			ci, ok := instance.(*cloudInstance)
 			if !ok {
-				p.API.LogInfo("only cloud instances supported for autolink", "err", err)
+				p.client.Log.Info("only cloud instances supported for autolink", "err", err)
 				continue
 			}
-
-			status, apiErr := p.API.GetPluginStatus(autolinkPluginID)
-			if apiErr != nil {
-				p.API.LogWarn("OnActivate: Autolink plugin unavailable. API returned error", "error", apiErr.Error())
+			var status *model.PluginStatus
+			status, err = p.client.Plugin.GetPluginStatus(autolinkPluginID)
+			if err != nil {
+				p.client.Log.Warn("OnActivate: Autolink plugin unavailable. API returned error", "error", err.Error())
 				continue
 			}
 			if status.State != model.PluginStateRunning {
-				p.API.LogWarn("OnActivate: Autolink plugin unavailable. Plugin is not running", "status", status)
+				p.client.Log.Warn("OnActivate: Autolink plugin unavailable. Plugin is not running", "status", status)
 				continue
 			}
 
 			if err = p.AddAutolinksForCloudInstance(ci); err != nil {
-				p.API.LogInfo("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
+				p.client.Log.Info("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
 				continue
 			}
 		}
 	}()
 
-	// initialize the rudder client once on activation
-	p.telemetryClient, err = telemetry.NewRudderClient()
-	if err != nil {
-		p.API.LogError("Cannot create telemetry client. err=%v", err)
-	}
+	p.initializeTelemetry()
 
 	return nil
 }
@@ -351,7 +343,7 @@ func (p *Plugin) AddAutolinksForCloudInstance(ci *cloudInstance) error {
 		return fmt.Errorf("unable to get jira client for server: %w", err)
 	}
 
-	plist, err := jiraCloudClient{JiraClient{Jira: client}}.ListProjects("", -1)
+	plist, err := jiraCloudClient{JiraClient{Jira: client}}.ListProjects("", -1, false)
 	if err != nil {
 		return fmt.Errorf("unable to get project keys: %w", err)
 	}
@@ -402,7 +394,7 @@ func (p *Plugin) GetPluginKey() string {
 }
 
 func (p *Plugin) GetPluginURLPath() string {
-	return "/plugins/" + manifest.ID
+	return "/plugins/" + Manifest.Id
 }
 
 func (p *Plugin) GetPluginURL() string {
@@ -414,15 +406,15 @@ func (p *Plugin) GetSiteURL() string {
 }
 
 func (p *Plugin) debugf(f string, args ...interface{}) {
-	p.API.LogDebug(fmt.Sprintf(f, args...))
+	p.client.Log.Debug(fmt.Sprintf(f, args...))
 }
 
 func (p *Plugin) infof(f string, args ...interface{}) {
-	p.API.LogInfo(fmt.Sprintf(f, args...))
+	p.client.Log.Info(fmt.Sprintf(f, args...))
 }
 
 func (p *Plugin) errorf(f string, args ...interface{}) {
-	p.API.LogError(fmt.Sprintf(f, args...))
+	p.client.Log.Error(fmt.Sprintf(f, args...))
 }
 
 func (p *Plugin) CheckSiteURL() error {
@@ -497,64 +489,6 @@ func (p *Plugin) setDefaultConfiguration() error {
 	}
 
 	return nil
-}
-
-func (p *Plugin) track(name, userID string) {
-	p.trackWithArgs(name, userID, nil)
-}
-
-func (p *Plugin) trackWithArgs(name, userID string, args map[string]interface{}) {
-	if args == nil {
-		args = map[string]interface{}{}
-	}
-	args["time"] = model.GetMillis()
-	_ = p.tracker.TrackUserEvent(name, userID, args)
-}
-
-func (p *Plugin) OnSendDailyTelemetry() {
-	args := map[string]interface{}{}
-
-	// Jira instances
-	server, cloud := 0, 0
-	instances, err := p.instanceStore.LoadInstances()
-	if err != nil {
-		p.API.LogWarn("Failed to get instances for telemetry", "error", err)
-	}
-	for _, id := range instances.IDs() {
-		switch instances.Get(id).Type {
-		case ServerInstanceType:
-			server++
-		case CloudInstanceType:
-			cloud++
-		}
-	}
-	args["instance_count"] = server + cloud
-	if server > 0 {
-		args["server_instance_count"] = server
-	}
-	if cloud > 0 {
-		args["cloud_instance_count"] = cloud
-	}
-
-	// Connected users
-	connected, err := p.userStore.CountUsers()
-	if err != nil {
-		p.API.LogWarn("Failed to get the number of connected users for telemetry", "error", err)
-	}
-	args["connected_user_count"] = connected
-
-	// Subscriptions
-	subscriptions := 0
-	for _, id := range instances.IDs() {
-		subs, err := p.getSubscriptions(id)
-		if err != nil {
-			p.API.LogWarn("Failed to get subscriptions for telemetry", "error", err)
-		}
-		subscriptions += len(subs.Channel.ByID)
-	}
-	args["subscriptions"] = subscriptions
-
-	_ = p.tracker.TrackEvent("stats", args)
 }
 
 func (p *Plugin) OnInstall(c *plugin.Context, event model.OnInstallEvent) error {

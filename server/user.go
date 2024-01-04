@@ -6,11 +6,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-server/v6/model"
 
@@ -28,10 +30,12 @@ type User struct {
 type Connection struct {
 	jira.User
 	PluginVersion      string
-	Oauth1AccessToken  string `json:",omitempty"`
-	Oauth1AccessSecret string `json:",omitempty"`
+	Oauth1AccessToken  string        `json:",omitempty"`
+	Oauth1AccessSecret string        `json:",omitempty"`
+	OAuth2Token        *oauth2.Token `json:",omitempty"`
 	Settings           *ConnectionSettings
-	DefaultProjectKey  string `json:"default_project_key,omitempty"`
+	DefaultProjectKey  string   `json:"default_project_key,omitempty"`
+	MattermostUserID   types.ID `json:"mattermost_user_id"`
 }
 
 func (c *Connection) JiraAccountID() types.ID {
@@ -62,17 +66,7 @@ func NewUser(mattermostUserID types.ID) *User {
 }
 
 func (p *Plugin) httpUserConnect(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be GET"))
-	}
-
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized,
-			errors.New("not authorized"))
-	}
-
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
@@ -100,22 +94,12 @@ func (p *Plugin) httpUserConnect(w http.ResponseWriter, r *http.Request, instanc
 }
 
 func (p *Plugin) httpUserDisconnect(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodPost {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be POST"))
-	}
-
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized,
-			errors.New("not authorized"))
-	}
-
 	disconnectPayload := &struct {
 		InstanceID string `json:"instance_id"`
 	}{}
 
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError,
 			errors.WithMessage(err, "failed to decode request"))
@@ -150,10 +134,6 @@ func (p *Plugin) httpUserDisconnect(w http.ResponseWriter, r *http.Request) (int
 // TODO succinctly document the difference between start and connect
 func (p *Plugin) httpUserStart(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized,
-			errors.New("not authorized"))
-	}
 
 	// If user is already connected we show them the docs
 	connection, err := p.userStore.LoadConnection(instanceID, types.ID(mattermostUserID))
@@ -208,27 +188,19 @@ func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, proje
 		return
 	}
 
-	p.API.PublishWebSocketEvent(websocketEventUpdateDefaults, info.AsConfigMap(),
+	p.client.Frontend.PublishWebSocketEvent(websocketEventUpdateDefaults, info.AsConfigMap(),
 		&model.WebsocketBroadcast{UserId: mattermostUserID.String()},
 	)
 }
 
 func (p *Plugin) httpGetSettingsInfo(w http.ResponseWriter, r *http.Request) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be GET"))
-	}
-
-	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized,
-			errors.New("not authorized"))
-	}
-
+	conf := p.getConfig()
 	return respondJSON(w, struct {
-		UIEnabled bool `json:"ui_enabled"`
+		UIEnabled                              bool `json:"ui_enabled"`
+		SecurityLevelEmptyForJiraSubscriptions bool `json:"security_level_empty_for_jira_subscriptions"`
 	}{
-		UIEnabled: p.getConfig().EnableJiraUI,
+		UIEnabled:                              conf.EnableJiraUI,
+		SecurityLevelEmptyForJiraSubscriptions: conf.SecurityLevelEmptyForJiraSubscriptions,
 	})
 }
 
@@ -258,11 +230,11 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, conne
 		return err
 	}
 
-	p.API.PublishWebSocketEvent(websocketEventConnect, info.AsConfigMap(),
+	p.client.Frontend.PublishWebSocketEvent(websocketEventConnect, info.AsConfigMap(),
 		&model.WebsocketBroadcast{UserId: mattermostUserID.String()},
 	)
 
-	p.track("userConnected", mattermostUserID.String())
+	p.TrackUserEvent("userConnected", mattermostUserID.String(), nil)
 
 	return nil
 }
@@ -303,10 +275,30 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 	if err != nil {
 		return nil, err
 	}
-	p.API.PublishWebSocketEvent(websocketEventDisconnect, info.AsConfigMap(),
+	p.client.Frontend.PublishWebSocketEvent(websocketEventDisconnect, info.AsConfigMap(),
 		&model.WebsocketBroadcast{UserId: user.MattermostUserID.String()})
 
-	p.track("userDisconnected", user.MattermostUserID.String())
+	p.TrackUserEvent("userDisconnected", user.MattermostUserID.String(), nil)
 
 	return conn, nil
+}
+
+func (p *Plugin) GetJiraUserFromMentions(instanceID types.ID, mentions model.UserMentionMap, userKey string) (*jira.User, error) {
+	userKey = strings.TrimPrefix(userKey, "@")
+	mentionUser, found := mentions[userKey]
+	if !found {
+		return nil, errors.New("the mentioned user was not found")
+	}
+
+	connection, err := p.userStore.LoadConnection(instanceID, types.ID(mentionUser))
+	if err != nil {
+		p.client.Log.Warn("Error occurred while loading connection", "User", mentionUser, "Error", err.Error())
+		return nil, errors.New("the mentioned user is not connected to Jira")
+	}
+
+	if connection.AccountID != "" {
+		return &connection.User, nil
+	}
+
+	return nil, errors.New("the mentioned user is not connected to Jira")
 }

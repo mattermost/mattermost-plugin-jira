@@ -1,0 +1,238 @@
+{
+  "timestamp": 1550286113023,
+  "webhookEvent": "jira:issue_created",
+  "issue_event_type_name": "issue_created",
+  "user": {
+    "self": "https://some-instance-test.atlassian.net/rest/api/2/user?accountId=5c5f880629be9642ba529340",
+    "name": "admin",
+    "key": "admin",
+    "accountId": "5c5f880629be9642ba529340",
+    "emailAddress": "some-instance-test@gmail.com",
+    "avatarUrls": {
+      "48x48": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=48&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D48%26noRedirect%3Dtrue",
+      "24x24": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=24&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D24%26noRedirect%3Dtrue",
+      "16x16": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=16&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D16%26noRedirect%3Dtrue",
+      "32x32": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=32&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D32%26noRedirect%3Dtrue"
+    },
+    "displayName": "Test User",
+    "active": true,
+    "timeZone": "America/Los_Angeles"
+  },
+  "issue": {
+    "id": "10040",
+    "self": "https://some-instance-test.atlassian.net/rest/api/2/issue/10040",
+    "key": "TES-41",
+    "fields": {
+      "issuetype": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/issuetype/10001",
+        "id": "10001",
+        "description": "Stories track functionality or features expressed as user goals.",
+        "iconUrl": "https://some-instance-test.atlassian.net/secure/viewavatar?size=xsmall&avatarId=10315&avatarType=issuetype",
+        "name": "Story",
+        "subtask": false,
+        "avatarId": 10315
+      },
+      "timespent": null,
+      "customfield_10030": null,
+      "project": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/project/10000",
+        "id": "10000",
+        "key": "TES",
+        "name": "test1",
+        "projectTypeKey": "software",
+        "avatarUrls": {
+          "48x48": "https://some-instance-test.atlassian.net/secure/projectavatar?avatarId=10324",
+          "24x24": "https://some-instance-test.atlassian.net/secure/projectavatar?size=small&avatarId=10324",
+          "16x16": "https://some-instance-test.atlassian.net/secure/projectavatar?size=xsmall&avatarId=10324",
+          "32x32": "https://some-instance-test.atlassian.net/secure/projectavatar?size=medium&avatarId=10324"
+        }
+      },
+      "fixVersions": [],
+      "aggregatetimespent": null,
+      "resolution": null,
+      "customfield_10027": null,
+      "resolutiondate": null,
+      "workratio": -1,
+      "lastViewed": null,
+      "watches": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/issue/TES-41/watchers",
+        "watchCount": 0,
+        "isWatching": true
+      },
+      "created": "2019-02-15T19:01:52.971-0800",
+      "customfield_10020": null,
+      "customfield_10021": null,
+      "customfield_10022": "0|i00067:",
+      "priority": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/priority/2",
+        "iconUrl": "https://some-instance-test.atlassian.net/images/icons/priorities/high.svg",
+        "name": "High",
+        "id": "2"
+      },
+      "customfield_10023": null,
+      "customfield_10024": [],
+      "customfield_10025": null,
+      "customfield_10026": null,
+      "labels": [
+        "test-label"
+      ],
+      "customfield_10016": null,
+      "customfield_10017": null,
+      "customfield_10018": {
+        "hasEpicLinkFieldDependency": false,
+        "showField": false,
+        "nonEditableReason": {
+          "reason": "PLUGIN_LICENSE_ERROR",
+          "message": "Portfolio for Jira must be licensed for the Parent Link to be available."
+        }
+      },
+      "customfield_10019": null,
+      "aggregatetimeoriginalestimate": null,
+      "timeestimate": null,
+      "versions": [],
+      "issuelinks": [],
+      "assignee": null,
+      "updated": "2019-02-15T19:01:52.971-0800",
+      "status": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/status/10001",
+        "description": "",
+        "iconUrl": "https://some-instance-test.atlassian.net/",
+        "name": "To Do",
+        "id": "10001",
+        "statusCategory": {
+          "self": "https://some-instance-test.atlassian.net/rest/api/2/statuscategory/2",
+          "id": 2,
+          "key": "new",
+          "colorName": "blue-gray",
+          "name": "New"
+        }
+      },
+      "components": [
+        {
+          "self": "https://some-instance-test.atlassian.net/rest/api/2/component/10000",
+          "id": "10000",
+          "name": "COMP-1",
+          "description": "Component-1"
+        }
+      ],
+      "timeoriginalestimate": null,
+      "description": "Unit test description, not that long",
+      "customfield_10010": null,
+      "customfield_10014": null,
+      "customfield_10015": null,
+      "timetracking": {},
+      "customfield_10005": null,
+      "customfield_10006": null,
+      "security": "10001",
+      "customfield_10007": null,
+      "customfield_10008": null,
+      "attachment": [],
+      "customfield_10009": null,
+      "aggregatetimeestimate": null,
+      "summary": "Unit test summary",
+      "creator": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/user?accountId=5c5f880629be9642ba529340",
+        "name": "admin",
+        "key": "admin",
+        "accountId": "5c5f880629be9642ba529340",
+        "emailAddress": "some-instance-test@gmail.com",
+        "avatarUrls": {
+          "48x48": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=48&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D48%26noRedirect%3Dtrue",
+          "24x24": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=24&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D24%26noRedirect%3Dtrue",
+          "16x16": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=16&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D16%26noRedirect%3Dtrue",
+          "32x32": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=32&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D32%26noRedirect%3Dtrue"
+        },
+        "displayName": "Test User",
+        "active": true,
+        "timeZone": "America/Los_Angeles"
+      },
+      "subtasks": [],
+      "reporter": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/user?accountId=5c5f880629be9642ba529340",
+        "name": "admin",
+        "key": "admin",
+        "accountId": "5c5f880629be9642ba529340",
+        "emailAddress": "some-instance-test@gmail.com",
+        "avatarUrls": {
+          "48x48": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=48&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D48%26noRedirect%3Dtrue",
+          "24x24": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=24&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D24%26noRedirect%3Dtrue",
+          "16x16": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=16&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D16%26noRedirect%3Dtrue",
+          "32x32": "https://avatar-cdn.atlassian.com/d991bc281c0c0ecb0bbb2db3979ddaff?s=32&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2Fd991bc281c0c0ecb0bbb2db3979ddaff%3Fd%3Dmm%26s%3D32%26noRedirect%3Dtrue"
+        },
+        "displayName": "Test User",
+        "active": true,
+        "timeZone": "America/Los_Angeles"
+      },
+      "customfield_10000": "{}",
+      "aggregateprogress": {
+        "progress": 0,
+        "total": 0
+      },
+      "customfield_10001": null,
+      "customfield_10002": null,
+      "customfield_10003": null,
+      "customfield_10004": null,
+      "environment": null,
+      "duedate": null,
+      "progress": {
+        "progress": 0,
+        "total": 0
+      },
+      "votes": {
+        "self": "https://some-instance-test.atlassian.net/rest/api/2/issue/TES-41/votes",
+        "votes": 0,
+        "hasVoted": false
+      }
+    }
+  },
+  "changelog": {
+    "id": "10222",
+    "items": [
+      {
+        "field": "description",
+        "fieldtype": "jira",
+        "fieldId": "description",
+        "from": null,
+        "fromString": null,
+        "to": null,
+        "toString": "Unit test description, not that long"
+      },
+      {
+        "field": "priority",
+        "fieldtype": "jira",
+        "fieldId": "priority",
+        "from": null,
+        "fromString": null,
+        "to": "2",
+        "toString": "High"
+      },
+      {
+        "field": "reporter",
+        "fieldtype": "jira",
+        "fieldId": "reporter",
+        "from": null,
+        "fromString": null,
+        "to": "admin",
+        "toString": "Test User"
+      },
+      {
+        "field": "Status",
+        "fieldtype": "jira",
+        "fieldId": "status",
+        "from": null,
+        "fromString": null,
+        "to": "10001",
+        "toString": "To Do"
+      },
+      {
+        "field": "summary",
+        "fieldtype": "jira",
+        "fieldId": "summary",
+        "from": null,
+        "fromString": null,
+        "to": null,
+        "toString": "Unit test summary"
+      }
+    ]
+  }
+}

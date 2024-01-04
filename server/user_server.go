@@ -34,7 +34,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 		if len(errtext) > 0 {
 			errtext = strings.ToUpper(errtext[:1]) + errtext[1:]
 		}
-		status, err = p.respondSpecialTemplate(w, "/other/message.html", status, "text/html", struct {
+		status, err = p.respondSpecialTemplate(w, "/other/message.html", status, ContentTypeHTML, struct {
 			Header  string
 			Message string
 		}{
@@ -60,13 +60,10 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	}
 
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return http.StatusUnauthorized, errors.New("not authorized")
-	}
-	mmuser, appErr := p.API.GetUser(mattermostUserID)
+	mmuser, appErr := p.client.User.Get(mattermostUserID)
 	if appErr != nil {
 		return http.StatusInternalServerError,
-			errors.WithMessage(appErr, "failed to load user "+mattermostUserID)
+			errors.WithMessage(err, "failed to load user "+mattermostUserID)
 	}
 
 	oauthTmpCredentials, err := p.otsStore.OneTimeLoadOauth1aTemporaryCredentials(mattermostUserID)
@@ -87,7 +84,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	}
 
 	connection := &Connection{
-		PluginVersion:      manifest.Version,
+		PluginVersion:      Manifest.Version,
 		Oauth1AccessToken:  accessToken,
 		Oauth1AccessSecret: accessSecret,
 	}
@@ -111,7 +108,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 		return http.StatusInternalServerError, err
 	}
 
-	return p.respondTemplate(w, r, "text/html", struct {
+	return p.respondTemplate(w, r, ContentTypeHTML, struct {
 		MattermostDisplayName string
 		JiraDisplayName       string
 		RevokeURL             string
@@ -123,23 +120,17 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 }
 
 func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
-	if r.Method != http.MethodGet {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			errors.New("method "+r.Method+" is not allowed, must be GET"))
-	}
-
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
-	if mattermostUserID == "" {
-		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
-	}
-
-	_, err := p.DisconnectUser(instanceID.String(), types.ID(mattermostUserID))
+	conn, err := p.DisconnectUser(instanceID.String(), types.ID(mattermostUserID))
 	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+	if _, err := p.CreateBotDMtoMMUserID(mattermostUserID, "You have successfully disconnected your Jira account (**%s**).", conn.DisplayName); err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
 	return p.respondSpecialTemplate(w, "/other/message.html", http.StatusOK,
-		"text/html", struct {
+		ContentTypeHTML, struct {
 			Header  string
 			Message string
 		}{

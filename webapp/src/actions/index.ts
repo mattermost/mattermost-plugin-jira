@@ -4,12 +4,19 @@
 import {PostTypes} from 'mattermost-redux/action_types';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
-import PluginId from 'plugin_id';
+import {id as PluginId} from '../manifest';
 import ActionTypes from 'action_types';
 import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
 import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances} from 'selectors';
 import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
-import {ChannelSubscription, CreateIssueRequest, SearchIssueParams, InstanceType, ProjectMetadata, APIResponse} from 'types/model';
+import {
+    APIResponse,
+    ChannelSubscription,
+    CreateIssueRequest,
+    InstanceType,
+    ProjectMetadata,
+    SearchIssueParams,
+} from 'types/model';
 
 export const openConnectModal = () => {
     return {
@@ -509,3 +516,24 @@ export function sendEphemeralPost(message: string, channelId?: string) {
         });
     };
 }
+
+export const fetchIssueByKey = (issueKey: string, instanceID: string) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        let data = null;
+        const params = `issue_key=${issueKey}&instance_id=${instanceID}`;
+        try {
+            data = await doFetch(`${baseUrl}/api/v2/get-issue-by-key?${params}`, {
+                method: 'get',
+            });
+
+            dispatch({
+                type: ActionTypes.RECEIVED_JIRA_TICKET,
+                data,
+            });
+            return {data};
+        } catch (error) {
+            return {error};
+        }
+    };
+};

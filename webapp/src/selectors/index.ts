@@ -6,7 +6,7 @@ import {createSelector} from 'reselect';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import PluginId from 'plugin_id';
+import {id as PluginId} from '../manifest';
 import {Instance} from 'types/model';
 
 const getPluginState = (state) => state['plugins-' + PluginId] || {};
@@ -73,3 +73,5 @@ export const instanceIsInstalled = (state): boolean => getInstalledInstances(sta
 export const getDefaultUserInstanceID = (state) => getPluginState(state).defaultUserInstanceID;
 
 export const getPluginSettings = (state) => getPluginState(state).pluginSettings;
+
+export const getStoredLinkTooltipIssue = (state) => getPluginState(state).storedLinkTooltipIssue;
