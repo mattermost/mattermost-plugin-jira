@@ -159,7 +159,7 @@ Jira notifications are messages sent to a Mattermost channel when a particular e
 
 Notifications and webhooks can be used together or you can opt for one of them.
 
-![This is a channel notification of a new bug that was created in Jira](assets/attach-from-post.png)
+![This is a channel notification of a new bug that was created in Jira](https://github.com/mattermost/mattermost-plugin-jira/assets/74422101/e15de4fe-1cb3-47d1-9b0d-538ab82ec91d)
 
 When any webhook event is received from Jira the plugin reviews all the notification subscriptions. If it matches a rule it will post a notification to the channel. If there are no subscription matches, the webhook event is discarded.
 
