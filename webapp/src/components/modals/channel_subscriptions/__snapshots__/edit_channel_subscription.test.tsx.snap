@@ -3634,7 +3634,7 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
           className="channel-subscriptions-modal__learnMore"
         >
           <a
-            href="https://github.com/mattermost/mattermost-plugin-jira/blob/master/docs/administrator-guide/notification-management.md#how-to-create-and-use-the-subscription-modal"
+            href="https://github.com/mattermost/mattermost-plugin-jira?tab=readme-ov-file#create-a-channel-subscription"
             rel="noopener noreferrer"
             target="_blank"
           >
