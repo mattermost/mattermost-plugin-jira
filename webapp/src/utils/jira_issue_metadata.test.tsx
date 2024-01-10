@@ -8,7 +8,7 @@ import {useFieldForIssueMetadata} from 'testdata/jira-issue-metadata-helpers';
 import {IssueMetadata, JiraField, FilterField, ChannelSubscriptionFilters, FilterFieldInclusion, IssueType, Project} from 'types/model';
 import {IssueAction, TicketDetails} from 'types/tooltip';
 
-import {getCustomFieldFiltersForProjects, generateJQLStringFromSubscriptionFilters, getConflictingFields, jiraIssueToReducer} from './jira_issue_metadata';
+import {getCustomFieldFiltersForProjects, generateJQLStringFromSubscriptionFilters, getConflictingFields, getJiraTicketDetails} from './jira_issue_metadata';
 
 describe('utils/jira_issue_metadata', () => {
     const useField = (field: JiraField, key: string): IssueMetadata => {
@@ -593,7 +593,7 @@ describe('utils/jira_issue_metadata', () => {
         });
     });
 
-    describe('jiraIssueToReducer', () => {
+    describe('getJiraTicketDetails', () => {
         it('should return the ticket details with all fields', () => {
             const action: IssueAction = ticketData('Mock Name');
 
@@ -610,7 +610,7 @@ describe('utils/jira_issue_metadata', () => {
                 issueIcon: 'https://something.atlassian.net/issuetype.png',
             };
 
-            const result = jiraIssueToReducer(action.data);
+            const result = getJiraTicketDetails(action.data);
 
             expect(result).toEqual(expectedTicketDetails);
         });
@@ -631,7 +631,7 @@ describe('utils/jira_issue_metadata', () => {
                 issueIcon: 'https://something.atlassian.net/issuetype.png',
             };
 
-            const result = jiraIssueToReducer(action.data);
+            const result = getJiraTicketDetails(action.data);
 
             expect(result).toEqual(expectedTicketDetails);
         });
