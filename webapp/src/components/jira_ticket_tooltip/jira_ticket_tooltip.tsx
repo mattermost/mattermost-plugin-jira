@@ -1,18 +1,18 @@
 import React, {ReactNode} from 'react';
 
 import {Instance} from 'types/model';
-import {TicketDetails} from 'types/tooltip';
+import {TicketData, TicketDetails} from 'types/tooltip';
 import DefaultAvatar from 'components/default_avatar/default_avatar';
 
 import './ticketStyle.scss';
+import {getJiraTicketDetails} from 'utils/jira_issue_metadata';
 
 export type Props = {
     href: string;
     show: boolean;
     connected: boolean;
-    ticketDetails?: TicketDetails | null;
     connectedInstances: Instance[];
-    fetchIssueByKey: (issueKey: string, instanceID: string) => Promise<void>;
+    fetchIssueByKey: (issueKey: string, instanceID: string) => Promise<{data?: TicketData}>;
 }
 
 export type State = {
@@ -77,25 +77,6 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         return null;
     }
 
-    isUserConnectedAndStateNotLoaded() {
-        const {connected} = this.props;
-        const {ticketDetails} = this.state;
-
-        return Boolean(connected && ticketDetails);
-    }
-
-    componentDidMount() {
-        if (!this.state.ticketId) {
-            return;
-        }
-
-        const {ticketDetails} = this.props;
-        const {ticketId} = this.state;
-        if (this.isUserConnectedAndStateNotLoaded() && ticketDetails && ticketDetails.ticketId === ticketId) {
-            this.setTicket(this.props);
-        }
-    }
-
     componentDidUpdate() {
         const issueKey = this.getIssueKey();
         if (!issueKey) {
@@ -103,20 +84,17 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         }
 
         const {instanceID} = issueKey;
-        const {ticketDetails} = this.props;
-        const {ticketId, ticketDetails: localTicketDetails} = this.state;
-
-        if (!localTicketDetails && ticketDetails && ticketDetails.ticketId === ticketId) {
-            this.setTicket(this.props);
-        } else if (!localTicketDetails && this.props.show && ticketId) {
-            this.props.fetchIssueByKey(ticketId, instanceID);
+        const {ticketId, ticketDetails} = this.state;
+        if (!ticketDetails && this.props.show && ticketId) {
+            this.props.fetchIssueByKey(this.state.ticketId, instanceID).then((res: {data?: TicketData}) => {
+                const updatedTicketDetails = getJiraTicketDetails(res.data);
+                if (this.props.connected && updatedTicketDetails && updatedTicketDetails.ticketId === ticketId) {
+                    this.setState({
+                        ticketDetails: updatedTicketDetails,
+                    });
+                }
+            });
         }
-    }
-
-    setTicket(data: Props) {
-        this.setState({
-            ticketDetails: data.ticketDetails,
-        });
     }
 
     fixVersionLabel(fixVersion: string) {

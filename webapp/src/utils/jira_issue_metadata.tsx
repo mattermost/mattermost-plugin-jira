@@ -376,13 +376,15 @@ export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMet
     return [projectJQL, issueTypesJQL, filterFieldsJQL].filter(Boolean).join(' AND ');
 }
 
-export function jiraIssueToReducer(data: TicketData): TicketDetails | null {
+export function getJiraTicketDetails(data?: TicketData): TicketDetails | null {
     if (!data) {
         return null;
     }
 
     const assignee = data && data.fields && data.fields.assignee ? data.fields.assignee : null;
     const ticketDetails: TicketDetails = {
+
+        // TODO: Add optional chaining operator
         assigneeName: (assignee && assignee.displayName) || '',
         assigneeAvatar: (assignee && assignee.avatarUrls && assignee.avatarUrls['48x48']) || '',
         labels: data.fields && data.fields.labels,
