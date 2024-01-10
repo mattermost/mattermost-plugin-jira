@@ -1,8 +1,7 @@
 import React, {ReactNode} from 'react';
-import {Dispatch} from 'redux';
 
 import {Instance} from 'types/model';
-import {TicketData, TicketDetails} from 'types/tooltip';
+import {TicketDetails} from 'types/tooltip';
 import DefaultAvatar from 'components/default_avatar/default_avatar';
 
 import './ticketStyle.scss';
@@ -139,7 +138,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
     tagTicketStatus(ticketStatus: string) {
         let ticketStatusClass = 'default-style ticket-status--default';
 
-        const myStatusClass = myStatusClasses[ticketStatus.toLowerCase()];
+        const myStatusClass = myStatusClasses[ticketStatus && ticketStatus.toLowerCase()];
         if (myStatusClass) {
             ticketStatusClass = 'default-style ' + myStatusClass;
         }
@@ -148,7 +147,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
     }
 
     renderLabelList(labels: string[]) {
-        if (!labels.length) {
+        if (!labels || !labels.length) {
             return null;
         }
 
@@ -243,7 +242,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                             target='_blank'
                             rel='noopener noreferrer'
                         >
-                            <h5>{ticketDetails.summary.substring(0, jiraTicketSummaryMaxLength)}</h5>
+                            <h5>{ticketDetails.summary && ticketDetails.summary.substring(0, jiraTicketSummaryMaxLength)}</h5>
                         </a>
                         {this.tagTicketStatus(ticketDetails.statusKey)}
                     </div>
