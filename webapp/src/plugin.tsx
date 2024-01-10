@@ -15,7 +15,6 @@ import ChannelSubscriptionsModal from 'components/modals/channel_subscriptions';
 import AttachCommentToIssuePostMenuAction from 'components/post_menu_actions/attach_comment_to_issue';
 import AttachCommentToIssueModal from 'components/modals/attach_comment_modal';
 import SetupUI from 'components/setup_ui';
-import LinkTooltip from 'components/jira_ticket_tooltip';
 
 import {id as PluginId} from './manifest';
 
@@ -38,7 +37,6 @@ const setupUILater = (registry: any, store: Store<object, Action<object>>): () =
             registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
             registry.registerRootComponent(AttachCommentToIssueModal);
             registry.registerPostDropdownMenuComponent(AttachCommentToIssuePostMenuAction);
-            registry.registerLinkTooltipComponent(LinkTooltip);
         }
 
         registry.registerRootComponent(ChannelSubscriptionsModal);
