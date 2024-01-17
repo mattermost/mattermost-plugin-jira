@@ -185,20 +185,6 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                     <div className='popover-header__container'>
                         <a
                             href={this.props.href}
-                            title='Go to ticket'
-                            target='_blank'
-                            rel='noopener noreferrer'
-                        >
-                            <img
-                                src={ticketDetails.jiraIcon}
-                                width={14}
-                                height={14}
-                                alt='jira-avatar'
-                                className='popover-header__avatar'
-                            />
-                        </a>
-                        <a
-                            href={this.props.href}
                             className='popover-header__keyword'
                             target='_blank'
                             rel='noopener noreferrer'
