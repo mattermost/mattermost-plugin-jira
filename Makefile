@@ -81,7 +81,7 @@ endif
 ## Ensures NPM dependencies are installed without having to run this all the time.
 webapp/.npminstall:
 ifneq ($(HAS_WEBAPP),)
-	cd webapp && $(NPM) install
+	cd webapp && $(NPM) install --verbose
 	touch $@
 endif
 

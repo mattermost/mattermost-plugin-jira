@@ -21,6 +21,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
+	jira "github.com/andygrunwald/go-jira"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -46,6 +47,15 @@ const (
 	WebhookMaxProcsPerServer = 20
 	WebhookBufferSize        = 10000
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
+
+	// Endpoints
+	patternCommentLinkEndpoint  = `/browse/)(?P<project_id>\w+)(-)(?P<jira_id>\d+)[?](focusedCommentId)(=)(?P<comment_id>\d+)`
+	templateCommentLinkEndpoint = `/browse/${project_id}-${jira_id}?focusedCommentId=${comment_id})`
+	patternIssueLinkEndpoint    = `/browse/)(?P<project_id>\w+)(-)(?P<jira_id>\d+)`
+	templateIssueLinkEndpoint   = `/browse/${project_id}-${jira_id})`
+
+	templateViewIssue            = `[${project_id}-${jira_id}](`
+	templateViewIssueWithComment = `[${project_id}-${jira_id} (comment)](`
 )
 
 var (
@@ -348,30 +358,36 @@ func (p *Plugin) AddAutolinksForCloudInstance(ci *cloudInstance) error {
 		return fmt.Errorf("unable to get project keys: %w", err)
 	}
 
-	for _, proj := range plist {
-		key := proj.Key
-		err = p.AddAutolinks(key, ci.BaseURL)
-	}
-	if err != nil {
+	if err = p.AddAutolinks(plist, ci.BaseURL); err != nil {
 		return fmt.Errorf("some keys were not installed: %w", err)
 	}
 
 	return nil
 }
 
-func (p *Plugin) AddAutolinks(key, baseURL string) error {
+func (p *Plugin) AddAutolinks(projectList jira.ProjectList, baseURL string) error {
 	baseURL = strings.TrimRight(baseURL, "/")
+	var replacedBaseURL = `(` + strings.ReplaceAll(baseURL, ".", `\.`)
 	installList := []autolink.Autolink{
 		{
+			Name:     "Jump to comment for " + baseURL,
+			Pattern:  replacedBaseURL + patternCommentLinkEndpoint,
+			Template: templateViewIssueWithComment + baseURL + templateCommentLinkEndpoint,
+		},
+		{
+			Name:     "Link to key for " + baseURL,
+			Pattern:  replacedBaseURL + patternIssueLinkEndpoint,
+			Template: templateViewIssue + baseURL + templateIssueLinkEndpoint,
+		},
+	}
+
+	for _, project := range projectList {
+		key := project.Key
+		installList = append(installList, autolink.Autolink{
 			Name:     key + " key to link for " + baseURL,
 			Pattern:  `(` + key + `)(-)(?P<jira_id>\d+)`,
 			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
-		},
-		{
-			Name:     key + " link to key for " + baseURL,
-			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)`,
-			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
-		},
+		})
 	}
 
 	client := autolinkclient.NewClientPlugin(p.API)
