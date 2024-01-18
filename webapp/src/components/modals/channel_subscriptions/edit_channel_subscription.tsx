@@ -418,6 +418,13 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                                     </span>
                                 </div>
                             )}
+                            <div className='channel-subscriptions-modal__learnMore'>
+                                <a
+                                    href='https://github.com/mattermost/mattermost-plugin-jira#create-a-channel-subscription'
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                >{'Learn More'}</a>
+                            </div>
                         </div>
                     </React.Fragment>
                 );
