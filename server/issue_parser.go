@@ -39,7 +39,7 @@ func getActions(instanceID types.ID, client Client, issue *jira.Issue) ([]*model
 	}
 
 	integration := &model.PostActionIntegration{
-		URL:     fmt.Sprintf("/plugins/%s%s%s", Manifest.Id, routeAPI, routeIssueTransition),
+		URL:     fmt.Sprintf("/plugins/%s%s%s", manifest.Id, routeAPI, routeIssueTransition),
 		Context: ctx,
 	}
 
@@ -71,7 +71,7 @@ func getActions(instanceID types.ID, client Client, issue *jira.Issue) ([]*model
 		Name: "Share publicly",
 		Type: "button",
 		Integration: &model.PostActionIntegration{
-			URL:     fmt.Sprintf("/plugins/%s%s%s", Manifest.Id, routeAPI, routeSharePublicly),
+			URL:     fmt.Sprintf("/plugins/%s%s%s", manifest.Id, routeAPI, routeSharePublicly),
 			Context: ctx,
 		},
 	})

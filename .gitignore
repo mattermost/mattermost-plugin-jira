@@ -4,6 +4,10 @@ dist
 bin
 vendor
 .npminstall
+.eslintcache
+
+webapp/src/manifest.ts
+server/manifest.go
 
 # Dev
 *.code-workspace
@@ -14,5 +18,5 @@ vendor
 # Intellij
 .idea/
 
-#VS CODE
-.vscode/
+# VS Code
+.vscode

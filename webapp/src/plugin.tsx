@@ -17,7 +17,7 @@ import AttachCommentToIssueModal from 'components/modals/attach_comment_modal';
 import SetupUI from 'components/setup_ui';
 import LinkTooltip from 'components/jira_ticket_tooltip';
 
-import {id as PluginId} from './manifest';
+import manifest from './manifest';
 
 import reducers from './reducers';
 import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings} from './actions';
@@ -27,6 +27,7 @@ const setupUILater = (registry: any, store: Store<object, Action<object>>): () =
     registry.registerReducer(reducers);
 
     const settings = await store.dispatch(getSettings());
+    const {id: PluginId} = manifest;
 
     try {
         await getConnected()(store.dispatch, store.getState);

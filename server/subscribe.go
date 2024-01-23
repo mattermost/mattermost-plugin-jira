@@ -94,7 +94,7 @@ type Subscriptions struct {
 
 func NewSubscriptions() *Subscriptions {
 	return &Subscriptions{
-		PluginVersion: Manifest.Version,
+		PluginVersion: manifest.Version,
 		Channel:       NewChannelSubscriptions(),
 	}
 }
@@ -106,7 +106,7 @@ func SubscriptionsFromJSON(bytes []byte, instanceID types.ID) (*Subscriptions, e
 		if unmarshalErr != nil {
 			return nil, unmarshalErr
 		}
-		subs.PluginVersion = Manifest.Version
+		subs.PluginVersion = manifest.Version
 	} else {
 		subs = NewSubscriptions()
 	}
