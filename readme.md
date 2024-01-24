@@ -40,6 +40,8 @@ Each user in Mattermost is connected with their own personal Jira account and no
 
 Keep all information in one place by attaching parts of Mattermost conversations in Jira issues as comments.  Then, on the resulting dialog, select the Jira issue you want to attach it to. You may search for issues containing specific text.
 
+![image](./assets/attach-from-post.png)
+
 ![image](https://user-images.githubusercontent.com/13119842/59113267-b627f780-8912-11e9-90ec-417d430de7e6.png)
 
 #### Transition Jira issues
