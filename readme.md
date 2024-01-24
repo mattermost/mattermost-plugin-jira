@@ -40,6 +40,8 @@ Each user in Mattermost is connected with their own personal Jira account and no
 
 Keep all information in one place by attaching parts of Mattermost conversations in Jira issues as comments.  Then, on the resulting dialog, select the Jira issue you want to attach it to. You may search for issues containing specific text.
 
+![image](./assets/attach-from-post.png)
+
 ![image](https://user-images.githubusercontent.com/13119842/59113267-b627f780-8912-11e9-90ec-417d430de7e6.png)
 
 #### Transition Jira issues
@@ -159,7 +161,7 @@ Jira notifications are messages sent to a Mattermost channel when a particular e
 
 Notifications and webhooks can be used together or you can opt for one of them.
 
-![This is a channel notification of a new bug that was created in Jira](https://github.com/mattermost/mattermost-plugin-jira/assets/74422101/e7020c3e-48f6-4825-8193-6a189f6c96eb)
+![This is a channel notification of a new bug that was created in Jira](./assets/ticket-created.png)
 
 When any webhook event is received from Jira the plugin reviews all the notification subscriptions. If it matches a rule it will post a notification to the channel. If there are no subscription matches, the webhook event is discarded.
 
