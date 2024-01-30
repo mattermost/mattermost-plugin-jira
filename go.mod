@@ -1,6 +1,6 @@
 module github.com/mattermost/mattermost-plugin-jira
 
-go 1.18
+go 1.21
 
 require (
 	github.com/andygrunwald/go-jira v1.10.0
