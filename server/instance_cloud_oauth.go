@@ -218,11 +218,11 @@ func (ci *cloudOAuthInstance) GetJiraBaseURL() string {
 }
 
 func (ci *cloudOAuthInstance) GetManageAppsURL() string {
-	return fmt.Sprintf("%s/plugins/servlet/applinks/listApplicationLinks", ci.GetURL())
+	return fmt.Sprintf("%s/plugins/servlet/applinks/listApplicationLinks", ci.GetJiraBaseURL())
 }
 
 func (ci *cloudOAuthInstance) GetManageWebhooksURL() string {
-	return fmt.Sprintf("%s/plugins/servlet/webhooks", ci.GetURL())
+	return fmt.Sprintf("%s/plugins/servlet/webhooks", ci.GetJiraBaseURL())
 }
 
 func (ci *cloudOAuthInstance) GetMattermostKey() string {

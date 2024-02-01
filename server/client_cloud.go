@@ -107,11 +107,12 @@ func (client jiraCloudClient) ListProjects(query string, limit int, expandIssueT
 			result.Values = result.Values[:remaining]
 		}
 		out = append(out, result.Values...)
-		remaining -= len(result.Values)
-
-		if !fetchAll && remaining == 0 {
-			// Got enough.
-			return out, nil
+		if !fetchAll {
+			remaining -= len(result.Values)
+			if remaining == 0 {
+				// Got enough.
+				return out, nil
+			}
 		}
 		if len(result.Values) == 0 || result.IsLast {
 			// Ran out of results.

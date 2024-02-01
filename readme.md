@@ -40,6 +40,8 @@ Each user in Mattermost is connected with their own personal Jira account and no
 
 Keep all information in one place by attaching parts of Mattermost conversations in Jira issues as comments.  Then, on the resulting dialog, select the Jira issue you want to attach it to. You may search for issues containing specific text.
 
+![image](./assets/attach-from-post.png)
+
 ![image](https://user-images.githubusercontent.com/13119842/59113267-b627f780-8912-11e9-90ec-417d430de7e6.png)
 
 #### Transition Jira issues
@@ -159,7 +161,7 @@ Jira notifications are messages sent to a Mattermost channel when a particular e
 
 Notifications and webhooks can be used together or you can opt for one of them.
 
-![This is a channel notification of a new bug that was created in Jira](https://github.com/mattermost/mattermost-plugin-jira/assets/74422101/e7020c3e-48f6-4825-8193-6a189f6c96eb)
+![This is a channel notification of a new bug that was created in Jira](./assets/ticket-created.png)
 
 When any webhook event is received from Jira the plugin reviews all the notification subscriptions. If it matches a rule it will post a notification to the channel. If there are no subscription matches, the webhook event is discarded.
 
@@ -200,6 +202,29 @@ The following Jira event notifications are supported:
 * Comments created, updated, or deleted
 
 ![This is the Channel Subscription modal](https://github.com/mattermost/mattermost-plugin-jira/assets/74422101/4dab17fa-5d49-48eb-91b1-cb9596780787)
+
+## Create a channel subscription
+
+1. Type the `/jira subscribe` command to open the "Create subscription" modal in the particular channel.
+2. Click on the **Create Subscription** button to create a subscription to receive Jira issue notifications in the current channel.
+3. Write the name of the subscription in the **Subscription Name** field.
+4. Select the project name to which you want to subscribe.
+5. Select the events and issue types for which you want to receive the notifications in the Mattermost channel.
+6. To be more specific, you can add filters as well. You can either include or exclude the particular filter by adding its type or name. We have many types of filters including some custom fields as well :
+   * Affects versions
+   * Epic Link
+   * Fix versions
+   * Labels
+   * Priority
+
+    **Few custom fields :**
+   * Checkboxes
+   * Labels
+   * Radio Buttons
+   * Select List (multiple choices)
+   * Select List (single choice)
+7. Based on the above given constraints in **Issue Type** and **Filters** fields an **Approximate JQL Output** is generated.
+8. Click on the **Add Subscription** button to add the subscription to that channel with the specific constraints that you have selected above.
 
 #### Setting up the webhook in Jira
 

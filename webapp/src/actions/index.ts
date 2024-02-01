@@ -526,11 +526,6 @@ export const fetchIssueByKey = (issueKey: string, instanceID: string) => {
             data = await doFetch(`${baseUrl}/api/v2/get-issue-by-key?${params}`, {
                 method: 'get',
             });
-
-            dispatch({
-                type: ActionTypes.RECEIVED_JIRA_TICKET,
-                data,
-            });
             return {data};
         } catch (error) {
             return {error};

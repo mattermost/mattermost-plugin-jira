@@ -1,19 +1,18 @@
 import React, {ReactNode} from 'react';
-import {Dispatch} from 'redux';
 
 import {Instance} from 'types/model';
 import {TicketData, TicketDetails} from 'types/tooltip';
 import DefaultAvatar from 'components/default_avatar/default_avatar';
 
 import './ticketStyle.scss';
+import {getJiraTicketDetails} from 'utils/jira_issue_metadata';
 
 export type Props = {
     href: string;
     show: boolean;
     connected: boolean;
-    ticketDetails?: TicketDetails | null;
     connectedInstances: Instance[];
-    fetchIssueByKey: (issueKey: string, instanceID: string) => Promise<void>;
+    fetchIssueByKey: (issueKey: string, instanceID: string) => Promise<{data?: TicketData}>;
 }
 
 export type State = {
@@ -78,25 +77,6 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         return null;
     }
 
-    isUserConnectedAndStateNotLoaded() {
-        const {connected} = this.props;
-        const {ticketDetails} = this.state;
-
-        return Boolean(connected && ticketDetails);
-    }
-
-    componentDidMount() {
-        if (!this.state.ticketId) {
-            return;
-        }
-
-        const {ticketDetails} = this.props;
-        const {ticketId} = this.state;
-        if (this.isUserConnectedAndStateNotLoaded() && ticketDetails && ticketDetails.ticketId === ticketId) {
-            this.setTicket(this.props);
-        }
-    }
-
     componentDidUpdate() {
         const issueKey = this.getIssueKey();
         if (!issueKey) {
@@ -104,20 +84,17 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         }
 
         const {instanceID} = issueKey;
-        const {ticketDetails} = this.props;
-        const {ticketId, ticketDetails: localTicketDetails} = this.state;
-
-        if (!localTicketDetails && ticketDetails && ticketDetails.ticketId === ticketId) {
-            this.setTicket(this.props);
-        } else if (!localTicketDetails && this.props.show && ticketId) {
-            this.props.fetchIssueByKey(ticketId, instanceID);
+        const {ticketId, ticketDetails} = this.state;
+        if (!ticketDetails && this.props.show && ticketId) {
+            this.props.fetchIssueByKey(this.state.ticketId, instanceID).then((res: {data?: TicketData}) => {
+                const updatedTicketDetails = getJiraTicketDetails(res.data);
+                if (this.props.connected && updatedTicketDetails && updatedTicketDetails.ticketId === ticketId) {
+                    this.setState({
+                        ticketDetails: updatedTicketDetails,
+                    });
+                }
+            });
         }
-    }
-
-    setTicket(data: Props) {
-        this.setState({
-            ticketDetails: data.ticketDetails,
-        });
     }
 
     fixVersionLabel(fixVersion: string) {
@@ -139,7 +116,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
     tagTicketStatus(ticketStatus: string) {
         let ticketStatusClass = 'default-style ticket-status--default';
 
-        const myStatusClass = myStatusClasses[ticketStatus.toLowerCase()];
+        const myStatusClass = myStatusClasses[ticketStatus && ticketStatus.toLowerCase()];
         if (myStatusClass) {
             ticketStatusClass = 'default-style ' + myStatusClass;
         }
@@ -148,7 +125,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
     }
 
     renderLabelList(labels: string[]) {
-        if (!labels.length) {
+        if (!labels || !labels.length) {
             return null;
         }
 
@@ -208,20 +185,6 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                     <div className='popover-header__container'>
                         <a
                             href={this.props.href}
-                            title='Go to ticket'
-                            target='_blank'
-                            rel='noopener noreferrer'
-                        >
-                            <img
-                                src={ticketDetails.jiraIcon}
-                                width={14}
-                                height={14}
-                                alt='jira-avatar'
-                                className='popover-header__avatar'
-                            />
-                        </a>
-                        <a
-                            href={this.props.href}
                             className='popover-header__keyword'
                             target='_blank'
                             rel='noopener noreferrer'
@@ -243,7 +206,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                             target='_blank'
                             rel='noopener noreferrer'
                         >
-                            <h5>{ticketDetails.summary.substring(0, jiraTicketSummaryMaxLength)}</h5>
+                            <h5>{ticketDetails.summary && ticketDetails.summary.substring(0, jiraTicketSummaryMaxLength)}</h5>
                         </a>
                         {this.tagTicketStatus(ticketDetails.statusKey)}
                     </div>
