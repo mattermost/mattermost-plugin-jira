@@ -14,7 +14,7 @@ import {getCustomFieldFiltersForProjects, isEpicLinkField} from 'utils/jira_issu
 import ChannelSubscriptionFilter, {Props} from './channel_subscription_filter';
 
 describe('components/ChannelSubscriptionFilter', () => {
-    const fields = getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key]);
+    const fields = getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key], []);
     const baseProps: Props = {
         theme: {},
         fields,

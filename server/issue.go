@@ -29,7 +29,15 @@ const (
 	descriptionField   = "description"
 	resolutionField    = "resolution"
 	securityLevelField = "security"
+
+	QueryParamInstanceID = "instance_id"
+	QueryParamProjectID  = "project_id"
 )
+
+type CreateMetaInfo struct {
+	*jira.CreateMetaInfo
+	IssueTypesWithStatuses []*IssueTypeWithStatuses `json:"issue_types_with_statuses"`
+}
 
 func makePost(userID, channelID, message string) *model.Post {
 	return &model.Post{
@@ -372,16 +380,29 @@ func (p *Plugin) httpGetCreateIssueMetadataForProjects(w http.ResponseWriter, r 
 	return respondJSON(w, cimd)
 }
 
-func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID types.ID, projectKeys string) (*jira.CreateMetaInfo, error) {
+func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID types.ID, projectKeys string) (*CreateMetaInfo, error) {
 	client, _, _, err := p.getClient(instanceID, mattermostUserID)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.GetCreateMetaInfo(p.API, &jira.GetQueryOptions{
+	projectStatuses, err := client.ListProjectStatuses(projectKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	metaInfo, err := client.GetCreateMetaInfo(p.API, &jira.GetQueryOptions{
 		Expand:      "projects.issuetypes.fields",
 		ProjectKeys: projectKeys,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &CreateMetaInfo{
+		metaInfo,
+		projectStatuses,
+	}, nil
 }
 
 func (p *Plugin) httpGetSearchIssues(w http.ResponseWriter, r *http.Request) (int, error) {

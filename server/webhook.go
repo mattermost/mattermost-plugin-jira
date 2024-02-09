@@ -20,6 +20,7 @@ const (
 	commentDeleted = "comment_deleted"
 	commentUpdated = "comment_updated"
 	commentCreated = "comment_created"
+	issueCreated   = "jira:issue_created"
 
 	worklogUpdated = "jira:worklog_updated"
 )
