@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi/experimental/flow"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -63,7 +63,7 @@ const (
 )
 
 func (p *Plugin) NewSetupFlow() *flow.Flow {
-	pluginURL := *p.client.Configuration.GetConfig().ServiceSettings.SiteURL + "/" + "plugins" + "/" + Manifest.Id
+	pluginURL := *p.client.Configuration.GetConfig().ServiceSettings.SiteURL + "/" + "plugins" + "/" + manifest.Id
 	conf := p.getConfig()
 	return flow.NewFlow("setup-wizard", p.client, pluginURL, conf.botUserID).
 		WithSteps(
@@ -97,7 +97,7 @@ func (p *Plugin) NewSetupFlow() *flow.Flow {
 }
 
 func (p *Plugin) NewOAuth2Flow() *flow.Flow {
-	pluginURL := fmt.Sprintf("%s/plugins/%s", *p.client.Configuration.GetConfig().ServiceSettings.SiteURL, Manifest.Id)
+	pluginURL := fmt.Sprintf("%s/plugins/%s", *p.client.Configuration.GetConfig().ServiceSettings.SiteURL, manifest.Id)
 	conf := p.getConfig()
 	return flow.NewFlow("setup-oauth2", p.client, pluginURL, conf.botUserID).
 		WithSteps(

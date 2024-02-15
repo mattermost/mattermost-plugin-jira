@@ -6,10 +6,10 @@ import {createSelector} from 'reselect';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {id as PluginId} from '../manifest';
+import manifest from '../manifest';
 import {Instance} from 'types/model';
 
-const getPluginState = (state) => state['plugins-' + PluginId] || {};
+const getPluginState = (state) => state['plugins-' + manifest.id] || {};
 
 export const getPluginServerRoute = (state) => {
     const config = getConfig(state);
@@ -23,7 +23,7 @@ export const getPluginServerRoute = (state) => {
         }
     }
 
-    return basePath + '/plugins/' + PluginId;
+    return basePath + '/plugins/' + manifest.id;
 };
 
 export const getCurrentUserLocale = createSelector(

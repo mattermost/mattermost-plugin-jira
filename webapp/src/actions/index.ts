@@ -4,7 +4,7 @@
 import {PostTypes} from 'mattermost-redux/action_types';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
-import {id as PluginId} from '../manifest';
+import manifest from '../manifest';
 import ActionTypes from 'action_types';
 import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
 import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances} from 'selectors';
@@ -434,7 +434,7 @@ export function handleConnectFlow(instanceID?: string) {
 export function redirectConnect(instanceID: string) {
     return async (dispatch, getState) => {
         const instancePrefix = '/instance/' + btoa(instanceID);
-        const target = '/plugins/' + PluginId + instancePrefix + '/user/connect';
+        const target = '/plugins/' + manifest.id + instancePrefix + '/user/connect';
         window.open(target, '_blank');
     };
 }

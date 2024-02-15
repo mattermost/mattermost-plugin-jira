@@ -12,7 +12,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -88,7 +88,7 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 
 	mmToken := r.FormValue(argMMToken)
 	connection := &Connection{
-		PluginVersion: Manifest.Version,
+		PluginVersion: manifest.Version,
 		User: jira.User{
 			AccountID:   accountID,
 			Key:         jUser.Key,

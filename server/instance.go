@@ -49,7 +49,7 @@ func newInstanceCommon(p *Plugin, instanceType InstanceType, instanceID types.ID
 		Plugin:        p,
 		Type:          instanceType,
 		InstanceID:    instanceID,
-		PluginVersion: Manifest.Version,
+		PluginVersion: manifest.Version,
 	}
 }
 
