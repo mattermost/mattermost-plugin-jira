@@ -8,11 +8,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -28,10 +30,12 @@ type User struct {
 type Connection struct {
 	jira.User
 	PluginVersion      string
-	Oauth1AccessToken  string `json:",omitempty"`
-	Oauth1AccessSecret string `json:",omitempty"`
+	Oauth1AccessToken  string        `json:",omitempty"`
+	Oauth1AccessSecret string        `json:",omitempty"`
+	OAuth2Token        *oauth2.Token `json:",omitempty"`
 	Settings           *ConnectionSettings
-	DefaultProjectKey  string `json:"default_project_key,omitempty"`
+	DefaultProjectKey  string   `json:"default_project_key,omitempty"`
+	MattermostUserID   types.ID `json:"mattermost_user_id"`
 }
 
 func (c *Connection) JiraAccountID() types.ID {
@@ -190,10 +194,13 @@ func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, proje
 }
 
 func (p *Plugin) httpGetSettingsInfo(w http.ResponseWriter, r *http.Request) (int, error) {
+	conf := p.getConfig()
 	return respondJSON(w, struct {
-		UIEnabled bool `json:"ui_enabled"`
+		UIEnabled                              bool `json:"ui_enabled"`
+		SecurityLevelEmptyForJiraSubscriptions bool `json:"security_level_empty_for_jira_subscriptions"`
 	}{
-		UIEnabled: p.getConfig().EnableJiraUI,
+		UIEnabled:                              conf.EnableJiraUI,
+		SecurityLevelEmptyForJiraSubscriptions: conf.SecurityLevelEmptyForJiraSubscriptions,
 	})
 }
 
@@ -274,4 +281,24 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 	p.TrackUserEvent("userDisconnected", user.MattermostUserID.String(), nil)
 
 	return conn, nil
+}
+
+func (p *Plugin) GetJiraUserFromMentions(instanceID types.ID, mentions model.UserMentionMap, userKey string) (*jira.User, error) {
+	userKey = strings.TrimPrefix(userKey, "@")
+	mentionUser, found := mentions[userKey]
+	if !found {
+		return nil, errors.New("the mentioned user was not found")
+	}
+
+	connection, err := p.userStore.LoadConnection(instanceID, types.ID(mentionUser))
+	if err != nil {
+		p.client.Log.Warn("Error occurred while loading connection", "User", mentionUser, "Error", err.Error())
+		return nil, errors.New("the mentioned user is not connected to Jira")
+	}
+
+	if connection.AccountID != "" {
+		return &connection.User, nil
+	}
+
+	return nil, errors.New("the mentioned user is not connected to Jira")
 }

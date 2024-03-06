@@ -54,9 +54,6 @@ const config = {
                     },
                     {
                         loader: 'sass-loader',
-                        options: {
-                            includePaths: ['node_modules/compass-mixins/lib', 'sass'],
-                        },
                     },
                 ],
             },
@@ -69,6 +66,7 @@ const config = {
         'react-redux': 'ReactRedux',
         'prop-types': 'PropTypes',
         'react-bootstrap': 'ReactBootstrap',
+        'react-router-dom': 'ReactRouterDom',
     },
     output: {
         devtoolNamespace: 'jira',

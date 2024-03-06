@@ -4,9 +4,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -110,7 +110,7 @@ func TestInstallInstance(t *testing.T) {
 
 			testInstance0 := &testInstance{
 				InstanceCommon: InstanceCommon{
-					InstanceID: mockInstance1URL,
+					InstanceID: mockInstance3URL,
 					IsV2Legacy: true,
 					Type:       "testInstanceType",
 				},

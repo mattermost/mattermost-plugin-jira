@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -20,6 +20,9 @@ const (
 	commentDeleted = "comment_deleted"
 	commentUpdated = "comment_updated"
 	commentCreated = "comment_created"
+	issueCreated   = "jira:issue_created"
+
+	worklogUpdated = "jira:worklog_updated"
 )
 
 type Webhook interface {
@@ -140,7 +143,11 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 
 		isCommentEvent := wh.Events().Intersection(commentEvents).Len() > 0
 		if isCommentEvent {
-			err = client.RESTGet(notification.commentSelf, nil, &struct{}{})
+			if instance.Common().IsCloudInstance() {
+				err = client.RESTGet(fmt.Sprintf("/2/issue/%s/comment/%s", wh.Issue.ID, wh.Comment.ID), nil, &struct{}{})
+			} else {
+				err = client.RESTGet(notification.commentSelf, nil, &struct{}{})
+			}
 		} else {
 			_, err = client.GetIssue(wh.Issue.ID, nil)
 		}

@@ -178,7 +178,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
 
         return (
             <div>
-                <div className='d-flex justify-content-between align-items-center margin-bottom x3'>
+                <div className='d-flex justify-content-between align-items-center margin-bottom x3 title-message'>
                     {titleMessage}
                     <button
                         className='btn btn-primary'

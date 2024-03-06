@@ -11,7 +11,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -40,7 +40,7 @@ func (p *Plugin) httpACUserRedirect(w http.ResponseWriter, r *http.Request, inst
 
 	submitURL := p.CreateFullURLPath(instancePath(routeACUserConfirm, instanceID))
 
-	return ci.Plugin.respondTemplate(w, r, "text/html", struct {
+	return ci.Plugin.respondTemplate(w, r, ContentTypeHTML, struct {
 		SubmitURL  string
 		ArgJiraJWT string
 		ArgMMToken string
@@ -165,7 +165,7 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 	// This set of props should work for all relevant routes/templates
 	connectSubmitURL := p.CreateFullURLPath(instancePath(routeACUserConnected, instanceID))
 	disconnectSubmitURL := p.CreateFullURLPath(instancePath(routeACUserDisconnected, instanceID))
-	return ci.Plugin.respondTemplate(w, r, "text/html", struct {
+	return ci.Plugin.respondTemplate(w, r, ContentTypeHTML, struct {
 		ConnectSubmitURL      string
 		DisconnectSubmitURL   string
 		ArgJiraJWT            string

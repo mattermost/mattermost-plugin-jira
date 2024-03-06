@@ -86,7 +86,7 @@ func (p *Plugin) initializeTelemetry() {
 		p.telemetryClient,
 		p.API.GetDiagnosticId(),
 		p.API.GetServerVersion(),
-		manifest.ID,
+		manifest.Id,
 		manifest.Version,
 		"jira",
 		telemetry.NewTrackerConfig(p.API.GetConfig()),

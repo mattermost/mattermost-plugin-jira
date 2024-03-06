@@ -19,8 +19,8 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost/server/public/plugin"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
@@ -57,6 +57,7 @@ type ProjectService interface {
 	GetProject(key string) (*jira.Project, error)
 	ListProjects(query string, limit int, expandIssueTypes bool) (jira.ProjectList, error)
 	GetIssueTypes(projectID string) ([]jira.IssueType, error)
+	ListProjectStatuses(projectID string) ([]*IssueTypeWithStatuses, error)
 }
 
 // SearchService is the interface for search-related APIs.
@@ -310,12 +311,12 @@ func (client JiraClient) GetSelf() (*jira.User, error) {
 // MakeCreateIssueURL makes a URL that would take a browser to a pre-filled form
 // to file a new issue in Jira.
 func MakeCreateIssueURL(instance Instance, project *jira.Project, issue *jira.Issue) string {
-	u, err := url.Parse(fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", instance.GetURL()))
+	url, err := url.Parse(fmt.Sprintf("%v/secure/CreateIssueDetails!init.jspa", instance.GetJiraBaseURL()))
 	if err != nil {
 		return ""
 	}
 
-	q := u.Query()
+	q := url.Query()
 	q.Add("pid", project.ID)
 	q.Add("issuetype", issue.Fields.Type.ID)
 	q.Add("summary", issue.Fields.Summary)
@@ -344,8 +345,8 @@ func MakeCreateIssueURL(instance Instance, project *jira.Project, issue *jira.Is
 		}
 	}
 
-	u.RawQuery = q.Encode()
-	return u.String()
+	url.RawQuery = q.Encode()
+	return url.String()
 }
 
 // SearchUsersAssignableToIssue finds all users that can be assigned to an issue.

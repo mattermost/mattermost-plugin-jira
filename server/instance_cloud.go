@@ -14,7 +14,7 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 	ajwt "github.com/rbriski/atlassian-jwt"
 	"golang.org/x/oauth2"
@@ -183,6 +183,10 @@ func (p *Plugin) createCookieFromSecret(secret string) (*http.Cookie, error) {
 
 func (ci *cloudInstance) GetURL() string {
 	return ci.AtlassianSecurityContext.BaseURL
+}
+
+func (ci *cloudInstance) GetJiraBaseURL() string {
+	return ci.GetURL()
 }
 
 func (ci *cloudInstance) GetManageAppsURL() string {

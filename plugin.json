@@ -4,10 +4,8 @@
     "description": "Atlassian Jira plugin for Mattermost.",
     "homepage_url": "https://github.com/mattermost/mattermost-plugin-jira",
     "support_url": "https://github.com/mattermost/mattermost-plugin-jira/issues",
-    "release_notes_url": "https://github.com/mattermost/mattermost-plugin-jira/releases/tag/v3.2.0",
     "icon_path": "assets/icon.svg",
-    "version": "3.2.0",
-    "min_server_version": "6.5.0",
+    "min_server_version": "7.8.0",
     "server": {
         "executables": {
             "darwin-amd64": "server/dist/plugin-darwin-amd64",
@@ -22,14 +20,14 @@
         "bundle_path": "webapp/dist/main.js"
     },
     "settings_schema": {
-        "header": "Please refer to the `/jira` command [**documentation**](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) to further configure the Jira plugin.",
-        "footer": "Please refer to the `/jira` command [**documentation**](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) to further configure the Jira plugin. Specifically, [`/jira instance [un-]install`](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) and [`/jira webhook`](https://mattermost.gitbook.io/plugin-jira/setup/configuration#step-4-required-setup-webhooks-from-jira).",
+        "header": "Please refer to the '/jira' command [**documentation**](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) to further configure the Jira plugin.",
+        "footer": "Please refer to the '/jira' command [**documentation**](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) to further configure the Jira plugin. Specifically, ['/jira instance [un-]install'](https://mattermost.gitbook.io/plugin-jira/setup/installation#step-2-install-app-on-jira-server) and ['/jira webhook'](https://mattermost.gitbook.io/plugin-jira/setup/configuration#step-4-required-setup-webhooks-from-jira).",
         "settings": [
             {
                 "key": "EnableJiraUI",
                 "display_name": "Allow users to attach and create Jira issues in Mattermost:",
                 "type": "bool",
-                "help_text": "When **false**, users cannot attach and create Jira issues in Mattermost. Does not affect Jira webhook notifications. Select **false** then disable and re-enable this plugin in **System Console \u003e Plugins \u003e Plugin Management** to reset the plugin state for all users. \n \n When **true**, install this plugin to your Jira instance with `/jira install` to allow users to create and manage issues across Mattermost channels. See [documentation](https://about.mattermost.com/default-jira-plugin-link-application) to learn more.",
+                "help_text": "When **false**, users cannot attach and create Jira issues in Mattermost. Does not affect Jira webhook notifications. Select **false** then disable and re-enable this plugin in **System Console \u003e Plugins \u003e Plugin Management** to reset the plugin state for all users. \n \n When **true**, install this plugin to your Jira instance with '/jira install' to allow users to create and manage issues across Mattermost channels. See [documentation](https://about.mattermost.com/default-jira-plugin-link-application) to learn more.",
                 "placeholder": "",
                 "default": true
             },
@@ -77,10 +75,18 @@
                 "default": ""
             },
             {
+                "key": "SecurityLevelEmptyForJiraSubscriptions",
+                "display_name": "Default Subscription Security Level to Empty:",
+                "type": "bool",
+                "help_text": "Subscriptions will only include issues that have a security level assigned if the appropriate security level has been included as a filter",
+                "placeholder": "",
+                "default": true
+            },
+            {
                 "key": "JiraAdminAdditionalHelpText",
                 "display_name": "Additional Help Text to be shown with Jira Help:",
                 "type": "text",
-                "help_text": "Additional Help Text to be shown to the user along with the output of `/jira help` command.",
+                "help_text": "Additional Help Text to be shown to the user along with the output of '/jira help' command.",
                 "placeholder": "",
                 "default": ""
             },
@@ -96,7 +102,7 @@
                 "key": "EnableAutocomplete",
                 "display_name": "Enable slash command autocomplete:",
                 "type": "bool",
-                "help_text": "Autocomplete guides users through the available `/jira` slash commands.",
+                "help_text": "Autocomplete guides users through the available '/jira' slash commands.",
                 "placeholder": "",
                 "default": true
             },

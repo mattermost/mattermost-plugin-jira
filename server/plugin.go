@@ -9,21 +9,22 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	htmlTemplate "html/template"
 	"math"
 	"net/url"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
-	"text/template"
+	textTemplate "text/template"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/mattermost/mattermost/server/public/pluginapi/experimental/flow"
 
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
@@ -46,10 +47,6 @@ const (
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
 )
 
-var BuildHash = ""
-var BuildHashShort = ""
-var BuildDate = ""
-
 type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
 	EnableJiraUI bool `json:"enablejiraui"`
@@ -69,6 +66,9 @@ type externalConfig struct {
 
 	// Additional Help Text to be shown in the output of '/jira help' command
 	JiraAdminAdditionalHelpText string
+
+	// When enabled, a subscription without security level rules will filter out an issue that has a security level assigned
+	SecurityLevelEmptyForJiraSubscriptions bool
 
 	// Hide issue descriptions and comments in Webhook and Subscription messages
 	HideDecriptionComment bool
@@ -112,7 +112,8 @@ type Plugin struct {
 	otsStore      OTSStore
 	secretsStore  SecretsStore
 
-	setupFlow *flow.Flow
+	setupFlow  *flow.Flow
+	oauth2Flow *flow.Flow
 
 	router *mux.Router
 
@@ -120,7 +121,8 @@ type Plugin struct {
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
 
 	// templates are loaded on startup
-	templates map[string]*template.Template
+	htmlTemplates map[string]*htmlTemplate.Template
+	textTemplates map[string]*textTemplate.Template
 
 	// channel to distribute work to the webhook processors
 	webhookQueue chan *webhookMessage
@@ -229,6 +231,7 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	botUserID, err := p.client.Bot.EnsureBot(&model.Bot{
+		OwnerId:     manifest.Id, // Workaround to support older server version affected by https://github.com/mattermost/mattermost-server/pull/21560
 		Username:    botUserName,
 		DisplayName: botDisplayName,
 		Description: botDescription,
@@ -241,6 +244,8 @@ func (p *Plugin) OnActivate() error {
 	ptr := p.client.Configuration.GetConfig().ServiceSettings.SiteURL
 	if ptr != nil {
 		mattermostSiteURL = *ptr
+	} else {
+		return errors.New("please configure the Mattermost server's SiteURL, then restart the plugin.")
 	}
 
 	err = p.setDefaultConfiguration()
@@ -264,13 +269,15 @@ func (p *Plugin) OnActivate() error {
 		return errors.WithMessage(err, "OnActivate: failed to migrate from previous version of the Jira plugin")
 	}
 
-	templates, err := p.loadTemplates(filepath.Join(bundlePath, "assets", "templates"))
+	htmlTemplates, textTemplates, err := p.loadTemplates(filepath.Join(bundlePath, "assets", "templates"))
 	if err != nil {
 		return err
 	}
-	p.templates = templates
+	p.htmlTemplates = htmlTemplates
+	p.textTemplates = textTemplates
 
 	p.setupFlow = p.NewSetupFlow()
+	p.oauth2Flow = p.NewOAuth2Flow()
 
 	// Register /jira command and stash the loaded list of known instances for
 	// later (autolink registration).
@@ -382,7 +389,7 @@ func (p *Plugin) GetPluginKey() string {
 }
 
 func (p *Plugin) GetPluginURLPath() string {
-	return "/plugins/" + manifest.ID
+	return "/plugins/" + manifest.Id
 }
 
 func (p *Plugin) GetPluginURL() string {

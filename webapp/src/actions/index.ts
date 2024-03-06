@@ -4,12 +4,19 @@
 import {PostTypes} from 'mattermost-redux/action_types';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
-import PluginId from 'plugin_id';
+import manifest from '../manifest';
 import ActionTypes from 'action_types';
 import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
 import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances} from 'selectors';
 import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
-import {ChannelSubscription, CreateIssueRequest, SearchIssueParams, InstanceType, ProjectMetadata, APIResponse} from 'types/model';
+import {
+    APIResponse,
+    ChannelSubscription,
+    CreateIssueRequest,
+    InstanceType,
+    ProjectMetadata,
+    SearchIssueParams,
+} from 'types/model';
 
 export const openConnectModal = () => {
     return {
@@ -428,8 +435,7 @@ export function redirectConnect(instanceID: string) {
     return async (dispatch, getState) => {
         const serverUrl = getPluginServerRoute(getState());
         const instancePrefix = '/instance/' + btoa(instanceID);
-        const target = `${serverUrl}${instancePrefix}/user/connect`;
-
+        const target = '/plugins/' + manifest.id + instancePrefix + '/user/connect';
         window.open(target, '_blank');
     };
 }
@@ -511,3 +517,19 @@ export function sendEphemeralPost(message: string, channelId?: string) {
         });
     };
 }
+
+export const fetchIssueByKey = (issueKey: string, instanceID: string) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        let data = null;
+        const params = `issue_key=${issueKey}&instance_id=${instanceID}`;
+        try {
+            data = await doFetch(`${baseUrl}/api/v2/get-issue-by-key?${params}`, {
+                method: 'get',
+            });
+            return {data};
+        } catch (error) {
+            return {error};
+        }
+    };
+};

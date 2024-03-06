@@ -9,13 +9,14 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/trivago/tgo/tcontainer"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 )
@@ -83,6 +84,28 @@ func (client testClient) AddComment(issueKey string, comment *jira.Comment) (*ji
 	}
 
 	return nil, nil
+}
+
+func (client testClient) GetCreateMetaInfo(api plugin.API, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
+	return &jira.CreateMetaInfo{
+		Projects: []*jira.MetaProject{
+			{
+				IssueTypes: []*jira.MetaIssueType{
+					{
+						Fields: tcontainer.MarshalMap{
+							"security": tcontainer.MarshalMap{
+								"allowedValues": []interface{}{
+									tcontainer.MarshalMap{
+										"id": "10001",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}, nil
 }
 
 func TestTransitionJiraIssue(t *testing.T) {
