@@ -13,7 +13,6 @@ const getPluginState = (state) => state['plugins-' + manifest.id] || {};
 
 export const getPluginServerRoute = (state) => {
     const config = getConfig(state);
-
     let basePath = '';
     if (config && config.SiteURL) {
         basePath = new URL(config.SiteURL).pathname;

@@ -5,7 +5,6 @@ package main
 
 import (
 	"net/http"
-	"path"
 	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -39,7 +38,7 @@ func (p *Plugin) httpACUserRedirect(w http.ResponseWriter, r *http.Request, inst
 		return respondErr(w, http.StatusBadRequest, err)
 	}
 
-	submitURL := path.Join(ci.Plugin.GetPluginURLPath(), instancePath(routeACUserConfirm, instanceID))
+	submitURL := p.CreateFullURLPath(instancePath(routeACUserConfirm, instanceID))
 
 	return ci.Plugin.respondTemplate(w, r, ContentTypeHTML, struct {
 		SubmitURL  string
@@ -164,8 +163,8 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 	}
 
 	// This set of props should work for all relevant routes/templates
-	connectSubmitURL := path.Join(p.GetPluginURLPath(), instancePath(routeACUserConnected, instanceID))
-	disconnectSubmitURL := path.Join(p.GetPluginURLPath(), instancePath(routeACUserDisconnected, instanceID))
+	connectSubmitURL := p.CreateFullURLPath(instancePath(routeACUserConnected, instanceID))
+	disconnectSubmitURL := p.CreateFullURLPath(instancePath(routeACUserDisconnected, instanceID))
 	return ci.Plugin.respondTemplate(w, r, ContentTypeHTML, struct {
 		ConnectSubmitURL      string
 		DisconnectSubmitURL   string

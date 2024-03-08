@@ -400,6 +400,10 @@ func (p *Plugin) GetSiteURL() string {
 	return p.getConfig().mattermostSiteURL
 }
 
+func (p *Plugin) CreateFullURLPath(extensionPath string) string {
+	return fmt.Sprintf("%s%s%s", p.GetSiteURL(), p.GetPluginURLPath(), extensionPath)
+}
+
 func (p *Plugin) debugf(f string, args ...interface{}) {
 	p.client.Log.Debug(fmt.Sprintf(f, args...))
 }

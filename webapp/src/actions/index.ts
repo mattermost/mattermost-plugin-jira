@@ -433,6 +433,7 @@ export function handleConnectFlow(instanceID?: string) {
 
 export function redirectConnect(instanceID: string) {
     return async (dispatch, getState) => {
+        const serverUrl = getPluginServerRoute(getState());
         const instancePrefix = '/instance/' + btoa(instanceID);
         const target = '/plugins/' + manifest.id + instancePrefix + '/user/connect';
         window.open(target, '_blank');
