@@ -24,9 +24,9 @@ func mdKeySummaryLink(issue *jira.Issue, instance Instance) string {
 	return fmt.Sprintf("[%s: %s (%s)](%s%s)", issue.Key, issue.Fields.Summary, issue.Fields.Status.Name, instance.GetJiraBaseURL(), "/browse/"+issue.Key)
 }
 
-func reporterSummary(issue *jira.Issue) string {
-	avatarLink := fmt.Sprintf("![avatar](%s =30x30)", issue.Fields.Reporter.AvatarUrls.One6X16)
-	reporterSummary := avatarLink + " " + issue.Fields.Reporter.Name
+func reporterSummary(reporter *jira.User) string {
+	avatarLink := fmt.Sprintf("![avatar](%s =30x30)", reporter.AvatarUrls.One6X16)
+	reporterSummary := avatarLink + " " + reporter.Name
 	return reporterSummary
 }
 
@@ -103,11 +103,13 @@ func asSlackAttachment(instance Instance, client Client, issue *jira.Issue, show
 		})
 	}
 
-	fields = append(fields, &model.SlackAttachmentField{
-		Title: "Reporter",
-		Value: reporterSummary(issue),
-		Short: true,
-	})
+	if issue.Fields.Reporter != nil {
+		fields = append(fields, &model.SlackAttachmentField{
+			Title: "Reporter",
+			Value: reporterSummary(issue.Fields.Reporter),
+			Short: true,
+		})
+	}
 
 	var actions []*model.PostAction
 	var err error
