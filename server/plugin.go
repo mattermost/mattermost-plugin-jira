@@ -276,8 +276,17 @@ func (p *Plugin) OnActivate() error {
 	p.htmlTemplates = htmlTemplates
 	p.textTemplates = textTemplates
 
-	p.setupFlow = p.NewSetupFlow()
-	p.oauth2Flow = p.NewOAuth2Flow()
+	setupFlow, err := p.NewSetupFlow()
+	if err != nil {
+		return err
+	}
+	p.setupFlow = setupFlow
+
+	oauth2Flow, err := p.NewOAuth2Flow()
+	if err != nil {
+		return err
+	}
+	p.oauth2Flow = oauth2Flow
 
 	// Register /jira command and stash the loaded list of known instances for
 	// later (autolink registration).

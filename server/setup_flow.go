@@ -62,10 +62,14 @@ const (
 	webhookURL = "[{{.WebhookURL}}]({{.WebhookURL}})"
 )
 
-func (p *Plugin) NewSetupFlow() *flow.Flow {
-	pluginURL := *p.client.Configuration.GetConfig().ServiceSettings.SiteURL + "/" + "plugins" + "/" + manifest.Id
+func (p *Plugin) NewSetupFlow() (*flow.Flow, error) {
 	conf := p.getConfig()
-	return flow.NewFlow("setup-wizard", p.client, pluginURL, conf.botUserID).
+
+	f, err := flow.NewFlow("setup-wizard", p.client, manifest.Id, conf.botUserID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create %q flow", "setup-wizard")
+	}
+	return f.
 		WithSteps(
 			p.stepWelcome(),
 			p.stepDelegate(),
@@ -93,13 +97,17 @@ func (p *Plugin) NewSetupFlow() *flow.Flow {
 			p.stepDone(),
 		).
 		// WithDebugLog().
-		InitHTTP(p.router)
+		InitHTTP(p.router), nil
 }
 
-func (p *Plugin) NewOAuth2Flow() *flow.Flow {
-	pluginURL := fmt.Sprintf("%s/plugins/%s", *p.client.Configuration.GetConfig().ServiceSettings.SiteURL, manifest.Id)
+func (p *Plugin) NewOAuth2Flow() (*flow.Flow, error) {
 	conf := p.getConfig()
-	return flow.NewFlow("setup-oauth2", p.client, pluginURL, conf.botUserID).
+
+	f, err := flow.NewFlow("setup-oauth2", p.client, manifest.Id, conf.botUserID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create %q flow", "setup-oauth2")
+	}
+	return f.
 		WithSteps(
 			p.stepCloudOAuthConfigure(),
 			p.stepInstalledJiraApp(),
@@ -112,7 +120,7 @@ func (p *Plugin) NewOAuth2Flow() *flow.Flow {
 			p.stepCancel(),
 			p.stepDone(),
 		).
-		InitHTTP(p.router)
+		InitHTTP(p.router), nil
 }
 
 var cancelButton = flow.Button{
