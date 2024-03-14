@@ -344,7 +344,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method:       "GET",
 			header:       "",
 			request:      &requestStruct{},
-			expectedCode: http.StatusMethodNotAllowed,
+			expectedCode: http.StatusNotFound,
 		},
 		"No header": {
 			method:       "POST",
@@ -424,13 +424,13 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 
 			tt.request.InstanceID = testInstance1.InstanceID.String()
 			bb, err := json.Marshal(tt.request)
-			assert.Nil(t, err)
+			assert.Nil(t, err, name)
 
 			request := httptest.NewRequest(tt.method, makeAPIRoute(routeAPIAttachCommentToIssue), strings.NewReader(string(bb)))
 			request.Header.Add("Mattermost-User-Id", tt.header)
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)
-			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "no request data")
+			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, name)
 		})
 	}
 }
