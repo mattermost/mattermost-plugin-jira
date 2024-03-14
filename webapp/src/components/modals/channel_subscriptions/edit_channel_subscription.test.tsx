@@ -138,7 +138,9 @@ describe('components/EditChannelSubscription', () => {
             <EditChannelSubscription {...props}/>
         );
         wrapper.setState(baseState);
-        wrapper.instance().handleProjectChange('TES');
+        wrapper.instance().handleProjectChange({
+            project_key: 'TES',
+        });
         expect(wrapper.state().filters.projects).toEqual(['TES']);
         expect(wrapper.state().fetchingIssueMetadata).toBe(true);
         expect(fetchJiraIssueMetadataForProjects).toHaveBeenCalled();
@@ -150,7 +152,9 @@ describe('components/EditChannelSubscription', () => {
         fetchJiraIssueMetadataForProjects = jest.fn().mockResolvedValue({error: {message: 'Failure'}});
         wrapper.setProps({fetchJiraIssueMetadataForProjects});
 
-        wrapper.instance().handleProjectChange('KT');
+        wrapper.instance().handleProjectChange({
+            project_key: 'KT',
+        });
         expect(wrapper.state().filters.projects).toEqual(['KT']);
         expect(fetchJiraIssueMetadataForProjects).toHaveBeenCalled();
         expect(wrapper.state().fetchingIssueMetadata).toBe(true);
