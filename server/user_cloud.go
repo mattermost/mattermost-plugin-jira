@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
-	jwt "github.com/dgrijalva/jwt-go"
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost/server/public/model"
