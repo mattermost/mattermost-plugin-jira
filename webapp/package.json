@@ -19,7 +19,7 @@
   "license": "",
   "devDependencies": {
     "@babel/cli": "7.5.5",
-    "@babel/core": "7.5.5",
+    "@babel/core": "7.8.0",
     "@babel/plugin-proposal-class-properties": "7.5.5",
     "@babel/plugin-proposal-object-rest-spread": "7.5.5",
     "@babel/plugin-syntax-dynamic-import": "7.2.0",
@@ -31,7 +31,7 @@
     "@types/enzyme": "3.10.3",
     "@types/jest": "29.5.12",
     "@types/node": "12.7.0",
-    "@types/react": "16.8.24",
+    "@types/react": "18.2.21",
     "@types/react-dom": "16.8.5",
     "@types/react-intl": "3.0.0",
     "@types/react-redux": "7.1.2",
@@ -41,7 +41,7 @@
     "@typescript-eslint/eslint-plugin": "2.1.0",
     "@typescript-eslint/parser": "2.34.0",
     "babel-eslint": "10.0.2",
-    "babel-jest": "24.8.0",
+    "babel-jest": "29.7.0",
     "babel-loader": "8.0.6",
     "babel-plugin-typescript-to-proptypes": "0.17.1",
     "css-loader": "3.1.0",
@@ -53,7 +53,7 @@
     "eslint-plugin-import": "2.18.0",
     "eslint-plugin-react": "7.14.2",
     "identity-obj-proxy": "3.0.0",
-    "jest": "29.7.0",
+    "jest": "24.8.0",
     "jest-canvas-mock": "2.1.0",
     "jest-junit": "6.4.0",
     "js-to-ts": "1.0.13",
@@ -68,7 +68,7 @@
     "core-js": "3.1.4",
     "debounce-promise": "3.1.2",
     "mattermost-redux": "5.33.1",
-    "react": "16.8.6",
+    "react": "18.2.0",
     "react-bootstrap": "0.32.4",
     "react-dom": "16.8.6",
     "react-redux": "5.1.1",
@@ -76,7 +76,7 @@
     "react-window": "1.8.5",
     "redux": "4.0.1",
     "reselect": "4.0.0",
-    "typescript": "3.5.3"
+    "typescript": "5.0.4"
   },
   "jest": {
     "snapshotSerializers": [
