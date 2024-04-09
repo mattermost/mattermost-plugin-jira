@@ -1,9 +1,9 @@
 module github.com/mattermost/mattermost-plugin-jira
 
-go 1.21
+go 1.21.8
 
 require (
-	github.com/andygrunwald/go-jira v1.10.0
+	github.com/andygrunwald/go-jira v1.16.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/dghubble/oauth1 v0.5.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
@@ -12,25 +12,25 @@ require (
 	github.com/mattermost/mattermost-plugin-autolink v1.2.2-0.20210709183311-c8fa30db649f
 	github.com/mattermost/mattermost/server/public v0.0.17-0.20240313200153-4d7437d30e1c
 	github.com/pkg/errors v0.9.1
-	github.com/rbriski/atlassian-jwt v0.0.0-20180307182949-7bb4ae273058
+	github.com/rbriski/atlassian-jwt v0.0.0-20240408161306-6b6d681cf2d9
 	github.com/rudderlabs/analytics-go v3.3.3+incompatible
 	github.com/stretchr/testify v1.8.4
-	github.com/trivago/tgo v1.0.1
+	github.com/trivago/tgo v1.0.7
 	golang.org/x/oauth2 v0.17.0
 	golang.org/x/text v0.14.0
 )
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/dyatlov/go-opengraph/opengraph v0.0.0-20220524092352-606d7b1e5f8a // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.5 // indirect
 	github.com/go-sql-driver/mysql v1.7.1 // indirect
+	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/go-querystring v1.0.0 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/hashicorp/go-hclog v1.6.2 // indirect
