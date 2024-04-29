@@ -4,7 +4,7 @@
 import {PostTypes} from 'mattermost-redux/action_types';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
-import manifest from '../manifest';
+import manifest from 'manifest';
 
 import ActionTypes from 'action_types';
 import {buildQueryString, doFetch, doFetchWithResponse} from 'client';

@@ -8,13 +8,13 @@ import {
     openCreateModalWithoutPost,
     openDisconnectModal,
     sendEphemeralPost,
-} from '../actions';
+} from 'actions';
 import {
     getPluginSettings,
     getUserConnectedInstances,
     instanceIsInstalled,
     isUserConnected,
-} from '../selectors';
+} from 'selectors';
 
 type ContextArgs = {channel_id: string};
 

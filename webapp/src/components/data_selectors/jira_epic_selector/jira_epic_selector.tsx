@@ -6,7 +6,7 @@ import React from 'react';
 import {isEpicIssueType, isEpicNameField} from 'utils/jira_issue_metadata';
 import {IssueMetadata, JiraIssue, ReactSelectOption} from 'types/model';
 
-import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
+import BackendSelector, {Props as BackendSelectorProps} from 'components/data_selectors/backend_selector';
 
 const searchDefaults = 'ORDER BY updated DESC';
 

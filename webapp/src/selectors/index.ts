@@ -6,7 +6,7 @@ import {createSelector} from 'reselect';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import manifest from '../manifest';
+import manifest from 'manifest';
 
 import {Instance} from 'types/model';
 

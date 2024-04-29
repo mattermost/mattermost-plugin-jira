@@ -3,7 +3,7 @@
 
 import React, {PureComponent} from 'react';
 
-import FullScreenModal from '../full_screen_modal/full_screen_modal';
+import FullScreenModal from 'components/modals/full_screen_modal/full_screen_modal';
 
 import ChannelSubscriptionsModalInner from './channel_subscriptions_internal';
 import {SharedProps} from './shared_props';
