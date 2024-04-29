@@ -6,8 +6,6 @@ exports[`components/CreateIssue should match snapshot 1`] = `
   role="form"
 >
   <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
     style={
       Object {
         "backgroundColor": "#ffffff",
@@ -56,8 +54,6 @@ exports[`components/CreateIssue should match snapshot 1`] = `
     />
   </ModalBody>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -95,8 +91,6 @@ exports[`components/CreateIssue should match snapshot with error 1`] = `
   role="form"
 >
   <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
     style={
       Object {
         "backgroundColor": "#ffffff",
@@ -3602,8 +3596,6 @@ exports[`components/CreateIssue should match snapshot with error 1`] = `
     </div>
   </ModalBody>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -3641,8 +3633,6 @@ exports[`components/CreateIssue should match snapshot with form filled 1`] = `
   role="form"
 >
   <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
     style={
       Object {
         "backgroundColor": "#ffffff",
@@ -7132,8 +7122,6 @@ exports[`components/CreateIssue should match snapshot with form filled 1`] = `
     </div>
   </ModalBody>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -7171,8 +7159,6 @@ exports[`components/CreateIssue should match snapshot with no instance id 1`] = 
   role="form"
 >
   <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
     style={
       Object {
         "backgroundColor": "#ffffff",
@@ -7221,8 +7207,6 @@ exports[`components/CreateIssue should match snapshot with no instance id 1`] = 
     />
   </ModalBody>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -7260,8 +7244,6 @@ exports[`components/CreateIssue should match snapshot with no issue metadata 1`]
   role="form"
 >
   <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
     style={
       Object {
         "backgroundColor": "#ffffff",
@@ -7310,8 +7292,6 @@ exports[`components/CreateIssue should match snapshot with no issue metadata 1`]
     />
   </ModalBody>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",

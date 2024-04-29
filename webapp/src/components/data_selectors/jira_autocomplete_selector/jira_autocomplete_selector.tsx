@@ -5,7 +5,7 @@ import React from 'react';
 
 import {ReactSelectOption} from 'types/model';
 
-import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
+import BackendSelector, {Props as BackendSelectorProps} from '/src/components/data_selectors/backend_selector';
 
 const stripHTML = (text: string) => {
     if (!text) {
@@ -57,5 +57,5 @@ export default class JiraAutoCompleteSelector extends React.PureComponent<Props>
                 search={this.searchAutoCompleteFields}
             />
         );
-    }
+    };
 }

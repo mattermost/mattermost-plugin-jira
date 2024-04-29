@@ -2,7 +2,14 @@ import React from 'react';
 
 import {Theme} from 'mattermost-redux/types/preferences';
 
-import {Instance, ProjectMetadata, ReactSelectOption, APIResponse, GetConnectedResponse, SavedFieldValues} from 'types/model';
+import {
+    APIResponse,
+    GetConnectedResponse,
+    Instance,
+    ProjectMetadata,
+    ReactSelectOption,
+    SavedFieldValues,
+} from 'types/model';
 import ReactSelectSetting from 'components/react_select_setting';
 import {getProjectValues} from 'utils/jira_issue_metadata';
 
@@ -75,7 +82,7 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
         if (instanceID) {
             this.handleJiraInstanceChange('', instanceID);
         }
-    }
+    };
 
     fetchJiraProjectMetadata = async (instanceID: string) => {
         if (!this.state.fetchingProjectMetadata) {
@@ -98,7 +105,7 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
         if (projectMetadata.saved_field_values && projectMetadata.saved_field_values.project_key && !this.props.selectedProjectID) {
             this.props.onProjectChange(projectMetadata.saved_field_values);
         }
-    }
+    };
 
     handleJiraInstanceChange = (_: string, instanceID: string) => {
         if (instanceID === this.props.selectedInstanceID) {
@@ -109,13 +116,13 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
         if (!this.props.hideProjectSelector) {
             this.fetchJiraProjectMetadata(instanceID);
         }
-    }
+    };
 
     handleProjectChange = (_: string, projectID: string) => {
         this.props.onProjectChange({
             project_key: projectID,
         });
-    }
+    };
 
     render() {
         const instanceOptions: ReactSelectOption[] = this.props.installedInstances.map((instance: Instance) => (

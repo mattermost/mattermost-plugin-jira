@@ -2,24 +2,23 @@
 // See LICENSE.txt for license information.
 
 import {
-    ProjectMetadata,
-    ReactSelectOption,
+    ChannelSubscriptionFilters,
+    FilterField,
+    FilterFieldInclusion,
+    FilterValue,
     IssueMetadata,
     IssueType,
-    JiraField,
-    FilterField,
-    FilterValue,
-    SelectField,
-    StringArrayField,
     IssueTypeIdentifier,
-    ChannelSubscriptionFilters,
-    FilterFieldInclusion,
+    JiraField,
     JiraFieldCustomTypeEnums,
     JiraFieldTypeEnums,
+    ProjectMetadata,
+    ReactSelectOption,
+    SelectField,
     Status,
-    IssueTypeWithStatuses,
+    StringArrayField,
 } from 'types/model';
-import {IssueAction, TicketData, TicketDetails} from 'types/tooltip';
+import {TicketData, TicketDetails} from 'types/tooltip';
 
 type FieldWithInfo = JiraField & {
     changeLogID: string;
@@ -138,7 +137,7 @@ export function getCustomFieldsForProjects(metadata: IssueMetadata | null, proje
                 id: issueType.id,
                 name: issueType.name,
             },
-        }))
+        })),
     )).filter(Boolean) as FieldWithInfo[];
 
     for (const field of fields) {

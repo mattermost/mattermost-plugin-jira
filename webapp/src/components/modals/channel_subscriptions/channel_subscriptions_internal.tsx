@@ -3,9 +3,9 @@
 
 import React from 'react';
 
-import {ChannelSubscription, AllProjectMetadata} from 'types/model';
+import {AllProjectMetadata, ChannelSubscription} from 'types/model';
 
-import BackIcon from '../full_screen_modal/back_icon';
+import BackIcon from '/src/components/modals/full_screen_modal/back_icon';
 
 import EditChannelSubscription from './edit_channel_subscription';
 import SelectChannelSubscription from './select_channel_subscription';

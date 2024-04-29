@@ -8,7 +8,7 @@ import testChannel from 'testdata/channel.json';
 
 import {IssueMetadata, ProjectMetadata} from 'types/model';
 
-import FullScreenModal from '../full_screen_modal/full_screen_modal';
+import FullScreenModal from '/src/components/modals/full_screen_modal/full_screen_modal';
 
 import ChannelSubscriptionsModal, {Props} from './channel_subscriptions';
 import ChannelSubscriptionsModalInner from './channel_subscriptions_internal';
@@ -38,7 +38,7 @@ describe('components/ChannelSettingsModal', () => {
         };
 
         const wrapper = shallow<ChannelSubscriptionsModal>(
-            <ChannelSubscriptionsModal {...props}/>, {lifecycleExperimental: true}
+            <ChannelSubscriptionsModal {...props}/>, {lifecycleExperimental: true},
         );
 
         expect(wrapper.find(ChannelSubscriptionsModalInner).length).toEqual(0);
@@ -66,7 +66,7 @@ describe('components/ChannelSettingsModal', () => {
         };
 
         const wrapper = shallow<ChannelSubscriptionsModal>(
-            <ChannelSubscriptionsModal {...props}/>, {lifecycleExperimental: true}
+            <ChannelSubscriptionsModal {...props}/>, {lifecycleExperimental: true},
         );
 
         wrapper.setProps({

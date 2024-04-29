@@ -43,7 +43,7 @@ describe('components/CreateIssue', () => {
     test('should match snapshot', () => {
         const props = {...baseProps};
         const wrapper = shallow<CreateIssueForm>(
-            <CreateIssueForm {...props}/>
+            <CreateIssueForm {...props}/>,
         );
         wrapper.setState(baseState);
         expect(wrapper).toMatchSnapshot();
@@ -52,7 +52,7 @@ describe('components/CreateIssue', () => {
     test('should match snapshot with no issue metadata', () => {
         const props = {...baseProps};
         const wrapper = shallow<CreateIssueForm>(
-            <CreateIssueForm {...props}/>
+            <CreateIssueForm {...props}/>,
         );
         wrapper.setState({...baseState, jiraIssueMetadata: null});
         expect(wrapper).toMatchSnapshot();
@@ -61,7 +61,7 @@ describe('components/CreateIssue', () => {
     test('should match snapshot with no instance id', () => {
         const props = {...baseProps};
         const wrapper = shallow<CreateIssueForm>(
-            <CreateIssueForm {...props}/>
+            <CreateIssueForm {...props}/>,
         );
         expect(wrapper).toMatchSnapshot();
     });
@@ -70,7 +70,7 @@ describe('components/CreateIssue', () => {
         const create = jest.fn().mockResolvedValue({});
         const props = {...baseProps, create};
         const wrapper = shallow<CreateIssueForm>(
-            <CreateIssueForm {...props}/>
+            <CreateIssueForm {...props}/>,
         );
         wrapper.setState(baseState);
         const fields = wrapper.state('fields');
@@ -94,7 +94,7 @@ describe('components/CreateIssue', () => {
         const create = jest.fn().mockResolvedValue({});
         const props = {...baseProps, create};
         const wrapper = shallow<CreateIssueForm>(
-            <CreateIssueForm {...props}/>
+            <CreateIssueForm {...props}/>,
         );
         wrapper.setState(baseState);
         const fields = wrapper.state('fields');
@@ -121,7 +121,7 @@ describe('components/CreateIssue', () => {
         const create = jest.fn().mockResolvedValue({});
         const props = {...baseProps, create};
         const wrapper = shallow<CreateIssueForm>(
-            <CreateIssueForm {...props}/>
+            <CreateIssueForm {...props}/>,
         );
         wrapper.setState(baseState);
         const fields = wrapper.state('fields');
@@ -152,7 +152,7 @@ describe('components/CreateIssue', () => {
             jiraIssueMetadata: serverIssueMetadata,
         };
         const wrapper = shallow<CreateIssueForm>(
-            <CreateIssueForm {...props}/>
+            <CreateIssueForm {...props}/>,
         );
         wrapper.setState(baseState);
         const fields = wrapper.state('fields');

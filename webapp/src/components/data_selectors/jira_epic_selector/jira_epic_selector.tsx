@@ -3,10 +3,10 @@
 
 import React from 'react';
 
-import {isEpicNameField, isEpicIssueType} from 'utils/jira_issue_metadata';
-import {IssueMetadata, ReactSelectOption, JiraIssue} from 'types/model';
+import {isEpicIssueType, isEpicNameField} from 'utils/jira_issue_metadata';
+import {IssueMetadata, JiraIssue, ReactSelectOption} from 'types/model';
 
-import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
+import BackendSelector, {Props as BackendSelectorProps} from '/src/components/data_selectors/backend_selector';
 
 const searchDefaults = 'ORDER BY updated DESC';
 
@@ -104,5 +104,5 @@ export default class JiraEpicSelector extends React.PureComponent<Props> {
                 search={this.searchIssues}
             />
         );
-    }
+    };
 }

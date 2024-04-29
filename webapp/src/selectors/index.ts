@@ -6,7 +6,8 @@ import {createSelector} from 'reselect';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import manifest from '../manifest';
+import manifest from '/src/manifest';
+
 import {Instance} from 'types/model';
 
 const getPluginState = (state) => state['plugins-' + manifest.id] || {};
@@ -34,7 +35,7 @@ export const getCurrentUserLocale = createSelector(
         }
 
         return locale;
-    }
+    },
 );
 
 export const isConnectModalVisible = (state) => getPluginState(state).connectModalVisible;

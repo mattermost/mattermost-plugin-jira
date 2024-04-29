@@ -7,9 +7,14 @@ import {bindActionCreators} from 'redux';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
 
-import {openCreateModal, handleConnectFlow} from 'actions';
+import {handleConnectFlow, openCreateModal} from 'actions';
 
-import {getCurrentUserLocale, isUserConnected, canUserConnect, getInstalledInstances} from 'selectors';
+import {
+canUserConnect,
+getCurrentUserLocale,
+getInstalledInstances,
+isUserConnected,
+} from 'selectors';
 import {isCombinedUserActivityPost} from 'utils/posts';
 
 import CreateIssuePostMenuAction from './create_issue';

@@ -98,8 +98,6 @@ exports[`components/EditChannelSubscription should match snapshot 1`] = `
     />
   </div>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -3767,8 +3765,6 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
     />
   </div>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -3906,8 +3902,6 @@ exports[`components/EditChannelSubscription should match snapshot with no issue 
     />
   </div>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -4029,8 +4023,6 @@ exports[`components/EditChannelSubscription should match snapshot with no subscr
     </div>
   </div>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -4168,8 +4160,6 @@ exports[`components/EditChannelSubscription should produce subscription error wh
     />
   </div>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",

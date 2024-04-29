@@ -6,8 +6,6 @@ exports[`components/ConnectModalForm should match snapshot 1`] = `
   role="form"
 >
   <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
     style={
       Object {
         "backgroundColor": undefined,
@@ -34,8 +32,6 @@ exports[`components/ConnectModalForm should match snapshot 1`] = `
     />
   </ModalBody>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",

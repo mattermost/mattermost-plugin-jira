@@ -64,7 +64,7 @@ describe('components/ChannelSubscriptionFilters', () => {
     test('should match snapshot', () => {
         const props = {...baseProps};
         const wrapper = shallow<ChannelSubscriptionFilters>(
-            <ChannelSubscriptionFilters {...props}/>
+            <ChannelSubscriptionFilters {...props}/>,
         );
 
         wrapper.setState({showCreateRow: true});
