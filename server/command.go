@@ -380,10 +380,10 @@ func (p *Plugin) help(args *model.CommandArgs) *model.CommandResponse {
 }
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	// err := p.CheckSiteURL()
-	// if err != nil {
-	// 	return p.responsef(commandArgs, err.Error()), nil
-	// }
+	err := p.CheckSiteURL()
+	if err != nil {
+		return p.responsef(commandArgs, err.Error()), nil
+	}
 	args := strings.Fields(commandArgs.Command)
 	if len(args) == 0 || args[0] != "/jira" {
 		return p.help(commandArgs), nil
