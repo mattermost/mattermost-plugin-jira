@@ -23,6 +23,7 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-api/cluster"
 	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
 	"github.com/mattermost/mattermost-plugin-api/experimental/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -55,6 +56,8 @@ const (
 
 	templateViewIssue            = `[${project_id}-${jira_id}](`
 	templateViewIssueWithComment = `[${project_id}-${jira_id} (comment)](`
+
+	autolinkClusterMutexKey = "autolink_cluster_mutex"
 )
 
 var BuildHash = ""
@@ -147,6 +150,9 @@ type Plugin struct {
 	// service that determines if this Mattermost instance has access to
 	// enterprise features
 	enterpriseChecker enterprise.Checker
+
+	// autolinkClusterMutex to lock operations for autolink
+	autolinkClusterMutex *cluster.Mutex
 }
 
 func (p *Plugin) getConfig() config {
@@ -315,6 +321,13 @@ func (p *Plugin) OnActivate() error {
 
 	p.enterpriseChecker = enterprise.NewEnterpriseChecker(p.API)
 
+	autolinkClusterMutex, err := cluster.NewMutex(p.API, autolinkClusterMutexKey)
+	if err != nil {
+		return err
+	}
+
+	p.autolinkClusterMutex = autolinkClusterMutex
+
 	go func() {
 		for _, url := range instances.IDs() {
 			var instance Instance
@@ -398,21 +411,26 @@ func (p *Plugin) AddAutolinks(projectList jira.ProjectList, baseURL string) erro
 		})
 	}
 
-	client := autolinkclient.NewClientPlugin(p.API)
-	
-	var keys []string
-	for _,autolink:= range installList {
-		keys = append(keys,autolink.Name)
-	}
+	if len(installList) > 0 {
+		p.autolinkClusterMutex.Lock()
+		defer p.autolinkClusterMutex.Unlock()
 
-	// Deleting the old autolinks if already present
-	if err := client.Delete(keys...); err != nil {
-		return fmt.Errorf("unable to delete autolinks: %w", err)
-	}
+		client := autolinkclient.NewClientPlugin(p.API)
 
-	// Creating the new autolinks  
-	if err := client.Add(installList...); err != nil {
-		return fmt.Errorf("unable to add autolinks: %w", err)
+		var keys []string
+		for _, autolink := range installList {
+			keys = append(keys, autolink.Name)
+		}
+
+		// Deleting the old autolinks if already present
+		if err := client.Delete(keys...); err != nil {
+			return fmt.Errorf("unable to delete autolinks: %w", err)
+		}
+
+		// Creating the new autolinks
+		if err := client.Add(installList...); err != nil {
+			return fmt.Errorf("unable to add autolinks: %w", err)
+		}
 	}
 
 	return nil
