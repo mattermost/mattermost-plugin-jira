@@ -559,18 +559,18 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
     }
 }
 
-const getStyle = (theme: any): any => ({
-    modalBody: {
-        padding: '2em 0',
-        color: theme.centerChannelColor,
-        backgroundColor: theme.centerChannelBg,
-    },
-    modalFooter: {
-        padding: '2rem 15px',
-    },
-    descriptionArea: {
-        height: 'auto',
-        width: '100%',
-        color: '#000',
-    },
-});
+// const getStyle = (theme: any): any => ({
+//     modalBody: {
+//         padding: '2em 0',
+//         color: theme.centerChannelColor,
+//         backgroundColor: theme.centerChannelBg,
+//     },
+//     modalFooter: {
+//         padding: '2rem 15px',
+//     },
+//     descriptionArea: {
+//         height: 'auto',
+//         width: '100%',
+//         color: '#000',
+//     },
+// });

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {PostTypes} from 'mattermost-redux/action_types';
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import manifest from 'manifest';
 

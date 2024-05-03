@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {Theme} from 'mattermost-redux/types/preferences';
+import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import ReactSelectSetting from 'components/react_select_setting';
 import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';

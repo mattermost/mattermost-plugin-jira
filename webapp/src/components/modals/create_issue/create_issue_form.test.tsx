@@ -4,8 +4,9 @@
 import React from 'react';
 import {shallow} from 'enzyme';
 
+import {Team} from '@mattermost/types/teams';
+
 import Preferences from 'mattermost-redux/constants/preferences';
-import {Team} from 'mattermost-redux/types/teams';
 
 import projectMetadata from 'testdata/cloud-get-jira-project-metadata.json';
 import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
@@ -26,7 +27,7 @@ describe('components/CreateIssue', () => {
 
     const baseProps = {
         ...baseActions,
-        theme: Preferences.THEMES.default,
+        theme: Preferences.THEMES.denim,
         jiraProjectMetadata: projectMetadata,
         jiraIssueMetadata: issueMetadata,
         currentTeam: {name: 'Team1'} as Team,

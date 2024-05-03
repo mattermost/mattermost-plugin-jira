@@ -21,7 +21,21 @@
     "experimentalDecorators": true,
     "jsx": "react",
     "baseUrl": "./src",
-    "types": ["jest", "node"]
+    "types": ["jest", "node"],
+    "paths": {
+      "@mattermost/types/*": [
+        "./mattermost-webapp/webapp/platform/types/src/*"
+      ],
+      "@mattermost/client": [
+        "./mattermost-webapp/webapp/platform/client/src"
+      ],
+      "@mattermost/client/*": [
+        "./mattermost-webapp/webapp/platform/client/src/*"
+      ],
+      "mattermost-redux/*": [
+        "./mattermost-webapp/webapp/channels/src/packages/mattermost-redux/src/*"
+      ]
+    }
   },
   "include": [
     "src"
@@ -29,6 +43,7 @@
   "exclude": [
     "dist",
     "node_modules",
-    "!node_modules/@types"
+    "!node_modules/@types",
+    "mattermost-webapp"
   ]
 }

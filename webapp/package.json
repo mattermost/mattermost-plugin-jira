@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "description": "This plugin serves as a starting point for writing a Mattermost plugin.",
   "main": "src/index.js",
+  "private": true,
   "scripts": {
+    "preinstall": "./install_mattermost_webapp.sh",
     "build": "webpack --mode=production",
     "build:watch": "webpack --mode=production --watch",
     "debug": "webpack --mode=none",
@@ -28,6 +30,8 @@
     "@babel/preset-react": "7.14.5",
     "@babel/preset-typescript": "7.15.0",
     "@babel/runtime": "7.15.4",
+    "@mattermost/client": "file:mattermost-webapp/webapp/platform/client",
+    "@mattermost/types": "file:mattermost-webapp/webapp/platform/types",
     "@types/enzyme": "3.10.18",
     "@types/jest": "27.5.1",
     "@types/node": "16.18.96",
@@ -39,7 +43,6 @@
     "@types/react-transition-group": "4.4.7",
     "@typescript-eslint/eslint-plugin": "5.41.0",
     "@typescript-eslint/parser": "5.41.0",
-    "react-intl": "4.5.0",
     "babel-eslint": "10.1.0",
     "babel-jest": "27.4.6",
     "babel-loader": "8.2.5",
@@ -61,6 +64,8 @@
     "jest": "27.5.1",
     "jest-canvas-mock": "2.5.2",
     "jest-junit": "13.1.0",
+    "mattermost-webapp": "file:mattermost-webapp/webapp/channels",
+    "react-intl": "4.5.0",
     "sass": "1.60.0",
     "sass-loader": "12.2.0",
     "style-loader": "3.3.1",
@@ -70,7 +75,6 @@
   "dependencies": {
     "core-js": "3.18.3",
     "debounce-promise": "3.1.2",
-    "mattermost-redux": "5.33.1",
     "react": "16.8.6",
     "react-bootstrap": "1.6.1",
     "react-dom": "16.8.6",
@@ -87,7 +91,8 @@
     ],
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/non_npm_dependencies/"
+      "/non_npm_dependencies/",
+      "/mattermost-webapp/"
     ],
     "clearMocks": true,
     "testEnvironment": "jsdom",
@@ -102,7 +107,11 @@
       "^.+\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "identity-obj-proxy",
       "^.+\\.(css|less|scss)$": "identity-obj-proxy",
       "^.*i18n.*\\.(json)$": "<rootDir>/tests/i18n_mock.json",
-      "^bundle-loader\\?lazy\\!(.*)$": "$1"
+      "^bundle-loader\\?lazy\\!(.*)$": "$1",
+      "^@mattermost/types/(.*)$": "<rootDir>/mattermost-webapp/webapp/platform/types/src/$1",
+      "^@mattermost/client$": "<rootDir>/mattermost-webapp/webapp/platform/client/src/index",
+      "^@mattermost/client/(.*)$": "<rootDir>/mattermost-webapp/webapp/platform/client/src/$1",
+      "^mattermost-redux(.*)$": "<rootDir>/mattermost-webapp/webapp/channels/src/packages/mattermost-redux/src$1"
     },
     "moduleDirectories": [
       "",

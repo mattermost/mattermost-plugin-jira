@@ -1,6 +1,7 @@
 import {connect} from 'react-redux';
 import {Dispatch, bindActionCreators} from 'redux';
-import {GlobalState} from 'mattermost-redux/types/store';
+
+import {GlobalState} from '@mattermost/types/store';
 
 import {getUserConnectedInstances, isUserConnected} from 'selectors';
 import {fetchIssueByKey} from 'actions';

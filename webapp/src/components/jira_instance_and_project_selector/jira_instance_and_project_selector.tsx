@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {Theme} from 'mattermost-redux/types/preferences';
+import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {
     APIResponse,
