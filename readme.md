@@ -88,19 +88,17 @@ If your server doesn't have access to the internet, you can download the latest 
    4. Select **Save**.
 2. At the top of the page set **Enable Plugin** to **True**.
 3. Select **Save** to enable the Jira plugin.
-4. Run `/jira setup` to start configuring the plugin.
+4. Run `/jira setup` to start configuring the plugin. If you wish to setup the plugin manually then please follow step 2 and 3.
 
 #### Step 2: Install the plugin as an application in Jira
 
-To allow users to create and manage Jira issues across Mattermost channels, install the plugin as an application in your Jira instance. For Jira Server or Data Center instances, post `/jira instance install server <your-jira-url>` to a Mattermost channel as a Mattermost system admin, and follow the steps posted to the channel. For Jira Cloud, post `/jira instance install cloud <your-jira-url>`.
+To allow users to create and manage Jira issues across Mattermost channels, install the plugin as an application in your Jira instance. For Jira Server or Data Center instances, post `/jira instance install server <your-jira-url>` to a Mattermost channel as a Mattermost system admin, and follow the steps posted to the channel. For Jira Cloud, post `/jira instance install cloud <your-jira-url>`. Then run `/jira instance connect <your-jira-url>` to connect your jira account.
 
 #### Step 3: Configure webhooks on the Jira server
 
 As of Jira 2.1, you need to configure a single webhook for all possible event triggers that you would like to be pushed into Mattermost. This is called a firehose; the plugin gets sent a stream of events from the Jira server via the webhook configured below. The plugin's Channel Subscription feature processes the firehose of data and then routes the events to channels based on your subscriptions.
 
 Use the `/jira webhook` command to get your webhook URL to copy into Jira.
-
-To control Mattermost channel subscriptions, use the `/jira subscribe` command in the channel in which you want to receive subscriptions. Then select the project and event triggers that will post to the channel. To manage all channel subscriptions as an administrator see the Notification Management section.
 
 1. To get the appropriate webhook URL, post `/jira webhook <your-jira-url>` to a Mattermost channel as a Mattermost System Admin.
 2. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
@@ -119,6 +117,11 @@ To control Mattermost channel subscriptions, use the `/jira subscribe` command i
 6. Choose **Save**.
 
 Previously configured webhooks that point to specific channels are still supported and will continue to work.
+
+#### Step 4: Manage Subscriptions
+
+To control Mattermost channel subscriptions, use the `/jira subscribe` command in the channel in which you want to receive subscriptions. Then select the project and event triggers that will post to the channel. To manage all channel subscriptions as an administrator see the Notification Management section.
+
 
 ### Update the plugin
 
