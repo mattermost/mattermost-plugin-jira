@@ -48,6 +48,7 @@ var jiraCommandHandler = CommandHandler{
 		"issue/transition":             executeTransition,
 		"issue/unassign":               executeUnassign,
 		"issue/view":                   executeView,
+		"settings":                     executeSettings,
 		"subscribe/list":               executeSubscribeList,
 		"transition":                   executeTransition,
 		"unassign":                     executeUnassign,
@@ -147,6 +148,9 @@ func addSubCommands(jira *model.AutocompleteData, optInstance bool) {
 	jira.AddCommand(createTransitionCommand(optInstance))
 	jira.AddCommand(createAssignCommand(optInstance))
 	jira.AddCommand(createUnassignCommand(optInstance))
+	jira.AddCommand(createConnectCommand())
+	jira.AddCommand(createDisconnectCommand())
+	jira.AddCommand(createSettingsCommand(optInstance))
 
 	// Generic commands
 	jira.AddCommand(createIssueCommand(optInstance))

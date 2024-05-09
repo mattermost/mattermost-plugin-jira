@@ -157,47 +157,47 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 		expectedMsg  string
 	}{
 		"no storage": {
-			commandArgs:  &model.CommandArgs{Command: "/jira instance settings", UserId: mockUserIDUnknown},
+			commandArgs:  &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
 			numInstances: 2,
 			expectedMsg:  "Failed to load your connection to Jira. Error: TESTING user \"3\" not found.",
 		},
 		"user not found": {
-			commandArgs:  &model.CommandArgs{Command: "/jira instance settings", UserId: mockUserIDUnknown},
+			commandArgs:  &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDUnknown},
 			numInstances: 0,
 			expectedMsg:  "Failed to load your connection to Jira. Error: TESTING user \"3\" not found.",
 		},
 		"no params, with notifications": {
-			commandArgs:  &model.CommandArgs{Command: "/jira instance settings", UserId: mockUserIDWithNotifications},
+			commandArgs:  &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithNotifications},
 			numInstances: 1,
 			expectedMsg:  "Current settings:\n\tNotifications: on",
 		},
 		"no params, without notifications": {
-			commandArgs:  &model.CommandArgs{Command: "/jira instance settings", UserId: mockUserIDWithoutNotifications},
+			commandArgs:  &model.CommandArgs{Command: "/jira settings", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
 			expectedMsg:  "Current settings:\n\tNotifications: off",
 		},
 		"unknown setting": {
-			commandArgs:  &model.CommandArgs{Command: "/jira instance settings" + " test", UserId: mockUserIDWithoutNotifications},
+			commandArgs:  &model.CommandArgs{Command: "/jira settings" + " test", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
 			expectedMsg:  "Unknown setting.",
 		},
 		"set notifications without value": {
-			commandArgs:  &model.CommandArgs{Command: "/jira instance settings" + " notifications", UserId: mockUserIDWithoutNotifications},
+			commandArgs:  &model.CommandArgs{Command: "/jira settings" + " notifications", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
 			expectedMsg:  "`/jira settings notifications [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
 		},
 		"set notification with unknown value": {
-			commandArgs:  &model.CommandArgs{Command: "/jira instance settings notifications test", UserId: mockUserIDWithoutNotifications},
+			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications test", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
 			expectedMsg:  "`/jira settings notifications [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
 		},
 		"enable notifications": {
-			commandArgs:  &model.CommandArgs{Command: "/jira instance settings notifications on", UserId: mockUserIDWithoutNotifications},
+			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications on", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
 			expectedMsg:  "Settings updated. Notifications on.",
 		},
 		"disable notifications": {
-			commandArgs:  &model.CommandArgs{Command: "/jira instance settings notifications off", UserId: mockUserIDWithNotifications},
+			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications off", UserId: mockUserIDWithNotifications},
 			numInstances: 1,
 			expectedMsg:  "Settings updated. Notifications off.",
 		},
