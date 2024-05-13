@@ -8,7 +8,7 @@ import {Theme} from 'mattermost-redux/types/preferences';
 import {Post} from 'mattermost-redux/types/posts';
 import {Team} from 'mattermost-redux/types/teams';
 
-import {APIResponse, IssueMetadata, CreateIssueRequest, JiraFieldTypeEnums, JiraFieldCustomTypeEnums, CreateIssueFields, JiraField} from 'types/model';
+import {APIResponse, IssueMetadata, CreateIssueRequest, JiraFieldTypeEnums, JiraFieldCustomTypeEnums, CreateIssueFields, JiraField, SavedFieldValues} from 'types/model';
 
 import {getFields, getIssueTypes} from 'utils/jira_issue_metadata';
 import {getModalStyles} from 'utils/styles';
@@ -115,7 +115,8 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
         this.setState({instanceID, projectKey: '', error: null});
     }
 
-    handleProjectChange = (projectKey: string) => {
+    handleProjectChange = (fieldValues: SavedFieldValues) => {
+        const projectKey = fieldValues.project_key ? fieldValues.project_key : '';
         this.setState({projectKey, fetchingIssueMetadata: true, error: null});
 
         this.props.fetchJiraIssueMetadataForProjects([projectKey], this.state.instanceID as string).then(({data, error}) => {
@@ -138,15 +139,21 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             project: {key: projectKey},
         } as CreateIssueFields;
 
-        const issueTypes = getIssueTypes(this.state.jiraIssueMetadata, projectKey);
-        const issueType = issueTypes.length ? issueTypes[0].id : '';
-        fields.issuetype = {
-            id: issueType,
-        };
+        if (fieldValues.issue_type) {
+            fields.issuetype = {
+                id: fieldValues.issue_type,
+            };
+        } else {
+            const issueTypes = getIssueTypes(this.state.jiraIssueMetadata, projectKey);
+            const issueType = issueTypes.length ? issueTypes[0].id : '';
+            fields.issuetype = {
+                id: issueType,
+            };
+        }
 
         this.setState({
             projectKey,
-            issueType,
+            issueType: fieldValues.issue_type ? fieldValues.issue_type : '',
             fields,
         });
     }

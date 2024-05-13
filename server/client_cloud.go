@@ -5,15 +5,21 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/pkg/errors"
 )
 
 type jiraCloudClient struct {
 	JiraClient
+}
+
+type IssueTypeWithStatuses struct {
+	*jira.IssueType
+	Statuses []*jira.Status `json:"statuses"`
 }
 
 func newCloudClient(jiraClient *jira.Client) Client {
@@ -107,11 +113,12 @@ func (client jiraCloudClient) ListProjects(query string, limit int, expandIssueT
 			result.Values = result.Values[:remaining]
 		}
 		out = append(out, result.Values...)
-		remaining -= len(result.Values)
-
-		if !fetchAll && remaining == 0 {
-			// Got enough.
-			return out, nil
+		if !fetchAll {
+			remaining -= len(result.Values)
+			if remaining == 0 {
+				// Got enough.
+				return out, nil
+			}
 		}
 		if len(result.Values) == 0 || result.IsLast {
 			// Ran out of results.
@@ -127,6 +134,15 @@ func (client jiraCloudClient) GetIssueTypes(projectID string) ([]jira.IssueType,
 	}
 
 	if err := client.RESTGet("3/issuetype/project", opts, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (client jiraCloudClient) ListProjectStatuses(projectID string) ([]*IssueTypeWithStatuses, error) {
+	var result []*IssueTypeWithStatuses
+	if err := client.RESTGet(fmt.Sprintf("3/project/%s/statuses", projectID), nil, &result); err != nil {
 		return nil, err
 	}
 

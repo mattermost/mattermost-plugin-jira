@@ -40,6 +40,8 @@ Each user in Mattermost is connected with their own personal Jira account and no
 
 Keep all information in one place by attaching parts of Mattermost conversations in Jira issues as comments.  Then, on the resulting dialog, select the Jira issue you want to attach it to. You may search for issues containing specific text.
 
+![image](./assets/attach-from-post.png)
+
 ![image](https://user-images.githubusercontent.com/13119842/59113267-b627f780-8912-11e9-90ec-417d430de7e6.png)
 
 #### Transition Jira issues
@@ -86,19 +88,17 @@ If your server doesn't have access to the internet, you can download the latest 
    4. Select **Save**.
 2. At the top of the page set **Enable Plugin** to **True**.
 3. Select **Save** to enable the Jira plugin.
-4. Run `/jira setup` to start configuring the plugin.
+4. Run `/jira setup` to start configuring the plugin. If you wish to setup the plugin manually then please follow step 2 and 3.
 
 #### Step 2: Install the plugin as an application in Jira
 
-To allow users to create and manage Jira issues across Mattermost channels, install the plugin as an application in your Jira instance. For Jira Server or Data Center instances, post `/jira instance install server <your-jira-url>` to a Mattermost channel as a Mattermost system admin, and follow the steps posted to the channel. For Jira Cloud, post `/jira instance install cloud <your-jira-url>`.
+To allow users to create and manage Jira issues across Mattermost channels, install the plugin as an application in your Jira instance. For Jira Server or Data Center instances, post `/jira instance install server <your-jira-url>` to a Mattermost channel as a Mattermost system admin, and follow the steps posted to the channel. For Jira Cloud, post `/jira instance install cloud <your-jira-url>`. Then run `/jira instance connect <your-jira-url>` to connect your jira account.
 
 #### Step 3: Configure webhooks on the Jira server
 
 As of Jira 2.1, you need to configure a single webhook for all possible event triggers that you would like to be pushed into Mattermost. This is called a firehose; the plugin gets sent a stream of events from the Jira server via the webhook configured below. The plugin's Channel Subscription feature processes the firehose of data and then routes the events to channels based on your subscriptions.
 
 Use the `/jira webhook` command to get your webhook URL to copy into Jira.
-
-To control Mattermost channel subscriptions, use the `/jira subscribe` command in the channel in which you want to receive subscriptions. Then select the project and event triggers that will post to the channel. To manage all channel subscriptions as an administrator see the Notification Management section.
 
 1. To get the appropriate webhook URL, post `/jira webhook <your-jira-url>` to a Mattermost channel as a Mattermost System Admin.
 2. As a Jira System Administrator, go to **Jira Settings > System > WebHooks**.
@@ -117,6 +117,11 @@ To control Mattermost channel subscriptions, use the `/jira subscribe` command i
 6. Choose **Save**.
 
 Previously configured webhooks that point to specific channels are still supported and will continue to work.
+
+#### Step 4: Manage Subscriptions
+
+To control Mattermost channel subscriptions, use the `/jira subscribe` command in the channel in which you want to receive subscriptions. Then select the project and event triggers that will post to the channel. To manage all channel subscriptions as an administrator see the Notification Management section.
+
 
 ### Update the plugin
 
@@ -159,7 +164,7 @@ Jira notifications are messages sent to a Mattermost channel when a particular e
 
 Notifications and webhooks can be used together or you can opt for one of them.
 
-![This is a channel notification of a new bug that was created in Jira](https://github.com/mattermost/mattermost-plugin-jira/assets/74422101/e7020c3e-48f6-4825-8193-6a189f6c96eb)
+![This is a channel notification of a new bug that was created in Jira](./assets/ticket-created.png)
 
 When any webhook event is received from Jira the plugin reviews all the notification subscriptions. If it matches a rule it will post a notification to the channel. If there are no subscription matches, the webhook event is discarded.
 
@@ -200,6 +205,29 @@ The following Jira event notifications are supported:
 * Comments created, updated, or deleted
 
 ![This is the Channel Subscription modal](https://github.com/mattermost/mattermost-plugin-jira/assets/74422101/4dab17fa-5d49-48eb-91b1-cb9596780787)
+
+## Create a channel subscription
+
+1. Type the `/jira subscribe` command to open the "Create subscription" modal in the particular channel.
+2. Click on the **Create Subscription** button to create a subscription to receive Jira issue notifications in the current channel.
+3. Write the name of the subscription in the **Subscription Name** field.
+4. Select the project name to which you want to subscribe.
+5. Select the events and issue types for which you want to receive the notifications in the Mattermost channel.
+6. To be more specific, you can add filters as well. You can either include or exclude the particular filter by adding its type or name. We have many types of filters including some custom fields as well :
+   * Affects versions
+   * Epic Link
+   * Fix versions
+   * Labels
+   * Priority
+
+    **Few custom fields :**
+   * Checkboxes
+   * Labels
+   * Radio Buttons
+   * Select List (multiple choices)
+   * Select List (single choice)
+7. Based on the above given constraints in **Issue Type** and **Filters** fields an **Approximate JQL Output** is generated.
+8. Click on the **Add Subscription** button to add the subscription to that channel with the specific constraints that you have selected above.
 
 #### Setting up the webhook in Jira
 
@@ -397,7 +425,16 @@ This repository is licensed under the Apache 2.0 License, except for the [server
 
 ## Development
 
-Read the [Developer Workflow](https://developers.mattermost.com/extend/plugins/developer-workflow/) and [Developer Setup](https://developers.mattermost.com/extend/plugins/developer-setup/) documentation for more information about developing and extending plugins.
+This plugin contains both a server and web app portion. Read our documentation about the [Developer Workflow](https://developers.mattermost.com/integrate/plugins/developer-workflow/) and [Developer Setup](https://developers.mattermost.com/integrate/plugins/developer-setup/) for more information about developing and extending plugins.
+
+### Releasing new versions
+
+The version of a plugin is determined at compile time, automatically populating a `version` field in the [plugin manifest](plugin.json):
+* If the current commit matches a tag, the version will match after stripping any leading `v`, e.g. `1.3.1`.
+* Otherwise, the version will combine the nearest tag with `git rev-parse --short HEAD`, e.g. `1.3.1+d06e53e1`.
+* If there is no version tag, an empty version will be combined with the short hash, e.g. `0.0.0+76081421`.
+
+To disable this behaviour, manually populate and maintain the `version` field.
 
 ### Environment
 

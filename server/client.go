@@ -19,8 +19,8 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost/server/public/plugin"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
@@ -59,6 +59,7 @@ type ProjectService interface {
 	GetProject(key string) (*jira.Project, error)
 	ListProjects(query string, limit int, expandIssueTypes bool) (jira.ProjectList, error)
 	GetIssueTypes(projectID string) ([]jira.IssueType, error)
+	ListProjectStatuses(projectID string) ([]*IssueTypeWithStatuses, error)
 }
 
 // SearchService is the interface for search-related APIs.

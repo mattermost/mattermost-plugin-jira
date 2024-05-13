@@ -46,7 +46,7 @@ describe('components/ChannelSubscriptionFilters', () => {
 
     const baseProps: Props = {
         theme: {},
-        fields: getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key]),
+        fields: getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key], []),
         values: [{
             key: 'priority',
             inclusion: FilterFieldInclusion.INCLUDE_ANY,

@@ -22,7 +22,7 @@ import {
     filterValueIsSecurityField,
 } from 'utils/jira_issue_metadata';
 
-import {ChannelSubscription, ChannelSubscriptionFilters as ChannelSubscriptionFiltersModel, ReactSelectOption, FilterValue, IssueMetadata} from 'types/model';
+import {ChannelSubscription, ChannelSubscriptionFilters as ChannelSubscriptionFiltersModel, ReactSelectOption, FilterValue, IssueMetadata, SavedFieldValues} from 'types/model';
 
 import ChannelSubscriptionFilters from './channel_subscription_filters';
 import {SharedProps} from './shared_props';
@@ -187,7 +187,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
 
         let conflictingFields = null;
         if (finalValue.length > this.state.filters.issue_types.length) {
-            const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects);
+            const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects, this.state.filters.issue_types);
             conflictingFields = getConflictingFields(
                 filterFields,
                 finalValue,
@@ -227,7 +227,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                 state.getMetaDataErr = `The project ${projectKeys[0]} is unavailable. Please contact your system administrator.`;
             }
 
-            const filterFields = getCustomFieldFiltersForProjects(jiraIssueMetadata, this.state.filters.projects);
+            const filterFields = getCustomFieldFiltersForProjects(jiraIssueMetadata, this.state.filters.projects, this.state.filters.issue_types);
             for (const v of this.state.filters.fields) {
                 if (!filterFields.find((f) => f.key === v.key)) {
                     state.error = 'A field in this subscription has been removed from Jira, so the subscription is invalid. When this form is submitted, the configured field will be removed from the subscription to make the subscription valid again.';
@@ -244,10 +244,11 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         }
 
         this.setState({instanceID, error: null});
-        this.handleProjectChange('');
+        this.handleProjectChange({});
     }
 
-    handleProjectChange = (projectID: string) => {
+    handleProjectChange = (fieldValues: SavedFieldValues) => {
+        const projectID = fieldValues.project_key ? fieldValues.project_key : '';
         this.clearConflictingErrorMessage();
 
         let projects: string[];
@@ -296,7 +297,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             return;
         }
 
-        const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects);
+        const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects, this.state.filters.issue_types);
         const configuredFields = this.state.filters.fields.concat([]);
         for (const v of this.state.filters.fields) {
             if (!filterFields.find((f) => f.key === v.key)) {
@@ -345,7 +346,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         const issueOptions = issueTypes.map((it) => ({label: it.name, value: it.id}));
 
         const customFields = getCustomFieldValuesForEvents(this.state.jiraIssueMetadata, this.state.filters.projects);
-        const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects);
+        const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects, this.state.filters.issue_types);
 
         const eventOptions = JiraEventOptions.concat(customFields);
 
@@ -418,6 +419,13 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                                     </span>
                                 </div>
                             )}
+                            <div className='channel-subscriptions-modal__learnMore'>
+                                <a
+                                    href='https://github.com/mattermost/mattermost-plugin-jira#create-a-channel-subscription'
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                >{'Learn More'}</a>
+                            </div>
                         </div>
                     </React.Fragment>
                 );
