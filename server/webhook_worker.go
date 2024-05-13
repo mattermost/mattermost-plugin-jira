@@ -4,10 +4,10 @@
 package main
 
 import (
+	"fmt"
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/pkg/errors"
-
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
+	"github.com/pkg/errors"
 )
 
 type webhookWorker struct {
@@ -51,7 +51,7 @@ func (ww webhookWorker) getVisibilityAttribute(msg *webhookMessage, v *webhook) 
 	}
 
 	comment := jira.Comment{}
-	if err = client.RESTGet(v.JiraWebhook.Comment.Self, nil, &comment); err != nil {
+	if err = client.RESTGet(fmt.Sprintf("2/issue/%s/comment/%s", v.JiraWebhook.Issue.ID, v.JiraWebhook.Comment.ID), nil, &comment); err != nil {
 		return "", err
 	}
 
