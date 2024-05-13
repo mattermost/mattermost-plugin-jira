@@ -1,4 +1,4 @@
-readonly COMMITHASH=e2a5293e2e1c99ba66c4ebd0e358a1daaad2c4ed
+readonly COMMITHASH=`jq -r '.localPackages.mattermost_webapp' package.json`
 
 echo "\n\nInstalling mattermost-webapp from the mattermost repo, using commit hash $COMMITHASH\n"
 

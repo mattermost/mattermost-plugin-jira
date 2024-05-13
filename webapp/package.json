@@ -4,6 +4,9 @@
   "description": "This plugin serves as a starting point for writing a Mattermost plugin.",
   "main": "src/index.js",
   "private": true,
+  "localPackages": {
+    "mattermost_webapp": "e2a5293e2e1c99ba66c4ebd0e358a1daaad2c4ed"
+  },
   "scripts": {
     "preinstall": "./install_mattermost_webapp.sh",
     "build": "webpack --mode=production",
@@ -111,7 +114,7 @@
       "^@mattermost/types/(.*)$": "<rootDir>/mattermost-webapp/webapp/platform/types/src/$1",
       "^@mattermost/client$": "<rootDir>/mattermost-webapp/webapp/platform/client/src/index",
       "^@mattermost/client/(.*)$": "<rootDir>/mattermost-webapp/webapp/platform/client/src/$1",
-      "^mattermost-redux(.*)$": "<rootDir>/mattermost-webapp/webapp/channels/src/packages/mattermost-redux/src$1"
+      "^mattermost-redux/(.*)$": "<rootDir>/mattermost-webapp/webapp/channels/src/packages/mattermost-redux/src/$1"
     },
     "moduleDirectories": [
       "",
