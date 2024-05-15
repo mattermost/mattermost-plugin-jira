@@ -10,10 +10,10 @@ import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
 import {handleConnectFlow, openCreateModal} from 'actions';
 
 import {
-canUserConnect,
-getCurrentUserLocale,
-getInstalledInstances,
-isUserConnected,
+    canUserConnect,
+    getCurrentUserLocale,
+    getInstalledInstances,
+    isUserConnected,
 } from 'selectors';
 import {isCombinedUserActivityPost} from 'utils/posts';
 

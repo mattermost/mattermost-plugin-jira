@@ -1,8 +1,7 @@
 {
   "extends": [
-      "eslint:recommended",
-      "plugin:react-hooks/recommended"
-
+    "eslint:recommended",
+    "plugin:react-hooks/recommended"
   ],
   "parser": "@typescript-eslint/parser",
   "plugins": [
@@ -33,7 +32,7 @@
   "settings": {
     "import/resolver": "webpack",
     "react": {
-        "version": "detect"
+      "version": "detect"
     }
   },
   "rules": {
@@ -129,7 +128,7 @@
     "global-require": 2,
     "guard-for-in": 2,
     "id-blacklist": 0,
-    "import/no-unresolved": 0, // ts handles this better
+    "import/no-unresolved": 0,
     "import/order": [
       "error",
       {
@@ -147,10 +146,10 @@
       }
     ],
     "import-newlines/enforce": [
-        2,
-        3
+      2,
+      3
     ],
-    "indent": 0, // ts handles this
+    "indent": 0,
     "jsx-quotes": [
       2,
       "prefer-single"
@@ -538,7 +537,7 @@
           "location",
           "history",
           "component",
-		      "className"
+          "className"
         ]
       }
     ],
@@ -548,15 +547,15 @@
     "react/self-closing-comp": 2,
     "react/sort-comp": 0,
     "react/style-prop-object": [
-        2,
-        {
-            "allow": [
-                "FormattedNumber",
-                "FormattedDuration",
-                "FormattedRelativeTime",
-                "Timestamp"
-            ]
-        }
+      2,
+      {
+        "allow": [
+          "FormattedNumber",
+          "FormattedDuration",
+          "FormattedRelativeTime",
+          "Timestamp"
+        ]
+      }
     ],
     "require-yield": 2,
     "rest-spread-spacing": [
@@ -637,12 +636,17 @@
     "unused-imports/no-unused-imports": 2,
     "no-relative-import-paths/no-relative-import-paths": [
       "error",
-      { "allowSameFolder": true }
+      {
+        "allowSameFolder": true
+      }
     ]
   },
   "overrides": [
     {
-      "files": ["**/*.tsx", "**/*.ts"],
+      "files": [
+        "**/*.tsx",
+        "**/*.ts"
+      ],
       "extends": "plugin:@typescript-eslint/recommended",
       "rules": {
         "@typescript-eslint/no-empty-function": 0,
@@ -672,7 +676,10 @@
         "react/jsx-filename-extension": [
           1,
           {
-            "extensions": [".jsx", ".tsx"]
+            "extensions": [
+              ".jsx",
+              ".tsx"
+            ]
           }
         ]
       }
