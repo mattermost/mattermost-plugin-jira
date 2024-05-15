@@ -55,30 +55,6 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
                 "value": "commentVisibility",
               },
               Object {
-                "label": "Comment Visibility",
-                "value": "commentVisibility",
-              },
-              Object {
-                "label": "Comment Visibility",
-                "value": "commentVisibility",
-              },
-              Object {
-                "label": "Comment Visibility",
-                "value": "commentVisibility",
-              },
-              Object {
-                "label": "Comment Visibility",
-                "value": "commentVisibility",
-              },
-              Object {
-                "label": "Comment Visibility",
-                "value": "commentVisibility",
-              },
-              Object {
-                "label": "Comment Visibility",
-                "value": "commentVisibility",
-              },
-              Object {
                 "label": "Epic Link",
                 "value": "customfield_10014",
               },

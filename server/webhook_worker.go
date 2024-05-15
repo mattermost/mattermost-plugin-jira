@@ -4,10 +4,12 @@
 package main
 
 import (
-	"fmt"
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
+
+	"fmt"
 )
 
 type webhookWorker struct {
@@ -38,10 +40,10 @@ func isCommentRelatedWebhook(wh Webhook) bool {
 	return wh.Events().Intersection(commentEvents).Len() > 0
 }
 
-func (ww webhookWorker) getVisibilityAttribute(msg *webhookMessage, v *webhook) (string, error) {
+func (ww webhookWorker) getCommentVisibility(msg *webhookMessage, v *webhook) (string, error) {
 	mattermostUserID, err := ww.p.userStore.LoadMattermostUserID(msg.InstanceID, v.JiraWebhook.Comment.Author.AccountID)
 	if err != nil {
-		ww.p.API.LogInfo("Commentator is not connected with the mattermost", "Error", err.Error())
+		ww.p.API.LogDebug("Comment author is not connected with Mattermost", "Error", err.Error())
 		return "", err
 	}
 
@@ -82,7 +84,7 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 
 	visibilityAttribute := ""
 	if isCommentRelatedWebhook(wh) {
-		if visibilityAttribute, err = ww.getVisibilityAttribute(msg, v); err != nil {
+		if visibilityAttribute, err = ww.getCommentVisibility(msg, v); err != nil {
 			return err
 		}
 	}

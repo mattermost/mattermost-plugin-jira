@@ -37,7 +37,7 @@ describe('utils/jira_issue_metadata', () => {
         expect(actual.length).toBeGreaterThan(0);
     });
 
-    test('should return only the status field if there are no available values', () => {
+    test('should return only the status and comment visibility field if there are no available values', () => {
         const field = {
             hasDefaultValue: false,
             key: 'customfield_10021',
@@ -59,8 +59,9 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(1);
-        expect(actual[0].name).toBe('Status');
+        expect(actual.length).toBe(2);
+        expect(actual[0].name).toBe('Comment Visibility');
+        expect(actual[1].name).toBe('Status');
     });
 
     test('should return options for multi-select options', () => {
@@ -376,12 +377,13 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(2);
+        expect(actual.length).toBe(3);
 
-        expect(actual[0].key).toEqual('custom1');
-        expect(actual[0].name).toEqual('MJK - Labels');
-        expect(actual[0].userDefined).toEqual(true);
-        expect(actual[1].name).toBe('Status');
+        expect(actual[0].name).toBe('Comment Visibility');
+        expect(actual[1].key).toEqual('custom1');
+        expect(actual[1].name).toEqual('MJK - Labels');
+        expect(actual[1].userDefined).toEqual(true);
+        expect(actual[2].name).toBe('Status');
     });
 
     test('getConflictingFields should return a list of fields with conflicts', () => {

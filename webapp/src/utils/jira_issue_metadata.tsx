@@ -259,19 +259,7 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
         } as FilterField;
     });
 
-    const commentVisibility = selectFields.map((field) => {
-        return {
-            key: commentVisibilityFieldKey,
-            name: 'Comment Visibility',
-            schema: {
-                type: 'commentVisibility',
-            },
-            values: [],
-            issueTypes: field.validIssueTypes,
-        } as FilterField;
-    });
-
-    const result = populatedFields.concat(userDefinedFields, commentVisibility);
+    const result = populatedFields.concat(userDefinedFields);
     const epicLinkField = fields.find(isEpicLinkField);
     if (epicLinkField) {
         result.unshift({
@@ -282,6 +270,23 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
             issueTypes: epicLinkField.validIssueTypes,
         } as FilterField);
     }
+
+    const commentVisibilityField = {
+        key: commentVisibilityFieldKey,
+        name: 'Comment Visibility',
+        schema: {
+            type: 'commentVisibility',
+        },
+        values: [],
+        issueTypes: metadata && metadata.issue_types_with_statuses.map((type) => {
+            return {
+                id: type.id,
+                name: type.name,
+            };
+        }),
+    } as FilterField;
+
+    result.push(commentVisibilityField);
 
     const statusField = getStatusField(metadata, issueTypes);
     if (statusField) {
