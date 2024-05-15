@@ -3,7 +3,7 @@
 
 import React, {PureComponent} from 'react';
 
-import FullScreenModal from 'components/modals/full_screen_modal/full_screen_modal';
+import FullScreenModal from '../full_screen_modal/full_screen_modal';
 
 import {AllProjectMetadata} from 'types/model';
 

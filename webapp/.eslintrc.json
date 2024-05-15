@@ -10,7 +10,6 @@
     "formatjs",
     "@typescript-eslint",
     "unused-imports",
-    "no-relative-import-paths",
     "import-newlines"
   ],
   "env": {
@@ -128,7 +127,7 @@
     "global-require": 2,
     "guard-for-in": 2,
     "id-blacklist": 0,
-    "import/no-unresolved": 0,
+    "import/no-unresolved": 2,
     "import/order": [
       "error",
       {
@@ -149,7 +148,7 @@
       2,
       3
     ],
-    "indent": 0,
+    "indent": 2,
     "jsx-quotes": [
       2,
       "prefer-single"
@@ -182,9 +181,9 @@
       }
     ],
     "max-lines": [
-      0,
+      2,
       {
-        "max": 450,
+        "max": 650,
         "skipBlankLines": true,
         "skipComments": false
       }
@@ -341,7 +340,7 @@
       }
     ],
     "no-undef-init": 2,
-    "no-undefined": 0,
+    "no-undefined": 2,
     "no-underscore-dangle": 2,
     "no-unexpected-multiline": 2,
     "no-unmodified-loop-condition": 2,
@@ -362,7 +361,14 @@
         "args": "after-used"
       }
     ],
-    "no-use-before-define": 0,
+    "no-use-before-define": [
+      2,
+      {
+        "classes": false,
+        "functions": false,
+        "variables": false
+      }
+    ],
     "no-useless-computed-key": 2,
     "no-useless-concat": 2,
     "no-useless-constructor": 2,
@@ -633,13 +639,7 @@
     "formatjs/enforce-default-message": 2,
     "formatjs/no-multiple-plurals": 2,
     "formatjs/enforce-placeholders": 2,
-    "unused-imports/no-unused-imports": 2,
-    "no-relative-import-paths/no-relative-import-paths": [
-      "error",
-      {
-        "allowSameFolder": true
-      }
-    ]
+    "unused-imports/no-unused-imports": 2
   },
   "overrides": [
     {
@@ -649,14 +649,12 @@
       ],
       "extends": "plugin:@typescript-eslint/recommended",
       "rules": {
-        "@typescript-eslint/no-empty-function": 0,
-        "@typescript-eslint/ban-ts-ignore": 0,
+        "@typescript-eslint/no-empty-function": 1,
         "@typescript-eslint/ban-types": 1,
-        "@typescript-eslint/ban-ts-comment": 0,
-        "@typescript-eslint/no-var-requires": 0,
-        "@typescript-eslint/prefer-interface": 0,
-        "@typescript-eslint/explicit-function-return-type": 0,
-        "@typescript-eslint/explicit-module-boundary-types": 0,
+        "@typescript-eslint/ban-ts-comment":1,
+        "@typescript-eslint/no-var-requires": 1,
+        "@typescript-eslint/explicit-function-return-type": 1,
+        "@typescript-eslint/explicit-module-boundary-types": 1,
         "@typescript-eslint/no-shadow": 2,
         "@typescript-eslint/indent": [
           2,
