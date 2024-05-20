@@ -32,7 +32,6 @@ const JiraCommentVisibilitySelector = (props: Props) => {
         const params = {
             fieldValue: inputValue,
             instance_id: instanceID,
-            expand: 'groups',
         };
         return searchCommentVisibilityFields(params).then(({data}) => {
             return data.groups.items.map((suggestion) => ({

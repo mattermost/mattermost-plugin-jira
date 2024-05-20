@@ -66,7 +66,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         onChange(value, {...value, values: newValues});
     };
 
-    handleEpicLinkChange = (values: string[]): void => {
+    handleValueChangeWithoutName = (values: string[]): void => {
         const {onChange, value} = this.props;
 
         const newValues = values || [];
@@ -283,7 +283,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                     {...selectProps}
                     fieldName={field.name}
                     value={value.values}
-                    onChange={this.handleEpicLinkChange}
+                    onChange={this.handleValueChangeWithoutName}
                 />
             );
         } else if (isEpicLinkField(this.props.field)) {
@@ -292,7 +292,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                     {...selectProps}
                     issueMetadata={this.props.issueMetadata}
                     value={value.values}
-                    onChange={this.handleEpicLinkChange}
+                    onChange={this.handleValueChangeWithoutName}
                 />
             );
         } else if (isLabelField(field)) {
@@ -301,7 +301,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                     {...selectProps}
                     fieldName={field.name}
                     value={value.values}
-                    onChange={this.handleEpicLinkChange}
+                    onChange={this.handleValueChangeWithoutName}
                 />
             );
         } else {
@@ -386,7 +386,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
 
 type EmptyChannelSubscriptionFilterProps = {
     fields: FilterField[];
-    theme: object;
+    theme: Theme;
     chosenIssueTypes: string[];
     issueMetadata: IssueMetadata;
     onChange: (f1: FilterValue | null, f2: FilterValue) => void;

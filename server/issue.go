@@ -32,10 +32,11 @@ const (
 	headerMattermostUserID = "Mattermost-User-ID"
 	instanceIDQueryParam   = "instance_id"
 	fieldValueQueryParam   = "fieldValue"
-	expandQueryParam       = "expand"
 
 	QueryParamInstanceID = "instance_id"
 	QueryParamProjectID  = "project_id"
+
+	expandValueGroups = "groups"
 )
 
 type CreateMetaInfo struct {
@@ -429,7 +430,7 @@ func (p *Plugin) httpGetCommentVisibilityFields(w http.ResponseWriter, r *http.R
 
 	params := map[string]string{
 		"fieldValue": r.FormValue(fieldValueQueryParam),
-		"expand":     r.FormValue(expandQueryParam),
+		"expand":     expandValueGroups,
 		"accountId":  connection.AccountID,
 	}
 	response, err := client.SearchCommentVisibilityFields(params)
