@@ -5,7 +5,7 @@ import React from 'react';
 
 import {AvatarSize, JiraUser, ReactSelectOption} from 'types/model';
 
-import BackendSelector, {Props as BackendSelectorProps} from 'components/data_selectors/backend_selector';
+import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
 
 type Props = BackendSelectorProps & {
     projectKey: string;

@@ -8,7 +8,7 @@ import testChannel from 'testdata/channel.json';
 
 import {IssueMetadata, ProjectMetadata} from 'types/model';
 
-import FullScreenModal from 'components/modals/full_screen_modal/full_screen_modal';
+import FullScreenModal from '../full_screen_modal/full_screen_modal';
 
 import ChannelSubscriptionsModal, {Props} from './channel_subscriptions';
 import ChannelSubscriptionsModalInner from './channel_subscriptions_internal';

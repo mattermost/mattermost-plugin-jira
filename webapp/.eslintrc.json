@@ -1,8 +1,7 @@
 {
   "extends": [
-      "eslint:recommended",
-      "plugin:react-hooks/recommended"
-
+    "eslint:recommended",
+    "plugin:react-hooks/recommended"
   ],
   "parser": "@typescript-eslint/parser",
   "plugins": [
@@ -11,7 +10,6 @@
     "formatjs",
     "@typescript-eslint",
     "unused-imports",
-    "no-relative-import-paths",
     "import-newlines"
   ],
   "env": {
@@ -33,7 +31,7 @@
   "settings": {
     "import/resolver": "webpack",
     "react": {
-        "version": "detect"
+      "version": "detect"
     }
   },
   "rules": {
@@ -129,7 +127,7 @@
     "global-require": 2,
     "guard-for-in": 2,
     "id-blacklist": 0,
-    "import/no-unresolved": 0, // ts handles this better
+    "import/no-unresolved": 2,
     "import/order": [
       "error",
       {
@@ -147,10 +145,10 @@
       }
     ],
     "import-newlines/enforce": [
-        2,
-        3
+      2,
+      3
     ],
-    "indent": 0, // ts handles this
+    "indent": 2,
     "jsx-quotes": [
       2,
       "prefer-single"
@@ -183,9 +181,9 @@
       }
     ],
     "max-lines": [
-      0,
+      2,
       {
-        "max": 450,
+        "max": 650,
         "skipBlankLines": true,
         "skipComments": false
       }
@@ -342,7 +340,7 @@
       }
     ],
     "no-undef-init": 2,
-    "no-undefined": 0,
+    "no-undefined": 2,
     "no-underscore-dangle": 2,
     "no-unexpected-multiline": 2,
     "no-unmodified-loop-condition": 2,
@@ -363,7 +361,14 @@
         "args": "after-used"
       }
     ],
-    "no-use-before-define": 0,
+    "no-use-before-define": [
+      2,
+      {
+        "classes": false,
+        "functions": false,
+        "variables": false
+      }
+    ],
     "no-useless-computed-key": 2,
     "no-useless-concat": 2,
     "no-useless-constructor": 2,
@@ -538,7 +543,7 @@
           "location",
           "history",
           "component",
-		      "className"
+          "className"
         ]
       }
     ],
@@ -548,15 +553,15 @@
     "react/self-closing-comp": 2,
     "react/sort-comp": 0,
     "react/style-prop-object": [
-        2,
-        {
-            "allow": [
-                "FormattedNumber",
-                "FormattedDuration",
-                "FormattedRelativeTime",
-                "Timestamp"
-            ]
-        }
+      2,
+      {
+        "allow": [
+          "FormattedNumber",
+          "FormattedDuration",
+          "FormattedRelativeTime",
+          "Timestamp"
+        ]
+      }
     ],
     "require-yield": 2,
     "rest-spread-spacing": [
@@ -634,25 +639,22 @@
     "formatjs/enforce-default-message": 2,
     "formatjs/no-multiple-plurals": 2,
     "formatjs/enforce-placeholders": 2,
-    "unused-imports/no-unused-imports": 2,
-    "no-relative-import-paths/no-relative-import-paths": [
-      "error",
-      { "allowSameFolder": true }
-    ]
+    "unused-imports/no-unused-imports": 2
   },
   "overrides": [
     {
-      "files": ["**/*.tsx", "**/*.ts"],
+      "files": [
+        "**/*.tsx",
+        "**/*.ts"
+      ],
       "extends": "plugin:@typescript-eslint/recommended",
       "rules": {
-        "@typescript-eslint/no-empty-function": 0,
-        "@typescript-eslint/ban-ts-ignore": 0,
+        "@typescript-eslint/no-empty-function": 1,
         "@typescript-eslint/ban-types": 1,
-        "@typescript-eslint/ban-ts-comment": 0,
-        "@typescript-eslint/no-var-requires": 0,
-        "@typescript-eslint/prefer-interface": 0,
-        "@typescript-eslint/explicit-function-return-type": 0,
-        "@typescript-eslint/explicit-module-boundary-types": 0,
+        "@typescript-eslint/ban-ts-comment":1,
+        "@typescript-eslint/no-var-requires": 1,
+        "@typescript-eslint/explicit-function-return-type": 1,
+        "@typescript-eslint/explicit-module-boundary-types": 1,
         "@typescript-eslint/no-shadow": 2,
         "@typescript-eslint/indent": [
           2,
@@ -672,7 +674,10 @@
         "react/jsx-filename-extension": [
           1,
           {
-            "extensions": [".jsx", ".tsx"]
+            "extensions": [
+              ".jsx",
+              ".tsx"
+            ]
           }
         ]
       }
