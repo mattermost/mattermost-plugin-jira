@@ -16,7 +16,7 @@ export type Props = SharedProps;
 
 type State = {
     showModal: boolean;
-    allProjectMetadata: AllProjectMetadata | null
+    allProjectMetadata: AllProjectMetadata | null;
 };
 
 export default class ChannelSubscriptionsModal extends PureComponent<Props, State> {
