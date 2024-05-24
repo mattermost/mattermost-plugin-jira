@@ -13,6 +13,11 @@ export type TicketDetails = {
     issueIcon: string;
 }
 
+export type TicketData = {
+    key: string;
+    fields: TicketDataFields;
+}
+
 export type AvatarUrls = {
     '48x48': string;
 }
@@ -26,11 +31,6 @@ export type TicketDataFields = {
     versions: string[];
     status: {name: string};
     issuetype: {iconUrl: string};
-}
-
-export type TicketData = {
-    key: string;
-    fields: TicketDataFields;
 }
 
 export type IssueAction = {
