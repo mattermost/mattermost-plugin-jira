@@ -74,7 +74,7 @@ export default class JiraIssueSelector extends Component {
     onChange = (e) => {
         const value = e ? e.value : '';
         this.props.onChange(value);
-    }
+    };
 
     isValid = () => {
         if (!this.props.required) {
@@ -158,5 +158,5 @@ export default class JiraIssueSelector extends Component {
                 {issueError}
             </div>
         );
-    }
+    };
 }

@@ -28,7 +28,7 @@ describe('components/JiraEpicSelector', () => {
     test('should match snapshot', () => {
         const props = {...baseProps};
         const wrapper = shallow<JiraEpicSelector>(
-            <JiraEpicSelector {...props}/>
+            <JiraEpicSelector {...props}/>,
         );
         expect(wrapper).toMatchSnapshot();
     });
@@ -41,7 +41,7 @@ describe('components/JiraEpicSelector', () => {
             searchIssues,
         };
         const wrapper = shallow<JiraEpicSelector>(
-            <JiraEpicSelector {...props}/>
+            <JiraEpicSelector {...props}/>,
         );
 
         wrapper.instance().searchIssues('');

@@ -5,9 +5,10 @@ import {PostTypes} from 'mattermost-redux/action_types';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
 import manifest from '../manifest';
+
 import ActionTypes from 'action_types';
-import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
-import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances} from 'selectors';
+import {buildQueryString, doFetch, doFetchWithResponse} from 'client';
+import {getInstalledInstances, getPluginServerRoute, getUserConnectedInstances} from 'selectors';
 import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
 import {
     APIResponse,
@@ -357,10 +358,9 @@ export function getConnected() {
 
 export function disconnectUser(instanceID: string) {
     return async (dispatch, getState) => {
-        let data;
         const baseUrl = getPluginServerRoute(getState());
         try {
-            data = await doFetch(`${baseUrl}/api/v3/disconnect`, {
+            await doFetch(`${baseUrl}/api/v3/disconnect`, {
                 method: 'post',
                 body: JSON.stringify({instance_id: instanceID}),
             });
@@ -433,7 +433,6 @@ export function handleConnectFlow(instanceID?: string) {
 
 export function redirectConnect(instanceID: string) {
     return async (dispatch, getState) => {
-        const serverUrl = getPluginServerRoute(getState());
         const instancePrefix = '/instance/' + btoa(instanceID);
         const target = '/plugins/' + manifest.id + instancePrefix + '/user/connect';
         window.open(target, '_blank');

@@ -1,6 +1,11 @@
 import React from 'react';
 
-import {FilterField, FilterValue, IssueMetadata, FilterFieldInclusion} from 'types/model';
+import {
+    FilterField,
+    FilterFieldInclusion,
+    FilterValue,
+    IssueMetadata,
+} from 'types/model';
 
 import {getConflictingFields} from 'utils/jira_issue_metadata';
 
@@ -72,7 +77,7 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
         const conflictingFields = getConflictingFields(
             this.props.fields,
             this.props.chosenIssueTypes,
-            this.props.issueMetadata
+            this.props.issueMetadata,
         );
         const nonConflictingFields = fields.filter((f) => {
             return !conflictingFields.find((conf) => conf.field.key === f.key);

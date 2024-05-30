@@ -1,8 +1,8 @@
 import {connect} from 'react-redux';
-import {bindActionCreators, Dispatch} from 'redux';
+import {Dispatch, bindActionCreators} from 'redux';
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import {isUserConnected, getUserConnectedInstances} from 'selectors';
+import {getUserConnectedInstances, isUserConnected} from 'selectors';
 import {fetchIssueByKey} from 'actions';
 
 import TicketPopover from './jira_ticket_tooltip';

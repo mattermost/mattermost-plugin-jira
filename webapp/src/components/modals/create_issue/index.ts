@@ -7,8 +7,13 @@ import {bindActionCreators} from 'redux';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {closeCreateModal, createIssue, fetchJiraIssueMetadataForProjects, redirectConnect} from 'actions';
-import {isCreateModalVisible, getCreateModal} from 'selectors';
+import {
+    closeCreateModal,
+    createIssue,
+    fetchJiraIssueMetadataForProjects,
+    redirectConnect,
+} from 'actions';
+import {getCreateModal, isCreateModalVisible} from 'selectors';
 
 import CreateIssue from './create_issue_modal';
 

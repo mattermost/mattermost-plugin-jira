@@ -4,7 +4,7 @@
 import React, {PureComponent} from 'react';
 import {Modal} from 'react-bootstrap';
 
-import {ReactSelectOption, Instance} from 'types/model';
+import {Instance, ReactSelectOption} from 'types/model';
 
 import {getModalStyles} from 'utils/styles';
 
@@ -44,11 +44,11 @@ export default class DisconnectModalForm extends PureComponent<Props, State> {
                 this.props.closeModal();
             }
         });
-    }
+    };
 
     closeModal = (e) => {
         this.props.closeModal();
-    }
+    };
 
     handleInstanceChoice = (_: string, instanceID: string) => {
         if (instanceID === this.state.selectedInstance) {
@@ -56,7 +56,7 @@ export default class DisconnectModalForm extends PureComponent<Props, State> {
         }
 
         this.setState({selectedInstance: instanceID, error: ''});
-    }
+    };
 
     render(): JSX.Element {
         const style = getModalStyles(this.props.theme);

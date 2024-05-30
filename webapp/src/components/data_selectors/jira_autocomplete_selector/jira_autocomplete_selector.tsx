@@ -57,5 +57,5 @@ export default class JiraAutoCompleteSelector extends React.PureComponent<Props>
                 search={this.searchAutoCompleteFields}
             />
         );
-    }
+    };
 }

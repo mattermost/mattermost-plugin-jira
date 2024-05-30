@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Store, Action} from 'redux';
+import {Action, Store} from 'redux';
 
 import ConnectModal from 'components/modals/connect_modal';
 import DisconnectModal from 'components/modals/disconnect_modal';
@@ -20,7 +20,12 @@ import LinkTooltip from 'components/jira_ticket_tooltip';
 import manifest from './manifest';
 
 import reducers from './reducers';
-import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings} from './actions';
+import {
+    getConnected,
+    getSettings,
+    handleConnectChange,
+    handleInstanceStatusChange,
+} from './actions';
 import Hooks from './hooks/hooks';
 
 const setupUILater = (registry: any, store: Store<object, Action<object>>): () => Promise<void> => async () => {

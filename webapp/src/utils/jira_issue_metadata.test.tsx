@@ -5,10 +5,22 @@ import createMeta from 'testdata/cloud-get-create-issue-metadata-for-project-man
 import {ticketData} from 'testdata/get-ticket-metadata-for-tooltip';
 import {useFieldForIssueMetadata} from 'testdata/jira-issue-metadata-helpers';
 
-import {IssueMetadata, JiraField, FilterField, ChannelSubscriptionFilters, FilterFieldInclusion} from 'types/model';
+import {
+    ChannelSubscriptionFilters,
+    FilterField,
+    FilterFieldInclusion,
+    IssueMetadata,
+    JiraField,
+} from 'types/model';
 import {IssueAction, TicketDetails} from 'types/tooltip';
 
-import {getCustomFieldFiltersForProjects, generateJQLStringFromSubscriptionFilters, getConflictingFields, getJiraTicketDetails, getStatusField} from './jira_issue_metadata';
+import {
+    generateJQLStringFromSubscriptionFilters,
+    getConflictingFields,
+    getCustomFieldFiltersForProjects,
+    getJiraTicketDetails,
+    getStatusField,
+} from './jira_issue_metadata';
 
 describe('utils/jira_issue_metadata', () => {
     const useField = (field: JiraField, key: string): IssueMetadata => {
