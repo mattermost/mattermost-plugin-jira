@@ -323,7 +323,9 @@ func (p *Plugin) stepCloudOAuthConfigure() flow.Step {
 			"       {{.OAuthCompleteURL}}\n"+
 			"8. Select **Settings** in the left menu.\n"+
 			"9. Copy the **Client ID** and **Secret** and keep it handy.\n"+
-			"10. Click on the **Configure** button below, enter these details and then **Continue**.", JiraScopes)).
+			"10. By default the app will be created as private. In order to share it with your organization, select the **Distribution** in the left menu.\n"+
+			"11. Click on the **Sharing** radio button, fill the form with the relevant data and click on **Save changes**.\n"+
+			"12. Click on the **Configure** button below, enter these details and then **Continue**.", JiraScopes)).
 		WithButton(flow.Button{
 			Name:  "Configure",
 			Color: flow.ColorPrimary,

@@ -13,7 +13,7 @@ import (
 	"time"
 
 	jira "github.com/andygrunwald/go-jira"
-	jwt "github.com/dgrijalva/jwt-go"
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 	ajwt "github.com/rbriski/atlassian-jwt"
