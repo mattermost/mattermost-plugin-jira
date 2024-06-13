@@ -1,8 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {ClientError} from '@mattermost/client';
+
 import {Client4} from 'mattermost-redux/client';
-import {ClientError} from 'mattermost-redux/client/client4';
 
 export const doFetch = async (url, options) => {
     const {data} = await doFetchWithResponse(url, options);

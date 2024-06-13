@@ -1,8 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {Theme} from 'mattermost-redux/selectors/entities/preferences';
+
 import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
-import {Theme} from 'mattermost-redux/types/preferences';
 
 export const getBaseStyles = (theme: Theme) => {
     return {
