@@ -15,9 +15,9 @@ const config = {
     ],
     resolve: {
         alias: {
-            '@mattermost/types': path.resolve(__dirname, './mattermost-webapp/webapp/platform/types/src/'),
-            '@mattermost/client': path.resolve(__dirname, './mattermost-webapp/webapp/platform/client/src/'),
-            'mattermost-redux': path.resolve(__dirname, './mattermost-webapp/webapp/channels/src/packages/mattermost-redux/src/'),
+            '@mattermost/types': path.resolve(__dirname, './mattermost-webapp/platform/types/src/'),
+            '@mattermost/client': path.resolve(__dirname, './mattermost-webapp/platform/client/src/'),
+            'mattermost-redux': path.resolve(__dirname, './mattermost-webapp/channels/src/packages/mattermost-redux/src/'),
         },
         modules: [
             'src',

@@ -24,16 +24,16 @@
     "types": ["jest", "node"],
     "paths": {
       "@mattermost/types/*": [
-        "./mattermost-webapp/webapp/platform/types/src/*"
+        "./mattermost-webapp/platform/types/src/*"
       ],
       "@mattermost/client": [
-        "./mattermost-webapp/webapp/platform/client/src"
+        "./mattermost-webapp/platform/client/src"
       ],
       "@mattermost/client/*": [
-        "./mattermost-webapp/webapp/platform/client/src/*"
+        "./mattermost-webapp/platform/client/src/*"
       ],
       "mattermost-redux/*": [
-        "./mattermost-webapp/webapp/channels/src/packages/mattermost-redux/src/*"
+        "./mattermost-webapp/channels/src/packages/mattermost-redux/src/*"
       ]
     }
   },

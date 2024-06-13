@@ -18,6 +18,12 @@ git fetch --depth=1 origin $COMMITHASH
 git reset --hard FETCH_HEAD
 
 cd ..
-npm i --save-dev ./mattermost-webapp/webapp/channels
-npm i --save-dev ./mattermost-webapp/webapp/platform/types
-npm i --save-dev ./mattermost-webapp/webapp/platform/client
+mv mattermost-webapp/webapp .
+rm -rf mattermost-webapp
+mv webapp mattermost-webapp
+
+echo "After movement"
+
+npm i --save-dev ./mattermost-webapp/channels
+npm i --save-dev ./mattermost-webapp/platform/types
+npm i --save-dev ./mattermost-webapp/platform/client
