@@ -3,9 +3,9 @@
 
 import React, {PureComponent} from 'react';
 
-import {ProjectMetadata, ChannelSubscription} from 'types/model';
-
 import FullScreenModal from '../full_screen_modal/full_screen_modal';
+
+import {AllProjectMetadata} from 'types/model';
 
 import ChannelSubscriptionsModalInner from './channel_subscriptions_internal';
 import {SharedProps} from './shared_props';
@@ -14,11 +14,16 @@ import './channel_subscriptions_modal.scss';
 
 export type Props = SharedProps;
 
-export default class ChannelSubscriptionsModal extends PureComponent<Props> {
+type State = {
+    showModal: boolean;
+    allProjectMetadata: AllProjectMetadata | null;
+};
+
+export default class ChannelSubscriptionsModal extends PureComponent<Props, State> {
     state = {
         showModal: false,
         allProjectMetadata: null,
-    }
+    };
 
     componentDidUpdate(prevProps: Props) {
         if (prevProps.channel && !this.props.channel) {
@@ -30,11 +35,11 @@ export default class ChannelSubscriptionsModal extends PureComponent<Props> {
 
     handleModalClosed = () => {
         this.setState({showModal: false});
-    }
+    };
 
     handleModalOpened = () => {
         this.fetchData();
-    }
+    };
 
     fetchData = async (): Promise<void> => {
         if (!this.props.channel) {

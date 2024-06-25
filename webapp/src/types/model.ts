@@ -65,14 +65,31 @@ export type Project = {
     issuetypes: IssueType[];
 }
 
+export type IssueTypeWithStatuses = {
+    id: string;
+    name: string;
+    statuses: Status[];
+}
+
 export type IssueMetadata = {
     projects: Project[];
+    issue_types_with_statuses: IssueTypeWithStatuses[];
+}
+
+export type Status = {
+    id: string;
+    name: string;
 }
 
 export type ProjectMetadata = {
     projects: ReactSelectOption[];
     issues_per_project: {[key: string]: ReactSelectOption[]};
-    default_project_key?: string;
+    saved_field_values?: SavedFieldValues;
+}
+
+export type SavedFieldValues = {
+    project_key?: string;
+    issue_type?: string;
 }
 
 export enum JiraFieldTypeEnums {

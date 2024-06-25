@@ -39,7 +39,7 @@ describe('components/ChannelSettingsModal', () => {
         };
 
         const wrapper = shallow<ChannelSubscriptionsModal>(
-            <ChannelSubscriptionsModal {...props}/>, {lifecycleExperimental: true}
+            <ChannelSubscriptionsModal {...props}/>, {lifecycleExperimental: true},
         );
 
         expect(wrapper.find(ChannelSubscriptionsModalInner).length).toEqual(0);
@@ -68,7 +68,7 @@ describe('components/ChannelSettingsModal', () => {
         };
 
         const wrapper = shallow<ChannelSubscriptionsModal>(
-            <ChannelSubscriptionsModal {...props}/>, {lifecycleExperimental: true}
+            <ChannelSubscriptionsModal {...props}/>, {lifecycleExperimental: true},
         );
 
         wrapper.setProps({

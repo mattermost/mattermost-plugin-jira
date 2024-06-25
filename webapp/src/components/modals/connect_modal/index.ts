@@ -5,7 +5,7 @@ import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 
 import {closeConnectModal, redirectConnect} from 'actions';
-import {isConnectModalVisible, getUserConnectedInstances, getInstalledInstances} from 'selectors';
+import {getInstalledInstances, getUserConnectedInstances, isConnectModalVisible} from 'selectors';
 
 import ConnectModal from './connect_modal';
 

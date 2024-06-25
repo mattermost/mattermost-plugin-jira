@@ -4,10 +4,11 @@
 import {PostTypes} from 'mattermost-redux/action_types';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
-import {id as PluginId} from '../manifest';
+import manifest from '../manifest';
+
 import ActionTypes from 'action_types';
-import {doFetch, doFetchWithResponse, buildQueryString} from 'client';
-import {getPluginServerRoute, getInstalledInstances, getUserConnectedInstances} from 'selectors';
+import {buildQueryString, doFetch, doFetchWithResponse} from 'client';
+import {getInstalledInstances, getPluginServerRoute, getUserConnectedInstances} from 'selectors';
 import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
 import {ChannelSubscription, CreateIssueRequest, SearchIssueParams, InstanceType, ProjectMetadata, APIResponse, SubscriptionTemplate} from 'types/model';
 
@@ -221,7 +222,7 @@ export const createSubscriptionTemplate = (subscriptionTemplate: SubscriptionTem
     return async (dispatch, getState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            const data = await doFetch(`${baseUrl}/api/v2/subscription-templates?channel_id=${subscriptionTemplate.channel_id}`, {
+            const data = await doFetch(`${baseUrl}/api/v2/subscription-templates`, {
                 method: 'post',
                 body: JSON.stringify(subscriptionTemplate),
             });
@@ -472,10 +473,9 @@ export function getConnected() {
 
 export function disconnectUser(instanceID: string) {
     return async (dispatch, getState) => {
-        let data;
         const baseUrl = getPluginServerRoute(getState());
         try {
-            data = await doFetch(`${baseUrl}/api/v3/disconnect`, {
+            await doFetch(`${baseUrl}/api/v3/disconnect`, {
                 method: 'post',
                 body: JSON.stringify({instance_id: instanceID}),
             });
@@ -549,7 +549,7 @@ export function handleConnectFlow(instanceID?: string) {
 export function redirectConnect(instanceID: string) {
     return async (dispatch, getState) => {
         const instancePrefix = '/instance/' + btoa(instanceID);
-        const target = '/plugins/' + PluginId + instancePrefix + '/user/connect';
+        const target = '/plugins/' + manifest.id + instancePrefix + '/user/connect';
         window.open(target, '_blank');
     };
 }
@@ -631,3 +631,19 @@ export function sendEphemeralPost(message: string, channelId?: string) {
         });
     };
 }
+
+export const fetchIssueByKey = (issueKey: string, instanceID: string) => {
+    return async (dispatch, getState) => {
+        const baseUrl = getPluginServerRoute(getState());
+        let data = null;
+        const params = `issue_key=${issueKey}&instance_id=${instanceID}`;
+        try {
+            data = await doFetch(`${baseUrl}/api/v2/get-issue-by-key?${params}`, {
+                method: 'get',
+            });
+            return {data};
+        } catch (error) {
+            return {error};
+        }
+    };
+};

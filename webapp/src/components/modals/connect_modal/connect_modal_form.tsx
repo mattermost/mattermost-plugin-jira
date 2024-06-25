@@ -4,7 +4,7 @@
 import React, {PureComponent} from 'react';
 import {Modal} from 'react-bootstrap';
 
-import {ReactSelectOption, Instance} from 'types/model';
+import {Instance, ReactSelectOption} from 'types/model';
 
 import {getModalStyles} from 'utils/styles';
 
@@ -43,7 +43,7 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
 
         this.props.closeModal();
         this.props.redirectConnect(this.state.selectedInstance);
-    }
+    };
 
     isAlreadyConnectedToInstance = (instanceID: string): boolean => {
         return Boolean(this.props.connectedInstances.find((instance) => instance.instance_id === instanceID));
@@ -51,7 +51,7 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
 
     closeModal = (e) => {
         this.props.closeModal();
-    }
+    };
 
     handleInstanceChoice = (_: string, instanceID: string) => {
         if (instanceID === this.state.selectedInstance) {
@@ -64,7 +64,7 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
         }
 
         this.setState({selectedInstance: instanceID, error});
-    }
+    };
 
     render(): JSX.Element {
         const style = getModalStyles(this.props.theme);

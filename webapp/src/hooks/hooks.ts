@@ -1,8 +1,20 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {openCreateModalWithoutPost, openChannelSettings, sendEphemeralPost, openDisconnectModal, handleConnectFlow, getConnected} from '../actions';
-import {isUserConnected, getInstalledInstances, getPluginSettings, getUserConnectedInstances, instanceIsInstalled} from '../selectors';
+import {
+    getConnected,
+    handleConnectFlow,
+    openChannelSettings,
+    openCreateModalWithoutPost,
+    openDisconnectModal,
+    sendEphemeralPost,
+} from 'actions';
+import {
+    getPluginSettings,
+    getUserConnectedInstances,
+    instanceIsInstalled,
+    isUserConnected,
+} from 'selectors';
 
 type ContextArgs = {channel_id: string};
 
@@ -60,7 +72,7 @@ export default class Hooks {
         }
 
         return Promise.resolve({message, args: contextArgs});
-    }
+    };
 
     handleCreateSlashCommand = (message: string, contextArgs: ContextArgs) => {
         if (!this.checkInstanceIsInstalled()) {
@@ -78,7 +90,7 @@ export default class Hooks {
         }
         this.store.dispatch(openCreateModalWithoutPost(description, contextArgs.channel_id));
         return Promise.resolve({});
-    }
+    };
 
     handleSubscribeSlashCommand = (message: string, contextArgs: ContextArgs) => {
         if (!this.checkInstanceIsInstalled()) {
@@ -91,7 +103,7 @@ export default class Hooks {
         this.store.dispatch(getConnected());
         this.store.dispatch(openChannelSettings(contextArgs.channel_id));
         return Promise.resolve({});
-    }
+    };
 
     handleDisconnectSlashCommand = (message: string, contextArgs: ContextArgs) => {
         if (!this.checkInstanceIsInstalled()) {
@@ -112,7 +124,7 @@ export default class Hooks {
 
         this.store.dispatch(openDisconnectModal());
         return Promise.resolve({});
-    }
+    };
 
     checkInstanceIsInstalled = async (): Promise<boolean> => {
         if (!instanceIsInstalled(this.store.getState())) {
@@ -124,7 +136,7 @@ export default class Hooks {
         }
 
         return true;
-    }
+    };
 
     checkUserIsConnected = async (): Promise<boolean> => {
         if (!isUserConnected(this.store.getState())) {
@@ -136,7 +148,7 @@ export default class Hooks {
         }
 
         return true;
-    }
+    };
 
     handleConnectSlashCommand = (message: string, contextArgs: ContextArgs) => {
         let instanceID = '';
@@ -147,5 +159,5 @@ export default class Hooks {
         }
         this.store.dispatch(handleConnectFlow(instanceID));
         return Promise.resolve({});
-    }
+    };
 }

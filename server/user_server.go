@@ -7,13 +7,12 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"net/http"
-	"path"
 	"strings"
 
 	"github.com/dghubble/oauth1"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -34,7 +33,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 		if len(errtext) > 0 {
 			errtext = strings.ToUpper(errtext[:1]) + errtext[1:]
 		}
-		status, err = p.respondSpecialTemplate(w, "/other/message.html", status, "text/html", struct {
+		status, err = p.respondSpecialTemplate(w, "/other/message.html", status, ContentTypeHTML, struct {
 			Header  string
 			Message string
 		}{
@@ -84,7 +83,7 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	}
 
 	connection := &Connection{
-		PluginVersion:      Manifest.Version,
+		PluginVersion:      manifest.Version,
 		Oauth1AccessToken:  accessToken,
 		Oauth1AccessSecret: accessSecret,
 	}
@@ -108,14 +107,14 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 		return http.StatusInternalServerError, err
 	}
 
-	return p.respondTemplate(w, r, "text/html", struct {
+	return p.respondTemplate(w, r, ContentTypeHTML, struct {
 		MattermostDisplayName string
 		JiraDisplayName       string
 		RevokeURL             string
 	}{
 		JiraDisplayName:       juser.DisplayName + " (" + juser.Name + ")",
 		MattermostDisplayName: mmuser.GetDisplayName(model.ShowNicknameFullName),
-		RevokeURL:             path.Join(p.GetPluginURLPath(), instancePath(routeUserDisconnect, instance.GetID())),
+		RevokeURL:             p.CreateFullURLPath(instancePath(routeUserDisconnect, instance.GetID())),
 	})
 }
 
@@ -130,7 +129,7 @@ func (p *Plugin) httpOAuth1aDisconnect(w http.ResponseWriter, r *http.Request, i
 	}
 
 	return p.respondSpecialTemplate(w, "/other/message.html", http.StatusOK,
-		"text/html", struct {
+		ContentTypeHTML, struct {
 			Header  string
 			Message string
 		}{

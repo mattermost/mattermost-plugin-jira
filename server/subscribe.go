@@ -17,7 +17,7 @@ import (
 
 	"github.com/trivago/tgo/tcontainer"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -35,10 +35,7 @@ const (
 	MaxSubscriptionNameLength         = 100
 	MaxSubscriptionTemplateNameLength = 100
 
-	QueryParamInstanceID = "instance_id"
 	QueryParamProjectKey = "project_key"
-
-	HeaderMattermostUserID = "Mattermost-User-Id"
 )
 
 type FieldFilter struct {
@@ -107,11 +104,11 @@ type Subscriptions struct {
 	Channel       *ChannelSubscriptions
 }
 
-type ListSubscriptionTemplate map[string]*SubscriptionTemplate
+type SubscriptionTemplateCollection map[string]*SubscriptionTemplate
 
 type SubscriptionTemplates struct {
 	ByID        map[string]SubscriptionTemplate     `json:"by_id"`
-	ByProjectID map[string]ListSubscriptionTemplate `json:"by_project_id"`
+	ByProjectID map[string]SubscriptionTemplateCollection `json:"by_project_id"`
 }
 
 type Templates struct {
@@ -121,7 +118,7 @@ type Templates struct {
 
 func NewSubscriptions() *Subscriptions {
 	return &Subscriptions{
-		PluginVersion: Manifest.Version,
+		PluginVersion: manifest.Version,
 		Channel:       NewChannelSubscriptions(),
 	}
 }
@@ -129,13 +126,13 @@ func NewSubscriptions() *Subscriptions {
 func NewSubscriptionTemplates() *SubscriptionTemplates {
 	return &SubscriptionTemplates{
 		ByID:        map[string]SubscriptionTemplate{},
-		ByProjectID: map[string]ListSubscriptionTemplate{},
+		ByProjectID: map[string]SubscriptionTemplateCollection{},
 	}
 }
 
 func NewTemplates() *Templates {
 	return &Templates{
-		PluginVersion: Manifest.Version,
+		PluginVersion: manifest.Version,
 		Templates:     NewSubscriptionTemplates(),
 	}
 }
@@ -147,7 +144,7 @@ func SubscriptionsFromJSON(bytes []byte, instanceID types.ID) (*Subscriptions, e
 		if unmarshalErr != nil {
 			return nil, unmarshalErr
 		}
-		subs.PluginVersion = Manifest.Version
+		subs.PluginVersion = manifest.Version
 	} else {
 		subs = NewSubscriptions()
 	}
@@ -167,7 +164,7 @@ func SubscriptionTemplatesFromJSON(bytes []byte) (*Templates, error) {
 		if unmarshalErr := json.Unmarshal(bytes, &subs); unmarshalErr != nil {
 			return nil, unmarshalErr
 		}
-		subs.PluginVersion = Manifest.Version
+		subs.PluginVersion = manifest.Version
 	} else {
 		subs = NewTemplates()
 	}
@@ -389,7 +386,7 @@ func (p *Plugin) addChannelSubscription(instanceID types.ID, newSubscription *Ch
 func (t *SubscriptionTemplates) add(projectKey string, newSubscriptionTemplate *SubscriptionTemplate) {
 	t.ByID[newSubscriptionTemplate.ID] = *newSubscriptionTemplate
 	if _, valid := t.ByProjectID[projectKey]; !valid {
-		t.ByProjectID[projectKey] = make(ListSubscriptionTemplate)
+		t.ByProjectID[projectKey] = make(SubscriptionTemplateCollection)
 	}
 
 	t.ByProjectID[projectKey][newSubscriptionTemplate.ID] = newSubscriptionTemplate
@@ -1042,7 +1039,9 @@ func (p *Plugin) httpChannelCreateSubscription(w http.ResponseWriter, r *http.Re
 	if subscription.Filters.Projects.Len() == 1 {
 		projectKey = subscription.Filters.Projects.Elems()[0]
 	}
-	p.UpdateUserDefaults(types.ID(mattermostUserID), subscription.InstanceID, projectKey)
+	p.UpdateUserDefaults(types.ID(mattermostUserID), subscription.InstanceID, &SavedFieldValues{
+		ProjectKey: projectKey,
+	})
 
 	code, err := respondJSON(w, &subscription)
 	if err != nil {
@@ -1102,7 +1101,9 @@ func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Requ
 	if subscription.Filters.Projects.Len() == 1 {
 		projectKey = subscription.Filters.Projects.Elems()[0]
 	}
-	p.UpdateUserDefaults(types.ID(mattermostUserID), subscription.InstanceID, projectKey)
+	p.UpdateUserDefaults(types.ID(mattermostUserID), subscription.InstanceID, &SavedFieldValues{
+		ProjectKey: projectKey,
+	})
 
 	code, err := respondJSON(w, &subscription)
 	if err != nil {

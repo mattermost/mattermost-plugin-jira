@@ -8,7 +8,16 @@ import {Theme} from 'mattermost-redux/types/preferences';
 import {Post} from 'mattermost-redux/types/posts';
 import {Team} from 'mattermost-redux/types/teams';
 
-import {APIResponse, IssueMetadata, CreateIssueRequest, JiraFieldTypeEnums, JiraFieldCustomTypeEnums, CreateIssueFields, JiraField} from 'types/model';
+import {
+    APIResponse,
+    CreateIssueFields,
+    CreateIssueRequest,
+    IssueMetadata,
+    JiraField,
+    JiraFieldCustomTypeEnums,
+    JiraFieldTypeEnums,
+    SavedFieldValues,
+} from 'types/model';
 
 import {getFields, getIssueTypes} from 'utils/jira_issue_metadata';
 import {getModalStyles} from 'utils/styles';
@@ -109,13 +118,14 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
         }
 
         this.props.close();
-    }
+    };
 
     handleInstanceChange = (instanceID: string) => {
         this.setState({instanceID, projectKey: '', error: null});
-    }
+    };
 
-    handleProjectChange = (projectKey: string) => {
+    handleProjectChange = (fieldValues: SavedFieldValues) => {
+        const projectKey = fieldValues.project_key ? fieldValues.project_key : '';
         this.setState({projectKey, fetchingIssueMetadata: true, error: null});
 
         this.props.fetchJiraIssueMetadataForProjects([projectKey], this.state.instanceID as string).then(({data, error}) => {
@@ -138,22 +148,28 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             project: {key: projectKey},
         } as CreateIssueFields;
 
-        const issueTypes = getIssueTypes(this.state.jiraIssueMetadata, projectKey);
-        const issueType = issueTypes.length ? issueTypes[0].id : '';
-        fields.issuetype = {
-            id: issueType,
-        };
+        if (fieldValues.issue_type) {
+            fields.issuetype = {
+                id: fieldValues.issue_type,
+            };
+        } else {
+            const issueTypes = getIssueTypes(this.state.jiraIssueMetadata, projectKey);
+            const issueType = issueTypes.length ? issueTypes[0].id : '';
+            fields.issuetype = {
+                id: issueType,
+            };
+        }
 
         this.setState({
             projectKey,
-            issueType,
+            issueType: fieldValues.issue_type ? fieldValues.issue_type : '',
             fields,
         });
-    }
+    };
 
     handleProjectFetchError = (error: string) => {
         this.setState({error});
-    }
+    };
 
     handleIssueTypeChange = (_: string, issueType: string) => {
         const fields = {
@@ -167,7 +183,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             issueType,
             fields,
         });
-    }
+    };
 
     handleFieldChange = (key: string, value: JiraField) => {
         const fields = {...this.state.fields};
@@ -184,13 +200,13 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
         this.setState({
             fields,
         });
-    }
+    };
 
     getFieldsNotCovered = () => {
         const fields = getFields(
             this.state.jiraIssueMetadata,
             this.state.projectKey,
-            this.state.issueType
+            this.state.issueType,
         );
 
         const fieldsNotCovered: [string, string][] = [];
@@ -206,7 +222,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             }
         });
         return fieldsNotCovered;
-    }
+    };
 
     handleSubmit = (e?: React.FormEvent) => {
         if (e && e.preventDefault) {
@@ -248,7 +264,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
 
             this.handleClose();
         });
-    }
+    };
 
     renderForm = () => {
         const issueTypes = getIssueTypes(this.state.jiraIssueMetadata, this.state.projectKey);
@@ -272,7 +288,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                     fields={getFields(
                         this.state.jiraIssueMetadata,
                         this.state.projectKey,
-                        this.state.issueType
+                        this.state.issueType,
                     )}
                     instanceID={this.state.instanceID as string}
                     issueMetadata={this.state.jiraIssueMetadata as IssueMetadata}
@@ -287,7 +303,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                 />
             </div>
         );
-    }
+    };
 
     render() {
         const style = getModalStyles(this.props.theme);

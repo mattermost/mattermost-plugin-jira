@@ -8,6 +8,7 @@ import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {isDirectChannel, isGroupChannel} from 'mattermost-redux/utils/channel_utils';
 
 import {
+    closeChannelSettings,
     createChannelSubscription,
     createSubscriptionTemplate,
     fetchChannelSubscriptions,
@@ -16,7 +17,6 @@ import {
     deleteSubscriptionTemplate,
     editChannelSubscription,
     editSubscriptionTemplate,
-    closeChannelSettings,
     fetchJiraProjectMetadata,
     fetchJiraProjectMetadataForAllInstances,
     fetchJiraIssueMetadataForProjects,
@@ -26,8 +26,8 @@ import {
 } from 'actions';
 
 import {
-    getChannelSubscriptions,
     getChannelIdWithSettingsOpen,
+    getChannelSubscriptions,
     getInstalledInstances,
     getUserConnectedInstances,
     getSubscriptionTemplates,

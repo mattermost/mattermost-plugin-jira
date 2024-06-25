@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-import {ChannelSubscription, AllProjectMetadata} from 'types/model';
+import {AllProjectMetadata, ChannelSubscription} from 'types/model';
 
 import BackIcon from '../full_screen_modal/back_icon';
 

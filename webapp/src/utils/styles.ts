@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
-import {Styles} from 'react-select/src/styles';
 import {Theme} from 'mattermost-redux/types/preferences';
 
 export const getBaseStyles = (theme: Theme) => {
