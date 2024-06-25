@@ -12,7 +12,7 @@ import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.jso
 import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project-many-fields.json';
 import testChannel from 'testdata/channel.json';
 
-import {IssueMetadata, ProjectMetadata, FilterFieldInclusion} from 'types/model';
+import {FilterFieldInclusion, IssueMetadata, ProjectMetadata} from 'types/model';
 
 import EditChannelSubscription, {Props} from './edit_channel_subscription';
 

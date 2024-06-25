@@ -40,7 +40,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         } else {
             this.deleteChannelSubscription(this.state.subscriptionToDelete);
         }
-    }
+    };
 
     handleDeleteChannelSubscription = (sub: ChannelSubscription, isTemplate = false): void => {
         this.setState({
@@ -95,7 +95,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
             return this.renderSubscriptionRow(sub, projectName, showInstanceColumn, instanceName);
         }
         return this.renderSubscriptionTemplateRow(sub, projectName, showInstanceColumn, instanceName);
-    }
+    };
 
     renderSubscriptionRow(sub: ChannelSubscription, projectName: string, showInstanceColumn: boolean, instanceName: string): JSX.Element {
         return (
@@ -134,7 +134,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                 </td>
             </tr>
         );
-    };
+    }
 
     renderSubscriptionTemplateRow(sub: ChannelSubscription, projectName: string, showInstanceColumn: boolean, instanceName: string): JSX.Element {
         return (

@@ -306,7 +306,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
 
             this.setState({templateOptions, fetchingIssueMetadata: false});
         });
-    }
+    };
 
     handleJiraInstanceChange = (instanceID: string) => {
         if (instanceID === this.state.instanceID) {
@@ -435,14 +435,14 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         }
     };
 
-    handleTemplateChange =(_: any, templateId: string) => {
+    handleTemplateChange = (_: any, templateId: string) => {
         const templateChoosen = this.props.subscriptionTemplates.find((template) => template.id === templateId);
         this.handleProjectChange(templateChoosen.filters.projects[0]);
         this.setState({
             filters: templateChoosen.filters,
             selectedTemplateID: templateId,
         });
-    }
+    };
 
     render(): JSX.Element {
         const style = getModalStyles(this.props.theme);

@@ -11,27 +11,27 @@ import {
     closeChannelSettings,
     createChannelSubscription,
     createSubscriptionTemplate,
-    fetchChannelSubscriptions,
-    fetchAllSubscriptionTemplates,
     deleteChannelSubscription,
     deleteSubscriptionTemplate,
     editChannelSubscription,
     editSubscriptionTemplate,
+    fetchAllSubscriptionTemplates,
+    fetchChannelSubscriptions,
+    fetchJiraIssueMetadataForProjects,
     fetchJiraProjectMetadata,
     fetchJiraProjectMetadataForAllInstances,
-    fetchJiraIssueMetadataForProjects,
     fetchSubscriptionTemplatesForProjectKey,
-    sendEphemeralPost,
     getConnected,
+    sendEphemeralPost,
 } from 'actions';
 
 import {
     getChannelIdWithSettingsOpen,
     getChannelSubscriptions,
     getInstalledInstances,
-    getUserConnectedInstances,
-    getSubscriptionTemplates,
     getPluginSettings,
+    getSubscriptionTemplates,
+    getUserConnectedInstances,
 } from 'selectors';
 
 import ChannelSubscriptionsModal from './channel_subscriptions';

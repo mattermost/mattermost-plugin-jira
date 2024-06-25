@@ -107,7 +107,7 @@ type Subscriptions struct {
 type SubscriptionTemplateCollection map[string]*SubscriptionTemplate
 
 type SubscriptionTemplates struct {
-	ByID        map[string]SubscriptionTemplate     `json:"by_id"`
+	ByID        map[string]SubscriptionTemplate           `json:"by_id"`
 	ByProjectID map[string]SubscriptionTemplateCollection `json:"by_project_id"`
 }
 

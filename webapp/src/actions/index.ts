@@ -10,7 +10,15 @@ import ActionTypes from 'action_types';
 import {buildQueryString, doFetch, doFetchWithResponse} from 'client';
 import {getInstalledInstances, getPluginServerRoute, getUserConnectedInstances} from 'selectors';
 import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
-import {ChannelSubscription, CreateIssueRequest, SearchIssueParams, InstanceType, ProjectMetadata, APIResponse, SubscriptionTemplate} from 'types/model';
+import {
+    APIResponse,
+    ChannelSubscription,
+    CreateIssueRequest,
+    InstanceType,
+    ProjectMetadata,
+    SearchIssueParams,
+    SubscriptionTemplate,
+} from 'types/model';
 
 export const openConnectModal = () => {
     return {
