@@ -11,8 +11,6 @@ For versions v3.0 and later of this plugin, support for multiple Jira instances 
 
 **Maintainer:** [@mickmister](https://github.com/mickmister)
 
-**Co-Maintainer:** [@jfrerich](https://github.com/jfrerich)
-
 See the [Mattermost Product Documentation](https://docs.mattermost.com/integrate/jira-interoperability.html) for details on installing, configuring, enabling, and using this Mattermost integration.
 
 ## Feature summary
