@@ -55,6 +55,26 @@
 				margin-right: 4px;
 			}
 		</style>
+		<script>
+			const handleDisconnect = () => {
+				// Splitting the cookies string on the basis of cookie name and then popping out the first value.
+				const token = ('; ' + document.cookie).split('; MMCSRF=').pop().split(';')[0];
+
+				fetch("{{ .RevokeURL }}", {
+					method: "POST",
+					headers: {'X-CSRF-Token': token},
+				}).then(res => {
+					const element = document.body;
+					if(!res.ok) {
+						element.style.margin = "10px";
+      				} else {
+						window.close();
+					}
+
+					return res.text().then(text => element.innerHTML = text);
+				})
+			}
+		</script>
 		<link rel="stylesheet" href="https://unpkg.com/@atlaskit/css-reset@2.0.0/dist/bundle.css" media="all">
 	</head>
 	<body>
@@ -71,7 +91,7 @@
 				<div>It is now safe to close this browser window.</div>
 			</div>
 			<a href="javascript:window.close();" class="btn btn-link">Close</a>
-			<a href="{{ .RevokeURL }}" class="btn btn-link">Disconnect</a>
+			<button onclick="handleDisconnect()" class="btn btn-link">Disconnect</button>
 		</div>
 	</body>
 </html>
