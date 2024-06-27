@@ -2,21 +2,23 @@
 // See LICENSE.txt for license information.
 
 import {
-    ProjectMetadata,
-    ReactSelectOption,
+    ChannelSubscriptionFilters,
+    FilterField,
+    FilterFieldInclusion,
+    FilterValue,
     IssueMetadata,
     IssueType,
-    JiraField,
-    FilterField,
-    FilterValue,
-    SelectField,
-    StringArrayField,
     IssueTypeIdentifier,
-    ChannelSubscriptionFilters,
-    FilterFieldInclusion,
+    JiraField,
     JiraFieldCustomTypeEnums,
     JiraFieldTypeEnums,
+    ProjectMetadata,
+    ReactSelectOption,
+    SelectField,
+    Status,
+    StringArrayField,
 } from 'types/model';
+import {TicketData, TicketDetails} from 'types/tooltip';
 
 type FieldWithInfo = JiraField & {
     changeLogID: string;
@@ -24,6 +26,8 @@ type FieldWithInfo = JiraField & {
     validIssueTypes: IssueTypeIdentifier[];
     issueTypeMeta: IssueTypeIdentifier;
 }
+
+export const FIELD_KEY_STATUS = 'status';
 
 // This is a replacement for the Array.flat() function which will be polyfilled by Babel
 // in our 5.16 release. Remove this and replace with .flat() then.
@@ -133,7 +137,7 @@ export function getCustomFieldsForProjects(metadata: IssueMetadata | null, proje
                 id: issueType.id,
                 name: issueType.name,
             },
-        }))
+        })),
     )).filter(Boolean) as FieldWithInfo[];
 
     for (const field of fields) {
@@ -185,7 +189,48 @@ function isValidFieldForFilter(field: JiraField): boolean {
     (type === 'array' && allowedArrayTypes.includes(items));
 }
 
-export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null, projectKeys: string[]): FilterField[] {
+export function getStatusField(metadata: IssueMetadata | null, selectedIssueTypes: string[]): FilterField | null {
+    // Filtering out the statuses on the basis of selected issue types
+    const issueTypesWithStatuses = metadata && metadata.issue_types_with_statuses;
+    const keys = new Set<string>();
+    const statuses: Status[] = [];
+    if (issueTypesWithStatuses) {
+        for (const issueType of issueTypesWithStatuses) {
+            if (selectedIssueTypes.includes(issueType.id) || !selectedIssueTypes.length) {
+                for (const status of issueType.statuses) {
+                    if (!keys.has(status.id)) {
+                        keys.add(status.id);
+                        statuses.push(status);
+                    }
+                }
+            }
+        }
+    }
+
+    if (!statuses.length) {
+        return null;
+    }
+
+    return {
+        key: FIELD_KEY_STATUS,
+        name: 'Status',
+        schema: {
+            type: 'array',
+        },
+        values: statuses.map((value) => ({
+            label: value.name,
+            value: value.id,
+        })),
+        issueTypes: metadata && metadata.issue_types_with_statuses.map((type) => {
+            return {
+                id: type.id,
+                name: type.name,
+            };
+        }),
+    } as FilterField;
+}
+
+export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null, projectKeys: string[], issueTypes: string[]): FilterField[] {
     const fields = getCustomFieldsForProjects(metadata, projectKeys).filter(isValidFieldForFilter);
     const selectFields = fields.filter((field) => Boolean(field.allowedValues && field.allowedValues.length)) as (SelectField & FieldWithInfo)[];
     const populatedFields = selectFields.map((field) => {
@@ -222,6 +267,11 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
             values: [],
             issueTypes: epicLinkField.validIssueTypes,
         } as FilterField);
+    }
+
+    const statusField = getStatusField(metadata, issueTypes);
+    if (statusField) {
+        result.push(statusField);
     }
 
     return sortByName(result);
@@ -373,4 +423,27 @@ export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMet
     }
 
     return [projectJQL, issueTypesJQL, filterFieldsJQL].filter(Boolean).join(' AND ');
+}
+
+export function getJiraTicketDetails(data?: TicketData): TicketDetails | null {
+    if (!data) {
+        return null;
+    }
+
+    const assignee = data && data.fields && data.fields.assignee ? data.fields.assignee : null;
+    const ticketDetails: TicketDetails = {
+
+        // TODO: Add optional chaining operator
+        assigneeName: (assignee && assignee.displayName) || '',
+        assigneeAvatar: (assignee && assignee.avatarUrls && assignee.avatarUrls['48x48']) || '',
+        labels: data.fields && data.fields.labels,
+        description: data.fields && data.fields.description,
+        summary: data.fields && data.fields.summary,
+        ticketId: data.key,
+        jiraIcon: data.fields && data.fields.project && data.fields.project.avatarUrls && data.fields.project.avatarUrls['48x48'],
+        versions: data.fields && data.fields.versions && data.fields.versions.length ? data.fields.versions[0] : '',
+        statusKey: data.fields && data.fields.status && data.fields.status.name,
+        issueIcon: data.fields && data.fields.issuetype && data.fields.issuetype.iconUrl,
+    };
+    return ticketDetails;
 }

@@ -26,7 +26,9 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}],
         defaultUserInstanceID: '',
         fetchJiraProjectMetadata: jest.fn().mockResolvedValue({data: {
-            default_project_key: 'TEST',
+            saved_field_values: {
+                project_key: 'TEST',
+            },
             projects: [
                 {value: 'TEST', label: 'Test Project'},
                 {value: 'AA', label: 'Apples Arrangement'},
@@ -42,7 +44,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}],
         };
         const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
 
         expect(wrapper).toMatchSnapshot();
@@ -54,7 +56,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}],
         };
         const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
 
         expect(wrapper).toMatchSnapshot();
@@ -67,7 +69,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             defaultUserInstanceID: 'instance1',
         };
         const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
 
         expect(wrapper).toMatchSnapshot();
@@ -80,7 +82,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             defaultUserInstanceID: 'instance2',
         };
         let wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
 
         await props.getConnected();
@@ -92,7 +94,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             onInstanceChange: jest.fn(),
         };
         wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
         await props.getConnected();
         expect(props.onInstanceChange).toBeCalledWith('instance1');
@@ -104,7 +106,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             selectedInstanceID: 'instance3', // pre-selected instance should take precedence. i.e. from existing subscription
         };
         wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
         await props.getConnected();
         expect(props.onInstanceChange).toBeCalledWith('instance3');
@@ -114,26 +116,28 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             onInstanceChange: jest.fn(),
         };
         wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
         await props.getConnected();
         expect(props.onInstanceChange).not.toBeCalled();
     });
 
-    test('should use default project key after fetch', async () => {
+    test('should use default field values after fetch', async () => {
         const props = {
             ...baseProps,
             defaultUserInstanceID: 'instance2',
             onProjectChange: jest.fn(),
         };
         const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
         await props.getConnected();
         expect(wrapper.state().fetchingProjectMetadata).toBe(true);
 
         await props.fetchJiraProjectMetadata('');
-        expect(props.onProjectChange).toBeCalledWith('TEST');
+        expect(props.onProjectChange).toBeCalledWith({
+            project_key: 'TEST',
+        });
     });
 
     test('should pass error on failed fetch', async () => {
@@ -144,7 +148,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             defaultUserInstanceID: 'instance2',
         };
         const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
 
         await props.getConnected();

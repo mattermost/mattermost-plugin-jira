@@ -6,14 +6,14 @@ import {createSelector} from 'reselect';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {id as PluginId} from '../manifest';
+import manifest from 'manifest';
+
 import {Instance} from 'types/model';
 
-const getPluginState = (state) => state['plugins-' + PluginId] || {};
+const getPluginState = (state) => state['plugins-' + manifest.id] || {};
 
 export const getPluginServerRoute = (state) => {
     const config = getConfig(state);
-
     let basePath = '';
     if (config && config.SiteURL) {
         basePath = new URL(config.SiteURL).pathname;
@@ -23,7 +23,7 @@ export const getPluginServerRoute = (state) => {
         }
     }
 
-    return basePath + '/plugins/' + PluginId;
+    return basePath + '/plugins/' + manifest.id;
 };
 
 export const getCurrentUserLocale = createSelector(
@@ -35,7 +35,7 @@ export const getCurrentUserLocale = createSelector(
         }
 
         return locale;
-    }
+    },
 );
 
 export const isConnectModalVisible = (state) => getPluginState(state).connectModalVisible;
@@ -73,3 +73,5 @@ export const instanceIsInstalled = (state): boolean => getInstalledInstances(sta
 export const getDefaultUserInstanceID = (state) => getPluginState(state).defaultUserInstanceID;
 
 export const getPluginSettings = (state) => getPluginState(state).pluginSettings;
+
+export const getStoredLinkTooltipIssue = (state) => getPluginState(state).storedLinkTooltipIssue;

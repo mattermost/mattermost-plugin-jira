@@ -23,7 +23,7 @@ describe('components/DisconnectModalForm', () => {
     test('should match snapshot', () => {
         const props = {...baseProps};
         const wrapper = shallow<DisconnectModalForm>(
-            <DisconnectModalForm {...props}/>
+            <DisconnectModalForm {...props}/>,
         );
         expect(wrapper).toMatchSnapshot();
     });
@@ -40,7 +40,7 @@ describe('components/DisconnectModalForm', () => {
             disconnectUser,
         };
         const wrapper = shallow<DisconnectModalForm>(
-            <DisconnectModalForm {...props}/>
+            <DisconnectModalForm {...props}/>,
         );
 
         wrapper.instance().handleInstanceChoice('', 'https://something.atlassian.net');
@@ -66,7 +66,7 @@ describe('components/DisconnectModalForm', () => {
             disconnectUser,
         };
         const wrapper = shallow<DisconnectModalForm>(
-            <DisconnectModalForm {...props}/>
+            <DisconnectModalForm {...props}/>,
         );
 
         wrapper.instance().handleInstanceChoice('', 'https://something.atlassian.net');

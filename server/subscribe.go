@@ -17,7 +17,7 @@ import (
 
 	"github.com/trivago/tgo/tcontainer"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -95,7 +95,7 @@ type Subscriptions struct {
 
 func NewSubscriptions() *Subscriptions {
 	return &Subscriptions{
-		PluginVersion: Manifest.Version,
+		PluginVersion: manifest.Version,
 		Channel:       NewChannelSubscriptions(),
 	}
 }
@@ -107,7 +107,7 @@ func SubscriptionsFromJSON(bytes []byte, instanceID types.ID) (*Subscriptions, e
 		if unmarshalErr != nil {
 			return nil, unmarshalErr
 		}
-		subs.PluginVersion = Manifest.Version
+		subs.PluginVersion = manifest.Version
 	} else {
 		subs = NewSubscriptions()
 	}
@@ -821,7 +821,9 @@ func (p *Plugin) httpChannelCreateSubscription(w http.ResponseWriter, r *http.Re
 	if subscription.Filters.Projects.Len() == 1 {
 		projectKey = subscription.Filters.Projects.Elems()[0]
 	}
-	p.UpdateUserDefaults(types.ID(mattermostUserID), subscription.InstanceID, projectKey)
+	p.UpdateUserDefaults(types.ID(mattermostUserID), subscription.InstanceID, &SavedFieldValues{
+		ProjectKey: projectKey,
+	})
 
 	code, err := respondJSON(w, &subscription)
 	if err != nil {
@@ -881,7 +883,9 @@ func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Requ
 	if subscription.Filters.Projects.Len() == 1 {
 		projectKey = subscription.Filters.Projects.Elems()[0]
 	}
-	p.UpdateUserDefaults(types.ID(mattermostUserID), subscription.InstanceID, projectKey)
+	p.UpdateUserDefaults(types.ID(mattermostUserID), subscription.InstanceID, &SavedFieldValues{
+		ProjectKey: projectKey,
+	})
 
 	code, err := respondJSON(w, &subscription)
 	if err != nil {

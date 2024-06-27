@@ -1,12 +1,85 @@
 {
   "expand": "projects",
+  "issue_types_with_statuses": [
+    {
+      "id": "10002",
+      "name": "Task",
+      "statuses": [
+        {
+          "id": "1001",
+          "name": "TODO"
+        }
+      ]
+    },
+    {
+      "id": "10003",
+      "name": "Sub-task",
+      "statuses": [
+        {
+          "id": "1001",
+          "name": "TODO"
+        },
+        {
+          "id": "1002",
+          "name": "In Progress"
+        }
+      ]
+    },
+    {
+      "id": "10001",
+      "name": "Story",
+      "statuses": [
+        {
+          "id": "1001",
+          "name": "TODO"
+        },
+        {
+          "id": "1002",
+          "name": "In Progress"
+        }
+      ]
+    },
+    {
+      "id": "10004",
+      "name": "Bug",
+      "statuses": [
+        {
+          "id": "1001",
+          "name": "TODO"
+        },
+        {
+          "id": "1002",
+          "name": "In Progress"
+        }
+      ]
+    },
+    {
+      "id": "10000",
+      "name": "Epic",
+      "statuses": [
+        {
+          "id": "1001",
+          "name": "TODO"
+        },
+        {
+          "id": "1002",
+          "name": "In Progress"
+        },
+        {
+          "id": "1003",
+          "name": "Bug"
+        }
+      ]
+    }
+  ],
   "projects": [{
     "expand": "issuetypes",
     "self": "https://mmtest.atlassian.net/rest/api/2/project/10008",
     "id": "10008",
     "key": "KT",
     "name": "Koch Testing",
-    "issuetypes": [{
+    "issuetypes": [
+      {
       "self": "https://mmtest.atlassian.net/rest/api/2/issuetype/10002",
       "id": "10002",
       "description": "A task that needs to be done.",

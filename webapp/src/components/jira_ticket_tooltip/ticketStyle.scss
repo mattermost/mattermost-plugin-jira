@@ -1,0 +1,233 @@
+.jira-issue-tooltip {
+    display: flex;
+    max-width: 380px;
+    width: 380px;
+    flex-direction: column;
+    align-items: center;
+    left: 0;
+    right: 0;
+    color: var(--center-channel-color);
+    top: calc(50% - 311px / 2);
+    background: var(--center-channel-bg);
+    border: 1px solid rgba(63, 67, 80, 0.16);
+    border-radius: 4px;
+    box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.12);
+
+    .popover-header__keyword:hover {
+        color: var(--link-color);
+        text-decoration-line: underline;
+    }
+
+    .popover-header {
+        height: 56px;
+        display: flex;
+        flex-direction: row;
+        align-self: stretch;
+    }
+
+    .popover-header__container {
+        display: flex;
+        margin: 24px;
+        height: 20px;
+        align-items: center;
+    }
+
+    .popover-header__keyword {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        font-weight: 600;
+        text-align: left;
+        font-size: 16px;
+        height: 16px;
+        line-height: 24px;
+        text-decoration: none;
+    }
+
+    .popover-header__keyword>span {
+        position: static;
+        font-style: normal;
+        font-weight: normal;
+        line-height: 12px;
+        display: flex;
+        order: 1;
+        flex: none;
+        flex-grow: 0;
+        margin: 0 6px;
+
+    }
+
+    .popover-body {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        align-self: stretch;
+    }
+
+    .popover-body__title {
+        display: flex;
+        margin: 0 24px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .popover-body__title>a:hover>h5 {
+        text-decoration-line: underline;
+    }
+
+    .popover-body__title>a>h5 {
+        font-family: Metropolis, system-ui;
+        text-align: left;
+        flex-grow: 1;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 16px;
+    }
+
+    .popover-body__title>a>h5 {
+        margin-block-start: 0;
+        margin-block-end: 0;
+        font-family: Metropolis, system-ui;
+    }
+
+    .popover-body__description {
+        text-align: left;
+        font-family: 'Open Sans', system-ui;
+        font-style: normal;
+        font-weight: normal;
+        margin: 0 24px 8px 24px;
+        font-size: 12px;
+        line-height: 1.5;
+        width: 300px;
+        text-overflow: ellipsis;
+        word-break: break-word;
+    }
+
+    .popover-body__description>p {
+        margin-block-start: 0;
+    }
+
+    .popover-body__see-more-link {
+        margin: 0 24px 8px 24px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .popover__labels__label {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .popover-body__labels {
+        margin: 0 24px;
+    }
+
+    .popover-footer {
+        display: flex;
+        height: 60px;
+        flex-direction: row;
+        align-items: center;
+        position: static;
+        flex: none;
+        order: 3;
+        flex-grow: 0;
+        margin-top: 16px;
+        align-self: stretch;
+        border-top: 1px solid rgba(63, 67, 80, 0.16);
+        font-family: Open Sans;
+        padding: 0 24px;
+        font-size: 12px;
+        line-height: 16px;
+    }
+
+    .popover-footer>span:nth-child(3) {
+        margin-left: 4px;
+    }
+
+    .popover-footer__assignee-profile {
+        width: 20px;
+        height: 20px;
+        border-radius: 50px;
+        flex: none;
+        margin-right: 6px;
+    }
+
+    .popover-footer__assignee-name {
+        font-weight: 600;
+    }
+
+    .popover-labels__label-list {
+        font-size: 10px;
+        font-weight: 600;
+        margin: 5px 5px 5px 0;
+        padding: 0 4px;
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        border-radius: 2px;
+        line-height: 16px;
+    }
+
+    .fix-version-label {
+        margin: 16px 0;
+        text-align: left;
+        font-family: open sans;
+        font-size: 10px;
+        padding: 0 0 2px 0;
+    }
+
+    .fix-version-label-value {
+        padding: 1px 8px;
+        font-weight: 600;
+        border-radius: 2px;
+    }
+
+    .default-style {
+        font-family: 'Open Sans', sans-serif;
+        font-style: normal;
+        font-weight: 600;
+        font-size: 12px;
+        margin: 10px 0 8px 0;
+        padding: 4px 8px;
+        text-align: center;
+        border-radius: 4px;
+    }
+
+    .ticket-status--indeterminate {
+        color: #FFFFFF;
+        background-color: #1C58D9;
+        border-radius: 2px;
+    }
+
+    .ticket-status--done {
+        color: #FFFFFF;
+        background-color: var(--online-indicator);
+    }
+
+    .ticket-status--default {
+        color: var(--center-channel-color-rgb);
+        background-color: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+
+    .jira-ticket-key-icon-loader {
+        min-width: 15px;
+        margin-right: 5px;
+    }
+
+    .jira-ticket-key-loader {
+        min-width: 50px;
+    }
+
+    .jira-ticket-key {
+        font-size: 12px;
+    }
+}
+
+.jira-issue-tooltip-loading {
+    height: 210px;
+    font-size: 28px;
+    justify-content: center;
+
+    .jira-issue-spinner {
+        opacity: 0.72;
+    }
+}

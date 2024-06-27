@@ -9,26 +9,26 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	htmlTemplate "html/template"
 	"math"
 	"net/url"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
-	"text/template"
+	textTemplate "text/template"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/mattermost/mattermost/server/public/pluginapi/experimental/flow"
 
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
 	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
 
-	root "github.com/mattermost/mattermost-plugin-jira"
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/telemetry"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -45,10 +45,6 @@ const (
 	WebhookMaxProcsPerServer = 20
 	WebhookBufferSize        = 10000
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
-)
-
-var (
-	Manifest model.Manifest = root.Manifest
 )
 
 type externalConfig struct {
@@ -116,7 +112,8 @@ type Plugin struct {
 	otsStore      OTSStore
 	secretsStore  SecretsStore
 
-	setupFlow *flow.Flow
+	setupFlow  *flow.Flow
+	oauth2Flow *flow.Flow
 
 	router *mux.Router
 
@@ -124,7 +121,8 @@ type Plugin struct {
 	RSAKey *rsa.PrivateKey `json:",omitempty"`
 
 	// templates are loaded on startup
-	templates map[string]*template.Template
+	htmlTemplates map[string]*htmlTemplate.Template
+	textTemplates map[string]*textTemplate.Template
 
 	// channel to distribute work to the webhook processors
 	webhookQueue chan *webhookMessage
@@ -233,7 +231,7 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	botUserID, err := p.client.Bot.EnsureBot(&model.Bot{
-		OwnerId:     Manifest.Id, // Workaround to support older server version affected by https://github.com/mattermost/mattermost-server/pull/21560
+		OwnerId:     manifest.Id, // Workaround to support older server version affected by https://github.com/mattermost/mattermost-server/pull/21560
 		Username:    botUserName,
 		DisplayName: botDisplayName,
 		Description: botDescription,
@@ -246,6 +244,8 @@ func (p *Plugin) OnActivate() error {
 	ptr := p.client.Configuration.GetConfig().ServiceSettings.SiteURL
 	if ptr != nil {
 		mattermostSiteURL = *ptr
+	} else {
+		return errors.New("please configure the Mattermost server's SiteURL, then restart the plugin.")
 	}
 
 	err = p.setDefaultConfiguration()
@@ -269,13 +269,24 @@ func (p *Plugin) OnActivate() error {
 		return errors.WithMessage(err, "OnActivate: failed to migrate from previous version of the Jira plugin")
 	}
 
-	templates, err := p.loadTemplates(filepath.Join(bundlePath, "assets", "templates"))
+	htmlTemplates, textTemplates, err := p.loadTemplates(filepath.Join(bundlePath, "assets", "templates"))
 	if err != nil {
 		return err
 	}
-	p.templates = templates
+	p.htmlTemplates = htmlTemplates
+	p.textTemplates = textTemplates
 
-	p.setupFlow = p.NewSetupFlow()
+	setupFlow, err := p.NewSetupFlow()
+	if err != nil {
+		return err
+	}
+	p.setupFlow = setupFlow
+
+	oauth2Flow, err := p.NewOAuth2Flow()
+	if err != nil {
+		return err
+	}
+	p.oauth2Flow = oauth2Flow
 
 	// Register /jira command and stash the loaded list of known instances for
 	// later (autolink registration).
@@ -387,7 +398,7 @@ func (p *Plugin) GetPluginKey() string {
 }
 
 func (p *Plugin) GetPluginURLPath() string {
-	return "/plugins/" + Manifest.Id
+	return "/plugins/" + manifest.Id
 }
 
 func (p *Plugin) GetPluginURL() string {
@@ -396,6 +407,10 @@ func (p *Plugin) GetPluginURL() string {
 
 func (p *Plugin) GetSiteURL() string {
 	return p.getConfig().mattermostSiteURL
+}
+
+func (p *Plugin) CreateFullURLPath(extensionPath string) string {
+	return fmt.Sprintf("%s%s%s", p.GetSiteURL(), p.GetPluginURLPath(), extensionPath)
 }
 
 func (p *Plugin) debugf(f string, args ...interface{}) {

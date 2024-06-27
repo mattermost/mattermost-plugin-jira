@@ -16,7 +16,7 @@ describe('components/widgets/modals/FullScreenModal', () => {
                 onClose={jest.fn()}
             >
                 {'test'}
-            </FullScreenModal>
+            </FullScreenModal>,
         );
         expect(wrapper).toMatchInlineSnapshot(`
 <CSSTransition
@@ -46,7 +46,7 @@ describe('components/widgets/modals/FullScreenModal', () => {
                 onClose={jest.fn()}
             >
                 {'test'}
-            </FullScreenModal>
+            </FullScreenModal>,
         );
         expect(wrapper).toMatchInlineSnapshot(`
 <CSSTransition
@@ -77,7 +77,7 @@ describe('components/widgets/modals/FullScreenModal', () => {
                 onClose={close}
             >
                 {'test'}
-            </FullScreenModal>
+            </FullScreenModal>,
         );
         expect(close).not.toBeCalled();
         wrapper.find(CloseIcon).simulate('click');
@@ -92,7 +92,7 @@ describe('components/widgets/modals/FullScreenModal', () => {
                 onClose={close}
             >
                 {'test'}
-            </FullScreenModal>
+            </FullScreenModal>,
         );
         expect(close).not.toBeCalled();
         const event = new KeyboardEvent('keydown', {key: 'Escape'});

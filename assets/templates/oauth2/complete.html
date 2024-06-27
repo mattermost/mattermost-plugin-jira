@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<style>
+			body {
+				color: rgb(23, 43, 77);
+				letter-spacing: -0.01em;
+			}
+
+			.flex-parent {
+				padding: 50px;
+			}
+
+			.btn {
+				-webkit-transition: all 0.15s ease;
+				-webkit-transition-delay: 0s;
+				transition-delay: 0s;
+				-moz-transition: all 0.15s ease;
+				-o-transition: all 0.15s ease;
+				transition: all 0.15s ease false;
+				padding-right: 0 1em;
+				font-size: inherit;
+				border: none;
+				height: 2.4em;
+				border-radius: 4px;
+				cursor: pointer;
+			}
+
+			.btn-primary {
+				color: rgb(255, 255, 255);
+				background: rgb(0, 82, 204);
+			}
+
+			.btn-primary:hover,
+			.btn-primary:active {
+				background: rgb(0, 101, 255);
+			}
+
+			.btn-link {
+				color: rgb(80, 95, 121);
+				background: rgb(244, 245, 247);
+				padding: 10px;
+			}
+
+			.btn-link:hover,
+			.btn-link:active {
+				background: rgb(235, 236, 240);
+			}
+
+			.accounts-container {
+				padding: 1.6em 0 0.8em;
+				opacity: .6;
+			}
+			.icon--check {
+				margin-right: 4px;
+			}
+		</style>
+		<link rel="stylesheet" href="https://unpkg.com/@atlaskit/css-reset@2.0.0/dist/bundle.css" media="all">
+	</head>
+	<body>
+		<div class="flex-parent">
+			<h3>
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="15" class="icon--check" viewBox="0 0 18 14">
+					<path fill="#0052CC" d="M100.649576,76.1740942 C100.649576,76.4531124 100.537969,76.7321306 100.337075,76.9330237 L90.7388497,86.5312494 C90.5379566,86.7321425 90.2589384,86.8437498 89.9799202,86.8437498 C89.700902,86.8437498 89.4218838,86.7321425 89.2209908,86.5312494 L83.6629484,80.9732071 C83.4620553,80.772314 83.350448,80.4932958 83.350448,80.2142776 C83.350448,79.9352594 83.4620553,79.6562412 83.6629484,79.4553481 L85.1808074,77.9374892 C85.3817005,77.7365961 85.6607186,77.6249888 85.9397368,77.6249888 C86.218755,77.6249888 86.4977732,77.7365961 86.6986663,77.9374892 L89.9799202,81.2299038 L97.3013575,73.8973058 C97.5022506,73.6964127 97.7812688,73.5848054 98.060287,73.5848054 C98.3393052,73.5848054 98.6183234,73.6964127 98.8192165,73.8973058 L100.337075,75.4151648 C100.537969,75.6160579 100.649576,75.895076 100.649576,76.1740942 Z" transform="translate(-83 -73)"/>
+				</svg>
+				Mattermost user is now connected to Jira
+			</h3>
+			<div class="accounts-container">
+				<div>Mattermost account: {{ .MattermostDisplayName }}</div>
+				<div>Jira account: {{ .JiraDisplayName }}</div>
+				<div>It is now safe to close this browser window.</div>
+			</div>
+			<a href="javascript:window.close();" class="btn btn-link">Close</a>
+			<a href="{{ .RevokeURL }}" class="btn btn-link">Disconnect</a>
+		</div>
+	</body>
+</html>

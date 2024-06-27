@@ -9,7 +9,7 @@ import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
 
 import {openAttachCommentToIssueModal, sendEphemeralPost} from 'actions';
 
-import {getCurrentUserLocale, isUserConnected, getInstalledInstances} from 'selectors';
+import {getCurrentUserLocale, getInstalledInstances, isUserConnected} from 'selectors';
 import {isCombinedUserActivityPost} from 'utils/posts';
 
 import AttachCommentToIssuePostMenuAction from './attach_comment_to_issue';
