@@ -8,7 +8,7 @@ import ReactSelectSetting from 'components/react_select_setting';
 import ConfirmModal from 'components/confirm_modal';
 import FormButton from 'components/form_button';
 import Input from 'components/input';
-import Loading from 'components/loading/loading';
+import Loading from 'components/loading';
 import Validator from 'components/validator';
 import JiraInstanceAndProjectSelector from 'components/jira_instance_and_project_selector';
 

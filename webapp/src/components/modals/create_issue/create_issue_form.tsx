@@ -25,7 +25,7 @@ import {getModalStyles} from 'utils/styles';
 import Validator from 'components/validator';
 import JiraFields from 'components/jira_fields';
 import FormButton from 'components/form_button';
-import Loading from 'components/loading/loading';
+import Loading from 'components/loading';
 import ReactSelectSetting from 'components/react_select_setting';
 import JiraInstanceAndProjectSelector from 'components/jira_instance_and_project_selector';
 
