@@ -176,7 +176,6 @@ func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 	jiraTypes := []model.AutocompleteListItem{
 		{HelpText: "Jira Server or Datacenter", Item: "server"},
 		{HelpText: "Jira Cloud OAuth 2.0 (atlassian.net)", Item: "cloud-oauth"},
-		{HelpText: "Jira Cloud (atlassian.net) (Deprecated. Please use cloud-oauth instead.)", Item: "cloud"},
 	}
 
 	install := model.NewAutocompleteData(
