@@ -5,7 +5,7 @@ import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 
 import {closeDisconnectModal, disconnectUser, sendEphemeralPost} from 'actions';
-import {isDisconnectModalVisible, getUserConnectedInstances} from 'selectors';
+import {getUserConnectedInstances, isDisconnectModalVisible} from 'selectors';
 
 import DisconnectModal from './disconnect_modal';
 

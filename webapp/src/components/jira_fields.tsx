@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 
 import {Theme} from 'mattermost-redux/types/preferences';
 
-import {JiraField, IssueMetadata, CreateIssueFields} from 'types/model';
+import {CreateIssueFields, IssueMetadata, JiraField} from 'types/model';
 
 import JiraFieldComponent from './jira_field';
 
@@ -81,7 +81,7 @@ export default class JiraFields extends React.Component<Props> {
         });
 
         return start.concat(fieldKeys);
-    }
+    };
 
     render() {
         const {fields, values} = this.props;

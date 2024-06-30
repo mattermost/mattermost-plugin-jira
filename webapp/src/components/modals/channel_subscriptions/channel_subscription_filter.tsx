@@ -5,8 +5,22 @@ import {Theme} from 'mattermost-redux/types/preferences';
 import ReactSelectSetting from 'components/react_select_setting';
 import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
-import {isEpicLinkField, isMultiSelectField, isLabelField, isSecurityLevelField, FIELD_KEY_STATUS, isCommentVisibilityField} from 'utils/jira_issue_metadata';
-import {FilterField, FilterValue, ReactSelectOption, IssueMetadata, IssueType, FilterFieldInclusion} from 'types/model';
+import {
+    FIELD_KEY_STATUS,
+    isEpicLinkField,
+    isLabelField,
+    isMultiSelectField,
+    isSecurityLevelField,
+    isCommentVisibilityField,
+} from 'utils/jira_issue_metadata';
+import {
+    FilterField,
+    FilterFieldInclusion,
+    FilterValue,
+    IssueMetadata,
+    IssueType,
+    ReactSelectOption,
+} from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
 import JiraAutoCompleteSelector from 'components/data_selectors/jira_autocomplete_selector';
 import JiraCommentVisibilitySelector from 'components/data_selectors/jira_commentvisibility_selector';
@@ -118,7 +132,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         }
 
         return true;
-    }
+    };
 
     checkInclusionError = (): string | null => {
         const inclusion = this.props.value && this.props.value.inclusion;
@@ -128,7 +142,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         }
 
         return null;
-    }
+    };
 
     checkFieldConflictError = (): string | null => {
         const conflictIssueTypes = this.getConflictingIssueTypes().map((it) => it.name);
@@ -172,7 +186,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                 </div>
             </div>
         );
-    }
+    };
 
     render(): JSX.Element {
         const {field, fields, value, theme} = this.props;

@@ -14,15 +14,22 @@ import JiraInstanceAndProjectSelector from 'components/jira_instance_and_project
 
 import {getBaseStyles, getModalStyles} from 'utils/styles';
 import {
-    getCustomFieldValuesForEvents,
-    getCustomFieldFiltersForProjects,
-    getConflictingFields,
-    generateJQLStringFromSubscriptionFilters,
-    getIssueTypes,
     filterValueIsSecurityField,
+    generateJQLStringFromSubscriptionFilters,
+    getConflictingFields,
+    getCustomFieldFiltersForProjects,
+    getCustomFieldValuesForEvents,
+    getIssueTypes,
 } from 'utils/jira_issue_metadata';
 
-import {ChannelSubscription, ChannelSubscriptionFilters as ChannelSubscriptionFiltersModel, ReactSelectOption, FilterValue, IssueMetadata, SavedFieldValues} from 'types/model';
+import {
+    ChannelSubscription,
+    ChannelSubscriptionFilters as ChannelSubscriptionFiltersModel,
+    FilterValue,
+    IssueMetadata,
+    ReactSelectOption,
+    SavedFieldValues,
+} from 'types/model';
 
 import ChannelSubscriptionFilters from './channel_subscription_filters';
 import {SharedProps} from './shared_props';
@@ -145,12 +152,12 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
 
     handleCancelDelete = () => {
         this.setState({showConfirmModal: false});
-    }
+    };
 
     handleConfirmDelete = () => {
         this.setState({showConfirmModal: false});
         this.deleteChannelSubscription();
-    }
+    };
 
     handleDeleteChannelSubscription = (): void => {
         this.setState({showConfirmModal: true});
@@ -171,7 +178,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
 
     clearConflictingErrorMessage = () => {
         this.setState({conflictingError: null});
-    }
+    };
 
     shouldShowEmptySecurityLevelMessage = (): boolean => {
         if (!this.props.securityLevelEmptyForJiraSubscriptions) {
@@ -179,7 +186,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         }
 
         return !this.state.filters.fields.some(filterValueIsSecurityField);
-    }
+    };
 
     handleIssueChange = (id: keyof ChannelSubscriptionFiltersModel, value: string[] | null) => {
         const finalValue = value || [];
@@ -191,7 +198,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             conflictingFields = getConflictingFields(
                 filterFields,
                 finalValue,
-                this.state.jiraIssueMetadata
+                this.state.jiraIssueMetadata,
             );
         }
 
@@ -245,7 +252,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
 
         this.setState({instanceID, error: null});
         this.handleProjectChange({});
-    }
+    };
 
     handleProjectChange = (fieldValues: SavedFieldValues) => {
         const projectID = fieldValues.project_key ? fieldValues.project_key : '';

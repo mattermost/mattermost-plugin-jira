@@ -75,7 +75,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         }
 
         return null;
-    }
+    };
 
     componentDidUpdate() {
         const issueKey = this.getIssueKey();

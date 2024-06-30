@@ -116,19 +116,19 @@ export default class ConfirmModal extends Component<Props, State> {
                 this.handleConfirm();
             }
         }
-    }
+    };
 
     handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({checked: e.target.checked});
-    }
+    };
 
     handleConfirm = () => {
         this.props.onConfirm(this.state.checked);
-    }
+    };
 
     handleCancel = () => {
         this.props.onCancel(this.state.checked);
-    }
+    };
 
     render(): JSX.Element {
         let checkbox;

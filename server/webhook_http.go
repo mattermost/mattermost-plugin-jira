@@ -29,7 +29,7 @@ var eventParamMasks = map[string]StringSet{
 	"updated_description": NewStringSet(eventUpdatedDescription), // issue description edited
 	"updated_labels":      NewStringSet(eventUpdatedLabels),      // updated labels
 	"updated_prioity":     NewStringSet(eventUpdatedPriority),    // changes in priority
-	"updated_rank":        NewStringSet(eventUpdatedRank),        // ranked higher or lower
+																																																																																									"updated_rank":        NewStringSet(eventUpdatedRank),        // ranked higher or lower
 	"updated_sprint":      NewStringSet(eventUpdatedSprint),      // assigned to a different sprint
 	"updated_status":      NewStringSet(eventUpdatedStatus),      // transitions like Done, In Progress
 	"updated_summary":     NewStringSet(eventUpdatedSummary),     // issue renamed

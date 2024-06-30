@@ -39,7 +39,7 @@ describe('components/jira_ticket_tooltip', () => {
                 <TicketPopover
                     {...mockProps1}
                     href='https://something-1.atlassian.net/browse/TICKET-1234'
-                />
+                />,
             );
             const instance = wrapper.instance() as TicketPopover;
             const expectedOutput = {ticketID: 'TICKET-1234', instanceID: 'https://something-1.atlassian.net'};
@@ -51,7 +51,7 @@ describe('components/jira_ticket_tooltip', () => {
                 <TicketPopover
                     {...mockProps1}
                     href='https://something-2.atlassian.net/jira/issues/?selectedIssue=TICKET-1234'
-                />
+                />,
             );
             const instance = wrapper.instance() as TicketPopover;
             const expectedOutput = {ticketID: 'TICKET-1234', instanceID: 'https://something-2.atlassian.net'};
@@ -63,7 +63,7 @@ describe('components/jira_ticket_tooltip', () => {
                 <TicketPopover
                     {...mockProps1}
                     href='https://something-invalid.atlassian.net/not-a-ticket'
-                />
+                />,
             );
             const instance = wrapper.instance() as TicketPopover;
             expect(instance.getIssueKey()).toEqual(null);
@@ -74,7 +74,7 @@ describe('components/jira_ticket_tooltip', () => {
                 <TicketPopover
                     {...mockProps1}
                     href='https://something-2.atlassian.net/jira/issues/?selectedIssue='
-                />
+                />,
             );
             const instance = wrapper.instance() as TicketPopover;
             expect(instance.getIssueKey()).toEqual(null);
@@ -85,7 +85,7 @@ describe('components/jira_ticket_tooltip', () => {
                 <TicketPopover
                     {...mockProps2}
                     href='https://something-2.atlassian.net/jira/issues/?selectedIssue='
-                />
+                />,
             );
             const instance = wrapper.instance() as TicketPopover;
             expect(instance.getIssueKey()).toEqual(null);

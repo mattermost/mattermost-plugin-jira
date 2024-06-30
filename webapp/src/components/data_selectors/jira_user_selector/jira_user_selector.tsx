@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-import {ReactSelectOption, JiraUser, AvatarSize} from 'types/model';
+import {AvatarSize, JiraUser, ReactSelectOption} from 'types/model';
 
 import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
 
@@ -66,5 +66,5 @@ export default class JiraUserSelector extends React.PureComponent<Props> {
                 search={this.searchUsers}
             />
         );
-    }
+    };
 }

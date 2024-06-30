@@ -44,7 +44,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}],
         };
         const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
 
         expect(wrapper).toMatchSnapshot();
@@ -56,7 +56,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}],
         };
         const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
 
         expect(wrapper).toMatchSnapshot();
@@ -69,7 +69,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             defaultUserInstanceID: 'instance1',
         };
         const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
 
         expect(wrapper).toMatchSnapshot();
@@ -82,7 +82,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             defaultUserInstanceID: 'instance2',
         };
         let wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
 
         await props.getConnected();
@@ -94,7 +94,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             onInstanceChange: jest.fn(),
         };
         wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
         await props.getConnected();
         expect(props.onInstanceChange).toBeCalledWith('instance1');
@@ -106,7 +106,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             selectedInstanceID: 'instance3', // pre-selected instance should take precedence. i.e. from existing subscription
         };
         wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
         await props.getConnected();
         expect(props.onInstanceChange).toBeCalledWith('instance3');
@@ -116,7 +116,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             onInstanceChange: jest.fn(),
         };
         wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
         await props.getConnected();
         expect(props.onInstanceChange).not.toBeCalled();
@@ -129,7 +129,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             onProjectChange: jest.fn(),
         };
         const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
         await props.getConnected();
         expect(wrapper.state().fetchingProjectMetadata).toBe(true);
@@ -148,7 +148,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             defaultUserInstanceID: 'instance2',
         };
         const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>
+            <JiraInstanceAndProjectSelector {...props}/>,
         );
 
         await props.getConnected();
