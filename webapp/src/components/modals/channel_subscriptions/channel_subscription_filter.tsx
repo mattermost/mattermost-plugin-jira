@@ -7,11 +7,11 @@ import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
 import {
     FIELD_KEY_STATUS,
+    isCommentVisibilityField,
     isEpicLinkField,
     isLabelField,
     isMultiSelectField,
     isSecurityLevelField,
-    isCommentVisibilityField,
 } from 'utils/jira_issue_metadata';
 import {
     FilterField,

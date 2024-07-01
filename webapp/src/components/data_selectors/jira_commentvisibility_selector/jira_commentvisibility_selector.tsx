@@ -25,8 +25,6 @@ type Props = BackendSelectorProps & {
 
 const JiraCommentVisibilitySelector = (props: Props) => {
     const {value, isMulti, instanceID, searchCommentVisibilityFields} = props;
-    const fetchInitialSelectedValues = async (): Promise<ReactSelectOption[]> =>
-        ((!value || (isMulti && !value.length)) ? [] : commentVisibilityFields(''));
 
     const commentVisibilityFields = async (inputValue: string): Promise<ReactSelectOption[]> => {
         const params = {
@@ -40,6 +38,8 @@ const JiraCommentVisibilitySelector = (props: Props) => {
             }));
         });
     };
+
+    const fetchInitialSelectedValues = async (): Promise<ReactSelectOption[]> => (value?.length ? commentVisibilityFields('') : []);
 
     return (
         <BackendSelector
