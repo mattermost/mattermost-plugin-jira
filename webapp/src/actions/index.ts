@@ -165,6 +165,13 @@ export const searchAutoCompleteFields = (params) => {
     };
 };
 
+export const searchCommentVisibilityFields = (params) => {
+    return async (dispatch, getState) => {
+        const url = `${getPluginServerRoute(getState())}/api/v2/get-comment-visibility-fields`;
+        return doFetchWithResponse(`${url}${buildQueryString(params)}`);
+    };
+};
+
 export const searchUsers = (params) => {
     return async (dispatch, getState) => {
         const url = getPluginServerRoute(getState()) + '/api/v2/get-search-users';
