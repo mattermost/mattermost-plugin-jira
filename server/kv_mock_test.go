@@ -20,9 +20,9 @@ type testInstance struct {
 var _ Instance = (*testInstance)(nil)
 
 const (
-	mockInstance1URL = "jiraurl1"
-	mockInstance2URL = "jiraurl2"
-	mockInstance3URL = "jiraurl3"
+	mockInstance1URL = "https://jiraurl1.com"
+	mockInstance2URL = "https://jiraurl2.com"
+	mockInstance3URL = "https://jiraurl3.com"
 )
 
 var testInstance1 = &testInstance{
