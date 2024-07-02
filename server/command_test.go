@@ -287,6 +287,16 @@ func TestPlugin_ExecuteCommand_Instance_Settings(t *testing.T) {
 			numInstances: 1,
 			expectedMsg:  "Settings updated. Notifications off.",
 		},
+		"multiple instances are present: Notifications off": {
+			commandArgs:  &model.CommandArgs{Command: "/jira instance settings notifications off --instance https://jiraurl1.com", UserId: mockUserIDWithNotifications},
+			numInstances: 2,
+			expectedMsg:  "Settings updated. Notifications off.",
+		},
+		"multiple instances are present: Notifications on": {
+			commandArgs:  &model.CommandArgs{Command: "/jira instance settings notifications on --instance https://jiraurl2.com", UserId: mockUserIDWithNotifications},
+			numInstances: 2,
+			expectedMsg:  "Settings updated. Notifications on.",
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
