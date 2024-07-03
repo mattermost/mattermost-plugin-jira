@@ -116,7 +116,7 @@ func TestGetJiraUserFromMentions(t *testing.T) {
 			mentions: &model.UserMentionMap{
 				"connected_user": string(testUser.MattermostUserID)},
 			userSearch:     "connected_user",
-			expectedResult: &jira.User{AccountID: "test"},
+			expectedResult: &jira.User{AccountID: "test-AccountID"},
 			SetupAPI:       func(api *plugintest.API) {},
 		},
 	}

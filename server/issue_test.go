@@ -184,6 +184,10 @@ func TestTransitionJiraIssue(t *testing.T) {
 func TestRouteIssueTransition(t *testing.T) {
 	api := &plugintest.API{}
 	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
+	api.On("LogWarn", "ERROR: ", "Status", "401", "Error", "", "Path", "/api/v2/transition", "Method", "POST", "query", "").Return(nil)
+	api.On("LogWarn", "ERROR: ", "Status", "500", "Error", "", "Path", "/api/v2/transition", "Method", "POST", "query", "").Return(nil)
+	api.On("LogWarn", "Recovered from a panic", "url", "/api/v2/transition", "error", mock.Anything, "stack", mock.Anything).Return(nil)
+
 
 	p := setupTestPlugin(api)
 
@@ -234,6 +238,8 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
 	api.On("DeleteEphemeralPost", validUserID, "").Return()
+	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return()
+    api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return()
 
 	p := setupTestPlugin(api)
 
@@ -514,7 +520,20 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 	api := &plugintest.API{}
 	api.On("GetPost", "error_post").Return(nil, &model.AppError{Id: "1"})
 	api.On("GetPost", "post_not_found").Return(nil, (*model.AppError)(nil))
-	api.On("PublishWebSocketEvent", "update_defaults", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.WebsocketBroadcast"))
+	api.On("GetPost", "valid_post").Return(&model.Post{
+		UserId: "userID",
+	}, nil)
+	api.On("GetPost", "0").Return(&model.Post{
+		UserId: "user_not_found",
+	}, nil)
+	api.On("GetUser", "userID").Return(&model.User{}, nil)
+	// Ensure GetUser for "user_not_found" returns an error or nil
+	api.On("GetUser", "user_not_found").Return(nil, &model.AppError{Id: "2"})
+	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), 
+		mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), 
+		mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), 
+		mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
 
 	p := setupTestPlugin(api)
 	p.updateConfig(func(conf *config) {
@@ -580,7 +599,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostID:   "1",
+				PostID:   "valid_post",
 				IssueKey: noPermissionsIssueKey,
 			},
 			expectedCode: http.StatusInternalServerError,
@@ -589,7 +608,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostID:   "1",
+				PostID:   "valid_post",
 				IssueKey: attachCommentErrorKey,
 			},
 			expectedCode: http.StatusInternalServerError,
@@ -598,7 +617,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostID:   "1",
+				PostID:   "valid_post",
 				IssueKey: existingIssueKey,
 			},
 			expectedCode: http.StatusOK,

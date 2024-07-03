@@ -82,7 +82,7 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 		p.responsef(header, errStoreNewSettings, err)
 	}
 	if len(instances.IDs()) > 1 {
-		settingsUpdatedMsg += fmt.Sprintf("for Jira instance %s", instanceID)
+		settingsUpdatedMsg += fmt.Sprintf(" for Jira instance %s", instanceID)
 	}
 
 	return p.responsef(header, "%s.\n\t%s notifications %s.", settingsUpdatedMsg, cases.Title(language.Und, cases.NoLower).String(role), notifications)

@@ -131,7 +131,7 @@ func (p *Plugin) getMockInstanceStoreKV(n int) *mockInstanceStoreKV {
 	}
 
 	for i, ti := range []*testInstance{testInstance1, testInstance2} {
-		if i > n {
+		if i >= n {
 			break
 		}
 		instance := *ti
