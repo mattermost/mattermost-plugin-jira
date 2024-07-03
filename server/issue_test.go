@@ -188,7 +188,6 @@ func TestRouteIssueTransition(t *testing.T) {
 	api.On("LogWarn", "ERROR: ", "Status", "500", "Error", "", "Path", "/api/v2/transition", "Method", "POST", "query", "").Return(nil)
 	api.On("LogWarn", "Recovered from a panic", "url", "/api/v2/transition", "error", mock.Anything, "stack", mock.Anything).Return(nil)
 
-
 	p := setupTestPlugin(api)
 
 	for name, tt := range map[string]struct {
@@ -239,7 +238,7 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
 	api.On("DeleteEphemeralPost", validUserID, "").Return()
 	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return()
-    api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return()
+	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return()
 
 	p := setupTestPlugin(api)
 
@@ -529,9 +528,9 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 	api.On("GetUser", "userID").Return(&model.User{}, nil)
 	// Ensure GetUser for "user_not_found" returns an error or nil
 	api.On("GetUser", "user_not_found").Return(nil, &model.AppError{Id: "2"})
-	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), 
-		mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), 
-		mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), 
+	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"),
+		mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"),
+		mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"),
 		mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
 	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
 
