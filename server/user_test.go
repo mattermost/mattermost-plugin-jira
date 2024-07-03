@@ -19,12 +19,28 @@ func TestUserSettings_String(t *testing.T) {
 		expectedOutput string
 	}{
 		"notifications on": {
-			settings:       ConnectionSettings{Notifications: false},
-			expectedOutput: "\tNotifications: off",
+			settings: ConnectionSettings{
+				Notifications: true,
+				RolesForDMNotification: map[string]bool{
+					assigneeRole: true,
+					mentionRole:  true,
+					reporterRole: true,
+					watchingRole: true,
+				},
+			},
+			expectedOutput: "\t- Notifications for assignee: on \n\t- Notifications for mention: on \n\t- Notifications for reporter: on \n\t- Notifications for watching: on",
 		},
 		"notifications off": {
-			settings:       ConnectionSettings{Notifications: true},
-			expectedOutput: "\tNotifications: on",
+			settings: ConnectionSettings{
+				Notifications: false,
+				RolesForDMNotification: map[string]bool{
+					assigneeRole: false,
+					mentionRole:  false,
+					reporterRole: false,
+					watchingRole: false,
+				},
+			},
+			expectedOutput: "\t- Notifications for assignee: off \n\t- Notifications for mention: off \n\t- Notifications for reporter: off \n\t- Notifications for watching: off",
 		},
 	}
 	for name, tt := range tests {
@@ -44,9 +60,9 @@ func TestRouteUserStart(t *testing.T) {
 	}
 	api := &plugintest.API{}
 
-	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return()
 
-	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
+	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return()
 
 	p := Plugin{}
 	p.initializeRouter()

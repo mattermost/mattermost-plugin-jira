@@ -75,8 +75,9 @@ const commonHelpText = "\n" +
 	"* `/jira me` - Display information about the current user\n" +
 	"* `/jira about` - Display build info\n" +
 	"* `/jira instance list` - List installed Jira instances\n" +
-	"* `/jira instance settings [setting] [value]` - Update your user settings\n" +
+	"* `/jira instance settings [setting] [role] [value]` - Update your user settings\n" +
 	"  * [setting] can be `notifications`\n" +
+	"  * [role] can be `assignee` , `mention` , `reporter` or `watching`\n" +
 	"  * [value] can be `on` or `off`\n" +
 	""
 
@@ -262,13 +263,34 @@ func createSettingsCommand(optInstance bool) *model.AutocompleteData {
 		"list", "", "View your current settings")
 	settings.AddCommand(list)
 
-	notifications := model.NewAutocompleteData(
-		"notifications", "[on|off]", "Update your user notifications settings")
-	notifications.AddStaticListArgument("value", true, []model.AutocompleteListItem{
+	setting := []model.AutocompleteListItem{
 		{HelpText: "Turn notifications on", Item: "on"},
 		{HelpText: "Turn notifications off", Item: "off"},
-	})
-	withFlagInstance(notifications, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
+	}
+	notifications := model.NewAutocompleteData(
+		"notifications", "[assignee|mention|reporter|watching]", "manage notifications")
+
+	assigneeNotifications := model.NewAutocompleteData(assigneeRole, "", "manage assignee notifications")
+	assigneeNotifications.AddStaticListArgument("value", true, setting)
+	withFlagInstance(assigneeNotifications, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
+
+	mentionNotifications := model.NewAutocompleteData(mentionRole, "", "manage mention notifications")
+	mentionNotifications.AddStaticListArgument("value", true, setting)
+	withFlagInstance(mentionNotifications, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
+
+	reporterNotifications := model.NewAutocompleteData(reporterRole, "", "manage reporter notifications")
+	reporterNotifications.AddStaticListArgument("value", true, setting)
+	withFlagInstance(reporterNotifications, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
+
+	watchingNotifications := model.NewAutocompleteData(watchingRole, "", "manage watching notifications")
+	watchingNotifications.AddStaticListArgument("value", true, setting)
+	withFlagInstance(watchingNotifications, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
+
+	notifications.AddCommand(assigneeNotifications)
+	notifications.AddCommand(mentionNotifications)
+	notifications.AddCommand(reporterNotifications)
+	notifications.AddCommand(watchingNotifications)
+
 	settings.AddCommand(notifications)
 
 	return settings
@@ -601,7 +623,10 @@ func executeSettings(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 
 	switch args[0] {
 	case "list":
-		return p.responsef(header, "Current settings:\n%s", conn.Settings.String())
+		if conn.Settings != nil {
+			return p.responsef(header, "Current settings:\n%s", conn.Settings.String())
+		}
+		return p.responsef(header, "Please connect to Jira account using the command `/jira connect`")
 	case "notifications":
 		return p.settingsNotifications(header, instance.GetID(), user.MattermostUserID, conn, args)
 	default:
