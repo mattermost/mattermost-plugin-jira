@@ -100,7 +100,7 @@ export function getFields(metadata: IssueMetadata | null, projectKey: string | n
         return {};
     }
 
-    const issueType = getIssueTypes(metadata, projectKey, false).find((it) => it.id === issueTypeId);
+    const issueType = getIssueTypes(metadata, projectKey, true).find((it) => it.id === issueTypeId);
     if (issueType) {
         return issueType.fields;
     }
