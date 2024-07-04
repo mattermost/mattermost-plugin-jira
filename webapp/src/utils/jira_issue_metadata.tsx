@@ -55,7 +55,7 @@ export function getProjectValues(metadata: ProjectMetadata | null): ReactSelectO
     return metadata.projects;
 }
 
-export function getIssueTypes(metadata: IssueMetadata | null, projectKey: string | null): IssueType[] {
+export function getIssueTypes(metadata: IssueMetadata | null, projectKey: string | null, includeSubtasks: boolean): IssueType[] {
     if (!metadata || !metadata.projects) {
         return [];
     }
@@ -64,7 +64,12 @@ export function getIssueTypes(metadata: IssueMetadata | null, projectKey: string
     if (!project) {
         return [];
     }
-    return project.issuetypes.filter((i) => !i.subtask);
+
+    if (!includeSubtasks) {
+        project.issuetypes = project.issuetypes.filter((i) => !i.subtask);
+    }
+
+    return project.issuetypes;
 }
 
 export function getIssueValues(metadata: ProjectMetadata, projectKey: string): ReactSelectOption[] {
@@ -95,7 +100,7 @@ export function getFields(metadata: IssueMetadata | null, projectKey: string | n
         return {};
     }
 
-    const issueType = getIssueTypes(metadata, projectKey).find((it) => it.id === issueTypeId);
+    const issueType = getIssueTypes(metadata, projectKey, false).find((it) => it.id === issueTypeId);
     if (issueType) {
         return issueType.fields;
     }
@@ -126,7 +131,7 @@ export function getCustomFieldsForProjects(metadata: IssueMetadata | null, proje
         return [];
     }
 
-    const issueTypes = flatten(projectKeys.map((key) => getIssueTypes(metadata, key))) as IssueType[];
+    const issueTypes = flatten(projectKeys.map((key) => getIssueTypes(metadata, key, true))) as IssueType[];
 
     const customFieldHash: {[key: string]: FieldWithInfo} = {};
     const fields = flatten(issueTypes.map((issueType) =>

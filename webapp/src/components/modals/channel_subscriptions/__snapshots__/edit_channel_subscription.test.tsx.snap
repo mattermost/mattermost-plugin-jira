@@ -436,6 +436,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
               "value": "10002",
             },
             Object {
+              "label": "Sub-task",
+              "value": "10003",
+            },
+            Object {
               "label": "Story",
               "value": "10001",
             },
@@ -526,6 +530,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                   "name": "Task",
                 },
                 Object {
+                  "id": "10003",
+                  "name": "Sub-task",
+                },
+                Object {
                   "id": "10001",
                   "name": "Story",
                 },
@@ -552,6 +560,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                 Object {
                   "id": "10002",
                   "name": "Task",
+                },
+                Object {
+                  "id": "10003",
+                  "name": "Sub-task",
                 },
                 Object {
                   "id": "10001",
@@ -587,6 +599,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                   "name": "Task",
                 },
                 Object {
+                  "id": "10003",
+                  "name": "Sub-task",
+                },
+                Object {
                   "id": "10001",
                   "name": "Story",
                 },
@@ -613,6 +629,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                 Object {
                   "id": "10002",
                   "name": "Task",
+                },
+                Object {
+                  "id": "10003",
+                  "name": "Sub-task",
                 },
                 Object {
                   "id": "10001",
@@ -653,6 +673,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                   "name": "Task",
                 },
                 Object {
+                  "id": "10003",
+                  "name": "Sub-task",
+                },
+                Object {
                   "id": "10001",
                   "name": "Story",
                 },
@@ -680,6 +704,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                 Object {
                   "id": "10002",
                   "name": "Task",
+                },
+                Object {
+                  "id": "10003",
+                  "name": "Sub-task",
                 },
                 Object {
                   "id": "10001",
@@ -717,6 +745,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                 Object {
                   "id": "10002",
                   "name": "Task",
+                },
+                Object {
+                  "id": "10003",
+                  "name": "Sub-task",
                 },
                 Object {
                   "id": "10001",
@@ -757,6 +789,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                   "name": "Task",
                 },
                 Object {
+                  "id": "10003",
+                  "name": "Sub-task",
+                },
+                Object {
                   "id": "10001",
                   "name": "Story",
                 },
@@ -792,6 +828,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                 Object {
                   "id": "10002",
                   "name": "Task",
+                },
+                Object {
+                  "id": "10003",
+                  "name": "Sub-task",
                 },
                 Object {
                   "id": "10001",
