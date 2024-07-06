@@ -28,7 +28,7 @@ var eventParamMasks = map[string]StringSet{
 	"updated_attachment":  NewStringSet(eventUpdatedAttachment),  // updated attachments
 	"updated_description": NewStringSet(eventUpdatedDescription), // issue description edited
 	"updated_labels":      NewStringSet(eventUpdatedLabels),      // updated labels
-	"updated_prioity":     NewStringSet(eventUpdatedPriority),    // changes in priority
+	"updated_prioity":     NewStringSet(eventUpdatedPriority),    // changes in priority (Leaving this event with incorrect spelling in place in order to maintain backward compatibility)
 	"updated_priority":    NewStringSet(eventUpdatedPriority),    // changes in priority
 	"updated_rank":        NewStringSet(eventUpdatedRank),        // ranked higher or lower
 	"updated_sprint":      NewStringSet(eventUpdatedSprint),      // assigned to a different sprint
