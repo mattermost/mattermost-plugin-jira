@@ -112,7 +112,7 @@ func TestPlugin(t *testing.T) {
 			api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
 			api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
-			api.On("KVGet", mock.AnythingOfTypeArgument("string")).Return(make([]byte, 0), (*model.AppError)(nil))
+			api.On("KVGet", mock.AnythingOfType("string")).Return(make([]byte, 0), (*model.AppError)(nil))
 			api.On("GetDirectChannel", mockAnythingOfTypeBatch("string", 2)...).Return(
 				&model.Channel{}, (*model.AppError)(nil))
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
