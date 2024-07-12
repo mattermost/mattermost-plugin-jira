@@ -237,6 +237,10 @@ func (p *Plugin) getSubscriptionsForChannel(instanceID types.ID, channelID strin
 		channelSubscriptions = append(channelSubscriptions, subs.Channel.ByID[channelSubscriptionID])
 	}
 
+	sort.Slice(channelSubscriptions, func(i, j int) bool {
+		return channelSubscriptions[i].Name < channelSubscriptions[j].Name
+	})
+
 	return channelSubscriptions, nil
 }
 
@@ -501,13 +505,22 @@ func (p *Plugin) listChannelSubscriptions(instanceID types.ID, teamID string) (s
 				}
 				rows = append(rows, fmt.Sprintf("\t* (%d) %s", len(subsIDs), instanceID))
 
+				channelSubscriptions := []ChannelSubscription{}
 				for _, subID := range subsIDs {
 					sub := subs.Channel.ByID[subID]
-					subName := "(No Name)"
-					if sub.Name != "" {
-						subName = sub.Name
+					if sub.Name == "" {
+						sub.Name = "(No Name)"
 					}
-					rows = append(rows, fmt.Sprintf("\t\t* %s - %s", sub.Filters.Projects.Elems()[0], subName))
+
+					channelSubscriptions = append(channelSubscriptions, sub)
+				}
+
+				sort.Slice(channelSubscriptions, func(i, j int) bool {
+					return channelSubscriptions[i].Name < channelSubscriptions[j].Name
+				})
+
+				for _, channelSubscription := range channelSubscriptions {
+					rows = append(rows, fmt.Sprintf("\t\t* %s - %s", channelSubscription.Filters.Projects.Elems()[0], channelSubscription.Name))
 				}
 			}
 		}
