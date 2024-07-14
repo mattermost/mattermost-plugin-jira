@@ -6,7 +6,7 @@ package main
 import (
 	"crypto/subtle"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -28,7 +28,8 @@ var eventParamMasks = map[string]StringSet{
 	"updated_attachment":  NewStringSet(eventUpdatedAttachment),  // updated attachments
 	"updated_description": NewStringSet(eventUpdatedDescription), // issue description edited
 	"updated_labels":      NewStringSet(eventUpdatedLabels),      // updated labels
-	"updated_prioity":     NewStringSet(eventUpdatedPriority),    // changes in priority
+	"updated_prioity":     NewStringSet(eventUpdatedPriority),    // changes in priority (Leaving this event with incorrect spelling in place in order to maintain backward compatibility)
+	"updated_priority":    NewStringSet(eventUpdatedPriority),    // changes in priority
 	"updated_rank":        NewStringSet(eventUpdatedRank),        // ranked higher or lower
 	"updated_sprint":      NewStringSet(eventUpdatedSprint),      // assigned to a different sprint
 	"updated_status":      NewStringSet(eventUpdatedStatus),      // transitions like Done, In Progress
@@ -48,11 +49,6 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 		}
 	}()
 
-	// Validate the request and extract params
-	if r.Method != http.MethodPost {
-		return respondErr(w, http.StatusMethodNotAllowed,
-			fmt.Errorf("Request: "+r.Method+" is not allowed, must be POST"))
-	}
 	if conf.Secret == "" {
 		return respondErr(w, http.StatusForbidden,
 			fmt.Errorf("JIRA plugin not configured correctly; must provide Secret"))
@@ -67,7 +63,7 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 		if eventErr != nil {
 			return respondErr(w, status, eventErr)
 		}
-		p.API.LogDebug("Webhook Event Log", "event", string(parsedRequest))
+		p.client.Log.Debug("Webhook Event Log", "event", string(parsedRequest))
 	}
 	teamName := r.FormValue("team")
 	if teamName == "" {
@@ -88,10 +84,10 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 		selectedEvents = selectedEvents.Union(paramMask)
 	}
 
-	bb, err := ioutil.ReadAll(r.Body)
-	channel, appErr := p.API.GetChannelByNameForTeamName(teamName, channelName, false)
-	if appErr != nil {
-		return respondErr(w, appErr.StatusCode, appErr)
+	bb, err := io.ReadAll(r.Body)
+	channel, err := p.client.Channel.GetByNameForTeamName(teamName, channelName, false)
+	if err != nil {
+		return respondErr(w, http.StatusBadRequest, err)
 	}
 
 	wh, err := ParseWebhook(bb)

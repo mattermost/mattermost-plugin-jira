@@ -12,8 +12,9 @@ import (
 type InstanceType string
 
 const (
-	CloudInstanceType  = InstanceType("cloud")
-	ServerInstanceType = InstanceType("server")
+	CloudInstanceType      = InstanceType("cloud")
+	ServerInstanceType     = InstanceType("server")
+	CloudOAuthInstanceType = InstanceType("cloud-oauth")
 )
 
 type Instance interface {
@@ -23,6 +24,7 @@ type Instance interface {
 	GetManageAppsURL() string
 	GetManageWebhooksURL() string
 	GetURL() string
+	GetJiraBaseURL() string
 
 	Common() *InstanceCommon
 	types.Value
@@ -65,4 +67,8 @@ func (ic InstanceCommon) GetID() types.ID {
 
 func (ic *InstanceCommon) Common() *InstanceCommon {
 	return ic
+}
+
+func (ic InstanceCommon) IsCloudInstance() bool {
+	return ic.Type == CloudInstanceType || ic.Type == CloudOAuthInstanceType
 }

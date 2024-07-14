@@ -3,8 +3,9 @@ package main
 import (
 	"testing"
 
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/stretchr/testify/require"
 )
 
@@ -53,8 +54,8 @@ func TestMigrateV2Instances(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
-			api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
-			api.On("LogDebug", mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogError", mock.AnythingOfType("string")).Return(nil)
+			api.On("LogDebug", mock.AnythingOfType("string")).Return(nil)
 
 			api.On("KVGet", keyInstances).Return(nil, nil)
 			api.On("KVGet", v2keyKnownJiraInstances).Return([]byte(tc.known), nil)
@@ -66,7 +67,7 @@ func TestMigrateV2Instances(t *testing.T) {
 
 			storedInstancePayload := []byte{}
 			storedInstancesPayload := []byte{}
-			api.On("KVSet", mock.AnythingOfTypeArgument("string"), mock.AnythingOfTypeArgument("[]uint8")).Return(nil).Run(
+			api.On("KVSetWithOptions", mock.AnythingOfType("string"), mock.Anything, mock.AnythingOfType("model.PluginKVSetOptions")).Return(true, nil).Run(
 				func(args mock.Arguments) {
 					key := args.Get(0).(string)
 					switch key {
@@ -82,6 +83,7 @@ func TestMigrateV2Instances(t *testing.T) {
 
 			p := &Plugin{}
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 			store := NewStore(p)
 			p.instanceStore = store
 			manifest.Version = "3.0.0"
@@ -127,13 +129,14 @@ func TestMigrateV3InstancesToV2(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
-			api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
-			api.On("LogDebug", mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogError", mock.AnythingOfType("string")).Return(nil)
+			api.On("LogDebug", mock.AnythingOfType("string")).Return(nil)
 
 			api.On("KVGet", keyInstances).Return([]byte(tc.v3Instances), nil)
 
 			p := &Plugin{}
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 			store := NewStore(p)
 			p.instanceStore = store
 

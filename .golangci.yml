@@ -10,38 +10,38 @@ linters-settings:
     simplify: true
   goimports:
     local-prefixes: github.com/mattermost/mattermost-plugin-jira
-  golint:
-    min-confidence: 0
   govet:
     check-shadowing: true
     enable-all: true
+    disable:
+      - fieldalignment
   misspell:
     locale: US
+  revive:
+    rules:
+      - name: error-strings
+        disabled: true
 
 linters:
   disable-all: true
   enable:
     - bodyclose
-    - deadcode
     - errcheck
-    - goconst
     - gocritic
     - gofmt
     - goimports
-    - golint
     - gosec
     - gosimple
     - govet
     - ineffassign
     - misspell
     - nakedret
+    - revive
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
     - unused
-    - varcheck
     - whitespace
 
 issues:

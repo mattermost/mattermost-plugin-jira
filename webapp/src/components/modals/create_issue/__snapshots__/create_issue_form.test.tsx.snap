@@ -6,8 +6,6 @@ exports[`components/CreateIssue should match snapshot 1`] = `
   role="form"
 >
   <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
     style={
       Object {
         "backgroundColor": "#ffffff",
@@ -56,8 +54,6 @@ exports[`components/CreateIssue should match snapshot 1`] = `
     />
   </ModalBody>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -95,8 +91,6 @@ exports[`components/CreateIssue should match snapshot with error 1`] = `
   role="form"
 >
   <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
     style={
       Object {
         "backgroundColor": "#ffffff",
@@ -781,6 +775,78 @@ exports[`components/CreateIssue should match snapshot with error 1`] = `
         issueMetadata={
           Object {
             "expand": "projects",
+            "issue_types_with_statuses": Array [
+              Object {
+                "id": "10002",
+                "name": "Task",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                ],
+              },
+              Object {
+                "id": "10003",
+                "name": "Sub-task",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                  Object {
+                    "id": "1002",
+                    "name": "In Progress",
+                  },
+                ],
+              },
+              Object {
+                "id": "10001",
+                "name": "Story",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                  Object {
+                    "id": "1002",
+                    "name": "In Progress",
+                  },
+                ],
+              },
+              Object {
+                "id": "10004",
+                "name": "Bug",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                  Object {
+                    "id": "1002",
+                    "name": "In Progress",
+                  },
+                ],
+              },
+              Object {
+                "id": "10000",
+                "name": "Epic",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                  Object {
+                    "id": "1002",
+                    "name": "In Progress",
+                  },
+                  Object {
+                    "id": "1003",
+                    "name": "Bug",
+                  },
+                ],
+              },
+            ],
             "projects": Array [
               Object {
                 "expand": "issuetypes",
@@ -3530,8 +3596,6 @@ exports[`components/CreateIssue should match snapshot with error 1`] = `
     </div>
   </ModalBody>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -3569,8 +3633,6 @@ exports[`components/CreateIssue should match snapshot with form filled 1`] = `
   role="form"
 >
   <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
     style={
       Object {
         "backgroundColor": "#ffffff",
@@ -4239,6 +4301,78 @@ exports[`components/CreateIssue should match snapshot with form filled 1`] = `
         issueMetadata={
           Object {
             "expand": "projects",
+            "issue_types_with_statuses": Array [
+              Object {
+                "id": "10002",
+                "name": "Task",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                ],
+              },
+              Object {
+                "id": "10003",
+                "name": "Sub-task",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                  Object {
+                    "id": "1002",
+                    "name": "In Progress",
+                  },
+                ],
+              },
+              Object {
+                "id": "10001",
+                "name": "Story",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                  Object {
+                    "id": "1002",
+                    "name": "In Progress",
+                  },
+                ],
+              },
+              Object {
+                "id": "10004",
+                "name": "Bug",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                  Object {
+                    "id": "1002",
+                    "name": "In Progress",
+                  },
+                ],
+              },
+              Object {
+                "id": "10000",
+                "name": "Epic",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                  Object {
+                    "id": "1002",
+                    "name": "In Progress",
+                  },
+                  Object {
+                    "id": "1003",
+                    "name": "Bug",
+                  },
+                ],
+              },
+            ],
             "projects": Array [
               Object {
                 "expand": "issuetypes",
@@ -6988,8 +7122,6 @@ exports[`components/CreateIssue should match snapshot with form filled 1`] = `
     </div>
   </ModalBody>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -7027,8 +7159,6 @@ exports[`components/CreateIssue should match snapshot with no instance id 1`] = 
   role="form"
 >
   <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
     style={
       Object {
         "backgroundColor": "#ffffff",
@@ -7077,8 +7207,6 @@ exports[`components/CreateIssue should match snapshot with no instance id 1`] = 
     />
   </ModalBody>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -7116,8 +7244,6 @@ exports[`components/CreateIssue should match snapshot with no issue metadata 1`]
   role="form"
 >
   <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
     style={
       Object {
         "backgroundColor": "#ffffff",
@@ -7166,8 +7292,6 @@ exports[`components/CreateIssue should match snapshot with no issue metadata 1`]
     />
   </ModalBody>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",

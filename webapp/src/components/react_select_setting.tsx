@@ -8,7 +8,7 @@ import CreatableSelect from 'react-select/creatable';
 
 import {Theme} from 'mattermost-redux/types/preferences';
 
-import {ActionMeta, ValueType} from 'react-select/src/types';
+import {ActionMeta} from 'react-select/src/types';
 
 import Setting from 'components/setting';
 

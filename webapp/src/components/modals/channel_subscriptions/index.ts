@@ -8,24 +8,24 @@ import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {isDirectChannel, isGroupChannel} from 'mattermost-redux/utils/channel_utils';
 
 import {
+    closeChannelSettings,
     createChannelSubscription,
-    fetchChannelSubscriptions,
     deleteChannelSubscription,
     editChannelSubscription,
-    closeChannelSettings,
+    fetchChannelSubscriptions,
+    fetchJiraIssueMetadataForProjects,
     fetchJiraProjectMetadata,
     fetchJiraProjectMetadataForAllInstances,
-    fetchJiraIssueMetadataForProjects,
-    sendEphemeralPost,
     getConnected,
+    sendEphemeralPost,
 } from 'actions';
 
 import {
-    getChannelSubscriptions,
     getChannelIdWithSettingsOpen,
+    getChannelSubscriptions,
     getInstalledInstances,
+    getPluginSettings,
     getUserConnectedInstances,
-    getDefaultUserInstanceID,
 } from 'selectors';
 
 import ChannelSubscriptionsModal from './channel_subscriptions';
@@ -44,6 +44,8 @@ const mapStateToProps = (state) => {
 
     const installedInstances = getInstalledInstances(state);
     const connectedInstances = getUserConnectedInstances(state);
+    const pluginSettings = getPluginSettings(state);
+    const securityLevelEmptyForJiraSubscriptions = pluginSettings.security_level_empty_for_jira_subscriptions;
 
     return {
         omitDisplayName,
@@ -51,6 +53,7 @@ const mapStateToProps = (state) => {
         channel,
         installedInstances,
         connectedInstances,
+        securityLevelEmptyForJiraSubscriptions,
     };
 };
 

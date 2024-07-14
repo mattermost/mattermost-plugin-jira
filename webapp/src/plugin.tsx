@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Store, Action} from 'redux';
+import {Action, Store} from 'redux';
 
 import ConnectModal from 'components/modals/connect_modal';
 import DisconnectModal from 'components/modals/disconnect_modal';
@@ -15,17 +15,24 @@ import ChannelSubscriptionsModal from 'components/modals/channel_subscriptions';
 import AttachCommentToIssuePostMenuAction from 'components/post_menu_actions/attach_comment_to_issue';
 import AttachCommentToIssueModal from 'components/modals/attach_comment_modal';
 import SetupUI from 'components/setup_ui';
+import LinkTooltip from 'components/jira_ticket_tooltip';
 
-import PluginId from 'plugin_id';
+import manifest from './manifest';
 
 import reducers from './reducers';
-import {handleConnectChange, getConnected, handleInstanceStatusChange, getSettings} from './actions';
+import {
+    getConnected,
+    getSettings,
+    handleConnectChange,
+    handleInstanceStatusChange,
+} from './actions';
 import Hooks from './hooks/hooks';
 
 const setupUILater = (registry: any, store: Store<object, Action<object>>): () => Promise<void> => async () => {
     registry.registerReducer(reducers);
 
     const settings = await store.dispatch(getSettings());
+    const {id: PluginId} = manifest;
 
     try {
         await getConnected()(store.dispatch, store.getState);
@@ -37,6 +44,7 @@ const setupUILater = (registry: any, store: Store<object, Action<object>>): () =
             registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
             registry.registerRootComponent(AttachCommentToIssueModal);
             registry.registerPostDropdownMenuComponent(AttachCommentToIssuePostMenuAction);
+            registry.registerLinkTooltipComponent(LinkTooltip);
         }
 
         registry.registerRootComponent(ChannelSubscriptionsModal);

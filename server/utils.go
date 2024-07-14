@@ -4,13 +4,16 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -34,9 +37,9 @@ func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message,
 	}
 
 	conf := p.getConfig()
-	channel, appErr := p.API.GetDirectChannel(mattermostUserID.String(), conf.botUserID)
-	if appErr != nil {
-		return nil, appErr
+	channel, err := p.client.Channel.GetDirect(mattermostUserID.String(), conf.botUserID)
+	if err != nil {
+		return nil, err
 	}
 
 	post = &model.Post{
@@ -46,9 +49,9 @@ func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message,
 		Type:      postType,
 	}
 
-	_, appErr = p.API.CreatePost(post)
-	if appErr != nil {
-		return nil, appErr
+	err = p.client.Post.CreatePost(post)
+	if err != nil {
+		return nil, err
 	}
 
 	return post, nil
@@ -63,9 +66,9 @@ func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...
 	}()
 
 	conf := p.getConfig()
-	channel, appErr := p.API.GetDirectChannel(mattermostUserID, conf.botUserID)
-	if appErr != nil {
-		return nil, appErr
+	channel, err := p.client.Channel.GetDirect(mattermostUserID, conf.botUserID)
+	if err != nil {
+		return nil, err
 	}
 
 	post = &model.Post{
@@ -74,9 +77,9 @@ func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...
 		Message:   fmt.Sprintf(format, args...),
 	}
 
-	_, appErr = p.API.CreatePost(post)
-	if appErr != nil {
-		return nil, appErr
+	err = p.client.Post.CreatePost(post)
+	if err != nil {
+		return nil, err
 	}
 
 	return post, nil
@@ -84,25 +87,26 @@ func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...
 
 func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string {
 	result := body
-
 	for _, uname := range parseJIRAUsernamesFromText(body) {
-		if !strings.HasPrefix(uname, "accountid:") {
-			continue
+		jiraUserIDOrName := ""
+		if strings.HasPrefix(uname, "accountid:") {
+			jiraUserIDOrName = uname[len("accountid:"):]
+		} else {
+			jiraUserIDOrName = uname
 		}
 
-		jiraUserID := uname[len("accountid:"):]
-		mattermostUserID, err := p.userStore.LoadMattermostUserID(instanceID, jiraUserID)
-		if err != nil {
-			continue
-		}
-		c, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
+		mattermostUserID, err := p.userStore.LoadMattermostUserID(instanceID, jiraUserIDOrName)
 		if err != nil {
 			continue
 		}
 
-		if c.DisplayName != "" {
-			result = strings.ReplaceAll(result, uname, c.DisplayName)
+		user, err := p.client.User.Get(string(mattermostUserID))
+		if err != nil {
+			continue
 		}
+
+		jiraUserName := "[~" + uname + "]"
+		result = strings.ReplaceAll(result, jiraUserName, "@"+user.Username)
 	}
 
 	return result
@@ -112,7 +116,7 @@ func parseJIRAUsernamesFromText(text string) []string {
 	usernameMap := map[string]bool{}
 	usernames := []string{}
 
-	var re = regexp.MustCompile(`(?m)\[~([a-zA-Z0-9-_.:\+]+)\]`)
+	var re = regexp.MustCompile(`(?m)\[~([a-zA-Z0-9-_@.:\+]+)\]`)
 	for _, match := range re.FindAllString(text, -1) {
 		name := match[:len(match)-1]
 		name = name[2:]
@@ -158,4 +162,23 @@ func isEmbbedableMIME(mime string) bool {
 		}
 	}
 	return false
+}
+
+// getS256PKCEParams creates the code_challenge and code_verifier params for oauth2
+func getS256PKCEParams() (*PKCEParams, error) {
+	buf := make([]byte, PKCEByteArrayLength)
+	if _, err := rand.Read(buf); err != nil {
+		return nil, err
+	}
+
+	verifier := base64.RawURLEncoding.EncodeToString(buf)
+
+	h := sha256.New()
+	h.Write([]byte(verifier))
+	challenge := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
+
+	return &PKCEParams{
+		CodeChallenge: challenge,
+		CodeVerifier:  verifier,
+	}, nil
 }

@@ -6,11 +6,10 @@ package main
 import (
 	"fmt"
 	"regexp"
-	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -21,18 +20,13 @@ func parseJiraLinksToMarkdown(text string) string {
 	return jiraLinkWithTextRegex.ReplaceAllString(text, "[${1}](${2})")
 }
 
-func mdKeySummaryLink(issue *jira.Issue) string {
-	// Use Self URL only to extract the full hostname from it
-	pos := strings.LastIndex(issue.Self, "/rest/api")
-	if pos < 0 {
-		return ""
-	}
-	return fmt.Sprintf("[%s](%s%s)", issue.Key+": "+issue.Fields.Summary+" ("+issue.Fields.Status.Name+")", issue.Self[:pos], "/browse/"+issue.Key)
+func mdKeySummaryLink(issue *jira.Issue, instance Instance) string {
+	return fmt.Sprintf("[%s: %s (%s)](%s%s)", issue.Key, issue.Fields.Summary, issue.Fields.Status.Name, instance.GetJiraBaseURL(), "/browse/"+issue.Key)
 }
 
-func reporterSummary(issue *jira.Issue) string {
-	avatarLink := fmt.Sprintf("![avatar](%s =30x30)", issue.Fields.Reporter.AvatarUrls.One6X16)
-	reporterSummary := avatarLink + " " + issue.Fields.Reporter.Name
+func reporterSummary(reporter *jira.User) string {
+	avatarLink := fmt.Sprintf("![avatar](%s =30x30)", reporter.AvatarUrls.One6X16)
+	reporterSummary := avatarLink + " " + reporter.Name
 	return reporterSummary
 }
 
@@ -45,7 +39,7 @@ func getActions(instanceID types.ID, client Client, issue *jira.Issue) ([]*model
 	}
 
 	integration := &model.PostActionIntegration{
-		URL:     fmt.Sprintf("/plugins/%s%s", manifest.ID, routeIssueTransition),
+		URL:     fmt.Sprintf("/plugins/%s%s%s", manifest.Id, routeAPI, routeIssueTransition),
 		Context: ctx,
 	}
 
@@ -77,7 +71,7 @@ func getActions(instanceID types.ID, client Client, issue *jira.Issue) ([]*model
 		Name: "Share publicly",
 		Type: "button",
 		Integration: &model.PostActionIntegration{
-			URL:     fmt.Sprintf("/plugins/%s%s", manifest.ID, routeSharePublicly),
+			URL:     fmt.Sprintf("/plugins/%s%s%s", manifest.Id, routeAPI, routeSharePublicly),
 			Context: ctx,
 		},
 	})
@@ -85,8 +79,8 @@ func getActions(instanceID types.ID, client Client, issue *jira.Issue) ([]*model
 	return actions, nil
 }
 
-func asSlackAttachment(instanceID types.ID, client Client, issue *jira.Issue, showActions bool) ([]*model.SlackAttachment, error) {
-	text := mdKeySummaryLink(issue)
+func asSlackAttachment(instance Instance, client Client, issue *jira.Issue, showActions bool) ([]*model.SlackAttachment, error) {
+	text := mdKeySummaryLink(issue, instance)
 	desc := truncate(issue.Fields.Description, 3000)
 	desc = parseJiraLinksToMarkdown(desc)
 	if desc != "" {
@@ -109,16 +103,18 @@ func asSlackAttachment(instanceID types.ID, client Client, issue *jira.Issue, sh
 		})
 	}
 
-	fields = append(fields, &model.SlackAttachmentField{
-		Title: "Reporter",
-		Value: reporterSummary(issue),
-		Short: true,
-	})
+	if issue.Fields.Reporter != nil {
+		fields = append(fields, &model.SlackAttachmentField{
+			Title: "Reporter",
+			Value: reporterSummary(issue.Fields.Reporter),
+			Short: true,
+		})
+	}
 
 	var actions []*model.PostAction
 	var err error
 	if showActions {
-		actions, err = getActions(instanceID, client, issue)
+		actions, err = getActions(instance.GetID(), client, issue)
 		if err != nil {
 			return []*model.SlackAttachment{}, err
 		}

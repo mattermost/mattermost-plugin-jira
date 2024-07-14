@@ -46,7 +46,7 @@ describe('components/ChannelSubscriptionFilters', () => {
 
     const baseProps: Props = {
         theme: {},
-        fields: getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key]),
+        fields: getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key], []),
         values: [{
             key: 'priority',
             inclusion: FilterFieldInclusion.INCLUDE_ANY,
@@ -58,12 +58,13 @@ describe('components/ChannelSubscriptionFilters', () => {
         removeValidate: jest.fn(),
         onChange: jest.fn(),
         instanceID: 'https://something.atlassian.net',
+        securityLevelEmptyForJiraSubscriptions: true,
     };
 
     test('should match snapshot', () => {
         const props = {...baseProps};
         const wrapper = shallow<ChannelSubscriptionFilters>(
-            <ChannelSubscriptionFilters {...props}/>
+            <ChannelSubscriptionFilters {...props}/>,
         );
 
         wrapper.setState({showCreateRow: true});

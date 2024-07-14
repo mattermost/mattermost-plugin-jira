@@ -15,5 +15,17 @@ export const useFieldForIssueMetadata = (field: JiraField, key: string): IssueMe
                 }],
             },
         ],
+        issue_types_with_statuses: [
+            {
+                id: '10001',
+                name: 'Bug',
+                statuses: [
+                    {
+                        id: '1001',
+                        name: 'TODO',
+                    },
+                ],
+            },
+        ],
     };
 };

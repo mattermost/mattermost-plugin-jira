@@ -6,17 +6,16 @@ package main
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
-	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -66,12 +65,12 @@ func TestPlugin(t *testing.T) {
 		},
 		"InvalidBody": {
 			Configuration:      validConfiguration,
-			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", ioutil.NopCloser(bytes.NewBufferString("foo"))),
+			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", io.NopCloser(bytes.NewBufferString("foo"))),
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
 		"UnknownJSONPayload": {
 			Configuration:      validConfiguration,
-			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", ioutil.NopCloser(bytes.NewBufferString("{}"))),
+			Request:            httptest.NewRequest("POST", "/webhook?team=theteam&channel=thechannel&secret=thesecret", io.NopCloser(bytes.NewBufferString("{}"))),
 			ExpectedStatusCode: http.StatusBadRequest,
 		},
 		"InvalidChannel": {
@@ -110,10 +109,10 @@ func TestPlugin(t *testing.T) {
 			api := &plugintest.API{}
 
 			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
-			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
-			api.On("KVGet", mock.AnythingOfTypeArgument("string")).Return(make([]byte, 0), (*model.AppError)(nil))
+			api.On("KVGet", mock.AnythingOfType("string")).Return(make([]byte, 0), (*model.AppError)(nil))
 			api.On("GetDirectChannel", mockAnythingOfTypeBatch("string", 2)...).Return(
 				&model.Channel{}, (*model.AppError)(nil))
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
@@ -135,8 +134,9 @@ func TestPlugin(t *testing.T) {
 				conf.Secret = tc.Configuration.Secret
 			})
 			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
 			p.instanceStore = p.getMockInstanceStoreKV(1)
-			p.gorillaRouter = mux.NewRouter()
+			p.initializeRouter()
 
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, tc.Request)

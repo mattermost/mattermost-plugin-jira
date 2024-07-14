@@ -14,6 +14,7 @@
 			.btn {
 				-webkit-transition: all 0.15s ease;
 				-webkit-transition-delay: 0s;
+				transition-delay: 0s;
 				-moz-transition: all 0.15s ease;
 				-o-transition: all 0.15s ease;
 				transition: all 0.15s ease false;
@@ -54,6 +55,26 @@
 				margin-right: 4px;
 			}
 		</style>
+		<script>
+			const handleDisconnect = () => {
+				// Splitting the cookies string on the basis of cookie name and then popping out the first value.
+				const token = ('; ' + document.cookie).split('; MMCSRF=').pop().split(';')[0];
+
+				fetch("{{ .RevokeURL }}", {
+					method: "POST",
+					headers: {'X-CSRF-Token': token},
+				}).then(res => {
+					const element = document.body;
+					if(!res.ok) {
+						element.style.margin = "10px";
+      				} else {
+						window.close();
+					}
+
+					return res.text().then(text => element.innerHTML = text);
+				})
+			}
+		</script>
 		<link rel="stylesheet" href="https://unpkg.com/@atlaskit/css-reset@2.0.0/dist/bundle.css" media="all">
 	</head>
 	<body>
@@ -68,7 +89,7 @@
 				<div>Mattermost account: {{ .MattermostDisplayName }}</div>
 				<div>Jira account: {{ .JiraDisplayName }}</div>
 			</div>
-			<a href="{{ .RevokeURL }}" class="btn btn-link">Disconnect</a>
+			<button onclick="handleDisconnect()" class="btn btn-link">Disconnect</button>
 		</div>
 	</body>
 </html>

@@ -8,13 +8,13 @@ import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
 import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 
-import {FilterFieldInclusion, IssueMetadata, FilterField} from 'types/model';
+import {FilterField, FilterFieldInclusion, IssueMetadata} from 'types/model';
 import {getCustomFieldFiltersForProjects, isEpicLinkField} from 'utils/jira_issue_metadata';
 
 import ChannelSubscriptionFilter, {Props} from './channel_subscription_filter';
 
 describe('components/ChannelSubscriptionFilter', () => {
-    const fields = getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key]);
+    const fields = getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key], []);
     const baseProps: Props = {
         theme: {},
         fields,
@@ -31,12 +31,13 @@ describe('components/ChannelSubscriptionFilter', () => {
         onChange: jest.fn(),
         removeFilter: jest.fn(),
         instanceID: 'https://something.atlassian.net',
+        securityLevelEmptyForJiraSubscriptions: true,
     };
 
     test('should match snapshot', () => {
         const props = {...baseProps, issueMetadata: {}};
         const wrapper = shallow<ChannelSubscriptionFilter>(
-            <ChannelSubscriptionFilter {...props}/>
+            <ChannelSubscriptionFilter {...props}/>,
         );
         expect(wrapper).toMatchSnapshot();
     });
@@ -44,7 +45,7 @@ describe('components/ChannelSubscriptionFilter', () => {
     test('should render JiraEpicSelector when Epic Link field is selected', () => {
         const props = {...baseProps};
         const wrapper = shallow<ChannelSubscriptionFilter>(
-            <ChannelSubscriptionFilter {...props}/>
+            <ChannelSubscriptionFilter {...props}/>,
         );
 
         expect(wrapper.find(JiraEpicSelector).length).toBe(0);
@@ -61,7 +62,7 @@ describe('components/ChannelSubscriptionFilter', () => {
         const props = {...baseProps};
 
         const wrapper = shallow<ChannelSubscriptionFilter>(
-            <ChannelSubscriptionFilter {...props}/>
+            <ChannelSubscriptionFilter {...props}/>,
         );
 
         const select = wrapper.find('ReactSelectSetting[name="inclusion"]');
@@ -96,7 +97,7 @@ describe('components/ChannelSubscriptionFilter', () => {
             },
         };
         const wrapper = shallow<ChannelSubscriptionFilter>(
-            <ChannelSubscriptionFilter {...props}/>
+            <ChannelSubscriptionFilter {...props}/>,
         );
 
         let result;
@@ -115,5 +116,62 @@ describe('components/ChannelSubscriptionFilter', () => {
 
         result = wrapper.instance().checkFieldConflictError();
         expect(result).toEqual('FieldName does not exist for issue type(s): Task.');
+    });
+
+    test('checkInclusionError should return an error string when there is an invalid inclusion value', () => {
+        const props: Props = {
+            ...baseProps,
+            field: {
+                ...baseProps.field,
+                schema: {
+                    ...baseProps.field.schema,
+                    type: 'securitylevel',
+                },
+            },
+        };
+        const wrapper = shallow<ChannelSubscriptionFilter>(
+            <ChannelSubscriptionFilter {...props}/>,
+        );
+
+        let isValid;
+        isValid = wrapper.instance().isValid();
+        expect(isValid).toBe(true);
+
+        wrapper.setProps({
+            ...props,
+            value: {
+                inclusion: FilterFieldInclusion.EMPTY,
+                key: 'securitylevel',
+                values: [],
+            },
+        });
+
+        isValid = wrapper.instance().isValid();
+        expect(isValid).toBe(true);
+
+        wrapper.setProps({
+            ...props,
+            value: {
+                inclusion: FilterFieldInclusion.INCLUDE_ANY,
+                key: 'securitylevel',
+                values: [],
+            },
+        });
+
+        isValid = wrapper.instance().isValid();
+        expect(isValid).toBe(true);
+
+        wrapper.setProps({
+            ...props,
+            value: {
+                inclusion: FilterFieldInclusion.EXCLUDE_ANY,
+                key: 'securitylevel',
+                values: [],
+            },
+        });
+
+        isValid = wrapper.instance().isValid();
+        expect(isValid).toBe(false);
+        expect(wrapper.find('.error-text').text()).toEqual('Security level inclusion cannot be "Exclude Any". Note that the default value is now "Empty".');
     });
 });

@@ -6,15 +6,18 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 )
+
+var errWebhookeventUnsupported = errors.New("Unsupported webhook event")
 
 var webhookWrapperFunc func(wh Webhook) Webhook
 
@@ -26,7 +29,7 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		if os.Getenv("MM_PLUGIN_JIRA_DEBUG_WEBHOOKS") == "" {
 			return
 		}
-		f, _ := ioutil.TempFile(os.TempDir(),
+		f, _ := os.CreateTemp(os.TempDir(),
 			fmt.Sprintf("jira_plugin_webhook_%s_*.json",
 				time.Now().Format("2006-01-02-15-04")))
 		if f == nil {
@@ -75,14 +78,16 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		wh, err = parseWebhookCommentUpdated(jwh)
 	case commentDeleted:
 		wh, err = parseWebhookCommentDeleted(jwh)
+	case worklogUpdated:
+		// not supported
 	default:
-		err = errors.Errorf("Unsupported webhook event: %v", jwh.WebhookEvent)
+		err = errors.Wrapf(errWebhookeventUnsupported, "event: %v", jwh.WebhookEvent)
 	}
 	if err != nil {
 		return nil, err
 	}
 	if wh == nil {
-		return nil, errors.Errorf("Unsupported webhook data: %v", jwh.WebhookEvent)
+		return nil, errors.Wrapf(errWebhookeventUnsupported, "event: %v", jwh.WebhookEvent)
 	}
 
 	// For HTTP testing, so we can capture the output of the interface
@@ -439,7 +444,8 @@ func mergeWebhookEvents(events []*webhook) Webhook {
 		if event.fieldInfo.name == descriptionField || strings.HasPrefix(event.fieldInfo.from, strike) {
 			strike = ""
 		}
-		msg := "**" + strings.Title(event.fieldInfo.name) + ":** " + strike +
+		// Use the english language for now. Using the server's local might be better.
+		msg := "**" + cases.Title(language.English, cases.NoLower).String(event.fieldInfo.name) + ":** " + strike +
 			event.fieldInfo.from + strike + " " + event.fieldInfo.to
 		merged.fields = append(merged.fields, &model.SlackAttachmentField{
 			Value: msg,

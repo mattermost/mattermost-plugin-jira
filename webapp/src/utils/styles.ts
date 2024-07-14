@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
-import {Styles} from 'react-select/src/styles';
 import {Theme} from 'mattermost-redux/types/preferences';
 
 export const getBaseStyles = (theme: Theme) => {
@@ -12,6 +11,7 @@ export const getBaseStyles = (theme: Theme) => {
             background: changeOpacity(theme.centerChannelColor, 0.08),
             borderRadius: '4px',
             marginTop: '8px',
+            marginBottom: '8px',
             fontSize: '13px',
         }),
     };

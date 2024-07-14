@@ -6,24 +6,219 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestValidateSubscription(t *testing.T) {
+	p := &Plugin{}
+
+	p.instanceStore = p.getMockInstanceStoreKV(0)
+
+	api := &plugintest.API{}
+	p.SetAPI(api)
+
+	for name, tc := range map[string]struct {
+		subscription          *ChannelSubscription
+		errorMessage          string
+		disableSecurityConfig bool
+	}{
+		"no event selected": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet(),
+					Projects:   NewStringSet("project"),
+					IssueTypes: NewStringSet("10001"),
+				},
+			},
+			errorMessage: "please provide at least one event type",
+		},
+		"no project selected": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet(),
+					IssueTypes: NewStringSet("10001"),
+				},
+			},
+			errorMessage: "please provide a project identifier",
+		},
+		"no issue type selected": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet("project"),
+					IssueTypes: NewStringSet(),
+				},
+			},
+			errorMessage: "please provide at least one issue type",
+		},
+		"valid subscription": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet("project"),
+					IssueTypes: NewStringSet("10001"),
+				},
+			},
+			errorMessage: "",
+		},
+		"valid subscription with security level": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet("TEST"),
+					IssueTypes: NewStringSet("10001"),
+					Fields: []FieldFilter{
+						{
+							Key:       "security",
+							Inclusion: FilterIncludeAll,
+							Values:    NewStringSet("10001"),
+						},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+		"invalid 'Exclude' of security level": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet("TEST"),
+					IssueTypes: NewStringSet("10001"),
+					Fields: []FieldFilter{
+						{
+							Key:       "security",
+							Inclusion: FilterExcludeAny,
+							Values:    NewStringSet("10001"),
+						},
+					},
+				},
+			},
+			errorMessage: "security level does not allow for an \"Exclude\" clause",
+		},
+		"security config disabled, valid 'Exclude' of security level": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet("TEST"),
+					IssueTypes: NewStringSet("10001"),
+					Fields: []FieldFilter{
+						{
+							Key:       "security",
+							Inclusion: FilterExcludeAny,
+							Values:    NewStringSet("10001"),
+						},
+					},
+				},
+			},
+			disableSecurityConfig: true,
+			errorMessage:          "",
+		},
+		"invalid access to security level": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet("TEST"),
+					IssueTypes: NewStringSet("10001"),
+					Fields: []FieldFilter{
+						{
+							Key:       "security",
+							Inclusion: FilterIncludeAll,
+							Values:    NewStringSet("10002"),
+						},
+					},
+				},
+			},
+			errorMessage: "invalid access to security level",
+		},
+		"user does not have read access to the project": {
+			subscription: &ChannelSubscription{
+				ID:         "id",
+				Name:       "name",
+				ChannelID:  "channelid",
+				InstanceID: "instance_id",
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("issue_created"),
+					Projects:   NewStringSet(nonExistantProjectKey),
+					IssueTypes: NewStringSet("10001"),
+				},
+			},
+			errorMessage: "failed to get project \"FP\": Project FP not found",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+			p.SetAPI(api)
+			p.client = pluginapi.NewClient(p.API, p.Driver)
+
+			api.On("KVGet", testSubKey).Return(nil, nil)
+
+			p.updateConfig(func(conf *config) {
+				conf.SecurityLevelEmptyForJiraSubscriptions = !tc.disableSecurityConfig
+			})
+
+			client := testClient{}
+			err := p.validateSubscription(testInstance1.InstanceID, tc.subscription, client)
+
+			if tc.errorMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				require.Equal(t, tc.errorMessage, err.Error())
+			}
+		})
+	}
+}
 
 func TestListChannelSubscriptions(t *testing.T) {
 	p := &Plugin{}
 	p.updateConfig(func(conf *config) {
 		conf.Secret = someSecret
 	})
+	p.client = pluginapi.NewClient(p.API, p.Driver)
 	p.instanceStore = p.getMockInstanceStoreKV(0)
 
 	for name, tc := range map[string]struct {
@@ -43,7 +238,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 				},
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
-				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe edit`\n\n#### Team 1 Display Name\n* **~channel-1-name** (1):\n\t* (1) jiraurl1\n\t\t* PROJ - Sub Name X"
+				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe edit`\n\n#### Team 1 Display Name\n* **~channel-1-name** (1):\n\t* (1) https://jiraurl1.com\n\t\t* PROJ - Sub Name X"
 				assert.Equal(t, expected, actual)
 			},
 		},
@@ -67,7 +262,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 				},
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
-				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe edit`\n\n#### Group and Direct Messages\n* **channel-2-name-DM** (1):\n\t* (1) jiraurl1\n\t\t* PROJ - Sub Name X"
+				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe edit`\n\n#### Group and Direct Messages\n* **channel-2-name-DM** (1):\n\t* (1) https://jiraurl1.com\n\t\t* PROJ - Sub Name X"
 				assert.Equal(t, expected, actual)
 			},
 		},
@@ -258,6 +453,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 				return true
 			})).Return(nil)
 
+			p.client = pluginapi.NewClient(api, p.Driver)
 			actual, err := p.listChannelSubscriptions(testInstance1.InstanceID, team1.Id)
 			assert.Nil(t, err)
 			assert.NotNil(t, actual)
@@ -275,9 +471,10 @@ func TestGetChannelsSubscribed(t *testing.T) {
 	p.instanceStore = p.getMockInstanceStoreKV(0)
 
 	for name, tc := range map[string]struct {
-		WebhookTestData      string
-		Subs                 *Subscriptions
-		ChannelSubscriptions []ChannelSubscription
+		WebhookTestData       string
+		Subs                  *Subscriptions
+		ChannelSubscriptions  []ChannelSubscription
+		disableSecurityConfig bool
 	}{
 		"no filters selected": {
 			WebhookTestData: "webhook-issue-created.json",
@@ -1357,12 +1554,90 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			}),
 			ChannelSubscriptions: []ChannelSubscription{{ChannelID: "sampleChannelId"}},
 		},
+		"no security level provided in subscription, but security level is present in issue": {
+			WebhookTestData: "webhook-issue-created-with-security-level.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				{
+					ID:        "rg86cd65efdjdjezgisgxaitzh",
+					ChannelID: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+						Fields:     []FieldFilter{},
+					},
+				},
+			}),
+			ChannelSubscriptions: []ChannelSubscription{},
+		},
+		"security config disabled, no security level provided in subscription, but security level is present in issue": {
+			WebhookTestData: "webhook-issue-created-with-security-level.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				{
+					ID:        "rg86cd65efdjdjezgisgxaitzh",
+					ChannelID: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+						Fields:     []FieldFilter{},
+					},
+				},
+			}),
+			ChannelSubscriptions:  []ChannelSubscription{{ChannelID: "sampleChannelId"}},
+			disableSecurityConfig: true,
+		},
+		"security level provided in subscription, but different security level is present in issue": {
+			WebhookTestData: "webhook-issue-created-with-security-level.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				{
+					ID:        "rg86cd65efdjdjezgisgxaitzh",
+					ChannelID: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+						Fields: []FieldFilter{
+							{
+								Key:       "security",
+								Inclusion: FilterIncludeAll,
+								Values:    NewStringSet("10002"),
+							},
+						},
+					},
+				},
+			}),
+			ChannelSubscriptions: []ChannelSubscription{},
+		},
+		"security level provided in subscription, and same security level is present in issue": {
+			WebhookTestData: "webhook-issue-created-with-security-level.json",
+			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
+				{
+					ID:        "rg86cd65efdjdjezgisgxaitzh",
+					ChannelID: "sampleChannelId",
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("event_created"),
+						Projects:   NewStringSet("TES"),
+						IssueTypes: NewStringSet("10001"),
+						Fields: []FieldFilter{
+							{
+								Key:       "security",
+								Inclusion: FilterIncludeAll,
+								Values:    NewStringSet("10001"),
+							},
+						},
+					},
+				},
+			}),
+			ChannelSubscriptions: []ChannelSubscription{{ChannelID: "sampleChannelId"}},
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
 			p.updateConfig(func(conf *config) {
 				conf.Secret = someSecret
+				conf.SecurityLevelEmptyForJiraSubscriptions = !tc.disableSecurityConfig
 			})
 			p.SetAPI(api)
 
@@ -1375,11 +1650,13 @@ func TestGetChannelsSubscribed(t *testing.T) {
 				return true
 			})).Return(nil)
 
+			p.client = pluginapi.NewClient(api, p.Driver)
+
 			data, err := getJiraTestData(tc.WebhookTestData)
 			assert.Nil(t, err)
 
 			r := bytes.NewReader(data)
-			bb, err := ioutil.ReadAll(r)
+			bb, err := io.ReadAll(r)
 			require.Nil(t, err)
 
 			wh, err := ParseWebhook(bb)

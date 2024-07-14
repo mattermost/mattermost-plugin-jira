@@ -4,6 +4,8 @@
 package main
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
@@ -22,14 +24,18 @@ func (ww webhookWorker) work() {
 	for msg := range ww.workQueue {
 		err := ww.process(msg)
 		if err != nil {
-			ww.p.errorf("WebhookWorker id: %d, error processing, err: %v", ww.id, err)
+			if errors.Is(err, errWebhookeventUnsupported) {
+				ww.p.debugf("WebhookWorker id: %d, error processing, err: %v", ww.id, err)
+			} else {
+				ww.p.errorf("WebhookWorker id: %d, error processing, err: %v", ww.id, err)
+			}
 		}
 	}
 }
 
 func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 	defer func() {
-		if err == ErrWebhookIgnored {
+		if errors.Is(err, ErrWebhookIgnored) {
 			// ignore ErrWebhookIgnored - from here up it's a success
 			err = nil
 		}

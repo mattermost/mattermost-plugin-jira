@@ -4,7 +4,14 @@
 import {Theme} from 'mattermost-redux/types/preferences';
 import {Channel} from 'mattermost-redux/types/channels';
 
-import {IssueMetadata, ChannelSubscription, Instance, APIResponse, AllProjectMetadata, GetConnectedResponse} from 'types/model';
+import {
+    APIResponse,
+    AllProjectMetadata,
+    ChannelSubscription,
+    GetConnectedResponse,
+    Instance,
+    IssueMetadata,
+} from 'types/model';
 
 export type SharedProps = {
     channel: Channel | null;
@@ -22,4 +29,5 @@ export type SharedProps = {
     getConnected: () => Promise<GetConnectedResponse>;
     close: () => void;
     sendEphemeralPost: (message: string) => void;
+    securityLevelEmptyForJiraSubscriptions: boolean;
 };

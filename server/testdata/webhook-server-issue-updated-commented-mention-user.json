@@ -1,0 +1,606 @@
+{
+    "timestamp": 1559607317244,
+    "webhookEvent": "jira:issue_updated",
+    "issue_event_type_name": "issue_commented",
+    "user": {
+        "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+        "name": "levbrouk",
+        "key": "levbrouk",
+        "emailAddress": "lev@mattermost.com",
+        "avatarUrls": {
+            "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+            "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+            "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+            "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+        },
+        "displayName": "Lev Brouk",
+        "active": true,
+        "timeZone": "Etc/UTC"
+    },
+    "issue": {
+        "id": "10013",
+        "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10013",
+        "key": "PRJX-14",
+        "fields": {
+            "issuetype": {
+                "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issuetype/10001",
+                "id": "10001",
+                "description": "Created by JIRA Software - do not edit or delete. Issue type for a user story.",
+                "iconUrl": "http://sales-jira.centralus.cloudapp.azure.com:8080/images/icons/issuetypes/story.svg",
+                "name": "Story",
+                "subtask": false
+            },
+            "timespent": null,
+            "project": {
+                "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/project/10000",
+                "id": "10000",
+                "key": "PRJX",
+                "name": "ProjectX",
+                "avatarUrls": {
+                    "48x48": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/projectavatar?pid=10000&avatarId=10210",
+                    "24x24": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/projectavatar?size=small&pid=10000&avatarId=10210",
+                    "16x16": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/projectavatar?size=xsmall&pid=10000&avatarId=10210",
+                    "32x32": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/projectavatar?size=medium&pid=10000&avatarId=10210"
+                }
+            },
+            "fixVersions": [],
+            "customfield_10110": null,
+            "customfield_10111": null,
+            "aggregatetimespent": null,
+            "resolution": null,
+            "customfield_10112": null,
+            "customfield_10113": "{summaryBean=com.atlassian.jira.plugin.devstatus.rest.SummaryBean@464372f5[summary={pullrequest=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@7da41753[overall=com.atlassian.jira.plugin.devstatus.summary.beans.PullRequestOverallBean@7961596e[stateCount=0,state=OPEN,count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], build=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@a08c1ce[overall=com.atlassian.jira.plugin.devstatus.summary.beans.BuildOverallBean@5701cea0[failedBuildCount=0,successfulBuildCount=0,unknownBuildCount=0,count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], review=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@ac2459c[overall=com.atlassian.jira.plugin.devstatus.summary.beans.ReviewsOverallBean@791bc783[stateCount=0,state=<null>,dueDate=<null>,overDue=false,count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], deployment-environment=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@35517fdf[overall=com.atlassian.jira.plugin.devstatus.summary.beans.DeploymentOverallBean@6cfcc31b[topEnvironments=[],showProjects=false,successfulCount=0,count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], repository=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@740a95bd[overall=com.atlassian.jira.plugin.devstatus.summary.beans.CommitOverallBean@538a7360[count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], branch=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@6d9b5149[overall=com.atlassian.jira.plugin.devstatus.summary.beans.BranchOverallBean@6775b3fa[count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}]},errors=[],configErrors=[]], devSummaryJson={\"cachedValue\":{\"errors\":[],\"configErrors\":[],\"summary\":{\"pullrequest\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"stateCount\":0,\"state\":\"OPEN\",\"open\":true},\"byInstanceType\":{}},\"build\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"failedBuildCount\":0,\"successfulBuildCount\":0,\"unknownBuildCount\":0},\"byInstanceType\":{}},\"review\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"stateCount\":0,\"state\":null,\"dueDate\":null,\"overDue\":false,\"completed\":false},\"byInstanceType\":{}},\"deployment-environment\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"topEnvironments\":[],\"showProjects\":false,\"successfulCount\":0},\"byInstanceType\":{}},\"repository\":{\"overall\":{\"count\":0,\"lastUpdated\":null},\"byInstanceType\":{}},\"branch\":{\"overall\":{\"count\":0,\"lastUpdated\":null},\"byInstanceType\":{}}}},\"isStale\":false}}",
+            "customfield_10114": "0|i000bj:",
+            "customfield_10104": [
+                "com.atlassian.greenhopper.service.sprint.Sprint@a88a698[id=1,rapidViewId=1,state=ACTIVE,name=Sample Sprint 2,startDate=2018-05-09T06:39:30.147Z,endDate=2018-05-23T06:59:30.147Z,completeDate=<null>,sequence=1,goal=<null>]"
+            ],
+            "customfield_10105": "0|i0002v:",
+            "customfield_10106": 3.0,
+            "customfield_10107": null,
+            "customfield_10108": null,
+            "customfield_10109": null,
+            "resolutiondate": null,
+            "workratio": -1,
+            "lastViewed": "2019-06-04T00:10:22.819+0000",
+            "watches": {
+                "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issue/PRJX-14/watchers",
+                "watchCount": 2,
+                "isWatching": true
+            },
+            "created": "2018-05-15T11:39:29.303+0000",
+            "priority": {
+                "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/priority/3",
+                "iconUrl": "http://sales-jira.centralus.cloudapp.azure.com:8080/images/icons/priorities/medium.svg",
+                "name": "Medium",
+                "id": "3"
+            },
+            "customfield_10100": null,
+            "labels": [],
+            "timeestimate": null,
+            "aggregatetimeoriginalestimate": null,
+            "versions": [],
+            "issuelinks": [],
+            "assignee": {
+                "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+                "name": "levbrouk",
+                "key": "levbrouk",
+                "emailAddress": "lev@mattermost.com",
+                "avatarUrls": {
+                    "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                    "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                    "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                    "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+                },
+                "displayName": "Lev Brouk",
+                "active": true,
+                "timeZone": "Etc/UTC"
+            },
+            "updated": "2019-06-04T00:10:21.326+0000",
+            "status": {
+                "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/status/10000",
+                "description": "",
+                "iconUrl": "http://sales-jira.centralus.cloudapp.azure.com:8080/",
+                "name": "To Do",
+                "id": "10000",
+                "statusCategory": {
+                    "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/statuscategory/2",
+                    "id": 2,
+                    "key": "new",
+                    "colorName": "blue-gray",
+                    "name": "To Do"
+                }
+            },
+            "components": [],
+            "timeoriginalestimate": null,
+            "description": "*Creating Quick Filters*\n\nYou can add your own Quick Filters in the board configuration (select *Board > Configure*)",
+            "customfield_10130": null,
+            "customfield_10131": null,
+            "timetracking": {},
+            "customfield_10126": null,
+            "customfield_10127": null,
+            "customfield_10128": null,
+            "customfield_10129": null,
+            "attachment": [],
+            "aggregatetimeestimate": null,
+            "summary": "As a user, I can find important items on the board by using the customisable \"Quick Filters\" above >> Try clicking the \"Only My Issues\" Quick Filter above",
+            "creator": {
+                "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=craig",
+                "name": "craig",
+                "key": "craig",
+                "emailAddress": "craig@mattermost.com",
+                "avatarUrls": {
+                    "48x48": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?avatarId=10341",
+                    "24x24": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=small&avatarId=10341",
+                    "16x16": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=xsmall&avatarId=10341",
+                    "32x32": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=medium&avatarId=10341"
+                },
+                "displayName": "Craig Vitter",
+                "active": true,
+                "timeZone": "America/New_York"
+            },
+            "subtasks": [],
+            "reporter": {
+                "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=craig",
+                "name": "craig",
+                "key": "craig",
+                "emailAddress": "craig@mattermost.com",
+                "avatarUrls": {
+                    "48x48": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?avatarId=10341",
+                    "24x24": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=small&avatarId=10341",
+                    "16x16": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=xsmall&avatarId=10341",
+                    "32x32": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=medium&avatarId=10341"
+                },
+                "displayName": "Craig Vitter",
+                "active": true,
+                "timeZone": "America/New_York"
+            },
+            "customfield_10120": null,
+            "customfield_10000": "{summaryBean=com.atlassian.jira.plugin.devstatus.rest.SummaryBean@e33aca6[summary={pullrequest=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@746f19b1[overall=com.atlassian.jira.plugin.devstatus.summary.beans.PullRequestOverallBean@543be32[stateCount=0,state=OPEN,count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], build=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@69423903[overall=com.atlassian.jira.plugin.devstatus.summary.beans.BuildOverallBean@7a07fe11[failedBuildCount=0,successfulBuildCount=0,unknownBuildCount=0,count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], review=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@7629c271[overall=com.atlassian.jira.plugin.devstatus.summary.beans.ReviewsOverallBean@6e0340a8[stateCount=0,state=<null>,dueDate=<null>,overDue=false,count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], deployment-environment=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@16f1e64a[overall=com.atlassian.jira.plugin.devstatus.summary.beans.DeploymentOverallBean@534365f3[topEnvironments=[],showProjects=false,successfulCount=0,count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], repository=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@6bc11fa0[overall=com.atlassian.jira.plugin.devstatus.summary.beans.CommitOverallBean@1fb30470[count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}], branch=com.atlassian.jira.plugin.devstatus.rest.SummaryItemBean@6e9627a[overall=com.atlassian.jira.plugin.devstatus.summary.beans.BranchOverallBean@4ecdf3a9[count=0,lastUpdated=<null>,lastUpdatedTimestamp=<null>],byInstanceType={}]},errors=[],configErrors=[]], devSummaryJson={\"cachedValue\":{\"errors\":[],\"configErrors\":[],\"summary\":{\"pullrequest\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"stateCount\":0,\"state\":\"OPEN\",\"open\":true},\"byInstanceType\":{}},\"build\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"failedBuildCount\":0,\"successfulBuildCount\":0,\"unknownBuildCount\":0},\"byInstanceType\":{}},\"review\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"stateCount\":0,\"state\":null,\"dueDate\":null,\"overDue\":false,\"completed\":false},\"byInstanceType\":{}},\"deployment-environment\":{\"overall\":{\"count\":0,\"lastUpdated\":null,\"topEnvironments\":[],\"showProjects\":false,\"successfulCount\":0},\"byInstanceType\":{}},\"repository\":{\"overall\":{\"count\":0,\"lastUpdated\":null},\"byInstanceType\":{}},\"branch\":{\"overall\":{\"count\":0,\"lastUpdated\":null},\"byInstanceType\":{}}}},\"isStale\":false}}",
+            "customfield_10121": null,
+            "aggregateprogress": {
+                "progress": 0,
+                "total": 0
+            },
+            "customfield_10122": null,
+            "customfield_10123": null,
+            "customfield_10124": null,
+            "customfield_10125": null,
+            "customfield_10115": null,
+            "customfield_10116": null,
+            "environment": null,
+            "customfield_10117": "false",
+            "customfield_10118": null,
+            "customfield_10119": "false",
+            "duedate": null,
+            "progress": {
+                "progress": 0,
+                "total": 0
+            },
+            "comment": {
+                "comments": [
+                    {
+                        "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10013/comment/10005",
+                        "id": "10005",
+                        "author": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=craig",
+                            "name": "craig",
+                            "key": "craig",
+                            "emailAddress": "craig@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?avatarId=10341",
+                                "24x24": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=small&avatarId=10341",
+                                "16x16": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=xsmall&avatarId=10341",
+                                "32x32": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=medium&avatarId=10341"
+                            },
+                            "displayName": "Craig Vitter",
+                            "active": true,
+                            "timeZone": "America/New_York"
+                        },
+                        "body": "Joined Sample Sprint 2 1 days 4 hours 10 minutes ago",
+                        "updateAuthor": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=craig",
+                            "name": "craig",
+                            "key": "craig",
+                            "emailAddress": "craig@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?avatarId=10341",
+                                "24x24": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=small&avatarId=10341",
+                                "16x16": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=xsmall&avatarId=10341",
+                                "32x32": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=medium&avatarId=10341"
+                            },
+                            "displayName": "Craig Vitter",
+                            "active": true,
+                            "timeZone": "America/New_York"
+                        },
+                        "created": "2018-05-15T11:39:29.299+0000",
+                        "updated": "2018-05-15T11:39:29.299+0000"
+                    },
+                    {
+                        "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10013/comment/10043",
+                        "id": "10043",
+                        "author": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=craig",
+                            "name": "craig",
+                            "key": "craig",
+                            "emailAddress": "craig@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?avatarId=10341",
+                                "24x24": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=small&avatarId=10341",
+                                "16x16": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=xsmall&avatarId=10341",
+                                "32x32": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=medium&avatarId=10341"
+                            },
+                            "displayName": "Craig Vitter",
+                            "active": true,
+                            "timeZone": "America/New_York"
+                        },
+                        "body": "Update test comments....",
+                        "updateAuthor": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=craig",
+                            "name": "craig",
+                            "key": "craig",
+                            "emailAddress": "craig@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?avatarId=10341",
+                                "24x24": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=small&avatarId=10341",
+                                "16x16": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=xsmall&avatarId=10341",
+                                "32x32": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=medium&avatarId=10341"
+                            },
+                            "displayName": "Craig Vitter",
+                            "active": true,
+                            "timeZone": "America/New_York"
+                        },
+                        "created": "2019-02-27T16:18:52.995+0000",
+                        "updated": "2019-02-27T16:18:52.995+0000"
+                    },
+                    {
+                        "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10013/comment/10044",
+                        "id": "10044",
+                        "author": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=craig",
+                            "name": "craig",
+                            "key": "craig",
+                            "emailAddress": "craig@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?avatarId=10341",
+                                "24x24": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=small&avatarId=10341",
+                                "16x16": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=xsmall&avatarId=10341",
+                                "32x32": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=medium&avatarId=10341"
+                            },
+                            "displayName": "Craig Vitter",
+                            "active": true,
+                            "timeZone": "America/New_York"
+                        },
+                        "body": "Another comment...",
+                        "updateAuthor": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=craig",
+                            "name": "craig",
+                            "key": "craig",
+                            "emailAddress": "craig@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?avatarId=10341",
+                                "24x24": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=small&avatarId=10341",
+                                "16x16": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=xsmall&avatarId=10341",
+                                "32x32": "http://sales-jira.centralus.cloudapp.azure.com:8080/secure/useravatar?size=medium&avatarId=10341"
+                            },
+                            "displayName": "Craig Vitter",
+                            "active": true,
+                            "timeZone": "America/New_York"
+                        },
+                        "created": "2019-02-27T20:11:05.906+0000",
+                        "updated": "2019-02-27T20:11:05.906+0000"
+                    },
+                    {
+                        "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10013/comment/10076",
+                        "id": "10076",
+                        "author": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+                            "name": "levbrouk",
+                            "key": "levbrouk",
+                            "emailAddress": "lev@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+                            },
+                            "displayName": "Lev Brouk",
+                            "active": true,
+                            "timeZone": "Etc/UTC"
+                        },
+                        "body": "and more comments",
+                        "updateAuthor": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+                            "name": "levbrouk",
+                            "key": "levbrouk",
+                            "emailAddress": "lev@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+                            },
+                            "displayName": "Lev Brouk",
+                            "active": true,
+                            "timeZone": "Etc/UTC"
+                        },
+                        "created": "2019-06-03T23:32:03.233+0000",
+                        "updated": "2019-06-03T23:32:03.233+0000"
+                    },
+                    {
+                        "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10013/comment/10077",
+                        "id": "10077",
+                        "author": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+                            "name": "levbrouk",
+                            "key": "levbrouk",
+                            "emailAddress": "lev@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+                            },
+                            "displayName": "Lev Brouk",
+                            "active": true,
+                            "timeZone": "Etc/UTC"
+                        },
+                        "body": "sdfsdfs",
+                        "updateAuthor": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+                            "name": "levbrouk",
+                            "key": "levbrouk",
+                            "emailAddress": "lev@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+                            },
+                            "displayName": "Lev Brouk",
+                            "active": true,
+                            "timeZone": "Etc/UTC"
+                        },
+                        "created": "2019-06-03T23:38:52.611+0000",
+                        "updated": "2019-06-03T23:38:52.611+0000"
+                    },
+                    {
+                        "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10013/comment/10078",
+                        "id": "10078",
+                        "author": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+                            "name": "levbrouk",
+                            "key": "levbrouk",
+                            "emailAddress": "lev@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+                            },
+                            "displayName": "Lev Brouk",
+                            "active": true,
+                            "timeZone": "Etc/UTC"
+                        },
+                        "body": "sd",
+                        "updateAuthor": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+                            "name": "levbrouk",
+                            "key": "levbrouk",
+                            "emailAddress": "lev@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+                            },
+                            "displayName": "Lev Brouk",
+                            "active": true,
+                            "timeZone": "Etc/UTC"
+                        },
+                        "created": "2019-06-04T00:05:47.936+0000",
+                        "updated": "2019-06-04T00:05:47.936+0000"
+                    },
+                    {
+                        "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10013/comment/10079",
+                        "id": "10079",
+                        "author": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+                            "name": "levbrouk",
+                            "key": "levbrouk",
+                            "emailAddress": "lev@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+                            },
+                            "displayName": "Lev Brouk",
+                            "active": true,
+                            "timeZone": "Etc/UTC"
+                        },
+                        "body": "slsdkjf lksdj f",
+                        "updateAuthor": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+                            "name": "levbrouk",
+                            "key": "levbrouk",
+                            "emailAddress": "lev@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+                            },
+                            "displayName": "Lev Brouk",
+                            "active": true,
+                            "timeZone": "Etc/UTC"
+                        },
+                        "created": "2019-06-04T00:06:53.965+0000",
+                        "updated": "2019-06-04T00:06:53.965+0000"
+                    },
+                    {
+                        "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10013/comment/10080",
+                        "id": "10080",
+                        "author": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+                            "name": "levbrouk",
+                            "key": "levbrouk",
+                            "emailAddress": "lev@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+                            },
+                            "displayName": "Lev Brouk",
+                            "active": true,
+                            "timeZone": "Etc/UTC"
+                        },
+                        "body": "sd",
+                        "updateAuthor": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+                            "name": "levbrouk",
+                            "key": "levbrouk",
+                            "emailAddress": "lev@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+                            },
+                            "displayName": "Lev Brouk",
+                            "active": true,
+                            "timeZone": "Etc/UTC"
+                        },
+                        "created": "2019-06-04T00:08:45.402+0000",
+                        "updated": "2019-06-04T00:08:45.402+0000"
+                    },
+                    {
+                        "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10013/comment/10081",
+                        "id": "10081",
+                        "author": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+                            "name": "levbrouk",
+                            "key": "levbrouk",
+                            "emailAddress": "lev@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+                            },
+                            "displayName": "Lev Brouk",
+                            "active": true,
+                            "timeZone": "Etc/UTC"
+                        },
+                        "body": "sd",
+                        "updateAuthor": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+                            "name": "levbrouk",
+                            "key": "levbrouk",
+                            "emailAddress": "lev@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+                            },
+                            "displayName": "Lev Brouk",
+                            "active": true,
+                            "timeZone": "Etc/UTC"
+                        },
+                        "created": "2019-06-04T00:10:21.326+0000",
+                        "updated": "2019-06-04T00:10:21.326+0000"
+                    },
+                    {
+                        "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10013/comment/10082",
+                        "id": "10082",
+                        "author": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+                            "name": "levbrouk",
+                            "key": "levbrouk",
+                            "emailAddress": "lev@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+                            },
+                            "displayName": "Lev Brouk",
+                            "active": true,
+                            "timeZone": "Etc/UTC"
+                        },
+                        "body": "unik with mentioned user [~user]",
+                        "updateAuthor": {
+                            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+                            "name": "levbrouk",
+                            "key": "levbrouk",
+                            "emailAddress": "lev@mattermost.com",
+                            "avatarUrls": {
+                                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+                            },
+                            "displayName": "Lev Brouk",
+                            "active": true,
+                            "timeZone": "Etc/UTC"
+                        },
+                        "created": "2019-06-04T00:15:17.234+0000",
+                        "updated": "2019-06-04T00:15:17.234+0000"
+                    }
+                ],
+                "maxResults": 10,
+                "total": 10,
+                "startAt": 0
+            },
+            "votes": {
+                "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issue/PRJX-14/votes",
+                "votes": 0,
+                "hasVoted": false
+            },
+            "worklog": {
+                "startAt": 0,
+                "maxResults": 20,
+                "total": 0,
+                "worklogs": []
+            }
+        }
+    },
+    "comment": {
+        "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/issue/10013/comment/10082",
+        "id": "10082",
+        "author": {
+            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+            "name": "levbrouk",
+            "key": "levbrouk",
+            "emailAddress": "lev@mattermost.com",
+            "avatarUrls": {
+                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+            },
+            "displayName": "Lev Brouk",
+            "active": true,
+            "timeZone": "Etc/UTC"
+        },
+        "body": "unik with mentioned user [~user]",
+        "updateAuthor": {
+            "self": "http://sales-jira.centralus.cloudapp.azure.com:8080/rest/api/2/user?username=levbrouk",
+            "name": "levbrouk",
+            "key": "levbrouk",
+            "emailAddress": "lev@mattermost.com",
+            "avatarUrls": {
+                "48x48": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=48",
+                "24x24": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=24",
+                "16x16": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=16",
+                "32x32": "https://www.gravatar.com/avatar/8c504b6c8f13cf9dc9ffb8af57323320?d=mm&s=32"
+            },
+            "displayName": "Lev Brouk",
+            "active": true,
+            "timeZone": "Etc/UTC"
+        },
+        "created": "2019-06-04T00:15:17.234+0000",
+        "updated": "2019-06-04T00:15:17.234+0000"
+    }
+}

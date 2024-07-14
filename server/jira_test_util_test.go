@@ -4,7 +4,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 )
@@ -19,13 +19,13 @@ func getJiraTestData(filename string) ([]byte, error) {
 	}
 
 	defer f.Close()
-	return ioutil.ReadAll(f)
+	return io.ReadAll(f)
 }
 
 func withExistingChannelSubscriptions(subscriptions []ChannelSubscription) *Subscriptions {
 	ret := NewSubscriptions()
-	for i, sub := range subscriptions {
-		sub.InstanceID = testInstance1.GetID()
+	for i := range subscriptions {
+		subscriptions[i].InstanceID = testInstance1.GetID()
 		ret.Channel.add(&subscriptions[i])
 	}
 	return ret

@@ -3,13 +3,13 @@
 
 import React from 'react';
 
-import {ReactSelectOption, JiraUser, AvatarSize} from 'types/model';
+import {AvatarSize, JiraUser, ReactSelectOption} from 'types/model';
 
 import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
 
 type Props = BackendSelectorProps & {
     projectKey: string;
-    searchUsers: (params: {project: string; q: string}) => Promise<{data: JiraUser[]; error?: Error}>;
+    searchUsers: (params: {project: string; q: string}) => Promise<{data: {label: string; value: JiraUser[]}; error?: Error}>;
 };
 
 export default class JiraUserSelector extends React.PureComponent<Props> {
@@ -53,6 +53,8 @@ export default class JiraUserSelector extends React.PureComponent<Props> {
                     label,
                 };
             });
+        }).catch((e) => {
+            throw new Error('Error fetching data');
         });
     };
 
@@ -64,5 +66,5 @@ export default class JiraUserSelector extends React.PureComponent<Props> {
                 search={this.searchUsers}
             />
         );
-    }
+    };
 }

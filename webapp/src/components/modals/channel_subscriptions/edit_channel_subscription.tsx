@@ -14,14 +14,22 @@ import JiraInstanceAndProjectSelector from 'components/jira_instance_and_project
 
 import {getBaseStyles, getModalStyles} from 'utils/styles';
 import {
-    getCustomFieldValuesForEvents,
-    getCustomFieldFiltersForProjects,
-    getConflictingFields,
+    filterValueIsSecurityField,
     generateJQLStringFromSubscriptionFilters,
+    getConflictingFields,
+    getCustomFieldFiltersForProjects,
+    getCustomFieldValuesForEvents,
     getIssueTypes,
 } from 'utils/jira_issue_metadata';
 
-import {ChannelSubscription, ChannelSubscriptionFilters as ChannelSubscriptionFiltersModel, ReactSelectOption, FilterValue, IssueMetadata} from 'types/model';
+import {
+    ChannelSubscription,
+    ChannelSubscriptionFilters as ChannelSubscriptionFiltersModel,
+    FilterValue,
+    IssueMetadata,
+    ReactSelectOption,
+    SavedFieldValues,
+} from 'types/model';
 
 import ChannelSubscriptionFilters from './channel_subscription_filters';
 import {SharedProps} from './shared_props';
@@ -144,12 +152,12 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
 
     handleCancelDelete = () => {
         this.setState({showConfirmModal: false});
-    }
+    };
 
     handleConfirmDelete = () => {
         this.setState({showConfirmModal: false});
         this.deleteChannelSubscription();
-    }
+    };
 
     handleDeleteChannelSubscription = (): void => {
         this.setState({showConfirmModal: true});
@@ -170,7 +178,15 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
 
     clearConflictingErrorMessage = () => {
         this.setState({conflictingError: null});
-    }
+    };
+
+    shouldShowEmptySecurityLevelMessage = (): boolean => {
+        if (!this.props.securityLevelEmptyForJiraSubscriptions) {
+            return false;
+        }
+
+        return !this.state.filters.fields.some(filterValueIsSecurityField);
+    };
 
     handleIssueChange = (id: keyof ChannelSubscriptionFiltersModel, value: string[] | null) => {
         const finalValue = value || [];
@@ -178,11 +194,11 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
 
         let conflictingFields = null;
         if (finalValue.length > this.state.filters.issue_types.length) {
-            const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects);
+            const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects, this.state.filters.issue_types);
             conflictingFields = getConflictingFields(
                 filterFields,
                 finalValue,
-                this.state.jiraIssueMetadata
+                this.state.jiraIssueMetadata,
             );
         }
 
@@ -218,7 +234,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                 state.getMetaDataErr = `The project ${projectKeys[0]} is unavailable. Please contact your system administrator.`;
             }
 
-            const filterFields = getCustomFieldFiltersForProjects(jiraIssueMetadata, this.state.filters.projects);
+            const filterFields = getCustomFieldFiltersForProjects(jiraIssueMetadata, this.state.filters.projects, this.state.filters.issue_types);
             for (const v of this.state.filters.fields) {
                 if (!filterFields.find((f) => f.key === v.key)) {
                     state.error = 'A field in this subscription has been removed from Jira, so the subscription is invalid. When this form is submitted, the configured field will be removed from the subscription to make the subscription valid again.';
@@ -235,10 +251,11 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         }
 
         this.setState({instanceID, error: null});
-        this.handleProjectChange('');
-    }
+        this.handleProjectChange({});
+    };
 
-    handleProjectChange = (projectID: string) => {
+    handleProjectChange = (fieldValues: SavedFieldValues) => {
+        const projectID = fieldValues.project_key ? fieldValues.project_key : '';
         this.clearConflictingErrorMessage();
 
         let projects: string[];
@@ -287,7 +304,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             return;
         }
 
-        const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects);
+        const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects, this.state.filters.issue_types);
         const configuredFields = this.state.filters.fields.concat([]);
         for (const v of this.state.filters.fields) {
             if (!filterFields.find((f) => f.key === v.key)) {
@@ -336,7 +353,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         const issueOptions = issueTypes.map((it) => ({label: it.name, value: it.id}));
 
         const customFields = getCustomFieldValuesForEvents(this.state.jiraIssueMetadata, this.state.filters.projects);
-        const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects);
+        const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects, this.state.filters.issue_types);
 
         const eventOptions = JiraEventOptions.concat(customFields);
 
@@ -392,13 +409,29 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
                             instanceID={this.state.instanceID}
+                            securityLevelEmptyForJiraSubscriptions={this.props.securityLevelEmptyForJiraSubscriptions}
                         />
                         <div>
                             <label className='control-label margin-bottom'>
                                 {'Approximate JQL Output'}
                             </label>
                             <div style={getBaseStyles(this.props.theme).codeBlock}>
-                                <span>{generateJQLStringFromSubscriptionFilters(this.state.jiraIssueMetadata, filterFields, this.state.filters)}</span>
+                                <span>{generateJQLStringFromSubscriptionFilters(this.state.jiraIssueMetadata, filterFields, this.state.filters, this.props.securityLevelEmptyForJiraSubscriptions)}</span>
+                            </div>
+                            {this.shouldShowEmptySecurityLevelMessage() && (
+                                <div>
+                                    <span>
+                                        <strong>{'Note'}</strong>
+                                        {' that since you have not selected a security level filter, the subscription will only allow issues that have no security level assigned.'}
+                                    </span>
+                                </div>
+                            )}
+                            <div className='channel-subscriptions-modal__learnMore'>
+                                <a
+                                    href='https://github.com/mattermost/mattermost-plugin-jira#create-a-channel-subscription'
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                >{'Learn More'}</a>
                             </div>
                         </div>
                     </React.Fragment>

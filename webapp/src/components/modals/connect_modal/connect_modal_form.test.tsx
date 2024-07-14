@@ -39,7 +39,7 @@ describe('components/ConnectModalForm', () => {
     test('should match snapshot', () => {
         const props = {...baseProps};
         const wrapper = shallow<ConnectModalForm>(
-            <ConnectModalForm {...props}/>
+            <ConnectModalForm {...props}/>,
         );
         expect(wrapper).toMatchSnapshot();
     });
@@ -53,7 +53,7 @@ describe('components/ConnectModalForm', () => {
             redirectConnect,
         };
         const wrapper = shallow<ConnectModalForm>(
-            <ConnectModalForm {...props}/>
+            <ConnectModalForm {...props}/>,
         );
 
         wrapper.instance().handleInstanceChoice('', 'http://localhost:8080');
@@ -64,7 +64,7 @@ describe('components/ConnectModalForm', () => {
     test('should show error when user is already connected to instance', async () => {
         const props = {...baseProps};
         const wrapper = shallow<ConnectModalForm>(
-            <ConnectModalForm {...props}/>
+            <ConnectModalForm {...props}/>,
         );
 
         wrapper.instance().handleInstanceChoice('', 'https://something.atlassian.net');
