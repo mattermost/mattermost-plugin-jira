@@ -25,7 +25,7 @@ const (
 
 func (connection *Connection) updateRolesForDMNotification(role, roleStatus string) (string, bool) {
 	if role != assigneeRole && role != mentionRole && role != reporterRole && role != watchingRole {
-		return "* Invalid role. Accepted roles are: `assignee`, `mention`, `reporter` or `watching`.", false
+		return fmt.Sprintf("* Invalid role `%s`. Accepted roles are: `assignee`, `mention`, `reporter` or `watching`.", role), false
 	}
 
 	var value bool
@@ -35,7 +35,7 @@ func (connection *Connection) updateRolesForDMNotification(role, roleStatus stri
 	case settingOff:
 		value = false
 	default:
-		return "* Invalid value. Accepted values are: `on` or `off`.", false
+		return fmt.Sprintf("* Invalid value `%s`. Accepted values are: `on` or `off`.", roleStatus), false
 	}
 
 	if connection.Settings.RolesForDMNotification == nil {
@@ -90,5 +90,5 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 		settingsUpdatedMsg += fmt.Sprintf(" for Jira instance %s", instanceID)
 	}
 
-	return p.responsef(header, "%s.\n\t%s notifications %s.", settingsUpdatedMsg, cases.Title(language.Und, cases.NoLower).String(role), notifications)
+	return p.responsef(header, "%s:\n* %s notifications %s.", settingsUpdatedMsg, cases.Title(language.Und, cases.NoLower).String(role), notifications)
 }

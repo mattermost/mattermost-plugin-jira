@@ -202,42 +202,42 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 		"enable assignee notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications assignee on", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tAssignee notifications on.",
+			expectedMsg:  "Settings updated:\n* Assignee notifications on.",
 		},
 		"disable assignee notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications assignee off", UserId: mockUserIDWithNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tAssignee notifications off.",
+			expectedMsg:  "Settings updated:\n* Assignee notifications off.",
 		},
 		"enable reporter notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications reporter on", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tReporter notifications on.",
+			expectedMsg:  "Settings updated:\n* Reporter notifications on.",
 		},
 		"disable reporter notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications reporter off", UserId: mockUserIDWithNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tReporter notifications off.",
+			expectedMsg:  "Settings updated:\n* Reporter notifications off.",
 		},
 		"enable mention notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications mention on", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tMention notifications on.",
+			expectedMsg:  "Settings updated:\n* Mention notifications on.",
 		},
 		"disable mention notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications mention off", UserId: mockUserIDWithNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tMention notifications off.",
+			expectedMsg:  "Settings updated:\n* Mention notifications off.",
 		},
 		"enable watching notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications watching on", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tWatching notifications on.",
+			expectedMsg:  "Settings updated:\n* Watching notifications on.",
 		},
 		"disable watching notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications watching off", UserId: mockUserIDWithNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tWatching notifications off.",
+			expectedMsg:  "Settings updated:\n* Watching notifications off.",
 		},
 	}
 	for name, tt := range tests {
@@ -318,42 +318,42 @@ func TestPlugin_ExecuteCommand_Instance_Settings(t *testing.T) {
 		"enable assignee notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira instance settings notifications assignee on", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tAssignee notifications on.",
+			expectedMsg:  "Settings updated:\n* Assignee notifications on.",
 		},
 		"disable assignee notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira instance settings notifications assignee off", UserId: mockUserIDWithNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tAssignee notifications off.",
+			expectedMsg:  "Settings updated:\n* Assignee notifications off.",
 		},
 		"enable reporter notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira instance settings notifications reporter on", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tReporter notifications on.",
+			expectedMsg:  "Settings updated:\n* Reporter notifications on.",
 		},
 		"disable reporter notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira instance settings notifications reporter off", UserId: mockUserIDWithNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tReporter notifications off.",
+			expectedMsg:  "Settings updated:\n* Reporter notifications off.",
 		},
 		"enable mention notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira instance settings notifications mention on", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tMention notifications on.",
+			expectedMsg:  "Settings updated:\n* Mention notifications on.",
 		},
 		"disable mention notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira instance settings notifications mention off", UserId: mockUserIDWithNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tMention notifications off.",
+			expectedMsg:  "Settings updated:\n* Mention notifications off.",
 		},
 		"enable watching notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira instance settings notifications watching on", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tWatching notifications on.",
+			expectedMsg:  "Settings updated:\n* Watching notifications on.",
 		},
 		"disable watching notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira instance settings notifications watching off", UserId: mockUserIDWithNotifications},
 			numInstances: 1,
-			expectedMsg:  "Settings updated.\n\tWatching notifications off.",
+			expectedMsg:  "Settings updated:\n* Watching notifications off.",
 		},
 	}
 	for name, tt := range tests {
