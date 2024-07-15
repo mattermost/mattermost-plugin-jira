@@ -22,8 +22,6 @@ mv mattermost-webapp/webapp .
 rm -rf mattermost-webapp
 mv webapp mattermost-webapp
 
-echo "After movement"
-
 npm i --save-dev ./mattermost-webapp/channels
 npm i --save-dev ./mattermost-webapp/platform/types
 npm i --save-dev ./mattermost-webapp/platform/client
