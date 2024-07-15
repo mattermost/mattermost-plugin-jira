@@ -9,10 +9,6 @@ This plugin supports a two-way integration between Mattermost and Jira. Jira Cor
 
 For versions v3.0 and later of this plugin, support for multiple Jira instances is offered for Mattermost Professional and Enterprise plans, configured using [Administrator Slash Commands](https://github.com/mattermost/mattermost-plugin-jira#readme).
 
-**Maintainer:** [@mickmister](https://github.com/mickmister)
-
-**Co-Maintainer:** [@jfrerich](https://github.com/jfrerich)
-
 See the [Mattermost Product Documentation](https://docs.mattermost.com/integrate/jira-interoperability.html) for details on installing, configuring, enabling, and using this Mattermost integration.
 
 ## Feature summary
@@ -76,6 +72,46 @@ The version of a plugin is determined at compile time, automatically populating 
 * If there is no version tag, an empty version will be combined with the short hash, e.g. `0.0.0+76081421`.
 
 To disable this behaviour, manually populate and maintain the `version` field.
+
+## How to Release
+
+To trigger a release, follow these steps:
+
+1. **For Patch Release:** Run the following command:
+    ```
+    make patch
+    ```
+   This will release a patch change.
+
+2. **For Minor Release:** Run the following command:
+    ```
+    make minor
+    ```
+   This will release a minor change.
+
+3. **For Major Release:** Run the following command:
+    ```
+    make major
+    ```
+   This will release a major change.
+
+4. **For Patch Release Candidate (RC):** Run the following command:
+    ```
+    make patch-rc
+    ```
+   This will release a patch release candidate.
+
+5. **For Minor Release Candidate (RC):** Run the following command:
+    ```
+    make minor-rc
+    ```
+   This will release a minor release candidate.
+
+6. **For Major Release Candidate (RC):** Run the following command:
+    ```
+    make major-rc
+    ```
+   This will release a major release candidate.
 
 ### Environment
 

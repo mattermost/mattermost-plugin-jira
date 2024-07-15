@@ -81,10 +81,7 @@ exports[`components/EditChannelSubscription should match snapshot 1`] = `
           }
         }
       />
-      <Loading
-        position="relative"
-        style={Object {}}
-      />
+      <Loading />
     </div>
     <ConfirmModal
       cancelButtonText="Cancel"
@@ -3890,10 +3887,7 @@ exports[`components/EditChannelSubscription should match snapshot with no issue 
           }
         }
       />
-      <Loading
-        position="relative"
-        style={Object {}}
-      />
+      <Loading />
     </div>
     <ConfirmModal
       cancelButtonText="Cancel"
@@ -4150,10 +4144,7 @@ exports[`components/EditChannelSubscription should produce subscription error wh
           }
         }
       />
-      <Loading
-        position="relative"
-        style={Object {}}
-      />
+      <Loading />
     </div>
     <ConfirmModal
       cancelButtonText="Cancel"
