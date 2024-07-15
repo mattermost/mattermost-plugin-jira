@@ -538,7 +538,7 @@ func TestCloudOAuthMigration(t *testing.T) {
 
 			api.On("UnregisterCommand", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
 			api.On("RegisterCommand", mock.Anything).Return(nil)
-			api.On("PublishWebSocketEvent", mock.AnythingOfTypeArgument("string"), mock.Anything, mock.Anything)
+			api.On("PublishWebSocketEvent", mock.AnythingOfType("string"), mock.Anything, mock.Anything)
 
 			installedInstanceID := tc.setup(p, api)
 
