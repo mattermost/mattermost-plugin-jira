@@ -23,25 +23,11 @@ const (
 	watchingRole = "watching"
 )
 
-func (connection *Connection) updateRolesForDMNotification(role string, hasNotification bool) bool {
+func (connection *Connection) updateRolesForDMNotification(role, roleStatus string) (string, bool) {
 	if role != assigneeRole && role != mentionRole && role != reporterRole && role != watchingRole {
-		return false
-	}
-	if connection.Settings.RolesForDMNotification == nil {
-		connection.Settings.RolesForDMNotification = make(map[string]bool)
-	}
-	connection.Settings.RolesForDMNotification[role] = hasNotification
-	return true
-}
-
-func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, mattermostUserID types.ID, connection *Connection, args []string) *model.CommandResponse {
-	const helpText = "`/jira settings notifications [assignee|mention|reporter|watching] [value]`\n* Invalid value. Accepted values are: `on` or `off`."
-
-	if len(args) != 3 {
-		return p.responsef(header, helpText)
+		return "* Invalid role. Accepted roles are: `assignee`, `mention`, `reporter` or `watching`.", false
 	}
 
-	role, roleStatus := args[1], args[2]
 	var value bool
 	switch roleStatus {
 	case settingOn:
@@ -49,13 +35,32 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	case settingOff:
 		value = false
 	default:
+		return "* Invalid value. Accepted values are: `on` or `off`.", false
+	}
+
+	if connection.Settings.RolesForDMNotification == nil {
+		connection.Settings.RolesForDMNotification = make(map[string]bool)
+	}
+	connection.Settings.RolesForDMNotification[role] = value
+	return "", true
+}
+
+func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, mattermostUserID types.ID, connection *Connection, args []string) *model.CommandResponse {
+	helpTextPrefix := "`/jira settings notifications [assignee|mention|reporter|watching] [value]`\n"
+	helpText := ""
+	if len(args) != 3 {
+		helpText = helpTextPrefix + "* Invalid command args."
 		return p.responsef(header, helpText)
 	}
 
 	if connection.Settings == nil {
 		connection.Settings = &ConnectionSettings{}
 	}
-	if !connection.updateRolesForDMNotification(role, value) {
+
+	role, roleStatus := args[1], args[2]
+	helpTextSuffix, isRoleUpdated := connection.updateRolesForDMNotification(role, roleStatus)
+	helpText = helpTextPrefix + helpTextSuffix
+	if !isRoleUpdated {
 		return p.responsef(header, helpText)
 	}
 

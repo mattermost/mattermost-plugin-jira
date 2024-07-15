@@ -192,12 +192,12 @@ func TestPlugin_ExecuteCommand_Settings(t *testing.T) {
 		"set notifications without value": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings" + " notifications", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "`/jira settings notifications [assignee|mention|reporter|watching] [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
+			expectedMsg:  "`/jira settings notifications [assignee|mention|reporter|watching] [value]`\n* Invalid command args.",
 		},
 		"set notification with unknown value": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications test", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "`/jira settings notifications [assignee|mention|reporter|watching] [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
+			expectedMsg:  "`/jira settings notifications [assignee|mention|reporter|watching] [value]`\n* Invalid command args.",
 		},
 		"enable assignee notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira settings notifications assignee on", UserId: mockUserIDWithoutNotifications},
@@ -308,12 +308,12 @@ func TestPlugin_ExecuteCommand_Instance_Settings(t *testing.T) {
 		"set notifications without value": {
 			commandArgs:  &model.CommandArgs{Command: "/jira instance settings" + " notifications", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "`/jira settings notifications [assignee|mention|reporter|watching] [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
+			expectedMsg:  "`/jira settings notifications [assignee|mention|reporter|watching] [value]`\n* Invalid command args.",
 		},
 		"set notification with unknown value": {
 			commandArgs:  &model.CommandArgs{Command: "/jira instance settings notifications test", UserId: mockUserIDWithoutNotifications},
 			numInstances: 1,
-			expectedMsg:  "`/jira settings notifications [assignee|mention|reporter|watching] [value]`\n* Invalid value. Accepted values are: `on` or `off`.",
+			expectedMsg:  "`/jira settings notifications [assignee|mention|reporter|watching] [value]`\n* Invalid command args.",
 		},
 		"enable assignee notifications": {
 			commandArgs:  &model.CommandArgs{Command: "/jira instance settings notifications assignee on", UserId: mockUserIDWithoutNotifications},

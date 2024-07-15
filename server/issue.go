@@ -1108,7 +1108,7 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 	jwhook := wh.JiraWebhook
 	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
 	commentMessage := fmt.Sprintf(
-		"%s **commented** on %s:\n> %s\n\n*Because you are watching this %s*",
+		"%s **commented** on %s:\n> %s\n\n*You are watching this %s*",
 		commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body, jwhook.mdIssueType(),
 	)
 	client, connection, err := wh.fetchConnectedUser(p, instanceID)
@@ -1151,7 +1151,7 @@ func (p *Plugin) applyReporterNotification(wh *webhook, instanceID types.ID, rep
 
 	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
 	commentMessage := fmt.Sprintf(
-		"%s **commented** on %s:\n> %s\n\n*Because you reported this %s*",
+		"%s **commented** on %s:\n> %s\n\n*You reported this %s*",
 		commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body, jwhook.mdIssueType(),
 	)
 
