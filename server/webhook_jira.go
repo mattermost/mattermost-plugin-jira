@@ -54,6 +54,15 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 
 			jwh.Issue = *issue
 		} else if instance, ok := instance.(*cloudOAuthInstance); ok {
+			if p.getConfig().AdminAPIToken != "" {
+				issue, err := p.GetIssueDataWithAPIToken(jwh.Issue.Key, instance.GetID().String())
+				if err != nil {
+					return err
+				}
+
+				jwh.Issue = *issue
+				return nil
+			}
 			accountID := jwh.Comment.Author.AccountID
 			if jwh.WebhookEvent == issueCreated {
 				accountID = jwh.Issue.Fields.Creator.AccountID

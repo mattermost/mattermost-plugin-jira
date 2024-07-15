@@ -81,6 +81,9 @@ type externalConfig struct {
 
 	// Display subscription name in notifications
 	DisplaySubscriptionNameInNotifications bool
+
+	// This token is used to fetch some extra details for a Jira issue for comment related and 'issue created' subscription events
+	AdminAPIToken string
 }
 
 const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb

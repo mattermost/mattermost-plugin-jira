@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -1092,5 +1093,34 @@ func (p *Plugin) GetIssueByKey(instanceID, mattermostUserID types.ID, issueKey s
 			return nil, errors.WithMessage(err, "request to Jira failed")
 		}
 	}
+	return issue, nil
+}
+
+func (p *Plugin) GetIssueDataWithAPIToken(issueID string, instanceID string) (*jira.Issue, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/rest/api/2/issue/%s", instanceID, issueID), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", p.getConfig().AdminAPIToken))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	issue := &jira.Issue{}
+	if err = json.Unmarshal(body, issue); err != nil {
+		return nil, err
+	}
+
 	return issue, nil
 }

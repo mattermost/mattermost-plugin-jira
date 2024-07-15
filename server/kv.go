@@ -182,6 +182,11 @@ func (store store) LoadMattermostUserID(instanceID types.ID, jiraUserNameOrID st
 		return "", errors.Wrapf(err,
 			"failed to load Mattermost user ID for Jira user/ID: "+jiraUserNameOrID)
 	}
+
+	if mattermostUserID == "" {
+		return "", errors.Errorf("failed to load Mattermost user ID for Jira user/ID: " + jiraUserNameOrID)
+	}
+
 	return mattermostUserID, nil
 }
 

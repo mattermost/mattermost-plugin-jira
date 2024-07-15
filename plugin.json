@@ -113,6 +113,14 @@
                 "help_text": "Display subscription name in post when a subscription posts to a channel",
                 "placeholder": "",
                 "default": false
+            },
+            {
+                "key": "AdminAPIToken",
+                "display_name": "Admin API Token",
+                "type": "text",
+                "help_text": "This token is used to fetch some extra details for a Jira issue for comment related and 'issue created' subscription events.",
+                "placeholder": "",
+                "default": ""
             }
         ]
     }
