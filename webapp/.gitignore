@@ -1,4 +1,4 @@
 build
 node_modules
 .npminstall
-./juint.wml
+junit.xml
