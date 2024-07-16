@@ -1,103 +1,145 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="79" failures="0" errors="0" time="7.906">
-  <testsuite name="components/EditChannelSubscription" errors="0" failures="0" skipped="0" timestamp="2024-07-08T08:42:13" time="2.148" tests="16">
+<testsuites name="jest tests" tests="79" failures="0" errors="0" time="7.378">
+  <testsuite name="components/EditChannelSubscription" errors="0" failures="0" skipped="0" timestamp="2024-07-16T08:29:51" time="1.925" tests="16">
     <testcase classname="components/EditChannelSubscription should match snapshot" name="components/EditChannelSubscription should match snapshot" time="0.02">
     </testcase>
-    <testcase classname="components/EditChannelSubscription should match snapshot with no subscriptions" name="components/EditChannelSubscription should match snapshot with no subscriptions" time="0.002">
+    <testcase classname="components/EditChannelSubscription should match snapshot with no subscriptions" name="components/EditChannelSubscription should match snapshot with no subscriptions" time="0.003">
     </testcase>
-    <testcase classname="components/EditChannelSubscription should match snapshot with no issue metadata" name="components/EditChannelSubscription should match snapshot with no issue metadata" time="0.006">
+    <testcase classname="components/EditChannelSubscription should match snapshot with no issue metadata" name="components/EditChannelSubscription should match snapshot with no issue metadata" time="0.01">
     </testcase>
-    <testcase classname="components/EditChannelSubscription should match snapshot after fetching issue metadata" name="components/EditChannelSubscription should match snapshot after fetching issue metadata" time="0.025">
+    <testcase classname="components/EditChannelSubscription should match snapshot after fetching issue metadata" name="components/EditChannelSubscription should match snapshot after fetching issue metadata" time="0.026">
     </testcase>
-    <testcase classname="components/EditChannelSubscription should change project filter when chosen" name="components/EditChannelSubscription should change project filter when chosen" time="0.01">
+    <testcase classname="components/EditChannelSubscription should change project filter when chosen" name="components/EditChannelSubscription should change project filter when chosen" time="0.014">
     </testcase>
-    <testcase classname="components/EditChannelSubscription should show an error when a previously configured field is not in the issue metadata" name="components/EditChannelSubscription should show an error when a previously configured field is not in the issue metadata" time="0.007">
+    <testcase classname="components/EditChannelSubscription should show an error when a previously configured field is not in the issue metadata" name="components/EditChannelSubscription should show an error when a previously configured field is not in the issue metadata" time="0.012">
     </testcase>
-    <testcase classname="components/EditChannelSubscription should create a named subscription" name="components/EditChannelSubscription should create a named subscription" time="0.014">
+    <testcase classname="components/EditChannelSubscription should create a named subscription" name="components/EditChannelSubscription should create a named subscription" time="0.015">
     </testcase>
     <testcase classname="components/EditChannelSubscription SERVER - should create a subscription" name="components/EditChannelSubscription SERVER - should create a subscription" time="0.009">
     </testcase>
     <testcase classname="components/EditChannelSubscription should on submit, remove filters for configured fields that are not in the issue metadata" name="components/EditChannelSubscription should on submit, remove filters for configured fields that are not in the issue metadata" time="0.01">
     </testcase>
-    <testcase classname="components/EditChannelSubscription should edit a subscription" name="components/EditChannelSubscription should edit a subscription" time="0.015">
+    <testcase classname="components/EditChannelSubscription should edit a subscription" name="components/EditChannelSubscription should edit a subscription" time="0.017">
     </testcase>
-    <testcase classname="components/EditChannelSubscription should produce subscription error when add conflicting issue type" name="components/EditChannelSubscription should produce subscription error when add conflicting issue type" time="0.009">
+    <testcase classname="components/EditChannelSubscription should produce subscription error when add conflicting issue type" name="components/EditChannelSubscription should produce subscription error when add conflicting issue type" time="0.014">
     </testcase>
-    <testcase classname="components/EditChannelSubscription conflicting subscription error should get cleared" name="components/EditChannelSubscription conflicting subscription error should get cleared" time="0.022">
+    <testcase classname="components/EditChannelSubscription conflicting subscription error should get cleared" name="components/EditChannelSubscription conflicting subscription error should get cleared" time="0.031">
     </testcase>
-    <testcase classname="components/EditChannelSubscription should not create when choices are blank" name="components/EditChannelSubscription should not create when choices are blank" time="0.012">
+    <testcase classname="components/EditChannelSubscription should not create when choices are blank" name="components/EditChannelSubscription should not create when choices are blank" time="0.013">
     </testcase>
-    <testcase classname="components/EditChannelSubscription should hide the delete button when no subscription is present" name="components/EditChannelSubscription should hide the delete button when no subscription is present" time="0.005">
+    <testcase classname="components/EditChannelSubscription should hide the delete button when no subscription is present" name="components/EditChannelSubscription should hide the delete button when no subscription is present" time="0.007">
     </testcase>
-    <testcase classname="components/EditChannelSubscription should delete subscription" name="components/EditChannelSubscription should delete subscription" time="0.01">
+    <testcase classname="components/EditChannelSubscription should delete subscription" name="components/EditChannelSubscription should delete subscription" time="0.012">
     </testcase>
-    <testcase classname="components/EditChannelSubscription should show error if delete fails" name="components/EditChannelSubscription should show error if delete fails" time="0.013">
+    <testcase classname="components/EditChannelSubscription should show error if delete fails" name="components/EditChannelSubscription should show error if delete fails" time="0.017">
     </testcase>
   </testsuite>
-  <testsuite name="components/ChannelSettingsModal" errors="0" failures="0" skipped="0" timestamp="2024-07-08T08:42:15" time="0.529" tests="2">
-    <testcase classname="components/ChannelSettingsModal modal only shows when channel is present" name="components/ChannelSettingsModal modal only shows when channel is present" time="0.035">
+  <testsuite name="components/ChannelSettingsModal" errors="0" failures="0" skipped="0" timestamp="2024-07-16T08:29:53" time="0.562" tests="2">
+    <testcase classname="components/ChannelSettingsModal modal only shows when channel is present" name="components/ChannelSettingsModal modal only shows when channel is present" time="0.04">
     </testcase>
     <testcase classname="components/ChannelSettingsModal error fetching channel subscriptions, should close modal and show ephemeral message" name="components/ChannelSettingsModal error fetching channel subscriptions, should close modal and show ephemeral message" time="0.008">
     </testcase>
   </testsuite>
-  <testsuite name="components/CreateIssue" errors="0" failures="0" skipped="0" timestamp="2024-07-08T08:42:15" time="0.545" tests="7">
-    <testcase classname="components/CreateIssue should match snapshot" name="components/CreateIssue should match snapshot" time="0.012">
+  <testsuite name="components/CreateIssue" errors="0" failures="0" skipped="0" timestamp="2024-07-16T08:29:54" time="0.532" tests="7">
+    <testcase classname="components/CreateIssue should match snapshot" name="components/CreateIssue should match snapshot" time="0.01">
     </testcase>
     <testcase classname="components/CreateIssue should match snapshot with no issue metadata" name="components/CreateIssue should match snapshot with no issue metadata" time="0.003">
     </testcase>
     <testcase classname="components/CreateIssue should match snapshot with no instance id" name="components/CreateIssue should match snapshot with no instance id" time="0.002">
     </testcase>
-    <testcase classname="components/CreateIssue should match snapshot with form filled" name="components/CreateIssue should match snapshot with form filled" time="0.019">
+    <testcase classname="components/CreateIssue should match snapshot with form filled" name="components/CreateIssue should match snapshot with form filled" time="0.016">
     </testcase>
-    <testcase classname="components/CreateIssue should match snapshot with error" name="components/CreateIssue should match snapshot with error" time="0.021">
+    <testcase classname="components/CreateIssue should match snapshot with error" name="components/CreateIssue should match snapshot with error" time="0.016">
     </testcase>
     <testcase classname="components/CreateIssue should call create prop to create an issue" name="components/CreateIssue should call create prop to create an issue" time="0.003">
     </testcase>
     <testcase classname="components/CreateIssue SERVER - should call create prop to create an issue" name="components/CreateIssue SERVER - should call create prop to create an issue" time="0.002">
     </testcase>
   </testsuite>
-  <testsuite name="components/ChannelSubscriptionFilter" errors="0" failures="0" skipped="0" timestamp="2024-07-08T08:42:16" time="0.541" tests="5">
-    <testcase classname="components/ChannelSubscriptionFilter should match snapshot" name="components/ChannelSubscriptionFilter should match snapshot" time="0.012">
-    </testcase>
-    <testcase classname="components/ChannelSubscriptionFilter should render JiraEpicSelector when Epic Link field is selected" name="components/ChannelSubscriptionFilter should render JiraEpicSelector when Epic Link field is selected" time="0.021">
-    </testcase>
-    <testcase classname="components/ChannelSubscriptionFilter should render correct inclusion captions for different include choices" name="components/ChannelSubscriptionFilter should render correct inclusion captions for different include choices" time="0.006">
-    </testcase>
-    <testcase classname="components/ChannelSubscriptionFilter checkFieldConflictError should return an error string when there is a conflict" name="components/ChannelSubscriptionFilter checkFieldConflictError should return an error string when there is a conflict" time="0.002">
-    </testcase>
-    <testcase classname="components/ChannelSubscriptionFilter checkInclusionError should return an error string when there is an invalid inclusion value" name="components/ChannelSubscriptionFilter checkInclusionError should return an error string when there is an invalid inclusion value" time="0.005">
+  <testsuite name="components/ChannelSubscriptionFilters" errors="0" failures="0" skipped="0" timestamp="2024-07-16T08:29:54" time="0.491" tests="1">
+    <testcase classname="components/ChannelSubscriptionFilters should match snapshot" name="components/ChannelSubscriptionFilters should match snapshot" time="0.011">
     </testcase>
   </testsuite>
-  <testsuite name="components/ChannelSubscriptionFilters" errors="0" failures="0" skipped="0" timestamp="2024-07-08T08:42:16" time="0.489" tests="1">
-    <testcase classname="components/ChannelSubscriptionFilters should match snapshot" name="components/ChannelSubscriptionFilters should match snapshot" time="0.013">
-    </testcase>
-  </testsuite>
-  <testsuite name="components/DisconnectModalForm" errors="0" failures="0" skipped="0" timestamp="2024-07-08T08:42:17" time="0.441" tests="3">
+  <testsuite name="components/DisconnectModalForm" errors="0" failures="0" skipped="0" timestamp="2024-07-16T08:29:55" time="0.399" tests="3">
     <testcase classname="components/DisconnectModalForm should match snapshot" name="components/DisconnectModalForm should match snapshot" time="0.008">
     </testcase>
-    <testcase classname="components/DisconnectModalForm should close modal and send ephemeral post on submit success" name="components/DisconnectModalForm should close modal and send ephemeral post on submit success" time="0.01">
+    <testcase classname="components/DisconnectModalForm should close modal and send ephemeral post on submit success" name="components/DisconnectModalForm should close modal and send ephemeral post on submit success" time="0.004">
     </testcase>
     <testcase classname="components/DisconnectModalForm should show error on submit fail" name="components/DisconnectModalForm should show error on submit fail" time="0.002">
     </testcase>
   </testsuite>
-  <testsuite name="components/ConnectModalForm" errors="0" failures="0" skipped="0" timestamp="2024-07-08T08:42:17" time="0.393" tests="3">
-    <testcase classname="components/ConnectModalForm should match snapshot" name="components/ConnectModalForm should match snapshot" time="0.013">
+  <testsuite name="components/ChannelSubscriptionFilter" errors="0" failures="0" skipped="0" timestamp="2024-07-16T08:29:55" time="0.478" tests="5">
+    <testcase classname="components/ChannelSubscriptionFilter should match snapshot" name="components/ChannelSubscriptionFilter should match snapshot" time="0.011">
+    </testcase>
+    <testcase classname="components/ChannelSubscriptionFilter should render JiraEpicSelector when Epic Link field is selected" name="components/ChannelSubscriptionFilter should render JiraEpicSelector when Epic Link field is selected" time="0.019">
+    </testcase>
+    <testcase classname="components/ChannelSubscriptionFilter should render correct inclusion captions for different include choices" name="components/ChannelSubscriptionFilter should render correct inclusion captions for different include choices" time="0.006">
+    </testcase>
+    <testcase classname="components/ChannelSubscriptionFilter checkFieldConflictError should return an error string when there is a conflict" name="components/ChannelSubscriptionFilter checkFieldConflictError should return an error string when there is a conflict" time="0.003">
+    </testcase>
+    <testcase classname="components/ChannelSubscriptionFilter checkInclusionError should return an error string when there is an invalid inclusion value" name="components/ChannelSubscriptionFilter checkInclusionError should return an error string when there is an invalid inclusion value" time="0.005">
+    </testcase>
+  </testsuite>
+  <testsuite name="components/ConnectModalForm" errors="0" failures="0" skipped="0" timestamp="2024-07-16T08:29:56" time="0.431" tests="3">
+    <testcase classname="components/ConnectModalForm should match snapshot" name="components/ConnectModalForm should match snapshot" time="0.009">
     </testcase>
     <testcase classname="components/ConnectModalForm should redirect on submit" name="components/ConnectModalForm should redirect on submit" time="0.003">
     </testcase>
     <testcase classname="components/ConnectModalForm should show error when user is already connected to instance" name="components/ConnectModalForm should show error when user is already connected to instance" time="0.002">
     </testcase>
   </testsuite>
-  <testsuite name="utils/jira_issue_metadata" errors="0" failures="0" skipped="0" timestamp="2024-07-08T08:42:18" time="0.35" tests="24">
-    <testcase classname="utils/jira_issue_metadata should return a list of fields" name="utils/jira_issue_metadata should return a list of fields" time="0.006">
+  <testsuite name="components/JiraEpicSelector" errors="0" failures="0" skipped="0" timestamp="2024-07-16T08:29:56" time="0.35" tests="2">
+    <testcase classname="components/JiraEpicSelector should match snapshot" name="components/JiraEpicSelector should match snapshot" time="0.019">
+    </testcase>
+    <testcase classname="components/JiraEpicSelector #searchIssues should call searchIssues" name="components/JiraEpicSelector #searchIssues should call searchIssues" time="0.004">
+    </testcase>
+  </testsuite>
+  <testsuite name="components/JiraInstanceAndProjectSelector" errors="0" failures="0" skipped="0" timestamp="2024-07-16T08:29:57" time="0.349" tests="6">
+    <testcase classname="components/JiraInstanceAndProjectSelector should match snapshot with one connected instance" name="components/JiraInstanceAndProjectSelector should match snapshot with one connected instance" time="0.009">
+    </testcase>
+    <testcase classname="components/JiraInstanceAndProjectSelector should match snapshot with two connected instances" name="components/JiraInstanceAndProjectSelector should match snapshot with two connected instances" time="0.003">
+    </testcase>
+    <testcase classname="components/JiraInstanceAndProjectSelector should match snapshot with a default instance selected" name="components/JiraInstanceAndProjectSelector should match snapshot with a default instance selected" time="0.002">
+    </testcase>
+    <testcase classname="components/JiraInstanceAndProjectSelector should assign the correct initial instance id" name="components/JiraInstanceAndProjectSelector should assign the correct initial instance id" time="0.004">
+    </testcase>
+    <testcase classname="components/JiraInstanceAndProjectSelector should use default field values after fetch" name="components/JiraInstanceAndProjectSelector should use default field values after fetch" time="0.002">
+    </testcase>
+    <testcase classname="components/JiraInstanceAndProjectSelector should pass error on failed fetch" name="components/JiraInstanceAndProjectSelector should pass error on failed fetch" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="components/jira_ticket_tooltip" errors="0" failures="0" skipped="0" timestamp="2024-07-16T08:29:57" time="0.305" tests="5">
+    <testcase classname="components/jira_ticket_tooltip getIssueKey should return the expected output when URL matches the first regex pattern" name="components/jira_ticket_tooltip getIssueKey should return the expected output when URL matches the first regex pattern" time="0.006">
+    </testcase>
+    <testcase classname="components/jira_ticket_tooltip getIssueKey should return the expected output when URL matches the second regex pattern" name="components/jira_ticket_tooltip getIssueKey should return the expected output when URL matches the second regex pattern" time="0.001">
+    </testcase>
+    <testcase classname="components/jira_ticket_tooltip getIssueKey should return null when URL does not match any pattern" name="components/jira_ticket_tooltip getIssueKey should return null when URL does not match any pattern" time="0.001">
+    </testcase>
+    <testcase classname="components/jira_ticket_tooltip getIssueKey should return null when the URL does not contain the ticket ID" name="components/jira_ticket_tooltip getIssueKey should return null when the URL does not contain the ticket ID" time="0">
+    </testcase>
+    <testcase classname="components/jira_ticket_tooltip getIssueKey should return null when no instance is connected" name="components/jira_ticket_tooltip getIssueKey should return null when no instance is connected" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="components/widgets/modals/FullScreenModal" errors="0" failures="0" skipped="0" timestamp="2024-07-16T08:29:57" time="0.316" tests="4">
+    <testcase classname="components/widgets/modals/FullScreenModal showing content" name="components/widgets/modals/FullScreenModal showing content" time="0.008">
+    </testcase>
+    <testcase classname="components/widgets/modals/FullScreenModal not showing content" name="components/widgets/modals/FullScreenModal not showing content" time="0.006">
+    </testcase>
+    <testcase classname="components/widgets/modals/FullScreenModal close on close icon click" name="components/widgets/modals/FullScreenModal close on close icon click" time="0.007">
+    </testcase>
+    <testcase classname="components/widgets/modals/FullScreenModal close on esc keypress" name="components/widgets/modals/FullScreenModal close on esc keypress" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="utils/jira_issue_metadata" errors="0" failures="0" skipped="0" timestamp="2024-07-16T08:29:58" time="0.335" tests="24">
+    <testcase classname="utils/jira_issue_metadata should return a list of fields" name="utils/jira_issue_metadata should return a list of fields" time="0.004">
     </testcase>
     <testcase classname="utils/jira_issue_metadata should return only the status field if there are no available values" name="utils/jira_issue_metadata should return only the status field if there are no available values" time="0.001">
     </testcase>
-    <testcase classname="utils/jira_issue_metadata should return options for multi-select options" name="utils/jira_issue_metadata should return options for multi-select options" time="0.001">
+    <testcase classname="utils/jira_issue_metadata should return options for multi-select options" name="utils/jira_issue_metadata should return options for multi-select options" time="0.002">
     </testcase>
     <testcase classname="utils/jira_issue_metadata should return options for single-select options" name="utils/jira_issue_metadata should return options for single-select options" time="0.001">
     </testcase>
-    <testcase classname="utils/jira_issue_metadata should return options for priority" name="utils/jira_issue_metadata should return options for priority" time="0.001">
+    <testcase classname="utils/jira_issue_metadata should return options for priority" name="utils/jira_issue_metadata should return options for priority" time="0.002">
     </testcase>
     <testcase classname="utils/jira_issue_metadata should return options for fix version" name="utils/jira_issue_metadata should return options for fix version" time="0.001">
     </testcase>
@@ -105,83 +147,41 @@
     </testcase>
     <testcase classname="utils/jira_issue_metadata getStatusField should return options for statuses for selected issue types only" name="utils/jira_issue_metadata getStatusField should return options for statuses for selected issue types only" time="0.001">
     </testcase>
-    <testcase classname="utils/jira_issue_metadata getStatusField should return options for statuses for all issue types if no issue type is selected" name="utils/jira_issue_metadata getStatusField should return options for statuses for all issue types if no issue type is selected" time="0.001">
+    <testcase classname="utils/jira_issue_metadata getStatusField should return options for statuses for all issue types if no issue type is selected" name="utils/jira_issue_metadata getStatusField should return options for statuses for all issue types if no issue type is selected" time="0.005">
     </testcase>
     <testcase classname="utils/jira_issue_metadata getStatusField should return null for statuses if statuses information is empty" name="utils/jira_issue_metadata getStatusField should return null for statuses if statuses information is empty" time="0.001">
     </testcase>
     <testcase classname="utils/jira_issue_metadata should return options with a `userDefined` flag for array of strings" name="utils/jira_issue_metadata should return options with a `userDefined` flag for array of strings" time="0.001">
     </testcase>
-    <testcase classname="utils/jira_issue_metadata getConflictingFields should return a list of fields with conflicts" name="utils/jira_issue_metadata getConflictingFields should return a list of fields with conflicts" time="0.005">
+    <testcase classname="utils/jira_issue_metadata getConflictingFields should return a list of fields with conflicts" name="utils/jira_issue_metadata getConflictingFields should return a list of fields with conflicts" time="0.001">
     </testcase>
-    <testcase classname="utils/jira_issue_metadata generateJQLFromSubscriptionFilters no values selected" name="utils/jira_issue_metadata generateJQLFromSubscriptionFilters no values selected" time="0.001">
+    <testcase classname="utils/jira_issue_metadata generateJQLFromSubscriptionFilters no values selected" name="utils/jira_issue_metadata generateJQLFromSubscriptionFilters no values selected" time="0">
     </testcase>
     <testcase classname="utils/jira_issue_metadata generateJQLFromSubscriptionFilters project and issue types are selected" name="utils/jira_issue_metadata generateJQLFromSubscriptionFilters project and issue types are selected" time="0.001">
     </testcase>
-    <testcase classname="utils/jira_issue_metadata generateJQLFromSubscriptionFilters multiple issue types selected" name="utils/jira_issue_metadata generateJQLFromSubscriptionFilters multiple issue types selected" time="0">
+    <testcase classname="utils/jira_issue_metadata generateJQLFromSubscriptionFilters multiple issue types selected" name="utils/jira_issue_metadata generateJQLFromSubscriptionFilters multiple issue types selected" time="0.001">
     </testcase>
     <testcase classname="utils/jira_issue_metadata generateJQLFromSubscriptionFilters INCLUDE ANY selected, no values chosen" name="utils/jira_issue_metadata generateJQLFromSubscriptionFilters INCLUDE ANY selected, no values chosen" time="0.001">
     </testcase>
     <testcase classname="utils/jira_issue_metadata generateJQLFromSubscriptionFilters INCLUDE ANY selected, one value chosen" name="utils/jira_issue_metadata generateJQLFromSubscriptionFilters INCLUDE ANY selected, one value chosen" time="0.001">
     </testcase>
-    <testcase classname="utils/jira_issue_metadata generateJQLFromSubscriptionFilters INCLUDE ANY selected, two values chosen" name="utils/jira_issue_metadata generateJQLFromSubscriptionFilters INCLUDE ANY selected, two values chosen" time="0">
+    <testcase classname="utils/jira_issue_metadata generateJQLFromSubscriptionFilters INCLUDE ANY selected, two values chosen" name="utils/jira_issue_metadata generateJQLFromSubscriptionFilters INCLUDE ANY selected, two values chosen" time="0.001">
     </testcase>
     <testcase classname="utils/jira_issue_metadata generateJQLFromSubscriptionFilters INCLUDE ANY selected, values for multiple fields" name="utils/jira_issue_metadata generateJQLFromSubscriptionFilters INCLUDE ANY selected, values for multiple fields" time="0">
     </testcase>
-    <testcase classname="utils/jira_issue_metadata generateJQLFromSubscriptionFilters EXCLUDE ANY selected, two values chosen" name="utils/jira_issue_metadata generateJQLFromSubscriptionFilters EXCLUDE ANY selected, two values chosen" time="0.001">
+    <testcase classname="utils/jira_issue_metadata generateJQLFromSubscriptionFilters EXCLUDE ANY selected, two values chosen" name="utils/jira_issue_metadata generateJQLFromSubscriptionFilters EXCLUDE ANY selected, two values chosen" time="0">
     </testcase>
     <testcase classname="utils/jira_issue_metadata generateJQLFromSubscriptionFilters INCLUDE ALL selected, two values chosen" name="utils/jira_issue_metadata generateJQLFromSubscriptionFilters INCLUDE ALL selected, two values chosen" time="0.001">
     </testcase>
-    <testcase classname="utils/jira_issue_metadata generateJQLFromSubscriptionFilters EMPTY inclusion chosen" name="utils/jira_issue_metadata generateJQLFromSubscriptionFilters EMPTY inclusion chosen" time="0">
+    <testcase classname="utils/jira_issue_metadata generateJQLFromSubscriptionFilters EMPTY inclusion chosen" name="utils/jira_issue_metadata generateJQLFromSubscriptionFilters EMPTY inclusion chosen" time="0.001">
     </testcase>
-    <testcase classname="utils/jira_issue_metadata getJiraTicketDetails should return the ticket details with all fields" name="utils/jira_issue_metadata getJiraTicketDetails should return the ticket details with all fields" time="0">
+    <testcase classname="utils/jira_issue_metadata getJiraTicketDetails should return the ticket details with all fields" name="utils/jira_issue_metadata getJiraTicketDetails should return the ticket details with all fields" time="0.001">
     </testcase>
-    <testcase classname="utils/jira_issue_metadata getJiraTicketDetails should return the ticket details with empty assignee fields when assignee is null" name="utils/jira_issue_metadata getJiraTicketDetails should return the ticket details with empty assignee fields when assignee is null" time="0.001">
-    </testcase>
-  </testsuite>
-  <testsuite name="components/JiraEpicSelector" errors="0" failures="0" skipped="0" timestamp="2024-07-08T08:42:18" time="0.369" tests="2">
-    <testcase classname="components/JiraEpicSelector should match snapshot" name="components/JiraEpicSelector should match snapshot" time="0.021">
-    </testcase>
-    <testcase classname="components/JiraEpicSelector #searchIssues should call searchIssues" name="components/JiraEpicSelector #searchIssues should call searchIssues" time="0.004">
+    <testcase classname="utils/jira_issue_metadata getJiraTicketDetails should return the ticket details with empty assignee fields when assignee is null" name="utils/jira_issue_metadata getJiraTicketDetails should return the ticket details with empty assignee fields when assignee is null" time="0">
     </testcase>
   </testsuite>
-  <testsuite name="components/JiraInstanceAndProjectSelector" errors="0" failures="0" skipped="0" timestamp="2024-07-08T08:42:19" time="0.369" tests="6">
-    <testcase classname="components/JiraInstanceAndProjectSelector should match snapshot with one connected instance" name="components/JiraInstanceAndProjectSelector should match snapshot with one connected instance" time="0.009">
-    </testcase>
-    <testcase classname="components/JiraInstanceAndProjectSelector should match snapshot with two connected instances" name="components/JiraInstanceAndProjectSelector should match snapshot with two connected instances" time="0.003">
-    </testcase>
-    <testcase classname="components/JiraInstanceAndProjectSelector should match snapshot with a default instance selected" name="components/JiraInstanceAndProjectSelector should match snapshot with a default instance selected" time="0.003">
-    </testcase>
-    <testcase classname="components/JiraInstanceAndProjectSelector should assign the correct initial instance id" name="components/JiraInstanceAndProjectSelector should assign the correct initial instance id" time="0.004">
-    </testcase>
-    <testcase classname="components/JiraInstanceAndProjectSelector should use default field values after fetch" name="components/JiraInstanceAndProjectSelector should use default field values after fetch" time="0.003">
-    </testcase>
-    <testcase classname="components/JiraInstanceAndProjectSelector should pass error on failed fetch" name="components/JiraInstanceAndProjectSelector should pass error on failed fetch" time="0.002">
-    </testcase>
-  </testsuite>
-  <testsuite name="components/widgets/modals/FullScreenModal" errors="0" failures="0" skipped="0" timestamp="2024-07-08T08:42:19" time="0.361" tests="4">
-    <testcase classname="components/widgets/modals/FullScreenModal showing content" name="components/widgets/modals/FullScreenModal showing content" time="0.009">
-    </testcase>
-    <testcase classname="components/widgets/modals/FullScreenModal not showing content" name="components/widgets/modals/FullScreenModal not showing content" time="0.002">
-    </testcase>
-    <testcase classname="components/widgets/modals/FullScreenModal close on close icon click" name="components/widgets/modals/FullScreenModal close on close icon click" time="0.009">
-    </testcase>
-    <testcase classname="components/widgets/modals/FullScreenModal close on esc keypress" name="components/widgets/modals/FullScreenModal close on esc keypress" time="0.002">
-    </testcase>
-  </testsuite>
-  <testsuite name="components/jira_ticket_tooltip" errors="0" failures="0" skipped="0" timestamp="2024-07-08T08:42:19" time="0.338" tests="5">
-    <testcase classname="components/jira_ticket_tooltip getIssueKey should return the expected output when URL matches the first regex pattern" name="components/jira_ticket_tooltip getIssueKey should return the expected output when URL matches the first regex pattern" time="0.005">
-    </testcase>
-    <testcase classname="components/jira_ticket_tooltip getIssueKey should return the expected output when URL matches the second regex pattern" name="components/jira_ticket_tooltip getIssueKey should return the expected output when URL matches the second regex pattern" time="0.001">
-    </testcase>
-    <testcase classname="components/jira_ticket_tooltip getIssueKey should return null when URL does not match any pattern" name="components/jira_ticket_tooltip getIssueKey should return null when URL does not match any pattern" time="0.001">
-    </testcase>
-    <testcase classname="components/jira_ticket_tooltip getIssueKey should return null when the URL does not contain the ticket ID" name="components/jira_ticket_tooltip getIssueKey should return null when the URL does not contain the ticket ID" time="0.001">
-    </testcase>
-    <testcase classname="components/jira_ticket_tooltip getIssueKey should return null when no instance is connected" name="components/jira_ticket_tooltip getIssueKey should return null when no instance is connected" time="0.001">
-    </testcase>
-  </testsuite>
-  <testsuite name="undefined" errors="0" failures="0" skipped="0" timestamp="2024-07-08T08:42:20" time="0.272" tests="1">
-    <testcase classname=" Plugin manifest, id and version are defined" name=" Plugin manifest, id and version are defined" time="0.003">
+  <testsuite name="undefined" errors="0" failures="0" skipped="0" timestamp="2024-07-16T08:29:58" time="0.277" tests="1">
+    <testcase classname=" Plugin manifest, id and version are defined" name=" Plugin manifest, id and version are defined" time="0.002">
     </testcase>
   </testsuite>
 </testsuites>

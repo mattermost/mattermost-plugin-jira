@@ -82,7 +82,7 @@ type externalConfig struct {
 	// Display subscription name in notifications
 	DisplaySubscriptionNameInNotifications bool
 
-	// This token is used to fetch some extra details for a Jira issue for comment related and 'issue created' subscription events
+	// API token from Jira
 	AdminAPIToken string
 }
 

@@ -118,7 +118,7 @@
                 "key": "AdminAPIToken",
                 "display_name": "Admin API Token",
                 "type": "text",
-                "help_text": "This token is used to fetch some extra details for a Jira issue for comment related and 'issue created' subscription events.",
+                "help_text": "Set this [API token](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) to get notified for comment and issue created events even if the user triggering the event is not connected to Jira.\n **Note:** API token is preferred to be created using an admin Jira account. Otherwise, notification will not be delivered for the project the API token user does not have access to.     ",
                 "placeholder": "",
                 "default": ""
             }
