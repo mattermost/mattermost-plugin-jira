@@ -112,6 +112,16 @@ func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string 
 	return result
 }
 
+func HasSubscription(subscription ChannelSubscription, channelSubscriptions []ChannelSubscription) bool {
+	for _, sub := range channelSubscriptions {
+		if sub.ChannelID == subscription.ChannelID {
+			return true
+		}
+	}
+
+	return false
+}
+
 func parseJIRAUsernamesFromText(text string) []string {
 	usernameMap := map[string]bool{}
 	usernames := []string{}

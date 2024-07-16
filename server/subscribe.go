@@ -209,7 +209,9 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) ([]Chan
 	subIds := subs.Channel.ByID
 	for _, sub := range subIds {
 		if p.matchesSubsciptionFilters(wh, sub.Filters) {
-			channelSubscriptions = append(channelSubscriptions, sub)
+			if !HasSubscription(sub, channelSubscriptions) {
+				channelSubscriptions = append(channelSubscriptions, sub)
+			}
 		}
 	}
 
