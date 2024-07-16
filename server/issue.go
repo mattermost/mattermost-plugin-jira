@@ -1111,7 +1111,7 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 	}
 
 	if resp.Body == nil {
-		return nil, errors.Wrapf(err, "failed to get issue data. IssueID: %s", issueID)
+		return nil, errors.Wrapf(err, "missing data for issue. StatusCode: %d, IssueID: %s", resp.StatusCode, issueID)
 	}
 
 	defer resp.Body.Close()
@@ -1123,7 +1123,7 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 
 	issue := &jira.Issue{}
 	if err = json.Unmarshal(body, issue); err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshall issue data. IssueID: %s", issueID)
+		return nil, errors.Wrapf(err, "failed to unmarshal issue data. IssueID: %s", issueID)
 	}
 
 	return issue, nil
