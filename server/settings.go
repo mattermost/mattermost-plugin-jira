@@ -24,7 +24,12 @@ const (
 )
 
 func (connection *Connection) updateRolesForDMNotification(role, roleStatus string) (string, bool) {
-	if role != assigneeRole && role != mentionRole && role != reporterRole && role != watchingRole {
+	switch role {
+	case assigneeRole:
+	case mentionRole:
+	case reporterRole:
+	case watchingRole:
+	default:
 		return fmt.Sprintf("* Invalid role `%s`. Accepted roles are: `assignee`, `mention`, `reporter` or `watching`.", role), false
 	}
 
