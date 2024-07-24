@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
@@ -191,11 +192,12 @@ func mdUser(user *jira.User) string {
 }
 
 func truncate(s string, max int) string {
-	if len(s) <= max || max < 0 {
+	if utf8.RuneCountInString(s) <= max || max < 0 {
 		return s
 	}
+	runes := []rune(s)
 	if max > 3 {
-		return s[:max-3] + "..."
+		return string(runes[:max-3]) + "..."
 	}
-	return s[:max]
+	return string(runes[:max])
 }
