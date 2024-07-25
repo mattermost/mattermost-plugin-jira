@@ -6,7 +6,7 @@ import React from 'react';
 import debounce from 'debounce-promise';
 import AsyncSelect from 'react-select/async';
 
-import {Theme} from 'mattermost-redux/types/preferences';
+import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {IssueMetadata, ReactSelectOption} from 'types/model';
 

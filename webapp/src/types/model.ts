@@ -9,6 +9,27 @@ export type AllowedValue = {
     name?: string;
 };
 
+export enum JiraFieldCustomTypeEnums {
+    SPRINT = 'com.pyxis.greenhopper.jira:gh-sprint',
+    EPIC_LINK = 'com.pyxis.greenhopper.jira:gh-epic-link',
+    EPIC_NAME = 'com.pyxis.greenhopper.jira:gh-epic-label',
+    RANK = 'com.pyxis.greenhopper.jira:gh-lexo-rank',
+
+    CASCADING_SELECT = 'com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect',
+    TEXT_AREA = 'com.atlassian.jira.plugin.system.customfieldtypes:textarea',
+    TEXT_FIELD = 'com.atlassian.jira.plugin.system.customfieldtypes:textfield',
+    SELECT = 'com.atlassian.jira.plugin.system.customfieldtypes:select',
+    PROJECT = 'com.atlassian.jira.plugin.system.customfieldtypes:project',
+
+    MULTI_SELECT = 'com.atlassian.jira.plugin.system.customfieldtypes:multiselect',
+    RADIO_BUTTONS = 'com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons',
+    MULTI_CHECKBOXES = 'com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes',
+    URL_FIELD = 'com.atlassian.jira.plugin.system.customfieldtypes:url',
+
+    LABELS = 'com.atlassian.jira.plugin.system.customfieldtypes:labels',
+    USER_PICKER = 'com.atlassian.jira.plugin.system.customfieldtypes:userpicker',
+}
+
 export type FieldSchema = {
     type: string;
     system?: string;
@@ -65,6 +86,11 @@ export type Project = {
     issuetypes: IssueType[];
 }
 
+export type Status = {
+    id: string;
+    name: string;
+}
+
 export type IssueTypeWithStatuses = {
     id: string;
     name: string;
@@ -76,20 +102,15 @@ export type IssueMetadata = {
     issue_types_with_statuses: IssueTypeWithStatuses[];
 }
 
-export type Status = {
-    id: string;
-    name: string;
+export type SavedFieldValues = {
+    project_key?: string;
+    issue_type?: string;
 }
 
 export type ProjectMetadata = {
     projects: ReactSelectOption[];
     issues_per_project: {[key: string]: ReactSelectOption[]};
     saved_field_values?: SavedFieldValues;
-}
-
-export type SavedFieldValues = {
-    project_key?: string;
-    issue_type?: string;
 }
 
 export enum JiraFieldTypeEnums {
@@ -120,27 +141,6 @@ export type JiraUser = {
     displayName: string;
     active: boolean;
     timeZone: string;
-}
-
-export enum JiraFieldCustomTypeEnums {
-    SPRINT = 'com.pyxis.greenhopper.jira:gh-sprint',
-    EPIC_LINK = 'com.pyxis.greenhopper.jira:gh-epic-link',
-    EPIC_NAME = 'com.pyxis.greenhopper.jira:gh-epic-label',
-    RANK = 'com.pyxis.greenhopper.jira:gh-lexo-rank',
-
-    CASCADING_SELECT = 'com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect',
-    TEXT_AREA = 'com.atlassian.jira.plugin.system.customfieldtypes:textarea',
-    TEXT_FIELD = 'com.atlassian.jira.plugin.system.customfieldtypes:textfield',
-    SELECT = 'com.atlassian.jira.plugin.system.customfieldtypes:select',
-    PROJECT = 'com.atlassian.jira.plugin.system.customfieldtypes:project',
-
-    MULTI_SELECT = 'com.atlassian.jira.plugin.system.customfieldtypes:multiselect',
-    RADIO_BUTTONS = 'com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons',
-    MULTI_CHECKBOXES = 'com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes',
-    URL_FIELD = 'com.atlassian.jira.plugin.system.customfieldtypes:url',
-
-    LABELS = 'com.atlassian.jira.plugin.system.customfieldtypes:labels',
-    USER_PICKER = 'com.atlassian.jira.plugin.system.customfieldtypes:userpicker',
 }
 
 export enum FilterFieldInclusion {
