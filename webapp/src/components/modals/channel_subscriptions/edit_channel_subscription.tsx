@@ -349,7 +349,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
     render(): JSX.Element {
         const style = getModalStyles(this.props.theme);
 
-        const issueTypes = getIssueTypes(this.state.jiraIssueMetadata, this.state.filters.projects[0]);
+        const issueTypes = getIssueTypes(this.state.jiraIssueMetadata, this.state.filters.projects[0], {includeSubtasks: true});
         const issueOptions = issueTypes.map((it) => ({label: it.name, value: it.id}));
 
         const customFields = getCustomFieldValuesForEvents(this.state.jiraIssueMetadata, this.state.filters.projects);
