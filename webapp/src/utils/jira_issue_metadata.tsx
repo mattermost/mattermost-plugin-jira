@@ -176,7 +176,15 @@ const allowedArrayTypes = [
     'option', // multiselect
     'string', // labels
     'version', // fix and affects versions
+    'user',
 ];
+
+const allowedFieldTypes = [
+    'user',
+    'option',
+]
+
+const jiraPluginUrl = 'com.atlassian.jira.plugin.system.customfieldtypes'
 
 const avoidedCustomTypesForFilters: string[] = [
     JiraFieldCustomTypeEnums.SPRINT,
@@ -194,7 +202,7 @@ function isValidFieldForFilter(field: JiraField): boolean {
     }
 
     return allowedTypes.includes(type) || (custom && acceptedCustomTypesForFilters.includes(custom)) ||
-    type === 'option' || // single select
+    allowedFieldTypes.includes(type)||
     (type === 'array' && allowedArrayTypes.includes(items));
 }
 
@@ -255,6 +263,18 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
         } as FilterField;
     });
 
+    const userFields = fields.filter((field) => field.schema.type === 'user' && !field.allowedValues) as (StringArrayField & FieldWithInfo)[];
+    const populatedUserFields = userFields.map((field) => {
+        return {
+            key: field.key,
+            name: field.name,
+            schema: field.schema,
+            issueTypes: field.validIssueTypes,
+        } as FilterField;
+    });
+
+    const userResult = populatedFields.concat(populatedUserFields);
+
     const stringArrayFields = fields.filter((field) => field.schema.type === 'array' && field.schema.items === 'string' && !field.allowedValues) as (StringArrayField & FieldWithInfo)[];
     const userDefinedFields = stringArrayFields.map((field) => {
         return {
@@ -266,7 +286,7 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
         } as FilterField;
     });
 
-    const result = populatedFields.concat(userDefinedFields);
+    const result = userResult.concat(userDefinedFields);
     const epicLinkField = fields.find(isEpicLinkField);
     if (epicLinkField) {
         result.unshift({
@@ -322,7 +342,11 @@ export function isEpicLinkField(field: JiraField | FilterField): boolean {
 }
 
 export function isLabelField(field: JiraField | FilterField): boolean {
-    return field.schema.system === 'labels' || field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:labels';
+    return field.schema.system === 'labels' || field.schema.custom === `${jiraPluginUrl}:labels`;
+}
+
+export function isUserField(field: JiraField | FilterField): boolean {
+    return field.schema.type === 'user' || field.schema.custom === `${jiraPluginUrl}:userpicker`;
 }
 
 export function isEpicIssueType(issueType: IssueType): boolean {
