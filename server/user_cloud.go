@@ -5,14 +5,13 @@ package main
 
 import (
 	"net/http"
-	"path"
 	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
-	jwt "github.com/dgrijalva/jwt-go"
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -39,9 +38,9 @@ func (p *Plugin) httpACUserRedirect(w http.ResponseWriter, r *http.Request, inst
 		return respondErr(w, http.StatusBadRequest, err)
 	}
 
-	submitURL := path.Join(ci.Plugin.GetPluginURLPath(), instancePath(routeACUserConfirm, instanceID))
+	submitURL := p.CreateFullURLPath(instancePath(routeACUserConfirm, instanceID))
 
-	return ci.Plugin.respondTemplate(w, r, "text/html", struct {
+	return ci.Plugin.respondTemplate(w, r, ContentTypeHTML, struct {
 		SubmitURL  string
 		ArgJiraJWT string
 		ArgMMToken string
@@ -88,7 +87,7 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 
 	mmToken := r.FormValue(argMMToken)
 	connection := &Connection{
-		PluginVersion: Manifest.Version,
+		PluginVersion: manifest.Version,
 		User: jira.User{
 			AccountID:   accountID,
 			Key:         jUser.Key,
@@ -164,9 +163,9 @@ func (p *Plugin) httpACUserInteractive(w http.ResponseWriter, r *http.Request, i
 	}
 
 	// This set of props should work for all relevant routes/templates
-	connectSubmitURL := path.Join(p.GetPluginURLPath(), instancePath(routeACUserConnected, instanceID))
-	disconnectSubmitURL := path.Join(p.GetPluginURLPath(), instancePath(routeACUserDisconnected, instanceID))
-	return ci.Plugin.respondTemplate(w, r, "text/html", struct {
+	connectSubmitURL := p.CreateFullURLPath(instancePath(routeACUserConnected, instanceID))
+	disconnectSubmitURL := p.CreateFullURLPath(instancePath(routeACUserDisconnected, instanceID))
+	return ci.Plugin.respondTemplate(w, r, ContentTypeHTML, struct {
 		ConnectSubmitURL      string
 		DisconnectSubmitURL   string
 		ArgJiraJWT            string

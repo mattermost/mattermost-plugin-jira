@@ -10,7 +10,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
@@ -79,7 +79,7 @@ func (p *Plugin) httpOAuth2Complete(w http.ResponseWriter, r *http.Request, inst
 		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, fmt.Sprintf("Error occurred while connecting user. UserID: %s", mattermostUserID)))
 	}
 
-	return p.respondTemplate(w, r, "text/html", struct {
+	return p.respondTemplate(w, r, ContentTypeHTML, struct {
 		MattermostDisplayName string
 		JiraDisplayName       string
 		RevokeURL             string

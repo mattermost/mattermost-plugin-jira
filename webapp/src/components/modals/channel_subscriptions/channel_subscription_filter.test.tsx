@@ -8,13 +8,13 @@ import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
 import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 
-import {FilterFieldInclusion, IssueMetadata, FilterField} from 'types/model';
+import {FilterField, FilterFieldInclusion, IssueMetadata} from 'types/model';
 import {getCustomFieldFiltersForProjects, isEpicLinkField} from 'utils/jira_issue_metadata';
 
 import ChannelSubscriptionFilter, {Props} from './channel_subscription_filter';
 
 describe('components/ChannelSubscriptionFilter', () => {
-    const fields = getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key]);
+    const fields = getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key], []);
     const baseProps: Props = {
         theme: {},
         fields,
@@ -37,7 +37,7 @@ describe('components/ChannelSubscriptionFilter', () => {
     test('should match snapshot', () => {
         const props = {...baseProps, issueMetadata: {}};
         const wrapper = shallow<ChannelSubscriptionFilter>(
-            <ChannelSubscriptionFilter {...props}/>
+            <ChannelSubscriptionFilter {...props}/>,
         );
         expect(wrapper).toMatchSnapshot();
     });
@@ -45,7 +45,7 @@ describe('components/ChannelSubscriptionFilter', () => {
     test('should render JiraEpicSelector when Epic Link field is selected', () => {
         const props = {...baseProps};
         const wrapper = shallow<ChannelSubscriptionFilter>(
-            <ChannelSubscriptionFilter {...props}/>
+            <ChannelSubscriptionFilter {...props}/>,
         );
 
         expect(wrapper.find(JiraEpicSelector).length).toBe(0);
@@ -62,7 +62,7 @@ describe('components/ChannelSubscriptionFilter', () => {
         const props = {...baseProps};
 
         const wrapper = shallow<ChannelSubscriptionFilter>(
-            <ChannelSubscriptionFilter {...props}/>
+            <ChannelSubscriptionFilter {...props}/>,
         );
 
         const select = wrapper.find('ReactSelectSetting[name="inclusion"]');
@@ -97,7 +97,7 @@ describe('components/ChannelSubscriptionFilter', () => {
             },
         };
         const wrapper = shallow<ChannelSubscriptionFilter>(
-            <ChannelSubscriptionFilter {...props}/>
+            <ChannelSubscriptionFilter {...props}/>,
         );
 
         let result;
@@ -130,7 +130,7 @@ describe('components/ChannelSubscriptionFilter', () => {
             },
         };
         const wrapper = shallow<ChannelSubscriptionFilter>(
-            <ChannelSubscriptionFilter {...props}/>
+            <ChannelSubscriptionFilter {...props}/>,
         );
 
         let isValid;

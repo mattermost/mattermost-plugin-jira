@@ -8,12 +8,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -33,8 +34,13 @@ type Connection struct {
 	Oauth1AccessSecret string        `json:",omitempty"`
 	OAuth2Token        *oauth2.Token `json:",omitempty"`
 	Settings           *ConnectionSettings
-	DefaultProjectKey  string   `json:"default_project_key,omitempty"`
-	MattermostUserID   types.ID `json:"mattermost_user_id"`
+	SavedFieldValues   *SavedFieldValues `json:"saved_field_values,omitempty"`
+	MattermostUserID   types.ID          `json:"mattermost_user_id"`
+}
+
+type SavedFieldValues struct {
+	ProjectKey string `json:"project_key,omitempty"`
+	IssueType  string `json:"issue_type,omitempty"`
 }
 
 func (c *Connection) JiraAccountID() types.ID {
@@ -153,7 +159,7 @@ func (user *User) AsConfigMap() map[string]interface{} {
 	}
 }
 
-func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, projectKey string) {
+func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, savedValues *SavedFieldValues) {
 	user, err := p.userStore.LoadUser(mattermostUserID)
 	if err != nil {
 		return
@@ -174,8 +180,8 @@ func (p *Plugin) UpdateUserDefaults(mattermostUserID, instanceID types.ID, proje
 		}
 	}
 
-	if projectKey != "" && projectKey != connection.DefaultProjectKey {
-		connection.DefaultProjectKey = projectKey
+	if savedValues != nil {
+		connection.SavedFieldValues = savedValues
 		err = p.userStore.StoreConnection(instanceID, user.MattermostUserID, connection)
 		if err != nil {
 			return
@@ -280,4 +286,24 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 	p.TrackUserEvent("userDisconnected", user.MattermostUserID.String(), nil)
 
 	return conn, nil
+}
+
+func (p *Plugin) GetJiraUserFromMentions(instanceID types.ID, mentions model.UserMentionMap, userKey string) (*jira.User, error) {
+	userKey = strings.TrimPrefix(userKey, "@")
+	mentionUser, found := mentions[userKey]
+	if !found {
+		return nil, errors.New("the mentioned user was not found")
+	}
+
+	connection, err := p.userStore.LoadConnection(instanceID, types.ID(mentionUser))
+	if err != nil {
+		p.client.Log.Warn("Error occurred while loading connection", "User", mentionUser, "Error", err.Error())
+		return nil, errors.New("the mentioned user is not connected to Jira")
+	}
+
+	if connection.AccountID != "" {
+		return &connection.User, nil
+	}
+
+	return nil, errors.New("the mentioned user is not connected to Jira")
 }

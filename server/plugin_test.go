@@ -11,11 +11,11 @@ import (
 	"os"
 	"testing"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -112,7 +112,7 @@ func TestPlugin(t *testing.T) {
 			api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
 			api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 
-			api.On("KVGet", mock.AnythingOfTypeArgument("string")).Return(make([]byte, 0), (*model.AppError)(nil))
+			api.On("KVGet", mock.AnythingOfType("string")).Return(make([]byte, 0), (*model.AppError)(nil))
 			api.On("GetDirectChannel", mockAnythingOfTypeBatch("string", 2)...).Return(
 				&model.Channel{}, (*model.AppError)(nil))
 			api.On("GetUserByUsername", "theuser").Return(&model.User{

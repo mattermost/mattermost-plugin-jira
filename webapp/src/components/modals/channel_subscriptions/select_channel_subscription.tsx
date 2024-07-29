@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {ChannelSubscription, AllProjectMetadata} from 'types/model';
+import {AllProjectMetadata, ChannelSubscription} from 'types/model';
 
 import ConfirmModal from 'components/confirm_modal';
 
@@ -27,12 +27,12 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
 
     handleCancelDelete = (): void => {
         this.setState({showConfirmModal: false});
-    }
+    };
 
     handleConfirmDelete = (): void => {
         this.setState({showConfirmModal: false});
         this.deleteChannelSubscription(this.state.subscriptionToDelete);
-    }
+    };
 
     handleDeleteChannelSubscription = (sub: ChannelSubscription): void => {
         this.setState({
@@ -64,7 +64,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         }
 
         return projectKey;
-    }
+    };
 
     renderRow = (sub: ChannelSubscription): JSX.Element => {
         const projectName = this.getProjectName(sub);
@@ -110,7 +110,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                 </td>
             </tr>
         );
-    }
+    };
 
     render(): React.ReactElement {
         const {channel, channelSubscriptions, omitDisplayName} = this.props;
@@ -178,7 +178,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
 
         return (
             <div>
-                <div className='d-flex justify-content-between align-items-center margin-bottom x3'>
+                <div className='d-flex justify-content-between align-items-center margin-bottom x3 title-message'>
                     {titleMessage}
                     <button
                         className='btn btn-primary'

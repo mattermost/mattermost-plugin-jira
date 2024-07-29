@@ -7,12 +7,13 @@ import (
 	"sort"
 	"strings"
 
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-api/experimental/command"
-	"github.com/mattermost/mattermost-plugin-api/experimental/flow"
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin"
+	"github.com/mattermost/mattermost/server/public/pluginapi/experimental/command"
+	"github.com/mattermost/mattermost/server/public/pluginapi/experimental/flow"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
@@ -83,11 +84,9 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"Install Jira instances:\n" +
 	"* `/jira instance install server [jiraURL]` - Connect Mattermost to a Jira Server or Data Center instance located at <jiraURL>\n" +
 	"* `/jira instance install cloud-oauth [jiraURL]` - Connect Mattermost to a Jira Cloud instance using OAuth 2.0 located at <jiraURL>\n" +
-	"* `/jira instance install cloud [jiraURL]` - Connect Mattermost to a Jira Cloud instance located at <jiraURL>. (Deprecated. Please use `cloud-oauth` instead.)\n" +
 	"Uninstall Jira instances:\n" +
 	"* `/jira instance uninstall server [jiraURL]` - Disconnect Mattermost from a Jira Server or Data Center instance located at <jiraURL>\n" +
 	"* `/jira instance uninstall cloud-oauth [jiraURL]` - Disconnect Mattermost from a Jira Cloud instance using OAuth 2.0 located at <jiraURL>\n" +
-	"* `/jira instance uninstall cloud [jiraURL]` - Disconnect Mattermost from a Jira Cloud instance located at <jiraURL>\n" +
 	"Manage channel subscriptions:\n" +
 	"* `/jira subscribe ` - Configure the Jira notifications sent to this channel\n" +
 	"* `/jira subscribe list` - Display all the the subscription rules setup across all the channels and teams on your Mattermost instance\n" +
@@ -147,6 +146,9 @@ func addSubCommands(jira *model.AutocompleteData, optInstance bool) {
 	jira.AddCommand(createTransitionCommand(optInstance))
 	jira.AddCommand(createAssignCommand(optInstance))
 	jira.AddCommand(createUnassignCommand(optInstance))
+	jira.AddCommand(createConnectCommand())
+	jira.AddCommand(createDisconnectCommand())
+	jira.AddCommand(createSettingsCommand(optInstance))
 
 	// Generic commands
 	jira.AddCommand(createIssueCommand(optInstance))
@@ -175,17 +177,16 @@ func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 	jiraTypes := []model.AutocompleteListItem{
 		{HelpText: "Jira Server or Datacenter", Item: "server"},
 		{HelpText: "Jira Cloud OAuth 2.0 (atlassian.net)", Item: "cloud-oauth"},
-		{HelpText: "Jira Cloud (atlassian.net) (Deprecated. Please use cloud-oauth instead.)", Item: "cloud"},
 	}
 
 	install := model.NewAutocompleteData(
-		"install", "[cloud|server|cloud-oauth] [URL]", "Connect Mattermost to a Jira instance")
+		"install", "[server|cloud-oauth] [URL]", "Connect Mattermost to a Jira instance")
 	install.AddStaticListArgument("Jira type: server, cloud or cloud-oauth", true, jiraTypes)
 	install.AddTextArgument("Jira URL", "Enter the Jira URL, e.g. https://mattermost.atlassian.net", "")
 	install.RoleID = model.SystemAdminRoleId
 
 	uninstall := model.NewAutocompleteData(
-		"uninstall", "[cloud|server|cloud-oauth] [URL]", "Disconnect Mattermost from a Jira instance")
+		"uninstall", "[server|cloud-oauth] [URL]", "Disconnect Mattermost from a Jira instance")
 	uninstall.AddStaticListArgument("Jira type: server, cloud or cloud-oauth", true, jiraTypes)
 	uninstall.AddDynamicListArgument("Jira instance", makeAutocompleteRoute(routeAutocompleteInstalledInstance), true)
 	uninstall.RoleID = model.SystemAdminRoleId
@@ -668,7 +669,7 @@ func executeV2Revert(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 		preMessage = `#### Successfully reverted the V3 Jira plugin database to V2. The Jira plugin has been disabled.` + "\n"
 
 		go func() {
-			_ = p.client.Plugin.Disable(Manifest.Id)
+			_ = p.client.Plugin.Disable(manifest.Id)
 		}()
 	}
 	message := `**Please note that if you have multiple configured Jira instances this command will result in all non-legacy instances being removed.**
@@ -817,7 +818,7 @@ func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *mode
 		return p.help(header)
 	}
 
-	jiraURL, instance, err := p.installCloudOAuthInstance(args[0], "", "")
+	jiraURL, instance, err := p.installCloudOAuthInstance(args[0])
 	if err != nil {
 		return p.responsef(header, err.Error())
 	}
@@ -935,8 +936,15 @@ func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args
 	}
 	issueKey := strings.ToUpper(args[0])
 	userSearch := strings.Join(args[1:], " ")
+	var assignee *jira.User
+	if strings.HasPrefix(userSearch, "@") {
+		assignee, err = p.GetJiraUserFromMentions(instance.GetID(), header.UserMentions, userSearch)
+		if err != nil {
+			return p.responsef(header, "%v", err)
+		}
+	}
 
-	msg, err := p.AssignIssue(instance, types.ID(header.UserId), issueKey, userSearch)
+	msg, err := p.AssignIssue(instance, types.ID(header.UserId), issueKey, userSearch, assignee)
 	if err != nil {
 		return p.responsef(header, "%v", err)
 	}
@@ -1035,8 +1043,8 @@ func executeMe(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...
 
 			resp += connectionBullet(info.User.ConnectedInstances.Get(instanceID), connection, info.User.DefaultInstanceID == instanceID)
 			resp += fmt.Sprintf("   * %s\n", connection.Settings)
-			if connection.DefaultProjectKey != "" {
-				resp += fmt.Sprintf("   * Default project: `%s`\n", connection.DefaultProjectKey)
+			if connection.SavedFieldValues != nil && connection.SavedFieldValues.ProjectKey != "" {
+				resp += fmt.Sprintf("   * Default project: `%s`\n", connection.SavedFieldValues.ProjectKey)
 			}
 		}
 	}
@@ -1077,7 +1085,11 @@ func executeMe(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...
 }
 
 func executeAbout(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	text, err := command.BuildInfo(Manifest)
+	text, err := command.BuildInfo(model.Manifest{
+		Id:      manifest.Id,
+		Version: manifest.Version,
+		Name:    manifest.Name,
+	})
 	if err != nil {
 		text = errors.Wrap(err, "failed to get build info").Error()
 	}
@@ -1256,7 +1268,7 @@ func (p *Plugin) loadFlagUserInstance(mattermostUserID string, args []string) (*
 }
 
 func (p *Plugin) respondCommandTemplate(commandArgs *model.CommandArgs, path string, values interface{}) *model.CommandResponse {
-	t := p.templates[path]
+	t := p.textTemplates[path]
 	if t == nil {
 		return p.responsef(commandArgs, "no template found for "+path)
 	}

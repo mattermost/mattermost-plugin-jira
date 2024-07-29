@@ -13,10 +13,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -238,7 +238,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 				},
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
-				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe edit`\n\n#### Team 1 Display Name\n* **~channel-1-name** (1):\n\t* (1) jiraurl1\n\t\t* PROJ - Sub Name X"
+				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe edit`\n\n#### Team 1 Display Name\n* **~channel-1-name** (1):\n\t* (1) https://jiraurl1.com\n\t\t* PROJ - Sub Name X"
 				assert.Equal(t, expected, actual)
 			},
 		},
@@ -262,7 +262,7 @@ func TestListChannelSubscriptions(t *testing.T) {
 				},
 			}),
 			RunAssertions: func(t *testing.T, actual string) {
-				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe edit`\n\n#### Group and Direct Messages\n* **channel-2-name-DM** (1):\n\t* (1) jiraurl1\n\t\t* PROJ - Sub Name X"
+				expected := "The following channels have subscribed to Jira notifications. To modify a subscription, navigate to the channel and type `/jira subscribe edit`\n\n#### Group and Direct Messages\n* **channel-2-name-DM** (1):\n\t* (1) https://jiraurl1.com\n\t\t* PROJ - Sub Name X"
 				assert.Equal(t, expected, actual)
 			},
 		},

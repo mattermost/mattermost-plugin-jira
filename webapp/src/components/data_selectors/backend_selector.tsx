@@ -8,10 +8,9 @@ import AsyncSelect from 'react-select/async';
 
 import {Theme} from 'mattermost-redux/types/preferences';
 
-import {IssueMetadata, ReactSelectOption, JiraIssue, SearchIssueParams, APIResponse} from 'types/model';
+import {IssueMetadata, ReactSelectOption} from 'types/model';
 
 import {getStyleForReactSelect} from 'utils/styles';
-import {isEpicNameField, isEpicIssueType} from 'utils/jira_issue_metadata';
 
 import {Props as ReactSelectSettingProps} from 'components/react_select_setting';
 import Setting from 'components/setting';
@@ -112,7 +111,7 @@ export default class BackendSelector extends React.PureComponent<Props, State> {
         if (this.props.resetInvalidOnChange) {
             this.setState({invalid: false});
         }
-    }
+    };
 
     isValid = (): boolean => {
         if (!this.props.required) {
@@ -196,5 +195,5 @@ export default class BackendSelector extends React.PureComponent<Props, State> {
                 {validationError}
             </Setting>
         );
-    }
+    };
 }

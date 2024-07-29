@@ -80,10 +80,7 @@ exports[`components/EditChannelSubscription should match snapshot 1`] = `
           }
         }
       />
-      <Loading
-        position="relative"
-        style={Object {}}
-      />
+      <Loading />
     </div>
     <ConfirmModal
       cancelButtonText="Cancel"
@@ -98,8 +95,6 @@ exports[`components/EditChannelSubscription should match snapshot 1`] = `
     />
   </div>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -438,6 +433,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
               "value": "10002",
             },
             Object {
+              "label": "Sub-task",
+              "value": "10003",
+            },
+            Object {
               "label": "Story",
               "value": "10001",
             },
@@ -528,6 +527,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                   "name": "Task",
                 },
                 Object {
+                  "id": "10003",
+                  "name": "Sub-task",
+                },
+                Object {
                   "id": "10001",
                   "name": "Story",
                 },
@@ -554,6 +557,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                 Object {
                   "id": "10002",
                   "name": "Task",
+                },
+                Object {
+                  "id": "10003",
+                  "name": "Sub-task",
                 },
                 Object {
                   "id": "10001",
@@ -589,6 +596,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                   "name": "Task",
                 },
                 Object {
+                  "id": "10003",
+                  "name": "Sub-task",
+                },
+                Object {
                   "id": "10001",
                   "name": "Story",
                 },
@@ -615,6 +626,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                 Object {
                   "id": "10002",
                   "name": "Task",
+                },
+                Object {
+                  "id": "10003",
+                  "name": "Sub-task",
                 },
                 Object {
                   "id": "10001",
@@ -655,6 +670,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                   "name": "Task",
                 },
                 Object {
+                  "id": "10003",
+                  "name": "Sub-task",
+                },
+                Object {
                   "id": "10001",
                   "name": "Story",
                 },
@@ -682,6 +701,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                 Object {
                   "id": "10002",
                   "name": "Task",
+                },
+                Object {
+                  "id": "10003",
+                  "name": "Sub-task",
                 },
                 Object {
                   "id": "10001",
@@ -719,6 +742,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                 Object {
                   "id": "10002",
                   "name": "Task",
+                },
+                Object {
+                  "id": "10003",
+                  "name": "Sub-task",
                 },
                 Object {
                   "id": "10001",
@@ -759,6 +786,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                   "name": "Task",
                 },
                 Object {
+                  "id": "10003",
+                  "name": "Sub-task",
+                },
+                Object {
                   "id": "10001",
                   "name": "Story",
                 },
@@ -794,6 +825,10 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                 Object {
                   "id": "10002",
                   "name": "Task",
+                },
+                Object {
+                  "id": "10003",
+                  "name": "Sub-task",
                 },
                 Object {
                   "id": "10001",
@@ -837,12 +872,123 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                 },
               ],
             },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10002",
+                  "name": "Task",
+                },
+                Object {
+                  "id": "10003",
+                  "name": "Sub-task",
+                },
+                Object {
+                  "id": "10001",
+                  "name": "Story",
+                },
+                Object {
+                  "id": "10004",
+                  "name": "Bug",
+                },
+                Object {
+                  "id": "10000",
+                  "name": "Epic",
+                },
+              ],
+              "key": "status",
+              "name": "Status",
+              "schema": Object {
+                "type": "array",
+              },
+              "values": Array [
+                Object {
+                  "label": "TODO",
+                  "value": "1001",
+                },
+                Object {
+                  "label": "In Progress",
+                  "value": "1002",
+                },
+              ],
+            },
           ]
         }
         instanceID="https://something.atlassian.net"
         issueMetadata={
           Object {
             "expand": "projects",
+            "issue_types_with_statuses": Array [
+              Object {
+                "id": "10002",
+                "name": "Task",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                ],
+              },
+              Object {
+                "id": "10003",
+                "name": "Sub-task",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                  Object {
+                    "id": "1002",
+                    "name": "In Progress",
+                  },
+                ],
+              },
+              Object {
+                "id": "10001",
+                "name": "Story",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                  Object {
+                    "id": "1002",
+                    "name": "In Progress",
+                  },
+                ],
+              },
+              Object {
+                "id": "10004",
+                "name": "Bug",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                  Object {
+                    "id": "1002",
+                    "name": "In Progress",
+                  },
+                ],
+              },
+              Object {
+                "id": "10000",
+                "name": "Epic",
+                "statuses": Array [
+                  Object {
+                    "id": "1001",
+                    "name": "TODO",
+                  },
+                  Object {
+                    "id": "1002",
+                    "name": "In Progress",
+                  },
+                  Object {
+                    "id": "1003",
+                    "name": "Bug",
+                  },
+                ],
+              },
+            ],
             "projects": Array [
               Object {
                 "expand": "issuetypes",
@@ -3630,6 +3776,17 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
              that since you have not selected a security level filter, the subscription will only allow issues that have no security level assigned.
           </span>
         </div>
+        <div
+          className="channel-subscriptions-modal__learnMore"
+        >
+          <a
+            href="https://github.com/mattermost/mattermost-plugin-jira#create-a-channel-subscription"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Learn More
+          </a>
+        </div>
       </div>
     </div>
     <ConfirmModal
@@ -3645,8 +3802,6 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
     />
   </div>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -3766,10 +3921,7 @@ exports[`components/EditChannelSubscription should match snapshot with no issue 
           }
         }
       />
-      <Loading
-        position="relative"
-        style={Object {}}
-      />
+      <Loading />
     </div>
     <ConfirmModal
       cancelButtonText="Cancel"
@@ -3784,8 +3936,6 @@ exports[`components/EditChannelSubscription should match snapshot with no issue 
     />
   </div>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -3907,8 +4057,6 @@ exports[`components/EditChannelSubscription should match snapshot with no subscr
     </div>
   </div>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",
@@ -4028,10 +4176,7 @@ exports[`components/EditChannelSubscription should produce subscription error wh
           }
         }
       />
-      <Loading
-        position="relative"
-        style={Object {}}
-      />
+      <Loading />
     </div>
     <ConfirmModal
       cancelButtonText="Cancel"
@@ -4046,8 +4191,6 @@ exports[`components/EditChannelSubscription should produce subscription error wh
     />
   </div>
   <ModalFooter
-    bsClass="modal-footer"
-    componentClass="div"
     style={
       Object {
         "padding": "2rem 15px",

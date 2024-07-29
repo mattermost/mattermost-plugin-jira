@@ -3,9 +3,9 @@ package main
 import (
 	"testing"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/stretchr/testify/require"
 )
 
@@ -54,8 +54,8 @@ func TestMigrateV2Instances(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
-			api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
-			api.On("LogDebug", mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogError", mock.AnythingOfType("string")).Return(nil)
+			api.On("LogDebug", mock.AnythingOfType("string")).Return(nil)
 
 			api.On("KVGet", keyInstances).Return(nil, nil)
 			api.On("KVGet", v2keyKnownJiraInstances).Return([]byte(tc.known), nil)
@@ -86,7 +86,7 @@ func TestMigrateV2Instances(t *testing.T) {
 			p.client = pluginapi.NewClient(api, p.Driver)
 			store := NewStore(p)
 			p.instanceStore = store
-			Manifest.Version = "3.0.0"
+			manifest.Version = "3.0.0"
 
 			instances, err := MigrateV2Instances(p)
 			require.NoError(t, err)
@@ -129,8 +129,8 @@ func TestMigrateV3InstancesToV2(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
-			api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
-			api.On("LogDebug", mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogError", mock.AnythingOfType("string")).Return(nil)
+			api.On("LogDebug", mock.AnythingOfType("string")).Return(nil)
 
 			api.On("KVGet", keyInstances).Return([]byte(tc.v3Instances), nil)
 

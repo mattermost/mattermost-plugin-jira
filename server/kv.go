@@ -13,7 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -137,7 +137,7 @@ func (store store) StoreConnection(instanceID, mattermostUserID types.ID, connec
 			fmt.Sprintf("failed to store connection, mattermostUserID:%s, Jira user:%s", mattermostUserID, connection.DisplayName))
 	}()
 
-	connection.PluginVersion = Manifest.Version
+	connection.PluginVersion = manifest.Version
 	connection.MattermostUserID = mattermostUserID
 
 	err := store.set(keyWithInstanceID(instanceID, mattermostUserID), connection)
@@ -157,8 +157,8 @@ func (store store) StoreConnection(instanceID, mattermostUserID types.ID, connec
 		return err
 	}
 
-	store.plugin.debugf("Stored: connection, keys:\n\t%s (%s): %+v\n\t%s (%s): %s",
-		keyWithInstanceID(instanceID, mattermostUserID), mattermostUserID, connection,
+	store.plugin.debugf("Stored: connection, keys:\n\t%s (%s): %s\n\t%s (%s): %s",
+		keyWithInstanceID(instanceID, mattermostUserID), mattermostUserID, connection.DisplayName,
 		keyWithInstanceID(instanceID, connection.JiraAccountID()), connection.JiraAccountID(), mattermostUserID)
 
 	return nil
@@ -171,7 +171,7 @@ func (store store) LoadConnection(instanceID, mattermostUserID types.ID) (*Conne
 		return nil, errors.Wrapf(err,
 			"failed to load connection for Mattermost user ID:%q, Jira:%q", mattermostUserID, instanceID)
 	}
-	c.PluginVersion = Manifest.Version
+	c.PluginVersion = manifest.Version
 	return c, nil
 }
 
@@ -224,7 +224,7 @@ func (store store) StoreUser(user *User) (returnErr error) {
 			fmt.Sprintf("failed to store user, mattermostUserId:%s", user.MattermostUserID))
 	}()
 
-	user.PluginVersion = Manifest.Version
+	user.PluginVersion = manifest.Version
 
 	key := hashkey(prefixUser, user.MattermostUserID.String())
 	err := store.set(key, user)
@@ -445,7 +445,7 @@ func (store *store) CreateInactiveCloudInstance(jiraURL types.ID, actingUserID s
 	if err != nil {
 		return errors.WithMessagef(err, "failed to store new Jira Cloud instance:%s", jiraURL)
 	}
-	ci.PluginVersion = Manifest.Version
+	ci.PluginVersion = manifest.Version
 
 	// Expire in 15 minutes
 	key := hashkey(prefixInstance, ci.GetURL())
@@ -500,6 +500,13 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 		if err := json.Unmarshal(data, &ci); err != nil {
 			return nil, errors.WithMessage(err, fmt.Sprintf("failed to unmarshal stored instance %s", fullkey))
 		}
+		if ci.JWTInstance != nil {
+			if err := json.Unmarshal([]byte(ci.JWTInstance.RawAtlassianSecurityContext), &ci.JWTInstance.AtlassianSecurityContext); err != nil {
+				return nil, errors.WithMessage(err, fmt.Sprintf("failed to unmarshal stored instance %s", fullkey))
+			}
+
+			ci.JWTInstance.Common().Plugin = store.plugin
+		}
 		ci.Plugin = store.plugin
 		return &ci, nil
 
@@ -513,7 +520,7 @@ func (store *store) LoadInstanceFullKey(fullkey string) (Instance, error) {
 
 func (store *store) StoreInstance(instance Instance) error {
 	kv := kvstore.NewStore(kvstore.NewPluginStore(store.plugin.client))
-	instance.Common().PluginVersion = Manifest.Version
+	instance.Common().PluginVersion = manifest.Version
 	return kv.Entity(prefixInstance).Store(instance.GetID(), instance)
 }
 
@@ -586,7 +593,7 @@ func MigrateV2Instances(p *Plugin) (*Instances, error) {
 	instances = NewInstances()
 	for k, v := range v2instances {
 		instances.Set(&InstanceCommon{
-			PluginVersion: Manifest.Version,
+			PluginVersion: manifest.Version,
 			InstanceID:    types.ID(k),
 			Type:          InstanceType(v),
 		})
