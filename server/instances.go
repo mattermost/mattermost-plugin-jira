@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -417,7 +418,7 @@ func (p *Plugin) httpAutocompleteInstalledInstanceWithAlias(w http.ResponseWrite
 	}
 
 	for _, instanceID := range info.Instances.IDs() {
-		item := instances.getAlias(instanceID)
+		item := fmt.Sprintf("%s(%s)", instances.getAlias(instanceID), instanceID)
 		if item == "" {
 			item = string(instanceID)
 		}

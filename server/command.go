@@ -229,7 +229,7 @@ func withParamIssueKey(cmd *model.AutocompleteData) {
 func createConnectCommand() *model.AutocompleteData {
 	connect := model.NewAutocompleteData(
 		"connect", "", "Connect your Mattermost account to your Jira account")
-	connect.AddDynamicListArgument("Jira URL", makeAutocompleteRoute(routeAutocompleteConnect), false)
+	connect.AddDynamicListArgument("Jira URL", makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias), false)
 	return connect
 }
 
