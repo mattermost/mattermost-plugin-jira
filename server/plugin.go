@@ -83,7 +83,7 @@ type externalConfig struct {
 	DisplaySubscriptionNameInNotifications bool
 }
 
-const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb
+const defaultMaxAttachmentSize = utils.ByteSize(100 * 1024 * 1024) // 10Mb
 
 type config struct {
 	// externalConfig caches values from the plugin's settings in the server's config.json
