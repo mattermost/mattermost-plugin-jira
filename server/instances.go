@@ -418,11 +418,14 @@ func (p *Plugin) httpAutocompleteInstalledInstanceWithAlias(w http.ResponseWrite
 
 	for _, instanceID := range info.Instances.IDs() {
 		item := instances.getAlias(instanceID)
+		helpText := string(instanceID)
 		if item == "" {
 			item = string(instanceID)
+			helpText = ""
 		}
 		out = append(out, model.AutocompleteListItem{
-			Item: item,
+			Item:     item,
+			HelpText: helpText,
 		})
 	}
 	return respondJSON(w, out)
