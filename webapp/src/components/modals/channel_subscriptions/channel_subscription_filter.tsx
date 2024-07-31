@@ -35,7 +35,7 @@ export type Props = {
     addValidate: (isValid: () => boolean) => void;
     removeValidate: (isValid: () => boolean) => void;
     instanceID: string;
-    securityLevelEmptyForJiraSubscriptions: boolean;
+    securityLevelEmptyForJiraSubscriptions?: boolean;
 };
 
 export type State = {

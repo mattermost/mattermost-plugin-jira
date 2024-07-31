@@ -365,7 +365,7 @@ function quoteGuard(s: string) {
     return s;
 }
 
-export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMetadata, fields: FilterField[], filters: ChannelSubscriptionFilters, securityLevelEmptyForJiraSubscriptions: boolean) {
+export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMetadata, fields: FilterField[], filters: ChannelSubscriptionFilters, securityLevelEmptyForJiraSubscriptions?: boolean) {
     const projectJQL = `Project = ${quoteGuard(filters.projects[0]) || '?'}`;
 
     let issueTypeValueString = '?';
