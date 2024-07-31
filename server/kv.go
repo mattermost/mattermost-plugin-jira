@@ -180,11 +180,11 @@ func (store store) LoadMattermostUserID(instanceID types.ID, jiraUserNameOrID st
 	err := store.get(keyWithInstanceID(instanceID, types.ID(jiraUserNameOrID)), &mattermostUserID)
 	if err != nil {
 		return "", errors.Wrapf(err,
-			"failed to load Mattermost user ID for Jira user/ID: "+jiraUserNameOrID)
+			"failed to load Mattermost user ID for Jira username/ID: %s", jiraUserNameOrID)
 	}
 
 	if mattermostUserID == "" {
-		return "", errors.Errorf("failed to load Mattermost user ID for Jira user/ID: " + jiraUserNameOrID)
+		return "", errors.Errorf("failed to load Mattermost user ID for Jira username/ID: %s", jiraUserNameOrID)
 	}
 
 	return mattermostUserID, nil
