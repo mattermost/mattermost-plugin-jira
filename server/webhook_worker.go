@@ -35,7 +35,7 @@ func (ww webhookWorker) work() {
 
 func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 	defer func() {
-		if err == ErrWebhookIgnored {
+		if errors.Is(err, ErrWebhookIgnored) {
 			// ignore ErrWebhookIgnored - from here up it's a success
 			err = nil
 		}

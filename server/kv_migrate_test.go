@@ -54,8 +54,8 @@ func TestMigrateV2Instances(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
-			api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
-			api.On("LogDebug", mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogError", mock.AnythingOfType("string")).Return(nil)
+			api.On("LogDebug", mock.AnythingOfType("string")).Return(nil)
 
 			api.On("KVGet", keyInstances).Return(nil, nil)
 			api.On("KVGet", v2keyKnownJiraInstances).Return([]byte(tc.known), nil)
@@ -129,8 +129,8 @@ func TestMigrateV3InstancesToV2(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
-			api.On("LogError", mock.AnythingOfTypeArgument("string")).Return(nil)
-			api.On("LogDebug", mock.AnythingOfTypeArgument("string")).Return(nil)
+			api.On("LogError", mock.AnythingOfType("string")).Return(nil)
+			api.On("LogDebug", mock.AnythingOfType("string")).Return(nil)
 
 			api.On("KVGet", keyInstances).Return([]byte(tc.v3Instances), nil)
 
