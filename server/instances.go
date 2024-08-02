@@ -343,7 +343,7 @@ func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.I
 	if user.ConnectedInstances.Len() == 1 {
 		return user.ConnectedInstances.IDs()[0], nil
 	}
-	return "", errors.Wrap(kvstore.ErrNotFound, "unable to pick the default Jira instance")
+	return "", errors.New("default jira instance not found, please run `/jira instance default <jiraURL>` to set one")
 }
 
 func (p *Plugin) httpAutocompleteConnect(w http.ResponseWriter, r *http.Request) (int, error) {

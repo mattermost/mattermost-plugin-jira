@@ -252,6 +252,26 @@ func (p *Plugin) DisconnectUser(instanceURL string, mattermostUserID types.ID) (
 	return p.disconnectUser(instance, user)
 }
 
+func (p *Plugin) SetDefaultInstance(instanceURL string, mattermostUserID types.ID) error {
+	user, instance, err := p.LoadUserInstance(mattermostUserID, instanceURL)
+	if err != nil {
+		return err
+	}
+
+	if !user.ConnectedInstances.Contains(instance.GetID()) {
+		return errors.Wrapf(kvstore.ErrNotFound, "user is not connected to %q", instance.GetID())
+	}
+
+	user.DefaultInstanceID = instance.GetID()
+
+	err = p.userStore.StoreUser(user)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, error) {
 	if !user.ConnectedInstances.Contains(instance.GetID()) {
 		return nil, errors.Wrapf(kvstore.ErrNotFound, "user is not connected to %q", instance.GetID())
