@@ -169,6 +169,10 @@ func (p *Plugin) OnConfigurationChange() error {
 
 	ec.MaxAttachmentSize = strings.TrimSpace(ec.MaxAttachmentSize)
 	maxAttachmentSize := defaultMaxAttachmentSize
+	mattermostMaxAttachmentSize := p.API.GetConfig().FileSettings.MaxFileSize
+	if mattermostMaxAttachmentSize != nil {
+		maxAttachmentSize = utils.ByteSize(*mattermostMaxAttachmentSize)
+	}
 	if len(ec.MaxAttachmentSize) > 0 {
 		maxAttachmentSize, err = utils.ParseByteSize(ec.MaxAttachmentSize)
 		if err != nil {
