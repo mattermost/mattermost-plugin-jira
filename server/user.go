@@ -264,8 +264,7 @@ func (p *Plugin) SetDefaultInstance(instanceURL string, mattermostUserID types.I
 
 	user.DefaultInstanceID = instance.GetID()
 
-	err = p.userStore.StoreUser(user)
-	if err != nil {
+	if err := p.userStore.StoreUser(user); err != nil {
 		return err
 	}
 

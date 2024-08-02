@@ -448,13 +448,13 @@ func executeDefaultInstance(p *Plugin, c *plugin.Context, header *model.CommandA
 	if err != nil {
 		return p.responsef(header, "Failed to load instances. Error: %v.", err)
 	}
+
 	instance := instances.getByAlias(jiraURL)
 	if instance != nil {
 		jiraURL = instance.InstanceID.String()
 	}
 
-	err = p.SetDefaultInstance(jiraURL, types.ID(header.UserId))
-	if err != nil {
+	if err := p.SetDefaultInstance(jiraURL, types.ID(header.UserId)); err != nil {
 		return p.responsef(header, "Could not complete the **default instance** request. Error: %v", err)
 	}
 
