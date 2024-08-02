@@ -9,6 +9,7 @@ import {
     FIELD_KEY_STATUS,
     isEpicLinkField,
     isLabelField,
+    isUserField,
     isMultiSelectField,
     isSecurityLevelField,
 } from 'utils/jira_issue_metadata';
@@ -299,6 +300,15 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                 />
             );
         } else if (isLabelField(field)) {
+            valueSelector = (
+                <JiraAutoCompleteSelector
+                    {...selectProps}
+                    fieldName={field.name}
+                    value={value.values}
+                    onChange={this.handleEpicLinkChange}
+                />
+            );
+        }else if (isUserField(field)) {
             valueSelector = (
                 <JiraAutoCompleteSelector
                     {...selectProps}
