@@ -184,7 +184,7 @@ const allowedFieldTypes = [
     'option',
 ];
 
-const jiraPluginUrl = 'com.atlassian.jira.plugin.system.customfieldtypes'
+const jiraPluginUrl = 'com.atlassian.jira.plugin.system.customfieldtypes';
 
 const avoidedCustomTypesForFilters: string[] = [
     JiraFieldCustomTypeEnums.SPRINT,
@@ -202,7 +202,7 @@ function isValidFieldForFilter(field: JiraField): boolean {
     }
 
     return allowedTypes.includes(type) || (custom && acceptedCustomTypesForFilters.includes(custom)) ||
-    allowedFieldTypes.includes(type)||
+    allowedFieldTypes.includes(type) ||
     (type === 'array' && allowedArrayTypes.includes(items));
 }
 
