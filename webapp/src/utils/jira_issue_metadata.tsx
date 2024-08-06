@@ -184,7 +184,7 @@ const allowedFieldTypes = [
     'option',
 ];
 
-const jiraPluginUrl = 'com.atlassian.jira.plugin.system.customfieldtypes';
+const jiraSystemCustomFieldTypesKey = 'com.atlassian.jira.plugin.system.customfieldtypes';
 
 const avoidedCustomTypesForFilters: string[] = [
     JiraFieldCustomTypeEnums.SPRINT,
@@ -342,11 +342,11 @@ export function isEpicLinkField(field: JiraField | FilterField): boolean {
 }
 
 export function isLabelField(field: JiraField | FilterField): boolean {
-    return field.schema.system === 'labels' || field.schema.custom === `${jiraPluginUrl}:labels`;
+    return field.schema.system === 'labels' || field.schema.custom === `${jiraSystemCustomFieldTypesKey}:labels`;
 }
 
 export function isUserField(field: JiraField | FilterField): boolean {
-    return field.schema.type === 'user' || field.schema.custom === `${jiraPluginUrl}:userpicker`;
+    return field.schema.type === 'user' || field.schema.custom === `${jiraSystemCustomFieldTypesKey}:userpicker`;
 }
 
 export function isEpicIssueType(issueType: IssueType): boolean {
