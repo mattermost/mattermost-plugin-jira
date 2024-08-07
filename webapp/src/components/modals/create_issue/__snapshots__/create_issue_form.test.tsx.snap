@@ -224,6 +224,7 @@ exports[`components/CreateIssue should match snapshot with error 1`] = `
           Array [
             "project",
             "issuetype",
+            "reporter",
             "priority",
             "description",
             "summary",
@@ -3212,6 +3213,7 @@ exports[`components/CreateIssue should match snapshot with form filled 1`] = `
           Array [
             "project",
             "issuetype",
+            "reporter",
             "priority",
             "description",
             "summary",
