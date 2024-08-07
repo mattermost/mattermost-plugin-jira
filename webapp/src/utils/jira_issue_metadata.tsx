@@ -195,7 +195,7 @@ function isValidFieldForFilter(field: JiraField): boolean {
 
     return allowedTypes.includes(type) || (custom && acceptedCustomTypesForFilters.includes(custom)) ||
     type === 'option' || // single select
-    (type === 'array' && allowedArrayTypes.includes(items));
+    (type === 'array' && typeof items !== 'undefined' && allowedArrayTypes.includes(items));
 }
 
 export function getStatusField(metadata: IssueMetadata | null, selectedIssueTypes: string[]): FilterField | null {
@@ -414,11 +414,11 @@ export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMet
         });
 
         if (inclusion === FilterFieldInclusion.INCLUDE_ALL && values.length > 1) {
-            const clauses = chosenValueLabels.map((v) => `${quoteGuard(fieldName)} IN (${quoteGuard(v)})`);
+            const clauses = chosenValueLabels.map((v) => `${quoteGuard(fieldName)} IN (${quoteGuard(v.toString())})`);
             return `(${clauses.join(' AND ')})`;
         }
 
-        const joinedValues = chosenValueLabels.map((v) => `${quoteGuard(v)}`).join(', ');
+        const joinedValues = chosenValueLabels.map((v) => `${quoteGuard(v.toString())}`).join(', ');
         const valueString = `(${joinedValues})`;
         return `${quoteGuard(fieldName)} ${inclusionString} ${valueString}`;
     }).join(' AND ');
