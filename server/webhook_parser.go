@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -245,7 +247,7 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventCreatedComment),
 		headline:    fmt.Sprintf("%s **commented** on %s", commentAuthor, jwh.mdKeySummaryLink()),
-		text:        truncate(quoteIssueComment(jwh.Comment.Body), 3000),
+		text:        truncate(quoteIssueComment(preProcessText(jwh.Comment.Body)), 3000),
 	}
 
 	appendCommentNotifications(wh, "**mentioned** you in a new comment on")
@@ -314,6 +316,75 @@ func appendCommentNotifications(wh *webhook, verb string) {
 
 func quoteIssueComment(comment string) string {
 	return "> " + strings.ReplaceAll(comment, "\n", "\n> ")
+}
+
+func preProcessText(comment string) string {
+	asteriskRegex := regexp.MustCompile(`\*(\w+)\*`)
+	hyphenRegex := regexp.MustCompile(`-(\w+)-`)
+	headingRegex := regexp.MustCompile(`(?m)^(h[1-6]\.)\s+`)
+	codeBlockRegex := regexp.MustCompile(`\{code:[^}]+\}(.+?)\{code\}`)
+	numberedListRegex := regexp.MustCompile(`^#\s+`)
+	colouredTextRegex := regexp.MustCompile(`\{color:[^}]+\}(.*?)\{color\}`)
+	linkRegex := regexp.MustCompile(`\[(.*?)\|([^|\]]+)(?:\|([^|\]]+))?\]`)
+
+	var counter int
+	var lastWasNumbered bool
+	var result []string
+	lines := strings.Split(comment, "\n")
+
+	for _, line := range lines {
+		if numberedListRegex.MatchString(line) {
+			if !lastWasNumbered {
+				counter = 1
+			} else {
+				counter++
+			}
+			line = strconv.Itoa(counter) + ". " + strings.TrimPrefix(line, "# ")
+			lastWasNumbered = true
+		} else {
+			lastWasNumbered = false
+		}
+		result = append(result, line)
+	}
+
+	processedComment := strings.Join(result, "\n")
+
+	processedComment = linkRegex.ReplaceAllStringFunc(processedComment, func(link string) string {
+		parts := linkRegex.FindStringSubmatch(link)
+		if len(parts) == 4 {
+			if parts[1] == "" {
+				return "[" + parts[2] + "](" + parts[2] + ")"
+			}
+			if parts[3] != "" {
+				return "[" + parts[1] + "](" + parts[2] + ")"
+			}
+			return "[" + parts[1] + "](" + parts[2] + ")"
+		}
+		return link
+	})
+
+	processedComment = asteriskRegex.ReplaceAllStringFunc(processedComment, func(word string) string {
+		return "**" + strings.Trim(word, "*") + "**"
+	})
+
+	processedComment = hyphenRegex.ReplaceAllStringFunc(processedComment, func(word string) string {
+		return "~~" + strings.Trim(word, "-") + "~~"
+	})
+
+	processedComment = headingRegex.ReplaceAllStringFunc(processedComment, func(heading string) string {
+		level := heading[1]
+		hashes := strings.Repeat("#", int(level-'0'))
+		return hashes + " "
+	})
+
+	processedComment = codeBlockRegex.ReplaceAllStringFunc(processedComment, func(codeBlock string) string {
+		codeContent := codeBlock[strings.Index(codeBlock, "}")+1 : strings.LastIndex(codeBlock, "{code}")]
+		return "`" + codeContent + "`"
+	})
+
+	processedComment = colouredTextRegex.ReplaceAllString(processedComment, "$1")
+
+	return processedComment
 }
 
 func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
