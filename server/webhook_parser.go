@@ -327,28 +327,30 @@ func preProcessText(comment string) string {
 	colouredTextRegex := regexp.MustCompile(`\{color:[^}]+\}(.*?)\{color\}`)
 	linkRegex := regexp.MustCompile(`\[(.*?)\|([^|\]]+)(?:\|([^|\]]+))?\]`)
 
+	// below code converts lines starting with "#" into a numbered list. It increments the counter if consecutive lines are numbered,
+	// otherwise resets it to 1. The "#" is replaced with the corresponding number and period. Non-numbered lines are added unchanged.
 	var counter int
-	var lastWasNumbered bool
+	var lastLineWasNumberedList bool
 	var result []string
 	lines := strings.Split(comment, "\n")
-
 	for _, line := range lines {
 		if numberedListRegex.MatchString(line) {
-			if !lastWasNumbered {
+			if !lastLineWasNumberedList {
 				counter = 1
 			} else {
 				counter++
 			}
 			line = strconv.Itoa(counter) + ". " + strings.TrimPrefix(line, "# ")
-			lastWasNumbered = true
+			lastLineWasNumberedList = true
 		} else {
-			lastWasNumbered = false
+			lastLineWasNumberedList = false
 		}
 		result = append(result, line)
 	}
-
 	processedComment := strings.Join(result, "\n")
 
+	// below code converts links in the format "[text|url]" or "[text|url|optional]" to Markdown links. If the text is empty,
+	// the URL is used for both the text and link. If the optional part is present, it's ignored. Unrecognized patterns remain unchanged.
 	processedComment = linkRegex.ReplaceAllStringFunc(processedComment, func(link string) string {
 		parts := linkRegex.FindStringSubmatch(link)
 		if len(parts) == 4 {
@@ -419,7 +421,7 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) (Webhook, error) {
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventUpdatedComment),
 		headline:    fmt.Sprintf("%s **edited comment** in %s", mdUser(&jwh.Comment.UpdateAuthor), jwh.mdKeySummaryLink()),
-		text:        truncate(quoteIssueComment(jwh.Comment.Body), 3000),
+		text:        truncate(quoteIssueComment(preProcessText(jwh.Comment.Body)), 3000),
 	}
 
 	return wh, nil
