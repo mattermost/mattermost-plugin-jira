@@ -318,6 +318,11 @@ func quoteIssueComment(comment string) string {
 	return "> " + strings.ReplaceAll(comment, "\n", "\n> ")
 }
 
+// preProcessText processes the given comment string to apply various formatting transformations.
+// The purpose of the function is to convert the formatting provided by JIRA into the corresponding formatting supported by Mattermost.
+// This includes converting asterisks to bold, hyphens to strikethrough, JIRA-style headings to Markdown headings,
+// JIRA code blocks to inline code, numbered lists to Markdown lists, colored text to plain text, and JIRA links to Markdown links.
+// For more reference, please visit https://github.com/mattermost/mattermost-plugin-jira/issues/1096
 func preProcessText(comment string) string {
 	asteriskRegex := regexp.MustCompile(`\*(\w+)\*`)
 	hyphenRegex := regexp.MustCompile(`-(\w+)-`)
@@ -327,7 +332,7 @@ func preProcessText(comment string) string {
 	colouredTextRegex := regexp.MustCompile(`\{color:[^}]+\}(.*?)\{color\}`)
 	linkRegex := regexp.MustCompile(`\[(.*?)\|([^|\]]+)(?:\|([^|\]]+))?\]`)
 
-	// below code converts lines starting with "#" into a numbered list. It increments the counter if consecutive lines are numbered,
+	// the below code converts lines starting with "#" into a numbered list. It increments the counter if consecutive lines are numbered,
 	// otherwise resets it to 1. The "#" is replaced with the corresponding number and period. Non-numbered lines are added unchanged.
 	var counter int
 	var lastLineWasNumberedList bool
@@ -349,7 +354,7 @@ func preProcessText(comment string) string {
 	}
 	processedComment := strings.Join(result, "\n")
 
-	// below code converts links in the format "[text|url]" or "[text|url|optional]" to Markdown links. If the text is empty,
+	// the below code converts links in the format "[text|url]" or "[text|url|optional]" to Markdown links. If the text is empty,
 	// the URL is used for both the text and link. If the optional part is present, it's ignored. Unrecognized patterns remain unchanged.
 	processedComment = linkRegex.ReplaceAllStringFunc(processedComment, func(link string) string {
 		parts := linkRegex.FindStringSubmatch(link)
