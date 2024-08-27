@@ -487,7 +487,7 @@ func parseWebhookUpdatedDescription(jwh *JiraWebhook, from, to string) *webhook 
 	fromFmttd := "\n**From:** " + truncate(from, 500)
 	toFmttd := "\n**To:** " + truncate(to, 500)
 	wh.fieldInfo = webhookField{descriptionField, descriptionField, fromFmttd, toFmttd}
-	wh.text = jwh.mdIssueDescription()
+	wh.text = preProcessText(jwh.mdIssueDescription())
 	return wh
 }
 
