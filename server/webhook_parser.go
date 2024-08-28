@@ -318,12 +318,12 @@ func quoteIssueComment(comment string) string {
 	return "> " + strings.ReplaceAll(comment, "\n", "\n> ")
 }
 
-// preProcessText processes the given comment string to apply various formatting transformations.
+// preProcessText processes the given string to apply various formatting transformations.
 // The purpose of the function is to convert the formatting provided by JIRA into the corresponding formatting supported by Mattermost.
 // This includes converting asterisks to bold, hyphens to strikethrough, JIRA-style headings to Markdown headings,
 // JIRA code blocks to inline code, numbered lists to Markdown lists, colored text to plain text, and JIRA links to Markdown links.
 // For more reference, please visit https://github.com/mattermost/mattermost-plugin-jira/issues/1096
-func preProcessText(comment string) string {
+func preProcessText(jiraMarkdownString string) string {
 	asteriskRegex := regexp.MustCompile(`\*(\w+)\*`)
 	hyphenRegex := regexp.MustCompile(`-(\w+)-`)
 	headingRegex := regexp.MustCompile(`(?m)^(h[1-6]\.)\s+`)
