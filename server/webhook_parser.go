@@ -337,7 +337,7 @@ func preProcessText(jiraMarkdownString string) string {
 	var counter int
 	var lastLineWasNumberedList bool
 	var result []string
-	lines := strings.Split(comment, "\n")
+	lines := strings.Split(jiraMarkdownString, "\n")
 	for _, line := range lines {
 		if numberedListRegex.MatchString(line) {
 			if !lastLineWasNumberedList {
