@@ -331,6 +331,7 @@ func preProcessText(jiraMarkdownString string) string {
 	numberedListRegex := regexp.MustCompile(`^#\s+`)
 	colouredTextRegex := regexp.MustCompile(`\{color:[^}]+\}(.*?)\{color\}`)
 	linkRegex := regexp.MustCompile(`\[(.*?)\|([^|\]]+)(?:\|([^|\]]+))?\]`)
+	quoteRegex := regexp.MustCompile(`\{quote\}(.*?)\{quote\}`)
 
 	// the below code converts lines starting with "#" into a numbered list. It increments the counter if consecutive lines are numbered,
 	// otherwise resets it to 1. The "#" is replaced with the corresponding number and period. Non-numbered lines are added unchanged.
@@ -390,6 +391,11 @@ func preProcessText(jiraMarkdownString string) string {
 	})
 
 	processedComment = colouredTextRegex.ReplaceAllString(processedComment, "$1")
+
+	processedComment = quoteRegex.ReplaceAllStringFunc(processedComment, func(quote string) string {
+		quotedText := quote[strings.Index(quote, "}")+1 : strings.LastIndex(quote, "{quote}")]
+		return "> " + quotedText
+	})
 
 	return processedComment
 }
