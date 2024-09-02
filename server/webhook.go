@@ -67,16 +67,6 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 		wh.headline = fmt.Sprintf("%s\nSubscription: **%s**", wh.headline, subscriptionName)
 	}
 
-	channel, nErr := p.API.GetChannel(channelID)
-	if nErr != nil {
-		p.client.Log.Warn("error occurred while getting the channel details while posting the webhook event", "ChannelID", channelID, "Error", nErr.DetailedError)
-		return nil, http.StatusInternalServerError, errors.Errorf("error getting channel details")
-	}
-
-	if channel.DeleteAt > 0 {
-		return nil, http.StatusBadRequest, errors.Errorf("archived channel")
-	}
-
 	post := &model.Post{
 		ChannelId: channelID,
 		UserId:    fromUserID,
