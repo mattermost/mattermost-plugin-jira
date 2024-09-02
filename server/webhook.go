@@ -69,7 +69,7 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 
 	channel, nErr := p.API.GetChannel(channelID)
 	if nErr != nil {
-		p.client.Log.Warn("error occured while getting the channel details while posting the webhook event", "ChannelID", channelID, "Error", nErr.DetailedError)
+		p.client.Log.Warn("error occurred while getting the channel details while posting the webhook event", "ChannelID", channelID, "Error", nErr.DetailedError)
 		return nil, http.StatusInternalServerError, errors.Errorf("error getting channel details")
 	}
 
