@@ -200,6 +200,10 @@ h6. HEADING 6`,
 			input:          "[google|http://www.google.com]",
 			expectedOutput: "[google](http://www.google.com)",
 		},
+		"Quote formatting": {
+			input:          "{quote}This is a quote{quote}",
+			expectedOutput: "> This is a quote",
+		},
 	}
 
 	for name, tc := range tests {
