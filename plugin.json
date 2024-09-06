@@ -20,8 +20,8 @@
         "bundle_path": "webapp/dist/main.js"
     },
     "settings_schema": {
-        "header": "Please refer to the '/jira' command [**documentation**](https://docs.mattermost.com/integrate/jira-interoperability.html#setup) to further configure the Jira plugin.",
-        "footer": "Please refer to the '/jira' command [**documentation**](https://docs.mattermost.com/integrate/jira-interoperability.html#setup) to further configure the Jira plugin. Specifically, ['/jira instance [un-]install'](https://docs.mattermost.com/integrate/jira-interoperability.html#setup) and ['/jira webhook'](https://docs.mattermost.com/integrate/jira-interoperability.html#configure-webhooks-in-jira).",
+        "header": "Please refer to the '/jira' command [**documentation**](https://mattermost.com/pl/integrate/jira-admin-setup) to further configure the Jira plugin.",
+        "footer": "Please refer to the '/jira' command [**documentation**](https://mattermost.com/pl/integrate/jira-admin-setup) to further configure the Jira plugin. Specifically, ['/jira instance [un-]install'](https://docs.mattermost.com/integrate/jira-interoperability.html#setup) and ['/jira webhook'](https://mattermost.com/pl/integrate/jira-admin-setup).",
         "settings": [
             {
                 "key": "EnableJiraUI",
