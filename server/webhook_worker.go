@@ -62,10 +62,10 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 
 	botUserID := ww.p.getUserID()
 	for _, channelSubscribed := range channelsSubscribed {
-		channel, nErr := ww.p.API.GetChannel(channelSubscribed.ChannelID)
-		if nErr != nil {
-			ww.p.client.Log.Warn("error occurred while getting the channel details while posting the webhook event", "ChannelID", channelSubscribed.ChannelID, "Error", nErr.DetailedError)
-			return errors.Errorf(nErr.DetailedError)
+		channel, err := ww.p.client.Channel.Get(channelSubscribed.ChannelID)
+		if err != nil {
+			ww.p.client.Log.Warn("Error occurred while getting the channel details while posting the webhook event", "ChannelID", channelSubscribed.ChannelID, "Error", err.Error())
+			return err
 		}
 
 		if channel.DeleteAt > 0 {
