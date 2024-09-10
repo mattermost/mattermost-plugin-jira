@@ -327,11 +327,12 @@ func preProcessText(jiraMarkdownString string) string {
 	asteriskRegex := regexp.MustCompile(`\*(\w+)\*`)
 	hyphenRegex := regexp.MustCompile(`-(\w+)-`)
 	headingRegex := regexp.MustCompile(`(?m)^(h[1-6]\.)\s+`)
-	codeBlockRegex := regexp.MustCompile(`\{code:[^}]+\}(.+?)\{code\}`)
+	langSpecificCodeBlockRegex := regexp.MustCompile(`\{code:[^}]+\}(.+?)\{code\}`)
 	numberedListRegex := regexp.MustCompile(`^#\s+`)
 	colouredTextRegex := regexp.MustCompile(`\{color:[^}]+\}(.*?)\{color\}`)
 	linkRegex := regexp.MustCompile(`\[(.*?)\|([^|\]]+)(?:\|([^|\]]+))?\]`)
 	quoteRegex := regexp.MustCompile(`\{quote\}(.*?)\{quote\}`)
+	codeBlockRegex := regexp.MustCompile(`\{\{(.+?)\}\}`)
 
 	// the below code converts lines starting with "#" into a numbered list. It increments the counter if consecutive lines are numbered,
 	// otherwise resets it to 1. The "#" is replaced with the corresponding number and period. Non-numbered lines are added unchanged.
@@ -353,11 +354,11 @@ func preProcessText(jiraMarkdownString string) string {
 		}
 		result = append(result, line)
 	}
-	processedComment := strings.Join(result, "\n")
+	processedString := strings.Join(result, "\n")
 
 	// the below code converts links in the format "[text|url]" or "[text|url|optional]" to Markdown links. If the text is empty,
 	// the URL is used for both the text and link. If the optional part is present, it's ignored. Unrecognized patterns remain unchanged.
-	processedComment = linkRegex.ReplaceAllStringFunc(processedComment, func(link string) string {
+	processedString = linkRegex.ReplaceAllStringFunc(processedString, func(link string) string {
 		parts := linkRegex.FindStringSubmatch(link)
 		if len(parts) == 4 {
 			if parts[1] == "" {
@@ -371,33 +372,44 @@ func preProcessText(jiraMarkdownString string) string {
 		return link
 	})
 
-	processedComment = asteriskRegex.ReplaceAllStringFunc(processedComment, func(word string) string {
+	processedString = asteriskRegex.ReplaceAllStringFunc(processedString, func(word string) string {
 		return "**" + strings.Trim(word, "*") + "**"
 	})
 
-	processedComment = hyphenRegex.ReplaceAllStringFunc(processedComment, func(word string) string {
+	processedString = hyphenRegex.ReplaceAllStringFunc(processedString, func(word string) string {
 		return "~~" + strings.Trim(word, "-") + "~~"
 	})
 
-	processedComment = headingRegex.ReplaceAllStringFunc(processedComment, func(heading string) string {
+	processedString = headingRegex.ReplaceAllStringFunc(processedString, func(heading string) string {
 		level := heading[1]
 		hashes := strings.Repeat("#", int(level-'0'))
 		return hashes + " "
 	})
 
-	processedComment = codeBlockRegex.ReplaceAllStringFunc(processedComment, func(codeBlock string) string {
+	processedString = langSpecificCodeBlockRegex.ReplaceAllStringFunc(processedString, func(codeBlock string) string {
 		codeContent := codeBlock[strings.Index(codeBlock, "}")+1 : strings.LastIndex(codeBlock, "{code}")]
 		return "`" + codeContent + "`"
 	})
 
-	processedComment = colouredTextRegex.ReplaceAllString(processedComment, "$1")
+	processedString = codeBlockRegex.ReplaceAllStringFunc(processedString, func(match string) string {
+		curlyContent := codeBlockRegex.FindStringSubmatch(match)[1]
+		return "`" + curlyContent + "`"
+	})
 
-	processedComment = quoteRegex.ReplaceAllStringFunc(processedComment, func(quote string) string {
+	processedString = colouredTextRegex.ReplaceAllString(processedString, "$1")
+
+	processedString = quoteRegex.ReplaceAllStringFunc(processedString, func(quote string) string {
 		quotedText := quote[strings.Index(quote, "}")+1 : strings.LastIndex(quote, "{quote}")]
 		return "> " + quotedText
 	})
 
-	return processedComment
+	fmt.Println("\n\n\n\n\n\n")
+	fmt.Println(jiraMarkdownString)
+	fmt.Println("\n\n\n\n\n\n")
+	fmt.Println(processedString)
+	fmt.Println("\n\n\n\n\n\n")
+
+	return processedString
 }
 
 func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
