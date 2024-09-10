@@ -136,3 +136,80 @@ func TestWebhookQuotedComment(t *testing.T) {
 		assert.True(t, strings.HasPrefix(w.text, ">"))
 	}
 }
+
+func TestPreProcessText(t *testing.T) {
+	tests := map[string]struct {
+		input          string
+		expectedOutput string
+	}{
+		"BOLD formatting": {
+			input:          "*BOLD*",
+			expectedOutput: "**BOLD**",
+		},
+		"STRIKETHROUGH formatting": {
+			input:          "-STRIKETHROUGH-",
+			expectedOutput: "~~STRIKETHROUGH~~",
+		},
+		"Colored text formatting": {
+			input:          "{color:#ff5630}RED{color} {color:#4c9aff}BLUE{color} {color:#36b37e}GREEN{color}",
+			expectedOutput: "RED BLUE GREEN",
+		},
+		"Numbered list with mixed content formatting": {
+			input: `# NUMBERED LIST ROW 1
+# NUMBERED LIST ROW 2
+non-numbered list text
+# NUMBERED LIST ROW 1`,
+			expectedOutput: `1. NUMBERED LIST ROW 1
+2. NUMBERED LIST ROW 2
+non-numbered list text
+1. NUMBERED LIST ROW 1`,
+		},
+		"Code block formatting": {
+			input:          "{code:go}fruit := \"APPLE\"{code}",
+			expectedOutput: "`fruit := \"APPLE\"`",
+		},
+		"Bullet list formatting": {
+			input: `* BULLET LIST ROW 1
+* BULLET LIST ROW 2`,
+			expectedOutput: `* BULLET LIST ROW 1
+* BULLET LIST ROW 2`,
+		},
+		"Heading formatting": {
+			input: `h1. HEADING 1
+h2. HEADING 2
+h3. HEADING 3
+h4. HEADING 4
+h5. HEADING 5
+h6. HEADING 6`,
+			expectedOutput: `# HEADING 1
+## HEADING 2
+### HEADING 3
+#### HEADING 4
+##### HEADING 5
+###### HEADING 6`,
+		},
+		"Link formatting with text": {
+			input:          "[www.googlesd.com|http://www.googlesd.com]",
+			expectedOutput: "[www.googlesd.com](http://www.googlesd.com)",
+		},
+		"Link formatting with smart-link": {
+			input:          "[http://www.google.com|http://www.google.com|smart-link]",
+			expectedOutput: "[http://www.google.com](http://www.google.com)",
+		},
+		"Link formatting with title": {
+			input:          "[google|http://www.google.com]",
+			expectedOutput: "[google](http://www.google.com)",
+		},
+		"Quote formatting": {
+			input:          "{quote}This is a quote{quote}",
+			expectedOutput: "> This is a quote",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			actualOutput := preProcessText(tc.input)
+			assert.Equal(t, tc.expectedOutput, actualOutput)
+		})
+	}
+}

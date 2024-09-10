@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -245,7 +247,7 @@ func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventCreatedComment),
 		headline:    fmt.Sprintf("%s **commented** on %s", commentAuthor, jwh.mdKeySummaryLink()),
-		text:        truncate(quoteIssueComment(jwh.Comment.Body), 3000),
+		text:        truncate(quoteIssueComment(preProcessText(jwh.Comment.Body)), 3000),
 	}
 
 	appendCommentNotifications(wh, "**mentioned** you in a new comment on")
@@ -316,6 +318,94 @@ func quoteIssueComment(comment string) string {
 	return "> " + strings.ReplaceAll(comment, "\n", "\n> ")
 }
 
+// preProcessText processes the given string to apply various formatting transformations.
+// The purpose of the function is to convert the formatting provided by JIRA into the corresponding formatting supported by Mattermost.
+// This includes converting asterisks to bold, hyphens to strikethrough, JIRA-style headings to Markdown headings,
+// JIRA code blocks to inline code, numbered lists to Markdown lists, colored text to plain text, and JIRA links to Markdown links.
+// For more reference, please visit https://github.com/mattermost/mattermost-plugin-jira/issues/1096
+func preProcessText(jiraMarkdownString string) string {
+	asteriskRegex := regexp.MustCompile(`\*(\w+)\*`)
+	hyphenRegex := regexp.MustCompile(`-(\w+)-`)
+	headingRegex := regexp.MustCompile(`(?m)^(h[1-6]\.)\s+`)
+	langSpecificCodeBlockRegex := regexp.MustCompile(`\{code:[^}]+\}(.+?)\{code\}`)
+	numberedListRegex := regexp.MustCompile(`^#\s+`)
+	colouredTextRegex := regexp.MustCompile(`\{color:[^}]+\}(.*?)\{color\}`)
+	linkRegex := regexp.MustCompile(`\[(.*?)\|([^|\]]+)(?:\|([^|\]]+))?\]`)
+	quoteRegex := regexp.MustCompile(`\{quote\}(.*?)\{quote\}`)
+	codeBlockRegex := regexp.MustCompile(`\{\{(.+?)\}\}`)
+
+	// the below code converts lines starting with "#" into a numbered list. It increments the counter if consecutive lines are numbered,
+	// otherwise resets it to 1. The "#" is replaced with the corresponding number and period. Non-numbered lines are added unchanged.
+	var counter int
+	var lastLineWasNumberedList bool
+	var result []string
+	lines := strings.Split(jiraMarkdownString, "\n")
+	for _, line := range lines {
+		if numberedListRegex.MatchString(line) {
+			if !lastLineWasNumberedList {
+				counter = 1
+			} else {
+				counter++
+			}
+			line = strconv.Itoa(counter) + ". " + strings.TrimPrefix(line, "# ")
+			lastLineWasNumberedList = true
+		} else {
+			lastLineWasNumberedList = false
+		}
+		result = append(result, line)
+	}
+	processedString := strings.Join(result, "\n")
+
+	// the below code converts links in the format "[text|url]" or "[text|url|optional]" to Markdown links. If the text is empty,
+	// the URL is used for both the text and link. If the optional part is present, it's ignored. Unrecognized patterns remain unchanged.
+	processedString = linkRegex.ReplaceAllStringFunc(processedString, func(link string) string {
+		parts := linkRegex.FindStringSubmatch(link)
+		if len(parts) == 4 {
+			if parts[1] == "" {
+				return "[" + parts[2] + "](" + parts[2] + ")"
+			}
+			if parts[3] != "" {
+				return "[" + parts[1] + "](" + parts[2] + ")"
+			}
+			return "[" + parts[1] + "](" + parts[2] + ")"
+		}
+		return link
+	})
+
+	processedString = asteriskRegex.ReplaceAllStringFunc(processedString, func(word string) string {
+		return "**" + strings.Trim(word, "*") + "**"
+	})
+
+	processedString = hyphenRegex.ReplaceAllStringFunc(processedString, func(word string) string {
+		return "~~" + strings.Trim(word, "-") + "~~"
+	})
+
+	processedString = headingRegex.ReplaceAllStringFunc(processedString, func(heading string) string {
+		level := heading[1]
+		hashes := strings.Repeat("#", int(level-'0'))
+		return hashes + " "
+	})
+
+	processedString = langSpecificCodeBlockRegex.ReplaceAllStringFunc(processedString, func(codeBlock string) string {
+		codeContent := codeBlock[strings.Index(codeBlock, "}")+1 : strings.LastIndex(codeBlock, "{code}")]
+		return "`" + codeContent + "`"
+	})
+
+	processedString = codeBlockRegex.ReplaceAllStringFunc(processedString, func(match string) string {
+		curlyContent := codeBlockRegex.FindStringSubmatch(match)[1]
+		return "`" + curlyContent + "`"
+	})
+
+	processedString = colouredTextRegex.ReplaceAllString(processedString, "$1")
+
+	processedString = quoteRegex.ReplaceAllStringFunc(processedString, func(quote string) string {
+		quotedText := quote[strings.Index(quote, "}")+1 : strings.LastIndex(quote, "{quote}")]
+		return "> " + quotedText
+	})
+
+	return processedString
+}
+
 func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
 	if jwh.Issue.ID == "" {
 		return nil, ErrWebhookIgnored
@@ -348,7 +438,7 @@ func parseWebhookCommentUpdated(jwh *JiraWebhook) (Webhook, error) {
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventUpdatedComment),
 		headline:    fmt.Sprintf("%s **edited comment** in %s", mdUser(&jwh.Comment.UpdateAuthor), jwh.mdKeySummaryLink()),
-		text:        truncate(quoteIssueComment(jwh.Comment.Body), 3000),
+		text:        truncate(quoteIssueComment(preProcessText(jwh.Comment.Body)), 3000),
 	}
 
 	return wh, nil
@@ -414,7 +504,7 @@ func parseWebhookUpdatedDescription(jwh *JiraWebhook, from, to string) *webhook 
 	fromFmttd := "\n**From:** " + truncate(from, 500)
 	toFmttd := "\n**To:** " + truncate(to, 500)
 	wh.fieldInfo = webhookField{descriptionField, descriptionField, fromFmttd, toFmttd}
-	wh.text = jwh.mdIssueDescription()
+	wh.text = preProcessText(jwh.mdIssueDescription())
 	return wh
 }
 
