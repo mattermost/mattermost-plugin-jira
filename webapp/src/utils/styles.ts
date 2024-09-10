@@ -4,6 +4,8 @@
 import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
 import {Theme} from 'mattermost-redux/types/preferences';
 
+import {ProvidedStyle, StyleState} from 'types/model';
+
 export const getBaseStyles = (theme: Theme) => {
     return {
         codeBlock: ({
@@ -17,7 +19,7 @@ export const getBaseStyles = (theme: Theme) => {
     };
 };
 
-export const getModalStyles = (theme) => ({
+export const getModalStyles = (theme: Theme) => ({
     modalBody: {
         padding: '2em 2em 3em',
         color: theme.centerChannelColor,
@@ -33,17 +35,17 @@ export const getModalStyles = (theme) => ({
     },
 });
 
-export const getStyleForReactSelect = (theme) => {
+export const getStyleForReactSelect = (theme: Theme) => {
     if (!theme) {
         return {};
     }
 
     return {
-        menuPortal: (provided) => ({
+        menuPortal: (provided: ProvidedStyle) => ({
             ...provided,
             zIndex: 9999,
         }),
-        control: (provided, state) => ({
+        control: (provided: ProvidedStyle, state: StyleState) => ({
             ...provided,
             color: theme.centerChannelColor,
             background: theme.centerChannelBg,
@@ -60,7 +62,7 @@ export const getStyleForReactSelect = (theme) => {
                 borderColor: changeOpacity(theme.centerChannelColor, 0.25),
             },
         }),
-        option: (provided, state) => ({
+        option: (provided: ProvidedStyle, state: StyleState) => ({
             ...provided,
             background: state.isFocused ? changeOpacity(theme.centerChannelColor, 0.12) : theme.centerChannelBg,
             color: theme.centerChannelColor,
@@ -68,7 +70,7 @@ export const getStyleForReactSelect = (theme) => {
                 background: changeOpacity(theme.centerChannelColor, 0.12),
             },
         }),
-        clearIndicator: (provided) => ({
+        clearIndicator: (provided: ProvidedStyle) => ({
             ...provided,
             width: '34px',
             color: changeOpacity(theme.centerChannelColor, 0.4),
@@ -78,18 +80,18 @@ export const getStyleForReactSelect = (theme) => {
                 color: theme.centerChannelColor,
             },
         }),
-        multiValue: (provided) => ({
+        multiValue: (provided: ProvidedStyle) => ({
             ...provided,
             background: changeOpacity(theme.centerChannelColor, 0.15),
         }),
-        multiValueLabel: (provided) => ({
+        multiValueLabel: (provided: ProvidedStyle) => ({
             ...provided,
             color: theme.centerChannelColor,
             paddingBottom: '4px',
             paddingLeft: '8px',
             fontSize: '90%',
         }),
-        multiValueRemove: (provided) => ({
+        multiValueRemove: (provided: ProvidedStyle) => ({
             ...provided,
             transform: 'translateX(-2px) scaleX(1.15)',
             color: changeOpacity(theme.centerChannelColor, 0.4),
@@ -97,7 +99,7 @@ export const getStyleForReactSelect = (theme) => {
                 background: 'transparent',
             },
         }),
-        menu: (provided) => ({
+        menu: (provided: ProvidedStyle) => ({
             ...provided,
             color: theme.centerChannelColor,
             background: theme.centerChannelBg,
@@ -106,26 +108,26 @@ export const getStyleForReactSelect = (theme) => {
             boxShadow: changeOpacity(theme.centerChannelColor, 0.2) + ' 1px 3px 12px',
             marginTop: '4px',
         }),
-        input: (provided) => ({
+        input: (provided: ProvidedStyle) => ({
             ...provided,
             color: theme.centerChannelColor,
         }),
-        placeholder: (provided) => ({
+        placeholder: (provided: ProvidedStyle) => ({
             ...provided,
             color: theme.centerChannelColor,
         }),
-        dropdownIndicator: (provided) => ({
+        dropdownIndicator: (provided: ProvidedStyle) => ({
             ...provided,
 
             '&:hover': {
                 color: theme.centerChannelColor,
             },
         }),
-        singleValue: (provided) => ({
+        singleValue: (provided: ProvidedStyle) => ({
             ...provided,
             color: theme.centerChannelColor,
         }),
-        indicatorSeparator: (provided) => ({
+        indicatorSeparator: (provided: ProvidedStyle) => ({
             ...provided,
             display: 'none',
         }),
