@@ -403,12 +403,6 @@ func preProcessText(jiraMarkdownString string) string {
 		return "> " + quotedText
 	})
 
-	fmt.Println("\n\n\n\n\n\n")
-	fmt.Println(jiraMarkdownString)
-	fmt.Println("\n\n\n\n\n\n")
-	fmt.Println(processedString)
-	fmt.Println("\n\n\n\n\n\n")
-
 	return processedString
 }
 
