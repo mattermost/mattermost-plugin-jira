@@ -189,7 +189,7 @@ func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 	uninstall := model.NewAutocompleteData(
 		"uninstall", "[server|cloud-oauth] [URL]", "Disconnect Mattermost from a Jira instance")
 	uninstall.AddStaticListArgument("Jira type: server, cloud or cloud-oauth", true, jiraTypes)
-	uninstall.AddDynamicListArgument("Jira instance", makeAutocompleteRoute(routeAutocompleteInstalledInstance), true)
+	uninstall.AddDynamicListArgument("Jira instance", makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias), true)
 	uninstall.RoleID = model.SystemAdminRoleId
 
 	list := model.NewAutocompleteData(
@@ -230,7 +230,7 @@ func withParamIssueKey(cmd *model.AutocompleteData) {
 func createConnectCommand() *model.AutocompleteData {
 	connect := model.NewAutocompleteData(
 		"connect", "", "Connect your Mattermost account to your Jira account")
-	connect.AddDynamicListArgument("Jira URL", makeAutocompleteRoute(routeAutocompleteConnect), false)
+	connect.AddDynamicListArgument("Jira URL", makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias), false)
 	return connect
 }
 
