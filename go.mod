@@ -5,11 +5,13 @@ go 1.21.8
 require (
 	github.com/andygrunwald/go-jira v1.16.0
 	github.com/blang/semver/v4 v4.0.0
+	//TODO: This is a temporary package will be changed after the autolink PR is merged
+	github.com/brightscout/mattermost-plugin-autolink v0.0.0-20230406101012-1b413c6d3031
 	github.com/dghubble/oauth1 v0.5.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/gorilla/mux v1.8.1
 	github.com/jarcoal/httpmock v1.0.8
-	github.com/mattermost/mattermost-plugin-autolink v1.2.2-0.20210709183311-c8fa30db649f
+	github.com/mattermost/mattermost-server/v6 v6.3.0 // indirect
 	github.com/mattermost/mattermost/server/public v0.0.17-0.20240313200153-4d7437d30e1c
 	github.com/pkg/errors v0.9.1
 	github.com/rbriski/atlassian-jwt v0.0.0-20240408161306-6b6d681cf2d9
@@ -64,7 +66,6 @@ require (
 	github.com/wiggin77/merror v1.0.5 // indirect
 	github.com/wiggin77/srslog v1.0.1 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
-	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect

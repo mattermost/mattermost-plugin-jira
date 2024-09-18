@@ -21,13 +21,15 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	"github.com/mattermost/mattermost/server/public/pluginapi/experimental/flow"
 
-	"github.com/mattermost/mattermost-plugin-autolink/server/autolink"
-	"github.com/mattermost/mattermost-plugin-autolink/server/autolinkclient"
+	"github.com/brightscout/mattermost-plugin-autolink/server/autolink"
+	"github.com/brightscout/mattermost-plugin-autolink/server/autolinkclient"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/telemetry"
@@ -45,6 +47,17 @@ const (
 	WebhookMaxProcsPerServer = 20
 	WebhookBufferSize        = 10000
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
+
+	// Endpoints
+	patternCommentLinkEndpoint  = `/browse/)(?P<project_id>\w+)(-)(?P<jira_id>\d+)[?](focusedCommentId)(=)(?P<comment_id>\d+)`
+	templateCommentLinkEndpoint = `/browse/${project_id}-${jira_id}?focusedCommentId=${comment_id})`
+	patternIssueLinkEndpoint    = `/browse/)(?P<project_id>\w+)(-)(?P<jira_id>\d+)`
+	templateIssueLinkEndpoint   = `/browse/${project_id}-${jira_id})`
+
+	templateViewIssue            = `[${project_id}-${jira_id}](`
+	templateViewIssueWithComment = `[${project_id}-${jira_id} (comment)](`
+
+	autolinkClusterMutexKey = "autolink_cluster_mutex"
 )
 
 type externalConfig struct {
@@ -139,6 +152,9 @@ type Plugin struct {
 
 	// telemetry Tracker
 	tracker telemetry.Tracker
+
+	// autolinkClusterMutex to lock operations for autolink
+	autolinkClusterMutex *cluster.Mutex
 }
 
 func (p *Plugin) getConfig() config {
@@ -305,6 +321,13 @@ func (p *Plugin) OnActivate() error {
 
 	p.enterpriseChecker = enterprise.NewEnterpriseChecker(p.API)
 
+	autolinkClusterMutex, err := cluster.NewMutex(p.API, autolinkClusterMutexKey)
+	if err != nil {
+		return err
+	}
+
+	p.autolinkClusterMutex = autolinkClusterMutex
+
 	go func() {
 		for _, url := range instances.IDs() {
 			var instance Instance
@@ -352,35 +375,58 @@ func (p *Plugin) AddAutolinksForCloudInstance(ci *cloudInstance) error {
 		return fmt.Errorf("unable to get project keys: %w", err)
 	}
 
-	for _, proj := range plist {
-		key := proj.Key
-		err = p.AddAutolinks(key, ci.BaseURL)
-	}
-	if err != nil {
+	if err = p.AddAutolinks(plist, ci.BaseURL); err != nil {
 		return fmt.Errorf("some keys were not installed: %w", err)
 	}
 
 	return nil
 }
 
-func (p *Plugin) AddAutolinks(key, baseURL string) error {
+func (p *Plugin) AddAutolinks(projectList jira.ProjectList, baseURL string) error {
 	baseURL = strings.TrimRight(baseURL, "/")
+	var replacedBaseURL = `(` + strings.ReplaceAll(baseURL, ".", `\.`)
 	installList := []autolink.Autolink{
 		{
-			Name:     key + " key to link for " + baseURL,
-			Pattern:  `(` + key + `)(-)(?P<jira_id>\d+)`,
-			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
+			Name:     "Jump to comment for " + baseURL,
+			Pattern:  replacedBaseURL + patternCommentLinkEndpoint,
+			Template: templateViewIssueWithComment + baseURL + templateCommentLinkEndpoint,
 		},
 		{
-			Name:     key + " link to key for " + baseURL,
-			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)`,
-			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
+			Name:     "Link to key for " + baseURL,
+			Pattern:  replacedBaseURL + patternIssueLinkEndpoint,
+			Template: templateViewIssue + baseURL + templateIssueLinkEndpoint,
 		},
 	}
 
-	client := autolinkclient.NewClientPlugin(p.API)
-	if err := client.Add(installList...); err != nil {
-		return fmt.Errorf("unable to add autolinks: %w", err)
+	for _, project := range projectList {
+		key := project.Key
+		installList = append(installList, autolink.Autolink{
+			Name:     key + " key to link for " + baseURL,
+			Pattern:  `(` + key + `)(-)(?P<jira_id>\d+)`,
+			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
+		})
+	}
+
+	if len(installList) > 0 {
+		p.autolinkClusterMutex.Lock()
+		defer p.autolinkClusterMutex.Unlock()
+
+		client := autolinkclient.NewClientPlugin(p.API)
+
+		var keys []string
+		for _, autolink := range installList {
+			keys = append(keys, autolink.Name)
+		}
+
+		// Deleting the old autolinks if already present
+		if err := client.Delete(keys...); err != nil {
+			return fmt.Errorf("unable to delete autolinks: %w", err)
+		}
+
+		// Creating the new autolinks
+		if err := client.Add(installList...); err != nil {
+			return fmt.Errorf("unable to add autolinks: %w", err)
+		}
 	}
 
 	return nil
