@@ -35,6 +35,23 @@ const myStatusClasses: Record<string, string> = {
     [myStatus.DONE]: 'ticket-status--done',
 };
 
+function preProcessDescription(description: string): string {
+    const trimmedDescription = description ?
+        `${description.substring(0, maxTicketDescriptionLength).trim()}${description.length > maxTicketDescriptionLength ? '...' : ''}` : '';
+
+    const linkRegex = /\[(.*?)\|([^|\]]+)(?:\|([^|\]]+))?\]/g;
+    const processedString = trimmedDescription
+        .replace(linkRegex, (match, text, url, optional) => {
+            if (!text) {
+                return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+            }
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+        })
+        .replace(/\n/g, '<br />');
+
+    return processedString;
+}
+
 export default class TicketPopover extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props);
@@ -211,7 +228,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                         {this.tagTicketStatus(ticketDetails.statusKey)}
                     </div>
                     <div className='popover-body__description'>
-                        {ticketDetails.description && `${ticketDetails.description.substring(0, maxTicketDescriptionLength).trim()}${ticketDetails.description.length > maxTicketDescriptionLength ? '...' : ''}`}
+                        <div dangerouslySetInnerHTML={{__html: preProcessDescription(ticketDetails.description)}}/>
                     </div>
                     <div className='popover-body__see-more-link'>
                         <a
