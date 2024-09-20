@@ -18,6 +18,7 @@ export type Props = {
 export type State = {
     ticketId: string;
     ticketDetails?: TicketDetails | null;
+    error: string | null;
 };
 
 const isAssignedLabel = ' is assigned';
@@ -46,6 +47,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
 
         this.state = {
             ticketId: ticketID,
+            error: null,
         };
     }
 
@@ -86,11 +88,16 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         const {instanceID} = issueKey;
         const {ticketId, ticketDetails} = this.state;
         if (!ticketDetails && this.props.show && ticketId) {
-            this.props.fetchIssueByKey(this.state.ticketId, instanceID).then((res: {data?: TicketData}) => {
+            this.props.fetchIssueByKey(this.state.ticketId, instanceID).then((res: { data?: TicketData; error?: any}) => {
+                if (res.error) {
+                    this.setState({error: 'There was a problem loading the details for this Jira link'});
+                    return;
+                }
                 const updatedTicketDetails = getJiraTicketDetails(res.data);
                 if (this.props.connected && updatedTicketDetails && updatedTicketDetails.ticketId === ticketId) {
                     this.setState({
                         ticketDetails: updatedTicketDetails,
+                        error: null,
                     });
                 }
             });
@@ -166,7 +173,21 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
             return null;
         }
 
-        const {ticketDetails} = this.state;
+        const {ticketDetails, error} = this.state;
+        if (error) {
+            return (
+                <div className='jira-issue-tooltip jira-issue-tooltip-error'>
+                    <span
+                        className='jira-issue-error-icon fa fa-exclamation-triangle'
+                        style={{color: 'red'}}
+                        title={'Hazard Icon'}
+                    />
+                    <div className='jira-issue-error-message'>{error}</div>
+                    <p className='jira-issue-error-footer'>{'Check your connection or try again later'}</p>
+                </div>
+            );
+        }
+
         if (!ticketDetails) {
             // Display the spinner loader while ticket details are being fetched
             return (
