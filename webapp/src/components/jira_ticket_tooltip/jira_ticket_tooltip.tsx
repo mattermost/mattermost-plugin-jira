@@ -1,6 +1,8 @@
 import React, {ReactNode} from 'react';
 
 import {Instance} from 'types/model';
+import SVGWrapper from 'components/svgWrapper';
+import {SVGIcons} from 'components/plugin_constants/icons';
 import {TicketData, TicketDetails} from 'types/tooltip';
 import DefaultAvatar from 'components/default_avatar/default_avatar';
 
@@ -177,11 +179,14 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         if (error) {
             return (
                 <div className='jira-issue-tooltip jira-issue-tooltip-error'>
-                    <span
-                        className='jira-issue-error-icon fa fa-exclamation-triangle'
-                        style={{color: 'red'}}
-                        title={'Hazard Icon'}
-                    />
+                    <SVGWrapper
+                        width={30}
+                        height={30}
+                        fill='red'
+                        className='my-icon-class'
+                    >
+                        {SVGIcons.exclamationTriangle}
+                    </SVGWrapper>
                     <div className='jira-issue-error-message'>{error}</div>
                     <p className='jira-issue-error-footer'>{'Check your connection or try again later'}</p>
                 </div>
