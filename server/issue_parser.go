@@ -16,7 +16,7 @@ import (
 
 var jiraLinkWithTextRegex = regexp.MustCompile(`\[([^\[]+)\|([^\]]+)\]`)
 
-const issueSummaryMaxLength = 80
+const maxIssueSummaryLength = 80
 
 func parseJiraLinksToMarkdown(text string) string {
 	return jiraLinkWithTextRegex.ReplaceAllString(text, "[${1}](${2})")
