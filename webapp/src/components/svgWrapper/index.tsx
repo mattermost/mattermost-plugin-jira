@@ -12,7 +12,7 @@ type SVGWrapperProps = {
 
 const SVGWrapper = ({
     children,
-    viewBox = '0 0 36 36',
+    viewBox = '0 0 16 16',
     height = 36,
     width = 36,
     fill = 'none',

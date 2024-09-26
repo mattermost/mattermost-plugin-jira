@@ -182,8 +182,8 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                     <SVGWrapper
                         width={30}
                         height={30}
-                        fill='red'
-                        className='my-icon-class'
+                        fill='#FF0000'
+                        className='bi bi-exclamation-triangle'
                     >
                         {SVGIcons.exclamationTriangle}
                     </SVGWrapper>
