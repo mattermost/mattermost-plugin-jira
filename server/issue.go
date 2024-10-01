@@ -1092,5 +1092,6 @@ func (p *Plugin) GetIssueByKey(instanceID, mattermostUserID types.ID, issueKey s
 			return nil, errors.WithMessage(err, "request to Jira failed")
 		}
 	}
+	issue.Fields.Description = preProcessText(issue.Fields.Description)
 	return issue, nil
 }
