@@ -38,7 +38,8 @@
                 "help_text": "The secret used to authenticate the webhook to Mattermost.",
                 "regenerate_help_text": "Regenerates the secret for the webhook URL endpoint. Regenerating the secret invalidates your existing Jira integrations.",
                 "placeholder": "",
-                "default": null
+                "default": null,
+                "secret": true
             },
             {
                 "key": "RolesAllowedToEditJiraSubscriptions",
