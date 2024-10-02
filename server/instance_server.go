@@ -107,7 +107,7 @@ func (si *serverInstance) GetClient(connection *Connection) (client Client, retu
 		if returnErr == nil {
 			return
 		}
-		returnErr = errors.WithMessage(returnErr, "failed to get a Jira client for "+connection.DisplayName)
+		returnErr = errors.WithMessage(returnErr, fmt.Sprintf("failed to get a Jira client for %s", connection.Name))
 	}()
 
 	if connection.Oauth1AccessToken == "" || connection.Oauth1AccessSecret == "" {
