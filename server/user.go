@@ -43,24 +43,42 @@ type SavedFieldValues struct {
 	IssueType  string `json:"issue_type,omitempty"`
 }
 
-func (c *Connection) JiraAccountID() types.ID {
-	if c.AccountID != "" {
-		return types.ID(c.AccountID)
+func (connection *Connection) JiraAccountID() types.ID {
+	if connection.AccountID != "" {
+		return types.ID(connection.AccountID)
 	}
 
-	return types.ID(c.Name)
+	return types.ID(connection.Name)
 }
 
 type ConnectionSettings struct {
-	Notifications bool `json:"notifications"`
+	Notifications          bool `json:"notifications"`
+	RolesForDMNotification map[string]bool
 }
 
 func (s *ConnectionSettings) String() string {
-	notifications := "off"
-	if s != nil && s.Notifications {
-		notifications = "on"
+	assigneeNotifications := "Notifications for assignee: off"
+	mentionNotifications := "Notifications for mention: off"
+	reporterNotifications := "Notifications for reporter: off"
+	watchingNotifications := "Notifications for watching: off"
+
+	if s != nil && s.ShouldReceiveNotification(assigneeRole) {
+		assigneeNotifications = "Notifications for assignee: on"
 	}
-	return fmt.Sprintf("\tNotifications: %s", notifications)
+
+	if s != nil && s.ShouldReceiveNotification(mentionRole) {
+		mentionNotifications = "Notifications for mention: on"
+	}
+
+	if s != nil && s.ShouldReceiveNotification(reporterRole) {
+		reporterNotifications = "Notifications for reporter: on"
+	}
+
+	if s != nil && s.ShouldReceiveNotification(watchingRole) {
+		watchingNotifications = "Notifications for watching: on"
+	}
+
+	return fmt.Sprintf("\t- %s \n\t- %s \n\t- %s \n\t- %s", assigneeNotifications, mentionNotifications, reporterNotifications, watchingNotifications)
 }
 
 func NewUser(mattermostUserID types.ID) *User {
