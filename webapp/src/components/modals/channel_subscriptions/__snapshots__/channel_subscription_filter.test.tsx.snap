@@ -51,6 +51,10 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
                 "value": "versions",
               },
               Object {
+                "label": "Assignee",
+                "value": "assignee",
+              },
+              Object {
                 "label": "Epic Link",
                 "value": "customfield_10014",
               },
@@ -81,6 +85,10 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
               Object {
                 "label": "MJK - Select List 3",
                 "value": "customfield_10076",
+              },
+              Object {
+                "label": "MJK - User Picker",
+                "value": "customfield_10080",
               },
               Object {
                 "label": "Priority",
