@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/mattermost/mattermost-plugin-jira/server/telemetry"
 )
 
@@ -22,19 +24,10 @@ func (p *Plugin) OnSendDailyTelemetry() {
 	args := map[string]interface{}{}
 
 	// Jira instances
-	server, cloud := 0, 0
-	instances, err := p.instanceStore.LoadInstances()
+	server, cloud, err := p.instanceCount()
 	if err != nil {
 		p.client.Log.Warn("Failed to get instances for telemetry", "error", err)
 	} else {
-		for _, id := range instances.IDs() {
-			switch instances.Get(id).Type {
-			case ServerInstanceType:
-				server++
-			case CloudInstanceType:
-				cloud++
-			}
-		}
 		args["instance_count"] = server + cloud
 		if server > 0 {
 			args["server_instance_count"] = server
@@ -42,23 +35,17 @@ func (p *Plugin) OnSendDailyTelemetry() {
 		if cloud > 0 {
 			args["cloud_instance_count"] = cloud
 		}
+	}
 
-		// Subscriptions
-		numSubscriptions := 0
-		var subs *Subscriptions
-		for _, id := range instances.IDs() {
-			subs, err = p.getSubscriptions(id)
-			if err != nil {
-				p.client.Log.Warn("Failed to get subscriptions for telemetry", "error", err)
-			}
-			numSubscriptions += len(subs.Channel.ByID)
-		}
-
-		args["subscriptions"] = numSubscriptions
+	subscriptionCount, err := p.subscriptionCount()
+	if err != nil {
+		p.client.Log.Warn("Failed to get the number of subscriptions for telemetry", "error", err)
+	} else {
+		args["subscriptions"] = subscriptionCount
 	}
 
 	// Connected users
-	connected, err := p.userStore.CountUsers()
+	connected, err := p.userCount()
 	if err != nil {
 		p.client.Log.Warn("Failed to get the number of connected users for telemetry", "error", err)
 	} else {
@@ -66,6 +53,48 @@ func (p *Plugin) OnSendDailyTelemetry() {
 	}
 
 	p.TrackEvent("stats", args)
+}
+
+func (p *Plugin) instanceCount() (server int, cloud int, err error) {
+	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return
+	}
+
+	for _, id := range instances.IDs() {
+		switch instances.Get(id).Type {
+		case ServerInstanceType:
+			server++
+		case CloudInstanceType:
+			cloud++
+		}
+	}
+
+	return
+}
+
+func (p *Plugin) subscriptionCount() (int, error) {
+	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return 0, err
+	}
+
+	// Subscriptions
+	numSubscriptions := 0
+	var subs *Subscriptions
+	for _, id := range instances.IDs() {
+		subs, err = p.getSubscriptions(id)
+		if err != nil {
+			return 0, errors.Wrapf(err, "failed to get subscription %q for telemetry", id)
+		}
+		numSubscriptions += len(subs.Channel.ByID)
+	}
+
+	return numSubscriptions, nil
+}
+
+func (p *Plugin) userCount() (int, error) {
+	return p.userStore.CountUsers()
 }
 
 // Initialize telemetry setups the tracker/clients needed to send telemetry data.
