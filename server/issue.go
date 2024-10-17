@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -1092,5 +1093,44 @@ func (p *Plugin) GetIssueByKey(instanceID, mattermostUserID types.ID, issueKey s
 			return nil, errors.WithMessage(err, "request to Jira failed")
 		}
 	}
+	return issue, nil
+}
+
+func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Issue, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/2/issue/%s", instanceID, issueID), nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create http request for fetching issue data. IssueID: %s", issueID)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", p.getConfig().AdminAPIToken))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get issue data. IssueID: %s", issueID)
+	}
+
+	if resp == nil || resp.Body == nil {
+		return nil, errors.Wrapf(err, "missing data for issue. StatusCode: %d, IssueID: %s", resp.StatusCode, issueID)
+	}
+
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to read issue data. StatusCode: %d, IssueID: %s", resp.StatusCode, issueID)
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, errors.Errorf("issue does not exist or user does not have permission to fetch the issue details. StatusCode: %d, IssueID: %s", resp.StatusCode, issueID)
+	} else if resp.StatusCode == http.StatusForbidden {
+		return nil, errors.Errorf("user does not have permission to fetch the issue details. StatusCode: %d, IssueID: %s", resp.StatusCode, issueID)
+	}
+
+	issue := &jira.Issue{}
+	if err = json.Unmarshal(body, issue); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal issue data. IssueID: %s", issueID)
+	}
+
 	return issue, nil
 }

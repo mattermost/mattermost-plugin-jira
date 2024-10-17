@@ -81,6 +81,9 @@ type externalConfig struct {
 
 	// Display subscription name in notifications
 	DisplaySubscriptionNameInNotifications bool
+
+	// API token from Jira
+	AdminAPIToken string
 }
 
 const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb
