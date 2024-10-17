@@ -1110,7 +1110,7 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 		return nil, errors.Wrapf(err, "failed to get issue data. IssueID: %s", issueID)
 	}
 
-	if resp.Body == nil {
+	if resp == nil || resp.Body == nil {
 		return nil, errors.Wrapf(err, "missing data for issue. StatusCode: %d, IssueID: %s", resp.StatusCode, issueID)
 	}
 
@@ -1119,6 +1119,12 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read issue data. StatusCode: %d, IssueID: %s", resp.StatusCode, issueID)
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, errors.Errorf("issue does not exist or user does not have permission to fetch the issue details. StatusCode: %d, IssueID: %s", resp.StatusCode, issueID)
+	} else if resp.StatusCode == http.StatusForbidden {
+		return nil, errors.Errorf("user does not have permission to fetch the issue details. StatusCode: %d, IssueID: %s", resp.StatusCode, issueID)
 	}
 
 	issue := &jira.Issue{}
