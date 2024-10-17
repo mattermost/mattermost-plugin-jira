@@ -65,9 +65,9 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 				if instance.JWTInstance == nil {
 					// Using API token to fetch the issue details as users were not getting notified for the events triggered by a non connected user i.e. oauth token is absent
 					if p.getConfig().AdminAPIToken != "" {
-						issue, err := p.GetIssueDataWithAPIToken(jwh.Issue.Key, instance.GetID().String())
-						if err != nil {
-							return err
+						issue, apiTokenErr := p.GetIssueDataWithAPIToken(jwh.Issue.Key, instance.GetID().String())
+						if apiTokenErr != nil {
+							return apiTokenErr
 						}
 
 						jwh.Issue = *issue
