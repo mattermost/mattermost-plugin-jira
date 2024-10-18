@@ -114,6 +114,14 @@
                 "help_text": "Display subscription name in post when a subscription posts to a channel",
                 "placeholder": "",
                 "default": false
+            },
+            {
+                "key": "AdminAPIToken",
+                "display_name": "Admin API Token",
+                "type": "text",
+                "help_text": "Set this [API token](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) to get notified for comment and issue created events even if the user triggering the event is not connected to Jira.\n **Note:** API token should be created using an admin Jira account. Otherwise, the notification will not be delivered for the project the user cannot access.",
+                "placeholder": "",
+                "default": ""
             }
         ]
     }
