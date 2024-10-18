@@ -4,13 +4,22 @@
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
-export const doFetch = async (url, options) => {
+interface QueryParameters {
+    [key: string]: string | number | boolean;
+}
+
+interface FetchOptions {
+    method: string;
+    body?: BodyInit | null;
+}
+
+export const doFetch = async (url: string, options: FetchOptions) => {
     const {data} = await doFetchWithResponse(url, options);
 
     return data;
 };
 
-export const doFetchWithResponse = async (url, options = {}) => {
+export const doFetchWithResponse = async (url: string, options = {}) => {
     const response = await fetch(url, Client4.getOptions(options));
 
     let data;
@@ -32,7 +41,7 @@ export const doFetchWithResponse = async (url, options = {}) => {
     });
 };
 
-export function buildQueryString(parameters) {
+export function buildQueryString(parameters: QueryParameters) {
     const keys = Object.keys(parameters);
     if (keys.length === 0) {
         return '';
