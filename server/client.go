@@ -333,14 +333,30 @@ func MakeCreateIssueURL(instance Instance, project *jira.Project, issue *jira.Is
 	}
 
 	// add custom fields
-	for k, v := range issue.Fields.Unknowns {
-		strV, ok := v.(string)
-		if ok {
-			q.Add(k, strV)
-		}
-		if mapV, ok := v.(map[string]interface{}); ok {
-			if id, ok := mapV["id"].(string); ok {
-				q.Add(k, id)
+	for key, field := range issue.Fields.Unknowns {
+		switch fieldTyped := field.(type) {
+		case string:
+			q.Add(key, fieldTyped)
+		case map[string]interface{}:
+			if id, ok := fieldTyped["id"].(string); ok {
+				q.Add(key, id)
+			}
+		case []interface{}:
+			for _, element := range fieldTyped {
+				switch elementTyped := element.(type) {
+				case string:
+					q.Add(key, elementTyped)
+				case map[string]interface{}:
+					if id, ok := elementTyped["id"].(string); ok {
+						q.Add(key, id)
+					}
+				case []map[string]interface{}:
+					for _, mapWithID := range elementTyped {
+						if id, ok := mapWithID["id"].(string); ok {
+							q.Add(key, id)
+						}
+					}
+				}
 			}
 		}
 	}
