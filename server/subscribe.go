@@ -33,6 +33,7 @@ const (
 	FilterIncludeOrEmpty = "include_or_empty"
 
 	MaxSubscriptionNameLength = 100
+	CommentVisibility         = "commentVisibility"
 )
 
 type FieldFilter struct {
@@ -171,6 +172,14 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		}
 
 		value := getIssueFieldValue(issue, field.Key)
+		if field.Key == CommentVisibility {
+			if wh.Comment.Visibility.Value != "" {
+				value = value.Add(wh.Comment.Visibility.Value)
+			} else {
+				value = value.Add(visibleToAllUsers)
+			}
+		}
+
 		if !isValidFieldInclusion(field, value, inclusion) {
 			return false
 		}
