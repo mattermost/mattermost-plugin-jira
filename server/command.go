@@ -434,7 +434,7 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 
 func executeDefaultInstance(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	if len(args) < 1 {
-		return p.responsef(header, "Please specify the jira instance URL")
+		return p.responsef(header, "Please specify the Jira instance URL")
 	}
 
 	if len(args) > 1 {
