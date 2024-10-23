@@ -335,13 +335,13 @@ func MakeCreateIssueURL(instance Instance, project *jira.Project, issue *jira.Is
 	// add custom fields
 	for key, field := range issue.Fields.Unknowns {
 		switch fieldTyped := field.(type) {
-		case string:
+		case string: // handles fields like url, short text, paragraph
 			q.Add(key, fieldTyped)
-		case map[string]interface{}:
+		case map[string]interface{}: // handles fields like dropdown
 			if id, ok := fieldTyped["id"].(string); ok {
 				q.Add(key, id)
 			}
-		case []interface{}:
+		case []interface{}: // handles fields like labels, checkbox, flags
 			for _, element := range fieldTyped {
 				switch elementTyped := element.(type) {
 				case string:
