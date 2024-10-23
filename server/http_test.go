@@ -286,7 +286,7 @@ func TestSubscribe(t *testing.T) {
 			},
 		},
 		"Initial Subscription happy": {
-			subscription:       `{"instance_id": "jiraurl1", "name": "some name", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "some name", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusOK,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{
 				{
@@ -300,37 +300,37 @@ func TestSubscribe(t *testing.T) {
 			}, nil, t),
 		},
 		"Initial Subscription, GetProject mocked error": {
-			subscription:       fmt.Sprintf(`{"instance_id": "jiraurl1", "name": "some name", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
+			subscription:       fmt.Sprintf(`{"instance_id": "https://jiraurl1.com", "name": "some name", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls:           hasSubscriptions([]ChannelSubscription{}, t),
 		},
 		"Initial Subscription, empty name provided": {
-			subscription:       `{"instance_id": "jiraurl1", "name": "", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls:           hasSubscriptions([]ChannelSubscription{}, t),
 		},
 		"Initial Subscription, long name provided": {
-			subscription:       `{"instance_id": "jiraurl1", "name": "` + TestDataLongSubscriptionName + `", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "` + TestDataLongSubscriptionName + `", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls:           hasSubscriptions([]ChannelSubscription{}, t),
 		},
 		"Initial Subscription, no project provided": {
-			subscription:       `{"instance_id": "jiraurl1", "name": "somename", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": [], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "somename", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": [], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls:           hasSubscriptions([]ChannelSubscription{}, t),
 		},
 		"Initial Subscription, no events provided": {
-			subscription:       `{"instance_id": "jiraurl1", "name": "somename", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": [], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "somename", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": [], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls:           hasSubscriptions([]ChannelSubscription{}, t),
 		},
 		"Initial Subscription, no issue types provided": {
-			subscription:       `{"instance_id": "jiraurl1", "name": "somename", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": []}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "somename", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": []}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls:           hasSubscriptions([]ChannelSubscription{}, t),
 		},
 		"Adding to existing with other channel": {
-			subscription:       `{"instance_id": "jiraurl1", "name": "some name", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "some name", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusOK,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{
 				{
@@ -364,7 +364,7 @@ func TestSubscribe(t *testing.T) {
 					}), t),
 		},
 		"Adding to existing in same channel": {
-			subscription:       `{"instance_id": "jiraurl1", "name": "subscription name", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "subscription name", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusOK,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{
 				{
@@ -398,7 +398,7 @@ func TestSubscribe(t *testing.T) {
 					}), t),
 		},
 		"Adding to existing with same name in same channel": {
-			subscription:       `{"instance_id": "jiraurl1", "name": "SubscriptionName", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "SubscriptionName", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{
 				{
@@ -615,7 +615,7 @@ func TestEditSubscription(t *testing.T) {
 			},
 		},
 		"Editing subscription": {
-			subscription:       `{"instance_id": "jiraurl1", "name": "some name", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "some name", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusOK,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{
 				{
@@ -642,7 +642,7 @@ func TestEditSubscription(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription, no name provided": {
-			subscription:       `{"instance_id": "jiraurl1", "name": "", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{},
 				withExistingChannelSubscriptions(
@@ -659,7 +659,7 @@ func TestEditSubscription(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription, name too long": {
-			subscription:       `{"instance_id": "jiraurl1", "name": "` + TestDataLongSubscriptionName + `", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "` + TestDataLongSubscriptionName + `", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{},
 				withExistingChannelSubscriptions(
@@ -676,7 +676,7 @@ func TestEditSubscription(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription, no project provided": {
-			subscription:       `{"instance_id": "jiraurl1", "name": "somename", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "projects": [], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "somename", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "projects": [], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{},
 				withExistingChannelSubscriptions(
@@ -693,7 +693,7 @@ func TestEditSubscription(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription, no events provided": {
-			subscription:       `{"instance_id": "jiraurl1", "name": "somename", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": [], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "somename", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": [], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{},
 				withExistingChannelSubscriptions(
@@ -710,7 +710,7 @@ func TestEditSubscription(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription, no issue types provided": {
-			subscription:       `{"instance_id": "jiraurl1", "name": "somename", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": []}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "somename", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": []}}`,
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{},
 				withExistingChannelSubscriptions(
@@ -727,7 +727,7 @@ func TestEditSubscription(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription, GetProject mocked error. Existing sub has nonexistent project.": {
-			subscription:       fmt.Sprintf(`{"instance_id": "jiraurl1", "id": "subaaaaaaaaaabbbbbbbbbbccc", "name": "subscription name", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
+			subscription:       fmt.Sprintf(`{"instance_id": "https://jiraurl1.com", "id": "subaaaaaaaaaabbbbbbbbbbccc", "name": "subscription name", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{},
 				withExistingChannelSubscriptions(
@@ -744,7 +744,7 @@ func TestEditSubscription(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription, GetProject mocked error. Existing sub has existing project.": {
-			subscription:       fmt.Sprintf(`{"instance_id": "jiraurl1", "id": "subaaaaaaaaaabbbbbbbbbbccc", "name": "subscription name", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
+			subscription:       fmt.Sprintf(`{"instance_id": "https://jiraurl1.com", "id": "subaaaaaaaaaabbbbbbbbbbccc", "name": "subscription name", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
 			expectedStatusCode: http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptions([]ChannelSubscription{},
 				withExistingChannelSubscriptions(

@@ -148,6 +148,7 @@ export enum FilterFieldInclusion {
     INCLUDE_ALL = 'include_all',
     EXCLUDE_ANY = 'exclude_any',
     EMPTY = 'empty',
+    INCLUDE_OR_EMPTY = 'include_or_empty',
 }
 
 export type FilterValue = {
@@ -235,3 +236,25 @@ export type CreateIssueFields = {
     project: {key: string};
     issuetype: {id: string};
 } & {[key: string]: JiraField};
+
+export type ProvidedStyle = {
+    zIndex?: number;
+    borderColor?: string;
+    color?: string;
+    background?: string;
+    padding?: string;
+    boxShadow?: string;
+    borderRadius?: string;
+    transform?: string;
+    marginRight?: string;
+    width?: string;
+    height?: string;
+    [key: string]: any;
+};
+
+export type StyleState = {
+    isFocused: boolean;
+    isSelected: boolean;
+    isDisabled: boolean;
+    [key: string]: any;
+};

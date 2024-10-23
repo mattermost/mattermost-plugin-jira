@@ -33,7 +33,7 @@ func TestAsSlackAttachment(t *testing.T) {
 				},
 			},
 			expectedAttachment: &model.SlackAttachment{
-				Text:  "[MM-57208:  (Open)](jiraurl2/browse/MM-57208)",
+				Text:  "[MM-57208:  (Open)](https://jiraurl2.com/browse/MM-57208)",
 				Color: "#95b7d0",
 			},
 		},
@@ -48,7 +48,7 @@ func TestAsSlackAttachment(t *testing.T) {
 				},
 			},
 			expectedAttachment: &model.SlackAttachment{
-				Text:  "[MM-57208: A Summary (Open)](jiraurl2/browse/MM-57208)",
+				Text:  "[MM-57208: A Summary (Open)](https://jiraurl2.com/browse/MM-57208)",
 				Color: "#95b7d0",
 			},
 		},
@@ -76,7 +76,7 @@ func TestAsSlackAttachment(t *testing.T) {
 				},
 			},
 			expectedAttachment: &model.SlackAttachment{
-				Text:  "[MM-57208: A Summary (Open)](jiraurl2/browse/MM-57208)\n\nA Description\n",
+				Text:  "[MM-57208: A Summary (Open)](https://jiraurl2.com/browse/MM-57208)\n\nA Description\n",
 				Color: "#95b7d0",
 				Fields: []*model.SlackAttachmentField{
 					{
@@ -110,7 +110,7 @@ func TestAsSlackAttachment(t *testing.T) {
 			},
 			showActions: true,
 			expectedAttachment: &model.SlackAttachment{
-				Text:  "[MM-57208:  (Open)](jiraurl2/browse/MM-57208)",
+				Text:  "[MM-57208:  (Open)](https://jiraurl2.com/browse/MM-57208)",
 				Color: "#95b7d0",
 				Actions: []*model.PostAction{
 					{

@@ -27,10 +27,11 @@ const (
 	JiraSubscriptionsKey = "jirasub"
 	templateKey          = "templates"
 
-	FilterIncludeAny = "include_any"
-	FilterIncludeAll = "include_all"
-	FilterExcludeAny = "exclude_any"
-	FilterEmpty      = "empty"
+	FilterIncludeAny     = "include_any"
+	FilterIncludeAll     = "include_all"
+	FilterExcludeAny     = "exclude_any"
+	FilterEmpty          = "empty"
+	FilterIncludeOrEmpty = "include_or_empty"
 
 	MaxSubscriptionNameLength         = 100
 	MaxSubscriptionTemplateNameLength = 100
@@ -244,7 +245,8 @@ func isValidFieldInclusion(field FieldFilter, value StringSet, inclusion string)
 	if (inclusion == FilterIncludeAny && !containsAny) ||
 		(inclusion == FilterIncludeAll && !containsAll) ||
 		(inclusion == FilterExcludeAny && containsAny) ||
-		(inclusion == FilterEmpty && value.Len() > 0) {
+		(inclusion == FilterEmpty && value.Len() > 0) ||
+		(inclusion == FilterIncludeOrEmpty && !containsAny && value.Len() > 0) {
 		return false
 	}
 
@@ -258,10 +260,14 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) ([]Chan
 	}
 
 	var channelSubscriptions []ChannelSubscription
+	subscriptionMap := make(map[string]bool)
 	subIds := subs.Channel.ByID
 	for _, sub := range subIds {
 		if p.matchesSubsciptionFilters(wh, sub.Filters) {
-			channelSubscriptions = append(channelSubscriptions, sub)
+			if !subscriptionMap[sub.ChannelID] {
+				subscriptionMap[sub.ChannelID] = true
+				channelSubscriptions = append(channelSubscriptions, sub)
+			}
 		}
 	}
 
@@ -297,6 +303,10 @@ func (p *Plugin) getSubscriptionsForChannel(instanceID types.ID, channelID strin
 	for _, channelSubscriptionID := range subs.Channel.IDByChannelID[channelID].Elems() {
 		channelSubscriptions = append(channelSubscriptions, subs.Channel.ByID[channelSubscriptionID])
 	}
+
+	sort.Slice(channelSubscriptions, func(i, j int) bool {
+		return channelSubscriptions[i].Name < channelSubscriptions[j].Name
+	})
 
 	return channelSubscriptions, nil
 }
@@ -721,13 +731,22 @@ func (p *Plugin) listChannelSubscriptions(instanceID types.ID, teamID string) (s
 				}
 				rows = append(rows, fmt.Sprintf("\t* (%d) %s", len(subsIDs), instanceID))
 
+				channelSubscriptions := []ChannelSubscription{}
 				for _, subID := range subsIDs {
 					sub := subs.Channel.ByID[subID]
-					subName := "(No Name)"
-					if sub.Name != "" {
-						subName = sub.Name
+					if sub.Name == "" {
+						sub.Name = "(No Name)"
 					}
-					rows = append(rows, fmt.Sprintf("\t\t* %s - %s", sub.Filters.Projects.Elems()[0], subName))
+
+					channelSubscriptions = append(channelSubscriptions, sub)
+				}
+
+				sort.Slice(channelSubscriptions, func(i, j int) bool {
+					return channelSubscriptions[i].Name < channelSubscriptions[j].Name
+				})
+
+				for _, channelSubscription := range channelSubscriptions {
+					rows = append(rows, fmt.Sprintf("\t\t* %s - %s", channelSubscription.Filters.Projects.Elems()[0], channelSubscription.Name))
 				}
 			}
 		}

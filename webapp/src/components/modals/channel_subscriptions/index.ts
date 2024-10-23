@@ -51,7 +51,7 @@ const mapStateToProps = (state) => {
     const installedInstances = getInstalledInstances(state);
     const connectedInstances = getUserConnectedInstances(state);
     const pluginSettings = getPluginSettings(state);
-    const securityLevelEmptyForJiraSubscriptions = pluginSettings.security_level_empty_for_jira_subscriptions;
+    const securityLevelEmptyForJiraSubscriptions = pluginSettings?.security_level_empty_for_jira_subscriptions;
 
     return {
         omitDisplayName,

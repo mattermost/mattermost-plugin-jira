@@ -21,7 +21,7 @@ export type Props = {
     removeValidate: (isValid: () => boolean) => void;
     onChange: (f: FilterValue[]) => void;
     instanceID: string;
-    securityLevelEmptyForJiraSubscriptions: boolean;
+    securityLevelEmptyForJiraSubscriptions?: boolean;
 };
 
 type State = {
