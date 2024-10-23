@@ -1068,7 +1068,7 @@ func TestEditSubscriptionTemplate(t *testing.T) {
 		},
 		"Editing subscription template": {
 			subscriptionTemplate: `{
-				"instance_id": "jiraurl1",
+				"instance_id": "https://jiraurl1.com",
 				"name": "mockName",
 				"id": "mockTemplateID1___________",
 				"filters": {
@@ -1100,7 +1100,7 @@ func TestEditSubscriptionTemplate(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription template, no name provided": {
-			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "", "id": "mockTemplateID1___________", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
+			subscriptionTemplate: `{"instance_id": "https://jiraurl1.com", "name": "", "id": "mockTemplateID1___________", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode:   http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{},
 				withExistingChannelSubscriptionTemplates(
@@ -1112,7 +1112,7 @@ func TestEditSubscriptionTemplate(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription template, name too long": {
-			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "` + TestDataLongSubscriptionName + `", "id": "mockTemplateID1___________", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
+			subscriptionTemplate: `{"instance_id": "https://jiraurl1.com", "name": "` + TestDataLongSubscriptionName + `", "id": "mockTemplateID1___________", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode:   http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{},
 				withExistingChannelSubscriptionTemplates(
@@ -1124,7 +1124,7 @@ func TestEditSubscriptionTemplate(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription template, no project provided": {
-			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "mockName", "id": "mockTemplateID1___________", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": [], "issue_types": ["10001"]}}`,
+			subscriptionTemplate: `{"instance_id": "https://jiraurl1.com", "name": "mockName", "id": "mockTemplateID1___________", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": [], "issue_types": ["10001"]}}`,
 			expectedStatusCode:   http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{},
 				withExistingChannelSubscriptionTemplates(
@@ -1136,7 +1136,7 @@ func TestEditSubscriptionTemplate(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription template, no events provided": {
-			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "mockName", "id": "mockTemplateID1___________", "channel_id": "mockChannelID_____________", "filters": {"events": [], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
+			subscriptionTemplate: `{"instance_id": "https://jiraurl1.com", "name": "mockName", "id": "mockTemplateID1___________", "channel_id": "mockChannelID_____________", "filters": {"events": [], "projects": ["otherproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode:   http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{},
 				withExistingChannelSubscriptionTemplates(
@@ -1148,7 +1148,7 @@ func TestEditSubscriptionTemplate(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription template, no issue types provided": {
-			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "mockName", "id": "mockTemplateID1___________", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": []}}`,
+			subscriptionTemplate: `{"instance_id": "https://jiraurl1.com", "name": "mockName", "id": "mockTemplateID1___________", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["otherproject"], "issue_types": []}}`,
 			expectedStatusCode:   http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{},
 				withExistingChannelSubscriptionTemplates(
@@ -1160,7 +1160,7 @@ func TestEditSubscriptionTemplate(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription template, GetProject mocked error. Existing subscription has a non-existent project.": {
-			subscriptionTemplate: fmt.Sprintf(`{"instance_id": "jiraurl1", "id": "mockTemplateID2___________", "name": "subscription name", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
+			subscriptionTemplate: fmt.Sprintf(`{"instance_id": "https://jiraurl1.com", "id": "mockTemplateID2___________", "name": "subscription name", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
 			expectedStatusCode:   http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{},
 				withExistingChannelSubscriptionTemplates(
@@ -1172,7 +1172,7 @@ func TestEditSubscriptionTemplate(t *testing.T) {
 					}), t),
 		},
 		"Editing subscription template, GetProject mocked error. Existing subscription has existing project.": {
-			subscriptionTemplate: fmt.Sprintf(`{"instance_id": "jiraurl1", "id": "mockTemplateID2___________", "name": "subscription name", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
+			subscriptionTemplate: fmt.Sprintf(`{"instance_id": "https://jiraurl1.com", "id": "mockTemplateID2___________", "name": "subscription name", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
 			expectedStatusCode:   http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{},
 				withExistingChannelSubscriptionTemplates(
@@ -1238,7 +1238,7 @@ func TestCreateSubscriptionTemplate(t *testing.T) {
 			skipAuthorize:        true,
 		},
 		"Initial Subscription Template": {
-			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "some name", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscriptionTemplate: `{"instance_id": "https://jiraurl1.com", "name": "some name", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode:   http.StatusOK,
 			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{
 				{
@@ -1247,32 +1247,32 @@ func TestCreateSubscriptionTemplate(t *testing.T) {
 			}, nil, t),
 		},
 		"Initial Subscription Template, GetProject mocked error": {
-			subscriptionTemplate: fmt.Sprintf(`{"instance_id": "jiraurl1", "name": "some name", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
+			subscriptionTemplate: fmt.Sprintf(`{"instance_id": "https://jiraurl1.com", "name": "some name", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["%s"], "issue_types": ["10001"]}}`, nonExistantProjectKey),
 			expectedStatusCode:   http.StatusInternalServerError,
 			apiCalls:             hasSubscriptionTemplates([]SubscriptionTemplate{}, t),
 		},
 		"Initial Subscription Template, empty name provided": {
-			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscriptionTemplate: `{"instance_id": "https://jiraurl1.com", "name": "", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode:   http.StatusInternalServerError,
 			apiCalls:             hasSubscriptionTemplates([]SubscriptionTemplate{}, t),
 		},
 		"Initial Subscription Template, long name provided": {
-			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "` + TestDataLongSubscriptionName + `", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscriptionTemplate: `{"instance_id": "https://jiraurl1.com", "name": "` + TestDataLongSubscriptionName + `", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode:   http.StatusInternalServerError,
 			apiCalls:             hasSubscriptionTemplates([]SubscriptionTemplate{}, t),
 		},
 		"Initial Subscription Template, no project provided": {
-			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "mockName", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": [], "issue_types": ["10001"]}}`,
+			subscriptionTemplate: `{"instance_id": "https://jiraurl1.com", "name": "mockName", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": [], "issue_types": ["10001"]}}`,
 			expectedStatusCode:   http.StatusInternalServerError,
 			apiCalls:             hasSubscriptionTemplates([]SubscriptionTemplate{}, t),
 		},
 		"Initial Subscription Template, no issue types provided": {
-			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "mockName", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": []}}`,
+			subscriptionTemplate: `{"instance_id": "https://jiraurl1.com", "name": "mockName", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": []}}`,
 			expectedStatusCode:   http.StatusInternalServerError,
 			apiCalls:             hasSubscriptionTemplates([]SubscriptionTemplate{}, t),
 		},
 		"Adding to existing templates in a different channel": {
-			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "some name", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscriptionTemplate: `{"instance_id": "https://jiraurl1.com", "name": "some name", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode:   http.StatusOK,
 			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{
 				{
@@ -1291,7 +1291,7 @@ func TestCreateSubscriptionTemplate(t *testing.T) {
 					}), t),
 		},
 		"Adding to existing templates in the same channel": {
-			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "subscription name", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscriptionTemplate: `{"instance_id": "https://jiraurl1.com", "name": "subscription name", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode:   http.StatusOK,
 			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{
 				{
@@ -1310,7 +1310,7 @@ func TestCreateSubscriptionTemplate(t *testing.T) {
 					}), t),
 		},
 		"Adding to existing templates with same name in the same channel": {
-			subscriptionTemplate: `{"instance_id": "jiraurl1", "name": "SubscriptionName", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			subscriptionTemplate: `{"instance_id": "https://jiraurl1.com", "name": "SubscriptionName", "channel_id": "mockChannelID_____________", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode:   http.StatusInternalServerError,
 			apiCalls: checkHasSubscriptionTemplates([]SubscriptionTemplate{
 				{
