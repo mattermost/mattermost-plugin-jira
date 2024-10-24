@@ -265,7 +265,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
             );
         } else {
             subscriptionTemplateRows = (
-                <p>{'Click "Create Template" to create subscription templates.'}</p>
+                <p>{'Click "Create Template" to create a subscription template.'}</p>
             );
         }
 
