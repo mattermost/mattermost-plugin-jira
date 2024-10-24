@@ -440,10 +440,12 @@ func executeDefaultInstance(p *Plugin, c *plugin.Context, header *model.CommandA
 	if len(args) > 1 {
 		return p.help(header)
 	}
+	
 	jiraURL := ""
 	if len(args) > 0 {
 		jiraURL = args[0]
 	}
+	
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
 		return p.responsef(header, "Failed to load instances. Error: %v.", err)
