@@ -206,7 +206,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                             target='_blank'
                             rel='noopener noreferrer'
                         >
-                            <h5>{ticketDetails.summary && `${ticketDetails.summary.substring(0, jiraTicketSummaryMaxLength).trim()}${ticketDetails.summary.length > jiraTicketSummaryMaxLength ? '...' : ''}`}</h5>
+                            <h5>{ticketDetails.summary && `${ticketDetails.summary.trim().split(/\s+/).join(' ').substring(0, jiraTicketSummaryMaxLength)}${ticketDetails.summary.trim().split(/\s+/).join(' ').length > jiraTicketSummaryMaxLength ? '...' : ''}`}</h5>
                         </a>
                         {this.tagTicketStatus(ticketDetails.statusKey)}
                     </div>
