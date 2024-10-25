@@ -10,6 +10,7 @@ require (
 	github.com/dghubble/oauth1 v0.5.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/gorilla/mux v1.8.1
+	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/mattermost/mattermost-plugin-autolink v1.2.2-0.20210709183311-c8fa30db649f
 	github.com/mattermost/mattermost/server/public v0.1.7
@@ -20,6 +21,7 @@ require (
 	github.com/trivago/tgo v1.0.7
 	golang.org/x/oauth2 v0.21.0
 	golang.org/x/text v0.16.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -38,7 +40,6 @@ require (
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-hclog v1.6.3 // indirect
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-plugin v1.6.1 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
 	github.com/klauspost/compress v1.15.14 // indirect
@@ -79,5 +80,4 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
