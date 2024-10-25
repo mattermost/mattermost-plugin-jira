@@ -209,6 +209,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                         <a
                             href={this.props.href}
                             target='_blank'
+                            title={ticketDetails?.summary}
                             rel='noopener noreferrer'
                         >
                             <h5>{formattedSummary}</h5>
