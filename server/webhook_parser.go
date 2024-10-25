@@ -191,7 +191,7 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 
 func parseWebhookCreated(jwh *JiraWebhook) Webhook {
 	wh := newWebhook(jwh, eventCreated, "**created**")
-	wh.text = jwh.mdIssueDescription()
+	wh.text = preProcessText(jwh.mdIssueDescription())
 
 	if jwh.Issue.Fields == nil {
 		return wh
