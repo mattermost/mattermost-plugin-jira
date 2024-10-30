@@ -90,7 +90,7 @@ export default class JiraFields extends React.Component<Props> {
             return null;
         }
 
-        let projectKey;
+        let projectKey: string | undefined;
         if (values && values.project) {
             projectKey = values.project.key;
         }
