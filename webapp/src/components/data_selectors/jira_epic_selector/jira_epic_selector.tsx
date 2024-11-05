@@ -45,7 +45,7 @@ export default class JiraEpicSelector extends React.PureComponent<Props> {
     searchIssues = async (userInput: string): Promise<ReactSelectOption[]> => {
         let epicNameTypeId: string | undefined;
         let epicNameTypeName: string | undefined;
-    
+
         for (const project of this.props.issueMetadata.projects) {
             for (const issueType of project.issuetypes) {
                 epicNameTypeId = Object.keys(issueType.fields).find((key) => isEpicNameField(issueType.fields[key]));
@@ -58,7 +58,7 @@ export default class JiraEpicSelector extends React.PureComponent<Props> {
                 break;
             }
         }
-    
+
         if (!epicNameTypeId || !epicNameTypeName) {
             return [];
         }
@@ -76,7 +76,7 @@ export default class JiraEpicSelector extends React.PureComponent<Props> {
         let epicIssueTypeId: string | undefined;
         let epicNameTypeId: string | undefined;
         let projectKey: string | undefined;
-    
+
         for (const project of this.props.issueMetadata.projects) {
             for (const issueType of project.issuetypes) {
                 epicNameTypeId = Object.keys(issueType.fields).find((key) => isEpicNameField(issueType.fields[key]));
