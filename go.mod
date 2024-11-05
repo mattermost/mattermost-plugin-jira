@@ -11,7 +11,6 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/gorilla/mux v1.8.1
 	github.com/jarcoal/httpmock v1.0.8
-	github.com/mattermost/mattermost-plugin-autolink v1.2.2-0.20210709183311-c8fa30db649f
 	github.com/mattermost/mattermost/server/public v0.1.7
 	github.com/pkg/errors v0.9.1
 	github.com/rbriski/atlassian-jwt v0.0.0-20240408161306-6b6d681cf2d9
@@ -44,6 +43,7 @@ require (
 	github.com/klauspost/compress v1.15.14 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
 	github.com/lib/pq v1.10.9 // indirect
+	github.com/mattermost-community/mattermost-plugin-autolink v1.4.1-0.20241105205450-79c240cde7d6 // indirect
 	github.com/mattermost/go-i18n v1.11.1-0.20211013152124-5c415071e404 // indirect
 	github.com/mattermost/ldap v0.0.0-20231116144001-0f480c025956 // indirect
 	github.com/mattermost/logr/v2 v2.0.21 // indirect
