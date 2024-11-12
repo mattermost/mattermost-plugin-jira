@@ -167,6 +167,11 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         }
 
         const {ticketDetails} = this.state;
+
+        // Format the ticket summary by trimming spaces, replacing multiple spaces with one, truncating to `jiraTicketSummaryMaxLength`, and adding '...' if it exceeds the limit.
+        const formattedSummary = ticketDetails?.summary ? `${ticketDetails.summary.trim().split(/\s+/).join(' ')
+            .substring(0, jiraTicketSummaryMaxLength)}${ticketDetails.summary.trim().split(/\s+/).join(' ').length > jiraTicketSummaryMaxLength ? '...' : ''}` : '';
+
         if (!ticketDetails) {
             // Display the spinner loader while ticket details are being fetched
             return (
@@ -204,9 +209,10 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                         <a
                             href={this.props.href}
                             target='_blank'
+                            title={ticketDetails?.summary}
                             rel='noopener noreferrer'
                         >
-                            <h5>{ticketDetails.summary && ticketDetails.summary.substring(0, jiraTicketSummaryMaxLength)}</h5>
+                            <h5>{formattedSummary}</h5>
                         </a>
                         {this.tagTicketStatus(ticketDetails.statusKey)}
                     </div>
