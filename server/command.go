@@ -82,6 +82,9 @@ const commonHelpText = "\n" +
 	""
 
 const sysAdminHelpText = "\n###### For System Administrators:\n" +
+	"Setup Jira plugin\n" +
+	"* `/jira setup` - Start Jira plugin setup flow\n" +
+	"* `/jira webhook [jiraURL]` - Display the webhook URLs to setup on Jira\n" +
 	"Install Jira instances:\n" +
 	"* `/jira instance install server [jiraURL]` - Connect Mattermost to a Jira Server or Data Center instance located at <jiraURL>\n" +
 	"* `/jira instance install cloud-oauth [jiraURL]` - Connect Mattermost to a Jira Cloud instance using OAuth 2.0 located at <jiraURL>\n" +
@@ -440,12 +443,12 @@ func executeDefaultInstance(p *Plugin, c *plugin.Context, header *model.CommandA
 	if len(args) > 1 {
 		return p.help(header)
 	}
-	
+
 	jiraURL := ""
 	if len(args) > 0 {
 		jiraURL = args[0]
 	}
-	
+
 	instances, err := p.instanceStore.LoadInstances()
 	if err != nil {
 		return p.responsef(header, "Failed to load instances. Error: %v.", err)
