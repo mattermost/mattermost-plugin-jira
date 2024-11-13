@@ -25,7 +25,7 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
         selectedInstance: '',
     };
 
-    submit = async (e) => {
+    submit = async (e: React.FormEvent<HTMLFormElement>) => {
         if (e.preventDefault) {
             e.preventDefault();
         }
@@ -49,7 +49,7 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
         return Boolean(this.props.connectedInstances.find((instance) => instance.instance_id === instanceID));
     };
 
-    closeModal = (e) => {
+    closeModal = (e: React.FormEvent<HTMLFormElement>) => {
         this.props.closeModal();
     };
 
