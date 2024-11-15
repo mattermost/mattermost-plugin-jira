@@ -46,8 +46,6 @@ const (
 	WebhookMaxProcsPerServer = 20
 	WebhookBufferSize        = 10000
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
-
-	apiTokenEncryptionKey = "token_encryption_key"
 )
 
 type externalConfig struct {
@@ -354,7 +352,7 @@ func (p *Plugin) SetupAutolink(instances *Instances) {
 		coi, coiOk := instance.(*cloudOAuthInstance)
 
 		if !ciOk && !coiOk {
-			p.client.Log.Info("only cloud and cloud-oauth instances supported for autolink", "err", err)
+			p.client.Log.Info("only cloud and cloud-oauth instances supported for autolink")
 			continue
 		}
 
