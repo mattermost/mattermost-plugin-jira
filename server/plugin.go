@@ -46,6 +46,8 @@ const (
 	WebhookMaxProcsPerServer = 20
 	WebhookBufferSize        = 10000
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
+
+	apiTokenEncryptionKey = "token_encryption_key"
 )
 
 type externalConfig struct {
@@ -82,6 +84,9 @@ type externalConfig struct {
 
 	// Display subscription name in notifications
 	DisplaySubscriptionNameInNotifications bool
+
+	// The AES encryption key used to encrypt stored api tokens
+	EncryptionKey string
 
 	// API token from Jira
 	AdminAPIToken string
@@ -182,6 +187,17 @@ func (p *Plugin) OnConfigurationChange() error {
 			return errors.WithMessage(err, "failed to load plugin configuration")
 		}
 	}
+
+	adminAPIToken := ec.AdminAPIToken
+	jsonBytes, err := json.Marshal(adminAPIToken)
+	if err != nil {
+		return err
+	}
+	encryptedAdminAPIToken, err := encrypt(jsonBytes, []byte(p.getConfig().EncryptionKey))
+	if err != nil {
+		return err
+	}
+	ec.AdminAPIToken = string(encryptedAdminAPIToken)
 
 	prev := p.getConfig()
 	p.updateConfig(func(conf *config) {

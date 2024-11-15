@@ -1104,7 +1104,18 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 		return nil, errors.Wrapf(err, "failed to create http request for fetching issue data. IssueID: %s", issueID)
 	}
 
-	encodedAuth := base64.StdEncoding.EncodeToString([]byte(p.getConfig().AdminEmail + ":" + p.getConfig().AdminAPIToken))
+	encryptedAdminAPIToken := p.getConfig().AdminAPIToken
+	jsonBytes, err := decrypt([]byte(encryptedAdminAPIToken), []byte(p.getConfig().EncryptionKey))
+	if err != nil {
+		return nil, err
+	}
+	var adminAPIToken string
+	err = json.Unmarshal(jsonBytes, &adminAPIToken)
+	if err != nil {
+		return nil, err
+	}
+
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte(p.getConfig().AdminEmail + ":" + adminAPIToken))
 	req.Header.Set("Authorization", "Basic "+encodedAuth)
 	req.Header.Set("Accept", "application/json")
 
@@ -1154,7 +1165,18 @@ func (p *Plugin) GetProjectListWithAPIToken(instanceID string) (*jira.ProjectLis
 		return nil, errors.Wrapf(err, "failed to create HTTP request for fetching project list data. InstanceID: %s", instanceID)
 	}
 
-	encodedAuth := base64.StdEncoding.EncodeToString([]byte(p.getConfig().AdminEmail + ":" + p.getConfig().AdminAPIToken))
+	encryptedAdminAPIToken := p.getConfig().AdminAPIToken
+	jsonBytes, err := decrypt([]byte(encryptedAdminAPIToken), []byte(p.getConfig().EncryptionKey))
+	if err != nil {
+		return nil, err
+	}
+	var adminAPIToken string
+	err = json.Unmarshal(jsonBytes, &adminAPIToken)
+	if err != nil {
+		return nil, err
+	}
+
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte(p.getConfig().AdminEmail + ":" + adminAPIToken))
 	req.Header.Set("Authorization", "Basic "+encodedAuth)
 	req.Header.Set("Accept", "application/json")
 

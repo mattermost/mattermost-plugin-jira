@@ -116,6 +116,13 @@
                 "default": false
             },
             {
+                "key": "EncryptionKey",
+                "display_name": "At Rest Encryption Key:",
+                "type": "generated",
+                "help_text": "The AES encryption key used to encrypt stored api tokens.",
+                "secret": true
+            },
+            {
                 "key": "AdminAPIToken",
                 "display_name": "Admin API Token",
                 "type": "text",
