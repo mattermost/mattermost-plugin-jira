@@ -7,9 +7,11 @@ import {bindActionCreators} from 'redux';
 import {closeConnectModal, redirectConnect} from 'actions';
 import {getInstalledInstances, getUserConnectedInstances, isConnectModalVisible} from 'selectors';
 
+import {GlobalState} from 'types/store';
+
 import ConnectModal from './connect_modal';
 
-const mapStateToProps = (state) => {
+const mapStateToProps = (state: GlobalState) => {
     return {
         visible: isConnectModalVisible(state),
         connectedInstances: getUserConnectedInstances(state),

@@ -7,9 +7,11 @@ import {bindActionCreators} from 'redux';
 import {closeDisconnectModal, disconnectUser, sendEphemeralPost} from 'actions';
 import {getUserConnectedInstances, isDisconnectModalVisible} from 'selectors';
 
+import {GlobalState} from 'types/store';
+
 import DisconnectModal from './disconnect_modal';
 
-const mapStateToProps = (state) => {
+const mapStateToProps = (state: GlobalState) => {
     return {
         connectedInstances: getUserConnectedInstances(state),
         visible: isDisconnectModalVisible(state),
