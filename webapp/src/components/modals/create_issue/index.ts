@@ -15,9 +15,11 @@ import {
 } from 'actions';
 import {getCreateModal, isCreateModalVisible} from 'selectors';
 
+import {GlobalState} from 'types/store';
+
 import CreateIssue from './create_issue_modal';
 
-const mapStateToProps = (state) => {
+const mapStateToProps = (state: GlobalState) => {
     const {postId, description, channelId} = getCreateModal(state);
     const post = (postId) ? getPost(state, postId) : null;
     const currentTeam = getCurrentTeam(state);

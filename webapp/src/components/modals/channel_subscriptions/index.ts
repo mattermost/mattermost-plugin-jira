@@ -28,9 +28,11 @@ import {
     getUserConnectedInstances,
 } from 'selectors';
 
+import {GlobalState} from 'types/store';
+
 import ChannelSubscriptionsModal from './channel_subscriptions';
 
-const mapStateToProps = (state) => {
+const mapStateToProps = (state: GlobalState) => {
     const channelId = getChannelIdWithSettingsOpen(state);
     let channel = null;
     let omitDisplayName = false;

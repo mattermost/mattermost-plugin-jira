@@ -10,9 +10,11 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {attachCommentToIssue, closeAttachCommentToIssueModal} from 'actions';
 import {getAttachCommentToIssueModalForPostId, isAttachCommentToIssueModalVisible} from 'selectors';
 
+import {GlobalState} from 'types/store';
+
 import AttachCommentToIssueModal from './attach_comment_modal';
 
-const mapStateToProps = (state) => {
+const mapStateToProps = (state: GlobalState) => {
     const postId = getAttachCommentToIssueModalForPostId(state);
     const post = getPost(state, postId);
     const currentTeam = getCurrentTeam(state);
