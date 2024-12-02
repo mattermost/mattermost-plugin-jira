@@ -25,7 +25,7 @@ export default class DisconnectModalForm extends PureComponent<Props, State> {
         selectedInstance: '',
     };
 
-    submit = async (e) => {
+    submit = async (e: React.FormEvent<HTMLFormElement>) => {
         if (e.preventDefault) {
             e.preventDefault();
         }
@@ -46,7 +46,7 @@ export default class DisconnectModalForm extends PureComponent<Props, State> {
         });
     };
 
-    closeModal = (e) => {
+    closeModal = (e: React.FormEvent<HTMLFormElement>) => {
         this.props.closeModal();
     };
 
