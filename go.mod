@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/mattermost/mattermost-plugin-autolink v1.2.2-0.20210709183311-c8fa30db649f
-	github.com/mattermost/mattermost/server/public v0.1.8
+	github.com/mattermost/mattermost/server/public v0.1.9
 	github.com/pkg/errors v0.9.1
 	github.com/rbriski/atlassian-jwt v0.0.0-20240408161306-6b6d681cf2d9
 	github.com/rudderlabs/analytics-go v3.3.3+incompatible
