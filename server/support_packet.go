@@ -1,7 +1,7 @@
 package main
 
 import (
-	"path"
+	"path/filepath"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -53,7 +53,7 @@ func (p *Plugin) GenerateSupportData(_ *plugin.Context) ([]*model.FileData, erro
 	}
 
 	return []*model.FileData{{
-		Filename: path.Join(manifest.Id, "diagnostics.yaml"),
+		Filename: filepath.Join(manifest.Id, "diagnostics.yaml"),
 		Body:     b,
 	}}, result.ErrorOrNil()
 }
