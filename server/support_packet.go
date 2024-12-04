@@ -29,7 +29,7 @@ func (p *Plugin) GenerateSupportData(_ *plugin.Context) ([]*model.FileData, erro
 		result = multierror.Append(result, errors.Wrap(err, "Failed to get the number of connected users for Support Packet"))
 	}
 
-	server, cloud, err := p.instanceCount()
+	serverICount, cloudICount, err := p.instanceCount()
 	if err != nil {
 		result = multierror.Append(result, errors.Wrap(err, "Failed to get the number of instances for Support Packet"))
 	}
@@ -41,19 +41,19 @@ func (p *Plugin) GenerateSupportData(_ *plugin.Context) ([]*model.FileData, erro
 
 	diagnostics := SupportPacket{
 		Version:             manifest.Version,
-		InstanceCount:       server + cloud,
-		ServerInstanceCount: server,
-		CloudInstanceCount:  cloud,
+		InstanceCount:       serverICount + cloudICount,
+		ServerInstanceCount: serverICount,
+		CloudInstanceCount:  cloudICount,
 		SubscriptionCount:   subscriptionCount,
 		ConnectedUserCount:  connectedUserCount,
 	}
-	b, err := yaml.Marshal(diagnostics)
+	body, err := yaml.Marshal(diagnostics)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to marshal diagnostics")
 	}
 
 	return []*model.FileData{{
 		Filename: filepath.Join(manifest.Id, "diagnostics.yaml"),
-		Body:     b,
+		Body:     body,
 	}}, result.ErrorOrNil()
 }

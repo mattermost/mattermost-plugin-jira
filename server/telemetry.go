@@ -24,16 +24,16 @@ func (p *Plugin) OnSendDailyTelemetry() {
 	args := map[string]interface{}{}
 
 	// Jira instances
-	server, cloud, err := p.instanceCount()
+	serverICount, cloudICount, err := p.instanceCount()
 	if err != nil {
 		p.client.Log.Warn("Failed to get instances for telemetry", "error", err)
 	} else {
-		args["instance_count"] = server + cloud
-		if server > 0 {
-			args["server_instance_count"] = server
+		args["instance_count"] = serverICount + cloudICount
+		if serverICount > 0 {
+			args["server_instance_count"] = serverICount
 		}
-		if cloud > 0 {
-			args["cloud_instance_count"] = cloud
+		if cloudICount > 0 {
+			args["cloud_instance_count"] = cloudICount
 		}
 	}
 
@@ -45,11 +45,11 @@ func (p *Plugin) OnSendDailyTelemetry() {
 	}
 
 	// Connected users
-	connected, err := p.userCount()
+	connectedUsers, err := p.userCount()
 	if err != nil {
 		p.client.Log.Warn("Failed to get the number of connected users for telemetry", "error", err)
 	} else {
-		args["connected_user_count"] = connected
+		args["connected_user_count"] = connectedUsers
 	}
 
 	p.TrackEvent("stats", args)
