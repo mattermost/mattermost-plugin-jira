@@ -189,13 +189,13 @@ func (p *Plugin) SetAdminAPITokenRequestHeader(req *http.Request) error {
 	encryptedAdminAPIToken := p.getConfig().AdminAPIToken
 	jsonBytes, err := decrypt([]byte(encryptedAdminAPIToken), []byte(p.getConfig().EncryptionKey))
 	if err != nil {
-		p.client.Log.Warn("Error decrypting admin API token", "error", err)
+		p.client.Log.Warn("Error decrypting admin API token", "error", err.Error())
 		return err
 	}
 	var adminAPIToken string
 	err = json.Unmarshal(jsonBytes, &adminAPIToken)
 	if err != nil {
-		p.client.Log.Warn("Error unmarshalling admin API token", "error", err)
+		p.client.Log.Warn("Error unmarshalling admin API token", "error", err.Error())
 		return err
 	}
 
