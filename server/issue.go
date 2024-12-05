@@ -1103,7 +1103,10 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 		return nil, errors.Wrapf(err, "failed to create http request for fetching issue data. IssueID: %s", issueID)
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", p.getConfig().AdminAPIToken))
+	err = p.SetAdminAPITokenRequestHeader(req)
+	if err != nil {
+		return nil, err
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -1133,4 +1136,48 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 	}
 
 	return issue, nil
+}
+
+type ProjectSearchResponse struct {
+	Self       string           `json:"self"`
+	MaxResults int              `json:"maxResults"`
+	StartAt    int              `json:"startAt"`
+	Total      int              `json:"total"`
+	IsLast     bool             `json:"isLast"`
+	Values     jira.ProjectList `json:"values"`
+}
+
+func (p *Plugin) GetProjectListWithAPIToken(instanceID string) (*jira.ProjectList, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/3/project/search", instanceID), nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create HTTP request for fetching project list data. InstanceID: %s", instanceID)
+	}
+
+	err = p.SetAdminAPITokenRequestHeader(req)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch project list data. InstanceID: %s", instanceID)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("unexpected status code: %d. InstanceID: %s", resp.StatusCode, instanceID)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	var projectResponse ProjectSearchResponse
+	if err = json.Unmarshal(body, &projectResponse); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal project list response")
+	}
+
+	return &projectResponse.Values, nil
 }
