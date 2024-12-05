@@ -177,7 +177,6 @@ func TestSetupAutolink(t *testing.T) {
 		{
 			name: "Unsupported instance type",
 			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
-				mockAPI.On("GetPluginStatus", "mattermost-autolink").Return(&model.PluginStatus{State: model.PluginStateRunning}, nil).Times(1)
 				mockAPI.On("LogInfo", "only cloud and cloud-oauth instances supported for autolink").Return(nil).Times(1)
 				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(&serverInstance{}, nil).Times(1)
 

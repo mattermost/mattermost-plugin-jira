@@ -188,16 +188,19 @@ func (p *Plugin) OnConfigurationChange() error {
 
 	jsonBytes, err := json.Marshal(ec.AdminAPIToken)
 	if err != nil {
+		p.client.Log.Warn("Error marshaling the admin API token", "error", err)
 		return err
 	}
 
 	encryptionKey := p.getConfig().EncryptionKey
 	if encryptionKey == "" {
+		p.client.Log.Warn("Encryption key required to encrypt admin API token")
 		return errors.New("failed to encrypt admin token. Encryption key not generated")
 	}
 
 	encryptedAdminAPIToken, err := encrypt(jsonBytes, []byte(encryptionKey))
 	if err != nil {
+		p.client.Log.Warn("Error encrypting the admin API token", "error", err)
 		return err
 	}
 	ec.AdminAPIToken = string(encryptedAdminAPIToken)
@@ -353,6 +356,13 @@ func (p *Plugin) SetupAutolink(instances *Instances) {
 			continue
 		}
 
+		switch instance.(type) {
+		case *cloudInstance, *cloudOAuthInstance:
+		default:
+			p.client.Log.Info("only cloud and cloud-oauth instances supported for autolink")
+			continue
+		}
+
 		var status *model.PluginStatus
 		status, err = p.client.Plugin.GetPluginStatus(autolinkPluginID)
 		if err != nil {
@@ -374,8 +384,6 @@ func (p *Plugin) SetupAutolink(instances *Instances) {
 			if err = p.AddAutolinksForCloudOAuthInstance(instance); err != nil {
 				p.client.Log.Info("could not install autolinks for cloud-oauth instance", "instance", instance.JiraBaseURL, "error", err)
 			}
-		default:
-			p.client.Log.Info("only cloud and cloud-oauth instances supported for autolink")
 		}
 	}
 }
