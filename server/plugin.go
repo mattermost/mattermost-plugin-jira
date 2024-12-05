@@ -83,7 +83,7 @@ type externalConfig struct {
 	// Display subscription name in notifications
 	DisplaySubscriptionNameInNotifications bool
 
-	// The AES encryption key used to encrypt stored api tokens
+	// The encryption key used to encrypt stored api tokens
 	EncryptionKey string
 
 	// API token from Jira
@@ -186,12 +186,17 @@ func (p *Plugin) OnConfigurationChange() error {
 		}
 	}
 
-	adminAPIToken := ec.AdminAPIToken
-	jsonBytes, err := json.Marshal(adminAPIToken)
+	jsonBytes, err := json.Marshal(ec.AdminAPIToken)
 	if err != nil {
 		return err
 	}
-	encryptedAdminAPIToken, err := encrypt(jsonBytes, []byte(p.getConfig().EncryptionKey))
+
+	encryptionKey := p.getConfig().EncryptionKey
+	if encryptionKey == "" {
+		return errors.New("failed to encrypt admin token. Encryption key not generated")
+	}
+
+	encryptedAdminAPIToken, err := encrypt(jsonBytes, []byte(encryptionKey))
 	if err != nil {
 		return err
 	}
@@ -348,14 +353,6 @@ func (p *Plugin) SetupAutolink(instances *Instances) {
 			continue
 		}
 
-		ci, ciOk := instance.(*cloudInstance)
-		coi, coiOk := instance.(*cloudOAuthInstance)
-
-		if !ciOk && !coiOk {
-			p.client.Log.Info("only cloud and cloud-oauth instances supported for autolink")
-			continue
-		}
-
 		var status *model.PluginStatus
 		status, err = p.client.Plugin.GetPluginStatus(autolinkPluginID)
 		if err != nil {
@@ -368,18 +365,17 @@ func (p *Plugin) SetupAutolink(instances *Instances) {
 			continue
 		}
 
-		if ciOk {
-			if err = p.AddAutolinksForCloudInstance(ci); err != nil {
-				p.client.Log.Info("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
-				continue
+		switch instance := instance.(type) {
+		case *cloudInstance:
+			if err = p.AddAutolinksForCloudInstance(instance); err != nil {
+				p.client.Log.Info("could not install autolinks for cloud instance", "instance", instance.BaseURL, "error", err)
 			}
-		}
-
-		if coiOk {
-			if err = p.AddAutolinksForCloudOAuthInstance(coi); err != nil {
-				p.client.Log.Info("could not install autolinks for cloud-oauth instance", "instance", coi.JiraBaseURL, "err", err)
-				continue
+		case *cloudOAuthInstance:
+			if err = p.AddAutolinksForCloudOAuthInstance(instance); err != nil {
+				p.client.Log.Info("could not install autolinks for cloud-oauth instance", "instance", instance.JiraBaseURL, "error", err)
 			}
+		default:
+			p.client.Log.Info("only cloud and cloud-oauth instances supported for autolink")
 		}
 	}
 }

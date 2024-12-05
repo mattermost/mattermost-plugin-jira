@@ -156,22 +156,14 @@ func TestPlugin(t *testing.T) {
 }
 
 func TestSetupAutolink(t *testing.T) {
-	mockAPI := &plugintest.API{}
-	dummyInstanceStore := new(mockInstanceStore)
-	mockPluginClient := pluginapi.NewClient(mockAPI, nil)
-	p := &Plugin{
-		client:        mockPluginClient,
-		instanceStore: dummyInstanceStore,
-	}
-
 	tests := []struct {
 		name         string
-		setup        func()
+		setup        func(*Plugin, *plugintest.API, *mockInstanceStore)
 		InstanceType InstanceType
 	}{
 		{
 			name: "Missing API token or Admin email",
-			setup: func() {
+			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
 				mockAPI.On("LogInfo", "unable to setup autolink due to missing API Token or Admin Email").Return(nil).Times(1)
 				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(&serverInstance{}, nil).Times(1)
 
@@ -184,7 +176,8 @@ func TestSetupAutolink(t *testing.T) {
 		},
 		{
 			name: "Unsupported instance type",
-			setup: func() {
+			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
+				mockAPI.On("GetPluginStatus", "mattermost-autolink").Return(&model.PluginStatus{State: model.PluginStateRunning}, nil).Times(1)
 				mockAPI.On("LogInfo", "only cloud and cloud-oauth instances supported for autolink").Return(nil).Times(1)
 				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(&serverInstance{}, nil).Times(1)
 
@@ -194,7 +187,7 @@ func TestSetupAutolink(t *testing.T) {
 		},
 		{
 			name: "Autolink plugin unavailable API returned error",
-			setup: func() {
+			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
 				mockAPI.On("LogWarn", "OnActivate: Autolink plugin unavailable. API returned error", "error", mock.Anything).Return(nil).Times(1)
 				mockAPI.On("GetPluginStatus", autolinkPluginID).Return(nil, &model.AppError{Message: "error getting plugin status"}).Times(1)
 				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(&cloudInstance{}, nil).Times(1)
@@ -205,7 +198,7 @@ func TestSetupAutolink(t *testing.T) {
 		},
 		{
 			name: "Autolink plugin not running",
-			setup: func() {
+			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
 				mockAPI.On("LogWarn", "OnActivate: Autolink plugin unavailable. Plugin is not running", "status", &model.PluginStatus{State: model.PluginStateNotRunning}).Return(nil).Times(1)
 				mockAPI.On("GetPluginStatus", autolinkPluginID).Return(&model.PluginStatus{State: model.PluginStateNotRunning}, nil).Times(1)
 				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(&cloudInstance{}, nil).Times(1)
@@ -216,8 +209,8 @@ func TestSetupAutolink(t *testing.T) {
 		},
 		{
 			name: "Error installing autolinks for cloud instance",
-			setup: func() {
-				mockAPI.On("LogInfo", "could not install autolinks for cloud instance", "instance", "mockBaseURL", "err", mock.Anything).Return(nil).Times(1)
+			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
+				mockAPI.On("LogInfo", "could not install autolinks for cloud instance", "instance", "mockBaseURL", "error", mock.Anything).Return(nil).Times(1)
 				mockAPI.On("GetPluginStatus", autolinkPluginID).Return(&model.PluginStatus{State: model.PluginStateRunning}, nil).Times(1)
 				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(
 					&cloudInstance{
@@ -238,9 +231,11 @@ func TestSetupAutolink(t *testing.T) {
 		},
 		{
 			name: "Error installing autolinks for cloud-oauth instance",
-			setup: func() {
-				mockAPI.On("LogInfo", "could not install autolinks for cloud-oauth instance", "instance", "mockBaseURL", "err", mock.Anything).Return(nil).Times(1)
+			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
+				mockAPI.On("LogWarn", "Error unmarshalling admin API token", "error", mock.Anything).Times(1)
+				mockAPI.On("LogInfo", "could not install autolinks for cloud-oauth instance", "instance", "mockBaseURL", "error", mock.Anything).Return(nil).Times(1)
 				mockAPI.On("GetPluginStatus", autolinkPluginID).Return(&model.PluginStatus{State: model.PluginStateRunning}, nil).Times(1)
+
 				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(
 					&cloudOAuthInstance{
 						InstanceCommon: &InstanceCommon{
@@ -255,8 +250,16 @@ func TestSetupAutolink(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		mockAPI := &plugintest.API{}
+		dummyInstanceStore := new(mockInstanceStore)
+		mockPluginClient := pluginapi.NewClient(mockAPI, nil)
+		p := &Plugin{
+			client:        mockPluginClient,
+			instanceStore: dummyInstanceStore,
+		}
+
 		t.Run(tt.name, func(t *testing.T) {
-			tt.setup()
+			tt.setup(p, mockAPI, dummyInstanceStore)
 			instances := GetInstancesWithType(tt.InstanceType)
 
 			p.SetupAutolink(instances)

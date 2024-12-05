@@ -119,14 +119,14 @@
                 "key": "EncryptionKey",
                 "display_name": "At Rest Encryption Key:",
                 "type": "generated",
-                "help_text": "The AES encryption key used to encrypt stored api tokens.",
+                "help_text": "The encryption key used to encrypt stored api tokens.",
                 "secret": true
             },
             {
                 "key": "AdminAPIToken",
                 "display_name": "Admin API Token",
                 "type": "text",
-                "help_text": "Set this [API token](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) to get notified for comment and issue created events even if the user triggering the event is not connected to Jira and setup autolink.\n **Note:** API token should be created using an admin Jira account. Otherwise, the notification will not be delivered for the project the user cannot access and autolink will not work.",
+                "help_text": "Set this [API token](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) to get notified for comment and issue created events even if the user triggering the event is not connected to Jira. This is also used for setting up autolink in the plugin.\n **Note:** API token should be created using an admin Jira account. Otherwise, the notification will not be delivered for the project the user cannot access and autolink will not work.",
                 "placeholder": "",
                 "secret": true,
                 "default": ""
@@ -135,7 +135,7 @@
                 "key": "AdminEmail",
                 "display_name": "Admin Email",
                 "type": "text",
-                "help_text": "**Note** Admin email is necessary to setup autolink for Jira plugin",
+                "help_text": "**Note** Admin email is necessary to setup autolink for Jira plugin and to to get notified for comment and issue created events even if the user triggering the event is not connected to Jira",
                 "placeholder": "",
                 "default": ""
             }
