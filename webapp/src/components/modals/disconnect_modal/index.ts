@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {connect} from 'react-redux';
-import {bindActionCreators} from 'redux';
+import {Dispatch, bindActionCreators} from 'redux';
 
 import {closeDisconnectModal, disconnectUser, sendEphemeralPost} from 'actions';
 import {getUserConnectedInstances, isDisconnectModalVisible} from 'selectors';
@@ -18,7 +18,7 @@ const mapStateToProps = (state: GlobalState) => {
     };
 };
 
-const mapDispatchToProps = (dispatch) => bindActionCreators({
+const mapDispatchToProps = (dispatch: Dispatch) => bindActionCreators({
     closeModal: closeDisconnectModal,
     disconnectUser,
     sendEphemeralPost,
