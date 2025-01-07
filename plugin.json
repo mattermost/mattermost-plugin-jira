@@ -120,6 +120,8 @@
                 "display_name": "At Rest Encryption Key:",
                 "type": "generated",
                 "help_text": "The encryption key used to encrypt stored API tokens.",
+                "placeholder": "",
+                "default": null,
                 "secret": true
             },
             {
