@@ -77,18 +77,17 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         return null;
     };
 
-    componentDidUpdate() {
+    componentDidMount() {
         const issueKey = this.getIssueKey();
         if (!issueKey) {
             return;
         }
 
         const {instanceID} = issueKey;
-        const {ticketId, ticketDetails} = this.state;
-        if (!ticketDetails && this.props.show && ticketId) {
+        if (this.props.show && this.state.ticketId && !this.state.ticketDetails) {
             this.props.fetchIssueByKey(this.state.ticketId, instanceID).then((res: {data?: TicketData}) => {
                 const updatedTicketDetails = getJiraTicketDetails(res.data);
-                if (this.props.connected && updatedTicketDetails && updatedTicketDetails.ticketId === ticketId) {
+                if (this.props.connected && updatedTicketDetails && updatedTicketDetails.ticketId === this.state.ticketId) {
                     this.setState({
                         ticketDetails: updatedTicketDetails,
                     });
