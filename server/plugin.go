@@ -379,10 +379,14 @@ func (p *Plugin) SetupAutolink(instances *Instances) {
 		case *cloudInstance:
 			if err = p.AddAutolinksForCloudInstance(instance); err != nil {
 				p.client.Log.Info("could not install autolinks for cloud instance", "instance", instance.BaseURL, "error", err.Error())
+			} else {
+				p.client.Log.Info("successfully installed autolinks for cloud instance", "instance", instance.BaseURL)
 			}
 		case *cloudOAuthInstance:
 			if err = p.AddAutolinksForCloudOAuthInstance(instance); err != nil {
 				p.client.Log.Info("could not install autolinks for cloud-oauth instance", "instance", instance.JiraBaseURL, "error", err.Error())
+			} else {
+				p.client.Log.Info("successfully installed autolinks for cloud-oauth instance", "instance", instance.JiraBaseURL)
 			}
 		}
 	}
@@ -441,7 +445,10 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 
 	client := autolinkclient.NewClientPlugin(p.API)
 	if err := client.Add(installList...); err != nil {
-		return fmt.Errorf("unable to add autolinks: %w", err)
+		// Do not return an error if the status code is 304 (indicating that the autolink for this project is already installed).
+		if !strings.Contains(err.Error(), `Error: 304, {"status": "OK"}`) {
+			return fmt.Errorf("unable to add autolinks: %w", err)
+		}
 	}
 
 	return nil
