@@ -235,3 +235,23 @@
 .tooltip-ticket-summary {
     font-family: inherit !important; 
 }
+
+.jira-issue-tooltip-error {
+    height: 210px;
+    font-size: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+
+    .jira-issue-error-message {
+        font-size: 19px;
+        text-align: center;
+    }
+
+    .jira-issue-error-footer {
+        font-size: 13px;
+        font-weight: 100;
+    }
+}
