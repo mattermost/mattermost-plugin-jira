@@ -54,9 +54,6 @@ export default class JiraEpicSelector extends React.PureComponent<Props> {
                     break;
                 }
             }
-            if (epicNameTypeId) {
-                break;
-            }
         }
 
         if (!epicNameTypeId || !epicNameTypeName) {
@@ -85,9 +82,6 @@ export default class JiraEpicSelector extends React.PureComponent<Props> {
                     projectKey = project.key;
                     break;
                 }
-            }
-            if (epicNameTypeId) {
-                break;
             }
         }
 
