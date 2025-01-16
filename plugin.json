@@ -116,10 +116,28 @@
                 "default": false
             },
             {
+                "key": "EncryptionKey",
+                "display_name": "At Rest Encryption Key:",
+                "type": "generated",
+                "help_text": "The encryption key used to encrypt stored API tokens.",
+                "placeholder": "",
+                "default": null,
+                "secret": true
+            },
+            {
                 "key": "AdminAPIToken",
                 "display_name": "Admin API Token",
                 "type": "text",
-                "help_text": "Set this [API token](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) to get notified for comment and issue created events even if the user triggering the event is not connected to Jira.\n **Note:** API token should be created using an admin Jira account. Otherwise, the notification will not be delivered for the project the user cannot access.",
+                "help_text": "Set this [API token](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) to get notified for comment and issue created events when the user triggering the event is not connected to Jira. This is also used for setting up autolink in the plugin.\n **Note:** API token should be created using an admin Jira account. Otherwise, the notification will not be delivered for projects that the user cannot access and autolink will not work.",
+                "placeholder": "",
+                "secret": true,
+                "default": ""
+            },
+            {
+                "key": "AdminEmail",
+                "display_name": "Admin Email",
+                "type": "text",
+                "help_text": "**Note** Admin email is necessary to setup autolink for the Jira plugin and to to get notified for comment and issue created events when the user triggering the event is not connected to Jira",
                 "placeholder": "",
                 "default": ""
             }
