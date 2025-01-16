@@ -237,7 +237,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                             title={ticketDetails?.summary}
                             rel='noopener noreferrer'
                         >
-                            <h5>{formattedSummary}</h5>
+                            <h5 className='tooltip-ticket-summary'>{ticketDetails.summary && ticketDetails.summary.substring(0, jiraTicketSummaryMaxLength)}</h5>
                         </a>
                         {this.tagTicketStatus(ticketDetails.statusKey)}
                     </div>
