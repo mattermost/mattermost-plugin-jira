@@ -2,7 +2,7 @@ module github.com/mattermost/mattermost-plugin-jira
 
 go 1.22
 
-toolchain go1.22.2
+toolchain go1.22.8
 
 require (
 	github.com/andygrunwald/go-jira v1.16.0
@@ -10,6 +10,7 @@ require (
 	github.com/dghubble/oauth1 v0.5.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/gorilla/mux v1.8.1
+	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/mattermost-community/mattermost-plugin-autolink v1.4.1-0.20241105205450-79c240cde7d6
 	github.com/mattermost/mattermost/server/public v0.1.7
@@ -20,6 +21,7 @@ require (
 	github.com/trivago/tgo v1.0.7
 	golang.org/x/oauth2 v0.21.0
 	golang.org/x/text v0.16.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -31,14 +33,13 @@ require (
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.7 // indirect
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
-	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-hclog v1.6.3 // indirect
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-plugin v1.6.1 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
 	github.com/lib/pq v1.10.9 // indirect
@@ -74,5 +75,4 @@ require (
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
