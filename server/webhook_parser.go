@@ -333,6 +333,8 @@ func preProcessText(jiraMarkdownString string) string {
 	linkRegex := regexp.MustCompile(`\[(.*?)\|([^|\]]+)(?:\|([^|\]]+))?\]`)
 	quoteRegex := regexp.MustCompile(`\{quote\}(.*?)\{quote\}`)
 	codeBlockRegex := regexp.MustCompile(`\{\{(.+?)\}\}`)
+	noFormatRegex := regexp.MustCompile(`\{noformat\}(.*?)\{noformat\}`)
+	doubleCurlyRegex := regexp.MustCompile(`\{\{(.*?)\}\}`)
 
 	// the below code converts lines starting with "#" into a numbered list. It increments the counter if consecutive lines are numbered,
 	// otherwise resets it to 1. The "#" is replaced with the corresponding number and period. Non-numbered lines are added unchanged.
@@ -401,6 +403,16 @@ func preProcessText(jiraMarkdownString string) string {
 	processedString = quoteRegex.ReplaceAllStringFunc(processedString, func(quote string) string {
 		quotedText := quote[strings.Index(quote, "}")+1 : strings.LastIndex(quote, "{quote}")]
 		return "> " + quotedText
+	})
+
+	processedString = noFormatRegex.ReplaceAllStringFunc(processedString, func(noFormatBlock string) string {
+		content := noFormatBlock[strings.Index(noFormatBlock, "}")+1 : strings.LastIndex(noFormatBlock, "{noformat}")]
+		return "`" + content + "`"
+	})
+
+	processedString = doubleCurlyRegex.ReplaceAllStringFunc(processedString, func(match string) string {
+		content := match[2 : len(match)-2]
+		return "`" + content + "`"
 	})
 
 	return processedString
