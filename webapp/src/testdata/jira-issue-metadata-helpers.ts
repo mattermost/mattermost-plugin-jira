@@ -1,3 +1,6 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import {IssueMetadata, JiraField} from 'types/model';
 
 export const useFieldForIssueMetadata = (field: JiraField, key: string): IssueMetadata => {
