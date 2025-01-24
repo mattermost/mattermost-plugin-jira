@@ -407,7 +407,7 @@ func preProcessText(jiraMarkdownString string) string {
 
 	processedString = noFormatRegex.ReplaceAllStringFunc(processedString, func(noFormatBlock string) string {
 		content := noFormatBlock[strings.Index(noFormatBlock, "}")+1 : strings.LastIndex(noFormatBlock, "{noformat}")]
-		return "`" + content + "`"
+		return fmt.Sprintf("`%s`", content)
 	})
 
 	processedString = doubleCurlyRegex.ReplaceAllStringFunc(processedString, func(match string) string {
