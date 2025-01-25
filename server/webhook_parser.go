@@ -412,7 +412,7 @@ func preProcessText(jiraMarkdownString string) string {
 
 	processedString = doubleCurlyRegex.ReplaceAllStringFunc(processedString, func(match string) string {
 		content := match[2 : len(match)-2]
-		return "`" + content + "`"
+		return fmt.Sprintf("`%s`", content)
 	})
 
 	return processedString
