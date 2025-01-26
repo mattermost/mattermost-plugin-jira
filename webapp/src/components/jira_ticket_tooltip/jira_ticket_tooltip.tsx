@@ -81,21 +81,25 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         return null;
     };
 
-    componentDidMount() {
+    fetchIssue = (show: boolean, connected: boolean, ticketId?: string, ticketDetails?: TicketDetails | null): void => {
         const issueKey = this.getIssueKey();
         if (!issueKey) {
             return;
         }
 
-        const {instanceID} = issueKey;
-        if (this.props.show && this.state.ticketId && !this.state.ticketDetails) {
-            this.props.fetchIssueByKey(this.state.ticketId, instanceID).then((res: {data?: TicketData, error?: any}) => {
+        if (!show) {
+            return;
+        }
+
+        if (ticketId && !ticketDetails) {
+            this.props.fetchIssueByKey(ticketId, issueKey.instanceID).then((res: {data?: TicketData, error?: any}) => {
                 if (res.error) {
                     this.setState({error: 'There was a problem loading the details for this Jira link'});
                     return;
                 }
+
                 const updatedTicketDetails = getJiraTicketDetails(res.data);
-                if (this.props.connected && updatedTicketDetails && updatedTicketDetails.ticketId === this.state.ticketId) {
+                if (connected && updatedTicketDetails && updatedTicketDetails.ticketId === ticketId) {
                     this.setState({
                         ticketDetails: updatedTicketDetails,
                         error: null,
@@ -103,9 +107,17 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                 }
             });
         }
+    };
+
+    componentDidMount(): void {
+        this.fetchIssue(this.props.show, this.props.connected, this.state.ticketId, this.state.ticketDetails);
     }
 
-    fixVersionLabel(fixVersion: string) {
+    componentDidUpdate(): void {
+        this.fetchIssue(this.props.show, this.props.connected, this.state.ticketId, this.state.ticketDetails);
+    }
+
+    fixVersionLabel(fixVersion: string): ReactNode {
         if (fixVersion) {
             const fixVersionString = 'Fix Version :';
             return (
@@ -121,7 +133,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         return null;
     }
 
-    tagTicketStatus(ticketStatus: string) {
+    tagTicketStatus(ticketStatus: string): ReactNode {
         let ticketStatusClass = 'default-style ticket-status--default';
 
         const myStatusClass = myStatusClasses[ticketStatus && ticketStatus.toLowerCase()];
