@@ -405,7 +405,7 @@ func preProcessText(jiraMarkdownString string) string {
 		return fmt.Sprintf("`%s`", content)
 	})
 
-	// handles sinlge and multi line language specific code blocks
+	// handles single and multi line language specific code blocks
 	processedString = langSpecificCodeBlockRegex.ReplaceAllStringFunc(processedString, func(langSpecificBlock string) string {
 		startIndex := strings.Index(langSpecificBlock, "{code:")
 		endIndex := strings.LastIndex(langSpecificBlock, "{code}")
@@ -430,7 +430,7 @@ func preProcessText(jiraMarkdownString string) string {
 		return "\n`" + strings.Join(lines, "\n") + "`\n"
 	})
 
-	// handles sinlge and multi line non-language specific code blocks
+	// handles single and multi line non-language specific code blocks
 	processedString = noFormatRegex.ReplaceAllStringFunc(processedString, func(noFormatBlock string) string {
 		startIndex := strings.Index(noFormatBlock, "{noformat}")
 		endIndex := strings.LastIndex(noFormatBlock, "{noformat}")
