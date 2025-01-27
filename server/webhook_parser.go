@@ -427,13 +427,7 @@ func preProcessText(jiraMarkdownString string) string {
 			return "`" + lines[0] + "`"
 		}
 
-		for i := range lines {
-			if lines[i] != "" {
-				lines[i] = "`" + lines[i] + "`"
-			}
-		}
-
-		return "\n" + strings.Join(lines, "\n") + "\n"
+		return "\n`" + strings.Join(lines, "\n") + "`\n"
 	})
 
 	// handles sinlge and multi line non-language specific code blocks
@@ -452,21 +446,7 @@ func preProcessText(jiraMarkdownString string) string {
 			return "`" + lines[0] + "`"
 		}
 
-		if len(lines) > 0 {
-			lines[0] = "`" + lines[0] + "`\n"
-		}
-
-		for i := 1; i < len(lines)-1; i++ {
-			if lines[i] != "" {
-				lines[i] = "`" + lines[i] + "`"
-			}
-		}
-
-		if len(lines) > 1 {
-			lines[len(lines)-1] = "`" + strings.TrimSuffix(lines[len(lines)-1], "{noformat}") + "`"
-		}
-
-		return "\n" + strings.Join(lines, "") + "\n"
+		return "\n`" + strings.Join(lines, "\n") + "`\n"
 	})
 
 	return processedString
