@@ -166,7 +166,7 @@ non-numbered list text
 		},
 		"Code block formatting": {
 			input:          "{code:go}fruit := \"APPLE\"{code}",
-			expectedOutput: "``fruit := \"APPLE\"``",
+			expectedOutput: "`fruit := \"APPLE\"`",
 		},
 		"Bullet list formatting": {
 			input: `* BULLET LIST ROW 1
@@ -206,7 +206,7 @@ h6. HEADING 6`,
 		},
 		"No-format block": {
 			input:          "{noformat}This is not formatted{noformat}",
-			expectedOutput: "``This is not formatted`\n`",
+			expectedOutput: "`This is not formatted`",
 		},
 		"Double curly block": {
 			input:          "{{This is a code block}}",

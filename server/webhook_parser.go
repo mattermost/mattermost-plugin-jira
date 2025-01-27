@@ -422,14 +422,15 @@ func preProcessText(jiraMarkdownString string) string {
 		content := langSpecificBlock[contentStartIndex:endIndex]
 
 		lines := strings.Split(content, "\n")
+
+		if len(lines) == 1 {
+			return "`" + lines[0] + "`"
+		}
+
 		for i := range lines {
 			if lines[i] != "" {
 				lines[i] = "`" + lines[i] + "`"
 			}
-		}
-
-		if len(lines) == 1 {
-			return "`" + lines[0] + "`"
 		}
 
 		return "\n" + strings.Join(lines, "\n") + "\n"
@@ -447,6 +448,10 @@ func preProcessText(jiraMarkdownString string) string {
 
 		lines := strings.Split(content, "\n")
 
+		if len(lines) == 1 {
+			return "`" + lines[0] + "`"
+		}
+
 		if len(lines) > 0 {
 			lines[0] = "`" + lines[0] + "`\n"
 		}
@@ -459,10 +464,6 @@ func preProcessText(jiraMarkdownString string) string {
 
 		if len(lines) > 1 {
 			lines[len(lines)-1] = "`" + strings.TrimSuffix(lines[len(lines)-1], "{noformat}") + "`"
-		}
-
-		if len(lines) == 1 {
-			return "`" + lines[0] + "`"
 		}
 
 		return "\n" + strings.Join(lines, "") + "\n"
