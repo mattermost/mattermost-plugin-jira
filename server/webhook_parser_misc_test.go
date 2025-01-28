@@ -216,12 +216,12 @@ h6. HEADING 6`,
 			input: `{code:go}func main() {
     fmt.Println("Hello, World!")
 }{code}`,
-			expectedOutput: "\n`func main() {\n    fmt.Println(\"Hello, World!\")\n}`\n",
+			expectedOutput: "\n`func main() {`\n`    fmt.Println(\"Hello, World!\")`\n`}`\n",
 		},
 		"Multi-line noformat code block": {
 			input: `{noformat}text data in code block.
 more text data in code block.{noformat}`,
-			expectedOutput: "\n`text data in code block.\nmore text data in code block.`\n",
+			expectedOutput: "\n`text data in code block.`\n`more text data in code block.`\n",
 		},
 	}
 
