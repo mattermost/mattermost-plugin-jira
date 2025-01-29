@@ -1,9 +1,6 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-// Copyright (c) 2019-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
-
 // Copied from pluginapi/experimental/bot/logger to avoid upgrading min_server_version
 // remove this file once pluginapi can be updated to 0.1.3+ ( min_server_version is
 //
