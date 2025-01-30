@@ -204,6 +204,14 @@ h6. HEADING 6`,
 			input:          "{quote}This is a quote{quote}",
 			expectedOutput: "> This is a quote",
 		},
+		"No-format block": {
+			input:          "{noformat}This is not formatted{noformat}",
+			expectedOutput: "`This is not formatted`",
+		},
+		"Double curly block": {
+			input:          "{{This is a code block}}",
+			expectedOutput: "`This is a code block`",
+		},
 	}
 
 	for name, tc := range tests {
