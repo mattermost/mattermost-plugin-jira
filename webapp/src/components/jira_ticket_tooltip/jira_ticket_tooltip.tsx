@@ -1,4 +1,5 @@
 import React, {ReactNode} from 'react';
+import ReactMarkdown from 'react-markdown';
 
 import {Instance} from 'types/model';
 import SVGWrapper from 'components/svgWrapper';
@@ -253,7 +254,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                         {this.tagTicketStatus(ticketDetails.statusKey)}
                     </div>
                     <div className='popover-body__description'>
-                        {ticketDetails.description && `${ticketDetails.description.substring(0, maxTicketDescriptionLength).trim()}${ticketDetails.description.length > maxTicketDescriptionLength ? '...' : ''}`}
+                        <ReactMarkdown>{ticketDetails.description && `${ticketDetails.description.substring(0, maxTicketDescriptionLength).trim()}${ticketDetails.description.length > maxTicketDescriptionLength ? '...' : ''}`}</ReactMarkdown>
                     </div>
                     <div className='popover-body__see-more-link'>
                         <a
