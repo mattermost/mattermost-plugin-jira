@@ -79,7 +79,7 @@
     "react-select": "3.2.0",
     "react-window": "1.8.6",
     "redux": "4.1.2",
-    "reselect": "4.1.2",
+    "reselect": "4.1.8",
     "typescript": "3.9.10"
   },
   "jest": {
