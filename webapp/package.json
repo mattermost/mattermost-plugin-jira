@@ -71,7 +71,7 @@
     "core-js": "3.18.3",
     "debounce-promise": "3.1.2",
     "mattermost-redux": "5.33.1",
-    "react": "16.8.6",
+    "react": "16.14.0",
     "react-bootstrap": "1.6.1",
     "react-dom": "16.8.6",
     "react-markdown": "5.0.3",
