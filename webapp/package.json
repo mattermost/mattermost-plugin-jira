@@ -78,7 +78,7 @@
     "react-redux": "7.2.6",
     "react-select": "3.2.0",
     "react-window": "1.8.6",
-    "redux": "4.1.2",
+    "redux": "4.2.1",
     "reselect": "4.1.2",
     "typescript": "3.9.10"
   },
