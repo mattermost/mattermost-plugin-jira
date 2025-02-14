@@ -193,7 +193,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	}
 
 	encryptionKey := ec.EncryptionKey
-	if encryptionKey == "" {
+	if encryptionKey == "" && ec.AdminAPIToken != "" {
 		p.client.Log.Warn("Encryption key required to encrypt admin API token")
 		return errors.New("failed to encrypt admin token. Encryption key not generated")
 	}
@@ -560,7 +560,12 @@ func (c *externalConfig) setDefaults() (bool, error) {
 }
 
 func (p *Plugin) setDefaultConfiguration() error {
-	ec := p.getConfig().externalConfig
+	ec := externalConfig{}
+	err := p.client.Configuration.LoadPluginConfiguration(&ec)
+	if err != nil {
+		return errors.WithMessage(err, "failed to load plugin configuration")
+	}
+
 	changed, err := ec.setDefaults()
 	if err != nil {
 		return err
