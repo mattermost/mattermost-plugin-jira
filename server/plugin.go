@@ -193,7 +193,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	}
 
 	encryptionKey := ec.EncryptionKey
-	if encryptionKey == "" && ec.AdminAPIToken != "" {
+	if ec.AdminAPIToken != "" && encryptionKey == "" {
 		p.client.Log.Warn("Encryption key required to encrypt admin API token")
 		return errors.New("failed to encrypt admin token. Encryption key not generated")
 	}
