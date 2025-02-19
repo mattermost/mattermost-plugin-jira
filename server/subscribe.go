@@ -179,12 +179,12 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 			}
 		}
 
-		if !isValidFieldInclusion(field, value, inclusion) {
-			return false
-		}
-
 		if !wh.eventTypes[commentCreated] {
 			field.Values = field.Values.Add(visibleToAllUsers)
+		}
+
+		if !isValidFieldInclusion(field, value, inclusion) {
+			return false
 		}
 	}
 
