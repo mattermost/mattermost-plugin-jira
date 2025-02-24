@@ -26,5 +26,4 @@ server/manifest.go
 
 # Aider
 .aider.*
-!.aider.conf.yml
 
