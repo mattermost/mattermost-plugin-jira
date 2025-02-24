@@ -180,7 +180,7 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 			}
 		}
 
-		if !wh.eventTypes[commentCreated] {
+		if !(wh.eventTypes[commentCreated] || wh.eventTypes[commentUpdated]) && field.Inclusion != FilterIncludeAll {
 			field.Values = field.Values.Add(visibleToAllUsers)
 		}
 
