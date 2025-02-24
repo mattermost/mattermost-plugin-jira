@@ -2,21 +2,23 @@
 // See LICENSE.txt for license information.
 
 import {connect} from 'react-redux';
-import {bindActionCreators} from 'redux';
+import {Dispatch, bindActionCreators} from 'redux';
 
 import {closeDisconnectModal, disconnectUser, sendEphemeralPost} from 'actions';
 import {getUserConnectedInstances, isDisconnectModalVisible} from 'selectors';
 
+import {GlobalState} from 'types/store';
+
 import DisconnectModal from './disconnect_modal';
 
-const mapStateToProps = (state) => {
+const mapStateToProps = (state: GlobalState) => {
     return {
         connectedInstances: getUserConnectedInstances(state),
         visible: isDisconnectModalVisible(state),
     };
 };
 
-const mapDispatchToProps = (dispatch) => bindActionCreators({
+const mapDispatchToProps = (dispatch: Dispatch) => bindActionCreators({
     closeModal: closeDisconnectModal,
     disconnectUser,
     sendEphemeralPost,
