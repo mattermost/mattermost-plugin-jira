@@ -1,5 +1,5 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -26,10 +26,11 @@ import (
 const (
 	JiraSubscriptionsKey = "jirasub"
 
-	FilterIncludeAny = "include_any"
-	FilterIncludeAll = "include_all"
-	FilterExcludeAny = "exclude_any"
-	FilterEmpty      = "empty"
+	FilterIncludeAny     = "include_any"
+	FilterIncludeAll     = "include_all"
+	FilterExcludeAny     = "exclude_any"
+	FilterEmpty          = "empty"
+	FilterIncludeOrEmpty = "include_or_empty"
 
 	MaxSubscriptionNameLength = 100
 	CommentVisibility         = "commentVisibility"
@@ -205,7 +206,8 @@ func isValidFieldInclusion(field FieldFilter, value StringSet, inclusion string)
 	if (inclusion == FilterIncludeAny && !containsAny) ||
 		(inclusion == FilterIncludeAll && !containsAll) ||
 		(inclusion == FilterExcludeAny && containsAny) ||
-		(inclusion == FilterEmpty && value.Len() > 0) {
+		(inclusion == FilterEmpty && value.Len() > 0) ||
+		(inclusion == FilterIncludeOrEmpty && !containsAny && value.Len() > 0) {
 		return false
 	}
 

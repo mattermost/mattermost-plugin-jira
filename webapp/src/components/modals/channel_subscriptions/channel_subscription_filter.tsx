@@ -1,5 +1,5 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// See LICENSE.txt for license information.
 
 import React from 'react';
 
@@ -40,7 +40,7 @@ export type Props = {
     addValidate: (isValid: () => boolean) => void;
     removeValidate: (isValid: () => boolean) => void;
     instanceID: string;
-    securityLevelEmptyForJiraSubscriptions: boolean;
+    securityLevelEmptyForJiraSubscriptions?: boolean;
 };
 
 export type State = {
@@ -179,6 +179,9 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         case FilterFieldInclusion.EMPTY:
             subtext = 'Includes when the value is empty';
             break;
+        case FilterFieldInclusion.INCLUDE_OR_EMPTY:
+            subtext = 'Includes the specified values or when the value is empty';
+            break;
         }
 
         return (
@@ -207,6 +210,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
             {label: 'Include All', value: FilterFieldInclusion.INCLUDE_ALL},
             {label: 'Exclude', value: FilterFieldInclusion.EXCLUDE_ANY},
             {label: 'Empty', value: FilterFieldInclusion.EMPTY},
+            {label: 'Include or Empty', value: FilterFieldInclusion.INCLUDE_OR_EMPTY},
         ];
 
         if (isSecurityLevelField(field) && value.inclusion !== FilterFieldInclusion.EXCLUDE_ANY && this.props.securityLevelEmptyForJiraSubscriptions) {

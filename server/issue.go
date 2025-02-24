@@ -1,11 +1,12 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// See LICENSE.txt for license information.
 
 package main
 
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -1138,5 +1139,92 @@ func (p *Plugin) GetIssueByKey(instanceID, mattermostUserID types.ID, issueKey s
 			return nil, errors.WithMessage(err, "request to Jira failed")
 		}
 	}
+	issue.Fields.Description = preProcessText(issue.Fields.Description)
 	return issue, nil
+}
+
+func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Issue, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/2/issue/%s", instanceID, issueID), nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create http request for fetching issue data. IssueID: %s", issueID)
+	}
+
+	err = p.SetAdminAPITokenRequestHeader(req)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get issue data. IssueID: %s", issueID)
+	}
+
+	if resp == nil || resp.Body == nil {
+		return nil, errors.Wrapf(err, "missing data for issue. StatusCode: %d, IssueID: %s", resp.StatusCode, issueID)
+	}
+
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to read issue data. StatusCode: %d, IssueID: %s", resp.StatusCode, issueID)
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, errors.Errorf("issue does not exist or user does not have permission to fetch the issue details. StatusCode: %d, IssueID: %s", resp.StatusCode, issueID)
+	} else if resp.StatusCode == http.StatusForbidden {
+		return nil, errors.Errorf("user does not have permission to fetch the issue details. StatusCode: %d, IssueID: %s", resp.StatusCode, issueID)
+	}
+
+	issue := &jira.Issue{}
+	if err = json.Unmarshal(body, issue); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal issue data. IssueID: %s", issueID)
+	}
+
+	return issue, nil
+}
+
+type ProjectSearchResponse struct {
+	Self       string           `json:"self"`
+	MaxResults int              `json:"maxResults"`
+	StartAt    int              `json:"startAt"`
+	Total      int              `json:"total"`
+	IsLast     bool             `json:"isLast"`
+	Values     jira.ProjectList `json:"values"`
+}
+
+func (p *Plugin) GetProjectListWithAPIToken(instanceID string) (*jira.ProjectList, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/3/project/search", instanceID), nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create HTTP request for fetching project list data. InstanceID: %s", instanceID)
+	}
+
+	err = p.SetAdminAPITokenRequestHeader(req)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch project list data. InstanceID: %s", instanceID)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("unexpected status code: %d. InstanceID: %s", resp.StatusCode, instanceID)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	var projectResponse ProjectSearchResponse
+	if err = json.Unmarshal(body, &projectResponse); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal project list response")
+	}
+
+	return &projectResponse.Values, nil
 }

@@ -144,6 +144,10 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
                 "label": "Empty",
                 "value": "empty",
               },
+              Object {
+                "label": "Include or Empty",
+                "value": "include_or_empty",
+              },
             ]
           }
           removeValidate={[MockFunction]}

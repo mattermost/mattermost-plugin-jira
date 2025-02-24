@@ -1,4 +1,4 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import {connect} from 'react-redux';
@@ -45,7 +45,7 @@ const mapStateToProps = (state) => {
     const installedInstances = getInstalledInstances(state);
     const connectedInstances = getUserConnectedInstances(state);
     const pluginSettings = getPluginSettings(state);
-    const securityLevelEmptyForJiraSubscriptions = pluginSettings.security_level_empty_for_jira_subscriptions;
+    const securityLevelEmptyForJiraSubscriptions = pluginSettings?.security_level_empty_for_jira_subscriptions;
 
     return {
         omitDisplayName,

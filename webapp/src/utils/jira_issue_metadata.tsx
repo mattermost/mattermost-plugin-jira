@@ -1,5 +1,5 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// See LICENSE.txt for license information.
 
 import {
     ChannelSubscriptionFilters,
@@ -387,7 +387,7 @@ function quoteGuard(s: string) {
     return s;
 }
 
-export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMetadata, fields: FilterField[], filters: ChannelSubscriptionFilters, securityLevelEmptyForJiraSubscriptions: boolean) {
+export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMetadata, fields: FilterField[], filters: ChannelSubscriptionFilters, securityLevelEmptyForJiraSubscriptions?: boolean) {
     const projectJQL = `Project = ${quoteGuard(filters.projects[0]) || '?'}`;
 
     let issueTypeValueString = '?';

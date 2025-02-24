@@ -1,5 +1,5 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// See LICENSE.txt for license information.
 
 import createMeta from 'testdata/cloud-get-create-issue-metadata-for-project-many-fields.json';
 import {ticketData} from 'testdata/get-ticket-metadata-for-tooltip';
