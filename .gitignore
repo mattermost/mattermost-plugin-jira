@@ -25,7 +25,7 @@ server/manifest.go
 .notice-work
 
 # Aider
-.aider*
+.aider.*
 !.aider.conf.yml
 !.aiderignore
 
