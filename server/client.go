@@ -68,7 +68,7 @@ type SearchService interface {
 	SearchUsersAssignableToIssue(issueKey, query string, maxResults int) ([]jira.User, error)
 	SearchUsersAssignableInProject(projectKey, query string, maxResults int) ([]jira.User, error)
 	SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error)
-	SearchCommentVisibilityFields(params map[string]string) (*CommentVisibilityResult, error)
+	GetUserVisibilityGroups(params map[string]string) (*CommentVisibilityResult, error)
 }
 
 // IssueService is the interface for issue-related APIs.
@@ -281,9 +281,9 @@ func (client JiraClient) SearchAutoCompleteFields(params map[string]string) (*Au
 	return result, nil
 }
 
-// SearchCommentVisibilityFields searches fieldValue specified in the params and returns the comment visibility suggestions
+// GetUserVisibilityGroups searches fieldValue specified in the params and returns the comment visibility suggestions
 // for that fieldValue
-func (client JiraClient) SearchCommentVisibilityFields(params map[string]string) (*CommentVisibilityResult, error) {
+func (client JiraClient) GetUserVisibilityGroups(params map[string]string) (*CommentVisibilityResult, error) {
 	result := &CommentVisibilityResult{}
 	if err := client.RESTGet(commentVisibilityRoute, params, result); err != nil {
 		return nil, err

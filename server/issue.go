@@ -434,7 +434,7 @@ func (p *Plugin) httpGetCommentVisibilityFields(w http.ResponseWriter, r *http.R
 		"expand":     expandValueGroups,
 		"accountId":  connection.AccountID,
 	}
-	response, err := client.SearchCommentVisibilityFields(params)
+	response, err := client.GetUserVisibilityGroups(params)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
