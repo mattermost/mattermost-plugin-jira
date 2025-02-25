@@ -23,3 +23,6 @@ server/manifest.go
 
 # notice
 .notice-work
+
+# Aider
+.aider.*
