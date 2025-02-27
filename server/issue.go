@@ -424,7 +424,7 @@ func (p *Plugin) httpGetCommentVisibilityFields(w http.ResponseWriter, r *http.R
 	}
 
 	instanceID := r.FormValue(instanceIDQueryParam)
-	client, _, connection, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+	client, instance, connection, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -434,6 +434,18 @@ func (p *Plugin) httpGetCommentVisibilityFields(w http.ResponseWriter, r *http.R
 		"expand":     expandValueGroups,
 		"accountId":  connection.AccountID,
 	}
+
+	switch instance.Common().Type {
+	case CloudOAuthInstanceType:
+		params["accountId"] = connection.AccountID
+	case ServerInstanceType:
+		user, err := client.GetSelf()
+		if err != nil {
+			p.client.Log.Error("Error getting self user from client", "error", err)
+		}
+		params["key"] = user.Key
+	}
+
 	response, err := client.GetUserVisibilityGroups(params)
 	if err != nil {
 		return http.StatusInternalServerError, err
