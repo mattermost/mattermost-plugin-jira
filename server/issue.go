@@ -439,10 +439,12 @@ func (p *Plugin) httpGetCommentVisibilityFields(w http.ResponseWriter, r *http.R
 	case CloudOAuthInstanceType:
 		params["accountId"] = connection.AccountID
 	case ServerInstanceType:
-		user, err := client.GetSelf()
+		var user *jira.User
+		user, err = client.GetSelf()
 		if err != nil {
 			p.client.Log.Error("Error getting self user from client", "error", err)
 		}
+
 		params["key"] = user.Key
 	}
 
