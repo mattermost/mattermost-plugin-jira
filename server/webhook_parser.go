@@ -1,5 +1,5 @@
-// See License for license information.
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -191,7 +191,7 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 
 func parseWebhookCreated(jwh *JiraWebhook) Webhook {
 	wh := newWebhook(jwh, eventCreated, "**created**")
-	wh.text = jwh.mdIssueDescription()
+	wh.text = preProcessText(jwh.mdIssueDescription())
 
 	if jwh.Issue.Fields == nil {
 		return wh
@@ -327,13 +327,13 @@ func preProcessText(jiraMarkdownString string) string {
 	asteriskRegex := regexp.MustCompile(`\*(\w+)\*`)
 	hyphenRegex := regexp.MustCompile(`-(\w+)-`)
 	headingRegex := regexp.MustCompile(`(?m)^(h[1-6]\.)\s+`)
-	langSpecificCodeBlockRegex := regexp.MustCompile(`\{code:[^}]+\}(.+?)\{code\}`)
+	langSpecificCodeBlockRegex := regexp.MustCompile(`\{code:[^}]+\}([\s\S]*?)\{code\}`)
 	numberedListRegex := regexp.MustCompile(`^#\s+`)
 	colouredTextRegex := regexp.MustCompile(`\{color:[^}]+\}(.*?)\{color\}`)
 	linkRegex := regexp.MustCompile(`\[(.*?)\|([^|\]]+)(?:\|([^|\]]+))?\]`)
 	quoteRegex := regexp.MustCompile(`\{quote\}(.*?)\{quote\}`)
 	codeBlockRegex := regexp.MustCompile(`\{\{(.+?)\}\}`)
-	noFormatRegex := regexp.MustCompile(`\{noformat\}(.*?)\{noformat\}`)
+	noFormatRegex := regexp.MustCompile(`\{noformat\}([\s\S]*?)\{noformat\}`)
 	doubleCurlyRegex := regexp.MustCompile(`\{\{(.*?)\}\}`)
 
 	// the below code converts lines starting with "#" into a numbered list. It increments the counter if consecutive lines are numbered,
@@ -388,11 +388,6 @@ func preProcessText(jiraMarkdownString string) string {
 		return hashes + " "
 	})
 
-	processedString = langSpecificCodeBlockRegex.ReplaceAllStringFunc(processedString, func(codeBlock string) string {
-		codeContent := codeBlock[strings.Index(codeBlock, "}")+1 : strings.LastIndex(codeBlock, "{code}")]
-		return "`" + codeContent + "`"
-	})
-
 	processedString = codeBlockRegex.ReplaceAllStringFunc(processedString, func(match string) string {
 		curlyContent := codeBlockRegex.FindStringSubmatch(match)[1]
 		return "`" + curlyContent + "`"
@@ -405,14 +400,65 @@ func preProcessText(jiraMarkdownString string) string {
 		return "> " + quotedText
 	})
 
-	processedString = noFormatRegex.ReplaceAllStringFunc(processedString, func(noFormatBlock string) string {
-		content := noFormatBlock[strings.Index(noFormatBlock, "}")+1 : strings.LastIndex(noFormatBlock, "{noformat}")]
-		return fmt.Sprintf("`%s`", content)
-	})
-
 	processedString = doubleCurlyRegex.ReplaceAllStringFunc(processedString, func(match string) string {
 		content := match[2 : len(match)-2]
 		return fmt.Sprintf("`%s`", content)
+	})
+
+	// handles single and multi line language specific code blocks
+	processedString = langSpecificCodeBlockRegex.ReplaceAllStringFunc(processedString, func(langSpecificBlock string) string {
+		startIndex := strings.Index(langSpecificBlock, "{code:")
+		endIndex := strings.LastIndex(langSpecificBlock, "{code}")
+		if startIndex == -1 || endIndex == -1 || startIndex == endIndex {
+			return langSpecificBlock
+		}
+
+		langEndIndex := strings.Index(langSpecificBlock[startIndex:], "}")
+		if langEndIndex == -1 {
+			return langSpecificBlock
+		}
+
+		contentStartIndex := startIndex + langEndIndex + 1
+		content := langSpecificBlock[contentStartIndex:endIndex]
+
+		lines := strings.Split(content, "\n")
+
+		if len(lines) == 1 {
+			return "`" + lines[0] + "`"
+		}
+
+		for i := range lines {
+			if len(lines[i]) > 0 {
+				lines[i] = "`" + lines[i] + "`"
+			}
+		}
+
+		return "\n" + strings.Join(lines, "\n") + "\n"
+	})
+
+	// handles single and multi line non-language specific code blocks
+	processedString = noFormatRegex.ReplaceAllStringFunc(processedString, func(noFormatBlock string) string {
+		startIndex := strings.Index(noFormatBlock, "{noformat}")
+		endIndex := strings.LastIndex(noFormatBlock, "{noformat}")
+		if startIndex == -1 || endIndex == -1 || startIndex == endIndex {
+			return noFormatBlock
+		}
+
+		content := noFormatBlock[startIndex+len("{noformat}") : endIndex]
+
+		lines := strings.Split(content, "\n")
+
+		if len(lines) == 1 {
+			return "`" + lines[0] + "`"
+		}
+
+		for i := range lines {
+			if len(lines[i]) > 0 {
+				lines[i] = "`" + lines[i] + "`"
+			}
+		}
+
+		return "\n" + strings.Join(lines, "\n") + "\n"
 	})
 
 	return processedString

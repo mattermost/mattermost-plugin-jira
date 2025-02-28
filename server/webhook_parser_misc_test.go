@@ -1,5 +1,5 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -211,6 +211,17 @@ h6. HEADING 6`,
 		"Double curly block": {
 			input:          "{{This is a code block}}",
 			expectedOutput: "`This is a code block`",
+		},
+		"Multi-line language specific code block": {
+			input: `{code:go}func main() {
+    fmt.Println("Hello, World!")
+}{code}`,
+			expectedOutput: "\n`func main() {`\n`    fmt.Println(\"Hello, World!\")`\n`}`\n",
+		},
+		"Multi-line noformat code block": {
+			input: `{noformat}text data in code block.
+more text data in code block.{noformat}`,
+			expectedOutput: "\n`text data in code block.`\n`more text data in code block.`\n",
 		},
 	}
 

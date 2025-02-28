@@ -1,5 +1,5 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -197,7 +197,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	}
 
 	encryptionKey := ec.EncryptionKey
-	if encryptionKey == "" && ec.AdminAPIToken != "" {
+	if ec.AdminAPIToken != "" && encryptionKey == "" {
 		p.client.Log.Warn("Encryption key required to encrypt admin API token")
 		return errors.New("failed to encrypt admin token. Encryption key not generated")
 	}

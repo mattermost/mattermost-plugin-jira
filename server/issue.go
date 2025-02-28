@@ -1,5 +1,5 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -1093,6 +1093,7 @@ func (p *Plugin) GetIssueByKey(instanceID, mattermostUserID types.ID, issueKey s
 			return nil, errors.WithMessage(err, "request to Jira failed")
 		}
 	}
+	issue.Fields.Description = preProcessText(issue.Fields.Description)
 	return issue, nil
 }
 
