@@ -32,7 +32,9 @@ const (
 	FilterEmpty          = "empty"
 	FilterIncludeOrEmpty = "include_or_empty"
 
-	MaxSubscriptionNameLength = 100
+	MaxSubscriptionNameLength  = 100
+	CommentVisibility          = "commentVisibility"
+	CommentVisibilityGroupType = "group"
 )
 
 type FieldFilter struct {
@@ -171,6 +173,14 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		}
 
 		value := getIssueFieldValue(issue, field.Key)
+		if field.Key == CommentVisibility {
+			value = updateCommentVisibilityValue(value, wh)
+		}
+
+		if shouldAddVisibleToAllUsersToFieldValues(wh, field) {
+			field.Values = field.Values.Add(visibleToAllUsers)
+		}
+
 		if !isValidFieldInclusion(field, value, inclusion) {
 			return false
 		}
@@ -184,6 +194,18 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 	}
 
 	return true
+}
+
+func updateCommentVisibilityValue(value StringSet, wh *webhook) StringSet {
+	if wh.Comment.Visibility.Value != "" && wh.Comment.Visibility.Type == CommentVisibilityGroupType {
+		return value.Add(wh.Comment.Visibility.Value)
+	}
+
+	return value.Add(visibleToAllUsers)
+}
+
+func shouldAddVisibleToAllUsersToFieldValues(wh *webhook, field FieldFilter) bool {
+	return !(wh.eventTypes[commentCreated] || wh.eventTypes[commentUpdated]) && field.Inclusion != FilterIncludeAll && field.Inclusion != FilterExcludeAny
 }
 
 func isValidFieldInclusion(field FieldFilter, value StringSet, inclusion string) bool {
