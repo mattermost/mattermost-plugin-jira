@@ -1,5 +1,5 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -9,6 +9,7 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -102,26 +103,29 @@ func (store mockUserStore) MapUsers(func(*User) error) error {
 	return nil
 }
 
-type mockInstanceStore struct{}
+type mockInstanceStore struct {
+	mock.Mock
+}
 
-func (store mockInstanceStore) CreateInactiveCloudInstance(types.ID, string) error {
+func (store *mockInstanceStore) CreateInactiveCloudInstance(types.ID, string) error {
 	return nil
 }
-func (store mockInstanceStore) DeleteInstance(types.ID) error {
+func (store *mockInstanceStore) DeleteInstance(types.ID) error {
 	return nil
 }
-func (store mockInstanceStore) LoadInstance(types.ID) (Instance, error) {
+func (store *mockInstanceStore) LoadInstance(id types.ID) (Instance, error) {
+	args := store.Called(id)
+	return args.Get(0).(Instance), args.Error(1)
+}
+func (store *mockInstanceStore) LoadInstanceFullKey(string) (Instance, error) {
 	return &testInstance{}, nil
 }
-func (store mockInstanceStore) LoadInstanceFullKey(string) (Instance, error) {
-	return &testInstance{}, nil
-}
-func (store mockInstanceStore) LoadInstances() (*Instances, error) {
+func (store *mockInstanceStore) LoadInstances() (*Instances, error) {
 	return NewInstances(), nil
 }
-func (store mockInstanceStore) StoreInstance(instance Instance) error {
+func (store *mockInstanceStore) StoreInstance(instance Instance) error {
 	return nil
 }
-func (store mockInstanceStore) StoreInstances(*Instances) error {
+func (store *mockInstanceStore) StoreInstances(*Instances) error {
 	return nil
 }

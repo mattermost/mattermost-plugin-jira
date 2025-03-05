@@ -1,3 +1,6 @@
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import React from 'react';
 
 import {Theme} from 'mattermost-redux/types/preferences';
@@ -7,6 +10,7 @@ import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 
 import {
     FIELD_KEY_STATUS,
+    isCommentVisibilityField,
     isEpicLinkField,
     isLabelField,
     isMultiSelectField,
@@ -22,6 +26,7 @@ import {
 } from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
 import JiraAutoCompleteSelector from 'components/data_selectors/jira_autocomplete_selector';
+import JiraCommentVisibilitySelector from 'components/data_selectors/jira_commentvisibility_selector';
 
 export type Props = {
     fields: FilterField[];
@@ -78,7 +83,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         onChange(value, {...value, values: newValues});
     };
 
-    handleEpicLinkChange = (values: string[]): void => {
+    handleValueChangeWithoutName = (values: string[]): void => {
         const {onChange, value} = this.props;
 
         const newValues = values || [];
@@ -293,13 +298,22 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         };
 
         let valueSelector;
-        if (isEpicLinkField(this.props.field)) {
+        if (isCommentVisibilityField(field)) {
+            valueSelector = (
+                <JiraCommentVisibilitySelector
+                    {...selectProps}
+                    fieldName={field.name}
+                    value={value.values}
+                    onChange={this.handleValueChangeWithoutName}
+                />
+            );
+        } else if (isEpicLinkField(this.props.field)) {
             valueSelector = (
                 <JiraEpicSelector
                     {...selectProps}
                     issueMetadata={this.props.issueMetadata}
                     value={value.values}
-                    onChange={this.handleEpicLinkChange}
+                    onChange={this.handleValueChangeWithoutName}
                 />
             );
         } else if (isLabelField(field)) {
@@ -308,7 +322,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                     {...selectProps}
                     fieldName={field.name}
                     value={value.values}
-                    onChange={this.handleEpicLinkChange}
+                    onChange={this.handleValueChangeWithoutName}
                 />
             );
         } else {
@@ -393,7 +407,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
 
 type EmptyChannelSubscriptionFilterProps = {
     fields: FilterField[];
-    theme: object;
+    theme: Theme;
     chosenIssueTypes: string[];
     issueMetadata: IssueMetadata;
     onChange: (f1: FilterValue | null, f2: FilterValue) => void;

@@ -1,6 +1,12 @@
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import React, {ReactNode} from 'react';
+import ReactMarkdown from 'react-markdown';
 
 import {Instance} from 'types/model';
+import SVGWrapper from 'components/svgWrapper';
+import {SVGIcons} from 'components/plugin_constants/icons';
 import {TicketData, TicketDetails} from 'types/tooltip';
 import DefaultAvatar from 'components/default_avatar/default_avatar';
 
@@ -18,6 +24,7 @@ export type Props = {
 export type State = {
     ticketId: string;
     ticketDetails?: TicketDetails | null;
+    error: string | null;
 };
 
 const isAssignedLabel = ' is assigned';
@@ -46,6 +53,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
 
         this.state = {
             ticketId: ticketID,
+            error: null,
         };
     }
 
@@ -77,27 +85,43 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         return null;
     };
 
-    componentDidUpdate() {
+    fetchIssue = (show: boolean, connected: boolean, ticketId?: string, ticketDetails?: TicketDetails | null): void => {
         const issueKey = this.getIssueKey();
         if (!issueKey) {
             return;
         }
 
-        const {instanceID} = issueKey;
-        const {ticketId, ticketDetails} = this.state;
-        if (!ticketDetails && this.props.show && ticketId) {
-            this.props.fetchIssueByKey(this.state.ticketId, instanceID).then((res: {data?: TicketData}) => {
+        if (!show) {
+            return;
+        }
+
+        if (ticketId && !ticketDetails) {
+            this.props.fetchIssueByKey(ticketId, issueKey.instanceID).then((res: {data?: TicketData, error?: any}) => {
+                if (res.error) {
+                    this.setState({error: 'There was a problem loading the details for this Jira link'});
+                    return;
+                }
+
                 const updatedTicketDetails = getJiraTicketDetails(res.data);
-                if (this.props.connected && updatedTicketDetails && updatedTicketDetails.ticketId === ticketId) {
+                if (connected && updatedTicketDetails && updatedTicketDetails.ticketId === ticketId) {
                     this.setState({
                         ticketDetails: updatedTicketDetails,
+                        error: null,
                     });
                 }
             });
         }
+    };
+
+    componentDidMount(): void {
+        this.fetchIssue(this.props.show, this.props.connected, this.state.ticketId, this.state.ticketDetails);
     }
 
-    fixVersionLabel(fixVersion: string) {
+    componentDidUpdate(): void {
+        this.fetchIssue(this.props.show, this.props.connected, this.state.ticketId, this.state.ticketDetails);
+    }
+
+    fixVersionLabel(fixVersion: string): ReactNode {
         if (fixVersion) {
             const fixVersionString = 'Fix Version :';
             return (
@@ -113,7 +137,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         return null;
     }
 
-    tagTicketStatus(ticketStatus: string) {
+    tagTicketStatus(ticketStatus: string): ReactNode {
         let ticketStatusClass = 'default-style ticket-status--default';
 
         const myStatusClass = myStatusClasses[ticketStatus && ticketStatus.toLowerCase()];
@@ -166,7 +190,28 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
             return null;
         }
 
-        const {ticketDetails} = this.state;
+        const {ticketDetails, error} = this.state;
+        if (error) {
+            return (
+                <div className='jira-issue-tooltip jira-issue-tooltip-error'>
+                    <SVGWrapper
+                        width={30}
+                        height={30}
+                        fill='#FF0000'
+                        className='bi bi-exclamation-triangle'
+                    >
+                        {SVGIcons.exclamationTriangle}
+                    </SVGWrapper>
+                    <div className='jira-issue-error-message'>{error}</div>
+                    <p className='jira-issue-error-footer'>{'Check your connection or try again later'}</p>
+                </div>
+            );
+        }
+
+        // Format the ticket summary by trimming spaces, replacing multiple spaces with one, truncating to `jiraTicketSummaryMaxLength`, and adding '...' if it exceeds the limit.
+        const formattedSummary = ticketDetails?.summary ? `${ticketDetails.summary.trim().split(/\s+/).join(' ')
+            .substring(0, jiraTicketSummaryMaxLength)}${ticketDetails.summary.trim().split(/\s+/).join(' ').length > jiraTicketSummaryMaxLength ? '...' : ''}` : '';
+
         if (!ticketDetails) {
             // Display the spinner loader while ticket details are being fetched
             return (
@@ -204,14 +249,15 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                         <a
                             href={this.props.href}
                             target='_blank'
+                            title={ticketDetails?.summary}
                             rel='noopener noreferrer'
                         >
-                            <h5>{ticketDetails.summary && ticketDetails.summary.substring(0, jiraTicketSummaryMaxLength)}</h5>
+                            <h5 className='tooltip-ticket-summary'>{ticketDetails.summary && ticketDetails.summary.substring(0, jiraTicketSummaryMaxLength)}</h5>
                         </a>
                         {this.tagTicketStatus(ticketDetails.statusKey)}
                     </div>
                     <div className='popover-body__description'>
-                        {ticketDetails.description && `${ticketDetails.description.substring(0, maxTicketDescriptionLength).trim()}${ticketDetails.description.length > maxTicketDescriptionLength ? '...' : ''}`}
+                        <ReactMarkdown>{ticketDetails.description && `${ticketDetails.description.substring(0, maxTicketDescriptionLength).trim()}${ticketDetails.description.length > maxTicketDescriptionLength ? '...' : ''}`}</ReactMarkdown>
                     </div>
                     <div className='popover-body__see-more-link'>
                         <a

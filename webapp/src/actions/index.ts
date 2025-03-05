@@ -1,4 +1,4 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import {PostTypes} from 'mattermost-redux/action_types';
@@ -161,6 +161,13 @@ export const searchIssues = (params: SearchIssueParams) => {
 export const searchAutoCompleteFields = (params) => {
     return async (dispatch, getState) => {
         const url = getPluginServerRoute(getState()) + '/api/v2/get-search-autocomplete-fields';
+        return doFetchWithResponse(`${url}${buildQueryString(params)}`);
+    };
+};
+
+export const searchCommentVisibilityFields = (params) => {
+    return async (dispatch, getState) => {
+        const url = `${getPluginServerRoute(getState())}/api/v2/get-comment-visibility-fields`;
         return doFetchWithResponse(`${url}${buildQueryString(params)}`);
     };
 };

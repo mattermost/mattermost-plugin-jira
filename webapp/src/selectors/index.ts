@@ -1,4 +1,4 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import {createSelector} from 'reselect';
@@ -73,5 +73,3 @@ export const instanceIsInstalled = (state): boolean => getInstalledInstances(sta
 export const getDefaultUserInstanceID = (state) => getPluginState(state).defaultUserInstanceID;
 
 export const getPluginSettings = (state) => getPluginState(state).pluginSettings;
-
-export const getStoredLinkTooltipIssue = (state) => getPluginState(state).storedLinkTooltipIssue;

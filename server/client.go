@@ -1,5 +1,5 @@
-// Copyright (c) 2019-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -26,8 +26,10 @@ import (
 )
 
 const autocompleteSearchRoute = "2/jql/autocompletedata/suggestions"
+const commentVisibilityRoute = "2/user"
 const userSearchRoute = "2/user/assignable/search"
 const unrecognizedEndpoint = "_unrecognized"
+const visibleToAllUsers = "visible-to-all-users"
 
 // Client is the combined interface for all upstream APIs and convenience methods.
 type Client interface {
@@ -68,6 +70,7 @@ type SearchService interface {
 	SearchUsersAssignableInProject(projectKey, query string, maxResults int) ([]jira.User, error)
 	SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error)
 	GetWatchers(instanceID, issueKey string, connection *Connection) (*jira.Watches, error)
+	GetUserVisibilityGroups(params map[string]string) (*CommentVisibilityResult, error)
 }
 
 // IssueService is the interface for issue-related APIs.
@@ -285,6 +288,18 @@ type AutoCompleteResult struct {
 	Results []Result `json:"results"`
 }
 
+type JiraUserGroup struct {
+	Name string `json:"name"`
+}
+
+type JiraUserGroupCollection struct {
+	JiraUserGroups []*JiraUserGroup `json:"items"`
+}
+
+type CommentVisibilityResult struct {
+	Groups *JiraUserGroupCollection `json:"groups"`
+}
+
 // SearchAutoCompleteFields searches fieldValue specified in the params and returns autocomplete suggestions
 // for that fieldValue
 func (client JiraClient) SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error) {
@@ -294,6 +309,17 @@ func (client JiraClient) SearchAutoCompleteFields(params map[string]string) (*Au
 		return nil, err
 	}
 
+	return result, nil
+}
+
+// GetUserVisibilityGroups searches fieldValue specified in the params and returns the comment visibility suggestions
+// for that fieldValue
+func (client JiraClient) GetUserVisibilityGroups(params map[string]string) (*CommentVisibilityResult, error) {
+	result := &CommentVisibilityResult{}
+	if err := client.RESTGet(commentVisibilityRoute, params, result); err != nil {
+		return nil, err
+	}
+	result.Groups.JiraUserGroups = append(result.Groups.JiraUserGroups, &JiraUserGroup{visibleToAllUsers})
 	return result, nil
 }
 
