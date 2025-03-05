@@ -174,14 +174,14 @@ export const searchAutoCompleteFields = (params: AutoCompleteParams) => {
 };
 
 export const searchCommentVisibilityFields = (params) => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const url = `${getPluginServerRoute(getState())}/api/v2/get-comment-visibility-fields`;
         return doFetchWithResponse(`${url}${buildQueryString(params)}`);
     };
 };
 
-export const searchUsers = (params) => {
-    return async (dispatch, getState) => {
+export const searchUsers = (params: SearchUsersParams) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const url = getPluginServerRoute(getState()) + '/api/v2/get-search-users';
         return doFetchWithResponse(`${url}${buildQueryString(params)}`);
     };
