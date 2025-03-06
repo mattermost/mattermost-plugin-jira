@@ -219,6 +219,18 @@ export type SearchIssueParams = {
     instance_id: string;
 };
 
+export type AutoCompleteParams = {
+    fieldValue: string;
+    fieldName: string;
+    instance_id: string;
+};
+
+export type SearchUsersParams = {
+    q: string;
+    project: string;
+    instance_id: string;
+};
+
 export type AttachCommentRequest = {
     post_id: string;
     current_team: string;
