@@ -209,8 +209,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	}
 	ec.AdminAPIToken = string(encryptedAdminAPIToken)
 
-	_, err = strconv.Atoi(ec.ThreadedJiraCommentSusbcriptionDuration)
-	if err != nil {
+	if _, err = strconv.Atoi(ec.ThreadedJiraCommentSusbcriptionDuration); err != nil {
 		return errors.New("error converting comment post reply duration to integer")
 	}
 
