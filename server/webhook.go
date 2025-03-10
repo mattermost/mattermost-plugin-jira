@@ -122,7 +122,7 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 		if err != nil {
 			p.client.Log.Error("Error converting comment post reply duration to integer, future comments may not thread correctly", "TicketID", wh.Issue.ID, "PostID", post.Id, "Error", err.Error())
 		} else {
-			expiry := pluginapi.SetExpiry(time.Duration(commentPostReplyDuration)*24*time.Hour)
+			expiry := pluginapi.SetExpiry(time.Duration(commentPostReplyDuration) * 24 * time.Hour)
 			if _, err := p.client.KV.Set(key, post.Id, expiry); err != nil {
 				p.client.Log.Error("Failed to store post ID, future comments may not thread correctly", "TicketID", wh.Issue.ID, "PostID", post.Id, "error", err.Error())
 			}
