@@ -173,6 +173,9 @@ const channelSubscriptions = (state = {} as AnyState, action = {} as AnyAction) 
     case ActionTypes.DELETED_CHANNEL_SUBSCRIPTION: {
         const sub = action.data;
         const newSubs = state[sub.channel_id].concat([]);
+
+        if (!newSubs) return { ...state }
+
         newSubs.splice(newSubs.findIndex((s: any) => s.id === sub.id), 1);
 
         return {
@@ -182,7 +185,7 @@ const channelSubscriptions = (state = {} as AnyState, action = {} as AnyAction) 
     }
     case ActionTypes.CREATED_CHANNEL_SUBSCRIPTION: {
         const sub = action.data;
-        const newSubs = state[sub.channel_id].concat([]);
+        const newSubs = state[sub.channel_id] ? state[sub.channel_id].concat([]) : [];
         newSubs.push(sub);
 
         return {
@@ -192,7 +195,7 @@ const channelSubscriptions = (state = {} as AnyState, action = {} as AnyAction) 
     }
     case ActionTypes.EDITED_CHANNEL_SUBSCRIPTION: {
         const sub = action.data;
-        const newSubs = state[sub.channel_id].concat([]);
+        const newSubs = state[sub.channel_id] ? state[sub.channel_id].concat([]) : [];
         newSubs.splice(newSubs.findIndex((s: any) => s.id === sub.id), 1, sub);
 
         return {
