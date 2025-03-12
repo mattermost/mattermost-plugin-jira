@@ -4,6 +4,7 @@
 import {combineReducers} from 'redux';
 
 import ActionTypes from 'action_types';
+import { ChannelSubscription } from 'types/model';
 
 export type Action<T extends string = string> = {
     type: T
@@ -176,7 +177,7 @@ const channelSubscriptions = (state = {} as AnyState, action = {} as AnyAction) 
 
         if (!newSubs) return { ...state }
 
-        newSubs.splice(newSubs.findIndex((s: any) => s.id === sub.id), 1);
+        newSubs.splice(newSubs.findIndex((s: ChannelSubscription) => s.id === sub.id), 1);
 
         return {
             ...state,
@@ -196,7 +197,7 @@ const channelSubscriptions = (state = {} as AnyState, action = {} as AnyAction) 
     case ActionTypes.EDITED_CHANNEL_SUBSCRIPTION: {
         const sub = action.data;
         const newSubs = state[sub.channel_id] ? state[sub.channel_id].concat([]) : [];
-        newSubs.splice(newSubs.findIndex((s: any) => s.id === sub.id), 1, sub);
+        newSubs.splice(newSubs.findIndex((s: ChannelSubscription) => s.id === sub.id), 1, sub);
 
         return {
             ...state,
