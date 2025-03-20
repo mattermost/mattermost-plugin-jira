@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-import {isEpicIssueType, isEpicNameField} from 'utils/jira_issue_metadata';
+import {isEpicNameField} from 'utils/jira_issue_metadata';
 import {IssueMetadata, JiraIssue, ReactSelectOption} from 'types/model';
 
 import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
@@ -43,17 +43,22 @@ export default class JiraEpicSelector extends React.PureComponent<Props> {
     };
 
     searchIssues = async (userInput: string): Promise<ReactSelectOption[]> => {
-        const epicIssueType = this.props.issueMetadata.projects[0].issuetypes.find(isEpicIssueType);
-        if (!epicIssueType) {
-            return [];
+        let epicNameTypeId: string | undefined;
+        let epicNameTypeName: string | undefined;
+
+        for (const project of this.props.issueMetadata.projects) {
+            for (const issueType of project.issuetypes) {
+                epicNameTypeId = Object.keys(issueType.fields).find((key) => isEpicNameField(issueType.fields[key]));
+                if (epicNameTypeId) {
+                    epicNameTypeName = issueType.fields[epicNameTypeId].name;
+                    break;
+                }
+            }
         }
 
-        const epicNameTypeId = Object.keys(epicIssueType.fields).find((key) => isEpicNameField(epicIssueType.fields[key]));
-        if (!epicNameTypeId) {
+        if (!epicNameTypeId || !epicNameTypeName) {
             return [];
         }
-
-        const epicNameTypeName = epicIssueType.fields[epicNameTypeId].name;
 
         let searchStr = '';
         if (userInput) {
@@ -65,18 +70,26 @@ export default class JiraEpicSelector extends React.PureComponent<Props> {
     };
 
     fetchEpicsFromJql = async (jqlSearch: string, userInput: string): Promise<ReactSelectOption[]> => {
-        const epicIssueType = this.props.issueMetadata.projects[0].issuetypes.find(isEpicIssueType);
-        if (!epicIssueType) {
+        let epicIssueTypeId: string | undefined;
+        let epicNameTypeId: string | undefined;
+        let projectKey: string | undefined;
+
+        for (const project of this.props.issueMetadata.projects) {
+            for (const issueType of project.issuetypes) {
+                epicNameTypeId = Object.keys(issueType.fields).find((key) => isEpicNameField(issueType.fields[key]));
+                if (epicNameTypeId) {
+                    epicIssueTypeId = issueType.id;
+                    projectKey = project.key;
+                    break;
+                }
+            }
+        }
+
+        if (!epicNameTypeId || !projectKey || !epicIssueTypeId) {
             return [];
         }
 
-        const epicNameTypeId = Object.keys(epicIssueType.fields).find((key) => isEpicNameField(epicIssueType.fields[key]));
-        if (!epicNameTypeId) {
-            return [];
-        }
-
-        const projectKey = this.props.issueMetadata.projects[0].key;
-        const fullJql = `project=${projectKey} and issuetype=${epicIssueType.id} ${jqlSearch} ${searchDefaults}`;
+        const fullJql = `project=${projectKey} and issuetype=${epicIssueTypeId} ${jqlSearch} ${searchDefaults}`;
 
         const params = {
             jql: fullJql,
