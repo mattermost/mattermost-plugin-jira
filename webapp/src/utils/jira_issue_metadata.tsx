@@ -31,6 +31,7 @@ type GetIssueTypesOptions = {
     includeSubtasks: boolean;
 }
 
+const commentVisibilityFieldKey = 'commentVisibility';
 export const FIELD_KEY_STATUS = 'status';
 
 // This is a replacement for the Array.flat() function which will be polyfilled by Babel
@@ -278,6 +279,23 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
         } as FilterField);
     }
 
+    const commentVisibilityField = {
+        key: commentVisibilityFieldKey,
+        name: 'Comment Visibility',
+        schema: {
+            type: 'commentVisibility',
+        },
+        values: [],
+        issueTypes: metadata && metadata.issue_types_with_statuses.map((type) => {
+            return {
+                id: type.id,
+                name: type.name,
+            };
+        }),
+    } as FilterField;
+
+    result.push(commentVisibilityField);
+
     const statusField = getStatusField(metadata, issueTypes);
     if (statusField) {
         result.push(statusField);
@@ -323,6 +341,10 @@ export function isEpicLinkField(field: JiraField | FilterField): boolean {
 
 export function isLabelField(field: JiraField | FilterField): boolean {
     return field.schema.system === 'labels' || field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:labels';
+}
+
+export function isCommentVisibilityField(field: JiraField | FilterField): boolean {
+    return field.key === commentVisibilityFieldKey;
 }
 
 export function isEpicIssueType(issueType: IssueType): boolean {

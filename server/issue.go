@@ -23,16 +23,21 @@ import (
 )
 
 const (
-	labelsField        = "labels"
-	statusField        = "status"
-	reporterField      = "reporter"
-	priorityField      = "priority"
-	descriptionField   = "description"
-	resolutionField    = "resolution"
-	securityLevelField = "security"
+	labelsField            = "labels"
+	statusField            = "status"
+	reporterField          = "reporter"
+	priorityField          = "priority"
+	descriptionField       = "description"
+	resolutionField        = "resolution"
+	securityLevelField     = "security"
+	headerMattermostUserID = "Mattermost-User-ID"
+	instanceIDQueryParam   = "instance_id"
+	fieldValueQueryParam   = "fieldValue"
 
 	QueryParamInstanceID = "instance_id"
 	QueryParamProjectID  = "project_id"
+
+	expandValueGroups = "groups"
 )
 
 type CreateMetaInfo struct {
@@ -406,6 +411,61 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 		metaInfo,
 		projectStatuses,
 	}, nil
+}
+
+func (p *Plugin) httpGetCommentVisibilityFields(w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed, fmt.Errorf("Request: " + r.Method + " is not allowed, must be GET")
+	}
+
+	mattermostUserID := r.Header.Get(headerMattermostUserID)
+	if mattermostUserID == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	instanceID := r.FormValue(instanceIDQueryParam)
+	client, instance, connection, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	params := map[string]string{
+		"fieldValue": r.FormValue(fieldValueQueryParam),
+		"expand":     expandValueGroups,
+		"accountId":  connection.AccountID,
+	}
+
+	switch instance.Common().Type {
+	case CloudOAuthInstanceType:
+		params["accountId"] = connection.AccountID
+	case ServerInstanceType:
+		var user *jira.User
+		user, err = client.GetSelf()
+		if err != nil {
+			p.client.Log.Error("Error getting self user from client", "error", err)
+		}
+
+		params["key"] = user.Key
+	}
+
+	response, err := client.GetUserVisibilityGroups(params)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	if response == nil {
+		return http.StatusInternalServerError, errors.New("failed to return the response")
+	}
+
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal the response")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err = w.Write(jsonResponse); err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write the response")
+	}
+	return http.StatusOK, nil
 }
 
 func (p *Plugin) httpGetSearchIssues(w http.ResponseWriter, r *http.Request) (int, error) {
