@@ -176,8 +176,8 @@ const channelSubscriptions = (state = {} as AnyState, action = {} as AnyAction) 
         const newSubs = state[sub.channel_id].concat([]);
 
         if (!newSubs) {
-            return {...state}
-        };
+            return {...state};
+        }
 
         newSubs.splice(newSubs.findIndex((s: ChannelSubscription) => s.id === sub.id), 1);
 
