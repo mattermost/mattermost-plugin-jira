@@ -448,8 +448,9 @@ export function handleConnectFlow(instanceID?: string) {
 
 export function redirectConnect(instanceID: string) {
     return async (dispatch: Dispatch, getState: GlobalState) => {
+        const baseUrl = getPluginServerRoute(getState());
         const instancePrefix = '/instance/' + btoa(instanceID);
-        const target = '/plugins/' + manifest.id + instancePrefix + '/user/connect';
+        const target = baseUrl + instancePrefix + '/user/connect';
         window.open(target, '_blank');
     };
 }
