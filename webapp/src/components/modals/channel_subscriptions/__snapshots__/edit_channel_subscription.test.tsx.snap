@@ -543,6 +543,36 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                   "name": "Epic",
                 },
               ],
+              "key": "assignee",
+              "name": "Assignee",
+              "schema": Object {
+                "system": "assignee",
+                "type": "user",
+              },
+            },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10002",
+                  "name": "Task",
+                },
+                Object {
+                  "id": "10003",
+                  "name": "Sub-task",
+                },
+                Object {
+                  "id": "10001",
+                  "name": "Story",
+                },
+                Object {
+                  "id": "10004",
+                  "name": "Bug",
+                },
+                Object {
+                  "id": "10000",
+                  "name": "Epic",
+                },
+              ],
               "key": "commentVisibility",
               "name": "Comment Visibility",
               "schema": Object {
@@ -849,6 +879,37 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                   "value": "10040",
                 },
               ],
+            },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10002",
+                  "name": "Task",
+                },
+                Object {
+                  "id": "10003",
+                  "name": "Sub-task",
+                },
+                Object {
+                  "id": "10001",
+                  "name": "Story",
+                },
+                Object {
+                  "id": "10004",
+                  "name": "Bug",
+                },
+                Object {
+                  "id": "10000",
+                  "name": "Epic",
+                },
+              ],
+              "key": "customfield_10080",
+              "name": "MJK - User Picker",
+              "schema": Object {
+                "custom": "com.atlassian.jira.plugin.system.customfieldtypes:userpicker",
+                "customId": 10080,
+                "type": "user",
+              },
             },
             Object {
               "issueTypes": Array [

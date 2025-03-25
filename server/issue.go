@@ -23,13 +23,14 @@ import (
 )
 
 const (
+	assigneeField          = "assignee"
+	securityLevelField     = "security"
 	labelsField            = "labels"
 	statusField            = "status"
 	reporterField          = "reporter"
 	priorityField          = "priority"
 	descriptionField       = "description"
 	resolutionField        = "resolution"
-	securityLevelField     = "security"
 	headerMattermostUserID = "Mattermost-User-ID"
 	instanceIDQueryParam   = "instance_id"
 	fieldValueQueryParam   = "fieldValue"
@@ -855,6 +856,10 @@ func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
 		if issue.Fields.Priority != nil {
 			return NewStringSet(issue.Fields.Priority.ID)
 		}
+	case reporterField:
+		return NewStringSet(issue.Fields.Reporter.AccountID)
+	case assigneeField:
+		return NewStringSet(issue.Fields.Assignee.AccountID)
 	case "fixversions":
 		result := NewStringSet()
 		for _, v := range issue.Fields.FixVersions {
