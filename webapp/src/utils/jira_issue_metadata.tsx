@@ -1,4 +1,4 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import {
@@ -31,6 +31,7 @@ type GetIssueTypesOptions = {
     includeSubtasks: boolean;
 }
 
+const commentVisibilityFieldKey = 'commentVisibility';
 export const FIELD_KEY_STATUS = 'status';
 
 // This is a replacement for the Array.flat() function which will be polyfilled by Babel
@@ -298,6 +299,23 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
         } as FilterField);
     }
 
+    const commentVisibilityField = {
+        key: commentVisibilityFieldKey,
+        name: 'Comment Visibility',
+        schema: {
+            type: 'commentVisibility',
+        },
+        values: [],
+        issueTypes: metadata && metadata.issue_types_with_statuses.map((type) => {
+            return {
+                id: type.id,
+                name: type.name,
+            };
+        }),
+    } as FilterField;
+
+    result.push(commentVisibilityField);
+
     const statusField = getStatusField(metadata, issueTypes);
     if (statusField) {
         result.push(statusField);
@@ -349,6 +367,10 @@ export function isUserField(field: JiraField | FilterField): boolean {
     return field.schema.type === 'user' || field.schema.custom === `${jiraSystemCustomFieldTypesKey}:userpicker`;
 }
 
+export function isCommentVisibilityField(field: JiraField | FilterField): boolean {
+    return field.key === commentVisibilityFieldKey;
+}
+
 export function isEpicIssueType(issueType: IssueType): boolean {
     return issueType.name === 'Epic';
 }
@@ -389,7 +411,7 @@ function quoteGuard(s: string) {
     return s;
 }
 
-export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMetadata, fields: FilterField[], filters: ChannelSubscriptionFilters, securityLevelEmptyForJiraSubscriptions: boolean) {
+export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMetadata, fields: FilterField[], filters: ChannelSubscriptionFilters, securityLevelEmptyForJiraSubscriptions?: boolean) {
     const projectJQL = `Project = ${quoteGuard(filters.projects[0]) || '?'}`;
 
     let issueTypeValueString = '?';

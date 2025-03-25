@@ -1,3 +1,6 @@
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 package main
 
 import (
@@ -81,6 +84,9 @@ const commonHelpText = "\n" +
 	""
 
 const sysAdminHelpText = "\n###### For System Administrators:\n" +
+	"Setup Jira plugin\n" +
+	"* `/jira setup` - Start Jira plugin setup flow\n" +
+	"* `/jira webhook [jiraURL]` - Display the webhook URLs to setup on Jira\n" +
 	"Install Jira instances:\n" +
 	"* `/jira instance install server [jiraURL]` - Connect Mattermost to a Jira Server or Data Center instance located at <jiraURL>\n" +
 	"* `/jira instance install cloud-oauth [jiraURL]` - Connect Mattermost to a Jira Cloud instance using OAuth 2.0 located at <jiraURL>\n" +
@@ -94,7 +100,6 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"* `/jira instance alias [URL] [alias-name]` - assign an alias to an instance\n" +
 	"* `/jira instance unalias [alias-name]` - remve an alias from an instance\n" +
 	"* `/jira instance v2 <jiraURL>` - Set the Jira instance to process \"v2\" webhooks and subscriptions (not prefixed with the instance ID)\n" +
-	"* `/jira webhook [--instance=<jiraURL>]` -  Show the Mattermost webhook to receive JQL queries\n" +
 	"* `/jira v2revert ` - Revert to V2 jira plugin data model\n" +
 	""
 

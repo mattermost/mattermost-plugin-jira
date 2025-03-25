@@ -1,4 +1,4 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import React from 'react';
@@ -90,7 +90,7 @@ export default class JiraFields extends React.Component<Props> {
             return null;
         }
 
-        let projectKey;
+        let projectKey: string | undefined;
         if (values && values.project) {
             projectKey = values.project.key;
         }

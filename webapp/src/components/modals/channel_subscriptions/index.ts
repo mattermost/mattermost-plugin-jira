@@ -1,4 +1,4 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import {connect} from 'react-redux';
@@ -28,9 +28,11 @@ import {
     getUserConnectedInstances,
 } from 'selectors';
 
+import {GlobalState} from 'types/store';
+
 import ChannelSubscriptionsModal from './channel_subscriptions';
 
-const mapStateToProps = (state) => {
+const mapStateToProps = (state: GlobalState) => {
     const channelId = getChannelIdWithSettingsOpen(state);
     let channel = null;
     let omitDisplayName = false;
@@ -45,7 +47,7 @@ const mapStateToProps = (state) => {
     const installedInstances = getInstalledInstances(state);
     const connectedInstances = getUserConnectedInstances(state);
     const pluginSettings = getPluginSettings(state);
-    const securityLevelEmptyForJiraSubscriptions = pluginSettings.security_level_empty_for_jira_subscriptions;
+    const securityLevelEmptyForJiraSubscriptions = pluginSettings?.security_level_empty_for_jira_subscriptions;
 
     return {
         omitDisplayName,

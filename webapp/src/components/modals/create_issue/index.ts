@@ -1,4 +1,4 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import {connect} from 'react-redux';
@@ -15,9 +15,11 @@ import {
 } from 'actions';
 import {getCreateModal, isCreateModalVisible} from 'selectors';
 
+import {GlobalState} from 'types/store';
+
 import CreateIssue from './create_issue_modal';
 
-const mapStateToProps = (state) => {
+const mapStateToProps = (state: GlobalState) => {
     const {postId, description, channelId} = getCreateModal(state);
     const post = (postId) ? getPost(state, postId) : null;
     const currentTeam = getCurrentTeam(state);

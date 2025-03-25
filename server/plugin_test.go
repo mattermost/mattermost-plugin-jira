@@ -1,5 +1,5 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -17,6 +17,16 @@ import (
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	MockInstanceID      = "mockInstanceID"
+	MockAPIToken        = "mockAPIToken"
+	MockAdminEmail      = "mockadmin@email.com"
+	MockBaseURL         = "mockBaseURL"
+	MockASCKey          = "mockAtlassianSecurityContextKey"
+	MockASCClientKey    = "mockAtlassianSecurityContextClientKey"
+	MockASCSharedSecret = "mockAtlassianSecurityContextSharedSecret" // #nosec G101: Potential hardcoded credentials - This is a mock for testing purposes
 )
 
 func validRequestBody() io.ReadCloser {
@@ -143,4 +153,132 @@ func TestPlugin(t *testing.T) {
 			assert.Equal(t, tc.ExpectedStatusCode, w.Result().StatusCode)
 		})
 	}
+}
+
+func TestSetupAutolink(t *testing.T) {
+	tests := []struct {
+		name         string
+		setup        func(*Plugin, *plugintest.API, *mockInstanceStore)
+		InstanceType InstanceType
+	}{
+		{
+			name: "Missing API token or Admin email",
+			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
+				mockAPI.On("LogInfo", "unable to setup autolink due to missing API Token or Admin Email").Return(nil).Times(1)
+				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(&serverInstance{}, nil).Times(1)
+
+				p.updateConfig(func(c *config) {
+					c.AdminAPIToken = ""
+					c.AdminEmail = ""
+				})
+			},
+			InstanceType: ServerInstanceType,
+		},
+		{
+			name: "Unsupported instance type",
+			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
+				mockAPI.On("LogInfo", "only cloud and cloud-oauth instances supported for autolink").Return(nil).Times(1)
+				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(&serverInstance{}, nil).Times(1)
+
+				p.updateConfig(GetConfigSetterFunction())
+			},
+			InstanceType: ServerInstanceType,
+		},
+		{
+			name: "Autolink plugin unavailable API returned error",
+			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
+				mockAPI.On("LogWarn", "OnActivate: Autolink plugin unavailable. API returned error", "error", mock.Anything).Return(nil).Times(1)
+				mockAPI.On("GetPluginStatus", autolinkPluginID).Return(nil, &model.AppError{Message: "error getting plugin status"}).Times(1)
+				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(&cloudInstance{}, nil).Times(1)
+
+				p.updateConfig(GetConfigSetterFunction())
+			},
+			InstanceType: CloudInstanceType,
+		},
+		{
+			name: "Autolink plugin not running",
+			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
+				mockAPI.On("LogWarn", "OnActivate: Autolink plugin unavailable. Plugin is not running", "status", &model.PluginStatus{State: model.PluginStateNotRunning}).Return(nil).Times(1)
+				mockAPI.On("GetPluginStatus", autolinkPluginID).Return(&model.PluginStatus{State: model.PluginStateNotRunning}, nil).Times(1)
+				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(&cloudInstance{}, nil).Times(1)
+
+				p.updateConfig(GetConfigSetterFunction())
+			},
+			InstanceType: CloudInstanceType,
+		},
+		{
+			name: "Error installing autolinks for cloud instance",
+			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
+				mockAPI.On("LogInfo", "could not install autolinks for cloud instance", "instance", "mockBaseURL", "error", mock.Anything).Return(nil).Times(1)
+				mockAPI.On("GetPluginStatus", autolinkPluginID).Return(&model.PluginStatus{State: model.PluginStateRunning}, nil).Times(1)
+				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(
+					&cloudInstance{
+						InstanceCommon: &InstanceCommon{
+							Plugin: p,
+						},
+						AtlassianSecurityContext: &AtlassianSecurityContext{
+							BaseURL:      MockBaseURL,
+							Key:          MockASCKey,
+							ClientKey:    MockASCClientKey,
+							SharedSecret: MockASCSharedSecret,
+						},
+					}, nil).Times(1)
+
+				p.updateConfig(GetConfigSetterFunction())
+			},
+			InstanceType: CloudInstanceType,
+		},
+		{
+			name: "Error installing autolinks for cloud-oauth instance",
+			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
+				mockAPI.On("LogWarn", "Error unmarshalling admin API token", "error", mock.Anything).Times(1)
+				mockAPI.On("LogInfo", "could not install autolinks for cloud-oauth instance", "instance", "mockBaseURL", "error", mock.Anything).Return(nil).Times(1)
+				mockAPI.On("GetPluginStatus", autolinkPluginID).Return(&model.PluginStatus{State: model.PluginStateRunning}, nil).Times(1)
+
+				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(
+					&cloudOAuthInstance{
+						InstanceCommon: &InstanceCommon{
+							Plugin: p,
+						},
+						JiraBaseURL: MockBaseURL,
+					}, nil).Times(1)
+
+				p.updateConfig(GetConfigSetterFunction())
+			},
+			InstanceType: CloudOAuthInstanceType,
+		},
+	}
+	for _, tt := range tests {
+		mockAPI := &plugintest.API{}
+		dummyInstanceStore := new(mockInstanceStore)
+		mockPluginClient := pluginapi.NewClient(mockAPI, nil)
+		p := &Plugin{
+			client:        mockPluginClient,
+			instanceStore: dummyInstanceStore,
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setup(p, mockAPI, dummyInstanceStore)
+			instances := GetInstancesWithType(tt.InstanceType)
+
+			p.SetupAutolink(instances)
+
+			mockAPI.AssertExpectations(t)
+			dummyInstanceStore.AssertExpectations(t)
+		})
+	}
+}
+
+func GetConfigSetterFunction() func(*config) {
+	return func(c *config) {
+		c.AdminAPIToken = MockAPIToken
+		c.AdminEmail = MockAdminEmail
+	}
+}
+
+func GetInstancesWithType(instanceType InstanceType) *Instances {
+	return NewInstances(&InstanceCommon{
+		InstanceID: MockInstanceID,
+		Type:       instanceType,
+	})
 }

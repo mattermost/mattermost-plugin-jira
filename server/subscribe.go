@@ -1,5 +1,5 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -26,12 +26,15 @@ import (
 const (
 	JiraSubscriptionsKey = "jirasub"
 
-	FilterIncludeAny = "include_any"
-	FilterIncludeAll = "include_all"
-	FilterExcludeAny = "exclude_any"
-	FilterEmpty      = "empty"
+	FilterIncludeAny     = "include_any"
+	FilterIncludeAll     = "include_all"
+	FilterExcludeAny     = "exclude_any"
+	FilterEmpty          = "empty"
+	FilterIncludeOrEmpty = "include_or_empty"
 
-	MaxSubscriptionNameLength = 100
+	MaxSubscriptionNameLength  = 100
+	CommentVisibility          = "commentVisibility"
+	CommentVisibilityGroupType = "group"
 )
 
 type FieldFilter struct {
@@ -170,6 +173,14 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		}
 
 		value := getIssueFieldValue(issue, field.Key)
+		if field.Key == CommentVisibility {
+			value = updateCommentVisibilityValue(value, wh)
+		}
+
+		if shouldAddVisibleToAllUsersToFieldValues(wh, field) {
+			field.Values = field.Values.Add(visibleToAllUsers)
+		}
+
 		if !isValidFieldInclusion(field, value, inclusion) {
 			return false
 		}
@@ -185,6 +196,18 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 	return true
 }
 
+func updateCommentVisibilityValue(value StringSet, wh *webhook) StringSet {
+	if wh.Comment.Visibility.Value != "" && wh.Comment.Visibility.Type == CommentVisibilityGroupType {
+		return value.Add(wh.Comment.Visibility.Value)
+	}
+
+	return value.Add(visibleToAllUsers)
+}
+
+func shouldAddVisibleToAllUsersToFieldValues(wh *webhook, field FieldFilter) bool {
+	return !(wh.eventTypes[commentCreated] || wh.eventTypes[commentUpdated]) && field.Inclusion != FilterIncludeAll && field.Inclusion != FilterExcludeAny
+}
+
 func isValidFieldInclusion(field FieldFilter, value StringSet, inclusion string) bool {
 	containsAny := value.ContainsAny(field.Values.Elems()...)
 	containsAll := value.ContainsAll(field.Values.Elems()...)
@@ -192,7 +215,8 @@ func isValidFieldInclusion(field FieldFilter, value StringSet, inclusion string)
 	if (inclusion == FilterIncludeAny && !containsAny) ||
 		(inclusion == FilterIncludeAll && !containsAll) ||
 		(inclusion == FilterExcludeAny && containsAny) ||
-		(inclusion == FilterEmpty && value.Len() > 0) {
+		(inclusion == FilterEmpty && value.Len() > 0) ||
+		(inclusion == FilterIncludeOrEmpty && !containsAny && value.Len() > 0) {
 		return false
 	}
 

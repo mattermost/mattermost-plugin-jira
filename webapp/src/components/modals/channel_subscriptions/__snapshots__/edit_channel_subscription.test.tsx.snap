@@ -549,6 +549,12 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                 "system": "assignee",
                 "type": "user",
               },
+              "key": "commentVisibility",
+              "name": "Comment Visibility",
+              "schema": Object {
+                "type": "commentVisibility",
+              },
+              "values": Array [],
             },
             Object {
               "issueTypes": Array [

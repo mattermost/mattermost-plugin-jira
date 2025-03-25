@@ -54,6 +54,9 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
                 "label": "Assignee",
                 "value": "assignee",
               },
+                "label": "Comment Visibility",
+                "value": "commentVisibility",
+              },
               Object {
                 "label": "Epic Link",
                 "value": "customfield_10014",
@@ -147,6 +150,10 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
               Object {
                 "label": "Empty",
                 "value": "empty",
+              },
+              Object {
+                "label": "Include or Empty",
+                "value": "include_or_empty",
               },
             ]
           }
