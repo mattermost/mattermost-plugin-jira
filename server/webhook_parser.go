@@ -325,7 +325,7 @@ func quoteIssueComment(comment string) string {
 // For more reference, please visit https://github.com/mattermost/mattermost-plugin-jira/issues/1096
 func preProcessText(jiraMarkdownString string) string {
 	asteriskRegex := regexp.MustCompile(`\*(\w+)\*`)
-	hyphenRegex := regexp.MustCompile(`-(\w+)-`)
+	hyphenRegex := regexp.MustCompile(`\B-([\w\d]+)-\B`)
 	headingRegex := regexp.MustCompile(`(?m)^(h[1-6]\.)\s+`)
 	langSpecificCodeBlockRegex := regexp.MustCompile(`\{code:[^}]+\}([\s\S]*?)\{code\}`)
 	numberedListRegex := regexp.MustCompile(`^#\s+`)
@@ -379,6 +379,9 @@ func preProcessText(jiraMarkdownString string) string {
 	})
 
 	processedString = hyphenRegex.ReplaceAllStringFunc(processedString, func(word string) string {
+		if strings.Contains(word, "accountid:") {
+			return word
+		}
 		return "~~" + strings.Trim(word, "-") + "~~"
 	})
 
