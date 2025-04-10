@@ -332,7 +332,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                     {...selectProps}
                     fieldName={field.name}
                     value={value.values}
-                    onChange={this.handleEpicLinkChange}
+                    onChange={this.handleValueChangeWithoutName}
                 />
             );
         } else {
