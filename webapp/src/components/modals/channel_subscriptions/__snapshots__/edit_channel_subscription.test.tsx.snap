@@ -941,6 +941,36 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                 },
               ],
             },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10002",
+                  "name": "Task",
+                },
+                Object {
+                  "id": "10003",
+                  "name": "Sub-task",
+                },
+                Object {
+                  "id": "10001",
+                  "name": "Story",
+                },
+                Object {
+                  "id": "10004",
+                  "name": "Bug",
+                },
+                Object {
+                  "id": "10000",
+                  "name": "Epic",
+                },
+              ],
+              "key": "teamField",
+              "name": "Team",
+              "schema": Object {
+                "type": "team",
+              },
+              "values": Array [],
+            },
           ]
         }
         instanceID="https://something.atlassian.net"
