@@ -223,6 +223,18 @@ h6. HEADING 6`,
 more text data in code block.{noformat}`,
 			expectedOutput: "\n`text data in code block.`\n`more text data in code block.`\n",
 		},
+		"User mentioned with account ID": {
+			input:          "[~accountid:712020:46403440-d0cf-4f7f-993f-1035facb10a2]",
+			expectedOutput: "[~accountid:712020:46403440-d0cf-4f7f-993f-1035facb10a2]",
+		},
+		"Hyphenated word with account ID": {
+			input:          "-word- [~accountid:712020:46403440-d0cf-4f7f-993f-1035facb10a2] -anotherWord-",
+			expectedOutput: "~~word~~ [~accountid:712020:46403440-d0cf-4f7f-993f-1035facb10a2] ~~anotherWord~~",
+		},
+		"Account ID within sentence": {
+			input:          "This is an account ID: [~accountid:712020:46403440-d0cf-4f7f-993f-1035facb10a2], and this -should be struck-",
+			expectedOutput: "This is an account ID: [~accountid:712020:46403440-d0cf-4f7f-993f-1035facb10a2], and this ~~should be struck~~",
+		},
 	}
 
 	for name, tc := range tests {
