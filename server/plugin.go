@@ -91,6 +91,16 @@ type externalConfig struct {
 
 	// Email of the admin
 	AdminEmail string
+
+	// Comma separated list of Team IDs and name to be used for filtering subscription on the basis of teams. Ex: [team-1-name](team-1-id),[team-2-name](team-2-id)
+	TeamIDs string
+
+	TeamIDList []TeamList
+}
+
+type TeamList struct {
+	Name string
+	ID   string
 }
 
 const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb
@@ -165,6 +175,12 @@ func (p *Plugin) updateConfig(f func(conf *config)) config {
 	return p.conf
 }
 
+func isValidUUIDv4(uuid string) bool {
+	// UUIDv4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+	re := regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$`)
+	return re.MatchString(uuid)
+}
+
 // OnConfigurationChange is invoked when configuration changes may have been made.
 func (p *Plugin) OnConfigurationChange() error {
 	// Load the public configuration fields from the Mattermost server configuration.
@@ -204,6 +220,34 @@ func (p *Plugin) OnConfigurationChange() error {
 		return err
 	}
 	ec.AdminAPIToken = string(encryptedAdminAPIToken)
+
+	if ec.TeamIDs != "" {
+		re := regexp.MustCompile(`\((.+?)\)\[([^\]]+)\]`) // Regular expression to match (team-name)[team-id]
+		matches := re.FindAllStringSubmatch(ec.TeamIDs, -1)
+
+		var teamIDList []TeamList
+		for _, match := range matches {
+			if len(match) != 3 {
+				continue
+			}
+
+			teamName := strings.TrimSpace(match[1])
+			teamID := strings.TrimSpace(match[2])
+
+			if len(teamName) == 0 {
+				continue
+			}
+			if !isValidUUIDv4(teamID) {
+				continue
+			}
+
+			teamIDList = append(teamIDList, TeamList{
+				Name: teamName,
+				ID:   teamID,
+			})
+		}
+		ec.TeamIDList = teamIDList
+	}
 
 	prev := p.getConfig()
 	p.updateConfig(func(conf *config) {
