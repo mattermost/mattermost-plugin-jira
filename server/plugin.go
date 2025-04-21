@@ -222,7 +222,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	ec.AdminAPIToken = string(encryptedAdminAPIToken)
 
 	if ec.TeamIDs != "" {
-		re := regexp.MustCompile(`\((.+?)\)\[([^\]]+)\]`) // Regular expression to match (team-name)[team-id]
+		re := regexp.MustCompile(`\[(.+?)\]\(([^)]+)\)`) // Matches [team-name](team-id)
 		matches := re.FindAllStringSubmatch(ec.TeamIDs, -1)
 
 		var teamIDList []TeamList

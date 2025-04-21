@@ -145,8 +145,8 @@
                 "key": "TeamIDs",
                 "display_name": "Team List",
                 "type": "text",
-                "help_text": "comma separated list of team ID's and team name to be used to filter subscriptions. Use the format (team-name)[team-id]",
-                "placeholder": "(team-1-name)[team-1-id],(team-2-name)[team-2-id]",
+                "help_text": "Comma separated list of team name and IDs to be used for filter subscriptions",
+                "placeholder": "[team-1-name](team-1-id),[team-2-name](team-2-id)",
                 "default": ""
             }
         ]
