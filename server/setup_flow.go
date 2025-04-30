@@ -485,7 +485,7 @@ func (p *Plugin) stepAnnouncementQuestion() flow.Step {
 							"We've added an integration that connects Jira and Mattermost. You can get notified when you are mentioned in Jira comments, " +
 							"or quickly change a message in Mattermost into a ticket in Jira. It's easy to get started, run the `/jira connect` slash " +
 							"command from any channel within Mattermost to connect your user account. See the " +
-							"[documentation](https://mattermost.gitbook.io/plugin-jira/end-user-guide/getting-started) for details on using the Jira plugin.",
+							"[documentation](https://docs.mattermost.com/integrate/jira-interoperability.html#usage) for details on using the Jira plugin.",
 						HelpText: "You can edit this message before sending it.",
 					},
 				},
