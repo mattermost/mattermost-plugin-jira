@@ -23,6 +23,7 @@ import (
 )
 
 const (
+	assigneeField            = "assignee"
 	labelsField              = "labels"
 	statusField              = "status"
 	reporterField            = "reporter"
@@ -850,32 +851,59 @@ func (p *Plugin) getIssueDataForCloudWebhook(instance Instance, issueKey string)
 }
 
 func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
+	if issue == nil || issue.Fields == nil {
+		return NewStringSet()
+	}
+
 	key = strings.ToLower(key)
+
 	switch key {
 	case statusField:
-		return NewStringSet(issue.Fields.Status.ID)
+		if issue.Fields.Status != nil {
+			return NewStringSet(issue.Fields.Status.ID)
+		}
 	case labelsField:
 		return NewStringSet(issue.Fields.Labels...)
 	case priorityField:
 		if issue.Fields.Priority != nil {
 			return NewStringSet(issue.Fields.Priority.ID)
 		}
+	case reporterField:
+		if issue.Fields.Reporter != nil {
+			return NewStringSet(issue.Fields.Reporter.AccountID)
+		}
+	case assigneeField:
+		if issue.Fields.Assignee != nil {
+			return NewStringSet(issue.Fields.Assignee.AccountID)
+		}
 	case "fixversions":
 		result := NewStringSet()
-		for _, v := range issue.Fields.FixVersions {
-			result = result.Add(v.ID)
+		if issue.Fields.FixVersions != nil {
+			for _, v := range issue.Fields.FixVersions {
+				if v != nil {
+					result = result.Add(v.ID)
+				}
+			}
 		}
 		return result
 	case "versions":
 		result := NewStringSet()
-		for _, v := range issue.Fields.AffectsVersions {
-			result = result.Add(v.ID)
+		if issue.Fields.AffectsVersions != nil {
+			for _, v := range issue.Fields.AffectsVersions {
+				if v != nil {
+					result = result.Add(v.ID)
+				}
+			}
 		}
 		return result
 	case "components":
 		result := NewStringSet()
-		for _, v := range issue.Fields.Components {
-			result = result.Add(v.ID)
+		if issue.Fields.Components != nil {
+			for _, v := range issue.Fields.Components {
+				if v != nil {
+					result = result.Add(v.ID)
+				}
+			}
 		}
 		return result
 	default:
