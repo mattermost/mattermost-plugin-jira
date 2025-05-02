@@ -14,6 +14,7 @@ import {getStyleForReactSelect} from 'utils/styles';
 
 import {Props as ReactSelectSettingProps} from 'components/react_select_setting';
 import Setting from 'components/setting';
+import {TEAM_FIELD} from 'constant';
 
 const searchDebounceDelay = 400;
 
@@ -30,6 +31,7 @@ export type Props = ReactSelectSettingProps & {
     issueMetadata: IssueMetadata;
     resetInvalidOnChange?: boolean;
     instanceID: string;
+    fieldKey?: string;
 };
 
 type State = {
@@ -58,11 +60,36 @@ export default class BackendSelector extends React.PureComponent<Props, State> {
             this.props.addValidate(this.isValid);
         }
 
-        this.props.fetchInitialSelectedValues().then((options: ReactSelectOption[]) => {
-            this.setState({cachedSelectedOptions: this.state.cachedSelectedOptions.concat(options)});
-        }).catch((e) => {
-            this.setState({error: e});
-        });
+        this.loadInitialOptions();
+    }
+
+    private loadInitialOptions(): void {
+        this.props.fetchInitialSelectedValues()
+            .then(async (options: ReactSelectOption[]) => {
+                const enrichedOptions = await this.ensureSelectedValueHasLabel(options);
+                this.setState({cachedSelectedOptions: enrichedOptions});
+            })
+            .catch((e) => {
+                this.setState({error: e});
+            });
+    }
+
+    private async ensureSelectedValueHasLabel(options: ReactSelectOption[]): Promise<ReactSelectOption[]> {
+        const value = this.props.value;
+        const stringValue = Array.isArray(value) ? value[0] : String(value ?? '');
+
+        if (!(this.props.fieldKey === TEAM_FIELD) || !stringValue || options.some((opt) => opt.value === stringValue)) {
+            return options;
+        }
+
+        try {
+            const allOptions = await this.props.search('');
+            const matched = allOptions.find((option) => option.value === stringValue);
+            return matched ? [...options, matched] : options;
+        } catch (e) {
+            this.setState({error: String(e)});
+            return options;
+        }
     }
 
     componentWillUnmount(): void {
@@ -149,18 +176,27 @@ export default class BackendSelector extends React.PureComponent<Props, State> {
         }
 
         let value;
-        const valueToOption = (v: string) => {
+        const valueToOption = (v: string): ReactSelectOption => {
+            // Ensure the value is always a string for comparison.
+            let stringValue: string;
+            if (typeof v === 'string') {
+                stringValue = v;
+            } else if (Array.isArray(v)) {
+                stringValue = v[0];
+            } else {
+                stringValue = String(v);
+            }
+
             if (this.state.cachedSelectedOptions && this.state.cachedSelectedOptions.length) {
-                const selected = this.state.cachedSelectedOptions.find((option) => option.value === v);
+                const selected = this.state.cachedSelectedOptions.find((option) => option.value === stringValue);
                 if (selected) {
                     return selected;
                 }
             }
 
-            // option's label hasn't been fetched yet
             return {
-                label: v,
-                value: v,
+                label: stringValue,
+                value: stringValue,
             };
         };
 
