@@ -235,10 +235,10 @@ func (p *Plugin) OnConfigurationChange() error {
 			teamID := strings.TrimSpace(match[2])
 
 			if len(teamName) == 0 {
-				continue
+				return errors.New("Please provide a valid list of team name and ID")
 			}
 			if !isValidUUIDv4(teamID) {
-				continue
+				return errors.New("Please provide a valid list of team name and ID")
 			}
 
 			teamIDList = append(teamIDList, TeamList{
