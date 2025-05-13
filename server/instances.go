@@ -15,7 +15,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
-const licenseErrorString = "You need a valid Mattermost E20, Professional, or Enterprise License to install multiple Jira instances."
+const licenseErrorString = "You need a valid Mattermost Professional, Enterprise or Enterprise Advanced License to install multiple Jira instances."
 
 type Instances struct {
 	*types.ValueSet // of *InstanceCommon, not Instance

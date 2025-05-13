@@ -27,19 +27,9 @@ func NewEnterpriseChecker(api PluginAPI) Checker {
 	}
 }
 
-const (
-	e20          = "E20"
-	professional = "professional"
-	enterprise   = "enterprise"
-)
-
 func (e *enterpriseChecker) HasEnterpriseFeatures() bool {
 	config := e.api.GetConfig()
 	license := e.api.GetLicense()
-
-	if license != nil && (license.SkuShortName == e20 || license.SkuShortName == enterprise || license.SkuShortName == professional) {
-		return true
-	}
 
 	return pluginapi.IsE20LicensedOrDevelopment(config, license)
 }
