@@ -189,13 +189,13 @@ func TestByteSizeRoundTrip(t *testing.T) {
 			parsed, err := ParseByteSize(str)
 			require.NoError(t, err)
 
-			// Handle special cases for rounding
-			if size == 0 {
+			switch {
+			case size == 0:
 				assert.Equal(t, size, parsed)
-			} else if size < 1024 {
+			case size < 1024:
 				// Bytes should be exact
 				assert.Equal(t, size, parsed)
-			} else {
+			default:
 				// For higher units, there might be rounding differences
 				// due to the decimal representation, so we check if they're close
 				ratio := float64(parsed) / float64(size)

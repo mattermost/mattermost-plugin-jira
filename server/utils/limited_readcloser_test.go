@@ -29,6 +29,7 @@ func TestLimitReadCloser(t *testing.T) {
 
 	n, err = r.Read(data[0:5])
 	require.Nil(t, err)
+
 	// Note, truncated to 4, total 8
 	require.Equal(t, 4, n)
 	require.Equal(t, "4567", string(data[0:4]))

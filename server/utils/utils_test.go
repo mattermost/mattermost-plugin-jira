@@ -9,9 +9,10 @@ import (
 	"testing"
 
 	"github.com/jarcoal/httpmock"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 func TestNormalizeInstallURL(t *testing.T) {
