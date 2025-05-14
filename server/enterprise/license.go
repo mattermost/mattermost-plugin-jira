@@ -31,5 +31,5 @@ func (e *enterpriseChecker) HasEnterpriseFeatures() bool {
 	config := e.api.GetConfig()
 	license := e.api.GetLicense()
 
-	return pluginapi.IsE20LicensedOrDevelopment(config, license)
+	return pluginapi.IsE10LicensedOrDevelopment(config, license)
 }
