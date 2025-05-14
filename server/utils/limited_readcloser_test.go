@@ -8,8 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 func TestLimitReadCloser(t *testing.T) {
