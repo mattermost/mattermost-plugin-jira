@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jarcoal/httpmock"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -57,7 +58,7 @@ func TestNormalizeInstallURL(t *testing.T) {
 func TestParseByteSize(t *testing.T) {
 	tests := []struct {
 		str     string
-		want    ByteSize
+		want    types.ByteSize
 		wantErr bool
 	}{
 		// Happy path
@@ -92,7 +93,7 @@ func TestParseByteSize(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.str, func(t *testing.T) {
-			got, err := ParseByteSize(tt.str)
+			got, err := types.ParseByteSize(tt.str)
 			if tt.wantErr {
 				require.NotNil(t, err)
 			} else {
@@ -105,7 +106,7 @@ func TestParseByteSize(t *testing.T) {
 
 func TestByteSizeString(t *testing.T) {
 	tests := []struct {
-		n    ByteSize
+		n    types.ByteSize
 		want string
 	}{
 		{0, "0"},

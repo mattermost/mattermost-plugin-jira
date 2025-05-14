@@ -22,7 +22,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 
-	"github.com/mattermost/mattermost-plugin-jira/server/utils"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const autocompleteSearchRoute = "2/jql/autocompletedata/suggestions"
@@ -76,7 +76,7 @@ type IssueService interface {
 	GetIssue(key string, options *jira.GetQueryOptions) (*jira.Issue, error)
 	CreateIssue(issue *jira.Issue) (*jira.Issue, error)
 
-	AddAttachment(mmClient pluginapi.Client, issueKey, fileID string, maxSize utils.ByteSize) (mattermostName, jiraName, mime string, err error)
+	AddAttachment(mmClient pluginapi.Client, issueKey, fileID string, maxSize types.ByteSize) (mattermostName, jiraName, mime string, err error)
 	AddComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
 	DoTransition(issueKey, transitionID string) error
 	GetCreateMetaInfo(api plugin.API, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error)
@@ -302,15 +302,15 @@ func (client JiraClient) DoTransition(issueKey, transitionID string) error {
 }
 
 // AddAttachment uploads a file attachment
-func (client JiraClient) AddAttachment(mmClient pluginapi.Client, issueKey, fileID string, maxSize utils.ByteSize) (
+func (client JiraClient) AddAttachment(mmClient pluginapi.Client, issueKey, fileID string, maxSize types.ByteSize) (
 	mattermostName, jiraName, mime string, err error) {
 	fileinfo, err := mmClient.File.GetInfo(fileID)
 	if err != nil {
 		return "", "", "", err
 	}
-	if utils.ByteSize(fileinfo.Size) > maxSize {
+	if types.ByteSize(fileinfo.Size) > maxSize {
 		return fileinfo.Name, "", fileinfo.MimeType,
-			errors.Errorf("Maximum attachment size %v exceeded, file size %v", maxSize, utils.ByteSize(fileinfo.Size))
+			errors.Errorf("Maximum attachment size %v exceeded, file size %v", maxSize, types.ByteSize(fileinfo.Size))
 	}
 
 	fileBytes, err := mmClient.File.GetByPath(fileinfo.Path)
