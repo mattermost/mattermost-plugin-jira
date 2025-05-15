@@ -15,6 +15,7 @@ import {
     isLabelField,
     isMultiSelectField,
     isSecurityLevelField,
+    isTeamField,
     isUserField,
 } from 'utils/jira_issue_metadata';
 import {
@@ -28,6 +29,7 @@ import {
 import ConfirmModal from 'components/confirm_modal';
 import JiraAutoCompleteSelector from 'components/data_selectors/jira_autocomplete_selector';
 import JiraCommentVisibilitySelector from 'components/data_selectors/jira_commentvisibility_selector';
+import JiraTeamSelector from 'components/data_selectors/jira_team_selector';
 
 export type Props = {
     fields: FilterField[];
@@ -42,6 +44,7 @@ export type Props = {
     removeValidate: (isValid: () => boolean) => void;
     instanceID: string;
     securityLevelEmptyForJiraSubscriptions?: boolean;
+    searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{data: {items: {name: string; id: string}[]}; error?: Error}>;
 };
 
 export type State = {
@@ -82,6 +85,19 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
 
         const newValues = values || [];
         onChange(value, {...value, values: newValues});
+    };
+
+    handleTeamSelection = (selected: string | string[]): void => {
+        const {onChange, value} = this.props;
+
+        const selectedValue = Array.isArray(selected) ? selected[0] : selected;
+
+        if (!selectedValue) {
+            onChange(value, {...value, values: []});
+            return;
+        }
+
+        onChange(value, {...value, values: [selectedValue]});
     };
 
     handleValueChangeWithoutName = (values: string[]): void => {
@@ -324,6 +340,15 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                     fieldName={field.name}
                     value={value.values}
                     onChange={this.handleValueChangeWithoutName}
+                />
+            );
+        } else if (isTeamField(field)) {
+            valueSelector = (
+                <JiraTeamSelector
+                    {...selectProps}
+                    fieldName={field.name}
+                    value={value.values}
+                    onChange={this.handleTeamSelection}
                 />
             );
         } else if (isUserField(field)) {
