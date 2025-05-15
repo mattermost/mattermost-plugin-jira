@@ -93,7 +93,7 @@ type externalConfig struct {
 	AdminEmail string
 }
 
-const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb
+const defaultMaxAttachmentSize = utils.ByteSize(100 * 1024 * 1024) // 100Mb
 
 type config struct {
 	// externalConfig caches values from the plugin's settings in the server's config.json
@@ -179,6 +179,10 @@ func (p *Plugin) OnConfigurationChange() error {
 
 	ec.MaxAttachmentSize = strings.TrimSpace(ec.MaxAttachmentSize)
 	maxAttachmentSize := defaultMaxAttachmentSize
+	mattermostMaxAttachmentSize := p.API.GetConfig().FileSettings.MaxFileSize
+	if mattermostMaxAttachmentSize != nil {
+		maxAttachmentSize = utils.ByteSize(*mattermostMaxAttachmentSize)
+	}
 	if len(ec.MaxAttachmentSize) > 0 {
 		maxAttachmentSize, err = utils.ParseByteSize(ec.MaxAttachmentSize)
 		if err != nil {
