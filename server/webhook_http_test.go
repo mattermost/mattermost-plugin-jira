@@ -621,6 +621,9 @@ func TestWebhookHTTP(t *testing.T) {
 			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 			api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
 			api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+			api.On("KVGet", mock.AnythingOfType("string")).Return(nil, nil).Times(10)
+			api.On("LogInfo", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Times(10)
+			api.On("LogError", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Times(10).Return(nil)
 
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
 				Id: "theuserid",
