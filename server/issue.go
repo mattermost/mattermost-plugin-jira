@@ -1023,7 +1023,7 @@ func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issue
 			}
 			errorMsg += fmt.Sprintf("* %+v\n", name)
 		}
-		return "", fmt.Errorf(errorMsg)
+		return "", errors.New(errorMsg)
 	}
 
 	// user is array of one object

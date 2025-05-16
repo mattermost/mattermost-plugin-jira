@@ -15,7 +15,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
-const licenseErrorString = "You need a valid Mattermost E20, Professional, or Enterprise License to install multiple Jira instances."
+const licenseErrorString = "You need a valid Mattermost Professional, Enterprise or Enterprise Advanced License to install multiple Jira instances."
 
 type Instances struct {
 	*types.ValueSet // of *InstanceCommon, not Instance
@@ -343,7 +343,7 @@ func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.I
 	if user.ConnectedInstances.Len() == 1 {
 		return user.ConnectedInstances.IDs()[0], nil
 	}
-	return "", errors.Wrap(kvstore.ErrNotFound, "unable to pick the default Jira instance")
+	return "", errors.New("default jira instance not found, please run `/jira instance default <jiraURL>` to set one")
 }
 
 func (p *Plugin) httpAutocompleteConnect(w http.ResponseWriter, r *http.Request) (int, error) {
