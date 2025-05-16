@@ -32,7 +32,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/telemetry"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (
@@ -93,7 +93,7 @@ type externalConfig struct {
 	AdminEmail string
 }
 
-const defaultMaxAttachmentSize = utils.ByteSize(100 * 1024 * 1024) // 100Mb
+const defaultMaxAttachmentSize = types.ByteSize(100 * 1024 * 1024) // 100Mb
 
 type config struct {
 	// externalConfig caches values from the plugin's settings in the server's config.json
@@ -103,7 +103,7 @@ type config struct {
 	botUserID string
 
 	// Maximum attachment size allowed to be uploaded to Jira
-	maxAttachmentSize utils.ByteSize
+	maxAttachmentSize types.ByteSize
 
 	mattermostSiteURL string
 	rsaKey            *rsa.PrivateKey
@@ -181,10 +181,10 @@ func (p *Plugin) OnConfigurationChange() error {
 	maxAttachmentSize := defaultMaxAttachmentSize
 	mattermostMaxAttachmentSize := p.API.GetConfig().FileSettings.MaxFileSize
 	if mattermostMaxAttachmentSize != nil {
-		maxAttachmentSize = utils.ByteSize(*mattermostMaxAttachmentSize)
+		maxAttachmentSize = types.ByteSize(*mattermostMaxAttachmentSize)
 	}
 	if len(ec.MaxAttachmentSize) > 0 {
-		maxAttachmentSize, err = utils.ParseByteSize(ec.MaxAttachmentSize)
+		maxAttachmentSize, err = types.ParseByteSize(ec.MaxAttachmentSize)
 		if err != nil {
 			return errors.WithMessage(err, "failed to load plugin configuration")
 		}
