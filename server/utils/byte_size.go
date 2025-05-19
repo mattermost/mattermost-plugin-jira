@@ -20,6 +20,20 @@ const sizeTb = 1024 * sizeGb
 var sizeUnits = []ByteSize{sizeTb, sizeGb, sizeMb, sizeKb, sizeB}
 var sizeSuffixes = []string{"Tb", "Gb", "Mb", "Kb", "b"}
 
+func (size ByteSize) ToUint64() uint64 {
+	if size < 0 {
+		return 0
+	}
+	return uint64(size) //nolint:gosec // Suppress G115 warning because we've checked for negative values
+}
+
+func SafeInt64ToUint64(i int64) uint64 {
+	if i < 0 {
+		return 0
+	}
+	return uint64(i) //nolint:gosec // Suppress G115 warning because we've checked for negative values
+}
+
 func (size ByteSize) String() string {
 	if size == 0 {
 		return "0"
@@ -40,14 +54,15 @@ func (size ByteSize) String() string {
 			continue
 		}
 		if u == sizeB {
-			return withCommas(strconv.FormatUint(uint64(size), 10)) + sizeSuffixes[i]
+			return withCommas(strconv.FormatUint(size.ToUint64(), 10)) + sizeSuffixes[i]
 		}
 
 		if size > math.MaxInt64/10 {
 			return NotAvailable
 		}
 
-		s := strconv.FormatUint(uint64((size*10+u/2)/u), 10)
+		v := (size*10 + u/2) / u
+		s := strconv.FormatUint(v.ToUint64(), 10)
 		l := len(s)
 		switch {
 		case l < 2:

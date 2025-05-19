@@ -47,6 +47,7 @@ var jiraCommandHandler = CommandHandler{
 		"instance/settings":            executeSettings,
 		"instance/uninstall":           executeInstanceUninstall,
 		"instance/v2":                  executeInstanceV2Legacy,
+		"instance/default":             executeDefaultInstance,
 		"issue/assign":                 executeAssign,
 		"issue/transition":             executeTransition,
 		"issue/unassign":               executeUnassign,
@@ -100,6 +101,8 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"* `/jira instance alias [URL] [alias-name]` - assign an alias to an instance\n" +
 	"* `/jira instance unalias [alias-name]` - remve an alias from an instance\n" +
 	"* `/jira instance v2 <jiraURL>` - Set the Jira instance to process \"v2\" webhooks and subscriptions (not prefixed with the instance ID)\n" +
+	"* `/jira instance default <jiraURL>` - Set a default instance in case of multiple Jira instances\n" +
+	"* `/jira webhook [--instance=<jiraURL>]` -  Show the Mattermost webhook to receive JQL queries\n" +
 	"* `/jira v2revert ` - Revert to V2 jira plugin data model\n" +
 	""
 
@@ -172,12 +175,13 @@ func addSubCommands(jira *model.AutocompleteData, optInstance bool) {
 
 func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 	instance := model.NewAutocompleteData(
-		"instance", "[alias|connect|disconnect|settings|unalias]", "View and manage installed Jira instances; more commands available to system administrators")
+		"instance", "[alias|connect|disconnect|settings|unalias|default]", "View and manage installed Jira instances; more commands available to system administrators")
 	instance.AddCommand(createAliasCommand())
 	instance.AddCommand(createUnAliasCommand())
 	instance.AddCommand(createConnectCommand())
 	instance.AddCommand(createSettingsCommand(optInstance))
 	instance.AddCommand(createDisconnectCommand())
+	instance.AddCommand(createDefaultInstanceCommand())
 
 	jiraTypes := []model.AutocompleteListItem{
 		{HelpText: "Jira Server or Datacenter", Item: "server"},
@@ -257,6 +261,13 @@ func createDisconnectCommand() *model.AutocompleteData {
 		"disconnect", "[Jira URL]", "Disconnect your Mattermost account from your Jira account")
 	disconnect.AddDynamicListArgument("Jira URL", makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias), false)
 	return disconnect
+}
+
+func createDefaultInstanceCommand() *model.AutocompleteData {
+	defaultInstance := model.NewAutocompleteData(
+		"default", "[Jira URL]", "Set a default instance in case of multiple Jira instances")
+	defaultInstance.AddDynamicListArgument("Jira URL", makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias), true)
+	return defaultInstance
 }
 
 func createSettingsCommand(optInstance bool) *model.AutocompleteData {
@@ -425,6 +436,37 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 		return p.responsef(header, "Could not complete the **disconnection** request. Error: %v", err)
 	}
 	return p.responsef(header, "You have successfully disconnected your Jira account (**%s**).", disconnected.DisplayName)
+}
+
+func executeDefaultInstance(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
+	if len(args) < 1 {
+		return p.responsef(header, "Please specify the Jira instance URL")
+	}
+
+	if len(args) > 1 {
+		return p.help(header)
+	}
+
+	jiraURL := ""
+	if len(args) > 0 {
+		jiraURL = args[0]
+	}
+
+	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		return p.responsef(header, "Failed to load instances. Error: %v.", err)
+	}
+
+	instance := instances.getByAlias(jiraURL)
+	if instance != nil {
+		jiraURL = instance.InstanceID.String()
+	}
+
+	if err := p.SetDefaultInstance(jiraURL, types.ID(header.UserId)); err != nil {
+		return p.responsef(header, "Could not complete the **default instance** request. Error: %v", err)
+	}
+
+	return p.responsef(header, "You have successfully set a default instance for your Jira account (**%s**).", jiraURL)
 }
 
 func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
