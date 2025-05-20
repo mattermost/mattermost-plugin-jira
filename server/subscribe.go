@@ -236,7 +236,7 @@ func updateTeamValue(value StringSet, wh *webhook) StringSet {
 		return value.Add(teamField.ID)
 	}
 
-	return value.Add(visibleToAllUsers)
+	return value
 }
 
 func shouldAddVisibleToAllUsersToFieldValues(wh *webhook, field FieldFilter) bool {

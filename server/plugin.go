@@ -93,9 +93,9 @@ type externalConfig struct {
 	AdminEmail string
 
 	// Comma separated list of Team IDs and name to be used for filtering subscription on the basis of teams. Ex: [team-1-name](team-1-id),[team-2-name](team-2-id)
-	TeamIDs string
+	TeamIDs string `json:"teamids"`
 
-	TeamIDList []TeamList
+	TeamIDList []TeamList `json:"teamidlist"`
 }
 
 type TeamList struct {
@@ -234,11 +234,9 @@ func (p *Plugin) OnConfigurationChange() error {
 			teamName := strings.TrimSpace(match[1])
 			teamID := strings.TrimSpace(match[2])
 
-			if len(teamName) == 0 {
-				return errors.New("Please provide a valid list of team name and ID")
-			}
-			if !isValidUUIDv4(teamID) {
-				return errors.New("Please provide a valid list of team name and ID")
+			if len(teamName) == 0 || !isValidUUIDv4(teamID) {
+				p.client.Log.Warn("Please provide a valid list of team name and ID")
+				continue
 			}
 
 			teamIDList = append(teamIDList, TeamList{
