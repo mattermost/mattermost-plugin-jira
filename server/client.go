@@ -1,5 +1,5 @@
-// Copyright (c) 2019-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -26,8 +26,10 @@ import (
 )
 
 const autocompleteSearchRoute = "2/jql/autocompletedata/suggestions"
+const commentVisibilityRoute = "2/user"
 const userSearchRoute = "2/user/assignable/search"
 const unrecognizedEndpoint = "_unrecognized"
+const visibleToAllUsers = "visible-to-all-users"
 
 // Client is the combined interface for all upstream APIs and convenience methods.
 type Client interface {
@@ -66,6 +68,7 @@ type SearchService interface {
 	SearchUsersAssignableToIssue(issueKey, query string, maxResults int) ([]jira.User, error)
 	SearchUsersAssignableInProject(projectKey, query string, maxResults int) ([]jira.User, error)
 	SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error)
+	GetUserVisibilityGroups(params map[string]string) (*CommentVisibilityResult, error)
 }
 
 // IssueService is the interface for issue-related APIs.
@@ -254,6 +257,18 @@ type AutoCompleteResult struct {
 	Results []Result `json:"results"`
 }
 
+type JiraUserGroup struct {
+	Name string `json:"name"`
+}
+
+type JiraUserGroupCollection struct {
+	JiraUserGroups []*JiraUserGroup `json:"items"`
+}
+
+type CommentVisibilityResult struct {
+	Groups *JiraUserGroupCollection `json:"groups"`
+}
+
 // SearchAutoCompleteFields searches fieldValue specified in the params and returns autocomplete suggestions
 // for that fieldValue
 func (client JiraClient) SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error) {
@@ -263,6 +278,17 @@ func (client JiraClient) SearchAutoCompleteFields(params map[string]string) (*Au
 		return nil, err
 	}
 
+	return result, nil
+}
+
+// GetUserVisibilityGroups searches fieldValue specified in the params and returns the comment visibility suggestions
+// for that fieldValue
+func (client JiraClient) GetUserVisibilityGroups(params map[string]string) (*CommentVisibilityResult, error) {
+	result := &CommentVisibilityResult{}
+	if err := client.RESTGet(commentVisibilityRoute, params, result); err != nil {
+		return nil, err
+	}
+	result.Groups.JiraUserGroups = append(result.Groups.JiraUserGroups, &JiraUserGroup{visibleToAllUsers})
 	return result, nil
 }
 
@@ -333,14 +359,30 @@ func MakeCreateIssueURL(instance Instance, project *jira.Project, issue *jira.Is
 	}
 
 	// add custom fields
-	for k, v := range issue.Fields.Unknowns {
-		strV, ok := v.(string)
-		if ok {
-			q.Add(k, strV)
-		}
-		if mapV, ok := v.(map[string]interface{}); ok {
-			if id, ok := mapV["id"].(string); ok {
-				q.Add(k, id)
+	for key, field := range issue.Fields.Unknowns {
+		switch fieldTyped := field.(type) {
+		case string: // handles fields like url, short text, paragraph
+			q.Add(key, fieldTyped)
+		case map[string]interface{}: // handles fields like dropdown
+			if id, ok := fieldTyped["id"].(string); ok {
+				q.Add(key, id)
+			}
+		case []interface{}: // handles fields like labels, checkbox, flags
+			for _, element := range fieldTyped {
+				switch elementTyped := element.(type) {
+				case string:
+					q.Add(key, elementTyped)
+				case map[string]interface{}:
+					if id, ok := elementTyped["id"].(string); ok {
+						q.Add(key, id)
+					}
+				case []map[string]interface{}:
+					for _, mapWithID := range elementTyped {
+						if id, ok := mapWithID["id"].(string); ok {
+							q.Add(key, id)
+						}
+					}
+				}
 			}
 		}
 	}

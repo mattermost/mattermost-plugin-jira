@@ -20,8 +20,8 @@
         "bundle_path": "webapp/dist/main.js"
     },
     "settings_schema": {
-        "header": "Please refer to the '/jira' command [**documentation**](https://docs.mattermost.com/integrate/jira-interoperability.html#setup) to further configure the Jira plugin.",
-        "footer": "Please refer to the '/jira' command [**documentation**](https://docs.mattermost.com/integrate/jira-interoperability.html#setup) to further configure the Jira plugin. Specifically, ['/jira instance [un-]install'](https://docs.mattermost.com/integrate/jira-interoperability.html#setup) and ['/jira webhook'](https://docs.mattermost.com/integrate/jira-interoperability.html#configure-webhooks-in-jira).",
+        "header": "Please refer to the '/jira' command [**documentation**](https://mattermost.com/pl/integrate/jira-admin-setup) to further configure the Jira plugin.",
+        "footer": "Please refer to the '/jira' command [**documentation**](https://mattermost.com/pl/integrate/jira-admin-setup) to further configure the Jira plugin. Specifically, ['/jira instance [un-]install'](https://mattermost.com/pl/integrate/jira-admin-setup) and ['/jira webhook'](https://mattermost.com/pl/integrate/configure-webhooks-in-jira).",
         "settings": [
             {
                 "key": "EnableJiraUI",
@@ -38,7 +38,8 @@
                 "help_text": "The secret used to authenticate the webhook to Mattermost.",
                 "regenerate_help_text": "Regenerates the secret for the webhook URL endpoint. Regenerating the secret invalidates your existing Jira integrations.",
                 "placeholder": "",
-                "default": null
+                "default": null,
+                "secret": true
             },
             {
                 "key": "RolesAllowedToEditJiraSubscriptions",
@@ -113,6 +114,32 @@
                 "help_text": "Display subscription name in post when a subscription posts to a channel",
                 "placeholder": "",
                 "default": false
+            },
+            {
+                "key": "EncryptionKey",
+                "display_name": "At Rest Encryption Key:",
+                "type": "generated",
+                "help_text": "The encryption key used to encrypt stored API tokens.",
+                "placeholder": "",
+                "default": null,
+                "secret": true
+            },
+            {
+                "key": "AdminAPIToken",
+                "display_name": "Admin API Token",
+                "type": "text",
+                "help_text": "Set this [API token](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) to get notified for comment and issue created events when the user triggering the event is not connected to Jira. This is also used for setting up autolink in the plugin.\n **Note:** API token should be created using an admin Jira account. Otherwise, the notification will not be delivered for projects that the user cannot access and autolink will not work.",
+                "placeholder": "",
+                "secret": true,
+                "default": ""
+            },
+            {
+                "key": "AdminEmail",
+                "display_name": "Admin Email",
+                "type": "text",
+                "help_text": "**Note** Admin email is necessary to setup autolink for the Jira plugin and to to get notified for comment and issue created events when the user triggering the event is not connected to Jira",
+                "placeholder": "",
+                "default": ""
             }
         ]
     }

@@ -1,5 +1,5 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -18,18 +18,18 @@ import (
 	"sync"
 	textTemplate "text/template"
 
+	"github.com/andygrunwald/go-jira"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
-	jira "github.com/andygrunwald/go-jira"
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	"github.com/mattermost/mattermost/server/public/pluginapi/experimental/flow"
 
-	"github.com/brightscout/mattermost-plugin-autolink/server/autolink"
-	"github.com/brightscout/mattermost-plugin-autolink/server/autolinkclient"
+	"github.com/mattermost-community/mattermost-plugin-autolink/server/autolink"
+	"github.com/mattermost-community/mattermost-plugin-autolink/server/autolinkclient"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-jira/server/telemetry"
@@ -94,9 +94,18 @@ type externalConfig struct {
 
 	// Display subscription name in notifications
 	DisplaySubscriptionNameInNotifications bool
+
+	// The encryption key used to encrypt stored api tokens
+	EncryptionKey string
+
+	// API token from Jira
+	AdminAPIToken string
+
+	// Email of the admin
+	AdminEmail string
 }
 
-const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb
+const defaultMaxAttachmentSize = utils.ByteSize(100 * 1024 * 1024) // 100Mb
 
 type config struct {
 	// externalConfig caches values from the plugin's settings in the server's config.json
@@ -185,12 +194,35 @@ func (p *Plugin) OnConfigurationChange() error {
 
 	ec.MaxAttachmentSize = strings.TrimSpace(ec.MaxAttachmentSize)
 	maxAttachmentSize := defaultMaxAttachmentSize
+	mattermostMaxAttachmentSize := p.API.GetConfig().FileSettings.MaxFileSize
+	if mattermostMaxAttachmentSize != nil {
+		maxAttachmentSize = utils.ByteSize(*mattermostMaxAttachmentSize)
+	}
 	if len(ec.MaxAttachmentSize) > 0 {
 		maxAttachmentSize, err = utils.ParseByteSize(ec.MaxAttachmentSize)
 		if err != nil {
 			return errors.WithMessage(err, "failed to load plugin configuration")
 		}
 	}
+
+	jsonBytes, err := json.Marshal(ec.AdminAPIToken)
+	if err != nil {
+		p.client.Log.Warn("Error marshaling the admin API token", "error", err.Error())
+		return err
+	}
+
+	encryptionKey := ec.EncryptionKey
+	if ec.AdminAPIToken != "" && encryptionKey == "" {
+		p.client.Log.Warn("Encryption key required to encrypt admin API token")
+		return errors.New("failed to encrypt admin token. Encryption key not generated")
+	}
+
+	encryptedAdminAPIToken, err := encrypt(jsonBytes, []byte(encryptionKey))
+	if err != nil {
+		p.client.Log.Warn("Error encrypting the admin API token", "error", err.Error())
+		return err
+	}
+	ec.AdminAPIToken = string(encryptedAdminAPIToken)
 
 	prev := p.getConfig()
 	p.updateConfig(func(conf *config) {
@@ -329,39 +361,61 @@ func (p *Plugin) OnActivate() error {
 	p.autolinkClusterMutex = autolinkClusterMutex
 
 	go func() {
-		for _, url := range instances.IDs() {
-			var instance Instance
-			instance, err = p.instanceStore.LoadInstance(url)
-			if err != nil {
-				continue
-			}
-
-			ci, ok := instance.(*cloudInstance)
-			if !ok {
-				p.client.Log.Info("only cloud instances supported for autolink", "err", err)
-				continue
-			}
-			var status *model.PluginStatus
-			status, err = p.client.Plugin.GetPluginStatus(autolinkPluginID)
-			if err != nil {
-				p.client.Log.Warn("OnActivate: Autolink plugin unavailable. API returned error", "error", err.Error())
-				continue
-			}
-			if status.State != model.PluginStateRunning {
-				p.client.Log.Warn("OnActivate: Autolink plugin unavailable. Plugin is not running", "status", status)
-				continue
-			}
-
-			if err = p.AddAutolinksForCloudInstance(ci); err != nil {
-				p.client.Log.Info("could not install autolinks for cloud instance", "instance", ci.BaseURL, "err", err)
-				continue
-			}
-		}
+		p.SetupAutolink(instances)
 	}()
 
 	p.initializeTelemetry()
 
 	return nil
+}
+
+func (p *Plugin) SetupAutolink(instances *Instances) {
+	for _, url := range instances.IDs() {
+		var instance Instance
+		instance, err := p.instanceStore.LoadInstance(url)
+		if err != nil {
+			continue
+		}
+
+		if p.getConfig().AdminAPIToken == "" || p.getConfig().AdminEmail == "" {
+			p.client.Log.Info("unable to setup autolink due to missing API Token or Admin Email")
+			continue
+		}
+
+		switch instance.(type) {
+		case *cloudInstance, *cloudOAuthInstance:
+		default:
+			p.client.Log.Info("only cloud and cloud-oauth instances supported for autolink")
+			continue
+		}
+
+		var status *model.PluginStatus
+		status, err = p.client.Plugin.GetPluginStatus(autolinkPluginID)
+		if err != nil {
+			p.client.Log.Warn("OnActivate: Autolink plugin unavailable. API returned error", "error", err.Error())
+			continue
+		}
+
+		if status.State != model.PluginStateRunning {
+			p.client.Log.Warn("OnActivate: Autolink plugin unavailable. Plugin is not running", "status", status)
+			continue
+		}
+
+		switch instance := instance.(type) {
+		case *cloudInstance:
+			if err = p.AddAutolinksForCloudInstance(instance); err != nil {
+				p.client.Log.Info("could not install autolinks for cloud instance", "instance", instance.BaseURL, "error", err.Error())
+			} else {
+				p.client.Log.Info("successfully installed autolinks for cloud instance", "instance", instance.BaseURL)
+			}
+		case *cloudOAuthInstance:
+			if err = p.AddAutolinksForCloudOAuthInstance(instance); err != nil {
+				p.client.Log.Info("could not install autolinks for cloud-oauth instance", "instance", instance.JiraBaseURL, "error", err.Error())
+			} else {
+				p.client.Log.Info("successfully installed autolinks for cloud-oauth instance", "instance", instance.JiraBaseURL)
+			}
+		}
+	}
 }
 
 func (p *Plugin) AddAutolinksForCloudInstance(ci *cloudInstance) error {
@@ -375,14 +429,32 @@ func (p *Plugin) AddAutolinksForCloudInstance(ci *cloudInstance) error {
 		return fmt.Errorf("unable to get project keys: %w", err)
 	}
 
-	if err = p.AddAutolinks(plist, ci.BaseURL); err != nil {
+	return p.AddAutoLinkForProjects(plist, ci.BaseURL)
+}
+
+func (p *Plugin) AddAutolinksForCloudOAuthInstance(coi *cloudOAuthInstance) error {
+	plist, err := p.GetProjectListWithAPIToken(string(coi.InstanceID))
+	if err != nil {
+		return fmt.Errorf("error getting project list: %w", err)
+	}
+
+	return p.AddAutoLinkForProjects(*plist, coi.JiraBaseURL)
+}
+
+func (p *Plugin) AddAutoLinkForProjects(plist jira.ProjectList, baseURL string) error {
+	var err error
+	for _, proj := range plist {
+		key := proj.Key
+		err = p.AddAutolinks(key, baseURL)
+	}
+	if err != nil {
 		return fmt.Errorf("some keys were not installed: %w", err)
 	}
 
 	return nil
 }
 
-func (p *Plugin) AddAutolinks(projectList jira.ProjectList, baseURL string) error {
+func (p *Plugin) AddAutolinks(key string, baseURL string) error {
 	baseURL = strings.TrimRight(baseURL, "/")
 	var replacedBaseURL = `(` + strings.ReplaceAll(baseURL, ".", `\.`)
 	installList := []autolink.Autolink{
@@ -396,15 +468,11 @@ func (p *Plugin) AddAutolinks(projectList jira.ProjectList, baseURL string) erro
 			Pattern:  replacedBaseURL + patternIssueLinkEndpoint,
 			Template: templateViewIssue + baseURL + templateIssueLinkEndpoint,
 		},
-	}
-
-	for _, project := range projectList {
-		key := project.Key
-		installList = append(installList, autolink.Autolink{
+		{
 			Name:     key + " key to link for " + baseURL,
 			Pattern:  `(` + key + `)(-)(?P<jira_id>\d+)`,
 			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
-		})
+		},
 	}
 
 	if len(installList) > 0 {
@@ -425,7 +493,10 @@ func (p *Plugin) AddAutolinks(projectList jira.ProjectList, baseURL string) erro
 
 		// Creating the new autolinks
 		if err := client.Add(installList...); err != nil {
-			return fmt.Errorf("unable to add autolinks: %w", err)
+			// Do not return an error if the status code is 304 (indicating that the autolink for this project is already installed).
+			if !strings.Contains(err.Error(), `Error: 304, {"status": "OK"}`) {
+				return fmt.Errorf("unable to add autolinks: %w", err)
+			}
 		}
 	}
 
@@ -525,11 +596,25 @@ func (c *externalConfig) setDefaults() (bool, error) {
 		changed = true
 	}
 
+	if c.EncryptionKey == "" {
+		encryptionKey, err := generateSecret()
+		if err != nil {
+			return false, err
+		}
+		c.EncryptionKey = encryptionKey
+		changed = true
+	}
+
 	return changed, nil
 }
 
 func (p *Plugin) setDefaultConfiguration() error {
-	ec := p.getConfig().externalConfig
+	ec := externalConfig{}
+	err := p.client.Configuration.LoadPluginConfiguration(&ec)
+	if err != nil {
+		return errors.WithMessage(err, "failed to load plugin configuration")
+	}
+
 	changed, err := ec.setDefaults()
 	if err != nil {
 		return err

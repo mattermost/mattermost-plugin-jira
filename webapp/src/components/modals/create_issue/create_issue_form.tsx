@@ -1,4 +1,4 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import React from 'react';
@@ -32,6 +32,7 @@ import JiraInstanceAndProjectSelector from 'components/jira_instance_and_project
 const allowedFields: string[] = [
     JiraFieldTypeEnums.PROJECT,
     JiraFieldTypeEnums.ISSUE_TYPE,
+    JiraFieldTypeEnums.REPORTER,
     JiraFieldTypeEnums.PRIORITY,
     JiraFieldTypeEnums.DESCRIPTION,
     JiraFieldTypeEnums.SUMMARY,
@@ -153,7 +154,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                 id: fieldValues.issue_type,
             };
         } else {
-            const issueTypes = getIssueTypes(this.state.jiraIssueMetadata, projectKey);
+            const issueTypes = getIssueTypes(this.state.jiraIssueMetadata, projectKey, {includeSubtasks: false});
             const issueType = issueTypes.length ? issueTypes[0].id : '';
             fields.issuetype = {
                 id: issueType,
@@ -267,7 +268,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
     };
 
     renderForm = () => {
-        const issueTypes = getIssueTypes(this.state.jiraIssueMetadata, this.state.projectKey);
+        const issueTypes = getIssueTypes(this.state.jiraIssueMetadata, this.state.projectKey, {includeSubtasks: false});
         const issueOptions = issueTypes.map((it) => ({label: it.name, value: it.id}));
 
         return (

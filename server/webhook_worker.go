@@ -1,5 +1,5 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -62,6 +62,16 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 
 	botUserID := ww.p.getUserID()
 	for _, channelSubscribed := range channelsSubscribed {
+		channel, err := ww.p.client.Channel.Get(channelSubscribed.ChannelID)
+		if err != nil {
+			ww.p.client.Log.Warn("Error occurred while getting the channel details while posting the webhook event", "ChannelID", channelSubscribed.ChannelID, "Error", err.Error())
+			return err
+		}
+
+		if channel.DeleteAt > 0 {
+			continue
+		}
+
 		if _, _, err1 := wh.PostToChannel(ww.p, msg.InstanceID, channelSubscribed.ChannelID, botUserID, channelSubscribed.Name); err1 != nil {
 			ww.p.errorf("WebhookWorker id: %d, error posting to channel, err: %v", ww.id, err1)
 		}

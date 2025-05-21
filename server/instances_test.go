@@ -1,3 +1,6 @@
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 package main
 
 import (
@@ -43,18 +46,11 @@ func TestInstallInstance(t *testing.T) {
 				SkuShortName: "professional",
 			},
 		},
-		"1 preinstalled, E10 license": {
-			numInstances: 1,
-			expectError:  true,
-			license: &model.License{
-				SkuShortName: "E10",
-			},
-		},
-		"1 preinstalled, E20 license": {
+		"1 preinstalled, Enterprise Advanced license": {
 			numInstances: 1,
 			expectError:  false,
 			license: &model.License{
-				SkuShortName: "E20",
+				SkuShortName: "advanced",
 			},
 		},
 		"1 preinstalled, enterprise license": {
@@ -119,7 +115,7 @@ func TestInstallInstance(t *testing.T) {
 			err = p.InstallInstance(testInstance0)
 			if tc.expectError {
 				assert.NotNil(t, err)
-				expected := "You need a valid Mattermost E20, Professional, or Enterprise License to install multiple Jira instances."
+				expected := "You need a valid Mattermost Professional, Enterprise or Enterprise Advanced License to install multiple Jira instances."
 				assert.Equal(t, expected, err.Error())
 			} else {
 				assert.Nil(t, err)

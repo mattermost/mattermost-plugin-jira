@@ -1,4 +1,4 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import {
@@ -27,6 +27,11 @@ type FieldWithInfo = JiraField & {
     issueTypeMeta: IssueTypeIdentifier;
 }
 
+type GetIssueTypesOptions = {
+    includeSubtasks: boolean;
+}
+
+const commentVisibilityFieldKey = 'commentVisibility';
 export const FIELD_KEY_STATUS = 'status';
 
 // This is a replacement for the Array.flat() function which will be polyfilled by Babel
@@ -55,7 +60,7 @@ export function getProjectValues(metadata: ProjectMetadata | null): ReactSelectO
     return metadata.projects;
 }
 
-export function getIssueTypes(metadata: IssueMetadata | null, projectKey: string | null): IssueType[] {
+export function getIssueTypes(metadata: IssueMetadata | null, projectKey: string | null, options: GetIssueTypesOptions): IssueType[] {
     if (!metadata || !metadata.projects) {
         return [];
     }
@@ -64,7 +69,12 @@ export function getIssueTypes(metadata: IssueMetadata | null, projectKey: string
     if (!project) {
         return [];
     }
-    return project.issuetypes.filter((i) => !i.subtask);
+
+    if (!options.includeSubtasks) {
+        project.issuetypes = project.issuetypes.filter((i) => !i.subtask);
+    }
+
+    return project.issuetypes;
 }
 
 export function getIssueValues(metadata: ProjectMetadata, projectKey: string): ReactSelectOption[] {
@@ -95,7 +105,7 @@ export function getFields(metadata: IssueMetadata | null, projectKey: string | n
         return {};
     }
 
-    const issueType = getIssueTypes(metadata, projectKey).find((it) => it.id === issueTypeId);
+    const issueType = getIssueTypes(metadata, projectKey, {includeSubtasks: false}).find((it) => it.id === issueTypeId);
     if (issueType) {
         return issueType.fields;
     }
@@ -126,7 +136,7 @@ export function getCustomFieldsForProjects(metadata: IssueMetadata | null, proje
         return [];
     }
 
-    const issueTypes = flatten(projectKeys.map((key) => getIssueTypes(metadata, key))) as IssueType[];
+    const issueTypes = flatten(projectKeys.map((key) => getIssueTypes(metadata, key, {includeSubtasks: true}))) as IssueType[];
 
     const customFieldHash: {[key: string]: FieldWithInfo} = {};
     const fields = flatten(issueTypes.map((issueType) =>
@@ -167,7 +177,15 @@ const allowedArrayTypes = [
     'option', // multiselect
     'string', // labels
     'version', // fix and affects versions
+    'user',
 ];
+
+const allowedFieldTypes = [
+    'user',
+    'option',
+];
+
+const jiraSystemCustomFieldTypesKey = 'com.atlassian.jira.plugin.system.customfieldtypes';
 
 const avoidedCustomTypesForFilters: string[] = [
     JiraFieldCustomTypeEnums.SPRINT,
@@ -185,8 +203,8 @@ function isValidFieldForFilter(field: JiraField): boolean {
     }
 
     return allowedTypes.includes(type) || (custom && acceptedCustomTypesForFilters.includes(custom)) ||
-    type === 'option' || // single select
-    (type === 'array' && allowedArrayTypes.includes(items));
+    allowedFieldTypes.includes(type) ||
+    (type === 'array' && typeof items !== 'undefined' && allowedArrayTypes.includes(items));
 }
 
 export function getStatusField(metadata: IssueMetadata | null, selectedIssueTypes: string[]): FilterField | null {
@@ -246,6 +264,18 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
         } as FilterField;
     });
 
+    const userFields = fields.filter((field) => field.schema.type === 'user' && !field.allowedValues) as (StringArrayField & FieldWithInfo)[];
+    const populatedUserFields = userFields.map((field) => {
+        return {
+            key: field.key,
+            name: field.name,
+            schema: field.schema,
+            issueTypes: field.validIssueTypes,
+        } as FilterField;
+    });
+
+    const userResult = populatedFields.concat(populatedUserFields);
+
     const stringArrayFields = fields.filter((field) => field.schema.type === 'array' && field.schema.items === 'string' && !field.allowedValues) as (StringArrayField & FieldWithInfo)[];
     const userDefinedFields = stringArrayFields.map((field) => {
         return {
@@ -257,7 +287,7 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
         } as FilterField;
     });
 
-    const result = populatedFields.concat(userDefinedFields);
+    const result = userResult.concat(userDefinedFields);
     const epicLinkField = fields.find(isEpicLinkField);
     if (epicLinkField) {
         result.unshift({
@@ -268,6 +298,23 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
             issueTypes: epicLinkField.validIssueTypes,
         } as FilterField);
     }
+
+    const commentVisibilityField = {
+        key: commentVisibilityFieldKey,
+        name: 'Comment Visibility',
+        schema: {
+            type: 'commentVisibility',
+        },
+        values: [],
+        issueTypes: metadata && metadata.issue_types_with_statuses.map((type) => {
+            return {
+                id: type.id,
+                name: type.name,
+            };
+        }),
+    } as FilterField;
+
+    result.push(commentVisibilityField);
 
     const statusField = getStatusField(metadata, issueTypes);
     if (statusField) {
@@ -313,7 +360,15 @@ export function isEpicLinkField(field: JiraField | FilterField): boolean {
 }
 
 export function isLabelField(field: JiraField | FilterField): boolean {
-    return field.schema.system === 'labels' || field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:labels';
+    return field.schema.system === 'labels' || field.schema.custom === `${jiraSystemCustomFieldTypesKey}:labels`;
+}
+
+export function isUserField(field: JiraField | FilterField): boolean {
+    return field.schema.type === 'user' || field.schema.custom === `${jiraSystemCustomFieldTypesKey}:userpicker`;
+}
+
+export function isCommentVisibilityField(field: JiraField | FilterField): boolean {
+    return field.key === commentVisibilityFieldKey;
 }
 
 export function isEpicIssueType(issueType: IssueType): boolean {
@@ -356,7 +411,7 @@ function quoteGuard(s: string) {
     return s;
 }
 
-export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMetadata, fields: FilterField[], filters: ChannelSubscriptionFilters, securityLevelEmptyForJiraSubscriptions: boolean) {
+export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMetadata, fields: FilterField[], filters: ChannelSubscriptionFilters, securityLevelEmptyForJiraSubscriptions?: boolean) {
     const projectJQL = `Project = ${quoteGuard(filters.projects[0]) || '?'}`;
 
     let issueTypeValueString = '?';
@@ -405,11 +460,11 @@ export function generateJQLStringFromSubscriptionFilters(issueMetadata: IssueMet
         });
 
         if (inclusion === FilterFieldInclusion.INCLUDE_ALL && values.length > 1) {
-            const clauses = chosenValueLabels.map((v) => `${quoteGuard(fieldName)} IN (${quoteGuard(v)})`);
+            const clauses = chosenValueLabels.map((v) => `${quoteGuard(fieldName)} IN (${quoteGuard(v.toString())})`);
             return `(${clauses.join(' AND ')})`;
         }
 
-        const joinedValues = chosenValueLabels.map((v) => `${quoteGuard(v)}`).join(', ');
+        const joinedValues = chosenValueLabels.map((v) => `${quoteGuard(v.toString())}`).join(', ');
         const valueString = `(${joinedValues})`;
         return `${quoteGuard(fieldName)} ${inclusionString} ${valueString}`;
     }).join(' AND ');

@@ -51,6 +51,14 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
                 "value": "versions",
               },
               Object {
+                "label": "Assignee",
+                "value": "assignee",
+              },
+              Object {
+                "label": "Comment Visibility",
+                "value": "commentVisibility",
+              },
+              Object {
                 "label": "Epic Link",
                 "value": "customfield_10014",
               },
@@ -81,6 +89,10 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
               Object {
                 "label": "MJK - Select List 3",
                 "value": "customfield_10076",
+              },
+              Object {
+                "label": "MJK - User Picker",
+                "value": "customfield_10080",
               },
               Object {
                 "label": "Priority",
@@ -139,6 +151,10 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
               Object {
                 "label": "Empty",
                 "value": "empty",
+              },
+              Object {
+                "label": "Include or Empty",
+                "value": "include_or_empty",
               },
             ]
           }
