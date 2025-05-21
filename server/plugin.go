@@ -481,16 +481,6 @@ func (p *Plugin) AddAutolinks(key string, baseURL string) error {
 
 		client := autolinkclient.NewClientPlugin(p.API)
 
-		var keys []string
-		for _, autolink := range installList {
-			keys = append(keys, autolink.Name)
-		}
-
-		// Deleting the old autolinks if already present
-		if err := client.Delete(keys...); err != nil {
-			return fmt.Errorf("unable to delete autolinks: %w", err)
-		}
-
 		// Creating the new autolinks
 		if err := client.Add(installList...); err != nil {
 			// Do not return an error if the status code is 304 (indicating that the autolink for this project is already installed).
