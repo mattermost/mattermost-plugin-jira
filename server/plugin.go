@@ -25,6 +25,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	"github.com/mattermost/mattermost/server/public/pluginapi/experimental/flow"
 
 	"github.com/mattermost-community/mattermost-plugin-autolink/server/autolink"
@@ -46,6 +47,17 @@ const (
 	WebhookMaxProcsPerServer = 20
 	WebhookBufferSize        = 10000
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
+
+	// Endpoints
+	patternCommentLinkEndpoint  = `/browse/)(?P<project_id>\w+)(-)(?P<jira_id>\d+)[?](focusedCommentId)(=)(?P<comment_id>\d+)`
+	templateCommentLinkEndpoint = `/browse/${project_id}-${jira_id}?focusedCommentId=${comment_id})`
+	patternIssueLinkEndpoint    = `/browse/)(?P<project_id>\w+)(-)(?P<jira_id>\d+)`
+	templateIssueLinkEndpoint   = `/browse/${project_id}-${jira_id})`
+
+	templateViewIssue            = `[${project_id}-${jira_id}](`
+	templateViewIssueWithComment = `[${project_id}-${jira_id} (comment)](`
+
+	autolinkClusterMutexKey = "autolink_cluster_mutex"
 )
 
 type externalConfig struct {
@@ -149,6 +161,9 @@ type Plugin struct {
 
 	// telemetry Tracker
 	tracker telemetry.Tracker
+
+	// autolinkClusterMutex to lock operations for autolink
+	autolinkClusterMutex *cluster.Mutex
 }
 
 func (p *Plugin) getConfig() config {
@@ -338,6 +353,13 @@ func (p *Plugin) OnActivate() error {
 
 	p.enterpriseChecker = enterprise.NewEnterpriseChecker(p.API)
 
+	autolinkClusterMutex, err := cluster.NewMutex(p.API, autolinkClusterMutexKey)
+	if err != nil {
+		return err
+	}
+
+	p.autolinkClusterMutex = autolinkClusterMutex
+
 	go func() {
 		p.SetupAutolink(instances)
 	}()
@@ -434,6 +456,7 @@ func (p *Plugin) AddAutoLinkForProjects(plist jira.ProjectList, baseURL string) 
 
 func (p *Plugin) AddAutolinks(key, baseURL string) error {
 	baseURL = strings.TrimRight(baseURL, "/")
+	var replacedBaseURL = `(` + strings.ReplaceAll(baseURL, ".", `\.`)
 	installList := []autolink.Autolink{
 		{
 			Name:     key + " key to link for " + baseURL,
@@ -441,17 +464,29 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
 		},
 		{
-			Name:     key + " link to key for " + baseURL,
-			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)`,
-			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
+			Name:     "Link to key for " + baseURL,
+			Pattern:  replacedBaseURL + patternIssueLinkEndpoint,
+			Template: templateViewIssue + baseURL + templateIssueLinkEndpoint,
+		},
+		{
+			Name:     "Jump to comment for " + baseURL,
+			Pattern:  replacedBaseURL + patternCommentLinkEndpoint,
+			Template: templateViewIssueWithComment + baseURL + templateCommentLinkEndpoint,
 		},
 	}
 
-	client := autolinkclient.NewClientPlugin(p.API)
-	if err := client.Add(installList...); err != nil {
-		// Do not return an error if the status code is 304 (indicating that the autolink for this project is already installed).
-		if !strings.Contains(err.Error(), `Error: 304, {"status": "OK"}`) {
-			return fmt.Errorf("unable to add autolinks: %w", err)
+	if len(installList) > 0 {
+		p.autolinkClusterMutex.Lock()
+		defer p.autolinkClusterMutex.Unlock()
+
+		client := autolinkclient.NewClientPlugin(p.API)
+
+		// Creating the new autolinks
+		if err := client.Add(installList...); err != nil {
+			// Do not return an error if the status code is 304 (indicating that the autolink for this project is already installed).
+			if !strings.Contains(err.Error(), `Error: 304, {"status": "OK"}`) {
+				return fmt.Errorf("unable to add autolinks: %w", err)
+			}
 		}
 	}
 
