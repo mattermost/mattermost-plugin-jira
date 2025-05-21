@@ -454,14 +454,14 @@ func (p *Plugin) AddAutoLinkForProjects(plist jira.ProjectList, baseURL string) 
 	return nil
 }
 
-func (p *Plugin) AddAutolinks(key string, baseURL string) error {
+func (p *Plugin) AddAutolinks(key, baseURL string) error {
 	baseURL = strings.TrimRight(baseURL, "/")
 	var replacedBaseURL = `(` + strings.ReplaceAll(baseURL, ".", `\.`)
 	installList := []autolink.Autolink{
 		{
-			Name:     "Jump to comment for " + baseURL,
-			Pattern:  replacedBaseURL + patternCommentLinkEndpoint,
-			Template: templateViewIssueWithComment + baseURL + templateCommentLinkEndpoint,
+			Name:     key + " key to link for " + baseURL,
+			Pattern:  `(` + key + `)(-)(?P<jira_id>\d+)`,
+			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
 		},
 		{
 			Name:     "Link to key for " + baseURL,
@@ -469,9 +469,9 @@ func (p *Plugin) AddAutolinks(key string, baseURL string) error {
 			Template: templateViewIssue + baseURL + templateIssueLinkEndpoint,
 		},
 		{
-			Name:     key + " key to link for " + baseURL,
-			Pattern:  `(` + key + `)(-)(?P<jira_id>\d+)`,
-			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
+			Name:     "Jump to comment for " + baseURL,
+			Pattern:  replacedBaseURL + patternCommentLinkEndpoint,
+			Template: templateViewIssueWithComment + baseURL + templateCommentLinkEndpoint,
 		},
 	}
 
