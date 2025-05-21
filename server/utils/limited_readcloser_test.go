@@ -9,12 +9,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 func TestLimitReadCloser(t *testing.T) {
 	inner := io.NopCloser(strings.NewReader("01234567890"))
 
-	totalRead := ByteSize(0)
+	totalRead := types.ByteSize(0)
 	r := NewLimitedReadCloser(inner, 8, func(lrc *LimitedReadCloser) error {
 		totalRead = lrc.TotalRead
 		return io.EOF
@@ -28,6 +30,7 @@ func TestLimitReadCloser(t *testing.T) {
 
 	n, err = r.Read(data[0:5])
 	require.Nil(t, err)
+
 	// Note, truncated to 4, total 8
 	require.Equal(t, 4, n)
 	require.Equal(t, "4567", string(data[0:4]))
@@ -38,5 +41,5 @@ func TestLimitReadCloser(t *testing.T) {
 
 	err = r.Close()
 	require.Equal(t, io.EOF, err)
-	require.Equal(t, ByteSize(8), totalRead)
+	require.Equal(t, types.ByteSize(8), totalRead)
 }
