@@ -140,6 +140,14 @@
                 "help_text": "**Note** Admin email is necessary to setup autolink for the Jira plugin and to to get notified for comment and issue created events when the user triggering the event is not connected to Jira",
                 "placeholder": "",
                 "default": ""
+            },
+            {
+                "key": "ThreadedJiraCommentSusbcriptionDuration",
+                "display_name": "Threaded Jira Comment Subscription Duration",
+                "type": "text",
+                "help_text": "Number of days Jira comments will be posted as threaded replies instead of new post",
+                "placeholder": "30",
+                "default": "30"
             }
         ]
     }
