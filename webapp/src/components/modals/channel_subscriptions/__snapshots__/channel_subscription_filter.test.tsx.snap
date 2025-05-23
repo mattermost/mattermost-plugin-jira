@@ -102,6 +102,10 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
                 "label": "Status",
                 "value": "status",
               },
+              Object {
+                "label": "Team",
+                "value": "teamField",
+              },
             ]
           }
           removeValidate={[MockFunction]}

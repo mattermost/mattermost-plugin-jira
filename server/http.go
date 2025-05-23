@@ -26,6 +26,7 @@ import (
 )
 
 const (
+	routeAPIGetTeamFields                       = "/get-team-fields"
 	routeAPIGetCommentVisibilityFields          = "/get-comment-visibility-fields"
 	routeAutocomplete                           = "/autocomplete"
 	routeAutocompleteConnect                    = "/connect"
@@ -101,6 +102,7 @@ func (p *Plugin) initializeRouter() {
 	apiRouter := p.router.PathPrefix(routeAPI).Subrouter()
 
 	// Issue APIs
+	apiRouter.HandleFunc(routeAPIGetTeamFields, p.checkAuth(p.handleResponse(p.httpGetTeamFields))).Methods(http.MethodGet)
 	apiRouter.HandleFunc(routeAPIGetCommentVisibilityFields, p.checkAuth(p.handleResponse(p.httpGetCommentVisibilityFields))).Methods(http.MethodGet)
 	apiRouter.HandleFunc(routeAPIGetAutoCompleteFields, p.checkAuth(p.handleResponse(p.httpGetAutoCompleteFields))).Methods(http.MethodGet)
 	apiRouter.HandleFunc(routeAPICreateIssue, p.checkAuth(p.handleResponse(p.httpCreateIssue))).Methods(http.MethodPost)
