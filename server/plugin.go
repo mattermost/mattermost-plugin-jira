@@ -222,20 +222,34 @@ func (p *Plugin) OnConfigurationChange() error {
 	ec.AdminAPIToken = string(encryptedAdminAPIToken)
 
 	if ec.TeamIDs != "" {
-		re := regexp.MustCompile(`\[(.*?)\]\((.*?)\)`) // Matches [team-name](team-id)
-		matches := re.FindAllStringSubmatch(ec.TeamIDs, -1)
+		teamListData := strings.Split(ec.TeamIDs, ",")
+		re := regexp.MustCompile(`^\[(.*?)\]\((.*?)\)$`)
 
 		var teamIDList []TeamList
-		for _, match := range matches {
+		var errorPrinted bool
+		var acceptedLength int
+
+		for _, item := range teamListData {
+			item = strings.TrimSpace(item)
+			match := re.FindStringSubmatch(item)
+
 			if len(match) != 3 {
+				if !errorPrinted {
+					p.client.Log.Warn("Please provide a valid list of team name and ID")
+					errorPrinted = true
+				}
 				continue
 			}
 
 			teamName := strings.TrimSpace(match[1])
 			teamID := strings.TrimSpace(match[2])
 
-			if len(teamName) == 0 || !isValidUUIDv4(teamID) {
-				p.client.Log.Warn("Please provide a valid list of team name and ID")
+			if teamName == "" || !isValidUUIDv4(teamID) {
+				if !errorPrinted {
+					p.client.Log.Warn("Please provide a valid list of team name and ID")
+					errorPrinted = true
+				}
+
 				continue
 			}
 
@@ -243,7 +257,20 @@ func (p *Plugin) OnConfigurationChange() error {
 				Name: teamName,
 				ID:   teamID,
 			})
+
+			// Add length for accepted entry:
+			acceptedLength += len(teamName) + len(teamID) + 4 // +4 for [ ] ( )
 		}
+
+		// Add length for commas (only between items)
+		if len(teamIDList) > 0 {
+			acceptedLength += len(teamIDList) - 1
+		}
+
+		if acceptedLength != len(ec.TeamIDs) {
+			p.client.Log.Warn("Some team entries were invalid and ignored")
+		}
+
 		ec.TeamIDList = teamIDList
 	}
 
