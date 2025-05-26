@@ -83,7 +83,11 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 	var rootID string
 	rootPostExists := false
 
-	if _, exists := wh.eventTypes[eventCreatedComment]; exists {
+	_, hasCreatedComment := wh.eventTypes[eventCreatedComment]
+	_, hasDeletedComment := wh.eventTypes[eventDeletedComment]
+	_, hasUpdatedComment := wh.eventTypes[eventUpdatedComment]
+
+	if hasCreatedComment || hasDeletedComment || hasUpdatedComment {
 		err := p.client.KV.Get(key, &rootID)
 		if err != nil || rootID == "" {
 			p.client.Log.Info("Post ID not found in KV store, creating a new post for Jira Subscription Comment Event", "TicketID", wh.Issue.ID)
@@ -117,7 +121,18 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 		return nil, http.StatusInternalServerError, err
 	}
 
-	if _, exists := wh.eventTypes[eventCreatedComment]; exists && !rootPostExists {
+	shouldStorePostID := false
+	if _, ok := wh.eventTypes[eventCreatedComment]; ok {
+		shouldStorePostID = true
+	} else if _, ok := wh.eventTypes[eventDeletedComment]; ok {
+		shouldStorePostID = true
+	} else if _, ok := wh.eventTypes[eventUpdatedComment]; ok {
+		shouldStorePostID = true
+	} else if _, ok := wh.eventTypes[eventCreated]; ok {
+		shouldStorePostID = true
+	}
+
+	if shouldStorePostID && !rootPostExists {
 		commentPostReplyDuration, err := strconv.Atoi(pluginConfig.ThreadedJiraCommentSusbcriptionDuration)
 		if err != nil {
 			p.client.Log.Error("Error converting comment post reply duration to integer, future comments may not thread correctly", "TicketID", wh.Issue.ID, "PostID", post.Id, "Error", err.Error())
