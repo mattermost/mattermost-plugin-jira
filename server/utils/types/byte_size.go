@@ -7,9 +7,9 @@ import (
 	"math"
 	"strconv"
 	"strings"
-
-	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 )
+
+const NotAvailable = "n/a"
 
 type ByteSize int64
 
@@ -53,7 +53,7 @@ func (size ByteSize) String() string {
 		}
 
 		if size > math.MaxInt64/10 {
-			return utils.NotAvailable
+			return NotAvailable
 		}
 
 		v := (size*10 + u/2) / u
@@ -61,14 +61,14 @@ func (size ByteSize) String() string {
 		l := len(s)
 		switch {
 		case l < 2:
-			return utils.NotAvailable
+			return NotAvailable
 		case s[l-1] == '0':
 			return withCommas(s[:l-1]) + sizeSuffixes[i]
 		default:
 			return withCommas(s[:l-1]) + "." + s[l-1:] + sizeSuffixes[i]
 		}
 	}
-	return utils.NotAvailable
+	return NotAvailable
 }
 
 func ParseByteSize(str string) (ByteSize, error) {
