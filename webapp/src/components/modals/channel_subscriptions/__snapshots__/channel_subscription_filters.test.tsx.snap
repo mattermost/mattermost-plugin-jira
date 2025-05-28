@@ -129,6 +129,20 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
                 },
               ],
             },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10001",
+                  "name": "Bug",
+                },
+              ],
+              "key": "teamField",
+              "name": "Team",
+              "schema": Object {
+                "type": "team",
+              },
+              "values": Array [],
+            },
           ]
         }
         instanceID="https://something.atlassian.net"
@@ -291,6 +305,20 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
                   "value": "1001",
                 },
               ],
+            },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10001",
+                  "name": "Bug",
+                },
+              ],
+              "key": "teamField",
+              "name": "Team",
+              "schema": Object {
+                "type": "team",
+              },
+              "values": Array [],
             },
           ]
         }

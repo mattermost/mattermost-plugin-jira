@@ -34,6 +34,7 @@ const (
 
 	MaxSubscriptionNameLength  = 100
 	CommentVisibility          = "commentVisibility"
+	TeamFilter                 = "teamField"
 	CommentVisibilityGroupType = "group"
 )
 
@@ -177,6 +178,10 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 			value = updateCommentVisibilityValue(value, wh)
 		}
 
+		if field.Key == TeamFilter {
+			value = updateTeamValue(value, wh)
+		}
+
 		if shouldAddVisibleToAllUsersToFieldValues(wh, field) {
 			field.Values = field.Values.Add(visibleToAllUsers)
 		}
@@ -202,6 +207,36 @@ func updateCommentVisibilityValue(value StringSet, wh *webhook) StringSet {
 	}
 
 	return value.Add(visibleToAllUsers)
+}
+
+type JiraTeamData struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func updateTeamValue(value StringSet, wh *webhook) StringSet {
+	raw, ok := wh.Issue.Fields.Unknowns["customfield_10001"]
+	if !ok {
+		return value
+	}
+
+	var teamField JiraTeamData
+
+	bytes, err := json.Marshal(raw)
+	if err != nil {
+		return value
+	}
+
+	err = json.Unmarshal(bytes, &teamField)
+	if err != nil {
+		return value
+	}
+
+	if teamField.ID != "" {
+		return value.Add(teamField.ID)
+	}
+
+	return value
 }
 
 func shouldAddVisibleToAllUsersToFieldValues(wh *webhook, field FieldFilter) bool {

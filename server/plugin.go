@@ -91,6 +91,16 @@ type externalConfig struct {
 
 	// Email of the admin
 	AdminEmail string
+
+	// Comma separated list of Team IDs and name to be used for filtering subscription on the basis of teams. Ex: [team-1-name](team-1-id),[team-2-name](team-2-id)
+	TeamIDs string `json:"teamids"`
+
+	TeamIDList []TeamList `json:"teamidlist"`
+}
+
+type TeamList struct {
+	Name string
+	ID   string
 }
 
 const defaultMaxAttachmentSize = types.ByteSize(100 * 1024 * 1024) // 100Mb
@@ -165,6 +175,12 @@ func (p *Plugin) updateConfig(f func(conf *config)) config {
 	return p.conf
 }
 
+func isValidUUIDv4(uuid string) bool {
+	// UUIDv4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+	re := regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$`)
+	return re.MatchString(uuid)
+}
+
 // OnConfigurationChange is invoked when configuration changes may have been made.
 func (p *Plugin) OnConfigurationChange() error {
 	// Load the public configuration fields from the Mattermost server configuration.
@@ -208,6 +224,59 @@ func (p *Plugin) OnConfigurationChange() error {
 		return err
 	}
 	ec.AdminAPIToken = string(encryptedAdminAPIToken)
+
+	if ec.TeamIDs != "" {
+		teamListData := strings.Split(ec.TeamIDs, ",")
+		re := regexp.MustCompile(`^\[(.*?)\]\((.*?)\)$`)
+
+		var teamIDList []TeamList
+		var errorPrinted bool
+		var acceptedLength int
+
+		for _, item := range teamListData {
+			item = strings.TrimSpace(item)
+			match := re.FindStringSubmatch(item)
+
+			if len(match) != 3 {
+				if !errorPrinted {
+					p.client.Log.Warn("Please provide a valid list of team name and ID")
+					errorPrinted = true
+				}
+				continue
+			}
+
+			teamName := strings.TrimSpace(match[1])
+			teamID := strings.TrimSpace(match[2])
+
+			if teamName == "" || !isValidUUIDv4(teamID) {
+				if !errorPrinted {
+					p.client.Log.Warn("Please provide a valid list of team name and ID")
+					errorPrinted = true
+				}
+
+				continue
+			}
+
+			teamIDList = append(teamIDList, TeamList{
+				Name: teamName,
+				ID:   teamID,
+			})
+
+			// Add length for accepted entry:
+			acceptedLength += len(teamName) + len(teamID) + 4 // +4 for [ ] ( )
+		}
+
+		// Add length for commas (only between items)
+		if len(teamIDList) > 0 {
+			acceptedLength += len(teamIDList) - 1
+		}
+
+		if acceptedLength != len(ec.TeamIDs) {
+			p.client.Log.Warn("Some team entries were invalid and ignored")
+		}
+
+		ec.TeamIDList = teamIDList
+	}
 
 	prev := p.getConfig()
 	p.updateConfig(func(conf *config) {
