@@ -25,6 +25,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	"github.com/mattermost/mattermost/server/public/pluginapi/experimental/flow"
 
 	"github.com/mattermost-community/mattermost-plugin-autolink/server/autolink"
@@ -40,7 +41,8 @@ const (
 	botDisplayName = "Jira"
 	botDescription = "Created by the Jira Plugin."
 
-	autolinkPluginID = "mattermost-autolink"
+	autolinkPluginID        = "mattermost-autolink"
+	autolinkClusterMutexKey = "autolink_cluster_mutex"
 
 	// Move these two to the plugin settings if admins need to adjust them.
 	WebhookMaxProcsPerServer = 20
@@ -84,13 +86,13 @@ type externalConfig struct {
 	DisplaySubscriptionNameInNotifications bool
 
 	// The encryption key used to encrypt stored api tokens
-	EncryptionKey string
+	EncryptionKey string `json:"encryptiontoken"`
 
 	// API token from Jira
-	AdminAPIToken string
+	AdminAPIToken string `json:"adminapitoken"`
 
 	// Email of the admin
-	AdminEmail string
+	AdminEmail string `json:"adminemail"`
 }
 
 const defaultMaxAttachmentSize = types.ByteSize(100 * 1024 * 1024) // 100Mb
@@ -149,6 +151,9 @@ type Plugin struct {
 
 	// telemetry Tracker
 	tracker telemetry.Tracker
+
+	// autolinkClusterMutex to lock operations for autolink
+	autolinkClusterMutex *cluster.Mutex
 }
 
 func (p *Plugin) getConfig() config {
@@ -338,6 +343,13 @@ func (p *Plugin) OnActivate() error {
 
 	p.enterpriseChecker = enterprise.NewEnterpriseChecker(p.API)
 
+	autolinkClusterMutex, err := cluster.NewMutex(p.API, autolinkClusterMutexKey)
+	if err != nil {
+		return err
+	}
+
+	p.autolinkClusterMutex = autolinkClusterMutex
+
 	go func() {
 		p.SetupAutolink(instances)
 	}()
@@ -434,6 +446,7 @@ func (p *Plugin) AddAutoLinkForProjects(plist jira.ProjectList, baseURL string) 
 
 func (p *Plugin) AddAutolinks(key, baseURL string) error {
 	baseURL = strings.TrimRight(baseURL, "/")
+	replacedBaseURL := `(` + strings.ReplaceAll(baseURL, ".", `\.`)
 	installList := []autolink.Autolink{
 		{
 			Name:     key + " key to link for " + baseURL,
@@ -445,7 +458,15 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)`,
 			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
 		},
+		{
+			Name:     key + "Jump to comment for " + baseURL,
+			Pattern:  replacedBaseURL + `/browse/)(?P<project_id>\w+)(-)(?P<jira_id>\d+)[?](focusedCommentId)(=)(?P<comment_id>\d+)`,
+			Template: `[${project_id}-${jira_id} (comment)](` + baseURL + `/browse/${project_id}-${jira_id}?focusedCommentId=${comment_id})`,
+		},
 	}
+
+	p.autolinkClusterMutex.Lock()
+	defer p.autolinkClusterMutex.Unlock()
 
 	client := autolinkclient.NewClientPlugin(p.API)
 	if err := client.Add(installList...); err != nil {
