@@ -140,6 +140,14 @@
                 "help_text": "**Note** Admin email is necessary to setup autolink for the Jira plugin and to to get notified for comment and issue created events when the user triggering the event is not connected to Jira",
                 "placeholder": "",
                 "default": ""
+            },
+            {
+                "key": "TeamIDs",
+                "display_name": "Team List",
+                "type": "text",
+                "help_text": "Comma separated list of team name and IDs to be used for filtering subscriptions",
+                "placeholder": "[team-1-name](team-1-id),[team-2-name](team-2-id)",
+                "default": ""
             }
         ]
     }

@@ -49,7 +49,7 @@ describe('utils/jira_issue_metadata', () => {
         expect(actual.length).toBeGreaterThan(0);
     });
 
-    test('should return only the status and comment visibility field if there are no available values', () => {
+    test('should return only the status, comment visibility and team  field if there are no available values', () => {
         const field = {
             hasDefaultValue: false,
             key: 'customfield_10021',
@@ -71,9 +71,10 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(2);
+        expect(actual.length).toBe(3);
         expect(actual[0].name).toBe('Comment Visibility');
         expect(actual[1].name).toBe('Status');
+        expect(actual[2].name).toBe('Team');
     });
 
     test('should return options for multi-select options', () => {
@@ -108,7 +109,7 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(3);
+        expect(actual.length).toBe(4);
 
         expect(actual[0].key).toEqual('commentVisibility');
         expect(actual[0].name).toEqual('Comment Visibility');
@@ -117,6 +118,9 @@ describe('utils/jira_issue_metadata', () => {
         expect(actual[1].name).toEqual('MJK - Checkbox');
         expect(actual[1].values).toEqual([{value: '10033', label: '1'}, {value: '10034', label: '2'}]);
         expect(actual[2].name).toBe('Status');
+        expect(actual[3].key).toEqual('teamField');
+        expect(actual[3].name).toEqual('Team');
+        expect(actual[3].values).toEqual([]);
     });
 
     test('should return options for single-select options', () => {
@@ -152,7 +156,7 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(3);
+        expect(actual.length).toBe(4);
 
         expect(actual[0].key).toEqual('commentVisibility');
         expect(actual[0].name).toEqual('Comment Visibility');
@@ -161,6 +165,7 @@ describe('utils/jira_issue_metadata', () => {
         expect(actual[1].name).toEqual('MJK - Radio Buttons');
         expect(actual[1].values).toEqual([{value: '10035', label: '1'}, {value: '10036', label: '2'}]);
         expect(actual[2].name).toBe('Status');
+        expect(actual[3].name).toBe('Team');
     });
 
     test('should return options for priority', () => {
@@ -221,7 +226,7 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(3);
+        expect(actual.length).toBe(4);
 
         expect(actual[0].key).toEqual('commentVisibility');
         expect(actual[0].name).toEqual('Comment Visibility');
@@ -230,6 +235,7 @@ describe('utils/jira_issue_metadata', () => {
         expect(actual[1].name).toEqual('Priority');
         expect(actual[1].values).toEqual([{value: '1', label: 'Highest'}, {value: '2', label: 'High'}, {value: '3', label: 'Medium'}, {value: '4', label: 'Low'}, {value: '5', label: 'Lowest'}]);
         expect(actual[2].name).toBe('Status');
+        expect(actual[3].name).toBe('Team');
     });
 
     test('should return options for fix version', () => {
@@ -259,7 +265,7 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(3);
+        expect(actual.length).toBe(4);
 
         expect(actual[0].key).toEqual('commentVisibility');
         expect(actual[0].name).toEqual('Comment Visibility');
@@ -268,6 +274,7 @@ describe('utils/jira_issue_metadata', () => {
         expect(actual[1].name).toEqual('Fix versions');
         expect(actual[1].values).toEqual([{value: '10000', label: '5.14 (August 2019)'}]);
         expect(actual[2].name).toBe('Status');
+        expect(actual[3].name).toBe('Team');
     });
 
     test('should return options for security level', () => {
@@ -316,7 +323,7 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(3);
+        expect(actual.length).toBe(4);
 
         expect(actual[0].key).toEqual('commentVisibility');
         expect(actual[0].name).toEqual('Comment Visibility');
@@ -325,6 +332,7 @@ describe('utils/jira_issue_metadata', () => {
         expect(actual[1].name).toEqual('Security Level');
         expect(actual[1].values).toEqual([{value: '10001', label: 'Admin only'}, {value: '10000', label: 'Everyone'}, {value: '10002', label: 'Staff'}]);
         expect(actual[2].name).toBe('Status');
+        expect(actual[3].name).toBe('Team');
     });
 
     test('getStatusField should return options for statuses for selected issue types only', () => {
@@ -389,13 +397,14 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(3);
+        expect(actual.length).toBe(4);
 
         expect(actual[0].name).toBe('Comment Visibility');
         expect(actual[1].key).toEqual('custom1');
         expect(actual[1].name).toEqual('MJK - Labels');
         expect(actual[1].userDefined).toEqual(true);
         expect(actual[2].name).toBe('Status');
+        expect(actual[3].name).toBe('Team');
     });
 
     test('getConflictingFields should return a list of fields with conflicts', () => {
