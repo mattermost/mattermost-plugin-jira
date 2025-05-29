@@ -94,7 +94,7 @@ type externalConfig struct {
 	AdminEmail string
 
 	// Number of days Jira comments will be posted as threaded replies instead of new post
-	ThreadedJiraCommentSusbcriptionDuration string
+	ThreadedJiraCommentSubscriptionDuration string `json:"threadedjiracommentsubscriptionduration"`
 }
 
 const defaultMaxAttachmentSize = utils.ByteSize(10 * 1024 * 1024) // 10Mb
@@ -209,8 +209,12 @@ func (p *Plugin) OnConfigurationChange() error {
 	}
 	ec.AdminAPIToken = string(encryptedAdminAPIToken)
 
-	if _, err = strconv.Atoi(ec.ThreadedJiraCommentSusbcriptionDuration); err != nil {
+	duration, err := strconv.Atoi(ec.ThreadedJiraCommentSubscriptionDuration)
+	if err != nil {
 		return errors.New("error converting comment post reply duration to integer")
+	}
+	if duration < 0 {
+		return errors.New("comment post reply duration cannot be negative")
 	}
 
 	prev := p.getConfig()

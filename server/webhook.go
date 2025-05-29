@@ -121,19 +121,12 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 		return nil, http.StatusInternalServerError, err
 	}
 
-	shouldStorePostID := false
-	if _, ok := wh.eventTypes[eventCreatedComment]; ok {
-		shouldStorePostID = true
-	} else if _, ok := wh.eventTypes[eventDeletedComment]; ok {
-		shouldStorePostID = true
-	} else if _, ok := wh.eventTypes[eventUpdatedComment]; ok {
-		shouldStorePostID = true
-	} else if _, ok := wh.eventTypes[eventCreated]; ok {
-		shouldStorePostID = true
-	}
+	commentEvent := commentEvents.ContainsAny(wh.Events().ToSlice()...)
+	issueCreated := wh.eventTypes[eventCreated]
+	shouldStorePostID := commentEvent || issueCreated
 
 	if shouldStorePostID && !rootPostExists {
-		commentPostReplyDuration, err := strconv.Atoi(pluginConfig.ThreadedJiraCommentSusbcriptionDuration)
+		commentPostReplyDuration, err := strconv.Atoi(pluginConfig.ThreadedJiraCommentSubscriptionDuration)
 		if err != nil {
 			p.client.Log.Error("Error converting comment post reply duration to integer, future comments may not thread correctly", "TicketID", wh.Issue.ID, "PostID", post.Id, "Error", err.Error())
 		} else {
