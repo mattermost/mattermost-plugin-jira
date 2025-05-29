@@ -67,6 +67,20 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
                   "name": "Bug",
                 },
               ],
+              "key": "commentVisibility",
+              "name": "Comment Visibility",
+              "schema": Object {
+                "type": "commentVisibility",
+              },
+              "values": Array [],
+            },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10001",
+                  "name": "Bug",
+                },
+              ],
               "key": "priority",
               "name": "Priority",
               "schema": Object {
@@ -114,6 +128,20 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
                   "value": "1001",
                 },
               ],
+            },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10001",
+                  "name": "Bug",
+                },
+              ],
+              "key": "teamField",
+              "name": "Team",
+              "schema": Object {
+                "type": "team",
+              },
+              "values": Array [],
             },
           ]
         }
@@ -216,6 +244,20 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
                   "name": "Bug",
                 },
               ],
+              "key": "commentVisibility",
+              "name": "Comment Visibility",
+              "schema": Object {
+                "type": "commentVisibility",
+              },
+              "values": Array [],
+            },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10001",
+                  "name": "Bug",
+                },
+              ],
               "key": "priority",
               "name": "Priority",
               "schema": Object {
@@ -263,6 +305,20 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
                   "value": "1001",
                 },
               ],
+            },
+            Object {
+              "issueTypes": Array [
+                Object {
+                  "id": "10001",
+                  "name": "Bug",
+                },
+              ],
+              "key": "teamField",
+              "name": "Team",
+              "schema": Object {
+                "type": "team",
+              },
+              "values": Array [],
             },
           ]
         }

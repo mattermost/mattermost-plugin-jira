@@ -5,17 +5,19 @@ package utils
 
 import (
 	"io"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 type LimitedReadCloser struct {
-	TotalRead ByteSize
+	TotalRead types.ByteSize
 
 	reader   io.Reader
 	closer   io.Closer
 	preClose func(*LimitedReadCloser) error
 }
 
-func NewLimitedReadCloser(rc io.ReadCloser, limit ByteSize, preClose func(*LimitedReadCloser) error) io.ReadCloser {
+func NewLimitedReadCloser(rc io.ReadCloser, limit types.ByteSize, preClose func(*LimitedReadCloser) error) io.ReadCloser {
 	lrc := &LimitedReadCloser{
 		reader:   rc,
 		closer:   rc,
@@ -29,7 +31,7 @@ func NewLimitedReadCloser(rc io.ReadCloser, limit ByteSize, preClose func(*Limit
 
 func (lrc *LimitedReadCloser) Read(data []byte) (int, error) {
 	n, err := lrc.reader.Read(data)
-	lrc.TotalRead += ByteSize(n)
+	lrc.TotalRead += types.ByteSize(n)
 	return n, err
 }
 

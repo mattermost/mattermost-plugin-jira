@@ -98,6 +98,7 @@ export type SavedFieldValues = {
 export enum JiraFieldTypeEnums {
     PROJECT = 'project',
     ISSUE_TYPE = 'issuetype',
+    REPORTER = 'reporter',
     PRIORITY = 'priority',
     DESCRIPTION = 'description',
     SUMMARY = 'summary',
@@ -216,6 +217,18 @@ export type SearchIssueParams = {
     jql?: string;
     fields: string;
     q: string;
+    instance_id: string;
+};
+
+export type AutoCompleteParams = {
+    fieldValue: string;
+    fieldName: string;
+    instance_id: string;
+};
+
+export type SearchUsersParams = {
+    q: string;
+    project: string;
     instance_id: string;
 };
 

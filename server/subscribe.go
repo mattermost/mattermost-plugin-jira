@@ -32,7 +32,10 @@ const (
 	FilterEmpty          = "empty"
 	FilterIncludeOrEmpty = "include_or_empty"
 
-	MaxSubscriptionNameLength = 100
+	MaxSubscriptionNameLength  = 100
+	CommentVisibility          = "commentVisibility"
+	TeamFilter                 = "teamField"
+	CommentVisibilityGroupType = "group"
 )
 
 type FieldFilter struct {
@@ -171,6 +174,18 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		}
 
 		value := getIssueFieldValue(issue, field.Key)
+		if field.Key == CommentVisibility {
+			value = updateCommentVisibilityValue(value, wh)
+		}
+
+		if field.Key == TeamFilter {
+			value = updateTeamValue(value, wh)
+		}
+
+		if shouldAddVisibleToAllUsersToFieldValues(wh, field) {
+			field.Values = field.Values.Add(visibleToAllUsers)
+		}
+
 		if !isValidFieldInclusion(field, value, inclusion) {
 			return false
 		}
@@ -184,6 +199,48 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 	}
 
 	return true
+}
+
+func updateCommentVisibilityValue(value StringSet, wh *webhook) StringSet {
+	if wh.Comment.Visibility.Value != "" && wh.Comment.Visibility.Type == CommentVisibilityGroupType {
+		return value.Add(wh.Comment.Visibility.Value)
+	}
+
+	return value.Add(visibleToAllUsers)
+}
+
+type JiraTeamData struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func updateTeamValue(value StringSet, wh *webhook) StringSet {
+	raw, ok := wh.Issue.Fields.Unknowns["customfield_10001"]
+	if !ok {
+		return value
+	}
+
+	var teamField JiraTeamData
+
+	bytes, err := json.Marshal(raw)
+	if err != nil {
+		return value
+	}
+
+	err = json.Unmarshal(bytes, &teamField)
+	if err != nil {
+		return value
+	}
+
+	if teamField.ID != "" {
+		return value.Add(teamField.ID)
+	}
+
+	return value
+}
+
+func shouldAddVisibleToAllUsersToFieldValues(wh *webhook, field FieldFilter) bool {
+	return !(wh.eventTypes[commentCreated] || wh.eventTypes[commentUpdated]) && field.Inclusion != FilterIncludeAll && field.Inclusion != FilterExcludeAny
 }
 
 func isValidFieldInclusion(field FieldFilter, value StringSet, inclusion string) bool {
