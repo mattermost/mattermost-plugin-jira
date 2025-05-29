@@ -345,7 +345,7 @@ func (p *Plugin) OnActivate() error {
 
 	autolinkClusterMutex, err := cluster.NewMutex(p.API, autolinkClusterMutexKey)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Error creating cluster mutex for autolink")
 	}
 
 	p.autolinkClusterMutex = autolinkClusterMutex
@@ -446,7 +446,7 @@ func (p *Plugin) AddAutoLinkForProjects(plist jira.ProjectList, baseURL string) 
 
 func (p *Plugin) AddAutolinks(key, baseURL string) error {
 	baseURL = strings.TrimRight(baseURL, "/")
-	replacedBaseURL := `(` + strings.ReplaceAll(baseURL, ".", `\.`)
+	replacedBaseURL := `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `)`
 	installList := []autolink.Autolink{
 		{
 			Name:     key + " key to link for " + baseURL,
@@ -455,7 +455,7 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 		},
 		{
 			Name:     key + " link to key for " + baseURL,
-			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)`,
+			Pattern:  replacedBaseURL + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)`,
 			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
 		},
 		{
