@@ -27,7 +27,7 @@ const (
 
 	worklogUpdated = "jira:worklog_updated"
 
-	ticketRootPostIDKey = "ticket_post_id_%s"
+	ticketRootPostIDKey = "ticket_post_id_%s_channel_id_%s"
 )
 
 type Webhook interface {
@@ -79,7 +79,7 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 		UserId:    fromUserID,
 	}
 
-	key := fmt.Sprintf(ticketRootPostIDKey, wh.Issue.ID)
+	key := fmt.Sprintf(ticketRootPostIDKey, wh.Issue.ID, channelID)
 	var rootID string
 	rootPostExists := false
 
