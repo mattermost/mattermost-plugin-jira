@@ -130,3 +130,11 @@ func (a StringSet) Equals(b StringSet) bool {
 	i := a.Intersection(b)
 	return i.Len() == a.Len()
 }
+
+func (a StringSet) ToSlice() []string {
+	slice := make([]string, 0, len(a))
+	for k := range a {
+		slice = append(slice, k)
+	}
+	return slice
+}
