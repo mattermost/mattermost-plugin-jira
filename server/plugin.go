@@ -515,7 +515,6 @@ func (p *Plugin) AddAutoLinkForProjects(plist jira.ProjectList, baseURL string) 
 
 func (p *Plugin) AddAutolinks(key, baseURL string) error {
 	baseURL = strings.TrimRight(baseURL, "/")
-	replacedBaseURL := `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `)`
 	installList := []autolink.Autolink{
 		{
 			Name:     key + " key to link for " + baseURL,
@@ -524,12 +523,12 @@ func (p *Plugin) AddAutolinks(key, baseURL string) error {
 		},
 		{
 			Name:     key + " link to key for " + baseURL,
-			Pattern:  replacedBaseURL + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)`,
+			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(` + key + `)(-)(?P<jira_id>\d+)`,
 			Template: `[` + key + `-${jira_id}](` + baseURL + `/browse/` + key + `-${jira_id})`,
 		},
 		{
 			Name:     key + "Jump to comment for " + baseURL,
-			Pattern:  replacedBaseURL + `/browse/)(?P<project_id>\w+)(-)(?P<jira_id>\d+)[?](focusedCommentId)(=)(?P<comment_id>\d+)`,
+			Pattern:  `(` + strings.ReplaceAll(baseURL, ".", `\.`) + `/browse/)(?P<project_id>\w+)(-)(?P<jira_id>\d+)[?](focusedCommentId)(=)(?P<comment_id>\d+)`,
 			Template: `[${project_id}-${jira_id} (comment)](` + baseURL + `/browse/${project_id}-${jira_id}?focusedCommentId=${comment_id})`,
 		},
 	}
