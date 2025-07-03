@@ -1,4 +1,4 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import {Theme} from 'mattermost-redux/types/preferences';
@@ -29,5 +29,5 @@ export type SharedProps = {
     getConnected: () => Promise<GetConnectedResponse>;
     close: () => void;
     sendEphemeralPost: (message: string) => void;
-    securityLevelEmptyForJiraSubscriptions: boolean;
+    securityLevelEmptyForJiraSubscriptions?: boolean;
 };

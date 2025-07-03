@@ -1,3 +1,6 @@
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import React from 'react';
 
 import {
@@ -21,7 +24,7 @@ export type Props = {
     removeValidate: (isValid: () => boolean) => void;
     onChange: (f: FilterValue[]) => void;
     instanceID: string;
-    securityLevelEmptyForJiraSubscriptions: boolean;
+    securityLevelEmptyForJiraSubscriptions?: boolean;
 };
 
 type State = {

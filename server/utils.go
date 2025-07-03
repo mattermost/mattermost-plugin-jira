@@ -1,5 +1,5 @@
-// Copyright (c) 2019-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -7,7 +7,9 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 
@@ -181,4 +183,25 @@ func getS256PKCEParams() (*PKCEParams, error) {
 		CodeChallenge: challenge,
 		CodeVerifier:  verifier,
 	}, nil
+}
+
+func (p *Plugin) SetAdminAPITokenRequestHeader(req *http.Request) error {
+	encryptedAdminAPIToken := p.getConfig().AdminAPIToken
+	jsonBytes, err := decrypt([]byte(encryptedAdminAPIToken), []byte(p.getConfig().EncryptionKey))
+	if err != nil {
+		p.client.Log.Warn("Error decrypting admin API token", "error", err.Error())
+		return err
+	}
+	var adminAPIToken string
+	err = json.Unmarshal(jsonBytes, &adminAPIToken)
+	if err != nil {
+		p.client.Log.Warn("Error unmarshalling admin API token", "error", err.Error())
+		return err
+	}
+
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte(p.getConfig().AdminEmail + ":" + adminAPIToken))
+	req.Header.Set("Authorization", "Basic "+encodedAuth)
+	req.Header.Set("Accept", "application/json")
+
+	return nil
 }

@@ -1,5 +1,5 @@
-// See License for license information.
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -16,12 +16,14 @@ import (
 
 var jiraLinkWithTextRegex = regexp.MustCompile(`\[([^\[]+)\|([^\]]+)\]`)
 
+const maxIssueSummaryLength = 80
+
 func parseJiraLinksToMarkdown(text string) string {
 	return jiraLinkWithTextRegex.ReplaceAllString(text, "[${1}](${2})")
 }
 
 func mdKeySummaryLink(issue *jira.Issue, instance Instance) string {
-	return fmt.Sprintf("[%s: %s (%s)](%s%s)", issue.Key, issue.Fields.Summary, issue.Fields.Status.Name, instance.GetJiraBaseURL(), "/browse/"+issue.Key)
+	return fmt.Sprintf("[%s: %s (%s)](%s%s)", issue.Key, truncate(issue.Fields.Summary, maxIssueSummaryLength), issue.Fields.Status.Name, instance.GetJiraBaseURL(), "/browse/"+issue.Key)
 }
 
 func reporterSummary(reporter *jira.User) string {

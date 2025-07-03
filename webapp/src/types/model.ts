@@ -1,3 +1,6 @@
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 export type ReactSelectOption = {
     label: string | React.ReactElement;
     value: string;
@@ -95,6 +98,7 @@ export type SavedFieldValues = {
 export enum JiraFieldTypeEnums {
     PROJECT = 'project',
     ISSUE_TYPE = 'issuetype',
+    REPORTER = 'reporter',
     PRIORITY = 'priority',
     DESCRIPTION = 'description',
     SUMMARY = 'summary',
@@ -148,6 +152,7 @@ export enum FilterFieldInclusion {
     INCLUDE_ALL = 'include_all',
     EXCLUDE_ANY = 'exclude_any',
     EMPTY = 'empty',
+    INCLUDE_OR_EMPTY = 'include_or_empty',
 }
 
 export type FilterValue = {
@@ -215,6 +220,18 @@ export type SearchIssueParams = {
     instance_id: string;
 };
 
+export type AutoCompleteParams = {
+    fieldValue: string;
+    fieldName: string;
+    instance_id: string;
+};
+
+export type SearchUsersParams = {
+    q: string;
+    project: string;
+    instance_id: string;
+};
+
 export type AttachCommentRequest = {
     post_id: string;
     current_team: string;
@@ -233,3 +250,25 @@ export type CreateIssueFields = {
     project: {key: string};
     issuetype: {id: string};
 } & {[key: string]: JiraField};
+
+export type ProvidedStyle = {
+    zIndex?: number;
+    borderColor?: string;
+    color?: string;
+    background?: string;
+    padding?: string;
+    boxShadow?: string;
+    borderRadius?: string;
+    transform?: string;
+    marginRight?: string;
+    width?: string;
+    height?: string;
+    [key: string]: any;
+};
+
+export type StyleState = {
+    isFocused: boolean;
+    isSelected: boolean;
+    isDisabled: boolean;
+    [key: string]: any;
+};

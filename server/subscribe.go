@@ -1,5 +1,5 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -26,12 +26,16 @@ import (
 const (
 	JiraSubscriptionsKey = "jirasub"
 
-	FilterIncludeAny = "include_any"
-	FilterIncludeAll = "include_all"
-	FilterExcludeAny = "exclude_any"
-	FilterEmpty      = "empty"
+	FilterIncludeAny     = "include_any"
+	FilterIncludeAll     = "include_all"
+	FilterExcludeAny     = "exclude_any"
+	FilterEmpty          = "empty"
+	FilterIncludeOrEmpty = "include_or_empty"
 
-	MaxSubscriptionNameLength = 100
+	MaxSubscriptionNameLength  = 100
+	CommentVisibility          = "commentVisibility"
+	TeamFilter                 = "teamField"
+	CommentVisibilityGroupType = "group"
 )
 
 type FieldFilter struct {
@@ -170,6 +174,18 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		}
 
 		value := getIssueFieldValue(issue, field.Key)
+		if field.Key == CommentVisibility {
+			value = updateCommentVisibilityValue(value, wh)
+		}
+
+		if field.Key == TeamFilter {
+			value = updateTeamValue(value, wh)
+		}
+
+		if shouldAddVisibleToAllUsersToFieldValues(wh, field) {
+			field.Values = field.Values.Add(visibleToAllUsers)
+		}
+
 		if !isValidFieldInclusion(field, value, inclusion) {
 			return false
 		}
@@ -185,6 +201,48 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 	return true
 }
 
+func updateCommentVisibilityValue(value StringSet, wh *webhook) StringSet {
+	if wh.Comment.Visibility.Value != "" && wh.Comment.Visibility.Type == CommentVisibilityGroupType {
+		return value.Add(wh.Comment.Visibility.Value)
+	}
+
+	return value.Add(visibleToAllUsers)
+}
+
+type JiraTeamData struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func updateTeamValue(value StringSet, wh *webhook) StringSet {
+	raw, ok := wh.Issue.Fields.Unknowns["customfield_10001"]
+	if !ok {
+		return value
+	}
+
+	var teamField JiraTeamData
+
+	bytes, err := json.Marshal(raw)
+	if err != nil {
+		return value
+	}
+
+	err = json.Unmarshal(bytes, &teamField)
+	if err != nil {
+		return value
+	}
+
+	if teamField.ID != "" {
+		return value.Add(teamField.ID)
+	}
+
+	return value
+}
+
+func shouldAddVisibleToAllUsersToFieldValues(wh *webhook, field FieldFilter) bool {
+	return !(wh.eventTypes[commentCreated] || wh.eventTypes[commentUpdated]) && field.Inclusion != FilterIncludeAll && field.Inclusion != FilterExcludeAny
+}
+
 func isValidFieldInclusion(field FieldFilter, value StringSet, inclusion string) bool {
 	containsAny := value.ContainsAny(field.Values.Elems()...)
 	containsAll := value.ContainsAll(field.Values.Elems()...)
@@ -192,7 +250,8 @@ func isValidFieldInclusion(field FieldFilter, value StringSet, inclusion string)
 	if (inclusion == FilterIncludeAny && !containsAny) ||
 		(inclusion == FilterIncludeAll && !containsAll) ||
 		(inclusion == FilterExcludeAny && containsAny) ||
-		(inclusion == FilterEmpty && value.Len() > 0) {
+		(inclusion == FilterEmpty && value.Len() > 0) ||
+		(inclusion == FilterIncludeOrEmpty && !containsAny && value.Len() > 0) {
 		return false
 	}
 
@@ -206,10 +265,14 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) ([]Chan
 	}
 
 	var channelSubscriptions []ChannelSubscription
+	subscriptionMap := make(map[string]bool)
 	subIds := subs.Channel.ByID
 	for _, sub := range subIds {
 		if p.matchesSubsciptionFilters(wh, sub.Filters) {
-			channelSubscriptions = append(channelSubscriptions, sub)
+			if !subscriptionMap[sub.ChannelID] {
+				subscriptionMap[sub.ChannelID] = true
+				channelSubscriptions = append(channelSubscriptions, sub)
+			}
 		}
 	}
 
@@ -236,6 +299,10 @@ func (p *Plugin) getSubscriptionsForChannel(instanceID types.ID, channelID strin
 	for _, channelSubscriptionID := range subs.Channel.IDByChannelID[channelID].Elems() {
 		channelSubscriptions = append(channelSubscriptions, subs.Channel.ByID[channelSubscriptionID])
 	}
+
+	sort.Slice(channelSubscriptions, func(i, j int) bool {
+		return channelSubscriptions[i].Name < channelSubscriptions[j].Name
+	})
 
 	return channelSubscriptions, nil
 }
@@ -501,13 +568,22 @@ func (p *Plugin) listChannelSubscriptions(instanceID types.ID, teamID string) (s
 				}
 				rows = append(rows, fmt.Sprintf("\t* (%d) %s", len(subsIDs), instanceID))
 
+				channelSubscriptions := []ChannelSubscription{}
 				for _, subID := range subsIDs {
 					sub := subs.Channel.ByID[subID]
-					subName := "(No Name)"
-					if sub.Name != "" {
-						subName = sub.Name
+					if sub.Name == "" {
+						sub.Name = "(No Name)"
 					}
-					rows = append(rows, fmt.Sprintf("\t\t* %s - %s", sub.Filters.Projects.Elems()[0], subName))
+
+					channelSubscriptions = append(channelSubscriptions, sub)
+				}
+
+				sort.Slice(channelSubscriptions, func(i, j int) bool {
+					return channelSubscriptions[i].Name < channelSubscriptions[j].Name
+				})
+
+				for _, channelSubscription := range channelSubscriptions {
+					rows = append(rows, fmt.Sprintf("\t\t* %s - %s", channelSubscription.Filters.Projects.Elems()[0], channelSubscription.Name))
 				}
 			}
 		}
