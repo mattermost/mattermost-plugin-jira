@@ -20,8 +20,8 @@ import {
     InstanceType,
     ProjectMetadata,
     SearchIssueParams,
-    SubscriptionTemplate,
     SearchUsersParams,
+    SubscriptionTemplate,
 } from 'types/model';
 
 import {GlobalState} from 'types/store';
@@ -433,7 +433,7 @@ export const fetchAllSubscriptionTemplates = () => {
 };
 
 export const fetchSubscriptionTemplatesForProjectKey = (instanceId: string, projectKey: string) => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/subscription-templates?instance_id=${instanceId}&project_key=${projectKey}`, {
