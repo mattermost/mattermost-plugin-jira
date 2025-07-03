@@ -35,7 +35,7 @@ const (
 
 	MaxSubscriptionTemplateNameLength = 100
 
-	QueryParamProjectKey = "project_key"
+	QueryParamProjectKey       = "project_key"
 	MaxSubscriptionNameLength  = 100
 	CommentVisibility          = "commentVisibility"
 	TeamFilter                 = "teamField"
