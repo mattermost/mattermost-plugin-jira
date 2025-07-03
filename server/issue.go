@@ -1,5 +1,5 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
-// See License for license information.
+// See LICENSE.txt for license information.
 
 package main
 
@@ -23,16 +23,22 @@ import (
 )
 
 const (
-	labelsField        = "labels"
-	statusField        = "status"
-	reporterField      = "reporter"
-	priorityField      = "priority"
-	descriptionField   = "description"
-	resolutionField    = "resolution"
-	securityLevelField = "security"
+	assigneeField          = "assignee"
+	securityLevelField     = "security"
+	labelsField            = "labels"
+	statusField            = "status"
+	reporterField          = "reporter"
+	priorityField          = "priority"
+	descriptionField       = "description"
+	resolutionField        = "resolution"
+	headerMattermostUserID = "Mattermost-User-ID"
+	instanceIDQueryParam   = "instance_id"
+	fieldValueQueryParam   = "fieldValue"
 
 	QueryParamInstanceID = "instance_id"
 	QueryParamProjectID  = "project_id"
+
+	expandValueGroups = "groups"
 )
 
 type CreateMetaInfo struct {
@@ -406,6 +412,89 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 		metaInfo,
 		projectStatuses,
 	}, nil
+}
+
+func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed, fmt.Errorf("request: %s is not allowed, must be GET", r.Method)
+	}
+
+	mattermostUserID := r.Header.Get(headerMattermostUserID)
+	if mattermostUserID == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	teamList := p.conf.TeamIDList
+	if teamList == nil {
+		teamList = make([]TeamList, 0)
+	}
+
+	jsonResponse, err := json.Marshal(teamList)
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal team list")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonResponse); err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+	}
+
+	return http.StatusOK, nil
+}
+
+func (p *Plugin) httpGetCommentVisibilityFields(w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed, fmt.Errorf("Request: " + r.Method + " is not allowed, must be GET")
+	}
+
+	mattermostUserID := r.Header.Get(headerMattermostUserID)
+	if mattermostUserID == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	instanceID := r.FormValue(instanceIDQueryParam)
+	client, instance, connection, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	params := map[string]string{
+		"fieldValue": r.FormValue(fieldValueQueryParam),
+		"expand":     expandValueGroups,
+		"accountId":  connection.AccountID,
+	}
+
+	switch instance.Common().Type {
+	case CloudOAuthInstanceType:
+		params["accountId"] = connection.AccountID
+	case ServerInstanceType:
+		var user *jira.User
+		user, err = client.GetSelf()
+		if err != nil {
+			p.client.Log.Error("Error getting self user from client", "error", err)
+		}
+
+		params["key"] = user.Key
+	}
+
+	response, err := client.GetUserVisibilityGroups(params)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	if response == nil {
+		return http.StatusInternalServerError, errors.New("failed to return the response")
+	}
+
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal the response")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err = w.Write(jsonResponse); err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write the response")
+	}
+	return http.StatusOK, nil
 }
 
 func (p *Plugin) httpGetSearchIssues(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -785,32 +874,59 @@ func (p *Plugin) getIssueDataForCloudWebhook(instance Instance, issueKey string)
 }
 
 func getIssueFieldValue(issue *jira.Issue, key string) StringSet {
+	if issue == nil || issue.Fields == nil {
+		return NewStringSet()
+	}
+
 	key = strings.ToLower(key)
+
 	switch key {
 	case statusField:
-		return NewStringSet(issue.Fields.Status.ID)
+		if issue.Fields.Status != nil {
+			return NewStringSet(issue.Fields.Status.ID)
+		}
 	case labelsField:
 		return NewStringSet(issue.Fields.Labels...)
 	case priorityField:
 		if issue.Fields.Priority != nil {
 			return NewStringSet(issue.Fields.Priority.ID)
 		}
+	case reporterField:
+		if issue.Fields.Reporter != nil {
+			return NewStringSet(issue.Fields.Reporter.AccountID)
+		}
+	case assigneeField:
+		if issue.Fields.Assignee != nil {
+			return NewStringSet(issue.Fields.Assignee.AccountID)
+		}
 	case "fixversions":
 		result := NewStringSet()
-		for _, v := range issue.Fields.FixVersions {
-			result = result.Add(v.ID)
+		if issue.Fields.FixVersions != nil {
+			for _, v := range issue.Fields.FixVersions {
+				if v != nil {
+					result = result.Add(v.ID)
+				}
+			}
 		}
 		return result
 	case "versions":
 		result := NewStringSet()
-		for _, v := range issue.Fields.AffectsVersions {
-			result = result.Add(v.ID)
+		if issue.Fields.AffectsVersions != nil {
+			for _, v := range issue.Fields.AffectsVersions {
+				if v != nil {
+					result = result.Add(v.ID)
+				}
+			}
 		}
 		return result
 	case "components":
 		result := NewStringSet()
-		for _, v := range issue.Fields.Components {
-			result = result.Add(v.ID)
+		if issue.Fields.Components != nil {
+			for _, v := range issue.Fields.Components {
+				if v != nil {
+					result = result.Add(v.ID)
+				}
+			}
 		}
 		return result
 	default:
@@ -935,7 +1051,7 @@ func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issue
 			}
 			errorMsg += fmt.Sprintf("* %+v\n", name)
 		}
-		return "", fmt.Errorf(errorMsg)
+		return "", errors.New(errorMsg)
 	}
 
 	// user is array of one object
@@ -1093,6 +1209,7 @@ func (p *Plugin) GetIssueByKey(instanceID, mattermostUserID types.ID, issueKey s
 			return nil, errors.WithMessage(err, "request to Jira failed")
 		}
 	}
+	issue.Fields.Description = preProcessText(issue.Fields.Description)
 	return issue, nil
 }
 
@@ -1103,7 +1220,10 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 		return nil, errors.Wrapf(err, "failed to create http request for fetching issue data. IssueID: %s", issueID)
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", p.getConfig().AdminAPIToken))
+	err = p.SetAdminAPITokenRequestHeader(req)
+	if err != nil {
+		return nil, err
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -1133,4 +1253,48 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 	}
 
 	return issue, nil
+}
+
+type ProjectSearchResponse struct {
+	Self       string           `json:"self"`
+	MaxResults int              `json:"maxResults"`
+	StartAt    int              `json:"startAt"`
+	Total      int              `json:"total"`
+	IsLast     bool             `json:"isLast"`
+	Values     jira.ProjectList `json:"values"`
+}
+
+func (p *Plugin) GetProjectListWithAPIToken(instanceID string) (*jira.ProjectList, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/3/project/search", instanceID), nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create HTTP request for fetching project list data. InstanceID: %s", instanceID)
+	}
+
+	err = p.SetAdminAPITokenRequestHeader(req)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch project list data. InstanceID: %s", instanceID)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("unexpected status code: %d. InstanceID: %s", resp.StatusCode, instanceID)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	var projectResponse ProjectSearchResponse
+	if err = json.Unmarshal(body, &projectResponse); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal project list response")
+	}
+
+	return &projectResponse.Values, nil
 }

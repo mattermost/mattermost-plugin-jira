@@ -1,4 +1,4 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import {connect} from 'react-redux';
@@ -34,9 +34,11 @@ import {
     getUserConnectedInstances,
 } from 'selectors';
 
+import {GlobalState} from 'types/store';
+
 import ChannelSubscriptionsModal from './channel_subscriptions';
 
-const mapStateToProps = (state) => {
+const mapStateToProps = (state: GlobalState) => {
     const channelId = getChannelIdWithSettingsOpen(state);
     let channel = null;
     let omitDisplayName = false;

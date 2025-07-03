@@ -1,11 +1,24 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import {combineReducers} from 'redux';
 
 import ActionTypes from 'action_types';
+import {ChannelSubscription} from 'types/model';
 
-function installedInstances(state = [], action) {
+export type Action<T extends string = string> = {
+    type: T
+}
+
+export interface AnyAction extends Action {
+    [key: string]: any
+}
+
+export interface AnyState {
+    [key: string]: any
+}
+
+function installedInstances(state = [], action = {} as AnyAction) {
     // We're notified of the instance status at startup (through getConnected)
     // and when we get a websocket instance_status event
     switch (action.type) {
@@ -16,7 +29,7 @@ function installedInstances(state = [], action) {
     }
 }
 
-function userConnected(state = false, action) {
+function userConnected(state = false, action = {} as AnyAction) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
         return action.data.is_connected;
@@ -25,7 +38,7 @@ function userConnected(state = false, action) {
     }
 }
 
-function userCanConnect(state = false, action) {
+function userCanConnect(state = false, action = {} as AnyAction) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
         return action.data.can_connect;
@@ -34,7 +47,7 @@ function userCanConnect(state = false, action) {
     }
 }
 
-function defaultUserInstanceID(state = '', action) {
+function defaultUserInstanceID(state = '', action = {} as AnyAction) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
         if (action.data.user_info && action.data.user_info.default_instance_id) {
@@ -46,7 +59,7 @@ function defaultUserInstanceID(state = '', action) {
     }
 }
 
-function userConnectedInstances(state = [], action) {
+function userConnectedInstances(state = [], action = {} as AnyAction) {
     switch (action.type) {
     case ActionTypes.RECEIVED_CONNECTED:
         if (action.data.user_info) {
@@ -58,7 +71,7 @@ function userConnectedInstances(state = [], action) {
     }
 }
 
-function pluginSettings(state = null, action) {
+function pluginSettings(state = null, action = {} as AnyAction) {
     switch (action.type) {
     case ActionTypes.RECEIVED_PLUGIN_SETTINGS:
         return action.data;
@@ -67,7 +80,7 @@ function pluginSettings(state = null, action) {
     }
 }
 
-const connectModalVisible = (state = false, action) => {
+const connectModalVisible = (state = false, action = {} as AnyAction) => {
     switch (action.type) {
     case ActionTypes.OPEN_CONNECT_MODAL:
         return true;
@@ -78,7 +91,7 @@ const connectModalVisible = (state = false, action) => {
     }
 };
 
-const disconnectModalVisible = (state = false, action) => {
+const disconnectModalVisible = (state = false, action = {} as AnyAction) => {
     switch (action.type) {
     case ActionTypes.OPEN_DISCONNECT_MODAL:
         return true;
@@ -89,7 +102,7 @@ const disconnectModalVisible = (state = false, action) => {
     }
 };
 
-const createModalVisible = (state = false, action) => {
+const createModalVisible = (state = false, action = {} as AnyAction) => {
     switch (action.type) {
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL:
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST:
@@ -101,12 +114,12 @@ const createModalVisible = (state = false, action) => {
     }
 };
 
-const createModal = (state = '', action) => {
+const createModal = (state = '', action = {} as AnyAction) => {
     switch (action.type) {
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL:
     case ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST:
         return {
-            ...state,
+            state,
             postId: action.data.postId,
             description: action.data.description,
             channelId: action.data.channelId,
@@ -118,7 +131,7 @@ const createModal = (state = '', action) => {
     }
 };
 
-const attachCommentToIssueModalVisible = (state = false, action) => {
+const attachCommentToIssueModalVisible = (state = false, action = {} as AnyAction) => {
     switch (action.type) {
     case ActionTypes.OPEN_ATTACH_COMMENT_TO_ISSUE_MODAL:
         return true;
@@ -129,7 +142,7 @@ const attachCommentToIssueModalVisible = (state = false, action) => {
     }
 };
 
-const attachCommentToIssueModalForPostId = (state = '', action) => {
+const attachCommentToIssueModalForPostId = (state = '', action = {} as AnyAction) => {
     switch (action.type) {
     case ActionTypes.OPEN_ATTACH_COMMENT_TO_ISSUE_MODAL:
         return action.data.postId;
@@ -140,7 +153,7 @@ const attachCommentToIssueModalForPostId = (state = '', action) => {
     }
 };
 
-const channelIdWithSettingsOpen = (state = '', action) => {
+const channelIdWithSettingsOpen = (state = '', action = {} as AnyAction) => {
     switch (action.type) {
     case ActionTypes.OPEN_CHANNEL_SETTINGS:
         return action.data.channelId;
@@ -151,7 +164,7 @@ const channelIdWithSettingsOpen = (state = '', action) => {
     }
 };
 
-const subscriptionTemplates = (state = '', action) => {
+const subscriptionTemplates = (state = {} as AnyState, action = {} as AnyAction) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_SUBSCRIPTION_TEMPLATES: {
         const nextState = {...state};
@@ -162,7 +175,7 @@ const subscriptionTemplates = (state = '', action) => {
         const subTemplate = action.data;
         const nextState = {...state};
 
-        nextState.subscriptionTemplates = nextState.subscriptionTemplates.filter((st) => {
+        nextState.subscriptionTemplates = nextState.subscriptionTemplates.filter((st: { id: string; }) => {
             return st.id !== subTemplate.id;
         });
 
@@ -179,7 +192,7 @@ const subscriptionTemplates = (state = '', action) => {
         const subTemplate = action.data;
         const nextState = {...state};
 
-        const index = nextState.subscriptionTemplates.findIndex((template) => template.id === subTemplate.id);
+        const index = nextState.subscriptionTemplates.findIndex((template: { id: string; }) => template.id === subTemplate.id);
 
         const newArray = [...nextState.subscriptionTemplates];
         newArray[index] = subTemplate;
@@ -194,7 +207,7 @@ const subscriptionTemplates = (state = '', action) => {
     }
 };
 
-const subscriptionTemplatesForProjectKey = (state = '', action) => {
+const subscriptionTemplatesForProjectKey = (state = {} as AnyState, action = {} as AnyAction) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_SUBSCRIPTION_TEMPLATES_PROJECT_KEY: {
         const nextState = {...state};
@@ -206,7 +219,7 @@ const subscriptionTemplatesForProjectKey = (state = '', action) => {
     }
 };
 
-const channelSubscriptions = (state = {}, action) => {
+const channelSubscriptions = (state = {} as AnyState, action = {} as AnyAction) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_CHANNEL_SUBSCRIPTIONS: {
         const nextState = {...state};
@@ -216,7 +229,12 @@ const channelSubscriptions = (state = {}, action) => {
     case ActionTypes.DELETED_CHANNEL_SUBSCRIPTION: {
         const sub = action.data;
         const newSubs = state[sub.channel_id].concat([]);
-        newSubs.splice(newSubs.findIndex((s) => s.id === sub.id), 1);
+
+        if (!newSubs) {
+            return {...state};
+        }
+
+        newSubs.splice(newSubs.findIndex((s: ChannelSubscription) => s.id === sub.id), 1);
 
         return {
             ...state,
@@ -225,7 +243,7 @@ const channelSubscriptions = (state = {}, action) => {
     }
     case ActionTypes.CREATED_CHANNEL_SUBSCRIPTION: {
         const sub = action.data;
-        const newSubs = state[sub.channel_id].concat([]);
+        const newSubs = state[sub.channel_id] ? state[sub.channel_id].concat([]) : [];
         newSubs.push(sub);
 
         return {
@@ -235,8 +253,8 @@ const channelSubscriptions = (state = {}, action) => {
     }
     case ActionTypes.EDITED_CHANNEL_SUBSCRIPTION: {
         const sub = action.data;
-        const newSubs = state[sub.channel_id].concat([]);
-        newSubs.splice(newSubs.findIndex((s) => s.id === sub.id), 1, sub);
+        const newSubs = state[sub.channel_id] ? state[sub.channel_id].concat([]) : [];
+        newSubs.splice(newSubs.findIndex((s: ChannelSubscription) => s.id === sub.id), 1, sub);
 
         return {
             ...state,

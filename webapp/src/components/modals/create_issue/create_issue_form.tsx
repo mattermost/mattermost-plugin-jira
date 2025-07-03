@@ -1,4 +1,4 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import React from 'react';
@@ -32,6 +32,7 @@ import JiraInstanceAndProjectSelector from 'components/jira_instance_and_project
 const allowedFields: string[] = [
     JiraFieldTypeEnums.PROJECT,
     JiraFieldTypeEnums.ISSUE_TYPE,
+    JiraFieldTypeEnums.REPORTER,
     JiraFieldTypeEnums.PRIORITY,
     JiraFieldTypeEnums.DESCRIPTION,
     JiraFieldTypeEnums.SUMMARY,

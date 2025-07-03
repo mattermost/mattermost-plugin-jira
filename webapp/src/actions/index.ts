@@ -1,24 +1,30 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import {PostTypes} from 'mattermost-redux/action_types';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
-import manifest from '../manifest';
+import {Action, Dispatch, Store} from 'redux';
 
 import ActionTypes from 'action_types';
 import {buildQueryString, doFetch, doFetchWithResponse} from 'client';
 import {getInstalledInstances, getPluginServerRoute, getUserConnectedInstances} from 'selectors';
 import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
+
 import {
     APIResponse,
+    AttachCommentRequest,
+    AutoCompleteParams,
     ChannelSubscription,
     CreateIssueRequest,
     InstanceType,
     ProjectMetadata,
     SearchIssueParams,
     SubscriptionTemplate,
+    SearchUsersParams,
 } from 'types/model';
+
+import {GlobalState} from 'types/store';
 
 export const openConnectModal = () => {
     return {
@@ -44,7 +50,7 @@ export const closeDisconnectModal = () => {
     };
 };
 
-export const openCreateModal = (postId) => {
+export const openCreateModal = (postId: string) => {
     return {
         type: ActionTypes.OPEN_CREATE_ISSUE_MODAL,
         data: {
@@ -53,7 +59,7 @@ export const openCreateModal = (postId) => {
     };
 };
 
-export const openCreateModalWithoutPost = (description, channelId) => (dispatch) => dispatch({
+export const openCreateModalWithoutPost = (description: string, channelId: string) => (dispatch) => dispatch({
     type: ActionTypes.OPEN_CREATE_ISSUE_MODAL_WITHOUT_POST,
     data: {
         description,
@@ -67,7 +73,7 @@ export const closeCreateModal = () => {
     };
 };
 
-export const openAttachCommentToIssueModal = (postId) => {
+export const openAttachCommentToIssueModal = (postId: string) => {
     return {
         type: ActionTypes.OPEN_ATTACH_COMMENT_TO_ISSUE_MODAL,
         data: {
@@ -83,7 +89,7 @@ export const closeAttachCommentToIssueModal = () => {
 };
 
 export const fetchJiraIssueMetadataForProjects = (projectKeys: string[], instanceID: string) => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         const projectKeysParam = projectKeys.join(',');
         let data = null;
@@ -105,7 +111,7 @@ export const fetchJiraIssueMetadataForProjects = (projectKeys: string[], instanc
 };
 
 export const fetchJiraProjectMetadata = (instanceID: string) => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         let data = null;
         try {
@@ -125,7 +131,7 @@ export const fetchJiraProjectMetadata = (instanceID: string) => {
 };
 
 export const fetchJiraProjectMetadataForAllInstances = () => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const instances = getInstalledInstances(getState());
         const promises = instances.map((instance) => dispatch(fetchJiraProjectMetadata(instance.instance_id)));
         const responses = await Promise.all(promises) as APIResponse<ProjectMetadata>[];
@@ -153,28 +159,42 @@ export const fetchJiraProjectMetadataForAllInstances = () => {
 };
 
 export const searchIssues = (params: SearchIssueParams) => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const url = getPluginServerRoute(getState()) + '/api/v2/get-search-issues';
         return doFetchWithResponse(`${url}${buildQueryString(params)}`);
     };
 };
 
-export const searchAutoCompleteFields = (params) => {
-    return async (dispatch, getState) => {
+export const searchAutoCompleteFields = (params: AutoCompleteParams) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const url = getPluginServerRoute(getState()) + '/api/v2/get-search-autocomplete-fields';
         return doFetchWithResponse(`${url}${buildQueryString(params)}`);
     };
 };
 
-export const searchUsers = (params) => {
-    return async (dispatch, getState) => {
+export const searchCommentVisibilityFields = (params) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
+        const url = `${getPluginServerRoute(getState())}/api/v2/get-comment-visibility-fields`;
+        return doFetchWithResponse(`${url}${buildQueryString(params)}`);
+    };
+};
+
+export const searchTeamFields = (params) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
+        const url = `${getPluginServerRoute(getState())}/api/v2/get-team-fields`;
+        return doFetchWithResponse(`${url}${buildQueryString(params)}`);
+    };
+};
+
+export const searchUsers = (params: SearchUsersParams) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const url = getPluginServerRoute(getState()) + '/api/v2/get-search-users';
         return doFetchWithResponse(`${url}${buildQueryString(params)}`);
     };
 };
 
 export const createIssue = (payload: CreateIssueRequest) => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/create-issue`, {
@@ -189,8 +209,8 @@ export const createIssue = (payload: CreateIssueRequest) => {
     };
 };
 
-export const attachCommentToIssue = (payload) => {
-    return async (dispatch, getState) => {
+export const attachCommentToIssue = (payload: AttachCommentRequest) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/attach-comment-to-issue`, {
@@ -206,7 +226,7 @@ export const attachCommentToIssue = (payload) => {
 };
 
 export const createChannelSubscription = (subscription: ChannelSubscription) => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel`, {
@@ -227,7 +247,7 @@ export const createChannelSubscription = (subscription: ChannelSubscription) => 
 };
 
 export const createSubscriptionTemplate = (subscriptionTemplate: SubscriptionTemplate) => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/subscription-templates`, {
@@ -248,7 +268,7 @@ export const createSubscriptionTemplate = (subscriptionTemplate: SubscriptionTem
 };
 
 export const editSubscriptionTemplate = (subscriptionTemplate: SubscriptionTemplate) => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/subscription-templates`, {
@@ -269,7 +289,7 @@ export const editSubscriptionTemplate = (subscriptionTemplate: SubscriptionTempl
 };
 
 export const editChannelSubscription = (subscription: ChannelSubscription) => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             const data = await doFetch(`${baseUrl}/api/v2/subscriptions/channel`, {
@@ -290,7 +310,7 @@ export const editChannelSubscription = (subscription: ChannelSubscription) => {
 };
 
 export const deleteChannelSubscription = (subscription: ChannelSubscription) => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             await doFetch(`${baseUrl}/api/v2/subscriptions/channel/${subscription.id}?instance_id=${subscription.instance_id}`, {
@@ -310,7 +330,7 @@ export const deleteChannelSubscription = (subscription: ChannelSubscription) => 
 };
 
 export const deleteSubscriptionTemplate = (subscriptionTemplate: SubscriptionTemplate) => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             await doFetch(`${baseUrl}/api/v2/subscription-templates/${subscriptionTemplate.id}?instance_id=${subscriptionTemplate.instance_id}&project_key=${subscriptionTemplate.filters.projects[0]}`, {
@@ -330,7 +350,7 @@ export const deleteSubscriptionTemplate = (subscriptionTemplate: SubscriptionTem
 };
 
 export const fetchChannelSubscriptions = (channelId: string) => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         const connectedInstances = getUserConnectedInstances(getState());
 
@@ -373,7 +393,7 @@ export const fetchChannelSubscriptions = (channelId: string) => {
 };
 
 export const fetchAllSubscriptionTemplates = () => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         const connectedInstances = getUserConnectedInstances(getState());
         const instances = connectedInstances.map((instance) => {
@@ -433,7 +453,7 @@ export const fetchSubscriptionTemplatesForProjectKey = (instanceId: string, proj
 };
 
 export function getSettings() {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         let data;
         const baseUrl = getPluginServerRoute(getState());
         try {
@@ -454,7 +474,7 @@ export function getSettings() {
 }
 
 export function getConnected() {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         let data;
         const baseUrl = getPluginServerRoute(getState());
         try {
@@ -480,7 +500,7 @@ export function getConnected() {
 }
 
 export function disconnectUser(instanceID: string) {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
             await doFetch(`${baseUrl}/api/v3/disconnect`, {
@@ -496,7 +516,7 @@ export function disconnectUser(instanceID: string) {
 }
 
 export function handleConnectFlow(instanceID?: string) {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const state = getState();
         const instances = getInstalledInstances(state);
         const connectedInstances = getUserConnectedInstances(state);
@@ -555,9 +575,10 @@ export function handleConnectFlow(instanceID?: string) {
 }
 
 export function redirectConnect(instanceID: string) {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
+        const baseUrl = getPluginServerRoute(getState());
         const instancePrefix = '/instance/' + btoa(instanceID);
-        const target = '/plugins/' + manifest.id + instancePrefix + '/user/connect';
+        const target = baseUrl + instancePrefix + '/user/connect';
         window.open(target, '_blank');
     };
 }
@@ -585,7 +606,7 @@ export function handleConnectChange(store) {
     };
 }
 
-export const openChannelSettings = (channelId) => {
+export const openChannelSettings = (channelId: string) => {
     return {
         type: ActionTypes.OPEN_CHANNEL_SETTINGS,
         data: {
@@ -600,7 +621,7 @@ export const closeChannelSettings = () => {
     };
 };
 
-export function handleInstanceStatusChange(store) {
+export function handleInstanceStatusChange(store: Store<object, Action<object>>) {
     return (msg) => {
         // Update the user's UI state when the instance state changes
         getConnected()(store.dispatch, store.getState);
@@ -617,7 +638,7 @@ export function handleInstanceStatusChange(store) {
 }
 
 export function sendEphemeralPost(message: string, channelId?: string) {
-    return (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const timestamp = Date.now();
         const post = {
             id: 'jiraPlugin' + Date.now(),
@@ -641,7 +662,7 @@ export function sendEphemeralPost(message: string, channelId?: string) {
 }
 
 export const fetchIssueByKey = (issueKey: string, instanceID: string) => {
-    return async (dispatch, getState) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         let data = null;
         const params = `issue_key=${issueKey}&instance_id=${instanceID}`;

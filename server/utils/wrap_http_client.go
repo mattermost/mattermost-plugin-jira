@@ -1,24 +1,29 @@
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 package utils
 
 import (
 	"net/http"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 type transport struct {
-	RequestSizeLimit  ByteSize
-	ResponseSizeLimit ByteSize
+	RequestSizeLimit  types.ByteSize
+	ResponseSizeLimit types.ByteSize
 	RequestPreClose   func(*LimitedReadCloser) error
 	ResponsePreClose  func(*LimitedReadCloser) error
 	http.RoundTripper
 }
 
-func WithRequestSizeLimit(limit ByteSize) func(t *transport) {
+func WithRequestSizeLimit(limit types.ByteSize) func(t *transport) {
 	return func(t *transport) {
 		t.RequestSizeLimit = limit
 	}
 }
 
-func WithResponseSizeLimit(limit ByteSize) func(t *transport) {
+func WithResponseSizeLimit(limit types.ByteSize) func(t *transport) {
 	return func(t *transport) {
 		t.ResponseSizeLimit = limit
 	}

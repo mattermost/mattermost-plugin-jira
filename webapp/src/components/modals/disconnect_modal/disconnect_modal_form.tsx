@@ -1,4 +1,4 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import React, {PureComponent} from 'react';
@@ -25,7 +25,7 @@ export default class DisconnectModalForm extends PureComponent<Props, State> {
         selectedInstance: '',
     };
 
-    submit = async (e) => {
+    submit = async (e: React.FormEvent<HTMLFormElement>) => {
         if (e.preventDefault) {
             e.preventDefault();
         }
@@ -46,7 +46,7 @@ export default class DisconnectModalForm extends PureComponent<Props, State> {
         });
     };
 
-    closeModal = (e) => {
+    closeModal = (e: React.FormEvent<HTMLFormElement>) => {
         this.props.closeModal();
     };
 
