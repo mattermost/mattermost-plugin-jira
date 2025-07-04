@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
-import {Theme} from 'mattermost-redux/types/preferences';
+import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {ProvidedStyle, StyleState} from 'types/model';
 
