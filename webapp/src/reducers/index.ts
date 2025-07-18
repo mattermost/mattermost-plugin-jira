@@ -164,6 +164,61 @@ const channelIdWithSettingsOpen = (state = '', action = {} as AnyAction) => {
     }
 };
 
+const subscriptionTemplates = (state = {} as AnyState, action = {} as AnyAction) => {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_SUBSCRIPTION_TEMPLATES: {
+        const nextState = {...state};
+        nextState.subscriptionTemplates = action.data;
+        return nextState;
+    }
+    case ActionTypes.DELETED_SUBSCRIPTION_TEMPLATE: {
+        const subTemplate = action.data;
+        const nextState = {...state};
+
+        nextState.subscriptionTemplates = nextState.subscriptionTemplates.filter((st: { id: string; }) => {
+            return st.id !== subTemplate.id;
+        });
+
+        return nextState;
+    }
+    case ActionTypes.CREATED_SUBSCRIPTION_TEMPLATE: {
+        const subTemplate = action.data;
+        const nextState = {...state};
+        nextState.subscriptionTemplates = [...nextState.subscriptionTemplates, subTemplate];
+
+        return nextState;
+    }
+    case ActionTypes.EDITED_SUBSCRIPTION_TEMPLATE: {
+        const subTemplate = action.data;
+        const nextState = {...state};
+
+        const index = nextState.subscriptionTemplates.findIndex((template: { id: string; }) => template.id === subTemplate.id);
+
+        const newArray = [...nextState.subscriptionTemplates];
+        newArray[index] = subTemplate;
+
+        return {
+            ...nextState,
+            subscriptionTemplates: newArray,
+        };
+    }
+    default:
+        return state;
+    }
+};
+
+const subscriptionTemplatesForProjectKey = (state = {} as AnyState, action = {} as AnyAction) => {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_SUBSCRIPTION_TEMPLATES_PROJECT_KEY: {
+        const nextState = {...state};
+        nextState.subscriptionTemplatesForProjectKey = action.data;
+        return nextState;
+    }
+    default:
+        return state;
+    }
+};
+
 const channelSubscriptions = (state = {} as AnyState, action = {} as AnyAction) => {
     switch (action.type) {
     case ActionTypes.RECEIVED_CHANNEL_SUBSCRIPTIONS: {
@@ -225,5 +280,7 @@ export default combineReducers({
     attachCommentToIssueModalVisible,
     attachCommentToIssueModalForPostId,
     channelIdWithSettingsOpen,
+    subscriptionTemplates,
+    subscriptionTemplatesForProjectKey,
     channelSubscriptions,
 });

@@ -14,6 +14,9 @@ import {SharedProps} from './shared_props';
 type State = {
     creatingSubscription: boolean;
     selectedSubscription: ChannelSubscription | null;
+    creatingSubscriptionTemplate: boolean;
+    selectedSubscriptionTemplate: ChannelSubscription | null;
+
 }
 
 type Props = SharedProps & {
@@ -24,38 +27,52 @@ export default class ChannelSubscriptionsModalInner extends React.PureComponent<
     state = {
         creatingSubscription: false,
         selectedSubscription: null,
+        creatingSubscriptionTemplate: false,
+        selectedSubscriptionTemplate: null,
     };
 
     showEditChannelSubscription = (subscription: ChannelSubscription): void => {
         this.setState({selectedSubscription: subscription, creatingSubscription: false});
     };
 
+    showEditSubscriptionTemplate = (subscription: ChannelSubscription): void => {
+        this.setState({selectedSubscriptionTemplate: subscription, creatingSubscriptionTemplate: false});
+    };
+
     showCreateChannelSubscription = (): void => {
         this.setState({selectedSubscription: null, creatingSubscription: true});
     };
 
+    showCreateSubscriptionTemplate = (): void => {
+        this.setState({selectedSubscriptionTemplate: null, creatingSubscriptionTemplate: true});
+    };
+
     finishEditSubscription = (): void => {
-        this.setState({selectedSubscription: null, creatingSubscription: false});
+        this.setState({selectedSubscription: null, creatingSubscription: false, selectedSubscriptionTemplate: null, creatingSubscriptionTemplate: false});
     };
 
     handleBack = (): void => {
         this.setState({
             creatingSubscription: false,
             selectedSubscription: null,
+            creatingSubscriptionTemplate: false,
+            selectedSubscriptionTemplate: null,
         });
     };
 
     render(): JSX.Element {
-        const {selectedSubscription, creatingSubscription} = this.state;
+        const {selectedSubscription, creatingSubscription, creatingSubscriptionTemplate, selectedSubscriptionTemplate} = this.state;
 
         let form;
-        if (selectedSubscription || creatingSubscription) {
+        if (selectedSubscription || creatingSubscription || creatingSubscriptionTemplate || selectedSubscriptionTemplate) {
             form = (
                 <EditChannelSubscription
                     {...this.props}
                     finishEditSubscription={this.finishEditSubscription}
                     selectedSubscription={selectedSubscription}
                     creatingSubscription={creatingSubscription}
+                    creatingSubscriptionTemplate={creatingSubscriptionTemplate}
+                    selectedSubscriptionTemplate={selectedSubscriptionTemplate}
                 />
             );
         } else {
@@ -65,12 +82,14 @@ export default class ChannelSubscriptionsModalInner extends React.PureComponent<
                     allProjectMetadata={this.props.allProjectMetadata}
                     showEditChannelSubscription={this.showEditChannelSubscription}
                     showCreateChannelSubscription={this.showCreateChannelSubscription}
+                    showEditSubscriptionTemplate={this.showEditSubscriptionTemplate}
+                    showCreateSubscriptionTemplate={this.showCreateSubscriptionTemplate}
                 />
             );
         }
 
         let backIcon;
-        if (this.state.creatingSubscription || this.state.selectedSubscription) {
+        if (this.state.creatingSubscription || this.state.selectedSubscription || this.state.creatingSubscriptionTemplate || this.state.selectedSubscriptionTemplate) {
             backIcon = (
                 <BackIcon
                     className='back'

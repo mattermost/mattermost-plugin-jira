@@ -45,7 +45,9 @@ const (
 	routeAPIUserInfo                            = "/userinfo"
 	routeAPISubscribeWebhook                    = "/webhook"
 	routeAPISubscriptionsChannel                = "/subscriptions/channel"
+	routeAPISubscriptionTemplates               = "/subscription-templates"
 	routeAPISubscriptionsChannelWithID          = routeAPISubscriptionsChannel + "/{id:[A-Za-z0-9]+}"
+	routeAPISubscriptionTemplatesWithID         = routeAPISubscriptionTemplates + "/{id:[A-Za-z0-9]+}"
 	routeAPISettingsInfo                        = "/settingsinfo"
 	routeIssueTransition                        = "/transition"
 	routeAPIUserDisconnect                      = "/api/v3/disconnect"
@@ -154,6 +156,12 @@ func (p *Plugin) initializeRouter() {
 	apiRouter.HandleFunc(routeAPISubscriptionsChannel, p.checkAuth(p.handleResponse(p.httpChannelCreateSubscription))).Methods(http.MethodPost)
 	apiRouter.HandleFunc(routeAPISubscriptionsChannel, p.checkAuth(p.handleResponse(p.httpChannelEditSubscription))).Methods(http.MethodPut)
 	apiRouter.HandleFunc(routeAPISubscriptionsChannelWithID, p.checkAuth(p.handleResponse(p.httpChannelDeleteSubscription))).Methods(http.MethodDelete)
+
+	// Subscription Templates
+	apiRouter.HandleFunc(routeAPISubscriptionTemplates, p.checkAuth(p.handleResponse(p.httpCreateSubscriptionTemplate))).Methods(http.MethodPost)
+	apiRouter.HandleFunc(routeAPISubscriptionTemplates, p.checkAuth(p.handleResponse(p.httpEditSubscriptionTemplates))).Methods(http.MethodPut)
+	apiRouter.HandleFunc(routeAPISubscriptionTemplatesWithID, p.checkAuth(p.handleResponse(p.httpDeleteSubscriptionTemplate))).Methods(http.MethodDelete)
+	apiRouter.HandleFunc(routeAPISubscriptionTemplates, p.checkAuth(p.handleResponse(p.httpGetSubscriptionTemplates))).Methods(http.MethodGet)
 }
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {

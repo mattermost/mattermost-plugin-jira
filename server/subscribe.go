@@ -25,6 +25,7 @@ import (
 
 const (
 	JiraSubscriptionsKey = "jirasub"
+	templateKey          = "templates"
 
 	FilterIncludeAny     = "include_any"
 	FilterIncludeAll     = "include_all"
@@ -32,6 +33,9 @@ const (
 	FilterEmpty          = "empty"
 	FilterIncludeOrEmpty = "include_or_empty"
 
+	MaxSubscriptionTemplateNameLength = 100
+
+	QueryParamProjectKey       = "project_key"
 	MaxSubscriptionNameLength  = 100
 	CommentVisibility          = "commentVisibility"
 	TeamFilter                 = "teamField"
@@ -57,6 +61,14 @@ type ChannelSubscription struct {
 	Filters    SubscriptionFilters `json:"filters"`
 	Name       string              `json:"name"`
 	InstanceID types.ID            `json:"instance_id"`
+}
+
+type SubscriptionTemplate struct {
+	ID         string               `json:"id"`
+	ChannelID  string               `json:"channel_id"`
+	Filters    *SubscriptionFilters `json:"filters"`
+	Name       string               `json:"name"`
+	InstanceID types.ID             `json:"instance_id"`
 }
 
 type ChannelSubscriptions struct {
@@ -96,10 +108,36 @@ type Subscriptions struct {
 	Channel       *ChannelSubscriptions
 }
 
+type SubscriptionTemplateCollection map[string]*SubscriptionTemplate
+
+type SubscriptionTemplates struct {
+	ByID        map[string]SubscriptionTemplate           `json:"by_id"`
+	ByProjectID map[string]SubscriptionTemplateCollection `json:"by_project_id"`
+}
+
+type Templates struct {
+	PluginVersion string
+	Templates     *SubscriptionTemplates
+}
+
 func NewSubscriptions() *Subscriptions {
 	return &Subscriptions{
 		PluginVersion: manifest.Version,
 		Channel:       NewChannelSubscriptions(),
+	}
+}
+
+func NewSubscriptionTemplates() *SubscriptionTemplates {
+	return &SubscriptionTemplates{
+		ByID:        map[string]SubscriptionTemplate{},
+		ByProjectID: map[string]SubscriptionTemplateCollection{},
+	}
+}
+
+func NewTemplates() *Templates {
+	return &Templates{
+		PluginVersion: manifest.Version,
+		Templates:     NewSubscriptionTemplates(),
 	}
 }
 
@@ -119,6 +157,20 @@ func SubscriptionsFromJSON(bytes []byte, instanceID types.ID) (*Subscriptions, e
 	for subID, sub := range subs.Channel.ByID {
 		sub.InstanceID = instanceID
 		subs.Channel.ByID[subID] = sub
+	}
+
+	return subs, nil
+}
+
+func SubscriptionTemplatesFromJSON(bytes []byte) (*Templates, error) {
+	var subs *Templates
+	if len(bytes) != 0 {
+		if unmarshalErr := json.Unmarshal(bytes, &subs); unmarshalErr != nil {
+			return nil, unmarshalErr
+		}
+		subs.PluginVersion = manifest.Version
+	} else {
+		subs = NewTemplates()
 	}
 
 	return subs, nil
@@ -288,6 +340,15 @@ func (p *Plugin) getSubscriptions(instanceID types.ID) (*Subscriptions, error) {
 	}
 	return SubscriptionsFromJSON(data, instanceID)
 }
+func (p *Plugin) getTemplates(instanceID types.ID) (*Templates, error) {
+	subKey := keyWithInstanceID(instanceID, templateKey)
+	data, appErr := p.API.KVGet(subKey)
+	if appErr != nil {
+		return nil, appErr
+	}
+
+	return SubscriptionTemplatesFromJSON(data)
+}
 
 func (p *Plugin) getSubscriptionsForChannel(instanceID types.ID, channelID string) ([]ChannelSubscription, error) {
 	subs, err := p.getSubscriptions(instanceID)
@@ -305,6 +366,25 @@ func (p *Plugin) getSubscriptionsForChannel(instanceID types.ID, channelID strin
 	})
 
 	return channelSubscriptions, nil
+}
+
+func (p *Plugin) getSubscriptionTemplatesForInstance(instanceID types.ID) (*Templates, error) {
+	subs, err := p.getTemplates(instanceID)
+	if err != nil {
+		return nil, err
+	}
+
+	return subs, nil
+}
+
+func (p *Plugin) getSubscriptionTemplatesByID(instanceID, templateID types.ID) (*SubscriptionTemplate, error) {
+	subs, err := p.getTemplates(instanceID)
+	if err != nil {
+		return nil, err
+	}
+
+	sub := subs.Templates.ByID[string(templateID)]
+	return &sub, nil
 }
 
 func (p *Plugin) getChannelSubscription(instanceID types.ID, subscriptionID string) (*ChannelSubscription, error) {
@@ -368,6 +448,146 @@ func (p *Plugin) addChannelSubscription(instanceID types.ID, newSubscription *Ch
 
 		return modifiedBytes, nil
 	})
+}
+
+func (t *SubscriptionTemplates) add(projectKey string, newSubscriptionTemplate *SubscriptionTemplate) {
+	t.ByID[newSubscriptionTemplate.ID] = *newSubscriptionTemplate
+	if _, valid := t.ByProjectID[projectKey]; !valid {
+		t.ByProjectID[projectKey] = make(SubscriptionTemplateCollection)
+	}
+
+	t.ByProjectID[projectKey][newSubscriptionTemplate.ID] = newSubscriptionTemplate
+}
+
+func (t *SubscriptionTemplates) delete(projectKey, subscriptionTemplateID string) {
+	delete(t.ByID, subscriptionTemplateID)
+	delete(t.ByProjectID[projectKey], subscriptionTemplateID)
+}
+
+func (p *Plugin) addSubscriptionTemplate(instanceID types.ID, newSubscriptionTemplate *SubscriptionTemplate, client Client) error {
+	subKey := keyWithInstanceID(instanceID, templateKey)
+	return p.client.KV.SetAtomicWithRetries(subKey, func(initialBytes []byte) (interface{}, error) {
+		oldSubscriptionTemplates, err := SubscriptionTemplatesFromJSON(initialBytes)
+		if err != nil {
+			return nil, err
+		}
+
+		projectKey := ""
+		if newSubscriptionTemplate.Filters.Projects.Len() == 1 {
+			projectKey = newSubscriptionTemplate.Filters.Projects.Elems()[0]
+		}
+
+		if err = p.validateSubscriptionTemplate(newSubscriptionTemplate, instanceID, client, projectKey); err != nil {
+			return nil, err
+		}
+
+		newSubscriptionTemplate.ID = model.NewId()
+		oldSubscriptionTemplates.Templates.add(projectKey, newSubscriptionTemplate)
+
+		modifiedBytes, marshalErr := json.Marshal(&oldSubscriptionTemplates)
+		if marshalErr != nil {
+			return nil, marshalErr
+		}
+
+		return modifiedBytes, nil
+	})
+}
+
+func (p *Plugin) editSubscriptionTemplate(instanceID types.ID, modifiedSubscriptionTemplate *SubscriptionTemplate, client Client) error {
+	subKey := keyWithInstanceID(instanceID, templateKey)
+	return p.client.KV.SetAtomicWithRetries(subKey, func(initialBytes []byte) (interface{}, error) {
+		subscriptionTemplates, err := SubscriptionTemplatesFromJSON(initialBytes)
+		if err != nil {
+			return nil, err
+		}
+
+		oldSubscriptionTemplate, ok := subscriptionTemplates.Templates.ByID[modifiedSubscriptionTemplate.ID]
+		if !ok {
+			return nil, errors.New("subscription template does not exist")
+		}
+
+		oldProjectKey := ""
+		if oldSubscriptionTemplate.Filters.Projects.Len() == 1 {
+			oldProjectKey = oldSubscriptionTemplate.Filters.Projects.Elems()[0]
+		}
+
+		newProjectKey := ""
+		if modifiedSubscriptionTemplate.Filters.Projects.Len() == 1 {
+			newProjectKey = modifiedSubscriptionTemplate.Filters.Projects.Elems()[0]
+		}
+
+		if err = p.validateSubscriptionTemplate(modifiedSubscriptionTemplate, instanceID, client, newProjectKey); err != nil {
+			return nil, err
+		}
+
+		subscriptionTemplates.Templates.delete(oldProjectKey, oldSubscriptionTemplate.ID)
+		subscriptionTemplates.Templates.add(newProjectKey, modifiedSubscriptionTemplate)
+
+		modifiedBytes, marshalErr := json.Marshal(&subscriptionTemplates)
+		if marshalErr != nil {
+			return nil, marshalErr
+		}
+
+		return modifiedBytes, nil
+	})
+}
+
+func (p *Plugin) removeSubscriptionTemplate(instanceID types.ID, subscriptionTemplateID, projectKey string) error {
+	subKey := keyWithInstanceID(instanceID, templateKey)
+	return p.client.KV.SetAtomicWithRetries(subKey, func(initialBytes []byte) (interface{}, error) {
+		oldSubscriptionTemplates, err := SubscriptionTemplatesFromJSON(initialBytes)
+		if err != nil {
+			return nil, err
+		}
+
+		oldSubscriptionTemplates.Templates.delete(projectKey, subscriptionTemplateID)
+
+		modifiedBytes, marshalErr := json.Marshal(&oldSubscriptionTemplates)
+		if marshalErr != nil {
+			return nil, marshalErr
+		}
+
+		return modifiedBytes, nil
+	})
+}
+
+func (p *Plugin) validateSubscriptionTemplate(subscriptionTemplate *SubscriptionTemplate, instanceID types.ID, client Client, projectKey string) error {
+	if len(subscriptionTemplate.Name) == 0 {
+		return errors.New("please provide a name for the subscription")
+	}
+
+	if len(subscriptionTemplate.Name) >= MaxSubscriptionTemplateNameLength {
+		return errors.Errorf("please provide a name less than %d characters", MaxSubscriptionTemplateNameLength)
+	}
+
+	if len(subscriptionTemplate.Filters.Events) == 0 {
+		return errors.New("please provide at least one event type")
+	}
+
+	if len(subscriptionTemplate.Filters.IssueTypes) == 0 {
+		return errors.New("please provide at least one issue type")
+	}
+
+	if (len(subscriptionTemplate.Filters.Projects)) == 0 {
+		return errors.New("please provide a project identifier")
+	}
+
+	if _, err := client.GetProject(projectKey); err != nil {
+		return errors.WithMessagef(err, "failed to get project %q", projectKey)
+	}
+
+	templates, err := p.getSubscriptionTemplatesForInstance(instanceID)
+	if err != nil {
+		return err
+	}
+
+	for _, template := range templates.Templates.ByProjectID[projectKey] {
+		if template.Name == subscriptionTemplate.Name && template.ID != subscriptionTemplate.ID {
+			return errors.Errorf("Subscription name, '%s', already exists. Please choose another name.", subscriptionTemplate.Name)
+		}
+	}
+
+	return nil
 }
 
 func (p *Plugin) validateSubscription(instanceID types.ID, subscription *ChannelSubscription, client Client) error {
@@ -1061,4 +1281,153 @@ func (p *Plugin) httpChannelGetSubscriptions(w http.ResponseWriter, r *http.Requ
 	}
 
 	return respondJSON(w, subscriptions)
+}
+
+func (p *Plugin) httpGetSubscriptionTemplates(w http.ResponseWriter, r *http.Request) (int, error) {
+	fmt.Print("/n httpGetSubscriptionTemplates")
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	instanceID := types.ID(r.FormValue(QueryParamInstanceID))
+	if len(instanceID) < 2 {
+		return respondErr(w, http.StatusBadRequest, errors.New("bad or missing instance id"))
+	}
+
+	subscriptionTemplates, err := p.getSubscriptionTemplatesForInstance(instanceID)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "unable to get subscription templates"))
+	}
+
+	subTemplates := make([]*SubscriptionTemplate, 0)
+
+	projectKey := r.FormValue(QueryParamProjectKey)
+	if len(projectKey) < 1 {
+		client, _, _, err := p.getClient(instanceID, types.ID(mattermostUserID))
+		if err != nil {
+			return respondErr(w, http.StatusInternalServerError, err)
+		}
+
+		pList, err := client.ListProjects("", -1, false)
+		if err != nil {
+			return respondErr(w, http.StatusInternalServerError, err)
+		}
+
+		for _, project := range pList {
+			listSubscriptionTemplate := subscriptionTemplates.Templates.ByProjectID[project.Key]
+			for _, subTemplate := range listSubscriptionTemplate {
+				subTemplates = append(subTemplates, subTemplate)
+			}
+		}
+	} else {
+		for _, subTemplate := range subscriptionTemplates.Templates.ByProjectID[projectKey] {
+			subTemplates = append(subTemplates, subTemplate)
+		}
+	}
+
+	return respondJSON(w, subTemplates)
+}
+
+func (p *Plugin) httpEditSubscriptionTemplates(w http.ResponseWriter, r *http.Request) (int, error) {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	subscriptionTemplate := SubscriptionTemplate{}
+	if err := json.NewDecoder(r.Body).Decode(&subscriptionTemplate); err != nil {
+		return respondErr(w, http.StatusBadRequest, errors.WithMessage(err, "failed to decode the incoming request"))
+	}
+
+	client, _, connection, err := p.getClient(subscriptionTemplate.InstanceID, types.ID(mattermostUserID))
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	if err = p.editSubscriptionTemplate(subscriptionTemplate.InstanceID, &subscriptionTemplate, client); err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	_ = p.API.SendEphemeralPost(mattermostUserID, &model.Post{
+		UserId:    p.getConfig().botUserID,
+		ChannelId: subscriptionTemplate.ChannelID,
+		Message:   fmt.Sprintf("Jira subscription template, %q, was updated by %s", subscriptionTemplate.Name, connection.DisplayName),
+	})
+
+	code, err := respondJSON(w, &subscriptionTemplate)
+	if err != nil {
+		return code, err
+	}
+
+	return http.StatusOK, nil
+}
+
+func (p *Plugin) httpCreateSubscriptionTemplate(w http.ResponseWriter, r *http.Request) (int, error) {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+	subscriptionTemplate := SubscriptionTemplate{}
+	if err := json.NewDecoder(r.Body).Decode(&subscriptionTemplate); err != nil {
+		return respondErr(w, http.StatusBadRequest, errors.WithMessage(err, "failed to decode incoming request"))
+	}
+
+	client, _, connection, err := p.getClient(subscriptionTemplate.InstanceID, types.ID(mattermostUserID))
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	if err = p.addSubscriptionTemplate(subscriptionTemplate.InstanceID, &subscriptionTemplate, client); err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	_ = p.API.SendEphemeralPost(mattermostUserID, &model.Post{
+		UserId:    p.getConfig().botUserID,
+		ChannelId: subscriptionTemplate.ChannelID,
+		Message:   fmt.Sprintf("Jira subscription template, %q, was added by %s", subscriptionTemplate.Name, connection.DisplayName),
+	})
+
+	code, err := respondJSON(w, &subscriptionTemplate)
+	if err != nil {
+		return code, err
+	}
+
+	return http.StatusCreated, nil
+}
+
+func (p *Plugin) httpDeleteSubscriptionTemplate(w http.ResponseWriter, r *http.Request) (int, error) {
+	mattermostUserID := r.Header.Get("Mattermost-User-Id")
+
+	params := mux.Vars(r)
+	subscriptionTemplateID := params["id"]
+	if len(subscriptionTemplateID) != 26 {
+		return respondErr(w, http.StatusBadRequest, errors.New("bad subscription id"))
+	}
+
+	instanceID := types.ID(r.FormValue(QueryParamInstanceID))
+	if len(instanceID) < 2 {
+		return respondErr(w, http.StatusBadRequest, errors.New("bad or missing instance id"))
+	}
+
+	projectKey := r.FormValue(QueryParamProjectKey)
+	if projectKey == "" {
+		return respondErr(w, http.StatusBadRequest, errors.New("missing project key"))
+	}
+
+	subscriptionTemplate, err := p.getSubscriptionTemplatesByID(instanceID, types.ID(subscriptionTemplateID))
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "unable to find the subscription template"))
+	}
+
+	_, _, connection, err := p.getClient(instanceID, types.ID(mattermostUserID))
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	if rErr := p.removeSubscriptionTemplate(instanceID, subscriptionTemplateID, projectKey); rErr != nil {
+		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "unable to remove channel subscription template"))
+	}
+
+	_ = p.API.SendEphemeralPost(mattermostUserID, &model.Post{
+		UserId:    p.getConfig().botUserID,
+		ChannelId: subscriptionTemplate.ChannelID,
+		Message:   fmt.Sprintf("Jira subscription template, %q, was removed by %s", subscriptionTemplate.Name, connection.DisplayName),
+	})
+
+	code, err := respondJSON(w, map[string]interface{}{model.STATUS: model.StatusOk})
+	if err != nil {
+		return code, err
+	}
+
+	return http.StatusOK, nil
 }
