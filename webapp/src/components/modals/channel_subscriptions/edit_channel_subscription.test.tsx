@@ -558,7 +558,7 @@ describe('components/EditChannelSubscription', () => {
         wrapper.find('#jira-delete-subscription').simulate('click');
 
         expect(wrapper.state().showConfirmModal).toBe(true);
-        wrapper.instance().handleConfirmDelete();
+        wrapper.instance().handleConfirmAction();
 
         expect(deleteChannelSubscription).toHaveBeenCalled();
 
@@ -584,7 +584,7 @@ describe('components/EditChannelSubscription', () => {
         wrapper.find('#jira-delete-subscription').simulate('click');
 
         expect(wrapper.state().showConfirmModal).toBe(true);
-        wrapper.instance().handleConfirmDelete();
+        wrapper.instance().handleConfirmAction();
 
         expect(deleteChannelSubscription).toHaveBeenCalled();
 

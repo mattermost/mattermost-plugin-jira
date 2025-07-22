@@ -285,8 +285,11 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                     </button>
                 </div>
                 {subscriptionRows}
-                <div className='d-flex justify-content-between align-items-center margin-bottom x3'>
-                    {subscriptionTemplateTitle}
+                <div
+                    className='d-flex align-items-center mb-3 w-100'
+                    style={{justifyContent: 'space-between'}}
+                >
+                    <div>{subscriptionTemplateTitle}</div>
                     <button
                         className='btn btn-primary'
                         onClick={this.props.showCreateSubscriptionTemplate}

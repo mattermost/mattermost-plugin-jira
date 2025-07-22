@@ -85,9 +85,9 @@ exports[`components/EditChannelSubscription should match snapshot 1`] = `
     <ConfirmModal
       cancelButtonText="Cancel"
       confirmButtonClass="btn btn-danger"
-      confirmButtonText="Delete"
+      confirmButtonText="Discard"
       hideCancel={false}
-      message="Are you sure to delete the subscription \\"SubTestName\\"?"
+      message=""
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
@@ -3951,9 +3951,9 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
     <ConfirmModal
       cancelButtonText="Cancel"
       confirmButtonClass="btn btn-danger"
-      confirmButtonText="Delete"
+      confirmButtonText="Discard"
       hideCancel={false}
-      message="Are you sure to delete the subscription \\"SubTestName\\"?"
+      message=""
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
@@ -4085,9 +4085,9 @@ exports[`components/EditChannelSubscription should match snapshot with no issue 
     <ConfirmModal
       cancelButtonText="Cancel"
       confirmButtonClass="btn btn-danger"
-      confirmButtonText="Delete"
+      confirmButtonText="Discard"
       hideCancel={false}
-      message="Are you sure to delete the subscription \\"SubTestName\\"?"
+      message=""
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
@@ -4337,9 +4337,9 @@ exports[`components/EditChannelSubscription should produce subscription error wh
     <ConfirmModal
       cancelButtonText="Cancel"
       confirmButtonClass="btn btn-danger"
-      confirmButtonText="Delete"
+      confirmButtonText="Discard"
       hideCancel={false}
-      message="Are you sure to delete the subscription \\"SubTestName\\"?"
+      message=""
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}

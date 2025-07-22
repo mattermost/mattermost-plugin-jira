@@ -80,6 +80,7 @@ export type State = {
     submittingTemplate: boolean;
     subscriptionName: string | null;
     showConfirmModal: boolean;
+    confirmActionType: 'delete' | 'close' | null;
     conflictingError: string | null;
     selectedTemplateID: string | null;
 };
@@ -135,6 +136,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             jiraIssueMetadata: null,
             subscriptionName,
             showConfirmModal: false,
+            confirmActionType: null,
             conflictingError: null,
             instanceID,
             selectedTemplateID: null,
@@ -160,10 +162,19 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         }
     }
 
+    handleCancel = (e? : React.FormEvent) => {
+        if (e && e.preventDefault) {
+            e.preventDefault();
+        }
+
+        this.setState({showConfirmModal: true, confirmActionType: 'close'});
+    };
+
     handleClose = (e?: React.FormEvent) => {
         if (e && e.preventDefault) {
             e.preventDefault();
         }
+
         this.props.finishEditSubscription();
     };
 
@@ -193,17 +204,22 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         }
     };
 
-    handleCancelDelete = () => {
+    handleCancelAction = () => {
         this.setState({showConfirmModal: false});
     };
 
-    handleConfirmDelete = () => {
-        this.setState({showConfirmModal: false});
-        this.deleteChannelSubscription();
+    handleConfirmAction = () => {
+        if (this.state.confirmActionType === 'close') {
+            this.props.finishEditSubscription();
+        } else if (this.state.confirmActionType === 'delete') {
+            this.deleteChannelSubscription();
+        }
+
+        this.setState({showConfirmModal: false, confirmActionType: null});
     };
 
     handleDeleteChannelSubscription = (): void => {
-        this.setState({showConfirmModal: true});
+        this.setState({showConfirmModal: true, confirmActionType: 'delete'});
     };
 
     handleSettingChange = (id: keyof ChannelSubscriptionFiltersModel, value: string[]) => {
@@ -584,10 +600,14 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
 
         const {showConfirmModal} = this.state;
 
-        let confirmDeleteMessage = '';
-        confirmDeleteMessage = `Are you sure to delete the subscription template ${(this.props.selectedSubscriptionTemplate && this.props.selectedSubscriptionTemplate.name) ? `"${this.props.selectedSubscriptionTemplate.name}"` : ''}?`;
-        if (this.props.selectedSubscription) {
-            confirmDeleteMessage = `Are you sure to delete the subscription ${this.props.selectedSubscription.name ? `"${this.props.selectedSubscription.name}"` : ''}?`;
+        let confirmMessage = '';
+        if (this.state.confirmActionType === 'delete') {
+            confirmMessage = `Are you sure to delete the subscription${this.props.selectedSubscription?.name ? ` "${this.props.selectedSubscription.name}"` : ''}?`;
+            if (this.props.selectedSubscriptionTemplate) {
+                confirmMessage = `Are you sure to delete the subscription template${this.props.selectedSubscriptionTemplate.name ? ` "${this.props.selectedSubscriptionTemplate.name}"` : ''}?`;
+            }
+        } else if (this.state.confirmActionType === 'close') {
+            confirmMessage = 'Are you sure you want to discard your changes?';
         }
 
         let confirmComponent;
@@ -595,12 +615,12 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             confirmComponent = (
                 <ConfirmModal
                     cancelButtonText='Cancel'
-                    confirmButtonText='Delete'
+                    confirmButtonText={this.state.confirmActionType === 'delete' ? 'Delete' : 'Discard'}
                     confirmButtonClass={'btn btn-danger'}
                     hideCancel={false}
-                    message={confirmDeleteMessage}
-                    onCancel={this.handleCancelDelete}
-                    onConfirm={this.handleConfirmDelete}
+                    message={confirmMessage}
+                    onCancel={this.handleCancelAction}
+                    onConfirm={this.handleConfirmAction}
                     show={showConfirmModal}
                     title={this.props.selectedSubscription ? 'Subscription' : 'Subscription Template'}
                 />
@@ -661,7 +681,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                         type='button'
                         btnClass='btn-link'
                         defaultMessage='Cancel'
-                        onClick={this.handleClose}
+                        onClick={this.handleCancel}
                     />
                     <FormButton
                         type='button'
