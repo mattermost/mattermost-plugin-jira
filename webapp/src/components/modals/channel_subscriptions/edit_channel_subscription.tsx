@@ -162,11 +162,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         }
     }
 
-    handleCancel = (e? : React.FormEvent) => {
-        if (e && e.preventDefault) {
-            e.preventDefault();
-        }
-
+    handleCancel = (): void => {
         this.setState({showConfirmModal: true, confirmActionType: 'close'});
     };
 
@@ -600,18 +596,16 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
 
         const {showConfirmModal} = this.state;
 
-        let confirmMessage = '';
+        let confirmMessage = 'Are you sure you want to discard your changes?';
         if (this.state.confirmActionType === 'delete') {
             confirmMessage = `Are you sure to delete the subscription${this.props.selectedSubscription?.name ? ` "${this.props.selectedSubscription.name}"` : ''}?`;
             if (this.props.selectedSubscriptionTemplate) {
                 confirmMessage = `Are you sure to delete the subscription template${this.props.selectedSubscriptionTemplate.name ? ` "${this.props.selectedSubscriptionTemplate.name}"` : ''}?`;
             }
-        } else if (this.state.confirmActionType === 'close') {
-            confirmMessage = 'Are you sure you want to discard your changes?';
         }
 
         let confirmComponent;
-        if (this.props.selectedSubscription || this.props.selectedSubscriptionTemplate) {
+        if (this.props.selectedSubscription || this.props.selectedSubscriptionTemplate || this.props.creatingSubscriptionTemplate) {
             confirmComponent = (
                 <ConfirmModal
                     cancelButtonText='Cancel'
@@ -621,7 +615,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                     message={confirmMessage}
                     onCancel={this.handleCancelAction}
                     onConfirm={this.handleConfirmAction}
-                    show={showConfirmModal}
+                    show={this.state.showConfirmModal}
                     title={this.props.selectedSubscription ? 'Subscription' : 'Subscription Template'}
                 />
             );
