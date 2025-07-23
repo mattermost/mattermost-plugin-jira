@@ -87,7 +87,7 @@ exports[`components/EditChannelSubscription should match snapshot 1`] = `
       confirmButtonClass="btn btn-danger"
       confirmButtonText="Discard"
       hideCancel={false}
-      message=""
+      message="Are you sure you want to discard your changes?"
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
@@ -3953,7 +3953,7 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
       confirmButtonClass="btn btn-danger"
       confirmButtonText="Discard"
       hideCancel={false}
-      message=""
+      message="Are you sure you want to discard your changes?"
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
@@ -4087,7 +4087,7 @@ exports[`components/EditChannelSubscription should match snapshot with no issue 
       confirmButtonClass="btn btn-danger"
       confirmButtonText="Discard"
       hideCancel={false}
-      message=""
+      message="Are you sure you want to discard your changes?"
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
@@ -4339,7 +4339,7 @@ exports[`components/EditChannelSubscription should produce subscription error wh
       confirmButtonClass="btn btn-danger"
       confirmButtonText="Discard"
       hideCancel={false}
-      message=""
+      message="Are you sure you want to discard your changes?"
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
