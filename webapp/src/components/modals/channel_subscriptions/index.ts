@@ -10,12 +10,17 @@ import {isDirectChannel, isGroupChannel} from 'mattermost-redux/utils/channel_ut
 import {
     closeChannelSettings,
     createChannelSubscription,
+    createSubscriptionTemplate,
     deleteChannelSubscription,
+    deleteSubscriptionTemplate,
     editChannelSubscription,
+    editSubscriptionTemplate,
+    fetchAllSubscriptionTemplates,
     fetchChannelSubscriptions,
     fetchJiraIssueMetadataForProjects,
     fetchJiraProjectMetadata,
     fetchJiraProjectMetadataForAllInstances,
+    fetchSubscriptionTemplatesForProjectKey,
     getConnected,
     sendEphemeralPost,
 } from 'actions';
@@ -25,6 +30,7 @@ import {
     getChannelSubscriptions,
     getInstalledInstances,
     getPluginSettings,
+    getSubscriptionTemplates,
     getUserConnectedInstances,
 } from 'selectors';
 
@@ -43,7 +49,7 @@ const mapStateToProps = (state: GlobalState) => {
     }
 
     const channelSubscriptions = getChannelSubscriptions(state)[channelId];
-
+    const subscriptionTemplates = getSubscriptionTemplates(state).subscriptionTemplates;
     const installedInstances = getInstalledInstances(state);
     const connectedInstances = getUserConnectedInstances(state);
     const pluginSettings = getPluginSettings(state);
@@ -52,6 +58,7 @@ const mapStateToProps = (state: GlobalState) => {
     return {
         omitDisplayName,
         channelSubscriptions,
+        subscriptionTemplates,
         channel,
         installedInstances,
         connectedInstances,
@@ -65,9 +72,14 @@ const mapDispatchToProps = (dispatch) => bindActionCreators({
     fetchJiraProjectMetadataForAllInstances,
     fetchJiraIssueMetadataForProjects,
     createChannelSubscription,
+    createSubscriptionTemplate,
+    fetchAllSubscriptionTemplates,
+    fetchSubscriptionTemplatesForProjectKey,
     fetchChannelSubscriptions,
     deleteChannelSubscription,
+    deleteSubscriptionTemplate,
     editChannelSubscription,
+    editSubscriptionTemplate,
     getConnected,
     sendEphemeralPost,
 }, dispatch);

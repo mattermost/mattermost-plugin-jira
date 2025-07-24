@@ -22,6 +22,14 @@ describe('components/EditChannelSubscription', () => {
         deleteChannelSubscription: jest.fn().mockResolvedValue({}),
         editChannelSubscription: jest.fn().mockResolvedValue({}),
         fetchChannelSubscriptions: jest.fn().mockResolvedValue({}),
+        createSubscriptionTemplate: jest.fn().mockResolvedValue({}),
+        deleteSubscriptionTemplate: jest.fn().mockResolvedValue({}),
+        editSubscriptionTemplate: jest.fn().mockResolvedValue({}),
+        fetchAllSubscriptionTemplates: jest.fn().mockResolvedValue({}),
+        fetchSubscriptionTemplatesForProjectKey: jest.fn().mockResolvedValue({}),
+        sendEphemeralPost: jest.fn().mockResolvedValue({}),
+        getConnected: jest.fn().mockResolvedValue({}),
+        fetchJiraProjectMetadataForAllInstances: jest.fn().mockResolvedValue({}),
         fetchJiraIssueMetadataForProjects: jest.fn().mockResolvedValue({data: cloudIssueMetadata}),
     };
 
@@ -80,6 +88,7 @@ describe('components/EditChannelSubscription', () => {
         close: jest.fn(),
         selectedSubscription: channelSubscriptionForCloud,
         creatingSubscription: false,
+        creatingSubscriptionTemplate: false,
         securityLevelEmptyForJiraSubscriptions: true,
     };
 
@@ -549,7 +558,7 @@ describe('components/EditChannelSubscription', () => {
         wrapper.find('#jira-delete-subscription').simulate('click');
 
         expect(wrapper.state().showConfirmModal).toBe(true);
-        wrapper.instance().handleConfirmDelete();
+        wrapper.instance().handleConfirmAction();
 
         expect(deleteChannelSubscription).toHaveBeenCalled();
 
@@ -575,7 +584,7 @@ describe('components/EditChannelSubscription', () => {
         wrapper.find('#jira-delete-subscription').simulate('click');
 
         expect(wrapper.state().showConfirmModal).toBe(true);
-        wrapper.instance().handleConfirmDelete();
+        wrapper.instance().handleConfirmAction();
 
         expect(deleteChannelSubscription).toHaveBeenCalled();
 

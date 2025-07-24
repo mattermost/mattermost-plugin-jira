@@ -85,9 +85,9 @@ exports[`components/EditChannelSubscription should match snapshot 1`] = `
     <ConfirmModal
       cancelButtonText="Cancel"
       confirmButtonClass="btn btn-danger"
-      confirmButtonText="Delete"
+      confirmButtonText="Discard"
       hideCancel={false}
-      message="Delete Subscription \\"SubTestName\\"?"
+      message="Are you sure you want to discard your changes?"
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
@@ -213,6 +213,44 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
             "type": "Mattermost",
           }
         }
+      />
+      <ReactSelectSetting
+        isLoading={false}
+        label="Use Template"
+        name="template"
+        onChange={[Function]}
+        options={null}
+        required={false}
+        theme={
+          Object {
+            "awayIndicator": "#ffbc42",
+            "buttonBg": "#166de0",
+            "buttonColor": "#ffffff",
+            "centerChannelBg": "#ffffff",
+            "centerChannelColor": "#3d3c40",
+            "codeTheme": "github",
+            "dndIndicator": "#f74343",
+            "errorTextColor": "#fd5960",
+            "linkColor": "#2389d7",
+            "mentionBg": "#ffffff",
+            "mentionBj": "#ffffff",
+            "mentionColor": "#145dbf",
+            "mentionHighlightBg": "#ffe577",
+            "mentionHighlightLink": "#166de0",
+            "newMessageSeparator": "#ff8800",
+            "onlineIndicator": "#06d6a0",
+            "sidebarBg": "#145dbf",
+            "sidebarHeaderBg": "#1153ab",
+            "sidebarHeaderTextColor": "#ffffff",
+            "sidebarText": "#ffffff",
+            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveColor": "#ffffff",
+            "sidebarTextHoverBg": "#4578bf",
+            "sidebarUnreadText": "#ffffff",
+            "type": "Mattermost",
+          }
+        }
+        value={null}
       />
       <ReactSelectSetting
         addValidate={[Function]}
@@ -3913,9 +3951,9 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
     <ConfirmModal
       cancelButtonText="Cancel"
       confirmButtonClass="btn btn-danger"
-      confirmButtonText="Delete"
+      confirmButtonText="Discard"
       hideCancel={false}
-      message="Delete Subscription \\"SubTestName\\"?"
+      message="Are you sure you want to discard your changes?"
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
@@ -4047,9 +4085,9 @@ exports[`components/EditChannelSubscription should match snapshot with no issue 
     <ConfirmModal
       cancelButtonText="Cancel"
       confirmButtonClass="btn btn-danger"
-      confirmButtonText="Delete"
+      confirmButtonText="Discard"
       hideCancel={false}
-      message="Delete Subscription \\"SubTestName\\"?"
+      message="Are you sure you want to discard your changes?"
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
@@ -4104,10 +4142,7 @@ exports[`components/EditChannelSubscription should match snapshot with no subscr
     className="margin-bottom x3 text-center"
   >
     <h2>
-      Edit Jira Subscription for 
-      <strong>
-        FGFG
-      </strong>
+      Add Subscription Template
     </h2>
   </div>
   <div
@@ -4205,7 +4240,7 @@ exports[`components/EditChannelSubscription should match snapshot with no subscr
     />
     <FormButton
       btnClass="btn-primary"
-      defaultMessage="Save Subscription"
+      defaultMessage="Add Template"
       disabled={true}
       extraClasses=""
       onClick={[Function]}
@@ -4302,9 +4337,9 @@ exports[`components/EditChannelSubscription should produce subscription error wh
     <ConfirmModal
       cancelButtonText="Cancel"
       confirmButtonClass="btn btn-danger"
-      confirmButtonText="Delete"
+      confirmButtonText="Discard"
       hideCancel={false}
-      message="Delete Subscription \\"SubTestName\\"?"
+      message="Are you sure you want to discard your changes?"
       onCancel={[Function]}
       onConfirm={[Function]}
       show={false}
