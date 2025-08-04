@@ -41,9 +41,9 @@ const setupUILater = (registry: any, store: Store<object, Action<object>>): () =
             registry.registerRootComponent(ConnectModal);
             registry.registerRootComponent(DisconnectModal);
             registry.registerRootComponent(CreateIssueModal);
-            registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
+            registry.registerPostDropdownMenuAction(CreateIssuePostMenuAction);
             registry.registerRootComponent(AttachCommentToIssueModal);
-            registry.registerPostDropdownMenuComponent(AttachCommentToIssuePostMenuAction);
+            registry.registerPostDropdownMenuAction(AttachCommentToIssuePostMenuAction);
             registry.registerLinkTooltipComponent(LinkTooltip);
         }
 
