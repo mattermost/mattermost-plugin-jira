@@ -3,7 +3,7 @@
 
 import {ReactSelectOption} from 'types/model';
 import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
-import {TEAM_FIELD} from 'constant';
+import {TEAM_FIELD} from '../../../constant';
 
 const stripHTML = (text: string): string => {
     if (!text) {

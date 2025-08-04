@@ -7,183 +7,183 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
   instanceID="https://something.atlassian.net"
   isMulti={true}
   issueMetadata={
-    Object {
+    {
       "expand": "projects",
-      "issue_types_with_statuses": Array [
-        Object {
+      "issue_types_with_statuses": [
+        {
           "id": "10002",
           "name": "Task",
-          "statuses": Array [
-            Object {
+          "statuses": [
+            {
               "id": "1001",
               "name": "TODO",
             },
           ],
         },
-        Object {
+        {
           "id": "10003",
           "name": "Sub-task",
-          "statuses": Array [
-            Object {
+          "statuses": [
+            {
               "id": "1001",
               "name": "TODO",
             },
-            Object {
+            {
               "id": "1002",
               "name": "In Progress",
             },
           ],
         },
-        Object {
+        {
           "id": "10001",
           "name": "Story",
-          "statuses": Array [
-            Object {
+          "statuses": [
+            {
               "id": "1001",
               "name": "TODO",
             },
-            Object {
+            {
               "id": "1002",
               "name": "In Progress",
             },
           ],
         },
-        Object {
+        {
           "id": "10004",
           "name": "Bug",
-          "statuses": Array [
-            Object {
+          "statuses": [
+            {
               "id": "1001",
               "name": "TODO",
             },
-            Object {
+            {
               "id": "1002",
               "name": "In Progress",
             },
           ],
         },
-        Object {
+        {
           "id": "10000",
           "name": "Epic",
-          "statuses": Array [
-            Object {
+          "statuses": [
+            {
               "id": "1001",
               "name": "TODO",
             },
-            Object {
+            {
               "id": "1002",
               "name": "In Progress",
             },
-            Object {
+            {
               "id": "1003",
               "name": "Bug",
             },
           ],
         },
       ],
-      "projects": Array [
-        Object {
+      "projects": [
+        {
           "expand": "issuetypes",
           "id": "10008",
-          "issuetypes": Array [
-            Object {
+          "issuetypes": [
+            {
               "description": "A task that needs to be done.",
               "expand": "fields",
-              "fields": Object {
-                "assignee": Object {
+              "fields": {
+                "assignee": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/user/assignable/search?project=KT&query=",
                   "hasDefaultValue": false,
                   "key": "assignee",
                   "name": "Assignee",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "system": "assignee",
                     "type": "user",
                   },
                 },
-                "attachment": Object {
+                "attachment": {
                   "hasDefaultValue": false,
                   "key": "attachment",
                   "name": "Attachment",
-                  "operations": Array [],
+                  "operations": [],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "attachment",
                     "system": "attachment",
                     "type": "array",
                   },
                 },
-                "components": Object {
-                  "allowedValues": Array [],
+                "components": {
+                  "allowedValues": [],
                   "hasDefaultValue": false,
                   "key": "components",
                   "name": "Components",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "component",
                     "system": "components",
                     "type": "array",
                   },
                 },
-                "customfield_10014": Object {
+                "customfield_10014": {
                   "hasDefaultValue": false,
                   "key": "customfield_10014",
                   "name": "Epic Link",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.pyxis.greenhopper.jira:gh-epic-link",
                     "customId": 10014,
                     "type": "any",
                   },
                 },
-                "customfield_10021": Object {
+                "customfield_10021": {
                   "hasDefaultValue": false,
                   "key": "customfield_10021",
                   "name": "Sprint",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.pyxis.greenhopper.jira:gh-sprint",
                     "customId": 10021,
                     "items": "string",
                     "type": "array",
                   },
                 },
-                "customfield_10067": Object {
+                "customfield_10067": {
                   "hasDefaultValue": false,
                   "key": "customfield_10067",
                   "name": "Favorite Food",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                     "customId": 10067,
                     "type": "string",
                   },
                 },
-                "customfield_10068": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10068": {
+                  "allowedValues": [
+                    {
                       "id": "10033",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10033",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10034",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10034",
                       "value": "2",
@@ -192,87 +192,87 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10068",
                   "name": "MJK - Checkbox",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
                     "customId": 10068,
                     "items": "option",
                     "type": "array",
                   },
                 },
-                "customfield_10069": Object {
+                "customfield_10069": {
                   "hasDefaultValue": false,
                   "key": "customfield_10069",
                   "name": "MJK - Date Picker",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datepicker",
                     "customId": 10069,
                     "type": "date",
                   },
                 },
-                "customfield_10070": Object {
+                "customfield_10070": {
                   "hasDefaultValue": false,
                   "key": "customfield_10070",
                   "name": "MJK - Date Time Picker",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datetime",
                     "customId": 10070,
                     "type": "datetime",
                   },
                 },
-                "customfield_10071": Object {
+                "customfield_10071": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?customFieldId=10071&query=",
                   "hasDefaultValue": false,
                   "key": "customfield_10071",
                   "name": "MJK - Labels",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:labels",
                     "customId": 10071,
                     "items": "string",
                     "type": "array",
                   },
                 },
-                "customfield_10072": Object {
+                "customfield_10072": {
                   "hasDefaultValue": false,
                   "key": "customfield_10072",
                   "name": "MJK - Number Field",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float",
                     "customId": 10072,
                     "type": "number",
                   },
                 },
-                "customfield_10073": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10073": {
+                  "allowedValues": [
+                    {
                       "id": "10035",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10035",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10036",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10036",
                       "value": "2",
@@ -281,39 +281,39 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10073",
                   "name": "MJK - Radio Buttons",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons",
                     "customId": 10073,
                     "type": "option",
                   },
                 },
-                "customfield_10074": Object {
-                  "allowedValues": Array [],
+                "customfield_10074": {
+                  "allowedValues": [],
                   "hasDefaultValue": false,
                   "key": "customfield_10074",
                   "name": "MJK - Select List 1",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect",
                     "customId": 10074,
                     "type": "option-with-child",
                   },
                 },
-                "customfield_10075": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10075": {
+                  "allowedValues": [
+                    {
                       "id": "10037",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10037",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10038",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10038",
                       "value": "2",
@@ -322,27 +322,27 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10075",
                   "name": "MJK - Select List 2",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multiselect",
                     "customId": 10075,
                     "items": "option",
                     "type": "array",
                   },
                 },
-                "customfield_10076": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10076": {
+                  "allowedValues": [
+                    {
                       "id": "10039",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10039",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10040",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10040",
                       "value": "2",
@@ -351,89 +351,89 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10076",
                   "name": "MJK - Select List 3",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:select",
                     "customId": 10076,
                     "type": "option",
                   },
                 },
-                "customfield_10077": Object {
+                "customfield_10077": {
                   "hasDefaultValue": false,
                   "key": "customfield_10077",
                   "name": "Text Field 1",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textarea",
                     "customId": 10077,
                     "type": "string",
                   },
                 },
-                "customfield_10078": Object {
+                "customfield_10078": {
                   "hasDefaultValue": false,
                   "key": "customfield_10078",
                   "name": "Text Field 2",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                     "customId": 10078,
                     "type": "string",
                   },
                 },
-                "customfield_10079": Object {
+                "customfield_10079": {
                   "hasDefaultValue": false,
                   "key": "customfield_10079",
                   "name": "MJK - URL Field",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:url",
                     "customId": 10079,
                     "type": "string",
                   },
                 },
-                "customfield_10080": Object {
+                "customfield_10080": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/users/picker?fieldName=customfield_10080&fieldConfigId=10187&projectId=10008&showAvatar=true&query=",
                   "hasDefaultValue": false,
                   "key": "customfield_10080",
                   "name": "MJK - User Picker",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:userpicker",
                     "customId": 10080,
                     "type": "user",
                   },
                 },
-                "description": Object {
+                "description": {
                   "hasDefaultValue": false,
                   "key": "description",
                   "name": "Description",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "description",
                     "type": "string",
                   },
                 },
-                "fixVersions": Object {
-                  "allowedValues": Array [
-                    Object {
+                "fixVersions": {
+                  "allowedValues": [
+                    {
                       "archived": false,
                       "id": "10000",
                       "name": "d",
@@ -445,36 +445,36 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "fixVersions",
                   "name": "Fix versions",
-                  "operations": Array [
+                  "operations": [
                     "set",
                     "add",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "version",
                     "system": "fixVersions",
                     "type": "array",
                   },
                 },
-                "issuelinks": Object {
+                "issuelinks": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/issue/picker?currentProjectId=&showSubTaskParent=true&showSubTasks=true&currentIssueKey=null&query=",
                   "hasDefaultValue": false,
                   "key": "issuelinks",
                   "name": "Linked Issues",
-                  "operations": Array [
+                  "operations": [
                     "add",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "issuelinks",
                     "system": "issuelinks",
                     "type": "array",
                   },
                 },
-                "issuetype": Object {
-                  "allowedValues": Array [
-                    Object {
+                "issuetype": {
+                  "allowedValues": [
+                    {
                       "avatarId": 10318,
                       "description": "A task that needs to be done.",
                       "iconUrl": "https://mmtest.atlassian.net/secure/viewavatar?size=medium&avatarId=10318&avatarType=issuetype",
@@ -487,64 +487,64 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "issuetype",
                   "name": "Issue Type",
-                  "operations": Array [],
+                  "operations": [],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "issuetype",
                     "type": "issuetype",
                   },
                 },
-                "labels": Object {
+                "labels": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?query=",
                   "hasDefaultValue": false,
                   "key": "labels",
                   "name": "Labels",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "string",
                     "system": "labels",
                     "type": "array",
                   },
                 },
-                "priority": Object {
-                  "allowedValues": Array [
-                    Object {
+                "priority": {
+                  "allowedValues": [
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/highest.svg",
                       "id": "1",
                       "name": "Highest",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/1",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/high.svg",
                       "id": "2",
                       "name": "High",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/2",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                       "id": "3",
                       "name": "Medium",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/3",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/low.svg",
                       "id": "4",
                       "name": "Low",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/4",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/lowest.svg",
                       "id": "5",
                       "name": "Lowest",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/5",
                     },
                   ],
-                  "defaultValue": Object {
+                  "defaultValue": {
                     "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                     "id": "3",
                     "name": "Medium",
@@ -553,19 +553,19 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": true,
                   "key": "priority",
                   "name": "Priority",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "priority",
                     "type": "priority",
                   },
                 },
-                "project": Object {
-                  "allowedValues": Array [
-                    Object {
-                      "avatarUrls": Object {
+                "project": {
+                  "allowedValues": [
+                    {
+                      "avatarUrls": {
                         "16x16": "https://mmtest.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10008&avatarId=10417",
                         "24x24": "https://mmtest.atlassian.net/secure/projectavatar?size=small&s=small&pid=10008&avatarId=10417",
                         "32x32": "https://mmtest.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10008&avatarId=10417",
@@ -582,24 +582,24 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "project",
                   "name": "Project",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "project",
                     "type": "project",
                   },
                 },
-                "summary": Object {
+                "summary": {
                   "hasDefaultValue": false,
                   "key": "summary",
                   "name": "Summary",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "summary",
                     "type": "string",
                   },
@@ -610,104 +610,104 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
               "name": "Task",
               "self": "https://mmtest.atlassian.net/rest/api/2/issuetype/10002",
             },
-            Object {
+            {
               "description": "The sub-task of the issue",
               "expand": "fields",
-              "fields": Object {
-                "assignee": Object {
+              "fields": {
+                "assignee": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/user/assignable/search?project=KT&query=",
                   "hasDefaultValue": false,
                   "key": "assignee",
                   "name": "Assignee",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "system": "assignee",
                     "type": "user",
                   },
                 },
-                "attachment": Object {
+                "attachment": {
                   "hasDefaultValue": false,
                   "key": "attachment",
                   "name": "Attachment",
-                  "operations": Array [],
+                  "operations": [],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "attachment",
                     "system": "attachment",
                     "type": "array",
                   },
                 },
-                "components": Object {
-                  "allowedValues": Array [],
+                "components": {
+                  "allowedValues": [],
                   "hasDefaultValue": false,
                   "key": "components",
                   "name": "Components",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "component",
                     "system": "components",
                     "type": "array",
                   },
                 },
-                "customfield_10014": Object {
+                "customfield_10014": {
                   "hasDefaultValue": false,
                   "key": "customfield_10014",
                   "name": "Epic Link",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.pyxis.greenhopper.jira:gh-epic-link",
                     "customId": 10014,
                     "type": "any",
                   },
                 },
-                "customfield_10021": Object {
+                "customfield_10021": {
                   "hasDefaultValue": false,
                   "key": "customfield_10021",
                   "name": "Sprint",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.pyxis.greenhopper.jira:gh-sprint",
                     "customId": 10021,
                     "items": "string",
                     "type": "array",
                   },
                 },
-                "customfield_10067": Object {
+                "customfield_10067": {
                   "hasDefaultValue": false,
                   "key": "customfield_10067",
                   "name": "Favorite Food",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                     "customId": 10067,
                     "type": "string",
                   },
                 },
-                "customfield_10068": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10068": {
+                  "allowedValues": [
+                    {
                       "id": "10033",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10033",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10034",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10034",
                       "value": "2",
@@ -716,87 +716,87 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10068",
                   "name": "MJK - Checkbox",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
                     "customId": 10068,
                     "items": "option",
                     "type": "array",
                   },
                 },
-                "customfield_10069": Object {
+                "customfield_10069": {
                   "hasDefaultValue": false,
                   "key": "customfield_10069",
                   "name": "MJK - Date Picker",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datepicker",
                     "customId": 10069,
                     "type": "date",
                   },
                 },
-                "customfield_10070": Object {
+                "customfield_10070": {
                   "hasDefaultValue": false,
                   "key": "customfield_10070",
                   "name": "MJK - Date Time Picker",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datetime",
                     "customId": 10070,
                     "type": "datetime",
                   },
                 },
-                "customfield_10071": Object {
+                "customfield_10071": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?customFieldId=10071&query=",
                   "hasDefaultValue": false,
                   "key": "customfield_10071",
                   "name": "MJK - Labels",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:labels",
                     "customId": 10071,
                     "items": "string",
                     "type": "array",
                   },
                 },
-                "customfield_10072": Object {
+                "customfield_10072": {
                   "hasDefaultValue": false,
                   "key": "customfield_10072",
                   "name": "MJK - Number Field",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float",
                     "customId": 10072,
                     "type": "number",
                   },
                 },
-                "customfield_10073": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10073": {
+                  "allowedValues": [
+                    {
                       "id": "10035",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10035",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10036",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10036",
                       "value": "2",
@@ -805,39 +805,39 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10073",
                   "name": "MJK - Radio Buttons",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons",
                     "customId": 10073,
                     "type": "option",
                   },
                 },
-                "customfield_10074": Object {
-                  "allowedValues": Array [],
+                "customfield_10074": {
+                  "allowedValues": [],
                   "hasDefaultValue": false,
                   "key": "customfield_10074",
                   "name": "MJK - Select List 1",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect",
                     "customId": 10074,
                     "type": "option-with-child",
                   },
                 },
-                "customfield_10075": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10075": {
+                  "allowedValues": [
+                    {
                       "id": "10037",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10037",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10038",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10038",
                       "value": "2",
@@ -846,27 +846,27 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10075",
                   "name": "MJK - Select List 2",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multiselect",
                     "customId": 10075,
                     "items": "option",
                     "type": "array",
                   },
                 },
-                "customfield_10076": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10076": {
+                  "allowedValues": [
+                    {
                       "id": "10039",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10039",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10040",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10040",
                       "value": "2",
@@ -875,89 +875,89 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10076",
                   "name": "MJK - Select List 3",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:select",
                     "customId": 10076,
                     "type": "option",
                   },
                 },
-                "customfield_10077": Object {
+                "customfield_10077": {
                   "hasDefaultValue": false,
                   "key": "customfield_10077",
                   "name": "Text Field 1",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textarea",
                     "customId": 10077,
                     "type": "string",
                   },
                 },
-                "customfield_10078": Object {
+                "customfield_10078": {
                   "hasDefaultValue": false,
                   "key": "customfield_10078",
                   "name": "Text Field 2",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                     "customId": 10078,
                     "type": "string",
                   },
                 },
-                "customfield_10079": Object {
+                "customfield_10079": {
                   "hasDefaultValue": false,
                   "key": "customfield_10079",
                   "name": "MJK - URL Field",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:url",
                     "customId": 10079,
                     "type": "string",
                   },
                 },
-                "customfield_10080": Object {
+                "customfield_10080": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/users/picker?fieldName=customfield_10080&fieldConfigId=10187&projectId=10008&showAvatar=true&query=",
                   "hasDefaultValue": false,
                   "key": "customfield_10080",
                   "name": "MJK - User Picker",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:userpicker",
                     "customId": 10080,
                     "type": "user",
                   },
                 },
-                "description": Object {
+                "description": {
                   "hasDefaultValue": false,
                   "key": "description",
                   "name": "Description",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "description",
                     "type": "string",
                   },
                 },
-                "fixVersions": Object {
-                  "allowedValues": Array [
-                    Object {
+                "fixVersions": {
+                  "allowedValues": [
+                    {
                       "archived": false,
                       "id": "10000",
                       "name": "d",
@@ -969,36 +969,36 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "fixVersions",
                   "name": "Fix versions",
-                  "operations": Array [
+                  "operations": [
                     "set",
                     "add",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "version",
                     "system": "fixVersions",
                     "type": "array",
                   },
                 },
-                "issuelinks": Object {
+                "issuelinks": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/issue/picker?currentProjectId=&showSubTaskParent=true&showSubTasks=true&currentIssueKey=null&query=",
                   "hasDefaultValue": false,
                   "key": "issuelinks",
                   "name": "Linked Issues",
-                  "operations": Array [
+                  "operations": [
                     "add",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "issuelinks",
                     "system": "issuelinks",
                     "type": "array",
                   },
                 },
-                "issuetype": Object {
-                  "allowedValues": Array [
-                    Object {
+                "issuetype": {
+                  "allowedValues": [
+                    {
                       "avatarId": 10316,
                       "description": "The sub-task of the issue",
                       "iconUrl": "https://mmtest.atlassian.net/secure/viewavatar?size=medium&avatarId=10316&avatarType=issuetype",
@@ -1011,77 +1011,77 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "issuetype",
                   "name": "Issue Type",
-                  "operations": Array [],
+                  "operations": [],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "issuetype",
                     "type": "issuetype",
                   },
                 },
-                "labels": Object {
+                "labels": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?query=",
                   "hasDefaultValue": false,
                   "key": "labels",
                   "name": "Labels",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "string",
                     "system": "labels",
                     "type": "array",
                   },
                 },
-                "parent": Object {
+                "parent": {
                   "hasDefaultValue": false,
                   "key": "parent",
                   "name": "Parent",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "parent",
                     "type": "issuelink",
                   },
                 },
-                "priority": Object {
-                  "allowedValues": Array [
-                    Object {
+                "priority": {
+                  "allowedValues": [
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/highest.svg",
                       "id": "1",
                       "name": "Highest",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/1",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/high.svg",
                       "id": "2",
                       "name": "High",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/2",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                       "id": "3",
                       "name": "Medium",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/3",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/low.svg",
                       "id": "4",
                       "name": "Low",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/4",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/lowest.svg",
                       "id": "5",
                       "name": "Lowest",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/5",
                     },
                   ],
-                  "defaultValue": Object {
+                  "defaultValue": {
                     "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                     "id": "3",
                     "name": "Medium",
@@ -1090,19 +1090,19 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": true,
                   "key": "priority",
                   "name": "Priority",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "priority",
                     "type": "priority",
                   },
                 },
-                "project": Object {
-                  "allowedValues": Array [
-                    Object {
-                      "avatarUrls": Object {
+                "project": {
+                  "allowedValues": [
+                    {
+                      "avatarUrls": {
                         "16x16": "https://mmtest.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10008&avatarId=10417",
                         "24x24": "https://mmtest.atlassian.net/secure/projectavatar?size=small&s=small&pid=10008&avatarId=10417",
                         "32x32": "https://mmtest.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10008&avatarId=10417",
@@ -1119,24 +1119,24 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "project",
                   "name": "Project",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "project",
                     "type": "project",
                   },
                 },
-                "summary": Object {
+                "summary": {
                   "hasDefaultValue": false,
                   "key": "summary",
                   "name": "Summary",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "summary",
                     "type": "string",
                   },
@@ -1148,104 +1148,104 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
               "self": "https://mmtest.atlassian.net/rest/api/2/issuetype/10003",
               "subtask": true,
             },
-            Object {
+            {
               "description": "Stories track functionality or features expressed as user goals.",
               "expand": "fields",
-              "fields": Object {
-                "assignee": Object {
+              "fields": {
+                "assignee": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/user/assignable/search?project=KT&query=",
                   "hasDefaultValue": false,
                   "key": "assignee",
                   "name": "Assignee",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "system": "assignee",
                     "type": "user",
                   },
                 },
-                "attachment": Object {
+                "attachment": {
                   "hasDefaultValue": false,
                   "key": "attachment",
                   "name": "Attachment",
-                  "operations": Array [],
+                  "operations": [],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "attachment",
                     "system": "attachment",
                     "type": "array",
                   },
                 },
-                "components": Object {
-                  "allowedValues": Array [],
+                "components": {
+                  "allowedValues": [],
                   "hasDefaultValue": false,
                   "key": "components",
                   "name": "Components",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "component",
                     "system": "components",
                     "type": "array",
                   },
                 },
-                "customfield_10014": Object {
+                "customfield_10014": {
                   "hasDefaultValue": false,
                   "key": "customfield_10014",
                   "name": "Epic Link",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.pyxis.greenhopper.jira:gh-epic-link",
                     "customId": 10014,
                     "type": "any",
                   },
                 },
-                "customfield_10021": Object {
+                "customfield_10021": {
                   "hasDefaultValue": false,
                   "key": "customfield_10021",
                   "name": "Sprint",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.pyxis.greenhopper.jira:gh-sprint",
                     "customId": 10021,
                     "items": "string",
                     "type": "array",
                   },
                 },
-                "customfield_10067": Object {
+                "customfield_10067": {
                   "hasDefaultValue": false,
                   "key": "customfield_10067",
                   "name": "Favorite Food",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                     "customId": 10067,
                     "type": "string",
                   },
                 },
-                "customfield_10068": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10068": {
+                  "allowedValues": [
+                    {
                       "id": "10033",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10033",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10034",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10034",
                       "value": "2",
@@ -1254,87 +1254,87 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10068",
                   "name": "MJK - Checkbox",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
                     "customId": 10068,
                     "items": "option",
                     "type": "array",
                   },
                 },
-                "customfield_10069": Object {
+                "customfield_10069": {
                   "hasDefaultValue": false,
                   "key": "customfield_10069",
                   "name": "MJK - Date Picker",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datepicker",
                     "customId": 10069,
                     "type": "date",
                   },
                 },
-                "customfield_10070": Object {
+                "customfield_10070": {
                   "hasDefaultValue": false,
                   "key": "customfield_10070",
                   "name": "MJK - Date Time Picker",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datetime",
                     "customId": 10070,
                     "type": "datetime",
                   },
                 },
-                "customfield_10071": Object {
+                "customfield_10071": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?customFieldId=10071&query=",
                   "hasDefaultValue": false,
                   "key": "customfield_10071",
                   "name": "MJK - Labels",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:labels",
                     "customId": 10071,
                     "items": "string",
                     "type": "array",
                   },
                 },
-                "customfield_10072": Object {
+                "customfield_10072": {
                   "hasDefaultValue": false,
                   "key": "customfield_10072",
                   "name": "MJK - Number Field",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float",
                     "customId": 10072,
                     "type": "number",
                   },
                 },
-                "customfield_10073": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10073": {
+                  "allowedValues": [
+                    {
                       "id": "10035",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10035",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10036",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10036",
                       "value": "2",
@@ -1343,39 +1343,39 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10073",
                   "name": "MJK - Radio Buttons",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons",
                     "customId": 10073,
                     "type": "option",
                   },
                 },
-                "customfield_10074": Object {
-                  "allowedValues": Array [],
+                "customfield_10074": {
+                  "allowedValues": [],
                   "hasDefaultValue": false,
                   "key": "customfield_10074",
                   "name": "MJK - Select List 1",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect",
                     "customId": 10074,
                     "type": "option-with-child",
                   },
                 },
-                "customfield_10075": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10075": {
+                  "allowedValues": [
+                    {
                       "id": "10037",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10037",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10038",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10038",
                       "value": "2",
@@ -1384,27 +1384,27 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10075",
                   "name": "MJK - Select List 2",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multiselect",
                     "customId": 10075,
                     "items": "option",
                     "type": "array",
                   },
                 },
-                "customfield_10076": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10076": {
+                  "allowedValues": [
+                    {
                       "id": "10039",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10039",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10040",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10040",
                       "value": "2",
@@ -1413,89 +1413,89 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10076",
                   "name": "MJK - Select List 3",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:select",
                     "customId": 10076,
                     "type": "option",
                   },
                 },
-                "customfield_10077": Object {
+                "customfield_10077": {
                   "hasDefaultValue": false,
                   "key": "customfield_10077",
                   "name": "Text Field 1",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textarea",
                     "customId": 10077,
                     "type": "string",
                   },
                 },
-                "customfield_10078": Object {
+                "customfield_10078": {
                   "hasDefaultValue": false,
                   "key": "customfield_10078",
                   "name": "Text Field 2",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                     "customId": 10078,
                     "type": "string",
                   },
                 },
-                "customfield_10079": Object {
+                "customfield_10079": {
                   "hasDefaultValue": false,
                   "key": "customfield_10079",
                   "name": "MJK - URL Field",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:url",
                     "customId": 10079,
                     "type": "string",
                   },
                 },
-                "customfield_10080": Object {
+                "customfield_10080": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/users/picker?fieldName=customfield_10080&fieldConfigId=10187&projectId=10008&showAvatar=true&query=",
                   "hasDefaultValue": false,
                   "key": "customfield_10080",
                   "name": "MJK - User Picker",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:userpicker",
                     "customId": 10080,
                     "type": "user",
                   },
                 },
-                "description": Object {
+                "description": {
                   "hasDefaultValue": false,
                   "key": "description",
                   "name": "Description",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "description",
                     "type": "string",
                   },
                 },
-                "fixVersions": Object {
-                  "allowedValues": Array [
-                    Object {
+                "fixVersions": {
+                  "allowedValues": [
+                    {
                       "archived": false,
                       "id": "10000",
                       "name": "d",
@@ -1507,36 +1507,36 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "fixVersions",
                   "name": "Fix versions",
-                  "operations": Array [
+                  "operations": [
                     "set",
                     "add",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "version",
                     "system": "fixVersions",
                     "type": "array",
                   },
                 },
-                "issuelinks": Object {
+                "issuelinks": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/issue/picker?currentProjectId=&showSubTaskParent=true&showSubTasks=true&currentIssueKey=null&query=",
                   "hasDefaultValue": false,
                   "key": "issuelinks",
                   "name": "Linked Issues",
-                  "operations": Array [
+                  "operations": [
                     "add",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "issuelinks",
                     "system": "issuelinks",
                     "type": "array",
                   },
                 },
-                "issuetype": Object {
-                  "allowedValues": Array [
-                    Object {
+                "issuetype": {
+                  "allowedValues": [
+                    {
                       "avatarId": 10315,
                       "description": "Stories track functionality or features expressed as user goals.",
                       "iconUrl": "https://mmtest.atlassian.net/secure/viewavatar?size=medium&avatarId=10315&avatarType=issuetype",
@@ -1549,64 +1549,64 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "issuetype",
                   "name": "Issue Type",
-                  "operations": Array [],
+                  "operations": [],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "issuetype",
                     "type": "issuetype",
                   },
                 },
-                "labels": Object {
+                "labels": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?query=",
                   "hasDefaultValue": false,
                   "key": "labels",
                   "name": "Labels",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "string",
                     "system": "labels",
                     "type": "array",
                   },
                 },
-                "priority": Object {
-                  "allowedValues": Array [
-                    Object {
+                "priority": {
+                  "allowedValues": [
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/highest.svg",
                       "id": "1",
                       "name": "Highest",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/1",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/high.svg",
                       "id": "2",
                       "name": "High",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/2",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                       "id": "3",
                       "name": "Medium",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/3",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/low.svg",
                       "id": "4",
                       "name": "Low",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/4",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/lowest.svg",
                       "id": "5",
                       "name": "Lowest",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/5",
                     },
                   ],
-                  "defaultValue": Object {
+                  "defaultValue": {
                     "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                     "id": "3",
                     "name": "Medium",
@@ -1615,19 +1615,19 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": true,
                   "key": "priority",
                   "name": "Priority",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "priority",
                     "type": "priority",
                   },
                 },
-                "project": Object {
-                  "allowedValues": Array [
-                    Object {
-                      "avatarUrls": Object {
+                "project": {
+                  "allowedValues": [
+                    {
+                      "avatarUrls": {
                         "16x16": "https://mmtest.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10008&avatarId=10417",
                         "24x24": "https://mmtest.atlassian.net/secure/projectavatar?size=small&s=small&pid=10008&avatarId=10417",
                         "32x32": "https://mmtest.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10008&avatarId=10417",
@@ -1644,24 +1644,24 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "project",
                   "name": "Project",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "project",
                     "type": "project",
                   },
                 },
-                "summary": Object {
+                "summary": {
                   "hasDefaultValue": false,
                   "key": "summary",
                   "name": "Summary",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "summary",
                     "type": "string",
                   },
@@ -1672,104 +1672,104 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
               "name": "Story",
               "self": "https://mmtest.atlassian.net/rest/api/2/issuetype/10001",
             },
-            Object {
+            {
               "description": "jira.translation.issuetype.bug.name.desc",
               "expand": "fields",
-              "fields": Object {
-                "assignee": Object {
+              "fields": {
+                "assignee": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/user/assignable/search?project=KT&query=",
                   "hasDefaultValue": false,
                   "key": "assignee",
                   "name": "Assignee",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "system": "assignee",
                     "type": "user",
                   },
                 },
-                "attachment": Object {
+                "attachment": {
                   "hasDefaultValue": false,
                   "key": "attachment",
                   "name": "Attachment",
-                  "operations": Array [],
+                  "operations": [],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "attachment",
                     "system": "attachment",
                     "type": "array",
                   },
                 },
-                "components": Object {
-                  "allowedValues": Array [],
+                "components": {
+                  "allowedValues": [],
                   "hasDefaultValue": false,
                   "key": "components",
                   "name": "Components",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "component",
                     "system": "components",
                     "type": "array",
                   },
                 },
-                "customfield_10014": Object {
+                "customfield_10014": {
                   "hasDefaultValue": false,
                   "key": "customfield_10014",
                   "name": "Epic Link",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.pyxis.greenhopper.jira:gh-epic-link",
                     "customId": 10014,
                     "type": "any",
                   },
                 },
-                "customfield_10021": Object {
+                "customfield_10021": {
                   "hasDefaultValue": false,
                   "key": "customfield_10021",
                   "name": "Sprint",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.pyxis.greenhopper.jira:gh-sprint",
                     "customId": 10021,
                     "items": "string",
                     "type": "array",
                   },
                 },
-                "customfield_10067": Object {
+                "customfield_10067": {
                   "hasDefaultValue": false,
                   "key": "customfield_10067",
                   "name": "Favorite Food",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                     "customId": 10067,
                     "type": "string",
                   },
                 },
-                "customfield_10068": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10068": {
+                  "allowedValues": [
+                    {
                       "id": "10033",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10033",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10034",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10034",
                       "value": "2",
@@ -1778,87 +1778,87 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10068",
                   "name": "MJK - Checkbox",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
                     "customId": 10068,
                     "items": "option",
                     "type": "array",
                   },
                 },
-                "customfield_10069": Object {
+                "customfield_10069": {
                   "hasDefaultValue": false,
                   "key": "customfield_10069",
                   "name": "MJK - Date Picker",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datepicker",
                     "customId": 10069,
                     "type": "date",
                   },
                 },
-                "customfield_10070": Object {
+                "customfield_10070": {
                   "hasDefaultValue": false,
                   "key": "customfield_10070",
                   "name": "MJK - Date Time Picker",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datetime",
                     "customId": 10070,
                     "type": "datetime",
                   },
                 },
-                "customfield_10071": Object {
+                "customfield_10071": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?customFieldId=10071&query=",
                   "hasDefaultValue": false,
                   "key": "customfield_10071",
                   "name": "MJK - Labels",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:labels",
                     "customId": 10071,
                     "items": "string",
                     "type": "array",
                   },
                 },
-                "customfield_10072": Object {
+                "customfield_10072": {
                   "hasDefaultValue": false,
                   "key": "customfield_10072",
                   "name": "MJK - Number Field",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float",
                     "customId": 10072,
                     "type": "number",
                   },
                 },
-                "customfield_10073": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10073": {
+                  "allowedValues": [
+                    {
                       "id": "10035",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10035",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10036",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10036",
                       "value": "2",
@@ -1867,39 +1867,39 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10073",
                   "name": "MJK - Radio Buttons",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons",
                     "customId": 10073,
                     "type": "option",
                   },
                 },
-                "customfield_10074": Object {
-                  "allowedValues": Array [],
+                "customfield_10074": {
+                  "allowedValues": [],
                   "hasDefaultValue": false,
                   "key": "customfield_10074",
                   "name": "MJK - Select List 1",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect",
                     "customId": 10074,
                     "type": "option-with-child",
                   },
                 },
-                "customfield_10075": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10075": {
+                  "allowedValues": [
+                    {
                       "id": "10037",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10037",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10038",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10038",
                       "value": "2",
@@ -1908,27 +1908,27 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10075",
                   "name": "MJK - Select List 2",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multiselect",
                     "customId": 10075,
                     "items": "option",
                     "type": "array",
                   },
                 },
-                "customfield_10076": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10076": {
+                  "allowedValues": [
+                    {
                       "id": "10039",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10039",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10040",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10040",
                       "value": "2",
@@ -1937,102 +1937,102 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10076",
                   "name": "MJK - Select List 3",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:select",
                     "customId": 10076,
                     "type": "option",
                   },
                 },
-                "customfield_10077": Object {
+                "customfield_10077": {
                   "hasDefaultValue": false,
                   "key": "customfield_10077",
                   "name": "Text Field 1",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textarea",
                     "customId": 10077,
                     "type": "string",
                   },
                 },
-                "customfield_10078": Object {
+                "customfield_10078": {
                   "hasDefaultValue": false,
                   "key": "customfield_10078",
                   "name": "Text Field 2",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                     "customId": 10078,
                     "type": "string",
                   },
                 },
-                "customfield_10079": Object {
+                "customfield_10079": {
                   "hasDefaultValue": false,
                   "key": "customfield_10079",
                   "name": "MJK - URL Field",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:url",
                     "customId": 10079,
                     "type": "string",
                   },
                 },
-                "customfield_10080": Object {
+                "customfield_10080": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/users/picker?fieldName=customfield_10080&fieldConfigId=10187&projectId=10008&showAvatar=true&query=",
                   "hasDefaultValue": false,
                   "key": "customfield_10080",
                   "name": "MJK - User Picker",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:userpicker",
                     "customId": 10080,
                     "type": "user",
                   },
                 },
-                "description": Object {
+                "description": {
                   "hasDefaultValue": false,
                   "key": "description",
                   "name": "Description",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "description",
                     "type": "string",
                   },
                 },
-                "environment": Object {
+                "environment": {
                   "hasDefaultValue": false,
                   "key": "environment",
                   "name": "Environment",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "system": "environment",
                     "type": "string",
                   },
                 },
-                "fixVersions": Object {
-                  "allowedValues": Array [
-                    Object {
+                "fixVersions": {
+                  "allowedValues": [
+                    {
                       "archived": false,
                       "id": "10000",
                       "name": "d",
@@ -2044,36 +2044,36 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "fixVersions",
                   "name": "Fix versions",
-                  "operations": Array [
+                  "operations": [
                     "set",
                     "add",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "version",
                     "system": "fixVersions",
                     "type": "array",
                   },
                 },
-                "issuelinks": Object {
+                "issuelinks": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/issue/picker?currentProjectId=&showSubTaskParent=true&showSubTasks=true&currentIssueKey=null&query=",
                   "hasDefaultValue": false,
                   "key": "issuelinks",
                   "name": "Linked Issues",
-                  "operations": Array [
+                  "operations": [
                     "add",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "issuelinks",
                     "system": "issuelinks",
                     "type": "array",
                   },
                 },
-                "issuetype": Object {
-                  "allowedValues": Array [
-                    Object {
+                "issuetype": {
+                  "allowedValues": [
+                    {
                       "avatarId": 10303,
                       "description": "jira.translation.issuetype.bug.name.desc",
                       "iconUrl": "https://mmtest.atlassian.net/secure/viewavatar?size=medium&avatarId=10303&avatarType=issuetype",
@@ -2086,64 +2086,64 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "issuetype",
                   "name": "Issue Type",
-                  "operations": Array [],
+                  "operations": [],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "issuetype",
                     "type": "issuetype",
                   },
                 },
-                "labels": Object {
+                "labels": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?query=",
                   "hasDefaultValue": false,
                   "key": "labels",
                   "name": "Labels",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "string",
                     "system": "labels",
                     "type": "array",
                   },
                 },
-                "priority": Object {
-                  "allowedValues": Array [
-                    Object {
+                "priority": {
+                  "allowedValues": [
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/highest.svg",
                       "id": "1",
                       "name": "Highest",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/1",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/high.svg",
                       "id": "2",
                       "name": "High",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/2",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                       "id": "3",
                       "name": "Medium",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/3",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/low.svg",
                       "id": "4",
                       "name": "Low",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/4",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/lowest.svg",
                       "id": "5",
                       "name": "Lowest",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/5",
                     },
                   ],
-                  "defaultValue": Object {
+                  "defaultValue": {
                     "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                     "id": "3",
                     "name": "Medium",
@@ -2152,19 +2152,19 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": true,
                   "key": "priority",
                   "name": "Priority",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "priority",
                     "type": "priority",
                   },
                 },
-                "project": Object {
-                  "allowedValues": Array [
-                    Object {
-                      "avatarUrls": Object {
+                "project": {
+                  "allowedValues": [
+                    {
+                      "avatarUrls": {
                         "16x16": "https://mmtest.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10008&avatarId=10417",
                         "24x24": "https://mmtest.atlassian.net/secure/projectavatar?size=small&s=small&pid=10008&avatarId=10417",
                         "32x32": "https://mmtest.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10008&avatarId=10417",
@@ -2181,31 +2181,31 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "project",
                   "name": "Project",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "project",
                     "type": "project",
                   },
                 },
-                "summary": Object {
+                "summary": {
                   "hasDefaultValue": false,
                   "key": "summary",
                   "name": "Summary",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "summary",
                     "type": "string",
                   },
                 },
-                "versions": Object {
-                  "allowedValues": Array [
-                    Object {
+                "versions": {
+                  "allowedValues": [
+                    {
                       "archived": false,
                       "id": "10000",
                       "name": "d",
@@ -2217,13 +2217,13 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "versions",
                   "name": "Affects versions",
-                  "operations": Array [
+                  "operations": [
                     "set",
                     "add",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "version",
                     "system": "versions",
                     "type": "array",
@@ -2235,118 +2235,118 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
               "name": "Bug",
               "self": "https://mmtest.atlassian.net/rest/api/2/issuetype/10004",
             },
-            Object {
+            {
               "description": "A big user story that needs to be broken down. Created by Jira Software - do not edit or delete.",
               "expand": "fields",
-              "fields": Object {
-                "assignee": Object {
+              "fields": {
+                "assignee": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/user/assignable/search?project=KT&query=",
                   "hasDefaultValue": false,
                   "key": "assignee",
                   "name": "Assignee",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "system": "assignee",
                     "type": "user",
                   },
                 },
-                "attachment": Object {
+                "attachment": {
                   "hasDefaultValue": false,
                   "key": "attachment",
                   "name": "Attachment",
-                  "operations": Array [],
+                  "operations": [],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "attachment",
                     "system": "attachment",
                     "type": "array",
                   },
                 },
-                "components": Object {
-                  "allowedValues": Array [],
+                "components": {
+                  "allowedValues": [],
                   "hasDefaultValue": false,
                   "key": "components",
                   "name": "Components",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "component",
                     "system": "components",
                     "type": "array",
                   },
                 },
-                "customfield_10011": Object {
+                "customfield_10011": {
                   "hasDefaultValue": false,
                   "key": "customfield_10011",
                   "name": "Epic Name",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.pyxis.greenhopper.jira:gh-epic-label",
                     "customId": 10011,
                     "type": "string",
                   },
                 },
-                "customfield_10014": Object {
+                "customfield_10014": {
                   "hasDefaultValue": false,
                   "key": "customfield_10014",
                   "name": "Epic Link",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.pyxis.greenhopper.jira:gh-epic-link",
                     "customId": 10014,
                     "type": "any",
                   },
                 },
-                "customfield_10021": Object {
+                "customfield_10021": {
                   "hasDefaultValue": false,
                   "key": "customfield_10021",
                   "name": "Sprint",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.pyxis.greenhopper.jira:gh-sprint",
                     "customId": 10021,
                     "items": "string",
                     "type": "array",
                   },
                 },
-                "customfield_10067": Object {
+                "customfield_10067": {
                   "hasDefaultValue": false,
                   "key": "customfield_10067",
                   "name": "Favorite Food",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                     "customId": 10067,
                     "type": "string",
                   },
                 },
-                "customfield_10068": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10068": {
+                  "allowedValues": [
+                    {
                       "id": "10033",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10033",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10034",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10034",
                       "value": "2",
@@ -2355,87 +2355,87 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10068",
                   "name": "MJK - Checkbox",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
                     "customId": 10068,
                     "items": "option",
                     "type": "array",
                   },
                 },
-                "customfield_10069": Object {
+                "customfield_10069": {
                   "hasDefaultValue": false,
                   "key": "customfield_10069",
                   "name": "MJK - Date Picker",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datepicker",
                     "customId": 10069,
                     "type": "date",
                   },
                 },
-                "customfield_10070": Object {
+                "customfield_10070": {
                   "hasDefaultValue": false,
                   "key": "customfield_10070",
                   "name": "MJK - Date Time Picker",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datetime",
                     "customId": 10070,
                     "type": "datetime",
                   },
                 },
-                "customfield_10071": Object {
+                "customfield_10071": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?customFieldId=10071&query=",
                   "hasDefaultValue": false,
                   "key": "customfield_10071",
                   "name": "MJK - Labels",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:labels",
                     "customId": 10071,
                     "items": "string",
                     "type": "array",
                   },
                 },
-                "customfield_10072": Object {
+                "customfield_10072": {
                   "hasDefaultValue": false,
                   "key": "customfield_10072",
                   "name": "MJK - Number Field",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float",
                     "customId": 10072,
                     "type": "number",
                   },
                 },
-                "customfield_10073": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10073": {
+                  "allowedValues": [
+                    {
                       "id": "10035",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10035",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10036",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10036",
                       "value": "2",
@@ -2444,39 +2444,39 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10073",
                   "name": "MJK - Radio Buttons",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons",
                     "customId": 10073,
                     "type": "option",
                   },
                 },
-                "customfield_10074": Object {
-                  "allowedValues": Array [],
+                "customfield_10074": {
+                  "allowedValues": [],
                   "hasDefaultValue": false,
                   "key": "customfield_10074",
                   "name": "MJK - Select List 1",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect",
                     "customId": 10074,
                     "type": "option-with-child",
                   },
                 },
-                "customfield_10075": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10075": {
+                  "allowedValues": [
+                    {
                       "id": "10037",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10037",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10038",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10038",
                       "value": "2",
@@ -2485,27 +2485,27 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10075",
                   "name": "MJK - Select List 2",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multiselect",
                     "customId": 10075,
                     "items": "option",
                     "type": "array",
                   },
                 },
-                "customfield_10076": Object {
-                  "allowedValues": Array [
-                    Object {
+                "customfield_10076": {
+                  "allowedValues": [
+                    {
                       "id": "10039",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10039",
                       "value": "1",
                     },
-                    Object {
+                    {
                       "id": "10040",
                       "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10040",
                       "value": "2",
@@ -2514,89 +2514,89 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "customfield_10076",
                   "name": "MJK - Select List 3",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:select",
                     "customId": 10076,
                     "type": "option",
                   },
                 },
-                "customfield_10077": Object {
+                "customfield_10077": {
                   "hasDefaultValue": false,
                   "key": "customfield_10077",
                   "name": "Text Field 1",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textarea",
                     "customId": 10077,
                     "type": "string",
                   },
                 },
-                "customfield_10078": Object {
+                "customfield_10078": {
                   "hasDefaultValue": false,
                   "key": "customfield_10078",
                   "name": "Text Field 2",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                     "customId": 10078,
                     "type": "string",
                   },
                 },
-                "customfield_10079": Object {
+                "customfield_10079": {
                   "hasDefaultValue": false,
                   "key": "customfield_10079",
                   "name": "MJK - URL Field",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:url",
                     "customId": 10079,
                     "type": "string",
                   },
                 },
-                "customfield_10080": Object {
+                "customfield_10080": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/users/picker?fieldName=customfield_10080&fieldConfigId=10187&projectId=10008&showAvatar=true&query=",
                   "hasDefaultValue": false,
                   "key": "customfield_10080",
                   "name": "MJK - User Picker",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "custom": "com.atlassian.jira.plugin.system.customfieldtypes:userpicker",
                     "customId": 10080,
                     "type": "user",
                   },
                 },
-                "description": Object {
+                "description": {
                   "hasDefaultValue": false,
                   "key": "description",
                   "name": "Description",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "description",
                     "type": "string",
                   },
                 },
-                "fixVersions": Object {
-                  "allowedValues": Array [
-                    Object {
+                "fixVersions": {
+                  "allowedValues": [
+                    {
                       "archived": false,
                       "id": "10000",
                       "name": "d",
@@ -2608,36 +2608,36 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "fixVersions",
                   "name": "Fix versions",
-                  "operations": Array [
+                  "operations": [
                     "set",
                     "add",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "version",
                     "system": "fixVersions",
                     "type": "array",
                   },
                 },
-                "issuelinks": Object {
+                "issuelinks": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/issue/picker?currentProjectId=&showSubTaskParent=true&showSubTasks=true&currentIssueKey=null&query=",
                   "hasDefaultValue": false,
                   "key": "issuelinks",
                   "name": "Linked Issues",
-                  "operations": Array [
+                  "operations": [
                     "add",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "issuelinks",
                     "system": "issuelinks",
                     "type": "array",
                   },
                 },
-                "issuetype": Object {
-                  "allowedValues": Array [
-                    Object {
+                "issuetype": {
+                  "allowedValues": [
+                    {
                       "description": "A big user story that needs to be broken down. Created by Jira Software - do not edit or delete.",
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/issuetypes/epic.svg",
                       "id": "10000",
@@ -2649,64 +2649,64 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "issuetype",
                   "name": "Issue Type",
-                  "operations": Array [],
+                  "operations": [],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "issuetype",
                     "type": "issuetype",
                   },
                 },
-                "labels": Object {
+                "labels": {
                   "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?query=",
                   "hasDefaultValue": false,
                   "key": "labels",
                   "name": "Labels",
-                  "operations": Array [
+                  "operations": [
                     "add",
                     "set",
                     "remove",
                   ],
                   "required": false,
-                  "schema": Object {
+                  "schema": {
                     "items": "string",
                     "system": "labels",
                     "type": "array",
                   },
                 },
-                "priority": Object {
-                  "allowedValues": Array [
-                    Object {
+                "priority": {
+                  "allowedValues": [
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/highest.svg",
                       "id": "1",
                       "name": "Highest",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/1",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/high.svg",
                       "id": "2",
                       "name": "High",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/2",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                       "id": "3",
                       "name": "Medium",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/3",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/low.svg",
                       "id": "4",
                       "name": "Low",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/4",
                     },
-                    Object {
+                    {
                       "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/lowest.svg",
                       "id": "5",
                       "name": "Lowest",
                       "self": "https://mmtest.atlassian.net/rest/api/2/priority/5",
                     },
                   ],
-                  "defaultValue": Object {
+                  "defaultValue": {
                     "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                     "id": "3",
                     "name": "Medium",
@@ -2715,19 +2715,19 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": true,
                   "key": "priority",
                   "name": "Priority",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "priority",
                     "type": "priority",
                   },
                 },
-                "project": Object {
-                  "allowedValues": Array [
-                    Object {
-                      "avatarUrls": Object {
+                "project": {
+                  "allowedValues": [
+                    {
+                      "avatarUrls": {
                         "16x16": "https://mmtest.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10008&avatarId=10417",
                         "24x24": "https://mmtest.atlassian.net/secure/projectavatar?size=small&s=small&pid=10008&avatarId=10417",
                         "32x32": "https://mmtest.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10008&avatarId=10417",
@@ -2744,24 +2744,24 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
                   "hasDefaultValue": false,
                   "key": "project",
                   "name": "Project",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "project",
                     "type": "project",
                   },
                 },
-                "summary": Object {
+                "summary": {
                   "hasDefaultValue": false,
                   "key": "summary",
                   "name": "Summary",
-                  "operations": Array [
+                  "operations": [
                     "set",
                   ],
                   "required": true,
-                  "schema": Object {
+                  "schema": {
                     "system": "summary",
                     "type": "string",
                   },
@@ -2784,37 +2784,8 @@ exports[`components/JiraEpicSelector should match snapshot 1`] = `
   removeValidate={[MockFunction]}
   search={[Function]}
   searchIssues={[MockFunction]}
-  theme={
-    Object {
-      "awayIndicator": "#ffbc42",
-      "buttonBg": "#166de0",
-      "buttonColor": "#ffffff",
-      "centerChannelBg": "#ffffff",
-      "centerChannelColor": "#3d3c40",
-      "codeTheme": "github",
-      "dndIndicator": "#f74343",
-      "errorTextColor": "#fd5960",
-      "linkColor": "#2389d7",
-      "mentionBg": "#ffffff",
-      "mentionBj": "#ffffff",
-      "mentionColor": "#145dbf",
-      "mentionHighlightBg": "#ffe577",
-      "mentionHighlightLink": "#166de0",
-      "newMessageSeparator": "#ff8800",
-      "onlineIndicator": "#06d6a0",
-      "sidebarBg": "#145dbf",
-      "sidebarHeaderBg": "#1153ab",
-      "sidebarHeaderTextColor": "#ffffff",
-      "sidebarText": "#ffffff",
-      "sidebarTextActiveBorder": "#579eff",
-      "sidebarTextActiveColor": "#ffffff",
-      "sidebarTextHoverBg": "#4578bf",
-      "sidebarUnreadText": "#ffffff",
-      "type": "Mattermost",
-    }
-  }
   value={
-    Array [
+    [
       "KT-17",
       "KT-20",
     ]

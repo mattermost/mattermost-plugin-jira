@@ -14,7 +14,7 @@ import {getStyleForReactSelect} from 'utils/styles';
 
 import {Props as ReactSelectSettingProps} from 'components/react_select_setting';
 import Setting from 'components/setting';
-import {TEAM_FIELD} from 'constant';
+import {TEAM_FIELD} from '../../constant';
 
 const searchDebounceDelay = 400;
 
