@@ -20,11 +20,15 @@
     "noEmit": true,
     "experimentalDecorators": true,
     "jsx": "react",
-    "baseUrl": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "types": ["jest", "node"]
   },
+  "typeRoots": ["./src/types"],
   "include": [
-    "src"
+    "./**/*"
   ],
   "exclude": [
     "dist",
