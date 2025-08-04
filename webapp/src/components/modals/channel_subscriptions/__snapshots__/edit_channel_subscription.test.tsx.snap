@@ -16,9 +16,9 @@ exports[`components/EditChannelSubscription should match snapshot 1`] = `
   </div>
   <div
     style={
-      Object {
+      {
         "backgroundColor": "#ffffff",
-        "color": "#3d3c40",
+        "color": "#3f4350",
         "padding": "2em 2em 3em",
       }
     }
@@ -51,32 +51,33 @@ exports[`components/EditChannelSubscription should match snapshot 1`] = `
         selectedInstanceID="https://something.atlassian.net"
         selectedProjectID="KT"
         theme={
-          Object {
-            "awayIndicator": "#ffbc42",
-            "buttonBg": "#166de0",
+          {
+            "awayIndicator": "#ffbc1f",
+            "buttonBg": "#1c58d9",
             "buttonColor": "#ffffff",
             "centerChannelBg": "#ffffff",
-            "centerChannelColor": "#3d3c40",
+            "centerChannelColor": "#3f4350",
             "codeTheme": "github",
-            "dndIndicator": "#f74343",
-            "errorTextColor": "#fd5960",
-            "linkColor": "#2389d7",
+            "dndIndicator": "#d24b4e",
+            "errorTextColor": "#d24b4e",
+            "linkColor": "#386fe5",
             "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
-            "mentionColor": "#145dbf",
-            "mentionHighlightBg": "#ffe577",
-            "mentionHighlightLink": "#166de0",
-            "newMessageSeparator": "#ff8800",
-            "onlineIndicator": "#06d6a0",
-            "sidebarBg": "#145dbf",
-            "sidebarHeaderBg": "#1153ab",
+            "mentionColor": "#1e325c",
+            "mentionHighlightBg": "#ffd470",
+            "mentionHighlightLink": "#1b1d22",
+            "newMessageSeparator": "#cc8f00",
+            "onlineIndicator": "#3db887",
+            "sidebarBg": "#1e325c",
+            "sidebarHeaderBg": "#192a4d",
             "sidebarHeaderTextColor": "#ffffff",
+            "sidebarTeamBarBg": "#162545",
             "sidebarText": "#ffffff",
-            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveBorder": "#5d89ea",
             "sidebarTextActiveColor": "#ffffff",
-            "sidebarTextHoverBg": "#4578bf",
+            "sidebarTextHoverBg": "#28427b",
             "sidebarUnreadText": "#ffffff",
-            "type": "Mattermost",
+            "type": "Denim",
           }
         }
       />
@@ -96,7 +97,7 @@ exports[`components/EditChannelSubscription should match snapshot 1`] = `
   </div>
   <ModalFooter
     style={
-      Object {
+      {
         "padding": "2rem 15px",
       }
     }
@@ -150,9 +151,9 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
   </div>
   <div
     style={
-      Object {
+      {
         "backgroundColor": "#ffffff",
-        "color": "#3d3c40",
+        "color": "#3f4350",
         "padding": "2em 2em 3em",
       }
     }
@@ -185,32 +186,33 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
         selectedInstanceID="https://something.atlassian.net"
         selectedProjectID="KT"
         theme={
-          Object {
-            "awayIndicator": "#ffbc42",
-            "buttonBg": "#166de0",
+          {
+            "awayIndicator": "#ffbc1f",
+            "buttonBg": "#1c58d9",
             "buttonColor": "#ffffff",
             "centerChannelBg": "#ffffff",
-            "centerChannelColor": "#3d3c40",
+            "centerChannelColor": "#3f4350",
             "codeTheme": "github",
-            "dndIndicator": "#f74343",
-            "errorTextColor": "#fd5960",
-            "linkColor": "#2389d7",
+            "dndIndicator": "#d24b4e",
+            "errorTextColor": "#d24b4e",
+            "linkColor": "#386fe5",
             "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
-            "mentionColor": "#145dbf",
-            "mentionHighlightBg": "#ffe577",
-            "mentionHighlightLink": "#166de0",
-            "newMessageSeparator": "#ff8800",
-            "onlineIndicator": "#06d6a0",
-            "sidebarBg": "#145dbf",
-            "sidebarHeaderBg": "#1153ab",
+            "mentionColor": "#1e325c",
+            "mentionHighlightBg": "#ffd470",
+            "mentionHighlightLink": "#1b1d22",
+            "newMessageSeparator": "#cc8f00",
+            "onlineIndicator": "#3db887",
+            "sidebarBg": "#1e325c",
+            "sidebarHeaderBg": "#192a4d",
             "sidebarHeaderTextColor": "#ffffff",
+            "sidebarTeamBarBg": "#162545",
             "sidebarText": "#ffffff",
-            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveBorder": "#5d89ea",
             "sidebarTextActiveColor": "#ffffff",
-            "sidebarTextHoverBg": "#4578bf",
+            "sidebarTextHoverBg": "#28427b",
             "sidebarUnreadText": "#ffffff",
-            "type": "Mattermost",
+            "type": "Denim",
           }
         }
       />
@@ -222,32 +224,33 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
         options={null}
         required={false}
         theme={
-          Object {
-            "awayIndicator": "#ffbc42",
-            "buttonBg": "#166de0",
+          {
+            "awayIndicator": "#ffbc1f",
+            "buttonBg": "#1c58d9",
             "buttonColor": "#ffffff",
             "centerChannelBg": "#ffffff",
-            "centerChannelColor": "#3d3c40",
+            "centerChannelColor": "#3f4350",
             "codeTheme": "github",
-            "dndIndicator": "#f74343",
-            "errorTextColor": "#fd5960",
-            "linkColor": "#2389d7",
+            "dndIndicator": "#d24b4e",
+            "errorTextColor": "#d24b4e",
+            "linkColor": "#386fe5",
             "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
-            "mentionColor": "#145dbf",
-            "mentionHighlightBg": "#ffe577",
-            "mentionHighlightLink": "#166de0",
-            "newMessageSeparator": "#ff8800",
-            "onlineIndicator": "#06d6a0",
-            "sidebarBg": "#145dbf",
-            "sidebarHeaderBg": "#1153ab",
+            "mentionColor": "#1e325c",
+            "mentionHighlightBg": "#ffd470",
+            "mentionHighlightLink": "#1b1d22",
+            "newMessageSeparator": "#cc8f00",
+            "onlineIndicator": "#3db887",
+            "sidebarBg": "#1e325c",
+            "sidebarHeaderBg": "#192a4d",
             "sidebarHeaderTextColor": "#ffffff",
+            "sidebarTeamBarBg": "#162545",
             "sidebarText": "#ffffff",
-            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveBorder": "#5d89ea",
             "sidebarTextActiveColor": "#ffffff",
-            "sidebarTextHoverBg": "#4578bf",
+            "sidebarTextHoverBg": "#28427b",
             "sidebarUnreadText": "#ffffff",
-            "type": "Mattermost",
+            "type": "Denim",
           }
         }
         value={null}
@@ -259,160 +262,160 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
         name="events"
         onChange={[Function]}
         options={
-          Array [
-            Object {
+          [
+            {
               "label": "Issue Created",
               "value": "event_created",
             },
-            Object {
+            {
               "label": "Issue Deleted",
               "value": "event_deleted",
             },
-            Object {
+            {
               "label": "Issue Deleted, Unresolved",
               "value": "event_deleted_unresolved",
             },
-            Object {
+            {
               "label": "Issue Reopened",
               "value": "event_updated_reopened",
             },
-            Object {
+            {
               "label": "Issue Resolved",
               "value": "event_updated_resolved",
             },
-            Object {
+            {
               "label": "Comment Created",
               "value": "event_created_comment",
             },
-            Object {
+            {
               "label": "Comment Updated",
               "value": "event_updated_comment",
             },
-            Object {
+            {
               "label": "Comment Deleted",
               "value": "event_deleted_comment",
             },
-            Object {
+            {
               "label": "Issue Updated: Any",
               "value": "event_updated_any",
             },
-            Object {
+            {
               "label": "Issue Updated: Affects Version",
               "value": "event_updated_affects_version",
             },
-            Object {
+            {
               "label": "Issue Updated: Assignee",
               "value": "event_updated_assignee",
             },
-            Object {
+            {
               "label": "Issue Updated: Attachment",
               "value": "event_updated_attachment",
             },
-            Object {
+            {
               "label": "Issue Updated: Description",
               "value": "event_updated_description",
             },
-            Object {
+            {
               "label": "Issue Updated: Fix Version",
               "value": "event_updated_fix_version",
             },
-            Object {
+            {
               "label": "Issue Updated: Issue Type",
               "value": "event_updated_issue_type",
             },
-            Object {
+            {
               "label": "Issue Updated: Labels",
               "value": "event_updated_labels",
             },
-            Object {
+            {
               "label": "Issue Updated: Priority",
               "value": "event_updated_priority",
             },
-            Object {
+            {
               "label": "Issue Updated: Rank",
               "value": "event_updated_rank",
             },
-            Object {
+            {
               "label": "Issue Updated: Reporter",
               "value": "event_updated_reporter",
             },
-            Object {
+            {
               "label": "Issue Updated: Sprint",
               "value": "event_updated_sprint",
             },
-            Object {
+            {
               "label": "Issue Updated: Status",
               "value": "event_updated_status",
             },
-            Object {
+            {
               "label": "Issue Updated: Summary",
               "value": "event_updated_summary",
             },
-            Object {
+            {
               "label": "Issue Updated: Components",
               "value": "event_updated_components",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - Epic Link",
               "value": "event_updated_customfield_10014",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - Epic Name",
               "value": "event_updated_customfield_10011",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - Favorite Food",
               "value": "event_updated_customfield_10067",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - MJK - Checkbox",
               "value": "event_updated_customfield_10068",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - MJK - Date Picker",
               "value": "event_updated_customfield_10069",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - MJK - Date Time Picker",
               "value": "event_updated_customfield_10070",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - MJK - Labels",
               "value": "event_updated_customfield_10071",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - MJK - Number Field",
               "value": "event_updated_customfield_10072",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - MJK - Radio Buttons",
               "value": "event_updated_customfield_10073",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - MJK - Select List 1",
               "value": "event_updated_customfield_10074",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - MJK - Select List 2",
               "value": "event_updated_customfield_10075",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - MJK - Select List 3",
               "value": "event_updated_customfield_10076",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - MJK - URL Field",
               "value": "event_updated_customfield_10079",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - MJK - User Picker",
               "value": "event_updated_customfield_10080",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - Text Field 1",
               "value": "event_updated_customfield_10077",
             },
-            Object {
+            {
               "label": "Issue Updated: Custom - Text Field 2",
               "value": "event_updated_customfield_10078",
             },
@@ -421,37 +424,38 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
         removeValidate={[Function]}
         required={true}
         theme={
-          Object {
-            "awayIndicator": "#ffbc42",
-            "buttonBg": "#166de0",
+          {
+            "awayIndicator": "#ffbc1f",
+            "buttonBg": "#1c58d9",
             "buttonColor": "#ffffff",
             "centerChannelBg": "#ffffff",
-            "centerChannelColor": "#3d3c40",
+            "centerChannelColor": "#3f4350",
             "codeTheme": "github",
-            "dndIndicator": "#f74343",
-            "errorTextColor": "#fd5960",
-            "linkColor": "#2389d7",
+            "dndIndicator": "#d24b4e",
+            "errorTextColor": "#d24b4e",
+            "linkColor": "#386fe5",
             "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
-            "mentionColor": "#145dbf",
-            "mentionHighlightBg": "#ffe577",
-            "mentionHighlightLink": "#166de0",
-            "newMessageSeparator": "#ff8800",
-            "onlineIndicator": "#06d6a0",
-            "sidebarBg": "#145dbf",
-            "sidebarHeaderBg": "#1153ab",
+            "mentionColor": "#1e325c",
+            "mentionHighlightBg": "#ffd470",
+            "mentionHighlightLink": "#1b1d22",
+            "newMessageSeparator": "#cc8f00",
+            "onlineIndicator": "#3db887",
+            "sidebarBg": "#1e325c",
+            "sidebarHeaderBg": "#192a4d",
             "sidebarHeaderTextColor": "#ffffff",
+            "sidebarTeamBarBg": "#162545",
             "sidebarText": "#ffffff",
-            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveBorder": "#5d89ea",
             "sidebarTextActiveColor": "#ffffff",
-            "sidebarTextHoverBg": "#4578bf",
+            "sidebarTextHoverBg": "#28427b",
             "sidebarUnreadText": "#ffffff",
-            "type": "Mattermost",
+            "type": "Denim",
           }
         }
         value={
-          Array [
-            Object {
+          [
+            {
               "label": "Issue Reopened",
               "value": "event_updated_reopened",
             },
@@ -465,24 +469,24 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
         name="issue_types"
         onChange={[Function]}
         options={
-          Array [
-            Object {
+          [
+            {
               "label": "Task",
               "value": "10002",
             },
-            Object {
+            {
               "label": "Sub-task",
               "value": "10003",
             },
-            Object {
+            {
               "label": "Story",
               "value": "10001",
             },
-            Object {
+            {
               "label": "Bug",
               "value": "10004",
             },
-            Object {
+            {
               "label": "Epic",
               "value": "10000",
             },
@@ -491,37 +495,38 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
         removeValidate={[Function]}
         required={true}
         theme={
-          Object {
-            "awayIndicator": "#ffbc42",
-            "buttonBg": "#166de0",
+          {
+            "awayIndicator": "#ffbc1f",
+            "buttonBg": "#1c58d9",
             "buttonColor": "#ffffff",
             "centerChannelBg": "#ffffff",
-            "centerChannelColor": "#3d3c40",
+            "centerChannelColor": "#3f4350",
             "codeTheme": "github",
-            "dndIndicator": "#f74343",
-            "errorTextColor": "#fd5960",
-            "linkColor": "#2389d7",
+            "dndIndicator": "#d24b4e",
+            "errorTextColor": "#d24b4e",
+            "linkColor": "#386fe5",
             "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
-            "mentionColor": "#145dbf",
-            "mentionHighlightBg": "#ffe577",
-            "mentionHighlightLink": "#166de0",
-            "newMessageSeparator": "#ff8800",
-            "onlineIndicator": "#06d6a0",
-            "sidebarBg": "#145dbf",
-            "sidebarHeaderBg": "#1153ab",
+            "mentionColor": "#1e325c",
+            "mentionHighlightBg": "#ffd470",
+            "mentionHighlightLink": "#1b1d22",
+            "newMessageSeparator": "#cc8f00",
+            "onlineIndicator": "#3db887",
+            "sidebarBg": "#1e325c",
+            "sidebarHeaderBg": "#192a4d",
             "sidebarHeaderTextColor": "#ffffff",
+            "sidebarTeamBarBg": "#162545",
             "sidebarText": "#ffffff",
-            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveBorder": "#5d89ea",
             "sidebarTextActiveColor": "#ffffff",
-            "sidebarTextHoverBg": "#4578bf",
+            "sidebarTextHoverBg": "#28427b",
             "sidebarUnreadText": "#ffffff",
-            "type": "Mattermost",
+            "type": "Denim",
           }
         }
         value={
-          Array [
-            Object {
+          [
+            {
               "label": "Bug",
               "value": "10004",
             },
@@ -531,262 +536,262 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
       <ChannelSubscriptionFilters
         addValidate={[Function]}
         chosenIssueTypes={
-          Array [
+          [
             "10004",
           ]
         }
         fields={
-          Array [
-            Object {
-              "issueTypes": Array [
-                Object {
+          [
+            {
+              "issueTypes": [
+                {
                   "id": "10004",
                   "name": "Bug",
                 },
               ],
               "key": "versions",
               "name": "Affects versions",
-              "schema": Object {
+              "schema": {
                 "items": "version",
                 "system": "versions",
                 "type": "array",
               },
-              "values": Array [
-                Object {
+              "values": [
+                {
                   "label": "d",
                   "value": "10000",
                 },
               ],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10002",
                   "name": "Task",
                 },
-                Object {
+                {
                   "id": "10003",
                   "name": "Sub-task",
                 },
-                Object {
+                {
                   "id": "10001",
                   "name": "Story",
                 },
-                Object {
+                {
                   "id": "10004",
                   "name": "Bug",
                 },
-                Object {
+                {
                   "id": "10000",
                   "name": "Epic",
                 },
               ],
               "key": "assignee",
               "name": "Assignee",
-              "schema": Object {
+              "schema": {
                 "system": "assignee",
                 "type": "user",
               },
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10002",
                   "name": "Task",
                 },
-                Object {
+                {
                   "id": "10003",
                   "name": "Sub-task",
                 },
-                Object {
+                {
                   "id": "10001",
                   "name": "Story",
                 },
-                Object {
+                {
                   "id": "10004",
                   "name": "Bug",
                 },
-                Object {
+                {
                   "id": "10000",
                   "name": "Epic",
                 },
               ],
               "key": "commentVisibility",
               "name": "Comment Visibility",
-              "schema": Object {
+              "schema": {
                 "type": "commentVisibility",
               },
-              "values": Array [],
+              "values": [],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10002",
                   "name": "Task",
                 },
-                Object {
+                {
                   "id": "10003",
                   "name": "Sub-task",
                 },
-                Object {
+                {
                   "id": "10001",
                   "name": "Story",
                 },
-                Object {
+                {
                   "id": "10004",
                   "name": "Bug",
                 },
-                Object {
+                {
                   "id": "10000",
                   "name": "Epic",
                 },
               ],
               "key": "customfield_10014",
               "name": "Epic Link",
-              "schema": Object {
+              "schema": {
                 "custom": "com.pyxis.greenhopper.jira:gh-epic-link",
                 "customId": 10014,
                 "type": "any",
               },
-              "values": Array [],
+              "values": [],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10002",
                   "name": "Task",
                 },
-                Object {
+                {
                   "id": "10003",
                   "name": "Sub-task",
                 },
-                Object {
+                {
                   "id": "10001",
                   "name": "Story",
                 },
-                Object {
+                {
                   "id": "10004",
                   "name": "Bug",
                 },
-                Object {
+                {
                   "id": "10000",
                   "name": "Epic",
                 },
               ],
               "key": "fixVersions",
               "name": "Fix versions",
-              "schema": Object {
+              "schema": {
                 "items": "version",
                 "system": "fixVersions",
                 "type": "array",
               },
-              "values": Array [
-                Object {
+              "values": [
+                {
                   "label": "d",
                   "value": "10000",
                 },
               ],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10002",
                   "name": "Task",
                 },
-                Object {
+                {
                   "id": "10003",
                   "name": "Sub-task",
                 },
-                Object {
+                {
                   "id": "10001",
                   "name": "Story",
                 },
-                Object {
+                {
                   "id": "10004",
                   "name": "Bug",
                 },
-                Object {
+                {
                   "id": "10000",
                   "name": "Epic",
                 },
               ],
               "key": "labels",
               "name": "Labels",
-              "schema": Object {
+              "schema": {
                 "items": "string",
                 "system": "labels",
                 "type": "array",
               },
               "userDefined": true,
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10002",
                   "name": "Task",
                 },
-                Object {
+                {
                   "id": "10003",
                   "name": "Sub-task",
                 },
-                Object {
+                {
                   "id": "10001",
                   "name": "Story",
                 },
-                Object {
+                {
                   "id": "10004",
                   "name": "Bug",
                 },
-                Object {
+                {
                   "id": "10000",
                   "name": "Epic",
                 },
               ],
               "key": "customfield_10068",
               "name": "MJK - Checkbox",
-              "schema": Object {
+              "schema": {
                 "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
                 "customId": 10068,
                 "items": "option",
                 "type": "array",
               },
-              "values": Array [
-                Object {
+              "values": [
+                {
                   "label": "1",
                   "value": "10033",
                 },
-                Object {
+                {
                   "label": "2",
                   "value": "10034",
                 },
               ],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10002",
                   "name": "Task",
                 },
-                Object {
+                {
                   "id": "10003",
                   "name": "Sub-task",
                 },
-                Object {
+                {
                   "id": "10001",
                   "name": "Story",
                 },
-                Object {
+                {
                   "id": "10004",
                   "name": "Bug",
                 },
-                Object {
+                {
                   "id": "10000",
                   "name": "Epic",
                 },
               ],
               "key": "customfield_10071",
               "name": "MJK - Labels",
-              "schema": Object {
+              "schema": {
                 "custom": "com.atlassian.jira.plugin.system.customfieldtypes:labels",
                 "customId": 10071,
                 "items": "string",
@@ -794,463 +799,463 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
               },
               "userDefined": true,
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10002",
                   "name": "Task",
                 },
-                Object {
+                {
                   "id": "10003",
                   "name": "Sub-task",
                 },
-                Object {
+                {
                   "id": "10001",
                   "name": "Story",
                 },
-                Object {
+                {
                   "id": "10004",
                   "name": "Bug",
                 },
-                Object {
+                {
                   "id": "10000",
                   "name": "Epic",
                 },
               ],
               "key": "customfield_10073",
               "name": "MJK - Radio Buttons",
-              "schema": Object {
+              "schema": {
                 "custom": "com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons",
                 "customId": 10073,
                 "type": "option",
               },
-              "values": Array [
-                Object {
+              "values": [
+                {
                   "label": "1",
                   "value": "10035",
                 },
-                Object {
+                {
                   "label": "2",
                   "value": "10036",
                 },
               ],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10002",
                   "name": "Task",
                 },
-                Object {
+                {
                   "id": "10003",
                   "name": "Sub-task",
                 },
-                Object {
+                {
                   "id": "10001",
                   "name": "Story",
                 },
-                Object {
+                {
                   "id": "10004",
                   "name": "Bug",
                 },
-                Object {
+                {
                   "id": "10000",
                   "name": "Epic",
                 },
               ],
               "key": "customfield_10075",
               "name": "MJK - Select List 2",
-              "schema": Object {
+              "schema": {
                 "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multiselect",
                 "customId": 10075,
                 "items": "option",
                 "type": "array",
               },
-              "values": Array [
-                Object {
+              "values": [
+                {
                   "label": "1",
                   "value": "10037",
                 },
-                Object {
+                {
                   "label": "2",
                   "value": "10038",
                 },
               ],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10002",
                   "name": "Task",
                 },
-                Object {
+                {
                   "id": "10003",
                   "name": "Sub-task",
                 },
-                Object {
+                {
                   "id": "10001",
                   "name": "Story",
                 },
-                Object {
+                {
                   "id": "10004",
                   "name": "Bug",
                 },
-                Object {
+                {
                   "id": "10000",
                   "name": "Epic",
                 },
               ],
               "key": "customfield_10076",
               "name": "MJK - Select List 3",
-              "schema": Object {
+              "schema": {
                 "custom": "com.atlassian.jira.plugin.system.customfieldtypes:select",
                 "customId": 10076,
                 "type": "option",
               },
-              "values": Array [
-                Object {
+              "values": [
+                {
                   "label": "1",
                   "value": "10039",
                 },
-                Object {
+                {
                   "label": "2",
                   "value": "10040",
                 },
               ],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10002",
                   "name": "Task",
                 },
-                Object {
+                {
                   "id": "10003",
                   "name": "Sub-task",
                 },
-                Object {
+                {
                   "id": "10001",
                   "name": "Story",
                 },
-                Object {
+                {
                   "id": "10004",
                   "name": "Bug",
                 },
-                Object {
+                {
                   "id": "10000",
                   "name": "Epic",
                 },
               ],
               "key": "customfield_10080",
               "name": "MJK - User Picker",
-              "schema": Object {
+              "schema": {
                 "custom": "com.atlassian.jira.plugin.system.customfieldtypes:userpicker",
                 "customId": 10080,
                 "type": "user",
               },
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10002",
                   "name": "Task",
                 },
-                Object {
+                {
                   "id": "10003",
                   "name": "Sub-task",
                 },
-                Object {
+                {
                   "id": "10001",
                   "name": "Story",
                 },
-                Object {
+                {
                   "id": "10004",
                   "name": "Bug",
                 },
-                Object {
+                {
                   "id": "10000",
                   "name": "Epic",
                 },
               ],
               "key": "priority",
               "name": "Priority",
-              "schema": Object {
+              "schema": {
                 "system": "priority",
                 "type": "priority",
               },
-              "values": Array [
-                Object {
+              "values": [
+                {
                   "label": "Highest",
                   "value": "1",
                 },
-                Object {
+                {
                   "label": "High",
                   "value": "2",
                 },
-                Object {
+                {
                   "label": "Medium",
                   "value": "3",
                 },
-                Object {
+                {
                   "label": "Low",
                   "value": "4",
                 },
-                Object {
+                {
                   "label": "Lowest",
                   "value": "5",
                 },
               ],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10002",
                   "name": "Task",
                 },
-                Object {
+                {
                   "id": "10003",
                   "name": "Sub-task",
                 },
-                Object {
+                {
                   "id": "10001",
                   "name": "Story",
                 },
-                Object {
+                {
                   "id": "10004",
                   "name": "Bug",
                 },
-                Object {
+                {
                   "id": "10000",
                   "name": "Epic",
                 },
               ],
               "key": "status",
               "name": "Status",
-              "schema": Object {
+              "schema": {
                 "type": "array",
               },
-              "values": Array [
-                Object {
+              "values": [
+                {
                   "label": "TODO",
                   "value": "1001",
                 },
-                Object {
+                {
                   "label": "In Progress",
                   "value": "1002",
                 },
               ],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10002",
                   "name": "Task",
                 },
-                Object {
+                {
                   "id": "10003",
                   "name": "Sub-task",
                 },
-                Object {
+                {
                   "id": "10001",
                   "name": "Story",
                 },
-                Object {
+                {
                   "id": "10004",
                   "name": "Bug",
                 },
-                Object {
+                {
                   "id": "10000",
                   "name": "Epic",
                 },
               ],
               "key": "teamField",
               "name": "Team",
-              "schema": Object {
+              "schema": {
                 "type": "team",
               },
-              "values": Array [],
+              "values": [],
             },
           ]
         }
         instanceID="https://something.atlassian.net"
         issueMetadata={
-          Object {
+          {
             "expand": "projects",
-            "issue_types_with_statuses": Array [
-              Object {
+            "issue_types_with_statuses": [
+              {
                 "id": "10002",
                 "name": "Task",
-                "statuses": Array [
-                  Object {
+                "statuses": [
+                  {
                     "id": "1001",
                     "name": "TODO",
                   },
                 ],
               },
-              Object {
+              {
                 "id": "10003",
                 "name": "Sub-task",
-                "statuses": Array [
-                  Object {
+                "statuses": [
+                  {
                     "id": "1001",
                     "name": "TODO",
                   },
-                  Object {
+                  {
                     "id": "1002",
                     "name": "In Progress",
                   },
                 ],
               },
-              Object {
+              {
                 "id": "10001",
                 "name": "Story",
-                "statuses": Array [
-                  Object {
+                "statuses": [
+                  {
                     "id": "1001",
                     "name": "TODO",
                   },
-                  Object {
+                  {
                     "id": "1002",
                     "name": "In Progress",
                   },
                 ],
               },
-              Object {
+              {
                 "id": "10004",
                 "name": "Bug",
-                "statuses": Array [
-                  Object {
+                "statuses": [
+                  {
                     "id": "1001",
                     "name": "TODO",
                   },
-                  Object {
+                  {
                     "id": "1002",
                     "name": "In Progress",
                   },
                 ],
               },
-              Object {
+              {
                 "id": "10000",
                 "name": "Epic",
-                "statuses": Array [
-                  Object {
+                "statuses": [
+                  {
                     "id": "1001",
                     "name": "TODO",
                   },
-                  Object {
+                  {
                     "id": "1002",
                     "name": "In Progress",
                   },
-                  Object {
+                  {
                     "id": "1003",
                     "name": "Bug",
                   },
                 ],
               },
             ],
-            "projects": Array [
-              Object {
+            "projects": [
+              {
                 "expand": "issuetypes",
                 "id": "10008",
-                "issuetypes": Array [
-                  Object {
+                "issuetypes": [
+                  {
                     "description": "A task that needs to be done.",
                     "expand": "fields",
-                    "fields": Object {
-                      "assignee": Object {
+                    "fields": {
+                      "assignee": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/user/assignable/search?project=KT&query=",
                         "hasDefaultValue": false,
                         "key": "assignee",
                         "name": "Assignee",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "system": "assignee",
                           "type": "user",
                         },
                       },
-                      "attachment": Object {
+                      "attachment": {
                         "hasDefaultValue": false,
                         "key": "attachment",
                         "name": "Attachment",
-                        "operations": Array [],
+                        "operations": [],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "attachment",
                           "system": "attachment",
                           "type": "array",
                         },
                       },
-                      "components": Object {
-                        "allowedValues": Array [],
+                      "components": {
+                        "allowedValues": [],
                         "hasDefaultValue": false,
                         "key": "components",
                         "name": "Components",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "component",
                           "system": "components",
                           "type": "array",
                         },
                       },
-                      "customfield_10014": Object {
+                      "customfield_10014": {
                         "hasDefaultValue": false,
                         "key": "customfield_10014",
                         "name": "Epic Link",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.pyxis.greenhopper.jira:gh-epic-link",
                           "customId": 10014,
                           "type": "any",
                         },
                       },
-                      "customfield_10021": Object {
+                      "customfield_10021": {
                         "hasDefaultValue": false,
                         "key": "customfield_10021",
                         "name": "Sprint",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.pyxis.greenhopper.jira:gh-sprint",
                           "customId": 10021,
                           "items": "string",
                           "type": "array",
                         },
                       },
-                      "customfield_10067": Object {
+                      "customfield_10067": {
                         "hasDefaultValue": false,
                         "key": "customfield_10067",
                         "name": "Favorite Food",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                           "customId": 10067,
                           "type": "string",
                         },
                       },
-                      "customfield_10068": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10068": {
+                        "allowedValues": [
+                          {
                             "id": "10033",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10033",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10034",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10034",
                             "value": "2",
@@ -1259,87 +1264,87 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10068",
                         "name": "MJK - Checkbox",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
                           "customId": 10068,
                           "items": "option",
                           "type": "array",
                         },
                       },
-                      "customfield_10069": Object {
+                      "customfield_10069": {
                         "hasDefaultValue": false,
                         "key": "customfield_10069",
                         "name": "MJK - Date Picker",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datepicker",
                           "customId": 10069,
                           "type": "date",
                         },
                       },
-                      "customfield_10070": Object {
+                      "customfield_10070": {
                         "hasDefaultValue": false,
                         "key": "customfield_10070",
                         "name": "MJK - Date Time Picker",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datetime",
                           "customId": 10070,
                           "type": "datetime",
                         },
                       },
-                      "customfield_10071": Object {
+                      "customfield_10071": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?customFieldId=10071&query=",
                         "hasDefaultValue": false,
                         "key": "customfield_10071",
                         "name": "MJK - Labels",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:labels",
                           "customId": 10071,
                           "items": "string",
                           "type": "array",
                         },
                       },
-                      "customfield_10072": Object {
+                      "customfield_10072": {
                         "hasDefaultValue": false,
                         "key": "customfield_10072",
                         "name": "MJK - Number Field",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float",
                           "customId": 10072,
                           "type": "number",
                         },
                       },
-                      "customfield_10073": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10073": {
+                        "allowedValues": [
+                          {
                             "id": "10035",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10035",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10036",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10036",
                             "value": "2",
@@ -1348,39 +1353,39 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10073",
                         "name": "MJK - Radio Buttons",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons",
                           "customId": 10073,
                           "type": "option",
                         },
                       },
-                      "customfield_10074": Object {
-                        "allowedValues": Array [],
+                      "customfield_10074": {
+                        "allowedValues": [],
                         "hasDefaultValue": false,
                         "key": "customfield_10074",
                         "name": "MJK - Select List 1",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect",
                           "customId": 10074,
                           "type": "option-with-child",
                         },
                       },
-                      "customfield_10075": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10075": {
+                        "allowedValues": [
+                          {
                             "id": "10037",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10037",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10038",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10038",
                             "value": "2",
@@ -1389,27 +1394,27 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10075",
                         "name": "MJK - Select List 2",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multiselect",
                           "customId": 10075,
                           "items": "option",
                           "type": "array",
                         },
                       },
-                      "customfield_10076": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10076": {
+                        "allowedValues": [
+                          {
                             "id": "10039",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10039",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10040",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10040",
                             "value": "2",
@@ -1418,89 +1423,89 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10076",
                         "name": "MJK - Select List 3",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:select",
                           "customId": 10076,
                           "type": "option",
                         },
                       },
-                      "customfield_10077": Object {
+                      "customfield_10077": {
                         "hasDefaultValue": false,
                         "key": "customfield_10077",
                         "name": "Text Field 1",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textarea",
                           "customId": 10077,
                           "type": "string",
                         },
                       },
-                      "customfield_10078": Object {
+                      "customfield_10078": {
                         "hasDefaultValue": false,
                         "key": "customfield_10078",
                         "name": "Text Field 2",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                           "customId": 10078,
                           "type": "string",
                         },
                       },
-                      "customfield_10079": Object {
+                      "customfield_10079": {
                         "hasDefaultValue": false,
                         "key": "customfield_10079",
                         "name": "MJK - URL Field",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:url",
                           "customId": 10079,
                           "type": "string",
                         },
                       },
-                      "customfield_10080": Object {
+                      "customfield_10080": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/users/picker?fieldName=customfield_10080&fieldConfigId=10187&projectId=10008&showAvatar=true&query=",
                         "hasDefaultValue": false,
                         "key": "customfield_10080",
                         "name": "MJK - User Picker",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:userpicker",
                           "customId": 10080,
                           "type": "user",
                         },
                       },
-                      "description": Object {
+                      "description": {
                         "hasDefaultValue": false,
                         "key": "description",
                         "name": "Description",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "description",
                           "type": "string",
                         },
                       },
-                      "fixVersions": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "fixVersions": {
+                        "allowedValues": [
+                          {
                             "archived": false,
                             "id": "10000",
                             "name": "d",
@@ -1512,36 +1517,36 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "fixVersions",
                         "name": "Fix versions",
-                        "operations": Array [
+                        "operations": [
                           "set",
                           "add",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "version",
                           "system": "fixVersions",
                           "type": "array",
                         },
                       },
-                      "issuelinks": Object {
+                      "issuelinks": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/issue/picker?currentProjectId=&showSubTaskParent=true&showSubTasks=true&currentIssueKey=null&query=",
                         "hasDefaultValue": false,
                         "key": "issuelinks",
                         "name": "Linked Issues",
-                        "operations": Array [
+                        "operations": [
                           "add",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "issuelinks",
                           "system": "issuelinks",
                           "type": "array",
                         },
                       },
-                      "issuetype": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "issuetype": {
+                        "allowedValues": [
+                          {
                             "avatarId": 10318,
                             "description": "A task that needs to be done.",
                             "iconUrl": "https://mmtest.atlassian.net/secure/viewavatar?size=medium&avatarId=10318&avatarType=issuetype",
@@ -1554,64 +1559,64 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "issuetype",
                         "name": "Issue Type",
-                        "operations": Array [],
+                        "operations": [],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "issuetype",
                           "type": "issuetype",
                         },
                       },
-                      "labels": Object {
+                      "labels": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?query=",
                         "hasDefaultValue": false,
                         "key": "labels",
                         "name": "Labels",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "string",
                           "system": "labels",
                           "type": "array",
                         },
                       },
-                      "priority": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "priority": {
+                        "allowedValues": [
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/highest.svg",
                             "id": "1",
                             "name": "Highest",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/1",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/high.svg",
                             "id": "2",
                             "name": "High",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/2",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                             "id": "3",
                             "name": "Medium",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/3",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/low.svg",
                             "id": "4",
                             "name": "Low",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/4",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/lowest.svg",
                             "id": "5",
                             "name": "Lowest",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/5",
                           },
                         ],
-                        "defaultValue": Object {
+                        "defaultValue": {
                           "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                           "id": "3",
                           "name": "Medium",
@@ -1620,19 +1625,19 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": true,
                         "key": "priority",
                         "name": "Priority",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "priority",
                           "type": "priority",
                         },
                       },
-                      "project": Object {
-                        "allowedValues": Array [
-                          Object {
-                            "avatarUrls": Object {
+                      "project": {
+                        "allowedValues": [
+                          {
+                            "avatarUrls": {
                               "16x16": "https://mmtest.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10008&avatarId=10417",
                               "24x24": "https://mmtest.atlassian.net/secure/projectavatar?size=small&s=small&pid=10008&avatarId=10417",
                               "32x32": "https://mmtest.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10008&avatarId=10417",
@@ -1649,24 +1654,24 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "project",
                         "name": "Project",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "project",
                           "type": "project",
                         },
                       },
-                      "summary": Object {
+                      "summary": {
                         "hasDefaultValue": false,
                         "key": "summary",
                         "name": "Summary",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "summary",
                           "type": "string",
                         },
@@ -1677,104 +1682,104 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                     "name": "Task",
                     "self": "https://mmtest.atlassian.net/rest/api/2/issuetype/10002",
                   },
-                  Object {
+                  {
                     "description": "The sub-task of the issue",
                     "expand": "fields",
-                    "fields": Object {
-                      "assignee": Object {
+                    "fields": {
+                      "assignee": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/user/assignable/search?project=KT&query=",
                         "hasDefaultValue": false,
                         "key": "assignee",
                         "name": "Assignee",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "system": "assignee",
                           "type": "user",
                         },
                       },
-                      "attachment": Object {
+                      "attachment": {
                         "hasDefaultValue": false,
                         "key": "attachment",
                         "name": "Attachment",
-                        "operations": Array [],
+                        "operations": [],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "attachment",
                           "system": "attachment",
                           "type": "array",
                         },
                       },
-                      "components": Object {
-                        "allowedValues": Array [],
+                      "components": {
+                        "allowedValues": [],
                         "hasDefaultValue": false,
                         "key": "components",
                         "name": "Components",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "component",
                           "system": "components",
                           "type": "array",
                         },
                       },
-                      "customfield_10014": Object {
+                      "customfield_10014": {
                         "hasDefaultValue": false,
                         "key": "customfield_10014",
                         "name": "Epic Link",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.pyxis.greenhopper.jira:gh-epic-link",
                           "customId": 10014,
                           "type": "any",
                         },
                       },
-                      "customfield_10021": Object {
+                      "customfield_10021": {
                         "hasDefaultValue": false,
                         "key": "customfield_10021",
                         "name": "Sprint",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.pyxis.greenhopper.jira:gh-sprint",
                           "customId": 10021,
                           "items": "string",
                           "type": "array",
                         },
                       },
-                      "customfield_10067": Object {
+                      "customfield_10067": {
                         "hasDefaultValue": false,
                         "key": "customfield_10067",
                         "name": "Favorite Food",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                           "customId": 10067,
                           "type": "string",
                         },
                       },
-                      "customfield_10068": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10068": {
+                        "allowedValues": [
+                          {
                             "id": "10033",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10033",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10034",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10034",
                             "value": "2",
@@ -1783,87 +1788,87 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10068",
                         "name": "MJK - Checkbox",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
                           "customId": 10068,
                           "items": "option",
                           "type": "array",
                         },
                       },
-                      "customfield_10069": Object {
+                      "customfield_10069": {
                         "hasDefaultValue": false,
                         "key": "customfield_10069",
                         "name": "MJK - Date Picker",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datepicker",
                           "customId": 10069,
                           "type": "date",
                         },
                       },
-                      "customfield_10070": Object {
+                      "customfield_10070": {
                         "hasDefaultValue": false,
                         "key": "customfield_10070",
                         "name": "MJK - Date Time Picker",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datetime",
                           "customId": 10070,
                           "type": "datetime",
                         },
                       },
-                      "customfield_10071": Object {
+                      "customfield_10071": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?customFieldId=10071&query=",
                         "hasDefaultValue": false,
                         "key": "customfield_10071",
                         "name": "MJK - Labels",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:labels",
                           "customId": 10071,
                           "items": "string",
                           "type": "array",
                         },
                       },
-                      "customfield_10072": Object {
+                      "customfield_10072": {
                         "hasDefaultValue": false,
                         "key": "customfield_10072",
                         "name": "MJK - Number Field",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float",
                           "customId": 10072,
                           "type": "number",
                         },
                       },
-                      "customfield_10073": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10073": {
+                        "allowedValues": [
+                          {
                             "id": "10035",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10035",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10036",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10036",
                             "value": "2",
@@ -1872,39 +1877,39 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10073",
                         "name": "MJK - Radio Buttons",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons",
                           "customId": 10073,
                           "type": "option",
                         },
                       },
-                      "customfield_10074": Object {
-                        "allowedValues": Array [],
+                      "customfield_10074": {
+                        "allowedValues": [],
                         "hasDefaultValue": false,
                         "key": "customfield_10074",
                         "name": "MJK - Select List 1",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect",
                           "customId": 10074,
                           "type": "option-with-child",
                         },
                       },
-                      "customfield_10075": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10075": {
+                        "allowedValues": [
+                          {
                             "id": "10037",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10037",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10038",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10038",
                             "value": "2",
@@ -1913,27 +1918,27 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10075",
                         "name": "MJK - Select List 2",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multiselect",
                           "customId": 10075,
                           "items": "option",
                           "type": "array",
                         },
                       },
-                      "customfield_10076": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10076": {
+                        "allowedValues": [
+                          {
                             "id": "10039",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10039",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10040",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10040",
                             "value": "2",
@@ -1942,89 +1947,89 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10076",
                         "name": "MJK - Select List 3",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:select",
                           "customId": 10076,
                           "type": "option",
                         },
                       },
-                      "customfield_10077": Object {
+                      "customfield_10077": {
                         "hasDefaultValue": false,
                         "key": "customfield_10077",
                         "name": "Text Field 1",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textarea",
                           "customId": 10077,
                           "type": "string",
                         },
                       },
-                      "customfield_10078": Object {
+                      "customfield_10078": {
                         "hasDefaultValue": false,
                         "key": "customfield_10078",
                         "name": "Text Field 2",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                           "customId": 10078,
                           "type": "string",
                         },
                       },
-                      "customfield_10079": Object {
+                      "customfield_10079": {
                         "hasDefaultValue": false,
                         "key": "customfield_10079",
                         "name": "MJK - URL Field",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:url",
                           "customId": 10079,
                           "type": "string",
                         },
                       },
-                      "customfield_10080": Object {
+                      "customfield_10080": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/users/picker?fieldName=customfield_10080&fieldConfigId=10187&projectId=10008&showAvatar=true&query=",
                         "hasDefaultValue": false,
                         "key": "customfield_10080",
                         "name": "MJK - User Picker",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:userpicker",
                           "customId": 10080,
                           "type": "user",
                         },
                       },
-                      "description": Object {
+                      "description": {
                         "hasDefaultValue": false,
                         "key": "description",
                         "name": "Description",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "description",
                           "type": "string",
                         },
                       },
-                      "fixVersions": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "fixVersions": {
+                        "allowedValues": [
+                          {
                             "archived": false,
                             "id": "10000",
                             "name": "d",
@@ -2036,36 +2041,36 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "fixVersions",
                         "name": "Fix versions",
-                        "operations": Array [
+                        "operations": [
                           "set",
                           "add",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "version",
                           "system": "fixVersions",
                           "type": "array",
                         },
                       },
-                      "issuelinks": Object {
+                      "issuelinks": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/issue/picker?currentProjectId=&showSubTaskParent=true&showSubTasks=true&currentIssueKey=null&query=",
                         "hasDefaultValue": false,
                         "key": "issuelinks",
                         "name": "Linked Issues",
-                        "operations": Array [
+                        "operations": [
                           "add",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "issuelinks",
                           "system": "issuelinks",
                           "type": "array",
                         },
                       },
-                      "issuetype": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "issuetype": {
+                        "allowedValues": [
+                          {
                             "avatarId": 10316,
                             "description": "The sub-task of the issue",
                             "iconUrl": "https://mmtest.atlassian.net/secure/viewavatar?size=medium&avatarId=10316&avatarType=issuetype",
@@ -2078,77 +2083,77 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "issuetype",
                         "name": "Issue Type",
-                        "operations": Array [],
+                        "operations": [],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "issuetype",
                           "type": "issuetype",
                         },
                       },
-                      "labels": Object {
+                      "labels": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?query=",
                         "hasDefaultValue": false,
                         "key": "labels",
                         "name": "Labels",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "string",
                           "system": "labels",
                           "type": "array",
                         },
                       },
-                      "parent": Object {
+                      "parent": {
                         "hasDefaultValue": false,
                         "key": "parent",
                         "name": "Parent",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "parent",
                           "type": "issuelink",
                         },
                       },
-                      "priority": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "priority": {
+                        "allowedValues": [
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/highest.svg",
                             "id": "1",
                             "name": "Highest",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/1",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/high.svg",
                             "id": "2",
                             "name": "High",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/2",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                             "id": "3",
                             "name": "Medium",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/3",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/low.svg",
                             "id": "4",
                             "name": "Low",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/4",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/lowest.svg",
                             "id": "5",
                             "name": "Lowest",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/5",
                           },
                         ],
-                        "defaultValue": Object {
+                        "defaultValue": {
                           "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                           "id": "3",
                           "name": "Medium",
@@ -2157,19 +2162,19 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": true,
                         "key": "priority",
                         "name": "Priority",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "priority",
                           "type": "priority",
                         },
                       },
-                      "project": Object {
-                        "allowedValues": Array [
-                          Object {
-                            "avatarUrls": Object {
+                      "project": {
+                        "allowedValues": [
+                          {
+                            "avatarUrls": {
                               "16x16": "https://mmtest.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10008&avatarId=10417",
                               "24x24": "https://mmtest.atlassian.net/secure/projectavatar?size=small&s=small&pid=10008&avatarId=10417",
                               "32x32": "https://mmtest.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10008&avatarId=10417",
@@ -2186,24 +2191,24 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "project",
                         "name": "Project",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "project",
                           "type": "project",
                         },
                       },
-                      "summary": Object {
+                      "summary": {
                         "hasDefaultValue": false,
                         "key": "summary",
                         "name": "Summary",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "summary",
                           "type": "string",
                         },
@@ -2215,104 +2220,104 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                     "self": "https://mmtest.atlassian.net/rest/api/2/issuetype/10003",
                     "subtask": true,
                   },
-                  Object {
+                  {
                     "description": "Stories track functionality or features expressed as user goals.",
                     "expand": "fields",
-                    "fields": Object {
-                      "assignee": Object {
+                    "fields": {
+                      "assignee": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/user/assignable/search?project=KT&query=",
                         "hasDefaultValue": false,
                         "key": "assignee",
                         "name": "Assignee",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "system": "assignee",
                           "type": "user",
                         },
                       },
-                      "attachment": Object {
+                      "attachment": {
                         "hasDefaultValue": false,
                         "key": "attachment",
                         "name": "Attachment",
-                        "operations": Array [],
+                        "operations": [],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "attachment",
                           "system": "attachment",
                           "type": "array",
                         },
                       },
-                      "components": Object {
-                        "allowedValues": Array [],
+                      "components": {
+                        "allowedValues": [],
                         "hasDefaultValue": false,
                         "key": "components",
                         "name": "Components",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "component",
                           "system": "components",
                           "type": "array",
                         },
                       },
-                      "customfield_10014": Object {
+                      "customfield_10014": {
                         "hasDefaultValue": false,
                         "key": "customfield_10014",
                         "name": "Epic Link",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.pyxis.greenhopper.jira:gh-epic-link",
                           "customId": 10014,
                           "type": "any",
                         },
                       },
-                      "customfield_10021": Object {
+                      "customfield_10021": {
                         "hasDefaultValue": false,
                         "key": "customfield_10021",
                         "name": "Sprint",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.pyxis.greenhopper.jira:gh-sprint",
                           "customId": 10021,
                           "items": "string",
                           "type": "array",
                         },
                       },
-                      "customfield_10067": Object {
+                      "customfield_10067": {
                         "hasDefaultValue": false,
                         "key": "customfield_10067",
                         "name": "Favorite Food",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                           "customId": 10067,
                           "type": "string",
                         },
                       },
-                      "customfield_10068": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10068": {
+                        "allowedValues": [
+                          {
                             "id": "10033",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10033",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10034",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10034",
                             "value": "2",
@@ -2321,87 +2326,87 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10068",
                         "name": "MJK - Checkbox",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
                           "customId": 10068,
                           "items": "option",
                           "type": "array",
                         },
                       },
-                      "customfield_10069": Object {
+                      "customfield_10069": {
                         "hasDefaultValue": false,
                         "key": "customfield_10069",
                         "name": "MJK - Date Picker",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datepicker",
                           "customId": 10069,
                           "type": "date",
                         },
                       },
-                      "customfield_10070": Object {
+                      "customfield_10070": {
                         "hasDefaultValue": false,
                         "key": "customfield_10070",
                         "name": "MJK - Date Time Picker",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datetime",
                           "customId": 10070,
                           "type": "datetime",
                         },
                       },
-                      "customfield_10071": Object {
+                      "customfield_10071": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?customFieldId=10071&query=",
                         "hasDefaultValue": false,
                         "key": "customfield_10071",
                         "name": "MJK - Labels",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:labels",
                           "customId": 10071,
                           "items": "string",
                           "type": "array",
                         },
                       },
-                      "customfield_10072": Object {
+                      "customfield_10072": {
                         "hasDefaultValue": false,
                         "key": "customfield_10072",
                         "name": "MJK - Number Field",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float",
                           "customId": 10072,
                           "type": "number",
                         },
                       },
-                      "customfield_10073": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10073": {
+                        "allowedValues": [
+                          {
                             "id": "10035",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10035",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10036",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10036",
                             "value": "2",
@@ -2410,39 +2415,39 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10073",
                         "name": "MJK - Radio Buttons",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons",
                           "customId": 10073,
                           "type": "option",
                         },
                       },
-                      "customfield_10074": Object {
-                        "allowedValues": Array [],
+                      "customfield_10074": {
+                        "allowedValues": [],
                         "hasDefaultValue": false,
                         "key": "customfield_10074",
                         "name": "MJK - Select List 1",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect",
                           "customId": 10074,
                           "type": "option-with-child",
                         },
                       },
-                      "customfield_10075": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10075": {
+                        "allowedValues": [
+                          {
                             "id": "10037",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10037",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10038",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10038",
                             "value": "2",
@@ -2451,27 +2456,27 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10075",
                         "name": "MJK - Select List 2",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multiselect",
                           "customId": 10075,
                           "items": "option",
                           "type": "array",
                         },
                       },
-                      "customfield_10076": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10076": {
+                        "allowedValues": [
+                          {
                             "id": "10039",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10039",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10040",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10040",
                             "value": "2",
@@ -2480,89 +2485,89 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10076",
                         "name": "MJK - Select List 3",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:select",
                           "customId": 10076,
                           "type": "option",
                         },
                       },
-                      "customfield_10077": Object {
+                      "customfield_10077": {
                         "hasDefaultValue": false,
                         "key": "customfield_10077",
                         "name": "Text Field 1",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textarea",
                           "customId": 10077,
                           "type": "string",
                         },
                       },
-                      "customfield_10078": Object {
+                      "customfield_10078": {
                         "hasDefaultValue": false,
                         "key": "customfield_10078",
                         "name": "Text Field 2",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                           "customId": 10078,
                           "type": "string",
                         },
                       },
-                      "customfield_10079": Object {
+                      "customfield_10079": {
                         "hasDefaultValue": false,
                         "key": "customfield_10079",
                         "name": "MJK - URL Field",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:url",
                           "customId": 10079,
                           "type": "string",
                         },
                       },
-                      "customfield_10080": Object {
+                      "customfield_10080": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/users/picker?fieldName=customfield_10080&fieldConfigId=10187&projectId=10008&showAvatar=true&query=",
                         "hasDefaultValue": false,
                         "key": "customfield_10080",
                         "name": "MJK - User Picker",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:userpicker",
                           "customId": 10080,
                           "type": "user",
                         },
                       },
-                      "description": Object {
+                      "description": {
                         "hasDefaultValue": false,
                         "key": "description",
                         "name": "Description",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "description",
                           "type": "string",
                         },
                       },
-                      "fixVersions": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "fixVersions": {
+                        "allowedValues": [
+                          {
                             "archived": false,
                             "id": "10000",
                             "name": "d",
@@ -2574,36 +2579,36 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "fixVersions",
                         "name": "Fix versions",
-                        "operations": Array [
+                        "operations": [
                           "set",
                           "add",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "version",
                           "system": "fixVersions",
                           "type": "array",
                         },
                       },
-                      "issuelinks": Object {
+                      "issuelinks": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/issue/picker?currentProjectId=&showSubTaskParent=true&showSubTasks=true&currentIssueKey=null&query=",
                         "hasDefaultValue": false,
                         "key": "issuelinks",
                         "name": "Linked Issues",
-                        "operations": Array [
+                        "operations": [
                           "add",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "issuelinks",
                           "system": "issuelinks",
                           "type": "array",
                         },
                       },
-                      "issuetype": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "issuetype": {
+                        "allowedValues": [
+                          {
                             "avatarId": 10315,
                             "description": "Stories track functionality or features expressed as user goals.",
                             "iconUrl": "https://mmtest.atlassian.net/secure/viewavatar?size=medium&avatarId=10315&avatarType=issuetype",
@@ -2616,64 +2621,64 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "issuetype",
                         "name": "Issue Type",
-                        "operations": Array [],
+                        "operations": [],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "issuetype",
                           "type": "issuetype",
                         },
                       },
-                      "labels": Object {
+                      "labels": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?query=",
                         "hasDefaultValue": false,
                         "key": "labels",
                         "name": "Labels",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "string",
                           "system": "labels",
                           "type": "array",
                         },
                       },
-                      "priority": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "priority": {
+                        "allowedValues": [
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/highest.svg",
                             "id": "1",
                             "name": "Highest",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/1",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/high.svg",
                             "id": "2",
                             "name": "High",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/2",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                             "id": "3",
                             "name": "Medium",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/3",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/low.svg",
                             "id": "4",
                             "name": "Low",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/4",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/lowest.svg",
                             "id": "5",
                             "name": "Lowest",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/5",
                           },
                         ],
-                        "defaultValue": Object {
+                        "defaultValue": {
                           "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                           "id": "3",
                           "name": "Medium",
@@ -2682,19 +2687,19 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": true,
                         "key": "priority",
                         "name": "Priority",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "priority",
                           "type": "priority",
                         },
                       },
-                      "project": Object {
-                        "allowedValues": Array [
-                          Object {
-                            "avatarUrls": Object {
+                      "project": {
+                        "allowedValues": [
+                          {
+                            "avatarUrls": {
                               "16x16": "https://mmtest.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10008&avatarId=10417",
                               "24x24": "https://mmtest.atlassian.net/secure/projectavatar?size=small&s=small&pid=10008&avatarId=10417",
                               "32x32": "https://mmtest.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10008&avatarId=10417",
@@ -2711,24 +2716,24 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "project",
                         "name": "Project",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "project",
                           "type": "project",
                         },
                       },
-                      "summary": Object {
+                      "summary": {
                         "hasDefaultValue": false,
                         "key": "summary",
                         "name": "Summary",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "summary",
                           "type": "string",
                         },
@@ -2739,104 +2744,104 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                     "name": "Story",
                     "self": "https://mmtest.atlassian.net/rest/api/2/issuetype/10001",
                   },
-                  Object {
+                  {
                     "description": "jira.translation.issuetype.bug.name.desc",
                     "expand": "fields",
-                    "fields": Object {
-                      "assignee": Object {
+                    "fields": {
+                      "assignee": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/user/assignable/search?project=KT&query=",
                         "hasDefaultValue": false,
                         "key": "assignee",
                         "name": "Assignee",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "system": "assignee",
                           "type": "user",
                         },
                       },
-                      "attachment": Object {
+                      "attachment": {
                         "hasDefaultValue": false,
                         "key": "attachment",
                         "name": "Attachment",
-                        "operations": Array [],
+                        "operations": [],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "attachment",
                           "system": "attachment",
                           "type": "array",
                         },
                       },
-                      "components": Object {
-                        "allowedValues": Array [],
+                      "components": {
+                        "allowedValues": [],
                         "hasDefaultValue": false,
                         "key": "components",
                         "name": "Components",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "component",
                           "system": "components",
                           "type": "array",
                         },
                       },
-                      "customfield_10014": Object {
+                      "customfield_10014": {
                         "hasDefaultValue": false,
                         "key": "customfield_10014",
                         "name": "Epic Link",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.pyxis.greenhopper.jira:gh-epic-link",
                           "customId": 10014,
                           "type": "any",
                         },
                       },
-                      "customfield_10021": Object {
+                      "customfield_10021": {
                         "hasDefaultValue": false,
                         "key": "customfield_10021",
                         "name": "Sprint",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.pyxis.greenhopper.jira:gh-sprint",
                           "customId": 10021,
                           "items": "string",
                           "type": "array",
                         },
                       },
-                      "customfield_10067": Object {
+                      "customfield_10067": {
                         "hasDefaultValue": false,
                         "key": "customfield_10067",
                         "name": "Favorite Food",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                           "customId": 10067,
                           "type": "string",
                         },
                       },
-                      "customfield_10068": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10068": {
+                        "allowedValues": [
+                          {
                             "id": "10033",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10033",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10034",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10034",
                             "value": "2",
@@ -2845,87 +2850,87 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10068",
                         "name": "MJK - Checkbox",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
                           "customId": 10068,
                           "items": "option",
                           "type": "array",
                         },
                       },
-                      "customfield_10069": Object {
+                      "customfield_10069": {
                         "hasDefaultValue": false,
                         "key": "customfield_10069",
                         "name": "MJK - Date Picker",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datepicker",
                           "customId": 10069,
                           "type": "date",
                         },
                       },
-                      "customfield_10070": Object {
+                      "customfield_10070": {
                         "hasDefaultValue": false,
                         "key": "customfield_10070",
                         "name": "MJK - Date Time Picker",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datetime",
                           "customId": 10070,
                           "type": "datetime",
                         },
                       },
-                      "customfield_10071": Object {
+                      "customfield_10071": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?customFieldId=10071&query=",
                         "hasDefaultValue": false,
                         "key": "customfield_10071",
                         "name": "MJK - Labels",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:labels",
                           "customId": 10071,
                           "items": "string",
                           "type": "array",
                         },
                       },
-                      "customfield_10072": Object {
+                      "customfield_10072": {
                         "hasDefaultValue": false,
                         "key": "customfield_10072",
                         "name": "MJK - Number Field",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float",
                           "customId": 10072,
                           "type": "number",
                         },
                       },
-                      "customfield_10073": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10073": {
+                        "allowedValues": [
+                          {
                             "id": "10035",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10035",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10036",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10036",
                             "value": "2",
@@ -2934,39 +2939,39 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10073",
                         "name": "MJK - Radio Buttons",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons",
                           "customId": 10073,
                           "type": "option",
                         },
                       },
-                      "customfield_10074": Object {
-                        "allowedValues": Array [],
+                      "customfield_10074": {
+                        "allowedValues": [],
                         "hasDefaultValue": false,
                         "key": "customfield_10074",
                         "name": "MJK - Select List 1",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect",
                           "customId": 10074,
                           "type": "option-with-child",
                         },
                       },
-                      "customfield_10075": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10075": {
+                        "allowedValues": [
+                          {
                             "id": "10037",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10037",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10038",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10038",
                             "value": "2",
@@ -2975,27 +2980,27 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10075",
                         "name": "MJK - Select List 2",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multiselect",
                           "customId": 10075,
                           "items": "option",
                           "type": "array",
                         },
                       },
-                      "customfield_10076": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10076": {
+                        "allowedValues": [
+                          {
                             "id": "10039",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10039",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10040",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10040",
                             "value": "2",
@@ -3004,102 +3009,102 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10076",
                         "name": "MJK - Select List 3",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:select",
                           "customId": 10076,
                           "type": "option",
                         },
                       },
-                      "customfield_10077": Object {
+                      "customfield_10077": {
                         "hasDefaultValue": false,
                         "key": "customfield_10077",
                         "name": "Text Field 1",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textarea",
                           "customId": 10077,
                           "type": "string",
                         },
                       },
-                      "customfield_10078": Object {
+                      "customfield_10078": {
                         "hasDefaultValue": false,
                         "key": "customfield_10078",
                         "name": "Text Field 2",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                           "customId": 10078,
                           "type": "string",
                         },
                       },
-                      "customfield_10079": Object {
+                      "customfield_10079": {
                         "hasDefaultValue": false,
                         "key": "customfield_10079",
                         "name": "MJK - URL Field",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:url",
                           "customId": 10079,
                           "type": "string",
                         },
                       },
-                      "customfield_10080": Object {
+                      "customfield_10080": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/users/picker?fieldName=customfield_10080&fieldConfigId=10187&projectId=10008&showAvatar=true&query=",
                         "hasDefaultValue": false,
                         "key": "customfield_10080",
                         "name": "MJK - User Picker",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:userpicker",
                           "customId": 10080,
                           "type": "user",
                         },
                       },
-                      "description": Object {
+                      "description": {
                         "hasDefaultValue": false,
                         "key": "description",
                         "name": "Description",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "description",
                           "type": "string",
                         },
                       },
-                      "environment": Object {
+                      "environment": {
                         "hasDefaultValue": false,
                         "key": "environment",
                         "name": "Environment",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "system": "environment",
                           "type": "string",
                         },
                       },
-                      "fixVersions": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "fixVersions": {
+                        "allowedValues": [
+                          {
                             "archived": false,
                             "id": "10000",
                             "name": "d",
@@ -3111,36 +3116,36 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "fixVersions",
                         "name": "Fix versions",
-                        "operations": Array [
+                        "operations": [
                           "set",
                           "add",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "version",
                           "system": "fixVersions",
                           "type": "array",
                         },
                       },
-                      "issuelinks": Object {
+                      "issuelinks": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/issue/picker?currentProjectId=&showSubTaskParent=true&showSubTasks=true&currentIssueKey=null&query=",
                         "hasDefaultValue": false,
                         "key": "issuelinks",
                         "name": "Linked Issues",
-                        "operations": Array [
+                        "operations": [
                           "add",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "issuelinks",
                           "system": "issuelinks",
                           "type": "array",
                         },
                       },
-                      "issuetype": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "issuetype": {
+                        "allowedValues": [
+                          {
                             "avatarId": 10303,
                             "description": "jira.translation.issuetype.bug.name.desc",
                             "iconUrl": "https://mmtest.atlassian.net/secure/viewavatar?size=medium&avatarId=10303&avatarType=issuetype",
@@ -3153,64 +3158,64 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "issuetype",
                         "name": "Issue Type",
-                        "operations": Array [],
+                        "operations": [],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "issuetype",
                           "type": "issuetype",
                         },
                       },
-                      "labels": Object {
+                      "labels": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?query=",
                         "hasDefaultValue": false,
                         "key": "labels",
                         "name": "Labels",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "string",
                           "system": "labels",
                           "type": "array",
                         },
                       },
-                      "priority": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "priority": {
+                        "allowedValues": [
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/highest.svg",
                             "id": "1",
                             "name": "Highest",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/1",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/high.svg",
                             "id": "2",
                             "name": "High",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/2",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                             "id": "3",
                             "name": "Medium",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/3",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/low.svg",
                             "id": "4",
                             "name": "Low",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/4",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/lowest.svg",
                             "id": "5",
                             "name": "Lowest",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/5",
                           },
                         ],
-                        "defaultValue": Object {
+                        "defaultValue": {
                           "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                           "id": "3",
                           "name": "Medium",
@@ -3219,19 +3224,19 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": true,
                         "key": "priority",
                         "name": "Priority",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "priority",
                           "type": "priority",
                         },
                       },
-                      "project": Object {
-                        "allowedValues": Array [
-                          Object {
-                            "avatarUrls": Object {
+                      "project": {
+                        "allowedValues": [
+                          {
+                            "avatarUrls": {
                               "16x16": "https://mmtest.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10008&avatarId=10417",
                               "24x24": "https://mmtest.atlassian.net/secure/projectavatar?size=small&s=small&pid=10008&avatarId=10417",
                               "32x32": "https://mmtest.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10008&avatarId=10417",
@@ -3248,31 +3253,31 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "project",
                         "name": "Project",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "project",
                           "type": "project",
                         },
                       },
-                      "summary": Object {
+                      "summary": {
                         "hasDefaultValue": false,
                         "key": "summary",
                         "name": "Summary",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "summary",
                           "type": "string",
                         },
                       },
-                      "versions": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "versions": {
+                        "allowedValues": [
+                          {
                             "archived": false,
                             "id": "10000",
                             "name": "d",
@@ -3284,13 +3289,13 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "versions",
                         "name": "Affects versions",
-                        "operations": Array [
+                        "operations": [
                           "set",
                           "add",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "version",
                           "system": "versions",
                           "type": "array",
@@ -3302,118 +3307,118 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                     "name": "Bug",
                     "self": "https://mmtest.atlassian.net/rest/api/2/issuetype/10004",
                   },
-                  Object {
+                  {
                     "description": "A big user story that needs to be broken down. Created by Jira Software - do not edit or delete.",
                     "expand": "fields",
-                    "fields": Object {
-                      "assignee": Object {
+                    "fields": {
+                      "assignee": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/user/assignable/search?project=KT&query=",
                         "hasDefaultValue": false,
                         "key": "assignee",
                         "name": "Assignee",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "system": "assignee",
                           "type": "user",
                         },
                       },
-                      "attachment": Object {
+                      "attachment": {
                         "hasDefaultValue": false,
                         "key": "attachment",
                         "name": "Attachment",
-                        "operations": Array [],
+                        "operations": [],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "attachment",
                           "system": "attachment",
                           "type": "array",
                         },
                       },
-                      "components": Object {
-                        "allowedValues": Array [],
+                      "components": {
+                        "allowedValues": [],
                         "hasDefaultValue": false,
                         "key": "components",
                         "name": "Components",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "component",
                           "system": "components",
                           "type": "array",
                         },
                       },
-                      "customfield_10011": Object {
+                      "customfield_10011": {
                         "hasDefaultValue": false,
                         "key": "customfield_10011",
                         "name": "Epic Name",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.pyxis.greenhopper.jira:gh-epic-label",
                           "customId": 10011,
                           "type": "string",
                         },
                       },
-                      "customfield_10014": Object {
+                      "customfield_10014": {
                         "hasDefaultValue": false,
                         "key": "customfield_10014",
                         "name": "Epic Link",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.pyxis.greenhopper.jira:gh-epic-link",
                           "customId": 10014,
                           "type": "any",
                         },
                       },
-                      "customfield_10021": Object {
+                      "customfield_10021": {
                         "hasDefaultValue": false,
                         "key": "customfield_10021",
                         "name": "Sprint",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.pyxis.greenhopper.jira:gh-sprint",
                           "customId": 10021,
                           "items": "string",
                           "type": "array",
                         },
                       },
-                      "customfield_10067": Object {
+                      "customfield_10067": {
                         "hasDefaultValue": false,
                         "key": "customfield_10067",
                         "name": "Favorite Food",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                           "customId": 10067,
                           "type": "string",
                         },
                       },
-                      "customfield_10068": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10068": {
+                        "allowedValues": [
+                          {
                             "id": "10033",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10033",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10034",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10034",
                             "value": "2",
@@ -3422,87 +3427,87 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10068",
                         "name": "MJK - Checkbox",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
                           "customId": 10068,
                           "items": "option",
                           "type": "array",
                         },
                       },
-                      "customfield_10069": Object {
+                      "customfield_10069": {
                         "hasDefaultValue": false,
                         "key": "customfield_10069",
                         "name": "MJK - Date Picker",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datepicker",
                           "customId": 10069,
                           "type": "date",
                         },
                       },
-                      "customfield_10070": Object {
+                      "customfield_10070": {
                         "hasDefaultValue": false,
                         "key": "customfield_10070",
                         "name": "MJK - Date Time Picker",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datetime",
                           "customId": 10070,
                           "type": "datetime",
                         },
                       },
-                      "customfield_10071": Object {
+                      "customfield_10071": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?customFieldId=10071&query=",
                         "hasDefaultValue": false,
                         "key": "customfield_10071",
                         "name": "MJK - Labels",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:labels",
                           "customId": 10071,
                           "items": "string",
                           "type": "array",
                         },
                       },
-                      "customfield_10072": Object {
+                      "customfield_10072": {
                         "hasDefaultValue": false,
                         "key": "customfield_10072",
                         "name": "MJK - Number Field",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float",
                           "customId": 10072,
                           "type": "number",
                         },
                       },
-                      "customfield_10073": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10073": {
+                        "allowedValues": [
+                          {
                             "id": "10035",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10035",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10036",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10036",
                             "value": "2",
@@ -3511,39 +3516,39 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10073",
                         "name": "MJK - Radio Buttons",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons",
                           "customId": 10073,
                           "type": "option",
                         },
                       },
-                      "customfield_10074": Object {
-                        "allowedValues": Array [],
+                      "customfield_10074": {
+                        "allowedValues": [],
                         "hasDefaultValue": false,
                         "key": "customfield_10074",
                         "name": "MJK - Select List 1",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect",
                           "customId": 10074,
                           "type": "option-with-child",
                         },
                       },
-                      "customfield_10075": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10075": {
+                        "allowedValues": [
+                          {
                             "id": "10037",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10037",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10038",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10038",
                             "value": "2",
@@ -3552,27 +3557,27 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10075",
                         "name": "MJK - Select List 2",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multiselect",
                           "customId": 10075,
                           "items": "option",
                           "type": "array",
                         },
                       },
-                      "customfield_10076": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "customfield_10076": {
+                        "allowedValues": [
+                          {
                             "id": "10039",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10039",
                             "value": "1",
                           },
-                          Object {
+                          {
                             "id": "10040",
                             "self": "https://mmtest.atlassian.net/rest/api/2/customFieldOption/10040",
                             "value": "2",
@@ -3581,89 +3586,89 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "customfield_10076",
                         "name": "MJK - Select List 3",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:select",
                           "customId": 10076,
                           "type": "option",
                         },
                       },
-                      "customfield_10077": Object {
+                      "customfield_10077": {
                         "hasDefaultValue": false,
                         "key": "customfield_10077",
                         "name": "Text Field 1",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textarea",
                           "customId": 10077,
                           "type": "string",
                         },
                       },
-                      "customfield_10078": Object {
+                      "customfield_10078": {
                         "hasDefaultValue": false,
                         "key": "customfield_10078",
                         "name": "Text Field 2",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
                           "customId": 10078,
                           "type": "string",
                         },
                       },
-                      "customfield_10079": Object {
+                      "customfield_10079": {
                         "hasDefaultValue": false,
                         "key": "customfield_10079",
                         "name": "MJK - URL Field",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:url",
                           "customId": 10079,
                           "type": "string",
                         },
                       },
-                      "customfield_10080": Object {
+                      "customfield_10080": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/users/picker?fieldName=customfield_10080&fieldConfigId=10187&projectId=10008&showAvatar=true&query=",
                         "hasDefaultValue": false,
                         "key": "customfield_10080",
                         "name": "MJK - User Picker",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:userpicker",
                           "customId": 10080,
                           "type": "user",
                         },
                       },
-                      "description": Object {
+                      "description": {
                         "hasDefaultValue": false,
                         "key": "description",
                         "name": "Description",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "description",
                           "type": "string",
                         },
                       },
-                      "fixVersions": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "fixVersions": {
+                        "allowedValues": [
+                          {
                             "archived": false,
                             "id": "10000",
                             "name": "d",
@@ -3675,36 +3680,36 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "fixVersions",
                         "name": "Fix versions",
-                        "operations": Array [
+                        "operations": [
                           "set",
                           "add",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "version",
                           "system": "fixVersions",
                           "type": "array",
                         },
                       },
-                      "issuelinks": Object {
+                      "issuelinks": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/2/issue/picker?currentProjectId=&showSubTaskParent=true&showSubTasks=true&currentIssueKey=null&query=",
                         "hasDefaultValue": false,
                         "key": "issuelinks",
                         "name": "Linked Issues",
-                        "operations": Array [
+                        "operations": [
                           "add",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "issuelinks",
                           "system": "issuelinks",
                           "type": "array",
                         },
                       },
-                      "issuetype": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "issuetype": {
+                        "allowedValues": [
+                          {
                             "description": "A big user story that needs to be broken down. Created by Jira Software - do not edit or delete.",
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/issuetypes/epic.svg",
                             "id": "10000",
@@ -3716,64 +3721,64 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "issuetype",
                         "name": "Issue Type",
-                        "operations": Array [],
+                        "operations": [],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "issuetype",
                           "type": "issuetype",
                         },
                       },
-                      "labels": Object {
+                      "labels": {
                         "autoCompleteUrl": "https://mmtest.atlassian.net/rest/api/1.0/labels/suggest?query=",
                         "hasDefaultValue": false,
                         "key": "labels",
                         "name": "Labels",
-                        "operations": Array [
+                        "operations": [
                           "add",
                           "set",
                           "remove",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "items": "string",
                           "system": "labels",
                           "type": "array",
                         },
                       },
-                      "priority": Object {
-                        "allowedValues": Array [
-                          Object {
+                      "priority": {
+                        "allowedValues": [
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/highest.svg",
                             "id": "1",
                             "name": "Highest",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/1",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/high.svg",
                             "id": "2",
                             "name": "High",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/2",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                             "id": "3",
                             "name": "Medium",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/3",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/low.svg",
                             "id": "4",
                             "name": "Low",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/4",
                           },
-                          Object {
+                          {
                             "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/lowest.svg",
                             "id": "5",
                             "name": "Lowest",
                             "self": "https://mmtest.atlassian.net/rest/api/2/priority/5",
                           },
                         ],
-                        "defaultValue": Object {
+                        "defaultValue": {
                           "iconUrl": "https://mmtest.atlassian.net/images/icons/priorities/medium.svg",
                           "id": "3",
                           "name": "Medium",
@@ -3782,19 +3787,19 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": true,
                         "key": "priority",
                         "name": "Priority",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "priority",
                           "type": "priority",
                         },
                       },
-                      "project": Object {
-                        "allowedValues": Array [
-                          Object {
-                            "avatarUrls": Object {
+                      "project": {
+                        "allowedValues": [
+                          {
+                            "avatarUrls": {
                               "16x16": "https://mmtest.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10008&avatarId=10417",
                               "24x24": "https://mmtest.atlassian.net/secure/projectavatar?size=small&s=small&pid=10008&avatarId=10417",
                               "32x32": "https://mmtest.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10008&avatarId=10417",
@@ -3811,24 +3816,24 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
                         "hasDefaultValue": false,
                         "key": "project",
                         "name": "Project",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "project",
                           "type": "project",
                         },
                       },
-                      "summary": Object {
+                      "summary": {
                         "hasDefaultValue": false,
                         "key": "summary",
                         "name": "Summary",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": true,
-                        "schema": Object {
+                        "schema": {
                           "system": "summary",
                           "type": "string",
                         },
@@ -3851,54 +3856,55 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
         removeValidate={[Function]}
         securityLevelEmptyForJiraSubscriptions={true}
         theme={
-          Object {
-            "awayIndicator": "#ffbc42",
-            "buttonBg": "#166de0",
+          {
+            "awayIndicator": "#ffbc1f",
+            "buttonBg": "#1c58d9",
             "buttonColor": "#ffffff",
             "centerChannelBg": "#ffffff",
-            "centerChannelColor": "#3d3c40",
+            "centerChannelColor": "#3f4350",
             "codeTheme": "github",
-            "dndIndicator": "#f74343",
-            "errorTextColor": "#fd5960",
-            "linkColor": "#2389d7",
+            "dndIndicator": "#d24b4e",
+            "errorTextColor": "#d24b4e",
+            "linkColor": "#386fe5",
             "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
-            "mentionColor": "#145dbf",
-            "mentionHighlightBg": "#ffe577",
-            "mentionHighlightLink": "#166de0",
-            "newMessageSeparator": "#ff8800",
-            "onlineIndicator": "#06d6a0",
-            "sidebarBg": "#145dbf",
-            "sidebarHeaderBg": "#1153ab",
+            "mentionColor": "#1e325c",
+            "mentionHighlightBg": "#ffd470",
+            "mentionHighlightLink": "#1b1d22",
+            "newMessageSeparator": "#cc8f00",
+            "onlineIndicator": "#3db887",
+            "sidebarBg": "#1e325c",
+            "sidebarHeaderBg": "#192a4d",
             "sidebarHeaderTextColor": "#ffffff",
+            "sidebarTeamBarBg": "#162545",
             "sidebarText": "#ffffff",
-            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveBorder": "#5d89ea",
             "sidebarTextActiveColor": "#ffffff",
-            "sidebarTextHoverBg": "#4578bf",
+            "sidebarTextHoverBg": "#28427b",
             "sidebarUnreadText": "#ffffff",
-            "type": "Mattermost",
+            "type": "Denim",
           }
         }
         values={
-          Array [
-            Object {
+          [
+            {
               "inclusion": "include_any",
               "key": "customfield_10073",
-              "values": Array [
+              "values": [
                 "10035",
               ],
             },
-            Object {
+            {
               "inclusion": "include_any",
               "key": "versions",
-              "values": Array [
+              "values": [
                 "10000",
               ],
             },
-            Object {
+            {
               "inclusion": "include_any",
               "key": "customfield_10014",
-              "values": Array [
+              "values": [
                 "IDT-24",
               ],
             },
@@ -3913,8 +3919,8 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
         </label>
         <div
           style={
-            Object {
-              "background": "rgba(61,60,64,0.08)",
+            {
+              "background": "rgba(63,67,80,0.08)",
               "borderRadius": "4px",
               "fontSize": "13px",
               "marginBottom": "8px",
@@ -3962,7 +3968,7 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
   </div>
   <ModalFooter
     style={
-      Object {
+      {
         "padding": "2rem 15px",
       }
     }
@@ -4016,9 +4022,9 @@ exports[`components/EditChannelSubscription should match snapshot with no issue 
   </div>
   <div
     style={
-      Object {
+      {
         "backgroundColor": "#ffffff",
-        "color": "#3d3c40",
+        "color": "#3f4350",
         "padding": "2em 2em 3em",
       }
     }
@@ -4051,32 +4057,33 @@ exports[`components/EditChannelSubscription should match snapshot with no issue 
         selectedInstanceID="https://something.atlassian.net"
         selectedProjectID="KT"
         theme={
-          Object {
-            "awayIndicator": "#ffbc42",
-            "buttonBg": "#166de0",
+          {
+            "awayIndicator": "#ffbc1f",
+            "buttonBg": "#1c58d9",
             "buttonColor": "#ffffff",
             "centerChannelBg": "#ffffff",
-            "centerChannelColor": "#3d3c40",
+            "centerChannelColor": "#3f4350",
             "codeTheme": "github",
-            "dndIndicator": "#f74343",
-            "errorTextColor": "#fd5960",
-            "linkColor": "#2389d7",
+            "dndIndicator": "#d24b4e",
+            "errorTextColor": "#d24b4e",
+            "linkColor": "#386fe5",
             "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
-            "mentionColor": "#145dbf",
-            "mentionHighlightBg": "#ffe577",
-            "mentionHighlightLink": "#166de0",
-            "newMessageSeparator": "#ff8800",
-            "onlineIndicator": "#06d6a0",
-            "sidebarBg": "#145dbf",
-            "sidebarHeaderBg": "#1153ab",
+            "mentionColor": "#1e325c",
+            "mentionHighlightBg": "#ffd470",
+            "mentionHighlightLink": "#1b1d22",
+            "newMessageSeparator": "#cc8f00",
+            "onlineIndicator": "#3db887",
+            "sidebarBg": "#1e325c",
+            "sidebarHeaderBg": "#192a4d",
             "sidebarHeaderTextColor": "#ffffff",
+            "sidebarTeamBarBg": "#162545",
             "sidebarText": "#ffffff",
-            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveBorder": "#5d89ea",
             "sidebarTextActiveColor": "#ffffff",
-            "sidebarTextHoverBg": "#4578bf",
+            "sidebarTextHoverBg": "#28427b",
             "sidebarUnreadText": "#ffffff",
-            "type": "Mattermost",
+            "type": "Denim",
           }
         }
       />
@@ -4096,7 +4103,7 @@ exports[`components/EditChannelSubscription should match snapshot with no issue 
   </div>
   <ModalFooter
     style={
-      Object {
+      {
         "padding": "2rem 15px",
       }
     }
@@ -4147,9 +4154,9 @@ exports[`components/EditChannelSubscription should match snapshot with no subscr
   </div>
   <div
     style={
-      Object {
+      {
         "backgroundColor": "#ffffff",
-        "color": "#3d3c40",
+        "color": "#3f4350",
         "padding": "2em 2em 3em",
       }
     }
@@ -4181,32 +4188,33 @@ exports[`components/EditChannelSubscription should match snapshot with no subscr
         removeValidate={[Function]}
         selectedInstanceID="https://something.atlassian.net"
         theme={
-          Object {
-            "awayIndicator": "#ffbc42",
-            "buttonBg": "#166de0",
+          {
+            "awayIndicator": "#ffbc1f",
+            "buttonBg": "#1c58d9",
             "buttonColor": "#ffffff",
             "centerChannelBg": "#ffffff",
-            "centerChannelColor": "#3d3c40",
+            "centerChannelColor": "#3f4350",
             "codeTheme": "github",
-            "dndIndicator": "#f74343",
-            "errorTextColor": "#fd5960",
-            "linkColor": "#2389d7",
+            "dndIndicator": "#d24b4e",
+            "errorTextColor": "#d24b4e",
+            "linkColor": "#386fe5",
             "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
-            "mentionColor": "#145dbf",
-            "mentionHighlightBg": "#ffe577",
-            "mentionHighlightLink": "#166de0",
-            "newMessageSeparator": "#ff8800",
-            "onlineIndicator": "#06d6a0",
-            "sidebarBg": "#145dbf",
-            "sidebarHeaderBg": "#1153ab",
+            "mentionColor": "#1e325c",
+            "mentionHighlightBg": "#ffd470",
+            "mentionHighlightLink": "#1b1d22",
+            "newMessageSeparator": "#cc8f00",
+            "onlineIndicator": "#3db887",
+            "sidebarBg": "#1e325c",
+            "sidebarHeaderBg": "#192a4d",
             "sidebarHeaderTextColor": "#ffffff",
+            "sidebarTeamBarBg": "#162545",
             "sidebarText": "#ffffff",
-            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveBorder": "#5d89ea",
             "sidebarTextActiveColor": "#ffffff",
-            "sidebarTextHoverBg": "#4578bf",
+            "sidebarTextHoverBg": "#28427b",
             "sidebarUnreadText": "#ffffff",
-            "type": "Mattermost",
+            "type": "Denim",
           }
         }
       />
@@ -4214,7 +4222,7 @@ exports[`components/EditChannelSubscription should match snapshot with no subscr
   </div>
   <ModalFooter
     style={
-      Object {
+      {
         "padding": "2rem 15px",
       }
     }
@@ -4268,9 +4276,9 @@ exports[`components/EditChannelSubscription should produce subscription error wh
   </div>
   <div
     style={
-      Object {
+      {
         "backgroundColor": "#ffffff",
-        "color": "#3d3c40",
+        "color": "#3f4350",
         "padding": "2em 2em 3em",
       }
     }
@@ -4303,32 +4311,33 @@ exports[`components/EditChannelSubscription should produce subscription error wh
         selectedInstanceID="https://something.atlassian.net"
         selectedProjectID="KT"
         theme={
-          Object {
-            "awayIndicator": "#ffbc42",
-            "buttonBg": "#166de0",
+          {
+            "awayIndicator": "#ffbc1f",
+            "buttonBg": "#1c58d9",
             "buttonColor": "#ffffff",
             "centerChannelBg": "#ffffff",
-            "centerChannelColor": "#3d3c40",
+            "centerChannelColor": "#3f4350",
             "codeTheme": "github",
-            "dndIndicator": "#f74343",
-            "errorTextColor": "#fd5960",
-            "linkColor": "#2389d7",
+            "dndIndicator": "#d24b4e",
+            "errorTextColor": "#d24b4e",
+            "linkColor": "#386fe5",
             "mentionBg": "#ffffff",
             "mentionBj": "#ffffff",
-            "mentionColor": "#145dbf",
-            "mentionHighlightBg": "#ffe577",
-            "mentionHighlightLink": "#166de0",
-            "newMessageSeparator": "#ff8800",
-            "onlineIndicator": "#06d6a0",
-            "sidebarBg": "#145dbf",
-            "sidebarHeaderBg": "#1153ab",
+            "mentionColor": "#1e325c",
+            "mentionHighlightBg": "#ffd470",
+            "mentionHighlightLink": "#1b1d22",
+            "newMessageSeparator": "#cc8f00",
+            "onlineIndicator": "#3db887",
+            "sidebarBg": "#1e325c",
+            "sidebarHeaderBg": "#192a4d",
             "sidebarHeaderTextColor": "#ffffff",
+            "sidebarTeamBarBg": "#162545",
             "sidebarText": "#ffffff",
-            "sidebarTextActiveBorder": "#579eff",
+            "sidebarTextActiveBorder": "#5d89ea",
             "sidebarTextActiveColor": "#ffffff",
-            "sidebarTextHoverBg": "#4578bf",
+            "sidebarTextHoverBg": "#28427b",
             "sidebarUnreadText": "#ffffff",
-            "type": "Mattermost",
+            "type": "Denim",
           }
         }
       />
@@ -4348,7 +4357,7 @@ exports[`components/EditChannelSubscription should produce subscription error wh
   </div>
   <ModalFooter
     style={
-      Object {
+      {
         "padding": "2rem 15px",
       }
     }

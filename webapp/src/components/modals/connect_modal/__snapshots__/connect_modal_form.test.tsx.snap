@@ -7,7 +7,7 @@ exports[`components/ConnectModalForm should match snapshot 1`] = `
 >
   <ModalBody
     style={
-      Object {
+      {
         "backgroundColor": undefined,
         "color": undefined,
         "padding": "2em 2em 3em",
@@ -17,23 +17,23 @@ exports[`components/ConnectModalForm should match snapshot 1`] = `
     <ReactSelectSetting
       onChange={[Function]}
       options={
-        Array [
-          Object {
+        [
+          {
             "label": "https://something.atlassian.net",
             "value": "https://something.atlassian.net",
           },
-          Object {
+          {
             "label": "http://localhost:8080",
             "value": "http://localhost:8080",
           },
         ]
       }
-      theme={Object {}}
+      theme={{}}
     />
   </ModalBody>
   <ModalFooter
     style={
-      Object {
+      {
         "padding": "2rem 15px",
       }
     }

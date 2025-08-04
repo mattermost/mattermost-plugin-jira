@@ -10,7 +10,7 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
     <div
       className="help-text error-text"
       style={
-        Object {
+        {
           "margin": "0 0 10px",
         }
       }
@@ -28,13 +28,13 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
         <ReactSelectSetting
           addValidate={
             [MockFunction] {
-              "calls": Array [
-                Array [
+              "calls": [
+                [
                   [Function],
                 ],
               ],
-              "results": Array [
-                Object {
+              "results": [
+                {
                   "type": "return",
                   "value": undefined,
                 },
@@ -45,64 +45,64 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
           name="fieldtype"
           onChange={[Function]}
           options={
-            Array [
-              Object {
+            [
+              {
                 "label": "Affects versions",
                 "value": "versions",
               },
-              Object {
+              {
                 "label": "Assignee",
                 "value": "assignee",
               },
-              Object {
+              {
                 "label": "Comment Visibility",
                 "value": "commentVisibility",
               },
-              Object {
+              {
                 "label": "Epic Link",
                 "value": "customfield_10014",
               },
-              Object {
+              {
                 "label": "Fix versions",
                 "value": "fixVersions",
               },
-              Object {
+              {
                 "label": "Labels",
                 "value": "labels",
               },
-              Object {
+              {
                 "label": "MJK - Checkbox",
                 "value": "customfield_10068",
               },
-              Object {
+              {
                 "label": "MJK - Labels",
                 "value": "customfield_10071",
               },
-              Object {
+              {
                 "label": "MJK - Radio Buttons",
                 "value": "customfield_10073",
               },
-              Object {
+              {
                 "label": "MJK - Select List 2",
                 "value": "customfield_10075",
               },
-              Object {
+              {
                 "label": "MJK - Select List 3",
                 "value": "customfield_10076",
               },
-              Object {
+              {
                 "label": "MJK - User Picker",
                 "value": "customfield_10080",
               },
-              Object {
+              {
                 "label": "Priority",
                 "value": "priority",
               },
-              Object {
+              {
                 "label": "Status",
                 "value": "status",
               },
-              Object {
+              {
                 "label": "Team",
                 "value": "teamField",
               },
@@ -110,9 +110,9 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
           }
           removeValidate={[MockFunction]}
           required={true}
-          theme={Object {}}
+          theme={{}}
           value={
-            Object {
+            {
               "label": "Priority",
               "value": "priority",
             }
@@ -125,13 +125,13 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
         <ReactSelectSetting
           addValidate={
             [MockFunction] {
-              "calls": Array [
-                Array [
+              "calls": [
+                [
                   [Function],
                 ],
               ],
-              "results": Array [
-                Object {
+              "results": [
+                {
                   "type": "return",
                   "value": undefined,
                 },
@@ -143,20 +143,20 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
           name="inclusion"
           onChange={[Function]}
           options={
-            Array [
-              Object {
+            [
+              {
                 "label": "Include",
                 "value": "include_any",
               },
-              Object {
+              {
                 "label": "Exclude",
                 "value": "exclude_any",
               },
-              Object {
+              {
                 "label": "Empty",
                 "value": "empty",
               },
-              Object {
+              {
                 "label": "Include or Empty",
                 "value": "include_or_empty",
               },
@@ -164,9 +164,9 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
           }
           removeValidate={[MockFunction]}
           required={true}
-          theme={Object {}}
+          theme={{}}
           value={
-            Object {
+            {
               "label": "Include",
               "value": "include_any",
             }
@@ -179,13 +179,13 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
         <ReactSelectSetting
           addValidate={
             [MockFunction] {
-              "calls": Array [
-                Array [
+              "calls": [
+                [
                   [Function],
                 ],
               ],
-              "results": Array [
-                Object {
+              "results": [
+                {
                   "type": "return",
                   "value": undefined,
                 },
@@ -201,24 +201,24 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
           name="values"
           onChange={[Function]}
           options={
-            Array [
-              Object {
+            [
+              {
                 "label": "Highest",
                 "value": "1",
               },
-              Object {
+              {
                 "label": "High",
                 "value": "2",
               },
-              Object {
+              {
                 "label": "Medium",
                 "value": "3",
               },
-              Object {
+              {
                 "label": "Low",
                 "value": "4",
               },
-              Object {
+              {
                 "label": "Lowest",
                 "value": "5",
               },
@@ -227,10 +227,10 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
           removeValidate={[MockFunction]}
           required={true}
           resetInvalidOnChange={true}
-          theme={Object {}}
+          theme={{}}
           value={
-            Array [
-              Object {
+            [
+              {
                 "label": "Highest",
                 "value": "1",
               },
@@ -247,7 +247,7 @@ exports[`components/ChannelSubscriptionFilter should match snapshot 1`] = `
       className="style--none"
       onClick={[Function]}
       style={
-        Object {
+        {
           "color": undefined,
           "fontSize": "20px",
           "margin": "0.5rem 0 0",

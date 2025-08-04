@@ -3,17 +3,19 @@
 
 import {Action, Store} from 'redux';
 
-import ConnectModal from 'components/modals/connect_modal';
 import DisconnectModal from 'components/modals/disconnect_modal';
 
-import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue';
+import ConnectModal from 'components/modals/connect_modal';
 
 import CreateIssueModal from 'components/modals/create_issue';
 
 import ChannelSubscriptionsModal from 'components/modals/channel_subscriptions';
 
-import AttachCommentToIssuePostMenuAction from 'components/post_menu_actions/attach_comment_to_issue';
 import AttachCommentToIssueModal from 'components/modals/attach_comment_modal';
+
+import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue';
+import AttachCommentToIssuePostMenuAction from 'components/post_menu_actions/attach_comment_to_issue';
+
 import SetupUI from 'components/setup_ui';
 import LinkTooltip from 'components/jira_ticket_tooltip';
 

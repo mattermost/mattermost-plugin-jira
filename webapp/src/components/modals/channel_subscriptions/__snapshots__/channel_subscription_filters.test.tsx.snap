@@ -16,42 +16,42 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
       <ChannelSubscriptionFilter
         addValidate={[MockFunction]}
         chosenIssueTypes={
-          Array [
+          [
             "10001",
           ]
         }
         field={
-          Object {
-            "issueTypes": Array [
-              Object {
+          {
+            "issueTypes": [
+              {
                 "id": "10001",
                 "name": "Bug",
               },
             ],
             "key": "priority",
             "name": "Priority",
-            "schema": Object {
+            "schema": {
               "system": "priority",
               "type": "priority",
             },
-            "values": Array [
-              Object {
+            "values": [
+              {
                 "label": "Highest",
                 "value": "1",
               },
-              Object {
+              {
                 "label": "High",
                 "value": "2",
               },
-              Object {
+              {
                 "label": "Medium",
                 "value": "3",
               },
-              Object {
+              {
                 "label": "Low",
                 "value": "4",
               },
-              Object {
+              {
                 "label": "Lowest",
                 "value": "5",
               },
@@ -59,131 +59,131 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
           }
         }
         fields={
-          Array [
-            Object {
-              "issueTypes": Array [
-                Object {
+          [
+            {
+              "issueTypes": [
+                {
                   "id": "10001",
                   "name": "Bug",
                 },
               ],
               "key": "commentVisibility",
               "name": "Comment Visibility",
-              "schema": Object {
+              "schema": {
                 "type": "commentVisibility",
               },
-              "values": Array [],
+              "values": [],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10001",
                   "name": "Bug",
                 },
               ],
               "key": "priority",
               "name": "Priority",
-              "schema": Object {
+              "schema": {
                 "system": "priority",
                 "type": "priority",
               },
-              "values": Array [
-                Object {
+              "values": [
+                {
                   "label": "Highest",
                   "value": "1",
                 },
-                Object {
+                {
                   "label": "High",
                   "value": "2",
                 },
-                Object {
+                {
                   "label": "Medium",
                   "value": "3",
                 },
-                Object {
+                {
                   "label": "Low",
                   "value": "4",
                 },
-                Object {
+                {
                   "label": "Lowest",
                   "value": "5",
                 },
               ],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10001",
                   "name": "Bug",
                 },
               ],
               "key": "status",
               "name": "Status",
-              "schema": Object {
+              "schema": {
                 "type": "array",
               },
-              "values": Array [
-                Object {
+              "values": [
+                {
                   "label": "TODO",
                   "value": "1001",
                 },
               ],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10001",
                   "name": "Bug",
                 },
               ],
               "key": "teamField",
               "name": "Team",
-              "schema": Object {
+              "schema": {
                 "type": "team",
               },
-              "values": Array [],
+              "values": [],
             },
           ]
         }
         instanceID="https://something.atlassian.net"
         issueMetadata={
-          Object {
-            "issue_types_with_statuses": Array [
-              Object {
+          {
+            "issue_types_with_statuses": [
+              {
                 "id": "10001",
                 "name": "Bug",
-                "statuses": Array [
-                  Object {
+                "statuses": [
+                  {
                     "id": "1001",
                     "name": "TODO",
                   },
                 ],
               },
             ],
-            "projects": Array [
-              Object {
-                "issuetypes": Array [
-                  Object {
-                    "fields": Object {
-                      "priority": Object {
-                        "allowedValues": Array [
-                          Object {
+            "projects": [
+              {
+                "issuetypes": [
+                  {
+                    "fields": {
+                      "priority": {
+                        "allowedValues": [
+                          {
                             "id": "1",
                             "name": "Highest",
                           },
-                          Object {
+                          {
                             "id": "2",
                             "name": "High",
                           },
-                          Object {
+                          {
                             "id": "3",
                             "name": "Medium",
                           },
-                          Object {
+                          {
                             "id": "4",
                             "name": "Low",
                           },
-                          Object {
+                          {
                             "id": "5",
                             "name": "Lowest",
                           },
@@ -191,11 +191,11 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
                         "hasDefaultValue": false,
                         "key": "priority",
                         "name": "Priority",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "system": "priority",
                           "type": "priority",
                         },
@@ -215,12 +215,12 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
         removeFilter={[Function]}
         removeValidate={[MockFunction]}
         securityLevelEmptyForJiraSubscriptions={true}
-        theme={Object {}}
+        theme={{}}
         value={
-          Object {
+          {
             "inclusion": "include_any",
             "key": "priority",
-            "values": Array [
+            "values": [
               "1",
             ],
           }
@@ -231,135 +231,135 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
       <EmptyChannelSubscriptionFilter
         cancelAdd={[Function]}
         chosenIssueTypes={
-          Array [
+          [
             "10001",
           ]
         }
         fields={
-          Array [
-            Object {
-              "issueTypes": Array [
-                Object {
+          [
+            {
+              "issueTypes": [
+                {
                   "id": "10001",
                   "name": "Bug",
                 },
               ],
               "key": "commentVisibility",
               "name": "Comment Visibility",
-              "schema": Object {
+              "schema": {
                 "type": "commentVisibility",
               },
-              "values": Array [],
+              "values": [],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10001",
                   "name": "Bug",
                 },
               ],
               "key": "priority",
               "name": "Priority",
-              "schema": Object {
+              "schema": {
                 "system": "priority",
                 "type": "priority",
               },
-              "values": Array [
-                Object {
+              "values": [
+                {
                   "label": "Highest",
                   "value": "1",
                 },
-                Object {
+                {
                   "label": "High",
                   "value": "2",
                 },
-                Object {
+                {
                   "label": "Medium",
                   "value": "3",
                 },
-                Object {
+                {
                   "label": "Low",
                   "value": "4",
                 },
-                Object {
+                {
                   "label": "Lowest",
                   "value": "5",
                 },
               ],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10001",
                   "name": "Bug",
                 },
               ],
               "key": "status",
               "name": "Status",
-              "schema": Object {
+              "schema": {
                 "type": "array",
               },
-              "values": Array [
-                Object {
+              "values": [
+                {
                   "label": "TODO",
                   "value": "1001",
                 },
               ],
             },
-            Object {
-              "issueTypes": Array [
-                Object {
+            {
+              "issueTypes": [
+                {
                   "id": "10001",
                   "name": "Bug",
                 },
               ],
               "key": "teamField",
               "name": "Team",
-              "schema": Object {
+              "schema": {
                 "type": "team",
               },
-              "values": Array [],
+              "values": [],
             },
           ]
         }
         issueMetadata={
-          Object {
-            "issue_types_with_statuses": Array [
-              Object {
+          {
+            "issue_types_with_statuses": [
+              {
                 "id": "10001",
                 "name": "Bug",
-                "statuses": Array [
-                  Object {
+                "statuses": [
+                  {
                     "id": "1001",
                     "name": "TODO",
                   },
                 ],
               },
             ],
-            "projects": Array [
-              Object {
-                "issuetypes": Array [
-                  Object {
-                    "fields": Object {
-                      "priority": Object {
-                        "allowedValues": Array [
-                          Object {
+            "projects": [
+              {
+                "issuetypes": [
+                  {
+                    "fields": {
+                      "priority": {
+                        "allowedValues": [
+                          {
                             "id": "1",
                             "name": "Highest",
                           },
-                          Object {
+                          {
                             "id": "2",
                             "name": "High",
                           },
-                          Object {
+                          {
                             "id": "3",
                             "name": "Medium",
                           },
-                          Object {
+                          {
                             "id": "4",
                             "name": "Low",
                           },
-                          Object {
+                          {
                             "id": "5",
                             "name": "Lowest",
                           },
@@ -367,11 +367,11 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
                         "hasDefaultValue": false,
                         "key": "priority",
                         "name": "Priority",
-                        "operations": Array [
+                        "operations": [
                           "set",
                         ],
                         "required": false,
-                        "schema": Object {
+                        "schema": {
                           "system": "priority",
                           "type": "priority",
                         },
@@ -388,7 +388,7 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
           }
         }
         onChange={[Function]}
-        theme={Object {}}
+        theme={{}}
       />
     </div>
     <button
@@ -399,7 +399,7 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
     >
       <span
         style={
-          Object {
+          {
             "fontSize": "24px",
             "margin": "-1px 4px 0 0",
           }
