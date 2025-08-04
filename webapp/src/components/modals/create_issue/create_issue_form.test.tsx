@@ -26,7 +26,7 @@ describe('components/CreateIssue', () => {
 
     const baseProps = {
         ...baseActions,
-        theme: Preferences.THEMES.default,
+        theme: Preferences.THEMES.denim,
         jiraProjectMetadata: projectMetadata,
         jiraIssueMetadata: issueMetadata,
         currentTeam: {name: 'Team1'} as Team,

@@ -82,7 +82,7 @@ describe('components/EditChannelSubscription', () => {
     const baseProps: Props = {
         ...baseActions,
         channel: testChannel as unknown as Channel,
-        theme: Preferences.THEMES.default,
+        theme: Preferences.THEMES.denim,
         finishEditSubscription: jest.fn(),
         channelSubscriptions: [channelSubscriptionForCloud],
         close: jest.fn(),
