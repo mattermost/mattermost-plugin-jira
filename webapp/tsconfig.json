@@ -23,8 +23,9 @@
     "baseUrl": "./src",
     "types": ["jest", "node"]
   },
+  "typeRoots": ["./src/types"],
   "include": [
-    "src"
+    "./**/*"
   ],
   "exclude": [
     "dist",

@@ -4,9 +4,9 @@
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 
-import {fetchJiraProjectMetadata, getConnected} from 'actions';
+import {fetchJiraProjectMetadata, getConnected} from '../../actions';
 
-import {getDefaultUserInstanceID, getInstalledInstances, getUserConnectedInstances} from 'selectors';
+import {getDefaultUserInstanceID, getInstalledInstances, getUserConnectedInstances} from '../../selectors';
 
 import JiraInstanceAndProjectSelector from './jira_instance_and_project_selector';
 

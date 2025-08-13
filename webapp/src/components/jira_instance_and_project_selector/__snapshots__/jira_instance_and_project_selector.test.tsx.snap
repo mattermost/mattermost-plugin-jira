@@ -9,23 +9,23 @@ exports[`components/JiraInstanceAndProjectSelector should match snapshot with a 
     name="instance"
     onChange={[Function]}
     options={
-      Array [
-        Object {
+      [
+        {
           "label": "instance1",
           "value": "instance1",
         },
-        Object {
+        {
           "label": "instance2",
           "value": "instance2",
         },
-        Object {
+        {
           "label": "instance3",
           "value": "instance3",
         },
       ]
     }
     required={true}
-    theme={Object {}}
+    theme={{}}
   />
 </Fragment>
 `;
@@ -41,23 +41,23 @@ exports[`components/JiraInstanceAndProjectSelector should match snapshot with tw
     name="instance"
     onChange={[Function]}
     options={
-      Array [
-        Object {
+      [
+        {
           "label": "instance1",
           "value": "instance1",
         },
-        Object {
+        {
           "label": "instance2",
           "value": "instance2",
         },
-        Object {
+        {
           "label": "instance3",
           "value": "instance3",
         },
       ]
     }
     required={true}
-    theme={Object {}}
+    theme={{}}
   />
 </Fragment>
 `;
