@@ -3,6 +3,9 @@
 
 import {Action, Store} from 'redux';
 
+import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
+import {getPost} from 'mattermost-redux/selectors/entities/posts';
+
 import ConnectModal from 'components/modals/connect_modal';
 import DisconnectModal from 'components/modals/disconnect_modal';
 
@@ -16,6 +19,9 @@ import AttachCommentToIssuePostMenuAction from 'components/post_menu_actions/att
 import AttachCommentToIssueModal from 'components/modals/attach_comment_modal';
 import SetupUI from 'components/setup_ui';
 import LinkTooltip from 'components/jira_ticket_tooltip';
+import {canUserConnect, getInstalledInstances, isUserConnected} from 'selectors';
+import {isCombinedUserActivityPost} from 'utils/posts';
+import {GlobalState} from 'types/store';
 
 import manifest from './manifest';
 
@@ -24,8 +30,12 @@ import {
     getConnected,
     getSettings,
     handleConnectChange,
+    handleConnectFlow,
     handleInstanceStatusChange,
+    openAttachCommentToIssueModal,
+    openCreateModal,
 } from './actions';
+
 import Hooks from './hooks/hooks';
 
 const setupUILater = (registry: any, store: Store<object, Action<object>>): () => Promise<void> => async () => {
@@ -41,9 +51,64 @@ const setupUILater = (registry: any, store: Store<object, Action<object>>): () =
             registry.registerRootComponent(ConnectModal);
             registry.registerRootComponent(DisconnectModal);
             registry.registerRootComponent(CreateIssueModal);
-            registry.registerPostDropdownMenuComponent(CreateIssuePostMenuAction);
+            registry.registerPostDropdownMenuAction({
+                text: CreateIssuePostMenuAction,
+                action: (postId: string) => {
+                    const state = store.getState() as GlobalState;
+                    const userConnected = isUserConnected(state);
+                    const userCanConnect = canUserConnect(state);
+                    const installedInstances = getInstalledInstances(state);
+
+                    if (!installedInstances.length) {
+                        return;
+                    }
+
+                    if (userConnected) {
+                        store.dispatch<any>(openCreateModal(postId));
+                    } else if (userCanConnect) {
+                        store.dispatch<any>(handleConnectFlow());
+                    }
+                },
+                filter: (postId: string): boolean => {
+                    const state = store.getState() as GlobalState;
+                    const post = getPost(state, postId);
+                    const oldSystemMessageOrNull = post ? isSystemMessage(post) : true;
+                    const systemMessage = isCombinedUserActivityPost(post) || oldSystemMessageOrNull;
+                    const installedInstances = getInstalledInstances(state);
+
+                    if (systemMessage || !installedInstances.length) {
+                        return false;
+                    }
+
+                    return true;
+                },
+            });
             registry.registerRootComponent(AttachCommentToIssueModal);
-            registry.registerPostDropdownMenuComponent(AttachCommentToIssuePostMenuAction);
+            registry.registerPostDropdownMenuAction({
+                text: AttachCommentToIssuePostMenuAction,
+                action: (postId: string) => {
+                    const state = store.getState() as GlobalState;
+                    const post = getPost(state, postId);
+                    const oldSystemMessageOrNull = post ? isSystemMessage(post) : true;
+                    const systemMessage = isCombinedUserActivityPost(post) || oldSystemMessageOrNull;
+                    const userConnected = isUserConnected(state);
+
+                    if (systemMessage || !userConnected) {
+                        return;
+                    }
+
+                    store.dispatch<any>(openAttachCommentToIssueModal(postId));
+                },
+                filter: (postId: string): boolean => {
+                    const state = store.getState() as GlobalState;
+                    const post = getPost(state, postId);
+                    const oldSystemMessageOrNull = post ? isSystemMessage(post) : true;
+                    const systemMessage = isCombinedUserActivityPost(post) || oldSystemMessageOrNull;
+                    const userConnected = isUserConnected(state);
+
+                    return !systemMessage && userConnected;
+                },
+            });
             registry.registerLinkTooltipComponent(LinkTooltip);
         }
 
