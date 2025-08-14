@@ -4,6 +4,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -71,6 +72,7 @@ func TestWebhookHTTP(t *testing.T) {
 		ExpectedStatus          int
 		ExpectedIgnored         bool // Indicates that no post was made as a result of the webhook request
 		CurrentInstance         bool
+		RootID                  string
 	}{
 		"issue created": {
 			Request:                 testWebhookRequest("webhook-issue-created.json"),
@@ -313,6 +315,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Test User **commented** on story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			ExpectedText:            "> Added a comment",
 			CurrentInstance:         true,
+			RootID:                  "test-root-id",
 		},
 		"CLOUD comment updated": {
 			Request:                 testWebhookRequest("webhook-cloud-comment-updated.json"),
@@ -320,11 +323,13 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Test User **edited comment** in story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			ExpectedText:            "> Added a comment, then edited it",
 			CurrentInstance:         true,
+			RootID:                  "test-root-id",
 		},
 		"CLOUD comment deleted": {
 			Request:          testWebhookRequest("webhook-cloud-comment-deleted.json"),
 			ExpectedHeadline: "Test User **deleted comment** in task [KT-7: s](https://mmtest.atlassian.net/browse/KT-7)",
 			CurrentInstance:  true,
+			RootID:           "test-root-id",
 		},
 		"SERVER issue commented": {
 			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-1.json"),
@@ -352,6 +357,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline: "Lev Brouk **deleted comment** in story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
 			ExpectedText:     "",
 			CurrentInstance:  true,
+			RootID:           "test-root-id",
 		},
 		"SERVER (old version) issue comment deleted (no issue_event_type_name)": {
 			Request:         testWebhookRequest("webhook-server-old-issue-updated-no-event-type-comment-deleted.json"),
@@ -365,6 +371,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline:        "Lev Brouk **edited comment** in story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
 			ExpectedText:            "> and higher eeven higher",
 			CurrentInstance:         true,
+			RootID:                  "test-root-id",
 		},
 		"SERVER (old version) issue comment edited (no issue_event_type_name)": {
 			Request:                 testWebhookRequest("webhook-server-old-issue-updated-no-event-type-comment-edited.json"),
@@ -614,13 +621,30 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedText:            "> unik with mentioned user @test-mm-username",
 			CurrentInstance:         false,
 		},
+		"SERVER issue commented - Post in issue created event thread": {
+			Request:                 testWebhookRequest("webhook-cloud-comment-created.json"),
+			ExpectedSlackAttachment: true,
+			ExpectedHeadline:        "Lev Brouk **commented** on story [PRJX-14: As a user, I can find important items on the board by using the customisable ...](http://sales-jira.centralus.cloudapp.azure.com:8080/browse/PRJX-14)",
+			ExpectedText:            "> unik with mentioned user @test-mm-username",
+			CurrentInstance:         false,
+			RootID:                  "test-root-id",
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
+			if tc.RootID != "" {
+				existingBytes, _ := json.Marshal(&tc.RootID)
+				api.On("KVGet", mock.AnythingOfType("string")).Return(existingBytes, (*model.AppError)(nil))
+			} else {
+				api.On("KVGet", mock.AnythingOfType("string")).Return(nil, (*model.AppError)(nil))
+			}
+
 			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 			api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
 			api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+			api.On("LogInfo", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Times(10)
+			api.On("LogError", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Times(10).Return(nil)
 
 			api.On("GetUserByUsername", "theuser").Return(&model.User{
 				Id: "theuserid",
@@ -640,6 +664,11 @@ func TestWebhookHTTP(t *testing.T) {
 					Fields:  tc.ExpectedFields,
 				},
 			}
+
+			if tc.RootID != "" {
+				rPost.RootId = tc.RootID
+			}
+
 			model.ParseSlackAttachment(rPost, rAttachments)
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(rPost, nil)
 			api.On("GetUser", mock.AnythingOfType("string")).Return(&model.User{
@@ -685,6 +714,13 @@ func TestWebhookHTTP(t *testing.T) {
 				return
 			}
 
+			if tc.RootID != "" {
+				require.NotNil(t, post.RootId)
+				assert.Equal(t, tc.RootID, post.RootId)
+			} else {
+				require.Empty(t, post.RootId)
+			}
+
 			require.NotNil(t, post.Props)
 			require.NotNil(t, post.Props["attachments"])
 			attachments := post.Props["attachments"].([]*model.SlackAttachment)
@@ -694,6 +730,7 @@ func TestWebhookHTTP(t *testing.T) {
 			assert.Equal(t, tc.ExpectedHeadline, sa.Pretext)
 			assert.Equal(t, tc.ExpectedText, sa.Text)
 			require.Equal(t, len(tc.ExpectedFields), len(sa.Fields))
+
 			for i := range tc.ExpectedFields {
 				assert.Equal(t, tc.ExpectedFields[i].Title, sa.Fields[i].Title)
 				assert.Equal(t, tc.ExpectedFields[i].Value, sa.Fields[i].Value)
