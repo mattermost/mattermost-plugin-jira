@@ -90,7 +90,7 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 	if hasCreatedComment || hasDeletedComment || hasUpdatedComment {
 		err := p.client.KV.Get(key, &rootID)
 		if err != nil || rootID == "" {
-			p.client.Log.Info("Post ID not found in KV store, creating a new post for Jira Subscription Comment Event", "TicketID", wh.Issue.ID)
+			p.client.Log.Info("Post ID not found in KV store, creating a new post for Jira subscription comment event", "TicketID", wh.Issue.ID)
 		} else {
 			rootPostExists = true
 			post.RootId = rootID

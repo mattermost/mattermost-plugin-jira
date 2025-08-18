@@ -145,7 +145,7 @@
                 "key": "ThreadedJiraCommentSubscriptionDuration",
                 "display_name": "Threaded Jira Comment Subscription Duration",
                 "type": "text",
-                "help_text": "Number of days Jira comments will be posted as threaded replies instead of new post",
+                "help_text": "Number of days Jira comments will be posted as threaded replies instead of a new post",
                 "placeholder": "30",
                 "default": "30"
             },

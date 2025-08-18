@@ -93,7 +93,7 @@ type externalConfig struct {
 	// Email of the admin
 	AdminEmail string
 
-	// Number of days Jira comments will be posted as threaded replies instead of new post
+	// Number of days Jira comments will be posted as threaded replies instead of a new post
 	ThreadedJiraCommentSubscriptionDuration string `json:"threadedjiracommentsubscriptionduration"`
 
 	// Comma separated list of Team IDs and name to be used for filtering subscription on the basis of teams. Ex: [team-1-name](team-1-id),[team-2-name](team-2-id)
