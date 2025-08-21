@@ -11,16 +11,9 @@ interface Props {
 
 export default function AttachCommentToIssuePostMenuAction({actionText}: Props): JSX.Element {
     return (
-        <li
-            className='MenuItem'
-            role='menuitem'
-        >
-            <button className='style--none'>
-                <span className='MenuItem__icon'>
-                    <JiraIcon type='menu'/>
-                </span>
-                {actionText}
-            </button>
-        </li>
+        <>
+            <JiraIcon type='menu'/>
+            {actionText}
+        </>
     );
 }
