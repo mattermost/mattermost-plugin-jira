@@ -18,6 +18,7 @@ describe('components/ChannelSettingsModal', () => {
         theme: {},
         fetchJiraProjectMetadataForAllInstances: jest.fn().mockResolvedValue({}),
         fetchChannelSubscriptions: jest.fn().mockResolvedValue({}),
+        fetchAllSubscriptionTemplates: jest.fn().mockResolvedValue({}),
         sendEphemeralPost: jest.fn(),
         jiraIssueMetadata: {} as IssueMetadata,
         jiraProjectMetadata: {} as ProjectMetadata,
@@ -50,6 +51,7 @@ describe('components/ChannelSettingsModal', () => {
         });
 
         await props.fetchChannelSubscriptions(testChannel.id);
+        await props.fetchAllSubscriptionTemplates();
         await props.fetchJiraProjectMetadataForAllInstances();
 
         expect(wrapper.find(ChannelSubscriptionsModalInner).length).toEqual(1);
