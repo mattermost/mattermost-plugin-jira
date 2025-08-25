@@ -9,7 +9,7 @@ This plugin supports a two-way integration between Mattermost and Jira. Jira Cor
 
 For versions v3.0 and later of this plugin, support for multiple Jira instances is offered for Mattermost Professional, Enterprise and Enterprise Advanced plans, configured using [Administrator Slash Commands](https://github.com/mattermost/mattermost-plugin-jira#readme).
 
-See the [Mattermost Product Documentation](https://docs.mattermost.com/integrate/jira-interoperability.html) for details on installing, configuring, enabling, and using this Mattermost integration.
+See the [Mattermost Product Documentation](https://docs.mattermost.com/integrations-guide/jira.html) for details on installing, configuring, enabling, and using this Mattermost integration.
 
 ## Feature summary
 
