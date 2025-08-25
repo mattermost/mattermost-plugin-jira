@@ -30,8 +30,8 @@
     "@babel/runtime": "7.15.4",
     "@types/enzyme": "3.10.18",
     "@types/jest": "29.5.11",
-    "@mattermost/client": "10.7.0",
-    "@mattermost/types": "10.8.0",
+    "@mattermost/client": "10.9.0",
+    "@mattermost/types": "10.9.0",
     "@types/cheerio": "0.22.30",
     "@types/react": "16.8.24",
     "@types/react-dom": "16.8.5",
@@ -73,14 +73,10 @@
     "webpack": "5.96.1",
     "webpack-cli": "5.1.4"
   },
-  "overrides": {
-    "cheerio": "0.22.0",
-    "@mattermost/types": "$@mattermost/types"
-  },
   "dependencies": {
     "core-js": "3.40.0",
     "debounce-promise": "3.1.2",
-    "mattermost-redux": "10.8.0",
+    "mattermost-redux": "10.9.0",
     "react": "16.14.0",
     "react-bootstrap": "1.6.1",
     "react-dom": "16.8.6",
