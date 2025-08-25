@@ -1,7 +1,7 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {TEAM_FIELD} from 'constant';
+import {TEAM_FIELD} from '../constant';
 import {
     ChannelSubscriptionFilters,
     FilterField,

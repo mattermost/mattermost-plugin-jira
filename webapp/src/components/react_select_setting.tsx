@@ -6,7 +6,7 @@ import ReactSelect, {GroupTypeBase} from 'react-select';
 import AsyncSelect, {Props as ReactSelectProps} from 'react-select/async';
 import CreatableSelect from 'react-select/creatable';
 
-import {Theme} from 'mattermost-redux/types/preferences';
+import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {ActionMeta} from 'react-select/src/types';
 

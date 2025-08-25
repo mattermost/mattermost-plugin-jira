@@ -16,7 +16,7 @@ describe('components/JiraEpicSelector', () => {
     const baseProps = {
         searchIssues: jest.fn().mockResolvedValue({}),
         issueMetadata: issueMetadata as IssueMetadata,
-        theme: Preferences.THEMES.default,
+        theme: Preferences.THEMES.denim,
         isMulti: true,
         onChange: jest.fn(),
         value: ['KT-17', 'KT-20'],
