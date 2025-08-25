@@ -23,7 +23,10 @@
             margin: 2rem 0;
         }
 
-        th,
+        .th-col {
+            width: 25%;
+        }
+
         td {
             padding: 1rem 0;
         }
@@ -39,6 +42,10 @@
                 outline: none;
                 border-color: transparent;
             }
+        }
+
+        td {
+            word-break: break-word;
         }
     }
     &__learnMore {

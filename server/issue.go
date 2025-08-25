@@ -419,6 +419,34 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 	}, nil
 }
 
+func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed, fmt.Errorf("request: %s is not allowed, must be GET", r.Method)
+	}
+
+	mattermostUserID := r.Header.Get(headerMattermostUserID)
+	if mattermostUserID == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	teamList := p.conf.TeamIDList
+	if teamList == nil {
+		teamList = make([]TeamList, 0)
+	}
+
+	jsonResponse, err := json.Marshal(teamList)
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal team list")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonResponse); err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+	}
+
+	return http.StatusOK, nil
+}
+
 func (p *Plugin) httpGetCommentVisibilityFields(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
 		return http.StatusMethodNotAllowed, fmt.Errorf("Request: " + r.Method + " is not allowed, must be GET")
@@ -1028,7 +1056,7 @@ func (p *Plugin) AssignIssue(instance Instance, mattermostUserID types.ID, issue
 			}
 			errorMsg += fmt.Sprintf("* %+v\n", name)
 		}
-		return "", fmt.Errorf(errorMsg)
+		return "", errors.New(errorMsg)
 	}
 
 	// user is array of one object

@@ -1,6 +1,7 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {TEAM_FIELD} from 'constant';
 import {
     ChannelSubscriptionFilters,
     FilterField,
@@ -316,6 +317,23 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
 
     result.push(commentVisibilityField);
 
+    const teamField = {
+        key: TEAM_FIELD,
+        name: 'Team',
+        schema: {
+            type: 'team',
+        },
+        values: [],
+        issueTypes: metadata && metadata.issue_types_with_statuses.map((type) => {
+            return {
+                id: type.id,
+                name: type.name,
+            };
+        }),
+    } as FilterField;
+
+    result.push(teamField);
+
     const statusField = getStatusField(metadata, issueTypes);
     if (statusField) {
         result.push(statusField);
@@ -369,6 +387,10 @@ export function isUserField(field: JiraField | FilterField): boolean {
 
 export function isCommentVisibilityField(field: JiraField | FilterField): boolean {
     return field.key === commentVisibilityFieldKey;
+}
+
+export function isTeamField(field: JiraField | FilterField): boolean {
+    return field.key === TEAM_FIELD;
 }
 
 export function isEpicIssueType(issueType: IssueType): boolean {

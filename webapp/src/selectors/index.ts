@@ -54,6 +54,10 @@ export const getChannelIdWithSettingsOpen = (state: GlobalState) => getPluginSta
 
 export const getChannelSubscriptions = (state: GlobalState) => getPluginState(state).channelSubscriptions;
 
+export const getSubscriptionTemplates = (state: GlobalState) => getPluginState(state).subscriptionTemplates;
+
+export const getSubscriptionTemplatesForProjectKey = (state: GlobalState) => getPluginState(state).subscriptionTemplatesForProjectKey;
+
 export const isUserConnected = (state: GlobalState) => getUserConnectedInstances(state).length > 0;
 
 export const canUserConnect = (state: GlobalState) => getPluginState(state).userCanConnect;
