@@ -4,7 +4,7 @@
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 
-import {searchIssues} from 'actions';
+import {searchIssues} from '../../../actions';
 
 import JiraEpicSelector from './jira_epic_selector';
 
