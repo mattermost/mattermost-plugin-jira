@@ -19,7 +19,7 @@ require (
 	github.com/rudderlabs/analytics-go v3.3.3+incompatible
 	github.com/stretchr/testify v1.10.0
 	github.com/trivago/tgo v1.0.7
-	golang.org/x/oauth2 v0.25.0
+	golang.org/x/oauth2 v0.27.0
 	golang.org/x/text v0.24.0
 	gopkg.in/yaml.v3 v3.0.1
 )
