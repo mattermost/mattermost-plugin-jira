@@ -142,6 +142,14 @@
                 "default": ""
             },
             {
+                "key": "ThreadedJiraCommentSubscriptionDuration",
+                "display_name": "Threaded Jira Comment Subscription Duration",
+                "type": "number",
+                "help_text": "Number of days Jira comments will be posted as threaded replies instead of a new post",
+                "placeholder": "30",
+                "default": "30"
+            },
+            {
                 "key": "TeamIDs",
                 "display_name": "Team List",
                 "type": "text",

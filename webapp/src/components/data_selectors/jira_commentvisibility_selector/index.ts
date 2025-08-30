@@ -4,7 +4,7 @@
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 
-import {searchCommentVisibilityFields} from 'actions';
+import {searchCommentVisibilityFields} from '../../../actions';
 
 import JiraCommentVisibilitySelector from './jira_commentvisibility_selector';
 

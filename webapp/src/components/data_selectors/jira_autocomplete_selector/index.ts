@@ -4,7 +4,7 @@
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 
-import {searchAutoCompleteFields} from 'actions';
+import {searchAutoCompleteFields} from '../../../actions';
 
 import JiraAutoCompleteSelector from './jira_autocomplete_selector';
 

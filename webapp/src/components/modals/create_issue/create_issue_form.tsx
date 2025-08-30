@@ -4,9 +4,9 @@
 import React from 'react';
 import {Modal} from 'react-bootstrap';
 
-import {Theme} from 'mattermost-redux/types/preferences';
-import {Post} from 'mattermost-redux/types/posts';
-import {Team} from 'mattermost-redux/types/teams';
+import {Theme} from 'mattermost-redux/selectors/entities/preferences';
+import {Post} from '@mattermost/types/posts';
+import {Team} from '@mattermost/types/teams';
 
 import {
     APIResponse,

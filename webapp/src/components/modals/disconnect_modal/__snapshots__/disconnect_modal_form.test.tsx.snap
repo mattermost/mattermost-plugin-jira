@@ -7,7 +7,7 @@ exports[`components/DisconnectModalForm should match snapshot 1`] = `
 >
   <ModalBody
     style={
-      Object {
+      {
         "backgroundColor": undefined,
         "color": undefined,
         "padding": "2em 2em 3em",
@@ -16,13 +16,13 @@ exports[`components/DisconnectModalForm should match snapshot 1`] = `
   >
     <ReactSelectSetting
       onChange={[Function]}
-      options={Array []}
-      theme={Object {}}
+      options={[]}
+      theme={{}}
     />
   </ModalBody>
   <ModalFooter
     style={
-      Object {
+      {
         "padding": "2rem 15px",
       }
     }

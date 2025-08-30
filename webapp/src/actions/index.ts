@@ -6,9 +6,9 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
 import {Action, Dispatch, Store} from 'redux';
 
-import ActionTypes from 'action_types';
-import {buildQueryString, doFetch, doFetchWithResponse} from 'client';
-import {getInstalledInstances, getPluginServerRoute, getUserConnectedInstances} from 'selectors';
+import ActionTypes from '../action_types';
+import {buildQueryString, doFetch, doFetchWithResponse} from '../client';
+import {getInstalledInstances, getPluginServerRoute, getUserConnectedInstances} from '../selectors';
 import {isDesktopApp, isMinimumDesktopAppVersion} from 'utils/user_agent';
 
 import {

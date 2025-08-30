@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	textTemplate "text/template"
@@ -93,6 +94,9 @@ type externalConfig struct {
 
 	// Email of the admin
 	AdminEmail string `json:"adminemail"`
+
+	// Number of days Jira comments will be posted as threaded replies instead of a new post
+	ThreadedJiraCommentSubscriptionDuration string `json:"threadedjiracommentsubscriptionduration"`
 
 	// Comma separated list of Team IDs and name to be used for filtering subscription on the basis of teams. Ex: [team-1-name](team-1-id),[team-2-name](team-2-id)
 	TeamIDs string `json:"teamids"`
@@ -229,6 +233,14 @@ func (p *Plugin) OnConfigurationChange() error {
 		return err
 	}
 	ec.AdminAPIToken = string(encryptedAdminAPIToken)
+
+	duration, err := strconv.Atoi(ec.ThreadedJiraCommentSubscriptionDuration)
+	if err != nil {
+		return errors.New("error converting comment post reply duration to integer")
+	}
+	if duration < 0 {
+		return errors.New("comment post reply duration cannot be negative")
+	}
 
 	if ec.TeamIDs != "" {
 		teamListData := strings.Split(ec.TeamIDs, ",")

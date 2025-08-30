@@ -7,10 +7,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -23,6 +26,8 @@ const (
 	issueCreated   = "jira:issue_created"
 
 	worklogUpdated = "jira:worklog_updated"
+
+	ticketRootPostIDKey = "ticket_post_id_%s_channel_id_%s"
 )
 
 type Webhook interface {
@@ -61,9 +66,11 @@ func (wh *webhook) Events() StringSet {
 }
 
 func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error) {
+	pluginConfig := p.getConfig()
+
 	if wh.headline == "" {
 		return nil, http.StatusBadRequest, errors.Errorf("unsupported webhook")
-	} else if p.getConfig().DisplaySubscriptionNameInNotifications && subscriptionName != "" {
+	} else if pluginConfig.DisplaySubscriptionNameInNotifications && subscriptionName != "" {
 		wh.headline = fmt.Sprintf("%s\nSubscription: **%s**", wh.headline, subscriptionName)
 	}
 
@@ -72,8 +79,26 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 		UserId:    fromUserID,
 	}
 
+	key := fmt.Sprintf(ticketRootPostIDKey, wh.Issue.ID, channelID)
+	var rootID string
+	rootPostExists := false
+
+	_, hasCreatedComment := wh.eventTypes[eventCreatedComment]
+	_, hasDeletedComment := wh.eventTypes[eventDeletedComment]
+	_, hasUpdatedComment := wh.eventTypes[eventUpdatedComment]
+
+	if hasCreatedComment || hasDeletedComment || hasUpdatedComment {
+		err := p.client.KV.Get(key, &rootID)
+		if err != nil || rootID == "" {
+			p.client.Log.Info("Post ID not found in KV store, creating a new post for Jira subscription comment event", "TicketID", wh.Issue.ID)
+		} else {
+			rootPostExists = true
+			post.RootId = rootID
+		}
+	}
+
 	text := ""
-	if wh.text != "" && !p.getConfig().HideDecriptionComment {
+	if wh.text != "" && !pluginConfig.HideDecriptionComment {
 		text = p.replaceJiraAccountIds(instanceID, wh.text)
 	}
 
@@ -92,9 +117,24 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 		post.Message = wh.headline
 	}
 
-	err := p.client.Post.CreatePost(post)
-	if err != nil {
+	if err := p.client.Post.CreatePost(post); err != nil {
 		return nil, http.StatusInternalServerError, err
+	}
+
+	commentEvent := commentEvents.ContainsAny(wh.Events().ToSlice()...)
+	issueCreated := wh.eventTypes[eventCreated]
+	shouldStorePostID := commentEvent || issueCreated
+
+	if shouldStorePostID && !rootPostExists {
+		commentPostReplyDuration, err := strconv.Atoi(pluginConfig.ThreadedJiraCommentSubscriptionDuration)
+		if err != nil {
+			p.client.Log.Error("Error converting comment post reply duration to integer, future comments may not thread correctly", "TicketID", wh.Issue.ID, "PostID", post.Id, "Error", err.Error())
+		} else {
+			expiry := pluginapi.SetExpiry(time.Duration(commentPostReplyDuration) * 24 * time.Hour)
+			if _, err := p.client.KV.Set(key, post.Id, expiry); err != nil {
+				p.client.Log.Error("Failed to store post ID, future comments may not thread correctly", "TicketID", wh.Issue.ID, "PostID", post.Id, "error", err.Error())
+			}
+		}
 	}
 
 	return post, http.StatusOK, nil
