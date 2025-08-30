@@ -6,7 +6,7 @@ import React from 'react';
 import debounce from 'debounce-promise';
 import AsyncSelect from 'react-select/async';
 
-import {Theme} from 'mattermost-redux/types/preferences';
+import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {IssueMetadata, ReactSelectOption} from 'types/model';
 
@@ -14,7 +14,7 @@ import {getStyleForReactSelect} from 'utils/styles';
 
 import {Props as ReactSelectSettingProps} from 'components/react_select_setting';
 import Setting from 'components/setting';
-import {TEAM_FIELD} from 'constant';
+import {TEAM_FIELD} from '../../constant';
 
 const searchDebounceDelay = 400;
 
