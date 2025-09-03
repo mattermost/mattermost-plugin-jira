@@ -237,6 +237,8 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 		Fields: &in.Fields,
 	}
 
+	issue.Fields = preProcessTeamID(issue.Fields)
+
 	channelID := in.ChannelID
 	if post != nil {
 		channelID = post.ChannelId
@@ -365,6 +367,20 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 	return createdIssue, nil
 }
 
+// Extract the "id" value from the custom field map and replace it
+// with a plain string, since Jira expects the field value directly.
+func preProcessTeamID(fields *jira.IssueFields) *jira.IssueFields {
+	if raw, ok := fields.Unknowns["customfield_10001"]; ok {
+		if m, ok := raw.(map[string]interface{}); ok {
+			if id, ok := m["id"].(string); ok {
+				fields.Unknowns["customfield_10001"] = id
+			}
+		}
+	}
+
+	return fields
+}
+
 func (p *Plugin) httpGetCreateIssueMetadataForProjects(w http.ResponseWriter, r *http.Request) (int, error) {
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	projectKeys := r.FormValue("project-keys")
@@ -408,10 +424,52 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 		return nil, err
 	}
 
+	teamIDList := p.conf.TeamIDList
+	if len(teamIDList) > 0 {
+		injectTeamAllowedValues(metaInfo, teamIDList)
+	}
+
 	return &CreateMetaInfo{
 		metaInfo,
 		projectStatuses,
 	}, nil
+}
+
+// The go-jira package does not support the Team field by default,
+// and the Jira API does not include Team data in the issue metadata.
+// Therefore, we need to manually inject the allowed Team values into the fields.
+func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamList) {
+	for _, project := range metaInfo.Projects {
+		for _, issueType := range project.IssueTypes {
+			for key, rawField := range issueType.Fields {
+				fieldMap, ok := rawField.(map[string]interface{})
+				if !ok {
+					continue
+				}
+
+				schemaRaw, ok := fieldMap["schema"].(map[string]interface{})
+				if !ok {
+					continue
+				}
+
+				if schemaRaw["custom"] != "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team" {
+					continue
+				}
+
+				allowedValues := make([]map[string]string, 0, len(teamIDList))
+				for _, team := range teamIDList {
+					allowedValues = append(allowedValues, map[string]string{
+						"id":    team.ID,
+						"name":  team.Name,
+						"value": team.Name,
+					})
+				}
+
+				fieldMap["allowedValues"] = allowedValues
+				issueType.Fields[key] = fieldMap
+			}
+		}
+	}
 }
 
 func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int, error) {
