@@ -439,6 +439,15 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 // and the Jira API does not include Team data in the issue metadata.
 // Therefore, we need to manually inject the allowed Team values into the fields.
 func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamList) {
+	allowedValues := make([]map[string]string, 0, len(teamIDList))
+	for _, team := range teamIDList {
+		allowedValues = append(allowedValues, map[string]string{
+			"id":    team.ID,
+			"name":  team.Name,
+			"value": team.Name,
+		})
+	}
+
 	for _, project := range metaInfo.Projects {
 		for _, issueType := range project.IssueTypes {
 			for key, rawField := range issueType.Fields {
@@ -454,15 +463,6 @@ func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamLis
 
 				if schemaRaw["custom"] != "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team" {
 					continue
-				}
-
-				allowedValues := make([]map[string]string, 0, len(teamIDList))
-				for _, team := range teamIDList {
-					allowedValues = append(allowedValues, map[string]string{
-						"id":    team.ID,
-						"name":  team.Name,
-						"value": team.Name,
-					})
 				}
 
 				fieldMap["allowedValues"] = allowedValues
