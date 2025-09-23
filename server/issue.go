@@ -451,7 +451,7 @@ func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamLis
 	for _, project := range metaInfo.Projects {
 		for _, issueType := range project.IssueTypes {
 			for key, rawField := range issueType.Fields {
-				fieldMap, ok := rawField.(map[string]interface{})
+				fieldMap, ok := rawField.(map[string]any)
 				if !ok {
 					continue
 				}
