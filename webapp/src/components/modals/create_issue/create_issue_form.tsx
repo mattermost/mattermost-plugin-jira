@@ -58,6 +58,7 @@ const allowedSchemaCustom: string[] = [
     JiraFieldCustomTypeEnums.URL_FIELD,
     JiraFieldCustomTypeEnums.LABELS,
     JiraFieldCustomTypeEnums.USER_PICKER,
+    JiraFieldCustomTypeEnums.TEAM,
 ];
 
 type Props = {
