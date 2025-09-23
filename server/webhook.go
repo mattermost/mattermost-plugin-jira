@@ -54,11 +54,12 @@ type webhook struct {
 }
 
 type webhookUserNotification struct {
-	jiraUsername  string
-	jiraAccountID string
-	message       string
-	postType      string
-	commentSelf   string
+	jiraUsername     string
+	jiraAccountID    string
+	message          string
+	postType         string
+	commentSelf      string
+	notificationType string
 }
 
 func (wh *webhook) Events() StringSet {
@@ -153,6 +154,7 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 	}
 
 	posts := []*model.Post{}
+	var mapForNotification = make(map[types.ID]int)
 	for _, notification := range wh.notifications {
 		var mattermostUserID types.ID
 		var err error
@@ -180,6 +182,16 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		}
 		// If this is a comment-related webhook, we need to check if they have permissions to read that.
 		// Otherwise, check if they can view the issue.
+
+		if !c.Settings.ShouldReceiveNotification(notification.notificationType) {
+			continue
+		}
+
+		if _, ok := mapForNotification[mattermostUserID]; ok {
+			continue
+		} else {
+			mapForNotification[mattermostUserID] = 1
+		}
 
 		isCommentEvent := wh.Events().Intersection(commentEvents).Len() > 0
 		if isCommentEvent {
