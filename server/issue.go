@@ -456,7 +456,7 @@ func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamLis
 					continue
 				}
 
-				schemaRaw, ok := fieldMap["schema"].(map[string]interface{})
+				schemaRaw, ok := fieldMap["schema"].(map[string]any)
 				if !ok {
 					continue
 				}
