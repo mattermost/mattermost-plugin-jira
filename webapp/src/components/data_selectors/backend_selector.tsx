@@ -8,7 +8,7 @@ import AsyncSelect from 'react-select/async';
 
 import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
-import {IssueMetadata, ReactSelectOption} from 'types/model';
+import {AvatarSize, IssueMetadata, ReactSelectOption} from 'types/model';
 
 import {getStyleForReactSelect} from 'utils/styles';
 
@@ -38,6 +38,14 @@ type State = {
     invalid: boolean;
     error?: string;
     cachedSelectedOptions: ReactSelectOption[];
+};
+
+type JiraUser = {
+    accountId: string;
+    displayName: string;
+    avatarUrls?: {
+        [size: string]: string;
+    };
 };
 
 export default class BackendSelector extends React.PureComponent<Props, State> {
@@ -179,12 +187,34 @@ export default class BackendSelector extends React.PureComponent<Props, State> {
         const valueToOption = (v: string): ReactSelectOption => {
             // Ensure the value is always a string for comparison.
             let stringValue: string;
+            let label: string | React.ReactElement;
+
             if (typeof v === 'string') {
                 stringValue = v;
+                label = v;
             } else if (Array.isArray(v)) {
                 stringValue = v[0];
+                label = v[0];
+            } else if (typeof v === 'object' && v !== null) {
+                const user = v as JiraUser;
+                stringValue = user.displayName;
+
+                label = user.displayName;
+                if (user.avatarUrls && user.avatarUrls[AvatarSize.SMALL]) {
+                    const avatarURL = user.avatarUrls[AvatarSize.SMALL];
+                    label = (
+                        <span>
+                            <img
+                                src={avatarURL}
+                                style={{width: '24px', marginRight: '10px'}}
+                            />
+                            <span>{user.displayName}</span>
+                        </span>
+                    );
+                }
             } else {
                 stringValue = String(v);
+                label = String(v);
             }
 
             if (this.state.cachedSelectedOptions && this.state.cachedSelectedOptions.length) {
@@ -195,7 +225,7 @@ export default class BackendSelector extends React.PureComponent<Props, State> {
             }
 
             return {
-                label: stringValue,
+                label,
                 value: stringValue,
             };
         };
