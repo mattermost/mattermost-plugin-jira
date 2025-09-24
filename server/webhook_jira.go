@@ -163,13 +163,13 @@ func mdAddRemove(from, to, add, remove string) string {
 	removed := mdDiff(to, from)
 	s := ""
 	if added != "" {
-		s += fmt.Sprintf("%v [%v] to", add, added)
+		s += fmt.Sprintf("%s [%s] to", add, added)
 	}
 	if removed != "" {
 		if added != "" {
 			s += ", "
 		}
-		s += fmt.Sprintf("%v [%v] from", remove, removed)
+		s += fmt.Sprintf("%s [%s] from", remove, removed)
 	}
 	return s
 }
@@ -181,18 +181,15 @@ func mdDiff(from, to string) string {
 	for _, s := range fromStrings {
 		fromMap[s] = true
 	}
-	toMap := map[string]bool{}
-	for _, s := range toStrings {
-		toMap[s] = true
-	}
+
 	added := []string{}
-	for s := range toMap {
+	for _, s := range toStrings {
 		if !fromMap[s] {
 			added = append(added, s)
 		}
 	}
 
-	return strings.Join(added, ",")
+	return strings.Join(added, " ")
 }
 
 func mdUser(user *jira.User) string {
