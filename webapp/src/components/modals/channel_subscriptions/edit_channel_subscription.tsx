@@ -384,6 +384,11 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             return;
         }
 
+        if (!this.state.subscriptionName || this.state.subscriptionName.trim() === '') {
+            this.setState({error: 'Subscription name cannot be empty or only whitespaces.'});
+            return;
+        }
+
         const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects, this.state.filters.issue_types);
         const configuredFields = this.state.filters.fields.concat([]);
         for (const v of this.state.filters.fields) {
