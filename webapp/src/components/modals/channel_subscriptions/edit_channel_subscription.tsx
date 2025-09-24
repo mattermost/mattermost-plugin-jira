@@ -385,7 +385,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         }
 
         if (!this.state.subscriptionName || this.state.subscriptionName.trim() === '') {
-            this.setState({error: 'Subscription name cannot be empty or only whitespaces.'});
+            this.setState({error: 'Name cannot be empty or only whitespaces.'});
             return;
         }
 
