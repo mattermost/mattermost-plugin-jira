@@ -175,7 +175,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
     };
 
     handleNameChange = (id: string, value: string) => {
-        this.setState({subscriptionName: value});
+        this.setState({subscriptionName: value.trim()});
     };
 
     deleteChannelSubscription = () => {
