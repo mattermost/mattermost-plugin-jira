@@ -58,6 +58,7 @@ type UserService interface {
 type ProjectService interface {
 	GetProject(key string) (*jira.Project, error)
 	ListProjects(query string, limit int, expandIssueTypes bool) (jira.ProjectList, error)
+	GetAllProjectKeys() ([]string, error)
 	GetIssueTypes(projectID string) ([]jira.IssueType, error)
 	ListProjectStatuses(projectID string) ([]*IssueTypeWithStatuses, error)
 }
@@ -68,6 +69,7 @@ type SearchService interface {
 	SearchUsersAssignableToIssue(issueKey, query string, maxResults int) ([]jira.User, error)
 	SearchUsersAssignableInProject(projectKey, query string, maxResults int) ([]jira.User, error)
 	SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error)
+	GetWatchers(instanceID, issueKey string, connection *Connection) (*jira.Watches, error)
 	GetUserVisibilityGroups(params map[string]string) (*CommentVisibilityResult, error)
 }
 
@@ -182,6 +184,20 @@ func (client JiraClient) GetProject(key string) (*jira.Project, error) {
 	return project, nil
 }
 
+func (client JiraClient) GetAllProjectKeys() ([]string, error) {
+	projectList, resp, err := client.Jira.Project.GetList()
+	if err != nil {
+		return nil, userFriendlyJiraError(resp, err)
+	}
+
+	keys := make([]string, len(*projectList))
+	for index, project := range *projectList {
+		keys[index] = project.Key
+	}
+
+	return keys, nil
+}
+
 // GetIssue returns an Issue by key (with options).
 func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (*jira.Issue, error) {
 	issue, resp, err := client.Jira.Issue.Get(key, options)
@@ -189,6 +205,21 @@ func (client JiraClient) GetIssue(key string, options *jira.GetQueryOptions) (*j
 		return nil, userFriendlyJiraError(resp, err)
 	}
 	return issue, nil
+}
+
+// GetWatchers returns an array of Jira users watching a given issue.
+func (client JiraClient) GetWatchers(instanceID, issueKey string, connection *Connection) (*jira.Watches, error) {
+	var watchers jira.Watches
+	params := map[string]string{
+		"accountId": connection.AccountID,
+	}
+
+	endpoint := fmt.Sprintf("2/issue/%s/watchers", issueKey)
+
+	if err := client.RESTGet(endpoint, params, &watchers); err != nil {
+		return nil, err
+	}
+	return &watchers, nil
 }
 
 // GetTransitions returns transitions for an issue with issueKey.
@@ -435,7 +466,7 @@ func endpointURL(endpoint string) (string, error) {
 		return "", err
 	}
 	if parsedURL.Scheme == "" {
-		// relative path
+		// Relative path
 		endpoint = path.Join("/rest/api", endpoint)
 	}
 	return endpoint, nil
