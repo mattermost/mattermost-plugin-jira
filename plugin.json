@@ -153,7 +153,7 @@
                 "key": "TeamIDs",
                 "display_name": "Team List",
                 "type": "text",
-                "help_text": "Comma separated list of team name and IDs to be used for filtering subscriptions\n**Note:** Teams provided here will be used in all the instances",
+                "help_text": "Comma separated list of team name and IDs to be used for filtering subscriptions\n**Note:** Teams provided here will be used across all configured Jira instances",
                 "placeholder": "[team-1-name](team-1-id),[team-2-name](team-2-id)",
                 "default": ""
             }

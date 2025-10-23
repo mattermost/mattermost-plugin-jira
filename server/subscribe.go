@@ -231,7 +231,7 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		}
 
 		if field.Key == TeamFilter {
-			value = updateTeamValue(value, wh)
+			value = updateTeamValue(value, wh, teamFieldKey)
 		}
 
 		if shouldAddVisibleToAllUsersToFieldValues(wh, field) {
@@ -266,8 +266,8 @@ type JiraTeamData struct {
 	Name string `json:"name"`
 }
 
-func updateTeamValue(value StringSet, wh *webhook) StringSet {
-	raw, ok := wh.Issue.Fields.Unknowns["customfield_10001"]
+func updateTeamValue(value StringSet, wh *webhook, teamFieldID string) StringSet {
+	raw, ok := wh.Issue.Fields.Unknowns[teamFieldID]
 	if !ok {
 		return value
 	}

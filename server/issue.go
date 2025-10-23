@@ -39,6 +39,8 @@ const (
 	QueryParamProjectID  = "project_id"
 
 	expandValueGroups = "groups"
+
+	teamFieldKey = "customfield_10001"
 )
 
 type CreateMetaInfo struct {
@@ -237,7 +239,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 		Fields: &in.Fields,
 	}
 
-	issue.Fields = preProcessTeamID(issue.Fields)
+	issue.Fields = preProcessTeamID(issue.Fields, teamFieldKey)
 
 	channelID := in.ChannelID
 	if post != nil {
@@ -369,11 +371,11 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 
 // Extract the "id" value from the custom field map and replace it
 // with a plain string, since Jira expects the field value directly.
-func preProcessTeamID(fields *jira.IssueFields) *jira.IssueFields {
-	if raw, ok := fields.Unknowns["customfield_10001"]; ok {
+func preProcessTeamID(fields *jira.IssueFields, teamFieldID string) *jira.IssueFields {
+	if raw, ok := fields.Unknowns[teamFieldID]; ok {
 		if m, ok := raw.(map[string]interface{}); ok {
 			if id, ok := m["id"].(string); ok {
-				fields.Unknowns["customfield_10001"] = id
+				fields.Unknowns[teamFieldID] = id
 			}
 		}
 	}
