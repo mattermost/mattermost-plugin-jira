@@ -328,6 +328,8 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 	api.On("GetUser", "1").Return(&model.User{Username: "username"}, (*model.AppError)(nil))
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, (*model.AppError)(nil))
 
+	api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
+
 	api.On("PublishWebSocketEvent", "update_defaults", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.WebsocketBroadcast"))
 
 	type requestStruct struct {
@@ -392,7 +394,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 				PostID:   "1",
 				IssueKey: noPermissionsIssueKey,
 			},
-			expectedCode: http.StatusInternalServerError,
+			expectedCode: http.StatusForbidden,
 		},
 		"Failed to attach the comment": {
 			method: "POST",
