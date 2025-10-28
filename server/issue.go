@@ -680,10 +680,9 @@ func (p *Plugin) httpAttachCommentToIssue(w http.ResponseWriter, r *http.Request
 	}
 
 	in.mattermostUserID = types.ID(r.Header.Get("Mattermost-User-Id"))
-	added, err := p.AttachCommentToIssue(&in)
+	added, statusCode, err := p.AttachCommentToIssue(&in)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to attach comment to issue"))
+		return respondErr(w, statusCode, errors.WithMessage(err, "failed to attach comment to issue"))
 	}
 
 	return respondJSON(w, added)
@@ -697,24 +696,29 @@ type InAttachCommentToIssue struct {
 	IssueKey         string   `json:"issueKey"`
 }
 
-func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment, error) {
+func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment, int, error) {
 	client, instance, connection, err := p.getClient(in.InstanceID, in.mattermostUserID)
 	if err != nil {
-		return nil, err
+		return nil, http.StatusInternalServerError, err
 	}
 
 	// Lets add a permalink to the post in the Jira Description
 	post, err := p.client.Post.GetPost(in.PostID)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to load post "+in.PostID)
+		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to load post "+in.PostID)
 	}
 	if post == nil {
-		return nil, errors.New("failed to load post " + in.PostID + ": not found")
+		return nil, http.StatusNotFound, errors.New("failed to load post " + in.PostID + ": not found")
+	}
+
+	_, err = p.client.Channel.GetMember(post.ChannelId, in.mattermostUserID.String())
+	if err != nil {
+		return nil, http.StatusForbidden, errors.New("User does not have access to this post")
 	}
 
 	commentUser, err := p.client.User.Get(post.UserId)
 	if err != nil {
-		return nil, errors.New("failed to load post.UserID " + post.UserId + ": not found")
+		return nil, http.StatusNotFound, errors.New("failed to load post.UserID " + post.UserId + ": not found")
 	}
 
 	permalink := getPermaLink(instance, in.PostID, in.CurrentTeam)
@@ -728,11 +732,11 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 	added, err := client.AddComment(in.IssueKey, &jiraComment)
 	if err != nil {
 		if strings.Contains(err.Error(), "you do not have the permission to comment on this issue") {
-			return nil, errors.New("you do not have permission to create a comment in the selected Jira issue. Please choose another issue or contact your Jira admin")
+			return nil, http.StatusForbidden, errors.New("you do not have permission to create a comment in the selected Jira issue. Please choose another issue or contact your Jira admin")
 		}
 
 		// The error was not a permissions error; it was unanticipated. Return it to the client.
-		return nil, errors.WithMessage(err, "failed to attach the comment, postId: "+in.PostID)
+		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to attach the comment, postId: "+in.PostID)
 	}
 
 	go func() {
@@ -781,10 +785,10 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 	}
 	err = p.client.Post.CreatePost(reply)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to create notification post "+in.PostID)
+		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to create notification post "+in.PostID)
 	}
 
-	return added, nil
+	return added, http.StatusOK, nil
 }
 
 func notifyOnFailedAttachment(instance Instance, mattermostUserID, issueKey string, err error, format string, args ...interface{}) {

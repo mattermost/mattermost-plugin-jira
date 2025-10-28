@@ -375,7 +375,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			request: &requestStruct{
 				PostID: "post_not_found",
 			},
-			expectedCode: http.StatusInternalServerError,
+			expectedCode: http.StatusNotFound,
 		},
 		"Post user not found": {
 			method: "POST",
@@ -383,7 +383,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			request: &requestStruct{
 				PostID: "0",
 			},
-			expectedCode: http.StatusInternalServerError,
+			expectedCode: http.StatusNotFound,
 		},
 		"No permissions to comment on issue": {
 			method: "POST",
