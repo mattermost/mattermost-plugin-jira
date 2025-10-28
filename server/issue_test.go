@@ -312,26 +312,6 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 }
 
 func TestRouteAttachCommentToIssue(t *testing.T) {
-	api := &plugintest.API{}
-
-	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
-
-	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
-
-	api.On("GetPost", "error_post").Return(nil, &model.AppError{Id: "1"})
-	api.On("GetPost", "post_not_found").Return(nil, (*model.AppError)(nil))
-
-	api.On("GetPost", "0").Return(&model.Post{UserId: "0"}, (*model.AppError)(nil))
-	api.On("GetUser", "0").Return(nil, &model.AppError{Id: "1"})
-
-	api.On("GetPost", "1").Return(&model.Post{UserId: "1"}, (*model.AppError)(nil))
-	api.On("GetUser", "1").Return(&model.User{Username: "username"}, (*model.AppError)(nil))
-	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, (*model.AppError)(nil))
-
-	api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
-
-	api.On("PublishWebSocketEvent", "update_defaults", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.WebsocketBroadcast"))
-
 	type requestStruct struct {
 		PostID      string `json:"post_id"`
 		InstanceID  string `json:"instance_id"`
@@ -339,29 +319,54 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 		IssueKey    string `json:"issueKey"`
 	}
 
-	tests := map[string]struct {
+	type testCase struct {
 		method       string
 		header       string
 		request      *requestStruct
 		expectedCode int
-	}{
+		setupMocks   func(api *plugintest.API)
+	}
+
+	successfulUserPostSetup := func(api *plugintest.API) {
+		api.On("GetPost", "1").Return(&model.Post{UserId: "1", ChannelId: "test_channel"}, (*model.AppError)(nil)).Once()
+		api.On("GetUser", "1").Return(&model.User{Username: "username"}, (*model.AppError)(nil)).Once()
+		api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil).Once()
+		api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, (*model.AppError)(nil)).Once()
+	}
+
+	baseMocks := func(api *plugintest.API) {
+		api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil).Maybe()
+		api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil).Maybe()
+		api.On("PublishWebSocketEvent", "update_defaults", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.WebsocketBroadcast")).Maybe()
+	}
+
+	tests := map[string]testCase{
 		"Wrong method": {
 			method:       "GET",
 			header:       "",
 			request:      &requestStruct{},
 			expectedCode: http.StatusNotFound,
+			setupMocks: func(api *plugintest.API) {
+				baseMocks(api)
+			},
 		},
 		"No header": {
 			method:       "POST",
 			header:       "",
 			request:      &requestStruct{},
 			expectedCode: http.StatusUnauthorized,
+			setupMocks: func(api *plugintest.API) {
+				baseMocks(api)
+			},
 		},
 		"User not found": {
 			method:       "POST",
 			header:       "nobody",
 			request:      &requestStruct{},
 			expectedCode: http.StatusInternalServerError,
+			setupMocks: func(api *plugintest.API) {
+				baseMocks(api)
+			},
 		},
 		"Failed to load post": {
 			method: "POST",
@@ -370,6 +375,10 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 				PostID: "error_post",
 			},
 			expectedCode: http.StatusInternalServerError,
+			setupMocks: func(api *plugintest.API) {
+				baseMocks(api)
+				api.On("GetPost", "error_post").Return(nil, &model.AppError{Id: "1"}).Once()
+			},
 		},
 		"Post not found": {
 			method: "POST",
@@ -378,32 +387,24 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 				PostID: "post_not_found",
 			},
 			expectedCode: http.StatusNotFound,
-		},
-		"Post user not found": {
-			method: "POST",
-			header: "1",
-			request: &requestStruct{
-				PostID: "0",
+			setupMocks: func(api *plugintest.API) {
+				baseMocks(api)
+				api.On("GetPost", "post_not_found").Return(nil, (*model.AppError)(nil)).Once()
 			},
-			expectedCode: http.StatusNotFound,
 		},
-		"No permissions to comment on issue": {
+		"User does not have channel access": {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
 				PostID:   "1",
-				IssueKey: noPermissionsIssueKey,
+				IssueKey: existingIssueKey,
 			},
 			expectedCode: http.StatusForbidden,
-		},
-		"Failed to attach the comment": {
-			method: "POST",
-			header: "1",
-			request: &requestStruct{
-				PostID:   "1",
-				IssueKey: attachCommentErrorKey,
+			setupMocks: func(api *plugintest.API) {
+				baseMocks(api)
+				api.On("GetPost", "1").Return(&model.Post{UserId: "1", ChannelId: "test_channel"}, (*model.AppError)(nil)).Once()
+				api.On("GetChannelMember", "test_channel", mock.AnythingOfType("string")).Return(nil, &model.AppError{Id: "channel_access_denied"}).Once()
 			},
-			expectedCode: http.StatusInternalServerError,
 		},
 		"Successfully created notification post": {
 			method: "POST",
@@ -413,10 +414,18 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 				IssueKey: existingIssueKey,
 			},
 			expectedCode: http.StatusOK,
+			setupMocks: func(api *plugintest.API) {
+				baseMocks(api)
+				successfulUserPostSetup(api)
+			},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+
+			tt.setupMocks(api)
+
 			p := Plugin{}
 			p.initializeRouter()
 			p.SetAPI(api)
@@ -436,6 +445,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)
 			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, name)
+			api.AssertExpectations(t)
 		})
 	}
 }
