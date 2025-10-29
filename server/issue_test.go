@@ -330,7 +330,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 	successfulUserPostSetup := func(api *plugintest.API) {
 		api.On("GetPost", "1").Return(&model.Post{UserId: "1", ChannelId: "test_channel"}, (*model.AppError)(nil)).Once()
 		api.On("GetUser", "1").Return(&model.User{Username: "username"}, (*model.AppError)(nil)).Once()
-		api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil).Once()
+		api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, nil).Once()
 		api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, (*model.AppError)(nil)).Once()
 	}
 
@@ -392,6 +392,20 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 				api.On("GetPost", "post_not_found").Return(nil, (*model.AppError)(nil)).Once()
 			},
 		},
+		"Post user not found": {
+			method: "POST",
+			header: "1",
+			request: &requestStruct{
+				PostID: "0",
+			},
+			expectedCode: http.StatusNotFound,
+			setupMocks: func(api *plugintest.API) {
+				baseMocks(api)
+				api.On("GetPost", "0").Return(&model.Post{UserId: "0", ChannelId: "test_channel"}, (*model.AppError)(nil)).Once()
+				api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, nil).Once()
+				api.On("GetUser", "0").Return(nil, &model.AppError{Id: "1"}).Once()
+			},
+		},
 		"User does not have channel access": {
 			method: "POST",
 			header: "1",
@@ -404,6 +418,36 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 				baseMocks(api)
 				api.On("GetPost", "1").Return(&model.Post{UserId: "1", ChannelId: "test_channel"}, (*model.AppError)(nil)).Once()
 				api.On("GetChannelMember", "test_channel", mock.AnythingOfType("string")).Return(nil, &model.AppError{Id: "channel_access_denied"}).Once()
+			},
+		},
+		"No permissions to comment on issue": {
+			method: "POST",
+			header: "1",
+			request: &requestStruct{
+				PostID:   "1",
+				IssueKey: noPermissionsIssueKey,
+			},
+			expectedCode: http.StatusForbidden,
+			setupMocks: func(api *plugintest.API) {
+				baseMocks(api)
+				api.On("GetPost", "1").Return(&model.Post{UserId: "1", ChannelId: "test_channel"}, (*model.AppError)(nil)).Once()
+				api.On("GetUser", "1").Return(&model.User{Username: "username"}, (*model.AppError)(nil)).Once()
+				api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, nil).Once()
+			},
+		},
+		"Failed to attach the comment": {
+			method: "POST",
+			header: "1",
+			request: &requestStruct{
+				PostID:   "1",
+				IssueKey: attachCommentErrorKey,
+			},
+			expectedCode: http.StatusInternalServerError,
+			setupMocks: func(api *plugintest.API) {
+				baseMocks(api)
+				api.On("GetPost", "1").Return(&model.Post{UserId: "1", ChannelId: "test_channel"}, (*model.AppError)(nil)).Once()
+				api.On("GetUser", "1").Return(&model.User{Username: "username"}, (*model.AppError)(nil)).Once()
+				api.On("GetChannelMember", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&model.ChannelMember{}, nil).Once()
 			},
 		},
 		"Successfully created notification post": {
