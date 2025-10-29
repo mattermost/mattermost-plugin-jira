@@ -193,18 +193,18 @@ func (p *Plugin) httpCreateIssue(w http.ResponseWriter, r *http.Request) (int, e
 	}
 
 	in.mattermostUserID = types.ID(r.Header.Get("Mattermost-User-Id"))
-	created, err := p.CreateIssue(&in)
+	created, statusCode, err := p.CreateIssue(&in)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return respondErr(w, statusCode, err)
 	}
 
 	return respondJSON(w, created)
 }
 
-func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
+func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 	client, instance, connection, err := p.getClient(in.InstanceID, in.mattermostUserID)
 	if err != nil {
-		return nil, err
+		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to get client")
 	}
 
 	var post *model.Post
@@ -213,12 +213,17 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 	if in.PostID != "" {
 		post, err = p.client.Post.GetPost(in.PostID)
 		if err != nil {
-			return nil, errors.WithMessage(err, "failed to load post "+in.PostID)
+			return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to load post "+in.PostID)
 		}
 		if post == nil {
-			return nil, errors.New("failed to load post " + in.PostID + ": not found")
+			return nil, http.StatusNotFound, errors.New("failed to load post " + in.PostID + ": not found")
 		}
 		permalink := getPermaLink(instance, in.PostID, in.CurrentTeam)
+
+		_, err = p.client.Channel.GetMember(post.ChannelId, in.mattermostUserID.String())
+		if err != nil {
+			return nil, http.StatusForbidden, errors.New("User does not have access to this post")
+		}
 
 		if len(in.Fields.Description) > 0 {
 			in.Fields.Description += fmt.Sprintf("\n\n_Issue created from a [message in Mattermost|%v]_.", permalink)
@@ -261,7 +266,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 
 	project, err := client.GetProject(issue.Fields.Project.Key)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to get project %q", issue.Fields.Project.Key)
+		return nil, http.StatusInternalServerError, errors.WithMessagef(err, "failed to get project %q", issue.Fields.Project.Key)
 	}
 
 	if len(in.RequiredFieldsNotCovered) > 0 {
@@ -282,7 +287,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 			UserId:    instance.Common().getConfig().botUserID,
 		}
 		p.client.Post.SendEphemeralPost(in.mattermostUserID.String(), reply)
-		return nil, errors.Errorf("issue can not be created via API: %s", message)
+		return nil, http.StatusForbidden, errors.Errorf("issue can not be created via API: %s", message)
 	}
 
 	created, err := client.CreateIssue(issue)
@@ -303,10 +308,10 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 				RootId:    rootID,
 				UserId:    instance.Common().getConfig().botUserID,
 			})
-			return nil, errors.Errorf("issue can not be created via API: %s", message)
+			return nil, http.StatusForbidden, errors.Errorf("issue can not be created via API: %s", message)
 		}
 
-		return nil, errors.WithMessage(err, "failed to create issue")
+		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to create issue")
 	}
 
 	// Reply with an ephemeral post with the Jira issue formatted as slack attachment.
@@ -321,7 +326,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 
 	attachment, err := instance.Common().getIssueAsSlackAttachment(instance, connection, created.Key, true)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to create notification post "+in.PostID)
+		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to create notification post "+in.PostID)
 	}
 
 	reply.AddProp("attachments", attachment)
@@ -331,7 +336,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 	// issue creation. We will not have issue summary in the creation response.
 	createdIssue, err := client.GetIssue(created.Key, nil)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to fetch issue details "+created.Key)
+		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to fetch issue details "+created.Key)
 	}
 	p.UpdateUserDefaults(in.mattermostUserID, in.InstanceID, &SavedFieldValues{
 		ProjectKey: project.Key,
@@ -347,7 +352,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 	}
 	err = p.client.Post.CreatePost(publicReply)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to create notification post "+in.PostID)
+		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to create notification post "+in.PostID)
 	}
 
 	if post != nil && len(post.FileIds) > 0 {
@@ -362,7 +367,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, error) {
 		}()
 	}
 
-	return createdIssue, nil
+	return createdIssue, http.StatusOK, nil
 }
 
 func (p *Plugin) httpGetCreateIssueMetadataForProjects(w http.ResponseWriter, r *http.Request) (int, error) {
