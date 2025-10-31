@@ -23,17 +23,22 @@ import (
 )
 
 const (
-	assigneeField          = "assignee"
-	securityLevelField     = "security"
-	labelsField            = "labels"
-	statusField            = "status"
-	reporterField          = "reporter"
-	priorityField          = "priority"
-	descriptionField       = "description"
-	resolutionField        = "resolution"
-	headerMattermostUserID = "Mattermost-User-ID"
-	instanceIDQueryParam   = "instance_id"
-	fieldValueQueryParam   = "fieldValue"
+	assigneeField            = "assignee"
+	labelsField              = "labels"
+	statusField              = "status"
+	reporterField            = "reporter"
+	priorityField            = "priority"
+	descriptionField         = "description"
+	resolutionField          = "resolution"
+	securityLevelField       = "security"
+	createdCommentEvent      = "event_created_comment"
+	notificationTypeReporter = "reporter"
+	notificationTypeWatching = "watching"
+	jiraUserName             = "Name"
+	jiraUserAccountID        = "AccountID"
+	headerMattermostUserID   = "Mattermost-User-ID"
+	instanceIDQueryParam     = "instance_id"
+	fieldValueQueryParam     = "fieldValue"
 
 	QueryParamInstanceID = "instance_id"
 	QueryParamProjectID  = "project_id"
@@ -1313,6 +1318,171 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 	}
 
 	return issue, nil
+}
+
+func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
+	if !wh.eventTypes.ContainsAny(createdCommentEvent) {
+		return
+	}
+
+	jwhook := wh.JiraWebhook
+	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
+	commentMessage := fmt.Sprintf(
+		"%s **commented** on %s:\n> %s\n\n*You are watching this %s*",
+		commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body, jwhook.mdIssueType(),
+	)
+	client, connection, err := wh.fetchConnectedUser(p, instanceID)
+	if err != nil || client == nil {
+		p.errorf("error while fetching connected users for the instanceID %v , Error : %v", instanceID, err)
+		return
+	}
+
+	watchers, err := client.GetWatchers(instanceID.String(), wh.Issue.ID, connection)
+	if err != nil {
+		p.errorf("error while getting watchers for the issue id %v , err : %v", wh.Issue.ID, err)
+		return
+	}
+
+	for _, watcherUser := range watchers.Watchers {
+		whUserNotification := webhookUserNotification{
+			jiraUsername:     watcherUser.Name,
+			jiraAccountID:    watcherUser.AccountID,
+			message:          commentMessage,
+			postType:         PostTypeComment,
+			commentSelf:      wh.JiraWebhook.Comment.Self,
+			notificationType: notificationTypeWatching,
+		}
+
+		wh.notifications = append(wh.notifications, whUserNotification)
+	}
+}
+
+func (p *Plugin) applyReporterNotification(wh *webhook, instanceID types.ID, reporter *jira.User) {
+	if !wh.eventTypes.ContainsAny(createdCommentEvent) {
+		return
+	}
+
+	jwhook := wh.JiraWebhook
+	if reporter == nil ||
+		(reporter.Name != "" && reporter.Name == jwhook.User.Name) ||
+		(reporter.AccountID != "" && reporter.AccountID == jwhook.Comment.UpdateAuthor.AccountID) {
+		return
+	}
+
+	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
+	commentMessage := fmt.Sprintf(
+		"%s **commented** on %s:\n> %s\n\n*You reported this %s*",
+		commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body, jwhook.mdIssueType(),
+	)
+
+	connection, err := p.GetUserSetting(wh, instanceID, reporter.Name, reporter.AccountID)
+	if err != nil || connection.Settings == nil || !connection.Settings.ShouldReceiveNotification(notificationTypeReporter) {
+		return
+	}
+
+	wh.notifications = append(wh.notifications, webhookUserNotification{
+		jiraUsername:     reporter.Name,
+		jiraAccountID:    reporter.AccountID,
+		message:          commentMessage,
+		postType:         PostTypeComment,
+		commentSelf:      jwhook.Comment.Self,
+		notificationType: notificationTypeReporter,
+	})
+}
+
+func (p *Plugin) GetUserSetting(wh *webhook, instanceID types.ID, jiraAccountID, jiraUsername string) (*Connection, error) {
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return nil, err
+	}
+
+	var mattermostUserID types.ID
+	jiraUserID := jiraAccountID
+	if jiraUserID == "" {
+		jiraUserID = jiraUsername
+	}
+
+	mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), jiraUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	connection, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return connection, nil
+}
+
+func (s *ConnectionSettings) ShouldReceiveNotification(role string) bool {
+	if val, ok := s.RolesForDMNotification[role]; ok {
+		return val
+	}
+
+	// Check old setting for backwards compatibility
+	return s.Notifications
+}
+
+func (p *Plugin) fetchConnectedUserFromAccount(account map[string]string, instance Instance) (Client, *Connection, error) {
+	accountKey := account[jiraUserName]
+	if account[jiraUserAccountID] != "" {
+		accountKey = account[jiraUserAccountID]
+	}
+	mattermostUserID, err := p.userStore.LoadMattermostUserID(instance.GetID(), accountKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	connection, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	client, err := instance.GetClient(connection)
+	if err != nil {
+		return nil, connection, err
+	}
+
+	return client, connection, nil
+}
+
+func appendAccountInformation(accountID, name string, accountInformation *[]map[string]string) {
+	*accountInformation = append(*accountInformation, map[string]string{
+		jiraUserAccountID: accountID,
+		jiraUserName:      name,
+	})
+}
+
+func (wh *webhook) fetchConnectedUser(p *Plugin, instanceID types.ID) (Client, *Connection, error) {
+	var accountInformation []map[string]string
+
+	if wh.Issue.Fields != nil {
+		if wh.Issue.Fields.Creator != nil {
+			appendAccountInformation(wh.Issue.Fields.Creator.AccountID, wh.Issue.Fields.Creator.Name, &accountInformation)
+		}
+		if wh.Issue.Fields.Assignee != nil {
+			appendAccountInformation(wh.Issue.Fields.Assignee.AccountID, wh.Issue.Fields.Assignee.Name, &accountInformation)
+		}
+		if wh.Issue.Fields.Reporter != nil {
+			appendAccountInformation(wh.Issue.Fields.Reporter.AccountID, wh.Issue.Fields.Reporter.Name, &accountInformation)
+		}
+	}
+
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, account := range accountInformation {
+		client, connection, err := p.fetchConnectedUserFromAccount(account, instance)
+		if err != nil {
+			continue
+		}
+
+		return client, connection, nil
+	}
+
+	return nil, nil, nil
 }
 
 type ProjectSearchResponse struct {

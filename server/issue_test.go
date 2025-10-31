@@ -22,6 +22,7 @@ import (
 	"github.com/trivago/tgo/tcontainer"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (
@@ -89,6 +90,20 @@ func (client testClient) AddComment(issueKey string, comment *jira.Comment) (*ji
 	return nil, nil
 }
 
+func setupTestPlugin(api *plugintest.API) *Plugin {
+	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return()
+	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return()
+
+	p := &Plugin{}
+	p.SetAPI(api)
+	p.initializeRouter()
+	p.instanceStore = p.getMockInstanceStoreKV(1)
+	p.userStore = getMockUserStoreKV()
+	p.client = pluginapi.NewClient(api, p.Driver)
+
+	return p
+}
+
 func (client testClient) GetCreateMetaInfo(api plugin.API, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
 	return &jira.CreateMetaInfo{
 		Projects: []*jira.MetaProject{
@@ -114,14 +129,10 @@ func (client testClient) GetCreateMetaInfo(api plugin.API, options *jira.GetQuer
 func TestTransitionJiraIssue(t *testing.T) {
 	api := &plugintest.API{}
 	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
-	p := Plugin{}
-	p.initializeRouter()
-	p.SetAPI(api)
-	p.client = pluginapi.NewClient(api, p.Driver)
-	p.userStore = getMockUserStoreKV()
-	p.instanceStore = p.getMockInstanceStoreKV(1)
 
-	tests := map[string]struct {
+	p := setupTestPlugin(api)
+
+	for name, tt := range map[string]struct {
 		issueKey    string
 		toState     string
 		expectedMsg string
@@ -157,9 +168,7 @@ func TestTransitionJiraIssue(t *testing.T) {
 			expectedMsg: fmt.Sprintf("[%s](%s/browse/%s) transitioned to `In Progress`", existingIssueKey, mockInstance1URL, existingIssueKey),
 			expectedErr: nil,
 		},
-	}
-
-	for name, tt := range tests {
+	} {
 		t.Run(name, func(t *testing.T) {
 			actual, err := p.TransitionIssue(&InTransitionIssue{
 				InstanceID:       testInstance1.InstanceID,
@@ -177,20 +186,14 @@ func TestTransitionJiraIssue(t *testing.T) {
 
 func TestRouteIssueTransition(t *testing.T) {
 	api := &plugintest.API{}
-
-	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
-
-	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
-
 	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
+	api.On("LogWarn", "ERROR: ", "Status", "401", "Error", "", "Path", "/api/v2/transition", "Method", "POST", "query", "").Return(nil)
+	api.On("LogWarn", "ERROR: ", "Status", "500", "Error", "", "Path", "/api/v2/transition", "Method", "POST", "query", "").Return(nil)
+	api.On("LogWarn", "Recovered from a panic", "url", "/api/v2/transition", "error", mock.Anything, "stack", mock.Anything).Return(nil)
 
-	p := Plugin{}
-	p.initializeRouter()
-	p.SetAPI(api)
-	p.client = pluginapi.NewClient(api, p.Driver)
-	p.userStore = getMockUserStoreKV()
+	p := setupTestPlugin(api)
 
-	tests := map[string]struct {
+	for name, tt := range map[string]struct {
 		bb           []byte
 		request      *model.PostActionIntegrationRequest
 		expectedCode int
@@ -218,8 +221,7 @@ func TestRouteIssueTransition(t *testing.T) {
 			},
 			expectedCode: http.StatusInternalServerError,
 		},
-	}
-	for name, tt := range tests {
+	} {
 		t.Run(name, func(t *testing.T) {
 			bb, err := json.Marshal(tt.request)
 			assert.Nil(t, err)
@@ -235,19 +237,15 @@ func TestRouteIssueTransition(t *testing.T) {
 func TestRouteShareIssuePublicly(t *testing.T) {
 	validUserID := "1"
 	api := &plugintest.API{}
-	p := Plugin{}
-	p.initializeRouter()
 	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
-	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
-	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
 	api.On("DeleteEphemeralPost", validUserID, "").Return()
-	p.SetAPI(api)
-	p.client = pluginapi.NewClient(api, p.Driver)
-	p.instanceStore = p.getMockInstanceStoreKV(1)
-	p.userStore = getMockUserStoreKV()
+	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return()
+	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return()
 
-	tests := map[string]struct {
+	p := setupTestPlugin(api)
+
+	for name, tt := range map[string]struct {
 		bb           []byte
 		request      *model.PostActionIntegrationRequest
 		expectedCode int
@@ -297,8 +295,7 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 			},
 			expectedCode: http.StatusOK,
 		},
-	}
-	for name, tt := range tests {
+	} {
 		t.Run(name, func(t *testing.T) {
 			bb, err := json.Marshal(tt.request)
 			assert.Nil(t, err)
@@ -311,24 +308,239 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 	}
 }
 
+func TestShouldReceiveNotification(t *testing.T) {
+	cs := ConnectionSettings{}
+	cs.RolesForDMNotification = make(map[string]bool)
+	cs.RolesForDMNotification[assigneeRole] = true
+	cs.RolesForDMNotification[mentionRole] = true
+	cs.RolesForDMNotification[reporterRole] = false
+	cs.RolesForDMNotification[watchingRole] = false
+	cs.Notifications = true
+	for name, tt := range map[string]struct {
+		role         string
+		notification bool
+	}{
+		assigneeRole: {
+			role:         assigneeRole,
+			notification: true,
+		},
+		mentionRole: {
+			role:         mentionRole,
+			notification: true,
+		},
+		reporterRole: {
+			role:         reporterRole,
+			notification: false,
+		},
+		watchingRole: {
+			role:         watchingRole,
+			notification: false,
+		},
+		"No Role": {
+			role:         "",
+			notification: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			val := cs.ShouldReceiveNotification(tt.role)
+			assert.Equal(t, tt.notification, val)
+		})
+	}
+}
+
+func TestFetchConnectedUser(t *testing.T) {
+	p := setupTestPlugin(&plugintest.API{})
+
+	for name, tt := range map[string]struct {
+		instanceID  types.ID
+		client      Client
+		connection  *Connection
+		wh          webhook
+		expectedErr error
+	}{
+		"Success": {
+			instanceID: testInstance1.InstanceID,
+			client:     testClient{},
+			connection: &Connection{
+				Settings: &ConnectionSettings{
+					Notifications: true,
+					RolesForDMNotification: map[string]bool{
+						assigneeRole: true,
+						mentionRole:  true,
+						reporterRole: true,
+						watchingRole: true,
+					},
+				},
+				User: jira.User{
+					AccountID: "test-AccountID",
+				},
+			},
+			wh: webhook{
+				JiraWebhook: &JiraWebhook{
+					Issue: jira.Issue{
+						Fields: &jira.IssueFields{
+							Creator: &jira.User{},
+						},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+		"Issue Field not found": {
+			instanceID: testInstance1.InstanceID,
+			client:     nil,
+			connection: nil,
+			wh: webhook{
+				JiraWebhook: &JiraWebhook{
+					Issue: jira.Issue{},
+				},
+			},
+			expectedErr: nil,
+		},
+		"Unable to load instance": {
+			instanceID: "test-instanceID",
+			client:     nil,
+			connection: nil,
+			wh: webhook{
+				JiraWebhook: &JiraWebhook{
+					Issue: jira.Issue{
+						Fields: &jira.IssueFields{
+							Creator: &jira.User{},
+						},
+					},
+				},
+			},
+			expectedErr: errors.New(fmt.Sprintf("instance %q not found", "test-instanceID")),
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			client, connection, error := tt.wh.fetchConnectedUser(p, tt.instanceID)
+			assert.Equal(t, tt.connection, connection)
+			assert.Equal(t, tt.client, client)
+			if tt.expectedErr != nil {
+				assert.Error(t, tt.expectedErr, error)
+			}
+		})
+	}
+}
+
+func TestApplyReporterNotification(t *testing.T) {
+	p := setupTestPlugin(&plugintest.API{})
+
+	wh := &webhook{
+		eventTypes: map[string]bool{createdCommentEvent: true},
+		JiraWebhook: &JiraWebhook{
+			Comment: jira.Comment{
+				UpdateAuthor: jira.User{},
+			},
+			Issue: jira.Issue{
+				Key: "test-key",
+				Fields: &jira.IssueFields{
+					Type: jira.IssueType{
+						Name: "Story",
+					},
+					Summary: "",
+				},
+				Self: "test-self",
+			},
+		},
+	}
+	for name, tt := range map[string]struct {
+		instanceID         types.ID
+		reporter           *jira.User
+		totalNotifications int
+	}{
+		"Success": {
+			instanceID:         testInstance1.InstanceID,
+			reporter:           &jira.User{},
+			totalNotifications: 1,
+		},
+		"Unable to load instance": {
+			instanceID: "test-instanceID",
+			reporter:   &jira.User{},
+		},
+		"Reporter is nil": {
+			instanceID: testInstance1.InstanceID,
+			reporter:   nil,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			wh.notifications = []webhookUserNotification{}
+			p.applyReporterNotification(wh, tt.instanceID, tt.reporter)
+			assert.Equal(t, len(wh.notifications), tt.totalNotifications)
+		})
+	}
+}
+
+func TestGetUserSetting(t *testing.T) {
+	p := setupTestPlugin(&plugintest.API{})
+
+	jiraAccountID := "test-jiraAccountID"
+	jiraUsername := "test-jiraUsername"
+
+	for name, tt := range map[string]struct {
+		wh          *webhook
+		instanceID  types.ID
+		connection  *Connection
+		expectedErr error
+	}{
+		"Success": {
+			wh:         &webhook{},
+			instanceID: testInstance1.InstanceID,
+			connection: &Connection{
+				User: jira.User{AccountID: "test-AccountID"},
+				Settings: &ConnectionSettings{
+					Notifications: true,
+					RolesForDMNotification: (map[string]bool{
+						assigneeRole: true,
+						mentionRole:  true,
+						reporterRole: true,
+						watchingRole: true,
+					}),
+				},
+			},
+			expectedErr: nil,
+		},
+		"Unable to load instance": {
+			wh:          &webhook{},
+			instanceID:  "instanceID",
+			connection:  nil,
+			expectedErr: errors.New("instance " + fmt.Sprintf("\"%s\"", "instanceID") + " not found"),
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			connection, error := p.GetUserSetting(tt.wh, tt.instanceID, jiraAccountID, jiraUsername)
+			assert.Equal(t, tt.connection, connection)
+			if tt.expectedErr != nil {
+				assert.Error(t, tt.expectedErr, error)
+			}
+		})
+	}
+}
+
 func TestRouteAttachCommentToIssue(t *testing.T) {
 	api := &plugintest.API{}
-
-	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
-
-	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
-
 	api.On("GetPost", "error_post").Return(nil, &model.AppError{Id: "1"})
 	api.On("GetPost", "post_not_found").Return(nil, (*model.AppError)(nil))
+	api.On("GetPost", "valid_post").Return(&model.Post{
+		UserId: "userID",
+	}, nil)
+	api.On("GetPost", "0").Return(&model.Post{
+		UserId: "user_not_found",
+	}, nil)
+	api.On("GetUser", "userID").Return(&model.User{}, nil)
+	// Ensure GetUser for "user_not_found" returns an error or nil
+	api.On("GetUser", "user_not_found").Return(nil, &model.AppError{Id: "2"})
+	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"),
+		mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"),
+		mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"),
+		mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
 
-	api.On("GetPost", "0").Return(&model.Post{UserId: "0"}, (*model.AppError)(nil))
-	api.On("GetUser", "0").Return(nil, &model.AppError{Id: "1"})
-
-	api.On("GetPost", "1").Return(&model.Post{UserId: "1"}, (*model.AppError)(nil))
-	api.On("GetUser", "1").Return(&model.User{Username: "username"}, (*model.AppError)(nil))
-	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, (*model.AppError)(nil))
-
-	api.On("PublishWebSocketEvent", "update_defaults", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.WebsocketBroadcast"))
+	p := setupTestPlugin(api)
+	p.updateConfig(func(conf *config) {
+		conf.mattermostSiteURL = "https://somelink.com"
+	})
 
 	type requestStruct struct {
 		PostID      string `json:"post_id"`
@@ -337,7 +549,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 		IssueKey    string `json:"issueKey"`
 	}
 
-	tests := map[string]struct {
+	for name, tt := range map[string]struct {
 		method       string
 		header       string
 		request      *requestStruct
@@ -389,7 +601,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostID:   "1",
+				PostID:   "valid_post",
 				IssueKey: noPermissionsIssueKey,
 			},
 			expectedCode: http.StatusInternalServerError,
@@ -398,7 +610,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostID:   "1",
+				PostID:   "valid_post",
 				IssueKey: attachCommentErrorKey,
 			},
 			expectedCode: http.StatusInternalServerError,
@@ -407,23 +619,14 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostID:   "1",
+				PostID:   "valid_post",
 				IssueKey: existingIssueKey,
 			},
 			expectedCode: http.StatusOK,
 		},
-	}
-	for name, tt := range tests {
+	} {
 		t.Run(name, func(t *testing.T) {
-			p := Plugin{}
 			p.initializeRouter()
-			p.SetAPI(api)
-			p.client = pluginapi.NewClient(api, p.Driver)
-			p.updateConfig(func(conf *config) {
-				conf.mattermostSiteURL = "https://somelink.com"
-			})
-			p.userStore = getMockUserStoreKV()
-			p.instanceStore = p.getMockInstanceStoreKV(1)
 
 			tt.request.InstanceID = testInstance1.InstanceID.String()
 			bb, err := json.Marshal(tt.request)
