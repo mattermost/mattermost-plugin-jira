@@ -475,6 +475,38 @@ func TestCreateIssue(t *testing.T) {
 		Message:   "Private message",
 	}, (*model.AppError)(nil))
 
+	// Mock reply post (threaded message) that user has access to
+	api.On("GetPost", "accessible_reply_post_id").Return(&model.Post{
+		Id:        "accessible_reply_post_id",
+		UserId:    "connected_user",
+		ChannelId: "channel_id_1",
+		RootId:    "root_post_id",
+		Message:   "Reply message",
+	}, (*model.AppError)(nil))
+
+	// Mock reply post in private channel
+	api.On("GetPost", "inaccessible_reply_post_id").Return(&model.Post{
+		Id:        "inaccessible_reply_post_id",
+		UserId:    "other_user",
+		ChannelId: "private_channel_id",
+		RootId:    "private_root_post_id",
+		Message:   "Private reply",
+	}, (*model.AppError)(nil))
+
+	// Mock post that doesn't exist
+	api.On("GetPost", "nonexistent_post_id").Return(nil, &model.AppError{
+		Id:      "app.post.get.app_error",
+		Message: "Post not found",
+	})
+
+	// Mock DM channel post
+	api.On("GetPost", "dm_post_id").Return(&model.Post{
+		Id:        "dm_post_id",
+		UserId:    "other_user",
+		ChannelId: "dm_channel_id",
+		Message:   "DM message",
+	}, (*model.AppError)(nil))
+
 	// Mock GetMember: user IS a member of channel_id_1
 	api.On("GetChannelMember", "channel_id_1", "connected_user").Return(&model.ChannelMember{
 		ChannelId: "channel_id_1",
@@ -487,6 +519,12 @@ func TestCreateIssue(t *testing.T) {
 		Message: "User does not have access to this channel",
 	})
 
+	// Mock GetMember: user is NOT a member of dm_channel_id
+	api.On("GetChannelMember", "dm_channel_id", "connected_user").Return(nil, &model.AppError{
+		Id:      "api.context.permissions.app_error",
+		Message: "User does not have access to this channel",
+	})
+
 	// Mock successful issue creation
 	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, (*model.AppError)(nil))
@@ -494,22 +532,60 @@ func TestCreateIssue(t *testing.T) {
 
 	tests := map[string]struct {
 		postID         string
+		channelID      string
 		expectedStatus int
 		expectError    bool
 		errorContains  string
 	}{
 		"Create issue without post - should succeed": {
 			postID:         "",
+			channelID:      "channel_id_1",
 			expectedStatus: http.StatusOK,
 			expectError:    false,
 		},
 		"Create issue with accessible post - should succeed": {
 			postID:         "accessible_post_id",
+			channelID:      "channel_id_1",
 			expectedStatus: http.StatusOK,
 			expectError:    false,
 		},
 		"Create issue with inaccessible post - should fail with 403": {
 			postID:         "inaccessible_post_id",
+			channelID:      "channel_id_1",
+			expectedStatus: http.StatusForbidden,
+			expectError:    true,
+			errorContains:  "User does not have access to this post",
+		},
+		"SECURITY: Bypass attempt - inaccessible post with accessible channelID in request should fail": {
+			postID:         "inaccessible_post_id", // post is in private_channel_id
+			channelID:      "channel_id_1",         // attacker provides accessible channel ID
+			expectedStatus: http.StatusForbidden,
+			expectError:    true,
+			errorContains:  "User does not have access to this post",
+		},
+		"Create issue with accessible reply post - should succeed": {
+			postID:         "accessible_reply_post_id",
+			channelID:      "channel_id_1",
+			expectedStatus: http.StatusOK,
+			expectError:    false,
+		},
+		"Create issue with inaccessible reply post - should fail with 403": {
+			postID:         "inaccessible_reply_post_id",
+			channelID:      "channel_id_1",
+			expectedStatus: http.StatusForbidden,
+			expectError:    true,
+			errorContains:  "User does not have access to this post",
+		},
+		"Create issue with nonexistent post - should fail with 500": {
+			postID:         "nonexistent_post_id",
+			channelID:      "channel_id_1",
+			expectedStatus: http.StatusInternalServerError,
+			expectError:    true,
+			errorContains:  "failed to load post",
+		},
+		"Create issue with DM post user doesn't have access to - should fail with 403": {
+			postID:         "dm_post_id",
+			channelID:      "channel_id_1",
 			expectedStatus: http.StatusForbidden,
 			expectError:    true,
 			errorContains:  "User does not have access to this post",
@@ -532,7 +608,7 @@ func TestCreateIssue(t *testing.T) {
 			in := &InCreateIssue{
 				PostID:           tt.postID,
 				CurrentTeam:      "test_team",
-				ChannelID:        "channel_id_1",
+				ChannelID:        tt.channelID,
 				mattermostUserID: "connected_user",
 				InstanceID:       testInstance1.InstanceID,
 				Fields: jira.IssueFields{
@@ -672,6 +748,26 @@ func TestRouteCreateIssue(t *testing.T) {
 				PostID:      "inaccessible_post_id",
 				CurrentTeam: "test_team",
 				ChannelID:   "channel_id_1",
+				Fields: jira.IssueFields{
+					Project: jira.Project{
+						Key: mockProjectKey,
+					},
+					Type: jira.IssueType{
+						ID: "10001",
+					},
+					Summary:     "Test Issue",
+					Description: "Test description",
+				},
+			},
+			expectedCode: http.StatusForbidden,
+		},
+		"SECURITY: Bypass attempt via HTTP route - should fail with 403": {
+			method: "POST",
+			userID: "connected_user",
+			request: &requestStruct{
+				PostID:      "inaccessible_post_id", // post is in private_channel_id
+				CurrentTeam: "test_team",
+				ChannelID:   "channel_id_1", // attacker provides accessible channel ID
 				Fields: jira.IssueFields{
 					Project: jira.Project{
 						Key: mockProjectKey,
