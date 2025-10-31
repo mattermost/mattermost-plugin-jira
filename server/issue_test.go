@@ -537,29 +537,6 @@ func TestGetUserSetting(t *testing.T) {
 }
 
 func TestRouteAttachCommentToIssue(t *testing.T) {
-	api := &plugintest.API{}
-	api.On("GetPost", "error_post").Return(nil, &model.AppError{Id: "1"})
-	api.On("GetPost", "post_not_found").Return(nil, (*model.AppError)(nil))
-	api.On("GetPost", "valid_post").Return(&model.Post{
-		UserId: "userID",
-	}, nil)
-	api.On("GetPost", "0").Return(&model.Post{
-		UserId: "user_not_found",
-	}, nil)
-	api.On("GetUser", "userID").Return(&model.User{}, nil)
-	// Ensure GetUser for "user_not_found" returns an error or nil
-	api.On("GetUser", "user_not_found").Return(nil, &model.AppError{Id: "2"})
-	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"),
-		mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"),
-		mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"),
-		mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
-	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
-
-	p := setupTestPlugin(api)
-	p.updateConfig(func(conf *config) {
-		conf.mattermostSiteURL = "https://somelink.com"
-	})
-
 	type requestStruct struct {
 		PostID      string `json:"post_id"`
 		InstanceID  string `json:"instance_id"`
@@ -672,7 +649,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostID:   "valid_post",
+				PostID:   "1",
 				IssueKey: noPermissionsIssueKey,
 			},
 			expectedCode: http.StatusForbidden,
@@ -687,7 +664,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostID:   "valid_post",
+				PostID:   "1",
 				IssueKey: attachCommentErrorKey,
 			},
 			expectedCode: http.StatusInternalServerError,
@@ -702,7 +679,7 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 			method: "POST",
 			header: "1",
 			request: &requestStruct{
-				PostID:   "valid_post",
+				PostID:   "1",
 				IssueKey: existingIssueKey,
 			},
 			expectedCode: http.StatusOK,
@@ -711,14 +688,22 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 				successfulUserPostSetup(api)
 			},
 		},
-	} {
+	}
+	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 
 			tt.setupMocks(api)
 
 			p := Plugin{}
+			p.SetAPI(api)
 			p.initializeRouter()
+			p.instanceStore = p.getMockInstanceStoreKV(1)
+			p.userStore = getMockUserStoreKV()
+			p.client = pluginapi.NewClient(api, p.Driver)
+			p.updateConfig(func(conf *config) {
+				conf.mattermostSiteURL = "https://somelink.com"
+			})
 
 			tt.request.InstanceID = testInstance1.InstanceID.String()
 			bb, err := json.Marshal(tt.request)
