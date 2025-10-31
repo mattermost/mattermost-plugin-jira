@@ -384,6 +384,11 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             return;
         }
 
+        if (!this.state.subscriptionName || this.state.subscriptionName.trim() === '') {
+            this.setState({error: 'Name cannot be empty or only whitespaces.'});
+            return;
+        }
+
         const filterFields = getCustomFieldFiltersForProjects(this.state.jiraIssueMetadata, this.state.filters.projects, this.state.filters.issue_types);
         const configuredFields = this.state.filters.fields.concat([]);
         for (const v of this.state.filters.fields) {
@@ -400,7 +405,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         const subscription = {
             channel_id: this.props.channel.id,
             filters,
-            name: this.state.subscriptionName,
+            name: this.state.subscriptionName?.trim(),
             instance_id: this.state.instanceID,
         } as ChannelSubscription;
 

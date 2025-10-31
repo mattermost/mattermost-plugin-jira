@@ -16,6 +16,8 @@ import {FilterFieldInclusion, IssueMetadata, ProjectMetadata} from 'types/model'
 
 import EditChannelSubscription, {Props} from './edit_channel_subscription';
 
+const MockSubscriptionName = 'testSubscriptionName';
+
 describe('components/EditChannelSubscription', () => {
     const baseActions = {
         createChannelSubscription: jest.fn().mockResolvedValue({}),
@@ -281,7 +283,7 @@ describe('components/EditChannelSubscription', () => {
         const wrapper = shallow<EditChannelSubscription>(
             <EditChannelSubscription {...props}/>,
         );
-        wrapper.setState({...baseState, jiraIssueMetadata: serverIssueMetadata});
+        wrapper.setState({...baseState, jiraIssueMetadata: serverIssueMetadata, subscriptionName: MockSubscriptionName});
 
         wrapper.setState({
             filters: channelSubscriptionForServer.filters,
@@ -292,7 +294,7 @@ describe('components/EditChannelSubscription', () => {
             {
                 channel_id: testChannel.id,
                 filters: channelSubscriptionForServer.filters,
-                name: null,
+                name: MockSubscriptionName,
                 instance_id: 'https://something.atlassian.net',
             },
         );
