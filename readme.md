@@ -11,6 +11,95 @@ For versions v3.0 and later of this plugin, support for multiple Jira instances 
 
 See the [Mattermost Product Documentation](https://docs.mattermost.com/integrations-guide/jira.html) for details on installing, configuring, enabling, and using this Mattermost integration.
 
+## Getting started locally
+
+Follow these steps to spin up Mattermost and Jira locally so you can iterate on the plugin with real APIs.
+
+### Prerequisites
+
+- Go **1.21.x**
+- Node **18.x** and npm (yarn optional)
+- Docker Desktop (for Jira Server + optional Postgres)
+- The [mattermost](https://github.com/mattermost/mattermost) repo cloned locally alongside this one
+
+### 1. Run Mattermost with the enterprise repo beside it
+
+Clone both repos into the same parent directory so the enterprise code is detected automatically, then start the server:
+
+```bash
+git clone https://github.com/mattermost/mattermost.git
+git clone https://github.com/mattermost/enterprise.git
+
+cd mattermost/server
+make run
+```
+
+If `./bin/mmctl` is not present yet, build it once so you can tweak config from the command line:
+
+```bash
+go build -o bin/mmctl ./cmd/mmctl
+```
+
+Configure the server so Jira can reach it and so plugins can be uploaded. Either edit `config/config.json` directly or run. Note that localhost urls won't be recognized by the plugin:
+
+```bash
+./bin/mmctl --local config set ServiceSettings.SiteURL http://host.docker.internal:8065
+./bin/mmctl --local config set PluginSettings.Enable true
+./bin/mmctl --local config set PluginSettings.EnableUploads true
+```
+
+Restart the server if prompted.
+
+### 2. Build and install the Jira plugin
+
+```bash
+cd ../mattermost-plugin-jira
+npm install
+make dist
+
+# optionally let the Makefile upload straight to your dev server
+export MM_SERVICESETTINGS_SITEURL=http://host.docker.internal:8065
+export MM_ADMIN_USERNAME=admin
+export MM_ADMIN_PASSWORD=admin
+make deploy
+```
+
+If you prefer to upload manually, go to **System Console → Plugins → Upload Plugin**, select `dist/com.github.mattermost.jira-*.tar.gz`, then enable the plugin under **Plugin Management**.
+
+For a tighter edit loop, leave `make watch` running – it rebuilds and redeploys whenever you save.
+
+### 3. Launch a local Jira Server in Docker
+
+```bash
+docker pull atlassian/jira-software:9.4.30
+docker run --name jira \
+  -d -p 8080:8080 \
+  atlassian/jira-software:9.4.30
+```
+
+Open `http://localhost:8080`, request a **Server** evaluation license from [my.atlassian.com](https://my.atlassian.com/), and finish the setup wizard. Wherever the wizard asks for your Mattermost URL, use `http://host.docker.internal:8065` so the container can call back into your dev server.
+
+### 4. Connect the plugin to Jira
+
+Back in Mattermost, confirm the plugin responds to `/jira help`, then install your local instance:
+
+```bash
+/jira instance install server http://localhost:8080
+```
+
+The command guides you through creating the Application Link inside Jira, exchanging the consumer key/secret, and configuring webhooks. Once that completes, run `/jira connect` to link your Mattermost user, and use `/jira create` or `/jira subscribe` to test the round trip.
+
+At this point you can edit plugin code, let `make watch` redeploy, and immediately exercise the change against a real Jira API.
+
+### Troubleshooting the local setup
+
+- **Plugin immediately disables itself when enabled** – check `logs/mattermost.log`. If you see `please configure the Mattermost server's SiteURL`, set `ServiceSettings.SiteURL` to a reachable address (e.g. `http://host.docker.internal:8065`) and re-enable the plugin.
+- **Upload button missing in System Console** – ensure `PluginSettings.EnableUploads` is `true` in `config/config.json`. You may need to restart the server after changing it.
+- **`./bin/mmctl` not found** – build it with `go build -o bin/mmctl ./cmd/mmctl` from the `mattermost/server` directory.
+- **Jira setup page refuses license** – generate a **Server** evaluation key for the Server ID shown in the wizard via [my.atlassian.com](https://my.atlassian.com/). Make sure you select the Server deployment type, not Cloud.
+- **`XSRF Security Token Missing` during Jira setup** – refresh the page or restart the Docker container and re-run the wizard in a fresh browser session; the token expired.
+- **Slash commands complain about unreachable Mattermost URL** – Jira is running in a container, so `localhost` refers to the container itself. Use `http://host.docker.internal:8065` (macOS/Linux with Docker Desktop) or your machine’s LAN IP so Jira can reach Mattermost.
+
 ## Feature summary
 
 ### Jira to Mattermost notifications
