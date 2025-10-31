@@ -282,9 +282,10 @@ func appendCommentNotifications(wh *webhook, verb string) {
 		}
 
 		notification := webhookUserNotification{
-			message:     message,
-			postType:    PostTypeMention,
-			commentSelf: jwh.Comment.Self,
+			message:          message,
+			postType:         PostTypeMention,
+			commentSelf:      jwh.Comment.Self,
+			notificationType: "mention",
 		}
 
 		if isAccountID {
@@ -306,11 +307,12 @@ func appendCommentNotifications(wh *webhook, verb string) {
 	}
 
 	wh.notifications = append(wh.notifications, webhookUserNotification{
-		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
-		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
-		message:       fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
-		postType:      PostTypeComment,
-		commentSelf:   jwh.Comment.Self,
+		jiraUsername:     jwh.Issue.Fields.Assignee.Name,
+		jiraAccountID:    jwh.Issue.Fields.Assignee.AccountID,
+		message:          fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
+		postType:         PostTypeComment,
+		commentSelf:      jwh.Comment.Self,
+		notificationType: "assignee",
 	})
 }
 

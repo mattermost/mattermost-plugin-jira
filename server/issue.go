@@ -23,22 +23,29 @@ import (
 )
 
 const (
-	assigneeField          = "assignee"
-	securityLevelField     = "security"
-	labelsField            = "labels"
-	statusField            = "status"
-	reporterField          = "reporter"
-	priorityField          = "priority"
-	descriptionField       = "description"
-	resolutionField        = "resolution"
-	headerMattermostUserID = "Mattermost-User-ID"
-	instanceIDQueryParam   = "instance_id"
-	fieldValueQueryParam   = "fieldValue"
+	assigneeField            = "assignee"
+	labelsField              = "labels"
+	statusField              = "status"
+	reporterField            = "reporter"
+	priorityField            = "priority"
+	descriptionField         = "description"
+	resolutionField          = "resolution"
+	securityLevelField       = "security"
+	createdCommentEvent      = "event_created_comment"
+	notificationTypeReporter = "reporter"
+	notificationTypeWatching = "watching"
+	jiraUserName             = "Name"
+	jiraUserAccountID        = "AccountID"
+	headerMattermostUserID   = "Mattermost-User-ID"
+	instanceIDQueryParam     = "instance_id"
+	fieldValueQueryParam     = "fieldValue"
 
 	QueryParamInstanceID = "instance_id"
 	QueryParamProjectID  = "project_id"
 
 	expandValueGroups = "groups"
+
+	teamFieldKey = "customfield_10001"
 )
 
 type CreateMetaInfo struct {
@@ -242,6 +249,8 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 		Fields: &in.Fields,
 	}
 
+	issue.Fields = preProcessTeamID(issue.Fields, teamFieldKey)
+
 	channelID := in.ChannelID
 	if post != nil {
 		channelID = post.ChannelId
@@ -370,6 +379,20 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 	return createdIssue, http.StatusOK, nil
 }
 
+// Extract the "id" value from the custom field map and replace it
+// with a plain string, since Jira expects the field value directly.
+func preProcessTeamID(fields *jira.IssueFields, teamFieldID string) *jira.IssueFields {
+	if raw, ok := fields.Unknowns[teamFieldID]; ok {
+		if m, ok := raw.(map[string]interface{}); ok {
+			if id, ok := m["id"].(string); ok {
+				fields.Unknowns[teamFieldID] = id
+			}
+		}
+	}
+
+	return fields
+}
+
 func (p *Plugin) httpGetCreateIssueMetadataForProjects(w http.ResponseWriter, r *http.Request) (int, error) {
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	projectKeys := r.FormValue("project-keys")
@@ -413,10 +436,52 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 		return nil, err
 	}
 
+	teamIDList := p.conf.TeamIDList
+	if len(teamIDList) > 0 {
+		injectTeamAllowedValues(metaInfo, teamIDList)
+	}
+
 	return &CreateMetaInfo{
 		metaInfo,
 		projectStatuses,
 	}, nil
+}
+
+// The go-jira package does not support the Team field by default,
+// and the Jira API does not include Team data in the issue metadata.
+// Therefore, we need to manually inject the allowed Team values into the fields.
+func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamList) {
+	allowedValues := make([]map[string]string, 0, len(teamIDList))
+	for _, team := range teamIDList {
+		allowedValues = append(allowedValues, map[string]string{
+			"id":    team.ID,
+			"name":  team.Name,
+			"value": team.Name,
+		})
+	}
+
+	for _, project := range metaInfo.Projects {
+		for _, issueType := range project.IssueTypes {
+			for key, rawField := range issueType.Fields {
+				fieldMap, ok := rawField.(map[string]any)
+				if !ok {
+					continue
+				}
+
+				schemaRaw, ok := fieldMap["schema"].(map[string]any)
+				if !ok {
+					continue
+				}
+
+				if schemaRaw["custom"] != "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team" {
+					continue
+				}
+
+				fieldMap["allowedValues"] = allowedValues
+				issueType.Fields[key] = fieldMap
+			}
+		}
+	}
 }
 
 func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -1262,6 +1327,171 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 	}
 
 	return issue, nil
+}
+
+func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
+	if !wh.eventTypes.ContainsAny(createdCommentEvent) {
+		return
+	}
+
+	jwhook := wh.JiraWebhook
+	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
+	commentMessage := fmt.Sprintf(
+		"%s **commented** on %s:\n> %s\n\n*You are watching this %s*",
+		commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body, jwhook.mdIssueType(),
+	)
+	client, connection, err := wh.fetchConnectedUser(p, instanceID)
+	if err != nil || client == nil {
+		p.errorf("error while fetching connected users for the instanceID %v , Error : %v", instanceID, err)
+		return
+	}
+
+	watchers, err := client.GetWatchers(instanceID.String(), wh.Issue.ID, connection)
+	if err != nil {
+		p.errorf("error while getting watchers for the issue id %v , err : %v", wh.Issue.ID, err)
+		return
+	}
+
+	for _, watcherUser := range watchers.Watchers {
+		whUserNotification := webhookUserNotification{
+			jiraUsername:     watcherUser.Name,
+			jiraAccountID:    watcherUser.AccountID,
+			message:          commentMessage,
+			postType:         PostTypeComment,
+			commentSelf:      wh.JiraWebhook.Comment.Self,
+			notificationType: notificationTypeWatching,
+		}
+
+		wh.notifications = append(wh.notifications, whUserNotification)
+	}
+}
+
+func (p *Plugin) applyReporterNotification(wh *webhook, instanceID types.ID, reporter *jira.User) {
+	if !wh.eventTypes.ContainsAny(createdCommentEvent) {
+		return
+	}
+
+	jwhook := wh.JiraWebhook
+	if reporter == nil ||
+		(reporter.Name != "" && reporter.Name == jwhook.User.Name) ||
+		(reporter.AccountID != "" && reporter.AccountID == jwhook.Comment.UpdateAuthor.AccountID) {
+		return
+	}
+
+	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
+	commentMessage := fmt.Sprintf(
+		"%s **commented** on %s:\n> %s\n\n*You reported this %s*",
+		commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body, jwhook.mdIssueType(),
+	)
+
+	connection, err := p.GetUserSetting(wh, instanceID, reporter.Name, reporter.AccountID)
+	if err != nil || connection.Settings == nil || !connection.Settings.ShouldReceiveNotification(notificationTypeReporter) {
+		return
+	}
+
+	wh.notifications = append(wh.notifications, webhookUserNotification{
+		jiraUsername:     reporter.Name,
+		jiraAccountID:    reporter.AccountID,
+		message:          commentMessage,
+		postType:         PostTypeComment,
+		commentSelf:      jwhook.Comment.Self,
+		notificationType: notificationTypeReporter,
+	})
+}
+
+func (p *Plugin) GetUserSetting(wh *webhook, instanceID types.ID, jiraAccountID, jiraUsername string) (*Connection, error) {
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return nil, err
+	}
+
+	var mattermostUserID types.ID
+	jiraUserID := jiraAccountID
+	if jiraUserID == "" {
+		jiraUserID = jiraUsername
+	}
+
+	mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), jiraUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	connection, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return connection, nil
+}
+
+func (s *ConnectionSettings) ShouldReceiveNotification(role string) bool {
+	if val, ok := s.RolesForDMNotification[role]; ok {
+		return val
+	}
+
+	// Check old setting for backwards compatibility
+	return s.Notifications
+}
+
+func (p *Plugin) fetchConnectedUserFromAccount(account map[string]string, instance Instance) (Client, *Connection, error) {
+	accountKey := account[jiraUserName]
+	if account[jiraUserAccountID] != "" {
+		accountKey = account[jiraUserAccountID]
+	}
+	mattermostUserID, err := p.userStore.LoadMattermostUserID(instance.GetID(), accountKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	connection, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	client, err := instance.GetClient(connection)
+	if err != nil {
+		return nil, connection, err
+	}
+
+	return client, connection, nil
+}
+
+func appendAccountInformation(accountID, name string, accountInformation *[]map[string]string) {
+	*accountInformation = append(*accountInformation, map[string]string{
+		jiraUserAccountID: accountID,
+		jiraUserName:      name,
+	})
+}
+
+func (wh *webhook) fetchConnectedUser(p *Plugin, instanceID types.ID) (Client, *Connection, error) {
+	var accountInformation []map[string]string
+
+	if wh.Issue.Fields != nil {
+		if wh.Issue.Fields.Creator != nil {
+			appendAccountInformation(wh.Issue.Fields.Creator.AccountID, wh.Issue.Fields.Creator.Name, &accountInformation)
+		}
+		if wh.Issue.Fields.Assignee != nil {
+			appendAccountInformation(wh.Issue.Fields.Assignee.AccountID, wh.Issue.Fields.Assignee.Name, &accountInformation)
+		}
+		if wh.Issue.Fields.Reporter != nil {
+			appendAccountInformation(wh.Issue.Fields.Reporter.AccountID, wh.Issue.Fields.Reporter.Name, &accountInformation)
+		}
+	}
+
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, account := range accountInformation {
+		client, connection, err := p.fetchConnectedUserFromAccount(account, instance)
+		if err != nil {
+			continue
+		}
+
+		return client, connection, nil
+	}
+
+	return nil, nil, nil
 }
 
 type ProjectSearchResponse struct {
