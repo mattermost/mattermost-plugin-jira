@@ -66,8 +66,26 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 
 	jiraBotID := p.getUserID()
 	channelID := requestData.ChannelId
-	mattermostUserID := requestData.UserId
-	if mattermostUserID == "" {
+	authenticatedUserID := strings.TrimSpace(r.Header.Get("Mattermost-User-ID"))
+	if authenticatedUserID == "" {
+		return respondErr(w, http.StatusUnauthorized,
+			errors.New("missing Mattermost-User-ID header"))
+	}
+	mattermostUserID := authenticatedUserID
+	if requestData.UserId != "" && requestData.UserId != mattermostUserID {
+		p.client.Log.Warn("share issue payload user mismatch", "header_user_id", authenticatedUserID, "payload_user_id", requestData.UserId)
+	}
+	postID := strings.TrimSpace(requestData.PostId)
+	if postID == "" {
+		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+			"user not authorized"), w, http.StatusUnauthorized)
+	}
+	originalPost, appErr := p.client.Post.GetPost(postID)
+	if appErr != nil || originalPost == nil {
+		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+			"user not authorized"), w, http.StatusUnauthorized)
+	}
+	if originalPost.UserId != jiraBotID {
 		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
 			"user not authorized"), w, http.StatusUnauthorized)
 	}

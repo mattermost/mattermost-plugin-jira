@@ -234,6 +234,7 @@ func TestRouteIssueTransition(t *testing.T) {
 
 func TestRouteShareIssuePublicly(t *testing.T) {
 	validUserID := "1"
+	botUserID := "bot-user"
 	api := &plugintest.API{}
 	p := Plugin{}
 	p.initializeRouter()
@@ -241,72 +242,119 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
-	api.On("DeleteEphemeralPost", validUserID, "").Return()
+	api.On("DeleteEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return()
+	api.On("GetPost", "valid-post").Return(&model.Post{UserId: botUserID}, (*model.AppError)(nil))
+	api.On("GetPost", "attacker-post").Return(&model.Post{UserId: "attacker"}, (*model.AppError)(nil))
+	api.On("GetPost", mock.AnythingOfType("string")).Maybe().Return(nil, &model.AppError{})
 	p.SetAPI(api)
 	p.client = pluginapi.NewClient(api, p.Driver)
 	p.instanceStore = p.getMockInstanceStoreKV(1)
 	p.userStore = getMockUserStoreKV()
+	p.updateConfig(func(conf *config) {
+		conf.botUserID = botUserID
+	})
 
 	tests := map[string]struct {
-		bb           []byte
 		request      *model.PostActionIntegrationRequest
+		headerUserID string
 		expectedCode int
 	}{
 		"No request data": {
 			request:      nil,
-			expectedCode: http.StatusUnauthorized,
+			headerUserID: "",
+			expectedCode: http.StatusBadRequest,
 		},
-		"No UserID": {
+		"No header": {
 			request: &model.PostActionIntegrationRequest{
-				UserId: "",
+				UserId: validUserID,
+				PostId: "valid-post",
 			},
+			headerUserID: "",
 			expectedCode: http.StatusUnauthorized,
 		},
 		"No issueKey": {
 			request: &model.PostActionIntegrationRequest{
-				UserId: "userID",
+				UserId: validUserID,
+				PostId: "valid-post",
 			},
+			headerUserID: validUserID,
 			expectedCode: http.StatusInternalServerError,
 		},
 		"No instanceId": {
 			request: &model.PostActionIntegrationRequest{
-				UserId: "userID",
+				UserId: validUserID,
+				PostId: "valid-post",
 				Context: map[string]interface{}{
 					"issue_key": "TEST-10",
 				},
 			},
+			headerUserID: validUserID,
 			expectedCode: http.StatusInternalServerError,
 		},
 		"No connection": {
 			request: &model.PostActionIntegrationRequest{
-				UserId: "userID",
+				UserId: validUserID,
+				PostId: "valid-post",
 				Context: map[string]interface{}{
 					"issue_key":   "TEST-10",
 					"instance_id": "id",
 				},
 			},
+			headerUserID: validUserID,
 			expectedCode: http.StatusInternalServerError,
 		},
 		"Happy Path": {
 			request: &model.PostActionIntegrationRequest{
 				UserId: validUserID,
+				PostId: "valid-post",
 				Context: map[string]interface{}{
 					"issue_key":   "TEST-10",
 					"instance_id": testInstance1.InstanceID.String(),
 				},
 			},
+			headerUserID: validUserID,
 			expectedCode: http.StatusOK,
+		},
+		"Header overrides payload": {
+			request: &model.PostActionIntegrationRequest{
+				UserId: "different",
+				PostId: "valid-post",
+				Context: map[string]interface{}{
+					"issue_key":   "TEST-10",
+					"instance_id": testInstance1.InstanceID.String(),
+				},
+			},
+			headerUserID: validUserID,
+			expectedCode: http.StatusOK,
+		},
+		"Non bot post": {
+			request: &model.PostActionIntegrationRequest{
+				UserId: validUserID,
+				PostId: "attacker-post",
+				Context: map[string]interface{}{
+					"issue_key":   "TEST-10",
+					"instance_id": testInstance1.InstanceID.String(),
+				},
+			},
+			headerUserID: validUserID,
+			expectedCode: http.StatusUnauthorized,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			bb, err := json.Marshal(tt.request)
-			assert.Nil(t, err)
-
-			request := httptest.NewRequest("POST", makeAPIRoute(routeSharePublicly), strings.NewReader(string(bb)))
+			var body string
+			if tt.request != nil {
+				bb, err := json.Marshal(tt.request)
+				assert.Nil(t, err)
+				body = string(bb)
+			}
+			request := httptest.NewRequest("POST", makeAPIRoute(routeSharePublicly), strings.NewReader(body))
+			if tt.headerUserID != "" {
+				request.Header.Set("Mattermost-User-ID", tt.headerUserID)
+			}
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)
-			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "no request data")
+			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "unexpected status code")
 		})
 	}
 }
