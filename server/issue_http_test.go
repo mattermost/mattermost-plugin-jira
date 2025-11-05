@@ -1,19 +1,5 @@
 package main
 
-// Example exploit payload for manual testing (before applying the fix):
-//
-// curl -X POST http://localhost:8065/plugins/com.github.mattermost.jira/api/v2/share-issue-publicly \
-//   -H "Content-Type: application/json" \
-//   -H "Authorization: Bearer e8knop59ufyhxkjnkrh6pugqzy" \
-//   -d '{
-//         "channel_id": "nqidqodbkjnt8r8ipnrqnnmtko",
-//         "user_id": "i4eh6saii7gwzpes5izxzkydao",
-//         "context": {
-//           "issue_key": "NEV-1",
-//           "instance_id": "mattermost_http_host_docker_internal_8065"
-//         }
-//       }'
-
 import (
 	"bytes"
 	"encoding/json"
