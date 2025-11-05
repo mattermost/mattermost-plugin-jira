@@ -17,7 +17,7 @@ Follow these steps to spin up Mattermost and Jira locally so you can iterate on 
 
 ### Prerequisites
 
-- Go **1.21.x**
+- Go **1.23.x**
 - Node **18.x** and npm (yarn optional)
 - Docker Desktop (for Jira Server + optional Postgres)
 - The [mattermost](https://github.com/mattermost/mattermost) repo cloned locally alongside this one
@@ -40,15 +40,25 @@ If `./bin/mmctl` is not present yet, build it once so you can tweak config from 
 go build -o bin/mmctl ./cmd/mmctl
 ```
 
-Configure the server so Jira can reach it and so plugins can be uploaded. Either edit `config/config.json` directly or run. Note that localhost urls won't be recognized by the plugin:
+Configure the server so Jira can reach it and so plugins can be uploaded. Either edit `config/config.json` directly or run the following commands. Note that localhost URLs won't be recognized by the plugin:
 
 ```bash
 ./bin/mmctl --local config set ServiceSettings.SiteURL http://host.docker.internal:8065
 ./bin/mmctl --local config set PluginSettings.Enable true
 ./bin/mmctl --local config set PluginSettings.EnableUploads true
+./bin/mmctl --local config set ServiceSettings.AllowCorsFrom http://host.docker.internal:8065
+./bin/mmctl --local config set ServiceSettings.AllowedUntrustedInternalConnections "localhost,127.0.0.1,::1,host.docker.internal"
 ```
 
 Restart the server if prompted.
+
+**Reachability tips**
+
+- `host.docker.internal` works on macOS with Docker Desktop. On Linux, specify the gateway explicitly when starting Jira (`docker run --add-host=host.docker.internal:host-gateway ...`) or use your workstation’s LAN IP in both `SiteURL` and the commands above.
+- Whichever hostname you choose, open Mattermost in your browser using that same URL as mismatches can trigger WebSocket CORS blocks and slash-command errors.
+- If Jira runs on another machine or you need external access, expose Mattermost via a tunnel or a real domain with valid HTTPS, and update the config values accordingly.
+- When you create the Application Link in Jira, supply that same externally reachable Mattermost URL. Jira reuses it to call the plugin’s endpoints.
+- You can sanity-check connectivity from the Jira container with `docker exec jira curl -I <your-site-url>`.
 
 ### 2. Build and install the Jira plugin
 
