@@ -83,7 +83,7 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 	postID := strings.TrimSpace(requestData.PostId)
 	if postID == "" {
 		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
-			"user not authorized"), w, http.StatusUnauthorized)
+			"missing post ID"), w, http.StatusBadRequest)
 	}
 	originalPost, appErr := p.client.Post.GetPost(postID)
 	if appErr != nil || originalPost == nil {
