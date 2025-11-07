@@ -87,8 +87,16 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 	}
 	originalPost, appErr := p.client.Post.GetPost(postID)
 	if appErr != nil || originalPost == nil {
-		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
-			"user not authorized"), w, http.StatusUnauthorized)
+		var status int
+		var msg string
+		if appErr != nil && strings.Contains(appErr.Error(), "not found") || originalPost == nil {
+			status = http.StatusNotFound
+			msg = "post not found"
+		} else {
+			status = http.StatusInternalServerError
+			msg = "failed to retrieve post"
+		}
+		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID, msg), w, status)
 	}
 	if originalPost.UserId != jiraBotID {
 		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
