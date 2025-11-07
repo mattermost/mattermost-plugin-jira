@@ -21,5 +21,5 @@ jobs:
       golang-version: "1.23.0"
 
   dist:
-    uses: mattermost/delivery-platform/.github/workflows/plugin-dist-pr.yml@main
+    uses: mattermost/actions-workflows/.github/workflows/plugin-dist-pr.yml@main
     secrets: inherit
