@@ -19,3 +19,10 @@ jobs:
     secrets: inherit
     with:
       golang-version: "1.23.0"
+
+  dist:
+    uses: mattermost/actions-workflows/.github/workflows/plugin-dist-pr.yml@main
+    secrets: inherit
+    with:
+      dist-target: "dist"
+      s3-prefix: "mattermost-plugin-jira"
