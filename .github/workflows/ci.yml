@@ -23,3 +23,6 @@ jobs:
   dist:
     uses: mattermost/actions-workflows/.github/workflows/plugin-dist-pr.yml@main
     secrets: inherit
+    with:
+      dist-target: "dist"
+      s3-prefix: "mattermost-plugin-jira"
