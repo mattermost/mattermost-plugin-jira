@@ -185,109 +185,285 @@ func TestTransitionJiraIssue(t *testing.T) {
 }
 
 func TestRouteIssueTransition(t *testing.T) {
+	const (
+		headerUserID      = "user-id"
+		botUserID         = "jira-bot"
+		validPostID       = "valid-post"
+		wrongAuthorPostID = "wrong-author-post"
+		missingPostID     = "missing-post"
+	)
+
 	api := &plugintest.API{}
 	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
-	api.On("LogWarn", "ERROR: ", "Status", "401", "Error", "", "Path", "/api/v2/transition", "Method", "POST", "query", "").Return(nil)
-	api.On("LogWarn", "ERROR: ", "Status", "500", "Error", "", "Path", "/api/v2/transition", "Method", "POST", "query", "").Return(nil)
-	api.On("LogWarn", "Recovered from a panic", "url", "/api/v2/transition", "error", mock.Anything, "stack", mock.Anything).Return(nil)
+	api.On("LogWarn", "ERROR: ", "Status", "401", "Error", "", "Path", "/api/v2/transition", "Method", "POST", "query", "").Return(nil).Maybe()
+	api.On("LogWarn", "ERROR: ", "Status", "400", "Error", "", "Path", "/api/v2/transition", "Method", "POST", "query", "").Return(nil).Maybe()
+	api.On("LogWarn", "ERROR: ", "Status", "404", "Error", "", "Path", "/api/v2/transition", "Method", "POST", "query", "").Return(nil).Maybe()
+	api.On("LogWarn", "ERROR: ", "Status", "500", "Error", "", "Path", "/api/v2/transition", "Method", "POST", "query", "").Return(nil).Maybe()
+	api.On("LogWarn", "Recovered from a panic", "url", "/api/v2/transition", "error", mock.Anything, "stack", mock.Anything).Return(nil).Maybe()
+	api.On("LogWarn", "transition payload user mismatch", "header_user_id", headerUserID, "payload_user_id", "different-user").Return().Maybe()
+	api.On("GetPost", validPostID).Return(&model.Post{Id: validPostID, UserId: botUserID}, nil)
+	api.On("GetPost", wrongAuthorPostID).Return(&model.Post{Id: wrongAuthorPostID, UserId: "not-bot"}, nil)
+	api.On("GetPost", missingPostID).Return(nil, (*model.AppError)(nil))
+	api.On("DeleteEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil).Maybe()
 
 	p := setupTestPlugin(api)
+	p.updateConfig(func(conf *config) {
+		conf.botUserID = botUserID
+	})
 
-	for name, tt := range map[string]struct {
-		bb           []byte
+	cases := map[string]struct {
+		header       string
 		request      *model.PostActionIntegrationRequest
 		expectedCode int
 	}{
-		"No request data": {
+		"Missing header": {
+			header:       "",
 			request:      nil,
 			expectedCode: http.StatusUnauthorized,
 		},
-		"No UserID": {
+		"Missing post id": {
+			header: headerUserID,
 			request: &model.PostActionIntegrationRequest{
-				UserId: "",
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    "",
+			},
+			expectedCode: http.StatusBadRequest,
+		},
+		"Post not found": {
+			header: headerUserID,
+			request: &model.PostActionIntegrationRequest{
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    missingPostID,
+				Context: map[string]interface{}{
+					"issue_key":       "TEST-10",
+					"selected_option": "31",
+					"instance_id":     testInstance1.InstanceID.String(),
+				},
+			},
+			expectedCode: http.StatusNotFound,
+		},
+		"Post not from Jira bot": {
+			header: headerUserID,
+			request: &model.PostActionIntegrationRequest{
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    wrongAuthorPostID,
+				Context: map[string]interface{}{
+					"issue_key":       "TEST-10",
+					"selected_option": "31",
+					"instance_id":     testInstance1.InstanceID.String(),
+				},
 			},
 			expectedCode: http.StatusUnauthorized,
 		},
-		"No issueKey": {
+		"Invalid issue key": {
+			header: headerUserID,
 			request: &model.PostActionIntegrationRequest{
-				UserId: "userID",
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    validPostID,
+				Context: map[string]interface{}{
+					"issue_key":       "bad",
+					"selected_option": "31",
+					"instance_id":     testInstance1.InstanceID.String(),
+				},
+			},
+			expectedCode: http.StatusBadRequest,
+		},
+		"Missing transition option": {
+			header: headerUserID,
+			request: &model.PostActionIntegrationRequest{
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    validPostID,
+				Context: map[string]interface{}{
+					"issue_key":   "TEST-10",
+					"instance_id": testInstance1.InstanceID.String(),
+				},
 			},
 			expectedCode: http.StatusInternalServerError,
 		},
-		"No selected_option": {
+		"Missing instance id": {
+			header: headerUserID,
 			request: &model.PostActionIntegrationRequest{
-				UserId:  "userID",
-				Context: map[string]interface{}{"issueKey": "Some-Key"},
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    validPostID,
+				Context: map[string]interface{}{
+					"issue_key":       "TEST-10",
+					"selected_option": "31",
+				},
 			},
 			expectedCode: http.StatusInternalServerError,
 		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			bb, err := json.Marshal(tt.request)
-			assert.Nil(t, err)
+		"Payload mismatch allowed": {
+			header: headerUserID,
+			request: &model.PostActionIntegrationRequest{
+				UserId:    "different-user",
+				ChannelId: "channel-id",
+				PostId:    validPostID,
+				Context: map[string]interface{}{
+					"issue_key":       "TEST-10",
+					"selected_option": "31",
+					"instance_id":     testInstance1.InstanceID.String(),
+				},
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+		"Happy Path": {
+			header: headerUserID,
+			request: &model.PostActionIntegrationRequest{
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    validPostID,
+				Context: map[string]interface{}{
+					"issue_key":       "TEST-10",
+					"selected_option": "31",
+					"instance_id":     testInstance1.InstanceID.String(),
+				},
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+	}
 
-			request := httptest.NewRequest("POST", makeAPIRoute(routeIssueTransition), strings.NewReader(string(bb)))
+	for name, tt := range cases {
+		t.Run(name, func(t *testing.T) {
+			body := ""
+			if tt.request != nil {
+				bb, err := json.Marshal(tt.request)
+				assert.Nil(t, err)
+				body = string(bb)
+			}
+
+			req := httptest.NewRequest("POST", makeAPIRoute(routeIssueTransition), strings.NewReader(body))
+			if tt.header != "" {
+				req.Header.Set(headerMattermostUserID, tt.header)
+			}
+
 			w := httptest.NewRecorder()
-			p.ServeHTTP(&plugin.Context{}, w, request)
-			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "no request data")
+			p.ServeHTTP(&plugin.Context{}, w, req)
+			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "status code mismatch")
 		})
 	}
 }
 
 func TestRouteShareIssuePublicly(t *testing.T) {
-	validUserID := "1"
+	const (
+		headerUserID      = "1"
+		botUserID         = "jira-bot"
+		validPostID       = "valid-post"
+		wrongAuthorPostID = "wrong-author-post"
+		missingPostID     = "missing-post"
+	)
+
 	api := &plugintest.API{}
 	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
-	api.On("DeleteEphemeralPost", validUserID, "").Return()
-	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return()
-	api.On("LogWarn", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return()
+	api.On("DeleteEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil).Maybe()
+	api.On("GetPost", validPostID).Return(&model.Post{Id: validPostID, UserId: botUserID}, nil)
+	api.On("GetPost", wrongAuthorPostID).Return(&model.Post{Id: wrongAuthorPostID, UserId: "someone-else"}, nil)
+	api.On("GetPost", missingPostID).Return(nil, (*model.AppError)(nil))
+	api.On("LogWarn", "share issue payload user mismatch", "header_user_id", headerUserID, "payload_user_id", "someone-else").Return().Maybe()
+	api.On("LogWarn", "ERROR: ", "Status", "400", "Error", "", "Path", "/api/v2/share-issue-publicly", "Method", "POST", "query", "").Return(nil).Maybe()
+	api.On("LogWarn", "ERROR: ", "Status", "404", "Error", "", "Path", "/api/v2/share-issue-publicly", "Method", "POST", "query", "").Return(nil).Maybe()
+	api.On("LogWarn", "ERROR: ", "Status", "500", "Error", "", "Path", "/api/v2/share-issue-publicly", "Method", "POST", "query", "").Return(nil).Maybe()
+	api.On("LogWarn", "Recovered from a panic", "url", "/api/v2/share-issue-publicly", "error", mock.Anything, "stack", mock.Anything).Return(nil).Maybe()
 
 	p := setupTestPlugin(api)
+	p.updateConfig(func(conf *config) {
+		conf.botUserID = botUserID
+	})
 
-	for name, tt := range map[string]struct {
-		bb           []byte
+	cases := map[string]struct {
+		header       string
 		request      *model.PostActionIntegrationRequest
 		expectedCode int
 	}{
-		"No request data": {
+		"Missing header": {
+			header:       "",
 			request:      nil,
 			expectedCode: http.StatusUnauthorized,
 		},
-		"No UserID": {
+		"Missing post id": {
+			header: headerUserID,
 			request: &model.PostActionIntegrationRequest{
-				UserId: "",
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    "",
+			},
+			expectedCode: http.StatusBadRequest,
+		},
+		"Post not found": {
+			header: headerUserID,
+			request: &model.PostActionIntegrationRequest{
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    missingPostID,
+				Context: map[string]interface{}{
+					"issue_key":   "TEST-10",
+					"instance_id": testInstance1.InstanceID.String(),
+				},
+			},
+			expectedCode: http.StatusNotFound,
+		},
+		"Post not from Jira bot": {
+			header: headerUserID,
+			request: &model.PostActionIntegrationRequest{
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    wrongAuthorPostID,
+				Context: map[string]interface{}{
+					"issue_key":   "TEST-10",
+					"instance_id": testInstance1.InstanceID.String(),
+				},
 			},
 			expectedCode: http.StatusUnauthorized,
 		},
-		"No issueKey": {
+		"Missing issue key": {
+			header: headerUserID,
 			request: &model.PostActionIntegrationRequest{
-				UserId: "userID",
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    validPostID,
+				Context: map[string]interface{}{
+					"instance_id": testInstance1.InstanceID.String(),
+				},
 			},
 			expectedCode: http.StatusInternalServerError,
 		},
-		"No instanceId": {
+		"Invalid issue key": {
+			header: headerUserID,
 			request: &model.PostActionIntegrationRequest{
-				UserId: "userID",
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    validPostID,
+				Context: map[string]interface{}{
+					"issue_key":   "bad",
+					"instance_id": testInstance1.InstanceID.String(),
+				},
+			},
+			expectedCode: http.StatusBadRequest,
+		},
+		"Missing instance id": {
+			header: headerUserID,
+			request: &model.PostActionIntegrationRequest{
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    validPostID,
 				Context: map[string]interface{}{
 					"issue_key": "TEST-10",
 				},
 			},
 			expectedCode: http.StatusInternalServerError,
 		},
-		"No connection": {
-			request: &model.PostActionIntegrationRequest{
-				UserId: "userID",
-				Context: map[string]interface{}{
-					"issue_key":   "TEST-10",
-					"instance_id": "id",
-				},
-			},
-			expectedCode: http.StatusInternalServerError,
-		},
 		"Happy Path": {
+			header: headerUserID,
 			request: &model.PostActionIntegrationRequest{
-				UserId: validUserID,
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    validPostID,
 				Context: map[string]interface{}{
 					"issue_key":   "TEST-10",
 					"instance_id": testInstance1.InstanceID.String(),
@@ -295,15 +471,38 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 			},
 			expectedCode: http.StatusOK,
 		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			bb, err := json.Marshal(tt.request)
-			assert.Nil(t, err)
+		"Payload mismatch allowed": {
+			header: headerUserID,
+			request: &model.PostActionIntegrationRequest{
+				UserId:    "someone-else",
+				ChannelId: "channel-id",
+				PostId:    validPostID,
+				Context: map[string]interface{}{
+					"issue_key":   "TEST-10",
+					"instance_id": testInstance1.InstanceID.String(),
+				},
+			},
+			expectedCode: http.StatusOK,
+		},
+	}
 
-			request := httptest.NewRequest("POST", makeAPIRoute(routeSharePublicly), strings.NewReader(string(bb)))
+	for name, tt := range cases {
+		t.Run(name, func(t *testing.T) {
+			body := ""
+			if tt.request != nil {
+				bb, err := json.Marshal(tt.request)
+				assert.Nil(t, err)
+				body = string(bb)
+			}
+
+			req := httptest.NewRequest("POST", makeAPIRoute(routeSharePublicly), strings.NewReader(body))
+			if tt.header != "" {
+				req.Header.Set(headerMattermostUserID, tt.header)
+			}
+
 			w := httptest.NewRecorder()
-			p.ServeHTTP(&plugin.Context{}, w, request)
-			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "no request data")
+			p.ServeHTTP(&plugin.Context{}, w, req)
+			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "status code mismatch")
 		})
 	}
 }
