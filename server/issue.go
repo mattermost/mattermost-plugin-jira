@@ -128,7 +128,7 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 			"No connection could be loaded with given params"), w, http.StatusInternalServerError)
 	}
 
-	attachment, err := p.getIssueAsSlackAttachment(instance, connection, strings.ToUpper(issueKey), false)
+	attachment, err := p.getIssueAsSlackAttachment(instance, connection, issueKey, false)
 	if err != nil {
 		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
 			"Could not get issue as slack attachment"), w, http.StatusInternalServerError)
