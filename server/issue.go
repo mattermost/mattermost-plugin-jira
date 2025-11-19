@@ -95,6 +95,11 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 			"user not authorized"), w, http.StatusUnauthorized)
 	}
 
+	if originalPost.ChannelId != channelID {
+		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, channelID,
+			"channel mismatch"), w, http.StatusBadRequest)
+	}
+
 	if requestData.UserId != "" && requestData.UserId != authenticatedUserID {
 		p.client.Log.Warn("share issue payload user mismatch",
 			"header_user_id", authenticatedUserID,
@@ -183,6 +188,11 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 	if originalPost.UserId != jiraBotID {
 		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, channelID,
 			"user not authorized"), w, http.StatusUnauthorized)
+	}
+
+	if originalPost.ChannelId != channelID {
+		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, channelID,
+			"channel mismatch"), w, http.StatusBadRequest)
 	}
 
 	if requestData.UserId != "" && requestData.UserId != authenticatedUserID {
