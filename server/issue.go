@@ -22,6 +22,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
+var issueKeyRegexp = regexp.MustCompile(`^[A-Z][A-Z0-9_]+-\d+$`)
+
 const (
 	assigneeField            = "assignee"
 	labelsField              = "labels"
@@ -62,6 +64,11 @@ func makePost(userID, channelID, message string) *model.Post {
 }
 
 func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) (int, error) {
+	authenticatedUserID := strings.TrimSpace(r.Header.Get(headerMattermostUserID))
+	if authenticatedUserID == "" {
+		return respondErr(w, http.StatusUnauthorized, errors.New("missing Mattermost-User-ID header"))
+	}
+
 	var requestData model.PostActionIntegrationRequest
 	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
@@ -71,17 +78,46 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 
 	jiraBotID := p.getUserID()
 	channelID := requestData.ChannelId
-	mattermostUserID := requestData.UserId
-	if mattermostUserID == "" {
-		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+
+	postID := strings.TrimSpace(requestData.PostId)
+	if postID == "" {
+		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, channelID,
+			"missing post id"), w, http.StatusBadRequest)
+	}
+
+	originalPost, appErr := p.client.Post.GetPost(postID)
+	if appErr != nil || originalPost == nil {
+		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, channelID,
+			"post not found"), w, http.StatusNotFound)
+	}
+	if originalPost.UserId != jiraBotID {
+		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, channelID,
 			"user not authorized"), w, http.StatusUnauthorized)
 	}
+
+	if originalPost.ChannelId != channelID {
+		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, channelID,
+			"channel mismatch"), w, http.StatusBadRequest)
+	}
+
+	if requestData.UserId != "" && requestData.UserId != authenticatedUserID {
+		p.client.Log.Warn("share issue payload user mismatch",
+			"header_user_id", authenticatedUserID,
+			"payload_user_id", requestData.UserId)
+	}
+
+	mattermostUserID := authenticatedUserID
 
 	val := requestData.Context["issue_key"]
 	issueKey, ok := val.(string)
 	if !ok {
 		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
 			"No issue key was found in context data"), w, http.StatusInternalServerError)
+	}
+	issueKey = strings.ToUpper(strings.TrimSpace(issueKey))
+	if !issueKeyRegexp.MatchString(issueKey) {
+		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+			"invalid issue key"), w, http.StatusBadRequest)
 	}
 
 	val = requestData.Context["instance_id"]
@@ -97,7 +133,7 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 			"No connection could be loaded with given params"), w, http.StatusInternalServerError)
 	}
 
-	attachment, err := p.getIssueAsSlackAttachment(instance, connection, strings.ToUpper(issueKey), false)
+	attachment, err := p.getIssueAsSlackAttachment(instance, connection, issueKey, false)
 	if err != nil {
 		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
 			"Could not get issue as slack attachment"), w, http.StatusInternalServerError)
@@ -123,6 +159,11 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 }
 
 func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Request) (int, error) {
+	authenticatedUserID := strings.TrimSpace(r.Header.Get(headerMattermostUserID))
+	if authenticatedUserID == "" {
+		return respondErr(w, http.StatusUnauthorized, errors.New("missing Mattermost-User-ID header"))
+	}
+
 	var requestData model.PostActionIntegrationRequest
 	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
@@ -133,17 +174,45 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 	jiraBotID := p.getUserID()
 	channelID := requestData.ChannelId
 
-	mattermostUserID := requestData.UserId
-	if mattermostUserID == "" {
-		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+	postID := strings.TrimSpace(requestData.PostId)
+	if postID == "" {
+		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, channelID,
+			"missing post id"), w, http.StatusBadRequest)
+	}
+
+	originalPost, appErr := p.client.Post.GetPost(postID)
+	if appErr != nil || originalPost == nil {
+		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, channelID,
+			"post not found"), w, http.StatusNotFound)
+	}
+	if originalPost.UserId != jiraBotID {
+		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, channelID,
 			"user not authorized"), w, http.StatusUnauthorized)
 	}
+
+	if originalPost.ChannelId != channelID {
+		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, channelID,
+			"channel mismatch"), w, http.StatusBadRequest)
+	}
+
+	if requestData.UserId != "" && requestData.UserId != authenticatedUserID {
+		p.client.Log.Warn("transition payload user mismatch",
+			"header_user_id", authenticatedUserID,
+			"payload_user_id", requestData.UserId)
+	}
+
+	mattermostUserID := authenticatedUserID
 
 	val := requestData.Context["issue_key"]
 	issueKey, ok := val.(string)
 	if !ok {
 		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
 			"No issue key was found in context data"), w, http.StatusInternalServerError)
+	}
+	issueKey = strings.ToUpper(strings.TrimSpace(issueKey))
+	if !issueKeyRegexp.MatchString(issueKey) {
+		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+			"invalid issue key"), w, http.StatusBadRequest)
 	}
 
 	val = requestData.Context["selected_option"]
