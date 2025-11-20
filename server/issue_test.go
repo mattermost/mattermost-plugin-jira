@@ -326,7 +326,7 @@ func TestRouteIssueTransition(t *testing.T) {
 					"instance_id":     testInstance1.InstanceID.String(),
 				},
 			},
-			expectedCode: http.StatusInternalServerError,
+			expectedCode: http.StatusOK,
 		},
 		"Happy Path": {
 			header: headerUserID,

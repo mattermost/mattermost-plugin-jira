@@ -85,7 +85,7 @@ func decodePostActionRequest(r *http.Request) (string, model.PostActionIntegrati
 	return authenticatedUserID, requestData, 0, nil
 }
 
-func (p *Plugin) buildPostActionContext(authenticatedUserID string, requestData model.PostActionIntegrationRequest, mismatchLog string) (*postActionContext, int, string) {
+func (p *Plugin) buildPostActionContext(authenticatedUserID string, requestData model.PostActionIntegrationRequest) (*postActionContext, int, string) {
 	jiraBotID := p.getUserID()
 	channelID := requestData.ChannelId
 	postID := strings.TrimSpace(requestData.PostId)
@@ -107,7 +107,7 @@ func (p *Plugin) buildPostActionContext(authenticatedUserID string, requestData 
 	}
 
 	if requestData.UserId != "" && requestData.UserId != authenticatedUserID {
-		p.client.Log.Warn(mismatchLog,
+		p.client.Log.Warn("post action payload user mismatch",
 			"header_user_id", authenticatedUserID,
 			"payload_user_id", requestData.UserId)
 	}
@@ -144,9 +144,9 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 	}
 
 	jiraBotID := p.getUserID()
-	ctx, status, msg := p.buildPostActionContext(authenticatedUserID, requestData, "share issue payload user mismatch")
-	if msg != "" {
-		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, requestData.ChannelId, msg), w, status)
+	ctx, status, errMsg := p.buildPostActionContext(authenticatedUserID, requestData)
+	if errMsg != "" {
+		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, requestData.ChannelId, errMsg), w, status)
 	}
 
 	_, instance, connection, err := p.getClient(types.ID(ctx.instanceID), types.ID(ctx.authenticatedUserID))
@@ -187,9 +187,9 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 	}
 
 	jiraBotID := p.getUserID()
-	ctx, status, msg := p.buildPostActionContext(authenticatedUserID, requestData, "transition payload user mismatch")
-	if msg != "" {
-		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, requestData.ChannelId, msg), w, status)
+	ctx, status, errMsg := p.buildPostActionContext(authenticatedUserID, requestData)
+	if errMsg != "" {
+		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, requestData.ChannelId, errMsg), w, status)
 	}
 
 	val := requestData.Context["selected_option"]
