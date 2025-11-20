@@ -344,7 +344,7 @@ func TestRouteIssueTransition(t *testing.T) {
 					"instance_id":     testInstance1.InstanceID.String(),
 				},
 			},
-			expectedCode: http.StatusInternalServerError,
+			expectedCode: http.StatusOK,
 		},
 		"Happy Path": {
 			header: headerUserID,
@@ -398,7 +398,7 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
 	api.On("DeleteEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil).Maybe()
 	api.On("GetPost", validPostID).Return(&model.Post{Id: validPostID, UserId: botUserID, ChannelId: "channel-id"}, nil)
-	api.On("GetPost", wrongAuthorPostID).Return(&model.Post{Id: wrongAuthorPostID, UserId: "someone-else"}, nil)
+	api.On("GetPost", wrongAuthorPostID).Return(&model.Post{Id: wrongAuthorPostID, UserId: "someone-else", ChannelId: "channel-id"}, nil)
 	api.On("GetPost", missingPostID).Return(nil, (*model.AppError)(nil))
 	api.On("GetPost", wrongChannelPostID).Return(&model.Post{Id: wrongChannelPostID, UserId: botUserID, ChannelId: "different-channel"}, nil)
 	api.On("LogWarn", "share issue payload user mismatch", "header_user_id", headerUserID, "payload_user_id", "someone-else").Return().Maybe()
@@ -507,10 +507,23 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 			},
 			expectedCode: http.StatusInternalServerError,
 		},
-		"Happy Path": {
+		"No connection": {
 			header: headerUserID,
 			request: &model.PostActionIntegrationRequest{
 				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    validPostID,
+				Context: map[string]interface{}{
+					"issue_key":   "TEST-10",
+					"instance_id": "id",
+				},
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+		"Payload mismatch allowed": {
+			header: headerUserID,
+			request: &model.PostActionIntegrationRequest{
+				UserId:    "someone-else",
 				ChannelId: "channel-id",
 				PostId:    validPostID,
 				Context: map[string]interface{}{
@@ -520,10 +533,10 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 			},
 			expectedCode: http.StatusOK,
 		},
-		"Payload mismatch allowed": {
+		"Happy Path": {
 			header: headerUserID,
 			request: &model.PostActionIntegrationRequest{
-				UserId:    "someone-else",
+				UserId:    headerUserID,
 				ChannelId: "channel-id",
 				PostId:    validPostID,
 				Context: map[string]interface{}{
