@@ -370,7 +370,7 @@ func TestRouteIssueTransition(t *testing.T) {
 					"instance_id":     testInstance1.InstanceID.String(),
 				},
 			},
-			expectedCode: http.StatusNotFound,
+			expectedCode:  http.StatusNotFound,
 			skipSignature: true,
 		},
 		"Post not from Jira bot": {
@@ -568,7 +568,7 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 					"instance_id": testInstance1.InstanceID.String(),
 				},
 			},
-			expectedCode: http.StatusNotFound,
+			expectedCode:  http.StatusNotFound,
 			skipSignature: true,
 		},
 		"Post not from Jira bot": {
