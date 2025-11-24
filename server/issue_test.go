@@ -105,8 +105,101 @@ func setupTestPlugin(api *plugintest.API) *Plugin {
 	p.instanceStore = p.getMockInstanceStoreKV(1)
 	p.userStore = getMockUserStoreKV()
 	p.client = pluginapi.NewClient(api, p.Driver)
+	p.updateConfig(func(conf *config) {
+		conf.Secret = someSecret
+	})
 
 	return p
+}
+
+func addActionSignatureToRequest(p *Plugin, req *model.PostActionIntegrationRequest) {
+	if req == nil {
+		return
+	}
+	if req.Context == nil {
+		req.Context = map[string]interface{}{}
+	}
+
+	issueKey, ok := req.Context["issue_key"].(string)
+	if !ok {
+		return
+	}
+	instanceID, ok := req.Context["instance_id"].(string)
+	if !ok {
+		return
+	}
+
+	if sig := p.generatePostActionSignature(strings.TrimSpace(issueKey), strings.TrimSpace(instanceID)); sig != "" {
+		req.Context["action_signature"] = sig
+	}
+}
+
+func TestBuildPostActionContext(t *testing.T) {
+	channelID := model.NewId()
+	postID := "missing-post"
+	instanceID := "instance-id"
+	issueKey := "MM-123"
+	authenticatedUserID := "user-id"
+
+	makeRequest := func(issue string) model.PostActionIntegrationRequest {
+		return model.PostActionIntegrationRequest{
+			ChannelId: channelID,
+			PostId:    postID,
+			Context: map[string]interface{}{
+				"issue_key":   issue,
+				"instance_id": instanceID,
+			},
+		}
+	}
+
+	t.Run("falls back to channel membership when post not stored", func(t *testing.T) {
+		api := &plugintest.API{}
+		api.On("GetPost", postID).Return((*model.Post)(nil), model.NewAppError("GetPost", "not_found", nil, "", http.StatusNotFound))
+		api.On("GetChannelMember", channelID, authenticatedUserID).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+
+		plg := &Plugin{}
+		plg.SetAPI(api)
+		plg.client = pluginapi.NewClient(api, plg.Driver)
+		plg.updateConfig(func(conf *config) {
+			conf.botUserID = "bot-user"
+			conf.Secret = someSecret
+		})
+
+		req := makeRequest(issueKey)
+		addActionSignatureToRequest(plg, &req)
+
+		ctx, status, msg := plg.buildPostActionContext(authenticatedUserID, req, false)
+		assert.Equal(t, 0, status)
+		assert.Equal(t, "", msg)
+		assert.Equal(t, channelID, ctx.channelID)
+		assert.Equal(t, strings.ToUpper(issueKey), ctx.issueKey)
+		assert.Equal(t, instanceID, ctx.instanceID)
+
+		api.AssertExpectations(t)
+	})
+
+	t.Run("requires stored post when flag is set", func(t *testing.T) {
+		api := &plugintest.API{}
+		api.On("GetPost", postID).Return((*model.Post)(nil), model.NewAppError("GetPost", "not_found", nil, "", http.StatusNotFound))
+
+		plg := &Plugin{}
+		plg.SetAPI(api)
+		plg.client = pluginapi.NewClient(api, plg.Driver)
+		plg.updateConfig(func(conf *config) {
+			conf.botUserID = "bot-user"
+			conf.Secret = someSecret
+		})
+
+		req := makeRequest(issueKey)
+		addActionSignatureToRequest(plg, &req)
+
+		ctx, status, msg := plg.buildPostActionContext(authenticatedUserID, req, true)
+		assert.Nil(t, ctx)
+		assert.Equal(t, http.StatusNotFound, status)
+		assert.Equal(t, "post not found", msg)
+
+		api.AssertExpectations(t)
+	})
 }
 
 func (client testClient) GetCreateMetaInfo(api plugin.API, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error) {
@@ -232,9 +325,10 @@ func TestRouteIssueTransition(t *testing.T) {
 	})
 
 	cases := map[string]struct {
-		header       string
-		request      *model.PostActionIntegrationRequest
-		expectedCode int
+		header        string
+		request       *model.PostActionIntegrationRequest
+		expectedCode  int
+		skipSignature bool
 	}{
 		"Missing header": {
 			header:       "",
@@ -262,7 +356,22 @@ func TestRouteIssueTransition(t *testing.T) {
 					"instance_id":     testInstance1.InstanceID.String(),
 				},
 			},
+			expectedCode: http.StatusOK,
+		},
+		"Post not found without signature": {
+			header: headerUserID,
+			request: &model.PostActionIntegrationRequest{
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    missingPostID,
+				Context: map[string]interface{}{
+					"issue_key":       "TEST-10",
+					"selected_option": "31",
+					"instance_id":     testInstance1.InstanceID.String(),
+				},
+			},
 			expectedCode: http.StatusNotFound,
+			skipSignature: true,
 		},
 		"Post not from Jira bot": {
 			header: headerUserID,
@@ -366,6 +475,9 @@ func TestRouteIssueTransition(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			body := ""
 			if tt.request != nil {
+				if !tt.skipSignature {
+					addActionSignatureToRequest(p, tt.request)
+				}
 				bb, err := json.Marshal(tt.request)
 				assert.Nil(t, err)
 				body = string(bb)
@@ -413,9 +525,10 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 	})
 
 	cases := map[string]struct {
-		header       string
-		request      *model.PostActionIntegrationRequest
-		expectedCode int
+		header        string
+		request       *model.PostActionIntegrationRequest
+		expectedCode  int
+		skipSignature bool
 	}{
 		"Missing header": {
 			header:       "",
@@ -442,7 +555,21 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 					"instance_id": testInstance1.InstanceID.String(),
 				},
 			},
+			expectedCode: http.StatusOK,
+		},
+		"Post not found without signature": {
+			header: headerUserID,
+			request: &model.PostActionIntegrationRequest{
+				UserId:    headerUserID,
+				ChannelId: "channel-id",
+				PostId:    missingPostID,
+				Context: map[string]interface{}{
+					"issue_key":   "TEST-10",
+					"instance_id": testInstance1.InstanceID.String(),
+				},
+			},
 			expectedCode: http.StatusNotFound,
+			skipSignature: true,
 		},
 		"Post not from Jira bot": {
 			header: headerUserID,
@@ -552,6 +679,9 @@ func TestRouteShareIssuePublicly(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			body := ""
 			if tt.request != nil {
+				if !tt.skipSignature {
+					addActionSignatureToRequest(p, tt.request)
+				}
 				bb, err := json.Marshal(tt.request)
 				assert.Nil(t, err)
 				body = string(bb)

@@ -17,6 +17,14 @@ func TestAsSlackAttachment(t *testing.T) {
 	instance := testInstance2
 	client := testClient{}
 
+	testPlugin := &Plugin{}
+	testPlugin.updateConfig(func(conf *config) {
+		conf.Secret = someSecret
+	})
+	originalPlugin := instance.Plugin
+	defer func() { instance.Plugin = originalPlugin }()
+	instance.Plugin = testPlugin
+
 	for name, tc := range map[string]struct {
 		issue              *jira.Issue
 		showActions        bool
@@ -132,6 +140,7 @@ func TestAsSlackAttachment(t *testing.T) {
 							Context: map[string]any{
 								"issue_key":   "some ID",
 								"instance_id": testInstance2.GetID().String(),
+								"action_signature": testPlugin.generatePostActionSignature("some ID", testInstance2.GetID().String()),
 							},
 						},
 					},
@@ -143,6 +152,7 @@ func TestAsSlackAttachment(t *testing.T) {
 							Context: map[string]any{
 								"issue_key":   "some ID",
 								"instance_id": testInstance2.GetID().String(),
+								"action_signature": testPlugin.generatePostActionSignature("some ID", testInstance2.GetID().String()),
 							},
 						},
 					},
