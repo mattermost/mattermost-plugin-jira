@@ -199,13 +199,13 @@ func mdUser(user *jira.User) string {
 	return user.DisplayName
 }
 
-func truncate(s string, max int) string {
-	if utf8.RuneCountInString(s) <= max || max < 0 {
+func truncate(s string, maxLen int) string {
+	if utf8.RuneCountInString(s) <= maxLen || maxLen < 0 {
 		return s
 	}
 	runes := []rune(s)
-	if max > 3 {
-		return string(runes[:max-3]) + "..."
+	if maxLen > 3 {
+		return string(runes[:maxLen-3]) + "..."
 	}
-	return string(runes[:max])
+	return string(runes[:maxLen])
 }

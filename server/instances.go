@@ -192,9 +192,8 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 					instances.Delete(instanceID)
 					if err = p.instanceStore.StoreInstances(instances); err != nil {
 						return err
-					} else {
-						return nil
 					}
+					return nil
 				}
 
 				return err

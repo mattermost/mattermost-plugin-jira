@@ -23,13 +23,13 @@ import (
 )
 
 func testWebhookRequest(filename string) *http.Request {
-	if f, err := os.Open(filepath.Join("testdata", filename)); err != nil {
+	f, err := os.Open(filepath.Join("testdata", filename))
+	if err != nil {
 		panic(err)
-	} else {
-		return httptest.NewRequest("POST",
-			"/webhook?team=theteam&channel=thechannel&secret=thesecret&updated_all=1",
-			f)
 	}
+	return httptest.NewRequest("POST",
+		"/webhook?team=theteam&channel=thechannel&secret=thesecret&updated_all=1",
+		f)
 }
 
 type testWebhookWrapper struct {
