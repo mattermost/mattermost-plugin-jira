@@ -58,7 +58,7 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	helpText := ""
 	if len(args) != 3 {
 		helpText = helpTextPrefix + "* Invalid command args."
-		return p.responsef(header, helpText)
+		return p.response(header, helpText)
 	}
 
 	if connection.Settings == nil {
@@ -69,7 +69,7 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	helpTextSuffix, isRoleUpdated := connection.updateRolesForDMNotification(role, roleStatus)
 	helpText = helpTextPrefix + helpTextSuffix
 	if !isRoleUpdated {
-		return p.responsef(header, helpText)
+		return p.response(header, helpText)
 	}
 
 	if err := p.userStore.StoreConnection(instanceID, mattermostUserID, connection); err != nil {

@@ -430,7 +430,7 @@ func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserID string) (*OAu
 	}
 	// If the key expired, appErr is nil, but the data is also nil
 	if len(credentials.Token) == 0 {
-		return nil, errors.Wrapf(kvstore.ErrNotFound, "temporary credentials for %s not found or expired, try to connect again"+mmUserID)
+		return nil, errors.Wrapf(kvstore.ErrNotFound, "temporary credentials for %s not found or expired, try to connect again", mmUserID)
 	}
 
 	err = store.plugin.client.KV.Delete(hashkey(prefixOneTimeSecret, mmUserID))

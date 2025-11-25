@@ -421,7 +421,7 @@ func (p *Plugin) help(args *model.CommandArgs) *model.CommandResponse {
 func (p *Plugin) ExecuteCommand(c *plugin.Context, commandArgs *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	err := p.CheckSiteURL()
 	if err != nil {
-		return p.responsef(commandArgs, err.Error()), nil
+		return p.response(commandArgs, err.Error()), nil
 	}
 	args := strings.Fields(commandArgs.Command)
 	if len(args) == 0 || args[0] != "/jira" {
@@ -452,7 +452,7 @@ func executeDisconnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 		if jiraURL != "" {
 			errorStr = fmt.Sprintf("You do not currently have a Jira account at %s linked to your Mattermost account. Please use `/jira connect` to connect your account.", jiraURL)
 		}
-		return p.responsef(header, errorStr)
+		return p.response(header, errorStr)
 	}
 	if err != nil {
 		return p.responsef(header, "Could not complete the **disconnection** request. Error: %v", err)
@@ -510,7 +510,7 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 
 	info, err := p.GetUserInfo(types.ID(header.UserId), nil)
 	if err != nil {
-		return p.responsef(header, "Failed to connect: "+err.Error())
+		return p.response(header, "Failed to connect: "+err.Error())
 	}
 	if info.Instances.IsEmpty() {
 		return p.responsef(header,
@@ -706,7 +706,7 @@ func executeView(p *Plugin, c *plugin.Context, header *model.CommandArgs, args .
 
 	attachment, err := p.getIssueAsSlackAttachment(instance, conn, strings.ToUpper(issueID), true)
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 
 	post := &model.Post{
@@ -736,7 +736,7 @@ func executeV2Revert(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 	if len(args) == 1 && args[0] == "--force" {
 		msg := MigrateV3ToV2(p)
 		if msg != "" {
-			return p.responsef(header, msg)
+			return p.response(header, msg)
 		}
 		preMessage = `#### Successfully reverted the V3 Jira plugin database to V2. The Jira plugin has been disabled.` + "\n"
 
@@ -759,7 +759,7 @@ If you ran |v2revert| unintentionally and would like to continue using the curre
 
 	p.TrackUserEvent("v2RevertSubmitted", header.UserId, nil)
 
-	return p.responsef(header, message)
+	return p.response(header, message)
 }
 
 func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -815,7 +815,7 @@ func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs
 		}
 		text += fmt.Sprintf(format, i+1, alias, key, details)
 	}
-	return p.responsef(header, text)
+	return p.response(header, text)
 }
 
 func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -840,7 +840,7 @@ func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArg
 		return p.responsef(header, "%v", err)
 	}
 
-	return p.responsef(header, msg)
+	return p.response(header, msg)
 }
 
 func authorizedSysAdmin(p *Plugin, userID string) (bool, error) {
@@ -857,7 +857,7 @@ func authorizedSysAdmin(p *Plugin, userID string) (bool, error) {
 func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 	if !authorized {
 		return p.responsef(header, "`/jira install` can only be run by a system administrator.")
@@ -868,7 +868,7 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 
 	jiraURL, err := p.installInactiveCloudInstance(args[0], header.UserId)
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 
 	return p.respondCommandTemplate(header, "/command/install_cloud.md", map[string]string{
@@ -881,7 +881,7 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 	if !authorized {
 		return p.responsef(header, "`/jira install` can only be run by a Mattermost system administrator.")
@@ -892,7 +892,7 @@ func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *mode
 
 	jiraURL, instance, err := p.installCloudOAuthInstance(args[0])
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 
 	state := flow.State{
@@ -904,12 +904,12 @@ func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *mode
 	}
 
 	if err = p.oauth2Flow.ForUser(header.UserId).Start(state); err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 
 	channel, err := p.client.Channel.GetDirect(header.UserId, p.conf.botUserID)
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 	if channel != nil && channel.Id != header.ChannelId {
 		return p.responsef(header, "continue in the direct conversation with @jira bot.")
@@ -921,7 +921,7 @@ func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *mode
 func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 	if !authorized {
 		return p.responsef(header, "`/jira install` can only be run by a system administrator.")
@@ -931,7 +931,7 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 	}
 	jiraURL, instance, err := p.installServerInstance(args[0])
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 	pkey, err := p.publicKeyString()
 	if err != nil {
@@ -951,7 +951,7 @@ func executeInstanceInstallServer(p *Plugin, c *plugin.Context, header *model.Co
 func executeInstanceUninstall(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	authorized, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 	if !authorized {
 		return p.responsef(header, "`/jira uninstall` can only be run by a System Administrator.")
@@ -965,11 +965,11 @@ func executeInstanceUninstall(p *Plugin, c *plugin.Context, header *model.Comman
 
 	id, err := utils.NormalizeJiraURL(instanceURL)
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 	uninstalled, err := p.UninstallInstance(types.ID(id), instanceType)
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 
 	uninstallInstructions := `` +
@@ -994,7 +994,7 @@ func executeUnassign(p *Plugin, c *plugin.Context, header *model.CommandArgs, ar
 	if err != nil {
 		return p.responsef(header, "%v", err)
 	}
-	return p.responsef(header, msg)
+	return p.response(header, msg)
 }
 
 func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -1021,7 +1021,7 @@ func executeAssign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args
 		return p.responsef(header, "%v", err)
 	}
 
-	return p.responsef(header, msg)
+	return p.response(header, msg)
 }
 
 // TODO should transition command post to channel? Options?
@@ -1049,10 +1049,10 @@ func executeTransition(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 		ToState:          toState,
 	})
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 
-	return p.responsef(header, msg)
+	return p.response(header, msg)
 }
 
 func executeMe(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -1091,7 +1091,7 @@ func executeMe(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...
 
 	info, err := p.GetUserInfo(mattermostUserID, nil)
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 
 	resp := sbullet("Mattermost site URL", p.GetSiteURL())
@@ -1103,14 +1103,14 @@ func executeMe(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...
 	case info.Instances.Len() > 0:
 		resp += "Jira is installed, but you are not connected. Please type `/jira connect` to connect.\n"
 	default:
-		return p.responsef(header, resp+"\nNo Jira instances installed, please contact your system administrator.")
+		return p.response(header, resp+"\nNo Jira instances installed, please contact your system administrator.")
 	}
 
 	if info.IsConnected {
 		for _, instanceID := range info.User.ConnectedInstances.IDs() {
 			connection, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
 			if err != nil {
-				return p.responsef(header, err.Error())
+				return p.response(header, err.Error())
 			}
 
 			resp += connectionBullet(info.User.ConnectedInstances.Get(instanceID), connection, info.User.DefaultInstanceID == instanceID)
@@ -1143,7 +1143,7 @@ func executeMe(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...
 				if errors.Cause(err) == kvstore.ErrNotFound {
 					continue
 				}
-				return p.responsef(header, err.Error())
+				return p.response(header, err.Error())
 			}
 
 			orphans += connectionBullet(info.Instances.Get(instanceID), connection, false)
@@ -1153,7 +1153,7 @@ func executeMe(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...
 		resp += fmt.Sprintf("###### Orphant Jira connections:\n%s", orphans)
 	}
 
-	return p.responsef(header, resp)
+	return p.response(header, resp)
 }
 
 func executeAbout(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -1166,7 +1166,7 @@ func executeAbout(p *Plugin, c *plugin.Context, header *model.CommandArgs, args 
 		text = errors.Wrap(err, "failed to get build info").Error()
 	}
 
-	return p.responsef(header, text)
+	return p.response(header, text)
 }
 
 func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
@@ -1187,16 +1187,16 @@ func executeWebhookURL(p *Plugin, c *plugin.Context, header *model.CommandArgs, 
 
 	instanceID, err := p.ResolveWebhookInstanceURL(jiraURL)
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 
 	subWebhookURL, legacyWebhookURL, err := p.GetWebhookURL(jiraURL, header.TeamId, header.ChannelId)
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 	return p.responsef(header,
 		"To set up webhook for instance %s please navigate to [Jira System Settings/Webhooks](%s) where you can add webhooks.\n"+
@@ -1225,12 +1225,12 @@ func executeSetup(p *Plugin, c *plugin.Context, header *model.CommandArgs, args 
 	}
 
 	if err = p.setupFlow.ForUser(header.UserId).Start(nil); err != nil {
-		return p.responsef(header, errors.Wrap(err, "Failed to start setup wizard").Error())
+		return p.response(header, errors.Wrap(err, "Failed to start setup wizard").Error())
 	}
 
 	channel, err := p.client.Channel.GetDirect(header.UserId, p.conf.botUserID)
 	if err != nil {
-		return p.responsef(header, err.Error())
+		return p.response(header, err.Error())
 	}
 	if channel != nil && channel.Id != header.ChannelId {
 		return p.responsef(header, "continue in the direct conversation with @jira bot.")
@@ -1249,8 +1249,13 @@ func (p *Plugin) postCommandResponse(args *model.CommandArgs, text string) {
 	p.client.Post.SendEphemeralPost(args.UserId, post)
 }
 
-func (p *Plugin) responsef(commandArgs *model.CommandArgs, format string, args ...interface{}) *model.CommandResponse {
+func (p *Plugin) responsef(commandArgs *model.CommandArgs, format string, args ...any) *model.CommandResponse {
 	p.postCommandResponse(commandArgs, fmt.Sprintf(format, args...))
+	return &model.CommandResponse{}
+}
+
+func (p *Plugin) response(commandArgs *model.CommandArgs, msg string) *model.CommandResponse {
+	p.postCommandResponse(commandArgs, msg)
 	return &model.CommandResponse{}
 }
 
@@ -1342,12 +1347,12 @@ func (p *Plugin) loadFlagUserInstance(mattermostUserID string, args []string) (*
 func (p *Plugin) respondCommandTemplate(commandArgs *model.CommandArgs, path string, values interface{}) *model.CommandResponse {
 	t := p.textTemplates[path]
 	if t == nil {
-		return p.responsef(commandArgs, "no template found for "+path)
+		return p.response(commandArgs, "no template found for "+path)
 	}
 	bb := &bytes.Buffer{}
 	err := t.Execute(bb, values)
 	if err != nil {
 		p.responsef(commandArgs, "failed to format results: %v", err)
 	}
-	return p.responsef(commandArgs, bb.String())
+	return p.response(commandArgs, bb.String())
 }
