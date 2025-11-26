@@ -22,23 +22,32 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
+var issueKeyRegexp = regexp.MustCompile(`^[A-Z][A-Z0-9_]+-\d+$`)
+
 const (
-	assigneeField          = "assignee"
-	securityLevelField     = "security"
-	labelsField            = "labels"
-	statusField            = "status"
-	reporterField          = "reporter"
-	priorityField          = "priority"
-	descriptionField       = "description"
-	resolutionField        = "resolution"
-	headerMattermostUserID = "Mattermost-User-ID"
-	instanceIDQueryParam   = "instance_id"
-	fieldValueQueryParam   = "fieldValue"
+	assigneeField            = "assignee"
+	labelsField              = "labels"
+	statusField              = "status"
+	reporterField            = "reporter"
+	priorityField            = "priority"
+	descriptionField         = "description"
+	resolutionField          = "resolution"
+	securityLevelField       = "security"
+	createdCommentEvent      = "event_created_comment"
+	notificationTypeReporter = "reporter"
+	notificationTypeWatching = "watching"
+	jiraUserName             = "Name"
+	jiraUserAccountID        = "AccountID"
+	headerMattermostUserID   = "Mattermost-User-ID"
+	instanceIDQueryParam     = "instance_id"
+	fieldValueQueryParam     = "fieldValue"
 
 	QueryParamInstanceID = "instance_id"
 	QueryParamProjectID  = "project_id"
 
 	expandValueGroups = "groups"
+
+	teamFieldKey = "customfield_10001"
 )
 
 type CreateMetaInfo struct {
@@ -54,51 +63,107 @@ func makePost(userID, channelID, message string) *model.Post {
 	}
 }
 
-func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) (int, error) {
-	var requestData model.PostActionIntegrationRequest
-	err := json.NewDecoder(r.Body).Decode(&requestData)
-	if err != nil {
-		return respondErr(w, http.StatusBadRequest,
-			errors.Wrap(err, "unmarshall the body"))
+type postActionContext struct {
+	authenticatedUserID string
+	channelID           string
+	issueKey            string
+	instanceID          string
+	postID              string
+}
+
+func decodePostActionRequest(r *http.Request) (string, model.PostActionIntegrationRequest, int, error) {
+	authenticatedUserID := strings.TrimSpace(r.Header.Get(headerMattermostUserID))
+	if authenticatedUserID == "" {
+		return "", model.PostActionIntegrationRequest{}, http.StatusUnauthorized, errors.New("missing Mattermost-User-ID header")
 	}
 
+	var requestData model.PostActionIntegrationRequest
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+		return "", model.PostActionIntegrationRequest{}, http.StatusBadRequest, errors.Wrap(err, "unmarshall the body")
+	}
+
+	return authenticatedUserID, requestData, 0, nil
+}
+
+func (p *Plugin) buildPostActionContext(authenticatedUserID string, requestData model.PostActionIntegrationRequest) (*postActionContext, int, string) {
 	jiraBotID := p.getUserID()
 	channelID := requestData.ChannelId
-	mattermostUserID := requestData.UserId
-	if mattermostUserID == "" {
-		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
-			"user not authorized"), w, http.StatusUnauthorized)
+	postID := strings.TrimSpace(requestData.PostId)
+	if postID == "" {
+		return nil, http.StatusBadRequest, "missing post id"
+	}
+
+	originalPost, appErr := p.client.Post.GetPost(postID)
+	if appErr != nil || originalPost == nil {
+		return nil, http.StatusNotFound, "post not found"
+	}
+
+	if originalPost.UserId != jiraBotID {
+		return nil, http.StatusUnauthorized, "user not authorized"
+	}
+
+	if originalPost.ChannelId != channelID {
+		return nil, http.StatusBadRequest, "channel mismatch"
+	}
+
+	if requestData.UserId != "" && requestData.UserId != authenticatedUserID {
+		p.client.Log.Warn("post action payload user mismatch",
+			"header_user_id", authenticatedUserID,
+			"payload_user_id", requestData.UserId)
 	}
 
 	val := requestData.Context["issue_key"]
 	issueKey, ok := val.(string)
 	if !ok {
-		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
-			"No issue key was found in context data"), w, http.StatusInternalServerError)
+		return nil, http.StatusInternalServerError, "No issue key was found in context data"
+	}
+	issueKey = strings.ToUpper(strings.TrimSpace(issueKey))
+	if !issueKeyRegexp.MatchString(issueKey) {
+		return nil, http.StatusBadRequest, "invalid issue key"
 	}
 
 	val = requestData.Context["instance_id"]
 	instanceID, ok := val.(string)
 	if !ok {
-		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
-			"No instance id was found in context data"), w, http.StatusInternalServerError)
+		return nil, http.StatusInternalServerError, "No instance id was found in context data"
 	}
 
-	_, instance, connection, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+	return &postActionContext{
+		authenticatedUserID: authenticatedUserID,
+		channelID:           channelID,
+		issueKey:            issueKey,
+		instanceID:          instanceID,
+		postID:              postID,
+	}, 0, ""
+}
+
+func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) (int, error) {
+	authenticatedUserID, requestData, status, err := decodePostActionRequest(r)
 	if err != nil {
-		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+		return respondErr(w, status, err)
+	}
+
+	jiraBotID := p.getUserID()
+	ctx, status, errMsg := p.buildPostActionContext(authenticatedUserID, requestData)
+	if errMsg != "" {
+		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, requestData.ChannelId, errMsg), w, status)
+	}
+
+	_, instance, connection, err := p.getClient(types.ID(ctx.instanceID), types.ID(ctx.authenticatedUserID))
+	if err != nil {
+		return p.respondErrWithFeedback(ctx.authenticatedUserID, makePost(jiraBotID, ctx.channelID,
 			"No connection could be loaded with given params"), w, http.StatusInternalServerError)
 	}
 
-	attachment, err := p.getIssueAsSlackAttachment(instance, connection, strings.ToUpper(issueKey), false)
+	attachment, err := p.getIssueAsSlackAttachment(instance, connection, ctx.issueKey, false)
 	if err != nil {
-		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+		return p.respondErrWithFeedback(ctx.authenticatedUserID, makePost(jiraBotID, ctx.channelID,
 			"Could not get issue as slack attachment"), w, http.StatusInternalServerError)
 	}
 
 	post := &model.Post{
-		UserId:    mattermostUserID,
-		ChannelId: channelID,
+		UserId:    ctx.authenticatedUserID,
+		ChannelId: ctx.channelID,
 	}
 	post.AddProp("attachments", attachment)
 
@@ -108,7 +173,7 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 			errors.WithMessage(err, "failed to create notification post"))
 	}
 
-	p.client.Post.DeleteEphemeralPost(mattermostUserID, requestData.PostId)
+	p.client.Post.DeleteEphemeralPost(ctx.authenticatedUserID, ctx.postID)
 
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write([]byte(`{statusField: "OK"}`))
@@ -116,51 +181,32 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 }
 
 func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Request) (int, error) {
-	var requestData model.PostActionIntegrationRequest
-	err := json.NewDecoder(r.Body).Decode(&requestData)
+	authenticatedUserID, requestData, status, err := decodePostActionRequest(r)
 	if err != nil {
-		return respondErr(w, http.StatusBadRequest,
-			errors.New("unmarshall the body"))
+		return respondErr(w, status, err)
 	}
 
 	jiraBotID := p.getUserID()
-	channelID := requestData.ChannelId
-
-	mattermostUserID := requestData.UserId
-	if mattermostUserID == "" {
-		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
-			"user not authorized"), w, http.StatusUnauthorized)
+	ctx, status, errMsg := p.buildPostActionContext(authenticatedUserID, requestData)
+	if errMsg != "" {
+		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, requestData.ChannelId, errMsg), w, status)
 	}
 
-	val := requestData.Context["issue_key"]
-	issueKey, ok := val.(string)
-	if !ok {
-		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
-			"No issue key was found in context data"), w, http.StatusInternalServerError)
-	}
-
-	val = requestData.Context["selected_option"]
+	val := requestData.Context["selected_option"]
 	toState, ok := val.(string)
 	if !ok {
-		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
+		return p.respondErrWithFeedback(ctx.authenticatedUserID, makePost(jiraBotID, ctx.channelID,
 			"No transition option was found in context data"), w, http.StatusInternalServerError)
 	}
 
-	val = requestData.Context["instance_id"]
-	instanceID, ok := val.(string)
-	if !ok {
-		return p.respondErrWithFeedback(mattermostUserID, makePost(jiraBotID, channelID,
-			"No instance id was found in context data"), w, http.StatusInternalServerError)
-	}
-
 	_, err = p.TransitionIssue(&InTransitionIssue{
-		mattermostUserID: types.ID(mattermostUserID),
-		InstanceID:       types.ID(instanceID),
-		IssueKey:         issueKey,
+		mattermostUserID: types.ID(ctx.authenticatedUserID),
+		InstanceID:       types.ID(ctx.instanceID),
+		IssueKey:         ctx.issueKey,
 		ToState:          toState,
 	})
 	if err != nil {
-		p.client.Post.SendEphemeralPost(mattermostUserID, makePost(jiraBotID, channelID, "Failed to transition this issue."))
+		p.client.Post.SendEphemeralPost(ctx.authenticatedUserID, makePost(jiraBotID, ctx.channelID, "Failed to transition this issue."))
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
@@ -241,6 +287,8 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 	issue := &jira.Issue{
 		Fields: &in.Fields,
 	}
+
+	issue.Fields = preProcessTeamID(issue.Fields, teamFieldKey)
 
 	channelID := in.ChannelID
 	if post != nil {
@@ -370,6 +418,20 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 	return createdIssue, http.StatusOK, nil
 }
 
+// Extract the "id" value from the custom field map and replace it
+// with a plain string, since Jira expects the field value directly.
+func preProcessTeamID(fields *jira.IssueFields, teamFieldID string) *jira.IssueFields {
+	if raw, ok := fields.Unknowns[teamFieldID]; ok {
+		if m, ok := raw.(map[string]interface{}); ok {
+			if id, ok := m["id"].(string); ok {
+				fields.Unknowns[teamFieldID] = id
+			}
+		}
+	}
+
+	return fields
+}
+
 func (p *Plugin) httpGetCreateIssueMetadataForProjects(w http.ResponseWriter, r *http.Request) (int, error) {
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	projectKeys := r.FormValue("project-keys")
@@ -413,10 +475,52 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 		return nil, err
 	}
 
+	teamIDList := p.conf.TeamIDList
+	if len(teamIDList) > 0 {
+		injectTeamAllowedValues(metaInfo, teamIDList)
+	}
+
 	return &CreateMetaInfo{
 		metaInfo,
 		projectStatuses,
 	}, nil
+}
+
+// The go-jira package does not support the Team field by default,
+// and the Jira API does not include Team data in the issue metadata.
+// Therefore, we need to manually inject the allowed Team values into the fields.
+func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamList) {
+	allowedValues := make([]map[string]string, 0, len(teamIDList))
+	for _, team := range teamIDList {
+		allowedValues = append(allowedValues, map[string]string{
+			"id":    team.ID,
+			"name":  team.Name,
+			"value": team.Name,
+		})
+	}
+
+	for _, project := range metaInfo.Projects {
+		for _, issueType := range project.IssueTypes {
+			for key, rawField := range issueType.Fields {
+				fieldMap, ok := rawField.(map[string]any)
+				if !ok {
+					continue
+				}
+
+				schemaRaw, ok := fieldMap["schema"].(map[string]any)
+				if !ok {
+					continue
+				}
+
+				if schemaRaw["custom"] != "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team" {
+					continue
+				}
+
+				fieldMap["allowedValues"] = allowedValues
+				issueType.Fields[key] = fieldMap
+			}
+		}
+	}
 }
 
 func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -685,10 +789,9 @@ func (p *Plugin) httpAttachCommentToIssue(w http.ResponseWriter, r *http.Request
 	}
 
 	in.mattermostUserID = types.ID(r.Header.Get("Mattermost-User-Id"))
-	added, err := p.AttachCommentToIssue(&in)
+	added, statusCode, err := p.AttachCommentToIssue(&in)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to attach comment to issue"))
+		return respondErr(w, statusCode, errors.WithMessage(err, "failed to attach comment to issue"))
 	}
 
 	return respondJSON(w, added)
@@ -702,24 +805,29 @@ type InAttachCommentToIssue struct {
 	IssueKey         string   `json:"issueKey"`
 }
 
-func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment, error) {
+func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment, int, error) {
 	client, instance, connection, err := p.getClient(in.InstanceID, in.mattermostUserID)
 	if err != nil {
-		return nil, err
+		return nil, http.StatusInternalServerError, err
 	}
 
 	// Lets add a permalink to the post in the Jira Description
 	post, err := p.client.Post.GetPost(in.PostID)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to load post "+in.PostID)
+		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to load post "+in.PostID)
 	}
 	if post == nil {
-		return nil, errors.New("failed to load post " + in.PostID + ": not found")
+		return nil, http.StatusNotFound, errors.New("failed to load post " + in.PostID + ": not found")
+	}
+
+	_, err = p.client.Channel.GetMember(post.ChannelId, in.mattermostUserID.String())
+	if err != nil {
+		return nil, http.StatusForbidden, errors.New("User does not have access to this post")
 	}
 
 	commentUser, err := p.client.User.Get(post.UserId)
 	if err != nil {
-		return nil, errors.New("failed to load post.UserID " + post.UserId + ": not found")
+		return nil, http.StatusNotFound, errors.New("failed to load post.UserID " + post.UserId + ": not found")
 	}
 
 	permalink := getPermaLink(instance, in.PostID, in.CurrentTeam)
@@ -733,11 +841,11 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 	added, err := client.AddComment(in.IssueKey, &jiraComment)
 	if err != nil {
 		if strings.Contains(err.Error(), "you do not have the permission to comment on this issue") {
-			return nil, errors.New("you do not have permission to create a comment in the selected Jira issue. Please choose another issue or contact your Jira admin")
+			return nil, http.StatusForbidden, errors.New("you do not have permission to create a comment in the selected Jira issue. Please choose another issue or contact your Jira admin")
 		}
 
 		// The error was not a permissions error; it was unanticipated. Return it to the client.
-		return nil, errors.WithMessage(err, "failed to attach the comment, postId: "+in.PostID)
+		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to attach the comment, postId: "+in.PostID)
 	}
 
 	go func() {
@@ -786,10 +894,10 @@ func (p *Plugin) AttachCommentToIssue(in *InAttachCommentToIssue) (*jira.Comment
 	}
 	err = p.client.Post.CreatePost(reply)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to create notification post "+in.PostID)
+		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to create notification post "+in.PostID)
 	}
 
-	return added, nil
+	return added, http.StatusOK, nil
 }
 
 func notifyOnFailedAttachment(instance Instance, mattermostUserID, issueKey string, err error, format string, args ...interface{}) {
@@ -1258,6 +1366,171 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 	}
 
 	return issue, nil
+}
+
+func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
+	if !wh.eventTypes.ContainsAny(createdCommentEvent) {
+		return
+	}
+
+	jwhook := wh.JiraWebhook
+	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
+	commentMessage := fmt.Sprintf(
+		"%s **commented** on %s:\n> %s\n\n*You are watching this %s*",
+		commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body, jwhook.mdIssueType(),
+	)
+	client, connection, err := wh.fetchConnectedUser(p, instanceID)
+	if err != nil || client == nil {
+		p.errorf("error while fetching connected users for the instanceID %v , Error : %v", instanceID, err)
+		return
+	}
+
+	watchers, err := client.GetWatchers(instanceID.String(), wh.Issue.ID, connection)
+	if err != nil {
+		p.errorf("error while getting watchers for the issue id %v , err : %v", wh.Issue.ID, err)
+		return
+	}
+
+	for _, watcherUser := range watchers.Watchers {
+		whUserNotification := webhookUserNotification{
+			jiraUsername:     watcherUser.Name,
+			jiraAccountID:    watcherUser.AccountID,
+			message:          commentMessage,
+			postType:         PostTypeComment,
+			commentSelf:      wh.JiraWebhook.Comment.Self,
+			notificationType: notificationTypeWatching,
+		}
+
+		wh.notifications = append(wh.notifications, whUserNotification)
+	}
+}
+
+func (p *Plugin) applyReporterNotification(wh *webhook, instanceID types.ID, reporter *jira.User) {
+	if !wh.eventTypes.ContainsAny(createdCommentEvent) {
+		return
+	}
+
+	jwhook := wh.JiraWebhook
+	if reporter == nil ||
+		(reporter.Name != "" && reporter.Name == jwhook.User.Name) ||
+		(reporter.AccountID != "" && reporter.AccountID == jwhook.Comment.UpdateAuthor.AccountID) {
+		return
+	}
+
+	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
+	commentMessage := fmt.Sprintf(
+		"%s **commented** on %s:\n> %s\n\n*You reported this %s*",
+		commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body, jwhook.mdIssueType(),
+	)
+
+	connection, err := p.GetUserSetting(wh, instanceID, reporter.Name, reporter.AccountID)
+	if err != nil || connection.Settings == nil || !connection.Settings.ShouldReceiveNotification(notificationTypeReporter) {
+		return
+	}
+
+	wh.notifications = append(wh.notifications, webhookUserNotification{
+		jiraUsername:     reporter.Name,
+		jiraAccountID:    reporter.AccountID,
+		message:          commentMessage,
+		postType:         PostTypeComment,
+		commentSelf:      jwhook.Comment.Self,
+		notificationType: notificationTypeReporter,
+	})
+}
+
+func (p *Plugin) GetUserSetting(wh *webhook, instanceID types.ID, jiraAccountID, jiraUsername string) (*Connection, error) {
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return nil, err
+	}
+
+	var mattermostUserID types.ID
+	jiraUserID := jiraAccountID
+	if jiraUserID == "" {
+		jiraUserID = jiraUsername
+	}
+
+	mattermostUserID, err = p.userStore.LoadMattermostUserID(instance.GetID(), jiraUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	connection, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return connection, nil
+}
+
+func (s *ConnectionSettings) ShouldReceiveNotification(role string) bool {
+	if val, ok := s.RolesForDMNotification[role]; ok {
+		return val
+	}
+
+	// Check old setting for backwards compatibility
+	return s.Notifications
+}
+
+func (p *Plugin) fetchConnectedUserFromAccount(account map[string]string, instance Instance) (Client, *Connection, error) {
+	accountKey := account[jiraUserName]
+	if account[jiraUserAccountID] != "" {
+		accountKey = account[jiraUserAccountID]
+	}
+	mattermostUserID, err := p.userStore.LoadMattermostUserID(instance.GetID(), accountKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	connection, err := p.userStore.LoadConnection(instance.GetID(), mattermostUserID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	client, err := instance.GetClient(connection)
+	if err != nil {
+		return nil, connection, err
+	}
+
+	return client, connection, nil
+}
+
+func appendAccountInformation(accountID, name string, accountInformation *[]map[string]string) {
+	*accountInformation = append(*accountInformation, map[string]string{
+		jiraUserAccountID: accountID,
+		jiraUserName:      name,
+	})
+}
+
+func (wh *webhook) fetchConnectedUser(p *Plugin, instanceID types.ID) (Client, *Connection, error) {
+	var accountInformation []map[string]string
+
+	if wh.Issue.Fields != nil {
+		if wh.Issue.Fields.Creator != nil {
+			appendAccountInformation(wh.Issue.Fields.Creator.AccountID, wh.Issue.Fields.Creator.Name, &accountInformation)
+		}
+		if wh.Issue.Fields.Assignee != nil {
+			appendAccountInformation(wh.Issue.Fields.Assignee.AccountID, wh.Issue.Fields.Assignee.Name, &accountInformation)
+		}
+		if wh.Issue.Fields.Reporter != nil {
+			appendAccountInformation(wh.Issue.Fields.Reporter.AccountID, wh.Issue.Fields.Reporter.Name, &accountInformation)
+		}
+	}
+
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, account := range accountInformation {
+		client, connection, err := p.fetchConnectedUserFromAccount(account, instance)
+		if err != nil {
+			continue
+		}
+
+		return client, connection, nil
+	}
+
+	return nil, nil, nil
 }
 
 type ProjectSearchResponse struct {
