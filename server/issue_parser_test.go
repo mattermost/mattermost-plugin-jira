@@ -17,6 +17,14 @@ func TestAsSlackAttachment(t *testing.T) {
 	instance := testInstance2
 	client := testClient{}
 
+	testPlugin := &Plugin{}
+	testPlugin.updateConfig(func(conf *config) {
+		conf.Secret = someSecret
+	})
+	originalPlugin := instance.Plugin
+	defer func() { instance.Plugin = originalPlugin }()
+	instance.Plugin = testPlugin
+
 	for name, tc := range map[string]struct {
 		issue              *jira.Issue
 		showActions        bool
@@ -130,8 +138,9 @@ func TestAsSlackAttachment(t *testing.T) {
 						Integration: &model.PostActionIntegration{
 							URL: fmt.Sprintf("/plugins/%s/api/v2/transition", manifest.Id),
 							Context: map[string]any{
-								"issue_key":   "some ID",
-								"instance_id": testInstance2.GetID().String(),
+								"issue_key":        "some ID",
+								"instance_id":      testInstance2.GetID().String(),
+								"action_signature": testPlugin.generatePostActionSignature("some ID", testInstance2.GetID().String()),
 							},
 						},
 					},
@@ -141,8 +150,9 @@ func TestAsSlackAttachment(t *testing.T) {
 						Integration: &model.PostActionIntegration{
 							URL: fmt.Sprintf("/plugins/%s/api/v2/share-issue-publicly", manifest.Id),
 							Context: map[string]any{
-								"issue_key":   "some ID",
-								"instance_id": testInstance2.GetID().String(),
+								"issue_key":        "some ID",
+								"instance_id":      testInstance2.GetID().String(),
+								"action_signature": testPlugin.generatePostActionSignature("some ID", testInstance2.GetID().String()),
 							},
 						},
 					},

@@ -4,6 +4,9 @@
 package main
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -22,7 +25,49 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
-var issueKeyRegexp = regexp.MustCompile(`^[A-Z][A-Z0-9_]+-\d+$`)
+var (
+	issueKeyRegexp = regexp.MustCompile(`^[A-Z][A-Z0-9_]+-\d+$`)
+	issueIDRegexp  = regexp.MustCompile(`^\d+$`)
+)
+
+func (p *Plugin) computePostActionSignature(issueKey, instanceID string) ([]byte, bool) {
+	secret := p.getConfig().Secret
+	if secret == "" || issueKey == "" || instanceID == "" {
+		return nil, false
+	}
+
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(issueKey))
+	mac.Write([]byte("|"))
+	mac.Write([]byte(instanceID))
+	return mac.Sum(nil), true
+}
+
+func (p *Plugin) generatePostActionSignature(issueKey, instanceID string) string {
+	sig, ok := p.computePostActionSignature(issueKey, instanceID)
+	if !ok {
+		return ""
+	}
+	return hex.EncodeToString(sig)
+}
+
+func (p *Plugin) verifyPostActionSignature(issueKey, instanceID, signature string) bool {
+	if signature == "" {
+		return false
+	}
+
+	provided, err := hex.DecodeString(signature)
+	if err != nil {
+		return false
+	}
+
+	expected, ok := p.computePostActionSignature(issueKey, instanceID)
+	if !ok {
+		return false
+	}
+
+	return hmac.Equal(expected, provided)
+}
 
 const (
 	assigneeField            = "assignee"
@@ -85,7 +130,7 @@ func decodePostActionRequest(r *http.Request) (string, model.PostActionIntegrati
 	return authenticatedUserID, requestData, 0, nil
 }
 
-func (p *Plugin) buildPostActionContext(authenticatedUserID string, requestData model.PostActionIntegrationRequest) (*postActionContext, int, string) {
+func (p *Plugin) buildPostActionContext(authenticatedUserID string, requestData model.PostActionIntegrationRequest, requireStoredPost bool) (*postActionContext, int, string) {
 	jiraBotID := p.getUserID()
 	channelID := requestData.ChannelId
 	postID := strings.TrimSpace(requestData.PostId)
@@ -93,32 +138,15 @@ func (p *Plugin) buildPostActionContext(authenticatedUserID string, requestData 
 		return nil, http.StatusBadRequest, "missing post id"
 	}
 
-	originalPost, appErr := p.client.Post.GetPost(postID)
-	if appErr != nil || originalPost == nil {
-		return nil, http.StatusNotFound, "post not found"
-	}
-
-	if originalPost.UserId != jiraBotID {
-		return nil, http.StatusUnauthorized, "user not authorized"
-	}
-
-	if originalPost.ChannelId != channelID {
-		return nil, http.StatusBadRequest, "channel mismatch"
-	}
-
-	if requestData.UserId != "" && requestData.UserId != authenticatedUserID {
-		p.client.Log.Warn("post action payload user mismatch",
-			"header_user_id", authenticatedUserID,
-			"payload_user_id", requestData.UserId)
-	}
-
 	val := requestData.Context["issue_key"]
-	issueKey, ok := val.(string)
+	issueKeyValue, ok := val.(string)
 	if !ok {
 		return nil, http.StatusInternalServerError, "No issue key was found in context data"
 	}
-	issueKey = strings.ToUpper(strings.TrimSpace(issueKey))
-	if !issueKeyRegexp.MatchString(issueKey) {
+
+	rawIssueKey := strings.TrimSpace(issueKeyValue)
+	normalizedIssueKey := strings.ToUpper(rawIssueKey)
+	if !issueKeyRegexp.MatchString(normalizedIssueKey) && !issueIDRegexp.MatchString(rawIssueKey) {
 		return nil, http.StatusBadRequest, "invalid issue key"
 	}
 
@@ -127,11 +155,47 @@ func (p *Plugin) buildPostActionContext(authenticatedUserID string, requestData 
 	if !ok {
 		return nil, http.StatusInternalServerError, "No instance id was found in context data"
 	}
+	instanceID = strings.TrimSpace(instanceID)
+
+	signature, _ := requestData.Context["action_signature"].(string)
+	hasValidSignature := p.verifyPostActionSignature(rawIssueKey, instanceID, signature)
+	allowMissingPost := hasValidSignature && !requireStoredPost
+
+	originalPost, appErr := p.client.Post.GetPost(postID)
+	if appErr != nil || originalPost == nil {
+		if !allowMissingPost {
+			return nil, http.StatusNotFound, "post not found"
+		}
+	} else {
+		if originalPost.UserId != jiraBotID {
+			return nil, http.StatusUnauthorized, "user not authorized"
+		}
+
+		if originalPost.ChannelId != channelID {
+			return nil, http.StatusBadRequest, "channel mismatch"
+		}
+	}
+
+	if originalPost == nil {
+		if channelID == "" {
+			return nil, http.StatusBadRequest, "missing channel id"
+		}
+
+		if _, err := p.client.Channel.GetMember(channelID, authenticatedUserID); err != nil {
+			return nil, http.StatusUnauthorized, "user not authorized"
+		}
+	}
+
+	if requestData.UserId != "" && requestData.UserId != authenticatedUserID {
+		p.client.Log.Warn("post action payload user mismatch",
+			"header_user_id", authenticatedUserID,
+			"payload_user_id", requestData.UserId)
+	}
 
 	return &postActionContext{
 		authenticatedUserID: authenticatedUserID,
 		channelID:           channelID,
-		issueKey:            issueKey,
+		issueKey:            normalizedIssueKey,
 		instanceID:          instanceID,
 		postID:              postID,
 	}, 0, ""
@@ -144,7 +208,7 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 	}
 
 	jiraBotID := p.getUserID()
-	ctx, status, errMsg := p.buildPostActionContext(authenticatedUserID, requestData)
+	ctx, status, errMsg := p.buildPostActionContext(authenticatedUserID, requestData, false)
 	if errMsg != "" {
 		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, requestData.ChannelId, errMsg), w, status)
 	}
@@ -175,9 +239,9 @@ func (p *Plugin) httpShareIssuePublicly(w http.ResponseWriter, r *http.Request) 
 
 	p.client.Post.DeleteEphemeralPost(ctx.authenticatedUserID, ctx.postID)
 
-	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write([]byte(`{statusField: "OK"}`))
-	return http.StatusOK, err
+	return respondJSON(w, map[string]string{
+		statusField: "OK",
+	})
 }
 
 func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -187,7 +251,7 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 	}
 
 	jiraBotID := p.getUserID()
-	ctx, status, errMsg := p.buildPostActionContext(authenticatedUserID, requestData)
+	ctx, status, errMsg := p.buildPostActionContext(authenticatedUserID, requestData, false)
 	if errMsg != "" {
 		return p.respondErrWithFeedback(authenticatedUserID, makePost(jiraBotID, requestData.ChannelId, errMsg), w, status)
 	}
@@ -210,9 +274,9 @@ func (p *Plugin) httpTransitionIssuePostAction(w http.ResponseWriter, r *http.Re
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write([]byte(`{statusField: "OK"}`))
-	return http.StatusOK, err
+	return respondJSON(w, map[string]string{
+		statusField: "OK",
+	})
 }
 
 func (p *Plugin) respondErrWithFeedback(mattermostUserID string, post *model.Post, w http.ResponseWriter, status int) (int, error) {

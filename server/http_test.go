@@ -1462,7 +1462,7 @@ func TestShareIssuePubliclyAuthentication(t *testing.T) {
 	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 	api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
 	api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(&model.Post{})
-	api.On("GetPost", "attacker-post").Return(&model.Post{UserId: "attacker"}, (*model.AppError)(nil))
+	api.On("GetPost", "attacker-post").Return(&model.Post{UserId: "attacker", ChannelId: "channel-id"}, (*model.AppError)(nil))
 
 	p := &Plugin{}
 	p.SetAPI(api)
@@ -1470,6 +1470,7 @@ func TestShareIssuePubliclyAuthentication(t *testing.T) {
 	p.initializeRouter()
 	p.updateConfig(func(conf *config) {
 		conf.botUserID = "bot-user"
+		conf.Secret = someSecret
 	})
 
 	t.Run("missing Mattermost user header", func(t *testing.T) {
@@ -1481,8 +1482,16 @@ func TestShareIssuePubliclyAuthentication(t *testing.T) {
 
 	t.Run("post not authored by jira bot", func(t *testing.T) {
 		payload := model.PostActionIntegrationRequest{
-			UserId: "victim",
-			PostId: "attacker-post",
+			UserId:    "victim",
+			PostId:    "attacker-post",
+			ChannelId: "channel-id",
+			Context: map[string]interface{}{
+				"issue_key":   "MM-123",
+				"instance_id": "https://example.com",
+			},
+		}
+		if sig := p.generatePostActionSignature("MM-123", "https://example.com"); sig != "" {
+			payload.Context["action_signature"] = sig
 		}
 		body, err := json.Marshal(payload)
 		require.NoError(t, err)

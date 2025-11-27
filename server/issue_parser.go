@@ -32,12 +32,18 @@ func reporterSummary(reporter *jira.User) string {
 	return reporterSummary
 }
 
-func getActions(instanceID types.ID, client Client, issue *jira.Issue) ([]*model.PostAction, error) {
+func getActions(p *Plugin, instanceID types.ID, client Client, issue *jira.Issue) ([]*model.PostAction, error) {
 	var actions []*model.PostAction
 
 	ctx := map[string]interface{}{
 		"issue_key":   issue.ID,
 		"instance_id": instanceID.String(),
+	}
+
+	if p != nil {
+		if sig := p.generatePostActionSignature(issue.ID, instanceID.String()); sig != "" {
+			ctx["action_signature"] = sig
+		}
 	}
 
 	integration := &model.PostActionIntegration{
@@ -116,7 +122,7 @@ func asSlackAttachment(instance Instance, client Client, issue *jira.Issue, show
 	var actions []*model.PostAction
 	var err error
 	if showActions {
-		actions, err = getActions(instance.GetID(), client, issue)
+		actions, err = getActions(instance.Common().Plugin, instance.GetID(), client, issue)
 		if err != nil {
 			return []*model.SlackAttachment{}, err
 		}
