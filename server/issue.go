@@ -553,7 +553,7 @@ func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int,
 
 func (p *Plugin) httpGetCommentVisibilityFields(w http.ResponseWriter, r *http.Request) (int, error) {
 	if r.Method != http.MethodGet {
-		return http.StatusMethodNotAllowed, fmt.Errorf("Request: " + r.Method + " is not allowed, must be GET")
+		return http.StatusMethodNotAllowed, fmt.Errorf("Request: %s is not allowed, must be GET", r.Method)
 	}
 
 	mattermostUserID := r.Header.Get(headerMattermostUserID)

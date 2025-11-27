@@ -30,11 +30,11 @@ const (
 )
 
 func validRequestBody() io.ReadCloser {
-	if f, err := os.Open("testdata/webhook-issue-created.json"); err != nil {
+	f, err := os.Open("testdata/webhook-issue-created.json")
+	if err != nil {
 		panic(err)
-	} else {
-		return f
 	}
+	return f
 }
 
 type TestConfiguration struct {

@@ -671,15 +671,15 @@ func TestFetchConnectedUser(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: errors.New(fmt.Sprintf("instance %q not found", "test-instanceID")),
+			expectedErr: fmt.Errorf("instance %q not found", "test-instanceID"),
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			client, connection, error := tt.wh.fetchConnectedUser(p, tt.instanceID)
+			client, connection, err := tt.wh.fetchConnectedUser(p, tt.instanceID)
 			assert.Equal(t, tt.connection, connection)
 			assert.Equal(t, tt.client, client)
 			if tt.expectedErr != nil {
-				assert.Error(t, tt.expectedErr, error)
+				assert.Error(t, tt.expectedErr, err)
 			}
 		})
 	}
@@ -770,10 +770,10 @@ func TestGetUserSetting(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			connection, error := p.GetUserSetting(tt.wh, tt.instanceID, jiraAccountID, jiraUsername)
+			connection, err := p.GetUserSetting(tt.wh, tt.instanceID, jiraAccountID, jiraUsername)
 			assert.Equal(t, tt.connection, connection)
 			if tt.expectedErr != nil {
-				assert.Error(t, tt.expectedErr, error)
+				assert.Error(t, tt.expectedErr, err)
 			}
 		})
 	}

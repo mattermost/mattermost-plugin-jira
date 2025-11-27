@@ -189,9 +189,8 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 
 		if _, ok := mapForNotification[mattermostUserID]; ok {
 			continue
-		} else {
-			mapForNotification[mattermostUserID] = 1
 		}
+		mapForNotification[mattermostUserID] = 1
 
 		isCommentEvent := wh.Events().Intersection(commentEvents).Len() > 0
 		if isCommentEvent {

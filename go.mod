@@ -1,8 +1,6 @@
 module github.com/mattermost/mattermost-plugin-jira
 
-go 1.23.0
-
-toolchain go1.23.9
+go 1.24.6
 
 require (
 	github.com/andygrunwald/go-jira v1.16.0

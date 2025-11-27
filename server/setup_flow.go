@@ -588,7 +588,7 @@ func (p *Plugin) submitDelegateSelection(f *flow.Flow, submission map[string]int
 		keyDelegatedFromUserID: f.UserID,
 	})
 	if err != nil {
-		return "", nil, nil, errors.Wrap(err, "failed to start configration wizzard")
+		return "", nil, nil, errors.Wrap(err, "failed to start configuration wizard")
 	}
 
 	return stepDelegated, flow.State{
