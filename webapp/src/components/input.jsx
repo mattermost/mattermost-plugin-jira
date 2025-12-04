@@ -27,6 +27,8 @@ export default class Input extends PureComponent {
             'number',
             'input',
             'textarea',
+            'date',
+            'datetime-local',
         ]),
     };
 
@@ -129,6 +131,20 @@ export default class Input extends PureComponent {
                     id={this.props.id}
                     className='form-control'
                     rows='5'
+                    placeholder={this.props.placeholder}
+                    value={value}
+                    maxLength={this.props.maxLength}
+                    onChange={this.handleChange}
+                    disabled={this.props.disabled}
+                    readOnly={this.props.readOnly}
+                />
+            );
+        } else if (this.props.type === 'date' || this.props.type === 'datetime-local') {
+            input = (
+                <input
+                    id={this.props.id}
+                    className='form-control'
+                    type={this.props.type}
                     placeholder={this.props.placeholder}
                     value={value}
                     maxLength={this.props.maxLength}
