@@ -216,12 +216,21 @@ func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 
 func createIssueCommand(optInstance bool) *model.AutocompleteData {
 	issue := model.NewAutocompleteData(
-		"issue", "[view|assign|transition]", "View and manage Jira issues")
+		"issue", "[view|assign|transition|create]", "View and manage Jira issues")
 	issue.AddCommand(createViewCommand(optInstance))
 	issue.AddCommand(createTransitionCommand(optInstance))
 	issue.AddCommand(createAssignCommand(optInstance))
 	issue.AddCommand(createUnassignCommand(optInstance))
+	issue.AddCommand(createCreateIssueCommand(optInstance))
 	return issue
+}
+
+func createCreateIssueCommand(optInstance bool) *model.AutocompleteData {
+	create := model.NewAutocompleteData(
+		"create", "[description]", "Create a new Jira issue and optionally prefill its description")
+	create.AddTextArgument("Description", "Optional text inserted into the Jira issue description", "")
+	withFlagInstance(create, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
+	return create
 }
 
 func withFlagInstance(cmd *model.AutocompleteData, optInstance bool, route string) {

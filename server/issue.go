@@ -92,7 +92,8 @@ const (
 
 	expandValueGroups = "groups"
 
-	teamFieldKey = "customfield_10001"
+	teamFieldSchema     = "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team"
+	defaultTeamFieldKey = "customfield_10001"
 )
 
 type CreateMetaInfo struct {
@@ -352,7 +353,7 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 		Fields: &in.Fields,
 	}
 
-	issue.Fields = preProcessTeamID(issue.Fields, teamFieldKey)
+	issue.Fields = preProcessTeamFields(issue.Fields, p.getTeamFieldKeys(in.InstanceID))
 
 	channelID := in.ChannelID
 	if post != nil {
@@ -482,13 +483,21 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 	return createdIssue, http.StatusOK, nil
 }
 
-// Extract the "id" value from the custom field map and replace it
+// Extract the "id" value from any Team field custom map and replace it
 // with a plain string, since Jira expects the field value directly.
-func preProcessTeamID(fields *jira.IssueFields, teamFieldID string) *jira.IssueFields {
-	if raw, ok := fields.Unknowns[teamFieldID]; ok {
+func preProcessTeamFields(fields *jira.IssueFields, teamFieldKeys map[string]struct{}) *jira.IssueFields {
+	if fields == nil || len(teamFieldKeys) == 0 {
+		return fields
+	}
+
+	for key, raw := range fields.Unknowns {
+		if _, ok := teamFieldKeys[strings.ToLower(key)]; !ok {
+			continue
+		}
+
 		if m, ok := raw.(map[string]interface{}); ok {
 			if id, ok := m["id"].(string); ok {
-				fields.Unknowns[teamFieldID] = id
+				fields.Unknowns[key] = id
 			}
 		}
 	}
@@ -539,9 +548,9 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 		return nil, err
 	}
 
-	teamIDList := p.conf.TeamIDList
-	if len(teamIDList) > 0 {
-		injectTeamAllowedValues(metaInfo, teamIDList)
+	teamFieldKeys := injectTeamAllowedValues(metaInfo, p.conf.TeamIDList)
+	if len(teamFieldKeys) > 0 {
+		p.cacheTeamFieldKeys(instanceID, teamFieldKeys)
 	}
 
 	return &CreateMetaInfo{
@@ -553,7 +562,7 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 // The go-jira package does not support the Team field by default,
 // and the Jira API does not include Team data in the issue metadata.
 // Therefore, we need to manually inject the allowed Team values into the fields.
-func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamList) {
+func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamList) []string {
 	allowedValues := make([]map[string]string, 0, len(teamIDList))
 	for _, team := range teamIDList {
 		allowedValues = append(allowedValues, map[string]string{
@@ -562,6 +571,8 @@ func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamLis
 			"value": team.Name,
 		})
 	}
+
+	foundKeys := map[string]struct{}{}
 
 	for _, project := range metaInfo.Projects {
 		for _, issueType := range project.IssueTypes {
@@ -576,15 +587,27 @@ func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamLis
 					continue
 				}
 
-				if schemaRaw["custom"] != "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team" {
+				if schemaRaw["custom"] != teamFieldSchema {
 					continue
 				}
 
-				fieldMap["allowedValues"] = allowedValues
-				issueType.Fields[key] = fieldMap
+				lowerKey := strings.ToLower(key)
+				foundKeys[lowerKey] = struct{}{}
+
+				if len(allowedValues) > 0 {
+					fieldMap["allowedValues"] = allowedValues
+					issueType.Fields[key] = fieldMap
+				}
 			}
 		}
 	}
+
+	result := make([]string, 0, len(foundKeys))
+	for key := range foundKeys {
+		result = append(result, key)
+	}
+
+	return result
 }
 
 func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int, error) {

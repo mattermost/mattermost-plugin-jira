@@ -223,40 +223,6 @@ exports[`components/CreateIssue should match snapshot with error 1`] = `
       />
       <JiraFields
         addValidate={[Function]}
-        allowedFields={
-          [
-            "project",
-            "issuetype",
-            "reporter",
-            "priority",
-            "description",
-            "summary",
-            "labels",
-            "assignee",
-            "security",
-            "components",
-            "fixVersions",
-            "versions",
-          ]
-        }
-        allowedSchemaCustom={
-          [
-            "com.atlassian.jira.plugin.system.customfieldtypes:textarea",
-            "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
-            "com.atlassian.jira.plugin.system.customfieldtypes:select",
-            "com.atlassian.jira.plugin.system.customfieldtypes:project",
-            "com.pyxis.greenhopper.jira:gh-epic-link",
-            "com.pyxis.greenhopper.jira:gh-epic-label",
-            "com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect",
-            "com.atlassian.jira.plugin.system.customfieldtypes:multiselect",
-            "com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons",
-            "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
-            "com.atlassian.jira.plugin.system.customfieldtypes:url",
-            "com.atlassian.jira.plugin.system.customfieldtypes:labels",
-            "com.atlassian.jira.plugin.system.customfieldtypes:userpicker",
-            "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team",
-          ]
-        }
         fields={
           {
             "assignee": {
@@ -3216,40 +3182,6 @@ exports[`components/CreateIssue should match snapshot with form filled 1`] = `
       />
       <JiraFields
         addValidate={[Function]}
-        allowedFields={
-          [
-            "project",
-            "issuetype",
-            "reporter",
-            "priority",
-            "description",
-            "summary",
-            "labels",
-            "assignee",
-            "security",
-            "components",
-            "fixVersions",
-            "versions",
-          ]
-        }
-        allowedSchemaCustom={
-          [
-            "com.atlassian.jira.plugin.system.customfieldtypes:textarea",
-            "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
-            "com.atlassian.jira.plugin.system.customfieldtypes:select",
-            "com.atlassian.jira.plugin.system.customfieldtypes:project",
-            "com.pyxis.greenhopper.jira:gh-epic-link",
-            "com.pyxis.greenhopper.jira:gh-epic-label",
-            "com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect",
-            "com.atlassian.jira.plugin.system.customfieldtypes:multiselect",
-            "com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons",
-            "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
-            "com.atlassian.jira.plugin.system.customfieldtypes:url",
-            "com.atlassian.jira.plugin.system.customfieldtypes:labels",
-            "com.atlassian.jira.plugin.system.customfieldtypes:userpicker",
-            "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team",
-          ]
-        }
         fields={
           {
             "assignee": {

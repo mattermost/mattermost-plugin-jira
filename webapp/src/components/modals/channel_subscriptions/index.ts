@@ -22,6 +22,7 @@ import {
     fetchJiraProjectMetadataForAllInstances,
     fetchSubscriptionTemplatesForProjectKey,
     getConnected,
+    searchTeamFields,
     sendEphemeralPost,
 } from 'actions';
 
@@ -81,6 +82,7 @@ const mapDispatchToProps = (dispatch) => bindActionCreators({
     editChannelSubscription,
     editSubscriptionTemplate,
     getConnected,
+    searchTeamFields,
     sendEphemeralPost,
 }, dispatch);
 

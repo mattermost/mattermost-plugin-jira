@@ -180,7 +180,7 @@ func (p *Plugin) getUserID() string {
 	return p.getConfig().botUserID
 }
 
-func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilters) bool {
+func (p *Plugin) matchesSubsciptionFilters(wh *webhook, instanceID types.ID, filters SubscriptionFilters) bool {
 	webhookEvents := wh.Events()
 	foundEvent := false
 	eventTypes := filters.Events
@@ -199,6 +199,7 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 	}
 
 	issue := &wh.JiraWebhook.Issue
+	teamFieldKeys := p.getTeamFieldKeys(instanceID)
 
 	if filters.IssueTypes.Len() != 0 && !filters.IssueTypes.ContainsAny(issue.Fields.Type.ID) {
 		return false
@@ -231,7 +232,7 @@ func (p *Plugin) matchesSubsciptionFilters(wh *webhook, filters SubscriptionFilt
 		}
 
 		if field.Key == TeamFilter {
-			value = updateTeamValue(value, wh, teamFieldKey)
+			value = updateTeamValue(value, issue, teamFieldKeys)
 		}
 
 		if shouldAddVisibleToAllUsersToFieldValues(wh, field) {
@@ -266,26 +267,17 @@ type JiraTeamData struct {
 	Name string `json:"name"`
 }
 
-func updateTeamValue(value StringSet, wh *webhook, teamFieldID string) StringSet {
-	raw, ok := wh.Issue.Fields.Unknowns[teamFieldID]
-	if !ok {
+func updateTeamValue(value StringSet, issue *jira.Issue, teamFieldKeys map[string]struct{}) StringSet {
+	if issue == nil || len(teamFieldKeys) == 0 {
 		return value
 	}
 
-	var teamField JiraTeamData
-
-	bytes, err := json.Marshal(raw)
-	if err != nil {
-		return value
-	}
-
-	err = json.Unmarshal(bytes, &teamField)
-	if err != nil {
-		return value
-	}
-
-	if teamField.ID != "" {
-		return value.Add(teamField.ID)
+	for key := range teamFieldKeys {
+		fieldValues := getIssueFieldValue(issue, key)
+		if fieldValues.Len() == 0 {
+			continue
+		}
+		value = value.Add(fieldValues.Elems()...)
 	}
 
 	return value
@@ -320,7 +312,7 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) ([]Chan
 	subscriptionMap := make(map[string]bool)
 	subIds := subs.Channel.ByID
 	for _, sub := range subIds {
-		if p.matchesSubsciptionFilters(wh, sub.Filters) {
+		if p.matchesSubsciptionFilters(wh, instanceID, sub.Filters) {
 			if !subscriptionMap[sub.ChannelID] {
 				subscriptionMap[sub.ChannelID] = true
 				channelSubscriptions = append(channelSubscriptions, sub)

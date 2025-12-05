@@ -8,7 +8,7 @@ import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {CreateIssueFields, IssueMetadata, JiraField} from 'types/model';
 
-import JiraFieldComponent from './jira_field';
+import JiraFieldComponent, {isFieldSupported} from './jira_field';
 
 type Props = {
     fields: {[key: string]: JiraField};
@@ -17,8 +17,6 @@ type Props = {
     issueMetadata: IssueMetadata | null;
     values: CreateIssueFields;
     isFilter: boolean;
-    allowedFields: string[];
-    allowedSchemaCustom: string[];
     theme: Theme;
     addValidate: (isValid: () => boolean) => void;
     removeValidate: (isValid: () => boolean) => void;
@@ -35,15 +33,13 @@ export default class JiraFields extends React.Component<Props> {
         issueMetadata: PropTypes.object.isRequired,
         values: PropTypes.object,
         isFilter: PropTypes.bool,
-        allowedFields: PropTypes.array.isRequired,
-        allowedSchemaCustom: PropTypes.array.isRequired,
         theme: PropTypes.object.isRequired,
         addValidate: PropTypes.func.isRequired,
         removeValidate: PropTypes.func.isRequired,
     };
 
     getSortedFields = () => {
-        const {allowedFields, allowedSchemaCustom, fields} = this.props;
+        const {fields} = this.props;
         let fieldKeys = Object.keys(fields);
 
         const start = [];
@@ -55,18 +51,11 @@ export default class JiraFields extends React.Component<Props> {
         }
 
         fieldKeys = fieldKeys.filter((key) => {
-            const field = fields[key];
             if (['summary', 'description', 'issuetype', 'project'].includes(key)) {
                 return false;
             }
-            if (field.schema.custom && !allowedSchemaCustom.includes(field.schema.custom)) {
-                return false;
-            }
-            if (!field.schema.custom && !allowedFields.includes(key)) {
-                return false;
-            }
 
-            return true;
+            return isFieldSupported(fields[key]);
         }).sort((a, b) => {
             const f1 = fields[a];
             const f2 = fields[b];

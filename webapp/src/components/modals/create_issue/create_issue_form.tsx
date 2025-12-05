@@ -14,8 +14,6 @@ import {
     CreateIssueRequest,
     IssueMetadata,
     JiraField,
-    JiraFieldCustomTypeEnums,
-    JiraFieldTypeEnums,
     SavedFieldValues,
 } from 'types/model';
 
@@ -24,42 +22,11 @@ import {getModalStyles} from 'utils/styles';
 
 import Validator from 'components/validator';
 import JiraFields from 'components/jira_fields';
+import {isFieldSupported} from 'components/jira_field';
 import FormButton from 'components/form_button';
 import Loading from 'components/loading';
 import ReactSelectSetting from 'components/react_select_setting';
 import JiraInstanceAndProjectSelector from 'components/jira_instance_and_project_selector';
-
-const allowedFields: string[] = [
-    JiraFieldTypeEnums.PROJECT,
-    JiraFieldTypeEnums.ISSUE_TYPE,
-    JiraFieldTypeEnums.REPORTER,
-    JiraFieldTypeEnums.PRIORITY,
-    JiraFieldTypeEnums.DESCRIPTION,
-    JiraFieldTypeEnums.SUMMARY,
-    JiraFieldTypeEnums.LABELS,
-    JiraFieldTypeEnums.ASSIGNEE,
-    JiraFieldTypeEnums.SECURITY,
-    JiraFieldTypeEnums.COMPONENTS,
-    JiraFieldTypeEnums.FIX_VERSIONS,
-    JiraFieldTypeEnums.AFFECTS_VERSIONS,
-];
-
-const allowedSchemaCustom: string[] = [
-    JiraFieldCustomTypeEnums.TEXT_AREA,
-    JiraFieldCustomTypeEnums.TEXT_FIELD,
-    JiraFieldCustomTypeEnums.SELECT,
-    JiraFieldCustomTypeEnums.PROJECT,
-    JiraFieldCustomTypeEnums.EPIC_LINK,
-    JiraFieldCustomTypeEnums.EPIC_NAME,
-    JiraFieldCustomTypeEnums.CASCADING_SELECT,
-    JiraFieldCustomTypeEnums.MULTI_SELECT,
-    JiraFieldCustomTypeEnums.RADIO_BUTTONS,
-    JiraFieldCustomTypeEnums.MULTI_CHECKBOXES,
-    JiraFieldCustomTypeEnums.URL_FIELD,
-    JiraFieldCustomTypeEnums.LABELS,
-    JiraFieldCustomTypeEnums.USER_PICKER,
-    JiraFieldCustomTypeEnums.TEAM,
-];
 
 type Props = {
     close: (e?: Event) => void;
@@ -216,7 +183,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             const field = fields[key];
             if (field.required) {
                 // Field is required and not supported by this modal.
-                if ((!field.schema.custom && !allowedFields.includes(key)) || (field.schema.custom && !allowedSchemaCustom.includes(field.schema.custom))) {
+                if (!isFieldSupported(field)) {
                     if (!fieldsNotCovered.find((f) => f[0] === key)) {
                         fieldsNotCovered.push([key, field.name]);
                     }
@@ -296,8 +263,6 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                     issueMetadata={this.state.jiraIssueMetadata as IssueMetadata}
                     onChange={this.handleFieldChange}
                     values={this.state.fields}
-                    allowedFields={allowedFields}
-                    allowedSchemaCustom={allowedSchemaCustom}
                     theme={this.props.theme}
                     addValidate={this.validator.addComponent}
                     removeValidate={this.validator.removeComponent}

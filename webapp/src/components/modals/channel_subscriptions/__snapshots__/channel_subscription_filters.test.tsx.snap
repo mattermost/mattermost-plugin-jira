@@ -139,6 +139,7 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
               "key": "teamField",
               "name": "Team",
               "schema": {
+                "custom": "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team",
                 "type": "team",
               },
               "values": [],
@@ -214,6 +215,7 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
         onChange={[Function]}
         removeFilter={[Function]}
         removeValidate={[MockFunction]}
+        searchTeamFields={[MockFunction]}
         securityLevelEmptyForJiraSubscriptions={true}
         theme={{}}
         value={
@@ -316,6 +318,7 @@ exports[`components/ChannelSubscriptionFilters should match snapshot 1`] = `
               "key": "teamField",
               "name": "Team",
               "schema": {
+                "custom": "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team",
                 "type": "team",
               },
               "values": [],

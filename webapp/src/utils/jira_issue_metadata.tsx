@@ -317,22 +317,26 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
 
     result.push(commentVisibilityField);
 
-    const teamField = {
-        key: TEAM_FIELD,
-        name: 'Team',
-        schema: {
-            type: 'team',
-        },
-        values: [],
-        issueTypes: metadata && metadata.issue_types_with_statuses.map((type) => {
-            return {
-                id: type.id,
-                name: type.name,
-            };
-        }),
-    } as FilterField;
+    const hasTeamField = result.some((field) => isTeamField(field));
+    if (!hasTeamField) {
+        const teamField = {
+            key: TEAM_FIELD,
+            name: 'Team',
+            schema: {
+                type: 'team',
+                custom: JiraFieldCustomTypeEnums.TEAM,
+            },
+            values: [],
+            issueTypes: metadata && metadata.issue_types_with_statuses.map((type) => {
+                return {
+                    id: type.id,
+                    name: type.name,
+                };
+            }),
+        } as FilterField;
 
-    result.push(teamField);
+        result.push(teamField);
+    }
 
     const statusField = getStatusField(metadata, issueTypes);
     if (statusField) {
@@ -390,7 +394,11 @@ export function isCommentVisibilityField(field: JiraField | FilterField): boolea
 }
 
 export function isTeamField(field: JiraField | FilterField): boolean {
-    return field.key === TEAM_FIELD;
+    if (field.key === TEAM_FIELD) {
+        return true;
+    }
+
+    return Boolean(field.schema && field.schema.custom === JiraFieldCustomTypeEnums.TEAM);
 }
 
 export function isEpicIssueType(issueType: IssueType): boolean {

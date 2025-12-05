@@ -163,6 +163,9 @@ type Plugin struct {
 
 	// telemetry Tracker
 	tracker telemetry.Tracker
+
+	teamFieldCache     map[types.ID]map[string]struct{}
+	teamFieldCacheLock sync.RWMutex
 }
 
 func (p *Plugin) getConfig() config {
@@ -336,6 +339,7 @@ func (p *Plugin) OnActivate() error {
 	p.secretsStore = store
 	p.otsStore = store
 	p.client = pluginapi.NewClient(p.API, p.Driver)
+	p.teamFieldCache = make(map[types.ID]map[string]struct{})
 
 	p.initializeRouter()
 

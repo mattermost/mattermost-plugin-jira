@@ -349,6 +349,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                     fieldName={field.name}
                     value={value.values}
                     onChange={this.handleTeamSelection}
+                    searchTeamFields={this.props.searchTeamFields}
                 />
             );
         } else if (isUserField(field)) {
