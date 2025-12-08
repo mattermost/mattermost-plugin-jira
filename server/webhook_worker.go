@@ -51,6 +51,10 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 		return err
 	}
 
+	if !ww.p.shouldProcessCommentNotification(v) {
+		return nil
+	}
+
 	ww.p.checkIssueWatchers(v, msg.InstanceID)
 	ww.p.applyReporterNotification(v, msg.InstanceID, v.Issue.Fields.Reporter)
 

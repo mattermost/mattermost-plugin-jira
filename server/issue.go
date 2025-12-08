@@ -1455,7 +1455,15 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 		return
 	}
 
+	author := &jwhook.Comment.UpdateAuthor
 	for _, watcherUser := range watchers.Watchers {
+		if watcherUser == nil {
+			continue
+		}
+		if !shouldNotifyWatcherUser(*watcherUser, author) {
+			continue
+		}
+
 		whUserNotification := webhookUserNotification{
 			jiraUsername:     watcherUser.Name,
 			jiraAccountID:    watcherUser.AccountID,
@@ -1639,4 +1647,20 @@ func (p *Plugin) GetProjectListWithAPIToken(instanceID string) (*jira.ProjectLis
 	}
 
 	return &projectResponse.Values, nil
+}
+
+func shouldNotifyWatcherUser(watcher jira.Watcher, author *jira.User) bool {
+	if author == nil {
+		return true
+	}
+
+	if watcher.AccountID != "" && author.AccountID != "" {
+		return watcher.AccountID != author.AccountID
+	}
+
+	if watcher.Name != "" && author.Name != "" {
+		return watcher.Name != author.Name
+	}
+
+	return true
 }
