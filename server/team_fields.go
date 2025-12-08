@@ -48,9 +48,8 @@ func (p *Plugin) cacheTeamFieldKeys(instanceID types.ID, keys []string) {
 func (p *Plugin) getTeamFieldKeys(instanceID types.ID) map[string]struct{} {
 	p.teamFieldCacheLock.RLock()
 	cached := p.teamFieldCache[instanceID]
-	p.teamFieldCacheLock.RUnlock()
-
 	if len(cached) == 0 {
+		p.teamFieldCacheLock.RUnlock()
 		return map[string]struct{}{
 			defaultTeamFieldKey: {},
 		}
@@ -60,6 +59,7 @@ func (p *Plugin) getTeamFieldKeys(instanceID types.ID) map[string]struct{} {
 	for key := range cached {
 		result[key] = struct{}{}
 	}
+	p.teamFieldCacheLock.RUnlock()
 
 	return result
 }
