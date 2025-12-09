@@ -49,7 +49,8 @@ const (
 	WebhookBufferSize        = 10000
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
 
-	recentCommentCacheTTL = 30 * time.Second
+	recentCommentCacheTTL    = 30 * time.Second
+	recentCommentCleanupEvery = 32
 )
 
 type externalConfig struct {
@@ -169,6 +170,7 @@ type Plugin struct {
 
 	recentCommentCache     map[string]time.Time
 	recentCommentCacheLock sync.Mutex
+	recentCommentCleanups  int
 }
 
 func (p *Plugin) getConfig() config {
@@ -201,9 +203,12 @@ func (p *Plugin) shouldProcessCommentNotification(wh *webhook) bool {
 		return false
 	}
 
-	for cacheKey, expiresAt := range p.recentCommentCache {
-		if expiresAt.Before(now) {
-			delete(p.recentCommentCache, cacheKey)
+	p.recentCommentCleanups++
+	if len(p.recentCommentCache) > recentCommentCleanupEvery && p.recentCommentCleanups%recentCommentCleanupEvery == 0 {
+		for cacheKey, expiresAt := range p.recentCommentCache {
+			if expiresAt.Before(now) {
+				delete(p.recentCommentCache, cacheKey)
+			}
 		}
 	}
 

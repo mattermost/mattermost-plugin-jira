@@ -1455,7 +1455,11 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 		return
 	}
 
-	author := &jwhook.Comment.UpdateAuthor
+	authorVal := jwhook.Comment.UpdateAuthor
+	var author *jira.User
+	if authorVal.AccountID != "" || authorVal.Name != "" {
+		author = &authorVal
+	}
 	for _, watcherUser := range watchers.Watchers {
 		if watcherUser == nil {
 			continue
