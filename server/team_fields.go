@@ -47,19 +47,20 @@ func (p *Plugin) cacheTeamFieldKeys(instanceID types.ID, keys []string) {
 
 func (p *Plugin) getTeamFieldKeys(instanceID types.ID) map[string]struct{} {
 	p.teamFieldCacheLock.RLock()
+	defer p.teamFieldCacheLock.RUnlock()
+
 	cached := p.teamFieldCache[instanceID]
 	if len(cached) == 0 {
-		p.teamFieldCacheLock.RUnlock()
 		return map[string]struct{}{
 			defaultTeamFieldKey: {},
 		}
 	}
 
+	// Copy under the read lock to avoid races if the map is updated concurrently.
 	result := make(map[string]struct{}, len(cached))
 	for key := range cached {
 		result[key] = struct{}{}
 	}
-	p.teamFieldCacheLock.RUnlock()
 
 	return result
 }
