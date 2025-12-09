@@ -147,7 +147,6 @@ export default class Input extends PureComponent {
                     type={this.props.type}
                     placeholder={this.props.placeholder}
                     value={value}
-                    maxLength={this.props.maxLength}
                     onChange={this.handleChange}
                     disabled={this.props.disabled}
                     readOnly={this.props.readOnly}

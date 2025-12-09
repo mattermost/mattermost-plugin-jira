@@ -180,7 +180,7 @@ func (p *Plugin) getUserID() string {
 	return p.getConfig().botUserID
 }
 
-func (p *Plugin) matchesSubsciptionFilters(wh *webhook, instanceID types.ID, filters SubscriptionFilters) bool {
+func (p *Plugin) matchesSubscriptionFilters(wh *webhook, instanceID types.ID, filters SubscriptionFilters) bool {
 	webhookEvents := wh.Events()
 	foundEvent := false
 	eventTypes := filters.Events
@@ -312,7 +312,7 @@ func (p *Plugin) getChannelsSubscribed(wh *webhook, instanceID types.ID) ([]Chan
 	subscriptionMap := make(map[string]bool)
 	subIds := subs.Channel.ByID
 	for _, sub := range subIds {
-		if p.matchesSubsciptionFilters(wh, instanceID, sub.Filters) {
+		if p.matchesSubscriptionFilters(wh, instanceID, sub.Filters) {
 			if !subscriptionMap[sub.ChannelID] {
 				subscriptionMap[sub.ChannelID] = true
 				channelSubscriptions = append(channelSubscriptions, sub)
