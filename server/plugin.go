@@ -49,7 +49,7 @@ const (
 	WebhookBufferSize        = 10000
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
 
-	recentCommentCacheTTL    = 30 * time.Second
+	recentCommentCacheTTL     = 30 * time.Second
 	recentCommentCleanupEvery = 32
 )
 
