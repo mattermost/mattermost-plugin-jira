@@ -18,7 +18,6 @@ import (
 	"strings"
 	"sync"
 	textTemplate "text/template"
-	"time"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/gorilla/mux"
