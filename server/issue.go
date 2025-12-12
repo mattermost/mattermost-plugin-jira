@@ -1460,8 +1460,9 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 	if authorVal.AccountID != "" || authorVal.Name != "" {
 		author = &authorVal
 	}
-	for _, watcherUser := range watchers.Watchers {
+	for idx, watcherUser := range watchers.Watchers {
 		if watcherUser == nil {
+			p.client.Log.Warn("nil watcherUser in watchers.Watchers", "issue_id", wh.Issue.ID, "index", idx)
 			continue
 		}
 		if !shouldNotifyWatcherUser(*watcherUser, author) {

@@ -74,12 +74,8 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		default:
 			wh, err = parseWebhookUnspecified(jwh)
 		}
-	case commentCreated:
-		wh, err = parseWebhookCommentCreated(jwh)
-	case commentUpdated:
-		wh, err = parseWebhookCommentUpdated(jwh)
-	case commentDeleted:
-		wh, err = parseWebhookCommentDeleted(jwh)
+	case commentCreated, commentUpdated, commentDeleted:
+		return nil, ErrWebhookIgnored
 	case worklogUpdated:
 		// not supported
 	default:

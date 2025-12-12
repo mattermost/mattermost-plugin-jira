@@ -48,9 +48,6 @@ const (
 	WebhookMaxProcsPerServer = 20
 	WebhookBufferSize        = 10000
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
-
-	recentCommentCacheTTL     = 30 * time.Second
-	recentCommentCleanupEvery = 32
 )
 
 type externalConfig struct {
@@ -167,54 +164,12 @@ type Plugin struct {
 
 	// telemetry Tracker
 	tracker telemetry.Tracker
-
-	recentCommentCache     map[string]time.Time
-	recentCommentCacheLock sync.Mutex
-	recentCommentCleanups  int
 }
 
 func (p *Plugin) getConfig() config {
 	p.confLock.RLock()
 	defer p.confLock.RUnlock()
 	return p.conf
-}
-
-func (p *Plugin) shouldProcessCommentNotification(wh *webhook) bool {
-	if wh == nil || len(wh.eventTypes.Intersection(commentEvents)) == 0 {
-		return true
-	}
-
-	jwh := wh.JiraWebhook
-	if jwh == nil || jwh.Comment.ID == "" || jwh.Issue.ID == "" {
-		return true
-	}
-
-	key := fmt.Sprintf("%s:%s", jwh.Issue.ID, jwh.Comment.ID)
-	now := time.Now()
-
-	p.recentCommentCacheLock.Lock()
-	defer p.recentCommentCacheLock.Unlock()
-
-	if p.recentCommentCache == nil {
-		p.recentCommentCache = make(map[string]time.Time)
-	}
-
-	if expiresAt, ok := p.recentCommentCache[key]; ok && expiresAt.After(now) {
-		return false
-	}
-
-	p.recentCommentCleanups++
-	if len(p.recentCommentCache) > recentCommentCleanupEvery && p.recentCommentCleanups%recentCommentCleanupEvery == 0 {
-		for cacheKey, expiresAt := range p.recentCommentCache {
-			if expiresAt.Before(now) {
-				delete(p.recentCommentCache, cacheKey)
-			}
-		}
-	}
-
-	p.recentCommentCache[key] = now.Add(recentCommentCacheTTL)
-
-	return true
 }
 
 func (p *Plugin) updateConfig(f func(conf *config)) config {
