@@ -159,6 +159,51 @@ export default class JiraField extends React.Component {
             );
         }
 
+        if (field.schema.type === 'number' || field.schema.type === 'float') {
+            return (
+                <Input
+                    id={this.props.id}
+                    label={field.name}
+                    type='number'
+                    onChange={this.props.onChange}
+                    required={this.props.obeyRequired && field.required}
+                    value={this.props.value}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
+                />
+            );
+        }
+
+        if (field.schema.type === 'date') {
+            return (
+                <Input
+                    id={this.props.id}
+                    label={field.name}
+                    type='date'
+                    onChange={this.props.onChange}
+                    required={this.props.obeyRequired && field.required}
+                    value={this.props.value}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
+                />
+            );
+        }
+
+        if (field.schema.type === 'datetime') {
+            return (
+                <Input
+                    id={this.props.id}
+                    label={field.name}
+                    type='datetime-local'
+                    onChange={this.props.onChange}
+                    required={this.props.obeyRequired && field.required}
+                    value={this.props.value}
+                    addValidate={this.props.addValidate}
+                    removeValidate={this.props.removeValidate}
+                />
+            );
+        }
+
         if (field.allowedValues && field.allowedValues.length) {
             const options = field.allowedValues.map((allowedValue) => {
                 const label = allowedValue.name ? allowedValue.name : allowedValue.value;
@@ -205,6 +250,46 @@ export default class JiraField extends React.Component {
         }
         return null;
     }
+}
+
+export function isFieldSupported(field) {
+    if (!field || !field.schema) {
+        return false;
+    }
+
+    if (field.schema.system === 'description') {
+        return true;
+    }
+
+    if (field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:textarea') {
+        return true;
+    }
+
+    if (field.schema.custom === 'com.pyxis.greenhopper.jira:gh-epic-link') {
+        return true;
+    }
+
+    if (field.schema.system === 'labels' || field.schema.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:labels') {
+        return true;
+    }
+
+    if (field.schema.type === 'user') {
+        return true;
+    }
+
+    if (field.schema.type === 'string' ||
+        field.schema.type === 'number' ||
+        field.schema.type === 'float' ||
+        field.schema.type === 'date' ||
+        field.schema.type === 'datetime') {
+        return true;
+    }
+
+    if (field.allowedValues && field.allowedValues.length) {
+        return true;
+    }
+
+    return false;
 }
 
 const getStyle = () => ({

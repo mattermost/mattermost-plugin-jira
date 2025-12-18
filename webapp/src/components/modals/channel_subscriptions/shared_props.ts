@@ -36,4 +36,8 @@ export type SharedProps = {
     close: () => void;
     sendEphemeralPost: (message: string) => void;
     securityLevelEmptyForJiraSubscriptions?: boolean;
+    searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{
+        data: {items: {Name: string; ID: string}[]};
+        error?: Error;
+    }>;
 };

@@ -1071,6 +1071,7 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
               "key": "teamField",
               "name": "Team",
               "schema": {
+                "custom": "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team",
                 "type": "team",
               },
               "values": [],
@@ -3854,6 +3855,7 @@ exports[`components/EditChannelSubscription should match snapshot after fetching
         }
         onChange={[Function]}
         removeValidate={[Function]}
+        searchTeamFields={[MockFunction]}
         securityLevelEmptyForJiraSubscriptions={true}
         theme={
           {
