@@ -32,6 +32,7 @@ describe('components/ChannelSubscriptionFilter', () => {
         removeFilter: jest.fn(),
         instanceID: 'https://something.atlassian.net',
         securityLevelEmptyForJiraSubscriptions: true,
+        searchTeamFields: jest.fn().mockResolvedValue({data: []}),
     };
 
     test('should match snapshot', () => {

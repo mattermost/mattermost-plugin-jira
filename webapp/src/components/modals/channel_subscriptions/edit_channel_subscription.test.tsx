@@ -33,6 +33,7 @@ describe('components/EditChannelSubscription', () => {
         getConnected: jest.fn().mockResolvedValue({}),
         fetchJiraProjectMetadataForAllInstances: jest.fn().mockResolvedValue({}),
         fetchJiraIssueMetadataForProjects: jest.fn().mockResolvedValue({data: cloudIssueMetadata}),
+        searchTeamFields: jest.fn().mockResolvedValue({data: []}),
     };
 
     const channelSubscriptionForCloud = {
