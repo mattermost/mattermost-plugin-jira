@@ -42,6 +42,10 @@ func (wh testWebhookWrapper) Events() StringSet {
 	return wh.Webhook.Events()
 }
 
+func (wh testWebhookWrapper) ShouldSkipChannelPost() bool {
+	return wh.Webhook.ShouldSkipChannelPost()
+}
+
 func (wh *testWebhookWrapper) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error) {
 	post, status, err := wh.Webhook.PostToChannel(p, "", channelID, fromUserID, subscriptionName)
 	if post != nil {
@@ -71,6 +75,7 @@ func TestWebhookHTTP(t *testing.T) {
 		ExpectedFields          []*model.SlackAttachmentField
 		ExpectedStatus          int
 		ExpectedIgnored         bool // Indicates that no post was made as a result of the webhook request
+		SkipChannelPostCheck    bool // Indicates standalone comment events that skip channel posts but are still processed
 		CurrentInstance         bool
 		RootID                  string
 	}{
@@ -310,19 +315,19 @@ func TestWebhookHTTP(t *testing.T) {
 			CurrentInstance:  true,
 		},
 		"CLOUD comment created": {
-			Request:         testWebhookRequest("webhook-cloud-comment-created.json"),
-			CurrentInstance: true,
-			ExpectedIgnored: true,
+			Request:              testWebhookRequest("webhook-cloud-comment-created.json"),
+			CurrentInstance:      true,
+			SkipChannelPostCheck: true,
 		},
 		"CLOUD comment updated": {
-			Request:         testWebhookRequest("webhook-cloud-comment-updated.json"),
-			CurrentInstance: true,
-			ExpectedIgnored: true,
+			Request:              testWebhookRequest("webhook-cloud-comment-updated.json"),
+			CurrentInstance:      true,
+			SkipChannelPostCheck: true,
 		},
 		"CLOUD comment deleted": {
-			Request:         testWebhookRequest("webhook-cloud-comment-deleted.json"),
-			CurrentInstance: true,
-			ExpectedIgnored: true,
+			Request:              testWebhookRequest("webhook-cloud-comment-deleted.json"),
+			CurrentInstance:      true,
+			SkipChannelPostCheck: true,
 		},
 		"SERVER issue commented": {
 			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-1.json"),
@@ -380,20 +385,20 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedText:            "> This is a test comment. We should act on it right away.",
 			CurrentInstance:         true,
 		},
-		"SERVER: ignored comment created": {
-			Request:         testWebhookRequest("webhook-server-comment-created.json"),
-			ExpectedIgnored: true,
-			CurrentInstance: true,
+		"SERVER: standalone comment created skips channel post": {
+			Request:              testWebhookRequest("webhook-server-comment-created.json"),
+			SkipChannelPostCheck: true,
+			CurrentInstance:      true,
 		},
-		"SERVER: ignored comment updated": {
-			Request:         testWebhookRequest("webhook-server-comment-updated.json"),
-			ExpectedIgnored: true,
-			CurrentInstance: true,
+		"SERVER: standalone comment updated skips channel post": {
+			Request:              testWebhookRequest("webhook-server-comment-updated.json"),
+			SkipChannelPostCheck: true,
+			CurrentInstance:      true,
 		},
-		"SERVER: ignored comment deleted": {
-			Request:         testWebhookRequest("webhook-server-comment-deleted.json"),
-			ExpectedIgnored: true,
-			CurrentInstance: true,
+		"SERVER: standalone comment deleted skips channel post": {
+			Request:              testWebhookRequest("webhook-server-comment-deleted.json"),
+			SkipChannelPostCheck: true,
+			CurrentInstance:      true,
 		},
 		"issue created - no Instance": {
 			Request:                 testWebhookRequest("webhook-issue-created.json"),
@@ -550,19 +555,19 @@ func TestWebhookHTTP(t *testing.T) {
 			CurrentInstance:  false,
 		},
 		"CLOUD comment created - no Instance": {
-			Request:         testWebhookRequest("webhook-cloud-comment-created.json"),
-			CurrentInstance: false,
-			ExpectedIgnored: true,
+			Request:              testWebhookRequest("webhook-cloud-comment-created.json"),
+			CurrentInstance:      false,
+			SkipChannelPostCheck: true,
 		},
 		"CLOUD comment updated - no Instance": {
-			Request:         testWebhookRequest("webhook-cloud-comment-updated.json"),
-			CurrentInstance: false,
-			ExpectedIgnored: true,
+			Request:              testWebhookRequest("webhook-cloud-comment-updated.json"),
+			CurrentInstance:      false,
+			SkipChannelPostCheck: true,
 		},
 		"CLOUD comment deleted - no Instance": {
-			Request:         testWebhookRequest("webhook-cloud-comment-deleted.json"),
-			CurrentInstance: false,
-			ExpectedIgnored: true,
+			Request:              testWebhookRequest("webhook-cloud-comment-deleted.json"),
+			CurrentInstance:      false,
+			SkipChannelPostCheck: true,
 		},
 		"SERVER issue commented - no Instance": {
 			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-1.json"),
@@ -591,15 +596,15 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedText:            "> This is a test comment. We should act on it right away.",
 			CurrentInstance:         false,
 		},
-		"SERVER: ignored comment created - no Instance": {
-			Request:         testWebhookRequest("webhook-server-comment-created.json"),
-			ExpectedIgnored: true,
-			CurrentInstance: false,
+		"SERVER: standalone comment created - no Instance": {
+			Request:              testWebhookRequest("webhook-server-comment-created.json"),
+			SkipChannelPostCheck: true,
+			CurrentInstance:      false,
 		},
 		"CLOUD comment created - user mentioned": {
-			Request:         testWebhookRequest("webhook-cloud-comment-created-mention-user.json"),
-			CurrentInstance: false,
-			ExpectedIgnored: true,
+			Request:              testWebhookRequest("webhook-cloud-comment-created-mention-user.json"),
+			CurrentInstance:      false,
+			SkipChannelPostCheck: true,
 		},
 		"SERVER issue commented - user mentioned": {
 			Request:                 testWebhookRequest("webhook-server-issue-updated-commented-mention-user.json"),
@@ -609,9 +614,9 @@ func TestWebhookHTTP(t *testing.T) {
 			CurrentInstance:         false,
 		},
 		"SERVER issue commented - Post in issue created event thread": {
-			Request:         testWebhookRequest("webhook-cloud-comment-created.json"),
-			CurrentInstance: false,
-			ExpectedIgnored: true,
+			Request:              testWebhookRequest("webhook-cloud-comment-created.json"),
+			CurrentInstance:      false,
+			SkipChannelPostCheck: true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -685,7 +690,7 @@ func TestWebhookHTTP(t *testing.T) {
 			}
 			assert.Equal(t, expectedStatus, w.Result().StatusCode)
 
-			if tc.ExpectedIgnored {
+			if tc.ExpectedIgnored || tc.SkipChannelPostCheck {
 				require.Nil(t, recorder.postedToChannel)
 				return
 			}
