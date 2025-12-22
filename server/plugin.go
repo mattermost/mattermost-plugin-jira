@@ -232,6 +232,10 @@ func (p *Plugin) OnConfigurationChange() error {
 	}
 	ec.AdminAPIToken = string(encryptedAdminAPIToken)
 
+	// Default to 30 days if not set
+	if ec.ThreadedJiraCommentSubscriptionDuration == "" {
+		ec.ThreadedJiraCommentSubscriptionDuration = "30"
+	}
 	duration, err := strconv.Atoi(ec.ThreadedJiraCommentSubscriptionDuration)
 	if err != nil {
 		return errors.New("error converting comment post reply duration to integer")
