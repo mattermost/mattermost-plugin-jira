@@ -260,8 +260,10 @@ func appendCommentNotifications(wh *webhook, verb string) {
 	jwh := wh.JiraWebhook
 	commentAuthor := mdUser(&jwh.Comment.UpdateAuthor)
 
+	// Process Jira markup to markdown before quoting
+	processedComment := preProcessText(jwh.Comment.Body)
 	message := fmt.Sprintf("%s %s %s:\n%s",
-		commentAuthor, verb, jwh.mdKeySummaryLink(), quoteIssueComment(jwh.Comment.Body))
+		commentAuthor, verb, jwh.mdKeySummaryLink(), quoteIssueComment(processedComment))
 	assigneeMentioned := false
 
 	for _, u := range parseJIRAUsernamesFromText(wh.Comment.Body) {
@@ -309,7 +311,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 	wh.notifications = append(wh.notifications, webhookUserNotification{
 		jiraUsername:     jwh.Issue.Fields.Assignee.Name,
 		jiraAccountID:    jwh.Issue.Fields.Assignee.AccountID,
-		message:          fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
+		message:          fmt.Sprintf("%s **commented** on %s:\n%s", commentAuthor, jwh.mdKeySummaryLink(), quoteIssueComment(processedComment)),
 		postType:         PostTypeComment,
 		commentSelf:      jwh.Comment.Self,
 		notificationType: "assignee",
