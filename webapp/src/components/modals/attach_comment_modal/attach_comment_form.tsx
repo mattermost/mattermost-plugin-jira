@@ -19,6 +19,24 @@ import Validator from 'components/validator';
 
 import JiraInstanceAndProjectSelector from 'components/jira_instance_and_project_selector';
 
+function getPostDisplayMessage(post: Post): string {
+    if (post.message) {
+        return post.message;
+    }
+
+    // If no message check for file attachments
+    const files = post.metadata?.files;
+    if (files && files.length > 0) {
+        const fileNames = files.map((file) => file.name);
+        if (fileNames.length === 1) {
+            return `Attached file: ${fileNames[0]}`;
+        }
+        return `Attached files: ${fileNames.join(', ')}`;
+    }
+
+    return '';
+}
+
 type Props = {
     close: () => void;
     attachComment: (payload: AttachCommentRequest) => Promise<APIResponse<{}>>;
@@ -122,7 +140,7 @@ export default class AttachCommentToIssueForm extends PureComponent<Props, State
                         label='Message Attached to Jira Issue'
                         type='textarea'
                         isDisabled={true}
-                        value={this.props.post.message}
+                        value={getPostDisplayMessage(this.props.post)}
                         disabled={false}
                         readOnly={true}
                     />
