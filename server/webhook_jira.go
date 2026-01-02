@@ -31,6 +31,10 @@ type JiraWebhook struct {
 		}
 	} `json:"changelog,omitempty"`
 	IssueEventTypeName string `json:"issue_event_type_name"`
+
+	// JiraBaseURL is set during expandIssue to use the user-facing Jira URL
+	// instead of the API URL for OAuth instances
+	JiraBaseURL string `json:"-"`
 }
 
 func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
@@ -38,6 +42,9 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 	if err != nil {
 		return err
 	}
+
+	// Store the user-facing Jira URL for use in message links
+	jwh.JiraBaseURL = instance.GetJiraBaseURL()
 
 	if !instance.Common().IsCloudInstance() {
 		return nil
@@ -112,12 +119,16 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 }
 
 func (jwh *JiraWebhook) mdJiraLink(title, suffix string) string {
-	// Use Self URL only to extract the full hostname from it
+	// This handles OAuth instances where Self URL is api.atlassian.com instead of the user-facing URL
+	if jwh.JiraBaseURL != "" {
+		return fmt.Sprintf("[%s](%s%s)", title, jwh.JiraBaseURL, suffix)
+	}
+
+	// Fallback - extract base URL from Self URL
 	pos := strings.LastIndex(jwh.Issue.Self, "/rest/api")
 	if pos < 0 {
 		return ""
 	}
-	// TODO: For Jira OAuth, the Self URL is sent as https://api.atlassian.com/ instead of the Jira Instance URL - to check this and handle accordingly
 	return fmt.Sprintf("[%s](%s%s)", title, jwh.Issue.Self[:pos], suffix)
 }
 
