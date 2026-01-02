@@ -475,6 +475,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		Subs                  *Subscriptions
 		ChannelSubscriptions  []ChannelSubscription
 		disableSecurityConfig bool
+		ExpectedIgnored       bool
+		SkipChannelPostCheck  bool
 	}{
 		"no filters selected": {
 			WebhookTestData: "webhook-issue-created.json",
@@ -1506,7 +1508,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			}),
 			ChannelSubscriptions: []ChannelSubscription{},
 		},
-		"subscribed any issue update, comment added, matches": {
+		"subscribed any issue update, comment added, no channel post": {
 			WebhookTestData: "webhook-cloud-comment-created.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
@@ -1520,9 +1522,10 @@ func TestGetChannelsSubscribed(t *testing.T) {
 					},
 				},
 			}),
-			ChannelSubscriptions: []ChannelSubscription{{ChannelID: "sampleChannelId"}},
+			ChannelSubscriptions: []ChannelSubscription{},
+			SkipChannelPostCheck: true,
 		},
-		"subscribed any issue update, comment updated, matches": {
+		"subscribed any issue update, comment updated, no channel post": {
 			WebhookTestData: "webhook-cloud-comment-updated.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
@@ -1536,9 +1539,10 @@ func TestGetChannelsSubscribed(t *testing.T) {
 					},
 				},
 			}),
-			ChannelSubscriptions: []ChannelSubscription{{ChannelID: "sampleChannelId"}},
+			ChannelSubscriptions: []ChannelSubscription{},
+			SkipChannelPostCheck: true,
 		},
-		"subscribed any issue update, comment deleted, matches": {
+		"subscribed any issue update, comment deleted, no channel post": {
 			WebhookTestData: "webhook-cloud-comment-deleted.json",
 			Subs: withExistingChannelSubscriptions([]ChannelSubscription{
 				{
@@ -1552,7 +1556,8 @@ func TestGetChannelsSubscribed(t *testing.T) {
 					},
 				},
 			}),
-			ChannelSubscriptions: []ChannelSubscription{{ChannelID: "sampleChannelId"}},
+			ChannelSubscriptions: []ChannelSubscription{},
+			SkipChannelPostCheck: true,
 		},
 		"no security level provided in subscription, but security level is present in issue": {
 			WebhookTestData: "webhook-issue-created-with-security-level.json",
@@ -1660,7 +1665,17 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			require.Nil(t, err)
 
 			wh, err := ParseWebhook(bb)
+			if tc.ExpectedIgnored {
+				assert.Equal(t, ErrWebhookIgnored, err)
+				return
+			}
 			assert.Nil(t, err)
+
+			// Standalone comment events skip channel posts
+			if tc.SkipChannelPostCheck {
+				assert.True(t, wh.(*webhook).skipChannelPost)
+				return
+			}
 
 			actual, err := p.getChannelsSubscribed(wh.(*webhook), testInstance1.InstanceID)
 			assert.Nil(t, err)

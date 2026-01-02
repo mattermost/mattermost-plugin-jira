@@ -98,6 +98,11 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 		return respondErr(w, http.StatusBadRequest, err)
 	}
 
+	// Skip channel posts for standalone comment events to avoid duplicates
+	if wh.ShouldSkipChannelPost() {
+		return http.StatusOK, nil
+	}
+
 	// Skip events we don't need to post
 	if selectedEvents.Intersection(wh.Events()).Len() == 0 {
 		return http.StatusOK, nil

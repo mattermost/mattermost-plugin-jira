@@ -76,10 +76,19 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 		}
 	case commentCreated:
 		wh, err = parseWebhookCommentCreated(jwh)
+		if err == nil && wh != nil {
+			wh.(*webhook).skipChannelPost = true
+		}
 	case commentUpdated:
 		wh, err = parseWebhookCommentUpdated(jwh)
+		if err == nil && wh != nil {
+			wh.(*webhook).skipChannelPost = true
+		}
 	case commentDeleted:
 		wh, err = parseWebhookCommentDeleted(jwh)
+		if err == nil && wh != nil {
+			wh.(*webhook).skipChannelPost = true
+		}
 	case worklogUpdated:
 		// not supported
 	default:

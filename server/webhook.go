@@ -34,6 +34,7 @@ type Webhook interface {
 	Events() StringSet
 	PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error)
 	PostNotifications(p *Plugin, instanceID types.ID) ([]*model.Post, int, error)
+	ShouldSkipChannelPost() bool
 }
 
 type webhookField struct {
@@ -45,12 +46,13 @@ type webhookField struct {
 
 type webhook struct {
 	*JiraWebhook
-	eventTypes    StringSet
-	headline      string
-	text          string
-	fields        []*model.SlackAttachmentField
-	notifications []webhookUserNotification
-	fieldInfo     webhookField
+	eventTypes      StringSet
+	headline        string
+	text            string
+	fields          []*model.SlackAttachmentField
+	notifications   []webhookUserNotification
+	fieldInfo       webhookField
+	skipChannelPost bool
 }
 
 type webhookUserNotification struct {
@@ -64,6 +66,10 @@ type webhookUserNotification struct {
 
 func (wh *webhook) Events() StringSet {
 	return wh.eventTypes
+}
+
+func (wh *webhook) ShouldSkipChannelPost() bool {
+	return wh.skipChannelPost
 }
 
 func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error) {
