@@ -154,7 +154,7 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 		case field == "Rank" && len(to) > 0:
 			event = parseWebhookUpdatedField(jwh, eventUpdatedRank, field, fieldID, strings.ToLower(fromWithDefault), strings.ToLower(toWithDefault))
 		case field == "Attachment":
-			event = parseWebhookUpdatedAttachments(jwh, from, to)
+			event = parseWebhookUpdatedAttachments(jwh, from, to, fromWithDefault, toWithDefault)
 		case field == labelsField:
 			event = parseWebhookUpdatedLabels(jwh, from, to, fromWithDefault, toWithDefault)
 		case field == "assignee":
@@ -573,9 +573,9 @@ func parseWebhookUpdatedDescription(jwh *JiraWebhook, from, to string) *webhook 
 	return wh
 }
 
-func parseWebhookUpdatedAttachments(jwh *JiraWebhook, from, to string) *webhook {
+func parseWebhookUpdatedAttachments(jwh *JiraWebhook, from, to, fromWithDefault, toWithDefault string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedAttachment, "%s", mdAddRemove(from, to, "**attached**", "**removed** attachments"))
-	wh.fieldInfo = webhookField{name: "attachments"}
+	wh.fieldInfo = webhookField{"attachments", "attachment", from, to}
 	return wh
 }
 
