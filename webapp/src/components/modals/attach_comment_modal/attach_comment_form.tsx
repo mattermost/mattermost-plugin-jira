@@ -24,7 +24,7 @@ function getPostDisplayMessage(post: Post): string {
         return post.message;
     }
 
-    // If no message check for file attachments
+    // If no message, check for file attachments
     const files = post.metadata?.files;
     if (files && files.length > 0) {
         const fileNames = files.map((file) => file.name);
@@ -32,6 +32,15 @@ function getPostDisplayMessage(post: Post): string {
             return `Attached file: ${fileNames[0]}`;
         }
         return `Attached files: ${fileNames.join(', ')}`;
+    }
+
+    // Fallback: check file_ids if metadata.files is not populated
+    const fileIds = post.file_ids;
+    if (fileIds && fileIds.length > 0) {
+        if (fileIds.length === 1) {
+            return 'Attached file';
+        }
+        return `Attached ${fileIds.length} files`;
     }
 
     return '';
