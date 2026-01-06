@@ -575,7 +575,7 @@ func parseWebhookUpdatedDescription(jwh *JiraWebhook, from, to string) *webhook 
 
 func parseWebhookUpdatedAttachments(jwh *JiraWebhook, from, to, fromWithDefault, toWithDefault string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedAttachment, "%s", mdAddRemove(from, to, "**attached**", "**removed** attachments"))
-	wh.fieldInfo = webhookField{"attachments", "attachment", fromWithDefault, toWithDefault}
+	wh.fieldInfo = webhookField{"attachments", "attachment", from, to}
 	return wh
 }
 
