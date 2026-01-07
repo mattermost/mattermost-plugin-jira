@@ -92,8 +92,9 @@ const (
 
 	expandValueGroups = "groups"
 
-	teamFieldSchema     = "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team"
-	defaultTeamFieldKey = "customfield_10001"
+	teamFieldSchema             = "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team"
+	teamAdvancedRoadmapsSchema  = "com.atlassian.teams:rm-team-custom-field-team"
+	defaultTeamFieldKey         = "customfield_10001"
 )
 
 type CreateMetaInfo struct {
@@ -587,7 +588,8 @@ func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamLis
 					continue
 				}
 
-				if schemaRaw["custom"] != teamFieldSchema {
+				customType, _ := schemaRaw["custom"].(string)
+				if customType != teamFieldSchema && customType != teamAdvancedRoadmapsSchema {
 					continue
 				}
 

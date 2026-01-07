@@ -146,6 +146,7 @@ export enum JiraFieldCustomTypeEnums {
     LABELS = 'com.atlassian.jira.plugin.system.customfieldtypes:labels',
     USER_PICKER = 'com.atlassian.jira.plugin.system.customfieldtypes:userpicker',
     TEAM = 'com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team',
+    TEAM_ADVANCED_ROADMAPS = 'com.atlassian.teams:rm-team-custom-field-team',
 }
 
 export enum FilterFieldInclusion {
