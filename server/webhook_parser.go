@@ -163,7 +163,7 @@ func parseWebhookChangeLog(jwh *JiraWebhook) Webhook {
 		case field == "Rank" && len(to) > 0:
 			event = parseWebhookUpdatedField(jwh, eventUpdatedRank, field, fieldID, strings.ToLower(fromWithDefault), strings.ToLower(toWithDefault))
 		case field == "Attachment":
-			event = parseWebhookUpdatedAttachments(jwh, from, to)
+			event = parseWebhookUpdatedAttachments(jwh, from, to, fromWithDefault, toWithDefault)
 		case field == labelsField:
 			event = parseWebhookUpdatedLabels(jwh, from, to, fromWithDefault, toWithDefault)
 		case field == "assignee":
@@ -258,8 +258,10 @@ func appendCommentNotifications(wh *webhook, verb string) {
 	jwh := wh.JiraWebhook
 	commentAuthor := mdUser(&jwh.Comment.UpdateAuthor)
 
+	// Process Jira markup to markdown before quoting
+	processedComment := preProcessText(jwh.Comment.Body)
 	message := fmt.Sprintf("%s %s %s:\n%s",
-		commentAuthor, verb, jwh.mdKeySummaryLink(), quoteIssueComment(jwh.Comment.Body))
+		commentAuthor, verb, jwh.mdKeySummaryLink(), quoteIssueComment(processedComment))
 	assigneeMentioned := false
 
 	for _, u := range parseJIRAUsernamesFromText(wh.Comment.Body) {
@@ -307,7 +309,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 	wh.notifications = append(wh.notifications, webhookUserNotification{
 		jiraUsername:     jwh.Issue.Fields.Assignee.Name,
 		jiraAccountID:    jwh.Issue.Fields.Assignee.AccountID,
-		message:          fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
+		message:          fmt.Sprintf("%s **commented** on %s:\n%s", commentAuthor, jwh.mdKeySummaryLink(), quoteIssueComment(processedComment)),
 		postType:         PostTypeComment,
 		commentSelf:      jwh.Comment.Self,
 		notificationType: "assignee",
@@ -561,9 +563,9 @@ func parseWebhookUpdatedDescription(jwh *JiraWebhook, from, to string) *webhook 
 	return wh
 }
 
-func parseWebhookUpdatedAttachments(jwh *JiraWebhook, from, to string) *webhook {
+func parseWebhookUpdatedAttachments(jwh *JiraWebhook, from, to, fromWithDefault, toWithDefault string) *webhook {
 	wh := newWebhook(jwh, eventUpdatedAttachment, "%s", mdAddRemove(from, to, "**attached**", "**removed** attachments"))
-	wh.fieldInfo = webhookField{name: "attachments"}
+	wh.fieldInfo = webhookField{"attachments", "attachment", from, to}
 	return wh
 }
 
