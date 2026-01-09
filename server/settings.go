@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"golang.org/x/text/cases"
@@ -54,22 +55,31 @@ func (connection *Connection) updateRolesForDMNotification(role, roleStatus stri
 }
 
 func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, mattermostUserID types.ID, connection *Connection, args []string) *model.CommandResponse {
-	helpTextPrefix := "`/jira settings notifications [assignee|mention|reporter|watching] [value]`\n"
-	helpText := ""
-	if len(args) != 3 {
-		helpText = helpTextPrefix + "* Invalid command args."
-		return p.response(header, helpText)
+	helpTextPrefix := "`/jira settings notifications [assignee|mention|reporter|watching] [value]`\n" +
+		"`/jira settings notifications fields [field1,field2,...]` - Set fields to notify on (empty to notify on all)\n"
+
+	if len(args) < 2 {
+		return p.response(header, helpTextPrefix+"* Invalid command args.")
 	}
 
 	if connection.Settings == nil {
 		connection.Settings = &ConnectionSettings{}
 	}
 
+	// Handle "fields" subcommand
+	if args[1] == "fields" {
+		return p.settingsNotificationsFields(header, instanceID, mattermostUserID, connection, args)
+	}
+
+	// Handle role-based notifications
+	if len(args) != 3 {
+		return p.response(header, helpTextPrefix+"* Invalid command args.")
+	}
+
 	role, roleStatus := args[1], args[2]
 	helpTextSuffix, isRoleUpdated := connection.updateRolesForDMNotification(role, roleStatus)
-	helpText = helpTextPrefix + helpTextSuffix
 	if !isRoleUpdated {
-		return p.response(header, helpText)
+		return p.response(header, helpTextPrefix+helpTextSuffix)
 	}
 
 	if err := p.userStore.StoreConnection(instanceID, mattermostUserID, connection); err != nil {
@@ -99,4 +109,48 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 	}
 
 	return p.responsef(header, "%s:\n* %s notifications %s.", settingsUpdatedMsg, cases.Title(language.Und, cases.NoLower).String(role), notifications)
+}
+
+func (p *Plugin) settingsNotificationsFields(header *model.CommandArgs, instanceID, mattermostUserID types.ID, connection *Connection, args []string) *model.CommandResponse {
+	if len(args) == 2 {
+		// Show current fields
+		fields := connection.Settings.FieldsForDMNotification
+		if len(fields) == 0 {
+			return p.responsef(header, "Field notifications: all fields (no filter set)\nUse `/jira settings notifications fields field1,field2,...` to filter.")
+		}
+		return p.responsef(header, "Field notifications enabled for: `%s`\nUse `/jira settings notifications fields clear` to receive notifications for all fields.", strings.Join(fields, ", "))
+	}
+
+	fieldArg := args[2]
+
+	if fieldArg == "clear" {
+		connection.Settings.FieldsForDMNotification = nil
+		if err := p.userStore.StoreConnection(instanceID, mattermostUserID, connection); err != nil {
+			p.errorf("settingsNotificationsFields, err: %v", err)
+			return p.responsef(header, errStoreNewSettings, err)
+		}
+		return p.responsef(header, "Field filter cleared. You will now receive notifications for all field changes.")
+	}
+
+	// Parse comma-separated fields
+	fields := strings.Split(fieldArg, ",")
+	cleanFields := make([]string, 0, len(fields))
+	for _, f := range fields {
+		f = strings.TrimSpace(f)
+		if f != "" {
+			cleanFields = append(cleanFields, f)
+		}
+	}
+
+	if len(cleanFields) == 0 {
+		return p.responsef(header, "No valid fields provided. Use `/jira settings notifications fields field1,field2,...`")
+	}
+
+	connection.Settings.FieldsForDMNotification = cleanFields
+	if err := p.userStore.StoreConnection(instanceID, mattermostUserID, connection); err != nil {
+		p.errorf("settingsNotificationsFields, err: %v", err)
+		return p.responsef(header, errStoreNewSettings, err)
+	}
+
+	return p.responsef(header, "Settings updated:\n* Field notifications enabled for: `%s`", strings.Join(cleanFields, ", "))
 }

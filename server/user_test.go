@@ -31,7 +31,7 @@ func TestUserSettings_String(t *testing.T) {
 					watchingRole: true,
 				},
 			},
-			expectedOutput: "\t- Notifications for assignee: on \n\t- Notifications for mention: on \n\t- Notifications for reporter: on \n\t- Notifications for watching: on",
+			expectedOutput: "\t- Notifications for assignee: on \n\t- Notifications for mention: on \n\t- Notifications for reporter: on \n\t- Notifications for watching: on \n\t- Field filter: all fields",
 		},
 		"notifications off": {
 			settings: ConnectionSettings{
@@ -43,7 +43,20 @@ func TestUserSettings_String(t *testing.T) {
 					watchingRole: false,
 				},
 			},
-			expectedOutput: "\t- Notifications for assignee: off \n\t- Notifications for mention: off \n\t- Notifications for reporter: off \n\t- Notifications for watching: off",
+			expectedOutput: "\t- Notifications for assignee: off \n\t- Notifications for mention: off \n\t- Notifications for reporter: off \n\t- Notifications for watching: off \n\t- Field filter: all fields",
+		},
+		"notifications with field filter": {
+			settings: ConnectionSettings{
+				Notifications: true,
+				RolesForDMNotification: map[string]bool{
+					assigneeRole: true,
+					mentionRole:  true,
+					reporterRole: true,
+					watchingRole: true,
+				},
+				FieldsForDMNotification: []string{"summary", "description", "customfield_12600"},
+			},
+			expectedOutput: "\t- Notifications for assignee: on \n\t- Notifications for mention: on \n\t- Notifications for reporter: on \n\t- Notifications for watching: on \n\t- Field filter: summary, description, customfield_12600",
 		},
 	}
 	for name, tt := range tests {

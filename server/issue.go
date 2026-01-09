@@ -1559,6 +1559,24 @@ func (s *ConnectionSettings) ShouldReceiveNotification(role string) bool {
 	return s.Notifications
 }
 
+func (s *ConnectionSettings) ShouldReceiveFieldNotification(fieldID, fieldName string) bool {
+	if s == nil || len(s.FieldsForDMNotification) == 0 {
+		return true
+	}
+
+	if fieldID == "" && fieldName == "" {
+		return true
+	}
+
+	for _, allowedField := range s.FieldsForDMNotification {
+		if allowedField == fieldID || allowedField == fieldName {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (p *Plugin) fetchConnectedUserFromAccount(account map[string]string, instance Instance) (Client, *Connection, error) {
 	accountKey := account[jiraUserName]
 	if account[jiraUserAccountID] != "" {

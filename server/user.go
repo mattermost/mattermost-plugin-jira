@@ -52,8 +52,9 @@ func (connection *Connection) JiraAccountID() types.ID {
 }
 
 type ConnectionSettings struct {
-	Notifications          bool `json:"notifications"`
-	RolesForDMNotification map[string]bool
+	Notifications           bool `json:"notifications"`
+	RolesForDMNotification  map[string]bool
+	FieldsForDMNotification []string `json:"fields_for_dm_notification,omitempty"`
 }
 
 func (s *ConnectionSettings) String() string {
@@ -61,6 +62,7 @@ func (s *ConnectionSettings) String() string {
 	mentionNotifications := "Notifications for mention: off"
 	reporterNotifications := "Notifications for reporter: off"
 	watchingNotifications := "Notifications for watching: off"
+	fieldNotifications := "Field filter: all fields"
 
 	if s != nil && s.ShouldReceiveNotification(assigneeRole) {
 		assigneeNotifications = "Notifications for assignee: on"
@@ -78,7 +80,11 @@ func (s *ConnectionSettings) String() string {
 		watchingNotifications = "Notifications for watching: on"
 	}
 
-	return fmt.Sprintf("\t- %s \n\t- %s \n\t- %s \n\t- %s", assigneeNotifications, mentionNotifications, reporterNotifications, watchingNotifications)
+	if s != nil && len(s.FieldsForDMNotification) > 0 {
+		fieldNotifications = "Field filter: " + strings.Join(s.FieldsForDMNotification, ", ")
+	}
+
+	return fmt.Sprintf("\t- %s \n\t- %s \n\t- %s \n\t- %s \n\t- %s", assigneeNotifications, mentionNotifications, reporterNotifications, watchingNotifications, fieldNotifications)
 }
 
 func NewUser(mattermostUserID types.ID) *User {

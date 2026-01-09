@@ -187,6 +187,11 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 			continue
 		}
 
+		// Check if user has field filter and if this field matches
+		if !c.Settings.ShouldReceiveFieldNotification(wh.fieldInfo.id, wh.fieldInfo.name) {
+			continue
+		}
+
 		if _, ok := mapForNotification[mattermostUserID]; ok {
 			continue
 		}
