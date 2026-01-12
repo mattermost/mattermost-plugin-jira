@@ -58,11 +58,6 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 		ww.p.errorf("WebhookWorker id: %d, error posting notifications, err: %v", ww.id, err)
 	}
 
-	// Skip channel posts for standalone comment events to avoid duplicates
-	if v.skipChannelPost {
-		return nil
-	}
-
 	channelsSubscribed, err := ww.p.getChannelsSubscribed(v, msg.InstanceID)
 	if err != nil {
 		return err
