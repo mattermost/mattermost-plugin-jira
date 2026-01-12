@@ -230,17 +230,6 @@ func parseWebhookDeleted(jwh *JiraWebhook) Webhook {
 }
 
 func parseWebhookCommentCreated(jwh *JiraWebhook) (Webhook, error) {
-	// The "comment_xxx" events from Jira Server come incomplete,
-	// i.e. with just minimal metadata. We toss them out since they
-	// are rather useless for our use case. Instead the Jira server
-	// webhooks receive and process jira:issue_updated with eventTypes
-	// "issue_commented", etc.
-	//
-	// Detect this condition by checking that jwh.Issue.ID
-	if jwh.Issue.ID == "" {
-		return nil, ErrWebhookIgnored
-	}
-
 	commentAuthor := mdUser(&jwh.Comment.UpdateAuthor)
 
 	wh := &webhook{
@@ -472,10 +461,6 @@ func preProcessText(jiraMarkdownString string) string {
 }
 
 func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
-	if jwh.Issue.ID == "" {
-		return nil, ErrWebhookIgnored
-	}
-
 	// Jira server vs Jira cloud pass the user info differently
 	user := ""
 	if jwh.User.Key != "" {
@@ -495,10 +480,6 @@ func parseWebhookCommentDeleted(jwh *JiraWebhook) (Webhook, error) {
 }
 
 func parseWebhookCommentUpdated(jwh *JiraWebhook) (Webhook, error) {
-	if jwh.Issue.ID == "" {
-		return nil, ErrWebhookIgnored
-	}
-
 	wh := &webhook{
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventUpdatedComment),
