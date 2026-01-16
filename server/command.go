@@ -311,10 +311,15 @@ func createSettingsCommand(optInstance bool) *model.AutocompleteData {
 	watchingNotifications.AddStaticListArgument("value", true, setting)
 	withFlagInstance(watchingNotifications, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 
+	fieldsNotifications := model.NewAutocompleteData("fields", "[field1,field2,...|clear]", "filter which field changes trigger notifications")
+	fieldsNotifications.AddTextArgument("Comma-separated field names/IDs, or 'clear' to remove filter", "", "")
+	withFlagInstance(fieldsNotifications, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
+
 	notifications.AddCommand(assigneeNotifications)
 	notifications.AddCommand(mentionNotifications)
 	notifications.AddCommand(reporterNotifications)
 	notifications.AddCommand(watchingNotifications)
+	notifications.AddCommand(fieldsNotifications)
 
 	settings.AddCommand(notifications)
 
