@@ -152,7 +152,9 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 	currentToken := connection.OAuth2Token
 	updatedToken, err := tokenSource.Token()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "error in getting token from token source")
+		// Notify the user to reconnect their account
+		ci.Plugin.notifyUserTokenExpired(connection.MattermostUserID, ci.GetID())
+		return nil, nil, errors.Wrap(err, "your Jira token has expired, please use `/jira connect` to reconnect your account")
 	}
 
 	if updatedToken.RefreshToken != currentToken.RefreshToken {
@@ -168,6 +170,10 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 	jiraID, err := ci.getJiraCloudResourceID(*client)
 	ci.JiraResourceID = jiraID
 	if err != nil {
+		if errors.Is(err, errTokenExpired) {
+			ci.Plugin.notifyUserTokenExpired(connection.MattermostUserID, ci.GetID())
+			return nil, nil, errors.New("your Jira token has expired, please use `/jira connect` to reconnect your account")
+		}
 		return nil, nil, err
 	}
 
@@ -232,6 +238,8 @@ func (ci *cloudOAuthInstance) GetMattermostKey() string {
 	return ci.MattermostKey
 }
 
+var errTokenExpired = errors.New("token expired or revoked")
+
 func (ci *cloudOAuthInstance) getJiraCloudResourceID(client http.Client) (string, error) {
 	request, err := http.NewRequest(
 		http.MethodGet,
@@ -248,6 +256,12 @@ func (ci *cloudOAuthInstance) getJiraCloudResourceID(client http.Client) (string
 	}
 
 	defer response.Body.Close()
+
+	// Check for authentication errors
+	if response.StatusCode == http.StatusUnauthorized || response.StatusCode == http.StatusForbidden {
+		return "", errTokenExpired
+	}
+
 	contents, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", fmt.Errorf("failed to read accessible resources response: %s", err.Error())
