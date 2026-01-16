@@ -112,16 +112,22 @@ func (p *Plugin) settingsNotifications(header *model.CommandArgs, instanceID, ma
 }
 
 func (p *Plugin) settingsNotificationsFields(header *model.CommandArgs, instanceID, mattermostUserID types.ID, connection *Connection, args []string) *model.CommandResponse {
+	commonFields := "**Common fields:** `summary`, `description`, `priority`, `status`, `assignee`, `reporter`, `labels`, `components`, `fixversions`, `versions`, `resolution`, `duedate`, `Sprint`, `Story Points`\n\n" +
+		"**Custom fields:** Use the field ID (e.g., `customfield_10001`) - check your Jira project settings for custom field IDs."
+
 	if len(args) == 2 {
-		// Show current fields
 		fields := connection.Settings.FieldsForDMNotification
 		if len(fields) == 0 {
-			return p.responsef(header, "Field notifications: all fields (no filter set)\nUse `/jira settings notifications fields field1,field2,...` to filter.")
+			return p.responsef(header, "Field notifications: all fields (no filter set)\n\nUse `/jira settings notifications fields field1,field2,...` to filter.\nUse `/jira settings notifications fields list` to see available fields.\n\n%s", commonFields)
 		}
-		return p.responsef(header, "Field notifications enabled for: `%s`\nUse `/jira settings notifications fields clear` to receive notifications for all fields.", strings.Join(fields, ", "))
+		return p.responsef(header, "Field notifications enabled for: `%s`\n\nUse `/jira settings notifications fields clear` to receive notifications for all fields.\n\n%s", strings.Join(fields, ", "), commonFields)
 	}
 
 	fieldArg := args[2]
+
+	if fieldArg == "list" {
+		return p.responsef(header, "**Available fields for notifications:**\n\n%s", commonFields)
+	}
 
 	if fieldArg == "clear" {
 		connection.Settings.FieldsForDMNotification = nil
