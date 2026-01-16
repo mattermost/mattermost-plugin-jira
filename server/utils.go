@@ -87,6 +87,17 @@ func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...
 	return post, nil
 }
 
+func (p *Plugin) notifyUserTokenExpired(mattermostUserID types.ID, instanceID types.ID) {
+	_, err := p.CreateBotDMtoMMUserID(mattermostUserID.String(),
+		":warning: Your Jira connection has expired. Please reconnect your account using `/jira connect %s`.",
+		instanceID)
+	if err != nil {
+		p.client.Log.Warn("Failed to send token expiry notification to user",
+			"mattermostUserID", mattermostUserID,
+			"error", err.Error())
+	}
+}
+
 func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string {
 	result := body
 	for _, uname := range parseJIRAUsernamesFromText(body) {

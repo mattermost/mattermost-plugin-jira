@@ -398,7 +398,10 @@ export function isTeamField(field: JiraField | FilterField): boolean {
         return true;
     }
 
-    return Boolean(field.schema && field.schema.custom === JiraFieldCustomTypeEnums.TEAM);
+    return Boolean(field.schema && (
+        field.schema.custom === JiraFieldCustomTypeEnums.TEAM ||
+        field.schema.custom === JiraFieldCustomTypeEnums.TEAM_ADVANCED_ROADMAPS
+    ));
 }
 
 export function isEpicIssueType(issueType: IssueType): boolean {

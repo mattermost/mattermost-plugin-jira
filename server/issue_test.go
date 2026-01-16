@@ -19,6 +19,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/trivago/tgo/tcontainer"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
@@ -1441,4 +1442,16 @@ func TestRouteCreateIssue(t *testing.T) {
 			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, name)
 		})
 	}
+}
+
+func TestShouldNotifyWatcherUser(t *testing.T) {
+	author := &jira.User{AccountID: "acct-1", Name: "author"}
+	require.True(t, shouldNotifyWatcherUser(jira.Watcher{AccountID: "acct-2", Name: "other"}, author))
+	require.False(t, shouldNotifyWatcherUser(jira.Watcher{AccountID: "acct-1", Name: "author"}, author))
+
+	nameOnlyAuthor := &jira.User{Name: "name-only"}
+	require.False(t, shouldNotifyWatcherUser(jira.Watcher{Name: "name-only"}, nameOnlyAuthor))
+	require.True(t, shouldNotifyWatcherUser(jira.Watcher{Name: "different"}, nameOnlyAuthor))
+
+	require.True(t, shouldNotifyWatcherUser(jira.Watcher{Name: "someone"}, nil))
 }

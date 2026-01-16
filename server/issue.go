@@ -92,8 +92,9 @@ const (
 
 	expandValueGroups = "groups"
 
-	teamFieldSchema     = "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team"
-	defaultTeamFieldKey = "customfield_10001"
+	teamFieldSchema            = "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team"
+	teamAdvancedRoadmapsSchema = "com.atlassian.teams:rm-team-custom-field-team"
+	defaultTeamFieldKey        = "customfield_10001"
 )
 
 type CreateMetaInfo struct {
@@ -587,7 +588,8 @@ func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamLis
 					continue
 				}
 
-				if schemaRaw["custom"] != teamFieldSchema {
+				customType, _ := schemaRaw["custom"].(string)
+				if customType != teamFieldSchema && customType != teamAdvancedRoadmapsSchema {
 					continue
 				}
 
@@ -1478,7 +1480,20 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 		return
 	}
 
-	for _, watcherUser := range watchers.Watchers {
+	authorVal := jwhook.Comment.UpdateAuthor
+	var author *jira.User
+	if authorVal.AccountID != "" || authorVal.Name != "" {
+		author = &authorVal
+	}
+	for idx, watcherUser := range watchers.Watchers {
+		if watcherUser == nil {
+			p.client.Log.Warn("nil watcherUser in watchers.Watchers", "issue_id", wh.Issue.ID, "index", idx)
+			continue
+		}
+		if !shouldNotifyWatcherUser(*watcherUser, author) {
+			continue
+		}
+
 		whUserNotification := webhookUserNotification{
 			jiraUsername:     watcherUser.Name,
 			jiraAccountID:    watcherUser.AccountID,
@@ -1680,4 +1695,20 @@ func (p *Plugin) GetProjectListWithAPIToken(instanceID string) (*jira.ProjectLis
 	}
 
 	return &projectResponse.Values, nil
+}
+
+func shouldNotifyWatcherUser(watcher jira.Watcher, author *jira.User) bool {
+	if author == nil {
+		return true
+	}
+
+	if watcher.AccountID != "" && author.AccountID != "" {
+		return watcher.AccountID != author.AccountID
+	}
+
+	if watcher.Name != "" && author.Name != "" {
+		return watcher.Name != author.Name
+	}
+
+	return true
 }
