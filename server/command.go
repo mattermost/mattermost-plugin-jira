@@ -312,7 +312,21 @@ func createSettingsCommand(optInstance bool) *model.AutocompleteData {
 	withFlagInstance(watchingNotifications, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 
 	fieldsNotifications := model.NewAutocompleteData("fields", "[field1,field2,...|clear|list]", "filter which field changes trigger notifications")
-	fieldsNotifications.AddTextArgument("Comma-separated field names/IDs, 'clear' to remove filter, or 'list' to see available fields", "", "")
+	fieldOptions := []model.AutocompleteListItem{
+		{Item: "list", HelpText: "Show available fields"},
+		{Item: "clear", HelpText: "Remove filter (notify on all fields)"},
+		{Item: "summary", HelpText: "Issue summary/title"},
+		{Item: "description", HelpText: "Issue description"},
+		{Item: "status", HelpText: "Issue status"},
+		{Item: "priority", HelpText: "Issue priority"},
+		{Item: "assignee", HelpText: "Issue assignee"},
+		{Item: "reporter", HelpText: "Issue reporter"},
+		{Item: "fixversion", HelpText: "Fix version (matches 'Fix Version')"},
+		{Item: "labels", HelpText: "Issue labels"},
+		{Item: "components", HelpText: "Issue components"},
+		{Item: "sprint", HelpText: "Sprint field"},
+	}
+	fieldsNotifications.AddStaticListArgument("field", false, fieldOptions)
 	withFlagInstance(fieldsNotifications, optInstance, makeAutocompleteRoute(routeAutocompleteInstalledInstanceWithAlias))
 
 	notifications.AddCommand(assigneeNotifications)

@@ -1583,13 +1583,40 @@ func (s *ConnectionSettings) ShouldReceiveFieldNotification(fieldID, fieldName s
 		return true
 	}
 
+	fieldIDLower := strings.ToLower(fieldID)
+	fieldNameLower := strings.ToLower(fieldName)
+	fieldNameNormalized := normalizeFieldName(fieldNameLower)
+
 	for _, allowedField := range s.FieldsForDMNotification {
-		if allowedField == fieldID || allowedField == fieldName {
+		allowedLower := strings.ToLower(strings.TrimSpace(allowedField))
+		allowedNormalized := normalizeFieldName(allowedLower)
+
+		// Match by exact field ID (e.g., customfield_10020)
+		if allowedLower == fieldIDLower {
+			return true
+		}
+
+		// Match by field name (case-insensitive)
+		if allowedLower == fieldNameLower {
+			return true
+		}
+
+		// Match by normalized name (no spaces/special chars)
+		// e.g., "fixversion" matches "Fix Version", "storypoints" matches "Story Points"
+		if allowedNormalized == fieldNameNormalized {
 			return true
 		}
 	}
 
 	return false
+}
+
+// normalizeFieldName removes spaces and common separators for fuzzy matching
+func normalizeFieldName(name string) string {
+	name = strings.ReplaceAll(name, " ", "")
+	name = strings.ReplaceAll(name, "_", "")
+	name = strings.ReplaceAll(name, "-", "")
+	return name
 }
 
 func (p *Plugin) fetchConnectedUserFromAccount(account map[string]string, instance Instance) (Client, *Connection, error) {
