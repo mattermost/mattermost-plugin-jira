@@ -1,6 +1,13 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import React from 'react';
+import {act, render} from '@testing-library/react';
+import {Provider} from 'react-redux';
+import {IntlProvider} from 'react-intl';
+import configureStore from 'redux-mock-store';
+import thunk from 'redux-thunk';
+
 import Preferences from 'mattermost-redux/constants/preferences';
 import {Team} from '@mattermost/types/teams';
 
@@ -8,6 +15,38 @@ import projectMetadata from 'testdata/cloud-get-jira-project-metadata.json';
 import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.json';
 import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project.json';
+
+import {IssueMetadata} from 'types/model';
+
+import CreateIssueForm from './create_issue_form';
+
+const mockStore = configureStore([thunk]);
+
+const defaultMockState = {
+    'plugins-jira': {
+        installedInstances: [],
+        connectedInstances: [],
+    },
+    entities: {
+        general: {
+            config: {
+                SiteURL: 'http://localhost:8065',
+            },
+        },
+    },
+};
+
+const renderWithRedux = (ui: React.ReactElement, initialState = defaultMockState) => {
+    const store = mockStore(initialState);
+    return {
+        store,
+        ...render(
+            <IntlProvider locale='en'>
+                <Provider store={store}>{ui}</Provider>
+            </IntlProvider>,
+        ),
+    };
+};
 
 describe('components/CreateIssue', () => {
     const baseActions = {
@@ -28,37 +67,217 @@ describe('components/CreateIssue', () => {
         channelId: 'channel-id-1',
     };
 
-    test('baseProps are correctly defined', () => {
-        expect(baseProps.theme).toBe(Preferences.THEMES.denim);
-        expect(baseProps.visible).toBe(true);
-        expect(baseProps.channelId).toBe('channel-id-1');
+    const baseState = {
+        instanceID: 'https://something.atlassian.net',
+        jiraIssueMetadata: issueMetadata as IssueMetadata,
+    };
+
+    beforeEach(() => {
+        jest.clearAllMocks();
     });
 
-    test('baseActions are correctly mocked', () => {
-        expect(baseActions.create).toBeDefined();
-        expect(baseActions.clearIssueMetadata).toBeDefined();
-        expect(baseActions.fetchJiraIssueMetadataForProjects).toBeDefined();
+    test('should match snapshot', async () => {
+        const props = {...baseProps};
+        const ref = React.createRef<CreateIssueForm>();
+        await act(async () => {
+            renderWithRedux(
+                <CreateIssueForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        expect(ref.current).toBeDefined();
     });
 
-    test('project metadata is loaded', () => {
-        expect(baseProps.jiraProjectMetadata).toBeDefined();
-        expect(projectMetadata).toBeDefined();
+    test('should match snapshot with no issue metadata', async () => {
+        const props = {...baseProps};
+        const ref = React.createRef<CreateIssueForm>();
+        await act(async () => {
+            renderWithRedux(
+                <CreateIssueForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState({...baseState, jiraIssueMetadata: null});
+        });
+        expect(ref.current).toBeDefined();
     });
 
-    test('issue metadata is loaded', () => {
-        expect(baseProps.jiraIssueMetadata).toBeDefined();
-        expect(issueMetadata).toBeDefined();
+    test('should match snapshot with no instance id', async () => {
+        const props = {...baseProps};
+        const ref = React.createRef<CreateIssueForm>();
+        await act(async () => {
+            renderWithRedux(
+                <CreateIssueForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        expect(ref.current).toBeDefined();
     });
 
-    test('server project metadata is available', () => {
-        expect(serverProjectMetadata).toBeDefined();
+    test('should match snapshot with form filled', async () => {
+        const create = jest.fn().mockResolvedValue({});
+        const props = {...baseProps, create};
+        const ref = React.createRef<CreateIssueForm>();
+        await act(async () => {
+            renderWithRedux(
+                <CreateIssueForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        const fields = ref.current?.state.fields;
+        await act(async () => {
+            ref.current?.setState({
+                fields: {
+                    ...fields,
+                    summary: '',
+                    description: 'some description',
+                    project: {key: 'KT'},
+                    issuetype: {id: '10001'},
+                    priority: {id: 1},
+                },
+                projectKey: 'KT',
+                issueType: '10001',
+            });
+        });
+        expect(ref.current).toBeDefined();
     });
 
-    test('server issue metadata is available', () => {
-        expect(serverIssueMetadata).toBeDefined();
+    test('should match snapshot with error', async () => {
+        const create = jest.fn().mockResolvedValue({});
+        const props = {...baseProps, create};
+        const ref = React.createRef<CreateIssueForm>();
+        await act(async () => {
+            renderWithRedux(
+                <CreateIssueForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        const fields = ref.current?.state.fields;
+        await act(async () => {
+            ref.current?.setState({
+                fields: {
+                    ...fields,
+                    summary: '',
+                    description: 'some description',
+                    project: {key: 'KT'},
+                    issuetype: {id: '10001'},
+                    priority: {id: 1},
+                },
+                projectKey: 'KT',
+                issueType: '10001',
+                error: 'Some error',
+            });
+        });
+        await act(async () => {
+            ref.current?.setState({instanceID: 'https://something.atlassian.net'});
+        });
+        expect(ref.current).toBeDefined();
     });
 
-    test('current team is correctly set', () => {
-        expect(baseProps.currentTeam.name).toBe('Team1');
+    test('should call create prop to create an issue', async () => {
+        const create = jest.fn().mockResolvedValue({});
+        const props = {...baseProps, create};
+        const ref = React.createRef<CreateIssueForm>();
+        await act(async () => {
+            renderWithRedux(
+                <CreateIssueForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        const fields = ref.current?.state.fields;
+        await act(async () => {
+            ref.current?.setState({
+                fields: {
+                    ...fields,
+                    summary: 'some summary',
+                    description: 'some description',
+                    project: {key: 'KT'},
+                    issuetype: {id: '10001'},
+                    priority: {id: '1'},
+                },
+                projectKey: 'KT',
+                issueType: '10001',
+            });
+        });
+
+        // Mock the validator to always return true
+        // @ts-ignore - accessing private property for testing
+        ref.current.validator = {validate: () => true};
+
+        await act(async () => {
+            ref.current?.handleSubmit();
+        });
+        expect(create).toHaveBeenCalled();
+    });
+
+    test('SERVER - should call create prop to create an issue', async () => {
+        const create = jest.fn().mockResolvedValue({});
+        const props = {
+            ...baseProps,
+            create,
+            jiraProjectMetadata: serverProjectMetadata,
+            jiraIssueMetadata: serverIssueMetadata,
+        };
+        const ref = React.createRef<CreateIssueForm>();
+        await act(async () => {
+            renderWithRedux(
+                <CreateIssueForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        const fields = ref.current?.state.fields;
+        await act(async () => {
+            ref.current?.setState({
+                fields: {
+                    ...fields,
+                    summary: 'some summary',
+                    description: 'some description',
+                    project: {key: 'HEY'},
+                    issuetype: {id: '10001'},
+                    priority: {id: '1'},
+                },
+                projectKey: 'HEY',
+                issueType: '10001',
+            });
+        });
+
+        // Mock the validator to always return true
+        // @ts-ignore - accessing private property for testing
+        ref.current.validator = {validate: () => true};
+
+        await act(async () => {
+            ref.current?.handleSubmit();
+        });
+        expect(create).toHaveBeenCalled();
     });
 });

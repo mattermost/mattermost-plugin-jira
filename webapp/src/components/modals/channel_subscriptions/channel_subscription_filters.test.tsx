@@ -1,12 +1,47 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import React from 'react';
+import {act, render} from '@testing-library/react';
+import {Provider} from 'react-redux';
+import {IntlProvider} from 'react-intl';
+import configureStore from 'redux-mock-store';
+import thunk from 'redux-thunk';
+
 import {useFieldForIssueMetadata} from 'testdata/jira-issue-metadata-helpers';
 
 import {FilterFieldInclusion} from 'types/model';
 import {getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
 
-import {Props} from './channel_subscription_filters';
+import ChannelSubscriptionFilters, {Props} from './channel_subscription_filters';
+
+const mockStore = configureStore([thunk]);
+
+const defaultMockState = {
+    'plugins-jira': {
+        installedInstances: [],
+        connectedInstances: [],
+    },
+    entities: {
+        general: {
+            config: {
+                SiteURL: 'http://localhost:8065',
+            },
+        },
+    },
+};
+
+const renderWithRedux = (ui: React.ReactElement, initialState = defaultMockState) => {
+    const store = mockStore(initialState);
+    return {
+        store,
+        ...render(
+            <IntlProvider locale='en'>
+                <Provider store={store}>{ui}</Provider>
+            </IntlProvider>,
+        ),
+    };
+};
 
 describe('components/ChannelSubscriptionFilters', () => {
     const field = {
@@ -68,31 +103,26 @@ describe('components/ChannelSubscriptionFilters', () => {
         searchTeamFields: jest.fn().mockResolvedValue({data: []}),
     };
 
-    test('baseProps are correctly defined', () => {
-        expect(baseProps.theme).toBeDefined();
-        expect(baseProps.fields).toBeDefined();
-        expect(baseProps.values).toHaveLength(1);
+    beforeEach(() => {
+        jest.clearAllMocks();
     });
 
-    test('issue metadata is correctly loaded', () => {
-        expect(issueMetadata).toBeDefined();
-        expect(issueMetadata.projects).toBeDefined();
-    });
+    test('should match snapshot', async () => {
+        const props = {...baseProps};
+        const ref = React.createRef<ChannelSubscriptionFilters>();
+        await act(async () => {
+            renderWithRedux(
+                <ChannelSubscriptionFilters
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
 
-    test('filter values have expected structure', () => {
-        expect(baseProps.values[0].key).toBe('priority');
-        expect(baseProps.values[0].inclusion).toBe(FilterFieldInclusion.INCLUDE_ANY);
-    });
+        await act(async () => {
+            ref.current?.setState({showCreateRow: true});
+        });
 
-    test('chosen issue types are set', () => {
-        expect(baseProps.chosenIssueTypes).toContain('10001');
-    });
-
-    test('instance ID is set', () => {
-        expect(baseProps.instanceID).toBe('https://something.atlassian.net');
-    });
-
-    test('security level empty flag is true', () => {
-        expect(baseProps.securityLevelEmptyForJiraSubscriptions).toBe(true);
+        expect(ref.current).toBeDefined();
     });
 });

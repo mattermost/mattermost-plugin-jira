@@ -2,18 +2,15 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {fireEvent, render, screen} from '@testing-library/react';
+import {fireEvent, render} from '@testing-library/react';
 import {IntlProvider} from 'react-intl';
 
 import FullScreenModal from './full_screen_modal.jsx';
 
-const renderWithIntl = (component) => {
+const renderWithIntl = (ui) => {
     return render(
-        <IntlProvider
-            locale='en'
-            messages={{}}
-        >
-            {component}
+        <IntlProvider locale='en'>
+            {ui}
         </IntlProvider>,
     );
 };
@@ -28,8 +25,9 @@ describe('components/widgets/modals/FullScreenModal', () => {
                 {'test'}
             </FullScreenModal>,
         );
-        expect(screen.getByText('test')).toBeInTheDocument();
+
         expect(container.querySelector('.FullScreenModal')).toBeInTheDocument();
+        expect(container.textContent).toContain('test');
     });
 
     test('not showing content', () => {
@@ -41,6 +39,7 @@ describe('components/widgets/modals/FullScreenModal', () => {
                 {'test'}
             </FullScreenModal>,
         );
+
         expect(container.querySelector('.FullScreenModal')).not.toBeInTheDocument();
     });
 
@@ -54,9 +53,10 @@ describe('components/widgets/modals/FullScreenModal', () => {
                 {'test'}
             </FullScreenModal>,
         );
+
         expect(close).not.toHaveBeenCalled();
-        const closeButton = container.querySelector('.close-x');
-        fireEvent.click(closeButton);
+        const closeIcon = container.querySelector('.close-x');
+        fireEvent.click(closeIcon);
         expect(close).toHaveBeenCalled();
     });
 
@@ -70,6 +70,7 @@ describe('components/widgets/modals/FullScreenModal', () => {
                 {'test'}
             </FullScreenModal>,
         );
+
         expect(close).not.toHaveBeenCalled();
         const event = new KeyboardEvent('keydown', {key: 'Escape'});
         document.dispatchEvent(event);

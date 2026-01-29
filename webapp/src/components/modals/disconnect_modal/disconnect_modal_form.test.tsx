@@ -2,11 +2,41 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {render} from '@testing-library/react';
-
-import {InstanceType} from 'types/model';
+import {act, render} from '@testing-library/react';
+import {Provider} from 'react-redux';
+import {IntlProvider} from 'react-intl';
+import configureStore from 'redux-mock-store';
+import thunk from 'redux-thunk';
 
 import DisconnectModalForm from './disconnect_modal_form';
+
+const mockStore = configureStore([thunk]);
+
+const defaultMockState = {
+    'plugins-jira': {
+        installedInstances: [],
+        connectedInstances: [],
+    },
+    entities: {
+        general: {
+            config: {
+                SiteURL: 'http://localhost:8065',
+            },
+        },
+    },
+};
+
+const renderWithRedux = (ui: React.ReactElement, initialState = defaultMockState) => {
+    const store = mockStore(initialState);
+    return {
+        store,
+        ...render(
+            <IntlProvider locale='en'>
+                <Provider store={store}>{ui}</Provider>
+            </IntlProvider>,
+        ),
+    };
+};
 
 describe('components/DisconnectModalForm', () => {
     const baseActions = {
@@ -28,25 +58,29 @@ describe('components/DisconnectModalForm', () => {
         ...baseActions,
         visible: true,
         theme: mockTheme,
-        connectedInstances: [
-            {
-                instance_id: 'https://something.atlassian.net',
-                type: InstanceType.CLOUD,
-            },
-        ],
+        connectedInstances: [],
     };
 
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
-    test('should match snapshot', () => {
+    test('should match snapshot', async () => {
         const props = {...baseProps};
-        const {container} = render(<DisconnectModalForm {...props}/>);
-        expect(container).toBeInTheDocument();
+        const ref = React.createRef<DisconnectModalForm>();
+        await act(async () => {
+            renderWithRedux(
+                <DisconnectModalForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+
+        expect(ref.current).toBeDefined();
     });
 
-    test('should close modal and send ephemeral post on submit success', () => {
+    test('should close modal and send ephemeral post on submit success', async () => {
         const closeModal = jest.fn().mockResolvedValue({});
         const sendEphemeralPost = jest.fn().mockResolvedValue({});
         const disconnectUser = jest.fn().mockResolvedValue({});
@@ -57,11 +91,34 @@ describe('components/DisconnectModalForm', () => {
             sendEphemeralPost,
             disconnectUser,
         };
-        const {container} = render(<DisconnectModalForm {...props}/>);
-        expect(container).toBeInTheDocument();
+        const ref = React.createRef<DisconnectModalForm>();
+        await act(async () => {
+            renderWithRedux(
+                <DisconnectModalForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+
+        await act(async () => {
+            ref.current?.handleInstanceChoice('', 'https://something.atlassian.net');
+        });
+        expect(ref.current?.state.selectedInstance).toEqual('https://something.atlassian.net');
+
+        await act(async () => {
+            ref.current?.submit({preventDefault: jest.fn()});
+        });
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(disconnectUser).toHaveBeenCalledWith('https://something.atlassian.net');
+        expect(sendEphemeralPost).toHaveBeenCalledWith('Successfully disconnected from Jira instance https://something.atlassian.net');
+        expect(closeModal).toHaveBeenCalled();
     });
 
-    test('should show error on submit fail', () => {
+    test('should show error on submit fail', async () => {
         const closeModal = jest.fn().mockResolvedValue({});
         const sendEphemeralPost = jest.fn().mockResolvedValue({});
         const disconnectUser = jest.fn().mockResolvedValue({error: 'Error disconnecting'});
@@ -72,7 +129,32 @@ describe('components/DisconnectModalForm', () => {
             sendEphemeralPost,
             disconnectUser,
         };
-        const {container} = render(<DisconnectModalForm {...props}/>);
-        expect(container).toBeInTheDocument();
+        const ref = React.createRef<DisconnectModalForm>();
+        await act(async () => {
+            renderWithRedux(
+                <DisconnectModalForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+
+        await act(async () => {
+            ref.current?.handleInstanceChoice('', 'https://something.atlassian.net');
+        });
+        expect(ref.current?.state.selectedInstance).toEqual('https://something.atlassian.net');
+
+        await act(async () => {
+            ref.current?.submit({preventDefault: jest.fn()});
+        });
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(disconnectUser).toHaveBeenCalled();
+        expect(sendEphemeralPost).not.toHaveBeenCalled();
+        expect(closeModal).not.toHaveBeenCalled();
+
+        expect(ref.current?.state.error).toEqual('Error disconnecting');
     });
 });

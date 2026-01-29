@@ -1,15 +1,55 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+/* eslint-disable max-lines */
+import React from 'react';
+import {act, fireEvent, render} from '@testing-library/react';
+import {Provider} from 'react-redux';
+import {IntlProvider} from 'react-intl';
+import configureStore from 'redux-mock-store';
+import thunk from 'redux-thunk';
+
 import Preferences from 'mattermost-redux/constants/preferences';
 import {Channel} from '@mattermost/types/channels';
 
 import cloudIssueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
+import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.json';
+import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project-many-fields.json';
 import testChannel from 'testdata/channel.json';
 
-import {FilterFieldInclusion} from 'types/model';
+import {FilterFieldInclusion, IssueMetadata, ProjectMetadata} from 'types/model';
 
-import {Props} from './edit_channel_subscription';
+import EditChannelSubscription, {Props} from './edit_channel_subscription';
+
+const MockSubscriptionName = 'testSubscriptionName';
+
+const mockStore = configureStore([thunk]);
+
+const defaultMockState = {
+    'plugins-jira': {
+        installedInstances: [],
+        connectedInstances: [],
+    },
+    entities: {
+        general: {
+            config: {
+                SiteURL: 'http://localhost:8065',
+            },
+        },
+    },
+};
+
+const renderWithProviders = (ui: React.ReactElement, initialState = defaultMockState) => {
+    const store = mockStore(initialState);
+    return {
+        store,
+        ...render(
+            <IntlProvider locale='en'>
+                <Provider store={store}>{ui}</Provider>
+            </IntlProvider>,
+        ),
+    };
+};
 
 describe('components/EditChannelSubscription', () => {
     const baseActions = {
@@ -54,6 +94,27 @@ describe('components/EditChannelSubscription', () => {
         instance_id: 'https://something.atlassian.net',
     };
 
+    const channelSubscriptionForServer = {
+        id: 'fjwifuxe8jyi9y81htww6ifeydh',
+        channel_id: testChannel.id,
+        filters: {
+            events: ['event_updated_reopened'],
+            projects: ['HEY'],
+            issue_types: ['10004'],
+            fields: [{
+                key: 'customfield_10201',
+                inclusion: 'include_any' as FilterFieldInclusion,
+                values: ['10035'],
+            }, {
+                key: 'fixVersions',
+                inclusion: 'include_any' as FilterFieldInclusion,
+                values: ['10000'],
+            }],
+        },
+        name: 'SubTestName',
+        instance_id: 'https://something.atlassian.net',
+    };
+
     const baseProps: Props = {
         ...baseActions,
         channel: testChannel as unknown as Channel,
@@ -67,79 +128,641 @@ describe('components/EditChannelSubscription', () => {
         securityLevelEmptyForJiraSubscriptions: true,
     };
 
-    test('props are correctly defined', () => {
-        expect(baseProps.channel).toBeDefined();
-        expect(baseProps.channelSubscriptions).toHaveLength(1);
-        expect(baseProps.selectedSubscription).toBeDefined();
+    const baseState = {
+        instanceID: 'https://something.atlassian.net',
+        jiraIssueMetadata: cloudIssueMetadata as IssueMetadata,
+    };
+
+    beforeEach(() => {
+        jest.clearAllMocks();
     });
 
-    test('baseActions are correctly mocked', () => {
-        expect(baseActions.createChannelSubscription).toBeDefined();
-        expect(baseActions.deleteChannelSubscription).toBeDefined();
-        expect(baseActions.editChannelSubscription).toBeDefined();
+    test('should match snapshot', async () => {
+        const props = {...baseProps};
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        expect(ref.current).toBeDefined();
     });
 
-    test('subscription filters are correctly structured', () => {
-        expect(channelSubscriptionForCloud.filters.events).toContain('event_updated_reopened');
-        expect(channelSubscriptionForCloud.filters.projects).toContain('KT');
-        expect(channelSubscriptionForCloud.filters.issue_types).toContain('10004');
+    test('should match snapshot with no subscriptions', async () => {
+        const props = {...baseProps, channelSubscriptions: [], selectedSubscription: null};
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        expect(ref.current).toBeDefined();
     });
 
-    test('subscription fields are correctly structured', () => {
-        const fields = channelSubscriptionForCloud.filters.fields;
-        expect(fields).toHaveLength(3);
-        expect(fields[0].key).toBe('customfield_10073');
-        expect(fields[0].inclusion).toBe('include_any');
+    test('should match snapshot with no issue metadata', async () => {
+        const props = {...baseProps};
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState({...baseState, jiraIssueMetadata: null});
+        });
+        expect(ref.current).toBeDefined();
     });
 
-    test('mock actions return expected values', async () => {
-        const result = await baseActions.fetchJiraIssueMetadataForProjects('', '');
-        expect(result.data).toBeDefined();
+    test('should match snapshot after fetching issue metadata', async () => {
+        const props = {...baseProps};
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(ref.current).toBeDefined();
     });
 
-    test('theme is correctly passed', () => {
-        expect(baseProps.theme).toBe(Preferences.THEMES.denim);
+    test('should change project filter when chosen', async () => {
+        const fetchJiraIssueMetadataForProjects = jest.fn().mockResolvedValue({});
+        const props = {
+            ...baseProps,
+            fetchJiraIssueMetadataForProjects,
+        };
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        await act(async () => {
+            ref.current?.handleProjectChange({project_key: 'TES'});
+        });
+        expect(ref.current?.state.filters.projects).toEqual(['TES']);
+        expect(fetchJiraIssueMetadataForProjects).toHaveBeenCalled();
     });
 
-    test('creating subscription flags work correctly', () => {
-        expect(baseProps.creatingSubscription).toBe(false);
-        expect(baseProps.creatingSubscriptionTemplate).toBe(false);
+    test('should show an error when a previously configured field is not in the issue metadata', async () => {
+        const subscription = {
+            id: 'asxtifxe8jyi9y81htww6ixkiy',
+            channel_id: testChannel.id,
+            filters: {
+                events: ['event_updated_reopened'],
+                projects: ['KT'],
+                issue_types: ['10004'],
+                fields: [{
+                    key: 'customfield_10099',
+                    inclusion: 'include_any' as FilterFieldInclusion,
+                    values: ['10035'],
+                }, {
+                    key: 'versions',
+                    inclusion: 'include_any' as FilterFieldInclusion,
+                    values: ['10000'],
+                }],
+            },
+            name: 'SubTestName',
+            instance_id: 'https://something.atlassian.net',
+        };
+
+        const props = {
+            ...baseProps,
+            channelSubscriptions: [subscription],
+            selectedSubscription: subscription,
+        };
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(ref.current?.state.fetchingIssueMetadata).toBe(false);
+        expect(ref.current?.state.getMetaDataErr).toBe(null);
+
+        const expected = 'A field in this subscription has been removed from Jira, so the subscription is invalid. When this form is submitted, the configured field will be removed from the subscription to make the subscription valid again.';
+        expect(ref.current?.state.error).toEqual(expected);
     });
 
-    test('security level empty flag is set', () => {
-        expect(baseProps.securityLevelEmptyForJiraSubscriptions).toBe(true);
+    test('should create a named subscription', async () => {
+        const createChannelSubscription = jest.fn().mockResolvedValue({});
+        const editChannelSubscription = jest.fn().mockResolvedValue({});
+        const finishEditSubscription = jest.fn();
+        const props = {
+            ...baseProps,
+            createChannelSubscription,
+            editChannelSubscription,
+            channelSubscriptions: [],
+            selectedSubscription: null,
+            finishEditSubscription,
+        };
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+
+        await act(async () => {
+            ref.current?.setState({
+                filters: channelSubscriptionForCloud.filters,
+                subscriptionName: channelSubscriptionForCloud.name,
+            });
+        });
+
+        // Mock the validator to always return true
+        // @ts-ignore - accessing private property for testing
+        ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(ref.current?.state.error).toBe(null);
+        expect(createChannelSubscription).toHaveBeenCalledWith({
+            channel_id: testChannel.id,
+            filters: channelSubscriptionForCloud.filters,
+            name: channelSubscriptionForCloud.name,
+            instance_id: 'https://something.atlassian.net',
+        });
+        expect(editChannelSubscription).not.toHaveBeenCalled();
+        expect(finishEditSubscription).toHaveBeenCalled();
     });
 
-    test('channel subscription has correct channel_id', () => {
-        expect(channelSubscriptionForCloud.channel_id).toBe(testChannel.id);
+    test('SERVER - should create a subscription', async () => {
+        const createChannelSubscription = jest.fn().mockResolvedValue({});
+        const editChannelSubscription = jest.fn().mockResolvedValue({});
+        const finishEditSubscription = jest.fn();
+        const props = {
+            ...baseProps,
+            createChannelSubscription,
+            editChannelSubscription,
+            channelSubscriptions: [],
+            selectedSubscription: null,
+            jiraProjectMetadata: serverProjectMetadata as ProjectMetadata,
+            finishEditSubscription,
+        };
+
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState({...baseState, jiraIssueMetadata: serverIssueMetadata, subscriptionName: MockSubscriptionName});
+        });
+
+        await act(async () => {
+            ref.current?.setState({
+                filters: channelSubscriptionForServer.filters,
+            });
+        });
+
+        // Mock the validator to always return true
+        // @ts-ignore - accessing private property for testing
+        ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(ref.current?.state.error).toBe(null);
+        expect(createChannelSubscription).toHaveBeenCalledWith({
+            channel_id: testChannel.id,
+            filters: channelSubscriptionForServer.filters,
+            name: MockSubscriptionName,
+            instance_id: 'https://something.atlassian.net',
+        });
+        expect(editChannelSubscription).not.toHaveBeenCalled();
+        expect(finishEditSubscription).toHaveBeenCalled();
     });
 
-    test('channel subscription has correct instance_id', () => {
-        expect(channelSubscriptionForCloud.instance_id).toBe('https://something.atlassian.net');
+    test('should on submit, remove filters for configured fields that are not in the issue metadata', async () => {
+        const subscription = {
+            id: 'asxtifxe8jyi9y81htww6ixkiy',
+            channel_id: testChannel.id,
+            filters: {
+                events: ['event_updated_reopened'],
+                projects: ['KT'],
+                issue_types: ['10004'],
+                fields: [{
+                    key: 'customfield_10099',
+                    inclusion: 'include_any' as FilterFieldInclusion,
+                    values: ['10035'],
+                }, {
+                    key: 'versions',
+                    inclusion: 'include_any' as FilterFieldInclusion,
+                    values: ['10000'],
+                }],
+            },
+            name: 'SubTestName',
+            instance_id: 'https://something.atlassian.net',
+        };
+
+        const editChannelSubscription = jest.fn().mockResolvedValue({});
+        const props = {
+            ...baseProps,
+            editChannelSubscription,
+            channelSubscriptions: [subscription],
+            selectedSubscription: subscription,
+        };
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+
+        // Mock the validator to always return true
+        // @ts-ignore - accessing private property for testing
+        ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
+        expect(editChannelSubscription).toHaveBeenCalledWith({
+            id: 'asxtifxe8jyi9y81htww6ixkiy',
+            channel_id: testChannel.id,
+            filters: {
+                ...subscription.filters,
+                fields: [{
+                    key: 'versions',
+                    inclusion: 'include_any' as FilterFieldInclusion,
+                    values: ['10000'],
+                }],
+            },
+            name: 'SubTestName',
+            instance_id: 'https://something.atlassian.net',
+        });
     });
 
-    test('channel subscription has correct name', () => {
-        expect(channelSubscriptionForCloud.name).toBe('SubTestName');
+    test('should edit a subscription', async () => {
+        const createChannelSubscription = jest.fn().mockResolvedValue({});
+        const editChannelSubscription = jest.fn().mockResolvedValue({});
+        const finishEditSubscription = jest.fn();
+        const props = {
+            ...baseProps,
+            createChannelSubscription,
+            editChannelSubscription,
+            finishEditSubscription,
+        };
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+
+        await act(async () => {
+            ref.current?.setState({
+                filters: channelSubscriptionForCloud.filters,
+            });
+        });
+
+        // Mock the validator to always return true
+        // @ts-ignore - accessing private property for testing
+        ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(ref.current?.state.error).toBe(null);
+        expect(editChannelSubscription).toHaveBeenCalledWith({
+            id: channelSubscriptionForCloud.id,
+            channel_id: testChannel.id,
+            filters: channelSubscriptionForCloud.filters,
+            name: channelSubscriptionForCloud.name,
+            instance_id: 'https://something.atlassian.net',
+        });
+        expect(createChannelSubscription).not.toHaveBeenCalled();
+        expect(finishEditSubscription).toHaveBeenCalled();
     });
 
-    test('filters include expected issue type', () => {
-        expect(baseProps.selectedSubscription?.filters.issue_types).toContain('10004');
+    test('should produce subscription error when add conflicting issue type', async () => {
+        const props = {
+            ...baseProps,
+        };
+
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+
+        // initially, there are no errors
+        expect(ref.current?.state.conflictingError).toBe(null);
+
+        // Add issue type with conflicting filter fields and observe error
+        await act(async () => {
+            ref.current?.handleIssueChange('issue_types', ['10004', '10000']);
+        });
+        expect(ref.current?.state.conflictingError).toEqual('Issue Type(s) "Epic" does not have filter field(s): "Affects versions".  Please update the conflicting fields or create a separate subscription.');
     });
 
-    test('filters include expected project', () => {
-        expect(baseProps.selectedSubscription?.filters.projects).toContain('KT');
+    test('conflicting subscription error should get cleared', async () => {
+        const props = {
+            ...baseProps,
+        };
+
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+
+        // Add issue type with conflicting filter fields
+        await act(async () => {
+            ref.current?.handleIssueChange('issue_types', ['10004', '10000']);
+        });
+
+        // save errorState for later usage
+        const errorState = {...ref.current?.state};
+
+        // change the Event Types - error should disappear
+        await act(async () => {
+            ref.current?.handleSettingChange('issue_types', ['10004', '10000']);
+        });
+        expect(ref.current?.state.conflictingError).toBe(null);
+
+        // reset error message state
+        await act(async () => {
+            ref.current?.setState(errorState);
+        });
+
+        // change project - error should disappear
+        await act(async () => {
+            ref.current?.handleProjectChange('project', 'KT');
+        });
+        expect(ref.current?.state.conflictingError).toBe(null);
+
+        // reset error message state
+        await act(async () => {
+            ref.current?.setState(errorState);
+        });
+
+        // change one of the filter fields - error should disappear
+        await act(async () => {
+            ref.current?.handleFilterFieldChange(['']);
+        });
+        expect(ref.current?.state.conflictingError).toBe(null);
     });
 
-    test('close callback is provided', () => {
-        expect(typeof baseProps.close).toBe('function');
+    test('should not create when choices are blank', async () => {
+        const createChannelSubscription = jest.fn().mockResolvedValue({});
+        const props = {
+            ...baseProps,
+            createChannelSubscription,
+            channelSubscriptions: [],
+        };
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+
+        const filters = channelSubscriptionForCloud.filters;
+
+        await act(async () => {
+            ref.current?.setState({
+                filters: {
+                    ...filters,
+                    projects: [],
+                },
+            });
+        });
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
+        expect(createChannelSubscription).not.toHaveBeenCalled();
+
+        await act(async () => {
+            ref.current?.setState({error: null});
+        });
+
+        await act(async () => {
+            ref.current?.setState({
+                filters: {
+                    ...filters,
+                    issue_types: [],
+                },
+            });
+        });
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
+        expect(createChannelSubscription).not.toHaveBeenCalled();
+
+        await act(async () => {
+            ref.current?.setState({
+                filters: {
+                    ...filters,
+                    events: [],
+                },
+            });
+        });
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
+        expect(createChannelSubscription).not.toHaveBeenCalled();
     });
 
-    test('finishEditSubscription callback is provided', () => {
-        expect(typeof baseProps.finishEditSubscription).toBe('function');
+    test('should hide the delete button when no subscription is present', async () => {
+        const props = {
+            ...baseProps,
+            channelSubscriptions: [],
+            selectedSubscription: null,
+        };
+        const ref = React.createRef<EditChannelSubscription>();
+        const {container} = await act(async () => {
+            return renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+
+        const deleteButton = container.querySelector('#jira-delete-subscription');
+        expect(deleteButton).toBeInTheDocument();
+        expect(deleteButton).toBeDisabled();
     });
 
-    test('channel data is valid', () => {
-        expect(testChannel.id).toBeDefined();
-        expect(testChannel.display_name).toBeDefined();
+    test('should delete subscription', async () => {
+        const deleteChannelSubscription = jest.fn().mockResolvedValue({});
+        const finishEditSubscription = jest.fn();
+        const props = {
+            ...baseProps,
+            deleteChannelSubscription,
+            finishEditSubscription,
+        };
+        const ref = React.createRef<EditChannelSubscription>();
+        const {container} = await act(async () => {
+            return renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+
+        const deleteButton = container.querySelector('#jira-delete-subscription');
+        expect(deleteButton).toBeInTheDocument();
+        await act(async () => {
+            fireEvent.click(deleteButton!);
+        });
+
+        expect(ref.current?.state.showConfirmModal).toBe(true);
+        await act(async () => {
+            ref.current?.handleConfirmAction();
+        });
+
+        expect(deleteChannelSubscription).toHaveBeenCalled();
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(ref.current?.state.error).toBe(null);
+        expect(finishEditSubscription).toHaveBeenCalled();
+    });
+
+    test('should show error if delete fails', async () => {
+        const deleteChannelSubscription = jest.fn().mockResolvedValue({error: {message: 'Failure'}});
+        const finishEditSubscription = jest.fn();
+        const props = {
+            ...baseProps,
+            deleteChannelSubscription,
+            finishEditSubscription,
+        };
+        const ref = React.createRef<EditChannelSubscription>();
+        const {container} = await act(async () => {
+            return renderWithProviders(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+
+        const deleteButton = container.querySelector('#jira-delete-subscription');
+        expect(deleteButton).toBeInTheDocument();
+        await act(async () => {
+            fireEvent.click(deleteButton!);
+        });
+
+        expect(ref.current?.state.showConfirmModal).toBe(true);
+        await act(async () => {
+            ref.current?.handleConfirmAction();
+        });
+
+        expect(deleteChannelSubscription).toHaveBeenCalled();
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(ref.current?.state.error).toEqual('Failure');
+        expect(finishEditSubscription).not.toHaveBeenCalled();
     });
 });
