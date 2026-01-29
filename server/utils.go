@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -108,21 +109,68 @@ func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string 
 			jiraUserIDOrName = uname
 		}
 
+		jiraMention := "[~" + uname + "]"
+
 		mattermostUserID, err := p.userStore.LoadMattermostUserID(instanceID, jiraUserIDOrName)
-		if err != nil {
-			continue
+		if err == nil {
+			user, userErr := p.client.User.Get(string(mattermostUserID))
+			if userErr == nil {
+				result = strings.ReplaceAll(result, jiraMention, "@"+user.Username)
+				continue
+			}
 		}
 
-		user, err := p.client.User.Get(string(mattermostUserID))
-		if err != nil {
-			continue
+		displayName := p.getJiraUserDisplayName(instanceID, jiraUserIDOrName)
+		if displayName != "" {
+			result = strings.ReplaceAll(result, jiraMention, displayName)
+		} else {
+			result = strings.ReplaceAll(result, jiraMention, jiraUserIDOrName)
 		}
-
-		jiraUserName := "[~" + uname + "]"
-		result = strings.ReplaceAll(result, jiraUserName, "@"+user.Username)
 	}
 
 	return result
+}
+
+func (p *Plugin) getJiraUserDisplayName(instanceID types.ID, accountID string) string {
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return ""
+	}
+
+	baseURL := instance.GetURL()
+	if baseURL == "" {
+		return ""
+	}
+
+	userURL := fmt.Sprintf("%s/rest/api/3/user?accountId=%s", baseURL, accountID)
+	req, err := http.NewRequest(http.MethodGet, userURL, nil)
+	if err != nil {
+		return ""
+	}
+
+	if err := p.SetAdminAPITokenRequestHeader(req); err != nil {
+		return ""
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return ""
+	}
+
+	var jiraUser struct {
+		DisplayName string `json:"displayName"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&jiraUser); err != nil {
+		return ""
+	}
+
+	return jiraUser.DisplayName
 }
 
 func parseJIRAUsernamesFromText(text string) []string {
