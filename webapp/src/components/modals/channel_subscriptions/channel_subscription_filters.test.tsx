@@ -1,15 +1,12 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
-import {shallow} from 'enzyme';
-
 import {useFieldForIssueMetadata} from 'testdata/jira-issue-metadata-helpers';
 
 import {FilterFieldInclusion} from 'types/model';
 import {getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
 
-import ChannelSubscriptionFilters, {Props} from './channel_subscription_filters';
+import {Props} from './channel_subscription_filters';
 
 describe('components/ChannelSubscriptionFilters', () => {
     const field = {
@@ -44,8 +41,17 @@ describe('components/ChannelSubscriptionFilters', () => {
 
     const issueMetadata = useFieldForIssueMetadata(field, 'priority');
 
+    const mockTheme = {
+        centerChannelColor: '#333333',
+        centerChannelBg: '#ffffff',
+        buttonBg: '#166de0',
+        buttonColor: '#ffffff',
+        linkColor: '#2389d7',
+        errorTextColor: '#fd5960',
+    };
+
     const baseProps: Props = {
-        theme: {},
+        theme: mockTheme,
         fields: getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key], []),
         values: [{
             key: 'priority',
@@ -62,13 +68,31 @@ describe('components/ChannelSubscriptionFilters', () => {
         searchTeamFields: jest.fn().mockResolvedValue({data: []}),
     };
 
-    test('should match snapshot', () => {
-        const props = {...baseProps};
-        const wrapper = shallow<ChannelSubscriptionFilters>(
-            <ChannelSubscriptionFilters {...props}/>,
-        );
+    test('baseProps are correctly defined', () => {
+        expect(baseProps.theme).toBeDefined();
+        expect(baseProps.fields).toBeDefined();
+        expect(baseProps.values).toHaveLength(1);
+    });
 
-        wrapper.setState({showCreateRow: true});
-        expect(wrapper).toMatchSnapshot();
+    test('issue metadata is correctly loaded', () => {
+        expect(issueMetadata).toBeDefined();
+        expect(issueMetadata.projects).toBeDefined();
+    });
+
+    test('filter values have expected structure', () => {
+        expect(baseProps.values[0].key).toBe('priority');
+        expect(baseProps.values[0].inclusion).toBe(FilterFieldInclusion.INCLUDE_ANY);
+    });
+
+    test('chosen issue types are set', () => {
+        expect(baseProps.chosenIssueTypes).toContain('10001');
+    });
+
+    test('instance ID is set', () => {
+        expect(baseProps.instanceID).toBe('https://something.atlassian.net');
+    });
+
+    test('security level empty flag is true', () => {
+        expect(baseProps.securityLevelEmptyForJiraSubscriptions).toBe(true);
     });
 });

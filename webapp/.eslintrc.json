@@ -643,6 +643,12 @@
   },
   "overrides": [
     {
+      "files": ["tests/**/*.js", "**/*.test.js", "**/*.test.jsx", "**/*.test.ts", "**/*.test.tsx"],
+      "rules": {
+        "import/no-unresolved": ["error", { "ignore": ["@testing-library/jest-dom"] }]
+      }
+    },
+    {
       "files": [
         "**/*.tsx",
         "**/*.ts"

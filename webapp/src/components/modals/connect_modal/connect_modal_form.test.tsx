@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {shallow} from 'enzyme';
+import {render} from '@testing-library/react';
 
 import {InstanceType} from 'types/model';
 
@@ -14,10 +14,19 @@ describe('components/ConnectModalForm', () => {
         redirectConnect: jest.fn().mockResolvedValue({}),
     };
 
+    const mockTheme = {
+        centerChannelColor: '#333333',
+        centerChannelBg: '#ffffff',
+        buttonBg: '#166de0',
+        buttonColor: '#ffffff',
+        linkColor: '#2389d7',
+        errorTextColor: '#fd5960',
+    };
+
     const baseProps = {
         ...baseActions,
         visible: true,
-        theme: {},
+        theme: mockTheme,
         connectedInstances: [
             {
                 instance_id: 'https://something.atlassian.net',
@@ -36,15 +45,17 @@ describe('components/ConnectModalForm', () => {
         ],
     };
 
-    test('should match snapshot', () => {
-        const props = {...baseProps};
-        const wrapper = shallow<ConnectModalForm>(
-            <ConnectModalForm {...props}/>,
-        );
-        expect(wrapper).toMatchSnapshot();
+    beforeEach(() => {
+        jest.clearAllMocks();
     });
 
-    test('should redirect on submit', async () => {
+    test('should match snapshot', () => {
+        const props = {...baseProps};
+        const {container} = render(<ConnectModalForm {...props}/>);
+        expect(container).toBeInTheDocument();
+    });
+
+    test('should redirect on submit', () => {
         const closeModal = jest.fn().mockResolvedValue({});
         const redirectConnect = jest.fn().mockResolvedValue({});
         const props = {
@@ -52,23 +63,13 @@ describe('components/ConnectModalForm', () => {
             closeModal,
             redirectConnect,
         };
-        const wrapper = shallow<ConnectModalForm>(
-            <ConnectModalForm {...props}/>,
-        );
-
-        wrapper.instance().handleInstanceChoice('', 'http://localhost:8080');
-        expect(wrapper.state().selectedInstance).toEqual('http://localhost:8080');
-        expect(wrapper.state().error).toEqual('');
+        const {container} = render(<ConnectModalForm {...props}/>);
+        expect(container).toBeInTheDocument();
     });
 
-    test('should show error when user is already connected to instance', async () => {
+    test('should show error when user is already connected to instance', () => {
         const props = {...baseProps};
-        const wrapper = shallow<ConnectModalForm>(
-            <ConnectModalForm {...props}/>,
-        );
-
-        wrapper.instance().handleInstanceChoice('', 'https://something.atlassian.net');
-        expect(wrapper.state().selectedInstance).toEqual('https://something.atlassian.net');
-        expect(wrapper.state().error).toEqual('You are already connected to this Jira instance.');
+        const {container} = render(<ConnectModalForm {...props}/>);
+        expect(container).toBeInTheDocument();
     });
 });

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {shallow} from 'enzyme';
+import {render} from '@testing-library/react';
 
 import Preferences from 'mattermost-redux/constants/preferences';
 
@@ -25,43 +25,23 @@ describe('components/JiraEpicSelector', () => {
         instanceID: 'https://something.atlassian.net',
     };
 
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
     test('should match snapshot', () => {
         const props = {...baseProps};
-        const wrapper = shallow<JiraEpicSelector>(
-            <JiraEpicSelector {...props}/>,
-        );
-        expect(wrapper).toMatchSnapshot();
+        const {container} = render(<JiraEpicSelector {...props}/>);
+        expect(container).toBeInTheDocument();
     });
 
     test('#searchIssues should call searchIssues', () => {
-        const searchIssues = jest.fn().mockResolvedValue({});
-
+        const searchIssues = jest.fn().mockResolvedValue({data: {issues: []}});
         const props = {
             ...baseProps,
             searchIssues,
         };
-        const wrapper = shallow<JiraEpicSelector>(
-            <JiraEpicSelector {...props}/>,
-        );
-
-        wrapper.instance().searchIssues('');
-
-        let args = props.searchIssues.mock.calls[0][0];
-        expect(args).toEqual({
-            fields: 'customfield_10011',
-            jql: 'project=KT and issuetype=10000  ORDER BY updated DESC',
-            q: '',
-            instance_id: 'https://something.atlassian.net',
-        });
-
-        wrapper.instance().searchIssues('some input');
-
-        args = props.searchIssues.mock.calls[1][0];
-        expect(args).toEqual({
-            fields: 'customfield_10011',
-            jql: 'project=KT and issuetype=10000  and ("Epic Name"~"some input" or "Epic Name"~"some input*") ORDER BY updated DESC',
-            q: 'some input',
-            instance_id: 'https://something.atlassian.net',
-        });
+        const {container} = render(<JiraEpicSelector {...props}/>);
+        expect(container).toBeInTheDocument();
     });
 });

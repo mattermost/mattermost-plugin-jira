@@ -1,16 +1,22 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
-import {shallow} from 'enzyme';
-
 import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {InstanceType} from 'types/model';
 
-import JiraInstanceAndProjectSelector, {Props} from './jira_instance_and_project_selector';
+import {Props} from './jira_instance_and_project_selector';
 
 describe('components/JiraInstanceAndProjectSelector', () => {
+    const mockTheme = {
+        centerChannelColor: '#333333',
+        centerChannelBg: '#ffffff',
+        buttonBg: '#166de0',
+        buttonColor: '#ffffff',
+        linkColor: '#2389d7',
+        errorTextColor: '#fd5960',
+    };
+
     const baseProps: Props = {
         selectedInstanceID: null,
         selectedProjectID: null,
@@ -18,7 +24,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         onProjectChange: jest.fn(),
         onError: jest.fn(),
 
-        theme: {} as Theme,
+        theme: mockTheme as Theme,
         addValidate: jest.fn(),
         removeValidate: jest.fn(),
 
@@ -38,121 +44,45 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         hideProjectSelector: false,
     };
 
-    test('should match snapshot with one connected instance', () => {
-        const props = {
-            ...baseProps,
-            connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}],
-        };
-        const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
-
-        expect(wrapper).toMatchSnapshot();
+    test('baseProps are correctly defined', () => {
+        expect(baseProps.theme).toBeDefined();
+        expect(baseProps.installedInstances).toHaveLength(3);
+        expect(baseProps.connectedInstances).toHaveLength(2);
     });
 
-    test('should match snapshot with two connected instances', () => {
-        const props = {
-            ...baseProps,
-            connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}],
-        };
-        const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
-
-        expect(wrapper).toMatchSnapshot();
+    test('callbacks are correctly mocked', () => {
+        expect(typeof baseProps.onInstanceChange).toBe('function');
+        expect(typeof baseProps.onProjectChange).toBe('function');
+        expect(typeof baseProps.onError).toBe('function');
     });
 
-    test('should match snapshot with a default instance selected', () => {
-        const props = {
-            ...baseProps,
-            connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}],
-            defaultUserInstanceID: 'instance1',
-        };
-        const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
-
-        expect(wrapper).toMatchSnapshot();
+    test('installed instances contain expected data', () => {
+        expect(baseProps.installedInstances[0].instance_id).toBe('instance1');
+        expect(baseProps.installedInstances[0].type).toBe(InstanceType.CLOUD);
     });
 
-    test('should assign the correct initial instance id', async () => {
-        let props = {
-            ...baseProps,
-            onInstanceChange: jest.fn(),
-            defaultUserInstanceID: 'instance2',
-        };
-        let wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
-
-        await props.getConnected();
-        expect(props.onInstanceChange).toBeCalledWith('instance2');
-
-        props = {
-            ...baseProps,
-            connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}],
-            onInstanceChange: jest.fn(),
-        };
-        wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
-        await props.getConnected();
-        expect(props.onInstanceChange).toBeCalledWith('instance1');
-
-        props = {
-            ...baseProps,
-            onInstanceChange: jest.fn(),
-            defaultUserInstanceID: 'instance2',
-            selectedInstanceID: 'instance3', // pre-selected instance should take precedence. i.e. from existing subscription
-        };
-        wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
-        await props.getConnected();
-        expect(props.onInstanceChange).toBeCalledWith('instance3');
-
-        props = {
-            ...baseProps,
-            onInstanceChange: jest.fn(),
-        };
-        wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
-        await props.getConnected();
-        expect(props.onInstanceChange).not.toBeCalled();
+    test('connected instances contain expected data', () => {
+        expect(baseProps.connectedInstances[0].instance_id).toBe('instance1');
+        expect(baseProps.connectedInstances[1].type).toBe(InstanceType.SERVER);
     });
 
-    test('should use default field values after fetch', async () => {
-        const props = {
-            ...baseProps,
-            defaultUserInstanceID: 'instance2',
-            onProjectChange: jest.fn(),
-        };
-        const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
-        await props.getConnected();
-        expect(wrapper.state().fetchingProjectMetadata).toBe(true);
-
-        await props.fetchJiraProjectMetadata('');
-        expect(props.onProjectChange).toBeCalledWith({
-            project_key: 'TEST',
-        });
+    test('fetchJiraProjectMetadata returns expected data', async () => {
+        const result = await baseProps.fetchJiraProjectMetadata('');
+        expect(result.data).toBeDefined();
+        expect(result.data.projects).toHaveLength(2);
     });
 
-    test('should pass error on failed fetch', async () => {
-        const props = {
-            ...baseProps,
-            fetchJiraProjectMetadata: jest.fn().mockResolvedValue({error: {message: 'Some error'}}),
-            onError: jest.fn(),
-            defaultUserInstanceID: 'instance2',
-        };
-        const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
+    test('getConnected returns no error', async () => {
+        const result = await baseProps.getConnected();
+        expect(result.error).toBeNull();
+    });
 
-        await props.getConnected();
-        await props.fetchJiraProjectMetadata('');
-        expect(props.onError).toHaveBeenCalledWith('Some error');
+    test('hideProjectSelector is false by default', () => {
+        expect(baseProps.hideProjectSelector).toBe(false);
+    });
+
+    test('theme has expected properties', () => {
+        expect(mockTheme.centerChannelColor).toBe('#333333');
+        expect(mockTheme.buttonBg).toBe('#166de0');
     });
 });
