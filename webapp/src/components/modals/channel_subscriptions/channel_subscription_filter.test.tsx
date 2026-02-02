@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {act, render} from '@testing-library/react';
+import {act} from '@testing-library/react';
 import {Provider} from 'react-redux';
 import {IntlProvider} from 'react-intl';
 import configureStore from 'redux-mock-store';
@@ -12,45 +12,11 @@ import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.
 
 import {FilterField, FilterFieldInclusion, IssueMetadata} from 'types/model';
 import {getCustomFieldFiltersForProjects, isEpicLinkField} from 'utils/jira_issue_metadata';
+import {defaultMockState, mockTheme, renderWithRedux} from 'testlib/test-utils';
 
 import ChannelSubscriptionFilter, {Props} from './channel_subscription_filter';
 
 const mockStore = configureStore([thunk]);
-
-const defaultMockState = {
-    'plugins-jira': {
-        installedInstances: [],
-        connectedInstances: [],
-    },
-    entities: {
-        general: {
-            config: {
-                SiteURL: 'http://localhost:8065',
-            },
-        },
-    },
-};
-
-const mockTheme = {
-    centerChannelColor: '#333333',
-    centerChannelBg: '#ffffff',
-    buttonBg: '#166de0',
-    buttonColor: '#ffffff',
-    linkColor: '#2389d7',
-    errorTextColor: '#fd5960',
-};
-
-const renderWithRedux = (ui: React.ReactElement, initialState = defaultMockState) => {
-    const store = mockStore(initialState);
-    return {
-        store,
-        ...render(
-            <IntlProvider locale='en'>
-                <Provider store={store}>{ui}</Provider>
-            </IntlProvider>,
-        ),
-    };
-};
 
 describe('components/ChannelSubscriptionFilter', () => {
     const fields = getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key], []);

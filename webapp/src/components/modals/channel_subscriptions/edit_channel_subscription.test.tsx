@@ -29,7 +29,7 @@ import EditChannelSubscription, {Props} from './edit_channel_subscription';
 
 const mockStore = configureStore([thunk]);
 
-const defaultMockState = {
+const editChannelMockState = {
     'plugins-jira': {
         installedInstances: [{instance_id: 'https://something.atlassian.net', type: InstanceType.CLOUD}],
         connectedInstances: [{instance_id: 'https://something.atlassian.net', type: InstanceType.CLOUD}],
@@ -43,7 +43,7 @@ const defaultMockState = {
     },
 };
 
-const renderWithRedux = (ui: React.ReactElement, initialState = defaultMockState) => {
+const renderWithRedux = (ui: React.ReactElement, initialState = editChannelMockState) => {
     const store = mockStore(initialState);
     return {
         store,

@@ -2,55 +2,14 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {act, render} from '@testing-library/react';
-import {Provider} from 'react-redux';
-import {IntlProvider} from 'react-intl';
-import configureStore from 'redux-mock-store';
-import thunk from 'redux-thunk';
+import {act} from '@testing-library/react';
 
 import testChannel from 'testdata/channel.json';
 
 import {InstanceType, IssueMetadata, ProjectMetadata} from 'types/model';
+import {mockTheme, renderWithRedux} from 'testlib/test-utils';
 
 import ChannelSubscriptionsModal, {Props} from './channel_subscriptions';
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const mockStore = configureStore([thunk]);
-
-const defaultMockState = {
-    'plugins-jira': {
-        installedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}],
-        connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}],
-    },
-    entities: {
-        general: {
-            config: {
-                SiteURL: 'http://localhost:8065',
-            },
-        },
-    },
-};
-
-const mockTheme = {
-    centerChannelColor: '#333333',
-    centerChannelBg: '#ffffff',
-    buttonBg: '#166de0',
-    buttonColor: '#ffffff',
-    linkColor: '#2389d7',
-    errorTextColor: '#fd5960',
-};
-
-const renderWithRedux = (ui: React.ReactElement, initialState = defaultMockState) => {
-    const store = mockStore(initialState);
-    return {
-        store,
-        ...render(
-            <IntlProvider locale='en'>
-                <Provider store={store}>{ui}</Provider>
-            </IntlProvider>,
-        ),
-    };
-};
 
 describe('components/ChannelSettingsModal', () => {
     const baseProps = {
@@ -77,7 +36,6 @@ describe('components/ChannelSettingsModal', () => {
     });
 
     test('modal only shows when channel is present', async () => {
-        // When channel is null, modal should not show
         const propsWithNullChannel = {
             ...baseProps,
             channel: null,
@@ -91,10 +49,8 @@ describe('components/ChannelSettingsModal', () => {
             />,
         );
 
-        // Component should render without crashing when channel is null
         expect(ref.current).toBeDefined();
 
-        // When channel is present, modal should show
         const propsWithChannel = {
             ...baseProps,
             channel: testChannel,
@@ -118,7 +74,6 @@ describe('components/ChannelSettingsModal', () => {
             await propsWithChannel.fetchJiraProjectMetadataForAllInstances();
         });
 
-        // Component should render and show when channel is present
         expect(ref2.current).toBeDefined();
     });
 
@@ -132,11 +87,11 @@ describe('components/ChannelSettingsModal', () => {
             fetchChannelSubscriptions,
             sendEphemeralPost,
             close,
-            channel: null,
+            channel: testChannel,
         };
 
         const ref = React.createRef<ChannelSubscriptionsModal>();
-        const {rerender} = renderWithRedux(
+        renderWithRedux(
             <ChannelSubscriptionsModal
                 {...props}
                 ref={ref}
@@ -144,24 +99,7 @@ describe('components/ChannelSettingsModal', () => {
         );
 
         await act(async () => {
-            rerender(
-                <IntlProvider locale='en'>
-                    <Provider store={mockStore(defaultMockState)}>
-                        <ChannelSubscriptionsModal
-                            {...props}
-                            channel={testChannel}
-                            ref={ref}
-                        />
-                    </Provider>
-                </IntlProvider>,
-            );
-        });
-
-        await act(async () => {
-            await fetchChannelSubscriptions(testChannel.id);
-        });
-        await act(async () => {
-            await props.fetchJiraProjectMetadataForAllInstances();
+            await ref.current?.fetchData();
         });
 
         expect(sendEphemeralPost).toHaveBeenCalledWith('You do not have permission to edit subscriptions for this channel. Subscribing to Jira events will create notifications in this channel when certain events occur, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.');

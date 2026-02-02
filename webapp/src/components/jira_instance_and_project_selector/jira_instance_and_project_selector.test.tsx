@@ -2,54 +2,16 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {act, render} from '@testing-library/react';
-import {Provider} from 'react-redux';
-import {IntlProvider} from 'react-intl';
-import configureStore from 'redux-mock-store';
-import thunk from 'redux-thunk';
+import {act} from '@testing-library/react';
 
 import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {InstanceType} from 'types/model';
+import {mockTheme as baseMockTheme, renderWithRedux} from 'testlib/test-utils';
 
 import JiraInstanceAndProjectSelector, {Props} from './jira_instance_and_project_selector';
 
-const mockStore = configureStore([thunk]);
-
-const defaultMockState = {
-    'plugins-jira': {
-        installedInstances: [],
-        connectedInstances: [],
-    },
-    entities: {
-        general: {
-            config: {
-                SiteURL: 'http://localhost:8065',
-            },
-        },
-    },
-};
-
-const mockTheme = {
-    centerChannelColor: '#333333',
-    centerChannelBg: '#ffffff',
-    buttonBg: '#166de0',
-    buttonColor: '#ffffff',
-    linkColor: '#2389d7',
-    errorTextColor: '#fd5960',
-} as Theme;
-
-const renderWithRedux = (ui: React.ReactElement, initialState = defaultMockState) => {
-    const store = mockStore(initialState);
-    return {
-        store,
-        ...render(
-            <IntlProvider locale='en'>
-                <Provider store={store}>{ui}</Provider>
-            </IntlProvider>,
-        ),
-    };
-};
+const mockTheme = baseMockTheme as Theme;
 
 describe('components/JiraInstanceAndProjectSelector', () => {
     const baseProps: Props = {

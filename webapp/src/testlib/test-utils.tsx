@@ -4,12 +4,22 @@
 import React from 'react';
 import {RenderOptions, render} from '@testing-library/react';
 import {Provider} from 'react-redux';
+import {IntlProvider} from 'react-intl';
 import configureStore from 'redux-mock-store';
 import thunk from 'redux-thunk';
 
 import {InstanceType} from 'types/model';
 
 const mockStore = configureStore([thunk]);
+
+export const mockTheme = {
+    centerChannelColor: '#333333',
+    centerChannelBg: '#ffffff',
+    buttonBg: '#166de0',
+    buttonColor: '#ffffff',
+    linkColor: '#2389d7',
+    errorTextColor: '#fd5960',
+};
 
 export const defaultMockState = {
     'plugins-jira': {
@@ -20,6 +30,13 @@ export const defaultMockState = {
         jiraIssueMetadata: null,
         channelIdWithSettingsOpen: null,
         channelSubscriptions: {},
+    },
+    entities: {
+        general: {
+            config: {
+                SiteURL: 'http://localhost:8065',
+            },
+        },
     },
 };
 
@@ -34,7 +51,11 @@ export function renderWithRedux(
     const store = mockStore(initialState);
 
     function Wrapper({children}: {children: React.ReactNode}) {
-        return <Provider store={store}>{children}</Provider>;
+        return (
+            <IntlProvider locale='en'>
+                <Provider store={store}>{children}</Provider>
+            </IntlProvider>
+        );
     }
 
     return {

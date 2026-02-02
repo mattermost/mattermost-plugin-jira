@@ -2,43 +2,12 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {act, render} from '@testing-library/react';
-import {Provider} from 'react-redux';
-import {IntlProvider} from 'react-intl';
-import configureStore from 'redux-mock-store';
-import thunk from 'redux-thunk';
+import {act} from '@testing-library/react';
 
 import {Instance, InstanceType} from 'types/model';
+import {renderWithRedux} from 'testlib/test-utils';
 
 import TicketPopover, {Props} from './jira_ticket_tooltip';
-
-const mockStore = configureStore([thunk]);
-
-const defaultMockState = {
-    'plugins-jira': {
-        installedInstances: [],
-        connectedInstances: [],
-    },
-    entities: {
-        general: {
-            config: {
-                SiteURL: 'http://localhost:8065',
-            },
-        },
-    },
-};
-
-const renderWithRedux = (ui: React.ReactElement, initialState = defaultMockState) => {
-    const store = mockStore(initialState);
-    return {
-        store,
-        ...render(
-            <IntlProvider locale='en'>
-                <Provider store={store}>{ui}</Provider>
-            </IntlProvider>,
-        ),
-    };
-};
 
 describe('components/jira_ticket_tooltip', () => {
     describe('getIssueKey', () => {

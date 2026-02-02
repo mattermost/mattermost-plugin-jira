@@ -101,6 +101,7 @@
       "^@/(.*)$": "<rootDir>/src/$1",
       "^types/(.*)$": "<rootDir>/src/types/$1",
       "^testdata/(.*)$": "<rootDir>/src/testdata/$1",
+      "^testlib/(.*)$": "<rootDir>/src/testlib/$1",
       "^utils/(.*)$": "<rootDir>/src/utils/$1",
       "^actions$": "<rootDir>/src/actions",
       "^components/(.*)$": "<rootDir>/src/components/$1",
