@@ -366,18 +366,19 @@ describe('components/EditChannelSubscription', () => {
             });
         });
 
-        // Call the internal submission logic directly
-        await act(async () => {
-            // Simulate what handleCreate does after validation
-            const subscription = {
-                channel_id: testChannel.id,
-                filters: channelSubscriptionForCloud.filters,
-                name: channelSubscriptionForCloud.name,
-                instance_id: 'https://something.atlassian.net',
+        // Mock validator to pass validation (include all methods used by child components)
+        if (ref.current) {
+            ref.current.validator = {
+                validate: () => true,
+                addComponent: jest.fn(),
+                removeComponent: jest.fn(),
             };
-            await createChannelSubscription(subscription);
-        });
+        }
 
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
+        expect(ref.current?.state.error).toBe(null);
         expect(createChannelSubscription).toHaveBeenCalledWith(
             {
                 channel_id: testChannel.id,
@@ -387,6 +388,11 @@ describe('components/EditChannelSubscription', () => {
             },
         );
         expect(editChannelSubscription).not.toHaveBeenCalled();
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(finishEditSubscription).toHaveBeenCalled();
     });
 
     test('should create a named subscription - error case', async () => {
@@ -411,27 +417,24 @@ describe('components/EditChannelSubscription', () => {
         await act(async () => {
             ref.current?.setState(baseState);
         });
-
         await act(async () => {
             ref.current?.setState({
                 filters: channelSubscriptionForCloud.filters,
                 subscriptionName: channelSubscriptionForCloud.name,
             });
         });
-
-        // Call the internal submission logic directly and check error handling
-        let result;
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
         await act(async () => {
-            result = await createChannelSubscription({
-                channel_id: testChannel.id,
-                filters: channelSubscriptionForCloud.filters,
-                name: channelSubscriptionForCloud.name,
-                instance_id: 'https://something.atlassian.net',
-            });
+            ref.current?.handleCreate({preventDefault: jest.fn()});
         });
 
-        expect(result).toEqual({error: {message: 'Failure'}});
+        await act(async () => {
+            await Promise.resolve();
+        });
         expect(finishEditSubscription).not.toHaveBeenCalled();
+        expect(ref.current?.state.error).toEqual('Failure');
     });
 
     test('SERVER - should create a subscription', async () => {
@@ -467,16 +470,15 @@ describe('components/EditChannelSubscription', () => {
             });
         });
 
-        // Call the internal submission logic directly
-        await act(async () => {
-            await createChannelSubscription({
-                channel_id: testChannel.id,
-                filters: channelSubscriptionForServer.filters,
-                name: MockSubscriptionName,
-                instance_id: 'https://something.atlassian.net',
-            });
-        });
+        // Mock validator to pass validation
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
 
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
+        expect(ref.current?.state.error).toBe(null);
         expect(createChannelSubscription).toHaveBeenCalledWith(
             {
                 channel_id: testChannel.id,
@@ -486,6 +488,11 @@ describe('components/EditChannelSubscription', () => {
             },
         );
         expect(editChannelSubscription).not.toHaveBeenCalled();
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(finishEditSubscription).toHaveBeenCalled();
     });
 
     test('SERVER - should create a subscription - error case', async () => {
@@ -512,25 +519,23 @@ describe('components/EditChannelSubscription', () => {
         await act(async () => {
             ref.current?.setState({...baseState, jiraIssueMetadata: serverIssueMetadata as IssueMetadata, subscriptionName: MockSubscriptionName});
         });
-
         await act(async () => {
             ref.current?.setState({
                 filters: channelSubscriptionForServer.filters,
             });
         });
-
-        let result;
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
         await act(async () => {
-            result = await createChannelSubscription({
-                channel_id: testChannel.id,
-                filters: channelSubscriptionForServer.filters,
-                name: MockSubscriptionName,
-                instance_id: 'https://something.atlassian.net',
-            });
+            ref.current?.handleCreate({preventDefault: jest.fn()});
         });
 
-        expect(result).toEqual({error: {message: 'Failure'}});
+        await act(async () => {
+            await Promise.resolve();
+        });
         expect(finishEditSubscription).not.toHaveBeenCalled();
+        expect(ref.current?.state.error).toEqual('Failure');
     });
 
     test('should on submit, remove filters for configured fields that are not in the issue metadata', async () => {
@@ -575,24 +580,15 @@ describe('components/EditChannelSubscription', () => {
             ref.current?.setState(baseState);
         });
 
-        // Test that invalid fields are filtered - call directly with the expected filtered value
-        await act(async () => {
-            await editChannelSubscription({
-                id: 'asxtifxe8jyi9y81htww6ixkiy',
-                channel_id: testChannel.id,
-                filters: {
-                    ...subscription.filters,
-                    fields: [{
-                        key: 'versions',
-                        inclusion: 'include_any' as FilterFieldInclusion,
-                        values: ['10000'],
-                    }],
-                },
-                name: 'SubTestName',
-                instance_id: 'https://something.atlassian.net',
-            });
-        });
+        // Mock validator to pass validation
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
 
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
+        expect(ref.current?.state.error).toBe(null);
         expect(editChannelSubscription).toHaveBeenCalledWith(
             {
                 id: 'asxtifxe8jyi9y81htww6ixkiy',
@@ -640,17 +636,15 @@ describe('components/EditChannelSubscription', () => {
             });
         });
 
-        // Call the edit logic directly
-        await act(async () => {
-            await editChannelSubscription({
-                id: channelSubscriptionForCloud.id,
-                channel_id: testChannel.id,
-                filters: channelSubscriptionForCloud.filters,
-                name: channelSubscriptionForCloud.name,
-                instance_id: 'https://something.atlassian.net',
-            });
-        });
+        // Mock validator to pass validation
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
 
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
+        expect(ref.current?.state.error).toBe(null);
         expect(editChannelSubscription).toHaveBeenCalledWith(
             {
                 id: channelSubscriptionForCloud.id,
@@ -661,6 +655,11 @@ describe('components/EditChannelSubscription', () => {
             },
         );
         expect(createChannelSubscription).not.toHaveBeenCalled();
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(finishEditSubscription).toHaveBeenCalled();
     });
 
     test('should edit a subscription - error case', async () => {
@@ -683,26 +682,23 @@ describe('components/EditChannelSubscription', () => {
         await act(async () => {
             ref.current?.setState(baseState);
         });
-
         await act(async () => {
             ref.current?.setState({
                 filters: channelSubscriptionForCloud.filters,
             });
         });
-
-        let result;
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
         await act(async () => {
-            result = await editChannelSubscription({
-                id: channelSubscriptionForCloud.id,
-                channel_id: testChannel.id,
-                filters: channelSubscriptionForCloud.filters,
-                name: channelSubscriptionForCloud.name,
-                instance_id: 'https://something.atlassian.net',
-            });
+            ref.current?.handleCreate({preventDefault: jest.fn()});
         });
 
-        expect(result).toEqual({error: {message: 'Failure'}});
+        await act(async () => {
+            await Promise.resolve();
+        });
         expect(finishEditSubscription).not.toHaveBeenCalled();
+        expect(ref.current?.state.error).toEqual('Failure');
     });
 
     test('should produce subscription error when add conflicting issue type', async () => {

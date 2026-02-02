@@ -229,17 +229,13 @@ describe('components/CreateIssue', () => {
             });
         });
 
-        // Call create directly to verify it works with the expected data
+        // Mock validator to pass validation
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
+
         await act(async () => {
-            await create({
-                fields: {
-                    summary: 'some summary',
-                    description: 'some description',
-                    project: {key: 'KT'},
-                    issuetype: {id: '10001'},
-                    priority: {id: '1'},
-                },
-            });
+            ref.current?.handleSubmit();
         });
         expect(create).toHaveBeenCalled();
     });
@@ -281,17 +277,13 @@ describe('components/CreateIssue', () => {
             });
         });
 
-        // Call create directly to verify it works with the expected data
+        // Mock validator to pass validation
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
+
         await act(async () => {
-            await create({
-                fields: {
-                    summary: 'some summary',
-                    description: 'some description',
-                    project: {key: 'HEY'},
-                    issuetype: {id: '10001'},
-                    priority: {id: '1'},
-                },
-            });
+            ref.current?.handleSubmit();
         });
         expect(create).toHaveBeenCalled();
     });

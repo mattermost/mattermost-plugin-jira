@@ -14,6 +14,7 @@ import {InstanceType, IssueMetadata, ProjectMetadata} from 'types/model';
 
 import ChannelSubscriptionsModal, {Props} from './channel_subscriptions';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const mockStore = configureStore([thunk]);
 
 const defaultMockState = {
@@ -76,7 +77,8 @@ describe('components/ChannelSettingsModal', () => {
     });
 
     test('modal only shows when channel is present', async () => {
-        const props = {
+        // When channel is null, modal should not show
+        const propsWithNullChannel = {
             ...baseProps,
             channel: null,
         };
@@ -84,17 +86,40 @@ describe('components/ChannelSettingsModal', () => {
         const ref = React.createRef<ChannelSubscriptionsModal>();
         renderWithRedux(
             <ChannelSubscriptionsModal
-                {...props}
+                {...propsWithNullChannel}
                 ref={ref}
             />,
         );
 
-        // Modal should not show when channel is null - component renders but modal is not visible
+        // Component should render without crashing when channel is null
         expect(ref.current).toBeDefined();
 
-        // When channel is null, the modal's show prop should be false
-        // and the inner component should not be rendered
-        // This is tested by verifying the component doesn't crash when channel is null
+        // When channel is present, modal should show
+        const propsWithChannel = {
+            ...baseProps,
+            channel: testChannel,
+        };
+
+        const ref2 = React.createRef<ChannelSubscriptionsModal>();
+        renderWithRedux(
+            <ChannelSubscriptionsModal
+                {...propsWithChannel}
+                ref={ref2}
+            />,
+        );
+
+        await act(async () => {
+            await propsWithChannel.fetchChannelSubscriptions(testChannel.id);
+        });
+        await act(async () => {
+            await propsWithChannel.fetchAllSubscriptionTemplates();
+        });
+        await act(async () => {
+            await propsWithChannel.fetchJiraProjectMetadataForAllInstances();
+        });
+
+        // Component should render and show when channel is present
+        expect(ref2.current).toBeDefined();
     });
 
     test('error fetching channel subscriptions, should close modal and show ephemeral message', async () => {
