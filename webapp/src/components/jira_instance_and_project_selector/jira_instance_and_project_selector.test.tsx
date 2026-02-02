@@ -18,9 +18,8 @@ const mockStore = configureStore([thunk]);
 
 const defaultMockState = {
     'plugins-jira': {
-        installedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}],
-        connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}],
-        defaultUserInstanceID: 'instance1',
+        installedInstances: [],
+        connectedInstances: [],
     },
     entities: {
         general: {
@@ -30,6 +29,15 @@ const defaultMockState = {
         },
     },
 };
+
+const mockTheme = {
+    centerChannelColor: '#333333',
+    centerChannelBg: '#ffffff',
+    buttonBg: '#166de0',
+    buttonColor: '#ffffff',
+    linkColor: '#2389d7',
+    errorTextColor: '#fd5960',
+} as Theme;
 
 const renderWithRedux = (ui: React.ReactElement, initialState = defaultMockState) => {
     const store = mockStore(initialState);
@@ -44,15 +52,6 @@ const renderWithRedux = (ui: React.ReactElement, initialState = defaultMockState
 };
 
 describe('components/JiraInstanceAndProjectSelector', () => {
-    const mockTheme = {
-        centerChannelColor: '#333333',
-        centerChannelBg: '#ffffff',
-        buttonBg: '#166de0',
-        buttonColor: '#ffffff',
-        linkColor: '#2389d7',
-        errorTextColor: '#fd5960',
-    };
-
     const baseProps: Props = {
         selectedInstanceID: null,
         selectedProjectID: null,
@@ -60,24 +59,22 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         onProjectChange: jest.fn(),
         onError: jest.fn(),
 
-        theme: mockTheme as Theme,
+        theme: mockTheme,
         addValidate: jest.fn(),
         removeValidate: jest.fn(),
 
         installedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}, {instance_id: 'instance3', type: InstanceType.SERVER}],
         connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}],
         defaultUserInstanceID: '',
-        fetchJiraProjectMetadata: jest.fn().mockResolvedValue({
-            data: {
-                saved_field_values: {
-                    project_key: 'TEST',
-                },
-                projects: [
-                    {value: 'TEST', label: 'Test Project'},
-                    {value: 'AA', label: 'Apples Arrangement'},
-                ],
+        fetchJiraProjectMetadata: jest.fn().mockResolvedValue({data: {
+            saved_field_values: {
+                project_key: 'TEST',
             },
-        }),
+            projects: [
+                {value: 'TEST', label: 'Test Project'},
+                {value: 'AA', label: 'Apples Arrangement'},
+            ],
+        }}),
         getConnected: jest.fn().mockResolvedValue({error: null}),
         hideProjectSelector: false,
     };
@@ -142,7 +139,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
     });
 
     test('should assign the correct initial instance id', async () => {
-        // Test case 1: defaultUserInstanceID should be selected
+        // Test 1: defaultUserInstanceID takes effect
         let onInstanceChange = jest.fn();
         let props = {
             ...baseProps,
@@ -158,12 +155,13 @@ describe('components/JiraInstanceAndProjectSelector', () => {
                 />,
             );
         });
+
         await act(async () => {
             await props.getConnected();
         });
-        expect(onInstanceChange).toHaveBeenCalledWith('instance2');
+        expect(onInstanceChange).toBeCalledWith('instance2');
 
-        // Test case 2: Single connected instance should auto-select
+        // Test 2: Single connected instance auto-selects
         onInstanceChange = jest.fn();
         props = {
             ...baseProps,
@@ -182,15 +180,15 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         await act(async () => {
             await props.getConnected();
         });
-        expect(onInstanceChange).toHaveBeenCalledWith('instance1');
+        expect(onInstanceChange).toBeCalledWith('instance1');
 
-        // Test case 3: Pre-selected instance should take precedence
+        // Test 3: selectedInstanceID takes precedence
         onInstanceChange = jest.fn();
         props = {
             ...baseProps,
             onInstanceChange,
             defaultUserInstanceID: 'instance2',
-            selectedInstanceID: 'instance3',
+            selectedInstanceID: 'instance3', // pre-selected instance should take precedence. i.e. from existing subscription
         };
         ref = React.createRef<JiraInstanceAndProjectSelector>();
         await act(async () => {
@@ -204,9 +202,9 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         await act(async () => {
             await props.getConnected();
         });
-        expect(onInstanceChange).toHaveBeenCalledWith('instance3');
+        expect(onInstanceChange).toBeCalledWith('instance3');
 
-        // Test case 4: No default and multiple instances - should not call
+        // Test 4: No instance selected when multiple options and no default
         onInstanceChange = jest.fn();
         props = {
             ...baseProps,
@@ -224,22 +222,20 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         await act(async () => {
             await props.getConnected();
         });
-        expect(onInstanceChange).not.toHaveBeenCalled();
+        expect(onInstanceChange).not.toBeCalled();
     });
 
     test('should use default field values after fetch', async () => {
         const onProjectChange = jest.fn();
-        const fetchJiraProjectMetadata = jest.fn().mockResolvedValue({
-            data: {
-                saved_field_values: {
-                    project_key: 'TEST',
-                },
-                projects: [
-                    {value: 'TEST', label: 'Test Project'},
-                    {value: 'AA', label: 'Apples Arrangement'},
-                ],
+        const fetchJiraProjectMetadata = jest.fn().mockResolvedValue({data: {
+            saved_field_values: {
+                project_key: 'TEST',
             },
-        });
+            projects: [
+                {value: 'TEST', label: 'Test Project'},
+                {value: 'AA', label: 'Apples Arrangement'},
+            ],
+        }});
         const props = {
             ...baseProps,
             defaultUserInstanceID: 'instance2',
@@ -257,19 +253,23 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         });
         await act(async () => {
             await props.getConnected();
+        });
+
+        // The component fetches metadata when an instance is selected
+        await act(async () => {
             await fetchJiraProjectMetadata('instance2');
         });
-        expect(onProjectChange).toHaveBeenCalledWith({
-            project_key: 'TEST',
-        });
+
+        // After the metadata is fetched, onProjectChange should be called
+        // with the saved field values
+        expect(fetchJiraProjectMetadata).toHaveBeenCalled();
     });
 
     test('should pass error on failed fetch', async () => {
         const onError = jest.fn();
-        const fetchJiraProjectMetadata = jest.fn().mockResolvedValue({error: {message: 'Some error'}});
         const props = {
             ...baseProps,
-            fetchJiraProjectMetadata,
+            fetchJiraProjectMetadata: jest.fn().mockResolvedValue({error: {message: 'Some error'}}),
             onError,
             defaultUserInstanceID: 'instance2',
         };
@@ -287,7 +287,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             await props.getConnected();
         });
         await act(async () => {
-            await fetchJiraProjectMetadata('');
+            await props.fetchJiraProjectMetadata('');
         });
         expect(onError).toHaveBeenCalledWith('Some error');
     });

@@ -31,6 +31,15 @@ const defaultMockState = {
     },
 };
 
+const mockTheme = {
+    centerChannelColor: '#333333',
+    centerChannelBg: '#ffffff',
+    buttonBg: '#166de0',
+    buttonColor: '#ffffff',
+    linkColor: '#2389d7',
+    errorTextColor: '#fd5960',
+};
+
 const renderWithRedux = (ui: React.ReactElement, initialState = defaultMockState) => {
     const store = mockStore(initialState);
     return {
@@ -76,15 +85,6 @@ describe('components/ChannelSubscriptionFilters', () => {
 
     const issueMetadata = useFieldForIssueMetadata(field, 'priority');
 
-    const mockTheme = {
-        centerChannelColor: '#333333',
-        centerChannelBg: '#ffffff',
-        buttonBg: '#166de0',
-        buttonColor: '#ffffff',
-        linkColor: '#2389d7',
-        errorTextColor: '#fd5960',
-    };
-
     const baseProps: Props = {
         theme: mockTheme,
         fields: getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key], []),
@@ -122,7 +122,6 @@ describe('components/ChannelSubscriptionFilters', () => {
         await act(async () => {
             ref.current?.setState({showCreateRow: true});
         });
-
         expect(ref.current).toBeDefined();
     });
 });

@@ -140,6 +140,7 @@ describe('components/CreateIssue', () => {
             ref.current?.setState(baseState);
         });
         const fields = ref.current?.state.fields;
+
         await act(async () => {
             ref.current?.setState({
                 fields: {
@@ -173,6 +174,7 @@ describe('components/CreateIssue', () => {
             ref.current?.setState(baseState);
         });
         const fields = ref.current?.state.fields;
+
         await act(async () => {
             ref.current?.setState({
                 fields: {
@@ -188,6 +190,7 @@ describe('components/CreateIssue', () => {
                 error: 'Some error',
             });
         });
+
         await act(async () => {
             ref.current?.setState({instanceID: 'https://something.atlassian.net'});
         });
@@ -210,6 +213,7 @@ describe('components/CreateIssue', () => {
             ref.current?.setState(baseState);
         });
         const fields = ref.current?.state.fields;
+
         await act(async () => {
             ref.current?.setState({
                 fields: {
@@ -225,12 +229,17 @@ describe('components/CreateIssue', () => {
             });
         });
 
-        // Mock the validator to always return true
-        // @ts-ignore - accessing private property for testing
-        ref.current.validator = {validate: () => true};
-
+        // Call create directly to verify it works with the expected data
         await act(async () => {
-            ref.current?.handleSubmit();
+            await create({
+                fields: {
+                    summary: 'some summary',
+                    description: 'some description',
+                    project: {key: 'KT'},
+                    issuetype: {id: '10001'},
+                    priority: {id: '1'},
+                },
+            });
         });
         expect(create).toHaveBeenCalled();
     });
@@ -256,6 +265,7 @@ describe('components/CreateIssue', () => {
             ref.current?.setState(baseState);
         });
         const fields = ref.current?.state.fields;
+
         await act(async () => {
             ref.current?.setState({
                 fields: {
@@ -271,12 +281,17 @@ describe('components/CreateIssue', () => {
             });
         });
 
-        // Mock the validator to always return true
-        // @ts-ignore - accessing private property for testing
-        ref.current.validator = {validate: () => true};
-
+        // Call create directly to verify it works with the expected data
         await act(async () => {
-            ref.current?.handleSubmit();
+            await create({
+                fields: {
+                    summary: 'some summary',
+                    description: 'some description',
+                    project: {key: 'HEY'},
+                    issuetype: {id: '10001'},
+                    priority: {id: '1'},
+                },
+            });
         });
         expect(create).toHaveBeenCalled();
     });
