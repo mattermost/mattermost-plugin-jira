@@ -137,13 +137,28 @@ describe('components/ChannelSubscriptionFilter', () => {
             );
         });
 
-        // Test that the component renders correctly
+        // Access the renderInclusionDropdownOption function directly via ref
         expect(ref.current).toBeDefined();
 
-        // The inclusion options are available in the component
-        // In Enzyme, we could access the formatOptionLabel function directly
-        // In RTL, we verify the component renders and the inclusion dropdown exists
-        // The inclusion options tested are: include_any, include_all, exclude_any, empty
+        const formatFunc = ref.current?.renderInclusionDropdownOption;
+        expect(formatFunc).toBeDefined();
+
+        const tests = [
+            ['include_any', 'Includes either of the values (or)'],
+            ['include_all', 'Includes all of the values (and)'],
+            ['exclude_any', 'Excludes all of the values'],
+            ['empty', 'Includes when the value is empty'],
+        ];
+
+        // Select dropdown is open
+        for (const t of tests) {
+            const element = formatFunc?.({value: t[0], label: t[1]}, {context: ''});
+            expect(element).toBeDefined();
+        }
+
+        // Select dropdown is closed - returns the label directly
+        const result = formatFunc?.({value: 'include_any', label: 'Some Option Label'}, {context: 'value'});
+        expect(result).toEqual('Some Option Label');
     });
 
     test('checkFieldConflictError should return an error string when there is a conflict', async () => {

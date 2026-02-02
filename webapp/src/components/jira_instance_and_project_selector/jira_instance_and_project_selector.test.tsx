@@ -255,14 +255,16 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             await props.getConnected();
         });
 
-        // The component fetches metadata when an instance is selected
+        // In RTL, the async fetch completes synchronously with mocked promises
+        // so we check that fetchJiraProjectMetadata was called
+        expect(fetchJiraProjectMetadata).toHaveBeenCalled();
+
         await act(async () => {
             await fetchJiraProjectMetadata('instance2');
         });
-
-        // After the metadata is fetched, onProjectChange should be called
-        // with the saved field values
-        expect(fetchJiraProjectMetadata).toHaveBeenCalled();
+        expect(onProjectChange).toBeCalledWith({
+            project_key: 'TEST',
+        });
     });
 
     test('should pass error on failed fetch', async () => {
