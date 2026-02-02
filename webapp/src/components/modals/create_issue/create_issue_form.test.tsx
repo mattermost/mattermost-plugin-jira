@@ -76,7 +76,7 @@ describe('components/CreateIssue', () => {
         jest.clearAllMocks();
     });
 
-    test('should match snapshot', async () => {
+    test('should render component', async () => {
         const props = {...baseProps};
         const ref = React.createRef<CreateIssueForm>();
         await act(async () => {
@@ -93,7 +93,7 @@ describe('components/CreateIssue', () => {
         expect(ref.current).toBeDefined();
     });
 
-    test('should match snapshot with no issue metadata', async () => {
+    test('should render component with no issue metadata', async () => {
         const props = {...baseProps};
         const ref = React.createRef<CreateIssueForm>();
         await act(async () => {
@@ -110,7 +110,7 @@ describe('components/CreateIssue', () => {
         expect(ref.current).toBeDefined();
     });
 
-    test('should match snapshot with no instance id', async () => {
+    test('should render component with no instance id', async () => {
         const props = {...baseProps};
         const ref = React.createRef<CreateIssueForm>();
         await act(async () => {
@@ -124,7 +124,7 @@ describe('components/CreateIssue', () => {
         expect(ref.current).toBeDefined();
     });
 
-    test('should match snapshot with form filled', async () => {
+    test('should render component with form filled', async () => {
         const create = jest.fn().mockResolvedValue({});
         const props = {...baseProps, create};
         const ref = React.createRef<CreateIssueForm>();
@@ -158,7 +158,7 @@ describe('components/CreateIssue', () => {
         expect(ref.current).toBeDefined();
     });
 
-    test('should match snapshot with error', async () => {
+    test('should render component with error', async () => {
         const create = jest.fn().mockResolvedValue({});
         const props = {...baseProps, create};
         const ref = React.createRef<CreateIssueForm>();
@@ -229,7 +229,6 @@ describe('components/CreateIssue', () => {
             });
         });
 
-        // Mock validator to pass validation
         if (ref.current) {
             ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
         }
@@ -277,7 +276,6 @@ describe('components/CreateIssue', () => {
             });
         });
 
-        // Mock validator to pass validation
         if (ref.current) {
             ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
         }

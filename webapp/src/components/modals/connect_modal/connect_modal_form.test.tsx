@@ -81,7 +81,7 @@ describe('components/ConnectModalForm', () => {
         jest.clearAllMocks();
     });
 
-    test('should match snapshot', async () => {
+    test('should render component', async () => {
         const props = {...baseProps};
         const ref = React.createRef<ConnectModalForm>();
         await act(async () => {

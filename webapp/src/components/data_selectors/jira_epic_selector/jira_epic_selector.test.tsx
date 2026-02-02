@@ -61,7 +61,7 @@ describe('components/JiraEpicSelector', () => {
         jest.clearAllMocks();
     });
 
-    test('should match snapshot', async () => {
+    test('should render component', async () => {
         const props = {...baseProps};
         const ref = React.createRef<JiraEpicSelector>();
         await act(async () => {
@@ -93,10 +93,8 @@ describe('components/JiraEpicSelector', () => {
             );
         });
 
-        // Clear the initial call from fetchInitialSelectedValues
         searchIssues.mockClear();
 
-        // Call searchIssues with empty string
         await act(async () => {
             await ref.current?.searchIssues('');
         });
@@ -109,7 +107,6 @@ describe('components/JiraEpicSelector', () => {
             instance_id: 'https://something.atlassian.net',
         });
 
-        // Call searchIssues with user input
         await act(async () => {
             await ref.current?.searchIssues('some input');
         });

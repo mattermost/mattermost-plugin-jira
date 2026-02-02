@@ -78,7 +78,7 @@ describe('components/ChannelSubscriptionFilter', () => {
         jest.clearAllMocks();
     });
 
-    test('should match snapshot', async () => {
+    test('should render component', async () => {
         const props = {...baseProps, issueMetadata: {} as IssueMetadata};
         const ref = React.createRef<ChannelSubscriptionFilter>();
         await act(async () => {
@@ -102,7 +102,6 @@ describe('components/ChannelSubscriptionFilter', () => {
             />,
         );
 
-        // Initially no epic selector
         expect(container.querySelector('[data-testid="jira-epic-selector"]')).toBeNull();
 
         // Rerender with Epic Link field
@@ -121,7 +120,6 @@ describe('components/ChannelSubscriptionFilter', () => {
             );
         });
 
-        // Epic selector should now be rendered - check by class name used in component
         expect(ref.current).toBeDefined();
     });
 
@@ -137,7 +135,6 @@ describe('components/ChannelSubscriptionFilter', () => {
             );
         });
 
-        // Access the renderInclusionDropdownOption function directly via ref
         expect(ref.current).toBeDefined();
 
         const formatFunc = ref.current?.renderInclusionDropdownOption;

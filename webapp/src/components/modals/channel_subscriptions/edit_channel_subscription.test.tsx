@@ -143,7 +143,7 @@ describe('components/EditChannelSubscription', () => {
         jest.clearAllMocks();
     });
 
-    test('should match snapshot', async () => {
+    test('should render component', async () => {
         const props = {...baseProps};
         const ref = React.createRef<EditChannelSubscription>();
         await act(async () => {
@@ -160,7 +160,7 @@ describe('components/EditChannelSubscription', () => {
         expect(ref.current).toBeDefined();
     });
 
-    test('should match snapshot with no subscriptions', async () => {
+    test('should render component with no subscriptions', async () => {
         const props = {...baseProps, channelSubscriptions: [], selectedSubscription: null};
         const ref = React.createRef<EditChannelSubscription>();
         await act(async () => {
@@ -177,7 +177,7 @@ describe('components/EditChannelSubscription', () => {
         expect(ref.current).toBeDefined();
     });
 
-    test('should match snapshot with no issue metadata', async () => {
+    test('should render component with no issue metadata', async () => {
         const props = {...baseProps};
         const ref = React.createRef<EditChannelSubscription>();
         await act(async () => {
@@ -194,7 +194,7 @@ describe('components/EditChannelSubscription', () => {
         expect(ref.current).toBeDefined();
     });
 
-    test('should match snapshot after fetching issue metadata', async () => {
+    test('should render component after fetching issue metadata', async () => {
         const props = {...baseProps};
         const ref = React.createRef<EditChannelSubscription>();
         await act(async () => {
@@ -366,7 +366,6 @@ describe('components/EditChannelSubscription', () => {
             });
         });
 
-        // Mock validator to pass validation (include all methods used by child components)
         if (ref.current) {
             ref.current.validator = {
                 validate: () => true,
@@ -470,7 +469,6 @@ describe('components/EditChannelSubscription', () => {
             });
         });
 
-        // Mock validator to pass validation
         if (ref.current) {
             ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
         }
@@ -580,7 +578,6 @@ describe('components/EditChannelSubscription', () => {
             ref.current?.setState(baseState);
         });
 
-        // Mock validator to pass validation
         if (ref.current) {
             ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
         }
@@ -636,7 +633,6 @@ describe('components/EditChannelSubscription', () => {
             });
         });
 
-        // Mock validator to pass validation
         if (ref.current) {
             ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
         }

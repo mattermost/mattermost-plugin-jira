@@ -83,7 +83,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         jest.clearAllMocks();
     });
 
-    test('should match snapshot with one connected instance', async () => {
+    test('should render component with one connected instance', async () => {
         const props = {
             ...baseProps,
             connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}],
@@ -101,7 +101,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         expect(ref.current).toBeDefined();
     });
 
-    test('should match snapshot with two connected instances', async () => {
+    test('should render component with two connected instances', async () => {
         const props = {
             ...baseProps,
             connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}],
@@ -119,7 +119,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         expect(ref.current).toBeDefined();
     });
 
-    test('should match snapshot with a default instance selected', async () => {
+    test('should render component with a default instance selected', async () => {
         const props = {
             ...baseProps,
             connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}],
@@ -139,7 +139,6 @@ describe('components/JiraInstanceAndProjectSelector', () => {
     });
 
     test('should assign the correct initial instance id', async () => {
-        // Test 1: defaultUserInstanceID takes effect
         let onInstanceChange = jest.fn();
         let props = {
             ...baseProps,
@@ -161,7 +160,6 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         });
         expect(onInstanceChange).toBeCalledWith('instance2');
 
-        // Test 2: Single connected instance auto-selects
         onInstanceChange = jest.fn();
         props = {
             ...baseProps,
@@ -182,7 +180,6 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         });
         expect(onInstanceChange).toBeCalledWith('instance1');
 
-        // Test 3: selectedInstanceID takes precedence
         onInstanceChange = jest.fn();
         props = {
             ...baseProps,
@@ -204,7 +201,6 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         });
         expect(onInstanceChange).toBeCalledWith('instance3');
 
-        // Test 4: No instance selected when multiple options and no default
         onInstanceChange = jest.fn();
         props = {
             ...baseProps,
@@ -255,8 +251,6 @@ describe('components/JiraInstanceAndProjectSelector', () => {
             await props.getConnected();
         });
 
-        // In RTL, the async fetch completes synchronously with mocked promises
-        // so we check that fetchJiraProjectMetadata was called
         expect(fetchJiraProjectMetadata).toHaveBeenCalled();
 
         await act(async () => {

@@ -107,7 +107,7 @@ describe('components/ChannelSubscriptionFilters', () => {
         jest.clearAllMocks();
     });
 
-    test('should match snapshot', async () => {
+    test('should render component', async () => {
         const props = {...baseProps};
         const ref = React.createRef<ChannelSubscriptionFilters>();
         await act(async () => {
