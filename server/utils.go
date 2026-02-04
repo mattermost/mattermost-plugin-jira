@@ -87,8 +87,31 @@ func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...
 	return post, nil
 }
 
-func (p *Plugin) notifyUserTokenExpired(mattermostUserID types.ID, instanceID types.ID) {
-	_, err := p.CreateBotDMtoMMUserID(mattermostUserID.String(),
+func (p *Plugin) disconnectUserDueToExpiredToken(mattermostUserID types.ID, instanceID types.ID) {
+	// Disconnect the user first to update server and client state via websocket
+	_, err := p.DisconnectUser(instanceID.String(), mattermostUserID)
+	if err != nil {
+		p.client.Log.Warn("Failed to disconnect user after token expiry",
+			"mattermostUserID", mattermostUserID,
+			"instanceID", instanceID,
+			"error", err.Error())
+
+		// Notify user even if disconnect failed, with manual disconnect instructions
+		_, notifyErr := p.CreateBotDMtoMMUserID(mattermostUserID.String(),
+			":warning: Your Jira connection has expired. Please manually disconnect and reconnect your account using:\n"+
+				"1. `/jira disconnect %s`\n"+
+				"2. `/jira connect %s`",
+			instanceID, instanceID)
+		if notifyErr != nil {
+			p.client.Log.Warn("Failed to send token expiry notification to user after disconnect failure",
+				"mattermostUserID", mattermostUserID,
+				"error", notifyErr.Error())
+		}
+		return
+	}
+
+	// Send notification after successful disconnect
+	_, err = p.CreateBotDMtoMMUserID(mattermostUserID.String(),
 		":warning: Your Jira connection has expired. Please reconnect your account using `/jira connect %s`.",
 		instanceID)
 	if err != nil {
