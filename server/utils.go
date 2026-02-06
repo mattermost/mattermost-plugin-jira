@@ -132,25 +132,26 @@ func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string 
 	return result
 }
 
-func (p *Plugin) getJiraUserDisplayName(instanceID types.ID, accountID string) string {
+func (p *Plugin) getJiraUserDisplayName(instanceID types.ID, userIdentifier string) string {
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		p.client.Log.Debug("Failed to load instance for user display name lookup", "instanceID", instanceID.String(), "error", err.Error())
 		return ""
 	}
 
-	// API v3 is only available for Cloud instances
-	if instance.Common().Type != CloudInstanceType {
-		return ""
-	}
-
-	baseURL := instance.GetURL()
+	baseURL := instance.GetJiraBaseURL()
 	if baseURL == "" {
 		p.client.Log.Debug("Instance has empty URL", "instanceID", instanceID.String())
 		return ""
 	}
 
-	userURL := fmt.Sprintf("%s/rest/api/3/user?accountId=%s", baseURL, url.QueryEscape(accountID))
+	var userURL string
+	if instance.Common().IsCloudInstance() {
+		userURL = fmt.Sprintf("%s/rest/api/2/user?accountId=%s", baseURL, url.QueryEscape(userIdentifier))
+	} else {
+		userURL = fmt.Sprintf("%s/rest/api/2/user?username=%s", baseURL, url.QueryEscape(userIdentifier))
+	}
+
 	req, err := http.NewRequest(http.MethodGet, userURL, nil)
 	if err != nil {
 		p.client.Log.Debug("Failed to create request for Jira user lookup", "error", err.Error())
@@ -164,13 +165,13 @@ func (p *Plugin) getJiraUserDisplayName(instanceID types.ID, accountID string) s
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		p.client.Log.Debug("Failed to fetch Jira user", "accountID", accountID, "error", err.Error())
+		p.client.Log.Debug("Failed to fetch Jira user", "userIdentifier", userIdentifier, "error", err.Error())
 		return ""
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		p.client.Log.Debug("Jira user lookup returned non-OK status", "accountID", accountID, "status", resp.StatusCode)
+		p.client.Log.Debug("Jira user lookup returned non-OK status", "userIdentifier", userIdentifier, "status", resp.StatusCode)
 		return ""
 	}
 
@@ -178,7 +179,7 @@ func (p *Plugin) getJiraUserDisplayName(instanceID types.ID, accountID string) s
 		DisplayName string `json:"displayName"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&jiraUser); err != nil {
-		p.client.Log.Debug("Failed to decode Jira user response", "accountID", accountID, "error", err.Error())
+		p.client.Log.Debug("Failed to decode Jira user response", "userIdentifier", userIdentifier, "error", err.Error())
 		return ""
 	}
 

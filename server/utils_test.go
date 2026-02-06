@@ -312,7 +312,7 @@ func TestGetJiraUserDisplayNameWithMockServer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			jiraServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, "/rest/api/3/user", r.URL.Path)
+				assert.Equal(t, "/rest/api/2/user", r.URL.Path)
 				assert.Equal(t, tt.accountID, r.URL.Query().Get("accountId"))
 
 				if tt.apiStatusCode != http.StatusOK {
