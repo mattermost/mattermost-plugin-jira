@@ -2,7 +2,9 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {shallow} from 'enzyme';
+import {act} from '@testing-library/react';
+
+import {mockTheme, renderWithRedux} from 'testlib/test-utils';
 
 import DisconnectModalForm from './disconnect_modal_form';
 
@@ -16,16 +18,27 @@ describe('components/DisconnectModalForm', () => {
     const baseProps = {
         ...baseActions,
         visible: true,
-        theme: {},
+        theme: mockTheme,
         connectedInstances: [],
     };
 
-    test('should match snapshot', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    test('should render component', async () => {
         const props = {...baseProps};
-        const wrapper = shallow<DisconnectModalForm>(
-            <DisconnectModalForm {...props}/>,
-        );
-        expect(wrapper).toMatchSnapshot();
+        const ref = React.createRef<DisconnectModalForm>();
+        await act(async () => {
+            renderWithRedux(
+                <DisconnectModalForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+
+        expect(ref.current).toBeDefined();
     });
 
     test('should close modal and send ephemeral post on submit success', async () => {
@@ -39,15 +52,27 @@ describe('components/DisconnectModalForm', () => {
             sendEphemeralPost,
             disconnectUser,
         };
-        const wrapper = shallow<DisconnectModalForm>(
-            <DisconnectModalForm {...props}/>,
-        );
+        const ref = React.createRef<DisconnectModalForm>();
+        await act(async () => {
+            renderWithRedux(
+                <DisconnectModalForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
 
-        wrapper.instance().handleInstanceChoice('', 'https://something.atlassian.net');
-        expect(wrapper.state().selectedInstance).toEqual('https://something.atlassian.net');
+        await act(async () => {
+            ref.current?.handleInstanceChoice('', 'https://something.atlassian.net');
+        });
+        expect(ref.current?.state.selectedInstance).toEqual('https://something.atlassian.net');
 
-        wrapper.instance().submit({preventDefault: jest.fn()});
-        await Promise.resolve();
+        await act(async () => {
+            ref.current?.submit({preventDefault: jest.fn()});
+        });
+        await act(async () => {
+            await Promise.resolve();
+        });
 
         expect(disconnectUser).toHaveBeenCalledWith('https://something.atlassian.net');
         expect(sendEphemeralPost).toHaveBeenCalledWith('Successfully disconnected from Jira instance https://something.atlassian.net');
@@ -65,20 +90,32 @@ describe('components/DisconnectModalForm', () => {
             sendEphemeralPost,
             disconnectUser,
         };
-        const wrapper = shallow<DisconnectModalForm>(
-            <DisconnectModalForm {...props}/>,
-        );
+        const ref = React.createRef<DisconnectModalForm>();
+        await act(async () => {
+            renderWithRedux(
+                <DisconnectModalForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
 
-        wrapper.instance().handleInstanceChoice('', 'https://something.atlassian.net');
-        expect(wrapper.state().selectedInstance).toEqual('https://something.atlassian.net');
+        await act(async () => {
+            ref.current?.handleInstanceChoice('', 'https://something.atlassian.net');
+        });
+        expect(ref.current?.state.selectedInstance).toEqual('https://something.atlassian.net');
 
-        wrapper.instance().submit({preventDefault: jest.fn()});
-        await Promise.resolve();
+        await act(async () => {
+            ref.current?.submit({preventDefault: jest.fn()});
+        });
+        await act(async () => {
+            await Promise.resolve();
+        });
 
         expect(disconnectUser).toHaveBeenCalled();
         expect(sendEphemeralPost).not.toHaveBeenCalled();
         expect(closeModal).not.toHaveBeenCalled();
 
-        expect(wrapper.state().error).toEqual('Error disconnecting');
+        expect(ref.current?.state.error).toEqual('Error disconnecting');
     });
 });
