@@ -186,6 +186,13 @@ export const searchTeamFields = (params) => {
     };
 };
 
+export const searchSprints = (params: {instance_id: string; project_key: string}) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
+        const url = `${getPluginServerRoute(getState())}/api/v2/get-sprints`;
+        return doFetchWithResponse(`${url}${buildQueryString(params)}`);
+    };
+};
+
 export const searchUsers = (params: SearchUsersParams) => {
     return async (dispatch: Dispatch, getState: GlobalState) => {
         const url = getPluginServerRoute(getState()) + '/api/v2/get-search-users';

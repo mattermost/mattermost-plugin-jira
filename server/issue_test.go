@@ -1455,3 +1455,78 @@ func TestShouldNotifyWatcherUser(t *testing.T) {
 
 	require.True(t, shouldNotifyWatcherUser(jira.Watcher{Name: "someone"}, nil))
 }
+
+func TestSprintTypes(t *testing.T) {
+	// Test Sprint struct JSON marshaling
+	sprint := Sprint{
+		ID:    1,
+		Name:  "Sprint 1",
+		State: "active",
+	}
+
+	data, err := json.Marshal(sprint)
+	require.NoError(t, err)
+
+	var decoded Sprint
+	err = json.Unmarshal(data, &decoded)
+	require.NoError(t, err)
+	assert.Equal(t, sprint.ID, decoded.ID)
+	assert.Equal(t, sprint.Name, decoded.Name)
+	assert.Equal(t, sprint.State, decoded.State)
+}
+
+func TestSprintSearchResult(t *testing.T) {
+	// Test SprintSearchResult JSON marshaling
+	result := SprintSearchResult{
+		Values: []Sprint{
+			{ID: 1, Name: "Sprint 1", State: "active"},
+			{ID: 2, Name: "Sprint 2", State: "future"},
+		},
+	}
+
+	data, err := json.Marshal(result)
+	require.NoError(t, err)
+
+	var decoded SprintSearchResult
+	err = json.Unmarshal(data, &decoded)
+	require.NoError(t, err)
+	assert.Len(t, decoded.Values, 2)
+	assert.Equal(t, "Sprint 1", decoded.Values[0].Name)
+	assert.Equal(t, "active", decoded.Values[0].State)
+}
+
+func TestBoardTypes(t *testing.T) {
+	// Test Board struct JSON marshaling
+	board := Board{
+		ID:   1,
+		Name: "Test Board",
+	}
+
+	data, err := json.Marshal(board)
+	require.NoError(t, err)
+
+	var decoded Board
+	err = json.Unmarshal(data, &decoded)
+	require.NoError(t, err)
+	assert.Equal(t, board.ID, decoded.ID)
+	assert.Equal(t, board.Name, decoded.Name)
+}
+
+func TestBoardSearchResult(t *testing.T) {
+	// Test BoardSearchResult JSON marshaling
+	result := BoardSearchResult{
+		Values: []Board{
+			{ID: 1, Name: "Board 1"},
+			{ID: 2, Name: "Board 2"},
+		},
+	}
+
+	data, err := json.Marshal(result)
+	require.NoError(t, err)
+
+	var decoded BoardSearchResult
+	err = json.Unmarshal(data, &decoded)
+	require.NoError(t, err)
+	assert.Len(t, decoded.Values, 2)
+	assert.Equal(t, "Board 1", decoded.Values[0].Name)
+}

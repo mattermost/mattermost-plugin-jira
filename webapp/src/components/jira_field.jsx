@@ -12,6 +12,7 @@ import Input from 'components/input';
 import JiraEpicSelector from './data_selectors/jira_epic_selector';
 import JiraAutoCompleteSelector from './data_selectors/jira_autocomplete_selector';
 import JiraUserSelector from './data_selectors/jira_user_selector';
+import JiraSprintSelector from './data_selectors/jira_sprint_selector';
 
 export default class JiraField extends React.Component {
     static propTypes = {
@@ -106,6 +107,20 @@ export default class JiraField extends React.Component {
                 <JiraEpicSelector
                     {...selectProps}
                     issueMetadata={this.props.issueMetadata}
+                    onChange={(value) => {
+                        this.props.onChange(this.props.id, value);
+                    }}
+                    value={this.props.value}
+                    isMulti={false}
+                />
+            );
+        }
+
+        if (field.schema.custom === 'com.pyxis.greenhopper.jira:gh-sprint') {
+            return (
+                <JiraSprintSelector
+                    {...selectProps}
+                    projectKey={this.props.projectKey}
                     onChange={(value) => {
                         this.props.onChange(this.props.id, value);
                     }}
@@ -266,6 +281,10 @@ export function isFieldSupported(field) {
     }
 
     if (field.schema.custom === 'com.pyxis.greenhopper.jira:gh-epic-link') {
+        return true;
+    }
+
+    if (field.schema.custom === 'com.pyxis.greenhopper.jira:gh-sprint') {
         return true;
     }
 

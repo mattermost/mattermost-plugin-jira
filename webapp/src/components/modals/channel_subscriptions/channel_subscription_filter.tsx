@@ -7,6 +7,7 @@ import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import ReactSelectSetting from 'components/react_select_setting';
 import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
+import JiraSprintSelector from 'components/data_selectors/jira_sprint_selector';
 
 import {
     FIELD_KEY_STATUS,
@@ -15,6 +16,7 @@ import {
     isLabelField,
     isMultiSelectField,
     isSecurityLevelField,
+    isSprintField,
     isTeamField,
     isUserField,
 } from 'utils/jira_issue_metadata';
@@ -45,6 +47,7 @@ export type Props = {
     instanceID: string;
     securityLevelEmptyForJiraSubscriptions?: boolean;
     searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{data: {items: {name: string; id: string}[]}; error?: Error}>;
+    projectKey: string;
 };
 
 export type State = {
@@ -350,6 +353,19 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                     value={value.values}
                     onChange={this.handleTeamSelection}
                     searchTeamFields={this.props.searchTeamFields}
+                />
+            );
+        } else if (isSprintField(field)) {
+            valueSelector = (
+                <JiraSprintSelector
+                    {...selectProps}
+                    isMulti={false}
+                    value={value.values[0] || ''}
+                    onChange={(selected: string | string[]) => {
+                        const selectedValue = Array.isArray(selected) ? selected : [selected];
+                        this.handleValueChangeWithoutName(selectedValue.filter(Boolean));
+                    }}
+                    projectKey={this.props.projectKey}
                 />
             );
         } else if (isUserField(field)) {

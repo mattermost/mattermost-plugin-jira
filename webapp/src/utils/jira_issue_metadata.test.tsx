@@ -49,7 +49,7 @@ describe('utils/jira_issue_metadata', () => {
         expect(actual.length).toBeGreaterThan(0);
     });
 
-    test('should return only the status, comment visibility and team  field if there are no available values', () => {
+    test('should return status, comment visibility, team and sprint fields', () => {
         const field = {
             hasDefaultValue: false,
             key: 'customfield_10021',
@@ -71,10 +71,11 @@ describe('utils/jira_issue_metadata', () => {
 
         const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(3);
+        expect(actual.length).toBe(4);
         expect(actual[0].name).toBe('Comment Visibility');
-        expect(actual[1].name).toBe('Status');
-        expect(actual[2].name).toBe('Team');
+        expect(actual[1].name).toBe('Sprint');
+        expect(actual[2].name).toBe('Status');
+        expect(actual[3].name).toBe('Team');
     });
 
     test('should return options for multi-select options', () => {
@@ -728,6 +729,38 @@ describe('utils/jira_issue_metadata', () => {
             const result = getJiraTicketDetails(action.data);
 
             expect(result).toEqual(expectedTicketDetails);
+        });
+    });
+
+    describe('isSprintField', () => {
+        it('should return true for Sprint field', () => {
+            const {isSprintField} = require('./jira_issue_metadata');
+            const field: FilterField = {
+                key: 'customfield_10021',
+                name: 'Sprint',
+                schema: {
+                    custom: 'com.pyxis.greenhopper.jira:gh-sprint',
+                    type: 'array',
+                },
+                values: [],
+            };
+
+            expect(isSprintField(field)).toBe(true);
+        });
+
+        it('should return false for non-Sprint field', () => {
+            const {isSprintField} = require('./jira_issue_metadata');
+            const field: FilterField = {
+                key: 'customfield_10001',
+                name: 'Team',
+                schema: {
+                    custom: 'com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team',
+                    type: 'team',
+                },
+                values: [],
+            };
+
+            expect(isSprintField(field)).toBe(false);
         });
     });
 });
