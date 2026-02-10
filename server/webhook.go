@@ -100,7 +100,11 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 
 	text := ""
 	if wh.text != "" && !pluginConfig.HideDecriptionComment {
-		text = p.replaceJiraAccountIds(instanceID, wh.text, nil)
+		var client Client
+		if p.userStore != nil {
+			client, _, _ = wh.fetchConnectedUser(p, instanceID)
+		}
+		text = p.replaceJiraAccountIds(instanceID, wh.text, client)
 	}
 
 	if text != "" || len(wh.fields) != 0 {
