@@ -10,11 +10,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
-	"time"
 
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -100,14 +99,18 @@ func (p *Plugin) notifyUserTokenExpired(mattermostUserID types.ID, instanceID ty
 	}
 }
 
-func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string {
+func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string, jiraClient Client) string {
 	result := body
+	isCloud := false
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err == nil {
+		isCloud = instance.Common().IsCloudInstance()
+	}
+
 	for _, uname := range parseJIRAUsernamesFromText(body) {
-		jiraUserIDOrName := ""
+		jiraUserIDOrName := uname
 		if strings.HasPrefix(uname, "accountid:") {
 			jiraUserIDOrName = uname[len("accountid:"):]
-		} else {
-			jiraUserIDOrName = uname
 		}
 
 		jiraMention := "[~" + uname + "]"
@@ -121,7 +124,7 @@ func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string 
 			}
 		}
 
-		displayName := p.getJiraUserDisplayName(instanceID, jiraUserIDOrName)
+		displayName := p.getJiraUserDisplayName(jiraClient, isCloud, jiraUserIDOrName)
 		if displayName != "" {
 			result = strings.ReplaceAll(result, jiraMention, displayName)
 		} else {
@@ -132,58 +135,25 @@ func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string 
 	return result
 }
 
-func (p *Plugin) getJiraUserDisplayName(instanceID types.ID, userIdentifier string) string {
-	instance, err := p.instanceStore.LoadInstance(instanceID)
-	if err != nil {
-		p.client.Log.Debug("Failed to load instance for user display name lookup", "instanceID", instanceID.String(), "error", err.Error())
+func (p *Plugin) getJiraUserDisplayName(jiraClient Client, isCloud bool, userIdentifier string) string {
+	if jiraClient == nil {
 		return ""
 	}
 
-	baseURL := instance.GetJiraBaseURL()
-	if baseURL == "" {
-		p.client.Log.Debug("Instance has empty URL", "instanceID", instanceID.String())
-		return ""
-	}
-
-	var userURL string
-	if instance.Common().IsCloudInstance() {
-		userURL = fmt.Sprintf("%s/rest/api/2/user?accountId=%s", baseURL, url.QueryEscape(userIdentifier))
+	var params map[string]string
+	if isCloud {
+		params = map[string]string{"accountId": userIdentifier}
 	} else {
-		userURL = fmt.Sprintf("%s/rest/api/2/user?username=%s", baseURL, url.QueryEscape(userIdentifier))
+		params = map[string]string{"username": userIdentifier}
 	}
 
-	req, err := http.NewRequest(http.MethodGet, userURL, nil)
-	if err != nil {
-		p.client.Log.Debug("Failed to create request for Jira user lookup", "error", err.Error())
+	var user jira.User
+	if err := jiraClient.RESTGet("2/user", params, &user); err != nil {
+		p.client.Log.Debug("Failed to fetch Jira user for display name", "userIdentifier", userIdentifier, "error", err.Error())
 		return ""
 	}
 
-	if err := p.SetAdminAPITokenRequestHeader(req); err != nil {
-		return ""
-	}
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		p.client.Log.Debug("Failed to fetch Jira user", "userIdentifier", userIdentifier, "error", err.Error())
-		return ""
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		p.client.Log.Debug("Jira user lookup returned non-OK status", "userIdentifier", userIdentifier, "status", resp.StatusCode)
-		return ""
-	}
-
-	var jiraUser struct {
-		DisplayName string `json:"displayName"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&jiraUser); err != nil {
-		p.client.Log.Debug("Failed to decode Jira user response", "userIdentifier", userIdentifier, "error", err.Error())
-		return ""
-	}
-
-	return jiraUser.DisplayName
+	return user.DisplayName
 }
 
 func parseJIRAUsernamesFromText(text string) []string {
