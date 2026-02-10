@@ -140,8 +140,8 @@ func (m *mockJiraClient) RESTPostAttachment(issueID string, data io.Reader, name
 	return nil, nil
 }
 
-func (m *mockJiraClient) GetSelf() (*jira.User, error)                              { return nil, nil }
-func (m *mockJiraClient) GetUserGroups(_ *Connection) ([]*jira.UserGroup, error)     { return nil, nil }
+func (m *mockJiraClient) GetSelf() (*jira.User, error)                           { return nil, nil }
+func (m *mockJiraClient) GetUserGroups(_ *Connection) ([]*jira.UserGroup, error) { return nil, nil }
 func (m *mockJiraClient) GetIssue(_ string, _ *jira.GetQueryOptions) (*jira.Issue, error) {
 	return nil, nil
 }
@@ -183,8 +183,8 @@ func (m *mockJiraClient) GetProject(_ string) (*jira.Project, error) { return ni
 func (m *mockJiraClient) ListProjects(_ string, _ int, _ bool) (jira.ProjectList, error) {
 	return nil, nil
 }
-func (m *mockJiraClient) GetAllProjectKeys() ([]string, error)                       { return nil, nil }
-func (m *mockJiraClient) GetIssueTypes(_ string) ([]jira.IssueType, error)           { return nil, nil }
+func (m *mockJiraClient) GetAllProjectKeys() ([]string, error)             { return nil, nil }
+func (m *mockJiraClient) GetIssueTypes(_ string) ([]jira.IssueType, error) { return nil, nil }
 func (m *mockJiraClient) ListProjectStatuses(_ string) ([]*IssueTypeWithStatuses, error) {
 	return nil, nil
 }
