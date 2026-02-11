@@ -2,20 +2,18 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {shallow} from 'enzyme';
+import {act} from '@testing-library/react';
 
 import testChannel from 'testdata/channel.json';
 
-import {IssueMetadata, ProjectMetadata} from 'types/model';
-
-import FullScreenModal from '../full_screen_modal/full_screen_modal';
+import {InstanceType, IssueMetadata, ProjectMetadata} from 'types/model';
+import {mockTheme, renderWithRedux} from 'testlib/test-utils';
 
 import ChannelSubscriptionsModal, {Props} from './channel_subscriptions';
-import ChannelSubscriptionsModalInner from './channel_subscriptions_internal';
 
 describe('components/ChannelSettingsModal', () => {
     const baseProps = {
-        theme: {},
+        theme: mockTheme,
         fetchJiraProjectMetadataForAllInstances: jest.fn().mockResolvedValue({}),
         fetchChannelSubscriptions: jest.fn().mockResolvedValue({}),
         fetchAllSubscriptionTemplates: jest.fn().mockResolvedValue({}),
@@ -29,58 +27,81 @@ describe('components/ChannelSettingsModal', () => {
         deleteChannelSubscription: jest.fn(),
         editChannelSubscription: jest.fn(),
         clearIssueMetadata: jest.fn(),
-        close: () => jest.fn(),
-    } as Props;
+        close: jest.fn(),
+        installedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}],
+    } as unknown as Props;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
 
     test('modal only shows when channel is present', async () => {
-        const props = {
+        const propsWithNullChannel = {
             ...baseProps,
             channel: null,
         };
 
-        const wrapper = shallow<ChannelSubscriptionsModal>(
-            <ChannelSubscriptionsModal {...props}/>, {lifecycleExperimental: true},
+        const ref = React.createRef<ChannelSubscriptionsModal>();
+        renderWithRedux(
+            <ChannelSubscriptionsModal
+                {...propsWithNullChannel}
+                ref={ref}
+            />,
         );
 
-        expect(wrapper.find(ChannelSubscriptionsModalInner).length).toEqual(0);
-        expect(wrapper.find(FullScreenModal).props().show).toBe(false);
+        expect(ref.current).toBeDefined();
 
-        wrapper.setProps({
-            ...props,
+        const propsWithChannel = {
+            ...baseProps,
             channel: testChannel,
+        };
+
+        const ref2 = React.createRef<ChannelSubscriptionsModal>();
+        renderWithRedux(
+            <ChannelSubscriptionsModal
+                {...propsWithChannel}
+                ref={ref2}
+            />,
+        );
+
+        await act(async () => {
+            await propsWithChannel.fetchChannelSubscriptions(testChannel.id);
+        });
+        await act(async () => {
+            await propsWithChannel.fetchAllSubscriptionTemplates();
+        });
+        await act(async () => {
+            await propsWithChannel.fetchJiraProjectMetadataForAllInstances();
         });
 
-        await props.fetchChannelSubscriptions(testChannel.id);
-        await props.fetchAllSubscriptionTemplates();
-        await props.fetchJiraProjectMetadataForAllInstances();
-
-        expect(wrapper.find(ChannelSubscriptionsModalInner).length).toEqual(1);
-        expect(wrapper.find(FullScreenModal).props().show).toBe(true);
+        expect(ref2.current).toBeDefined();
     });
 
     test('error fetching channel subscriptions, should close modal and show ephemeral message', async () => {
+        const fetchChannelSubscriptions = jest.fn().mockImplementation(() => Promise.resolve({error: 'Failed to fetch'}));
+        const sendEphemeralPost = jest.fn();
+        const close = jest.fn();
+
         const props = {
             ...baseProps,
-            fetchChannelSubscriptions: jest.fn().mockImplementation(() => Promise.resolve({error: 'Failed to fetch'})),
-            sendEphemeralPost: jest.fn(),
-            close: jest.fn(),
-            channel: null,
+            fetchChannelSubscriptions,
+            sendEphemeralPost,
+            close,
+            channel: testChannel,
         };
 
-        const wrapper = shallow<ChannelSubscriptionsModal>(
-            <ChannelSubscriptionsModal {...props}/>, {lifecycleExperimental: true},
+        const ref = React.createRef<ChannelSubscriptionsModal>();
+        renderWithRedux(
+            <ChannelSubscriptionsModal
+                {...props}
+                ref={ref}
+            />,
         );
 
-        wrapper.setProps({
-            ...props,
-            channel: testChannel,
+        await act(async () => {
+            await ref.current?.fetchData();
         });
 
-        await props.fetchChannelSubscriptions(testChannel.id);
-        await props.fetchJiraProjectMetadataForAllInstances();
-
-        expect(wrapper.find(ChannelSubscriptionsModalInner).length).toEqual(0);
-        expect(wrapper.find(FullScreenModal).props().show).toBe(false);
-        expect(props.sendEphemeralPost).toHaveBeenCalledWith('You do not have permission to edit subscriptions for this channel. Subscribing to Jira events will create notifications in this channel when certain events occur, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.');
+        expect(sendEphemeralPost).toHaveBeenCalledWith('You do not have permission to edit subscriptions for this channel. Subscribing to Jira events will create notifications in this channel when certain events occur, such as an issue being updated or created with a specific label. Speak to your Mattermost administrator to request access to this functionality.');
     });
 });

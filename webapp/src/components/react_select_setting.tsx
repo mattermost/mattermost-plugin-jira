@@ -2,13 +2,11 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import ReactSelect, {GroupTypeBase} from 'react-select';
-import AsyncSelect, {Props as ReactSelectProps} from 'react-select/async';
+import ReactSelect, {ActionMeta, GroupBase} from 'react-select';
+import AsyncSelect, {AsyncProps} from 'react-select/async';
 import CreatableSelect from 'react-select/creatable';
 
 import {Theme} from 'mattermost-redux/selectors/entities/preferences';
-
-import {ActionMeta} from 'react-select/src/types';
 
 import Setting from 'components/setting';
 
@@ -20,7 +18,7 @@ const MAX_NUM_OPTIONS = 100;
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
 
-export type Props = Omit<ReactSelectProps<ReactSelectOption, boolean, GroupTypeBase<ReactSelectOption>>, 'theme'> & {
+export type Props = Omit<AsyncProps<ReactSelectOption, boolean, GroupBase<ReactSelectOption>>, 'theme'> & {
     theme: Theme;
     addValidate?: (isValid: () => boolean) => void;
     removeValidate?: (isValid: () => boolean) => void;

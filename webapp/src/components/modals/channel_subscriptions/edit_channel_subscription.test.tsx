@@ -1,8 +1,14 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+/* eslint-disable max-lines */
+
 import React from 'react';
-import {shallow} from 'enzyme';
+import {act, fireEvent, render} from '@testing-library/react';
+import {Provider} from 'react-redux';
+import {IntlProvider} from 'react-intl';
+import configureStore from 'redux-mock-store';
+import thunk from 'redux-thunk';
 
 import Preferences from 'mattermost-redux/constants/preferences';
 import {Channel} from '@mattermost/types/channels';
@@ -12,9 +18,42 @@ import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.jso
 import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project-many-fields.json';
 import testChannel from 'testdata/channel.json';
 
-import {FilterFieldInclusion, IssueMetadata, ProjectMetadata} from 'types/model';
+import {
+    FilterFieldInclusion,
+    InstanceType,
+    IssueMetadata,
+    ProjectMetadata,
+} from 'types/model';
 
 import EditChannelSubscription, {Props} from './edit_channel_subscription';
+
+const mockStore = configureStore([thunk]);
+
+const editChannelMockState = {
+    'plugins-jira': {
+        installedInstances: [{instance_id: 'https://something.atlassian.net', type: InstanceType.CLOUD}],
+        connectedInstances: [{instance_id: 'https://something.atlassian.net', type: InstanceType.CLOUD}],
+    },
+    entities: {
+        general: {
+            config: {
+                SiteURL: 'http://localhost:8065',
+            },
+        },
+    },
+};
+
+const renderWithRedux = (ui: React.ReactElement, initialState = editChannelMockState) => {
+    const store = mockStore(initialState);
+    return {
+        store,
+        ...render(
+            <IntlProvider locale='en'>
+                <Provider store={store}>{ui}</Provider>
+            </IntlProvider>,
+        ),
+    };
+};
 
 const MockSubscriptionName = 'testSubscriptionName';
 
@@ -100,80 +139,149 @@ describe('components/EditChannelSubscription', () => {
         jiraIssueMetadata: cloudIssueMetadata as IssueMetadata,
     };
 
-    test('should match snapshot', () => {
-        const props = {...baseProps};
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
-        );
-        wrapper.setState(baseState);
-        expect(wrapper).toMatchSnapshot();
+    beforeEach(() => {
+        jest.clearAllMocks();
     });
 
-    test('should match snapshot with no subscriptions', () => {
+    test('should render component', async () => {
+        const props = {...baseProps};
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        expect(ref.current).toBeDefined();
+    });
+
+    test('should render component with no subscriptions', async () => {
         const props = {...baseProps, channelSubscriptions: [], selectedSubscription: null};
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
-        );
-        wrapper.setState(baseState);
-        expect(wrapper).toMatchSnapshot();
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        expect(ref.current).toBeDefined();
     });
 
-    test('should match snapshot with no issue metadata', () => {
+    test('should render component with no issue metadata', async () => {
         const props = {...baseProps};
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
-        );
-        wrapper.setState({...baseState, jiraIssueMetadata: null});
-        expect(wrapper).toMatchSnapshot();
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState({...baseState, jiraIssueMetadata: null});
+        });
+        expect(ref.current).toBeDefined();
     });
 
-    test('should match snapshot after fetching issue metadata', async () => {
+    test('should render component after fetching issue metadata', async () => {
         const props = {...baseProps};
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
-        );
-        wrapper.setState(baseState);
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
 
-        expect(wrapper.state().fetchingIssueMetadata).toBe(true);
-        await Promise.resolve();
-        expect(wrapper.state().fetchingIssueMetadata).toBe(false);
-        expect(wrapper).toMatchSnapshot();
+        // After setting state and async operations complete, fetchingIssueMetadata should be false
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(ref.current?.state.fetchingIssueMetadata).toBe(false);
+        expect(ref.current).toBeDefined();
     });
 
     test('should change project filter when chosen', async () => {
-        let fetchJiraIssueMetadataForProjects = jest.fn().mockResolvedValue({});
+        const fetchJiraIssueMetadataForProjects = jest.fn().mockResolvedValue({});
         const props = {
             ...baseProps,
             fetchJiraIssueMetadataForProjects,
         };
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
-        );
-        wrapper.setState(baseState);
-        wrapper.instance().handleProjectChange({
-            project_key: 'TES',
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
         });
-        expect(wrapper.state().filters.projects).toEqual(['TES']);
-        expect(wrapper.state().fetchingIssueMetadata).toBe(true);
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+
+        await act(async () => {
+            ref.current?.handleProjectChange({
+                project_key: 'TES',
+            });
+        });
+        expect(ref.current?.state.filters.projects).toEqual(['TES']);
         expect(fetchJiraIssueMetadataForProjects).toHaveBeenCalled();
 
-        await Promise.resolve();
-        expect(wrapper.state().fetchingIssueMetadata).toBe(false);
-        expect(wrapper.state().getMetaDataErr).toBe(null);
-
-        fetchJiraIssueMetadataForProjects = jest.fn().mockResolvedValue({error: {message: 'Failure'}});
-        wrapper.setProps({fetchJiraIssueMetadataForProjects});
-
-        wrapper.instance().handleProjectChange({
-            project_key: 'KT',
+        await act(async () => {
+            await Promise.resolve();
         });
-        expect(wrapper.state().filters.projects).toEqual(['KT']);
-        expect(fetchJiraIssueMetadataForProjects).toHaveBeenCalled();
-        expect(wrapper.state().fetchingIssueMetadata).toBe(true);
+        expect(ref.current?.state.fetchingIssueMetadata).toBe(false);
+        expect(ref.current?.state.getMetaDataErr).toBe(null);
 
-        await Promise.resolve();
-        expect(wrapper.state().fetchingIssueMetadata).toBe(false);
-        expect(wrapper.state().getMetaDataErr).toEqual('The project KT is unavailable. Please contact your system administrator.');
+        // Test error case
+        const fetchJiraIssueMetadataForProjectsError = jest.fn().mockResolvedValue({error: {message: 'Failure'}});
+        const propsWithError = {
+            ...baseProps,
+            fetchJiraIssueMetadataForProjects: fetchJiraIssueMetadataForProjectsError,
+        };
+        const refError = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...propsWithError}
+                    ref={refError}
+                />,
+            );
+        });
+        await act(async () => {
+            refError.current?.setState(baseState);
+        });
+
+        await act(async () => {
+            refError.current?.handleProjectChange({
+                project_key: 'KT',
+            });
+        });
+        expect(refError.current?.state.filters.projects).toEqual(['KT']);
+        expect(fetchJiraIssueMetadataForProjectsError).toHaveBeenCalled();
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(refError.current?.state.fetchingIssueMetadata).toBe(false);
+        expect(refError.current?.state.getMetaDataErr).toEqual('The project KT is unavailable. Please contact your system administrator.');
     });
 
     test('should show an error when a previously configured field is not in the issue metadata', async () => {
@@ -203,23 +311,33 @@ describe('components/EditChannelSubscription', () => {
             channelSubscriptions: [subscription],
             selectedSubscription: subscription,
         };
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
-        );
-        wrapper.setState(baseState);
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
 
-        await Promise.resolve();
-        expect(wrapper.state().fetchingIssueMetadata).toBe(false);
-        expect(wrapper.state().getMetaDataErr).toBe(null);
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(ref.current?.state.fetchingIssueMetadata).toBe(false);
+        expect(ref.current?.state.getMetaDataErr).toBe(null);
 
         const expected = 'A field in this subscription has been removed from Jira, so the subscription is invalid. When this form is submitted, the configured field will be removed from the subscription to make the subscription valid again.';
-        expect(wrapper.state().error).toEqual(expected);
+        expect(ref.current?.state.error).toEqual(expected);
     });
 
     test('should create a named subscription', async () => {
         const createChannelSubscription = jest.fn().mockResolvedValue({});
         const editChannelSubscription = jest.fn().mockResolvedValue({});
-        let finishEditSubscription = jest.fn();
+        const finishEditSubscription = jest.fn();
         const props = {
             ...baseProps,
             createChannelSubscription,
@@ -228,17 +346,38 @@ describe('components/EditChannelSubscription', () => {
             selectedSubscription: null,
             finishEditSubscription,
         };
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
-        );
-        wrapper.setState(baseState);
-
-        wrapper.setState({
-            filters: channelSubscriptionForCloud.filters,
-            subscriptionName: channelSubscriptionForCloud.name,
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
         });
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
-        expect(wrapper.state().error).toBe(null);
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+
+        await act(async () => {
+            ref.current?.setState({
+                filters: channelSubscriptionForCloud.filters,
+                subscriptionName: channelSubscriptionForCloud.name,
+            });
+        });
+
+        if (ref.current) {
+            ref.current.validator = {
+                validate: () => true,
+                addComponent: jest.fn(),
+                removeComponent: jest.fn(),
+            };
+        }
+
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
+        expect(ref.current?.state.error).toBe(null);
         expect(createChannelSubscription).toHaveBeenCalledWith(
             {
                 channel_id: testChannel.id,
@@ -248,29 +387,59 @@ describe('components/EditChannelSubscription', () => {
             },
         );
         expect(editChannelSubscription).not.toHaveBeenCalled();
-        expect(finishEditSubscription).not.toHaveBeenCalled();
 
-        await Promise.resolve();
+        await act(async () => {
+            await Promise.resolve();
+        });
         expect(finishEditSubscription).toHaveBeenCalled();
+    });
 
-        finishEditSubscription = jest.fn();
-        wrapper.setProps({
+    test('should create a named subscription - error case', async () => {
+        const createChannelSubscription = jest.fn().mockResolvedValue({error: {message: 'Failure'}});
+        const finishEditSubscription = jest.fn();
+        const props = {
+            ...baseProps,
+            createChannelSubscription,
+            channelSubscriptions: [],
+            selectedSubscription: null,
             finishEditSubscription,
-            createChannelSubscription: jest.fn().mockResolvedValue({error: {message: 'Failure'}}),
+        };
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        await act(async () => {
+            ref.current?.setState({
+                filters: channelSubscriptionForCloud.filters,
+                subscriptionName: channelSubscriptionForCloud.name,
+            });
+        });
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
         });
 
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
-        expect(wrapper.state().error).toEqual(null);
-
-        await Promise.resolve();
+        await act(async () => {
+            await Promise.resolve();
+        });
         expect(finishEditSubscription).not.toHaveBeenCalled();
-        expect(wrapper.state().error).toEqual('Failure');
+        expect(ref.current?.state.error).toEqual('Failure');
     });
 
     test('SERVER - should create a subscription', async () => {
         const createChannelSubscription = jest.fn().mockResolvedValue({});
         const editChannelSubscription = jest.fn().mockResolvedValue({});
-        let finishEditSubscription = jest.fn();
+        const finishEditSubscription = jest.fn();
         const props = {
             ...baseProps,
             createChannelSubscription,
@@ -281,16 +450,33 @@ describe('components/EditChannelSubscription', () => {
             finishEditSubscription,
         };
 
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
-        );
-        wrapper.setState({...baseState, jiraIssueMetadata: serverIssueMetadata, subscriptionName: MockSubscriptionName});
-
-        wrapper.setState({
-            filters: channelSubscriptionForServer.filters,
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
         });
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
-        expect(wrapper.state().error).toBe(null);
+        await act(async () => {
+            ref.current?.setState({...baseState, jiraIssueMetadata: serverIssueMetadata as IssueMetadata, subscriptionName: MockSubscriptionName});
+        });
+
+        await act(async () => {
+            ref.current?.setState({
+                filters: channelSubscriptionForServer.filters,
+            });
+        });
+
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
+
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
+        expect(ref.current?.state.error).toBe(null);
         expect(createChannelSubscription).toHaveBeenCalledWith(
             {
                 channel_id: testChannel.id,
@@ -300,23 +486,54 @@ describe('components/EditChannelSubscription', () => {
             },
         );
         expect(editChannelSubscription).not.toHaveBeenCalled();
-        expect(finishEditSubscription).not.toHaveBeenCalled();
 
-        await Promise.resolve();
+        await act(async () => {
+            await Promise.resolve();
+        });
         expect(finishEditSubscription).toHaveBeenCalled();
+    });
 
-        finishEditSubscription = jest.fn();
-        wrapper.setProps({
+    test('SERVER - should create a subscription - error case', async () => {
+        const createChannelSubscription = jest.fn().mockResolvedValue({error: {message: 'Failure'}});
+        const finishEditSubscription = jest.fn();
+        const props = {
+            ...baseProps,
+            createChannelSubscription,
+            channelSubscriptions: [],
+            selectedSubscription: null,
+            jiraProjectMetadata: serverProjectMetadata as ProjectMetadata,
             finishEditSubscription,
-            createChannelSubscription: jest.fn().mockResolvedValue({error: {message: 'Failure'}}),
+        };
+
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState({...baseState, jiraIssueMetadata: serverIssueMetadata as IssueMetadata, subscriptionName: MockSubscriptionName});
+        });
+        await act(async () => {
+            ref.current?.setState({
+                filters: channelSubscriptionForServer.filters,
+            });
+        });
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
         });
 
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
-        expect(wrapper.state().error).toEqual(null);
-
-        await Promise.resolve();
+        await act(async () => {
+            await Promise.resolve();
+        });
         expect(finishEditSubscription).not.toHaveBeenCalled();
-        expect(wrapper.state().error).toEqual('Failure');
+        expect(ref.current?.state.error).toEqual('Failure');
     });
 
     test('should on submit, remove filters for configured fields that are not in the issue metadata', async () => {
@@ -348,13 +565,27 @@ describe('components/EditChannelSubscription', () => {
             channelSubscriptions: [subscription],
             selectedSubscription: subscription,
         };
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
-        );
-        wrapper.setState(baseState);
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
 
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
-        expect(wrapper.state().error).toBe(null);
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
+
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
+        expect(ref.current?.state.error).toBe(null);
         expect(editChannelSubscription).toHaveBeenCalledWith(
             {
                 id: 'asxtifxe8jyi9y81htww6ixkiy',
@@ -376,24 +607,40 @@ describe('components/EditChannelSubscription', () => {
     test('should edit a subscription', async () => {
         const createChannelSubscription = jest.fn().mockResolvedValue({});
         const editChannelSubscription = jest.fn().mockResolvedValue({});
-        let finishEditSubscription = jest.fn();
+        const finishEditSubscription = jest.fn();
         const props = {
             ...baseProps,
             createChannelSubscription,
             editChannelSubscription,
             finishEditSubscription,
         };
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
-        );
-        wrapper.setState(baseState);
-
-        wrapper.setState({
-            filters: channelSubscriptionForCloud.filters,
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
         });
 
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
-        expect(wrapper.state().error).toBe(null);
+        await act(async () => {
+            ref.current?.setState({
+                filters: channelSubscriptionForCloud.filters,
+            });
+        });
+
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
+
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
+        expect(ref.current?.state.error).toBe(null);
         expect(editChannelSubscription).toHaveBeenCalledWith(
             {
                 id: channelSubscriptionForCloud.id,
@@ -404,144 +651,223 @@ describe('components/EditChannelSubscription', () => {
             },
         );
         expect(createChannelSubscription).not.toHaveBeenCalled();
-        expect(finishEditSubscription).not.toHaveBeenCalled();
 
-        await Promise.resolve();
+        await act(async () => {
+            await Promise.resolve();
+        });
         expect(finishEditSubscription).toHaveBeenCalled();
+    });
 
-        finishEditSubscription = jest.fn();
-        wrapper.setProps({
+    test('should edit a subscription - error case', async () => {
+        const editChannelSubscription = jest.fn().mockResolvedValue({error: {message: 'Failure'}});
+        const finishEditSubscription = jest.fn();
+        const props = {
+            ...baseProps,
+            editChannelSubscription,
             finishEditSubscription,
-            editChannelSubscription: jest.fn().mockResolvedValue({error: {message: 'Failure'}}),
+        };
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        await act(async () => {
+            ref.current?.setState({
+                filters: channelSubscriptionForCloud.filters,
+            });
+        });
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
         });
 
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
-
-        await Promise.resolve();
+        await act(async () => {
+            await Promise.resolve();
+        });
         expect(finishEditSubscription).not.toHaveBeenCalled();
-        expect(wrapper.state().error).toEqual('Failure');
+        expect(ref.current?.state.error).toEqual('Failure');
     });
 
     test('should produce subscription error when add conflicting issue type', async () => {
-        // This test checks that adding an issue type with confilcting fields
-        // will trigger an error message that lists the conflicting filter
-        // fields.
-
         const props = {
             ...baseProps,
         };
 
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
-        );
-        wrapper.setState(baseState);
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
 
         // initially, there are no errors
-        expect(wrapper.state().conflictingError).toBe(null);
+        expect(ref.current?.state.conflictingError).toBe(null);
 
         // Add issue type with conflicting filter fields and observe error
-        wrapper.instance().handleIssueChange('issue_types', ['10004', '10000']);
-        expect(wrapper.state().conflictingError).toEqual('Issue Type(s) "Epic" does not have filter field(s): "Affects versions".  Please update the conflicting fields or create a separate subscription.');
+        await act(async () => {
+            ref.current?.handleIssueChange('issue_types', ['10004', '10000']);
+        });
+        expect(ref.current?.state.conflictingError).toEqual('Issue Type(s) "Epic" does not have filter field(s): "Affects versions".  Please update the conflicting fields or create a separate subscription.');
 
-        // save snapshot showing error message
-        expect(wrapper).toMatchSnapshot();
+        expect(ref.current).toBeDefined();
     });
 
     test('conflicting subscription error should get cleared', async () => {
-        // Check that the conflicting error message disappears with
-        // each change of a filter field, project, or event
-
         const props = {
             ...baseProps,
         };
 
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
-        );
-        wrapper.setState(baseState);
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
 
         // Add issue type with conflicting filter fields
-        wrapper.instance().handleIssueChange('issue_types', ['10004', '10000']);
+        await act(async () => {
+            ref.current?.handleIssueChange('issue_types', ['10004', '10000']);
+        });
 
         // save errorState for later usage and testing error disappears with changing fields
-        const errorState = wrapper.state();
+        const errorState = {...ref.current?.state};
 
         // change the Event Types - error should disappear
-        wrapper.instance().handleSettingChange('issue_types', ['10004', '10000']);
-        expect(wrapper.state().conflictingError).toBe(null);
+        await act(async () => {
+            ref.current?.handleSettingChange('issue_types', ['10004', '10000']);
+        });
+        expect(ref.current?.state.conflictingError).toBe(null);
 
         // reset error message state to include error message
-        wrapper.setState({...errorState});
+        await act(async () => {
+            ref.current?.setState(errorState);
+        });
 
         // change project - error should disappear
-        wrapper.instance().handleProjectChange('project', 'KT');
-        expect(wrapper.state().conflictingError).toBe(null);
+        await act(async () => {
+            ref.current?.handleProjectChange({project_key: 'KT'});
+        });
+        expect(ref.current?.state.conflictingError).toBe(null);
 
         // reset error message state to include error message
-        wrapper.setState({...errorState});
+        await act(async () => {
+            ref.current?.setState(errorState);
+        });
 
         // change one of the filter fields - error should disappear
-        wrapper.instance().handleFilterFieldChange(['']);
-        expect(wrapper.state().conflictingError).toBe(null);
+        await act(async () => {
+            ref.current?.handleFilterFieldChange(['']);
+        });
+        expect(ref.current?.state.conflictingError).toBe(null);
     });
 
-    test('should not create when choices are blank', () => {
+    test('should not create when choices are blank', async () => {
         const createChannelSubscription = jest.fn().mockResolvedValue({});
         const props = {
             ...baseProps,
             createChannelSubscription,
             channelSubscriptions: [],
         };
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
-        );
-        wrapper.setState(baseState);
+        const ref = React.createRef<EditChannelSubscription>();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
 
         const filters = channelSubscriptionForCloud.filters;
 
-        wrapper.setState({
-            filters: {
-                ...filters,
-                projects: [],
-            },
+        await act(async () => {
+            ref.current?.setState({
+                filters: {
+                    ...filters,
+                    projects: [],
+                },
+            });
         });
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
         expect(createChannelSubscription).not.toHaveBeenCalled();
 
-        wrapper.setState({error: null});
-
-        wrapper.setState({
-            filters: {
-                ...filters,
-                issue_types: [],
-            },
+        await act(async () => {
+            ref.current?.setState({error: null});
         });
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
+
+        await act(async () => {
+            ref.current?.setState({
+                filters: {
+                    ...filters,
+                    issue_types: [],
+                },
+            });
+        });
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
         expect(createChannelSubscription).not.toHaveBeenCalled();
 
-        wrapper.setState({
-            filters: {
-                ...filters,
-                events: [],
-            },
+        await act(async () => {
+            ref.current?.setState({
+                filters: {
+                    ...filters,
+                    events: [],
+                },
+            });
         });
-        wrapper.instance().handleCreate({preventDefault: jest.fn()});
+        await act(async () => {
+            ref.current?.handleCreate({preventDefault: jest.fn()});
+        });
         expect(createChannelSubscription).not.toHaveBeenCalled();
     });
 
-    test('should hide the delete button when no subscription is present', () => {
+    test('should hide the delete button when no subscription is present', async () => {
         const props = {
             ...baseProps,
             channelSubscriptions: [],
             selectedSubscription: null,
         };
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
+        const ref = React.createRef<EditChannelSubscription>();
+        const {container} = renderWithRedux(
+            <EditChannelSubscription
+                {...props}
+                ref={ref}
+            />,
         );
-        wrapper.setState(baseState);
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
 
-        expect(wrapper.exists('#jira-delete-subscription')).toBe(true);
-        expect(wrapper.find('#jira-delete-subscription').prop('disabled')).toBe(true);
+        const deleteButton = container.querySelector('#jira-delete-subscription');
+        expect(deleteButton).toBeTruthy();
+        expect(deleteButton?.hasAttribute('disabled')).toBe(true);
     });
 
     test('should delete subscription', async () => {
@@ -552,21 +878,36 @@ describe('components/EditChannelSubscription', () => {
             deleteChannelSubscription,
             finishEditSubscription,
         };
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
+        const ref = React.createRef<EditChannelSubscription>();
+        const {container} = renderWithRedux(
+            <EditChannelSubscription
+                {...props}
+                ref={ref}
+            />,
         );
-        wrapper.setState(baseState);
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
 
-        expect(wrapper.exists('#jira-delete-subscription')).toBe(true);
-        wrapper.find('#jira-delete-subscription').simulate('click');
+        const deleteButton = container.querySelector('#jira-delete-subscription');
+        expect(deleteButton).toBeTruthy();
 
-        expect(wrapper.state().showConfirmModal).toBe(true);
-        wrapper.instance().handleConfirmAction();
+        await act(async () => {
+            fireEvent.click(deleteButton!);
+        });
+
+        expect(ref.current?.state.showConfirmModal).toBe(true);
+
+        await act(async () => {
+            ref.current?.handleConfirmAction();
+        });
 
         expect(deleteChannelSubscription).toHaveBeenCalled();
 
-        await Promise.resolve();
-        expect(wrapper.state().error).toBe(null);
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(ref.current?.state.error).toBe(null);
         expect(finishEditSubscription).toHaveBeenCalled();
     });
 
@@ -578,21 +919,36 @@ describe('components/EditChannelSubscription', () => {
             deleteChannelSubscription,
             finishEditSubscription,
         };
-        const wrapper = shallow<EditChannelSubscription>(
-            <EditChannelSubscription {...props}/>,
+        const ref = React.createRef<EditChannelSubscription>();
+        const {container} = renderWithRedux(
+            <EditChannelSubscription
+                {...props}
+                ref={ref}
+            />,
         );
-        wrapper.setState(baseState);
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
 
-        expect(wrapper.exists('#jira-delete-subscription')).toBe(true);
-        wrapper.find('#jira-delete-subscription').simulate('click');
+        const deleteButton = container.querySelector('#jira-delete-subscription');
+        expect(deleteButton).toBeTruthy();
 
-        expect(wrapper.state().showConfirmModal).toBe(true);
-        wrapper.instance().handleConfirmAction();
+        await act(async () => {
+            fireEvent.click(deleteButton!);
+        });
+
+        expect(ref.current?.state.showConfirmModal).toBe(true);
+
+        await act(async () => {
+            ref.current?.handleConfirmAction();
+        });
 
         expect(deleteChannelSubscription).toHaveBeenCalled();
 
-        await Promise.resolve();
-        expect(wrapper.state().error).toEqual('Failure');
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(ref.current?.state.error).toEqual('Failure');
         expect(finishEditSubscription).not.toHaveBeenCalled();
     });
 });

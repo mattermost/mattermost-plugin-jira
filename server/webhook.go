@@ -100,7 +100,11 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 
 	text := ""
 	if wh.text != "" && !pluginConfig.HideDecriptionComment {
-		text = p.replaceJiraAccountIds(instanceID, wh.text)
+		var client Client
+		if p.userStore != nil {
+			client, _, _ = wh.fetchConnectedUser(p, instanceID)
+		}
+		text = p.replaceJiraAccountIds(instanceID, wh.text, client)
 	}
 
 	if text != "" || len(wh.fields) != 0 {
@@ -207,7 +211,7 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 			continue
 		}
 
-		notification.message = p.replaceJiraAccountIds(instance.GetID(), notification.message)
+		notification.message = p.replaceJiraAccountIds(instance.GetID(), notification.message, client)
 
 		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType)
 		if err != nil {

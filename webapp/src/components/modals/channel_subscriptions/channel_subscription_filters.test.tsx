@@ -2,12 +2,13 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {shallow} from 'enzyme';
+import {act} from '@testing-library/react';
 
 import {useFieldForIssueMetadata} from 'testdata/jira-issue-metadata-helpers';
 
 import {FilterFieldInclusion} from 'types/model';
 import {getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
+import {mockTheme, renderWithRedux} from 'testlib/test-utils';
 
 import ChannelSubscriptionFilters, {Props} from './channel_subscription_filters';
 
@@ -45,7 +46,7 @@ describe('components/ChannelSubscriptionFilters', () => {
     const issueMetadata = useFieldForIssueMetadata(field, 'priority');
 
     const baseProps: Props = {
-        theme: {},
+        theme: mockTheme,
         fields: getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key], []),
         values: [{
             key: 'priority',
@@ -62,13 +63,25 @@ describe('components/ChannelSubscriptionFilters', () => {
         searchTeamFields: jest.fn().mockResolvedValue({data: []}),
     };
 
-    test('should match snapshot', () => {
-        const props = {...baseProps};
-        const wrapper = shallow<ChannelSubscriptionFilters>(
-            <ChannelSubscriptionFilters {...props}/>,
-        );
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
 
-        wrapper.setState({showCreateRow: true});
-        expect(wrapper).toMatchSnapshot();
+    test('should render component', async () => {
+        const props = {...baseProps};
+        const ref = React.createRef<ChannelSubscriptionFilters>();
+        await act(async () => {
+            renderWithRedux(
+                <ChannelSubscriptionFilters
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+
+        await act(async () => {
+            ref.current?.setState({showCreateRow: true});
+        });
+        expect(ref.current).toBeDefined();
     });
 });

@@ -17,7 +17,7 @@ const config = {
             shippedProposals: true,
         }],
         ['@babel/preset-react', {
-            useBuiltIns: true,
+            runtime: 'automatic',
         }],
         ['@babel/typescript', {
             allExtensions: true,
@@ -25,20 +25,44 @@ const config = {
         }],
     ],
     plugins: [
-        '@babel/plugin-proposal-class-properties',
+        '@babel/plugin-transform-class-properties',
         '@babel/plugin-syntax-dynamic-import',
-        '@babel/proposal-object-rest-spread',
+        '@babel/plugin-transform-object-rest-spread',
         'babel-plugin-typescript-to-proptypes',
     ],
 };
 
-// Jest needs module transformation
 config.env = {
     test: {
-        presets: config.presets,
-        plugins: config.plugins,
+        presets: [
+            ['@babel/preset-env', {
+                targets: {
+                    chrome: 66,
+                    firefox: 60,
+                    edge: 42,
+                    safari: 12,
+                },
+                modules: 'auto',
+                corejs: 3,
+                debug: false,
+                useBuiltIns: 'usage',
+                shippedProposals: true,
+            }],
+            ['@babel/preset-react', {
+                runtime: 'automatic',
+            }],
+            ['@babel/typescript', {
+                allExtensions: true,
+                isTSX: true,
+            }],
+        ],
+        plugins: [
+            '@babel/plugin-transform-class-properties',
+            '@babel/plugin-syntax-dynamic-import',
+            '@babel/plugin-transform-object-rest-spread',
+            'babel-plugin-typescript-to-proptypes',
+        ],
     },
 };
-config.env.test.presets[0][1].modules = 'auto';
 
 module.exports = config;

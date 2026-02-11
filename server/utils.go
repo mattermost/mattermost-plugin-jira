@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -121,31 +122,61 @@ func (p *Plugin) disconnectUserDueToExpiredToken(mattermostUserID types.ID, inst
 	}
 }
 
-func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string) string {
+func (p *Plugin) replaceJiraAccountIds(instanceID types.ID, body string, jiraClient Client) string {
 	result := body
+	isCloud := false
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err == nil {
+		isCloud = instance.Common().IsCloudInstance()
+	}
+
 	for _, uname := range parseJIRAUsernamesFromText(body) {
-		jiraUserIDOrName := ""
+		jiraUserIDOrName := uname
 		if strings.HasPrefix(uname, "accountid:") {
 			jiraUserIDOrName = uname[len("accountid:"):]
-		} else {
-			jiraUserIDOrName = uname
 		}
+
+		jiraMention := "[~" + uname + "]"
 
 		mattermostUserID, err := p.userStore.LoadMattermostUserID(instanceID, jiraUserIDOrName)
-		if err != nil {
-			continue
+		if err == nil {
+			user, userErr := p.client.User.Get(string(mattermostUserID))
+			if userErr == nil {
+				result = strings.ReplaceAll(result, jiraMention, "@"+user.Username)
+				continue
+			}
 		}
 
-		user, err := p.client.User.Get(string(mattermostUserID))
-		if err != nil {
-			continue
+		displayName := p.getJiraUserDisplayName(jiraClient, isCloud, jiraUserIDOrName)
+		if displayName != "" {
+			result = strings.ReplaceAll(result, jiraMention, displayName)
+		} else {
+			result = strings.ReplaceAll(result, jiraMention, jiraUserIDOrName)
 		}
-
-		jiraUserName := "[~" + uname + "]"
-		result = strings.ReplaceAll(result, jiraUserName, "@"+user.Username)
 	}
 
 	return result
+}
+
+func (p *Plugin) getJiraUserDisplayName(jiraClient Client, isCloud bool, userIdentifier string) string {
+	if jiraClient == nil {
+		return ""
+	}
+
+	var params map[string]string
+	if isCloud {
+		params = map[string]string{"accountId": userIdentifier}
+	} else {
+		params = map[string]string{"username": userIdentifier}
+	}
+
+	var user jira.User
+	if err := jiraClient.RESTGet("2/user", params, &user); err != nil {
+		p.client.Log.Debug("Failed to fetch Jira user for display name", "userIdentifier", userIdentifier, "error", err.Error())
+		return ""
+	}
+
+	return user.DisplayName
 }
 
 func parseJIRAUsernamesFromText(text string) []string {
