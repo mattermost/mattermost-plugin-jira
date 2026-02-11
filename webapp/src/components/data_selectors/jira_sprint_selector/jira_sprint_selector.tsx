@@ -25,6 +25,10 @@ const JiraSprintSelector = (props: Props): JSX.Element => {
     const {value, instanceID, projectKey, searchSprints} = props;
 
     const fetchSprints = async (): Promise<ReactSelectOption[]> => {
+        if (!instanceID || !projectKey) {
+            return [];
+        }
+
         const params = {
             instance_id: instanceID,
             project_key: projectKey,
@@ -35,7 +39,7 @@ const JiraSprintSelector = (props: Props): JSX.Element => {
                 return [];
             }
 
-            return data.map((sprint) => ({
+            return data.map((sprint: Sprint) => ({
                 value: String(sprint.id),
                 label: `${sprint.name} (${sprint.state})`,
             }));

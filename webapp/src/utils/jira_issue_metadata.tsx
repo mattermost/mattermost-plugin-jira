@@ -188,9 +188,7 @@ const allowedFieldTypes = [
 
 const jiraSystemCustomFieldTypesKey = 'com.atlassian.jira.plugin.system.customfieldtypes';
 
-const avoidedCustomTypesForFilters: string[] = [
-    // Sprint field is now supported
-];
+const avoidedCustomTypesForFilters: string[] = [];
 
 const acceptedCustomTypesForFilters: string[] = [
     JiraFieldCustomTypeEnums.EPIC_LINK,

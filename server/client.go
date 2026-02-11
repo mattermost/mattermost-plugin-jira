@@ -45,6 +45,7 @@ type Client interface {
 // or a fully-qualified URL, with a non-empty Scheme.
 type RESTService interface {
 	RESTGet(endpoint string, params map[string]string, dest interface{}) error
+	RESTGetRaw(rawPath string, params map[string]string, dest interface{}) error
 	RESTPostAttachment(issueID string, data io.Reader, name string) (*jira.Attachment, error)
 }
 
@@ -101,6 +102,26 @@ func (client JiraClient) RESTGet(endpoint string, params map[string]string, dest
 		return err
 	}
 	req, err := client.Jira.NewRequest("GET", endpointURL, nil)
+	if err != nil {
+		return err
+	}
+	q := req.URL.Query()
+	for k, v := range params {
+		q.Add(k, v)
+	}
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := client.Jira.Do(req, dest)
+	if err != nil {
+		err = userFriendlyJiraError(resp, err)
+	}
+	return err
+}
+
+// RESTGetRaw calls a specified HTTP endpoint with a GET method using the raw path as-is,
+// without prepending /rest/api/. Use this for non-standard API paths like the Agile API.
+func (client JiraClient) RESTGetRaw(rawPath string, params map[string]string, dest interface{}) error {
+	req, err := client.Jira.NewRequest("GET", rawPath, nil)
 	if err != nil {
 		return err
 	}

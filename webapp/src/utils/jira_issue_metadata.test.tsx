@@ -20,6 +20,7 @@ import {
     getCustomFieldFiltersForProjects,
     getJiraTicketDetails,
     getStatusField,
+    isSprintField,
 } from './jira_issue_metadata';
 
 describe('utils/jira_issue_metadata', () => {
@@ -54,22 +55,12 @@ describe('utils/jira_issue_metadata', () => {
             hasDefaultValue: false,
             key: 'customfield_10021',
             name: 'Sprint',
-            operations: [
-                'set',
-            ],
+            operations: ['set'],
             required: false,
-            schema: {
-                custom: 'com.pyxis.greenhopper.jira:gh-sprint',
-                customId: 10021,
-                items: 'string',
-                type: 'array',
-            },
+            schema: {custom: 'com.pyxis.greenhopper.jira:gh-sprint', customId: 10021, items: 'string', type: 'array'},
         };
-
         const metadata = useFieldForIssueMetadata(field, 'customfield_10021');
-        const projectKey = metadata.projects[0].key;
-
-        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
+        const actual = getCustomFieldFiltersForProjects(metadata, [metadata.projects[0].key], []);
         expect(actual).not.toBe(null);
         expect(actual.length).toBe(4);
         expect(actual[0].name).toBe('Comment Visibility');
@@ -732,35 +723,10 @@ describe('utils/jira_issue_metadata', () => {
         });
     });
 
-    describe('isSprintField', () => {
-        it('should return true for Sprint field', () => {
-            const {isSprintField} = require('./jira_issue_metadata');
-            const field: FilterField = {
-                key: 'customfield_10021',
-                name: 'Sprint',
-                schema: {
-                    custom: 'com.pyxis.greenhopper.jira:gh-sprint',
-                    type: 'array',
-                },
-                values: [],
-            };
-
-            expect(isSprintField(field)).toBe(true);
-        });
-
-        it('should return false for non-Sprint field', () => {
-            const {isSprintField} = require('./jira_issue_metadata');
-            const field: FilterField = {
-                key: 'customfield_10001',
-                name: 'Team',
-                schema: {
-                    custom: 'com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team',
-                    type: 'team',
-                },
-                values: [],
-            };
-
-            expect(isSprintField(field)).toBe(false);
-        });
+    test('isSprintField should identify sprint fields correctly', () => {
+        const sprint: FilterField = {key: 'customfield_10021', name: 'Sprint', schema: {custom: 'com.pyxis.greenhopper.jira:gh-sprint', type: 'array'}, values: []};
+        const team: FilterField = {key: 'customfield_10001', name: 'Team', schema: {custom: 'com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team', type: 'team'}, values: []};
+        expect(isSprintField(sprint)).toBe(true);
+        expect(isSprintField(team)).toBe(false);
     });
 });

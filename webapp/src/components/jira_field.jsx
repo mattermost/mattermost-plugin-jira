@@ -117,14 +117,19 @@ export default class JiraField extends React.Component {
         }
 
         if (field.schema.custom === 'com.pyxis.greenhopper.jira:gh-sprint') {
+            const sprintValue = this.props.value && this.props.value.id ? String(this.props.value.id) : (this.props.value || '');
             return (
                 <JiraSprintSelector
                     {...selectProps}
                     projectKey={this.props.projectKey}
-                    onChange={(value) => {
-                        this.props.onChange(this.props.id, value);
+                    onChange={(selected) => {
+                        if (selected) {
+                            this.props.onChange(this.props.id, {id: Number(selected)});
+                        } else {
+                            this.props.onChange(this.props.id, null);
+                        }
                     }}
-                    value={this.props.value}
+                    value={sprintValue}
                     isMulti={false}
                 />
             );
