@@ -1455,3 +1455,165 @@ func TestShouldNotifyWatcherUser(t *testing.T) {
 
 	require.True(t, shouldNotifyWatcherUser(jira.Watcher{Name: "someone"}, nil))
 }
+
+func TestInjectTeamAllowedValues(t *testing.T) {
+	t.Run("with manual team config", func(t *testing.T) {
+		metaInfo := &jira.CreateMetaInfo{
+			Projects: []*jira.MetaProject{
+				{
+					IssueTypes: []*jira.MetaIssueType{
+						{
+							Fields: tcontainer.MarshalMap{
+								"customfield_10600": map[string]any{
+									"name": "Team",
+									"schema": map[string]any{
+										"custom": teamFieldSchema,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		teamIDList := []TeamList{
+			{Name: "Alpha Team", ID: "alpha-1"},
+			{Name: "Beta Team", ID: "beta-2"},
+		}
+
+		keys := injectTeamAllowedValues(metaInfo, teamIDList)
+		require.Len(t, keys, 1)
+		require.Contains(t, keys, "customfield_10600")
+
+		fieldMap := metaInfo.Projects[0].IssueTypes[0].Fields["customfield_10600"].(map[string]any)
+		allowedValues := fieldMap["allowedValues"].([]map[string]string)
+		require.Len(t, allowedValues, 2)
+		assert.Equal(t, "alpha-1", allowedValues[0]["id"])
+		assert.Equal(t, "Alpha Team", allowedValues[0]["name"])
+	})
+
+	t.Run("without manual config sets autoDiscovery flag", func(t *testing.T) {
+		metaInfo := &jira.CreateMetaInfo{
+			Projects: []*jira.MetaProject{
+				{
+					IssueTypes: []*jira.MetaIssueType{
+						{
+							Fields: tcontainer.MarshalMap{
+								"customfield_10600": map[string]any{
+									"name": "Team",
+									"schema": map[string]any{
+										"custom": teamFieldSchema,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		keys := injectTeamAllowedValues(metaInfo, nil)
+		require.Len(t, keys, 1)
+
+		fieldMap := metaInfo.Projects[0].IssueTypes[0].Fields["customfield_10600"].(map[string]any)
+		_, hasAllowedValues := fieldMap["allowedValues"]
+		assert.False(t, hasAllowedValues)
+		autoDiscovery, hasAutoDiscovery := fieldMap["autoDiscovery"]
+		assert.True(t, hasAutoDiscovery)
+		assert.Equal(t, true, autoDiscovery)
+	})
+
+	t.Run("detects advanced roadmaps team schema", func(t *testing.T) {
+		metaInfo := &jira.CreateMetaInfo{
+			Projects: []*jira.MetaProject{
+				{
+					IssueTypes: []*jira.MetaIssueType{
+						{
+							Fields: tcontainer.MarshalMap{
+								"customfield_10001": map[string]any{
+									"name": "Team",
+									"schema": map[string]any{
+										"custom": teamAdvancedRoadmapsSchema,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		keys := injectTeamAllowedValues(metaInfo, nil)
+		require.Len(t, keys, 1)
+		require.Contains(t, keys, "customfield_10001")
+	})
+
+	t.Run("no team fields found", func(t *testing.T) {
+		metaInfo := &jira.CreateMetaInfo{
+			Projects: []*jira.MetaProject{
+				{
+					IssueTypes: []*jira.MetaIssueType{
+						{
+							Fields: tcontainer.MarshalMap{
+								"summary": map[string]any{
+									"name": "Summary",
+									"schema": map[string]any{
+										"type": "string",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		keys := injectTeamAllowedValues(metaInfo, nil)
+		require.Len(t, keys, 0)
+	})
+}
+
+func TestPreProcessTeamFields(t *testing.T) {
+	t.Run("extracts id from team field map", func(t *testing.T) {
+		fields := &jira.IssueFields{
+			Unknowns: tcontainer.MarshalMap{
+				"customfield_10001": map[string]interface{}{
+					"id": "team-123",
+				},
+			},
+		}
+		teamFieldKeys := map[string]struct{}{
+			"customfield_10001": {},
+		}
+
+		result := preProcessTeamFields(fields, teamFieldKeys)
+		assert.Equal(t, "team-123", result.Unknowns["customfield_10001"])
+	})
+
+	t.Run("ignores non-team fields", func(t *testing.T) {
+		original := map[string]interface{}{"id": "some-id"}
+		fields := &jira.IssueFields{
+			Unknowns: tcontainer.MarshalMap{
+				"customfield_99999": original,
+			},
+		}
+		teamFieldKeys := map[string]struct{}{
+			"customfield_10001": {},
+		}
+
+		result := preProcessTeamFields(fields, teamFieldKeys)
+		assert.Equal(t, original, result.Unknowns["customfield_99999"])
+	})
+
+	t.Run("nil fields returns nil", func(t *testing.T) {
+		result := preProcessTeamFields(nil, map[string]struct{}{"a": {}})
+		assert.Nil(t, result)
+	})
+
+	t.Run("empty team keys returns fields unchanged", func(t *testing.T) {
+		fields := &jira.IssueFields{}
+		result := preProcessTeamFields(fields, nil)
+		assert.Equal(t, fields, result)
+	})
+}
