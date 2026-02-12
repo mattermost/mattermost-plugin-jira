@@ -598,8 +598,6 @@ func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamLis
 
 				if len(allowedValues) > 0 {
 					fieldMap["allowedValues"] = allowedValues
-				} else {
-					fieldMap["autoDiscovery"] = true
 				}
 				issueType.Fields[key] = fieldMap
 			}
@@ -641,6 +639,9 @@ func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int,
 				"fieldName":  fmt.Sprintf("cf[%s]", strings.TrimPrefix(fieldName, "customfield_")),
 				"fieldValue": fieldValue,
 			})
+			if apiErr != nil {
+				p.client.Log.Debug("Failed to auto-discover team fields, falling back to configured teams", "error", apiErr.Error())
+			}
 			if apiErr == nil && suggestions != nil && len(suggestions.Results) > 0 {
 				teamList := make([]TeamList, 0, len(suggestions.Results))
 				for _, result := range suggestions.Results {

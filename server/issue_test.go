@@ -1519,9 +1519,6 @@ func TestInjectTeamAllowedValues(t *testing.T) {
 		fieldMap := metaInfo.Projects[0].IssueTypes[0].Fields["customfield_10600"].(map[string]any)
 		_, hasAllowedValues := fieldMap["allowedValues"]
 		assert.False(t, hasAllowedValues)
-		autoDiscovery, hasAutoDiscovery := fieldMap["autoDiscovery"]
-		assert.True(t, hasAutoDiscovery)
-		assert.Equal(t, true, autoDiscovery)
 	})
 
 	t.Run("detects advanced roadmaps team schema", func(t *testing.T) {
