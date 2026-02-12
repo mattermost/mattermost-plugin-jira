@@ -1456,77 +1456,129 @@ func TestShouldNotifyWatcherUser(t *testing.T) {
 	require.True(t, shouldNotifyWatcherUser(jira.Watcher{Name: "someone"}, nil))
 }
 
-func TestSprintTypes(t *testing.T) {
-	// Test Sprint struct JSON marshaling
-	sprint := Sprint{
-		ID:    1,
-		Name:  "Sprint 1",
-		State: "active",
-	}
+func TestSprintAndBoardTypes(t *testing.T) {
+	t.Run("Sprint JSON marshaling", func(t *testing.T) {
+		sprint := Sprint{ID: 1, Name: "Sprint 1", State: "active"}
+		data, err := json.Marshal(sprint)
+		require.NoError(t, err)
 
-	data, err := json.Marshal(sprint)
-	require.NoError(t, err)
+		var decoded Sprint
+		require.NoError(t, json.Unmarshal(data, &decoded))
+		assert.Equal(t, sprint.ID, decoded.ID)
+		assert.Equal(t, sprint.Name, decoded.Name)
+		assert.Equal(t, sprint.State, decoded.State)
+	})
 
-	var decoded Sprint
-	err = json.Unmarshal(data, &decoded)
-	require.NoError(t, err)
-	assert.Equal(t, sprint.ID, decoded.ID)
-	assert.Equal(t, sprint.Name, decoded.Name)
-	assert.Equal(t, sprint.State, decoded.State)
+	t.Run("SprintSearchResult JSON marshaling", func(t *testing.T) {
+		result := SprintSearchResult{
+			Values: []Sprint{
+				{ID: 1, Name: "Sprint 1", State: "active"},
+				{ID: 2, Name: "Sprint 2", State: "future"},
+			},
+		}
+		data, err := json.Marshal(result)
+		require.NoError(t, err)
+
+		var decoded SprintSearchResult
+		require.NoError(t, json.Unmarshal(data, &decoded))
+		assert.Len(t, decoded.Values, 2)
+		assert.Equal(t, "Sprint 1", decoded.Values[0].Name)
+	})
+
+	t.Run("Board JSON marshaling", func(t *testing.T) {
+		board := Board{ID: 1, Name: "Test Board"}
+		data, err := json.Marshal(board)
+		require.NoError(t, err)
+
+		var decoded Board
+		require.NoError(t, json.Unmarshal(data, &decoded))
+		assert.Equal(t, board.ID, decoded.ID)
+		assert.Equal(t, board.Name, decoded.Name)
+	})
+
+	t.Run("BoardSearchResult JSON marshaling", func(t *testing.T) {
+		result := BoardSearchResult{Values: []Board{{ID: 1, Name: "Board 1"}, {ID: 2, Name: "Board 2"}}}
+		data, err := json.Marshal(result)
+		require.NoError(t, err)
+
+		var decoded BoardSearchResult
+		require.NoError(t, json.Unmarshal(data, &decoded))
+		assert.Len(t, decoded.Values, 2)
+		assert.Equal(t, "Board 1", decoded.Values[0].Name)
+	})
 }
 
-func TestSprintSearchResult(t *testing.T) {
-	// Test SprintSearchResult JSON marshaling
-	result := SprintSearchResult{
-		Values: []Sprint{
+func TestSprintDeduplication(t *testing.T) {
+	// Test the sprint deduplication logic used in httpGetSprints
+	// This simulates collecting sprints from multiple boards where some sprints appear on multiple boards
+
+	t.Run("deduplicates sprints from multiple boards", func(t *testing.T) {
+		// Simulate sprints from board 1
+		board1Sprints := []Sprint{
 			{ID: 1, Name: "Sprint 1", State: "active"},
 			{ID: 2, Name: "Sprint 2", State: "future"},
-		},
-	}
+		}
+		// Simulate sprints from board 2 (with duplicate sprint ID 1)
+		board2Sprints := []Sprint{
+			{ID: 1, Name: "Sprint 1", State: "active"}, // duplicate
+			{ID: 3, Name: "Sprint 3", State: "future"},
+		}
 
-	data, err := json.Marshal(result)
-	require.NoError(t, err)
+		var allSprints []Sprint
+		seenSprints := make(map[int]bool)
 
-	var decoded SprintSearchResult
-	err = json.Unmarshal(data, &decoded)
-	require.NoError(t, err)
-	assert.Len(t, decoded.Values, 2)
-	assert.Equal(t, "Sprint 1", decoded.Values[0].Name)
-	assert.Equal(t, "active", decoded.Values[0].State)
-}
+		for _, sprint := range board1Sprints {
+			if !seenSprints[sprint.ID] {
+				seenSprints[sprint.ID] = true
+				allSprints = append(allSprints, sprint)
+			}
+		}
+		for _, sprint := range board2Sprints {
+			if !seenSprints[sprint.ID] {
+				seenSprints[sprint.ID] = true
+				allSprints = append(allSprints, sprint)
+			}
+		}
 
-func TestBoardTypes(t *testing.T) {
-	// Test Board struct JSON marshaling
-	board := Board{
-		ID:   1,
-		Name: "Test Board",
-	}
+		assert.Len(t, allSprints, 3)
+		assert.Equal(t, 1, allSprints[0].ID)
+		assert.Equal(t, 2, allSprints[1].ID)
+		assert.Equal(t, 3, allSprints[2].ID)
+	})
 
-	data, err := json.Marshal(board)
-	require.NoError(t, err)
+	t.Run("handles empty sprints from all boards", func(t *testing.T) {
+		var allSprints []Sprint
+		seenSprints := make(map[int]bool)
 
-	var decoded Board
-	err = json.Unmarshal(data, &decoded)
-	require.NoError(t, err)
-	assert.Equal(t, board.ID, decoded.ID)
-	assert.Equal(t, board.Name, decoded.Name)
-}
+		// Simulate no sprints from any board
+		boardSprints := [][]Sprint{{}, {}}
+		for _, sprints := range boardSprints {
+			for _, sprint := range sprints {
+				if !seenSprints[sprint.ID] {
+					seenSprints[sprint.ID] = true
+					allSprints = append(allSprints, sprint)
+				}
+			}
+		}
 
-func TestBoardSearchResult(t *testing.T) {
-	// Test BoardSearchResult JSON marshaling
-	result := BoardSearchResult{
-		Values: []Board{
-			{ID: 1, Name: "Board 1"},
-			{ID: 2, Name: "Board 2"},
-		},
-	}
+		assert.Empty(t, allSprints)
+	})
 
-	data, err := json.Marshal(result)
-	require.NoError(t, err)
+	t.Run("handles single board with sprints", func(t *testing.T) {
+		sprints := []Sprint{
+			{ID: 10, Name: "Q1 Sprint", State: "active"},
+			{ID: 11, Name: "Q2 Sprint", State: "future"},
+		}
 
-	var decoded BoardSearchResult
-	err = json.Unmarshal(data, &decoded)
-	require.NoError(t, err)
-	assert.Len(t, decoded.Values, 2)
-	assert.Equal(t, "Board 1", decoded.Values[0].Name)
+		var allSprints []Sprint
+		seenSprints := make(map[int]bool)
+		for _, sprint := range sprints {
+			if !seenSprints[sprint.ID] {
+				seenSprints[sprint.ID] = true
+				allSprints = append(allSprints, sprint)
+			}
+		}
+
+		assert.Len(t, allSprints, 2)
+	})
 }

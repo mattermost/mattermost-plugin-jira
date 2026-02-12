@@ -86,6 +86,7 @@ const (
 	headerMattermostUserID   = "Mattermost-User-ID"
 	instanceIDQueryParam     = "instance_id"
 	fieldValueQueryParam     = "fieldValue"
+	projectKeyQueryParam     = "project_key"
 
 	QueryParamInstanceID = "instance_id"
 	QueryParamProjectID  = "project_id"
@@ -670,7 +671,7 @@ func (p *Plugin) httpGetSprints(w http.ResponseWriter, r *http.Request) (int, er
 	}
 
 	instanceID := r.FormValue(instanceIDQueryParam)
-	projectKey := r.FormValue("project_key")
+	projectKey := r.FormValue(projectKeyQueryParam)
 
 	client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
 	if err != nil {
