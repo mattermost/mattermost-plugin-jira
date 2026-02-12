@@ -86,6 +86,7 @@ const (
 	headerMattermostUserID   = "Mattermost-User-ID"
 	instanceIDQueryParam     = "instance_id"
 	fieldValueQueryParam     = "fieldValue"
+	projectKeyQueryParam     = "project_key"
 
 	QueryParamInstanceID = "instance_id"
 	QueryParamProjectID  = "project_id"
@@ -630,6 +631,87 @@ func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int,
 	jsonResponse, err := json.Marshal(teamList)
 	if err != nil {
 		return http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal team list")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonResponse); err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
+	}
+
+	return http.StatusOK, nil
+}
+
+type Sprint struct {
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	State string `json:"state"`
+}
+
+type SprintSearchResult struct {
+	Values []Sprint `json:"values"`
+}
+
+type Board struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type BoardSearchResult struct {
+	Values []Board `json:"values"`
+}
+
+func (p *Plugin) httpGetSprints(w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return http.StatusMethodNotAllowed, fmt.Errorf("request: %s is not allowed, must be GET", r.Method)
+	}
+
+	mattermostUserID := r.Header.Get(headerMattermostUserID)
+	if mattermostUserID == "" {
+		return http.StatusUnauthorized, errors.New("not authorized")
+	}
+
+	instanceID := r.FormValue(instanceIDQueryParam)
+	projectKey := r.FormValue(projectKeyQueryParam)
+
+	client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	boardParams := map[string]string{
+		"projectKeyOrId": projectKey,
+	}
+	var boardResult BoardSearchResult
+	if err := client.RESTGetRaw("rest/agile/1.0/board", boardParams, &boardResult); err != nil {
+		p.client.Log.Warn("Failed to get boards for project", "project", projectKey, "error", err.Error())
+		return http.StatusInternalServerError, errors.WithMessagef(err, "failed to get boards for project %s", projectKey)
+	}
+
+	allSprints := make([]Sprint, 0)
+	seenSprints := make(map[int]bool)
+
+	for _, board := range boardResult.Values {
+		sprintParams := map[string]string{
+			"state": "active,future",
+		}
+		var sprintResult SprintSearchResult
+		endpoint := fmt.Sprintf("rest/agile/1.0/board/%d/sprint", board.ID)
+		if err := client.RESTGetRaw(endpoint, sprintParams, &sprintResult); err != nil {
+			p.client.Log.Debug("Failed to get sprints for board", "board", board.ID, "error", err.Error())
+			continue
+		}
+
+		for _, sprint := range sprintResult.Values {
+			if !seenSprints[sprint.ID] {
+				seenSprints[sprint.ID] = true
+				allSprints = append(allSprints, sprint)
+			}
+		}
+	}
+
+	jsonResponse, err := json.Marshal(allSprints)
+	if err != nil {
+		return http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal sprints")
 	}
 
 	w.Header().Set("Content-Type", "application/json")

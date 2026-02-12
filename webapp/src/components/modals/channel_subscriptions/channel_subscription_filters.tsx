@@ -29,6 +29,7 @@ export type Props = {
         data: {items: {Name: string; ID: string}[]};
         error?: Error;
     }>;
+    projectKey: string;
 };
 
 type State = {
@@ -119,6 +120,7 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
                                     instanceID={this.props.instanceID}
                                     securityLevelEmptyForJiraSubscriptions={this.props.securityLevelEmptyForJiraSubscriptions}
                                     searchTeamFields={this.props.searchTeamFields}
+                                    projectKey={this.props.projectKey}
                                 />
                             </div>
                         );

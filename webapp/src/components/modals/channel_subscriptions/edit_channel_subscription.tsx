@@ -536,6 +536,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                             instanceID={this.state.instanceID}
                             securityLevelEmptyForJiraSubscriptions={this.props.securityLevelEmptyForJiraSubscriptions}
                             searchTeamFields={this.props.searchTeamFields}
+                            projectKey={this.state.filters.projects[0] || ''}
                         />
                         <div>
                             <label className='control-label margin-bottom'>
