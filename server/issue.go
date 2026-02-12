@@ -682,14 +682,12 @@ func (p *Plugin) httpGetSprints(w http.ResponseWriter, r *http.Request) (int, er
 		"projectKeyOrId": projectKey,
 	}
 	var boardResult BoardSearchResult
-	if err := client.RESTGetRaw("/rest/agile/1.0/board", boardParams, &boardResult); err != nil {
-		p.client.Log.Debug("Failed to get boards for project", "project", projectKey, "error", err.Error())
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte("[]"))
-		return http.StatusOK, nil
+	if err := client.RESTGetRaw("rest/agile/1.0/board", boardParams, &boardResult); err != nil {
+		p.client.Log.Warn("Failed to get boards for project", "project", projectKey, "error", err.Error())
+		return http.StatusInternalServerError, errors.WithMessagef(err, "failed to get boards for project %s", projectKey)
 	}
 
-	var allSprints []Sprint
+	allSprints := make([]Sprint, 0)
 	seenSprints := make(map[int]bool)
 
 	for _, board := range boardResult.Values {
@@ -697,7 +695,7 @@ func (p *Plugin) httpGetSprints(w http.ResponseWriter, r *http.Request) (int, er
 			"state": "active,future",
 		}
 		var sprintResult SprintSearchResult
-		endpoint := fmt.Sprintf("/rest/agile/1.0/board/%d/sprint", board.ID)
+		endpoint := fmt.Sprintf("rest/agile/1.0/board/%d/sprint", board.ID)
 		if err := client.RESTGetRaw(endpoint, sprintParams, &sprintResult); err != nil {
 			p.client.Log.Debug("Failed to get sprints for board", "board", board.ID, "error", err.Error())
 			continue
