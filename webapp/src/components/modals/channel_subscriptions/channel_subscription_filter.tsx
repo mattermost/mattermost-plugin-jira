@@ -44,7 +44,7 @@ export type Props = {
     removeValidate: (isValid: () => boolean) => void;
     instanceID: string;
     securityLevelEmptyForJiraSubscriptions?: boolean;
-    searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{data: {items: {name: string; id: string}[]}; error?: Error}>;
+    searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{data: {Name: string; ID: string}[]}>;
 };
 
 export type State = {
