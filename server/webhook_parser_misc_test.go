@@ -110,6 +110,14 @@ func TestTruncate(t *testing.T) {
 	assert.Equal(t, "12345", truncate("12345", -1))
 }
 
+func TestQuoteIssueComment(t *testing.T) {
+	assert.Equal(t, "> test comment", quoteIssueComment("test comment"))
+	assert.Equal(t, "> line1\n> line2", quoteIssueComment("line1\nline2"))
+	assert.Equal(t, "", quoteIssueComment(""))
+	assert.Equal(t, "", quoteIssueComment("   "))
+	assert.Equal(t, "", quoteIssueComment("\n\t"))
+}
+
 func TestJiraLink(t *testing.T) {
 	var jwh JiraWebhook
 	jwh.Issue.Self = "http://localhost:8080/rest/api/2/issue/10006"

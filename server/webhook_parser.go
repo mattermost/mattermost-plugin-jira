@@ -308,6 +308,9 @@ func appendCommentNotifications(wh *webhook, verb string) {
 }
 
 func quoteIssueComment(comment string) string {
+	if strings.TrimSpace(comment) == "" {
+		return ""
+	}
 	return "> " + strings.ReplaceAll(comment, "\n", "\n> ")
 }
 
