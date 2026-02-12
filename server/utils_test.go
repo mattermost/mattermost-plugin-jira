@@ -326,6 +326,11 @@ func (m *mockJiraClient) RESTGet(endpoint string, params map[string]string, dest
 	return args.Error(0)
 }
 
+func (m *mockJiraClient) RESTGetRaw(rawPath string, params map[string]string, dest interface{}) error {
+	args := m.Called(rawPath, params)
+	return args.Error(0)
+}
+
 func (m *mockJiraClient) RESTPostAttachment(issueID string, data io.Reader, name string) (*jira.Attachment, error) {
 	return nil, nil
 }
