@@ -621,7 +621,9 @@ func generateSecret() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	s := base64.RawStdEncoding.EncodeToString(b)
+	// Use RawURLEncoding instead of RawStdEncoding to avoid + and / characters
+	// which cause issues when used in URL query parameters
+	s := base64.RawURLEncoding.EncodeToString(b)
 
 	s = s[:32]
 
