@@ -402,7 +402,7 @@ export function isTeamField(field: JiraField | FilterField): boolean {
 }
 
 export function isSprintField(field: JiraField | FilterField): boolean {
-    return Boolean(field.schema && field.schema.custom === JiraFieldCustomTypeEnums.SPRINT);
+    return field.schema && field.schema.custom === JiraFieldCustomTypeEnums.SPRINT;
 }
 
 export function isEpicIssueType(issueType: IssueType): boolean {

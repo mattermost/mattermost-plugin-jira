@@ -35,7 +35,11 @@ const JiraSprintSelector = (props: Props): JSX.Element => {
         };
 
         try {
-            const {data} = await searchSprints(params);
+            const {data, error} = await searchSprints(params);
+            if (error) {
+                console.warn('Failed to fetch sprints:', error);
+                return [];
+            }
             if (!data || !Array.isArray(data)) {
                 return [];
             }
@@ -44,7 +48,8 @@ const JiraSprintSelector = (props: Props): JSX.Element => {
                 value: String(sprint.id),
                 label: `${sprint.name} (${sprint.state})`,
             }));
-        } catch {
+        } catch (e) {
+            console.warn('Failed to fetch sprints:', e);
             return [];
         }
     };
