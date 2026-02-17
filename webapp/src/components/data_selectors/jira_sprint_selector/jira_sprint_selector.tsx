@@ -34,7 +34,8 @@ const JiraSprintSelector = (props: Props): JSX.Element => {
             project_key: projectKey,
         };
 
-        return searchSprints(params).then(({data}) => {
+        try {
+            const {data} = await searchSprints(params);
             if (!data || !Array.isArray(data)) {
                 return [];
             }
@@ -43,7 +44,9 @@ const JiraSprintSelector = (props: Props): JSX.Element => {
                 value: String(sprint.id),
                 label: `${sprint.name} (${sprint.state})`,
             }));
-        });
+        } catch {
+            return [];
+        }
     };
 
     const fetchInitialSelectedValues = async (): Promise<ReactSelectOption[]> => {
