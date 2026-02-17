@@ -648,7 +648,10 @@ type Sprint struct {
 }
 
 type SprintSearchResult struct {
-	Values []Sprint `json:"values"`
+	MaxResults int      `json:"maxResults"`
+	StartAt    int      `json:"startAt"`
+	IsLast     bool     `json:"isLast"`
+	Values     []Sprint `json:"values"`
 }
 
 type Board struct {
@@ -657,7 +660,10 @@ type Board struct {
 }
 
 type BoardSearchResult struct {
-	Values []Board `json:"values"`
+	MaxResults int     `json:"maxResults"`
+	StartAt    int     `json:"startAt"`
+	IsLast     bool    `json:"isLast"`
+	Values     []Board `json:"values"`
 }
 
 func (p *Plugin) httpGetSprints(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -678,36 +684,55 @@ func (p *Plugin) httpGetSprints(w http.ResponseWriter, r *http.Request) (int, er
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	boardParams := map[string]string{
-		"projectKeyOrId": projectKey,
-	}
-	var boardResult BoardSearchResult
-	if err := client.RESTGetRaw("rest/agile/1.0/board", boardParams, &boardResult); err != nil {
-		p.client.Log.Warn("Failed to get boards for project, returning empty sprint list", "project", projectKey, "error", err.Error())
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte("[]"))
-		return http.StatusOK, nil
+	var allBoards []Board
+	boardStartAt := 0
+	for {
+		boardParams := map[string]string{
+			"projectKeyOrId": projectKey,
+			"startAt":        strconv.Itoa(boardStartAt),
+		}
+		var boardResult BoardSearchResult
+		if err := client.RESTGetRaw("rest/agile/1.0/board", boardParams, &boardResult); err != nil {
+			p.client.Log.Warn("Failed to get boards for project, returning empty sprint list", "project", projectKey, "error", err.Error())
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte("[]"))
+			return http.StatusOK, nil
+		}
+		allBoards = append(allBoards, boardResult.Values...)
+		if boardResult.IsLast || len(boardResult.Values) == 0 {
+			break
+		}
+		boardStartAt += len(boardResult.Values)
 	}
 
 	allSprints := make([]Sprint, 0)
 	seenSprints := make(map[int]bool)
 
-	for _, board := range boardResult.Values {
-		sprintParams := map[string]string{
-			"state": "active,future",
-		}
-		var sprintResult SprintSearchResult
+	for _, board := range allBoards {
 		endpoint := fmt.Sprintf("rest/agile/1.0/board/%d/sprint", board.ID)
-		if err := client.RESTGetRaw(endpoint, sprintParams, &sprintResult); err != nil {
-			p.client.Log.Debug("Failed to get sprints for board", "board", board.ID, "error", err.Error())
-			continue
-		}
-
-		for _, sprint := range sprintResult.Values {
-			if !seenSprints[sprint.ID] {
-				seenSprints[sprint.ID] = true
-				allSprints = append(allSprints, sprint)
+		sprintStartAt := 0
+		for {
+			sprintParams := map[string]string{
+				"state":   "active,future",
+				"startAt": strconv.Itoa(sprintStartAt),
 			}
+			var sprintResult SprintSearchResult
+			if err := client.RESTGetRaw(endpoint, sprintParams, &sprintResult); err != nil {
+				p.client.Log.Debug("Failed to get sprints for board", "board", board.ID, "error", err.Error())
+				break
+			}
+
+			for _, sprint := range sprintResult.Values {
+				if !seenSprints[sprint.ID] {
+					seenSprints[sprint.ID] = true
+					allSprints = append(allSprints, sprint)
+				}
+			}
+
+			if sprintResult.IsLast || len(sprintResult.Values) == 0 {
+				break
+			}
+			sprintStartAt += len(sprintResult.Values)
 		}
 	}
 
