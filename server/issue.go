@@ -677,7 +677,13 @@ func (p *Plugin) httpGetSprints(w http.ResponseWriter, r *http.Request) (int, er
 	}
 
 	instanceID := r.FormValue(instanceIDQueryParam)
+	if instanceID == "" {
+		return respondErr(w, http.StatusBadRequest, errors.New("instance_id is required"))
+	}
 	projectKey := r.FormValue(projectKeyQueryParam)
+	if projectKey == "" {
+		return respondErr(w, http.StatusBadRequest, errors.New("project_key is required"))
+	}
 
 	client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
 	if err != nil {
@@ -694,9 +700,7 @@ func (p *Plugin) httpGetSprints(w http.ResponseWriter, r *http.Request) (int, er
 		var boardResult BoardSearchResult
 		if err := client.RESTGetRaw("rest/agile/1.0/board", boardParams, &boardResult); err != nil {
 			p.client.Log.Warn("Failed to get boards for project, returning empty sprint list", "project", projectKey, "error", err.Error())
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte("[]"))
-			return http.StatusOK, nil
+			break
 		}
 		allBoards = append(allBoards, boardResult.Values...)
 		if boardResult.IsLast || len(boardResult.Values) == 0 {
@@ -739,6 +743,47 @@ func (p *Plugin) httpGetSprints(w http.ResponseWriter, r *http.Request) (int, er
 	jsonResponse, err := json.Marshal(allSprints)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal sprints"))
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(jsonResponse)
+
+	return http.StatusOK, nil
+}
+
+func (p *Plugin) httpGetSprintByID(w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return respondErr(w, http.StatusMethodNotAllowed, fmt.Errorf("request: %s is not allowed, must be GET", r.Method))
+	}
+
+	mattermostUserID := r.Header.Get(headerMattermostUserID)
+	if mattermostUserID == "" {
+		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
+	}
+
+	instanceID := r.FormValue(instanceIDQueryParam)
+	if instanceID == "" {
+		return respondErr(w, http.StatusBadRequest, errors.New("instance_id is required"))
+	}
+	sprintID := r.FormValue("sprint_id")
+	if sprintID == "" {
+		return respondErr(w, http.StatusBadRequest, errors.New("sprint_id is required"))
+	}
+
+	client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	endpoint := fmt.Sprintf("rest/agile/1.0/sprint/%s", sprintID)
+	var sprint Sprint
+	if err := client.RESTGetRaw(endpoint, nil, &sprint); err != nil {
+		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to get sprint"))
+	}
+
+	jsonResponse, err := json.Marshal(sprint)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal sprint"))
 	}
 
 	w.Header().Set("Content-Type", "application/json")

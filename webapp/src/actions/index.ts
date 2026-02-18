@@ -193,6 +193,13 @@ export const searchSprints = (params: {instance_id: string; project_key: string}
     };
 };
 
+export const getSprintByID = (params: {instance_id: string; sprint_id: string}) => {
+    return async (dispatch: Dispatch, getState: GlobalState) => {
+        const url = `${getPluginServerRoute(getState())}/api/v2/get-sprint`;
+        return doFetchWithResponse(`${url}${buildQueryString(params)}`);
+    };
+};
+
 export const searchUsers = (params: SearchUsersParams) => {
     return async (dispatch: Dispatch, getState: GlobalState) => {
         const url = getPluginServerRoute(getState()) + '/api/v2/get-search-users';

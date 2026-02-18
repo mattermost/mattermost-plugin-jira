@@ -9,6 +9,8 @@ import {components} from 'react-select';
 import ReactSelectSetting from 'components/react_select_setting';
 import Input from 'components/input';
 
+import {JiraFieldCustomTypeEnums} from 'types/model';
+
 import JiraEpicSelector from './data_selectors/jira_epic_selector';
 import JiraAutoCompleteSelector from './data_selectors/jira_autocomplete_selector';
 import JiraUserSelector from './data_selectors/jira_user_selector';
@@ -116,7 +118,7 @@ export default class JiraField extends React.Component {
             );
         }
 
-        if (field.schema.custom === 'com.pyxis.greenhopper.jira:gh-sprint') {
+        if (field.schema.custom === JiraFieldCustomTypeEnums.SPRINT) {
             const sprintValue = this.props.value && this.props.value.id ? String(this.props.value.id) : (this.props.value || '');
             return (
                 <JiraSprintSelector
@@ -289,7 +291,7 @@ export function isFieldSupported(field) {
         return true;
     }
 
-    if (field.schema.custom === 'com.pyxis.greenhopper.jira:gh-sprint') {
+    if (field.schema.custom === JiraFieldCustomTypeEnums.SPRINT) {
         return true;
     }
 

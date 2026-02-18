@@ -327,7 +327,7 @@ func (m *mockJiraClient) RESTGet(endpoint string, params map[string]string, dest
 }
 
 func (m *mockJiraClient) RESTGetRaw(rawPath string, params map[string]string, dest interface{}) error {
-	args := m.Called(rawPath, params, dest)
+	args := m.Called(rawPath, params)
 	return args.Error(0)
 }
 

@@ -4,10 +4,10 @@
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 
-import {searchSprints} from 'actions';
+import {getSprintByID, searchSprints} from 'actions';
 
 import JiraSprintSelector from './jira_sprint_selector';
 
-const mapDispatchToProps = (dispatch) => bindActionCreators({searchSprints}, dispatch);
+const mapDispatchToProps = (dispatch) => bindActionCreators({searchSprints, getSprintByID}, dispatch);
 
 export default connect(null, mapDispatchToProps)(JiraSprintSelector);

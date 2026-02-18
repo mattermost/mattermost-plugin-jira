@@ -17,12 +17,14 @@ type Props = Omit<BackendSelectorProps, 'fetchInitialSelectedValues' | 'search'>
     projectKey: string;
     searchSprints: (params: {instance_id: string; project_key: string}) => Promise<{
         data: Sprint[];
-        error?: Error;
+    }>;
+    getSprintByID: (params: {instance_id: string; sprint_id: string}) => Promise<{
+        data: Sprint;
     }>;
 };
 
 const JiraSprintSelector = (props: Props): JSX.Element => {
-    const {value, instanceID, projectKey, searchSprints} = props;
+    const {value, instanceID, projectKey, searchSprints, getSprintByID} = props;
 
     const fetchSprints = async (): Promise<ReactSelectOption[]> => {
         if (!instanceID || !projectKey) {
@@ -35,11 +37,7 @@ const JiraSprintSelector = (props: Props): JSX.Element => {
         };
 
         try {
-            const {data, error} = await searchSprints(params);
-            if (error) {
-                console.warn('Failed to fetch sprints:', error);
-                return [];
-            }
+            const {data} = await searchSprints(params);
             if (!data || !Array.isArray(data)) {
                 return [];
             }
@@ -48,20 +46,32 @@ const JiraSprintSelector = (props: Props): JSX.Element => {
                 value: String(sprint.id),
                 label: `${sprint.name} (${sprint.state})`,
             }));
-        } catch (e) {
-            console.warn('Failed to fetch sprints:', e);
+        } catch {
             return [];
         }
     };
 
     const fetchInitialSelectedValues = async (): Promise<ReactSelectOption[]> => {
-        const all = await fetchSprints();
-        if (!value) {
+        if (!value || !instanceID) {
             return [];
         }
 
-        const valueStr = String(value);
-        return all.filter((option) => option.value === valueStr);
+        const sprintID = String(value);
+        try {
+            const {data} = await getSprintByID({
+                instance_id: instanceID,
+                sprint_id: sprintID,
+            });
+            if (!data) {
+                return [];
+            }
+            return [{
+                value: String(data.id),
+                label: `${data.name} (${data.state})`,
+            }];
+        } catch {
+            return [];
+        }
     };
 
     return (

@@ -724,8 +724,8 @@ describe('utils/jira_issue_metadata', () => {
     });
 
     test('isSprintField should identify sprint fields correctly', () => {
-        const sprint: FilterField = {key: 'customfield_10021', name: 'Sprint', schema: {custom: 'com.pyxis.greenhopper.jira:gh-sprint', type: 'array'}, values: []};
-        const team: FilterField = {key: 'customfield_10001', name: 'Team', schema: {custom: 'com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team', type: 'team'}, values: []};
+        const sprint: FilterField = {key: 'customfield_10021', name: 'Sprint', schema: {custom: 'com.pyxis.greenhopper.jira:gh-sprint', type: 'array'}, values: [], issueTypes: []};
+        const team: FilterField = {key: 'customfield_10001', name: 'Team', schema: {custom: 'com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team', type: 'team'}, values: [], issueTypes: []};
         expect(isSprintField(sprint)).toBe(true);
         expect(isSprintField(team)).toBe(false);
     });
