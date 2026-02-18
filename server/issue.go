@@ -625,6 +625,8 @@ func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int,
 	instanceID := r.FormValue(instanceIDQueryParam)
 	fieldValue := r.FormValue(fieldValueQueryParam)
 
+	// Resolve the team custom field key from cache (populated when createmeta is fetched).
+	// getTeamFieldKeys is safe with an empty instanceID — it returns the default key.
 	teamFieldKeys := p.getTeamFieldKeys(types.ID(instanceID))
 	fieldName := defaultTeamFieldKey
 	for key := range teamFieldKeys {
@@ -632,6 +634,9 @@ func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int,
 		break
 	}
 
+	// Phase 1: Try auto-discovery via the JQL autocomplete API.
+	// This works on both Cloud (atlassian-team field) and Data Center (Advanced Roadmaps team field).
+	// The instanceID check guards getClient, which requires a valid instance.
 	if instanceID != "" {
 		client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
 		if err == nil {
@@ -655,6 +660,7 @@ func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int,
 		}
 	}
 
+	// Phase 2: Fall back to the manually configured team list from plugin settings.
 	teamList := p.conf.TeamIDList
 	if teamList == nil {
 		teamList = make([]TeamList, 0)
