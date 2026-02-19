@@ -4,6 +4,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -328,6 +329,12 @@ func (m *mockJiraClient) RESTGet(endpoint string, params map[string]string, dest
 
 func (m *mockJiraClient) RESTGetRaw(rawPath string, params map[string]string, dest interface{}) error {
 	args := m.Called(rawPath, params)
+	if args.Error(0) == nil && dest != nil && args.Get(1) != nil {
+		data, err := json.Marshal(args.Get(1))
+		if err == nil {
+			_ = json.Unmarshal(data, dest)
+		}
+	}
 	return args.Error(0)
 }
 

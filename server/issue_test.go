@@ -1508,77 +1508,68 @@ func TestSprintAndBoardTypes(t *testing.T) {
 	})
 }
 
-func TestSprintDeduplication(t *testing.T) {
-	// Test the sprint deduplication logic used in httpGetSprints
-	// This simulates collecting sprints from multiple boards where some sprints appear on multiple boards
-
-	t.Run("deduplicates sprints from multiple boards", func(t *testing.T) {
-		// Simulate sprints from board 1
-		board1Sprints := []Sprint{
-			{ID: 1, Name: "Sprint 1", State: "active"},
-			{ID: 2, Name: "Sprint 2", State: "future"},
-		}
-		// Simulate sprints from board 2 (with duplicate sprint ID 1)
-		board2Sprints := []Sprint{
-			{ID: 1, Name: "Sprint 1", State: "active"}, // duplicate
-			{ID: 3, Name: "Sprint 3", State: "future"},
-		}
-
-		var allSprints []Sprint
-		seenSprints := make(map[int]bool)
-
-		for _, sprint := range board1Sprints {
-			if !seenSprints[sprint.ID] {
-				seenSprints[sprint.ID] = true
-				allSprints = append(allSprints, sprint)
-			}
-		}
-		for _, sprint := range board2Sprints {
-			if !seenSprints[sprint.ID] {
-				seenSprints[sprint.ID] = true
-				allSprints = append(allSprints, sprint)
-			}
-		}
-
-		assert.Len(t, allSprints, 3)
-		assert.Equal(t, 1, allSprints[0].ID)
-		assert.Equal(t, 2, allSprints[1].ID)
-		assert.Equal(t, 3, allSprints[2].ID)
-	})
-
-	t.Run("handles empty sprints from all boards", func(t *testing.T) {
-		var allSprints []Sprint
-		seenSprints := make(map[int]bool)
-
-		// Simulate no sprints from any board
-		boardSprints := [][]Sprint{{}, {}}
-		for _, sprints := range boardSprints {
-			for _, sprint := range sprints {
-				if !seenSprints[sprint.ID] {
-					seenSprints[sprint.ID] = true
-					allSprints = append(allSprints, sprint)
-				}
-			}
-		}
-
-		assert.Empty(t, allSprints)
-	})
-
-	t.Run("handles single board with sprints", func(t *testing.T) {
-		sprints := []Sprint{
-			{ID: 10, Name: "Q1 Sprint", State: "active"},
-			{ID: 11, Name: "Q2 Sprint", State: "future"},
-		}
-
-		var allSprints []Sprint
-		seenSprints := make(map[int]bool)
+func deduplicateSprints(boardSprints [][]Sprint) []Sprint {
+	allSprints := make([]Sprint, 0)
+	seenSprints := make(map[int]bool)
+	for _, sprints := range boardSprints {
 		for _, sprint := range sprints {
 			if !seenSprints[sprint.ID] {
 				seenSprints[sprint.ID] = true
 				allSprints = append(allSprints, sprint)
 			}
 		}
+	}
+	return allSprints
+}
 
-		assert.Len(t, allSprints, 2)
+func TestSprintDeduplication(t *testing.T) {
+	t.Run("deduplicates sprints from multiple boards", func(t *testing.T) {
+		result := deduplicateSprints([][]Sprint{
+			{{ID: 1, Name: "Sprint 1", State: "active"}, {ID: 2, Name: "Sprint 2", State: "future"}},
+			{{ID: 1, Name: "Sprint 1", State: "active"}, {ID: 3, Name: "Sprint 3", State: "future"}},
+		})
+
+		data, err := json.Marshal(result)
+		require.NoError(t, err)
+
+		var decoded []Sprint
+		require.NoError(t, json.Unmarshal(data, &decoded))
+		assert.Len(t, decoded, 3)
+		assert.Equal(t, 1, decoded[0].ID)
+		assert.Equal(t, 2, decoded[1].ID)
+		assert.Equal(t, 3, decoded[2].ID)
+	})
+
+	t.Run("handles empty sprints from all boards", func(t *testing.T) {
+		result := deduplicateSprints([][]Sprint{{}, {}})
+
+		data, err := json.Marshal(result)
+		require.NoError(t, err)
+		assert.Equal(t, "[]", string(data))
+	})
+
+	t.Run("handles single board with sprints", func(t *testing.T) {
+		result := deduplicateSprints([][]Sprint{
+			{{ID: 10, Name: "Q1 Sprint", State: "active"}, {ID: 11, Name: "Q2 Sprint", State: "future"}},
+		})
+
+		data, err := json.Marshal(result)
+		require.NoError(t, err)
+
+		var decoded []Sprint
+		require.NoError(t, json.Unmarshal(data, &decoded))
+		assert.Len(t, decoded, 2)
+	})
+
+	t.Run("preserves order of first occurrence", func(t *testing.T) {
+		result := deduplicateSprints([][]Sprint{
+			{{ID: 5, Name: "Sprint 5", State: "future"}, {ID: 3, Name: "Sprint 3", State: "active"}},
+			{{ID: 3, Name: "Sprint 3", State: "active"}, {ID: 1, Name: "Sprint 1", State: "closed"}},
+		})
+
+		assert.Len(t, result, 3)
+		assert.Equal(t, 5, result[0].ID)
+		assert.Equal(t, 3, result[1].ID)
+		assert.Equal(t, 1, result[2].ID)
 	})
 }

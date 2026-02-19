@@ -769,6 +769,9 @@ func (p *Plugin) httpGetSprintByID(w http.ResponseWriter, r *http.Request) (int,
 	if sprintID == "" {
 		return respondErr(w, http.StatusBadRequest, errors.New("sprint_id is required"))
 	}
+	if _, err := strconv.Atoi(sprintID); err != nil {
+		return respondErr(w, http.StatusBadRequest, errors.New("sprint_id must be numeric"))
+	}
 
 	client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
 	if err != nil {

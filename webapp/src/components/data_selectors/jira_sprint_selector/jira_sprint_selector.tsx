@@ -26,7 +26,7 @@ type Props = Omit<BackendSelectorProps, 'fetchInitialSelectedValues' | 'search'>
 const JiraSprintSelector = (props: Props): JSX.Element => {
     const {value, instanceID, projectKey, searchSprints, getSprintByID} = props;
 
-    const fetchSprints = async (): Promise<ReactSelectOption[]> => {
+    const fetchSprints = async (query: string): Promise<ReactSelectOption[]> => {
         if (!instanceID || !projectKey) {
             return [];
         }
@@ -42,10 +42,17 @@ const JiraSprintSelector = (props: Props): JSX.Element => {
                 return [];
             }
 
-            return data.map((sprint: Sprint) => ({
+            const options = data.map((sprint: Sprint) => ({
                 value: String(sprint.id),
                 label: `${sprint.name} (${sprint.state})`,
             }));
+
+            if (!query) {
+                return options;
+            }
+
+            const lowerQuery = query.toLowerCase();
+            return options.filter((opt) => opt.label.toLowerCase().includes(lowerQuery));
         } catch {
             return [];
         }
