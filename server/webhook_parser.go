@@ -311,7 +311,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 	}
 
 	wh.notifications = append(wh.notifications, webhookUserNotification{
-		jiraUsername:      jwh.Issue.Fields.Assignee.Name,
+		jiraUsername:     jwh.Issue.Fields.Assignee.Name,
 		jiraAccountID:    jwh.Issue.Fields.Assignee.AccountID,
 		message:          assigneeMessage,
 		postType:         PostTypeComment,
