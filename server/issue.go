@@ -598,8 +598,8 @@ func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamLis
 
 				if len(allowedValues) > 0 {
 					fieldMap["allowedValues"] = allowedValues
-					issueType.Fields[key] = fieldMap
 				}
+				issueType.Fields[key] = fieldMap
 			}
 		}
 	}
@@ -622,22 +622,62 @@ func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int,
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
+	instanceID := r.FormValue(instanceIDQueryParam)
+	fieldValue := r.FormValue(fieldValueQueryParam)
+
+	// Resolve the team custom field key from cache (populated when createmeta is fetched).
+	// getTeamFieldKeys is safe with an empty instanceID — it returns the default key.
+	teamFieldKeys := p.getTeamFieldKeys(types.ID(instanceID))
+	fieldName := defaultTeamFieldKey
+	for key := range teamFieldKeys {
+		fieldName = key
+		break
+	}
+
+	// Phase 1: Try auto-discovery via the JQL autocomplete API.
+	// This works on both Cloud (atlassian-team field) and Data Center (Advanced Roadmaps team field).
+	// The instanceID check guards getClient, which requires a valid instance.
+	if instanceID != "" {
+		client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+		if err == nil {
+			suggestions, apiErr := client.SearchAutoCompleteFields(map[string]string{
+				"fieldName":  fmt.Sprintf("cf[%s]", strings.TrimPrefix(fieldName, "customfield_")),
+				"fieldValue": fieldValue,
+			})
+			if apiErr != nil {
+				p.client.Log.Debug("Failed to auto-discover team fields, falling back to configured teams", "error", apiErr.Error())
+			}
+			if apiErr == nil && suggestions != nil && len(suggestions.Results) > 0 {
+				teamList := make([]TeamList, 0, len(suggestions.Results))
+				for _, result := range suggestions.Results {
+					teamList = append(teamList, TeamList{
+						Name: result.DisplayName,
+						ID:   result.Value,
+					})
+				}
+				return respondJSON(w, teamList)
+			}
+		}
+	}
+
+	// Phase 2: Fall back to the manually configured team list from plugin settings.
 	teamList := p.conf.TeamIDList
 	if teamList == nil {
 		teamList = make([]TeamList, 0)
 	}
 
-	jsonResponse, err := json.Marshal(teamList)
-	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal team list")
+	if fieldValue != "" {
+		filtered := make([]TeamList, 0)
+		lowerSearch := strings.ToLower(fieldValue)
+		for _, team := range teamList {
+			if strings.Contains(strings.ToLower(team.Name), lowerSearch) {
+				filtered = append(filtered, team)
+			}
+		}
+		teamList = filtered
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResponse); err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-	}
-
-	return http.StatusOK, nil
+	return respondJSON(w, teamList)
 }
 
 func (p *Plugin) httpGetCommentVisibilityFields(w http.ResponseWriter, r *http.Request) (int, error) {
