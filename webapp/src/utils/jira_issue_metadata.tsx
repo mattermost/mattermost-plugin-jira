@@ -188,9 +188,7 @@ const allowedFieldTypes = [
 
 const jiraSystemCustomFieldTypesKey = 'com.atlassian.jira.plugin.system.customfieldtypes';
 
-const avoidedCustomTypesForFilters: string[] = [
-    JiraFieldCustomTypeEnums.SPRINT,
-];
+const avoidedCustomTypesForFilters: string[] = [];
 
 const acceptedCustomTypesForFilters: string[] = [
     JiraFieldCustomTypeEnums.EPIC_LINK,
@@ -347,7 +345,6 @@ export function getCustomFieldFiltersForProjects(metadata: IssueMetadata | null,
 }
 
 const avoidedCustomTypesForEvents: string[] = [
-    JiraFieldCustomTypeEnums.SPRINT,
     JiraFieldCustomTypeEnums.RANK,
 ];
 
@@ -402,6 +399,10 @@ export function isTeamField(field: JiraField | FilterField): boolean {
         field.schema.custom === JiraFieldCustomTypeEnums.TEAM ||
         field.schema.custom === JiraFieldCustomTypeEnums.TEAM_ADVANCED_ROADMAPS
     ));
+}
+
+export function isSprintField(field: JiraField | FilterField): boolean {
+    return field.schema && field.schema.custom === JiraFieldCustomTypeEnums.SPRINT;
 }
 
 export function isEpicIssueType(issueType: IssueType): boolean {

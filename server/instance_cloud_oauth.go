@@ -55,7 +55,7 @@ var _ Instance = (*cloudOAuthInstance)(nil)
 var jiraOAuthAccessibleResourcesURL = "https://api.atlassian.com/oauth/token/accessible-resources"
 
 const (
-	JiraScopes          = "read:jira-user,read:jira-work,write:jira-work"
+	JiraScopes          = "read:jira-user,read:jira-work,write:jira-work,read:board-scope:jira-software,read:project:jira,read:sprint:jira-software"
 	JiraScopesOffline   = JiraScopes + ",offline_access"
 	JiraResponseType    = "code"
 	JiraConsent         = "consent"

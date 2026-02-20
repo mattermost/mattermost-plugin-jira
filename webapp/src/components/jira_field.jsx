@@ -9,9 +9,12 @@ import {components} from 'react-select';
 import ReactSelectSetting from 'components/react_select_setting';
 import Input from 'components/input';
 
+import {JiraFieldCustomTypeEnums} from 'types/model';
+
 import JiraEpicSelector from './data_selectors/jira_epic_selector';
 import JiraAutoCompleteSelector from './data_selectors/jira_autocomplete_selector';
 import JiraUserSelector from './data_selectors/jira_user_selector';
+import JiraSprintSelector from './data_selectors/jira_sprint_selector';
 
 export default class JiraField extends React.Component {
     static propTypes = {
@@ -110,6 +113,25 @@ export default class JiraField extends React.Component {
                         this.props.onChange(this.props.id, value);
                     }}
                     value={this.props.value}
+                    isMulti={false}
+                />
+            );
+        }
+
+        if (field.schema.custom === JiraFieldCustomTypeEnums.SPRINT) {
+            const sprintValue = this.props.value && this.props.value.id ? String(this.props.value.id) : (this.props.value || '');
+            return (
+                <JiraSprintSelector
+                    {...selectProps}
+                    projectKey={this.props.projectKey}
+                    onChange={(selected) => {
+                        if (selected) {
+                            this.props.onChange(this.props.id, {id: Number(selected)});
+                        } else {
+                            this.props.onChange(this.props.id, null);
+                        }
+                    }}
+                    value={sprintValue}
                     isMulti={false}
                 />
             );
@@ -266,6 +288,10 @@ export function isFieldSupported(field) {
     }
 
     if (field.schema.custom === 'com.pyxis.greenhopper.jira:gh-epic-link') {
+        return true;
+    }
+
+    if (field.schema.custom === JiraFieldCustomTypeEnums.SPRINT) {
         return true;
     }
 
