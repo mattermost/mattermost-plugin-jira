@@ -53,8 +53,8 @@ const JiraSprintSelector = (props: Props): JSX.Element => {
 
             const lowerQuery = query.toLowerCase();
             return options.filter((opt) => opt.label.toLowerCase().includes(lowerQuery));
-        } catch {
-            return [];
+        } catch (e) {
+            throw new Error('Error fetching sprints');
         }
     };
 
@@ -76,8 +76,8 @@ const JiraSprintSelector = (props: Props): JSX.Element => {
                 value: String(data.id),
                 label: `${data.name} (${data.state})`,
             }];
-        } catch {
-            return [];
+        } catch (e) {
+            throw new Error('Error fetching sprint');
         }
     };
 
