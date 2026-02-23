@@ -121,7 +121,20 @@ func (client JiraClient) RESTGet(endpoint string, params map[string]string, dest
 // RESTGetRaw calls a specified HTTP endpoint with a GET method using the raw path as-is,
 // without prepending /rest/api/. Use this for non-standard API paths like the Agile API.
 func (client JiraClient) RESTGetRaw(rawPath string, params map[string]string, dest interface{}) error {
-	req, err := client.Jira.NewRequest("GET", rawPath, nil)
+	parsed, err := url.Parse(rawPath)
+	if err != nil {
+		return fmt.Errorf("invalid path: %w", err)
+	}
+	if parsed.Scheme != "" || parsed.Host != "" {
+		return fmt.Errorf("rawPath must be a relative path, got %q", rawPath)
+	}
+
+	cleanPath := path.Clean(parsed.Path)
+	if parsed.RawQuery != "" {
+		cleanPath += "?" + parsed.RawQuery
+	}
+
+	req, err := client.Jira.NewRequest("GET", cleanPath, nil)
 	if err != nil {
 		return err
 	}
@@ -486,11 +499,13 @@ func endpointURL(endpoint string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if parsedURL.Scheme == "" {
-		// Relative path
-		endpoint = path.Join("/rest/api", endpoint)
+	if parsedURL.Scheme != "" {
+		return endpoint, nil
 	}
-	return endpoint, nil
+	if parsedURL.Host != "" {
+		return "", fmt.Errorf("endpoint must not contain a host without a scheme, got %q", endpoint)
+	}
+	return path.Join("/rest/api", endpoint), nil
 }
 
 var keyOrIDRegex = regexp.MustCompile("(^[[:alnum:]]+-)?[[:digit:]]+$")
