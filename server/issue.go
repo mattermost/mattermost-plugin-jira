@@ -93,7 +93,8 @@ const (
 	expandValueGroups = "groups"
 
 	teamFieldSchema            = "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team"
-	teamAdvancedRoadmapsSchema = "com.atlassian.teams:rm-team-custom-field-team"
+	teamAdvancedRoadmapsSchema = "com.atlassian.teams:rm-team-custom-field-team"   // legacy/variant
+	teamAdvancedRoadmapsDC     = "com.atlassian.teams:rm-teams-custom-field-team"  // Data Center (actual type key)
 	defaultTeamFieldKey        = "customfield_10001"
 )
 
@@ -560,6 +561,13 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 	}, nil
 }
 
+// isTeamFieldSchema returns true if the schema custom type is a known team field
+func isTeamFieldSchema(customType string) bool {
+	return customType == teamFieldSchema ||
+		customType == teamAdvancedRoadmapsSchema ||
+		customType == teamAdvancedRoadmapsDC
+}
+
 // The go-jira package does not support the Team field by default,
 // and the Jira API does not include Team data in the issue metadata.
 // Therefore, we need to manually inject the allowed Team values into the fields.
@@ -589,7 +597,7 @@ func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamLis
 				}
 
 				customType, _ := schemaRaw["custom"].(string)
-				if customType != teamFieldSchema && customType != teamAdvancedRoadmapsSchema {
+				if !isTeamFieldSchema(customType) {
 					continue
 				}
 

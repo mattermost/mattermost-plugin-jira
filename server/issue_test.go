@@ -1546,6 +1546,31 @@ func TestInjectTeamAllowedValues(t *testing.T) {
 		require.Contains(t, keys, "customfield_10001")
 	})
 
+	t.Run("recognizes Data Center Advanced Roadmaps team field (rm-teams)", func(t *testing.T) {
+		metaInfo := &jira.CreateMetaInfo{
+			Projects: []*jira.MetaProject{
+				{
+					IssueTypes: []*jira.MetaIssueType{
+						{
+							Fields: tcontainer.MarshalMap{
+								"customfield_10020": map[string]any{
+									"name": "Team",
+									"schema": map[string]any{
+										"custom": teamAdvancedRoadmapsDC,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		keys := injectTeamAllowedValues(metaInfo, nil)
+		require.Len(t, keys, 1)
+		require.Contains(t, keys, "customfield_10020")
+	})
+
 	t.Run("no team fields found", func(t *testing.T) {
 		metaInfo := &jira.CreateMetaInfo{
 			Projects: []*jira.MetaProject{
