@@ -93,8 +93,8 @@ const (
 	expandValueGroups = "groups"
 
 	teamFieldSchema            = "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team"
-	teamAdvancedRoadmapsSchema = "com.atlassian.teams:rm-team-custom-field-team"   // legacy/variant
-	teamAdvancedRoadmapsDC     = "com.atlassian.teams:rm-teams-custom-field-team"  // Data Center (actual type key)
+	teamAdvancedRoadmapsSchema = "com.atlassian.teams:rm-team-custom-field-team"
+	teamAdvancedRoadmapsDC     = "com.atlassian.teams:rm-teams-custom-field-team"
 	defaultTeamFieldKey        = "customfield_10001"
 )
 
