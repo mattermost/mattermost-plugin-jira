@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -633,37 +634,35 @@ func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int,
 	instanceID := r.FormValue(instanceIDQueryParam)
 	fieldValue := r.FormValue(fieldValueQueryParam)
 
-	// Resolve the team custom field key from cache (populated when createmeta is fetched).
-	// getTeamFieldKeys is safe with an empty instanceID — it returns the default key.
 	teamFieldKeys := p.getTeamFieldKeys(types.ID(instanceID))
-	fieldName := defaultTeamFieldKey
+	sortedKeys := make([]string, 0, len(teamFieldKeys))
 	for key := range teamFieldKeys {
-		fieldName = key
-		break
+		sortedKeys = append(sortedKeys, key)
 	}
+	sort.Strings(sortedKeys)
 
-	// Phase 1: Try auto-discovery via the JQL autocomplete API.
-	// This works on both Cloud (atlassian-team field) and Data Center (Advanced Roadmaps team field).
-	// The instanceID check guards getClient, which requires a valid instance.
 	if instanceID != "" {
 		client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
 		if err == nil {
-			suggestions, apiErr := client.SearchAutoCompleteFields(map[string]string{
-				"fieldName":  fmt.Sprintf("cf[%s]", strings.TrimPrefix(fieldName, "customfield_")),
-				"fieldValue": fieldValue,
-			})
-			if apiErr != nil {
-				p.client.Log.Debug("Failed to auto-discover team fields, falling back to configured teams", "error", apiErr.Error())
-			}
-			if apiErr == nil && suggestions != nil && len(suggestions.Results) > 0 {
-				teamList := make([]TeamList, 0, len(suggestions.Results))
-				for _, result := range suggestions.Results {
-					teamList = append(teamList, TeamList{
-						Name: result.DisplayName,
-						ID:   result.Value,
-					})
+			for _, fieldName := range sortedKeys {
+				suggestions, apiErr := client.SearchAutoCompleteFields(map[string]string{
+					"fieldName":  fmt.Sprintf("cf[%s]", strings.TrimPrefix(fieldName, "customfield_")),
+					"fieldValue": fieldValue,
+				})
+				if apiErr != nil {
+					p.client.Log.Debug("Failed to auto-discover team fields, trying next key", "field", fieldName, "error", apiErr.Error())
+					continue
 				}
-				return respondJSON(w, teamList)
+				if suggestions != nil && len(suggestions.Results) > 0 {
+					teamList := make([]TeamList, 0, len(suggestions.Results))
+					for _, result := range suggestions.Results {
+						teamList = append(teamList, TeamList{
+							Name: result.DisplayName,
+							ID:   result.Value,
+						})
+					}
+					return respondJSON(w, teamList)
+				}
 			}
 		}
 	}

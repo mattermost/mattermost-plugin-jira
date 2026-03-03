@@ -400,7 +400,8 @@ export function isTeamField(field: JiraField | FilterField): boolean {
 
     return Boolean(field.schema && (
         field.schema.custom === JiraFieldCustomTypeEnums.TEAM ||
-        field.schema.custom === JiraFieldCustomTypeEnums.TEAM_ADVANCED_ROADMAPS
+        field.schema.custom === JiraFieldCustomTypeEnums.TEAM_ADVANCED_ROADMAPS ||
+        field.schema.custom === JiraFieldCustomTypeEnums.TEAM_ADVANCED_ROADMAPS_DC
     ));
 }
 
