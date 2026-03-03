@@ -641,6 +641,10 @@ func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int,
 	}
 	sort.Strings(sortedKeys)
 
+	if len(sortedKeys) == 0 {
+		sortedKeys = []string{defaultTeamFieldKey}
+	}
+
 	if instanceID != "" {
 		client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
 		if err == nil {
