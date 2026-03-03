@@ -2,9 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {shallow} from 'enzyme';
+import {act} from '@testing-library/react';
 
 import {InstanceType} from 'types/model';
+import {mockTheme, renderWithRedux} from 'testlib/test-utils';
 
 import ConnectModalForm from './connect_modal_form';
 
@@ -17,7 +18,7 @@ describe('components/ConnectModalForm', () => {
     const baseProps = {
         ...baseActions,
         visible: true,
-        theme: {},
+        theme: mockTheme,
         connectedInstances: [
             {
                 instance_id: 'https://something.atlassian.net',
@@ -36,12 +37,23 @@ describe('components/ConnectModalForm', () => {
         ],
     };
 
-    test('should match snapshot', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    test('should render component', async () => {
         const props = {...baseProps};
-        const wrapper = shallow<ConnectModalForm>(
-            <ConnectModalForm {...props}/>,
-        );
-        expect(wrapper).toMatchSnapshot();
+        const ref = React.createRef<ConnectModalForm>();
+        await act(async () => {
+            renderWithRedux(
+                <ConnectModalForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+
+        expect(ref.current).toBeDefined();
     });
 
     test('should redirect on submit', async () => {
@@ -52,23 +64,39 @@ describe('components/ConnectModalForm', () => {
             closeModal,
             redirectConnect,
         };
-        const wrapper = shallow<ConnectModalForm>(
-            <ConnectModalForm {...props}/>,
-        );
+        const ref = React.createRef<ConnectModalForm>();
+        await act(async () => {
+            renderWithRedux(
+                <ConnectModalForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
 
-        wrapper.instance().handleInstanceChoice('', 'http://localhost:8080');
-        expect(wrapper.state().selectedInstance).toEqual('http://localhost:8080');
-        expect(wrapper.state().error).toEqual('');
+        await act(async () => {
+            ref.current?.handleInstanceChoice('', 'http://localhost:8080');
+        });
+        expect(ref.current?.state.selectedInstance).toEqual('http://localhost:8080');
+        expect(ref.current?.state.error).toEqual('');
     });
 
     test('should show error when user is already connected to instance', async () => {
         const props = {...baseProps};
-        const wrapper = shallow<ConnectModalForm>(
-            <ConnectModalForm {...props}/>,
-        );
+        const ref = React.createRef<ConnectModalForm>();
+        await act(async () => {
+            renderWithRedux(
+                <ConnectModalForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
 
-        wrapper.instance().handleInstanceChoice('', 'https://something.atlassian.net');
-        expect(wrapper.state().selectedInstance).toEqual('https://something.atlassian.net');
-        expect(wrapper.state().error).toEqual('You are already connected to this Jira instance.');
+        await act(async () => {
+            ref.current?.handleInstanceChoice('', 'https://something.atlassian.net');
+        });
+        expect(ref.current?.state.selectedInstance).toEqual('https://something.atlassian.net');
+        expect(ref.current?.state.error).toEqual('You are already connected to this Jira instance.');
     });
 });

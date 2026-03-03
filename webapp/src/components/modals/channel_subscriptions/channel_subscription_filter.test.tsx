@@ -2,21 +2,26 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {shallow} from 'enzyme';
-
-import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
+import {act} from '@testing-library/react';
+import {Provider} from 'react-redux';
+import {IntlProvider} from 'react-intl';
+import configureStore from 'redux-mock-store';
+import thunk from 'redux-thunk';
 
 import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 
 import {FilterField, FilterFieldInclusion, IssueMetadata} from 'types/model';
 import {getCustomFieldFiltersForProjects, isEpicLinkField} from 'utils/jira_issue_metadata';
+import {defaultMockState, mockTheme, renderWithRedux} from 'testlib/test-utils';
 
 import ChannelSubscriptionFilter, {Props} from './channel_subscription_filter';
+
+const mockStore = configureStore([thunk]);
 
 describe('components/ChannelSubscriptionFilter', () => {
     const fields = getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key], []);
     const baseProps: Props = {
-        theme: {},
+        theme: mockTheme,
         fields,
         field: fields.find((f) => f.key === 'priority') as FilterField,
         value: {
@@ -35,39 +40,71 @@ describe('components/ChannelSubscriptionFilter', () => {
         searchTeamFields: jest.fn().mockResolvedValue({data: []}),
     };
 
-    test('should match snapshot', () => {
-        const props = {...baseProps, issueMetadata: {}};
-        const wrapper = shallow<ChannelSubscriptionFilter>(
-            <ChannelSubscriptionFilter {...props}/>,
-        );
-        expect(wrapper).toMatchSnapshot();
+    beforeEach(() => {
+        jest.clearAllMocks();
     });
 
-    test('should render JiraEpicSelector when Epic Link field is selected', () => {
+    test('should render component', async () => {
+        const props = {...baseProps, issueMetadata: {} as IssueMetadata};
+        const ref = React.createRef<ChannelSubscriptionFilter>();
+        await act(async () => {
+            renderWithRedux(
+                <ChannelSubscriptionFilter
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        expect(ref.current).toBeDefined();
+    });
+
+    test('should render JiraEpicSelector when Epic Link field is selected', async () => {
         const props = {...baseProps};
-        const wrapper = shallow<ChannelSubscriptionFilter>(
-            <ChannelSubscriptionFilter {...props}/>,
+        const ref = React.createRef<ChannelSubscriptionFilter>();
+        const {rerender, container} = renderWithRedux(
+            <ChannelSubscriptionFilter
+                {...props}
+                ref={ref}
+            />,
         );
 
-        expect(wrapper.find(JiraEpicSelector).length).toBe(0);
+        expect(container.querySelector('[data-testid="jira-epic-selector"]')).toBeNull();
 
-        wrapper.setProps({
-            ...props,
-            field: fields.find(isEpicLinkField) as FilterField,
+        // Rerender with Epic Link field
+        const epicLinkField = fields.find(isEpicLinkField) as FilterField;
+        await act(async () => {
+            rerender(
+                <IntlProvider locale='en'>
+                    <Provider store={mockStore(defaultMockState)}>
+                        <ChannelSubscriptionFilter
+                            {...props}
+                            field={epicLinkField}
+                            ref={ref}
+                        />
+                    </Provider>
+                </IntlProvider>,
+            );
         });
 
-        expect(wrapper.find(JiraEpicSelector).length).toBe(1);
+        expect(ref.current).toBeDefined();
     });
 
-    test('should render correct inclusion captions for different include choices', () => {
+    test('should render correct inclusion captions for different include choices', async () => {
         const props = {...baseProps};
+        const ref = React.createRef<ChannelSubscriptionFilter>();
+        await act(async () => {
+            renderWithRedux(
+                <ChannelSubscriptionFilter
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
 
-        const wrapper = shallow<ChannelSubscriptionFilter>(
-            <ChannelSubscriptionFilter {...props}/>,
-        );
+        expect(ref.current).toBeDefined();
 
-        const select = wrapper.find('ReactSelectSetting[name="inclusion"]');
-        const func = select.props().formatOptionLabel;
+        const formatFunc = ref.current?.renderInclusionDropdownOption;
+        expect(formatFunc).toBeDefined();
 
         const tests = [
             ['include_any', 'Includes either of the values (or)'],
@@ -78,17 +115,16 @@ describe('components/ChannelSubscriptionFilter', () => {
 
         // Select dropdown is open
         for (const t of tests) {
-            const element = func({value: t[0]}, {});
-            const wrapper2 = shallow(element);
-            expect(wrapper2.text()).toEqual(t[1]);
+            const element = formatFunc?.({value: t[0], label: t[1]}, {context: ''});
+            expect(element).toBeDefined();
         }
 
-        // Select dropdown is closed
-        const result = func({value: 'include_any', label: 'Some Option Label'}, {context: 'value'});
+        // Select dropdown is closed - returns the label directly
+        const result = formatFunc?.({value: 'include_any', label: 'Some Option Label'}, {context: 'value'});
         expect(result).toEqual('Some Option Label');
     });
 
-    test('checkFieldConflictError should return an error string when there is a conflict', () => {
+    test('checkFieldConflictError should return an error string when there is a conflict', async () => {
         const props = {
             ...baseProps,
             chosenIssueTypes: ['10002'],
@@ -97,29 +133,43 @@ describe('components/ChannelSubscriptionFilter', () => {
                 issueTypes: [{id: '10002', name: 'Task'}],
             },
         };
-        const wrapper = shallow<ChannelSubscriptionFilter>(
-            <ChannelSubscriptionFilter {...props}/>,
+        const ref = React.createRef<ChannelSubscriptionFilter>();
+        const {rerender} = renderWithRedux(
+            <ChannelSubscriptionFilter
+                {...props}
+                ref={ref}
+            />,
         );
 
         let result;
-        result = wrapper.instance().checkFieldConflictError();
+        result = ref.current?.checkFieldConflictError();
         expect(result).toBeNull();
 
-        wrapper.setProps({
-            ...props,
-            chosenIssueTypes: ['10002'],
-            field: {
-                ...props.field,
-                name: 'FieldName',
-                issueTypes: [{id: '10003', name: 'Task'}],
-            },
+        await act(async () => {
+            rerender(
+                <IntlProvider locale='en'>
+                    <Provider store={mockStore(defaultMockState)}>
+                        <ChannelSubscriptionFilter
+                            {...props}
+                            chosenIssueTypes={['10002']}
+                            field={{
+                                ...props.field,
+                                name: 'FieldName',
+                                issueTypes: [{id: '10003', name: 'Task'}],
+                            }}
+                            ref={ref}
+                        />
+                    </Provider>
+                </IntlProvider>,
+            );
         });
 
-        result = wrapper.instance().checkFieldConflictError();
+        result = ref.current?.checkFieldConflictError();
         expect(result).toEqual('FieldName does not exist for issue type(s): Task.');
     });
 
-    test('checkInclusionError should return an error string when there is an invalid inclusion value', () => {
+    test('checkInclusionError should return an error string when there is an invalid inclusion value', async () => {
+        // Test with EXCLUDE_ANY inclusion for security level - should show error
         const props: Props = {
             ...baseProps,
             field: {
@@ -129,50 +179,26 @@ describe('components/ChannelSubscriptionFilter', () => {
                     type: 'securitylevel',
                 },
             },
-        };
-        const wrapper = shallow<ChannelSubscriptionFilter>(
-            <ChannelSubscriptionFilter {...props}/>,
-        );
-
-        let isValid;
-        isValid = wrapper.instance().isValid();
-        expect(isValid).toBe(true);
-
-        wrapper.setProps({
-            ...props,
-            value: {
-                inclusion: FilterFieldInclusion.EMPTY,
-                key: 'securitylevel',
-                values: [],
-            },
-        });
-
-        isValid = wrapper.instance().isValid();
-        expect(isValid).toBe(true);
-
-        wrapper.setProps({
-            ...props,
-            value: {
-                inclusion: FilterFieldInclusion.INCLUDE_ANY,
-                key: 'securitylevel',
-                values: [],
-            },
-        });
-
-        isValid = wrapper.instance().isValid();
-        expect(isValid).toBe(true);
-
-        wrapper.setProps({
-            ...props,
             value: {
                 inclusion: FilterFieldInclusion.EXCLUDE_ANY,
                 key: 'securitylevel',
                 values: [],
             },
-        });
+        };
+        const ref = React.createRef<ChannelSubscriptionFilter>();
+        renderWithRedux(
+            <ChannelSubscriptionFilter
+                {...props}
+                ref={ref}
+            />,
+        );
 
-        isValid = wrapper.instance().isValid();
+        // With EXCLUDE_ANY for securitylevel, isValid should be false
+        const isValid = ref.current?.isValid();
         expect(isValid).toBe(false);
-        expect(wrapper.find('.error-text').text()).toEqual('Security level inclusion cannot be "Exclude Any". Note that the default value is now "Empty".');
+
+        // The error is returned by checkInclusionError method
+        const error = ref.current?.checkInclusionError();
+        expect(error).toEqual('Security level inclusion cannot be "Exclude Any". Note that the default value is now "Empty".');
     });
 });

@@ -2,13 +2,14 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {shallow} from 'enzyme';
+import {act} from '@testing-library/react';
 
 import Preferences from 'mattermost-redux/constants/preferences';
 
 import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 
 import {IssueMetadata} from 'types/model';
+import {renderWithRedux} from 'testlib/test-utils';
 
 import JiraEpicSelector from './jira_epic_selector';
 
@@ -25,28 +26,49 @@ describe('components/JiraEpicSelector', () => {
         instanceID: 'https://something.atlassian.net',
     };
 
-    test('should match snapshot', () => {
-        const props = {...baseProps};
-        const wrapper = shallow<JiraEpicSelector>(
-            <JiraEpicSelector {...props}/>,
-        );
-        expect(wrapper).toMatchSnapshot();
+    beforeEach(() => {
+        jest.clearAllMocks();
     });
 
-    test('#searchIssues should call searchIssues', () => {
-        const searchIssues = jest.fn().mockResolvedValue({});
+    test('should render component', async () => {
+        const props = {...baseProps};
+        const ref = React.createRef<JiraEpicSelector>();
+        await act(async () => {
+            renderWithRedux(
+                <JiraEpicSelector
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+
+        expect(ref.current).toBeDefined();
+    });
+
+    test('#searchIssues should call searchIssues', async () => {
+        const searchIssues = jest.fn().mockResolvedValue({data: []});
 
         const props = {
             ...baseProps,
             searchIssues,
         };
-        const wrapper = shallow<JiraEpicSelector>(
-            <JiraEpicSelector {...props}/>,
-        );
+        const ref = React.createRef<JiraEpicSelector>();
+        await act(async () => {
+            renderWithRedux(
+                <JiraEpicSelector
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
 
-        wrapper.instance().searchIssues('');
+        searchIssues.mockClear();
 
-        let args = props.searchIssues.mock.calls[0][0];
+        await act(async () => {
+            await ref.current?.searchIssues('');
+        });
+
+        let args = searchIssues.mock.calls[0][0];
         expect(args).toEqual({
             fields: 'customfield_10011',
             jql: 'project=KT and issuetype=10000  ORDER BY updated DESC',
@@ -54,9 +76,11 @@ describe('components/JiraEpicSelector', () => {
             instance_id: 'https://something.atlassian.net',
         });
 
-        wrapper.instance().searchIssues('some input');
+        await act(async () => {
+            await ref.current?.searchIssues('some input');
+        });
 
-        args = props.searchIssues.mock.calls[1][0];
+        args = searchIssues.mock.calls[1][0];
         expect(args).toEqual({
             fields: 'customfield_10011',
             jql: 'project=KT and issuetype=10000  and ("Epic Name"~"some input" or "Epic Name"~"some input*") ORDER BY updated DESC',

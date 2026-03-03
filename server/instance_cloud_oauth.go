@@ -152,9 +152,12 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 	currentToken := connection.OAuth2Token
 	updatedToken, err := tokenSource.Token()
 	if err != nil {
-		// Notify the user to reconnect their account
-		ci.Plugin.notifyUserTokenExpired(connection.MattermostUserID, ci.GetID())
-		return nil, nil, errors.Wrap(err, "your Jira token has expired, please use `/jira connect` to reconnect your account")
+		// Disconnect the user and notify them to reconnect their account
+		if strings.Contains(err.Error(), "invalid_grant") {
+			ci.Plugin.disconnectUserDueToExpiredToken(connection.MattermostUserID, ci.GetID())
+			return nil, nil, errors.Wrap(err, "your Jira token has expired, please use `/jira connect` to reconnect your account")
+		}
+		return nil, nil, errors.Wrap(err, "failed to get a new refreshed token for the user")
 	}
 
 	if updatedToken.RefreshToken != currentToken.RefreshToken {
@@ -171,7 +174,7 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 	ci.JiraResourceID = jiraID
 	if err != nil {
 		if errors.Is(err, errTokenExpired) {
-			ci.Plugin.notifyUserTokenExpired(connection.MattermostUserID, ci.GetID())
+			ci.Plugin.disconnectUserDueToExpiredToken(connection.MattermostUserID, ci.GetID())
 			return nil, nil, errors.New("your Jira token has expired, please use `/jira connect` to reconnect your account")
 		}
 		return nil, nil, err

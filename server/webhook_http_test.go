@@ -149,6 +149,12 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedHeadline: "Test User **assigned** Test User to story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
 			CurrentInstance:  true,
 		},
+		"issue assigned with empty changelog": {
+			Request:         testWebhookRequest("webhook-issue-assigned-empty-changelog.json"),
+			ExpectedIgnored: true,
+			ExpectedStatus:  http.StatusBadRequest,
+			CurrentInstance: true,
+		},
 		"SERVER (old version) issue assigned (no issue_event_type_name)": {
 			Request:          testWebhookRequest("webhook-server-old-issue-updated-no-event-type-assigned.json"),
 			ExpectedHeadline: "Test User **assigned** Test User to story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",

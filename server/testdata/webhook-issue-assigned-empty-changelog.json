@@ -1,0 +1,88 @@
+{
+  "timestamp": 1724179662935,
+  "webhookEvent": "jira:issue_updated",
+  "issue_event_type_name": "issue_assigned",
+  "user": {
+    "self": "https://test-instance.atlassian.net/rest/api/2/user?accountId=123456",
+    "accountId": "123456",
+    "emailAddress": "admin@example.com",
+    "avatarUrls": {
+      "48x48": "https://avatar-management.services.atlassian.com/initials/AA-1.png",
+      "24x24": "https://avatar-management.services.atlassian.com/initials/AA-1.png",
+      "16x16": "https://avatar-management.services.atlassian.com/initials/AA-1.png",
+      "32x32": "https://avatar-management.services.atlassian.com/initials/AA-1.png"
+    },
+    "displayName": "Admin User",
+    "active": true,
+    "timeZone": "America/New_York",
+    "accountType": "atlassian"
+  },
+  "issue": {
+    "id": "10001",
+    "self": "https://test-instance.atlassian.net/rest/api/2/issue/10001",
+    "key": "TEST-123",
+    "fields": {
+      "summary": "Test issue for empty changelog assignment",
+      "status": {
+        "self": "https://test-instance.atlassian.net/rest/api/2/status/10000",
+        "description": "",
+        "iconUrl": "https://test-instance.atlassian.net/",
+        "name": "To Do",
+        "id": "10000",
+        "statusCategory": {
+          "self": "https://test-instance.atlassian.net/rest/api/2/statuscategory/2",
+          "id": 2,
+          "key": "new",
+          "colorName": "blue-gray",
+          "name": "To Do"
+        }
+      },
+      "priority": {
+        "self": "https://test-instance.atlassian.net/rest/api/2/priority/3",
+        "iconUrl": "https://test-instance.atlassian.net/images/icons/priorities/medium.svg",
+        "name": "Medium",
+        "id": "3"
+      },
+      "assignee": {
+        "self": "https://test-instance.atlassian.net/rest/api/2/user?accountId=789012",
+        "accountId": "789012",
+        "emailAddress": "assignee@example.com",
+        "avatarUrls": {
+          "48x48": "https://avatar-management.services.atlassian.com/initials/JD-2.png",
+          "24x24": "https://avatar-management.services.atlassian.com/initials/JD-2.png",
+          "16x16": "https://avatar-management.services.atlassian.com/initials/JD-2.png",
+          "32x32": "https://avatar-management.services.atlassian.com/initials/JD-2.png"
+        },
+        "displayName": "John Doe",
+        "active": true,
+        "timeZone": "America/Los_Angeles",
+        "accountType": "atlassian"
+      },
+      "issuetype": {
+        "self": "https://test-instance.atlassian.net/rest/api/2/issuetype/10001",
+        "id": "10001",
+        "description": "A task that needs to be done.",
+        "iconUrl": "https://test-instance.atlassian.net/secure/viewavatar?size=xsmall&avatarId=10318&avatarType=issuetype",
+        "name": "Task",
+        "subtask": false
+      },
+      "project": {
+        "self": "https://test-instance.atlassian.net/rest/api/2/project/10000",
+        "id": "10000",
+        "key": "TEST",
+        "name": "Test Project",
+        "avatarUrls": {
+          "48x48": "https://test-instance.atlassian.net/secure/projectavatar?pid=10000&avatarId=10324",
+          "24x24": "https://test-instance.atlassian.net/secure/projectavatar?size=small&pid=10000&avatarId=10324",
+          "16x16": "https://test-instance.atlassian.net/secure/projectavatar?size=xsmall&pid=10000&avatarId=10324",
+          "32x32": "https://test-instance.atlassian.net/secure/projectavatar?size=medium&pid=10000&avatarId=10324"
+        }
+      },
+      "description": "This webhook simulates an assignment event with empty changelog items, which can occur with API assignments, automation rules, or bulk operations."
+    }
+  },
+  "changelog": {
+    "id": "10500",
+    "items": []
+  }
+}

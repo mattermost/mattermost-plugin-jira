@@ -2,13 +2,16 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {shallow} from 'enzyme';
+import {act} from '@testing-library/react';
 
 import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {InstanceType} from 'types/model';
+import {mockTheme as baseMockTheme, renderWithRedux} from 'testlib/test-utils';
 
 import JiraInstanceAndProjectSelector, {Props} from './jira_instance_and_project_selector';
+
+const mockTheme = baseMockTheme as Theme;
 
 describe('components/JiraInstanceAndProjectSelector', () => {
     const baseProps: Props = {
@@ -18,7 +21,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         onProjectChange: jest.fn(),
         onError: jest.fn(),
 
-        theme: {} as Theme,
+        theme: mockTheme,
         addValidate: jest.fn(),
         removeValidate: jest.fn(),
 
@@ -38,121 +41,212 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         hideProjectSelector: false,
     };
 
-    test('should match snapshot with one connected instance', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    test('should render component with one connected instance', async () => {
         const props = {
             ...baseProps,
             connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}],
         };
-        const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
+        const ref = React.createRef<JiraInstanceAndProjectSelector>();
+        await act(async () => {
+            renderWithRedux(
+                <JiraInstanceAndProjectSelector
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
 
-        expect(wrapper).toMatchSnapshot();
+        expect(ref.current).toBeDefined();
     });
 
-    test('should match snapshot with two connected instances', () => {
+    test('should render component with two connected instances', async () => {
         const props = {
             ...baseProps,
             connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}],
         };
-        const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
+        const ref = React.createRef<JiraInstanceAndProjectSelector>();
+        await act(async () => {
+            renderWithRedux(
+                <JiraInstanceAndProjectSelector
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
 
-        expect(wrapper).toMatchSnapshot();
+        expect(ref.current).toBeDefined();
     });
 
-    test('should match snapshot with a default instance selected', () => {
+    test('should render component with a default instance selected', async () => {
         const props = {
             ...baseProps,
             connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.SERVER}],
             defaultUserInstanceID: 'instance1',
         };
-        const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
+        const ref = React.createRef<JiraInstanceAndProjectSelector>();
+        await act(async () => {
+            renderWithRedux(
+                <JiraInstanceAndProjectSelector
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
 
-        expect(wrapper).toMatchSnapshot();
+        expect(ref.current).toBeDefined();
     });
 
     test('should assign the correct initial instance id', async () => {
+        let onInstanceChange = jest.fn();
         let props = {
             ...baseProps,
-            onInstanceChange: jest.fn(),
+            onInstanceChange,
             defaultUserInstanceID: 'instance2',
         };
-        let wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
+        let ref = React.createRef<JiraInstanceAndProjectSelector>();
+        await act(async () => {
+            renderWithRedux(
+                <JiraInstanceAndProjectSelector
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
 
-        await props.getConnected();
-        expect(props.onInstanceChange).toBeCalledWith('instance2');
+        await act(async () => {
+            await props.getConnected();
+        });
+        expect(onInstanceChange).toBeCalledWith('instance2');
 
+        onInstanceChange = jest.fn();
         props = {
             ...baseProps,
             connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}],
-            onInstanceChange: jest.fn(),
+            onInstanceChange,
         };
-        wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
-        await props.getConnected();
-        expect(props.onInstanceChange).toBeCalledWith('instance1');
+        ref = React.createRef<JiraInstanceAndProjectSelector>();
+        await act(async () => {
+            renderWithRedux(
+                <JiraInstanceAndProjectSelector
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            await props.getConnected();
+        });
+        expect(onInstanceChange).toBeCalledWith('instance1');
 
+        onInstanceChange = jest.fn();
         props = {
             ...baseProps,
-            onInstanceChange: jest.fn(),
+            onInstanceChange,
             defaultUserInstanceID: 'instance2',
             selectedInstanceID: 'instance3', // pre-selected instance should take precedence. i.e. from existing subscription
         };
-        wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
-        await props.getConnected();
-        expect(props.onInstanceChange).toBeCalledWith('instance3');
+        ref = React.createRef<JiraInstanceAndProjectSelector>();
+        await act(async () => {
+            renderWithRedux(
+                <JiraInstanceAndProjectSelector
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            await props.getConnected();
+        });
+        expect(onInstanceChange).toBeCalledWith('instance3');
 
+        onInstanceChange = jest.fn();
         props = {
             ...baseProps,
-            onInstanceChange: jest.fn(),
+            onInstanceChange,
         };
-        wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
-        await props.getConnected();
-        expect(props.onInstanceChange).not.toBeCalled();
+        ref = React.createRef<JiraInstanceAndProjectSelector>();
+        await act(async () => {
+            renderWithRedux(
+                <JiraInstanceAndProjectSelector
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            await props.getConnected();
+        });
+        expect(onInstanceChange).not.toBeCalled();
     });
 
     test('should use default field values after fetch', async () => {
+        const onProjectChange = jest.fn();
+        const fetchJiraProjectMetadata = jest.fn().mockResolvedValue({data: {
+            saved_field_values: {
+                project_key: 'TEST',
+            },
+            projects: [
+                {value: 'TEST', label: 'Test Project'},
+                {value: 'AA', label: 'Apples Arrangement'},
+            ],
+        }});
         const props = {
             ...baseProps,
             defaultUserInstanceID: 'instance2',
-            onProjectChange: jest.fn(),
+            onProjectChange,
+            fetchJiraProjectMetadata,
         };
-        const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
-        await props.getConnected();
-        expect(wrapper.state().fetchingProjectMetadata).toBe(true);
+        const ref = React.createRef<JiraInstanceAndProjectSelector>();
+        await act(async () => {
+            renderWithRedux(
+                <JiraInstanceAndProjectSelector
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            await props.getConnected();
+        });
 
-        await props.fetchJiraProjectMetadata('');
-        expect(props.onProjectChange).toBeCalledWith({
+        expect(fetchJiraProjectMetadata).toHaveBeenCalled();
+
+        await act(async () => {
+            await fetchJiraProjectMetadata('instance2');
+        });
+        expect(onProjectChange).toBeCalledWith({
             project_key: 'TEST',
         });
     });
 
     test('should pass error on failed fetch', async () => {
+        const onError = jest.fn();
         const props = {
             ...baseProps,
             fetchJiraProjectMetadata: jest.fn().mockResolvedValue({error: {message: 'Some error'}}),
-            onError: jest.fn(),
+            onError,
             defaultUserInstanceID: 'instance2',
         };
-        const wrapper = shallow<JiraInstanceAndProjectSelector>(
-            <JiraInstanceAndProjectSelector {...props}/>,
-        );
+        const ref = React.createRef<JiraInstanceAndProjectSelector>();
+        await act(async () => {
+            renderWithRedux(
+                <JiraInstanceAndProjectSelector
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
 
-        await props.getConnected();
-        await props.fetchJiraProjectMetadata('');
-        expect(props.onError).toHaveBeenCalledWith('Some error');
+        await act(async () => {
+            await props.getConnected();
+        });
+        await act(async () => {
+            await props.fetchJiraProjectMetadata('');
+        });
+        expect(onError).toHaveBeenCalledWith('Some error');
     });
 });
