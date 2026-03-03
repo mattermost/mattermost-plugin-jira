@@ -119,14 +119,14 @@ export default class JiraField extends React.Component {
         }
 
         if (field.schema.custom === JiraFieldCustomTypeEnums.SPRINT) {
-            const sprintValue = this.props.value && this.props.value.id ? String(this.props.value.id) : (this.props.value || '');
+            const sprintValue = typeof this.props.value === 'number' ? String(this.props.value) : (this.props.value || '');
             return (
                 <JiraSprintSelector
                     {...selectProps}
                     projectKey={this.props.projectKey}
                     onChange={(selected) => {
                         if (selected) {
-                            this.props.onChange(this.props.id, {id: Number(selected)});
+                            this.props.onChange(this.props.id, Number(selected));
                         } else {
                             this.props.onChange(this.props.id, null);
                         }
