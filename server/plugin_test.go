@@ -288,16 +288,16 @@ func TestGenerateSecretIsURLSafe(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		secret, err := generateSecret()
 		assert.NoError(t, err)
-		
+
 		// Verify the secret has the correct length
 		assert.Equal(t, 32, len(secret), "Secret should be 32 characters long")
-		
+
 		// Verify no URL-unsafe characters (+ and /) are present
 		// These characters cause issues when used in URL query parameters
 		// as they get URL-encoded/decoded differently by different systems
 		assert.NotContains(t, secret, "+", "Secret should not contain '+' character (not URL-safe)")
 		assert.NotContains(t, secret, "/", "Secret should not contain '/' character (not URL-safe)")
-		
+
 		// Verify the secret only contains valid base64 URL-safe characters
 		// Valid characters: A-Z, a-z, 0-9, -, _
 		for _, char := range secret {

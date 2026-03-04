@@ -1464,10 +1464,15 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 
 	jwhook := wh.JiraWebhook
 	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
-	commentMessage := fmt.Sprintf(
-		"%s **commented** on %s:\n> %s\n\n*You are watching this %s*",
-		commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body, jwhook.mdIssueType(),
-	)
+	quoted := quoteIssueComment(preProcessText(jwhook.Comment.Body))
+	var commentMessage string
+	if quoted != "" {
+		commentMessage = fmt.Sprintf("%s **commented** on %s:\n%s\n\n*You are watching this %s*",
+			commentAuthor, jwhook.mdKeySummaryLink(), quoted, jwhook.mdIssueType())
+	} else {
+		commentMessage = fmt.Sprintf("%s **commented** on %s\n\n*You are watching this %s*",
+			commentAuthor, jwhook.mdKeySummaryLink(), jwhook.mdIssueType())
+	}
 	client, connection, err := wh.fetchConnectedUser(p, instanceID)
 	if err != nil || client == nil {
 		p.errorf("error while fetching connected users for the instanceID %v , Error : %v", instanceID, err)
@@ -1520,10 +1525,15 @@ func (p *Plugin) applyReporterNotification(wh *webhook, instanceID types.ID, rep
 	}
 
 	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
-	commentMessage := fmt.Sprintf(
-		"%s **commented** on %s:\n> %s\n\n*You reported this %s*",
-		commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body, jwhook.mdIssueType(),
-	)
+	quoted := quoteIssueComment(preProcessText(jwhook.Comment.Body))
+	var commentMessage string
+	if quoted != "" {
+		commentMessage = fmt.Sprintf("%s **commented** on %s:\n%s\n\n*You reported this %s*",
+			commentAuthor, jwhook.mdKeySummaryLink(), quoted, jwhook.mdIssueType())
+	} else {
+		commentMessage = fmt.Sprintf("%s **commented** on %s\n\n*You reported this %s*",
+			commentAuthor, jwhook.mdKeySummaryLink(), jwhook.mdIssueType())
+	}
 
 	connection, err := p.GetUserSetting(wh, instanceID, reporter.Name, reporter.AccountID)
 	if err != nil || connection.Settings == nil || !connection.Settings.ShouldReceiveNotification(notificationTypeReporter) {
