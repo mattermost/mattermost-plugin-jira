@@ -13,30 +13,33 @@ const stripHTML = (text: string): string => {
     return doc.body.textContent || '';
 };
 
+type TeamItem = {Name: string; ID: string};
+
 type Props = Omit<BackendSelectorProps, 'fetchInitialSelectedValues' | 'search'> & {
     fieldName: string;
     instanceID: string;
-    searchTeamFields: (params: { fieldValue: string; instance_id: string }) => Promise<{
-        data: { items: { Name: string; ID: string }[] };
-        error?: Error;
-    }>;
+    searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{data: TeamItem[]}>;
 };
 
 const JiraTeamSelector = (props: Props): JSX.Element => {
     const {value, instanceID, searchTeamFields} = props;
 
     const teamFields = async (inputValue: string): Promise<ReactSelectOption[]> => {
+        if (!instanceID) {
+            return [];
+        }
+
         const params = {
             fieldValue: inputValue,
             instance_id: instanceID,
         };
 
-        return searchTeamFields(params).then(({data}) => {
+        return searchTeamFields(params).then(({data}: {data: TeamItem[]}) => {
             if (!data || !Array.isArray(data)) {
                 return [];
             }
 
-            return data.map((team) => ({
+            return data.map((team: TeamItem) => ({
                 value: team.ID,
                 label: stripHTML(team.Name),
             }));

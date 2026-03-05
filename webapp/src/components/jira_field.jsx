@@ -8,12 +8,14 @@ import {components} from 'react-select';
 
 import ReactSelectSetting from 'components/react_select_setting';
 import Input from 'components/input';
+import {isTeamField} from 'utils/jira_issue_metadata';
 
 import {JiraFieldCustomTypeEnums} from 'types/model';
 
 import JiraEpicSelector from './data_selectors/jira_epic_selector';
 import JiraAutoCompleteSelector from './data_selectors/jira_autocomplete_selector';
 import JiraUserSelector from './data_selectors/jira_user_selector';
+import JiraTeamSelector from './data_selectors/jira_team_selector';
 import JiraSprintSelector from './data_selectors/jira_sprint_selector';
 
 export default class JiraField extends React.Component {
@@ -166,6 +168,25 @@ export default class JiraField extends React.Component {
             );
         }
 
+        if (isTeamField(field)) {
+            const teamValue = this.props.value && this.props.value.id ? this.props.value.id : (this.props.value || '');
+            return (
+                <JiraTeamSelector
+                    {...selectProps}
+                    fieldName={field.name}
+                    onChange={(selected) => {
+                        if (selected) {
+                            this.props.onChange(this.props.id, {id: selected});
+                        } else {
+                            this.props.onChange(this.props.id, null);
+                        }
+                    }}
+                    value={teamValue}
+                    isMulti={false}
+                />
+            );
+        }
+
         if (field.schema.type === 'string') {
             return (
                 <Input
@@ -300,6 +321,10 @@ export function isFieldSupported(field) {
     }
 
     if (field.schema.type === 'user') {
+        return true;
+    }
+
+    if (isTeamField(field)) {
         return true;
     }
 

@@ -273,7 +273,7 @@ func updateTeamValue(value StringSet, issue *jira.Issue, teamFieldKeys map[strin
 	}
 
 	for key := range teamFieldKeys {
-		fieldValues := getIssueFieldValue(issue, key)
+		fieldValues := getTeamFieldValue(issue, key)
 		if fieldValues.Len() == 0 {
 			continue
 		}
@@ -281,6 +281,33 @@ func updateTeamValue(value StringSet, issue *jira.Issue, teamFieldKeys map[strin
 	}
 
 	return value
+}
+
+func getTeamFieldValue(issue *jira.Issue, key string) StringSet {
+	m, exists := issue.Fields.Unknowns.Value(key)
+	if !exists || m == nil {
+		return nil
+	}
+
+	result := NewStringSet()
+	switch v := m.(type) {
+	case map[string]interface{}:
+		if id, ok := v["id"].(string); ok {
+			result = result.Add(id)
+		} else if numID, ok := v["id"].(float64); ok {
+			result = result.Add(fmt.Sprintf("%.0f", numID))
+		}
+		if name, ok := v["name"].(string); ok {
+			result = result.Add(name)
+		}
+		if title, ok := v["title"].(string); ok {
+			result = result.Add(title)
+		}
+	case string:
+		result = result.Add(v)
+	}
+
+	return result
 }
 
 func shouldAddVisibleToAllUsersToFieldValues(wh *webhook, field FieldFilter) bool {

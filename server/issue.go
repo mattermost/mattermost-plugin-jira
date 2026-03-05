@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -95,6 +96,7 @@ const (
 
 	teamFieldSchema            = "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team"
 	teamAdvancedRoadmapsSchema = "com.atlassian.teams:rm-team-custom-field-team"
+	teamAdvancedRoadmapsDC     = "com.atlassian.teams:rm-teams-custom-field-team"
 	defaultTeamFieldKey        = "customfield_10001"
 )
 
@@ -561,6 +563,13 @@ func (p *Plugin) GetCreateIssueMetadataForProjects(instanceID, mattermostUserID 
 	}, nil
 }
 
+// isTeamFieldSchema returns true if the schema custom type is a known team field
+func isTeamFieldSchema(customType string) bool {
+	return customType == teamFieldSchema ||
+		customType == teamAdvancedRoadmapsSchema ||
+		customType == teamAdvancedRoadmapsDC
+}
+
 // The go-jira package does not support the Team field by default,
 // and the Jira API does not include Team data in the issue metadata.
 // Therefore, we need to manually inject the allowed Team values into the fields.
@@ -590,7 +599,7 @@ func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamLis
 				}
 
 				customType, _ := schemaRaw["custom"].(string)
-				if customType != teamFieldSchema && customType != teamAdvancedRoadmapsSchema {
+				if !isTeamFieldSchema(customType) {
 					continue
 				}
 
@@ -599,8 +608,8 @@ func injectTeamAllowedValues(metaInfo *jira.CreateMetaInfo, teamIDList []TeamLis
 
 				if len(allowedValues) > 0 {
 					fieldMap["allowedValues"] = allowedValues
-					issueType.Fields[key] = fieldMap
 				}
+				issueType.Fields[key] = fieldMap
 			}
 		}
 	}
@@ -623,22 +632,63 @@ func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int,
 		return http.StatusUnauthorized, errors.New("not authorized")
 	}
 
+	instanceID := r.FormValue(instanceIDQueryParam)
+	fieldValue := r.FormValue(fieldValueQueryParam)
+
+	// getTeamFieldKeys returns defaultTeamFieldKey when the cache is empty (cold start).
+	// The cache is populated with the real keys when GetCreateIssueMetadataForProjects
+	// inspects the create-meta schema via injectTeamAllowedValues → cacheTeamFieldKeys.
+	teamFieldKeys := p.getTeamFieldKeys(types.ID(instanceID))
+	sortedKeys := make([]string, 0, len(teamFieldKeys))
+	for key := range teamFieldKeys {
+		sortedKeys = append(sortedKeys, key)
+	}
+	sort.Strings(sortedKeys)
+
+	if instanceID != "" {
+		client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+		if err == nil {
+			for _, fieldName := range sortedKeys {
+				suggestions, apiErr := client.SearchAutoCompleteFields(map[string]string{
+					"fieldName":  fmt.Sprintf("cf[%s]", strings.TrimPrefix(fieldName, "customfield_")),
+					"fieldValue": fieldValue,
+				})
+				if apiErr != nil {
+					p.client.Log.Debug("Failed to auto-discover team fields, trying next key", "field", fieldName, "error", apiErr.Error())
+					continue
+				}
+				if suggestions != nil && len(suggestions.Results) > 0 {
+					teamList := make([]TeamList, 0, len(suggestions.Results))
+					for _, result := range suggestions.Results {
+						teamList = append(teamList, TeamList{
+							Name: result.DisplayName,
+							ID:   result.Value,
+						})
+					}
+					return respondJSON(w, teamList)
+				}
+			}
+		}
+	}
+
+	// Phase 2: Fall back to the manually configured team list from plugin settings.
 	teamList := p.conf.TeamIDList
 	if teamList == nil {
 		teamList = make([]TeamList, 0)
 	}
 
-	jsonResponse, err := json.Marshal(teamList)
-	if err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal team list")
+	if fieldValue != "" {
+		filtered := make([]TeamList, 0)
+		lowerSearch := strings.ToLower(fieldValue)
+		for _, team := range teamList {
+			if strings.Contains(strings.ToLower(team.Name), lowerSearch) {
+				filtered = append(filtered, team)
+			}
+		}
+		teamList = filtered
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResponse); err != nil {
-		return http.StatusInternalServerError, errors.WithMessage(err, "failed to write response")
-	}
-
-	return http.StatusOK, nil
+	return respondJSON(w, teamList)
 }
 
 type Sprint struct {
