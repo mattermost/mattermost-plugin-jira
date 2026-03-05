@@ -20,6 +20,7 @@ import {
     getCustomFieldFiltersForProjects,
     getJiraTicketDetails,
     getStatusField,
+    isSprintField,
 } from './jira_issue_metadata';
 
 describe('utils/jira_issue_metadata', () => {
@@ -49,32 +50,23 @@ describe('utils/jira_issue_metadata', () => {
         expect(actual.length).toBeGreaterThan(0);
     });
 
-    test('should return only the status, comment visibility and team  field if there are no available values', () => {
+    test('should return status, comment visibility, team and sprint fields', () => {
         const field = {
             hasDefaultValue: false,
             key: 'customfield_10021',
             name: 'Sprint',
-            operations: [
-                'set',
-            ],
+            operations: ['set'],
             required: false,
-            schema: {
-                custom: 'com.pyxis.greenhopper.jira:gh-sprint',
-                customId: 10021,
-                items: 'string',
-                type: 'array',
-            },
+            schema: {custom: 'com.pyxis.greenhopper.jira:gh-sprint', customId: 10021, items: 'string', type: 'array'},
         };
-
         const metadata = useFieldForIssueMetadata(field, 'customfield_10021');
-        const projectKey = metadata.projects[0].key;
-
-        const actual = getCustomFieldFiltersForProjects(metadata, [projectKey], []);
+        const actual = getCustomFieldFiltersForProjects(metadata, [metadata.projects[0].key], []);
         expect(actual).not.toBe(null);
-        expect(actual.length).toBe(3);
+        expect(actual.length).toBe(4);
         expect(actual[0].name).toBe('Comment Visibility');
-        expect(actual[1].name).toBe('Status');
-        expect(actual[2].name).toBe('Team');
+        expect(actual[1].name).toBe('Sprint');
+        expect(actual[2].name).toBe('Status');
+        expect(actual[3].name).toBe('Team');
     });
 
     test('should return options for multi-select options', () => {
@@ -729,5 +721,12 @@ describe('utils/jira_issue_metadata', () => {
 
             expect(result).toEqual(expectedTicketDetails);
         });
+    });
+
+    test('isSprintField should identify sprint fields correctly', () => {
+        const sprint: FilterField = {key: 'customfield_10021', name: 'Sprint', schema: {custom: 'com.pyxis.greenhopper.jira:gh-sprint', type: 'array'}, values: [], issueTypes: []};
+        const team: FilterField = {key: 'customfield_10001', name: 'Team', schema: {custom: 'com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team', type: 'team'}, values: [], issueTypes: []};
+        expect(isSprintField(sprint)).toBe(true);
+        expect(isSprintField(team)).toBe(false);
     });
 });
