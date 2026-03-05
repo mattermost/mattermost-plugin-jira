@@ -25,7 +25,11 @@ export type Props = {
     onChange: (f: FilterValue[]) => void;
     instanceID: string;
     securityLevelEmptyForJiraSubscriptions?: boolean;
-    searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{data: {Name: string; ID: string}[]}>;
+    searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{
+        data: {items: {Name: string; ID: string}[]};
+        error?: Error;
+    }>;
+    projectKey: string;
 };
 
 type State = {
@@ -116,6 +120,7 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
                                     instanceID={this.props.instanceID}
                                     securityLevelEmptyForJiraSubscriptions={this.props.securityLevelEmptyForJiraSubscriptions}
                                     searchTeamFields={this.props.searchTeamFields}
+                                    projectKey={this.props.projectKey}
                                 />
                             </div>
                         );

@@ -249,8 +249,14 @@ func appendCommentNotifications(wh *webhook, verb string) {
 
 	// Process Jira markup to markdown before quoting
 	processedComment := preProcessText(jwh.Comment.Body)
-	message := fmt.Sprintf("%s %s %s:\n%s",
-		commentAuthor, verb, jwh.mdKeySummaryLink(), quoteIssueComment(processedComment))
+	quoted := quoteIssueComment(processedComment)
+
+	var message string
+	if quoted != "" {
+		message = fmt.Sprintf("%s %s %s:\n%s", commentAuthor, verb, jwh.mdKeySummaryLink(), quoted)
+	} else {
+		message = fmt.Sprintf("%s %s %s", commentAuthor, verb, jwh.mdKeySummaryLink())
+	}
 	assigneeMentioned := false
 
 	for _, u := range parseJIRAUsernamesFromText(wh.Comment.Body) {
@@ -295,10 +301,17 @@ func appendCommentNotifications(wh *webhook, verb string) {
 		return
 	}
 
+	var assigneeMessage string
+	if quoted != "" {
+		assigneeMessage = fmt.Sprintf("%s **commented** on %s:\n%s", commentAuthor, jwh.mdKeySummaryLink(), quoted)
+	} else {
+		assigneeMessage = fmt.Sprintf("%s **commented** on %s", commentAuthor, jwh.mdKeySummaryLink())
+	}
+
 	wh.notifications = append(wh.notifications, webhookUserNotification{
 		jiraUsername:     jwh.Issue.Fields.Assignee.Name,
 		jiraAccountID:    jwh.Issue.Fields.Assignee.AccountID,
-		message:          fmt.Sprintf("%s **commented** on %s:\n%s", commentAuthor, jwh.mdKeySummaryLink(), quoteIssueComment(processedComment)),
+		message:          assigneeMessage,
 		postType:         PostTypeComment,
 		commentSelf:      jwh.Comment.Self,
 		notificationType: "assignee",
@@ -306,6 +319,9 @@ func appendCommentNotifications(wh *webhook, verb string) {
 }
 
 func quoteIssueComment(comment string) string {
+	if strings.TrimSpace(comment) == "" {
+		return ""
+	}
 	return "> " + strings.ReplaceAll(comment, "\n", "\n> ")
 }
 

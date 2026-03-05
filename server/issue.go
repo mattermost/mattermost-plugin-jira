@@ -87,6 +87,7 @@ const (
 	headerMattermostUserID   = "Mattermost-User-ID"
 	instanceIDQueryParam     = "instance_id"
 	fieldValueQueryParam     = "fieldValue"
+	projectKeyQueryParam     = "project_key"
 
 	QueryParamInstanceID = "instance_id"
 	QueryParamProjectID  = "project_id"
@@ -688,6 +689,160 @@ func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int,
 	}
 
 	return respondJSON(w, teamList)
+}
+
+type Sprint struct {
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	State string `json:"state"`
+}
+
+type SprintSearchResult struct {
+	MaxResults int      `json:"maxResults"`
+	StartAt    int      `json:"startAt"`
+	IsLast     bool     `json:"isLast"`
+	Values     []Sprint `json:"values"`
+}
+
+type Board struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type BoardSearchResult struct {
+	MaxResults int     `json:"maxResults"`
+	StartAt    int     `json:"startAt"`
+	IsLast     bool    `json:"isLast"`
+	Values     []Board `json:"values"`
+}
+
+func (p *Plugin) httpGetSprints(w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return respondErr(w, http.StatusMethodNotAllowed, fmt.Errorf("request: %s is not allowed, must be GET", r.Method))
+	}
+
+	mattermostUserID := r.Header.Get(headerMattermostUserID)
+	if mattermostUserID == "" {
+		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
+	}
+
+	instanceID := r.FormValue(instanceIDQueryParam)
+	if instanceID == "" {
+		return respondErr(w, http.StatusBadRequest, errors.New("instance_id is required"))
+	}
+	projectKey := r.FormValue(projectKeyQueryParam)
+	if projectKey == "" {
+		return respondErr(w, http.StatusBadRequest, errors.New("project_key is required"))
+	}
+
+	client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	var allBoards []Board
+	boardStartAt := 0
+	for {
+		boardParams := map[string]string{
+			"projectKeyOrId": projectKey,
+			"startAt":        strconv.Itoa(boardStartAt),
+		}
+		var boardResult BoardSearchResult
+		if err := client.RESTGetRaw("rest/agile/1.0/board", boardParams, &boardResult); err != nil {
+			p.client.Log.Warn("Failed to get boards for project, returning empty sprint list", "project", projectKey, "error", err.Error())
+			break
+		}
+		allBoards = append(allBoards, boardResult.Values...)
+		if boardResult.IsLast || len(boardResult.Values) == 0 {
+			break
+		}
+		boardStartAt += len(boardResult.Values)
+	}
+
+	allSprints := make([]Sprint, 0)
+	seenSprints := make(map[int]bool)
+
+	for _, board := range allBoards {
+		endpoint := fmt.Sprintf("rest/agile/1.0/board/%d/sprint", board.ID)
+		sprintStartAt := 0
+		for {
+			sprintParams := map[string]string{
+				"state":   "active,future",
+				"startAt": strconv.Itoa(sprintStartAt),
+			}
+			var sprintResult SprintSearchResult
+			if err := client.RESTGetRaw(endpoint, sprintParams, &sprintResult); err != nil {
+				p.client.Log.Debug("Failed to get sprints for board", "board", board.ID, "error", err.Error())
+				break
+			}
+
+			for _, sprint := range sprintResult.Values {
+				if !seenSprints[sprint.ID] {
+					seenSprints[sprint.ID] = true
+					allSprints = append(allSprints, sprint)
+				}
+			}
+
+			if sprintResult.IsLast || len(sprintResult.Values) == 0 {
+				break
+			}
+			sprintStartAt += len(sprintResult.Values)
+		}
+	}
+
+	jsonResponse, err := json.Marshal(allSprints)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal sprints"))
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(jsonResponse)
+
+	return http.StatusOK, nil
+}
+
+func (p *Plugin) httpGetSprintByID(w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != http.MethodGet {
+		return respondErr(w, http.StatusMethodNotAllowed, fmt.Errorf("request: %s is not allowed, must be GET", r.Method))
+	}
+
+	mattermostUserID := r.Header.Get(headerMattermostUserID)
+	if mattermostUserID == "" {
+		return respondErr(w, http.StatusUnauthorized, errors.New("not authorized"))
+	}
+
+	instanceID := r.FormValue(instanceIDQueryParam)
+	if instanceID == "" {
+		return respondErr(w, http.StatusBadRequest, errors.New("instance_id is required"))
+	}
+	sprintID := r.FormValue("sprint_id")
+	if sprintID == "" {
+		return respondErr(w, http.StatusBadRequest, errors.New("sprint_id is required"))
+	}
+	if _, err := strconv.Atoi(sprintID); err != nil {
+		return respondErr(w, http.StatusBadRequest, errors.New("sprint_id must be numeric"))
+	}
+
+	client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	endpoint := fmt.Sprintf("rest/agile/1.0/sprint/%s", sprintID)
+	var sprint Sprint
+	if err := client.RESTGetRaw(endpoint, nil, &sprint); err != nil {
+		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to get sprint"))
+	}
+
+	jsonResponse, err := json.Marshal(sprint)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, errors.WithMessage(err, "failed to marshal sprint"))
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(jsonResponse)
+
+	return http.StatusOK, nil
 }
 
 func (p *Plugin) httpGetCommentVisibilityFields(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -1514,10 +1669,15 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 
 	jwhook := wh.JiraWebhook
 	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
-	commentMessage := fmt.Sprintf(
-		"%s **commented** on %s:\n> %s\n\n*You are watching this %s*",
-		commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body, jwhook.mdIssueType(),
-	)
+	quoted := quoteIssueComment(preProcessText(jwhook.Comment.Body))
+	var commentMessage string
+	if quoted != "" {
+		commentMessage = fmt.Sprintf("%s **commented** on %s:\n%s\n\n*You are watching this %s*",
+			commentAuthor, jwhook.mdKeySummaryLink(), quoted, jwhook.mdIssueType())
+	} else {
+		commentMessage = fmt.Sprintf("%s **commented** on %s\n\n*You are watching this %s*",
+			commentAuthor, jwhook.mdKeySummaryLink(), jwhook.mdIssueType())
+	}
 	client, connection, err := wh.fetchConnectedUser(p, instanceID)
 	if err != nil || client == nil {
 		p.errorf("error while fetching connected users for the instanceID %v , Error : %v", instanceID, err)
@@ -1570,10 +1730,15 @@ func (p *Plugin) applyReporterNotification(wh *webhook, instanceID types.ID, rep
 	}
 
 	commentAuthor := mdUser(&jwhook.Comment.UpdateAuthor)
-	commentMessage := fmt.Sprintf(
-		"%s **commented** on %s:\n> %s\n\n*You reported this %s*",
-		commentAuthor, jwhook.mdKeySummaryLink(), jwhook.Comment.Body, jwhook.mdIssueType(),
-	)
+	quoted := quoteIssueComment(preProcessText(jwhook.Comment.Body))
+	var commentMessage string
+	if quoted != "" {
+		commentMessage = fmt.Sprintf("%s **commented** on %s:\n%s\n\n*You reported this %s*",
+			commentAuthor, jwhook.mdKeySummaryLink(), quoted, jwhook.mdIssueType())
+	} else {
+		commentMessage = fmt.Sprintf("%s **commented** on %s\n\n*You reported this %s*",
+			commentAuthor, jwhook.mdKeySummaryLink(), jwhook.mdIssueType())
+	}
 
 	connection, err := p.GetUserSetting(wh, instanceID, reporter.Name, reporter.AccountID)
 	if err != nil || connection.Settings == nil || !connection.Settings.ShouldReceiveNotification(notificationTypeReporter) {
