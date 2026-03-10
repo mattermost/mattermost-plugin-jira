@@ -47,6 +47,17 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 	}
 
 	v := wh.(*webhook)
+
+	if isStandaloneCommentEvent(v.JiraWebhook) {
+		instance, loadErr := ww.p.instanceStore.LoadInstance(msg.InstanceID)
+		if loadErr != nil {
+			return loadErr
+		}
+		if !instance.Common().IsCloudInstance() {
+			return ErrWebhookIgnored
+		}
+	}
+
 	if err = v.JiraWebhook.expandIssue(ww.p, msg.InstanceID); err != nil {
 		return err
 	}
