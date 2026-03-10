@@ -73,10 +73,19 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 			wh, err = parseWebhookUnspecified(jwh)
 		}
 	case commentCreated:
+		if isServerWebhook(jwh) {
+			return nil, ErrWebhookIgnored
+		}
 		wh, err = parseWebhookCommentCreated(jwh)
 	case commentUpdated:
+		if isServerWebhook(jwh) {
+			return nil, ErrWebhookIgnored
+		}
 		wh, err = parseWebhookCommentUpdated(jwh)
 	case commentDeleted:
+		if isServerWebhook(jwh) {
+			return nil, ErrWebhookIgnored
+		}
 		wh, err = parseWebhookCommentDeleted(jwh)
 	case worklogUpdated:
 		// not supported
@@ -578,6 +587,10 @@ func parseWebhookUpdatedLabels(jwh *JiraWebhook, from, to, fromWithDefault, toWi
 	wh := newWebhook(jwh, eventUpdatedLabels, "%s", mdAddRemove(from, to, "**added** labels", "**removed** labels"))
 	wh.fieldInfo = webhookField{"labels", "labels", fromWithDefault, toWithDefault}
 	return wh
+}
+
+func isServerWebhook(jwh *JiraWebhook) bool {
+	return jwh.User.Key != ""
 }
 
 // mergeWebhookEvents assumes len(events) > 1
