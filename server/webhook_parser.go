@@ -580,6 +580,12 @@ func parseWebhookUpdatedLabels(jwh *JiraWebhook, from, to, fromWithDefault, toWi
 	return wh
 }
 
+func isStandaloneCommentEvent(jwh *JiraWebhook) bool {
+	return jwh.WebhookEvent == commentCreated ||
+		jwh.WebhookEvent == commentUpdated ||
+		jwh.WebhookEvent == commentDeleted
+}
+
 // mergeWebhookEvents assumes len(events) > 1
 func mergeWebhookEvents(events []*webhook) Webhook {
 	merged := &webhook{
