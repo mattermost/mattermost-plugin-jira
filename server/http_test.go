@@ -425,6 +425,26 @@ func TestSubscribe(t *testing.T) {
 						},
 					}), t),
 		},
+		"Reject DM channel subscription": {
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "some name", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			expectedStatusCode: http.StatusBadRequest,
+			apiCalls: func(api *plugintest.API) {
+				api.On("GetChannel", "aaaaaaaaaaaaaaaaaaaaaaaaab").Return(&model.Channel{
+					Id:   "aaaaaaaaaaaaaaaaaaaaaaaaab",
+					Type: model.ChannelTypeDirect,
+				}, nil)
+			},
+		},
+		"Reject GM channel subscription": {
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "some name", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			expectedStatusCode: http.StatusBadRequest,
+			apiCalls: func(api *plugintest.API) {
+				api.On("GetChannel", "aaaaaaaaaaaaaaaaaaaaaaaaab").Return(&model.Channel{
+					Id:   "aaaaaaaaaaaaaaaaaaaaaaaaab",
+					Type: model.ChannelTypeGroup,
+				}, nil)
+			},
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
@@ -440,6 +460,13 @@ func TestSubscribe(t *testing.T) {
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
+			}
+
+			if !api.IsMethodCallable(t, "GetChannel", mock.AnythingOfType("string")) {
+				api.On("GetChannel", mock.AnythingOfType("string")).Return(&model.Channel{
+					Id:   "aaaaaaaaaaaaaaaaaaaaaaaaab",
+					Type: model.ChannelTypeOpen,
+				}, nil)
 			}
 
 			p.updateConfig(func(conf *config) {
@@ -761,6 +788,26 @@ func TestEditSubscription(t *testing.T) {
 						},
 					}), t),
 		},
+		"Reject editing DM channel subscription": {
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "some name", "id": "subaaaaaaaaaabbbbbbbbbbccc", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			expectedStatusCode: http.StatusBadRequest,
+			apiCalls: func(api *plugintest.API) {
+				api.On("GetChannel", "channelaaaaaaaaaabbbbbbbbb").Return(&model.Channel{
+					Id:   "channelaaaaaaaaaabbbbbbbbb",
+					Type: model.ChannelTypeDirect,
+				}, nil)
+			},
+		},
+		"Reject editing GM channel subscription": {
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "some name", "id": "subaaaaaaaaaabbbbbbbbbbccc", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			expectedStatusCode: http.StatusBadRequest,
+			apiCalls: func(api *plugintest.API) {
+				api.On("GetChannel", "channelaaaaaaaaaabbbbbbbbb").Return(&model.Channel{
+					Id:   "channelaaaaaaaaaabbbbbbbbb",
+					Type: model.ChannelTypeGroup,
+				}, nil)
+			},
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
@@ -776,6 +823,13 @@ func TestEditSubscription(t *testing.T) {
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
+			}
+
+			if !api.IsMethodCallable(t, "GetChannel", mock.AnythingOfType("string")) {
+				api.On("GetChannel", mock.AnythingOfType("string")).Return(&model.Channel{
+					Id:   "channelaaaaaaaaaabbbbbbbbb",
+					Type: model.ChannelTypeOpen,
+				}, nil)
 			}
 
 			p.updateConfig(func(conf *config) {

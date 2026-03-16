@@ -132,9 +132,13 @@ func TestDisconnectUserDueToExpiredToken(t *testing.T) {
 					return b.UserId == testMattermostUserID.String()
 				})).Return().Once()
 
+				// GetDirectChannel called twice, once for DM subscription cleanup, once for DM notification
 				api.On("GetDirectChannel", testMattermostUserID.String(), testBotUserID).Return(&model.Channel{
 					Id: testChannelID,
-				}, nil).Once()
+				}, nil)
+
+				// KVGet for subscription cleanup
+				api.On("KVGet", mock.AnythingOfType("string")).Return(nil, nil)
 
 				api.On("CreatePost", mock.MatchedBy(func(post *model.Post) bool {
 					return post.UserId == testBotUserID &&

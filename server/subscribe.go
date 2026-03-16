@@ -444,6 +444,54 @@ func (p *Plugin) removeChannelSubscription(instanceID types.ID, subscriptionID s
 	})
 }
 
+func (p *Plugin) removeSubscriptionsForDMChannel(instanceID types.ID, channelID string) error {
+	subs, err := p.getSubscriptions(instanceID)
+	if err != nil {
+		return err
+	}
+
+	if subs.Channel.IDByChannelID[channelID].Len() == 0 {
+		return nil
+	}
+
+	subKey := keyWithInstanceID(instanceID, JiraSubscriptionsKey)
+	return p.client.KV.SetAtomicWithRetries(subKey, func(initialBytes []byte) (interface{}, error) {
+		subs, err := SubscriptionsFromJSON(initialBytes, instanceID)
+		if err != nil {
+			return nil, err
+		}
+
+		subIDs := subs.Channel.IDByChannelID[channelID]
+		for _, subID := range subIDs.Elems() {
+			if sub, ok := subs.Channel.ByID[subID]; ok {
+				subs.Channel.remove(&sub)
+			}
+		}
+
+		modifiedBytes, marshalErr := json.Marshal(&subs)
+		if marshalErr != nil {
+			return nil, marshalErr
+		}
+
+		return modifiedBytes, nil
+	})
+}
+
+func (p *Plugin) cleanupDMSubscriptionsOnDisconnect(instanceID types.ID, mattermostUserID string) {
+	conf := p.getConfig()
+	dmChannel, err := p.client.Channel.GetDirect(mattermostUserID, conf.botUserID)
+	if err != nil {
+		return
+	}
+
+	if err := p.removeSubscriptionsForDMChannel(instanceID, dmChannel.Id); err != nil {
+		p.client.Log.Warn("Failed to clean up DM subscriptions on disconnect",
+			"mattermostUserID", mattermostUserID,
+			"instanceID", string(instanceID),
+			"error", err.Error())
+	}
+}
+
 func (p *Plugin) addChannelSubscription(instanceID types.ID, newSubscription *ChannelSubscription, client Client) error {
 	subKey := keyWithInstanceID(instanceID, JiraSubscriptionsKey)
 	return p.client.KV.SetAtomicWithRetries(subKey, func(initialBytes []byte) (interface{}, error) {
@@ -1114,6 +1162,16 @@ func (p *Plugin) httpChannelCreateSubscription(w http.ResponseWriter, r *http.Re
 			errors.New("not a member of the channel specified"))
 	}
 
+	channel, appErr := p.client.Channel.Get(subscription.ChannelID)
+	if appErr != nil {
+		return respondErr(w, http.StatusInternalServerError,
+			errors.Wrap(appErr, "failed to get channel"))
+	}
+	if channel.Type == model.ChannelTypeDirect || channel.Type == model.ChannelTypeGroup {
+		return respondErr(w, http.StatusBadRequest,
+			errors.New("subscriptions are not allowed in direct message or group message channels"))
+	}
+
 	err = p.hasPermissionToManageSubscription(subscription.InstanceID, mattermostUserID, subscription.ChannelID)
 	if err != nil {
 		return respondErr(w, http.StatusForbidden,
@@ -1169,6 +1227,16 @@ func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Requ
 		len(subscription.ID) != 26 {
 		return respondErr(w, http.StatusBadRequest,
 			fmt.Errorf("channel subscription invalid"))
+	}
+
+	channel, appErr := p.client.Channel.Get(subscription.ChannelID)
+	if appErr != nil {
+		return respondErr(w, http.StatusInternalServerError,
+			errors.Wrap(appErr, "failed to get channel"))
+	}
+	if channel.Type == model.ChannelTypeDirect || channel.Type == model.ChannelTypeGroup {
+		return respondErr(w, http.StatusBadRequest,
+			errors.New("subscriptions are not allowed in direct message or group message channels"))
 	}
 
 	err = p.hasPermissionToManageSubscription(subscription.InstanceID, mattermostUserID, subscription.ChannelID)
