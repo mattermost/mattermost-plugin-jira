@@ -444,7 +444,7 @@ func (p *Plugin) removeChannelSubscription(instanceID types.ID, subscriptionID s
 	})
 }
 
-func (p *Plugin) removeSubscriptionsForDMChannel(instanceID types.ID, channelID string) error {
+func (p *Plugin) removeSubscriptionsForChannel(instanceID types.ID, channelID string) error {
 	subs, err := p.getSubscriptions(instanceID)
 	if err != nil {
 		return err
@@ -481,10 +481,14 @@ func (p *Plugin) cleanupDMSubscriptionsOnDisconnect(instanceID types.ID, matterm
 	conf := p.getConfig()
 	dmChannel, err := p.client.Channel.GetDirect(mattermostUserID, conf.botUserID)
 	if err != nil {
+		p.client.Log.Warn("Failed to get DM channel for subscription cleanup on disconnect",
+			"mattermostUserID", mattermostUserID,
+			"instanceID", string(instanceID),
+			"error", err.Error())
 		return
 	}
 
-	if err := p.removeSubscriptionsForDMChannel(instanceID, dmChannel.Id); err != nil {
+	if err := p.removeSubscriptionsForChannel(instanceID, dmChannel.Id); err != nil {
 		p.client.Log.Warn("Failed to clean up DM subscriptions on disconnect",
 			"mattermostUserID", mattermostUserID,
 			"instanceID", string(instanceID),

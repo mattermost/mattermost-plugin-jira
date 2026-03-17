@@ -1679,7 +1679,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 	}
 }
 
-func TestRemoveSubscriptionsForDMChannel(t *testing.T) {
+func TestRemoveSubscriptionsForChannel(t *testing.T) {
 	dmChannelID := "dmchannelaaaaaaaaaaaaaaaa"
 	otherChannelID := "otherchannelbbbbbbbbbbbbbb"
 
@@ -1799,7 +1799,7 @@ func TestRemoveSubscriptionsForDMChannel(t *testing.T) {
 				}), mock.AnythingOfType("model.PluginKVSetOptions")).Return(true, nil)
 			}
 
-			err = p.removeSubscriptionsForDMChannel(testInstance1.GetID(), dmChannelID)
+			err = p.removeSubscriptionsForChannel(testInstance1.GetID(), dmChannelID)
 			assert.NoError(t, err)
 		})
 	}
@@ -1883,6 +1883,7 @@ func TestCleanupDMSubscriptionsOnDisconnect(t *testing.T) {
 		p.instanceStore = p.getMockInstanceStoreKV(1)
 
 		api.On("GetDirectChannel", mattermostUserID, botUserID).Return(nil, &model.AppError{Message: "channel not found"})
+		api.On("LogWarn", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 
 		p.cleanupDMSubscriptionsOnDisconnect(testInstance1.GetID(), mattermostUserID)
 
