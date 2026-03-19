@@ -313,6 +313,8 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 		return nil, err
 	}
 
+	p.cleanupDMSubscriptionsOnDisconnect(instance.GetID(), user.MattermostUserID.String())
+
 	info, err := p.GetUserInfo(user.MattermostUserID, user)
 	if err != nil {
 		return nil, err

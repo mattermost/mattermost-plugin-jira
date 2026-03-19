@@ -1678,3 +1678,215 @@ func TestGetChannelsSubscribed(t *testing.T) {
 		})
 	}
 }
+
+func TestRemoveSubscriptionsForChannel(t *testing.T) {
+	dmChannelID := "dmchannelaaaaaaaaaaaaaaaa"
+	otherChannelID := "otherchannelbbbbbbbbbbbbbb"
+
+	for name, tc := range map[string]struct {
+		existingSubs          []ChannelSubscription
+		expectedRemainingByID map[string]bool
+	}{
+		"no subscriptions to remove": {
+			existingSubs:          []ChannelSubscription{},
+			expectedRemainingByID: nil,
+		},
+		"remove single DM subscription": {
+			existingSubs: []ChannelSubscription{
+				{
+					ID:        "sub1______________________",
+					ChannelID: dmChannelID,
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("jira:issue_created"),
+						Projects:   NewStringSet("myproject"),
+						IssueTypes: NewStringSet("10001"),
+					},
+				},
+			},
+			expectedRemainingByID: map[string]bool{},
+		},
+		"remove DM subscription but keep other channel subscriptions": {
+			existingSubs: []ChannelSubscription{
+				{
+					ID:        "sub1______________________",
+					ChannelID: dmChannelID,
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("jira:issue_created"),
+						Projects:   NewStringSet("myproject"),
+						IssueTypes: NewStringSet("10001"),
+					},
+				},
+				{
+					ID:        "sub2______________________",
+					ChannelID: otherChannelID,
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("jira:issue_created"),
+						Projects:   NewStringSet("myproject"),
+						IssueTypes: NewStringSet("10001"),
+					},
+				},
+			},
+			expectedRemainingByID: map[string]bool{
+				"sub2______________________": true,
+			},
+		},
+		"remove multiple DM subscriptions": {
+			existingSubs: []ChannelSubscription{
+				{
+					ID:        "sub1______________________",
+					ChannelID: dmChannelID,
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("jira:issue_created"),
+						Projects:   NewStringSet("myproject"),
+						IssueTypes: NewStringSet("10001"),
+					},
+				},
+				{
+					ID:        "sub2______________________",
+					ChannelID: dmChannelID,
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("jira:issue_updated"),
+						Projects:   NewStringSet("otherproject"),
+						IssueTypes: NewStringSet("10002"),
+					},
+				},
+				{
+					ID:        "sub3______________________",
+					ChannelID: otherChannelID,
+					Filters: SubscriptionFilters{
+						Events:     NewStringSet("jira:issue_created"),
+						Projects:   NewStringSet("myproject"),
+						IssueTypes: NewStringSet("10001"),
+					},
+				},
+			},
+			expectedRemainingByID: map[string]bool{
+				"sub3______________________": true,
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+			p := Plugin{}
+
+			p.updateConfig(func(conf *config) {
+				conf.Secret = someSecret
+			})
+			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
+			p.instanceStore = p.getMockInstanceStoreKV(1)
+
+			existing := withExistingChannelSubscriptions(tc.existingSubs)
+			existingBytes, err := json.Marshal(existing)
+			require.NoError(t, err)
+
+			api.On("KVGet", testSubKey).Return(existingBytes, nil)
+
+			if tc.expectedRemainingByID != nil {
+				api.On("KVSetWithOptions", testSubKey, mock.MatchedBy(func(data []byte) bool {
+					var savedSubs Subscriptions
+					unmarshalErr := json.Unmarshal(data, &savedSubs)
+					if unmarshalErr != nil {
+						return false
+					}
+
+					for id := range savedSubs.Channel.ByID {
+						if !tc.expectedRemainingByID[id] {
+							return false
+						}
+					}
+					return len(savedSubs.Channel.ByID) == len(tc.expectedRemainingByID)
+				}), mock.AnythingOfType("model.PluginKVSetOptions")).Return(true, nil)
+			}
+
+			err = p.removeSubscriptionsForChannel(testInstance1.GetID(), dmChannelID)
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestCleanupDMSubscriptionsOnDisconnect(t *testing.T) {
+	botUserID := "botuser___________________"
+	mattermostUserID := "mmuser____________________"
+	dmChannelID := "dmchannelaaaaaaaaaaaaaaaa"
+	otherChannelID := "otherchannelbbbbbbbbbbbbbb"
+
+	t.Run("removes DM subscriptions on disconnect", func(t *testing.T) {
+		api := &plugintest.API{}
+		p := Plugin{}
+
+		p.updateConfig(func(conf *config) {
+			conf.Secret = someSecret
+			conf.botUserID = botUserID
+		})
+		p.SetAPI(api)
+		p.client = pluginapi.NewClient(api, p.Driver)
+		p.instanceStore = p.getMockInstanceStoreKV(1)
+
+		api.On("GetDirectChannel", mattermostUserID, botUserID).Return(&model.Channel{
+			Id:   dmChannelID,
+			Type: model.ChannelTypeDirect,
+		}, nil)
+
+		existing := withExistingChannelSubscriptions([]ChannelSubscription{
+			{
+				ID:        "sub1______________________",
+				ChannelID: dmChannelID,
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("jira:issue_created"),
+					Projects:   NewStringSet("myproject"),
+					IssueTypes: NewStringSet("10001"),
+				},
+			},
+			{
+				ID:        "sub2______________________",
+				ChannelID: otherChannelID,
+				Filters: SubscriptionFilters{
+					Events:     NewStringSet("jira:issue_created"),
+					Projects:   NewStringSet("myproject"),
+					IssueTypes: NewStringSet("10001"),
+				},
+			},
+		})
+		existingBytes, err := json.Marshal(existing)
+		require.NoError(t, err)
+
+		api.On("KVGet", testSubKey).Return(existingBytes, nil)
+		api.On("KVSetWithOptions", testSubKey, mock.MatchedBy(func(data []byte) bool {
+			var savedSubs Subscriptions
+			unmarshalErr := json.Unmarshal(data, &savedSubs)
+			if unmarshalErr != nil {
+				return false
+			}
+
+			_, hasDMSub := savedSubs.Channel.ByID["sub1______________________"]
+			_, hasOtherSub := savedSubs.Channel.ByID["sub2______________________"]
+			return !hasDMSub && hasOtherSub && len(savedSubs.Channel.ByID) == 1
+		}), mock.AnythingOfType("model.PluginKVSetOptions")).Return(true, nil)
+
+		api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return()
+		api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return()
+
+		p.cleanupDMSubscriptionsOnDisconnect(testInstance1.GetID(), mattermostUserID)
+	})
+
+	t.Run("no-op when DM channel does not exist", func(t *testing.T) {
+		api := &plugintest.API{}
+		p := Plugin{}
+
+		p.updateConfig(func(conf *config) {
+			conf.Secret = someSecret
+			conf.botUserID = botUserID
+		})
+		p.SetAPI(api)
+		p.client = pluginapi.NewClient(api, p.Driver)
+		p.instanceStore = p.getMockInstanceStoreKV(1)
+
+		api.On("GetDirectChannel", mattermostUserID, botUserID).Return(nil, &model.AppError{Message: "channel not found"})
+		api.On("LogWarn", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+
+		p.cleanupDMSubscriptionsOnDisconnect(testInstance1.GetID(), mattermostUserID)
+
+		api.AssertNotCalled(t, "KVGet", mock.Anything)
+	})
+}
