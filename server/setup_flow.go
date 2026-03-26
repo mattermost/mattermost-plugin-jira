@@ -321,6 +321,7 @@ func (p *Plugin) stepCloudOAuthConfigure() flow.Step {
 			"4. Select **Permissions** in the left menu. Next to the JIRA API, select **Add**.\n"+
 			"5. Then select **Configure** and ensure following scopes are selected:\n"+
 			"       %s\n"+
+			"   **Note:** In the Atlassian Developer Console these scopes are split across **Classic scopes** and **Granular scopes**.\n"+
 			"6. Select **Authorization** in the left menu.\n"+
 			"7. Next to OAuth 2.0 (3LO), select **Add** and set the Callback URL as follows and click **Save Changes**:\n"+
 			"       {{.OAuthCompleteURL}}\n"+
@@ -405,9 +406,8 @@ func (p *Plugin) stepWebhook() flow.Step {
 			"3. **Status**: Enabled.\n" +
 			"4. Leave **URL** blank for the moment. Once you are done configuring the webhook options, come back " +
 			"here and select **View Webhook URL** to see the confidential URL.\n" +
-			"5. **Issue related events**: we recommend leaving the query at **All Issues**. Check **Comment**, " +
-			"**Attachment**, and **Issue** events. We recommend checking all of these boxes. These events will be " +
-			"further filtered by Mattermost subscriptions. Leave **Entity property**, **Worklog**, and **Issue " +
+			"5. **Issue related events**: we recommend leaving the query at **All Issues**. Check **Comment** " +
+			"and **Issue** events. Leave **Entity property**, **Worklog**, and **Issue " +
 			"link** events unchecked, they are not yet supported.\n" +
 			"6. Leave all other checkboxes blank.\n" +
 			"7. Select **View Webhook URL** to see the secret **URL** to enter in Jira, and continue.\n").
