@@ -1679,15 +1679,24 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 			commentAuthor, jwhook.mdKeySummaryLink(), jwhook.mdIssueType())
 	}
 	client, connection, err := wh.fetchConnectedUser(p, instanceID)
-	if err != nil || client == nil {
-		p.errorf("error while fetching connected users for the instanceID %v , Error : %v", instanceID, err)
-		return
-	}
 
-	watchers, err := client.GetWatchers(instanceID.String(), wh.Issue.ID, connection)
-	if err != nil {
-		p.errorf("error while getting watchers for the issue id %v , err : %v", wh.Issue.ID, err)
-		return
+	var watchers *jira.Watches
+	if err != nil || client == nil {
+		if p.getConfig().AdminAPIToken == "" {
+			p.errorf("error while fetching connected users for the instanceID %v and no admin API token configured, Error : %v", instanceID, err)
+			return
+		}
+		watchers, err = p.GetWatchersWithAPIToken(wh.Issue.ID, instanceID.String())
+		if err != nil {
+			p.errorf("error while getting watchers with admin API token for issue id %v , err : %v", wh.Issue.ID, err)
+			return
+		}
+	} else {
+		watchers, err = client.GetWatchers(instanceID.String(), wh.Issue.ID, connection)
+		if err != nil {
+			p.errorf("error while getting watchers for the issue id %v , err : %v", wh.Issue.ID, err)
+			return
+		}
 	}
 
 	authorVal := jwhook.Comment.UpdateAuthor
@@ -1892,6 +1901,44 @@ func (p *Plugin) GetProjectListWithAPIToken(instanceID string) (*jira.ProjectLis
 	}
 
 	return &projectResponse.Values, nil
+}
+
+func (p *Plugin) GetWatchersWithAPIToken(issueID, instanceID string) (*jira.Watches, error) {
+	httpClient := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/2/issue/%s/watchers", instanceID, issueID), nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create http request for fetching watchers. IssueID: %s", issueID)
+	}
+
+	err = p.SetAdminAPITokenRequestHeader(req)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get watchers. IssueID: %s", issueID)
+	}
+	if resp == nil || resp.Body == nil {
+		return nil, errors.Errorf("missing response for watchers. IssueID: %s", issueID)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("unexpected status code %d while fetching watchers. IssueID: %s", resp.StatusCode, issueID)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to read watchers response. IssueID: %s", issueID)
+	}
+
+	var watchers jira.Watches
+	if err = json.Unmarshal(body, &watchers); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal watchers data. IssueID: %s", issueID)
+	}
+
+	return &watchers, nil
 }
 
 func shouldNotifyWatcherUser(watcher jira.Watcher, author *jira.User) bool {
