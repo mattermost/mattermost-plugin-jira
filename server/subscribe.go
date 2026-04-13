@@ -1233,6 +1233,38 @@ func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Requ
 			fmt.Errorf("channel subscription invalid"))
 	}
 
+	existingSub, err := p.getChannelSubscription(subscription.InstanceID, subscription.ID)
+	if err != nil {
+		return respondErr(w, http.StatusBadRequest,
+			errors.Wrap(err, "failed to find existing subscription"))
+	}
+
+	err = p.hasPermissionToManageSubscription(subscription.InstanceID, mattermostUserID, existingSub.ChannelID)
+	if err != nil {
+		return respondErr(w, http.StatusForbidden,
+			errors.Wrap(err, "you don't have permission to manage subscriptions in the original channel"))
+	}
+
+	_, err = p.client.Channel.GetMember(existingSub.ChannelID, mattermostUserID)
+	if err != nil {
+		return respondErr(w, http.StatusForbidden,
+			errors.New("not a member of the channel that owns this subscription"))
+	}
+
+	if subscription.ChannelID != existingSub.ChannelID {
+		err = p.hasPermissionToManageSubscription(subscription.InstanceID, mattermostUserID, subscription.ChannelID)
+		if err != nil {
+			return respondErr(w, http.StatusForbidden,
+				errors.Wrap(err, "you don't have permission to manage subscriptions in the target channel"))
+		}
+
+		_, err = p.client.Channel.GetMember(subscription.ChannelID, mattermostUserID)
+		if err != nil {
+			return respondErr(w, http.StatusForbidden,
+				errors.New("not a member of the target channel"))
+		}
+	}
+
 	channel, appErr := p.client.Channel.Get(subscription.ChannelID)
 	if appErr != nil {
 		return respondErr(w, http.StatusInternalServerError,
@@ -1241,18 +1273,6 @@ func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Requ
 	if channel.Type == model.ChannelTypeDirect || channel.Type == model.ChannelTypeGroup {
 		return respondErr(w, http.StatusBadRequest,
 			errors.New("subscriptions are not allowed in direct message or group message channels"))
-	}
-
-	err = p.hasPermissionToManageSubscription(subscription.InstanceID, mattermostUserID, subscription.ChannelID)
-	if err != nil {
-		return respondErr(w, http.StatusForbidden,
-			errors.Wrap(err, "you don't have permission to manage subscriptions"))
-	}
-
-	_, err = p.client.Channel.GetMember(subscription.ChannelID, mattermostUserID)
-	if err != nil {
-		return respondErr(w, http.StatusForbidden,
-			errors.New("not a member of the channel specified"))
 	}
 
 	client, _, connection, err := p.getClient(subscription.InstanceID, types.ID(mattermostUserID))
