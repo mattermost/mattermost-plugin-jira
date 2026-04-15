@@ -636,9 +636,22 @@ func TestEditSubscription(t *testing.T) {
 			expectedStatusCode: http.StatusBadRequest,
 		},
 		"No Permissions": {
-			subscription:       `{"id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "project": ["otherproject"]}}`,
+			subscription:       `{"instance_id": "https://jiraurl1.com", "id": "aaaaaaaaaaaaaaaaaaaaaaaaab", "channel_id": "aaaaaaaaaaaaaaaaaaaaaaaaac", "filters": {"events": ["jira:issue_created"], "project": ["otherproject"]}}`,
 			expectedStatusCode: http.StatusForbidden,
 			apiCalls: func(api *plugintest.API) {
+				existing := withExistingChannelSubscriptions([]ChannelSubscription{
+					{
+						ID:        "aaaaaaaaaaaaaaaaaaaaaaaaab",
+						ChannelID: "aaaaaaaaaaaaaaaaaaaaaaaaac",
+						Filters: SubscriptionFilters{
+							Events:     NewStringSet("jira:issue_created"),
+							Projects:   NewStringSet("myproject"),
+							IssueTypes: NewStringSet("10001"),
+						},
+					},
+				})
+				existingBytes, _ := json.Marshal(existing)
+				api.On("KVGet", testSubKey).Return(existingBytes, nil)
 				api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(false)
 			},
 		},
@@ -792,6 +805,20 @@ func TestEditSubscription(t *testing.T) {
 			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "some name", "id": "subaaaaaaaaaabbbbbbbbbbccc", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusBadRequest,
 			apiCalls: func(api *plugintest.API) {
+				existing := withExistingChannelSubscriptions([]ChannelSubscription{
+					{
+						ID:        "subaaaaaaaaaabbbbbbbbbbccc",
+						ChannelID: "channelaaaaaaaaaabbbbbbbbb",
+						Filters: SubscriptionFilters{
+							Events:     NewStringSet("jira:issue_created"),
+							Projects:   NewStringSet("myproject"),
+							IssueTypes: NewStringSet("10001"),
+						},
+					},
+				})
+				existingBytes, _ := json.Marshal(existing)
+				api.On("KVGet", testSubKey).Return(existingBytes, nil)
+				api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
 				api.On("GetChannel", "channelaaaaaaaaaabbbbbbbbb").Return(&model.Channel{
 					Id:   "channelaaaaaaaaaabbbbbbbbb",
 					Type: model.ChannelTypeDirect,
@@ -802,10 +829,31 @@ func TestEditSubscription(t *testing.T) {
 			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "some name", "id": "subaaaaaaaaaabbbbbbbbbbccc", "channel_id": "channelaaaaaaaaaabbbbbbbbb", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
 			expectedStatusCode: http.StatusBadRequest,
 			apiCalls: func(api *plugintest.API) {
+				existing := withExistingChannelSubscriptions([]ChannelSubscription{
+					{
+						ID:        "subaaaaaaaaaabbbbbbbbbbccc",
+						ChannelID: "channelaaaaaaaaaabbbbbbbbb",
+						Filters: SubscriptionFilters{
+							Events:     NewStringSet("jira:issue_created"),
+							Projects:   NewStringSet("myproject"),
+							IssueTypes: NewStringSet("10001"),
+						},
+					},
+				})
+				existingBytes, _ := json.Marshal(existing)
+				api.On("KVGet", testSubKey).Return(existingBytes, nil)
+				api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
 				api.On("GetChannel", "channelaaaaaaaaaabbbbbbbbb").Return(&model.Channel{
 					Id:   "channelaaaaaaaaaabbbbbbbbb",
 					Type: model.ChannelTypeGroup,
 				}, nil)
+			},
+		},
+		"Reject editing non-existent subscription": {
+			subscription:       `{"instance_id": "https://jiraurl1.com", "name": "hijacked", "id": "nonexistentsubidaaaaaaaaaa", "channel_id": "attackerchannelaaabbbbbccc", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`,
+			expectedStatusCode: http.StatusBadRequest,
+			apiCalls: func(api *plugintest.API) {
+				api.On("KVGet", testSubKey).Return(nil, nil)
 			},
 		},
 	} {
