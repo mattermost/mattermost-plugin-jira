@@ -207,7 +207,22 @@ func mdUser(user *jira.User) string {
 	if user == nil {
 		return ""
 	}
-	return user.DisplayName
+	if user.DisplayName != "" {
+		return user.DisplayName
+	}
+	if user.Name != "" {
+		return user.Name
+	}
+	if user.EmailAddress != "" {
+		return user.EmailAddress
+	}
+	if user.AccountID != "" {
+		return user.AccountID
+	}
+	if user.Key != "" {
+		return user.Key
+	}
+	return "Someone"
 }
 
 func truncate(s string, maxLen int) string {
