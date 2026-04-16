@@ -207,20 +207,20 @@ func mdUser(user *jira.User) string {
 	if user == nil {
 		return ""
 	}
-	if user.DisplayName != "" {
-		return user.DisplayName
+	if v := strings.TrimSpace(user.DisplayName); v != "" {
+		return v
 	}
-	if user.Name != "" {
-		return user.Name
+	if v := strings.TrimSpace(user.Name); v != "" {
+		return v
 	}
-	if user.EmailAddress != "" {
-		return user.EmailAddress
+	if v := strings.TrimSpace(user.AccountID); v != "" {
+		return v
 	}
-	if user.AccountID != "" {
-		return user.AccountID
+	if v := strings.TrimSpace(user.Key); v != "" {
+		return v
 	}
-	if user.Key != "" {
-		return user.Key
+	if v := strings.TrimSpace(user.EmailAddress); v != "" {
+		return v
 	}
 	return "Someone"
 }
