@@ -60,12 +60,16 @@ export default class JiraIssueSelector extends Component {
         };
 
         return this.props.searchIssues(params).then(({data}) => {
+            if (!data) {
+                return [];
+            }
             return data.map((issue) => ({
                 value: issue.key,
                 label: `${issue.key}: ${issue.fields.summary}`,
             }));
         }).catch((e) => {
             this.setState({error: e});
+            return [];
         });
     };
 

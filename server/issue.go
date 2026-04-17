@@ -925,8 +925,13 @@ func (p *Plugin) GetSearchIssues(instanceID, mattermostUserID types.ID, q, jqlSt
 		fieldsStr = "key,summary"
 	}
 	if len(jqlString) == 0 {
-		escaped := strings.ReplaceAll(q, `"`, `\"`)
-		jqlString = fmt.Sprintf(`text ~ "%s" OR text ~ "%s*"`, escaped, escaped)
+		q = strings.TrimSpace(q)
+		if len(q) == 0 {
+			jqlString = "ORDER BY updated DESC"
+		} else {
+			escaped := strings.ReplaceAll(q, `"`, `\"`)
+			jqlString = fmt.Sprintf(`text ~ "%s" OR text ~ "%s*"`, escaped, escaped)
+		}
 	}
 
 	limit := 50
