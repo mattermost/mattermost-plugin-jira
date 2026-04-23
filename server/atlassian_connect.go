@@ -4,6 +4,7 @@
 package main
 
 import (
+	"crypto/hmac"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -16,10 +17,21 @@ import (
 const userRedirectPageKey = "user-redirect"
 
 func (p *Plugin) httpACJSON(w http.ResponseWriter, r *http.Request, instanceID types.ID) (int, error) {
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError,
+			errors.WithMessage(err, "failed to load instance"))
+	}
+
+	installRoute := routeACInstalled
+	if ci, ok := instance.(*cloudInstance); ok && ci.InstallToken != "" {
+		installRoute = routeACInstalled + "?token=" + ci.InstallToken
+	}
+
 	return p.respondTemplate(w, r, "application/json", map[string]string{
 		"BaseURL":                      p.GetPluginURL(),
 		"RouteACJSON":                  instancePath(routeACJSON, instanceID),
-		"RouteACInstalled":             routeACInstalled,
+		"RouteACInstalled":             installRoute,
 		"RouteACUninstalled":           routeACUninstalled,
 		"RouteACUserRedirectWithToken": instancePath(routeACUserRedirectWithToken, instanceID),
 		"UserRedirectPageKey":          userRedirectPageKey,
@@ -62,6 +74,14 @@ func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request) (int, e
 	if ci.Installed {
 		return respondErr(w, http.StatusForbidden,
 			errors.Errorf("Jira instance %s is already installed", asc.BaseURL))
+	}
+
+	if ci.InstallToken != "" {
+		providedToken := r.URL.Query().Get("token")
+		if !hmac.Equal([]byte(providedToken), []byte(ci.InstallToken)) {
+			return respondErr(w, http.StatusForbidden,
+				errors.New("invalid install token"))
+		}
 	}
 
 	// Create a permanent instance record, also store it as current

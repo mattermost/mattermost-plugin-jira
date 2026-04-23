@@ -7,6 +7,7 @@ import (
 	"crypto/md5" // #nosec G501
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -445,6 +446,12 @@ func (store *store) CreateInactiveCloudInstance(jiraURL types.ID, actingUserID s
 		fmt.Sprintf(`{"BaseURL": "%s"}`, jiraURL),
 		&AtlassianSecurityContext{BaseURL: jiraURL.String()})
 	ci.SetupWizardUserID = actingUserID
+
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		return errors.Wrap(err, "failed to generate install token")
+	}
+	ci.InstallToken = hex.EncodeToString(tokenBytes)
 
 	data, err := json.Marshal(ci)
 	if err != nil {

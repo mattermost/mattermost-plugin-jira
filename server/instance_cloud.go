@@ -34,6 +34,12 @@ type cloudInstance struct {
 	// for the instance.
 	Installed bool
 
+	// InstallToken is a cryptographic nonce generated when an inactive instance
+	// is created. It is embedded in the atlassian-connect.json installed callback
+	// URL and verified on the /ac/installed endpoint to prevent unauthenticated
+	// callers from injecting a rogue sharedSecret.
+	InstallToken string `json:"install_token,omitempty"`
+
 	// For cloud instances (atlassian-connect.json install and user auth)
 	RawAtlassianSecurityContext string
 	*AtlassianSecurityContext   `json:"-"`
