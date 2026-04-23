@@ -1665,7 +1665,9 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 }
 
 func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
+	p.client.Log.Warn("DEBUG checkIssueWatchers entered", "event_types", fmt.Sprintf("%v", wh.eventTypes), "issue_id", wh.Issue.ID, "instance_id", instanceID.String())
 	if !wh.eventTypes.ContainsAny(createdCommentEvent) {
+		p.client.Log.Warn("DEBUG checkIssueWatchers skipped: not a comment event", "event_types", fmt.Sprintf("%v", wh.eventTypes))
 		return
 	}
 
@@ -1688,6 +1690,7 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 
 	var watchers *jira.Watches
 	if client == nil {
+		p.client.Log.Warn("DEBUG no connected user, trying admin token fallback", "admin_token_set", p.getConfig().AdminAPIToken != "", "admin_email_set", p.getConfig().AdminEmail != "")
 		if p.getConfig().AdminAPIToken == "" {
 			p.errorf("no connected user found and no admin API token configured. InstanceID: %v, IssueID: %v", instanceID, wh.Issue.ID)
 			return
@@ -1697,7 +1700,9 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 			p.errorf("failed to get watchers with admin API token. IssueID: %v, InstanceID: %v, err: %v", wh.Issue.ID, instanceID, err)
 			return
 		}
+		p.client.Log.Warn("DEBUG admin token watchers result", "watch_count", watchers.WatchCount, "watchers_len", len(watchers.Watchers))
 	} else {
+		p.client.Log.Warn("DEBUG connected user found, using client", "connection_name", connection.Name)
 		watchers, err = client.GetWatchers(instanceID.String(), wh.Issue.ID, connection)
 		if err != nil {
 			p.errorf("error while getting watchers for the issue id %v , err : %v", wh.Issue.ID, err)
