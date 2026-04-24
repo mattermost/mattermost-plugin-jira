@@ -25,13 +25,13 @@ const (
 	v2keyCurrentJIRAInstance = "current_jira_instance"
 	v2keyKnownJiraInstances  = "known_jira_instances"
 
-	keyInstances        = "instances/v3"
-	keyRSAKey           = "rsa_key"
-	keyTokenSecret      = "token_secret"
-	prefixInstance           = "jira_instance_"
-	prefixPendingCloudRoute  = "jira_pcsetup_" // opaque routing id to jira URL during Connect install window
-	prefixOneTimeSecret      = "ots_"          // + unique key that will be deleted after the first verification
-	prefixUser               = "user_"
+	keyInstances            = "instances/v3"
+	keyRSAKey               = "rsa_key"
+	keyTokenSecret          = "token_secret"
+	prefixInstance          = "jira_instance_"
+	prefixPendingCloudRoute = "jira_pcsetup_" // opaque routing id to jira URL during Connect install window
+	prefixOneTimeSecret     = "ots_"          // + unique key that will be deleted after the first verification
+	prefixUser              = "user_"
 )
 
 type JiraV2Instances map[string]string
