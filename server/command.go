@@ -875,7 +875,7 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 		return p.help(header)
 	}
 
-	jiraURL, err := p.installInactiveCloudInstance(args[0], header.UserId)
+	jiraURL, setupRoutingSecret, err := p.installInactiveCloudInstance(args[0], header.UserId)
 	if err != nil {
 		return p.response(header, err.Error())
 	}
@@ -883,7 +883,7 @@ func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.Com
 	return p.respondCommandTemplate(header, "/command/install_cloud.md", map[string]string{
 		"JiraURL":                 jiraURL,
 		"PluginURL":               p.GetPluginURL(),
-		"AtlassianConnectJSONURL": p.GetPluginURL() + instancePath(routeACJSON, types.ID(jiraURL)),
+		"AtlassianConnectJSONURL": p.GetPluginURL() + instancePath(routeACJSON, types.ID(setupRoutingSecret)),
 	})
 }
 

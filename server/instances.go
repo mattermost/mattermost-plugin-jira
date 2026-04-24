@@ -258,6 +258,13 @@ func (p *Plugin) StoreV2LegacyInstance(id types.ID) error {
 
 func (p *Plugin) ResolveWebhookInstanceURL(instanceURL string) (types.ID, error) {
 	var err error
+	if instanceURL != "" && isOpaqueCloudSetupRoutingID(instanceURL) {
+		jiraURL, err := p.instanceStore.LoadPendingCloudSetupRoute(types.ID(instanceURL))
+		if err != nil {
+			return "", err
+		}
+		return jiraURL, nil
+	}
 	if instanceURL != "" {
 		instanceURL, err = utils.NormalizeJiraURL(instanceURL)
 		if err != nil {

@@ -7,6 +7,7 @@ import (
 	"crypto/md5" // #nosec G501
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -24,12 +25,13 @@ const (
 	v2keyCurrentJIRAInstance = "current_jira_instance"
 	v2keyKnownJiraInstances  = "known_jira_instances"
 
-	keyInstances        = "instances/v3"
-	keyRSAKey           = "rsa_key"
-	keyTokenSecret      = "token_secret"
-	prefixInstance      = "jira_instance_"
-	prefixOneTimeSecret = "ots_" // + unique key that will be deleted after the first verification
-	prefixUser          = "user_"
+	keyInstances            = "instances/v3"
+	keyRSAKey               = "rsa_key"
+	keyTokenSecret          = "token_secret"
+	prefixInstance          = "jira_instance_"
+	prefixPendingCloudRoute = "jira_pcsetup_" // opaque routing id to jira URL during Connect install window
+	prefixOneTimeSecret     = "ots_"          // + unique key that will be deleted after the first verification
+	prefixUser              = "user_"
 )
 
 type JiraV2Instances map[string]string
@@ -47,11 +49,14 @@ type SecretsStore interface {
 }
 
 type InstanceStore interface {
-	CreateInactiveCloudInstance(_ types.ID, actingUserID string) error
+	CreateInactiveCloudInstance(_ types.ID, actingUserID string) (setupRoutingSecret string, err error)
 	DeleteInstance(types.ID) error
 	LoadInstance(types.ID) (Instance, error)
 	LoadInstanceFullKey(string) (Instance, error)
 	LoadInstances() (*Instances, error)
+	LoadPendingCloudSetupRoute(opaque types.ID) (jiraURL types.ID, err error)
+	StorePendingCloudSetupRoute(opaque, jiraURL types.ID) error
+	DeletePendingCloudSetupRoute(opaque types.ID) error
 	StoreInstance(instance Instance) error
 	StoreInstances(*Instances) error
 }
@@ -440,25 +445,81 @@ func (store store) OneTimeLoadOauth1aTemporaryCredentials(mmUserID string) (*OAu
 	return &credentials, nil
 }
 
-func (store *store) CreateInactiveCloudInstance(jiraURL types.ID, actingUserID string) (returnErr error) {
+func (store *store) CreateInactiveCloudInstance(jiraURL types.ID, actingUserID string) (string, error) {
 	ci := newCloudInstance(store.plugin, jiraURL, false,
 		fmt.Sprintf(`{"BaseURL": "%s"}`, jiraURL),
 		&AtlassianSecurityContext{BaseURL: jiraURL.String()})
 	ci.SetupWizardUserID = actingUserID
 
+	routeSecret := make([]byte, 32)
+	if _, err := rand.Read(routeSecret); err != nil {
+		return "", errors.Wrap(err, "failed to generate setup routing secret")
+	}
+	ci.SetupRoutingSecret = hex.EncodeToString(routeSecret)
+
+	if err := store.StorePendingCloudSetupRoute(types.ID(ci.SetupRoutingSecret), jiraURL); err != nil {
+		return "", err
+	}
+
+	ci.PluginVersion = manifest.Version
+
 	data, err := json.Marshal(ci)
 	if err != nil {
-		return errors.WithMessagef(err, "failed to store new Jira Cloud instance:%s", jiraURL)
+		return "", errors.WithMessagef(err, "failed to store new Jira Cloud instance:%s", jiraURL)
 	}
-	ci.PluginVersion = manifest.Version
 
 	// Expire in 15 minutes
 	key := hashkey(prefixInstance, ci.GetURL())
 	_, err = store.plugin.client.KV.Set(key, data, pluginapi.SetExpiry(15*60))
 	if err != nil {
-		return errors.WithMessagef(err, "failed to store new Jira Cloud instance:%s", jiraURL)
+		return "", errors.WithMessagef(err, "failed to store new Jira Cloud instance:%s", jiraURL)
 	}
 	store.plugin.debugf("Stored: new Jira Cloud instance: %s as %s", ci.GetURL(), key)
+	return ci.SetupRoutingSecret, nil
+}
+
+type pendingCloudSetupRoute struct {
+	JiraURL string `json:"j"`
+}
+
+func (store *store) StorePendingCloudSetupRoute(opaque, jiraURL types.ID) error {
+	payload, err := json.Marshal(pendingCloudSetupRoute{JiraURL: jiraURL.String()})
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal pending cloud setup route")
+	}
+	key := hashkey(prefixPendingCloudRoute, opaque.String())
+	_, err = store.plugin.client.KV.Set(key, payload, pluginapi.SetExpiry(15*60))
+	if err != nil {
+		return errors.WithMessage(err, "failed to store pending cloud setup route")
+	}
+	return nil
+}
+
+func (store *store) LoadPendingCloudSetupRoute(opaque types.ID) (types.ID, error) {
+	var data []byte
+	key := hashkey(prefixPendingCloudRoute, opaque.String())
+	err := store.plugin.client.KV.Get(key, &data)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load pending cloud setup route")
+	}
+	if len(data) == 0 {
+		return "", errors.Wrap(kvstore.ErrNotFound, "pending cloud setup route not found")
+	}
+	var p pendingCloudSetupRoute
+	if err := json.Unmarshal(data, &p); err != nil {
+		return "", errors.Wrap(err, "failed to unmarshal pending cloud setup route")
+	}
+	if p.JiraURL == "" {
+		return "", errors.Wrap(kvstore.ErrNotFound, "pending cloud setup route empty")
+	}
+	return types.ID(p.JiraURL), nil
+}
+
+func (store *store) DeletePendingCloudSetupRoute(opaque types.ID) error {
+	key := hashkey(prefixPendingCloudRoute, opaque.String())
+	if err := store.plugin.client.KV.Delete(key); err != nil {
+		return errors.WithMessage(err, "failed to delete pending cloud setup route")
+	}
 	return nil
 }
 
