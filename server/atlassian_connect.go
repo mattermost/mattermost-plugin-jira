@@ -65,7 +65,7 @@ func (p *Plugin) httpACInstalledGlobal(w http.ResponseWriter, r *http.Request) (
 	return p.processACInstalled(w, r, "", false)
 }
 
-func (p *Plugin) httpACInstalled(w http.ResponseWriter, r *http.Request, _ types.ID) (int, error) {
+func (p *Plugin) httpACInstalledInstanceScoped(w http.ResponseWriter, r *http.Request) (int, error) {
 	rawPathID, _ := splitInstancePath(r.URL.Path)
 	return p.processACInstalled(w, r, rawPathID, true)
 }

@@ -127,7 +127,9 @@ func (p *Plugin) initializeRouter() {
 
 	// Atlassian Connect application
 	instanceRouter.HandleFunc(routeACJSON, p.handleResponseWithCallbackInstance(p.httpACJSON)).Methods(http.MethodGet)
-	instanceRouter.HandleFunc(routeACInstalled, p.handleResponseWithCallbackInstance(p.httpACInstalled)).Methods(http.MethodPost)
+	// Do not use handleResponseWithCallbackInstance: ResolveWebhookInstanceURL errors
+	// would become 500 before processACInstalled can return 403/404.
+	instanceRouter.HandleFunc(routeACInstalled, p.handleResponse(p.httpACInstalledInstanceScoped)).Methods(http.MethodPost)
 	p.router.HandleFunc(routeACInstalled, p.handleResponse(p.httpACInstalledGlobal)).Methods(http.MethodPost)
 	p.router.HandleFunc(routeACUninstalled, p.handleResponse(p.httpACUninstalled)).Methods(http.MethodPost)
 

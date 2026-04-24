@@ -461,11 +461,12 @@ func (store *store) CreateInactiveCloudInstance(jiraURL types.ID, actingUserID s
 		return "", err
 	}
 
+	ci.PluginVersion = manifest.Version
+
 	data, err := json.Marshal(ci)
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed to store new Jira Cloud instance:%s", jiraURL)
 	}
-	ci.PluginVersion = manifest.Version
 
 	// Expire in 15 minutes
 	key := hashkey(prefixInstance, ci.GetURL())
