@@ -127,7 +127,8 @@ func (p *Plugin) initializeRouter() {
 
 	// Atlassian Connect application
 	instanceRouter.HandleFunc(routeACJSON, p.handleResponseWithCallbackInstance(p.httpACJSON)).Methods(http.MethodGet)
-	p.router.HandleFunc(routeACInstalled, p.handleResponse(p.httpACInstalled)).Methods(http.MethodPost)
+	instanceRouter.HandleFunc(routeACInstalled, p.handleResponseWithCallbackInstance(p.httpACInstalled)).Methods(http.MethodPost)
+	p.router.HandleFunc(routeACInstalled, p.handleResponse(p.httpACInstalledGlobal)).Methods(http.MethodPost)
 	p.router.HandleFunc(routeACUninstalled, p.handleResponse(p.httpACUninstalled)).Methods(http.MethodPost)
 
 	// Atlassian Connect user mapping
@@ -297,6 +298,23 @@ func splitInstancePath(route string) (instanceURL string, remainingPath string) 
 		return "", route
 	}
 	return string(id), leadingSlash + strings.Join(ss[2:], "/")
+}
+
+// isOpaqueCloudSetupRoutingID reports whether s is the hex encoding of 32 random
+// bytes (SetupRoutingSecret), as used in instance paths during Jira Cloud Connect setup.
+func isOpaqueCloudSetupRoutingID(s string) bool {
+	if len(s) != 64 {
+		return false
+	}
+	for _, c := range s {
+		switch {
+		case c >= '0' && c <= '9':
+		case c >= 'a' && c <= 'f':
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func (p *Plugin) withRecovery(next http.Handler) http.Handler {

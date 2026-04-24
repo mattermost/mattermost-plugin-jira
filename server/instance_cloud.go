@@ -34,11 +34,11 @@ type cloudInstance struct {
 	// for the instance.
 	Installed bool
 
-	// InstallToken is a cryptographic nonce generated when an inactive instance
-	// is created. It is embedded in the atlassian-connect.json installed callback
-	// URL and verified on the /ac/installed endpoint to prevent unauthenticated
-	// callers from injecting a rogue sharedSecret.
-	InstallToken string `json:"install_token,omitempty"`
+	// SetupRoutingSecret is a high-entropy value used only in instance URL paths
+	// during the Atlassian Connect install window. It must not appear in public
+	// descriptor responses reachable via the Jira-URL-derived path alone; the admin
+	// receives the full descriptor URL from Mattermost after /jira install.
+	SetupRoutingSecret string `json:"setup_routing_secret,omitempty"`
 
 	// For cloud instances (atlassian-connect.json install and user auth)
 	RawAtlassianSecurityContext string
@@ -69,30 +69,30 @@ func newCloudInstance(p *Plugin, key types.ID, installed bool, rawASC string, as
 	}
 }
 
-func (p *Plugin) installInactiveCloudInstance(rawURL string, actingUserID string) (string, error) {
-	jiraURL, err := utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
+func (p *Plugin) installInactiveCloudInstance(rawURL string, actingUserID string) (jiraURL, setupRoutingSecret string, err error) {
+	jiraURL, err = utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if !strings.HasPrefix(jiraURL, "https://") {
-		return "", errors.New("a secure HTTPS URL is required")
+		return "", "", errors.New("a secure HTTPS URL is required")
 	}
 
 	instances, _ := p.instanceStore.LoadInstances()
 	if !p.enterpriseChecker.HasEnterpriseFeatures() {
 		if instances != nil && len(instances.IDs()) > 0 {
-			return "", errors.New(licenseErrorString)
+			return "", "", errors.New(licenseErrorString)
 		}
 	}
 
 	// Create an "uninitialized" instance of Jira Cloud that will
 	// receive the /installed callback
-	err = p.instanceStore.CreateInactiveCloudInstance(types.ID(jiraURL), actingUserID)
+	setupRoutingSecret, err = p.instanceStore.CreateInactiveCloudInstance(types.ID(jiraURL), actingUserID)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return jiraURL, err
+	return jiraURL, setupRoutingSecret, nil
 }
 
 func (ci *cloudInstance) GetMattermostKey() string {

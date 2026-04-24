@@ -49,7 +49,7 @@ func TestCloudOAuthMigration(t *testing.T) {
 			connection: nil,
 			setup: func(p *Plugin, api *plugintest.API) (instanceID string) {
 				api.On("LogDebug", "Stored: new Jira Cloud instance: https://mmtest.atlassian.net as jira_instance_b5f8e96862ed24709919a73271ae8851").Twice().Return(nil)
-				_, err := p.installInactiveCloudInstance(jiraCloudURL, mmUserID)
+				_, _, err := p.installInactiveCloudInstance(jiraCloudURL, mmUserID)
 				require.NoError(t, err)
 
 				return jiraCloudURL
@@ -78,7 +78,7 @@ func TestCloudOAuthMigration(t *testing.T) {
 				api.On("LogDebug", "Stored: new Jira Cloud instance: https://mmtest.atlassian.net as jira_instance_b5f8e96862ed24709919a73271ae8851").Return(nil)
 				api.On("LogDebug", "Stored: user someuserid key:user_daa0ef689b843fada63e9f383fce33e1: connected to:[\"https://mmtest.atlassian.net\"]").Return(nil)
 				api.On("LogDebug", "Stored: connection, keys:\n\t6d03c97fdd1dee73b64caeca04e3e0d6 (someuserid): \n\t0f1a5629834c263cd6a3d59ce216c1f5 (): someuserid").Return(nil)
-				_, err := p.installInactiveCloudInstance(jiraCloudURL, mmUserID)
+				_, _, err := p.installInactiveCloudInstance(jiraCloudURL, mmUserID)
 				require.NoError(t, err)
 
 				return jiraCloudURL
@@ -99,7 +99,7 @@ func TestCloudOAuthMigration(t *testing.T) {
 				api.On("LogDebug", "Stored: user someuserid key:user_daa0ef689b843fada63e9f383fce33e1: connected to:[\"https://mmtest.atlassian.net\"]").Return(nil)
 				api.On("LogDebug", "Stored: connection, keys:\n\t6d03c97fdd1dee73b64caeca04e3e0d6 (someuserid): \n\t0f1a5629834c263cd6a3d59ce216c1f5 (): someuserid").Return(nil)
 
-				_, err := p.installInactiveCloudInstance(jiraCloudURL, mmUserID)
+				_, _, err := p.installInactiveCloudInstance(jiraCloudURL, mmUserID)
 				require.NoError(t, err)
 
 				api.On("LogDebug", "Installing cloud-oauth over existing cloud JWT instance. Carrying over existing saved JWT instance.").Return(nil)
@@ -138,7 +138,7 @@ func TestCloudOAuthMigration(t *testing.T) {
 				api.On("LogDebug", "Stored: user someuserid key:user_daa0ef689b843fada63e9f383fce33e1: connected to:[\"https://mmtest.atlassian.net\"]").Return(nil)
 				api.On("LogDebug", "Stored: connection, keys:\n\t6d03c97fdd1dee73b64caeca04e3e0d6 (someuserid): \n\t0f1a5629834c263cd6a3d59ce216c1f5 (): someuserid").Return(nil)
 
-				_, err := p.installInactiveCloudInstance(jiraCloudURL, mmUserID)
+				_, _, err := p.installInactiveCloudInstance(jiraCloudURL, mmUserID)
 				require.NoError(t, err)
 
 				api.On("LogDebug", "Installing cloud-oauth over existing cloud JWT instance. Carrying over existing saved JWT instance.").Return(nil)
@@ -175,7 +175,7 @@ func TestCloudOAuthMigration(t *testing.T) {
 				api.On("LogDebug", "Stored: user someuserid key:user_daa0ef689b843fada63e9f383fce33e1: connected to:[\"https://mmtest.atlassian.net\"]").Return(nil)
 				api.On("LogDebug", "Stored: connection, keys:\n\t6d03c97fdd1dee73b64caeca04e3e0d6 (someuserid): \n\t0f1a5629834c263cd6a3d59ce216c1f5 (): someuserid").Return(nil)
 
-				_, err := p.installInactiveCloudInstance(jiraCloudURL, mmUserID)
+				_, _, err := p.installInactiveCloudInstance(jiraCloudURL, mmUserID)
 				require.NoError(t, err)
 
 				api.On("LogDebug", "Installing cloud-oauth over existing cloud JWT instance. Carrying over existing saved JWT instance.").Return(nil)
@@ -219,7 +219,7 @@ func TestCloudOAuthMigration(t *testing.T) {
 				api.On("LogDebug", "Stored: user someuserid key:user_daa0ef689b843fada63e9f383fce33e1: connected to:[\"https://mmtest.atlassian.net\"]").Return(nil)
 				api.On("LogDebug", "Stored: connection, keys:\n\t6d03c97fdd1dee73b64caeca04e3e0d6 (someuserid): \n\t0f1a5629834c263cd6a3d59ce216c1f5 (): someuserid").Return(nil)
 
-				_, err := p.installInactiveCloudInstance(jiraCloudURL, mmUserID)
+				_, _, err := p.installInactiveCloudInstance(jiraCloudURL, mmUserID)
 				require.NoError(t, err)
 
 				api.On("LogDebug", "Installing cloud-oauth over existing cloud JWT instance. Carrying over existing saved JWT instance.").Return(nil)
@@ -272,7 +272,7 @@ func TestCloudOAuthMigration(t *testing.T) {
 				api.On("LogDebug", "Stored: user someuserid key:user_daa0ef689b843fada63e9f383fce33e1: connected to:[\"https://mmtest.atlassian.net\"]").Return(nil)
 				api.On("LogDebug", "Stored: connection, keys:\n\t6d03c97fdd1dee73b64caeca04e3e0d6 (someuserid): \n\t0f1a5629834c263cd6a3d59ce216c1f5 (): someuserid").Return(nil)
 
-				_, err := p.installInactiveCloudInstance(jiraCloudURL, mmUserID)
+				_, _, err := p.installInactiveCloudInstance(jiraCloudURL, mmUserID)
 				require.NoError(t, err)
 
 				api.On("LogDebug", "Installing cloud-oauth over existing cloud JWT instance. Carrying over existing saved JWT instance.").Return(nil)
