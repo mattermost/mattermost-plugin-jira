@@ -1662,6 +1662,53 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 	return issue, nil
 }
 
+// GetWatchersWithAPIToken fetches the watcher list for an issue using the
+// admin API token configured in plugin settings. This serves as a fallback
+// when none of the issue's Creator, Assignee, or Reporter have connected
+// Jira accounts.  Works with both Jira Cloud (email + API token) and
+// Server/Data Center (username + password/PAT) via HTTP Basic auth.
+// Endpoint: GET /rest/api/2/issue/{issueIdOrKey}/watchers
+func (p *Plugin) GetWatchersWithAPIToken(issueKeyOrID, instanceID string) (*jira.Watches, error) {
+	httpClient := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/2/issue/%s/watchers", instanceID, issueKeyOrID), nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create HTTP request for fetching watchers. Issue: %s", issueKeyOrID)
+	}
+
+	if err = p.SetAdminAPITokenRequestHeader(req); err != nil {
+		return nil, err
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch watchers. Issue: %s", issueKeyOrID)
+	}
+	if resp == nil || resp.Body == nil {
+		return nil, errors.Errorf("missing response data for watchers. Issue: %s", issueKeyOrID)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to read watchers response. StatusCode: %d, Issue: %s", resp.StatusCode, issueKeyOrID)
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, errors.Errorf("issue does not exist or admin does not have permission to view watchers. StatusCode: %d, Issue: %s", resp.StatusCode, issueKeyOrID)
+	} else if resp.StatusCode == http.StatusForbidden {
+		return nil, errors.Errorf("admin does not have permission to view watchers. StatusCode: %d, Issue: %s", resp.StatusCode, issueKeyOrID)
+	} else if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("unexpected status code when fetching watchers. StatusCode: %d, Issue: %s", resp.StatusCode, issueKeyOrID)
+	}
+
+	var watchers jira.Watches
+	if err = json.Unmarshal(body, &watchers); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal watchers data. Issue: %s", issueKeyOrID)
+	}
+
+	return &watchers, nil
+}
+
 func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 	if !wh.eventTypes.ContainsAny(createdCommentEvent) {
 		return
@@ -1678,15 +1725,39 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 		commentMessage = fmt.Sprintf("%s **commented** on %s\n\n*You are watching this %s*",
 			commentAuthor, jwhook.mdKeySummaryLink(), jwhook.mdIssueType())
 	}
+
+	var watchers *jira.Watches
 	client, connection, err := wh.fetchConnectedUser(p, instanceID)
 	if err != nil || client == nil {
-		p.errorf("error while fetching connected users for the instanceID %v , Error : %v", instanceID, err)
-		return
+		if p.getConfig().AdminAPIToken == "" {
+			p.errorf("error while fetching connected users for the instanceID %v, Error: %v", instanceID, err)
+			return
+		}
+
+		issueRef := wh.Issue.ID
+		if wh.Issue.Key != "" {
+			issueRef = wh.Issue.Key
+		}
+		p.client.Log.Info("No connected users found for watcher lookup, falling back to admin API token",
+			"instanceID", instanceID.String(), "issue", issueRef)
+
+		watchers, err = p.GetWatchersWithAPIToken(issueRef, instanceID.String())
+		if err != nil {
+			p.errorf("error while getting watchers with admin API token for issue %v, err: %v", issueRef, err)
+			return
+		}
+	} else {
+		watchers, err = client.GetWatchers(instanceID.String(), wh.Issue.ID, connection)
+		if err != nil {
+			p.errorf("error while getting watchers for the issue id %v, err: %v", wh.Issue.ID, err)
+			return
+		}
 	}
 
-	watchers, err := client.GetWatchers(instanceID.String(), wh.Issue.ID, connection)
-	if err != nil {
-		p.errorf("error while getting watchers for the issue id %v , err : %v", wh.Issue.ID, err)
+	if watchers.WatchCount > 0 && len(watchers.Watchers) == 0 {
+		p.client.Log.Warn("Jira returned a non-zero watch count but an empty watcher list; "+
+			"the admin account likely lacks the 'View voters and watchers' project permission",
+			"issue_id", wh.Issue.ID, "watch_count", watchers.WatchCount, "instance_id", instanceID.String())
 		return
 	}
 
