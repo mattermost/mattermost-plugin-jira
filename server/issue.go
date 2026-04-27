@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
@@ -1669,7 +1670,7 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 // Server/Data Center (username + password/PAT) via HTTP Basic auth.
 // Endpoint: GET /rest/api/2/issue/{issueIdOrKey}/watchers
 func (p *Plugin) GetWatchersWithAPIToken(issueKeyOrID, instanceID string) (*jira.Watches, error) {
-	httpClient := &http.Client{}
+	httpClient := &http.Client{Timeout: 30 * time.Second}
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/2/issue/%s/watchers", instanceID, issueKeyOrID), nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create HTTP request for fetching watchers. Issue: %s", issueKeyOrID)
