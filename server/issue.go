@@ -1693,11 +1693,13 @@ func (p *Plugin) GetWatchersWithAPIToken(issueKeyOrID, instanceID string) (*jira
 		return nil, errors.Wrapf(err, "failed to read watchers response. StatusCode: %d, Issue: %s", resp.StatusCode, issueKeyOrID)
 	}
 
-	if resp.StatusCode == http.StatusNotFound {
+	switch resp.StatusCode {
+	case http.StatusOK:
+	case http.StatusNotFound:
 		return nil, errors.Errorf("issue does not exist or admin does not have permission to view watchers. StatusCode: %d, Issue: %s", resp.StatusCode, issueKeyOrID)
-	} else if resp.StatusCode == http.StatusForbidden {
+	case http.StatusForbidden:
 		return nil, errors.Errorf("admin does not have permission to view watchers. StatusCode: %d, Issue: %s", resp.StatusCode, issueKeyOrID)
-	} else if resp.StatusCode != http.StatusOK {
+	default:
 		return nil, errors.Errorf("unexpected status code when fetching watchers. StatusCode: %d, Issue: %s", resp.StatusCode, issueKeyOrID)
 	}
 
