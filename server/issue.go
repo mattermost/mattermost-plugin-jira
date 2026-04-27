@@ -925,8 +925,14 @@ func (p *Plugin) GetSearchIssues(instanceID, mattermostUserID types.ID, q, jqlSt
 		fieldsStr = "key,summary"
 	}
 	if len(jqlString) == 0 {
-		escaped := strings.ReplaceAll(q, `"`, `\"`)
-		jqlString = fmt.Sprintf(`text ~ "%s" OR text ~ "%s*"`, escaped, escaped)
+		q = strings.TrimSpace(q)
+		if len(q) == 0 {
+			jqlString = "updated >= -4w ORDER BY updated DESC"
+		} else {
+			escaped := strings.ReplaceAll(q, `\`, `\\`)
+			escaped = strings.ReplaceAll(escaped, `"`, `\"`)
+			jqlString = fmt.Sprintf(`text ~ "%s" OR text ~ "%s*"`, escaped, escaped)
+		}
 	}
 
 	limit := 50
@@ -952,12 +958,11 @@ func (p *Plugin) GetSearchIssues(instanceID, mattermostUserID types.ID, q, jqlSt
 	var found []jira.Issue
 	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		found, _ = client.SearchIssues(jqlString, &jira.SearchOptions{
 			MaxResults: limit,
 			Fields:     fields,
 		})
-
-		wg.Done()
 	}()
 
 	wg.Wait()
