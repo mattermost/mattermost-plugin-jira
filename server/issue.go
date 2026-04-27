@@ -1731,9 +1731,13 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 
 	var watchers *jira.Watches
 	client, connection, err := wh.fetchConnectedUser(p, instanceID)
-	if err != nil || client == nil {
+	if err != nil {
+		p.errorf("error while fetching connected users for the instanceID %v, Error: %v", instanceID, err)
+		return
+	}
+	if client == nil {
 		if p.getConfig().AdminAPIToken == "" {
-			p.errorf("error while fetching connected users for the instanceID %v, Error: %v", instanceID, err)
+			p.errorf("no connected user found and no admin API token configured for instanceID %v", instanceID)
 			return
 		}
 
