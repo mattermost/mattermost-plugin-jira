@@ -1730,6 +1730,7 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 	}
 
 	var watchers *jira.Watches
+	lookupSource := "connected_user"
 	client, connection, err := wh.fetchConnectedUser(p, instanceID)
 	if err != nil {
 		p.errorf("error while fetching connected users for the instanceID %v, Error: %v", instanceID, err)
@@ -1748,6 +1749,7 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 		p.client.Log.Info("No connected users found for watcher lookup, falling back to admin API token",
 			"instanceID", instanceID.String(), "issue", issueRef)
 
+		lookupSource = "admin_api_token"
 		watchers, err = p.GetWatchersWithAPIToken(issueRef, instanceID.String())
 		if err != nil {
 			p.errorf("error while getting watchers with admin API token for issue %v, err: %v", issueRef, err)
@@ -1763,8 +1765,8 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 
 	if watchers.WatchCount > 0 && len(watchers.Watchers) == 0 {
 		p.client.Log.Warn("Jira returned a non-zero watch count but an empty watcher list; "+
-			"the admin account likely lacks the 'View voters and watchers' project permission",
-			"issue_id", wh.Issue.ID, "watch_count", watchers.WatchCount, "instance_id", instanceID.String())
+			"the Jira account used for watcher lookup likely lacks the 'View voters and watchers' project permission",
+			"issue_id", wh.Issue.ID, "watch_count", watchers.WatchCount, "instance_id", instanceID.String(), "lookup_source", lookupSource)
 		return
 	}
 
