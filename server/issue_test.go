@@ -1456,6 +1456,113 @@ func TestShouldNotifyWatcherUser(t *testing.T) {
 	require.True(t, shouldNotifyWatcherUser(jira.Watcher{Name: "someone"}, nil))
 }
 
+func TestGetWatchersWithAPIToken(t *testing.T) {
+	watchersPayload := jira.Watches{
+		WatchCount: 2,
+		IsWatching: false,
+		Watchers: []*jira.Watcher{
+			{AccountID: "acct-100", DisplayName: "Watcher One", Active: true},
+			{Name: "watcher-two", DisplayName: "Watcher Two", Active: true},
+		},
+	}
+
+	t.Run("success - Cloud (accountId watchers)", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "/rest/api/2/issue/PROJ-123/watchers", r.URL.Path)
+			assert.Contains(t, r.Header.Get("Authorization"), "Basic ")
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(watchersPayload) //nolint:errcheck
+		}))
+		defer ts.Close()
+
+		p := setupTestPlugin(&plugintest.API{})
+		tokenJSON, _ := json.Marshal("test-api-token")
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = string(tokenJSON)
+			conf.AdminEmail = "admin@example.com"
+			conf.EncryptionKey = ""
+		})
+
+		watchers, err := p.GetWatchersWithAPIToken("PROJ-123", ts.URL)
+		require.NoError(t, err)
+		require.NotNil(t, watchers)
+		assert.Equal(t, 2, watchers.WatchCount)
+		require.Len(t, watchers.Watchers, 2)
+		assert.Equal(t, "acct-100", watchers.Watchers[0].AccountID)
+		assert.Equal(t, "watcher-two", watchers.Watchers[1].Name)
+	})
+
+	t.Run("success - Server/DC (name-based watchers)", func(t *testing.T) {
+		dcPayload := jira.Watches{
+			WatchCount: 1,
+			Watchers: []*jira.Watcher{
+				{Name: "fred", DisplayName: "Fred F. User", Active: true},
+			},
+		}
+
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "/rest/api/2/issue/ISSUE-456/watchers", r.URL.Path)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(dcPayload) //nolint:errcheck
+		}))
+		defer ts.Close()
+
+		p := setupTestPlugin(&plugintest.API{})
+		tokenJSON, _ := json.Marshal("admin-password")
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = string(tokenJSON)
+			conf.AdminEmail = "admin"
+			conf.EncryptionKey = ""
+		})
+
+		watchers, err := p.GetWatchersWithAPIToken("ISSUE-456", ts.URL)
+		require.NoError(t, err)
+		require.NotNil(t, watchers)
+		assert.Equal(t, 1, watchers.WatchCount)
+		assert.Equal(t, "fred", watchers.Watchers[0].Name)
+	})
+
+	t.Run("404 - issue not found", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+		}))
+		defer ts.Close()
+
+		p := setupTestPlugin(&plugintest.API{})
+		tokenJSON, _ := json.Marshal("test-api-token")
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = string(tokenJSON)
+			conf.AdminEmail = "admin@example.com"
+			conf.EncryptionKey = ""
+		})
+
+		watchers, err := p.GetWatchersWithAPIToken("FAKE-999", ts.URL)
+		assert.Error(t, err)
+		assert.Nil(t, watchers)
+		assert.Contains(t, err.Error(), "does not exist")
+	})
+
+	t.Run("403 - forbidden", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusForbidden)
+		}))
+		defer ts.Close()
+
+		p := setupTestPlugin(&plugintest.API{})
+		tokenJSON, _ := json.Marshal("test-api-token")
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = string(tokenJSON)
+			conf.AdminEmail = "admin@example.com"
+			conf.EncryptionKey = ""
+		})
+
+		watchers, err := p.GetWatchersWithAPIToken("PROJ-123", ts.URL)
+		assert.Error(t, err)
+		assert.Nil(t, watchers)
+		assert.Contains(t, err.Error(), "permission")
+	})
+}
+
 func TestInjectTeamAllowedValues(t *testing.T) {
 	t.Run("with manual team config", func(t *testing.T) {
 		metaInfo := &jira.CreateMetaInfo{
