@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -104,6 +105,8 @@ func TestDisconnectUserDueToExpiredToken(t *testing.T) {
 		{
 			name: "Happy path - Disconnect succeeds and DM sent",
 			setupMocks: func(api *plugintest.API, userStore *mockUserStoreForTokenExpiry, instanceStore *mockInstanceStoreWithLoadInstances) {
+				api.On("KVSetWithOptions", mock.AnythingOfType("string"), []byte("1"), mock.Anything).Return(true, (*model.AppError)(nil)).Once()
+
 				user := NewUser(testMattermostUserID)
 				user.ConnectedInstances = NewInstances()
 				user.ConnectedInstances.Set(&InstanceCommon{InstanceID: testInstanceID})
@@ -151,6 +154,8 @@ func TestDisconnectUserDueToExpiredToken(t *testing.T) {
 		{
 			name: "Disconnect fails but DM with manual instructions sent",
 			setupMocks: func(api *plugintest.API, userStore *mockUserStoreForTokenExpiry, instanceStore *mockInstanceStoreWithLoadInstances) {
+				api.On("KVSetWithOptions", mock.AnythingOfType("string"), []byte("1"), mock.Anything).Return(true, (*model.AppError)(nil)).Once()
+
 				userStore.On("LoadUser", testMattermostUserID).Return(nil, kvstore.ErrNotFound).Once()
 
 				api.On("GetDirectChannel", testMattermostUserID.String(), testBotUserID).Return(&model.Channel{
@@ -172,6 +177,8 @@ func TestDisconnectUserDueToExpiredToken(t *testing.T) {
 		{
 			name: "Disconnect fails and DM also fails - only logging",
 			setupMocks: func(api *plugintest.API, userStore *mockUserStoreForTokenExpiry, instanceStore *mockInstanceStoreWithLoadInstances) {
+				api.On("KVSetWithOptions", mock.AnythingOfType("string"), []byte("1"), mock.Anything).Return(true, (*model.AppError)(nil)).Once()
+
 				userStore.On("LoadUser", testMattermostUserID).Return(nil, kvstore.ErrNotFound).Once()
 
 				api.On("GetDirectChannel", testMattermostUserID.String(), testBotUserID).Return(nil, &model.AppError{
@@ -230,6 +237,14 @@ func TestDisconnectUserDueToExpiredTokenDeduplicatesConcurrentCalls(t *testing.T
 	instanceStore := &mockInstanceStoreWithLoadInstances{
 		mockInstanceStore: &mockInstanceStore{},
 	}
+
+	var kvWinners atomic.Int32
+	api.On("KVSetWithOptions", mock.AnythingOfType("string"), []byte("1"), mock.Anything).Return(func(string, []byte, model.PluginKVSetOptions) (bool, *model.AppError) {
+		if kvWinners.Add(1) == 1 {
+			return true, nil
+		}
+		return false, nil
+	})
 
 	user := NewUser(testMattermostUserID)
 	user.ConnectedInstances = NewInstances()

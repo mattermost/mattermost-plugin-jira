@@ -18,11 +18,15 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
-const expiredTokenNotificationCooldown = 5 * time.Minute
+const (
+	expiredTokenNotificationCooldown = 5 * time.Minute
+	expiredTokenNotificationKeyPrefix = "expired_token_dm:"
+)
 
 func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message, postType string) (post *model.Post, returnErr error) {
 	defer func() {
@@ -92,16 +96,22 @@ func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...
 }
 
 func (p *Plugin) disconnectUserDueToExpiredToken(mattermostUserID types.ID, instanceID types.ID) {
-	key := mattermostUserID.String() + ":" + instanceID.String()
-	if _, loaded := p.expiredTokenInFlight.LoadOrStore(key, struct{}{}); loaded {
+	key := expiredTokenNotificationKeyPrefix + mattermostUserID.String() + ":" + instanceID.String()
+	ok, err := p.client.KV.Set(key, []byte("1"),
+		pluginapi.SetAtomic(nil),
+		pluginapi.SetExpiry(expiredTokenNotificationCooldown),
+	)
+	if err != nil {
+		p.client.Log.Warn("Failed to set expired-token notification dedup marker; proceeding without dedup",
+			"mattermostUserID", mattermostUserID,
+			"instanceID", instanceID,
+			"error", err.Error())
+	} else if !ok {
 		return
 	}
-	defer time.AfterFunc(expiredTokenNotificationCooldown, func() {
-		p.expiredTokenInFlight.Delete(key)
-	})
 
 	// Disconnect the user first to update server and client state via websocket
-	_, err := p.DisconnectUser(instanceID.String(), mattermostUserID)
+	_, err = p.DisconnectUser(instanceID.String(), mattermostUserID)
 	if err != nil {
 		p.client.Log.Warn("Failed to disconnect user after token expiry",
 			"mattermostUserID", mattermostUserID,
