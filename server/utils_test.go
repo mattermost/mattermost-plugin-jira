@@ -21,7 +21,6 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/telemetry"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 	"github.com/stretchr/testify/require"
 )
@@ -156,7 +155,7 @@ func TestDisconnectUserDueToExpiredToken(t *testing.T) {
 			setupMocks: func(api *plugintest.API, userStore *mockUserStoreForTokenExpiry, instanceStore *mockInstanceStoreWithLoadInstances) {
 				api.On("KVSetWithOptions", mock.AnythingOfType("string"), []byte("1"), mock.Anything).Return(true, (*model.AppError)(nil)).Once()
 
-				userStore.On("LoadUser", testMattermostUserID).Return(nil, kvstore.ErrNotFound).Once()
+				userStore.On("LoadUser", testMattermostUserID).Return(nil, errors.New("transient kv failure")).Once()
 
 				api.On("GetDirectChannel", testMattermostUserID.String(), testBotUserID).Return(&model.Channel{
 					Id: testChannelID,
@@ -179,7 +178,7 @@ func TestDisconnectUserDueToExpiredToken(t *testing.T) {
 			setupMocks: func(api *plugintest.API, userStore *mockUserStoreForTokenExpiry, instanceStore *mockInstanceStoreWithLoadInstances) {
 				api.On("KVSetWithOptions", mock.AnythingOfType("string"), []byte("1"), mock.Anything).Return(true, (*model.AppError)(nil)).Once()
 
-				userStore.On("LoadUser", testMattermostUserID).Return(nil, kvstore.ErrNotFound).Once()
+				userStore.On("LoadUser", testMattermostUserID).Return(nil, errors.New("transient kv failure")).Once()
 
 				api.On("GetDirectChannel", testMattermostUserID.String(), testBotUserID).Return(nil, &model.AppError{
 					Message: "channel not found",
@@ -246,13 +245,17 @@ func TestDisconnectUserDueToExpiredTokenDeduplicatesConcurrentCalls(t *testing.T
 		return false, nil
 	})
 
-	user := NewUser(testMattermostUserID)
-	user.ConnectedInstances = NewInstances()
-	user.ConnectedInstances.Set(&InstanceCommon{InstanceID: testInstanceID})
-	userStore.On("LoadUser", testMattermostUserID).Return(user, nil).Once()
+	connectedUser := NewUser(testMattermostUserID)
+	connectedUser.ConnectedInstances = NewInstances()
+	connectedUser.ConnectedInstances.Set(&InstanceCommon{InstanceID: testInstanceID})
+	disconnectedUser := NewUser(testMattermostUserID)
+	disconnectedUser.ConnectedInstances = NewInstances()
+
+	userStore.On("LoadUser", testMattermostUserID).Return(connectedUser, nil).Once()
+	userStore.On("LoadUser", testMattermostUserID).Return(disconnectedUser, nil)
 
 	mockInstance := &testInstance{InstanceCommon: InstanceCommon{InstanceID: testInstanceID}}
-	instanceStore.On("LoadInstance", testInstanceID).Return(mockInstance, nil).Once()
+	instanceStore.On("LoadInstance", testInstanceID).Return(mockInstance, nil)
 
 	connection := &Connection{MattermostUserID: testMattermostUserID}
 	userStore.On("LoadConnection", testInstanceID, testMattermostUserID).Return(connection, nil).Once()
@@ -261,7 +264,7 @@ func TestDisconnectUserDueToExpiredTokenDeduplicatesConcurrentCalls(t *testing.T
 
 	instances := NewInstances()
 	instances.Set(&InstanceCommon{InstanceID: testInstanceID})
-	instanceStore.On("LoadInstances").Return(instances, nil).Twice()
+	instanceStore.On("LoadInstances").Return(instances, nil)
 
 	api.On("PublishWebSocketEvent", "disconnect", mock.Anything, mock.MatchedBy(func(b *model.WebsocketBroadcast) bool {
 		return b.UserId == testMattermostUserID.String()

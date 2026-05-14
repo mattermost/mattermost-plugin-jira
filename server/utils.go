@@ -20,11 +20,12 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 const (
-	expiredTokenNotificationCooldown = 5 * time.Minute
+	expiredTokenNotificationCooldown  = 5 * time.Minute
 	expiredTokenNotificationKeyPrefix = "expired_token_dm:"
 )
 
@@ -96,50 +97,51 @@ func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...
 }
 
 func (p *Plugin) disconnectUserDueToExpiredToken(mattermostUserID types.ID, instanceID types.ID) {
-	key := expiredTokenNotificationKeyPrefix + mattermostUserID.String() + ":" + instanceID.String()
-	ok, err := p.client.KV.Set(key, []byte("1"),
+	_, disconnectErr := p.DisconnectUser(instanceID.String(), mattermostUserID)
+	if disconnectErr != nil && errors.Cause(disconnectErr) == kvstore.ErrNotFound {
+		disconnectErr = nil
+	}
+	if disconnectErr != nil {
+		p.client.Log.Warn("Failed to disconnect user after token expiry",
+			"mattermostUserID", mattermostUserID,
+			"instanceID", instanceID,
+			"error", disconnectErr.Error())
+	}
+
+	dmKey := expiredTokenNotificationKeyPrefix + mattermostUserID.String() + ":" + instanceID.String()
+	ok, kvErr := p.client.KV.Set(dmKey, []byte("1"),
 		pluginapi.SetAtomic(nil),
 		pluginapi.SetExpiry(expiredTokenNotificationCooldown),
 	)
-	if err != nil {
+	if kvErr != nil {
 		p.client.Log.Warn("Failed to set expired-token notification dedup marker; proceeding without dedup",
 			"mattermostUserID", mattermostUserID,
 			"instanceID", instanceID,
-			"error", err.Error())
+			"error", kvErr.Error())
 	} else if !ok {
 		return
 	}
 
-	// Disconnect the user first to update server and client state via websocket
-	_, err = p.DisconnectUser(instanceID.String(), mattermostUserID)
-	if err != nil {
-		p.client.Log.Warn("Failed to disconnect user after token expiry",
-			"mattermostUserID", mattermostUserID,
-			"instanceID", instanceID,
-			"error", err.Error())
-
-		// Notify user even if disconnect failed, with manual disconnect instructions
-		_, notifyErr := p.CreateBotDMtoMMUserID(mattermostUserID.String(),
+	var notifyErr error
+	if disconnectErr != nil {
+		_, notifyErr = p.CreateBotDMtoMMUserID(mattermostUserID.String(),
 			":warning: Your Jira connection has expired. Please manually disconnect and reconnect your account using:\n"+
 				"1. `/jira disconnect %s`\n"+
 				"2. `/jira connect %s`",
 			instanceID, instanceID)
-		if notifyErr != nil {
-			p.client.Log.Warn("Failed to send token expiry notification to user after disconnect failure",
-				"mattermostUserID", mattermostUserID,
-				"error", notifyErr.Error())
-		}
-		return
+	} else {
+		_, notifyErr = p.CreateBotDMtoMMUserID(mattermostUserID.String(),
+			":warning: Your Jira connection has expired. Please reconnect your account using `/jira connect %s`.",
+			instanceID)
 	}
-
-	// Send notification after successful disconnect
-	_, err = p.CreateBotDMtoMMUserID(mattermostUserID.String(),
-		":warning: Your Jira connection has expired. Please reconnect your account using `/jira connect %s`.",
-		instanceID)
-	if err != nil {
-		p.client.Log.Warn("Failed to send token expiry notification to user",
+	if notifyErr != nil {
+		label := "Failed to send token expiry notification to user"
+		if disconnectErr != nil {
+			label = "Failed to send token expiry notification to user after disconnect failure"
+		}
+		p.client.Log.Warn(label,
 			"mattermostUserID", mattermostUserID,
-			"error", err.Error())
+			"error", notifyErr.Error())
 	}
 }
 
