@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
@@ -20,6 +21,8 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
+
+const expiredTokenNotificationCooldown = 5 * time.Minute
 
 func (p *Plugin) CreateBotDMPost(instanceID, mattermostUserID types.ID, message, postType string) (post *model.Post, returnErr error) {
 	defer func() {
@@ -89,6 +92,14 @@ func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...
 }
 
 func (p *Plugin) disconnectUserDueToExpiredToken(mattermostUserID types.ID, instanceID types.ID) {
+	key := mattermostUserID.String() + ":" + instanceID.String()
+	if _, loaded := p.expiredTokenInFlight.LoadOrStore(key, struct{}{}); loaded {
+		return
+	}
+	defer time.AfterFunc(expiredTokenNotificationCooldown, func() {
+		p.expiredTokenInFlight.Delete(key)
+	})
+
 	// Disconnect the user first to update server and client state via websocket
 	_, err := p.DisconnectUser(instanceID.String(), mattermostUserID)
 	if err != nil {

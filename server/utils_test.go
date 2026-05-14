@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"sync"
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -216,6 +217,75 @@ func TestDisconnectUserDueToExpiredToken(t *testing.T) {
 			instanceStore.AssertExpectations(t)
 		})
 	}
+}
+
+func TestDisconnectUserDueToExpiredTokenDeduplicatesConcurrentCalls(t *testing.T) {
+	testMattermostUserID := types.ID("test-mm-user-id")
+	testInstanceID := types.ID("https://test-instance.atlassian.net")
+	testChannelID := "test-channel-id"
+	testBotUserID := "test-bot-user-id"
+
+	api := &plugintest.API{}
+	userStore := &mockUserStoreForTokenExpiry{}
+	instanceStore := &mockInstanceStoreWithLoadInstances{
+		mockInstanceStore: &mockInstanceStore{},
+	}
+
+	user := NewUser(testMattermostUserID)
+	user.ConnectedInstances = NewInstances()
+	user.ConnectedInstances.Set(&InstanceCommon{InstanceID: testInstanceID})
+	userStore.On("LoadUser", testMattermostUserID).Return(user, nil).Once()
+
+	mockInstance := &testInstance{InstanceCommon: InstanceCommon{InstanceID: testInstanceID}}
+	instanceStore.On("LoadInstance", testInstanceID).Return(mockInstance, nil).Once()
+
+	connection := &Connection{MattermostUserID: testMattermostUserID}
+	userStore.On("LoadConnection", testInstanceID, testMattermostUserID).Return(connection, nil).Once()
+	userStore.On("DeleteConnection", testInstanceID, testMattermostUserID).Return(nil).Once()
+	userStore.On("StoreUser", mock.AnythingOfType("*main.User")).Return(nil).Once()
+
+	instances := NewInstances()
+	instances.Set(&InstanceCommon{InstanceID: testInstanceID})
+	instanceStore.On("LoadInstances").Return(instances, nil).Twice()
+
+	api.On("PublishWebSocketEvent", "disconnect", mock.Anything, mock.MatchedBy(func(b *model.WebsocketBroadcast) bool {
+		return b.UserId == testMattermostUserID.String()
+	})).Return().Once()
+	api.On("GetDirectChannel", testMattermostUserID.String(), testBotUserID).Return(&model.Channel{Id: testChannelID}, nil)
+	api.On("KVGet", mock.AnythingOfType("string")).Return(nil, nil)
+
+	api.On("CreatePost", mock.MatchedBy(func(post *model.Post) bool {
+		return post.UserId == testBotUserID && post.ChannelId == testChannelID
+	})).Return(&model.Post{}, nil).Once()
+
+	p := &Plugin{
+		userStore:     userStore,
+		instanceStore: instanceStore,
+		tracker:       &mockTelemetryTracker{},
+	}
+	p.SetAPI(api)
+	p.client = pluginapi.NewClient(api, p.Driver)
+	p.updateConfig(func(conf *config) {
+		conf.botUserID = testBotUserID
+	})
+
+	const callers = 25
+	var wg sync.WaitGroup
+	wg.Add(callers)
+	start := make(chan struct{})
+	for i := 0; i < callers; i++ {
+		go func() {
+			defer wg.Done()
+			<-start
+			p.disconnectUserDueToExpiredToken(testMattermostUserID, testInstanceID)
+		}()
+	}
+	close(start)
+	wg.Wait()
+
+	api.AssertExpectations(t)
+	userStore.AssertExpectations(t)
+	instanceStore.AssertExpectations(t)
 }
 
 func TestParseJIRAUsernamesFromText(t *testing.T) {

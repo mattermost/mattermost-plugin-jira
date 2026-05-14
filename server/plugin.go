@@ -166,6 +166,8 @@ type Plugin struct {
 
 	teamFieldCache     map[types.ID]map[string]struct{}
 	teamFieldCacheLock sync.RWMutex
+
+	expiredTokenInFlight sync.Map
 }
 
 func (p *Plugin) getConfig() config {
