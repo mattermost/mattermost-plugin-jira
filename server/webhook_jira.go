@@ -207,7 +207,22 @@ func mdUser(user *jira.User) string {
 	if user == nil {
 		return ""
 	}
-	return user.DisplayName
+	if v := strings.TrimSpace(user.DisplayName); v != "" {
+		return v
+	}
+	if v := strings.TrimSpace(user.Name); v != "" {
+		return v
+	}
+	if v := strings.TrimSpace(user.AccountID); v != "" {
+		return v
+	}
+	if v := strings.TrimSpace(user.Key); v != "" {
+		return v
+	}
+	if v := strings.TrimSpace(user.EmailAddress); v != "" {
+		return v
+	}
+	return "Someone"
 }
 
 func truncate(s string, maxLen int) string {

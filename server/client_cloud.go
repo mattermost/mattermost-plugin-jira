@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/mattermost/mattermost/server/public/plugin"
@@ -147,4 +148,32 @@ func (client jiraCloudClient) ListProjectStatuses(projectID string) ([]*IssueTyp
 	}
 
 	return result, nil
+}
+
+// SearchIssues overrides the base JiraClient implementation to use the new
+// /rest/api/2/search/jql endpoint, since /rest/api/2/search is being removed
+// from Jira Cloud.
+func (client jiraCloudClient) SearchIssues(jql string, options *jira.SearchOptions) ([]jira.Issue, error) {
+	type searchResult struct {
+		Issues []jira.Issue `json:"issues"`
+	}
+
+	params := map[string]string{
+		"jql": jql,
+	}
+	if options != nil {
+		if options.MaxResults > 0 {
+			params["maxResults"] = strconv.Itoa(options.MaxResults)
+		}
+		if len(options.Fields) > 0 {
+			params["fields"] = strings.Join(options.Fields, ",")
+		}
+	}
+
+	var result searchResult
+	err := client.RESTGet("2/search/jql", params, &result)
+	if err != nil {
+		return nil, err
+	}
+	return result.Issues, nil
 }

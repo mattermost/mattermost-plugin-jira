@@ -97,7 +97,23 @@ func TestWebhookVariousErrors(t *testing.T) {
 	assert.Equal(t, "", wh.mdIssueType())
 	assert.Equal(t, " ", wh.mdSummaryLink())
 	assert.Equal(t, " ", wh.mdKeyLink())
-	assert.Equal(t, "", wh.mdUser())
+	assert.Equal(t, "Someone", wh.mdUser())
+}
+
+func TestMdUserFallback(t *testing.T) {
+	assert.Equal(t, "", mdUser(nil))
+	assert.Equal(t, "Someone", mdUser(&jira.User{}))
+	assert.Equal(t, "John Doe", mdUser(&jira.User{DisplayName: "John Doe"}))
+	assert.Equal(t, "jdoe", mdUser(&jira.User{Name: "jdoe"}))
+	assert.Equal(t, "abc123", mdUser(&jira.User{AccountID: "abc123"}))
+	assert.Equal(t, "JIRAUSER123", mdUser(&jira.User{Key: "JIRAUSER123"}))
+	assert.Equal(t, "jdoe@example.com", mdUser(&jira.User{EmailAddress: "jdoe@example.com"}))
+	assert.Equal(t, "John Doe", mdUser(&jira.User{DisplayName: "John Doe", Name: "jdoe", EmailAddress: "jdoe@example.com"}))
+	assert.Equal(t, "jdoe", mdUser(&jira.User{Name: "jdoe", AccountID: "abc123"}))
+
+	// Whitespace-only values should be skipped
+	assert.Equal(t, "Someone", mdUser(&jira.User{DisplayName: "   ", Name: "  "}))
+	assert.Equal(t, "jdoe", mdUser(&jira.User{DisplayName: "  ", Name: "jdoe"}))
 }
 
 func TestTruncate(t *testing.T) {
