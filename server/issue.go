@@ -1671,12 +1671,16 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 // GetWatchersWithAPIToken fetches the watcher list for an issue using the
 // admin API token configured in plugin settings. This serves as a fallback
 // when none of the issue's Creator, Assignee, or Reporter have connected
-// Jira accounts.  Works with both Jira Cloud (email + API token) and
+// Jira accounts. Works with both Jira Cloud (email + API token) and
 // Server/Data Center (username + password/PAT) via HTTP Basic auth.
-// Endpoint: GET /rest/api/2/issue/{issueIdOrKey}/watchers
-func (p *Plugin) GetWatchersWithAPIToken(issueKeyOrID, instanceID string) (*jira.Watches, error) {
+func (p *Plugin) GetWatchersWithAPIToken(issueKeyOrID string, instance Instance) (*jira.Watches, error) {
+	apiVersion := "2"
+	if instance.Common().IsCloudInstance() {
+		apiVersion = "3"
+	}
+
 	httpClient := &http.Client{Timeout: 30 * time.Second}
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/2/issue/%s/watchers", instanceID, issueKeyOrID), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/%s/issue/%s/watchers", instance.GetURL(), apiVersion, issueKeyOrID), nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create HTTP request for fetching watchers. Issue: %s", issueKeyOrID)
 	}
@@ -1747,6 +1751,12 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 			return
 		}
 
+		instance, loadErr := p.instanceStore.LoadInstance(instanceID)
+		if loadErr != nil {
+			p.errorf("error loading instance for admin-token watcher lookup, instanceID %v, err: %v", instanceID, loadErr)
+			return
+		}
+
 		issueRef := wh.Issue.ID
 		if wh.Issue.Key != "" {
 			issueRef = wh.Issue.Key
@@ -1755,7 +1765,7 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 			"instanceID", instanceID.String(), "issue", issueRef)
 
 		lookupSource = "admin_api_token"
-		watchers, err = p.GetWatchersWithAPIToken(issueRef, instanceID.String())
+		watchers, err = p.GetWatchersWithAPIToken(issueRef, instance)
 		if err != nil {
 			p.errorf("error while getting watchers with admin API token for issue %v, err: %v", issueRef, err)
 			return
@@ -1783,6 +1793,12 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 	for idx, watcherUser := range watchers.Watchers {
 		if watcherUser == nil {
 			p.client.Log.Warn("nil watcherUser in watchers.Watchers", "issue_id", wh.Issue.ID, "index", idx)
+			continue
+		}
+		if watcherUser.AccountID == "" && watcherUser.Name == "" {
+			p.client.Log.Warn("Skipping watcher with empty accountId and name; cannot map to a Mattermost user",
+				"issue_id", wh.Issue.ID, "index", idx, "lookup_source", lookupSource,
+				"display_name", watcherUser.DisplayName)
 			continue
 		}
 		if !shouldNotifyWatcherUser(*watcherUser, author) {
