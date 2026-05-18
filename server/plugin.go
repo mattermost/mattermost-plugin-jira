@@ -213,24 +213,37 @@ func (p *Plugin) OnConfigurationChange() error {
 		}
 	}
 
-	jsonBytes, err := json.Marshal(ec.AdminAPIToken)
-	if err != nil {
-		p.client.Log.Warn("Error marshaling the admin API token", "error", err.Error())
-		return err
+	prevExternal := p.getConfig().externalConfig
+
+	switch {
+	case ec.AdminAPIToken == model.FakeSetting:
+		ec.AdminAPIToken = prevExternal.AdminAPIToken
+	case ec.AdminAPIToken == "":
+	case ec.AdminAPIToken == prevExternal.AdminAPIToken:
+	default:
+		if _, decErr := decrypt([]byte(ec.AdminAPIToken), []byte(ec.EncryptionKey)); decErr == nil {
+			break
+		}
+		jsonBytes, err := json.Marshal(ec.AdminAPIToken)
+		if err != nil {
+			p.client.Log.Warn("Error marshaling the admin API token", "error", err.Error())
+			return err
+		}
+		if ec.EncryptionKey == "" {
+			p.client.Log.Warn("Encryption key required to encrypt admin API token")
+			return errors.New("failed to encrypt admin token. Encryption key not generated")
+		}
+		encryptedAdminAPIToken, err := encrypt(jsonBytes, []byte(ec.EncryptionKey))
+		if err != nil {
+			p.client.Log.Warn("Error encrypting the admin API token", "error", err.Error())
+			return err
+		}
+		ec.AdminAPIToken = string(encryptedAdminAPIToken)
 	}
 
-	encryptionKey := ec.EncryptionKey
-	if ec.AdminAPIToken != "" && encryptionKey == "" {
-		p.client.Log.Warn("Encryption key required to encrypt admin API token")
-		return errors.New("failed to encrypt admin token. Encryption key not generated")
+	if ec.AdminEmail == model.FakeSetting {
+		ec.AdminEmail = prevExternal.AdminEmail
 	}
-
-	encryptedAdminAPIToken, err := encrypt(jsonBytes, []byte(encryptionKey))
-	if err != nil {
-		p.client.Log.Warn("Error encrypting the admin API token", "error", err.Error())
-		return err
-	}
-	ec.AdminAPIToken = string(encryptedAdminAPIToken)
 
 	// Default to 30 days if not set
 	if ec.ThreadedJiraCommentSubscriptionDuration == "" {
