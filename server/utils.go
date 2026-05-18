@@ -251,22 +251,32 @@ func getS256PKCEParams() (*PKCEParams, error) {
 }
 
 func (p *Plugin) SetAdminAPITokenRequestHeader(req *http.Request) error {
-	encryptedAdminAPIToken := p.getConfig().AdminAPIToken
-	jsonBytes, err := decrypt([]byte(encryptedAdminAPIToken), []byte(p.getConfig().EncryptionKey))
+	cfg := p.getConfig()
+	if cfg.AdminEmail == "" {
+		return errors.New("admin email/username is empty in plugin config")
+	}
+	if cfg.AdminAPIToken == "" {
+		return errors.New("admin API token is empty in plugin config")
+	}
+
+	jsonBytes, err := decrypt([]byte(cfg.AdminAPIToken), []byte(cfg.EncryptionKey))
 	if err != nil {
-		p.client.Log.Warn("Error decrypting admin API token", "error", err.Error())
+		p.client.Log.Warn("Error decrypting admin API token; re-save the Admin API Token in System Console", "error", err.Error())
 		return err
 	}
 	var adminAPIToken string
-	err = json.Unmarshal(jsonBytes, &adminAPIToken)
-	if err != nil {
+	if err = json.Unmarshal(jsonBytes, &adminAPIToken); err != nil {
 		p.client.Log.Warn("Error unmarshalling admin API token", "error", err.Error())
 		return err
 	}
+	if adminAPIToken == "" {
+		return errors.New("decrypted admin API token is empty; re-save the Admin API Token in System Console")
+	}
 
-	encodedAuth := base64.StdEncoding.EncodeToString([]byte(p.getConfig().AdminEmail + ":" + adminAPIToken))
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte(cfg.AdminEmail + ":" + adminAPIToken))
 	req.Header.Set("Authorization", "Basic "+encodedAuth)
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "Mattermost-Plugin-Jira/"+manifest.Version)
 
 	return nil
 }
