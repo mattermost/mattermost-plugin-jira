@@ -216,8 +216,9 @@ func (p *Plugin) OnConfigurationChange() error {
 	prevExternal := p.getConfig().externalConfig
 
 	switch {
-	case ec.AdminAPIToken == "" || ec.AdminAPIToken == model.FakeSetting:
+	case ec.AdminAPIToken == model.FakeSetting:
 		ec.AdminAPIToken = prevExternal.AdminAPIToken
+	case ec.AdminAPIToken == "":
 	case ec.AdminAPIToken == prevExternal.AdminAPIToken:
 	default:
 		if _, decErr := decrypt([]byte(ec.AdminAPIToken), []byte(ec.EncryptionKey)); decErr == nil {
@@ -240,7 +241,7 @@ func (p *Plugin) OnConfigurationChange() error {
 		ec.AdminAPIToken = string(encryptedAdminAPIToken)
 	}
 
-	if ec.AdminEmail == "" {
+	if ec.AdminEmail == model.FakeSetting {
 		ec.AdminEmail = prevExternal.AdminEmail
 	}
 
