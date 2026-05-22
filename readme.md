@@ -57,7 +57,7 @@ Restart the server if prompted.
 - `host.docker.internal` works on macOS with Docker Desktop. On Linux, specify the gateway explicitly when starting Jira (`docker run --add-host=host.docker.internal:host-gateway ...`) or use your workstation’s LAN IP in both `SiteURL` and the commands above.
 - Whichever hostname you choose, open Mattermost in your browser using that same URL as mismatches can trigger WebSocket CORS blocks and slash-command errors.
 - If Jira runs on another machine or you need external access, expose Mattermost via a tunnel or a real domain with valid HTTPS, and update the config values accordingly.
-- When you create the Application Link in Jira, supply that same externally reachable Mattermost URL. Jira reuses it to call the plugin’s endpoints.
+- When you create the Application Link in Jira, supply that same externally reachable Mattermost URL. Jira reuses it to call the plugin endpoints.
 - You can sanity-check connectivity from the Jira container with `docker exec jira curl -I <your-site-url>`.
 
 ### 2. Build and install the Jira plugin
