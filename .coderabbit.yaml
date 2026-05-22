@@ -1,10 +1,10 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 language: en-US
-tone_instructions: ''
+tone_instructions: 'audit marker'
 early_access: false
 enable_free_tier: true
 inheritance: true
-reviews:
+
   profile: chill
   request_changes_workflow: true
   high_level_summary: true
