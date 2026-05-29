@@ -222,16 +222,20 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 
 		dedupKey := notificationDedupKey(wh, mattermostUserID, notification.message)
 		var alreadySent bool
-		_ = p.client.KV.Get(dedupKey, &alreadySent)
+		if kvErr := p.client.KV.Get(dedupKey, &alreadySent); kvErr != nil {
+			p.client.Log.Warn("PostNotifications: failed to read dedup key, sending notification anyway", "key", dedupKey, "error", kvErr.Error())
+		}
 		if alreadySent {
 			continue
 		}
-		_, _ = p.client.KV.Set(dedupKey, true, pluginapi.SetExpiry(notificationDedupTTL))
 
 		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType)
 		if err != nil {
 			p.errorf("PostNotifications: failed to create notification post, err: %v", err)
 			continue
+		}
+		if _, kvErr := p.client.KV.Set(dedupKey, true, pluginapi.SetExpiry(notificationDedupTTL)); kvErr != nil {
+			p.client.Log.Warn("PostNotifications: failed to write dedup key, duplicate may be sent", "key", dedupKey, "error", kvErr.Error())
 		}
 		posts = append(posts, post)
 	}
@@ -253,7 +257,7 @@ func notificationDedupKey(wh *webhook, recipientID types.ID, message string) str
 		message,
 	)
 	hash := sha256.Sum256([]byte(raw))
-	return fmt.Sprintf(notificationDedupKeyFmt, hex.EncodeToString(hash[:12]))
+	return fmt.Sprintf(notificationDedupKeyFmt, hex.EncodeToString(hash[:]))
 }
 
 func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL, legacyURL string, err error) {
