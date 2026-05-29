@@ -66,6 +66,21 @@ func (wh *webhook) Events() StringSet {
 	return wh.eventTypes
 }
 
+func (wh *webhook) hasNotification(jiraUsername, jiraAccountID, message string) bool {
+	for _, n := range wh.notifications {
+		if n.message != message {
+			continue
+		}
+		if jiraAccountID != "" && n.jiraAccountID == jiraAccountID {
+			return true
+		}
+		if jiraUsername != "" && n.jiraUsername == jiraUsername {
+			return true
+		}
+	}
+	return false
+}
+
 func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error) {
 	pluginConfig := p.getConfig()
 
