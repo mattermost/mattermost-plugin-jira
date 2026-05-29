@@ -289,9 +289,6 @@ func appendCommentNotifications(wh *webhook, verb string) {
 			notification.jiraUsername = u
 		}
 
-		if wh.hasNotification(notification.jiraUsername, notification.jiraAccountID, message) {
-			continue
-		}
 		wh.notifications = append(wh.notifications, notification)
 	}
 
@@ -309,10 +306,6 @@ func appendCommentNotifications(wh *webhook, verb string) {
 		assigneeMessage = fmt.Sprintf("%s **commented** on %s:\n%s", commentAuthor, jwh.mdKeySummaryLink(), quoted)
 	} else {
 		assigneeMessage = fmt.Sprintf("%s **commented** on %s", commentAuthor, jwh.mdKeySummaryLink())
-	}
-
-	if wh.hasNotification(jwh.Issue.Fields.Assignee.Name, jwh.Issue.Fields.Assignee.AccountID, assigneeMessage) {
-		return
 	}
 
 	wh.notifications = append(wh.notifications, webhookUserNotification{
@@ -541,15 +534,10 @@ func appendNotificationForAssignee(wh *webhook) {
 		return
 	}
 
-	message := fmt.Sprintf("%s **assigned** you to %s", jwh.mdUser(), jwh.mdKeySummaryLink())
-	if wh.hasNotification(jwh.Issue.Fields.Assignee.Name, jwh.Issue.Fields.Assignee.AccountID, message) {
-		return
-	}
-
 	wh.notifications = append(wh.notifications, webhookUserNotification{
 		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
 		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
-		message:       message,
+		message:       fmt.Sprintf("%s **assigned** you to %s", jwh.mdUser(), jwh.mdKeySummaryLink()),
 	})
 }
 

@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -269,92 +270,58 @@ more text data in code block.{noformat}`,
 	}
 }
 
-func TestHasNotification(t *testing.T) {
-	wh := &webhook{
-		JiraWebhook: &JiraWebhook{},
-		notifications: []webhookUserNotification{
-			{jiraAccountID: "acc-1", jiraUsername: "user1", message: "msg A"},
-			{jiraAccountID: "acc-2", jiraUsername: "user2", message: "msg B"},
-		},
+func TestNotificationDedupKey(t *testing.T) {
+	makeWebhook := func(issueKey string) *webhook {
+		return &webhook{
+			JiraWebhook: &JiraWebhook{
+				Issue: jira.Issue{Key: issueKey},
+			},
+		}
 	}
 
-	assert.True(t, wh.hasNotification("", "acc-1", "msg A"))
-	assert.True(t, wh.hasNotification("user2", "", "msg B"))
-	assert.True(t, wh.hasNotification("user1", "acc-1", "msg A"))
-	assert.False(t, wh.hasNotification("", "acc-1", "msg B"), "same user different message")
-	assert.False(t, wh.hasNotification("", "acc-3", "msg A"), "different user same message")
-	assert.False(t, wh.hasNotification("", "", "msg A"), "empty identifiers never match")
-}
+	t.Run("same issue, recipient and message produce the same key", func(t *testing.T) {
+		wh1 := makeWebhook("PROJ-1")
+		wh2 := makeWebhook("PROJ-1")
+		assert.Equal(t,
+			notificationDedupKey(wh1, "user-abc", "Actor **assigned** you to PROJ-1"),
+			notificationDedupKey(wh2, "user-abc", "Actor **assigned** you to PROJ-1"))
+	})
 
-func TestAppendNotificationForAssigneeDedup(t *testing.T) {
-	jwh := &JiraWebhook{
-		Issue: jira.Issue{
-			Self: "https://example.atlassian.net/rest/api/2/issue/10001",
-			Key:  "TEST-1",
-			Fields: &jira.IssueFields{
-				Summary: "Test issue",
-				Type:    jira.IssueType{Name: "Story"},
-				Assignee: &jira.User{
-					AccountID:   "assignee-acc-id",
-					Name:        "assignee-user",
-					DisplayName: "Assignee User",
-				},
-			},
-		},
-		User: jira.User{
-			AccountID:   "actor-acc-id",
-			Name:        "actor-user",
-			DisplayName: "Actor User",
-		},
-	}
+	t.Run("different events producing identical notifications still dedup", func(t *testing.T) {
+		whCreated := &webhook{JiraWebhook: &JiraWebhook{
+			WebhookEvent: "jira:issue_created",
+			Issue:        jira.Issue{Key: "PROJ-1"},
+		}}
+		whAssigned := &webhook{JiraWebhook: &JiraWebhook{
+			WebhookEvent:       "jira:issue_updated",
+			IssueEventTypeName: "issue_assigned",
+			Issue:              jira.Issue{Key: "PROJ-1"},
+		}}
+		msg := "Actor **assigned** you to PROJ-1"
+		assert.Equal(t,
+			notificationDedupKey(whCreated, "user-abc", msg),
+			notificationDedupKey(whAssigned, "user-abc", msg))
+	})
 
-	wh := &webhook{JiraWebhook: jwh, eventTypes: NewStringSet(eventUpdatedAssignee)}
+	t.Run("different recipients produce different keys", func(t *testing.T) {
+		wh := makeWebhook("PROJ-1")
+		msg := "Actor **assigned** you to PROJ-1"
+		assert.NotEqual(t,
+			notificationDedupKey(wh, "user-abc", msg),
+			notificationDedupKey(wh, "user-xyz", msg))
+	})
 
-	appendNotificationForAssignee(wh)
-	require.Len(t, wh.notifications, 1)
+	t.Run("different issues produce different keys", func(t *testing.T) {
+		msg := "Actor **assigned** you to %s"
+		assert.NotEqual(t,
+			notificationDedupKey(makeWebhook("PROJ-1"), "user-abc", fmt.Sprintf(msg, "PROJ-1")),
+			notificationDedupKey(makeWebhook("PROJ-2"), "user-abc", fmt.Sprintf(msg, "PROJ-2")))
+	})
 
-	appendNotificationForAssignee(wh)
-	require.Len(t, wh.notifications, 1, "second call must not add a duplicate")
-
-	appendNotificationForAssignee(wh)
-	require.Len(t, wh.notifications, 1, "third call must not add a duplicate")
-}
-
-func TestAppendCommentNotificationsDedup(t *testing.T) {
-	jwh := &JiraWebhook{
-		Issue: jira.Issue{
-			Self: "https://example.atlassian.net/rest/api/2/issue/10001",
-			Key:  "TEST-1",
-			Fields: &jira.IssueFields{
-				Summary: "Test issue",
-				Type:    jira.IssueType{Name: "Story"},
-				Assignee: &jira.User{
-					AccountID:   "assignee-acc-id",
-					Name:        "assignee-user",
-					DisplayName: "Assignee User",
-				},
-			},
-		},
-		User: jira.User{
-			AccountID:   "actor-acc-id",
-			Name:        "actor-user",
-			DisplayName: "Actor User",
-		},
-		Comment: jira.Comment{
-			Body: "A comment with mention [~accountid:mentioned-acc-id]",
-			UpdateAuthor: jira.User{
-				AccountID:   "actor-acc-id",
-				DisplayName: "Actor User",
-			},
-			Self: "https://example.atlassian.net/rest/api/2/issue/10001/comment/10000",
-		},
-	}
-
-	wh := &webhook{JiraWebhook: jwh, eventTypes: NewStringSet(eventCreatedComment)}
-
-	appendCommentNotifications(wh, "**mentioned** you in a new comment on")
-	count := len(wh.notifications)
-
-	appendCommentNotifications(wh, "**mentioned** you in a new comment on")
-	assert.Equal(t, count, len(wh.notifications), "second call must not add duplicates")
+	t.Run("different messages produce different keys", func(t *testing.T) {
+		wh := makeWebhook("PROJ-1")
+		assert.NotEqual(t,
+			notificationDedupKey(wh, "user-abc", "Actor **assigned** you to PROJ-1"),
+			notificationDedupKey(wh, "user-abc", "Actor **commented** on PROJ-1"))
+	})
 }

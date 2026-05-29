@@ -4,6 +4,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -16,6 +18,11 @@ import (
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
+)
+
+const (
+	notificationDedupTTL    = 3 * time.Second
+	notificationDedupKeyFmt = "notif_dedup_%s"
 )
 
 const (
@@ -64,21 +71,6 @@ type webhookUserNotification struct {
 
 func (wh *webhook) Events() StringSet {
 	return wh.eventTypes
-}
-
-func (wh *webhook) hasNotification(jiraUsername, jiraAccountID, message string) bool {
-	for _, n := range wh.notifications {
-		if n.message != message {
-			continue
-		}
-		if jiraAccountID != "" && n.jiraAccountID == jiraAccountID {
-			return true
-		}
-		if jiraUsername != "" && n.jiraUsername == jiraUsername {
-			return true
-		}
-	}
-	return false
 }
 
 func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromUserID, subscriptionName string) (*model.Post, int, error) {
@@ -228,6 +220,14 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 
 		notification.message = p.replaceJiraAccountIds(instance.GetID(), notification.message, client)
 
+		dedupKey := notificationDedupKey(wh, mattermostUserID, notification.message)
+		var alreadySent bool
+		_ = p.client.KV.Get(dedupKey, &alreadySent)
+		if alreadySent {
+			continue
+		}
+		_, _ = p.client.KV.Set(dedupKey, true, pluginapi.SetExpiry(notificationDedupTTL))
+
 		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType)
 		if err != nil {
 			p.errorf("PostNotifications: failed to create notification post, err: %v", err)
@@ -244,6 +244,16 @@ func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...inter
 		eventTypes:  NewStringSet(eventType),
 		headline:    jwh.mdUser() + " " + fmt.Sprintf(format, args...) + " " + jwh.mdKeySummaryLink(),
 	}
+}
+
+func notificationDedupKey(wh *webhook, recipientID types.ID, message string) string {
+	raw := fmt.Sprintf("%s_%s_%s",
+		wh.Issue.Key,
+		string(recipientID),
+		message,
+	)
+	hash := sha256.Sum256([]byte(raw))
+	return fmt.Sprintf(notificationDedupKeyFmt, hex.EncodeToString(hash[:12]))
 }
 
 func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL, legacyURL string, err error) {

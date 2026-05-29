@@ -1805,10 +1805,6 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 			continue
 		}
 
-		if wh.hasNotification(watcherUser.Name, watcherUser.AccountID, commentMessage) {
-			continue
-		}
-
 		whUserNotification := webhookUserNotification{
 			jiraUsername:     watcherUser.Name,
 			jiraAccountID:    watcherUser.AccountID,
@@ -1847,10 +1843,6 @@ func (p *Plugin) applyReporterNotification(wh *webhook, instanceID types.ID, rep
 
 	connection, err := p.GetUserSetting(wh, instanceID, reporter.Name, reporter.AccountID)
 	if err != nil || connection.Settings == nil || !connection.Settings.ShouldReceiveNotification(notificationTypeReporter) {
-		return
-	}
-
-	if wh.hasNotification(reporter.Name, reporter.AccountID, commentMessage) {
 		return
 	}
 
