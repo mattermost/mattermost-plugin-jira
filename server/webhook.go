@@ -4,6 +4,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -16,6 +18,11 @@ import (
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
+)
+
+const (
+	notificationDedupTTL    = 3 * time.Second
+	notificationDedupKeyFmt = "notif_dedup_%s"
 )
 
 const (
@@ -213,10 +220,22 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 
 		notification.message = p.replaceJiraAccountIds(instance.GetID(), notification.message, client)
 
+		dedupKey := notificationDedupKey(wh, mattermostUserID, notification.message)
+		var alreadySent bool
+		if kvErr := p.client.KV.Get(dedupKey, &alreadySent); kvErr != nil {
+			p.client.Log.Warn("PostNotifications: failed to read dedup key, sending notification anyway", "key", dedupKey, "error", kvErr.Error())
+		}
+		if alreadySent {
+			continue
+		}
+
 		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType)
 		if err != nil {
 			p.errorf("PostNotifications: failed to create notification post, err: %v", err)
 			continue
+		}
+		if _, kvErr := p.client.KV.Set(dedupKey, true, pluginapi.SetExpiry(notificationDedupTTL)); kvErr != nil {
+			p.client.Log.Warn("PostNotifications: failed to write dedup key, duplicate may be sent", "key", dedupKey, "error", kvErr.Error())
 		}
 		posts = append(posts, post)
 	}
@@ -229,6 +248,16 @@ func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...inter
 		eventTypes:  NewStringSet(eventType),
 		headline:    jwh.mdUser() + " " + fmt.Sprintf(format, args...) + " " + jwh.mdKeySummaryLink(),
 	}
+}
+
+func notificationDedupKey(wh *webhook, recipientID types.ID, message string) string {
+	raw := fmt.Sprintf("%s_%s_%s",
+		wh.Issue.Key,
+		string(recipientID),
+		message,
+	)
+	hash := sha256.Sum256([]byte(raw))
+	return fmt.Sprintf(notificationDedupKeyFmt, hex.EncodeToString(hash[:]))
 }
 
 func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL, legacyURL string, err error) {

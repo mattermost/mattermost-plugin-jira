@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -267,4 +268,60 @@ more text data in code block.{noformat}`,
 			assert.Equal(t, tc.expectedOutput, actualOutput)
 		})
 	}
+}
+
+func TestNotificationDedupKey(t *testing.T) {
+	makeWebhook := func(issueKey string) *webhook {
+		return &webhook{
+			JiraWebhook: &JiraWebhook{
+				Issue: jira.Issue{Key: issueKey},
+			},
+		}
+	}
+
+	t.Run("same issue, recipient and message produce the same key", func(t *testing.T) {
+		wh1 := makeWebhook("PROJ-1")
+		wh2 := makeWebhook("PROJ-1")
+		assert.Equal(t,
+			notificationDedupKey(wh1, "user-abc", "Actor **assigned** you to PROJ-1"),
+			notificationDedupKey(wh2, "user-abc", "Actor **assigned** you to PROJ-1"))
+	})
+
+	t.Run("different events producing identical notifications still dedup", func(t *testing.T) {
+		whCreated := &webhook{JiraWebhook: &JiraWebhook{
+			WebhookEvent: "jira:issue_created",
+			Issue:        jira.Issue{Key: "PROJ-1"},
+		}}
+		whAssigned := &webhook{JiraWebhook: &JiraWebhook{
+			WebhookEvent:       "jira:issue_updated",
+			IssueEventTypeName: "issue_assigned",
+			Issue:              jira.Issue{Key: "PROJ-1"},
+		}}
+		msg := "Actor **assigned** you to PROJ-1"
+		assert.Equal(t,
+			notificationDedupKey(whCreated, "user-abc", msg),
+			notificationDedupKey(whAssigned, "user-abc", msg))
+	})
+
+	t.Run("different recipients produce different keys", func(t *testing.T) {
+		wh := makeWebhook("PROJ-1")
+		msg := "Actor **assigned** you to PROJ-1"
+		assert.NotEqual(t,
+			notificationDedupKey(wh, "user-abc", msg),
+			notificationDedupKey(wh, "user-xyz", msg))
+	})
+
+	t.Run("different issues produce different keys", func(t *testing.T) {
+		msg := "Actor **assigned** you to %s"
+		assert.NotEqual(t,
+			notificationDedupKey(makeWebhook("PROJ-1"), "user-abc", fmt.Sprintf(msg, "PROJ-1")),
+			notificationDedupKey(makeWebhook("PROJ-2"), "user-abc", fmt.Sprintf(msg, "PROJ-2")))
+	})
+
+	t.Run("different messages produce different keys", func(t *testing.T) {
+		wh := makeWebhook("PROJ-1")
+		assert.NotEqual(t,
+			notificationDedupKey(wh, "user-abc", "Actor **assigned** you to PROJ-1"),
+			notificationDedupKey(wh, "user-abc", "Actor **commented** on PROJ-1"))
+	})
 }
