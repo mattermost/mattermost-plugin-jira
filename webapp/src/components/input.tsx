@@ -1,47 +1,42 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {PureComponent} from 'react';
-import PropTypes from 'prop-types';
+import React, {PureComponent, ChangeEvent} from 'react';
 
-import Setting from './setting.jsx';
+import Setting from './setting';
 
-export default class Input extends PureComponent {
-    static propTypes = {
-        id: PropTypes.string,
-        label: PropTypes.node.isRequired,
-        placeholder: PropTypes.string,
-        helpText: PropTypes.node,
-        value: PropTypes.oneOfType([
-            PropTypes.string,
-            PropTypes.number,
-        ]),
-        addValidate: PropTypes.func.isRequired,
-        removeValidate: PropTypes.func.isRequired,
-        maxLength: PropTypes.number,
-        onChange: PropTypes.func,
-        disabled: PropTypes.bool,
-        required: PropTypes.bool,
-        readOnly: PropTypes.bool,
-        type: PropTypes.oneOf([
-            'number',
-            'input',
-            'textarea',
-            'date',
-            'datetime-local',
-        ]),
-    };
+type InputType = 'number' | 'input' | 'textarea' | 'date' | 'datetime-local';
 
+type Props = {
+    id?: string;
+    label: React.ReactNode;
+    placeholder?: string;
+    helpText?: React.ReactNode;
+    value?: string | number;
+    addValidate: (fn: () => boolean) => void;
+    removeValidate: (fn: () => boolean) => void;
+    maxLength?: number | null;
+    onChange?: (id: string, value: string | number) => void;
+    disabled?: boolean;
+    required?: boolean;
+    readOnly?: boolean;
+    type?: InputType;
+};
+
+type State = {
+    invalid: boolean;
+};
+
+export default class Input extends PureComponent<Props, State> {
     static defaultProps = {
-        type: 'input',
+        type: 'input' as InputType,
         maxLength: null,
         required: false,
         readOnly: false,
     };
 
-    constructor(props) {
+    constructor(props: Props) {
         super(props);
-
         this.state = {invalid: false};
     }
 
@@ -57,25 +52,25 @@ export default class Input extends PureComponent {
         }
     }
 
-    componentDidUpdate(prevProps, prevState) {
+    componentDidUpdate(prevProps: Props, prevState: State) {
         if (prevState.invalid && this.props.value !== prevProps.value) {
             this.setState({invalid: false}); //eslint-disable-line react/no-did-update-set-state
         }
     }
 
-    handleChange = (e) => {
+    handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         if (this.props.type === 'number') {
-            this.props.onChange(this.props.id, parseInt(e.target.value, 10));
+            this.props.onChange?.(this.props.id ?? '', parseInt(e.target.value, 10));
         } else {
-            this.props.onChange(this.props.id, e.target.value);
+            this.props.onChange?.(this.props.id ?? '', e.target.value);
         }
     };
 
-    isValid = () => {
+    isValid = (): boolean => {
         if (!this.props.required) {
             return true;
         }
-        const valid = this.props.value && this.props.value.toString().length !== 0;
+        const valid = Boolean(this.props.value && this.props.value.toString().length !== 0);
         this.setState({invalid: !valid});
         return valid;
     };
@@ -103,7 +98,7 @@ export default class Input extends PureComponent {
                     type='text'
                     placeholder={this.props.placeholder}
                     value={value}
-                    maxLength={this.props.maxLength}
+                    maxLength={this.props.maxLength ?? undefined}
                     onChange={this.handleChange}
                     disabled={this.props.disabled}
                     readOnly={this.props.readOnly}
@@ -117,7 +112,7 @@ export default class Input extends PureComponent {
                     type='number'
                     placeholder={this.props.placeholder}
                     value={value}
-                    maxLength={this.props.maxLength}
+                    maxLength={this.props.maxLength ?? undefined}
                     onChange={this.handleChange}
                     disabled={this.props.disabled}
                     readOnly={this.props.readOnly}
@@ -130,10 +125,10 @@ export default class Input extends PureComponent {
                     resize='none'
                     id={this.props.id}
                     className='form-control'
-                    rows='5'
+                    rows={5}
                     placeholder={this.props.placeholder}
                     value={value}
-                    maxLength={this.props.maxLength}
+                    maxLength={this.props.maxLength ?? undefined}
                     onChange={this.handleChange}
                     disabled={this.props.disabled}
                     readOnly={this.props.readOnly}
@@ -170,6 +165,6 @@ export default class Input extends PureComponent {
 
 const getStyle = () => ({
     textarea: {
-        resize: 'none',
+        resize: 'none' as const,
     },
 });

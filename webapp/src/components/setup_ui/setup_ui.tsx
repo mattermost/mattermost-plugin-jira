@@ -2,16 +2,15 @@
 // See LICENSE.txt for license information.
 
 import {PureComponent} from 'react';
-import PropTypes from 'prop-types';
+
+type Props = {
+    haveSetupUI: boolean;
+    finishedSetupUI: () => void;
+    setupUI: () => void;
+};
 
 // SetupUI is a dummy Root component that we use to detect when the user has logged in
-export default class SetupUI extends PureComponent {
-    static propTypes = {
-        haveSetupUI: PropTypes.bool.isRequired,
-        finishedSetupUI: PropTypes.func.isRequired,
-        setupUI: PropTypes.func.isRequired,
-    };
-
+export default class SetupUI extends PureComponent<Props> {
     componentDidMount() {
         if (!this.props.haveSetupUI) {
             this.props.setupUI();

@@ -2,18 +2,17 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import PropTypes from 'prop-types';
 
-export default class Setting extends React.PureComponent {
-    static propTypes = {
-        inputId: PropTypes.string,
-        label: PropTypes.node,
-        children: PropTypes.node.isRequired,
-        helpText: PropTypes.node,
-        required: PropTypes.bool,
-        hideRequiredStar: PropTypes.bool,
-    };
+type Props = {
+    inputId?: string;
+    label?: React.ReactNode;
+    children: React.ReactNode;
+    helpText?: React.ReactNode;
+    required?: boolean;
+    hideRequiredStar?: boolean;
+};
 
+export default class Setting extends React.PureComponent<Props> {
     render() {
         const {
             children,
