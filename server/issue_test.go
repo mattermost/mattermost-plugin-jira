@@ -1456,6 +1456,147 @@ func TestShouldNotifyWatcherUser(t *testing.T) {
 	require.True(t, shouldNotifyWatcherUser(jira.Watcher{Name: "someone"}, nil))
 }
 
+func TestGetWatchersWithAPIToken(t *testing.T) {
+	watchersPayload := jira.Watches{
+		WatchCount: 2,
+		IsWatching: false,
+		Watchers: []*jira.Watcher{
+			{AccountID: "acct-100", DisplayName: "Watcher One", Active: true},
+			{Name: "watcher-two", DisplayName: "Watcher Two", Active: true},
+		},
+	}
+
+	newCloudInst := func(baseURL string) Instance {
+		return &testInstance{InstanceCommon: InstanceCommon{
+			InstanceID: types.ID(baseURL),
+			Type:       CloudInstanceType,
+		}}
+	}
+	newServerInst := func(baseURL string) Instance {
+		return &testInstance{InstanceCommon: InstanceCommon{
+			InstanceID: types.ID(baseURL),
+			Type:       ServerInstanceType,
+		}}
+	}
+
+	t.Run("success - Cloud uses /rest/api/3 and accountId watchers", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "/rest/api/3/issue/PROJ-123/watchers", r.URL.Path)
+			assert.Contains(t, r.Header.Get("Authorization"), "Basic ")
+			assert.Contains(t, r.Header.Get("User-Agent"), "Mattermost-Plugin-Jira/")
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(watchersPayload) //nolint:errcheck
+		}))
+		defer ts.Close()
+
+		p := setupTestPlugin(&plugintest.API{})
+		tokenJSON, _ := json.Marshal("test-api-token")
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = string(tokenJSON)
+			conf.AdminEmail = "admin@example.com"
+			conf.EncryptionKey = ""
+		})
+
+		watchers, err := p.GetWatchersWithAPIToken("PROJ-123", newCloudInst(ts.URL))
+		require.NoError(t, err)
+		require.NotNil(t, watchers)
+		assert.Equal(t, 2, watchers.WatchCount)
+		require.Len(t, watchers.Watchers, 2)
+		assert.Equal(t, "acct-100", watchers.Watchers[0].AccountID)
+		assert.Equal(t, "watcher-two", watchers.Watchers[1].Name)
+	})
+
+	t.Run("success - Server/DC uses /rest/api/2 and name-based watchers", func(t *testing.T) {
+		dcPayload := jira.Watches{
+			WatchCount: 1,
+			Watchers: []*jira.Watcher{
+				{Name: "fred", DisplayName: "Fred F. User", Active: true},
+			},
+		}
+
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "/rest/api/2/issue/ISSUE-456/watchers", r.URL.Path)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(dcPayload) //nolint:errcheck
+		}))
+		defer ts.Close()
+
+		p := setupTestPlugin(&plugintest.API{})
+		tokenJSON, _ := json.Marshal("admin-password")
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = string(tokenJSON)
+			conf.AdminEmail = "admin"
+			conf.EncryptionKey = ""
+		})
+
+		watchers, err := p.GetWatchersWithAPIToken("ISSUE-456", newServerInst(ts.URL))
+		require.NoError(t, err)
+		require.NotNil(t, watchers)
+		assert.Equal(t, 1, watchers.WatchCount)
+		assert.Equal(t, "fred", watchers.Watchers[0].Name)
+	})
+
+	t.Run("404 - issue not found", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+		}))
+		defer ts.Close()
+
+		p := setupTestPlugin(&plugintest.API{})
+		tokenJSON, _ := json.Marshal("test-api-token")
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = string(tokenJSON)
+			conf.AdminEmail = "admin@example.com"
+			conf.EncryptionKey = ""
+		})
+
+		watchers, err := p.GetWatchersWithAPIToken("FAKE-999", newCloudInst(ts.URL))
+		assert.Error(t, err)
+		assert.Nil(t, watchers)
+		assert.Contains(t, err.Error(), "does not exist")
+	})
+
+	t.Run("403 - forbidden", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusForbidden)
+		}))
+		defer ts.Close()
+
+		p := setupTestPlugin(&plugintest.API{})
+		tokenJSON, _ := json.Marshal("test-api-token")
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = string(tokenJSON)
+			conf.AdminEmail = "admin@example.com"
+			conf.EncryptionKey = ""
+		})
+
+		watchers, err := p.GetWatchersWithAPIToken("PROJ-123", newCloudInst(ts.URL))
+		assert.Error(t, err)
+		assert.Nil(t, watchers)
+		assert.Contains(t, err.Error(), "permission")
+	})
+
+	t.Run("missing admin email returns config error", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+			t.Fatal("HTTP request should not have been made when admin email is missing")
+		}))
+		defer ts.Close()
+
+		p := setupTestPlugin(&plugintest.API{})
+		tokenJSON, _ := json.Marshal("test-api-token")
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = string(tokenJSON)
+			conf.AdminEmail = ""
+			conf.EncryptionKey = ""
+		})
+
+		watchers, err := p.GetWatchersWithAPIToken("PROJ-123", newCloudInst(ts.URL))
+		require.Error(t, err)
+		assert.Nil(t, watchers)
+		assert.Contains(t, err.Error(), "admin email/username is empty in plugin config")
+	})
+}
+
 func TestInjectTeamAllowedValues(t *testing.T) {
 	t.Run("with manual team config", func(t *testing.T) {
 		metaInfo := &jira.CreateMetaInfo{
