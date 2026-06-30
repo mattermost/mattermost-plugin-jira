@@ -1092,10 +1092,9 @@ func TestRouteAttachCommentToIssue(t *testing.T) {
 		})
 	}
 }
-func TestCreateIssue(t *testing.T) {
+func setupCreateIssueAPIMock() *plugintest.API {
 	api := &plugintest.API{}
 
-	// Mock post that exists and user has access to
 	api.On("GetPost", "accessible_post_id").Return(&model.Post{
 		Id:        "accessible_post_id",
 		UserId:    "connected_user",
@@ -1103,7 +1102,6 @@ func TestCreateIssue(t *testing.T) {
 		Message:   "Test message",
 	}, (*model.AppError)(nil))
 
-	// Mock post that exists but user doesn't have access to
 	api.On("GetPost", "inaccessible_post_id").Return(&model.Post{
 		Id:        "inaccessible_post_id",
 		UserId:    "other_user",
@@ -1111,7 +1109,6 @@ func TestCreateIssue(t *testing.T) {
 		Message:   "Private message",
 	}, (*model.AppError)(nil))
 
-	// Mock reply post (threaded message) that user has access to
 	api.On("GetPost", "accessible_reply_post_id").Return(&model.Post{
 		Id:        "accessible_reply_post_id",
 		UserId:    "connected_user",
@@ -1120,7 +1117,6 @@ func TestCreateIssue(t *testing.T) {
 		Message:   "Reply message",
 	}, (*model.AppError)(nil))
 
-	// Mock reply post in private channel
 	api.On("GetPost", "inaccessible_reply_post_id").Return(&model.Post{
 		Id:        "inaccessible_reply_post_id",
 		UserId:    "other_user",
@@ -1129,13 +1125,11 @@ func TestCreateIssue(t *testing.T) {
 		Message:   "Private reply",
 	}, (*model.AppError)(nil))
 
-	// Mock post that doesn't exist
 	api.On("GetPost", "nonexistent_post_id").Return(nil, &model.AppError{
 		Id:      "app.post.get.app_error",
 		Message: "Post not found",
 	})
 
-	// Mock DM channel post
 	api.On("GetPost", "dm_post_id").Return(&model.Post{
 		Id:        "dm_post_id",
 		UserId:    "other_user",
@@ -1143,29 +1137,29 @@ func TestCreateIssue(t *testing.T) {
 		Message:   "DM message",
 	}, (*model.AppError)(nil))
 
-	// Mock GetMember: user IS a member of channel_id_1
 	api.On("GetChannelMember", "channel_id_1", "connected_user").Return(&model.ChannelMember{
 		ChannelId: "channel_id_1",
 		UserId:    "connected_user",
 	}, (*model.AppError)(nil))
 
-	// Mock GetMember: user is NOT a member of private_channel_id
 	api.On("GetChannelMember", "private_channel_id", "connected_user").Return(nil, &model.AppError{
 		Id:      "api.context.permissions.app_error",
 		Message: "User does not have access to this channel",
 	})
 
-	// Mock GetMember: user is NOT a member of dm_channel_id
 	api.On("GetChannelMember", "dm_channel_id", "connected_user").Return(nil, &model.AppError{
 		Id:      "api.context.permissions.app_error",
 		Message: "User does not have access to this channel",
 	})
 
-	// Mock successful issue creation
 	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, (*model.AppError)(nil))
 	api.On("PublishWebSocketEvent", "update_defaults", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.WebsocketBroadcast"))
 
+	return api
+}
+
+func TestCreateIssue(t *testing.T) {
 	tests := map[string]struct {
 		postID         string
 		channelID      string
@@ -1190,14 +1184,14 @@ func TestCreateIssue(t *testing.T) {
 			channelID:      "channel_id_1",
 			expectedStatus: http.StatusForbidden,
 			expectError:    true,
-			errorContains:  "User does not have access to this post",
+			errorContains:  "User does not have access to this channel",
 		},
 		"SECURITY: Bypass attempt - inaccessible post with accessible channelID in request should fail": {
 			postID:         "inaccessible_post_id", // post is in private_channel_id
 			channelID:      "channel_id_1",         // attacker provides accessible channel ID
 			expectedStatus: http.StatusForbidden,
 			expectError:    true,
-			errorContains:  "User does not have access to this post",
+			errorContains:  "User does not have access to this channel",
 		},
 		"Create issue with accessible reply post - should succeed": {
 			postID:         "accessible_reply_post_id",
@@ -1210,7 +1204,7 @@ func TestCreateIssue(t *testing.T) {
 			channelID:      "channel_id_1",
 			expectedStatus: http.StatusForbidden,
 			expectError:    true,
-			errorContains:  "User does not have access to this post",
+			errorContains:  "User does not have access to this channel",
 		},
 		"Create issue with nonexistent post - should fail with 500": {
 			postID:         "nonexistent_post_id",
@@ -1224,12 +1218,21 @@ func TestCreateIssue(t *testing.T) {
 			channelID:      "channel_id_1",
 			expectedStatus: http.StatusForbidden,
 			expectError:    true,
-			errorContains:  "User does not have access to this post",
+			errorContains:  "User does not have access to this channel",
+		},
+		"SECURITY (MM-69541): post_id omitted with private channel_id should fail with 403": {
+			postID:         "",
+			channelID:      "private_channel_id",
+			expectedStatus: http.StatusForbidden,
+			expectError:    true,
+			errorContains:  "User does not have access to this channel",
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			api := setupCreateIssueAPIMock()
+
 			p := Plugin{}
 			p.initializeRouter()
 			p.SetAPI(api)
@@ -1240,7 +1243,6 @@ func TestCreateIssue(t *testing.T) {
 			p.userStore = getMockUserStoreKV()
 			p.instanceStore = p.getMockInstanceStoreKV(1)
 
-			// Create the InCreateIssue input
 			in := &InCreateIssue{
 				PostID:           tt.postID,
 				CurrentTeam:      "test_team",
@@ -1259,10 +1261,8 @@ func TestCreateIssue(t *testing.T) {
 				},
 			}
 
-			// Call CreateIssue
 			issue, statusCode, err := p.CreateIssue(in)
 
-			// Assertions
 			assert.Equal(t, tt.expectedStatus, statusCode, "Expected status code to match")
 
 			if tt.expectError {
@@ -1271,6 +1271,15 @@ func TestCreateIssue(t *testing.T) {
 					assert.Contains(t, err.Error(), tt.errorContains, "Error should contain expected text")
 				}
 				assert.Nil(t, issue, "Issue should be nil when error occurs")
+
+				// Forbidden / failed paths must never write a post via the
+				// elevated plugin API; this guards against MM-69541-style
+				// regressions where authorization runs after the post is
+				// already created.
+				if tt.expectedStatus == http.StatusForbidden {
+					api.AssertNotCalled(t, "CreatePost", mock.Anything)
+					api.AssertNotCalled(t, "SendEphemeralPost", mock.Anything, mock.Anything)
+				}
 			} else {
 				assert.NoError(t, err, "Expected no error")
 				assert.NotNil(t, issue, "Issue should not be nil on success")
@@ -1279,44 +1288,14 @@ func TestCreateIssue(t *testing.T) {
 	}
 }
 
-func TestRouteCreateIssue(t *testing.T) {
-	api := &plugintest.API{}
-
+func setupRouteCreateIssueAPIMock() *plugintest.API {
+	api := setupCreateIssueAPIMock()
 	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
+	return api
+}
 
-	// Mock post that exists and user has access to
-	api.On("GetPost", "accessible_post_id").Return(&model.Post{
-		Id:        "accessible_post_id",
-		UserId:    "connected_user",
-		ChannelId: "channel_id_1",
-		Message:   "Test message",
-	}, (*model.AppError)(nil))
-
-	// Mock post that exists but user doesn't have access to
-	api.On("GetPost", "inaccessible_post_id").Return(&model.Post{
-		Id:        "inaccessible_post_id",
-		UserId:    "other_user",
-		ChannelId: "private_channel_id",
-		Message:   "Private message",
-	}, (*model.AppError)(nil))
-
-	// Mock GetMember: user IS a member of channel_id_1
-	api.On("GetChannelMember", "channel_id_1", "connected_user").Return(&model.ChannelMember{
-		ChannelId: "channel_id_1",
-		UserId:    "connected_user",
-	}, (*model.AppError)(nil))
-
-	// Mock GetMember: user is NOT a member of private_channel_id
-	api.On("GetChannelMember", "private_channel_id", "connected_user").Return(nil, &model.AppError{
-		Id:      "api.context.permissions.app_error",
-		Message: "User does not have access to this channel",
-	})
-
-	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
-	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, (*model.AppError)(nil))
-	api.On("PublishWebSocketEvent", "update_defaults", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.WebsocketBroadcast"))
-
+func TestRouteCreateIssue(t *testing.T) {
 	type requestStruct struct {
 		PostID      string           `json:"post_id"`
 		InstanceID  string           `json:"instance_id"`
@@ -1417,10 +1396,32 @@ func TestRouteCreateIssue(t *testing.T) {
 			},
 			expectedCode: http.StatusForbidden,
 		},
+		"SECURITY (MM-69541): empty post_id with private channel_id should fail with 403": {
+			method: "POST",
+			userID: "connected_user",
+			request: &requestStruct{
+				PostID:      "",
+				CurrentTeam: "test_team",
+				ChannelID:   "private_channel_id",
+				Fields: jira.IssueFields{
+					Project: jira.Project{
+						Key: mockProjectKey,
+					},
+					Type: jira.IssueType{
+						ID: "10001",
+					},
+					Summary:     "Test Issue",
+					Description: "Test description",
+				},
+			},
+			expectedCode: http.StatusForbidden,
+		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			api := setupRouteCreateIssueAPIMock()
+
 			p := Plugin{}
 			p.initializeRouter()
 			p.SetAPI(api)
@@ -1440,6 +1441,11 @@ func TestRouteCreateIssue(t *testing.T) {
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)
 			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, name)
+
+			if tt.expectedCode == http.StatusForbidden {
+				api.AssertNotCalled(t, "CreatePost", mock.Anything)
+				api.AssertNotCalled(t, "SendEphemeralPost", mock.Anything, mock.Anything)
+			}
 		})
 	}
 }
