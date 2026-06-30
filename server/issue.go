@@ -336,11 +336,6 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 		}
 		permalink := getPermaLink(instance, in.PostID, in.CurrentTeam)
 
-		_, err = p.client.Channel.GetMember(post.ChannelId, in.mattermostUserID.String())
-		if err != nil {
-			return nil, http.StatusForbidden, errors.New("User does not have access to this post")
-		}
-
 		if len(in.Fields.Description) > 0 {
 			in.Fields.Description += fmt.Sprintf("\n\n_Issue created from a [message in Mattermost|%v]_.", permalink)
 		} else {
@@ -363,6 +358,12 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 	channelID := in.ChannelID
 	if post != nil {
 		channelID = post.ChannelId
+	}
+
+	if channelID != "" {
+		if _, err = p.client.Channel.GetMember(channelID, in.mattermostUserID.String()); err != nil {
+			return nil, http.StatusForbidden, errors.New("User does not have access to this channel")
+		}
 	}
 
 	for i, notCovered := range in.RequiredFieldsNotCovered {
