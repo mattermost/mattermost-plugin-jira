@@ -360,10 +360,12 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 		channelID = post.ChannelId
 	}
 
-	if channelID != "" {
-		if _, err = p.client.Channel.GetMember(channelID, in.mattermostUserID.String()); err != nil {
-			return nil, http.StatusForbidden, errors.New("User does not have access to this channel")
-		}
+	if channelID == "" {
+		return nil, http.StatusBadRequest, errors.New("either post_id or channel_id must be provided")
+	}
+
+	if _, err = p.client.Channel.GetMember(channelID, in.mattermostUserID.String()); err != nil {
+		return nil, http.StatusForbidden, errors.New("User does not have access to this channel")
 	}
 
 	for i, notCovered := range in.RequiredFieldsNotCovered {
