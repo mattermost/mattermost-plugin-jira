@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import type {Theme} from 'mattermost-redux/types/preferences';
+import type {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {components} from 'react-select';
 
@@ -10,7 +10,7 @@ import ReactSelectSetting from 'components/react_select_setting';
 import Input from 'components/input';
 import {isTeamField} from 'utils/jira_issue_metadata';
 
-import {JiraFieldCustomTypeEnums} from 'types/model';
+import {IssueMetadata, JiraField, AllowedValue, JiraFieldCustomTypeEnums} from 'types/model';
 
 import JiraEpicSelector from './data_selectors/jira_epic_selector';
 import JiraAutoCompleteSelector from './data_selectors/jira_autocomplete_selector';
@@ -23,41 +23,16 @@ type JiraFieldData = {
     name?: string;
     value?: string;
     iconUrl?: string;
-    allowedValue: {
-        id: string;
-        name?: string;
-        value?: string;
-        iconUrl?: string;
-    };
+    allowedValue: AllowedValue;
     label: string;
-};
-
-type FieldSchema = {
-    system?: string;
-    custom?: string;
-    type?: string;
-};
-
-type AllowedValue = {
-    id: string;
-    name?: string;
-    value?: string;
-    iconUrl?: string;
-};
-
-type Field = {
-    name: string;
-    required?: boolean;
-    schema: FieldSchema;
-    allowedValues?: AllowedValue[];
 };
 
 type Props = {
     id: string;
     instanceID: string;
-    field: Field;
-    projectKey: string;
-    issueMetadata: Record<string, any>;
+    field: JiraField;
+    projectKey?: string;
+    issueMetadata: IssueMetadata | null;
     obeyRequired?: boolean;
     onChange: (id: string, value: any) => void;
     value?: any;
@@ -88,10 +63,7 @@ export default class JiraField extends React.Component<Props> {
             );
         }
         return (
-            <components.Option
-                {...props}
-                style={getStyle().selectComponent}
-            >
+            <components.Option {...props}>
                 {img}
                 {props.data.label}
             </components.Option>
@@ -334,7 +306,7 @@ export default class JiraField extends React.Component<Props> {
     }
 }
 
-export function isFieldSupported(field: Field | null | undefined) {
+export function isFieldSupported(field: JiraField | null | undefined) {
     if (!field || !field.schema) {
         return false;
     }

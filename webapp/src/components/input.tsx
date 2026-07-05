@@ -60,7 +60,8 @@ export default class Input extends PureComponent<Props, State> {
 
     handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         if (this.props.type === 'number') {
-            this.props.onChange?.(this.props.id ?? '', parseInt(e.target.value, 10));
+            const numValue = e.target.value === '' ? '' : Number(e.target.value);
+            this.props.onChange?.(this.props.id ?? '', numValue);
         } else {
             this.props.onChange?.(this.props.id ?? '', e.target.value);
         }
@@ -70,7 +71,8 @@ export default class Input extends PureComponent<Props, State> {
         if (!this.props.required) {
             return true;
         }
-        const valid = Boolean(this.props.value && this.props.value.toString().length !== 0);
+        const {value} = this.props;
+        const valid = value !== undefined && value !== null && value !== '';
         this.setState({invalid: !valid});
         return valid;
     };
@@ -78,7 +80,7 @@ export default class Input extends PureComponent<Props, State> {
     render() {
         const requiredMsg = 'This field is required.';
         const style = getStyle();
-        const value = this.props.value || '';
+        const value = this.props.value ?? '';
 
         let validationError = null;
         if (this.props.required && this.state.invalid) {

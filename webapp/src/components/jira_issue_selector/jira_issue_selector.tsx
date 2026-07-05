@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {Component} from 'react';
-import type {Theme} from 'mattermost-redux/types/preferences';
+import type {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import debounce from 'debounce-promise';
 import AsyncSelect from 'react-select/async';
