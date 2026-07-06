@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	notificationDedupTTL    = 3 * time.Second
+	notificationDedupTTL    = 30 * time.Second
 	notificationDedupKeyFmt = "notif_dedup_%s"
 )
 
@@ -237,12 +237,9 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType)
 		if err != nil {
 			p.errorf("PostNotifications: failed to create notification post, err: %v", err)
-			// Release the claim so the notification can be retried.
-			if claimed {
-				if delErr := p.client.KV.Delete(dedupKey); delErr != nil {
-					p.client.Log.Warn("PostNotifications: failed to release dedup key after post failure", "key", dedupKey, "error", delErr.Error())
-				}
-			}
+			// Keep the claim: CreateBotDMPost may have persisted the post despite
+			// returning an error, so releasing it would let a retry post a
+			// duplicate. Let the claim TTL expire on its own.
 			continue
 		}
 		posts = append(posts, post)
