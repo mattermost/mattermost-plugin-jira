@@ -13,6 +13,8 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 func TestMarkdown(t *testing.T) {
@@ -279,12 +281,14 @@ func TestNotificationDedupKey(t *testing.T) {
 		}
 	}
 
-	t.Run("same issue, recipient and message produce the same key", func(t *testing.T) {
+	const instanceID = types.ID("https://jira.example.com")
+
+	t.Run("same instance, issue, recipient and message produce the same key", func(t *testing.T) {
 		wh1 := makeWebhook("PROJ-1")
 		wh2 := makeWebhook("PROJ-1")
 		assert.Equal(t,
-			notificationDedupKey(wh1, "user-abc", "Actor **assigned** you to PROJ-1"),
-			notificationDedupKey(wh2, "user-abc", "Actor **assigned** you to PROJ-1"))
+			notificationDedupKey(instanceID, wh1, "user-abc", "Actor **assigned** you to PROJ-1"),
+			notificationDedupKey(instanceID, wh2, "user-abc", "Actor **assigned** you to PROJ-1"))
 	})
 
 	t.Run("different events producing identical notifications still dedup", func(t *testing.T) {
@@ -299,29 +303,37 @@ func TestNotificationDedupKey(t *testing.T) {
 		}}
 		msg := "Actor **assigned** you to PROJ-1"
 		assert.Equal(t,
-			notificationDedupKey(whCreated, "user-abc", msg),
-			notificationDedupKey(whAssigned, "user-abc", msg))
+			notificationDedupKey(instanceID, whCreated, "user-abc", msg),
+			notificationDedupKey(instanceID, whAssigned, "user-abc", msg))
+	})
+
+	t.Run("different instances produce different keys", func(t *testing.T) {
+		wh := makeWebhook("PROJ-1")
+		msg := "Actor **assigned** you to PROJ-1"
+		assert.NotEqual(t,
+			notificationDedupKey(types.ID("https://jira-a.example.com"), wh, "user-abc", msg),
+			notificationDedupKey(types.ID("https://jira-b.example.com"), wh, "user-abc", msg))
 	})
 
 	t.Run("different recipients produce different keys", func(t *testing.T) {
 		wh := makeWebhook("PROJ-1")
 		msg := "Actor **assigned** you to PROJ-1"
 		assert.NotEqual(t,
-			notificationDedupKey(wh, "user-abc", msg),
-			notificationDedupKey(wh, "user-xyz", msg))
+			notificationDedupKey(instanceID, wh, "user-abc", msg),
+			notificationDedupKey(instanceID, wh, "user-xyz", msg))
 	})
 
 	t.Run("different issues produce different keys", func(t *testing.T) {
 		msg := "Actor **assigned** you to %s"
 		assert.NotEqual(t,
-			notificationDedupKey(makeWebhook("PROJ-1"), "user-abc", fmt.Sprintf(msg, "PROJ-1")),
-			notificationDedupKey(makeWebhook("PROJ-2"), "user-abc", fmt.Sprintf(msg, "PROJ-2")))
+			notificationDedupKey(instanceID, makeWebhook("PROJ-1"), "user-abc", fmt.Sprintf(msg, "PROJ-1")),
+			notificationDedupKey(instanceID, makeWebhook("PROJ-2"), "user-abc", fmt.Sprintf(msg, "PROJ-2")))
 	})
 
 	t.Run("different messages produce different keys", func(t *testing.T) {
 		wh := makeWebhook("PROJ-1")
 		assert.NotEqual(t,
-			notificationDedupKey(wh, "user-abc", "Actor **assigned** you to PROJ-1"),
-			notificationDedupKey(wh, "user-abc", "Actor **commented** on PROJ-1"))
+			notificationDedupKey(instanceID, wh, "user-abc", "Actor **assigned** you to PROJ-1"),
+			notificationDedupKey(instanceID, wh, "user-abc", "Actor **commented** on PROJ-1"))
 	})
 }

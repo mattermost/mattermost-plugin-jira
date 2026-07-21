@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	notificationDedupTTL    = 3 * time.Second
+	notificationDedupTTL    = 30 * time.Second
 	notificationDedupKeyFmt = "notif_dedup_%s"
 )
 
@@ -220,22 +220,27 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 
 		notification.message = p.replaceJiraAccountIds(instance.GetID(), notification.message, client)
 
-		dedupKey := notificationDedupKey(wh, mattermostUserID, notification.message)
-		var alreadySent bool
-		if kvErr := p.client.KV.Get(dedupKey, &alreadySent); kvErr != nil {
-			p.client.Log.Warn("PostNotifications: failed to read dedup key, sending notification anyway", "key", dedupKey, "error", kvErr.Error())
-		}
-		if alreadySent {
+		// Atomically claim the dedup key before posting so concurrent webhook
+		// deliveries can't both pass the check and send duplicates. SetAtomic(nil)
+		// only writes when the key does not already exist.
+		dedupKey := notificationDedupKey(instance.GetID(), wh, mattermostUserID, notification.message)
+		claimed, kvErr := p.client.KV.Set(dedupKey, true, pluginapi.SetExpiry(notificationDedupTTL), pluginapi.SetAtomic(nil))
+		switch {
+		case kvErr != nil:
+			// Fail open: send the notification rather than dropping it.
+			p.client.Log.Warn("PostNotifications: failed to claim dedup key, sending notification anyway", "key", dedupKey, "error", kvErr.Error())
+		case !claimed:
+			// Another delivery already claimed this notification.
 			continue
 		}
 
 		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType)
 		if err != nil {
 			p.errorf("PostNotifications: failed to create notification post, err: %v", err)
+			// Keep the claim: CreateBotDMPost may have persisted the post despite
+			// returning an error, so releasing it would let a retry post a
+			// duplicate. Let the claim TTL expire on its own.
 			continue
-		}
-		if _, kvErr := p.client.KV.Set(dedupKey, true, pluginapi.SetExpiry(notificationDedupTTL)); kvErr != nil {
-			p.client.Log.Warn("PostNotifications: failed to write dedup key, duplicate may be sent", "key", dedupKey, "error", kvErr.Error())
 		}
 		posts = append(posts, post)
 	}
@@ -250,8 +255,9 @@ func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...inter
 	}
 }
 
-func notificationDedupKey(wh *webhook, recipientID types.ID, message string) string {
-	raw := fmt.Sprintf("%s_%s_%s",
+func notificationDedupKey(instanceID types.ID, wh *webhook, recipientID types.ID, message string) string {
+	raw := fmt.Sprintf("%s_%s_%s_%s",
+		string(instanceID),
 		wh.Issue.Key,
 		string(recipientID),
 		message,
