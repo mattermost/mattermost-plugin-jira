@@ -221,6 +221,10 @@ func (p *Plugin) OnConfigurationChange() error {
 	case ec.AdminAPIToken == "":
 	case ec.AdminAPIToken == prevExternal.AdminAPIToken:
 	default:
+		if ec.EncryptionKey == "" {
+			p.client.Log.Warn("Encryption key required to encrypt admin API token")
+			return errors.New("failed to encrypt admin token. Encryption key not generated")
+		}
 		if _, decErr := decrypt([]byte(ec.AdminAPIToken), []byte(ec.EncryptionKey)); decErr == nil {
 			break
 		}
@@ -228,10 +232,6 @@ func (p *Plugin) OnConfigurationChange() error {
 		if err != nil {
 			p.client.Log.Warn("Error marshaling the admin API token", "error", err.Error())
 			return err
-		}
-		if ec.EncryptionKey == "" {
-			p.client.Log.Warn("Encryption key required to encrypt admin API token")
-			return errors.New("failed to encrypt admin token. Encryption key not generated")
 		}
 		encryptedAdminAPIToken, err := encrypt(jsonBytes, []byte(ec.EncryptionKey))
 		if err != nil {
