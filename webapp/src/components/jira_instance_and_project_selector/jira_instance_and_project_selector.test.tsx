@@ -120,7 +120,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         await act(async () => {
             await props.getConnected();
         });
-        expect(onInstanceChange).toBeCalledWith('instance2');
+        expect(onInstanceChange).toHaveBeenCalledWith('instance2');
 
         onInstanceChange = jest.fn();
         props = {
@@ -140,7 +140,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         await act(async () => {
             await props.getConnected();
         });
-        expect(onInstanceChange).toBeCalledWith('instance1');
+        expect(onInstanceChange).toHaveBeenCalledWith('instance1');
 
         onInstanceChange = jest.fn();
         props = {
@@ -161,7 +161,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         await act(async () => {
             await props.getConnected();
         });
-        expect(onInstanceChange).toBeCalledWith('instance3');
+        expect(onInstanceChange).toHaveBeenCalledWith('instance3');
 
         onInstanceChange = jest.fn();
         props = {
@@ -180,7 +180,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         await act(async () => {
             await props.getConnected();
         });
-        expect(onInstanceChange).not.toBeCalled();
+        expect(onInstanceChange).not.toHaveBeenCalled();
     });
 
     test('should use default field values after fetch', async () => {
@@ -218,7 +218,7 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         await act(async () => {
             await fetchJiraProjectMetadata('instance2');
         });
-        expect(onProjectChange).toBeCalledWith({
+        expect(onProjectChange).toHaveBeenCalledWith({
             project_key: 'TEST',
         });
     });
