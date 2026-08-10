@@ -41,7 +41,7 @@ const (
 	CommentVisibility          = "commentVisibility"
 	TeamFilter                 = "teamField"
 	CommentVisibilityGroupType = "group"
-	maxDMGMChannelMembers = 200
+	maxDMGMChannelMembers      = 200
 )
 
 type FieldFilter struct {

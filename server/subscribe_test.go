@@ -1807,6 +1807,7 @@ func TestRemoveSubscriptionsForChannelIndexDrift(t *testing.T) {
 
 	err = p.removeSubscriptionsForChannel(testInstance1.GetID(), dmChannelID)
 	assert.NoError(t, err)
+	api.AssertExpectations(t)
 }
 
 func TestRemoveSubscriptionsForChannel(t *testing.T) {
@@ -2001,6 +2002,8 @@ func TestCleanupDMSubscriptionsOnDisconnect(t *testing.T) {
 		}), mock.AnythingOfType("model.PluginKVSetOptions")).Return(true, nil)
 
 		p.cleanupDMSubscriptionsOnDisconnect(testInstance1.GetID(), mattermostUserID)
+
+		api.AssertExpectations(t)
 	})
 
 	t.Run("keeps GM subscription when another member is still connected", func(t *testing.T) {

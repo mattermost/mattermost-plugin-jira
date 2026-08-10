@@ -93,6 +93,7 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 		require.NoError(t, err)
 
 		api.AssertNotCalled(t, "CreatePost", mock.Anything)
+		api.AssertExpectations(t)
 	})
 
 	t.Run("delivers to DM when a member is still connected", func(t *testing.T) {
