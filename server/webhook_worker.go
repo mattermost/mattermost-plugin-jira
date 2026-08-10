@@ -86,6 +86,24 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 			continue
 		}
 
+		// DM/GM subscriptions are legacy data; only keep posting to them while at least
+		// one member is still connected to this instance.
+		hasConnectedMember, err := ww.p.channelHasConnectedMember(msg.InstanceID, channel)
+		if err != nil {
+			ww.p.client.Log.Warn("Failed to check for connected members before posting subscription notification; skipping post",
+				"ChannelID", channelSubscribed.ChannelID, "InstanceID", string(msg.InstanceID), "Error", err.Error())
+			continue
+		}
+		if !hasConnectedMember {
+			ww.p.client.Log.Info("Skipping subscription post to DM/GM channel with no connected members; removing orphaned subscriptions",
+				"ChannelID", channelSubscribed.ChannelID, "InstanceID", string(msg.InstanceID))
+			if removeErr := ww.p.removeSubscriptionsForChannel(msg.InstanceID, channelSubscribed.ChannelID); removeErr != nil {
+				ww.p.client.Log.Warn("Failed to remove orphaned DM/GM subscriptions",
+					"ChannelID", channelSubscribed.ChannelID, "InstanceID", string(msg.InstanceID), "Error", removeErr.Error())
+			}
+			continue
+		}
+
 		if _, _, err1 := wh.PostToChannel(ww.p, msg.InstanceID, channelSubscribed.ChannelID, botUserID, channelSubscribed.Name); err1 != nil {
 			ww.p.errorf("WebhookWorker id: %d, error posting to channel, err: %v", ww.id, err1)
 		}

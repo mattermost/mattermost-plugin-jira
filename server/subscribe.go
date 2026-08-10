@@ -20,6 +20,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
@@ -40,6 +41,7 @@ const (
 	CommentVisibility          = "commentVisibility"
 	TeamFilter                 = "teamField"
 	CommentVisibilityGroupType = "group"
+	maxDMGMChannelMembers = 200
 )
 
 type FieldFilter struct {
@@ -444,13 +446,66 @@ func (p *Plugin) removeChannelSubscription(instanceID types.ID, subscriptionID s
 	})
 }
 
+func isDirectOrGroupChannel(channel *model.Channel) bool {
+	return channel.Type == model.ChannelTypeDirect || channel.Type == model.ChannelTypeGroup
+}
+
+// channelHasConnectedMember reports whether any non-bot member of channel is still
+// connected to instanceID. Channel types other than DM/GM are always allowed, since
+// they are not tied to any single user's connection.
+func (p *Plugin) channelHasConnectedMember(instanceID types.ID, channel *model.Channel) (bool, error) {
+	if !isDirectOrGroupChannel(channel) {
+		return true, nil
+	}
+
+	botUserID := p.getConfig().botUserID
+	members, err := p.client.Channel.ListMembers(channel.Id, 0, maxDMGMChannelMembers)
+	if err != nil {
+		return false, err
+	}
+
+	for _, member := range members {
+		if member.UserId == botUserID {
+			continue
+		}
+
+		connection, err := p.userStore.LoadConnection(instanceID, types.ID(member.UserId))
+		if err != nil {
+			if errors.Cause(err) != kvstore.ErrNotFound {
+				return false, err
+			}
+			continue
+		}
+
+		// A missing connection can also read back as an empty one rather than an error.
+		if connection.JiraAccountID() != "" {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// subscriptionIDsForChannel returns the IDs of subscriptions targeting channelID.
+// ByID is scanned directly because the IDByChannelID index can drift from it, e.g.
+// for data written before the index existed.
+func subscriptionIDsForChannel(subs *ChannelSubscriptions, channelID string) []string {
+	var subIDs []string
+	for id, sub := range subs.ByID {
+		if sub.ChannelID == channelID {
+			subIDs = append(subIDs, id)
+		}
+	}
+	return subIDs
+}
+
 func (p *Plugin) removeSubscriptionsForChannel(instanceID types.ID, channelID string) error {
 	subs, err := p.getSubscriptions(instanceID)
 	if err != nil {
 		return err
 	}
 
-	if subs.Channel.IDByChannelID[channelID].Len() == 0 {
+	if len(subscriptionIDsForChannel(subs.Channel, channelID)) == 0 {
 		return nil
 	}
 
@@ -461,8 +516,7 @@ func (p *Plugin) removeSubscriptionsForChannel(instanceID types.ID, channelID st
 			return nil, err
 		}
 
-		subIDs := subs.Channel.IDByChannelID[channelID]
-		for _, subID := range subIDs.Elems() {
+		for _, subID := range subscriptionIDsForChannel(subs.Channel, channelID) {
 			if sub, ok := subs.Channel.ByID[subID]; ok {
 				subs.Channel.remove(&sub)
 			}
@@ -477,22 +531,62 @@ func (p *Plugin) removeSubscriptionsForChannel(instanceID types.ID, channelID st
 	})
 }
 
+// cleanupDMSubscriptionsOnDisconnect removes channel subscriptions targeting any DM or
+// GM the disconnecting user belongs to, once no member of that channel remains connected
+// to instanceID. Must be called after the user's connection has been deleted.
 func (p *Plugin) cleanupDMSubscriptionsOnDisconnect(instanceID types.ID, mattermostUserID string) {
-	conf := p.getConfig()
-	dmChannel, err := p.client.Channel.GetDirect(mattermostUserID, conf.botUserID)
+	subs, err := p.getSubscriptions(instanceID)
 	if err != nil {
-		p.client.Log.Warn("Failed to get DM channel for subscription cleanup on disconnect",
+		p.client.Log.Warn("Failed to load subscriptions for DM/GM cleanup on disconnect",
 			"mattermostUserID", mattermostUserID,
 			"instanceID", string(instanceID),
 			"error", err.Error())
 		return
 	}
 
-	if err := p.removeSubscriptionsForChannel(instanceID, dmChannel.Id); err != nil {
-		p.client.Log.Warn("Failed to clean up DM subscriptions on disconnect",
-			"mattermostUserID", mattermostUserID,
-			"instanceID", string(instanceID),
-			"error", err.Error())
+	channelIDs := map[string]bool{}
+	for _, sub := range subs.Channel.ByID {
+		channelIDs[sub.ChannelID] = true
+	}
+
+	for channelID := range channelIDs {
+		channel, err := p.client.Channel.Get(channelID)
+		if err != nil {
+			p.client.Log.Warn("Failed to get channel for DM/GM subscription cleanup on disconnect",
+				"channelID", channelID,
+				"instanceID", string(instanceID),
+				"error", err.Error())
+			continue
+		}
+
+		if !isDirectOrGroupChannel(channel) {
+			continue
+		}
+
+		if _, err := p.client.Channel.GetMember(channelID, mattermostUserID); err != nil {
+			// The disconnecting user isn't a member of this DM/GM.
+			continue
+		}
+
+		hasConnectedMember, err := p.channelHasConnectedMember(instanceID, channel)
+		if err != nil {
+			p.client.Log.Warn("Failed to check for connected members during DM/GM subscription cleanup",
+				"channelID", channelID,
+				"instanceID", string(instanceID),
+				"error", err.Error())
+			continue
+		}
+		if hasConnectedMember {
+			continue
+		}
+
+		if err := p.removeSubscriptionsForChannel(instanceID, channelID); err != nil {
+			p.client.Log.Warn("Failed to clean up DM/GM subscriptions on disconnect",
+				"mattermostUserID", mattermostUserID,
+				"channelID", channelID,
+				"instanceID", string(instanceID),
+				"error", err.Error())
+		}
 	}
 }
 
