@@ -192,15 +192,15 @@ func (ci *cloudInstance) GetURL() string {
 }
 
 func (ci *cloudInstance) GetJiraBaseURL() string {
-	return ci.GetURL()
+	return normalizeJiraBaseURL(ci.GetURL())
 }
 
 func (ci *cloudInstance) GetManageAppsURL() string {
-	return fmt.Sprintf("%s/plugins/servlet/upm", ci.GetURL())
+	return fmt.Sprintf("%s/plugins/servlet/upm", ci.GetJiraBaseURL())
 }
 
 func (ci *cloudInstance) GetManageWebhooksURL() string {
-	return cloudManageWebhooksURL(ci.GetURL())
+	return cloudManageWebhooksURL(ci.GetJiraBaseURL())
 }
 
 func cloudManageWebhooksURL(jiraURL string) string {

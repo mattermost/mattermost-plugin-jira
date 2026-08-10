@@ -5,6 +5,7 @@ package main
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -71,4 +72,8 @@ func (ic *InstanceCommon) Common() *InstanceCommon {
 
 func (ic InstanceCommon) IsCloudInstance() bool {
 	return ic.Type == CloudInstanceType || ic.Type == CloudOAuthInstanceType
+}
+
+func normalizeJiraBaseURL(baseURL string) string {
+	return strings.TrimSuffix(baseURL, "/")
 }

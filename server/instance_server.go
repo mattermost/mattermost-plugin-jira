@@ -53,15 +53,15 @@ func (si *serverInstance) GetURL() string {
 }
 
 func (si *serverInstance) GetJiraBaseURL() string {
-	return si.GetURL()
+	return normalizeJiraBaseURL(si.GetURL())
 }
 
 func (si *serverInstance) GetManageAppsURL() string {
-	return fmt.Sprintf("%s/plugins/servlet/applinks/listApplicationLinks", si.GetURL())
+	return fmt.Sprintf("%s/plugins/servlet/applinks/listApplicationLinks", si.GetJiraBaseURL())
 }
 
 func (si *serverInstance) GetManageWebhooksURL() string {
-	return fmt.Sprintf("%s/plugins/servlet/webhooks", si.GetURL())
+	return fmt.Sprintf("%s/plugins/servlet/webhooks", si.GetJiraBaseURL())
 }
 
 func (si *serverInstance) GetMattermostKey() string {

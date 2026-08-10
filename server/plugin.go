@@ -518,7 +518,7 @@ func (p *Plugin) AddAutolinksForCloudOAuthInstance(coi *cloudOAuthInstance) erro
 		return fmt.Errorf("error getting project list: %w", err)
 	}
 
-	return p.AddAutoLinkForProjects(*plist, coi.JiraBaseURL)
+	return p.AddAutoLinkForProjects(*plist, coi.GetJiraBaseURL())
 }
 
 func (p *Plugin) AddAutoLinkForProjects(plist jira.ProjectList, baseURL string) error {

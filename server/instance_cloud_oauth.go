@@ -79,7 +79,7 @@ func (p *Plugin) installCloudOAuthInstance(rawURL string) (string, *cloudOAuthIn
 	newInstance := &cloudOAuthInstance{
 		InstanceCommon: newInstanceCommon(p, CloudOAuthInstanceType, types.ID(jiraURL)),
 		MattermostKey:  p.GetPluginKey(),
-		JiraBaseURL:    rawURL,
+		JiraBaseURL:    jiraURL,
 		CodeVerifier:   params.CodeVerifier,
 		CodeChallenge:  params.CodeChallenge,
 	}
@@ -226,7 +226,7 @@ func (ci *cloudOAuthInstance) GetURL() string {
 }
 
 func (ci *cloudOAuthInstance) GetJiraBaseURL() string {
-	return ci.JiraBaseURL
+	return normalizeJiraBaseURL(ci.JiraBaseURL)
 }
 
 func (ci *cloudOAuthInstance) GetManageAppsURL() string {
