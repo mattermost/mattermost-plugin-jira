@@ -5,18 +5,22 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
+	jira "github.com/andygrunwald/go-jira"
+	"github.com/mattermost-community/mattermost-plugin-autolink/server/autolink"
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -265,6 +269,48 @@ func TestSetupAutolink(t *testing.T) {
 
 			mockAPI.AssertExpectations(t)
 			dummyInstanceStore.AssertExpectations(t)
+		})
+	}
+}
+
+func TestAddAutoLinkForProjectsNormalizesBaseURL(t *testing.T) {
+	rawURL := "https://mmtest.atlassian.net///"
+	accessorURL := (&cloudInstance{
+		AtlassianSecurityContext: &AtlassianSecurityContext{BaseURL: rawURL},
+	}).GetJiraBaseURL()
+
+	for name, baseURL := range map[string]string{
+		"no trailing slash":         "https://mmtest.atlassian.net",
+		"trailing slash":            "https://mmtest.atlassian.net/",
+		"repeated trailing slashes": rawURL,
+		"normalized by accessor":    accessorURL,
+	} {
+		t.Run(name, func(t *testing.T) {
+			mockAPI := &plugintest.API{}
+			var installed []autolink.Autolink
+			mockAPI.On("PluginHTTP", mock.AnythingOfType("*http.Request")).Return(
+				&http.Response{StatusCode: http.StatusOK, Body: http.NoBody},
+			).Run(func(args mock.Arguments) {
+				req := args.Get(0).(*http.Request)
+				body, err := io.ReadAll(req.Body)
+				require.NoError(t, err)
+
+				var link autolink.Autolink
+				require.NoError(t, json.Unmarshal(body, &link))
+				installed = append(installed, link)
+			})
+
+			p := &Plugin{}
+			p.SetAPI(mockAPI)
+
+			require.NoError(t, p.AddAutoLinkForProjects(jira.ProjectList{{Key: "TES"}}, baseURL))
+
+			require.Len(t, installed, 2)
+			for _, link := range installed {
+				assert.NotContains(t, link.Template, "net//browse/")
+				assert.Contains(t, link.Template, "https://mmtest.atlassian.net/browse/TES-${jira_id}")
+			}
+			assert.Contains(t, installed[1].Pattern, `https://mmtest\.atlassian\.net/browse/`)
 		})
 	}
 }

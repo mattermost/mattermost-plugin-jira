@@ -75,5 +75,5 @@ func (ic InstanceCommon) IsCloudInstance() bool {
 }
 
 func normalizeJiraBaseURL(baseURL string) string {
-	return strings.TrimSuffix(baseURL, "/")
+	return strings.TrimRight(baseURL, "/")
 }

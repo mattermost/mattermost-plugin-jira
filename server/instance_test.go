@@ -24,6 +24,10 @@ func TestGetJiraBaseURLTrimsTrailingSlash(t *testing.T) {
 			instance: &cloudOAuthInstance{JiraBaseURL: "https://mmtest.atlassian.net/"},
 			expected: "https://mmtest.atlassian.net",
 		},
+		"cloud-oauth, repeated trailing slashes": {
+			instance: &cloudOAuthInstance{JiraBaseURL: "https://mmtest.atlassian.net///"},
+			expected: "https://mmtest.atlassian.net",
+		},
 		"cloud, trailing slash": {
 			instance: &cloudInstance{
 				AtlassianSecurityContext: &AtlassianSecurityContext{BaseURL: "https://mmtest.atlassian.net/"},
