@@ -37,6 +37,7 @@ func TestPostToChannelDeduplicatesConcurrentDeliveries(t *testing.T) {
 			return false, nil
 		})
 		api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{Id: "post1"}, nil).Once()
+		api.On("LogDebug", mockAnythingOfTypeBatch("string", 3)...).Return()
 
 		p := &Plugin{}
 		p.SetAPI(api)
@@ -72,6 +73,7 @@ func TestPostToChannelDeduplicatesConcurrentDeliveries(t *testing.T) {
 			return false, nil
 		}).Twice()
 		api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{Id: "post1"}, nil).Once()
+		api.On("LogDebug", mockAnythingOfTypeBatch("string", 3)...).Return().Once()
 
 		p := &Plugin{}
 		p.SetAPI(api)
