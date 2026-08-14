@@ -147,6 +147,7 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 		p.client.Log.Warn("PostToChannel: failed to claim dedup key, posting anyway", "key", dedupKey, "error", kvErr.Error())
 	case !claimed:
 		// Another delivery already claimed this post.
+		p.client.Log.Debug("PostToChannel: another delivery already claimed this post, skipping", "key", dedupKey)
 		return nil, http.StatusOK, nil
 	}
 
