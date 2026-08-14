@@ -337,6 +337,21 @@ func TestNotificationDedupKey(t *testing.T) {
 			notificationDedupKey(instanceID, wh, "user-abc", "Actor **assigned** you to PROJ-1"),
 			notificationDedupKey(instanceID, wh, "user-abc", "Actor **commented** on PROJ-1"))
 	})
+
+	t.Run("values containing separator-like characters do not collide", func(t *testing.T) {
+		// A naive "_"-joined encoding would make ("user-abc", "extra_hello")
+		// collide with ("user-abc_extra", "hello"). The length-prefixed encoding
+		// must keep these distinct.
+		wh := makeWebhook("PROJ-1")
+		assert.NotEqual(t,
+			notificationDedupKey(instanceID, wh, "user-abc", "extra_hello"),
+			notificationDedupKey(instanceID, wh, "user-abc_extra", "hello"))
+
+		// Same idea across the issue key/recipient boundary.
+		assert.NotEqual(t,
+			notificationDedupKey(instanceID, makeWebhook("PROJ-1_user"), "abc", "hello"),
+			notificationDedupKey(instanceID, makeWebhook("PROJ-1"), "user_abc", "hello"))
+	})
 }
 
 func TestChannelPostDedupKey(t *testing.T) {
@@ -399,5 +414,36 @@ func TestChannelPostDedupKey(t *testing.T) {
 		assert.NotEqual(t,
 			channelPostDedupKey(instanceID, wh1, "channel-abc"),
 			channelPostDedupKey(instanceID, wh2, "channel-abc"))
+	})
+
+	t.Run("different field Short flags produce different keys", func(t *testing.T) {
+		wh1 := makeWebhook("PROJ-1", "headline", "text", []*model.SlackAttachmentField{{Title: "Priority", Value: "High", Short: true}})
+		wh2 := makeWebhook("PROJ-1", "headline", "text", []*model.SlackAttachmentField{{Title: "Priority", Value: "High", Short: false}})
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, wh1, "channel-abc"),
+			channelPostDedupKey(instanceID, wh2, "channel-abc"))
+	})
+
+	t.Run("values containing separator-like characters do not collide", func(t *testing.T) {
+		// A naive "_"-joined encoding would make ("A_B", "C") collide with ("A", "B_C").
+		// The length-prefixed encoding must keep these distinct.
+		wh1 := makeWebhook("PROJ-1", "A_B", "C", nil)
+		wh2 := makeWebhook("PROJ-1", "A", "B_C", nil)
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, wh1, "channel-abc"),
+			channelPostDedupKey(instanceID, wh2, "channel-abc"))
+
+		// Same idea across the channelID/headline boundary.
+		wh3 := makeWebhook("PROJ-1", "B", "text", nil)
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, wh3, "channel-abc_extra"),
+			channelPostDedupKey(instanceID, makeWebhook("PROJ-1", "extra_B", "text", nil), "channel-abc"))
+
+		// And across a field's title/value boundary.
+		wh4 := makeWebhook("PROJ-1", "headline", "text", []*model.SlackAttachmentField{{Title: "A=B", Value: "C"}})
+		wh5 := makeWebhook("PROJ-1", "headline", "text", []*model.SlackAttachmentField{{Title: "A", Value: "B=C"}})
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, wh4, "channel-abc"),
+			channelPostDedupKey(instanceID, wh5, "channel-abc"))
 	})
 }

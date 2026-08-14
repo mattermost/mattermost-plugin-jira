@@ -5,12 +5,13 @@ package main
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"hash"
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -277,26 +278,34 @@ func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...inter
 	}
 }
 
+// writeDedupToken writes s into h prefixed with its length, so concatenated
+// tokens can't collide due to separator characters appearing inside values.
+func writeDedupToken(h hash.Hash, s string) {
+	var length [8]byte
+	binary.BigEndian.PutUint64(length[:], uint64(len(s)))
+	h.Write(length[:]) //nolint:errcheck // hash.Hash.Write never returns an error
+	h.Write([]byte(s)) //nolint:errcheck // hash.Hash.Write never returns an error
+}
+
 func notificationDedupKey(instanceID types.ID, wh *webhook, recipientID types.ID, message string) string {
-	raw := fmt.Sprintf("%s_%s_%s_%s",
-		string(instanceID),
-		wh.Issue.Key,
-		string(recipientID),
-		message,
-	)
-	hash := sha256.Sum256([]byte(raw))
-	return fmt.Sprintf(notificationDedupKeyFmt, hex.EncodeToString(hash[:]))
+	h := sha256.New()
+	for _, token := range []string{string(instanceID), wh.Issue.Key, string(recipientID), message} {
+		writeDedupToken(h, token)
+	}
+	return fmt.Sprintf(notificationDedupKeyFmt, hex.EncodeToString(h.Sum(nil)))
 }
 
 func channelPostDedupKey(instanceID types.ID, wh *webhook, channelID string) string {
-	var sb strings.Builder
-	fmt.Fprintf(&sb, "%s_%s_%s_%s_%s",
-		string(instanceID), wh.Issue.Key, channelID, wh.headline, wh.text)
-	for _, f := range wh.fields {
-		fmt.Fprintf(&sb, "_%s=%s", f.Title, f.Value)
+	h := sha256.New()
+	for _, token := range []string{string(instanceID), wh.Issue.Key, channelID, wh.headline, wh.text} {
+		writeDedupToken(h, token)
 	}
-	hash := sha256.Sum256([]byte(sb.String()))
-	return fmt.Sprintf(channelPostDedupKeyFmt, hex.EncodeToString(hash[:]))
+	for _, f := range wh.fields {
+		writeDedupToken(h, f.Title)
+		writeDedupToken(h, fmt.Sprintf("%v", f.Value))
+		writeDedupToken(h, fmt.Sprintf("%t", bool(f.Short)))
+	}
+	return fmt.Sprintf(channelPostDedupKeyFmt, hex.EncodeToString(h.Sum(nil)))
 }
 
 func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL, legacyURL string, err error) {
