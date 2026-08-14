@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -21,8 +22,9 @@ import (
 )
 
 const (
-	notificationDedupTTL    = 30 * time.Second
+	webhookDedupTTL         = 30 * time.Second
 	notificationDedupKeyFmt = "notif_dedup_%s"
+	channelPostDedupKeyFmt  = "chan_dedup_%s"
 )
 
 const (
@@ -78,8 +80,13 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 
 	if wh.headline == "" {
 		return nil, http.StatusBadRequest, errors.Errorf("unsupported webhook")
-	} else if pluginConfig.DisplaySubscriptionNameInNotifications && subscriptionName != "" {
-		wh.headline = fmt.Sprintf("%s\nSubscription: **%s**", wh.headline, subscriptionName)
+	}
+
+	// Keep the dedup identity independent of the subscription name so overlapping
+	// subscriptions on the same channel collapse into one post.
+	headline := wh.headline
+	if pluginConfig.DisplaySubscriptionNameInNotifications && subscriptionName != "" {
+		headline = fmt.Sprintf("%s\nSubscription: **%s**", headline, subscriptionName)
 	}
 
 	post := &model.Post{
@@ -119,14 +126,28 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 			{
 				// TODO is this supposed to be themed?
 				Color:    "#95b7d0",
-				Fallback: wh.headline,
-				Pretext:  wh.headline,
+				Fallback: headline,
+				Pretext:  headline,
 				Text:     text,
 				Fields:   wh.fields,
 			},
 		})
 	} else {
-		post.Message = wh.headline
+		post.Message = headline
+	}
+
+	// Atomically claim the dedup key before posting so concurrent webhook
+	// deliveries can't both pass the check and post duplicates. SetAtomic(nil)
+	// only writes when the key does not already exist.
+	dedupKey := channelPostDedupKey(instanceID, &wh, channelID)
+	claimed, kvErr := p.client.KV.Set(dedupKey, true, pluginapi.SetExpiry(webhookDedupTTL), pluginapi.SetAtomic(nil))
+	switch {
+	case kvErr != nil:
+		// Fail open: post rather than dropping the event.
+		p.client.Log.Warn("PostToChannel: failed to claim dedup key, posting anyway", "key", dedupKey, "error", kvErr.Error())
+	case !claimed:
+		// Another delivery already claimed this post.
+		return nil, http.StatusOK, nil
 	}
 
 	if err := p.client.Post.CreatePost(post); err != nil {
@@ -224,7 +245,7 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		// deliveries can't both pass the check and send duplicates. SetAtomic(nil)
 		// only writes when the key does not already exist.
 		dedupKey := notificationDedupKey(instance.GetID(), wh, mattermostUserID, notification.message)
-		claimed, kvErr := p.client.KV.Set(dedupKey, true, pluginapi.SetExpiry(notificationDedupTTL), pluginapi.SetAtomic(nil))
+		claimed, kvErr := p.client.KV.Set(dedupKey, true, pluginapi.SetExpiry(webhookDedupTTL), pluginapi.SetAtomic(nil))
 		switch {
 		case kvErr != nil:
 			// Fail open: send the notification rather than dropping it.
@@ -264,6 +285,17 @@ func notificationDedupKey(instanceID types.ID, wh *webhook, recipientID types.ID
 	)
 	hash := sha256.Sum256([]byte(raw))
 	return fmt.Sprintf(notificationDedupKeyFmt, hex.EncodeToString(hash[:]))
+}
+
+func channelPostDedupKey(instanceID types.ID, wh *webhook, channelID string) string {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "%s_%s_%s_%s_%s",
+		string(instanceID), wh.Issue.Key, channelID, wh.headline, wh.text)
+	for _, f := range wh.fields {
+		fmt.Fprintf(&sb, "_%s=%s", f.Title, f.Value)
+	}
+	hash := sha256.Sum256([]byte(sb.String()))
+	return fmt.Sprintf(channelPostDedupKeyFmt, hex.EncodeToString(hash[:]))
 }
 
 func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL, legacyURL string, err error) {

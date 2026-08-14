@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -335,5 +336,68 @@ func TestNotificationDedupKey(t *testing.T) {
 		assert.NotEqual(t,
 			notificationDedupKey(instanceID, wh, "user-abc", "Actor **assigned** you to PROJ-1"),
 			notificationDedupKey(instanceID, wh, "user-abc", "Actor **commented** on PROJ-1"))
+	})
+}
+
+func TestChannelPostDedupKey(t *testing.T) {
+	makeWebhook := func(issueKey, headline, text string, fields []*model.SlackAttachmentField) *webhook {
+		return &webhook{
+			JiraWebhook: &JiraWebhook{
+				Issue: jira.Issue{Key: issueKey},
+			},
+			headline: headline,
+			text:     text,
+			fields:   fields,
+		}
+	}
+
+	const instanceID = types.ID("https://jira.example.com")
+
+	t.Run("same instance, issue, channel and content produce the same key", func(t *testing.T) {
+		wh1 := makeWebhook("PROJ-1", "Actor **commented** on PROJ-1", "some comment", nil)
+		wh2 := makeWebhook("PROJ-1", "Actor **commented** on PROJ-1", "some comment", nil)
+		assert.Equal(t,
+			channelPostDedupKey(instanceID, wh1, "channel-abc"),
+			channelPostDedupKey(instanceID, wh2, "channel-abc"))
+	})
+
+	t.Run("different channels produce different keys", func(t *testing.T) {
+		wh := makeWebhook("PROJ-1", "Actor **commented** on PROJ-1", "some comment", nil)
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, wh, "channel-abc"),
+			channelPostDedupKey(instanceID, wh, "channel-xyz"))
+	})
+
+	t.Run("different instances produce different keys", func(t *testing.T) {
+		wh := makeWebhook("PROJ-1", "Actor **commented** on PROJ-1", "some comment", nil)
+		assert.NotEqual(t,
+			channelPostDedupKey(types.ID("https://jira-a.example.com"), wh, "channel-abc"),
+			channelPostDedupKey(types.ID("https://jira-b.example.com"), wh, "channel-abc"))
+	})
+
+	t.Run("different issues produce different keys", func(t *testing.T) {
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, makeWebhook("PROJ-1", "headline", "text", nil), "channel-abc"),
+			channelPostDedupKey(instanceID, makeWebhook("PROJ-2", "headline", "text", nil), "channel-abc"))
+	})
+
+	t.Run("different headlines produce different keys", func(t *testing.T) {
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, makeWebhook("PROJ-1", "Actor **commented** on PROJ-1", "text", nil), "channel-abc"),
+			channelPostDedupKey(instanceID, makeWebhook("PROJ-1", "Actor **updated** PROJ-1", "text", nil), "channel-abc"))
+	})
+
+	t.Run("different text produce different keys", func(t *testing.T) {
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, makeWebhook("PROJ-1", "headline", "first comment", nil), "channel-abc"),
+			channelPostDedupKey(instanceID, makeWebhook("PROJ-1", "headline", "second comment", nil), "channel-abc"))
+	})
+
+	t.Run("different fields produce different keys", func(t *testing.T) {
+		wh1 := makeWebhook("PROJ-1", "headline", "text", []*model.SlackAttachmentField{{Title: "Priority", Value: "High"}})
+		wh2 := makeWebhook("PROJ-1", "headline", "text", []*model.SlackAttachmentField{{Title: "Priority", Value: "Low"}})
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, wh1, "channel-abc"),
+			channelPostDedupKey(instanceID, wh2, "channel-abc"))
 	})
 }
