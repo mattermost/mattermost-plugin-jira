@@ -153,6 +153,9 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 	}
 
 	if err := p.client.Post.CreatePost(post); err != nil {
+		if claimed {
+			p.releaseDedupKey("PostToChannel", dedupKey)
+		}
 		return nil, http.StatusInternalServerError, err
 	}
 
@@ -260,9 +263,9 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType)
 		if err != nil {
 			p.errorf("PostNotifications: failed to create notification post, err: %v", err)
-			// Keep the claim: CreateBotDMPost may have persisted the post despite
-			// returning an error, so releasing it would let a retry post a
-			// duplicate. Let the claim TTL expire on its own.
+			if claimed {
+				p.releaseDedupKey("PostNotifications", dedupKey)
+			}
 			continue
 		}
 		posts = append(posts, post)
@@ -275,6 +278,16 @@ func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...inter
 		JiraWebhook: jwh,
 		eventTypes:  NewStringSet(eventType),
 		headline:    jwh.mdUser() + " " + fmt.Sprintf(format, args...) + " " + jwh.mdKeySummaryLink(),
+	}
+}
+
+// releaseDedupKey drops a dedup claim after the post it guarded failed, so a
+// later delivery of the same event can retry instead of being skipped until the
+// claim expires. Only safe to call when this delivery won the claim.
+func (p *Plugin) releaseDedupKey(caller, dedupKey string) {
+	if err := p.client.KV.Delete(dedupKey); err != nil {
+		p.client.Log.Warn(caller+": failed to release dedup key after a failed post; duplicates of this event will be skipped until the claim expires",
+			"key", dedupKey, "error", err.Error())
 	}
 }
 
