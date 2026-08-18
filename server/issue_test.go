@@ -1155,6 +1155,7 @@ func setupCreateIssueAPIMock() *plugintest.API {
 	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
 	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, (*model.AppError)(nil))
 	api.On("PublishWebSocketEvent", "update_defaults", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.WebsocketBroadcast"))
+	api.On("KVGet", mock.AnythingOfType("string")).Return(nil, (*model.AppError)(nil))
 
 	return api
 }

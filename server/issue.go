@@ -98,7 +98,6 @@ const (
 	teamFieldSchema            = "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team"
 	teamAdvancedRoadmapsSchema = "com.atlassian.teams:rm-team-custom-field-team"
 	teamAdvancedRoadmapsDC     = "com.atlassian.teams:rm-teams-custom-field-team"
-	defaultTeamFieldKey        = "customfield_10001"
 )
 
 type CreateMetaInfo struct {
@@ -639,19 +638,18 @@ func (p *Plugin) httpGetTeamFields(w http.ResponseWriter, r *http.Request) (int,
 	instanceID := r.FormValue(instanceIDQueryParam)
 	fieldValue := r.FormValue(fieldValueQueryParam)
 
-	// getTeamFieldKeys returns defaultTeamFieldKey when the cache is empty (cold start).
-	// The cache is populated with the real keys when GetCreateIssueMetadataForProjects
-	// inspects the create-meta schema via injectTeamAllowedValues → cacheTeamFieldKeys.
-	teamFieldKeys := p.getTeamFieldKeys(types.ID(instanceID))
-	sortedKeys := make([]string, 0, len(teamFieldKeys))
-	for key := range teamFieldKeys {
-		sortedKeys = append(sortedKeys, key)
-	}
-	sort.Strings(sortedKeys)
-
 	if instanceID != "" {
 		client, _, _, err := p.getClient(types.ID(instanceID), types.ID(mattermostUserID))
 		if err == nil {
+			p.discoverTeamFieldKeys(types.ID(instanceID), client)
+
+			teamFieldKeys := p.getTeamFieldKeys(types.ID(instanceID))
+			sortedKeys := make([]string, 0, len(teamFieldKeys))
+			for key := range teamFieldKeys {
+				sortedKeys = append(sortedKeys, key)
+			}
+			sort.Strings(sortedKeys)
+
 			for _, fieldName := range sortedKeys {
 				suggestions, apiErr := client.SearchAutoCompleteFields(map[string]string{
 					"fieldName":  fmt.Sprintf("cf[%s]", strings.TrimPrefix(fieldName, "customfield_")),

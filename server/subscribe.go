@@ -232,6 +232,10 @@ func (p *Plugin) matchesSubscriptionFilters(wh *webhook, instanceID types.ID, fi
 		}
 
 		if field.Key == TeamFilter {
+			if len(teamFieldKeys) == 0 {
+				p.client.Log.Warn("Jira team field is unresolved for this instance, team subscription filters cannot match",
+					"instance_id", string(instanceID))
+			}
 			value = updateTeamValue(value, issue, teamFieldKeys)
 		}
 
@@ -265,6 +269,16 @@ func updateCommentVisibilityValue(value StringSet, wh *webhook) StringSet {
 type JiraTeamData struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+func hasTeamFilter(filters SubscriptionFilters) bool {
+	for _, field := range filters.Fields {
+		if field.Key == TeamFilter {
+			return true
+		}
+	}
+
+	return false
 }
 
 func updateTeamValue(value StringSet, issue *jira.Issue, teamFieldKeys map[string]struct{}) StringSet {
@@ -1187,6 +1201,10 @@ func (p *Plugin) httpChannelCreateSubscription(w http.ResponseWriter, r *http.Re
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
+	if hasTeamFilter(subscription.Filters) {
+		p.discoverTeamFieldKeys(subscription.InstanceID, client)
+	}
+
 	err = p.addChannelSubscription(subscription.InstanceID, &subscription, client)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
@@ -1279,6 +1297,11 @@ func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
+
+	if hasTeamFilter(subscription.Filters) {
+		p.discoverTeamFieldKeys(subscription.InstanceID, client)
+	}
+
 	err = p.editChannelSubscription(subscription.InstanceID, &subscription, client)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)

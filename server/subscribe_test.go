@@ -1645,6 +1645,7 @@ func TestGetChannelsSubscribed(t *testing.T) {
 			assert.Nil(t, err)
 
 			api.On("KVGet", testSubKey).Return(subscriptionBytes, nil)
+			api.On("KVGet", mock.AnythingOfType("string")).Return(nil, (*model.AppError)(nil))
 
 			api.On("KVCompareAndSet", testSubKey, subscriptionBytes, mock.MatchedBy(func(data []byte) bool {
 				return true

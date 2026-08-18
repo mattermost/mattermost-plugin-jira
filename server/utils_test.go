@@ -463,6 +463,7 @@ func (m *mockJiraClient) GetCreateMetaInfo(_ plugin.API, _ *jira.GetQueryOptions
 	return nil, nil
 }
 func (m *mockJiraClient) GetTransitions(_ string) ([]jira.Transition, error) { return nil, nil }
+func (m *mockJiraClient) ListFields() ([]JiraField, error)                   { return nil, nil }
 func (m *mockJiraClient) UpdateAssignee(_ string, _ *jira.User) error        { return nil }
 func (m *mockJiraClient) UpdateComment(_ string, _ *jira.Comment) (*jira.Comment, error) {
 	return nil, nil

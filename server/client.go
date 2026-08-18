@@ -27,6 +27,7 @@ import (
 
 const autocompleteSearchRoute = "2/jql/autocompletedata/suggestions"
 const commentVisibilityRoute = "2/user"
+const fieldRoute = "2/field"
 const userSearchRoute = "2/user/assignable/search"
 const unrecognizedEndpoint = "_unrecognized"
 const visibleToAllUsers = "visible-to-all-users"
@@ -84,6 +85,7 @@ type IssueService interface {
 	DoTransition(issueKey, transitionID string) error
 	GetCreateMetaInfo(api plugin.API, options *jira.GetQueryOptions) (*jira.CreateMetaInfo, error)
 	GetTransitions(issueKey string) ([]jira.Transition, error)
+	ListFields() ([]JiraField, error)
 	UpdateAssignee(issueKey string, user *jira.User) error
 	UpdateComment(issueKey string, comment *jira.Comment) (*jira.Comment, error)
 }
@@ -355,6 +357,25 @@ func (client JiraClient) GetUserVisibilityGroups(params map[string]string) (*Com
 	}
 	result.Groups.JiraUserGroups = append(result.Groups.JiraUserGroups, &JiraUserGroup{visibleToAllUsers})
 	return result, nil
+}
+
+type JiraField struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Schema struct {
+		Custom string `json:"custom"`
+	} `json:"schema"`
+}
+
+// ListFields returns the field metadata for the instance, including custom fields
+// that are not present on any project's create screen.
+func (client JiraClient) ListFields() ([]JiraField, error) {
+	fields := []JiraField{}
+	if err := client.RESTGet(fieldRoute, nil, &fields); err != nil {
+		return nil, err
+	}
+
+	return fields, nil
 }
 
 // DoTransition executes a transition on an issue.
