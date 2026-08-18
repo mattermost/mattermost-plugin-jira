@@ -86,7 +86,11 @@ func (p *Plugin) getTeamFieldKeys(instanceID types.ID) map[string]struct{} {
 	if p.teamFieldCache == nil {
 		p.teamFieldCache = make(map[types.ID]map[string]struct{})
 	}
-	p.teamFieldCache[instanceID] = stored
+	if current, ok := p.teamFieldCache[instanceID]; ok {
+		stored = current
+	} else {
+		p.teamFieldCache[instanceID] = stored
+	}
 	p.teamFieldCacheLock.Unlock()
 
 	return copyTeamFieldKeys(stored)

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -142,6 +143,80 @@ func TestDiscoverTeamFieldKeys(t *testing.T) {
 			p.discoverTeamFieldKeys(testInstance1.InstanceID, tc.client)
 
 			assert.Equal(t, tc.expected, p.getTeamFieldKeys(testInstance1.InstanceID))
+		})
+	}
+}
+
+func TestGetTeamFieldKeysKeepsConcurrentDiscovery(t *testing.T) {
+	p, api := setupTeamFieldPlugin(t)
+	api.On("KVSetWithOptions", mock.AnythingOfType("string"), mock.Anything, mock.Anything).
+		Return(true, (*model.AppError)(nil))
+
+	// Simulate a discovery landing while this instance's KV read is in flight.
+	api.On("KVGet", mock.AnythingOfType("string")).
+		Run(func(_ mock.Arguments) {
+			p.cacheTeamFieldKeys(testInstance1.InstanceID, []string{"customfield_10800"})
+		}).Return(nil, (*model.AppError)(nil))
+
+	assert.Equal(t, map[string]struct{}{"customfield_10800": {}}, p.getTeamFieldKeys(testInstance1.InstanceID))
+	assert.Equal(t, map[string]struct{}{"customfield_10800": {}}, p.getTeamFieldKeys(testInstance1.InstanceID))
+}
+
+const testTeamID = "d885d551-c24d-45d5-a8a3-5be1808be30f"
+
+func teamFilterWebhook(teamFieldKey string) *webhook {
+	fields := &jira.IssueFields{
+		Type:     jira.IssueType{ID: "10001"},
+		Project:  jira.Project{Key: mockProjectKey},
+		Unknowns: map[string]interface{}{},
+	}
+	if teamFieldKey != "" {
+		fields.Unknowns[teamFieldKey] = map[string]interface{}{"id": testTeamID}
+	}
+
+	return &webhook{
+		JiraWebhook: &JiraWebhook{Issue: jira.Issue{Fields: fields}},
+		eventTypes:  NewStringSet(eventCreated),
+	}
+}
+
+func teamFilters(inclusion string) SubscriptionFilters {
+	return SubscriptionFilters{
+		Events:     NewStringSet(eventCreated),
+		IssueTypes: NewStringSet("10001"),
+		Projects:   NewStringSet(mockProjectKey),
+		Fields: []FieldFilter{{
+			Key:       TeamFilter,
+			Inclusion: inclusion,
+			Values:    NewStringSet(testTeamID),
+		}},
+	}
+}
+
+func TestMatchesSubscriptionFiltersResolvedTeamField(t *testing.T) {
+	p, api := setupTeamFieldPlugin(t)
+
+	stored, err := json.Marshal([]string{"customfield_10800"})
+	require.NoError(t, err)
+	api.On("KVGet", mock.AnythingOfType("string")).Return(stored, (*model.AppError)(nil))
+
+	assert.True(t, p.matchesSubscriptionFilters(
+		teamFilterWebhook("customfield_10800"), testInstance1.InstanceID, teamFilters(FilterIncludeAny)))
+
+	assert.False(t, p.matchesSubscriptionFilters(
+		teamFilterWebhook("customfield_10800"), testInstance1.InstanceID, teamFilters(FilterExcludeAny)))
+}
+
+func TestMatchesSubscriptionFiltersUnresolvedTeamFieldFailsClosed(t *testing.T) {
+	for _, inclusion := range []string{FilterIncludeAny, FilterIncludeAll, FilterExcludeAny, FilterEmpty, FilterIncludeOrEmpty} {
+		t.Run(inclusion, func(t *testing.T) {
+			p, api := setupTeamFieldPlugin(t)
+			api.On("KVGet", mock.AnythingOfType("string")).Return(nil, (*model.AppError)(nil))
+
+			matched := p.matchesSubscriptionFilters(
+				teamFilterWebhook("customfield_10800"), testInstance1.InstanceID, teamFilters(inclusion))
+
+			assert.False(t, matched, "an unresolved team field must not select the channel")
 		})
 	}
 }

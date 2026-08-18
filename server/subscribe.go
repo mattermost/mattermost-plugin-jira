@@ -233,8 +233,9 @@ func (p *Plugin) matchesSubscriptionFilters(wh *webhook, instanceID types.ID, fi
 
 		if field.Key == TeamFilter {
 			if len(teamFieldKeys) == 0 {
-				p.client.Log.Warn("Jira team field is unresolved for this instance, team subscription filters cannot match",
+				p.client.Log.Warn("Jira team field is unresolved for this instance, skipping team subscription filter",
 					"instance_id", string(instanceID))
+				return false
 			}
 			value = updateTeamValue(value, issue, teamFieldKeys)
 		}
