@@ -32,6 +32,14 @@
                 "default": true
             },
             {
+                "key": "EnableJiraRHS",
+                "display_name": "Show Jira tickets in the right-hand sidebar:",
+                "type": "bool",
+                "help_text": "When **false**, the Jira tickets right-hand sidebar is not registered. When **true**, users with a connected Jira Cloud account can open their assigned tickets from the App Bar. Jira Cloud only; Server/Data Center instances are never shown.",
+                "placeholder": "",
+                "default": false
+            },
+            {
                 "key": "secret",
                 "display_name": "Webhook Secret:",
                 "type": "generated",
@@ -156,6 +164,11 @@
                 "help_text": "Comma separated list of team name and IDs to be used for filtering subscriptions\n**Note:** Teams provided here will be used across all configured Jira instances",
                 "placeholder": "[team-1-name](team-1-id),[team-2-name](team-2-id)",
                 "default": ""
+            },
+            {
+                "key": "RHSStatusTabs",
+                "type": "custom",
+                "display_name": "Jira RHS status tabs"
             }
         ]
     }

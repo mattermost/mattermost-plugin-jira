@@ -53,6 +53,12 @@ type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
 	EnableJiraUI bool `json:"enablejiraui"`
 
+	// Setting to turn on/off the Cloud-only personal tickets RHS
+	EnableJiraRHS bool `json:"enablejirarhs"`
+
+	// Per Cloud instance id → status/category tabs. Native JSON object, not a string.
+	RHSStatusTabs map[string][]RHSTabEntry `json:"rhsstatustabs"`
+
 	// Webhook secret
 	Secret string `json:"secret"`
 
