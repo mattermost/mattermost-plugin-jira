@@ -4,8 +4,8 @@
 package main
 
 import (
+	"crypto/rand"
 	"encoding/json"
-	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
@@ -38,7 +38,11 @@ func defaultRHSRetry() rhsRetry {
 }
 
 func rhsRandomJitter() float64 {
-	return 0.7 + rand.Float64()*(1.3-0.7)
+	var b [1]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return 1.0
+	}
+	return 0.7 + float64(b[0])*(1.3-0.7)/255.0
 }
 
 func closeJiraResp(resp *jira.Response) {
@@ -52,7 +56,11 @@ func closeJiraResp(resp *jira.Response) {
 // Prefer parseable Retry-After (seconds) over exponential. Cap applies to
 // exponential only. Then multiply by jitter.
 func rhsBackoffDelay(retry rhsRetry, failedAttempt int, retryAfterHeader string) time.Duration {
-	exp := retry.base * time.Duration(1<<uint(failedAttempt-1)) // 2s, 4s, 8s, …
+	shift := failedAttempt - 1
+	if shift < 0 {
+		shift = 0
+	}
+	exp := retry.base * time.Duration(1<<shift) // 2s, 4s, 8s, …
 	if exp > retry.cap {
 		exp = retry.cap
 	}

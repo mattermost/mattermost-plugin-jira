@@ -230,9 +230,9 @@ func TestRHSCacheOnConfigurationChangeEmptiesAllInstances(t *testing.T) {
 	api := &plugintest.API{}
 	p := setupTestPlugin(api)
 
-	max := int64(100 * 1024 * 1024)
+	maxFileSize := int64(100 * 1024 * 1024)
 	api.On("GetConfig").Return(&model.Config{
-		FileSettings: model.FileSettings{MaxFileSize: &max},
+		FileSettings: model.FileSettings{MaxFileSize: &maxFileSize},
 	})
 	api.On("LoadPluginConfiguration", mock.Anything).Return(nil)
 	api.On("LogWarn", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe().Return()
