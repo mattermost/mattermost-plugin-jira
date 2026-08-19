@@ -8,7 +8,7 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import manifest from '../manifest';
 
-import {Instance} from 'types/model';
+import {Instance, InstanceType, PluginSettings} from 'types/model';
 import {GlobalState, pluginStateKey} from 'types/store';
 
 const getPluginState = (state: GlobalState) => state[pluginStateKey] || {};
@@ -73,8 +73,34 @@ export const getUserConnectedInstances = (state: GlobalState): Instance[] => {
 };
 
 export const getInstalledInstances = (state: GlobalState): Instance[] => getPluginState(state).installedInstances;
+
+export const isCloudInstance = (instance: Instance): boolean => {
+    switch (instance.type) {
+    case InstanceType.CLOUD:
+    case InstanceType.CLOUD_OAUTH:
+        return true;
+    case InstanceType.SERVER:
+        return false;
+    default:
+        return false;
+    }
+};
+
+export const hasCloudInstance = (state: GlobalState): boolean => {
+    const installed = getInstalledInstances(state);
+    if (!installed) {
+        return false;
+    }
+
+    return installed.some(isCloudInstance);
+};
+
+export const getConnectedCloudInstances = (state: GlobalState): Instance[] => {
+    return getUserConnectedInstances(state).filter(isCloudInstance);
+};
+
 export const instanceIsInstalled = (state: GlobalState): boolean => getInstalledInstances(state).length > 0;
 
 export const getDefaultUserInstanceID = (state: GlobalState) => getPluginState(state).defaultUserInstanceID;
 
-export const getPluginSettings = (state: GlobalState) => getPluginState(state).pluginSettings;
+export const getPluginSettings = (state: GlobalState): PluginSettings | null => getPluginState(state).pluginSettings;

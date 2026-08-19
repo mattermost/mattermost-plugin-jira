@@ -23,8 +23,8 @@ export const mockTheme = {
 
 export const defaultMockState = {
     'plugins-jira': {
-        installedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}],
-        connectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}],
+        installedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.CLOUD_OAUTH}],
+        userConnectedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}, {instance_id: 'instance2', type: InstanceType.CLOUD_OAUTH}],
         defaultUserInstanceID: 'instance1',
         jiraProjectMetadata: null,
         jiraIssueMetadata: null,

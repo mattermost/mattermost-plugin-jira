@@ -32,7 +32,7 @@ const mockStore = configureStore([thunk]);
 const editChannelMockState = {
     'plugins-jira': {
         installedInstances: [{instance_id: 'https://something.atlassian.net', type: InstanceType.CLOUD}],
-        connectedInstances: [{instance_id: 'https://something.atlassian.net', type: InstanceType.CLOUD}],
+        userConnectedInstances: [{instance_id: 'https://something.atlassian.net', type: InstanceType.CLOUD}],
     },
     entities: {
         general: {

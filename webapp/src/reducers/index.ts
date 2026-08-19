@@ -4,7 +4,7 @@
 import {combineReducers} from 'redux';
 
 import ActionTypes from 'action_types';
-import {ChannelSubscription} from 'types/model';
+import {ChannelSubscription, PluginSettings} from 'types/model';
 
 export type Action<T extends string = string> = {
     type: T
@@ -71,7 +71,7 @@ function userConnectedInstances(state = [], action = {} as AnyAction) {
     }
 }
 
-function pluginSettings(state = null, action = {} as AnyAction) {
+function pluginSettings(state: PluginSettings | null = null, action = {} as AnyAction): PluginSettings | null {
     switch (action.type) {
     case ActionTypes.RECEIVED_PLUGIN_SETTINGS:
         return action.data;

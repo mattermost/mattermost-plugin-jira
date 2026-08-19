@@ -183,6 +183,7 @@ export type SubscriptionTemplate = ChannelSubscription
 
 export enum InstanceType {
     CLOUD = 'cloud',
+    CLOUD_OAUTH = 'cloud-oauth',
     SERVER = 'server',
 }
 export type Instance = {
@@ -190,6 +191,12 @@ export type Instance = {
     instance_id: string;
     type: InstanceType;
 }
+
+export type PluginSettings = {
+    ui_enabled: boolean;
+    rhs_enabled: boolean;
+    security_level_empty_for_jira_subscriptions: boolean;
+};
 
 export type GetConnectedResponse = {
     data: {
