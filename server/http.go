@@ -68,6 +68,8 @@ const (
 	routeGetIssueByKey                          = "/get-issue-by-key"
 	routeSharePublicly                          = "/share-issue-publicly"
 	routeOAuth2Complete                         = "/oauth2/complete.html"
+	routeAPIRHSIssues                           = "/rhs/issues"
+	routeAPIRHSStatuses                         = "/rhs/statuses"
 )
 
 const routePrefixInstance = "instance"
@@ -166,6 +168,10 @@ func (p *Plugin) initializeRouter() {
 	apiRouter.HandleFunc(routeAPISubscriptionTemplates, p.checkAuth(p.handleResponse(p.httpEditSubscriptionTemplates))).Methods(http.MethodPut)
 	apiRouter.HandleFunc(routeAPISubscriptionTemplatesWithID, p.checkAuth(p.handleResponse(p.httpDeleteSubscriptionTemplate))).Methods(http.MethodDelete)
 	apiRouter.HandleFunc(routeAPISubscriptionTemplates, p.checkAuth(p.handleResponse(p.httpGetSubscriptionTemplates))).Methods(http.MethodGet)
+
+	// Cloud-only personal tickets RHS
+	apiRouter.HandleFunc(routeAPIRHSIssues, p.checkAuth(p.handleResponse(p.httpRHSGetIssues))).Methods(http.MethodGet)
+	apiRouter.HandleFunc(routeAPIRHSStatuses, p.checkAuth(p.handleResponse(p.httpRHSListStatuses))).Methods(http.MethodGet)
 }
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {

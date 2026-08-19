@@ -95,3 +95,31 @@ var ErrUnknownRHSTabKind = errors.New("unknown rhs tab kind")
 
 // ErrInvalidRHSTab is returned when a status tab has an empty ID.
 var ErrInvalidRHSTab = errors.New("invalid rhs tab")
+
+// ErrRHSNotCloud is returned when the instance or client is not Jira Cloud.
+// Phase 4 maps this to JSON not_cloud.
+var ErrRHSNotCloud = errors.New("jira rhs is available for jira cloud only")
+
+// RHSIssueStatus is the status fragment of the RHS issue DTO.
+type RHSIssueStatus struct {
+	Name        string `json:"name"`
+	CategoryKey string `json:"categoryKey"`
+}
+
+// RHSIssue is the normalized issue DTO on GET /api/v2/rhs/issues only.
+// get-search-issues keeps raw []jira.Issue.
+type RHSIssue struct {
+	Key       string         `json:"key"`
+	Summary   string         `json:"summary"`
+	BrowseURL string         `json:"browseUrl"`
+	Status    RHSIssueStatus `json:"status"`
+	Priority  string         `json:"priority"`
+	IssueType string         `json:"issueType"`
+	Project   string         `json:"project"`
+	Assignee  string         `json:"assignee"`
+	Reporter  string         `json:"reporter"`
+	Created   string         `json:"created"`
+	Updated   string         `json:"updated"`
+	DueDate   string         `json:"dueDate"`
+	Labels    []string       `json:"labels"`
+}
