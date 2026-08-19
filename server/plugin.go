@@ -172,6 +172,9 @@ type Plugin struct {
 
 	teamFieldCache     map[types.ID]map[string]struct{}
 	teamFieldCacheLock sync.RWMutex
+
+	rhsStatusCache     map[types.ID]*rhsStatusCacheEntry
+	rhsStatusCacheLock sync.RWMutex
 }
 
 func (p *Plugin) getConfig() config {
@@ -309,6 +312,8 @@ func (p *Plugin) OnConfigurationChange() error {
 		conf.maxAttachmentSize = maxAttachmentSize
 	})
 
+	p.invalidateRHSStatusCache()
+
 	// OnConfigurationChanged is first called before the plugin is activated,
 	// in this case don't register the command, let Activate do it, it has the instanceStore.
 	// TODO: consider moving (some? stores? all?) initialization into the first OnConfig instead of OnActivate.
@@ -350,6 +355,7 @@ func (p *Plugin) OnActivate() error {
 	p.otsStore = store
 	p.client = pluginapi.NewClient(p.API, p.Driver)
 	p.teamFieldCache = make(map[types.ID]map[string]struct{})
+	p.rhsStatusCache = make(map[types.ID]*rhsStatusCacheEntry)
 
 	p.initializeRouter()
 

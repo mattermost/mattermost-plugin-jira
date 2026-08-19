@@ -81,3 +81,17 @@ type CloudSearchResult struct {
 // ErrRateLimited is returned when a 429 is not retried (global quota) or
 // when retries are exhausted. Phase 4 maps this to JSON error rate_limited.
 var ErrRateLimited = errors.New("jira rate limited")
+
+// ErrInvalidStatusCategory is returned when a statusCategory JQL operand is
+// missing from validCategoryKeys. Phase 4 maps this to invalid_request.
+// Assigned's hardcoded "done" uses this path — do not special-case it.
+var ErrInvalidStatusCategory = errors.New("invalid status category operand")
+
+// ErrInvalidRHSSort is returned when sortField is not "updated" or "created".
+var ErrInvalidRHSSort = errors.New("invalid rhs sort field")
+
+// ErrUnknownRHSTabKind is returned when buildTabJQL sees an unknown Kind.
+var ErrUnknownRHSTabKind = errors.New("unknown rhs tab kind")
+
+// ErrInvalidRHSTab is returned when a status tab has an empty ID.
+var ErrInvalidRHSTab = errors.New("invalid rhs tab")
