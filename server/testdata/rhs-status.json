@@ -1,0 +1,27 @@
+[
+  {
+    "description": "This issue is being actively worked on.",
+    "iconUrl": "https://example.atlassian.net/images/icons/statuses/inprogress.png",
+    "id": "3",
+    "name": "In Progress",
+    "self": "https://example.atlassian.net/rest/api/3/status/3",
+    "statusCategory": {
+      "self": "https://example.atlassian.net/rest/api/3/statuscategory/4",
+      "id": 4,
+      "key": "indeterminate",
+      "colorName": "yellow",
+      "name": "In Progress"
+    }
+  },
+  {
+    "description": "The issue is open.",
+    "id": "10001",
+    "name": "Backlog",
+    "statusCategory": {
+      "id": 2,
+      "key": "new",
+      "colorName": "blue-gray",
+      "name": "To Do"
+    }
+  }
+]

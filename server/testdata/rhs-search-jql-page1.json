@@ -1,0 +1,23 @@
+{
+  "issues": [
+    {
+      "id": "10040",
+      "self": "https://example.atlassian.net/rest/api/3/issue/10040",
+      "key": "TES-41",
+      "fields": {
+        "summary": "Fix login redirect",
+        "status": {
+          "id": "3",
+          "name": "In Progress",
+          "statusCategory": {
+            "id": 4,
+            "key": "indeterminate",
+            "name": "In Progress"
+          }
+        }
+      }
+    }
+  ],
+  "nextPageToken": "opaque-token-page-2",
+  "isLast": false
+}

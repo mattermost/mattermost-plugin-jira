@@ -3,6 +3,12 @@
 
 package main
 
+import (
+	"errors"
+
+	jira "github.com/andygrunwald/go-jira"
+)
+
 type RHSTabKind string
 
 const (
@@ -38,3 +44,40 @@ func rhsDefaultTabs() []RHSTabEntry {
 		{Kind: RHSTabKindCategory, Key: statusCategoryKeyIndeterminate, Name: "In Progress"},
 	}
 }
+
+// JiraStatus is one instance-wide workflow status from GET /rest/api/3/status.
+// Extra JSON fields (self, description, iconUrl) are ignored.
+type JiraStatus struct {
+	ID             string             `json:"id"`
+	Name           string             `json:"name"`
+	StatusCategory JiraStatusCategory `json:"statusCategory"`
+}
+
+// JiraStatusCategory is a Cloud status category.
+// ID is numeric (official schema int64). Key is the JQL operand
+// (new / indeterminate / done / undefined).
+type JiraStatusCategory struct {
+	ID   int    `json:"id"`
+	Key  string `json:"key"`
+	Name string `json:"name"`
+}
+
+// CloudSearchParams is the input to jiraCloudClient.SearchJQL.
+type CloudSearchParams struct {
+	JQL           string
+	Fields        []string
+	MaxResults    int
+	NextPageToken string
+}
+
+// CloudSearchResult is GET /rest/api/3/search/jql.
+// Cloud returns no total — do not add one.
+type CloudSearchResult struct {
+	Issues        []jira.Issue `json:"issues"`
+	NextPageToken string       `json:"nextPageToken"`
+	IsLast        bool         `json:"isLast"`
+}
+
+// ErrRateLimited is returned when a 429 is not retried (global quota) or
+// when retries are exhausted. Phase 4 maps this to JSON error rate_limited.
+var ErrRateLimited = errors.New("jira rate limited")
