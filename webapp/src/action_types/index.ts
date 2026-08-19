@@ -40,4 +40,12 @@ export default {
     RECEIVED_CHANNEL_SUBSCRIPTIONS: `${PluginId}_recevied_channel_subscriptions`,
     RECEIVED_SUBSCRIPTION_TEMPLATES: `${PluginId}_recevied_subscription_templates`,
     DELETED_CHANNEL_SUBSCRIPTION: `${PluginId}_deleted_channel_subscription`,
+    SET_RHS_INSTANCE_ID: `${PluginId}_set_rhs_instance_id`,
+    SET_RHS_TAB: `${PluginId}_set_rhs_tab`,
+    SET_RHS_SORT: `${PluginId}_set_rhs_sort`,
+    HYDRATE_RHS_VIEW_STATE: `${PluginId}_hydrate_rhs_view_state`,
+    RHS_ISSUES_LOADING: `${PluginId}_rhs_issues_loading`,
+    RECEIVED_RHS_ISSUES: `${PluginId}_received_rhs_issues`,
+    RECEIVED_RHS_ISSUES_APPEND: `${PluginId}_received_rhs_issues_append`,
+    RHS_ISSUES_ERROR: `${PluginId}_rhs_issues_error`,
 };

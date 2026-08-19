@@ -3,8 +3,17 @@
 
 import {combineReducers} from 'redux';
 
-import ActionTypes from 'action_types';
-import {ChannelSubscription, PluginSettings} from 'types/model';
+import ActionTypes from '../action_types';
+import {
+    ChannelSubscription,
+    PluginSettings,
+    RHSErrorCode,
+    RHSIssue,
+    RHSSort,
+    RHSTab,
+    RHS_DEFAULT_SORT,
+    RHS_DEFAULT_TAB,
+} from 'types/model';
 
 export type Action<T extends string = string> = {
     type: T
@@ -266,6 +275,121 @@ const channelSubscriptions = (state = {} as AnyState, action = {} as AnyAction) 
     }
 };
 
+function rhsInstanceID(state = '', action = {} as AnyAction): string {
+    switch (action.type) {
+    case ActionTypes.SET_RHS_INSTANCE_ID:
+        return action.data;
+    case ActionTypes.HYDRATE_RHS_VIEW_STATE:
+        return action.data.instance;
+    default:
+        return state;
+    }
+}
+
+function rhsTab(state: RHSTab = RHS_DEFAULT_TAB, action = {} as AnyAction): RHSTab {
+    switch (action.type) {
+    case ActionTypes.SET_RHS_TAB:
+        return action.data;
+    case ActionTypes.HYDRATE_RHS_VIEW_STATE:
+        return action.data.tab;
+    default:
+        return state;
+    }
+}
+
+function rhsSort(state: RHSSort = RHS_DEFAULT_SORT, action = {} as AnyAction): RHSSort {
+    switch (action.type) {
+    case ActionTypes.SET_RHS_SORT:
+        return action.data;
+    case ActionTypes.HYDRATE_RHS_VIEW_STATE:
+        return action.data.sort;
+    default:
+        return state;
+    }
+}
+
+function rhsIssues(state: RHSIssue[] = [], action = {} as AnyAction): RHSIssue[] {
+    switch (action.type) {
+    case ActionTypes.RHS_ISSUES_LOADING:
+        if (action.data && action.data.reset) {
+            return [];
+        }
+        return state;
+    case ActionTypes.RECEIVED_RHS_ISSUES:
+        return action.data.issues ? action.data.issues : [];
+    case ActionTypes.RECEIVED_RHS_ISSUES_APPEND:
+        return state.concat(action.data.issues ? action.data.issues : []);
+    default:
+        return state;
+    }
+}
+
+function rhsTabs(state: RHSTab[] = [], action = {} as AnyAction): RHSTab[] {
+    switch (action.type) {
+    case ActionTypes.RECEIVED_RHS_ISSUES:
+    case ActionTypes.RECEIVED_RHS_ISSUES_APPEND:
+        return action.data.tabs ? action.data.tabs : state;
+    default:
+        return state;
+    }
+}
+
+function rhsNextPageToken(state = '', action = {} as AnyAction): string {
+    switch (action.type) {
+    case ActionTypes.RHS_ISSUES_LOADING:
+        if (action.data && action.data.reset) {
+            return '';
+        }
+        return state;
+    case ActionTypes.RECEIVED_RHS_ISSUES:
+    case ActionTypes.RECEIVED_RHS_ISSUES_APPEND:
+        return action.data.nextPageToken ? action.data.nextPageToken : '';
+    default:
+        return state;
+    }
+}
+
+function rhsIsLast(state = true, action = {} as AnyAction): boolean {
+    switch (action.type) {
+    case ActionTypes.RHS_ISSUES_LOADING:
+        if (action.data && action.data.reset) {
+            return true;
+        }
+        return state;
+    case ActionTypes.RECEIVED_RHS_ISSUES:
+    case ActionTypes.RECEIVED_RHS_ISSUES_APPEND:
+        return Boolean(action.data.isLast);
+    default:
+        return state;
+    }
+}
+
+function rhsLoading(state = false, action = {} as AnyAction): boolean {
+    switch (action.type) {
+    case ActionTypes.RHS_ISSUES_LOADING:
+        return true;
+    case ActionTypes.RECEIVED_RHS_ISSUES:
+    case ActionTypes.RECEIVED_RHS_ISSUES_APPEND:
+    case ActionTypes.RHS_ISSUES_ERROR:
+        return false;
+    default:
+        return state;
+    }
+}
+
+function rhsError(state: RHSErrorCode | null = null, action = {} as AnyAction): RHSErrorCode | null {
+    switch (action.type) {
+    case ActionTypes.RHS_ISSUES_LOADING:
+    case ActionTypes.RECEIVED_RHS_ISSUES:
+    case ActionTypes.RECEIVED_RHS_ISSUES_APPEND:
+        return null;
+    case ActionTypes.RHS_ISSUES_ERROR:
+        return action.data;
+    default:
+        return state;
+    }
+}
+
 export default combineReducers({
     userConnected,
     userCanConnect,
@@ -283,4 +407,13 @@ export default combineReducers({
     subscriptionTemplates,
     subscriptionTemplatesForProjectKey,
     channelSubscriptions,
+    rhsInstanceID,
+    rhsTab,
+    rhsSort,
+    rhsIssues,
+    rhsTabs,
+    rhsNextPageToken,
+    rhsIsLast,
+    rhsLoading,
+    rhsError,
 });

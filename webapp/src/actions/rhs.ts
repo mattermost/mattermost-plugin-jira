@@ -1,0 +1,231 @@
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import {Dispatch} from 'redux';
+
+import ActionTypes from '../action_types';
+import {RHSFetchError, getRHSIssues, getRHSStatuses} from '../client';
+import {getPluginServerRoute} from '../selectors';
+import {loadRHSViewState, saveRHSViewState} from 'utils/rhs_view_state';
+
+import {
+    FetchRHSIssuesArgs,
+    RHSErrorCode,
+    RHSIssuesResponse,
+    RHSSort,
+    RHSTab,
+} from 'types/model';
+import {GlobalState, pluginStateKey} from 'types/store';
+
+export function rhsIssuesFlightKey(instanceID: string, tab: RHSTab, sort: RHSSort): string {
+    return JSON.stringify({
+        instance: instanceID,
+        kind: tab.kind,
+        key: tab.key || '',
+        id: tab.id || '',
+        sort,
+    });
+}
+
+const rhsIssuesInFlight: Map<string, Promise<{data: RHSIssuesResponse} | {error: RHSFetchError}>> = new Map();
+
+export function resetRHSIssuesInFlight(): void {
+    rhsIssuesInFlight.clear();
+}
+
+function withRHSIssuesInFlight(
+    key: string,
+    work: () => Promise<{data: RHSIssuesResponse} | {error: RHSFetchError}>,
+): Promise<{data: RHSIssuesResponse} | {error: RHSFetchError}> {
+    const existing = rhsIssuesInFlight.get(key);
+    if (existing) {
+        return existing;
+    }
+
+    const promise = (async () => {
+        try {
+            return await work();
+        } finally {
+            rhsIssuesInFlight.delete(key);
+        }
+    })();
+
+    rhsIssuesInFlight.set(key, promise);
+    return promise;
+}
+
+function persistCurrentRHSView(state: GlobalState): void {
+    const plugin = state[pluginStateKey];
+    saveRHSViewState(state.entities.users.currentUserId, {
+        instance: plugin.rhsInstanceID,
+        tab: plugin.rhsTab,
+        sort: plugin.rhsSort,
+    });
+}
+
+function toRHSFetchError(error: unknown): RHSFetchError {
+    if (error instanceof RHSFetchError) {
+        return error;
+    }
+    const message = error instanceof Error ? error.message : 'internal error';
+    const errorCode: RHSErrorCode = 'internal_error';
+    return new RHSFetchError(errorCode, message, 0);
+}
+
+export const setRHSInstanceID = (instanceID: string) => {
+    return (dispatch: Dispatch, getState: () => GlobalState) => {
+        dispatch({
+            type: ActionTypes.SET_RHS_INSTANCE_ID,
+            data: instanceID,
+        });
+        persistCurrentRHSView(getState());
+        return {data: instanceID};
+    };
+};
+
+export const setRHSTab = (tab: RHSTab) => {
+    return (dispatch: Dispatch, getState: () => GlobalState) => {
+        dispatch({
+            type: ActionTypes.SET_RHS_TAB,
+            data: tab,
+        });
+        persistCurrentRHSView(getState());
+        return {data: tab};
+    };
+};
+
+export const setRHSSort = (sort: RHSSort) => {
+    return (dispatch: Dispatch, getState: () => GlobalState) => {
+        dispatch({
+            type: ActionTypes.SET_RHS_SORT,
+            data: sort,
+        });
+        persistCurrentRHSView(getState());
+        return {data: sort};
+    };
+};
+
+export const restoreRHSViewState = () => {
+    return (dispatch: Dispatch, getState: () => GlobalState) => {
+        const saved = loadRHSViewState(getState().entities.users.currentUserId);
+        if (!saved) {
+            return {data: null};
+        }
+        dispatch({
+            type: ActionTypes.HYDRATE_RHS_VIEW_STATE,
+            data: saved,
+        });
+        return {data: saved};
+    };
+};
+
+export const fetchRHSIssues = (args: FetchRHSIssuesArgs) => {
+    return (dispatch: Dispatch, getState: () => GlobalState) => {
+        const key = rhsIssuesFlightKey(args.instanceID, args.tab, args.sort);
+
+        return withRHSIssuesInFlight(key, async () => {
+            dispatch({
+                type: ActionTypes.SET_RHS_INSTANCE_ID,
+                data: args.instanceID,
+            });
+            dispatch({
+                type: ActionTypes.SET_RHS_TAB,
+                data: args.tab,
+            });
+            dispatch({
+                type: ActionTypes.SET_RHS_SORT,
+                data: args.sort,
+            });
+            persistCurrentRHSView(getState());
+            dispatch({
+                type: ActionTypes.RHS_ISSUES_LOADING,
+                data: {reset: true},
+            });
+
+            try {
+                const data = await getRHSIssues(getPluginServerRoute(getState()), {
+                    instanceID: args.instanceID,
+                    tab: args.tab,
+                    sort: args.sort,
+                });
+                dispatch({
+                    type: ActionTypes.RECEIVED_RHS_ISSUES,
+                    data,
+                });
+                return {data};
+            } catch (error) {
+                const rhsError = toRHSFetchError(error);
+                dispatch({
+                    type: ActionTypes.RHS_ISSUES_ERROR,
+                    data: rhsError.errorCode,
+                });
+                return {error: rhsError};
+            }
+        });
+    };
+};
+
+export const loadMoreRHSIssues = () => {
+    return (dispatch: Dispatch, getState: () => GlobalState) => {
+        const plugin = getState()[pluginStateKey];
+        if (plugin.rhsIsLast || !plugin.rhsNextPageToken) {
+            return Promise.resolve({data: plugin.rhsIssues as RHSIssuesResponse['issues']});
+        }
+
+        const instanceID = plugin.rhsInstanceID as string;
+        const tab = plugin.rhsTab as RHSTab;
+        const sort = plugin.rhsSort as RHSSort;
+        const nextPageToken = plugin.rhsNextPageToken as string;
+        const key = rhsIssuesFlightKey(instanceID, tab, sort);
+
+        return withRHSIssuesInFlight(key, async () => {
+            dispatch({
+                type: ActionTypes.RHS_ISSUES_LOADING,
+                data: {reset: false},
+            });
+
+            try {
+                const data = await getRHSIssues(getPluginServerRoute(getState()), {
+                    instanceID,
+                    tab,
+                    sort,
+                    nextPageToken,
+                });
+                dispatch({
+                    type: ActionTypes.RECEIVED_RHS_ISSUES_APPEND,
+                    data,
+                });
+                return {data};
+            } catch (error) {
+                const rhsError = toRHSFetchError(error);
+                dispatch({
+                    type: ActionTypes.RHS_ISSUES_ERROR,
+                    data: rhsError.errorCode,
+                });
+                return {error: rhsError};
+            }
+        });
+    };
+};
+
+export const refreshRHSIssues = () => {
+    return (dispatch: Dispatch, getState: () => GlobalState) => {
+        const plugin = getState()[pluginStateKey];
+        return dispatch(fetchRHSIssues({
+            instanceID: plugin.rhsInstanceID,
+            tab: plugin.rhsTab,
+            sort: plugin.rhsSort,
+        }) as any);
+    };
+};
+
+export const fetchRHSStatuses = (instanceID: string) => {
+    return async (dispatch: Dispatch, getState: () => GlobalState) => {
+        try {
+            const data = await getRHSStatuses(getPluginServerRoute(getState()), instanceID);
+            return {data};
+        } catch (error) {
+            return {error: toRHSFetchError(error)};
+        }
+    };
+};

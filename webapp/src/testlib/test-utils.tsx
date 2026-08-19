@@ -30,6 +30,15 @@ export const defaultMockState = {
         jiraIssueMetadata: null,
         channelIdWithSettingsOpen: null,
         channelSubscriptions: {},
+        rhsInstanceID: '',
+        rhsTab: {kind: 'assigned', name: 'Assigned'},
+        rhsSort: 'updated',
+        rhsIssues: [],
+        rhsTabs: [],
+        rhsNextPageToken: '',
+        rhsIsLast: true,
+        rhsLoading: false,
+        rhsError: null,
     },
     entities: {
         general: {

@@ -198,6 +198,89 @@ export type PluginSettings = {
     security_level_empty_for_jira_subscriptions: boolean;
 };
 
+export type RHSErrorCode =
+    'not_connected' |
+    'rate_limited' |
+    'not_authorized' |
+    'not_cloud' |
+    'invalid_request' |
+    'internal_error';
+
+export type RHSTabKind = 'assigned' | 'category' | 'status';
+
+export type RHSSort = 'updated' | 'created';
+
+export type RHSTab = {
+    kind: RHSTabKind;
+    name: string;
+    key?: string;
+    id?: string;
+};
+
+export type RHSIssueStatus = {
+    name: string;
+    categoryKey: string;
+};
+
+export type RHSIssue = {
+    key: string;
+    summary: string;
+    browseUrl: string;
+    status: RHSIssueStatus;
+    priority: string;
+    issueType: string;
+    project: string;
+    assignee: string;
+    reporter: string;
+    created: string;
+    updated: string;
+    dueDate: string;
+    labels: string[];
+};
+
+export type RHSIssuesResponse = {
+    issues: RHSIssue[];
+    tabs: RHSTab[];
+    nextPageToken: string;
+    isLast: boolean;
+};
+
+export type RHSStatusCategory = {
+    id: number;
+    key: string;
+    name: string;
+};
+
+export type RHSStatus = {
+    id: string;
+    name: string;
+    statusCategory: RHSStatusCategory;
+};
+
+export type RHSStatusesResponse = {
+    statuses: RHSStatus[];
+    categories: RHSStatusCategory[];
+};
+
+export type RHSViewState = {
+    instance: string;
+    tab: RHSTab;
+    sort: RHSSort;
+};
+
+export const RHS_DEFAULT_SORT: RHSSort = 'updated';
+
+export const RHS_DEFAULT_TAB: RHSTab = {
+    kind: 'assigned',
+    name: 'Assigned',
+};
+
+export type FetchRHSIssuesArgs = {
+    instanceID: string;
+    tab: RHSTab;
+    sort: RHSSort;
+};
+
 export type GetConnectedResponse = {
     data: {
         can_connect: boolean;

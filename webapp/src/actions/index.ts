@@ -690,3 +690,16 @@ export const fetchIssueByKey = (issueKey: string, instanceID: string) => {
         }
     };
 };
+
+export {
+    fetchRHSIssues,
+    fetchRHSStatuses,
+    loadMoreRHSIssues,
+    refreshRHSIssues,
+    resetRHSIssuesInFlight,
+    restoreRHSViewState,
+    rhsIssuesFlightKey,
+    setRHSInstanceID,
+    setRHSSort,
+    setRHSTab,
+} from './rhs';
