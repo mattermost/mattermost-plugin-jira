@@ -142,7 +142,7 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 			return ci.JWTInstance.getClientForConnection(connection)
 		}
 
-		return nil, nil, errors.New("failed to create client for OAuth instance: no JWT instance found, and connection's OAuth token is missing")
+		return nil, nil, errOAuthTokenMissing
 	}
 
 	tokenSource := oauth2Conf.TokenSource(ctx, connection.OAuth2Token)
@@ -240,6 +240,8 @@ func (ci *cloudOAuthInstance) GetManageWebhooksURL() string {
 func (ci *cloudOAuthInstance) GetMattermostKey() string {
 	return ci.MattermostKey
 }
+
+var errOAuthTokenMissing = errors.New("failed to create client for OAuth instance: no JWT instance found, and connection's OAuth token is missing")
 
 var errTokenExpired = errors.New("token expired or revoked")
 

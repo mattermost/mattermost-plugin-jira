@@ -1706,3 +1706,15 @@ cd server && go test ./... -run TestRHSHTTP -v
 ### Blockers
 
 None. Ready for Gate 4 review / local commit checkpoint (orchestration). Phase 5 not started.
+
+## QA5 follow-up (2026-08-20)
+
+Disconnected **cloud-oauth** users often do not get `kvstore.ErrNotFound` from
+`LoadConnection` (zero `Connection`, `OAuth2Token == nil`). `GetClient` then
+returns `errOAuthTokenMissing` (`no JWT instance found, and connection's OAuth
+token is missing`), which `respondRHSErr` mapped to 500 `internal_error`. New
+RHS routes now map that sentinel to JSON `not_connected` (401). Existing
+`getClient` call sites and `get-search-issues` are unchanged. Tests:
+`TestRHSHTTPGetIssuesCloudOAuthMissingTokenJSON`,
+`TestRHSHTTPListStatusesCloudOAuthMissingTokenJSON`.
+

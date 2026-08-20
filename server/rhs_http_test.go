@@ -99,6 +99,26 @@ func (rhsErrNotFoundUserStore) LoadConnection(types.ID, types.ID) (*Connection, 
 	return nil, kvstore.ErrNotFound
 }
 
+// Production LoadConnection often yields a zero Connection (nil OAuth2Token)
+// instead of kvstore.ErrNotFound when the user is not connected.
+type rhsNilOAuthTokenUserStore struct {
+	mockUserStore
+}
+
+func (rhsNilOAuthTokenUserStore) LoadConnection(types.ID, types.ID) (*Connection, error) {
+	return &Connection{}, nil
+}
+
+func installRHSCloudOAuth(t *testing.T, p *Plugin) *cloudOAuthInstance {
+	t.Helper()
+	oi := &cloudOAuthInstance{
+		InstanceCommon: newInstanceCommon(p, CloudOAuthInstanceType, types.ID("https://oauth.example.atlassian.net")),
+		JiraBaseURL:    "https://oauth.example.atlassian.net",
+	}
+	storeRHSInstance(t, p, oi)
+	return oi
+}
+
 func setupRHSHTTPPlugin(t *testing.T, api *plugintest.API) *Plugin {
 	t.Helper()
 	api.On("LogWarn", mockAnythingOfTypeBatch("string", 11)...).Maybe().Return()
@@ -290,6 +310,22 @@ func TestRHSHTTPGetIssuesNotConnectedJSON(t *testing.T) {
 	assert.Equal(t, 0, client.searchCalls)
 }
 
+func TestRHSHTTPGetIssuesCloudOAuthMissingTokenJSON(t *testing.T) {
+	api := &plugintest.API{}
+	p := setupRHSHTTPPlugin(t, api)
+	oi := installRHSCloudOAuth(t, p)
+	p.userStore = rhsNilOAuthTokenUserStore{}
+
+	w := doRHSHTTPGet(t, p, makeAPIRoute(routeAPIRHSIssues)+"?instance_id="+string(oi.GetID()), "connected_user")
+	require.Equal(t, http.StatusUnauthorized, w.Result().StatusCode)
+	require.NotEqual(t, http.StatusInternalServerError, w.Result().StatusCode)
+	assert.NotEqual(t, "text/plain", w.Result().Header.Get("Content-Type"))
+	body := decodeRHSError(t, w)
+	assert.Equal(t, rhsErrNotConnected, body.Error)
+	assert.NotEqual(t, rhsErrInternal, body.Error)
+	assert.NotEmpty(t, body.Message)
+}
+
 func TestRHSHTTPGetIssuesRateLimitedJSON(t *testing.T) {
 	api := &plugintest.API{}
 	p := setupRHSHTTPPlugin(t, api)
@@ -463,6 +499,22 @@ func TestRHSHTTPListStatusesOAuth2NotConnectedJSON(t *testing.T) {
 	require.Equal(t, http.StatusUnauthorized, w.Result().StatusCode)
 	body := decodeRHSError(t, w)
 	assert.Equal(t, rhsErrNotConnected, body.Error)
+}
+
+func TestRHSHTTPListStatusesCloudOAuthMissingTokenJSON(t *testing.T) {
+	api := &plugintest.API{}
+	api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
+	p := setupRHSHTTPPlugin(t, api)
+	oi := installRHSCloudOAuth(t, p)
+	p.userStore = rhsNilOAuthTokenUserStore{}
+
+	w := doRHSHTTPGet(t, p, makeAPIRoute(routeAPIRHSStatuses)+"?instance_id="+string(oi.GetID()), "connected_user")
+	require.Equal(t, http.StatusUnauthorized, w.Result().StatusCode)
+	require.NotEqual(t, http.StatusInternalServerError, w.Result().StatusCode)
+	body := decodeRHSError(t, w)
+	assert.Equal(t, rhsErrNotConnected, body.Error)
+	assert.NotEqual(t, rhsErrInternal, body.Error)
+	assert.NotEmpty(t, body.Message)
 }
 
 func TestRHSHTTPListStatusesOAuth2IgnoresAdminAPIToken(t *testing.T) {

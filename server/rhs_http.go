@@ -52,7 +52,7 @@ func (p *Plugin) checkSystemAdmin(userID string) bool {
 
 func respondRHSErr(w http.ResponseWriter, err error) (int, error) {
 	switch {
-	case errors.Is(err, kvstore.ErrNotFound):
+	case errors.Is(err, kvstore.ErrNotFound), errors.Is(err, errOAuthTokenMissing):
 		return respondJSONErr(w, http.StatusUnauthorized, rhsErrNotConnected, "Jira account is not connected")
 	case errors.Is(err, ErrRateLimited):
 		return respondJSONErr(w, http.StatusTooManyRequests, rhsErrRateLimited, "Jira is rate limiting requests, try again shortly")
