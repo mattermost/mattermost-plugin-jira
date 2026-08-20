@@ -4,8 +4,15 @@
 import {applyMiddleware, createStore} from 'redux';
 import thunk from 'redux-thunk';
 
-import {InstanceType, RHSIssuesResponse, RHSTab} from 'types/model';
+import {
+    Instance,
+    InstanceType,
+    RHSIssuesResponse,
+    RHSTab,
+} from 'types/model';
 import {pluginStateKey} from 'types/store';
+import {isRHSPopoutPathname} from 'utils/rhs_popout';
+import {saveRHSViewState} from 'utils/rhs_view_state';
 
 import ActionTypes from '../action_types';
 import {RHSFetchError} from '../client';
@@ -17,10 +24,13 @@ import {
     loadMoreRHSIssues,
     resetRHSIssuesInFlight,
     resolveAndFetchRHSIssues,
+    restoreRHSViewState,
     setRHSSort,
 } from './rhs';
 
 const assignedTab: RHSTab = {kind: 'assigned', name: 'Assigned'};
+const inProgressTab: RHSTab = {kind: 'category', name: 'In Progress', key: 'indeterminate'};
+const cloudOAuth = {instance_id: 'https://oauth.example.atlassian.net', type: InstanceType.CLOUD_OAUTH};
 
 const page1: RHSIssuesResponse = {
     issues: [{
@@ -412,7 +422,59 @@ describe('rhs actions', () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
         expect(pluginFrom(store).rhsError).toBe('invalid_request');
     });
+
+    test('a simulated /_popout/ pathname rehydrates the persisted view state and triggers a fresh issues fetch', async () => {
+        expect(isRHSPopoutPathname('/_popout/rhs/team/plugin/jira')).toBe(true);
+
+        const saved = {
+            instance: 'https://oauth.example.atlassian.net',
+            tab: inProgressTab,
+            sort: 'created' as const,
+        };
+        saveRHSViewState('user-1', saved);
+
+        const stored = JSON.parse(localStorage.getItem('jira:rhs-view:user-1') as string);
+        expect(stored.issues).toBeUndefined();
+        expect(stored.instance).toBe(saved.instance);
+
+        const store = makeRHSStore();
+        store.dispatch({
+            type: ActionTypes.RECEIVED_INSTANCE_STATUS,
+            data: {instances: [cloudOAuth]},
+        });
+        store.dispatch({
+            type: ActionTypes.RECEIVED_CONNECTED,
+            data: userinfoWithInstances([cloudOAuth]),
+        });
+
+        store.dispatch(restoreRHSViewState());
+        expect(pluginFrom(store).rhsInstanceID).toBe(saved.instance);
+        expect(pluginFrom(store).rhsSort).toBe('created');
+        expect(pluginFrom(store).rhsIssues).toEqual([]);
+
+        const fetchMock = mockFetchOk(page1);
+        await store.dispatch(resolveAndFetchRHSIssues() as any);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const url = String(fetchMock.mock.calls[0][0]);
+        expect(url).toContain('/api/v2/rhs/issues');
+        expect(url).toContain('sort=created');
+        expect(url).toContain('tab_kind=category');
+        expect(url).toContain('tab_key=indeterminate');
+        expect(pluginFrom(store).rhsIssues.length).toBeGreaterThan(0);
+    });
 });
+
+function userinfoWithInstances(instances: Instance[]) {
+    return {
+        can_connect: true,
+        is_connected: instances.length > 0,
+        instances,
+        user_info: {
+            connected_instances: instances,
+            default_instance_id: instances[0] ? instances[0].instance_id : '',
+        },
+    };
+}
 
 function seedConnectedCloud(store: ReturnType<typeof makeRHSStore>) {
     const instance = {instance_id: 'https://example.atlassian.net', type: InstanceType.CLOUD};

@@ -15,6 +15,7 @@ import {
     RHS_DEFAULT_TAB,
 } from 'types/model';
 
+import {isRHSPopoutPathname} from 'utils/rhs_popout';
 import {rhsTabsEqual} from 'utils/rhs_resolve';
 
 import RHSHeader from './rhs_header';
@@ -71,6 +72,7 @@ export default function Rhs(props: Props): JSX.Element {
         handleConnectFlow,
     } = props;
 
+    const isPopout = isRHSPopoutPathname(window.location.pathname);
     const [booting, setBooting] = useState(true);
     const nowMs = Date.now();
 
@@ -193,6 +195,7 @@ export default function Rhs(props: Props): JSX.Element {
         <div
             className='jira-rhs'
             data-testid='jira-rhs'
+            data-rhs-popout={isPopout ? 'true' : 'false'}
         >
             <RHSHeader
                 sort={sort}

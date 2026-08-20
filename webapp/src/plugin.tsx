@@ -20,8 +20,8 @@ import AttachCommentToIssuePostMenuAction from 'components/post_menu_actions/att
 import AttachCommentToIssueModal from 'components/modals/attach_comment_modal';
 import SetupUI from 'components/setup_ui';
 import LinkTooltip from 'components/jira_ticket_tooltip';
-import {canUserConnect, getInstalledInstances, isUserConnected} from 'selectors';
 import {isCombinedUserActivityPost} from 'utils/posts';
+import {registerJiraAppBar, shouldRegisterJiraRHS} from 'utils/rhs_register';
 import {GlobalState} from 'types/store';
 
 import manifest from './manifest';
@@ -38,8 +38,9 @@ import {
 } from './actions';
 
 import Hooks from './hooks/hooks';
+import {canUserConnect, getInstalledInstances, isUserConnected} from './selectors';
 
-const setupUILater = (registry: any, store: Store<object, Action<object>>): () => Promise<void> => async () => {
+export const setupUILater = (registry: any, store: Store<object, Action<object>>): () => Promise<void> => async () => {
     registry.registerReducer(reducers);
 
     const settings = await store.dispatch(getSettings());
@@ -113,6 +114,10 @@ const setupUILater = (registry: any, store: Store<object, Action<object>>): () =
             registry.registerLinkTooltipComponent(LinkTooltip);
         }
 
+        if (shouldRegisterJiraRHS(settings as {rhs_enabled?: boolean}, store.getState() as GlobalState)) {
+            registerJiraAppBar(registry, store.getState() as GlobalState);
+        }
+
         registry.registerRootComponent(ChannelSubscriptionsModal);
         registry.registerAdminConsoleCustomSetting('RHSStatusTabs', RHSStatusSetting, {showTitle: true});
 
@@ -128,21 +133,15 @@ const setupUILater = (registry: any, store: Store<object, Action<object>>): () =
 
 export default class Plugin {
     private haveSetupUI = false;
-    private headerButtonId = '';
     private setupUI?: () => Promise<void>;
 
     private finishedSetupUI = () => {
         this.haveSetupUI = true;
     };
 
-    private setHeaderButtonId = (id: string) => {
-        this.headerButtonId = id;
-    };
-
     public async initialize(registry: PluginRegistry, store: Store<object, Action<object>>) {
         this.setupUI = setupUILater(registry, store);
         this.haveSetupUI = false;
-        this.headerButtonId = '';
 
         // Register the dummy component, which will call setupUI when it is activated (i.e., when the user logs in)
         registry.registerRootComponent(
@@ -153,8 +152,6 @@ export default class Plugin {
                         setupUI={this.setupUI}
                         haveSetupUI={this.haveSetupUI}
                         finishedSetupUI={this.finishedSetupUI}
-                        headerButtonId={this.headerButtonId}
-                        setHeaderButtonId={this.setHeaderButtonId}
                     />
                 );
             });
