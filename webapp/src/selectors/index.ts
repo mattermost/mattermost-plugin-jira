@@ -8,7 +8,17 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import manifest from '../manifest';
 
-import {Instance, InstanceType, PluginSettings} from 'types/model';
+import {
+    Instance,
+    InstanceType,
+    PluginSettings,
+    RHSErrorCode,
+    RHSIssue,
+    RHSSort,
+    RHSTab,
+    RHS_DEFAULT_SORT,
+    RHS_DEFAULT_TAB,
+} from 'types/model';
 import {GlobalState, pluginStateKey} from 'types/store';
 
 const getPluginState = (state: GlobalState) => state[pluginStateKey] || {};
@@ -104,3 +114,19 @@ export const instanceIsInstalled = (state: GlobalState): boolean => getInstalled
 export const getDefaultUserInstanceID = (state: GlobalState) => getPluginState(state).defaultUserInstanceID;
 
 export const getPluginSettings = (state: GlobalState): PluginSettings | null => getPluginState(state).pluginSettings;
+
+export const getRHSInstanceID = (state: GlobalState): string => getPluginState(state).rhsInstanceID || '';
+
+export const getRHSTab = (state: GlobalState): RHSTab => getPluginState(state).rhsTab || RHS_DEFAULT_TAB;
+
+export const getRHSSort = (state: GlobalState): RHSSort => getPluginState(state).rhsSort || RHS_DEFAULT_SORT;
+
+export const getRHSIssues = (state: GlobalState): RHSIssue[] => getPluginState(state).rhsIssues || [];
+
+export const getRHSTabs = (state: GlobalState): RHSTab[] => getPluginState(state).rhsTabs || [];
+
+export const getRHSIsLast = (state: GlobalState): boolean => Boolean(getPluginState(state).rhsIsLast);
+
+export const getRHSLoading = (state: GlobalState): boolean => Boolean(getPluginState(state).rhsLoading);
+
+export const getRHSError = (state: GlobalState): RHSErrorCode | null => getPluginState(state).rhsError || null;

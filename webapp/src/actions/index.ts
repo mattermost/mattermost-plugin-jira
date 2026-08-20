@@ -697,9 +697,11 @@ export {
     loadMoreRHSIssues,
     refreshRHSIssues,
     resetRHSIssuesInFlight,
+    resolveAndFetchRHSIssues,
     restoreRHSViewState,
     rhsIssuesFlightKey,
     setRHSInstanceID,
     setRHSSort,
     setRHSTab,
+    type ResolveAndFetchArgs,
 } from './rhs';

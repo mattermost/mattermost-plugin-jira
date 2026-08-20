@@ -4,9 +4,10 @@
 import {applyMiddleware, createStore} from 'redux';
 import thunk from 'redux-thunk';
 
-import {RHSIssuesResponse, RHSTab} from 'types/model';
+import {InstanceType, RHSIssuesResponse, RHSTab} from 'types/model';
 import {pluginStateKey} from 'types/store';
 
+import ActionTypes from '../action_types';
 import {RHSFetchError} from '../client';
 import reducer from '../reducers';
 
@@ -15,6 +16,7 @@ import {
     fetchRHSStatuses,
     loadMoreRHSIssues,
     resetRHSIssuesInFlight,
+    resolveAndFetchRHSIssues,
     setRHSSort,
 } from './rhs';
 
@@ -348,4 +350,85 @@ describe('rhs actions', () => {
         const stored = JSON.parse(localStorage.getItem('jira:rhs-view:user-1') as string);
         expect(stored.sort).toBe('created');
     });
+
+    test('resolveAndFetchRHSIssues does not fetch when no connected Cloud instance', async () => {
+        const fetchMock = global.fetch as jest.Mock;
+        const store = makeRHSStore();
+
+        await store.dispatch(resolveAndFetchRHSIssues() as any);
+
+        expect(fetchMock).toHaveBeenCalledTimes(0);
+    });
+
+    test('resolveAndFetchRHSIssues retries Assigned after invalid_request on a vanished tab', async () => {
+        const vanishedTab: RHSTab = {kind: 'category', name: 'In Progress', key: 'indeterminate'};
+        const fetchMock = global.fetch as jest.Mock;
+        fetchMock
+            .mockImplementationOnce(() => Promise.resolve({
+                ok: false,
+                status: 400,
+                text: () => Promise.resolve(JSON.stringify({
+                    error: 'invalid_request',
+                    message: 'unknown tab',
+                })),
+            }))
+            .mockImplementationOnce(() => Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({
+                    issues: [],
+                    tabs: [assignedTab],
+                    nextPageToken: '',
+                    isLast: true,
+                }),
+            }));
+
+        const store = makeRHSStore();
+        seedConnectedCloud(store);
+
+        await store.dispatch(resolveAndFetchRHSIssues({tab: vanishedTab}) as any);
+
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        const plugin = pluginFrom(store);
+        expect(plugin.rhsTab.kind).toBe('assigned');
+        expect(plugin.rhsError).toBeNull();
+    });
+
+    test('resolveAndFetchRHSIssues does not retry Assigned when the first error is invalid_request on Assigned', async () => {
+        const fetchMock = global.fetch as jest.Mock;
+        fetchMock.mockImplementation(() => Promise.resolve({
+            ok: false,
+            status: 400,
+            text: () => Promise.resolve(JSON.stringify({
+                error: 'invalid_request',
+                message: 'bad assigned request',
+            })),
+        }));
+
+        const store = makeRHSStore();
+        seedConnectedCloud(store);
+
+        await store.dispatch(resolveAndFetchRHSIssues() as any);
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(pluginFrom(store).rhsError).toBe('invalid_request');
+    });
 });
+
+function seedConnectedCloud(store: ReturnType<typeof makeRHSStore>) {
+    const instance = {instance_id: 'https://example.atlassian.net', type: InstanceType.CLOUD};
+    store.dispatch({
+        type: ActionTypes.RECEIVED_INSTANCE_STATUS,
+        data: {instances: [instance]},
+    });
+    store.dispatch({
+        type: ActionTypes.RECEIVED_CONNECTED,
+        data: {
+            can_connect: true,
+            is_connected: true,
+            user_info: {
+                connected_instances: [instance],
+                default_instance_id: instance.instance_id,
+            },
+        },
+    });
+}

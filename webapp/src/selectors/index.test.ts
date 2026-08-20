@@ -1,12 +1,20 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Instance, InstanceType} from 'types/model';
+import {
+    Instance,
+    InstanceType,
+    RHSErrorCode,
+    RHSIssue,
+} from 'types/model';
 import {GlobalState, pluginStateKey} from 'types/store';
 import {defaultMockState} from 'testlib/test-utils';
 
 import {
     getConnectedCloudInstances,
+    getRHSError,
+    getRHSIssues,
+    getRHSLoading,
     getUserConnectedInstances,
     hasCloudInstance,
     isCloudInstance,
@@ -15,6 +23,9 @@ import {
 function makeState(plugin: {
     installedInstances?: Instance[];
     userConnectedInstances?: Instance[];
+    rhsLoading?: boolean;
+    rhsIssues?: RHSIssue[];
+    rhsError?: RHSErrorCode | null;
 }): GlobalState {
     return {
         [pluginStateKey]: plugin,
@@ -82,5 +93,16 @@ describe('selectors', () => {
             expect.objectContaining({instance_id: 'instance2', type: InstanceType.CLOUD_OAUTH}),
         ]));
         expect(connectedCloud).toHaveLength(2);
+    });
+
+    test('getRHSLoading and getRHSIssues keep loading distinguishable from empty', () => {
+        const state = makeState({rhsLoading: true, rhsIssues: [], rhsError: null});
+        expect(getRHSLoading(state)).toBe(true);
+        expect(getRHSIssues(state)).toEqual([]);
+    });
+
+    test('getRHSError returns the typed code', () => {
+        const state = makeState({rhsError: 'not_connected'});
+        expect(getRHSError(state)).toBe('not_connected');
     });
 });

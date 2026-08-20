@@ -5,7 +5,8 @@ import {Dispatch} from 'redux';
 
 import ActionTypes from '../action_types';
 import {RHSFetchError, getRHSIssues, getRHSStatuses} from '../client';
-import {getPluginServerRoute} from '../selectors';
+import {getConnectedCloudInstances, getDefaultUserInstanceID, getPluginServerRoute} from '../selectors';
+import {resolveRHSInstanceID} from 'utils/rhs_resolve';
 import {loadRHSViewState, saveRHSViewState} from 'utils/rhs_view_state';
 
 import {
@@ -14,6 +15,7 @@ import {
     RHSIssuesResponse,
     RHSSort,
     RHSTab,
+    RHS_DEFAULT_TAB,
 } from 'types/model';
 import {GlobalState, pluginStateKey} from 'types/store';
 
@@ -227,5 +229,45 @@ export const fetchRHSStatuses = (instanceID: string) => {
         } catch (error) {
             return {error: toRHSFetchError(error)};
         }
+    };
+};
+
+export type ResolveAndFetchArgs = {
+    instanceID?: string;
+    tab?: RHSTab;
+    sort?: RHSSort;
+};
+
+export const resolveAndFetchRHSIssues = (overrides: ResolveAndFetchArgs = {}) => {
+    return (dispatch: Dispatch, getState: () => GlobalState) => {
+        const state = getState();
+        const plugin = state[pluginStateKey];
+        const instanceID = overrides.instanceID || resolveRHSInstanceID(
+            plugin.rhsInstanceID,
+            getConnectedCloudInstances(state),
+            getDefaultUserInstanceID(state) || '',
+        );
+        if (!instanceID) {
+            return Promise.resolve({data: null});
+        }
+
+        const tab = overrides.tab || (plugin.rhsTab as RHSTab);
+        const sort = overrides.sort || (plugin.rhsSort as RHSSort);
+
+        return dispatch(fetchRHSIssues({instanceID, tab, sort}) as any).then((result: {data?: RHSIssuesResponse; error?: RHSFetchError}) => {
+            if (
+                result &&
+                result.error &&
+                result.error.errorCode === 'invalid_request' &&
+                tab.kind !== 'assigned'
+            ) {
+                return dispatch(fetchRHSIssues({
+                    instanceID,
+                    tab: RHS_DEFAULT_TAB,
+                    sort,
+                }) as any);
+            }
+            return result;
+        });
     };
 };
