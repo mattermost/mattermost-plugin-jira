@@ -119,7 +119,6 @@ export const setupUILater = (registry: any, store: Store<object, Action<object>>
         }
 
         registry.registerRootComponent(ChannelSubscriptionsModal);
-        registry.registerAdminConsoleCustomSetting('RHSStatusTabs', RHSStatusSetting, {showTitle: true});
 
         const hooks = new Hooks(store, settings);
         registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);
@@ -140,6 +139,11 @@ export default class Plugin {
     };
 
     public async initialize(registry: PluginRegistry, store: Store<object, Action<object>>) {
+        // System Console loads this bundle without mounting SetupUI, so admin
+        // custom settings and the plugin reducer must register here — not in setupUILater.
+        registry.registerReducer(reducers);
+        registry.registerAdminConsoleCustomSetting('RHSStatusTabs', RHSStatusSetting, {showTitle: true});
+
         this.setupUI = setupUILater(registry, store);
         this.haveSetupUI = false;
 

@@ -1399,3 +1399,17 @@ registration when W5 landed.
 ### Blockers
 
 None.
+
+---
+
+## Staff remediation
+
+**Date:** 2026-08-20  
+**Engineer:** SE1 (not committed, not pushed)
+
+**Bug (QA1 + QA2):** `registerAdminConsoleCustomSetting('RHSStatusTabs', …)` ran only inside delayed `setupUILater()`, which `<SetupUI />` kicks off after channels login. A full load of `/admin_console/plugins/plugin_jira` never mounts SetupUI, so `plugins.adminConsoleCustomComponents` stayed `{}` and Mattermost omitted the unregistered `type: custom` setting. The picker appeared only after Town Square then SPA navigation to Console.
+
+**Fix:** Register `RHSStatusTabs` ungated in `Plugin.initialize()`, matching user-survey / custom-attributes / ai. App Bar / RHS registration stays in `setupUILater` after `getConnected()` (W4). Also register the plugin reducer in `initialize()` so the picker's own `getConnected()` can populate `installedInstances` when SetupUI never mounts.
+
+**Tests:** `plugin.test.ts` — `initialize` registers `RHSStatusTabs` without `setupUILater` / `getConnected`; Gate 8 negatives still assert the admin setting registers when App Bar does not.
+

@@ -4,13 +4,14 @@
 import {applyMiddleware, createStore} from 'redux';
 import thunk from 'redux-thunk';
 
+import RHSStatusSetting from 'components/admin_console/rhs_status_setting';
 import ConnectModal from 'components/modals/connect_modal';
 import Rhs from 'components/rhs';
 import {Instance, InstanceType} from 'types/model';
 import {pluginStateKey} from 'types/store';
 import {JIRA_RHS_TITLE} from 'utils/rhs_register';
 
-import {setupUILater} from './plugin';
+import Plugin, {setupUILater} from './plugin';
 import reducer from './reducers';
 
 const cloudOAuth = {instance_id: 'https://oauth.example.atlassian.net', type: InstanceType.CLOUD_OAUTH};
@@ -103,9 +104,56 @@ async function runSetup(registry: ReturnType<typeof makeRegistry>, store: Return
     await setupUILater(registry, store as any)();
 }
 
-function expectAdminSettingRegistered(registry: ReturnType<typeof makeRegistry>) {
-    expect(registry.registerAdminConsoleCustomSetting).toHaveBeenCalledWith('RHSStatusTabs', expect.anything(), {showTitle: true});
+async function runInitialize(registry: ReturnType<typeof makeRegistry>, store: ReturnType<typeof makeRHSStore>) {
+    const plugin = new Plugin();
+    await plugin.initialize(registry as any, store as any);
 }
+
+async function runInitializeThenSetup(registry: ReturnType<typeof makeRegistry>, store: ReturnType<typeof makeRHSStore>) {
+    await runInitialize(registry, store);
+    await runSetup(registry, store);
+}
+
+function expectAdminSettingRegistered(registry: ReturnType<typeof makeRegistry>) {
+    expect(registry.registerAdminConsoleCustomSetting).toHaveBeenCalledWith('RHSStatusTabs', RHSStatusSetting, {showTitle: true});
+}
+
+describe('plugin initialize', () => {
+    beforeEach(() => {
+        (global.fetch as jest.Mock).mockReset();
+        localStorage.clear();
+    });
+
+    afterEach(() => {
+        (global.fetch as jest.Mock).mockReset();
+        localStorage.clear();
+    });
+
+    test('initialize registers RHSStatusTabs without setupUILater or getConnected', async () => {
+        const fetchMock = global.fetch as jest.Mock;
+        const registry = makeRegistry();
+        const store = makeRHSStore();
+
+        await runInitialize(registry, store);
+
+        expectAdminSettingRegistered(registry);
+        expect(registry.registerAdminConsoleCustomSetting).toHaveBeenCalledTimes(1);
+        expect(registry.registerReducer).toHaveBeenCalled();
+        expect(registry.registerAppBarComponent).not.toHaveBeenCalled();
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    test('initialize registers RHSStatusTabs on a System Console path that never mounts SetupUI', async () => {
+        const registry = makeRegistry();
+        const store = makeRHSStore();
+
+        await runInitialize(registry, store);
+
+        expectAdminSettingRegistered(registry);
+        expect(registry.registerRootComponent).toHaveBeenCalled();
+        expect(registry.registerAppBarComponent).not.toHaveBeenCalled();
+    });
+});
 
 describe('plugin setupUILater', () => {
     beforeEach(() => {
@@ -126,7 +174,7 @@ describe('plugin setupUILater', () => {
         const registry = makeRegistry();
         const store = makeRHSStore();
 
-        await runSetup(registry, store);
+        await runInitializeThenSetup(registry, store);
 
         expect(registry.registerAppBarComponent).not.toHaveBeenCalled();
         expectAdminSettingRegistered(registry);
@@ -140,7 +188,7 @@ describe('plugin setupUILater', () => {
         const registry = makeRegistry();
         const store = makeRHSStore();
 
-        await runSetup(registry, store);
+        await runInitializeThenSetup(registry, store);
 
         expect(registry.registerAppBarComponent).not.toHaveBeenCalled();
         expectAdminSettingRegistered(registry);
@@ -154,7 +202,7 @@ describe('plugin setupUILater', () => {
         const registry = makeRegistry();
         const store = makeRHSStore();
 
-        await runSetup(registry, store);
+        await runInitializeThenSetup(registry, store);
 
         expect(registry.registerAppBarComponent).toHaveBeenCalledTimes(1);
         expect(registry.registerAppBarComponent.mock.calls[0][1]).toBeUndefined();
