@@ -1,0 +1,276 @@
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import {
+    Instance,
+    InstanceType,
+    RHSErrorCode,
+    RHSStatus,
+    RHSStatusesResponse,
+    RHSTab,
+} from 'types/model';
+
+export type RHSStatusTabsValue = Record<string, RHSTab[]>;
+
+export type StatusTabOption = {
+    label: string;
+    value: string;
+    isFixed?: boolean;
+    tab: RHSTab;
+};
+
+export const ASSIGNED_TAB: RHSTab = {
+    kind: 'assigned',
+    name: 'Assigned',
+};
+
+export const IN_PROGRESS_TAB: RHSTab = {
+    kind: 'category',
+    key: 'indeterminate',
+    name: 'In Progress',
+};
+
+export const ASSIGNED_OPTION_VALUE = 'assigned';
+
+export const ASSIGNED_OPTION: StatusTabOption = {
+    label: ASSIGNED_TAB.name,
+    value: ASSIGNED_OPTION_VALUE,
+    isFixed: true,
+    tab: ASSIGNED_TAB,
+};
+
+export const CATEGORY_OPTION_PREFIX = 'category:';
+export const STATUS_OPTION_PREFIX = 'status:';
+
+export const NOT_CONNECTED_MESSAGE = 'Connect Jira to change status tabs.';
+export const STATUS_TABS_HELP = 'Choosing a category name (To Do, In Progress, Done) matches statusCategory and is broader than a single status.';
+export const INSTANCE_LABEL = 'Instance';
+export const STATUS_TABS_LABEL = 'Status tabs';
+export const NO_CLOUD_INSTANCE_MESSAGE = 'Install a Jira Cloud instance to configure RHS status tabs.';
+export const UNABLE_TO_LOAD_STATUSES_MESSAGE = 'Unable to load statuses.';
+
+export function isCloudInstalledInstance(instance: Instance): boolean {
+    switch (instance.type) {
+    case InstanceType.CLOUD:
+    case InstanceType.CLOUD_OAUTH:
+        return true;
+    case InstanceType.SERVER:
+        return false;
+    default: {
+        const exhaustive: never = instance.type;
+        return exhaustive;
+    }
+    }
+}
+
+export function filterInstalledCloudInstances(instances: Instance[] | null): Instance[] {
+    if (!instances) {
+        return [];
+    }
+    return instances.filter(isCloudInstalledInstance);
+}
+
+export function isTabsValueEmpty(value: RHSStatusTabsValue | null, instanceID: string): boolean {
+    if (!value || typeof value !== 'object') {
+        return true;
+    }
+    const extras = value[instanceID];
+    return !extras || extras.length === 0;
+}
+
+export function storedExtrasForInstance(value: RHSStatusTabsValue | null, instanceID: string): RHSTab[] {
+    if (!value || isTabsValueEmpty(value, instanceID)) {
+        return [];
+    }
+    return value[instanceID].filter((tab) => tab.kind !== 'assigned');
+}
+
+export function displayTabsForInstance(value: RHSStatusTabsValue | null, instanceID: string): RHSTab[] {
+    if (isTabsValueEmpty(value, instanceID)) {
+        return [ASSIGNED_TAB, IN_PROGRESS_TAB];
+    }
+    return [ASSIGNED_TAB, ...storedExtrasForInstance(value, instanceID)];
+}
+
+export function optionValueForTab(tab: RHSTab): string {
+    switch (tab.kind) {
+    case 'assigned':
+        return ASSIGNED_OPTION_VALUE;
+    case 'category':
+        return CATEGORY_OPTION_PREFIX + (tab.key || '');
+    case 'status':
+        return STATUS_OPTION_PREFIX + (tab.id || '');
+    default: {
+        const exhaustive: never = tab.kind;
+        return exhaustive;
+    }
+    }
+}
+
+export function tabFromOptionValue(value: string, options: StatusTabOption[]): RHSTab | null {
+    const match = options.find((option) => option.value === value);
+    if (match) {
+        return match.tab;
+    }
+    if (value === ASSIGNED_OPTION_VALUE) {
+        return ASSIGNED_TAB;
+    }
+    if (value.indexOf(CATEGORY_OPTION_PREFIX) === 0) {
+        const key = value.slice(CATEGORY_OPTION_PREFIX.length);
+        if (!key) {
+            return null;
+        }
+        return {
+            kind: 'category',
+            key,
+            name: key,
+        };
+    }
+    if (value.indexOf(STATUS_OPTION_PREFIX) === 0) {
+        const id = value.slice(STATUS_OPTION_PREFIX.length);
+        if (!id) {
+            return null;
+        }
+        return {
+            kind: 'status',
+            id,
+            name: id,
+        };
+    }
+    return null;
+}
+
+export function optionsFromTabs(tabs: RHSTab[]): StatusTabOption[] {
+    return tabs.map((tab) => {
+        if (tab.kind === 'assigned') {
+            return ASSIGNED_OPTION;
+        }
+        return {
+            label: tab.name,
+            value: optionValueForTab(tab),
+            tab,
+        };
+    });
+}
+
+export function extrasFromOptionValues(values: string[], options: StatusTabOption[]): RHSTab[] {
+    const extras: RHSTab[] = [];
+    for (let i = 0; i < values.length; i++) {
+        const value = values[i];
+        if (value === ASSIGNED_OPTION_VALUE) {
+            continue;
+        }
+        const tab = tabFromOptionValue(value, options);
+        if (tab && tab.kind !== 'assigned') {
+            extras.push(tab);
+        }
+    }
+    return extras;
+}
+
+export function isVirtualSeedExtras(extras: RHSTab[]): boolean {
+    if (extras.length !== 1) {
+        return false;
+    }
+    const tab = extras[0];
+    return tab.kind === 'category' && tab.key === IN_PROGRESS_TAB.key;
+}
+
+export function buildPersistedValue(
+    current: RHSStatusTabsValue | null,
+    instanceID: string,
+    extras: RHSTab[],
+): RHSStatusTabsValue {
+    const next: RHSStatusTabsValue = current && typeof current === 'object' ? {...current} : {};
+    if (isVirtualSeedExtras(extras) && isTabsValueEmpty(current, instanceID)) {
+        delete next[instanceID];
+        return next;
+    }
+    next[instanceID] = extras;
+    return next;
+}
+
+export function persistedValuesEqual(left: RHSStatusTabsValue | null, right: RHSStatusTabsValue): boolean {
+    return JSON.stringify(left || {}) === JSON.stringify(right);
+}
+
+export function dedupeStatusesById(statuses: RHSStatus[]): RHSStatus[] {
+    const keys = new Set<string>();
+    const out: RHSStatus[] = [];
+    for (let i = 0; i < statuses.length; i++) {
+        const status = statuses[i];
+        if (!keys.has(status.id)) {
+            keys.add(status.id);
+            out.push(status);
+        }
+    }
+    return out;
+}
+
+export type StatusOptionGroup = {
+    label: string;
+    options: StatusTabOption[];
+};
+
+export function buildStatusOptionGroups(data: RHSStatusesResponse): StatusOptionGroup[] {
+    const categories = data.categories
+        .filter((category) => category.key !== 'undefined')
+        .map((category): StatusTabOption => {
+            const tab: RHSTab = {
+                kind: 'category',
+                key: category.key,
+                name: category.name,
+            };
+            return {
+                label: category.name,
+                value: optionValueForTab(tab),
+                tab,
+            };
+        });
+
+    const statuses = dedupeStatusesById(data.statuses).map((status): StatusTabOption => {
+        const tab: RHSTab = {
+            kind: 'status',
+            id: status.id,
+            name: status.name,
+        };
+        return {
+            label: status.name,
+            value: optionValueForTab(tab),
+            tab,
+        };
+    });
+
+    return [
+        {label: 'Categories', options: categories},
+        {label: 'Statuses', options: statuses},
+    ];
+}
+
+export function flattenOptionGroups(groups: StatusOptionGroup[]): StatusTabOption[] {
+    const out: StatusTabOption[] = [ASSIGNED_OPTION];
+    for (let i = 0; i < groups.length; i++) {
+        out.push(...groups[i].options);
+    }
+    return out;
+}
+
+export function statusFetchMessage(code: RHSErrorCode): string {
+    switch (code) {
+    case 'not_connected':
+        return NOT_CONNECTED_MESSAGE;
+    case 'rate_limited':
+        return 'Jira is rate limiting requests, try again shortly';
+    case 'not_authorized':
+        return 'not authorized';
+    case 'not_cloud':
+        return 'Jira RHS is available for Jira Cloud only';
+    case 'invalid_request':
+    case 'internal_error':
+        return UNABLE_TO_LOAD_STATUSES_MESSAGE;
+    default: {
+        const exhaustive: never = code;
+        return exhaustive;
+    }
+    }
+}

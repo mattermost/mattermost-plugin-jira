@@ -1,0 +1,102 @@
+// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import {InstanceType, RHSStatusesResponse} from 'types/model';
+
+import {
+    ASSIGNED_TAB,
+    IN_PROGRESS_TAB,
+    NOT_CONNECTED_MESSAGE,
+    buildPersistedValue,
+    buildStatusOptionGroups,
+    displayTabsForInstance,
+    filterInstalledCloudInstances,
+    flattenOptionGroups,
+    isTabsValueEmpty,
+    statusFetchMessage,
+} from './rhs_status_options';
+
+const CLOUD_ID = 'https://cloud.example.atlassian.net';
+const OAUTH_ID = 'https://oauth.example.atlassian.net';
+const SERVER_ID = 'http://jira.example.com';
+
+const statusesData: RHSStatusesResponse = {
+    categories: [
+        {id: 1, key: 'undefined', name: 'No Category'},
+        {id: 2, key: 'new', name: 'To Do'},
+        {id: 4, key: 'indeterminate', name: 'In Progress'},
+        {id: 3, key: 'done', name: 'Done'},
+    ],
+    statuses: [
+        {id: '3', name: 'In Progress', statusCategory: {id: 4, key: 'indeterminate', name: 'In Progress'}},
+        {id: '3', name: 'In Progress', statusCategory: {id: 4, key: 'indeterminate', name: 'In Progress'}},
+        {id: '10001', name: 'Submitted', statusCategory: {id: 2, key: 'new', name: 'To Do'}},
+    ],
+};
+
+describe('rhs_status_options', () => {
+    test('isTabsValueEmpty treats null undefined empty object missing key and empty array as empty', () => {
+        const missing: {value?: Record<string, never> | null} = {};
+
+        expect(isTabsValueEmpty(null, CLOUD_ID)).toBe(true);
+        expect(isTabsValueEmpty(missing.value as never, CLOUD_ID)).toBe(true);
+        expect(isTabsValueEmpty({}, CLOUD_ID)).toBe(true);
+        expect(isTabsValueEmpty({[OAUTH_ID]: [IN_PROGRESS_TAB]}, CLOUD_ID)).toBe(true);
+        expect(isTabsValueEmpty({[CLOUD_ID]: []}, CLOUD_ID)).toBe(true);
+    });
+
+    test('displayTabsForInstance returns Assigned and In Progress when value is empty', () => {
+        expect(displayTabsForInstance(null, CLOUD_ID)).toEqual([ASSIGNED_TAB, IN_PROGRESS_TAB]);
+        expect(displayTabsForInstance({}, CLOUD_ID)).toEqual([ASSIGNED_TAB, IN_PROGRESS_TAB]);
+        expect(displayTabsForInstance({[CLOUD_ID]: []}, CLOUD_ID)).toEqual([ASSIGNED_TAB, IN_PROGRESS_TAB]);
+    });
+
+    test('displayTabsForInstance prepends Assigned to stored extras and drops a stored assigned entry', () => {
+        const doneTab = {kind: 'category' as const, key: 'done', name: 'Done'};
+        const value = {
+            [CLOUD_ID]: [
+                {kind: 'assigned' as const, name: 'Assigned'},
+                doneTab,
+            ],
+        };
+
+        expect(displayTabsForInstance(value, CLOUD_ID)).toEqual([ASSIGNED_TAB, doneTab]);
+    });
+
+    test('buildPersistedValue does not materialize the virtual seed when the instance is already empty', () => {
+        expect(buildPersistedValue(null, CLOUD_ID, [IN_PROGRESS_TAB])).toEqual({});
+        expect(Object.prototype.hasOwnProperty.call(buildPersistedValue(null, CLOUD_ID, [IN_PROGRESS_TAB]), CLOUD_ID)).toBe(false);
+    });
+
+    test('buildPersistedValue writes extras without Assigned', () => {
+        const submitted = {kind: 'status' as const, id: '10001', name: 'Submitted'};
+        const extras = [IN_PROGRESS_TAB, submitted];
+
+        expect(buildPersistedValue(null, CLOUD_ID, extras)).toEqual({
+            [CLOUD_ID]: extras,
+        });
+        expect(buildPersistedValue(null, CLOUD_ID, extras)[CLOUD_ID].some((tab) => tab.kind === 'assigned')).toBe(false);
+    });
+
+    test('buildStatusOptionGroups omits No Category and dedupes statuses by id', () => {
+        const groups = buildStatusOptionGroups(statusesData);
+        const options = flattenOptionGroups(groups);
+
+        expect(options.some((option) => option.tab.key === 'undefined')).toBe(false);
+        expect(options.filter((option) => option.value === 'status:3')).toHaveLength(1);
+    });
+
+    test('filterInstalledCloudInstances drops SERVER and keeps cloud and cloud-oauth', () => {
+        const filtered = filterInstalledCloudInstances([
+            {instance_id: CLOUD_ID, type: InstanceType.CLOUD},
+            {instance_id: OAUTH_ID, type: InstanceType.CLOUD_OAUTH},
+            {instance_id: SERVER_ID, type: InstanceType.SERVER},
+        ]);
+
+        expect(filtered.map((instance) => instance.instance_id)).toEqual([CLOUD_ID, OAUTH_ID]);
+    });
+
+    test('statusFetchMessage returns the connect copy for not_connected', () => {
+        expect(statusFetchMessage('not_connected')).toBe(NOT_CONNECTED_MESSAGE);
+    });
+});

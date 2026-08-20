@@ -14,6 +14,7 @@ import CreateIssuePostMenuAction from 'components/post_menu_actions/create_issue
 import CreateIssueModal from 'components/modals/create_issue';
 
 import ChannelSubscriptionsModal from 'components/modals/channel_subscriptions';
+import RHSStatusSetting from 'components/admin_console/rhs_status_setting';
 
 import AttachCommentToIssuePostMenuAction from 'components/post_menu_actions/attach_comment_to_issue';
 import AttachCommentToIssueModal from 'components/modals/attach_comment_modal';
@@ -113,6 +114,7 @@ const setupUILater = (registry: any, store: Store<object, Action<object>>): () =
         }
 
         registry.registerRootComponent(ChannelSubscriptionsModal);
+        registry.registerAdminConsoleCustomSetting('RHSStatusTabs', RHSStatusSetting, {showTitle: true});
 
         const hooks = new Hooks(store, settings);
         registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);
