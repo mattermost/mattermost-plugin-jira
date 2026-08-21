@@ -26,6 +26,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
+var testGetIssue func(issueKey string, options *jira.GetQueryOptions) (*jira.Issue, error)
+
 const (
 	nonExistantIssueKey   = "FAKE-1"
 	noPermissionsIssueKey = "SUDO-1"
@@ -73,6 +75,9 @@ func (client testClient) DoTransition(issueKey string, transitionID string) erro
 }
 
 func (client testClient) GetIssue(issueKey string, options *jira.GetQueryOptions) (*jira.Issue, error) {
+	if testGetIssue != nil {
+		return testGetIssue(issueKey, options)
+	}
 	if issueKey == nonExistantIssueKey {
 		return nil, kvstore.ErrNotFound
 	}
@@ -1277,6 +1282,54 @@ func TestCreateIssue(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCreateIssueWithoutPostWhenGetIssueFailsAfterCreate(t *testing.T) {
+	api := &plugintest.API{}
+	api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Return(&model.Post{})
+	api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, (*model.AppError)(nil))
+	api.On("PublishWebSocketEvent", "update_defaults", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.WebsocketBroadcast"))
+	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return().Maybe()
+
+	testGetIssue = func(issueKey string, _ *jira.GetQueryOptions) (*jira.Issue, error) {
+		return nil, RESTError{errors.New("not found"), http.StatusNotFound}
+	}
+	t.Cleanup(func() {
+		testGetIssue = nil
+	})
+
+	p := Plugin{}
+	p.initializeRouter()
+	p.SetAPI(api)
+	p.client = pluginapi.NewClient(api, p.Driver)
+	p.updateConfig(func(conf *config) {
+		conf.mattermostSiteURL = "https://somelink.com"
+	})
+	p.userStore = getMockUserStoreKV()
+	p.instanceStore = p.getMockInstanceStoreKV(1)
+
+	in := &InCreateIssue{
+		PostID:           "",
+		CurrentTeam:      "test_team",
+		ChannelID:        "channel_id_1",
+		mattermostUserID: "connected_user",
+		InstanceID:       testInstance1.InstanceID,
+		Fields: jira.IssueFields{
+			Project: jira.Project{
+				Key: mockProjectKey,
+			},
+			Type: jira.IssueType{
+				ID: "10001",
+			},
+			Summary:     "Test Issue",
+			Description: "",
+		},
+	}
+
+	issue, statusCode, err := p.CreateIssue(in)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, statusCode)
+	assert.NotNil(t, issue)
 }
 
 func TestRouteCreateIssue(t *testing.T) {

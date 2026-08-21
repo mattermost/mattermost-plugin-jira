@@ -5,6 +5,7 @@ import React from 'react';
 import {act} from '@testing-library/react';
 
 import Preferences from 'mattermost-redux/constants/preferences';
+import {Post} from '@mattermost/types/posts';
 import {Team} from '@mattermost/types/teams';
 
 import projectMetadata from 'testdata/cloud-get-jira-project-metadata.json';
@@ -206,6 +207,115 @@ describe('components/CreateIssue', () => {
             ref.current?.handleSubmit();
         });
         expect(create).toHaveBeenCalled();
+    });
+
+    test('successful submit without a post and empty description closes the modal', async () => {
+        const create = jest.fn().mockResolvedValue({});
+        const close = jest.fn();
+        const props = {
+            ...baseProps,
+            create,
+            close,
+            description: '',
+            channelId: 'channel-id-1',
+        };
+        const ref = React.createRef<CreateIssueForm>();
+        await act(async () => {
+            renderWithRedux(
+                <CreateIssueForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        const fields = ref.current?.state.fields;
+
+        await act(async () => {
+            ref.current?.setState({
+                fields: {
+                    ...fields,
+                    summary: 'some summary',
+                    description: '',
+                    project: {key: 'KT'},
+                    issuetype: {id: '10001'},
+                    priority: {id: '1'},
+                },
+                projectKey: 'KT',
+                issueType: '10001',
+            });
+        });
+
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
+
+        await act(async () => {
+            ref.current?.handleSubmit();
+        });
+        expect(create).toHaveBeenCalledWith(expect.objectContaining({
+            post_id: '',
+            channel_id: 'channel-id-1',
+        }));
+        expect(close).toHaveBeenCalled();
+    });
+
+    test('successful submit with a post still closes the modal', async () => {
+        const create = jest.fn().mockResolvedValue({});
+        const close = jest.fn();
+        const props = {
+            ...baseProps,
+            create,
+            close,
+            post: {
+                id: 'post-id-1',
+                channel_id: 'channel-from-post',
+                message: 'post message',
+            } as Post,
+        };
+        const ref = React.createRef<CreateIssueForm>();
+        await act(async () => {
+            renderWithRedux(
+                <CreateIssueForm
+                    {...props}
+                    ref={ref}
+                />,
+            );
+        });
+        await act(async () => {
+            ref.current?.setState(baseState);
+        });
+        const fields = ref.current?.state.fields;
+
+        await act(async () => {
+            ref.current?.setState({
+                fields: {
+                    ...fields,
+                    summary: 'some summary',
+                    description: 'post message',
+                    project: {key: 'KT'},
+                    issuetype: {id: '10001'},
+                    priority: {id: '1'},
+                },
+                projectKey: 'KT',
+                issueType: '10001',
+            });
+        });
+
+        if (ref.current) {
+            ref.current.validator = {validate: () => true, addComponent: jest.fn(), removeComponent: jest.fn()};
+        }
+
+        await act(async () => {
+            ref.current?.handleSubmit();
+        });
+        expect(create).toHaveBeenCalledWith(expect.objectContaining({
+            post_id: 'post-id-1',
+            channel_id: 'channel-from-post',
+        }));
+        expect(close).toHaveBeenCalled();
     });
 
     test('SERVER - should call create prop to create an issue', async () => {

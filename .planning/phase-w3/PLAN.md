@@ -1726,6 +1726,29 @@ popout is a new mount and runs the same boot sequence.
 
 ---
 
+## Staff note (2026-08-20) — New ticket modal stayed open after save
+
+**Symptom:** RHS **New ticket** → Create Jira Issue → save created the issue
+in Jira but the modal stayed open.
+
+**Cause:** Not a missing `closeCreateModal()` on the without-post submit
+path. `CreateIssueForm.handleSubmit` already calls `close()` whenever
+`create()` resolves without `error`. RHS `openCreateModalWithoutPost('',
+channelId)` sends `post_id: ''`. After `client.CreateIssue` succeeded, the
+server re-fetched the issue for the Mattermost notification
+(`getIssueAsSlackAttachment` / `GetIssue`), got 404 (`we couldn't find the
+issue key…`), and returned HTTP 500 (`failed to create notification post :`
+with an empty post id). The client treated that as a failed create and
+skipped close.
+
+**Fix:** `server/issue.go` — once Jira has accepted the issue, notification
+and follow-up fetch errors are logged; the handler still returns 200 so the
+existing modal close path runs. Jest locks close on the without-post /
+empty-description submit and on create-from-post.
+
+
+---
+
 ## Implementation Summary
 
 **Engineer:** IE8 (new; not PE8 / IE1–IE7)

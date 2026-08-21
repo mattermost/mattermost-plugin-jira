@@ -431,8 +431,11 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to create issue")
 	}
 
-	// Reply with an ephemeral post with the Jira issue formatted as slack attachment.
-	msg := fmt.Sprintf("Created Jira issue [%s](%s/browse/%s)", created.Key, instance.GetJiraBaseURL(), created.Key)
+	// Jira has accepted the issue. Follow-up notification / re-fetch failures must
+	// not fail this request: the create modal would stay open (RHS New ticket uses
+	// an empty post_id) and a retry would duplicate the ticket.
+	ref := createdIssueRef(created)
+	msg := fmt.Sprintf("Created Jira issue [%s](%s/browse/%s)", ref, instance.GetJiraBaseURL(), ref)
 
 	reply := &model.Post{
 		Message:   msg,
@@ -441,35 +444,42 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 		UserId:    instance.Common().getConfig().botUserID,
 	}
 
-	attachment, err := instance.Common().getIssueAsSlackAttachment(instance, connection, created.Key, true)
-	if err != nil {
-		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to create notification post "+in.PostID)
+	attachment, attachErr := instance.Common().getIssueAsSlackAttachment(instance, connection, ref, true)
+	if attachErr != nil {
+		p.errorf("CreateIssue: failed to load issue %s for notification: %v", ref, attachErr)
+	} else {
+		reply.AddProp("attachments", attachment)
 	}
-
-	reply.AddProp("attachments", attachment)
 	p.client.Post.SendEphemeralPost(in.mattermostUserID.String(), reply)
 
 	// Fetching issue details as Jira only returns the issue id and issue key at the time of
 	// issue creation. We will not have issue summary in the creation response.
-	createdIssue, err := client.GetIssue(created.Key, nil)
-	if err != nil {
-		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to fetch issue details "+created.Key)
+	createdIssue, err := client.GetIssue(ref, nil)
+	if err != nil || createdIssue == nil {
+		if err != nil {
+			p.errorf("CreateIssue: failed to fetch issue details %s: %v", ref, err)
+		}
+		createdIssue = created
 	}
 	p.UpdateUserDefaults(in.mattermostUserID, in.InstanceID, &SavedFieldValues{
 		ProjectKey: project.Key,
 		IssueType:  issue.Fields.Type.ID,
 	})
 
+	publicMsg := fmt.Sprintf("Created a Jira issue: [%s](%s/browse/%s)", ref, instance.GetJiraBaseURL(), ref)
+	if createdIssue.Fields != nil && createdIssue.Fields.Status != nil {
+		publicMsg = fmt.Sprintf("Created a Jira issue: %s", mdKeySummaryLink(createdIssue, instance))
+	}
+
 	// Create a public post for all the channel members
 	publicReply := &model.Post{
-		Message:   fmt.Sprintf("Created a Jira issue: %s", mdKeySummaryLink(createdIssue, instance)),
+		Message:   publicMsg,
 		ChannelId: channelID,
 		RootId:    rootID,
 		UserId:    in.mattermostUserID.String(),
 	}
-	err = p.client.Post.CreatePost(publicReply)
-	if err != nil {
-		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to create notification post "+in.PostID)
+	if postErr := p.client.Post.CreatePost(publicReply); postErr != nil {
+		p.errorf("CreateIssue: failed to create notification post %s: %v", in.PostID, postErr)
 	}
 
 	if post != nil && len(post.FileIds) > 0 {
@@ -485,6 +495,16 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 	}
 
 	return createdIssue, http.StatusOK, nil
+}
+
+func createdIssueRef(issue *jira.Issue) string {
+	if issue == nil {
+		return ""
+	}
+	if issue.Key != "" {
+		return issue.Key
+	}
+	return issue.ID
 }
 
 // Extract the "id" value from any Team field custom map and replace it
