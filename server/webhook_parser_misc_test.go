@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -335,5 +336,114 @@ func TestNotificationDedupKey(t *testing.T) {
 		assert.NotEqual(t,
 			notificationDedupKey(instanceID, wh, "user-abc", "Actor **assigned** you to PROJ-1"),
 			notificationDedupKey(instanceID, wh, "user-abc", "Actor **commented** on PROJ-1"))
+	})
+
+	t.Run("values containing separator-like characters do not collide", func(t *testing.T) {
+		// A naive "_"-joined encoding would make ("user-abc", "extra_hello")
+		// collide with ("user-abc_extra", "hello"). The length-prefixed encoding
+		// must keep these distinct.
+		wh := makeWebhook("PROJ-1")
+		assert.NotEqual(t,
+			notificationDedupKey(instanceID, wh, "user-abc", "extra_hello"),
+			notificationDedupKey(instanceID, wh, "user-abc_extra", "hello"))
+
+		// Same idea across the issue key/recipient boundary.
+		assert.NotEqual(t,
+			notificationDedupKey(instanceID, makeWebhook("PROJ-1_user"), "abc", "hello"),
+			notificationDedupKey(instanceID, makeWebhook("PROJ-1"), "user_abc", "hello"))
+	})
+}
+
+func TestChannelPostDedupKey(t *testing.T) {
+	makeWebhook := func(issueKey, headline, text string, fields []*model.SlackAttachmentField) *webhook {
+		return &webhook{
+			JiraWebhook: &JiraWebhook{
+				Issue: jira.Issue{Key: issueKey},
+			},
+			headline: headline,
+			text:     text,
+			fields:   fields,
+		}
+	}
+
+	const instanceID = types.ID("https://jira.example.com")
+
+	t.Run("same instance, issue, channel and content produce the same key", func(t *testing.T) {
+		wh1 := makeWebhook("PROJ-1", "Actor **commented** on PROJ-1", "some comment", nil)
+		wh2 := makeWebhook("PROJ-1", "Actor **commented** on PROJ-1", "some comment", nil)
+		assert.Equal(t,
+			channelPostDedupKey(instanceID, wh1, "channel-abc"),
+			channelPostDedupKey(instanceID, wh2, "channel-abc"))
+	})
+
+	t.Run("different channels produce different keys", func(t *testing.T) {
+		wh := makeWebhook("PROJ-1", "Actor **commented** on PROJ-1", "some comment", nil)
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, wh, "channel-abc"),
+			channelPostDedupKey(instanceID, wh, "channel-xyz"))
+	})
+
+	t.Run("different instances produce different keys", func(t *testing.T) {
+		wh := makeWebhook("PROJ-1", "Actor **commented** on PROJ-1", "some comment", nil)
+		assert.NotEqual(t,
+			channelPostDedupKey(types.ID("https://jira-a.example.com"), wh, "channel-abc"),
+			channelPostDedupKey(types.ID("https://jira-b.example.com"), wh, "channel-abc"))
+	})
+
+	t.Run("different issues produce different keys", func(t *testing.T) {
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, makeWebhook("PROJ-1", "headline", "text", nil), "channel-abc"),
+			channelPostDedupKey(instanceID, makeWebhook("PROJ-2", "headline", "text", nil), "channel-abc"))
+	})
+
+	t.Run("different headlines produce different keys", func(t *testing.T) {
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, makeWebhook("PROJ-1", "Actor **commented** on PROJ-1", "text", nil), "channel-abc"),
+			channelPostDedupKey(instanceID, makeWebhook("PROJ-1", "Actor **updated** PROJ-1", "text", nil), "channel-abc"))
+	})
+
+	t.Run("different text produce different keys", func(t *testing.T) {
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, makeWebhook("PROJ-1", "headline", "first comment", nil), "channel-abc"),
+			channelPostDedupKey(instanceID, makeWebhook("PROJ-1", "headline", "second comment", nil), "channel-abc"))
+	})
+
+	t.Run("different fields produce different keys", func(t *testing.T) {
+		wh1 := makeWebhook("PROJ-1", "headline", "text", []*model.SlackAttachmentField{{Title: "Priority", Value: "High"}})
+		wh2 := makeWebhook("PROJ-1", "headline", "text", []*model.SlackAttachmentField{{Title: "Priority", Value: "Low"}})
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, wh1, "channel-abc"),
+			channelPostDedupKey(instanceID, wh2, "channel-abc"))
+	})
+
+	t.Run("different field Short flags produce different keys", func(t *testing.T) {
+		wh1 := makeWebhook("PROJ-1", "headline", "text", []*model.SlackAttachmentField{{Title: "Priority", Value: "High", Short: true}})
+		wh2 := makeWebhook("PROJ-1", "headline", "text", []*model.SlackAttachmentField{{Title: "Priority", Value: "High", Short: false}})
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, wh1, "channel-abc"),
+			channelPostDedupKey(instanceID, wh2, "channel-abc"))
+	})
+
+	t.Run("values containing separator-like characters do not collide", func(t *testing.T) {
+		// A naive "_"-joined encoding would make ("A_B", "C") collide with ("A", "B_C").
+		// The length-prefixed encoding must keep these distinct.
+		wh1 := makeWebhook("PROJ-1", "A_B", "C", nil)
+		wh2 := makeWebhook("PROJ-1", "A", "B_C", nil)
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, wh1, "channel-abc"),
+			channelPostDedupKey(instanceID, wh2, "channel-abc"))
+
+		// Same idea across the channelID/headline boundary.
+		wh3 := makeWebhook("PROJ-1", "B", "text", nil)
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, wh3, "channel-abc_extra"),
+			channelPostDedupKey(instanceID, makeWebhook("PROJ-1", "extra_B", "text", nil), "channel-abc"))
+
+		// And across a field's title/value boundary.
+		wh4 := makeWebhook("PROJ-1", "headline", "text", []*model.SlackAttachmentField{{Title: "A=B", Value: "C"}})
+		wh5 := makeWebhook("PROJ-1", "headline", "text", []*model.SlackAttachmentField{{Title: "A", Value: "B=C"}})
+		assert.NotEqual(t,
+			channelPostDedupKey(instanceID, wh4, "channel-abc"),
+			channelPostDedupKey(instanceID, wh5, "channel-abc"))
 	})
 }
