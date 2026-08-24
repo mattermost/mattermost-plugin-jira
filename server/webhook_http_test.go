@@ -645,6 +645,7 @@ func TestWebhookHTTP(t *testing.T) {
 			} else {
 				api.On("KVGet", mock.AnythingOfType("string")).Return(nil, (*model.AppError)(nil))
 			}
+			api.On("KVSetWithOptions", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(true, nil)
 
 			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 			api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
