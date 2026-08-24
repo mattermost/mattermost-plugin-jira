@@ -90,6 +90,14 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 		return respondErr(w, http.StatusBadRequest, err)
 	}
 
+	hasConnectedMember, err := p.channelHasConnectedMember(instanceID, channel)
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+	if !hasConnectedMember {
+		return http.StatusOK, nil
+	}
+
 	wh, err := ParseWebhook(bb)
 	if err == ErrWebhookIgnored {
 		return respondErr(w, http.StatusOK, err)
