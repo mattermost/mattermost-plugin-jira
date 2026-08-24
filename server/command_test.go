@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
@@ -48,7 +49,7 @@ var _ UserStore = (*mockUserStoreKV)(nil)
 func (store mockUserStoreKV) LoadConnection(instanceID, mattermostUserID types.ID) (*Connection, error) {
 	connection, ok := store.connections[mattermostUserID]
 	if !ok {
-		return nil, errors.Errorf("TESTING connection %q %q not found", instanceID, mattermostUserID)
+		return nil, errors.Wrapf(kvstore.ErrNotFound, "TESTING connection %q %q", instanceID, mattermostUserID)
 	}
 	return connection, nil
 }
@@ -97,6 +98,14 @@ func getMockUserStoreKV() mockUserStoreKV {
 			"connected_user":               &connection,
 		},
 	}
+}
+
+func mockUserStoreKVWithConnected(connectedUserIDs ...types.ID) mockUserStoreKV {
+	store := getMockUserStoreKV()
+	for _, id := range connectedUserIDs {
+		store.connections[id] = &Connection{User: jira.User{AccountID: "test-AccountID"}}
+	}
+	return store
 }
 
 type mockInstanceStoreKV struct {
