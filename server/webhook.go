@@ -5,8 +5,10 @@ package main
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"hash"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -21,8 +23,9 @@ import (
 )
 
 const (
-	notificationDedupTTL    = 30 * time.Second
+	webhookDedupTTL         = 30 * time.Second
 	notificationDedupKeyFmt = "notif_dedup_%s"
+	channelPostDedupKeyFmt  = "chan_dedup_%s"
 )
 
 const (
@@ -78,8 +81,13 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 
 	if wh.headline == "" {
 		return nil, http.StatusBadRequest, errors.Errorf("unsupported webhook")
-	} else if pluginConfig.DisplaySubscriptionNameInNotifications && subscriptionName != "" {
-		wh.headline = fmt.Sprintf("%s\nSubscription: **%s**", wh.headline, subscriptionName)
+	}
+
+	// Keep the dedup identity independent of the subscription name so overlapping
+	// subscriptions on the same channel collapse into one post.
+	headline := wh.headline
+	if pluginConfig.DisplaySubscriptionNameInNotifications && subscriptionName != "" {
+		headline = fmt.Sprintf("%s\nSubscription: **%s**", headline, subscriptionName)
 	}
 
 	post := &model.Post{
@@ -119,17 +127,35 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 			{
 				// TODO is this supposed to be themed?
 				Color:    "#95b7d0",
-				Fallback: wh.headline,
-				Pretext:  wh.headline,
+				Fallback: headline,
+				Pretext:  headline,
 				Text:     text,
 				Fields:   wh.fields,
 			},
 		})
 	} else {
-		post.Message = wh.headline
+		post.Message = headline
+	}
+
+	// Atomically claim the dedup key before posting so concurrent webhook
+	// deliveries can't both pass the check and post duplicates. SetAtomic(nil)
+	// only writes when the key does not already exist.
+	dedupKey := channelPostDedupKey(instanceID, &wh, channelID)
+	claimed, kvErr := p.client.KV.Set(dedupKey, true, pluginapi.SetExpiry(webhookDedupTTL), pluginapi.SetAtomic(nil))
+	switch {
+	case kvErr != nil:
+		// Fail open: post rather than dropping the event.
+		p.client.Log.Warn("PostToChannel: failed to claim dedup key, posting anyway", "key", dedupKey, "error", kvErr.Error())
+	case !claimed:
+		// Another delivery already claimed this post.
+		p.client.Log.Debug("PostToChannel: another delivery already claimed this post, skipping", "key", dedupKey)
+		return nil, http.StatusOK, nil
 	}
 
 	if err := p.client.Post.CreatePost(post); err != nil {
+		if claimed {
+			p.releaseDedupKey("PostToChannel", dedupKey)
+		}
 		return nil, http.StatusInternalServerError, err
 	}
 
@@ -224,7 +250,7 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		// deliveries can't both pass the check and send duplicates. SetAtomic(nil)
 		// only writes when the key does not already exist.
 		dedupKey := notificationDedupKey(instance.GetID(), wh, mattermostUserID, notification.message)
-		claimed, kvErr := p.client.KV.Set(dedupKey, true, pluginapi.SetExpiry(notificationDedupTTL), pluginapi.SetAtomic(nil))
+		claimed, kvErr := p.client.KV.Set(dedupKey, true, pluginapi.SetExpiry(webhookDedupTTL), pluginapi.SetAtomic(nil))
 		switch {
 		case kvErr != nil:
 			// Fail open: send the notification rather than dropping it.
@@ -237,9 +263,9 @@ func (wh *webhook) PostNotifications(p *Plugin, instanceID types.ID) ([]*model.P
 		post, err := p.CreateBotDMPost(instance.GetID(), mattermostUserID, notification.message, notification.postType)
 		if err != nil {
 			p.errorf("PostNotifications: failed to create notification post, err: %v", err)
-			// Keep the claim: CreateBotDMPost may have persisted the post despite
-			// returning an error, so releasing it would let a retry post a
-			// duplicate. Let the claim TTL expire on its own.
+			if claimed {
+				p.releaseDedupKey("PostNotifications", dedupKey)
+			}
 			continue
 		}
 		posts = append(posts, post)
@@ -255,15 +281,44 @@ func newWebhook(jwh *JiraWebhook, eventType string, format string, args ...inter
 	}
 }
 
+// releaseDedupKey drops a dedup claim after the post it guarded failed, so a
+// later delivery of the same event can retry instead of being skipped until the
+// claim expires. Only safe to call when this delivery won the claim.
+func (p *Plugin) releaseDedupKey(caller, dedupKey string) {
+	if err := p.client.KV.Delete(dedupKey); err != nil {
+		p.client.Log.Warn(caller+": failed to release dedup key after a failed post; duplicates of this event will be skipped until the claim expires",
+			"key", dedupKey, "error", err.Error())
+	}
+}
+
+// writeDedupToken writes s into h prefixed with its length, so concatenated
+// tokens can't collide due to separator characters appearing inside values.
+func writeDedupToken(h hash.Hash, s string) {
+	var length [8]byte
+	binary.BigEndian.PutUint64(length[:], uint64(len(s)))
+	h.Write(length[:]) //nolint:errcheck // hash.Hash.Write never returns an error
+	h.Write([]byte(s)) //nolint:errcheck // hash.Hash.Write never returns an error
+}
+
 func notificationDedupKey(instanceID types.ID, wh *webhook, recipientID types.ID, message string) string {
-	raw := fmt.Sprintf("%s_%s_%s_%s",
-		string(instanceID),
-		wh.Issue.Key,
-		string(recipientID),
-		message,
-	)
-	hash := sha256.Sum256([]byte(raw))
-	return fmt.Sprintf(notificationDedupKeyFmt, hex.EncodeToString(hash[:]))
+	h := sha256.New()
+	for _, token := range []string{string(instanceID), wh.Issue.Key, string(recipientID), message} {
+		writeDedupToken(h, token)
+	}
+	return fmt.Sprintf(notificationDedupKeyFmt, hex.EncodeToString(h.Sum(nil)))
+}
+
+func channelPostDedupKey(instanceID types.ID, wh *webhook, channelID string) string {
+	h := sha256.New()
+	for _, token := range []string{string(instanceID), wh.Issue.Key, channelID, wh.headline, wh.text} {
+		writeDedupToken(h, token)
+	}
+	for _, f := range wh.fields {
+		writeDedupToken(h, f.Title)
+		writeDedupToken(h, fmt.Sprintf("%v", f.Value))
+		writeDedupToken(h, fmt.Sprintf("%t", bool(f.Short)))
+	}
+	return fmt.Sprintf(channelPostDedupKeyFmt, hex.EncodeToString(h.Sum(nil)))
 }
 
 func (p *Plugin) GetWebhookURL(jiraURL string, teamID, channelID string) (subURL, legacyURL string, err error) {
