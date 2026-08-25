@@ -2,21 +2,20 @@
 // See LICENSE.txt for license information.
 
 import React, {PureComponent} from 'react';
-import PropTypes from 'prop-types';
 
-export default class FormButton extends PureComponent {
-    static propTypes = {
-        executing: PropTypes.bool,
-        disabled: PropTypes.bool,
-        executingMessage: PropTypes.node,
-        defaultMessage: PropTypes.node,
-        btnClass: PropTypes.string,
-        extraClasses: PropTypes.string,
-        saving: PropTypes.bool,
-        savingMessage: PropTypes.string,
-        type: PropTypes.string,
-    };
+type Props = {
+    executing?: boolean;
+    disabled?: boolean;
+    executingMessage?: React.ReactNode;
+    defaultMessage?: React.ReactNode;
+    btnClass?: string;
+    extraClasses?: string;
+    saving?: boolean;
+    savingMessage?: string;
+    type?: string;
+} & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
+export default class FormButton extends PureComponent<Props> {
     static defaultProps = {
         disabled: false,
         savingMessage: 'Creating',

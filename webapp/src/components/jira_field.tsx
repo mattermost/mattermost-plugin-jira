@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import PropTypes from 'prop-types';
+import type {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {components} from 'react-select';
 
@@ -10,7 +10,7 @@ import ReactSelectSetting from 'components/react_select_setting';
 import Input from 'components/input';
 import {isTeamField} from 'utils/jira_issue_metadata';
 
-import {JiraFieldCustomTypeEnums} from 'types/model';
+import {IssueMetadata, JiraField, AllowedValue, JiraFieldCustomTypeEnums} from 'types/model';
 
 import JiraEpicSelector from './data_selectors/jira_epic_selector';
 import JiraAutoCompleteSelector from './data_selectors/jira_autocomplete_selector';
@@ -18,29 +18,43 @@ import JiraUserSelector from './data_selectors/jira_user_selector';
 import JiraTeamSelector from './data_selectors/jira_team_selector';
 import JiraSprintSelector from './data_selectors/jira_sprint_selector';
 
-export default class JiraField extends React.Component {
-    static propTypes = {
-        id: PropTypes.string.isRequired,
-        instanceID: PropTypes.string.isRequired,
-        field: PropTypes.object.isRequired,
-        projectKey: PropTypes.string.isRequired,
-        issueMetadata: PropTypes.object.isRequired,
-        obeyRequired: PropTypes.bool,
-        onChange: PropTypes.func.isRequired,
-        value: PropTypes.any,
-        isFilter: PropTypes.bool,
-        theme: PropTypes.object.isRequired,
-        addValidate: PropTypes.func.isRequired,
-        removeValidate: PropTypes.func.isRequired,
-    };
+type JiraFieldData = {
+    id: string;
+    name?: string;
+    value?: string;
+    iconUrl?: string;
+    allowedValue: AllowedValue;
+    label: string;
+};
 
+type Props = {
+    id: string;
+    instanceID: string;
+    field: JiraField;
+    projectKey?: string;
+    issueMetadata: IssueMetadata | null;
+    obeyRequired?: boolean;
+    onChange: (id: string, value: any) => void;
+    value?: any;
+    isFilter?: boolean;
+    theme: Theme;
+    addValidate: (fn: () => boolean) => void;
+    removeValidate: (fn: () => boolean) => void;
+};
+
+type IconOptionProps = {
+    data: JiraFieldData;
+    label: string;
+} & any;
+
+export default class JiraField extends React.Component<Props> {
     static defaultProps = {
         obeyRequired: true,
     };
 
-    static IconOption = (props) => {
+    static IconOption = (props: IconOptionProps) => {
         let img = null;
-        if (props.data.allowedValue.iconUrl) {
+        if (props.data.allowedValue?.iconUrl) {
             img = (
                 <img
                     style={getStyle().jiraIcon}
@@ -49,10 +63,7 @@ export default class JiraField extends React.Component {
             );
         }
         return (
-            <components.Option
-                {...props}
-                style={getStyle().selectComponent}
-            >
+            <components.Option {...props}>
                 {img}
                 {props.data.label}
             </components.Option>
@@ -111,7 +122,7 @@ export default class JiraField extends React.Component {
                 <JiraEpicSelector
                     {...selectProps}
                     issueMetadata={this.props.issueMetadata}
-                    onChange={(value) => {
+                    onChange={(value: string) => {
                         this.props.onChange(this.props.id, value);
                     }}
                     value={this.props.value}
@@ -126,7 +137,7 @@ export default class JiraField extends React.Component {
                 <JiraSprintSelector
                     {...selectProps}
                     projectKey={this.props.projectKey}
-                    onChange={(selected) => {
+                    onChange={(selected: string | null) => {
                         if (selected) {
                             this.props.onChange(this.props.id, Number(selected));
                         } else {
@@ -144,7 +155,7 @@ export default class JiraField extends React.Component {
                 <JiraAutoCompleteSelector
                     {...selectProps}
                     fieldName={field.name}
-                    onChange={(value) => {
+                    onChange={(value: string[]) => {
                         this.props.onChange(this.props.id, value);
                     }}
                     value={this.props.value || []}
@@ -159,7 +170,7 @@ export default class JiraField extends React.Component {
                     {...selectProps}
                     projectKey={this.props.projectKey}
                     fieldName={field.name}
-                    onChange={(value) => {
+                    onChange={(value: string) => {
                         this.props.onChange(this.props.id, value);
                     }}
                     value={this.props.value}
@@ -174,7 +185,7 @@ export default class JiraField extends React.Component {
                 <JiraTeamSelector
                     {...selectProps}
                     fieldName={field.name}
-                    onChange={(selected) => {
+                    onChange={(selected: string | null) => {
                         if (selected) {
                             this.props.onChange(this.props.id, {id: selected});
                         } else {
@@ -249,21 +260,21 @@ export default class JiraField extends React.Component {
 
         if (field.allowedValues && field.allowedValues.length) {
             const options = field.allowedValues.map((allowedValue) => {
-                const label = allowedValue.name ? allowedValue.name : allowedValue.value;
+                const label = allowedValue.name ? allowedValue.name : (allowedValue.value ?? '');
                 return (
                     {value: allowedValue.id, label, allowedValue}
                 );
             });
 
             if (field.schema.type === 'array') {
-                let selectedOptions = [];
+                let selectedOptions: {value: string; label: string; allowedValue: AllowedValue}[] = [];
                 if (this.props.value) {
-                    const values = this.props.value.map((v) => v.id);
+                    const values = this.props.value.map((v: {id: string}) => v.id);
                     selectedOptions = options.filter((opt) => values.includes(opt.value));
                 }
 
-                const onChange = (id, val) => {
-                    const newValue = val ? val.map((v) => ({id: v})) : [];
+                const onChange = (id: string, val: {value: string}[] | null) => {
+                    const newValue = val ? val.map((v) => ({id: v.value})) : [];
                     this.props.onChange(id, newValue);
                 };
 
@@ -284,7 +295,7 @@ export default class JiraField extends React.Component {
                     {...selectProps}
                     name={this.props.id}
                     options={options}
-                    onChange={(id, val) => this.props.onChange(id, {id: val})}
+                    onChange={(id: string, val: string) => this.props.onChange(id, {id: val})}
                     isMulti={false}
                     value={options.find((option) => option.value === (this.props.value && this.props.value.id))}
                     components={{Option: JiraField.IconOption}}
@@ -295,7 +306,7 @@ export default class JiraField extends React.Component {
     }
 }
 
-export function isFieldSupported(field) {
+export function isFieldSupported(field: JiraField | null | undefined) {
     if (!field || !field.schema) {
         return false;
     }

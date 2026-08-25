@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {Component} from 'react';
-import PropTypes from 'prop-types';
+import type {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import debounce from 'debounce-promise';
 import AsyncSelect from 'react-select/async';
@@ -11,22 +11,26 @@ import {getStyleForReactSelect} from 'utils/styles';
 
 const searchDebounceDelay = 400;
 
-export default class JiraIssueSelector extends Component {
-    static propTypes = {
-        required: PropTypes.bool,
-        theme: PropTypes.object.isRequired,
-        onChange: PropTypes.func.isRequired,
-        searchIssues: PropTypes.func.isRequired,
-        error: PropTypes.string,
-        value: PropTypes.string,
-        addValidate: PropTypes.func.isRequired,
-        removeValidate: PropTypes.func.isRequired,
-        instanceID: PropTypes.string.isRequired,
-    };
+type Props = {
+    required?: boolean;
+    theme: Theme;
+    onChange: (value: string) => void;
+    searchIssues: (params: Record<string, string>) => Promise<{data: any[]}>;
+    error?: string;
+    value?: string;
+    addValidate: (fn: () => boolean) => void;
+    removeValidate: (fn: () => boolean) => void;
+    instanceID: string;
+};
 
-    constructor(props) {
+type State = {
+    invalid: boolean;
+    error?: string;
+};
+
+export default class JiraIssueSelector extends Component<Props, State> {
+    constructor(props: Props) {
         super(props);
-
         this.state = {invalid: false};
     }
 
@@ -42,17 +46,17 @@ export default class JiraIssueSelector extends Component {
         }
     }
 
-    componentDidUpdate(prevProps, prevState) {
+    componentDidUpdate(prevProps: Props, prevState: State) {
         if (prevState.invalid && this.props.value !== prevProps.value) {
             this.setState({invalid: false}); //eslint-disable-line react/no-did-update-set-state
         }
     }
 
-    handleIssueSearchTermChange = (inputValue) => {
+    handleIssueSearchTermChange = (inputValue: string) => {
         return this.debouncedSearchIssues(inputValue);
     };
 
-    searchIssues = (text) => {
+    searchIssues = (text: string) => {
         const params = {
             fields: 'key,summary',
             q: text.trim(),
@@ -75,17 +79,17 @@ export default class JiraIssueSelector extends Component {
 
     debouncedSearchIssues = debounce(this.searchIssues, searchDebounceDelay);
 
-    onChange = (e) => {
+    onChange = (e: {value: string} | null) => {
         const value = e ? e.value : '';
         this.props.onChange(value);
     };
 
-    isValid = () => {
+    isValid = (): boolean => {
         if (!this.props.required) {
             return true;
         }
 
-        const valid = this.props.value && this.props.value.toString().length !== 0;
+        const valid = Boolean(this.props.value && this.props.value.toString().length !== 0);
         this.setState({invalid: !valid});
         return valid;
     };
@@ -119,7 +123,7 @@ export default class JiraIssueSelector extends Component {
                         className='fa fa-warning'
                         title='Warning Icon'
                     />
-                    <span> {serverError.toString()}</span>
+                    <span> {serverError?.toString()}</span>
                 </p>
             );
         }
@@ -149,7 +153,7 @@ export default class JiraIssueSelector extends Component {
                     placeholder={'Search for issues containing text...'}
                     onChange={this.onChange}
                     required={true}
-                    disabled={false}
+                    isDisabled={false}
                     isMulti={false}
                     isClearable={true}
                     defaultOptions={true}

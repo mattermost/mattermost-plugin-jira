@@ -9,14 +9,14 @@ export function isDesktopApp() {
     return userAgent.indexOf('Mattermost') !== -1 && userAgent.indexOf('Electron') !== -1;
 }
 
-export function getDesktopAppVersion() {
+export function getDesktopAppVersion(): string | null {
     if (window.desktop && window.desktop.version) {
         return window.desktop.version;
     }
     return null;
 }
 
-export function isMinimumDesktopAppVersion(minMajorVersion, minMinorVersion, minDotVersion) {
+export function isMinimumDesktopAppVersion(minMajorVersion: number, minMinorVersion: number, minDotVersion: number) {
     const currentVersion = getDesktopAppVersion();
     if (!currentVersion) {
         return false;
