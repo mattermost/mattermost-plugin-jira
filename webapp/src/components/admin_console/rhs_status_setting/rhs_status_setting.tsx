@@ -26,6 +26,7 @@ import {
     STATUS_TABS_LABEL,
     StatusOptionGroup,
     StatusTabOption,
+    UNABLE_TO_LOAD_STATUSES_MESSAGE,
     buildPersistedValue,
     buildStatusOptionGroups,
     displayTabsForInstance,
@@ -101,7 +102,6 @@ export default function RHSStatusSetting(props: Props): React.ReactElement {
     const [optionGroups, setOptionGroups] = useState<StatusOptionGroup[]>([]);
     const [fetchError, setFetchError] = useState<RHSErrorCode | null>(null);
     const [loadingStatuses, setLoadingStatuses] = useState(false);
-    const [fetchGeneration, setFetchGeneration] = useState(0);
     const latestGeneration = useRef(0);
 
     const cloudInstances = filterInstalledCloudInstances(installedInstances);
@@ -114,7 +114,7 @@ export default function RHSStatusSetting(props: Props): React.ReactElement {
             try {
                 await getConnected();
             } catch {
-                // Connection refresh is best-effort and must not call onChange.
+                // best-effort; must not call onChange
             }
         };
 
@@ -139,9 +139,8 @@ export default function RHSStatusSetting(props: Props): React.ReactElement {
             return;
         }
 
-        latestGeneration.current = fetchGeneration + 1;
+        latestGeneration.current += 1;
         const generation = latestGeneration.current;
-        setFetchGeneration(generation);
         setLoadingStatuses(true);
         setFetchError(null);
 
@@ -150,30 +149,25 @@ export default function RHSStatusSetting(props: Props): React.ReactElement {
             try {
                 result = await fetchRHSStatuses(instanceID);
             } catch {
-                result = {error: {errorCode: 'internal_error'} as RHSFetchError};
+                result = {error: new RHSFetchError('internal_error', UNABLE_TO_LOAD_STATUSES_MESSAGE, 0)};
             }
 
             if (generation !== latestGeneration.current) {
                 return;
             }
 
-            try {
-                if (result.error) {
-                    setFetchError(result.error.errorCode);
-                    setOptionGroups([]);
-                } else if (result.data) {
-                    setOptionGroups(buildStatusOptionGroups(result.data));
-                    setFetchError(null);
-                }
-            } finally {
-                if (generation === latestGeneration.current) {
-                    setLoadingStatuses(false);
-                }
+            if (result.error) {
+                setFetchError(result.error.errorCode);
+                setOptionGroups([]);
+            } else if (result.data) {
+                setOptionGroups(buildStatusOptionGroups(result.data));
+                setFetchError(null);
             }
+            setLoadingStatuses(false);
         };
 
         load();
-    }, [instanceID, fetchRHSStatuses]); // fetchGeneration is the in-flight token, not a retrigger
+    }, [instanceID, fetchRHSStatuses]);
 
     const handleInstanceChange = (name: string, nextID: string | string[] | null): void => {
         if (!nextID || Array.isArray(nextID) || nextID === instanceID) {

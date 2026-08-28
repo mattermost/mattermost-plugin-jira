@@ -137,6 +137,41 @@ func TestCloudRHSSearchJQLRetryAfterHonored(t *testing.T) {
 	assert.Equal(t, 7*time.Second, sleeps[0])
 }
 
+func TestRHSBackoffDelayCapsRetryAfter(t *testing.T) {
+	var sleeps []time.Duration
+	retry := testRetryNoSleep(&sleeps)
+	assert.Equal(t, 30*time.Second, rhsBackoffDelay(retry, 1, "1847"))
+	assert.Equal(t, 7*time.Second, rhsBackoffDelay(retry, 1, "7"))
+	assert.Equal(t, 2*time.Second, rhsBackoffDelay(retry, 1, ""))
+}
+
+func TestCloudRHSSearchJQLBurstRetryAfterCapped(t *testing.T) {
+	var requests int
+	var sleeps []time.Duration
+	client := newTestCloudRHSClient(t, func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		assert.Equal(t, http.MethodGet, r.Method)
+		if requests == 1 {
+			w.Header().Set("Retry-After", "1847")
+			w.Header().Set("RateLimit-Reason", "jira-burst-based")
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
+		writeJSON(w, http.StatusOK, loadRHSTestdata(t, "rhs-search-jql-last.json"))
+	})
+
+	result, err := client.searchJQL(CloudSearchParams{
+		JQL:        "assignee = currentUser() ORDER BY updated DESC",
+		Fields:     []string{"summary"},
+		MaxResults: 20,
+	}, testRetryNoSleep(&sleeps))
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	assert.Equal(t, 2, requests)
+	require.Len(t, sleeps, 1)
+	assert.Equal(t, 30*time.Second, sleeps[0])
+}
+
 func TestCloudRHSSearchJQLGlobalQuotaNoRetry(t *testing.T) {
 	var requests int
 	var sleeps []time.Duration

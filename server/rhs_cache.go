@@ -17,8 +17,6 @@ type rhsStatusCacheEntry struct {
 	fetchedAt  time.Time
 }
 
-// rhsStatusLister is the cache's view of the Cloud client.
-// Phase 4's rhsCloudClient will include these methods.
 type rhsStatusLister interface {
 	ListStatuses() ([]*JiraStatus, error)
 	ListStatusCategories() ([]*JiraStatusCategory, error)
@@ -57,13 +55,6 @@ func (p *Plugin) getInstanceStatuses(instanceID types.ID, client rhsStatusLister
 	}
 	p.rhsStatusCacheLock.RUnlock()
 
-	p.rhsStatusCacheLock.Lock()
-	defer p.rhsStatusCacheLock.Unlock()
-
-	if entry := p.freshRHSStatusCacheLocked(instanceID); entry != nil {
-		return entry, nil
-	}
-
 	statuses, err := client.ListStatuses()
 	if err != nil {
 		return nil, err
@@ -77,6 +68,12 @@ func (p *Plugin) getInstanceStatuses(instanceID types.ID, client rhsStatusLister
 		statuses:   statuses,
 		categories: categories,
 		fetchedAt:  time.Now(),
+	}
+
+	p.rhsStatusCacheLock.Lock()
+	defer p.rhsStatusCacheLock.Unlock()
+	if existing := p.freshRHSStatusCacheLocked(instanceID); existing != nil {
+		return existing, nil
 	}
 	if p.rhsStatusCache == nil {
 		p.rhsStatusCache = make(map[types.ID]*rhsStatusCacheEntry)

@@ -19,20 +19,27 @@ import {
 } from 'types/model';
 import {GlobalState, pluginStateKey} from 'types/store';
 
-export function rhsIssuesFlightKey(instanceID: string, tab: RHSTab, sort: RHSSort): string {
+export function rhsIssuesFlightKey(instanceID: string, tab: RHSTab, sort: RHSSort, mode: 'reset' | 'append' = 'reset'): string {
     return JSON.stringify({
         instance: instanceID,
         kind: tab.kind,
         key: tab.key || '',
         id: tab.id || '',
         sort,
+        mode,
     });
 }
 
 const rhsIssuesInFlight: Map<string, Promise<{data: RHSIssuesResponse} | {error: RHSFetchError}>> = new Map();
+let rhsIssuesGeneration = 0;
 
 export function resetRHSIssuesInFlight(): void {
     rhsIssuesInFlight.clear();
+    rhsIssuesGeneration = 0;
+}
+
+function isCurrentRHSGeneration(gen: number): boolean {
+    return gen === rhsIssuesGeneration;
 }
 
 function withRHSIssuesInFlight(
@@ -123,26 +130,29 @@ export const restoreRHSViewState = () => {
 
 export const fetchRHSIssues = (args: FetchRHSIssuesArgs) => {
     return (dispatch: Dispatch, getState: () => GlobalState) => {
-        const key = rhsIssuesFlightKey(args.instanceID, args.tab, args.sort);
+        const key = rhsIssuesFlightKey(args.instanceID, args.tab, args.sort, 'reset');
 
         return withRHSIssuesInFlight(key, async () => {
-            dispatch({
-                type: ActionTypes.SET_RHS_INSTANCE_ID,
-                data: args.instanceID,
-            });
-            dispatch({
-                type: ActionTypes.SET_RHS_TAB,
-                data: args.tab,
-            });
-            dispatch({
-                type: ActionTypes.SET_RHS_SORT,
-                data: args.sort,
-            });
-            persistCurrentRHSView(getState());
-            dispatch({
-                type: ActionTypes.RHS_ISSUES_LOADING,
-                data: {reset: true},
-            });
+            const gen = ++rhsIssuesGeneration;
+            if (isCurrentRHSGeneration(gen)) {
+                dispatch({
+                    type: ActionTypes.SET_RHS_INSTANCE_ID,
+                    data: args.instanceID,
+                });
+                dispatch({
+                    type: ActionTypes.SET_RHS_TAB,
+                    data: args.tab,
+                });
+                dispatch({
+                    type: ActionTypes.SET_RHS_SORT,
+                    data: args.sort,
+                });
+                persistCurrentRHSView(getState());
+                dispatch({
+                    type: ActionTypes.RHS_ISSUES_LOADING,
+                    data: {reset: true},
+                });
+            }
 
             try {
                 const data = await getRHSIssues(getPluginServerRoute(getState()), {
@@ -150,6 +160,9 @@ export const fetchRHSIssues = (args: FetchRHSIssuesArgs) => {
                     tab: args.tab,
                     sort: args.sort,
                 });
+                if (!isCurrentRHSGeneration(gen)) {
+                    return {data};
+                }
                 dispatch({
                     type: ActionTypes.RECEIVED_RHS_ISSUES,
                     data,
@@ -157,6 +170,9 @@ export const fetchRHSIssues = (args: FetchRHSIssuesArgs) => {
                 return {data};
             } catch (error) {
                 const rhsError = toRHSFetchError(error);
+                if (!isCurrentRHSGeneration(gen)) {
+                    return {error: rhsError};
+                }
                 dispatch({
                     type: ActionTypes.RHS_ISSUES_ERROR,
                     data: rhsError.errorCode,
@@ -171,20 +187,23 @@ export const loadMoreRHSIssues = () => {
     return (dispatch: Dispatch, getState: () => GlobalState) => {
         const plugin = getState()[pluginStateKey];
         if (plugin.rhsIsLast || !plugin.rhsNextPageToken) {
-            return Promise.resolve({data: plugin.rhsIssues as RHSIssuesResponse['issues']});
+            return Promise.resolve({data: plugin.rhsIssues});
         }
 
-        const instanceID = plugin.rhsInstanceID as string;
-        const tab = plugin.rhsTab as RHSTab;
-        const sort = plugin.rhsSort as RHSSort;
-        const nextPageToken = plugin.rhsNextPageToken as string;
-        const key = rhsIssuesFlightKey(instanceID, tab, sort);
+        const instanceID = plugin.rhsInstanceID;
+        const tab = plugin.rhsTab;
+        const sort = plugin.rhsSort;
+        const nextPageToken = plugin.rhsNextPageToken;
+        const key = rhsIssuesFlightKey(instanceID, tab, sort, 'append');
+        const gen = rhsIssuesGeneration;
 
         return withRHSIssuesInFlight(key, async () => {
-            dispatch({
-                type: ActionTypes.RHS_ISSUES_LOADING,
-                data: {reset: false},
-            });
+            if (isCurrentRHSGeneration(gen)) {
+                dispatch({
+                    type: ActionTypes.RHS_ISSUES_LOADING,
+                    data: {reset: false},
+                });
+            }
 
             try {
                 const data = await getRHSIssues(getPluginServerRoute(getState()), {
@@ -193,6 +212,9 @@ export const loadMoreRHSIssues = () => {
                     sort,
                     nextPageToken,
                 });
+                if (!isCurrentRHSGeneration(gen)) {
+                    return {data};
+                }
                 dispatch({
                     type: ActionTypes.RECEIVED_RHS_ISSUES_APPEND,
                     data,
@@ -200,6 +222,9 @@ export const loadMoreRHSIssues = () => {
                 return {data};
             } catch (error) {
                 const rhsError = toRHSFetchError(error);
+                if (!isCurrentRHSGeneration(gen)) {
+                    return {error: rhsError};
+                }
                 dispatch({
                     type: ActionTypes.RHS_ISSUES_ERROR,
                     data: rhsError.errorCode,
@@ -213,11 +238,11 @@ export const loadMoreRHSIssues = () => {
 export const refreshRHSIssues = () => {
     return (dispatch: Dispatch, getState: () => GlobalState) => {
         const plugin = getState()[pluginStateKey];
-        return dispatch(fetchRHSIssues({
+        return fetchRHSIssues({
             instanceID: plugin.rhsInstanceID,
             tab: plugin.rhsTab,
             sort: plugin.rhsSort,
-        }) as any);
+        })(dispatch, getState);
     };
 };
 
@@ -251,21 +276,22 @@ export const resolveAndFetchRHSIssues = (overrides: ResolveAndFetchArgs = {}) =>
             return Promise.resolve({data: null});
         }
 
-        const tab = overrides.tab || (plugin.rhsTab as RHSTab);
-        const sort = overrides.sort || (plugin.rhsSort as RHSSort);
+        const tab = overrides.tab || plugin.rhsTab;
+        const sort = overrides.sort || plugin.rhsSort;
 
-        return dispatch(fetchRHSIssues({instanceID, tab, sort}) as any).then((result: {data?: RHSIssuesResponse; error?: RHSFetchError}) => {
+        return fetchRHSIssues({instanceID, tab, sort})(dispatch, getState).then((result) => {
             if (
                 result &&
+                'error' in result &&
                 result.error &&
                 result.error.errorCode === 'invalid_request' &&
                 tab.kind !== 'assigned'
             ) {
-                return dispatch(fetchRHSIssues({
+                return fetchRHSIssues({
                     instanceID,
                     tab: RHS_DEFAULT_TAB,
                     sort,
-                }) as any);
+                })(dispatch, getState);
             }
             return result;
         });

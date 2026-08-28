@@ -455,10 +455,10 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 	// Fetching issue details as Jira only returns the issue id and issue key at the time of
 	// issue creation. We will not have issue summary in the creation response.
 	createdIssue, err := client.GetIssue(ref, nil)
-	if err != nil || createdIssue == nil {
-		if err != nil {
-			p.errorf("CreateIssue: failed to fetch issue details %s: %v", ref, err)
-		}
+	if err != nil {
+		p.errorf("CreateIssue: failed to fetch issue details %s: %v", ref, err)
+	}
+	if createdIssue == nil {
 		createdIssue = created
 	}
 	p.UpdateUserDefaults(in.mattermostUserID, in.InstanceID, &SavedFieldValues{

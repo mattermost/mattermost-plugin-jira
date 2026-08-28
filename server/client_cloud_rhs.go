@@ -52,21 +52,20 @@ func closeJiraResp(resp *jira.Response) {
 	_ = resp.Body.Close()
 }
 
-// rhsBackoffDelay is the sleep after a retryable 429 on failedAttempt (1-indexed).
-// Prefer parseable Retry-After (seconds) over exponential. Cap applies to
-// exponential only. Then multiply by jitter.
+// rhsBackoffDelay sleeps after a retryable 429. Prefer parseable Retry-After
+// (seconds, >= 0) over exponential backoff; the cap applies to both exponential
+// and Retry-After. Then apply jitter.
 func rhsBackoffDelay(retry rhsRetry, failedAttempt int, retryAfterHeader string) time.Duration {
 	shift := failedAttempt - 1
 	if shift < 0 {
 		shift = 0
 	}
-	exp := retry.base * time.Duration(1<<shift) // 2s, 4s, 8s, …
-	if exp > retry.cap {
-		exp = retry.cap
-	}
-	delay := exp
+	delay := retry.base * time.Duration(1<<shift)
 	if secs, err := strconv.Atoi(strings.TrimSpace(retryAfterHeader)); err == nil && secs >= 0 {
 		delay = time.Duration(secs) * time.Second
+	}
+	if retry.cap > 0 && delay > retry.cap {
+		delay = retry.cap
 	}
 	factor := 1.0
 	if retry.jitter != nil {

@@ -44,7 +44,6 @@ const issueOne: RHSIssue = {
 function makeProps(overrides: Partial<Props> = {}): Props {
     return {
         connectedCloud: [cloudOne],
-        defaultUserInstanceID: cloudOne.instance_id,
         channelId: 'channel-1',
         instanceID: cloudOne.instance_id,
         tab: assignedTab,

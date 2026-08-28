@@ -35,11 +35,8 @@ func assignedMembershipFixture() []rhsFakeIssue {
 	}
 }
 
-// issuesMatchingJQL is test-only and models Cloud JQL, including the silent-
-// widen trap: an unresolvable statusCategory operand makes "=" match nothing
-// and "!=" match everything. Canonical resolvable keys are the four Cloud
-// keys — independent of validCategoryKeys (that map is OUR validator; this
-// function is Jira).
+// issuesMatchingJQL models Cloud JQL: an unknown statusCategory makes "=" match
+// nothing and "!=" match everything. Canonical keys are independent of our validator.
 func issuesMatchingJQL(jql string, issues []rhsFakeIssue) []rhsFakeIssue {
 	categoryRe := regexp.MustCompile(`statusCategory (!=|=) (\S+)`)
 	statusRe := regexp.MustCompile(`status = (\S+)`)
@@ -201,12 +198,7 @@ func TestRHSJQLAssignedExcludesDoneMembership(t *testing.T) {
 	got := issuesMatchingJQL(jql, assignedMembershipFixture())
 	keys := issueKeys(got)
 
-	// Primary #36 assertion: a Done-category issue is ABSENT.
-	// A bad != operand would include TES-DONE (superset, 200, non-empty).
 	assert.NotContains(t, keys, "TES-DONE")
-
-	// Guard against the other silent failure (= bogus → matches nothing).
-	// Do not replace the NotContains assertion with NotEmpty.
 	assert.Contains(t, keys, "TES-NEW")
 	assert.Contains(t, keys, "TES-IP")
 	assert.Contains(t, keys, "TES-UNDEF")

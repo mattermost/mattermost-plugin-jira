@@ -27,12 +27,7 @@ func statusIDSet(statuses []*JiraStatus) map[string]bool {
 	return out
 }
 
-// validateStatusCategoryOperand is the #36 mitigation.
-// Every statusCategory operand — including Assigned's statusCategoryKeyDone —
-// must pass through this function. Do not inline the map check at call sites
-// in a way that lets Assigned skip it. Gate 3 stubs THIS function to
-// `return nil` and requires TestRHSJQLAssignedErrorsWhenDoneOmittedFromValidKeys
-// to FAIL.
+// Assigned's hardcoded done must go through this: Cloud treats != <unknown> as match-all.
 func validateStatusCategoryOperand(operand string, validCategoryKeys map[string]bool) error {
 	if operand == "" || validCategoryKeys == nil || !validCategoryKeys[operand] {
 		return fmt.Errorf("%w: %q", ErrInvalidStatusCategory, operand)
@@ -59,8 +54,6 @@ func buildTabJQL(tab RHSTabEntry, sortField string, validCategoryKeys map[string
 
 	switch tab.Kind {
 	case RHSTabKindAssigned:
-		// Validate the hardcoded done — this is the clause whose failure is
-		// invisible on Cloud (!= bogus matches everything).
 		if err := validateStatusCategoryOperand(statusCategoryKeyDone, validCategoryKeys); err != nil {
 			return "", err
 		}

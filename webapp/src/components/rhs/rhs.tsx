@@ -34,7 +34,6 @@ import './rhs.scss';
 
 export type Props = {
     connectedCloud: Instance[];
-    defaultUserInstanceID: string;
     channelId: string;
     instanceID: string;
     tab: RHSTab;

@@ -109,6 +109,6 @@ export function saveRHSViewState(userId: string, view: RHSViewState): void {
         };
         localStorage.setItem(rhsViewStorageKey(userId), JSON.stringify(payload));
     } catch {
-        // Persistence is best-effort; quota / private-mode throws are ignored.
+        // ignore quota / private-mode
     }
 }

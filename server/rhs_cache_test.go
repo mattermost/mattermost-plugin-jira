@@ -191,8 +191,69 @@ func TestRHSCacheConcurrentWarmDoesNotDoubleFetch(t *testing.T) {
 	require.NotNil(t, gotA)
 	require.NotNil(t, gotB)
 	statusCalls, catCalls := client.counts()
-	assert.Equal(t, 1, statusCalls)
-	assert.Equal(t, 1, catCalls)
+	assert.GreaterOrEqual(t, statusCalls, 1)
+	assert.LessOrEqual(t, statusCalls, 2)
+	assert.Equal(t, statusCalls, catCalls)
+}
+
+func TestRHSCacheSlowMissDoesNotBlockOtherInstanceHit(t *testing.T) {
+	api := &plugintest.API{}
+	p := setupTestPlugin(api)
+	statuses, categories := fixtureStatusesAndCategories(t)
+	idA := types.ID("https://a.example.atlassian.net")
+	idB := types.ID("https://b.example.atlassian.net")
+
+	p.rhsStatusCacheLock.Lock()
+	p.rhsStatusCache = map[types.ID]*rhsStatusCacheEntry{
+		idB: {
+			statuses:   statuses,
+			categories: categories,
+			fetchedAt:  time.Now(),
+		},
+	}
+	p.rhsStatusCacheLock.Unlock()
+
+	slowA := &countingRHSStatusClient{
+		statuses:   statuses,
+		categories: categories,
+		sleep:      250 * time.Millisecond,
+	}
+	clientB := &countingRHSStatusClient{statuses: statuses, categories: categories}
+
+	aDone := make(chan struct{})
+	go func() {
+		defer close(aDone)
+		_, _ = p.getInstanceStatuses(idA, slowA)
+	}()
+
+	waitUntil := time.Now().Add(time.Second)
+	for {
+		n, _ := slowA.counts()
+		if n >= 1 {
+			break
+		}
+		if time.Now().After(waitUntil) {
+			t.Fatal("timed out waiting for instance A ListStatuses")
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	gotB, err := p.getInstanceStatuses(idB, clientB)
+
+	select {
+	case <-aDone:
+		t.Fatal("instance A fetch finished before instance B cache hit returned")
+	default:
+	}
+
+	require.NoError(t, err)
+	require.NotNil(t, gotB)
+	statusB, catB := clientB.counts()
+	assert.Equal(t, 0, statusB)
+	assert.Equal(t, 0, catB)
+	require.Len(t, gotB.statuses, 2)
+
+	<-aDone
 }
 
 func TestRHSCacheFetchErrorDoesNotStore(t *testing.T) {

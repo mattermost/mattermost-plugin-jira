@@ -22,6 +22,7 @@ import {
     fetchRHSIssues,
     fetchRHSStatuses,
     loadMoreRHSIssues,
+    refreshRHSIssues,
     resetRHSIssuesInFlight,
     resolveAndFetchRHSIssues,
     restoreRHSViewState,
@@ -170,6 +171,63 @@ describe('rhs actions', () => {
         await p2;
     });
 
+    test('a slower Assigned fetch does not overwrite a later In Progress fetch', async () => {
+        const fetchMock = global.fetch as jest.Mock;
+        const resolvers: Array<(value: unknown) => void> = [];
+        fetchMock.mockImplementation(() => new Promise((resolve) => {
+            resolvers.push(resolve);
+        }));
+
+        const store = makeRHSStore();
+        const assignedPending = store.dispatch(fetchRHSIssues({
+            instanceID: 'https://example.atlassian.net',
+            tab: assignedTab,
+            sort: 'updated',
+        }) as any);
+        const inProgressPending = store.dispatch(fetchRHSIssues({
+            instanceID: 'https://example.atlassian.net',
+            tab: inProgressTab,
+            sort: 'updated',
+        }) as any);
+
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+
+        resolvers[1]({
+            ok: true,
+            json: () => Promise.resolve({
+                issues: [{
+                    ...page1.issues[0],
+                    key: 'TES-IP',
+                    browseUrl: 'https://example.atlassian.net/browse/TES-IP',
+                }],
+                tabs: [assignedTab, inProgressTab],
+                nextPageToken: '',
+                isLast: true,
+            }),
+        });
+        await inProgressPending;
+
+        resolvers[0]({
+            ok: true,
+            json: () => Promise.resolve({
+                issues: [{
+                    ...page1.issues[0],
+                    key: 'TES-ASG',
+                    browseUrl: 'https://example.atlassian.net/browse/TES-ASG',
+                }],
+                tabs: [assignedTab],
+                nextPageToken: '',
+                isLast: true,
+            }),
+        });
+        await assignedPending;
+
+        const plugin = pluginFrom(store);
+        expect(plugin.rhsTab.kind).toBe('category');
+        expect(plugin.rhsTab.key).toBe('indeterminate');
+        expect(plugin.rhsIssues.map((issue: {key: string}) => issue.key)).toEqual(['TES-IP']);
+    });
+
     test('fetchRHSIssues after the in-flight request settles does call fetch again', async () => {
         const fetchMock = mockFetchOk({
             issues: [],
@@ -277,6 +335,122 @@ describe('rhs actions', () => {
 
         await store.dispatch(loadMoreRHSIssues() as any);
         expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    test('load-more result does not append onto a tab fetched while it was in flight', async () => {
+        const fetchMock = mockFetchOk(page1);
+        const store = makeRHSStore();
+
+        await store.dispatch(fetchRHSIssues({
+            instanceID: 'https://example.atlassian.net',
+            tab: assignedTab,
+            sort: 'updated',
+        }) as any);
+
+        const resolvers: Array<(value: unknown) => void> = [];
+        fetchMock.mockImplementation(() => new Promise((resolve) => {
+            resolvers.push(resolve);
+        }));
+
+        const loadMorePending = store.dispatch(loadMoreRHSIssues() as any);
+        const inProgressPending = store.dispatch(fetchRHSIssues({
+            instanceID: 'https://example.atlassian.net',
+            tab: inProgressTab,
+            sort: 'updated',
+        }) as any);
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+
+        resolvers[1]({
+            ok: true,
+            json: () => Promise.resolve({
+                issues: [{
+                    ...page1.issues[0],
+                    key: 'TES-IP',
+                    browseUrl: 'https://example.atlassian.net/browse/TES-IP',
+                }],
+                tabs: [assignedTab, inProgressTab],
+                nextPageToken: '',
+                isLast: true,
+            }),
+        });
+        await inProgressPending;
+
+        resolvers[0]({
+            ok: true,
+            json: () => Promise.resolve({
+                issues: [{
+                    ...page1.issues[0],
+                    key: 'TES-2',
+                    browseUrl: 'https://example.atlassian.net/browse/TES-2',
+                }],
+                tabs: [assignedTab],
+                nextPageToken: '',
+                isLast: true,
+            }),
+        });
+        await loadMorePending;
+
+        const plugin = pluginFrom(store);
+        expect(plugin.rhsTab.key).toBe('indeterminate');
+        expect(plugin.rhsIssues.map((issue: {key: string}) => issue.key)).toEqual(['TES-IP']);
+    });
+
+    test('refresh while load-more is in flight issues a new page-1 request and ignores the append', async () => {
+        const fetchMock = mockFetchOk(page1);
+        const store = makeRHSStore();
+
+        await store.dispatch(fetchRHSIssues({
+            instanceID: 'https://example.atlassian.net',
+            tab: assignedTab,
+            sort: 'updated',
+        }) as any);
+
+        const resolvers: Array<(value: unknown) => void> = [];
+        fetchMock.mockImplementation(() => new Promise((resolve) => {
+            resolvers.push(resolve);
+        }));
+
+        const loadMorePending = store.dispatch(loadMoreRHSIssues() as any);
+        const refreshPending = store.dispatch(refreshRHSIssues() as any);
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        expect(String(fetchMock.mock.calls[1][0])).toContain('next_page_token=tok-page-2');
+        expect(String(fetchMock.mock.calls[2][0])).not.toContain('next_page_token');
+
+        resolvers[1]({
+            ok: true,
+            json: () => Promise.resolve({
+                issues: [{
+                    ...page1.issues[0],
+                    key: 'TES-9',
+                    browseUrl: 'https://example.atlassian.net/browse/TES-9',
+                }],
+                tabs: [assignedTab],
+                nextPageToken: 'tok-refresh',
+                isLast: false,
+            }),
+        });
+        await refreshPending;
+
+        resolvers[0]({
+            ok: true,
+            json: () => Promise.resolve({
+                issues: [{
+                    ...page1.issues[0],
+                    key: 'TES-2',
+                    browseUrl: 'https://example.atlassian.net/browse/TES-2',
+                }],
+                tabs: [assignedTab],
+                nextPageToken: '',
+                isLast: true,
+            }),
+        });
+        await loadMorePending;
+
+        const plugin = pluginFrom(store);
+        expect(plugin.rhsIssues.map((issue: {key: string}) => issue.key)).toEqual(['TES-9']);
+        expect(plugin.rhsNextPageToken).toBe('tok-refresh');
     });
 
     test('rhsLoading is true and issues are empty during a page-1 fetch', async () => {

@@ -16,7 +16,6 @@ import {
 } from 'actions';
 import {
     getConnectedCloudInstances,
-    getDefaultUserInstanceID,
     getRHSError,
     getRHSInstanceID,
     getRHSIsLast,
@@ -29,12 +28,13 @@ import {
 
 import {GlobalState} from 'types/store';
 
-import Rhs from './rhs';
+import Rhs, {Props} from './rhs';
+
+type RHSDispatchProps = Pick<Props, 'getConnected' | 'handleConnectFlow' | 'loadMoreRHSIssues' | 'openCreateModalWithoutPost' | 'resolveAndFetchRHSIssues' | 'restoreRHSViewState'>;
 
 const mapStateToProps = (state: GlobalState) => {
     return {
         connectedCloud: getConnectedCloudInstances(state),
-        defaultUserInstanceID: (getDefaultUserInstanceID(state) || '') as string,
         channelId: getCurrentChannelId(state) || '',
         instanceID: getRHSInstanceID(state),
         tab: getRHSTab(state),
@@ -54,6 +54,6 @@ const mapDispatchToProps = (dispatch: Dispatch) => bindActionCreators({
     openCreateModalWithoutPost,
     resolveAndFetchRHSIssues,
     restoreRHSViewState,
-}, dispatch);
+}, dispatch) as unknown as RHSDispatchProps;
 
-export default connect(mapStateToProps, mapDispatchToProps)(Rhs as any);
+export default connect(mapStateToProps, mapDispatchToProps)(Rhs);

@@ -9,6 +9,8 @@ import {GlobalState} from 'types/store';
 
 export const JIRA_RHS_TITLE = 'Jira';
 
+const omittedAppBarArg = [][0];
+
 export function shouldRegisterJiraRHS(
     settings: {rhs_enabled?: boolean} | null | undefined,
     state: GlobalState,
@@ -26,9 +28,9 @@ export function getJiraAppBarIconUrl(state: GlobalState): string {
 export function registerJiraAppBar(registry: any, state: GlobalState): void {
     registry.registerAppBarComponent(
         getJiraAppBarIconUrl(state),
-        ([] as any[])[0],
+        omittedAppBarArg,
         JIRA_RHS_TITLE,
-        ([] as any[])[0],
+        omittedAppBarArg,
         Rhs,
         JIRA_RHS_TITLE,
     );

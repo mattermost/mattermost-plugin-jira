@@ -21,8 +21,7 @@ var rhsSearchFields = []string{
 	"created", "updated", "duedate", "project", "labels",
 }
 
-// rhsCloudClient is the Cloud-only surface the HTTP layer type-asserts to.
-// Do not add these methods to the shared Client / SearchService tree.
+// rhsCloudClient is the Cloud-only RHS API. Do not add these methods to Client.
 type rhsCloudClient interface {
 	rhsStatusLister
 	SearchJQL(params CloudSearchParams) (*CloudSearchResult, error)
@@ -190,7 +189,6 @@ func (p *Plugin) getRHSIssues(instanceID, mattermostUserID types.ID, tabKind, ta
 	if err != nil {
 		return nil, err
 	}
-	// Read-only: do not mutate entry.statuses / entry.categories.
 
 	conf := p.getConfig()
 	configured := conf.RHSStatusTabs[string(instance.GetID())]
@@ -204,7 +202,6 @@ func (p *Plugin) getRHSIssues(instanceID, mattermostUserID types.ID, tabKind, ta
 		sort = rhsDefaultSort
 	}
 
-	// RE3: cached keys only. Do not substitute a hardcoded four-key map.
 	jql, err := buildTabJQL(selected, sort, validCategoryKeysFrom(entry.categories))
 	if err != nil {
 		return nil, err
