@@ -109,6 +109,7 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 		}, nil)
 		api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{Id: "createdpost1"}, nil)
 		api.On("KVSetWithOptions", fmt.Sprintf(ticketRootPostIDKey, fixtureIssueID, channelID), mock.Anything, mock.Anything).Return(true, nil)
+		api.On("KVSetWithOptions", mock.AnythingOfType("string"), mock.Anything, mock.MatchedBy(isDedupClaimOptions)).Return(true, nil)
 
 		ww := webhookWorker{id: 1, p: p}
 		err := ww.process(&webhookMessage{InstanceID: testInstance1.GetID(), Data: loadWebhookData(t)})
@@ -125,6 +126,7 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 		api.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Type: model.ChannelTypeOpen}, nil)
 		api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{Id: "createdpost2"}, nil)
 		api.On("KVSetWithOptions", fmt.Sprintf(ticketRootPostIDKey, fixtureIssueID, channelID), mock.Anything, mock.Anything).Return(true, nil)
+		api.On("KVSetWithOptions", mock.AnythingOfType("string"), mock.Anything, mock.MatchedBy(isDedupClaimOptions)).Return(true, nil)
 
 		ww := webhookWorker{id: 1, p: p}
 		err := ww.process(&webhookMessage{InstanceID: testInstance1.GetID(), Data: loadWebhookData(t)})
