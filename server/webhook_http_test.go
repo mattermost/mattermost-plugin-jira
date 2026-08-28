@@ -746,3 +746,71 @@ func TestWebhookHTTP(t *testing.T) {
 		})
 	}
 }
+
+// TestHTTPWebhookDeliveryGuard covers the DM/GM connected-member guard on the legacy
+// team+channel webhook URL.
+func TestHTTPWebhookDeliveryGuard(t *testing.T) {
+	const (
+		botUserID          = "botuser___________________"
+		connectedUserID    = "connecteduser______________"
+		disconnectedUserID = "disconnecteduser___________"
+		channelID          = "dmchannelaaaaaaaaaaaaaaaa"
+	)
+
+	setup := func(t *testing.T) (*plugintest.API, *Plugin) {
+		api := &plugintest.API{}
+		p := &Plugin{}
+
+		p.updateConfig(func(conf *config) {
+			conf.Secret = "thesecret"
+			conf.botUserID = botUserID
+			conf.HideDecriptionComment = true
+			conf.ThreadedJiraCommentSubscriptionDuration = "30"
+		})
+		p.SetAPI(api)
+		p.client = pluginapi.NewClient(api, p.Driver)
+		p.instanceStore = p.getMockInstanceStoreKV(1)
+		p.userStore = getMockUserStoreKV()
+
+		api.On("GetChannelByNameForTeamName", "theteam", "thechannel", false).Return(&model.Channel{
+			Id:   channelID,
+			Type: model.ChannelTypeDirect,
+		}, nil)
+
+		return api, p
+	}
+
+	t.Run("skips delivery when no DM member is connected", func(t *testing.T) {
+		api, p := setup(t)
+		api.On("GetChannelMembers", channelID, 0, maxDMGMChannelMembers).Return(model.ChannelMembers{
+			{UserId: botUserID},
+			{UserId: disconnectedUserID},
+		}, nil)
+
+		status, err := p.httpWebhook(httptest.NewRecorder(), testWebhookRequest("webhook-issue-created.json"), testInstance1.GetID())
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, status)
+
+		api.AssertNotCalled(t, "CreatePost", mock.Anything)
+	})
+
+	t.Run("delivers when a DM member is connected", func(t *testing.T) {
+		api, p := setup(t)
+		p.userStore = mockUserStoreKVWithConnected(types.ID(connectedUserID))
+
+		api.On("GetChannelMembers", channelID, 0, maxDMGMChannelMembers).Return(model.ChannelMembers{
+			{UserId: botUserID},
+			{UserId: connectedUserID},
+		}, nil)
+		api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{Id: "createdpost1"}, nil)
+		api.On("KVGet", mock.AnythingOfType("string")).Return(nil, nil)
+		api.On("KVSetWithOptions", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(true, nil)
+		api.On("LogInfo", mock.Anything, mock.Anything, mock.Anything).Return()
+
+		status, err := p.httpWebhook(httptest.NewRecorder(), testWebhookRequest("webhook-issue-created.json"), testInstance1.GetID())
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, status)
+
+		api.AssertCalled(t, "CreatePost", mock.AnythingOfType("*model.Post"))
+	})
+}
