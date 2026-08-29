@@ -88,17 +88,18 @@ type RHSIssueStatus struct {
 }
 
 type RHSIssue struct {
-	Key       string         `json:"key"`
-	Summary   string         `json:"summary"`
-	BrowseURL string         `json:"browseUrl"`
-	Status    RHSIssueStatus `json:"status"`
-	Priority  string         `json:"priority"`
-	IssueType string         `json:"issueType"`
-	Project   string         `json:"project"`
-	Assignee  string         `json:"assignee"`
-	Reporter  string         `json:"reporter"`
-	Created   string         `json:"created"`
-	Updated   string         `json:"updated"`
-	DueDate   string         `json:"dueDate"`
-	Labels    []string       `json:"labels"`
+	Key              string         `json:"key"`
+	Summary          string         `json:"summary"`
+	BrowseURL        string         `json:"browseUrl"`
+	Status           RHSIssueStatus `json:"status"`
+	Priority         string         `json:"priority"`
+	IssueType        string         `json:"issueType"`
+	IssueTypeIconURL string         `json:"issueTypeIconUrl,omitempty"`
+	Project          string         `json:"project"`
+	Assignee         string         `json:"assignee"`
+	Reporter         string         `json:"reporter"`
+	Created          string         `json:"created"`
+	Updated          string         `json:"updated"`
+	DueDate          string         `json:"dueDate"`
+	Labels           []string       `json:"labels"`
 }

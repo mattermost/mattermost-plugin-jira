@@ -38,6 +38,7 @@ export function RHSErrorState(props: {onRetry: () => void}): JSX.Element {
             <p>{RHS_STRINGS.error}</p>
             <button
                 type='button'
+                className='btn btn-secondary btn-sm'
                 onClick={props.onRetry}
             >
                 {RHS_STRINGS.retry}
@@ -74,6 +75,7 @@ export function RHSRateLimitedState(props: {onRetry: () => void}): JSX.Element {
             <p>{RHS_STRINGS.rateLimited}</p>
             <button
                 type='button'
+                className='btn btn-secondary btn-sm'
                 onClick={props.onRetry}
             >
                 {RHS_STRINGS.retry}

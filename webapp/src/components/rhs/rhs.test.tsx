@@ -133,8 +133,10 @@ describe('components/rhs', () => {
         });
 
         expect(screen.getByTestId('rhs-state-error')).toBeInTheDocument();
+        const retry = screen.getByText(RHS_STRINGS.retry);
+        expect(retry).toHaveClass('btn', 'btn-secondary', 'btn-sm');
         (props.resolveAndFetchRHSIssues as jest.Mock).mockClear();
-        fireEvent.click(screen.getByText(RHS_STRINGS.retry));
+        fireEvent.click(retry);
         expect(props.resolveAndFetchRHSIssues).toHaveBeenCalled();
     });
 
@@ -144,6 +146,10 @@ describe('components/rhs', () => {
         });
 
         expect(screen.getByTestId('rhs-state-not-connected')).toBeInTheDocument();
+        expect(screen.queryByTestId('rhs-sort')).toBeNull();
+        expect(screen.queryByTestId('rhs-refresh')).toBeNull();
+        expect(screen.queryByTestId('rhs-new-ticket')).toBeNull();
+        expect(screen.queryByTestId('rhs-tab-strip')).toBeNull();
         fireEvent.click(screen.getByTestId('rhs-connect'));
         expect(props.handleConnectFlow).toHaveBeenCalled();
         expect(props.handleConnectFlow).toHaveBeenCalledTimes(1);
@@ -192,7 +198,8 @@ describe('components/rhs', () => {
         const {props} = await renderSettled();
         (props.resolveAndFetchRHSIssues as jest.Mock).mockClear();
 
-        fireEvent.change(screen.getByTestId('rhs-sort'), {target: {value: 'created'}});
+        fireEvent.click(screen.getByTestId('rhs-sort'));
+        fireEvent.click(screen.getByRole('option', {name: RHS_STRINGS.sortCreated}));
 
         expect(props.resolveAndFetchRHSIssues).toHaveBeenCalledWith({sort: 'created'});
     });
@@ -205,6 +212,20 @@ describe('components/rhs', () => {
         (props.resolveAndFetchRHSIssues as jest.Mock).mockClear();
 
         fireEvent.click(screen.getByText(inProgressTab.name));
+
+        expect(props.resolveAndFetchRHSIssues).toHaveBeenCalledWith({tab: inProgressTab});
+    });
+
+    test('arrow keys move between tabs', async () => {
+        const {props} = await renderSettled({
+            tabs: [assignedTab, inProgressTab],
+            tab: assignedTab,
+        });
+        (props.resolveAndFetchRHSIssues as jest.Mock).mockClear();
+
+        const assigned = screen.getByRole('tab', {name: assignedTab.name});
+        assigned.focus();
+        fireEvent.keyDown(assigned, {key: 'ArrowRight'});
 
         expect(props.resolveAndFetchRHSIssues).toHaveBeenCalledWith({tab: inProgressTab});
     });

@@ -28,7 +28,7 @@ import {
     RHSNotConnectedState,
     RHSRateLimitedState,
 } from './rhs_states';
-import RHSTabStrip from './rhs_tab_strip';
+import RHSTabStrip, {RHS_TAB_PANEL_ID, rhsTabDomId} from './rhs_tab_strip';
 
 import './rhs.scss';
 
@@ -190,28 +190,42 @@ export default function Rhs(props: Props): JSX.Element {
         />
     ) : null;
 
+    const showChrome = !showNotConnected;
+    const showTabs = showChrome && tabs.length > 0;
+
     return (
         <div
             className='jira-rhs'
             data-testid='jira-rhs'
             data-rhs-popout={isPopout ? 'true' : 'false'}
         >
-            <RHSHeader
-                sort={sort}
-                loading={booting || loading}
-                onSortChange={onSortChange}
-                onRefresh={onRefresh}
-                onNewTicket={onNewTicket}
-                instancePicker={instancePicker}
-            />
-            {tabs.length > 0 && (
+            {showChrome && (
+                <RHSHeader
+                    sort={sort}
+                    loading={booting || loading}
+                    onSortChange={onSortChange}
+                    onRefresh={onRefresh}
+                    onNewTicket={onNewTicket}
+                    instancePicker={instancePicker}
+                />
+            )}
+            {showTabs && (
                 <RHSTabStrip
                     tabs={tabs}
                     selectedTab={tab}
                     onSelect={onSelectTab}
                 />
             )}
-            {body}
+            <div
+                className='jira-rhs-body'
+                {...(showTabs ? {
+                    role: 'tabpanel',
+                    id: RHS_TAB_PANEL_ID,
+                    'aria-labelledby': rhsTabDomId(tab),
+                } : {})}
+            >
+                {body}
+            </div>
         </div>
     );
 }

@@ -27,7 +27,7 @@ const issueOne: RHSIssue = {
 };
 
 describe('components/rhs/rhs_issue_row', () => {
-    test('row links use the DTO browseUrl and do not reconstruct a host', () => {
+    test('row has one browse link and keeps the summary as text', () => {
         const {container} = render(
             <RHSIssueRow
                 issue={issueOne}
@@ -35,8 +35,12 @@ describe('components/rhs/rhs_issue_row', () => {
             />,
         );
 
-        expect(screen.getByText('TES-1')).toHaveAttribute('href', 'https://example.atlassian.net/browse/TES-1');
-        expect(screen.getByText('One')).toHaveAttribute('href', 'https://example.atlassian.net/browse/TES-1');
+        const links = screen.getAllByRole('link');
+        expect(links).toHaveLength(1);
+        expect(links[0]).toHaveAttribute('href', 'https://example.atlassian.net/browse/TES-1');
+        expect(links[0]).toHaveTextContent('TES-1');
+        expect(links[0]).toHaveTextContent('One');
+        expect(screen.getByText('One')).toHaveClass('jira-rhs-issue-summary');
         expect(container.innerHTML).not.toContain('api.atlassian.com');
     });
 

@@ -28,4 +28,18 @@ describe('components/rhs/rhs_issue_type_icon', () => {
         );
         expect(container.querySelector('.jira-rhs-type-icon--bug')).not.toBeNull();
     });
+
+    test('renders Jira type icon URL when provided', () => {
+        const {container} = render(
+            <RHSIssueTypeIcon
+                issueType='Bug'
+                iconUrl='https://example.atlassian.net/bug.svg'
+            />,
+        );
+        const img = container.querySelector('img');
+        expect(img).not.toBeNull();
+        expect(img).toHaveAttribute('src', 'https://example.atlassian.net/bug.svg');
+        expect(img).toHaveAttribute('alt', 'Bug');
+        expect(container.querySelector('svg')).toBeNull();
+    });
 });

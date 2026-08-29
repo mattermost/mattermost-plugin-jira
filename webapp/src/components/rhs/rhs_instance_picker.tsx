@@ -5,6 +5,7 @@ import React from 'react';
 
 import {Instance} from 'types/model';
 
+import RHSSelect from './rhs_select';
 import {RHS_STRINGS} from './rhs_strings';
 
 export type Props = {
@@ -19,23 +20,17 @@ export default function RHSInstancePicker(props: Props): JSX.Element | null {
     }
 
     return (
-        <label className='jira-rhs-instance'>
-            <span className='jira-rhs-instance-label'>{RHS_STRINGS.instanceLabel}</span>
-            <select
-                aria-label={RHS_STRINGS.instanceLabel}
-                data-testid='rhs-instance-picker'
-                value={props.selectedInstanceID}
-                onChange={(event) => props.onChange(event.target.value)}
-            >
-                {props.instances.map((instance) => (
-                    <option
-                        key={instance.instance_id}
-                        value={instance.instance_id}
-                    >
-                        {instance.alias || instance.instance_id}
-                    </option>
-                ))}
-            </select>
-        </label>
+        <RHSSelect
+            ariaLabel={RHS_STRINGS.instanceLabel}
+            testId='rhs-instance-picker'
+            value={props.selectedInstanceID}
+            options={props.instances.map((instance) => {
+                return {
+                    value: instance.instance_id,
+                    label: instance.alias || instance.instance_id,
+                };
+            })}
+            onChange={props.onChange}
+        />
     );
 }

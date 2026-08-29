@@ -36,7 +36,10 @@ export default function RHSIssueList(props: Props): JSX.Element {
                     className='jira-rhs-list-loading'
                     data-testid='rhs-list-loading'
                 >
-                    <span className='fa fa-spin fa-spinner'/>
+                    <span
+                        className='icon icon-refresh jira-rhs-spinner'
+                        aria-hidden={true}
+                    />
                     <span>{RHS_STRINGS.loadingMore}</span>
                 </div>
             )}
@@ -48,6 +51,7 @@ export default function RHSIssueList(props: Props): JSX.Element {
                     <span>{props.error === 'rate_limited' ? RHS_STRINGS.rateLimited : RHS_STRINGS.error}</span>
                     <button
                         type='button'
+                        className='btn btn-secondary btn-sm'
                         onClick={props.onRetry}
                     >
                         {RHS_STRINGS.retry}

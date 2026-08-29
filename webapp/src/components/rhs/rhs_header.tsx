@@ -5,6 +5,7 @@ import React from 'react';
 
 import {RHSSort} from 'types/model';
 
+import RHSSelect from './rhs_select';
 import {RHS_STRINGS} from './rhs_strings';
 
 export type Props = {
@@ -16,6 +17,11 @@ export type Props = {
     instancePicker?: React.ReactNode;
 };
 
+const SORT_OPTIONS: Array<{value: RHSSort; label: string}> = [
+    {value: 'updated', label: RHS_STRINGS.sortUpdated},
+    {value: 'created', label: RHS_STRINGS.sortCreated},
+];
+
 export default function RHSHeader(props: Props): JSX.Element {
     return (
         <div
@@ -24,38 +30,36 @@ export default function RHSHeader(props: Props): JSX.Element {
         >
             {props.instancePicker}
             <div className='jira-rhs-header-actions'>
-                <label className='jira-rhs-sort'>
-                    <span className='jira-rhs-sort-label'>{RHS_STRINGS.sortLabel}</span>
-                    <select
-                        aria-label={RHS_STRINGS.sortLabel}
-                        data-testid='rhs-sort'
-                        value={props.sort}
-                        onChange={(event) => props.onSortChange(event.target.value as RHSSort)}
-                    >
-                        <option value='updated'>{RHS_STRINGS.sortUpdated}</option>
-                        <option value='created'>{RHS_STRINGS.sortCreated}</option>
-                    </select>
-                </label>
+                <RHSSelect
+                    ariaLabel={RHS_STRINGS.sortLabel}
+                    testId='rhs-sort'
+                    value={props.sort}
+                    options={SORT_OPTIONS}
+                    onChange={props.onSortChange}
+                />
                 <button
                     type='button'
-                    className='jira-rhs-icon-button'
+                    className='btn btn-icon btn-sm'
                     aria-label={RHS_STRINGS.refresh}
                     data-testid='rhs-refresh'
                     disabled={props.loading}
                     onClick={props.onRefresh}
                 >
                     <i
-                        className='fa fa-refresh'
-                        title={RHS_STRINGS.refresh}
+                        className='icon icon-refresh'
+                        aria-hidden={true}
                     />
                 </button>
                 <button
                     type='button'
-                    className='btn btn-primary jira-rhs-new-ticket'
+                    className='btn btn-primary btn-sm jira-rhs-new-ticket'
                     data-testid='rhs-new-ticket'
                     onClick={props.onNewTicket}
                 >
-                    <i className='fa fa-plus'/>
+                    <i
+                        className='icon icon-plus'
+                        aria-hidden={true}
+                    />
                     <span>{RHS_STRINGS.newTicket}</span>
                 </button>
             </div>

@@ -208,7 +208,10 @@ func tes41Issue() jira.Issue {
 				StatusCategory: jira.StatusCategory{Key: statusCategoryKeyIndeterminate},
 			},
 			Priority: &jira.Priority{Name: "High"},
-			Type:     jira.IssueType{Name: "Bug"},
+			Type: jira.IssueType{
+				Name:    "Bug",
+				IconURL: "https://example.atlassian.net/images/icons/issuetypes/bug.svg",
+			},
 			Project:  jira.Project{Key: "TES"},
 			Assignee: &jira.User{DisplayName: "Ada"},
 			Reporter: &jira.User{DisplayName: "Bea"},
@@ -245,6 +248,7 @@ func TestRHSHTTPGetIssuesHappyPathDTO(t *testing.T) {
 	assert.Equal(t, "indeterminate", body.Issues[0].Status.CategoryKey)
 	assert.Equal(t, "High", body.Issues[0].Priority)
 	assert.Equal(t, "Bug", body.Issues[0].IssueType)
+	assert.Equal(t, "https://example.atlassian.net/images/icons/issuetypes/bug.svg", body.Issues[0].IssueTypeIconURL)
 	assert.Equal(t, "TES", body.Issues[0].Project)
 	assert.Equal(t, "Ada", body.Issues[0].Assignee)
 	assert.Equal(t, "Bea", body.Issues[0].Reporter)

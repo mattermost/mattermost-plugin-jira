@@ -229,6 +229,7 @@ export type RHSIssue = {
     status: RHSIssueStatus;
     priority: string;
     issueType: string;
+    issueTypeIconUrl?: string;
     project: string;
     assignee: string;
     reporter: string;

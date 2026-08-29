@@ -1,7 +1,7 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 
 import SVGWrapper from 'components/svgWrapper';
 
@@ -70,7 +70,6 @@ function iconGlyph(name: RHSIssueTypeIconName): React.ReactNode {
             </g>
         );
     case 'task':
-    default:
         return (
             <React.Fragment>
                 <path
@@ -85,19 +84,42 @@ function iconGlyph(name: RHSIssueTypeIconName): React.ReactNode {
                 />
             </React.Fragment>
         );
+    default: {
+        const exhaustive: never = name;
+        return exhaustive;
+    }
     }
 }
 
 export type Props = {
     issueType: string;
+    iconUrl?: string;
 };
 
 export default function RHSIssueTypeIcon(props: Props): JSX.Element {
+    const [failed, setFailed] = useState(false);
     const name = rhsIssueTypeIconName(props.issueType);
+    const iconUrl = props.iconUrl;
+
+    if (iconUrl && !failed) {
+        return (
+            <span className='jira-rhs-type-icon-wrap'>
+                <img
+                    className={'jira-rhs-type-icon jira-rhs-type-icon--' + name}
+                    src={iconUrl}
+                    alt={props.issueType}
+                    width={14}
+                    height={14}
+                    onError={() => setFailed(true)}
+                />
+            </span>
+        );
+    }
+
     return (
         <span
-            aria-hidden={true}
-            className={'jira-rhs-type-icon-wrap'}
+            className='jira-rhs-type-icon-wrap'
+            title={props.issueType}
         >
             <SVGWrapper
                 width={14}
