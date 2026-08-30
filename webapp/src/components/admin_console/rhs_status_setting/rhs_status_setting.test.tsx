@@ -13,6 +13,7 @@ import {RHSFetchError} from '../../../client';
 
 import RHSStatusSetting, {Props} from './rhs_status_setting';
 import {
+    ASSIGNED_TAB,
     INSTANCE_LABEL,
     IN_PROGRESS_TAB,
     NOT_CONNECTED_MESSAGE,
@@ -58,6 +59,18 @@ const statusesData: RHSStatusesResponse = {
         {id: '3', name: 'In Progress', statusCategory: {id: 4, key: 'indeterminate', name: 'In Progress'}},
         {id: '3', name: 'In Progress', statusCategory: {id: 4, key: 'indeterminate', name: 'In Progress'}},
         {id: '10001', name: 'Submitted', statusCategory: {id: 2, key: 'new', name: 'To Do'}},
+        {
+            id: '10042',
+            name: 'In Progress',
+            statusCategory: {id: 4, key: 'indeterminate', name: 'In Progress'},
+            project: {id: '10000', key: 'PLAY', name: 'Playbooks'},
+        },
+        {
+            id: '10043',
+            name: 'In Progress',
+            statusCategory: {id: 4, key: 'indeterminate', name: 'In Progress'},
+            project: {id: '10001', key: 'DSGN', name: 'Design'},
+        },
     ],
 };
 
@@ -101,8 +114,7 @@ describe('components/RHSStatusSetting', () => {
     test.each([
         [null],
         [{}],
-        [{[CLOUD_ID]: []}],
-    ])('empty value renders Assigned and In Progress selected without calling onChange', async (value) => {
+    ])('unset value renders Assigned and In Progress selected without calling onChange', async (value) => {
         const onChange = jest.fn();
         const setSaveNeeded = jest.fn();
         const fetchRHSStatuses = jest.fn().mockResolvedValue({data: statusesData});
@@ -123,11 +135,61 @@ describe('components/RHSStatusSetting', () => {
             expect(fetchRHSStatuses).toHaveBeenCalled();
         });
 
-        expect(screen.getByText('Assigned')).toBeInTheDocument();
+        expect(screen.getByText(ASSIGNED_TAB.name)).toBeInTheDocument();
         expect(screen.getByText('In Progress')).toBeInTheDocument();
         expect(screen.queryByText('FromConfig')).not.toBeInTheDocument();
         expect(onChange).not.toHaveBeenCalled();
         expect(setSaveNeeded).not.toHaveBeenCalled();
+    });
+
+    test('stored empty extras render Assigned without reseeding In Progress', async () => {
+        const {props} = await renderSettled({
+            value: {[CLOUD_ID]: []},
+        });
+
+        await waitFor(() => {
+            expect(props.fetchRHSStatuses).toHaveBeenCalled();
+        });
+
+        expect(screen.getByText(ASSIGNED_TAB.name)).toBeInTheDocument();
+        expect(screen.queryByLabelText('Remove In Progress')).not.toBeInTheDocument();
+        expect(props.onChange).not.toHaveBeenCalled();
+    });
+
+    test('removing the last extra tab persists Assigned only', async () => {
+        const onChange = jest.fn();
+        const {props} = await renderSettled({
+            onChange,
+        });
+
+        await waitFor(() => {
+            expect(props.fetchRHSStatuses).toHaveBeenCalled();
+        });
+
+        fireEvent.click(screen.getByLabelText('Remove In Progress'));
+
+        await waitFor(() => {
+            expect(onChange).toHaveBeenCalledWith(SETTING_ID, {[CLOUD_ID]: []});
+        });
+        expect(props.setSaveNeeded).toHaveBeenCalled();
+    });
+
+    test('removing a stored last extra tab persists Assigned only', async () => {
+        const onChange = jest.fn();
+        const {props} = await renderSettled({
+            value: {[CLOUD_ID]: [{kind: 'category', key: 'done', name: 'Done'}]},
+            onChange,
+        });
+
+        await waitFor(() => {
+            expect(props.fetchRHSStatuses).toHaveBeenCalled();
+        });
+
+        fireEvent.click(screen.getByLabelText('Remove Done'));
+
+        await waitFor(() => {
+            expect(onChange).toHaveBeenCalledWith(SETTING_ID, {[CLOUD_ID]: []});
+        });
     });
 
     test('not_connected keeps stored chips disables the status control and does not call onChange', async () => {
@@ -144,7 +206,7 @@ describe('components/RHSStatusSetting', () => {
             expect(fetchRHSStatuses).toHaveBeenCalled();
         });
 
-        expect(screen.getByText('Assigned')).toBeInTheDocument();
+        expect(screen.getByText(ASSIGNED_TAB.name)).toBeInTheDocument();
         expect(screen.getByText('To Do')).toBeInTheDocument();
         expect(screen.getByText(NOT_CONNECTED_MESSAGE)).toBeInTheDocument();
         expect(screen.queryByText('FromConfig')).not.toBeInTheDocument();
@@ -163,7 +225,7 @@ describe('components/RHSStatusSetting', () => {
             expect(props.fetchRHSStatuses).toHaveBeenCalled();
         });
 
-        expect(screen.getByText('Assigned')).toBeInTheDocument();
+        expect(screen.getByText(ASSIGNED_TAB.name)).toBeInTheDocument();
         expect(screen.getByText('Submitted')).toBeInTheDocument();
         expect(screen.queryByText('FromConfig')).not.toBeInTheDocument();
         expect(props.onChange).not.toHaveBeenCalled();
@@ -181,7 +243,7 @@ describe('components/RHSStatusSetting', () => {
             expect(fetchRHSStatuses).toHaveBeenCalled();
         });
 
-        expect(screen.getByText('Assigned')).toBeInTheDocument();
+        expect(screen.getByText(ASSIGNED_TAB.name)).toBeInTheDocument();
         expect(screen.getByText('Done')).toBeInTheDocument();
         expect(props.onChange).not.toHaveBeenCalled();
         expect(props.setSaveNeeded).not.toHaveBeenCalled();
@@ -201,7 +263,7 @@ describe('components/RHSStatusSetting', () => {
             expect(fetchRHSStatuses).toHaveBeenCalled();
         });
 
-        expect(screen.getByText('Assigned')).toBeInTheDocument();
+        expect(screen.getByText(ASSIGNED_TAB.name)).toBeInTheDocument();
         expect(screen.getByText('Done')).toBeInTheDocument();
         expect(props.onChange).not.toHaveBeenCalled();
         expect(props.setSaveNeeded).not.toHaveBeenCalled();
@@ -217,7 +279,7 @@ describe('components/RHSStatusSetting', () => {
             expect(props.fetchRHSStatuses).toHaveBeenCalled();
         });
 
-        expect(screen.queryByLabelText('Remove Assigned')).not.toBeInTheDocument();
+        expect(screen.queryByLabelText('Remove ' + ASSIGNED_TAB.name)).not.toBeInTheDocument();
 
         const removeInProgress = screen.getByLabelText('Remove In Progress');
         fireEvent.click(removeInProgress);
@@ -226,7 +288,7 @@ describe('components/RHSStatusSetting', () => {
             expect(onChange).toHaveBeenCalled();
         });
 
-        expect(screen.queryByLabelText('Remove Assigned')).not.toBeInTheDocument();
+        expect(screen.queryByLabelText('Remove ' + ASSIGNED_TAB.name)).not.toBeInTheDocument();
     });
 
     test('selecting a status calls onChange and setSaveNeeded with extras only', async () => {
@@ -274,6 +336,19 @@ describe('components/RHSStatusSetting', () => {
         expect(optionLabels).toEqual([CLOUD_ID, OAUTH_ID]);
         expect(screen.queryByText(SERVER_ID)).not.toBeInTheDocument();
         expect(screen.queryByText('jira.example.com')).not.toBeInTheDocument();
+    });
+
+    test('status options show the Jira project under the status name', async () => {
+        const {props} = await renderSettled();
+
+        await waitFor(() => {
+            expect(props.fetchRHSStatuses).toHaveBeenCalled();
+        });
+
+        fireEvent.keyDown(screen.getByLabelText(STATUS_TABS_LABEL), {key: 'ArrowDown'});
+
+        expect(await screen.findByText('Playbooks (PLAY)')).toBeInTheDocument();
+        expect(screen.getByText('Design (DSGN)')).toBeInTheDocument();
     });
 
     test('getConnected is called on mount and a getConnected failure does not call onChange', async () => {

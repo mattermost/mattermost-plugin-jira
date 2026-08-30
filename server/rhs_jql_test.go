@@ -84,7 +84,7 @@ func issueKeys(issues []rhsFakeIssue) []string {
 
 func TestRHSJQLBuildExactStrings(t *testing.T) {
 	valid := canonicalValidCategoryKeys()
-	assigned := RHSTabEntry{Kind: RHSTabKindAssigned, Name: "Assigned"}
+	assigned := RHSTabEntry{Kind: RHSTabKindAssigned, Name: rhsAssignedTabName}
 	inProgress := RHSTabEntry{Kind: RHSTabKindCategory, Key: statusCategoryKeyIndeterminate, Name: "In Progress"}
 	todo := RHSTabEntry{Kind: RHSTabKindCategory, Key: statusCategoryKeyNew, Name: "To Do"}
 	status := RHSTabEntry{Kind: RHSTabKindStatus, ID: "10001", Name: "Backlog"}
@@ -141,7 +141,7 @@ func TestRHSJQLAssignedErrorsWhenDoneOmittedFromValidKeys(t *testing.T) {
 		statusCategoryKeyUndefined:     true,
 		// done is deliberately omitted
 	}
-	tab := RHSTabEntry{Kind: RHSTabKindAssigned, Name: "Assigned"}
+	tab := RHSTabEntry{Kind: RHSTabKindAssigned, Name: rhsAssignedTabName}
 
 	got, err := buildTabJQL(tab, "updated", valid)
 	require.Error(t, err)
@@ -149,7 +149,7 @@ func TestRHSJQLAssignedErrorsWhenDoneOmittedFromValidKeys(t *testing.T) {
 	assert.Empty(t, got, "Assigned must not emit JQL when done is not in validCategoryKeys")
 
 	t.Run("nil map", func(t *testing.T) {
-		got, err := buildTabJQL(RHSTabEntry{Kind: RHSTabKindAssigned, Name: "Assigned"}, "updated", nil)
+		got, err := buildTabJQL(RHSTabEntry{Kind: RHSTabKindAssigned, Name: rhsAssignedTabName}, "updated", nil)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrInvalidStatusCategory)
 		assert.Empty(t, got)
@@ -168,7 +168,7 @@ func TestRHSJQLCategoryErrorsWhenKeyMissingFromValidKeys(t *testing.T) {
 
 func TestRHSJQLRejectsSortOutsideAllowlist(t *testing.T) {
 	valid := canonicalValidCategoryKeys()
-	tab := RHSTabEntry{Kind: RHSTabKindAssigned, Name: "Assigned"}
+	tab := RHSTabEntry{Kind: RHSTabKindAssigned, Name: rhsAssignedTabName}
 
 	tests := map[string]string{
 		"empty":        "",
@@ -189,7 +189,7 @@ func TestRHSJQLRejectsSortOutsideAllowlist(t *testing.T) {
 
 func TestRHSJQLAssignedExcludesDoneMembership(t *testing.T) {
 	jql, err := buildTabJQL(
-		RHSTabEntry{Kind: RHSTabKindAssigned, Name: "Assigned"},
+		RHSTabEntry{Kind: RHSTabKindAssigned, Name: rhsAssignedTabName},
 		"updated",
 		canonicalValidCategoryKeys(),
 	)
@@ -246,14 +246,14 @@ func TestRHSJQLResolveTabsAssignedAlwaysFirst(t *testing.T) {
 
 	configured := []RHSTabEntry{
 		{Kind: RHSTabKindCategory, Key: statusCategoryKeyIndeterminate, Name: "In Progress"},
-		{Kind: RHSTabKindAssigned, Name: "Assigned"},
+		{Kind: RHSTabKindAssigned, Name: rhsAssignedTabName},
 		{Kind: RHSTabKindStatus, ID: "10001", Name: "Backlog"},
 	}
 
 	got := resolveTabs(configured, statuses, categories)
 	require.Len(t, got, 3)
 	assert.Equal(t, RHSTabKindAssigned, got[0].Kind)
-	assert.Equal(t, "Assigned", got[0].Name)
+	assert.Equal(t, rhsAssignedTabName, got[0].Name)
 
 	assignedCount := 0
 	for _, tab := range got {
@@ -291,7 +291,7 @@ func TestRHSJQLResolveTabsHidesVanishedStatusAndCategory(t *testing.T) {
 	got := resolveTabs(configured, statuses, categories)
 	require.Len(t, got, 3)
 	assert.Equal(t, RHSTabKindAssigned, got[0].Kind)
-	assert.Equal(t, "Assigned", got[0].Name)
+	assert.Equal(t, rhsAssignedTabName, got[0].Name)
 	assert.Equal(t, RHSTabKindCategory, got[1].Kind)
 	assert.Equal(t, statusCategoryKeyIndeterminate, got[1].Key)
 	assert.Equal(t, "In Progress", got[1].Name)
@@ -320,18 +320,17 @@ func TestRHSJQLResolveTabsEmptyConfigUsesDefaultSeed(t *testing.T) {
 		assert.Equal(t, statusCategoryKeyIndeterminate, got[1].Key)
 	})
 
-	t.Run("empty config", func(t *testing.T) {
+	t.Run("empty config is Assigned only", func(t *testing.T) {
 		got := resolveTabs([]RHSTabEntry{}, statuses, categories)
-		require.Len(t, got, 2)
+		require.Len(t, got, 1)
 		assert.Equal(t, RHSTabKindAssigned, got[0].Kind)
-		assert.Equal(t, RHSTabKindCategory, got[1].Kind)
-		assert.Equal(t, statusCategoryKeyIndeterminate, got[1].Key)
+		assert.Equal(t, rhsAssignedTabName, got[0].Name)
 	})
 
 	t.Run("nil config and nil categories", func(t *testing.T) {
 		got := resolveTabs(nil, statuses, nil)
 		require.Len(t, got, 1)
 		assert.Equal(t, RHSTabKindAssigned, got[0].Kind)
-		assert.Equal(t, "Assigned", got[0].Name)
+		assert.Equal(t, rhsAssignedTabName, got[0].Name)
 	})
 }

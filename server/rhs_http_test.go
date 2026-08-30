@@ -255,6 +255,7 @@ func TestRHSHTTPGetIssuesHappyPathDTO(t *testing.T) {
 	assert.Contains(t, body.Issues[0].Labels, "rhs")
 	require.GreaterOrEqual(t, len(body.Tabs), 1)
 	assert.Equal(t, RHSTabKindAssigned, body.Tabs[0].Kind)
+	assert.Equal(t, rhsAssignedTabName, body.Tabs[0].Name)
 
 	client.mu.Lock()
 	defer client.mu.Unlock()

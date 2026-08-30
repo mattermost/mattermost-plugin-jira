@@ -8,7 +8,7 @@ import {RHSTab} from 'types/model';
 
 import RHSTabStrip from './rhs_tab_strip';
 
-const assignedTab: RHSTab = {kind: 'assigned', name: 'Assigned'};
+const assignedTab: RHSTab = {kind: 'assigned', name: 'Assigned to me'};
 const inProgressTab: RHSTab = {kind: 'category', name: 'In Progress', key: 'indeterminate'};
 
 describe('components/rhs/rhs_tab_strip', () => {

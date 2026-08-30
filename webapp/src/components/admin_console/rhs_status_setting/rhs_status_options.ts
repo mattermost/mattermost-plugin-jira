@@ -8,6 +8,7 @@ import {
     RHSStatus,
     RHSStatusesResponse,
     RHSTab,
+    RHS_DEFAULT_TAB,
 } from 'types/model';
 
 export type RHSStatusTabsValue = Record<string, RHSTab[]>;
@@ -17,12 +18,10 @@ export type StatusTabOption = {
     value: string;
     isFixed?: boolean;
     tab: RHSTab;
+    description?: string;
 };
 
-export const ASSIGNED_TAB: RHSTab = {
-    kind: 'assigned',
-    name: 'Assigned',
-};
+export const ASSIGNED_TAB: RHSTab = RHS_DEFAULT_TAB;
 
 export const IN_PROGRESS_TAB: RHSTab = {
     kind: 'category',
@@ -70,23 +69,22 @@ export function filterInstalledCloudInstances(instances: Instance[] | null): Ins
     return instances.filter(isCloudInstalledInstance);
 }
 
-export function isTabsValueEmpty(value: RHSStatusTabsValue | null, instanceID: string): boolean {
+export function isTabsValueUnset(value: RHSStatusTabsValue | null, instanceID: string): boolean {
     if (!value || typeof value !== 'object') {
         return true;
     }
-    const extras = value[instanceID];
-    return !extras || extras.length === 0;
+    return value[instanceID] == null;
 }
 
 export function storedExtrasForInstance(value: RHSStatusTabsValue | null, instanceID: string): RHSTab[] {
-    if (!value || isTabsValueEmpty(value, instanceID)) {
+    if (!value || isTabsValueUnset(value, instanceID)) {
         return [];
     }
     return value[instanceID].filter((tab) => tab.kind !== 'assigned');
 }
 
 export function displayTabsForInstance(value: RHSStatusTabsValue | null, instanceID: string): RHSTab[] {
-    if (isTabsValueEmpty(value, instanceID)) {
+    if (isTabsValueUnset(value, instanceID)) {
         return [ASSIGNED_TAB, IN_PROGRESS_TAB];
     }
     return [ASSIGNED_TAB, ...storedExtrasForInstance(value, instanceID)];
@@ -182,7 +180,7 @@ export function buildPersistedValue(
     extras: RHSTab[],
 ): RHSStatusTabsValue {
     const next: RHSStatusTabsValue = current && typeof current === 'object' ? {...current} : {};
-    if (isVirtualSeedExtras(extras) && isTabsValueEmpty(current, instanceID)) {
+    if (isVirtualSeedExtras(extras) && isTabsValueUnset(current, instanceID)) {
         delete next[instanceID];
         return next;
     }
@@ -234,11 +232,16 @@ export function buildStatusOptionGroups(data: RHSStatusesResponse): StatusOption
             id: status.id,
             name: status.name,
         };
-        return {
+        const option: StatusTabOption = {
             label: status.name,
             value: optionValueForTab(tab),
             tab,
         };
+        const description = statusProjectDescription(status);
+        if (description) {
+            option.description = description;
+        }
+        return option;
     });
 
     return [
@@ -253,6 +256,35 @@ export function flattenOptionGroups(groups: StatusOptionGroup[]): StatusTabOptio
         out.push(...groups[i].options);
     }
     return out;
+}
+
+export function statusProjectDescription(status: RHSStatus): string {
+    if (!status.project) {
+        return '';
+    }
+    const name = status.project.name || '';
+    const key = status.project.key || '';
+    if (name && key) {
+        return name + ' (' + key + ')';
+    }
+    if (name) {
+        return name;
+    }
+    if (key) {
+        return key;
+    }
+    return '';
+}
+
+export function statusTabOptionMatches(option: StatusTabOption, input: string): boolean {
+    const query = input.trim().toLowerCase();
+    if (!query) {
+        return true;
+    }
+    if (option.label.toLowerCase().indexOf(query) !== -1) {
+        return true;
+    }
+    return Boolean(option.description && option.description.toLowerCase().indexOf(query) !== -1);
 }
 
 export function statusFetchMessage(code: RHSErrorCode): string {

@@ -77,10 +77,11 @@ func buildTabJQL(tab RHSTabEntry, sortField string, validCategoryKeys map[string
 }
 
 func resolveTabs(configured []RHSTabEntry, statuses []*JiraStatus, categories []*JiraStatusCategory) []RHSTabEntry {
-	out := []RHSTabEntry{{Kind: RHSTabKindAssigned, Name: "Assigned"}}
+	out := []RHSTabEntry{rhsAssignedTab()}
 
 	extras := configured
-	if len(configured) == 0 {
+	// nil is unset (seed In Progress). An empty slice is Assigned only.
+	if configured == nil {
 		extras = rhsDefaultTabs()[1:]
 	}
 

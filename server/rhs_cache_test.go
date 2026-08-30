@@ -310,3 +310,95 @@ func TestRHSCacheOnConfigurationChangeEmptiesAllInstances(t *testing.T) {
 	require.NoError(t, p.OnConfigurationChange())
 	assert.Empty(t, p.rhsStatusCache)
 }
+
+type lookupRHSStatusClient struct {
+	countingRHSStatusClient
+	projects    map[string]JiraStatusProject
+	lookupErr   error
+	lookupCalls int
+}
+
+func (c *lookupRHSStatusClient) lookupStatusProjects(ids []string) (map[string]JiraStatusProject, error) {
+	c.mu.Lock()
+	c.lookupCalls++
+	c.mu.Unlock()
+	if c.lookupErr != nil {
+		return nil, c.lookupErr
+	}
+	return c.projects, nil
+}
+
+func TestRHSCacheEnrichesScopedStatusesWithProjectNames(t *testing.T) {
+	api := &plugintest.API{}
+	p := setupTestPlugin(api)
+	statuses := []*JiraStatus{
+		{ID: "3", Name: "In Progress"},
+		{
+			ID:   "10042",
+			Name: "In Progress",
+			Scope: &JiraStatusScope{
+				Type:    "PROJECT",
+				Project: &JiraStatusScopeProject{ID: "10000"},
+			},
+		},
+	}
+	categories := []*JiraStatusCategory{{ID: 4, Key: statusCategoryKeyIndeterminate, Name: "In Progress"}}
+	client := &lookupRHSStatusClient{
+		countingRHSStatusClient: countingRHSStatusClient{statuses: statuses, categories: categories},
+		projects: map[string]JiraStatusProject{
+			"10000": {ID: "10000", Key: "PLAY", Name: "Playbooks"},
+		},
+	}
+
+	got, err := p.getInstanceStatuses(types.ID("https://a.example.atlassian.net"), client)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	assert.Equal(t, 1, client.lookupCalls)
+	assert.Nil(t, got.statuses[0].Project)
+	require.NotNil(t, got.statuses[1].Project)
+	assert.Equal(t, "Playbooks", got.statuses[1].Project.Name)
+	assert.Equal(t, "PLAY", got.statuses[1].Project.Key)
+}
+
+func TestRHSCacheSkipsProjectLookupWhenStatusesAreGlobal(t *testing.T) {
+	api := &plugintest.API{}
+	p := setupTestPlugin(api)
+	statuses, categories := fixtureStatusesAndCategories(t)
+	client := &lookupRHSStatusClient{
+		countingRHSStatusClient: countingRHSStatusClient{statuses: statuses, categories: categories},
+		projects:                map[string]JiraStatusProject{"10000": {Name: "unused"}},
+	}
+
+	got, err := p.getInstanceStatuses(types.ID("https://a.example.atlassian.net"), client)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	assert.Equal(t, 0, client.lookupCalls)
+}
+
+func TestRHSCacheProjectLookupErrorStillReturnsStatuses(t *testing.T) {
+	api := &plugintest.API{}
+	api.On("LogWarn", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe().Return()
+	p := setupTestPlugin(api)
+	statuses := []*JiraStatus{
+		{
+			ID:   "10042",
+			Name: "In Progress",
+			Scope: &JiraStatusScope{
+				Type:    "PROJECT",
+				Project: &JiraStatusScopeProject{ID: "10000"},
+			},
+		},
+	}
+	categories := []*JiraStatusCategory{{ID: 4, Key: statusCategoryKeyIndeterminate, Name: "In Progress"}}
+	client := &lookupRHSStatusClient{
+		countingRHSStatusClient: countingRHSStatusClient{statuses: statuses, categories: categories},
+		lookupErr:               errors.New("project search failed"),
+	}
+
+	got, err := p.getInstanceStatuses(types.ID("https://a.example.atlassian.net"), client)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	require.Len(t, got.statuses, 1)
+	assert.Nil(t, got.statuses[0].Project)
+	assert.Equal(t, 1, client.lookupCalls)
+}

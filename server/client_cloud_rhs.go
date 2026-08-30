@@ -82,6 +82,35 @@ func (client jiraCloudClient) ListStatuses() ([]*JiraStatus, error) {
 	return result, nil
 }
 
+func (client jiraCloudClient) lookupStatusProjects(ids []string) (map[string]JiraStatusProject, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	projects, err := client.ListProjects("", -1, false)
+	if err != nil {
+		return nil, err
+	}
+	want := make(map[string]struct{}, len(ids))
+	for _, id := range ids {
+		if id == "" {
+			continue
+		}
+		want[id] = struct{}{}
+	}
+	out := make(map[string]JiraStatusProject, len(want))
+	for _, project := range projects {
+		if _, ok := want[project.ID]; !ok {
+			continue
+		}
+		out[project.ID] = JiraStatusProject{
+			ID:   project.ID,
+			Key:  project.Key,
+			Name: project.Name,
+		}
+	}
+	return out, nil
+}
+
 func (client jiraCloudClient) ListStatusCategories() ([]*JiraStatusCategory, error) {
 	var result []*JiraStatusCategory
 	if err := client.RESTGet("3/statuscategory", nil, &result); err != nil {

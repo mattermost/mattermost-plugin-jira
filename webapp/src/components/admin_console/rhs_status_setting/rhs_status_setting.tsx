@@ -2,7 +2,13 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useRef, useState} from 'react';
-import {MultiValueRemoveProps, components} from 'react-select';
+import {
+    FilterOptionOption,
+    FormatOptionLabelMeta,
+    MultiValueProps,
+    MultiValueRemoveProps,
+    components,
+} from 'react-select';
 
 import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
@@ -33,11 +39,12 @@ import {
     extrasFromOptionValues,
     filterInstalledCloudInstances,
     flattenOptionGroups,
-    isTabsValueEmpty,
+    isTabsValueUnset,
     isVirtualSeedExtras,
     optionsFromTabs,
     persistedValuesEqual,
     statusFetchMessage,
+    statusTabOptionMatches,
     storedExtrasForInstance,
 } from './rhs_status_options';
 
@@ -67,10 +74,36 @@ type ConsoleSelectProps = {
     isLoading?: boolean;
     theme: Theme;
     components?: unknown;
+    formatOptionLabel?: (data: StatusTabOption, meta: FormatOptionLabelMeta<StatusTabOption>) => React.ReactNode;
+    filterOption?: (option: FilterOptionOption<StatusTabOption>, input: string) => boolean;
     onChange: (name: string, value: string | string[] | null) => void;
 };
 
 const ConsoleSelect = ReactSelectSetting as unknown as React.ComponentType<ConsoleSelectProps>;
+
+function RHSFixedMultiValue(props: MultiValueProps<ReactSelectOption>): React.ReactElement {
+    const option = props.data as StatusTabOption;
+    if (!option.isFixed) {
+        return (
+            <components.MultiValue
+                {...props}
+            />
+        );
+    }
+
+    return (
+        <components.MultiValue
+            {...props}
+            innerProps={{
+                ...props.innerProps,
+                style: {
+                    ...props.innerProps?.style,
+                    paddingRight: 8,
+                },
+            }}
+        />
+    );
+}
 
 function RHSFixedMultiValueRemove(props: MultiValueRemoveProps<ReactSelectOption>): React.ReactElement | null {
     const option = props.data as StatusTabOption;
@@ -83,6 +116,25 @@ function RHSFixedMultiValueRemove(props: MultiValueRemoveProps<ReactSelectOption
             {...props}
         />
     );
+}
+
+function formatStatusTabOption(data: StatusTabOption, meta: FormatOptionLabelMeta<StatusTabOption>): React.ReactNode {
+    if (meta.context === 'value' || !data.description) {
+        return data.label;
+    }
+
+    return (
+        <div>
+            <div>{data.label}</div>
+            <div style={{opacity: 0.6}}>
+                {data.description}
+            </div>
+        </div>
+    );
+}
+
+function filterStatusTabOption(option: FilterOptionOption<StatusTabOption>, input: string): boolean {
+    return statusTabOptionMatches(option.data, input);
 }
 
 export default function RHSStatusSetting(props: Props): React.ReactElement {
@@ -188,7 +240,7 @@ export default function RHSStatusSetting(props: Props): React.ReactElement {
         }
 
         const extras = extrasFromOptionValues(nextValues, [...flatOptions, ...selectedOptions]);
-        const emptyValue = isTabsValueEmpty(value, instanceID);
+        const emptyValue = isTabsValueUnset(value, instanceID);
         if (emptyValue && isVirtualSeedExtras(extras)) {
             return;
         }
@@ -248,7 +300,9 @@ export default function RHSStatusSetting(props: Props): React.ReactElement {
                 options={optionGroups}
                 value={selectedOptions}
                 theme={theme}
-                components={{MultiValueRemove: RHSFixedMultiValueRemove}}
+                components={{MultiValue: RHSFixedMultiValue, MultiValueRemove: RHSFixedMultiValueRemove}}
+                formatOptionLabel={formatStatusTabOption}
+                filterOption={filterStatusTabOption}
                 onChange={handleStatusValuesChange}
             />
         </React.Fragment>

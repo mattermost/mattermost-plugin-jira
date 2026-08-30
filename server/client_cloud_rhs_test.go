@@ -241,6 +241,36 @@ func TestCloudRHSListStatuses(t *testing.T) {
 	assert.Equal(t, 1, requests)
 }
 
+func TestCloudRHSLookupStatusProjects(t *testing.T) {
+	var requests int
+	client := newTestCloudRHSClient(t, func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "/rest/api/3/project/search", r.URL.Path)
+		writeJSON(w, http.StatusOK, []byte(`{
+			"values": [
+				{"id": "10000", "key": "PLAY", "name": "Playbooks"},
+				{"id": "10001", "key": "OTHER", "name": "Other"}
+			],
+			"isLast": true
+		}`))
+	})
+
+	got, err := client.lookupStatusProjects([]string{"10000", "missing"})
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+	assert.Equal(t, "Playbooks", got["10000"].Name)
+	assert.Equal(t, "PLAY", got["10000"].Key)
+	_, ok := got["missing"]
+	assert.False(t, ok)
+	assert.Equal(t, 1, requests)
+
+	empty, err := client.lookupStatusProjects(nil)
+	require.NoError(t, err)
+	assert.Nil(t, empty)
+	assert.Equal(t, 1, requests)
+}
+
 func TestCloudRHSListStatusCategories(t *testing.T) {
 	var requests int
 	client := newTestCloudRHSClient(t, func(w http.ResponseWriter, r *http.Request) {

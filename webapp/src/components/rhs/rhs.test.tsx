@@ -19,7 +19,7 @@ import {
 import Rhs, {Props} from './rhs';
 import {RHS_STRINGS} from './rhs_strings';
 
-const assignedTab: RHSTab = {kind: 'assigned', name: 'Assigned'};
+const assignedTab: RHSTab = {kind: 'assigned', name: 'Assigned to me'};
 const inProgressTab: RHSTab = {kind: 'category', name: 'In Progress', key: 'indeterminate'};
 
 const cloudOne: Instance = {instance_id: 'https://one.atlassian.net', type: InstanceType.CLOUD};

@@ -17,6 +17,12 @@ const (
 	RHSTabKindStatus   RHSTabKind = "status"
 )
 
+const rhsAssignedTabName = "Assigned to me"
+
+func rhsAssignedTab() RHSTabEntry {
+	return RHSTabEntry{Kind: RHSTabKindAssigned, Name: rhsAssignedTabName}
+}
+
 // Cloud statusCategory JQL operands. Do not use the numeric ids (2/4/3/1).
 const (
 	statusCategoryKeyNew           = "new"
@@ -37,7 +43,7 @@ type RHSTabEntry struct {
 // rhsDefaultTabs is Assigned plus In Progress when an instance has no stored tabs.
 func rhsDefaultTabs() []RHSTabEntry {
 	return []RHSTabEntry{
-		{Kind: RHSTabKindAssigned, Name: "Assigned"},
+		rhsAssignedTab(),
 		{Kind: RHSTabKindCategory, Key: statusCategoryKeyIndeterminate, Name: "In Progress"},
 	}
 }
@@ -46,12 +52,75 @@ type JiraStatus struct {
 	ID             string             `json:"id"`
 	Name           string             `json:"name"`
 	StatusCategory JiraStatusCategory `json:"statusCategory"`
+	Scope          *JiraStatusScope   `json:"scope,omitempty"`
+	Project        *JiraStatusProject `json:"project,omitempty"`
+}
+
+// JiraStatusScope is Cloud's per-status scope. Team-managed statuses set
+// type=PROJECT and project.id; company-managed statuses are typically GLOBAL.
+type JiraStatusScope struct {
+	Type    string                  `json:"type"`
+	Project *JiraStatusScopeProject `json:"project,omitempty"`
+}
+
+type JiraStatusScopeProject struct {
+	ID string `json:"id"`
+}
+
+// JiraStatusProject is the picker-facing project label, filled from
+// /project/search after ListStatuses. Not returned by GET /status.
+type JiraStatusProject struct {
+	ID   string `json:"id,omitempty"`
+	Key  string `json:"key,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 
 type JiraStatusCategory struct {
 	ID   int    `json:"id"`
 	Key  string `json:"key"`
 	Name string `json:"name"`
+}
+
+func statusProjectID(status *JiraStatus) string {
+	if status == nil || status.Scope == nil || status.Scope.Project == nil {
+		return ""
+	}
+	return status.Scope.Project.ID
+}
+
+func uniqueStatusProjectIDs(statuses []*JiraStatus) []string {
+	seen := make(map[string]struct{})
+	var ids []string
+	for _, status := range statuses {
+		id := statusProjectID(status)
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+func applyStatusProjects(statuses []*JiraStatus, byID map[string]JiraStatusProject) {
+	if len(byID) == 0 {
+		return
+	}
+	for _, status := range statuses {
+		id := statusProjectID(status)
+		if id == "" {
+			continue
+		}
+		project, ok := byID[id]
+		if !ok {
+			continue
+		}
+		projectCopy := project
+		status.Project = &projectCopy
+	}
 }
 
 type CloudSearchParams struct {

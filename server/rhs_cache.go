@@ -22,6 +22,13 @@ type rhsStatusLister interface {
 	ListStatusCategories() ([]*JiraStatusCategory, error)
 }
 
+// statusProjectLookup is implemented by the Cloud client. Test listers omit it
+// so existing mocks do not have to stub project search. Do not type-assert
+// ListProjects — testClient embeds a nil ProjectService and would panic.
+type statusProjectLookup interface {
+	lookupStatusProjects(ids []string) (map[string]JiraStatusProject, error)
+}
+
 func copyRHSStatusCacheEntry(in *rhsStatusCacheEntry) *rhsStatusCacheEntry {
 	if in == nil {
 		return nil
@@ -59,6 +66,7 @@ func (p *Plugin) getInstanceStatuses(instanceID types.ID, client rhsStatusLister
 	if err != nil {
 		return nil, err
 	}
+	p.enrichStatusesWithProjects(client, statuses)
 	categories, err := client.ListStatusCategories()
 	if err != nil {
 		return nil, err
@@ -80,6 +88,23 @@ func (p *Plugin) getInstanceStatuses(instanceID types.ID, client rhsStatusLister
 	}
 	p.rhsStatusCache[instanceID] = entry
 	return copyRHSStatusCacheEntry(entry), nil
+}
+
+func (p *Plugin) enrichStatusesWithProjects(client rhsStatusLister, statuses []*JiraStatus) {
+	ids := uniqueStatusProjectIDs(statuses)
+	if len(ids) == 0 {
+		return
+	}
+	lookup, ok := client.(statusProjectLookup)
+	if !ok {
+		return
+	}
+	byID, err := lookup.lookupStatusProjects(ids)
+	if err != nil {
+		p.client.Log.Warn("Failed to load Jira projects for RHS status tabs", "error", err.Error())
+		return
+	}
+	applyStatusProjects(statuses, byID)
 }
 
 func (p *Plugin) invalidateRHSStatusCache() {

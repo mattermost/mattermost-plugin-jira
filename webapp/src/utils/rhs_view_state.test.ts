@@ -54,6 +54,18 @@ describe('rhs_view_state', () => {
         }).not.toThrow();
     });
 
+    test('validateRHSViewState rewrites a stored assigned label to Assigned to me', () => {
+        expect(validateRHSViewState({
+            instance: 'x',
+            tab: {kind: 'assigned', name: 'Assigned'},
+            sort: 'updated',
+        })).toEqual({
+            instance: 'x',
+            tab: {kind: 'assigned', name: 'Assigned to me'},
+            sort: 'updated',
+        });
+    });
+
     test('validateRHSViewState rejects an unknown tab kind', () => {
         expect(validateRHSViewState({
             instance: 'x',

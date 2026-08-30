@@ -142,7 +142,7 @@ func TestRHSConfigDefaultTabs(t *testing.T) {
 	require.Len(t, got, 2)
 
 	assert.Equal(t, RHSTabKindAssigned, got[0].Kind)
-	assert.Equal(t, "Assigned", got[0].Name)
+	assert.Equal(t, rhsAssignedTabName, got[0].Name)
 	assert.Empty(t, got[0].Key)
 	assert.Empty(t, got[0].ID)
 
@@ -185,4 +185,51 @@ func TestRHSConfigSettingsInfoExposesFlag(t *testing.T) {
 			assert.Equal(t, tc.rhsEnabled, body.RHSEnabled)
 		})
 	}
+}
+
+func TestJiraStatusUnmarshalsProjectScope(t *testing.T) {
+	const raw = `[
+		{"id":"3","name":"In Progress","statusCategory":{"id":4,"key":"indeterminate","name":"In Progress"}},
+		{"id":"10042","name":"In Progress","statusCategory":{"id":4,"key":"indeterminate","name":"In Progress"},"scope":{"type":"PROJECT","project":{"id":"10000"}}}
+	]`
+
+	var statuses []*JiraStatus
+	require.NoError(t, json.Unmarshal([]byte(raw), &statuses))
+	require.Len(t, statuses, 2)
+	assert.Nil(t, statuses[0].Scope)
+	require.NotNil(t, statuses[1].Scope)
+	require.NotNil(t, statuses[1].Scope.Project)
+	assert.Equal(t, "PROJECT", statuses[1].Scope.Type)
+	assert.Equal(t, "10000", statuses[1].Scope.Project.ID)
+	assert.Equal(t, []string{"10000"}, uniqueStatusProjectIDs(statuses))
+}
+
+func TestApplyStatusProjects(t *testing.T) {
+	global := &JiraStatus{ID: "3", Name: "In Progress"}
+	scoped := &JiraStatus{
+		ID:   "10042",
+		Name: "In Progress",
+		Scope: &JiraStatusScope{
+			Type:    "PROJECT",
+			Project: &JiraStatusScopeProject{ID: "10000"},
+		},
+	}
+	missing := &JiraStatus{
+		ID:   "10043",
+		Name: "In Progress",
+		Scope: &JiraStatusScope{
+			Type:    "PROJECT",
+			Project: &JiraStatusScopeProject{ID: "999"},
+		},
+	}
+
+	applyStatusProjects([]*JiraStatus{global, scoped, missing}, map[string]JiraStatusProject{
+		"10000": {ID: "10000", Key: "PLAY", Name: "Playbooks"},
+	})
+
+	assert.Nil(t, global.Project)
+	require.NotNil(t, scoped.Project)
+	assert.Equal(t, "Playbooks", scoped.Project.Name)
+	assert.Equal(t, "PLAY", scoped.Project.Key)
+	assert.Nil(t, missing.Project)
 }

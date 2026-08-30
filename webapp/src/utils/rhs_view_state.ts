@@ -48,6 +48,9 @@ export function validateRHSViewState(raw: unknown): RHSViewState | null {
         kind: tabRaw.kind,
         name: typeof tabRaw.name === 'string' && tabRaw.name ? tabRaw.name : RHS_DEFAULT_TAB.name,
     };
+    if (tab.kind === 'assigned') {
+        tab.name = RHS_DEFAULT_TAB.name;
+    }
 
     if (tab.kind === 'category') {
         if (typeof tabRaw.key !== 'string' || !tabRaw.key) {

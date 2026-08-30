@@ -31,7 +31,7 @@ export const defaultMockState = {
         channelIdWithSettingsOpen: null,
         channelSubscriptions: {},
         rhsInstanceID: '',
-        rhsTab: {kind: 'assigned', name: 'Assigned'},
+        rhsTab: {kind: 'assigned', name: 'Assigned to me'},
         rhsSort: 'updated',
         rhsIssues: [],
         rhsTabs: [],

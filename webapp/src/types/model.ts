@@ -252,10 +252,17 @@ export type RHSStatusCategory = {
     name: string;
 };
 
+export type RHSStatusProject = {
+    id?: string;
+    key?: string;
+    name?: string;
+};
+
 export type RHSStatus = {
     id: string;
     name: string;
     statusCategory: RHSStatusCategory;
+    project?: RHSStatusProject;
 };
 
 export type RHSStatusesResponse = {
@@ -271,9 +278,11 @@ export type RHSViewState = {
 
 export const RHS_DEFAULT_SORT: RHSSort = 'updated';
 
+export const RHS_ASSIGNED_TAB_NAME = 'Assigned to me';
+
 export const RHS_DEFAULT_TAB: RHSTab = {
     kind: 'assigned',
-    name: 'Assigned',
+    name: RHS_ASSIGNED_TAB_NAME,
 };
 
 export type FetchRHSIssuesArgs = {

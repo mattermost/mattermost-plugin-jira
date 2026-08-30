@@ -15,7 +15,7 @@ import {
 
 const fetchMock = global.fetch as jest.Mock;
 
-const assignedTab: RHSTab = {kind: 'assigned', name: 'Assigned'};
+const assignedTab: RHSTab = {kind: 'assigned', name: 'Assigned to me'};
 
 const emptyIssues: RHSIssuesResponse = {
     issues: [],
@@ -145,7 +145,7 @@ describe('client JSON helper', () => {
 
         await getRHSIssues('/plugins/jira', {
             instanceID: 'https://x.atlassian.net',
-            tab: {kind: 'assigned', name: 'Assigned'},
+            tab: {kind: 'assigned', name: 'Assigned to me'},
             sort: 'updated',
         });
 

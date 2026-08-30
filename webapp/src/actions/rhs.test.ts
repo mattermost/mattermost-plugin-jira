@@ -29,7 +29,7 @@ import {
     setRHSSort,
 } from './rhs';
 
-const assignedTab: RHSTab = {kind: 'assigned', name: 'Assigned'};
+const assignedTab: RHSTab = {kind: 'assigned', name: 'Assigned to me'};
 const inProgressTab: RHSTab = {kind: 'category', name: 'In Progress', key: 'indeterminate'};
 const cloudOAuth = {instance_id: 'https://oauth.example.atlassian.net', type: InstanceType.CLOUD_OAUTH};
 
