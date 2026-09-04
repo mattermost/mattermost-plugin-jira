@@ -16,6 +16,10 @@ type UserInfo struct {
 	Instances   *Instances `json:"instances"`
 
 	connectable *Instances
+	// reconciled reports whether GetUserInfo dropped any stale instances
+	// from User. Callers that hold a durable copy of the record should
+	// persist it via StoreUser when this is true.
+	reconciled bool
 }
 
 func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -23,6 +27,13 @@ func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, e
 	info, err := p.GetUserInfo(types.ID(mattermostUserID), nil)
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
+	}
+
+	if info.reconciled {
+		if err := p.userStore.StoreUser(info.User); err != nil {
+			p.client.Log.Warn("Failed to persist reconciled user record",
+				"mattermostUserID", mattermostUserID, "error", err.Error())
+		}
 	}
 
 	return respondJSON(w, info.AsConfigMap())
@@ -43,6 +54,12 @@ func (p *Plugin) GetUserInfo(mattermostUserID types.ID, user *User) (*UserInfo, 
 		}
 	}
 
+	// Drop any instances that are no longer installed before computing
+	// anything from the record, so a dangling reference to a removed
+	// instance can't make IsConnected/CanConnect report a contradictory
+	// state.
+	reconciled := reconcileUserInstances(user, instances)
+
 	isConnected := !user.ConnectedInstances.IsEmpty()
 	connectable := NewInstances()
 	for _, instanceID := range instances.IDs() {
@@ -51,17 +68,13 @@ func (p *Plugin) GetUserInfo(mattermostUserID types.ID, user *User) (*UserInfo, 
 		}
 	}
 
-	for _, instanceID := range user.ConnectedInstances.IDs() {
-		if !instances.Contains(instanceID) {
-			user.ConnectedInstances.Delete(instanceID)
-		}
-	}
 	return &UserInfo{
 		CanConnect:  !connectable.IsEmpty(),
 		IsConnected: isConnected,
 		Instances:   instances,
 		User:        user,
 		connectable: connectable,
+		reconciled:  reconciled,
 	}, nil
 }
 

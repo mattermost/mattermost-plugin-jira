@@ -541,11 +541,17 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 			"Jira instance %s is not installed, please contact the system administrator.",
 			instanceID)
 	}
+	// instanceID passed the connectable check above, which only admits
+	// instances the user's own record does not list as connected. A
+	// connection row that still exists here is orphaned -- most likely left
+	// behind by a previous, since-removed instance that reused this same
+	// URL. Clear it instead of blocking the reconnect on stale data.
 	conn, err := p.userStore.LoadConnection(instanceID, types.ID(header.UserId))
 	if err == nil && len(conn.JiraAccountID()) != 0 {
-		return p.responsef(header,
-			"You already have a Jira account linked to your Mattermost account from %s. Please use `/jira disconnect --instance=%s` to disconnect.",
-			instanceID, instanceID)
+		if err := p.userStore.DeleteConnection(instanceID, types.ID(header.UserId)); err != nil {
+			p.client.Log.Warn("Failed to delete stale Jira connection row before reconnect",
+				"mattermostUserID", header.UserId, "instanceID", instanceID, "error", err.Error())
+		}
 	}
 
 	link := routeUserConnect
@@ -976,7 +982,7 @@ func executeInstanceUninstall(p *Plugin, c *plugin.Context, header *model.Comman
 	if err != nil {
 		return p.response(header, err.Error())
 	}
-	uninstalled, err := p.UninstallInstance(types.ID(id), instanceType)
+	uninstalled, failedUsers, err := p.UninstallInstance(types.ID(id), instanceType)
 	if err != nil {
 		return p.response(header, err.Error())
 	}
@@ -985,6 +991,11 @@ func executeInstanceUninstall(p *Plugin, c *plugin.Context, header *model.Comman
 		`Jira instance successfully uninstalled. Navigate to [**your app management URL**](%s) in order to remove the application from your Jira instance.
 Don't forget to remove Jira-side webhook in [Jira System Settings/Webhooks](%s)'
 `
+	if failedUsers > 0 {
+		uninstallInstructions += fmt.Sprintf(
+			"\n:warning: Failed to fully disconnect %d user(s) from this instance; they may need to run `/jira disconnect` manually.",
+			failedUsers)
+	}
 	return p.responsef(header, uninstallInstructions, uninstalled.GetManageAppsURL(), uninstalled.GetManageWebhooksURL())
 }
 

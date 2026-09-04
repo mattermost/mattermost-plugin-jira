@@ -88,8 +88,10 @@ func (m *mockUserStoreForTokenExpiry) StoreConnection(types.ID, types.ID, *Conne
 func (m *mockUserStoreForTokenExpiry) LoadMattermostUserID(types.ID, string) (types.ID, error) {
 	return "", nil
 }
-func (m *mockUserStoreForTokenExpiry) CountUsers() (int, error)         { return 0, nil }
-func (m *mockUserStoreForTokenExpiry) MapUsers(func(*User) error) error { return nil }
+func (m *mockUserStoreForTokenExpiry) CountUsers() (int, error) { return 0, nil }
+func (m *mockUserStoreForTokenExpiry) MapUsers(func(*User) error) (int, error) {
+	return 0, nil
+}
 
 func TestDisconnectUserDueToExpiredToken(t *testing.T) {
 	testMattermostUserID := types.ID("test-mm-user-id")
@@ -368,8 +370,8 @@ func (m mockUserStoreForUtils) CountUsers() (int, error) {
 	return 0, nil
 }
 
-func (m mockUserStoreForUtils) MapUsers(func(*User) error) error {
-	return nil
+func (m mockUserStoreForUtils) MapUsers(func(*User) error) (int, error) {
+	return 0, nil
 }
 
 type mockInstanceStoreForUtils struct {

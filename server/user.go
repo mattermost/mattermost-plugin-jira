@@ -263,11 +263,23 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, conne
 }
 
 func (p *Plugin) DisconnectUser(instanceURL string, mattermostUserID types.ID) (*Connection, error) {
-	user, instance, err := p.LoadUserInstance(mattermostUserID, instanceURL)
+	user, instanceID, err := p.ResolveUserInstanceURL(mattermostUserID, instanceURL)
 	if err != nil {
 		return nil, err
 	}
-	return p.disconnectUser(instance, user)
+
+	// The instance may have been uninstalled while the user's record still
+	// references it. Clean up the record anyway rather than locking the
+	// user out of the one command that can fix it.
+	if _, err := p.instanceStore.LoadInstance(instanceID); err != nil {
+		if errors.Cause(err) != kvstore.ErrNotFound {
+			return nil, err
+		}
+		p.client.Log.Info("Disconnecting user from an instance that is no longer installed",
+			"mattermostUserID", mattermostUserID, "instanceID", instanceID)
+	}
+
+	return p.disconnectUser(instanceID, user)
 }
 
 func (p *Plugin) SetDefaultInstance(instanceURL string, mattermostUserID types.ID) error {
@@ -289,22 +301,25 @@ func (p *Plugin) SetDefaultInstance(instanceURL string, mattermostUserID types.I
 	return nil
 }
 
-func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, error) {
-	if !user.ConnectedInstances.Contains(instance.GetID()) {
-		return nil, errors.Wrapf(kvstore.ErrNotFound, "user is not connected to %q", instance.GetID())
+func (p *Plugin) disconnectUser(instanceID types.ID, user *User) (*Connection, error) {
+	if !user.ConnectedInstances.Contains(instanceID) {
+		return nil, errors.Wrapf(kvstore.ErrNotFound, "user is not connected to %q", instanceID)
 	}
-	conn, err := p.userStore.LoadConnection(instance.GetID(), user.MattermostUserID)
+	// LoadConnection does not error on a missing row; it returns a non-nil,
+	// empty Connection, which is fine here since we only need the ID to prune
+	// and (if present) the DisplayName for the caller's response.
+	conn, err := p.userStore.LoadConnection(instanceID, user.MattermostUserID)
 	if err != nil {
 		return nil, err
 	}
 
-	if user.DefaultInstanceID == instance.GetID() {
+	if user.DefaultInstanceID == instanceID {
 		user.DefaultInstanceID = ""
 	}
 
-	user.ConnectedInstances.Delete(instance.GetID())
+	user.ConnectedInstances.Delete(instanceID)
 
-	err = p.userStore.DeleteConnection(instance.GetID(), user.MattermostUserID)
+	err = p.userStore.DeleteConnection(instanceID, user.MattermostUserID)
 	if err != nil && errors.Cause(err) != kvstore.ErrNotFound {
 		return nil, err
 	}
@@ -313,18 +328,46 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 		return nil, err
 	}
 
-	p.cleanupDMSubscriptionsOnDisconnect(instance.GetID(), user.MattermostUserID.String())
+	p.cleanupDMSubscriptionsOnDisconnect(instanceID, user.MattermostUserID.String())
 
 	info, err := p.GetUserInfo(user.MattermostUserID, user)
 	if err != nil {
 		return nil, err
 	}
+	// GetUserInfo may have pruned other stale instances from the record
+	// while it was in hand; persist that so a single disconnect can recover
+	// a record with more than one dangling instance reference.
+	if info.reconciled {
+		if err := p.userStore.StoreUser(user); err != nil {
+			return nil, err
+		}
+	}
+
 	p.client.Frontend.PublishWebSocketEvent(websocketEventDisconnect, info.AsConfigMap(),
 		&model.WebsocketBroadcast{UserId: user.MattermostUserID.String()})
 
 	p.TrackUserEvent("userDisconnected", user.MattermostUserID.String(), nil)
 
 	return conn, nil
+}
+
+// reconcileUserInstances drops instances that are no longer installed from
+// the user's record, and clears a default that points at one of them. It
+// reports whether it changed anything, so callers can decide whether to
+// persist the result.
+func reconcileUserInstances(user *User, instances *Instances) bool {
+	changed := false
+	for _, instanceID := range user.ConnectedInstances.IDs() {
+		if !instances.Contains(instanceID) {
+			user.ConnectedInstances.Delete(instanceID)
+			changed = true
+		}
+	}
+	if user.DefaultInstanceID != "" && !user.ConnectedInstances.Contains(user.DefaultInstanceID) {
+		user.DefaultInstanceID = ""
+		changed = true
+	}
+	return changed
 }
 
 func (p *Plugin) GetJiraUserFromMentions(instanceID types.ID, mentions model.UserMentionMap, userKey string) (*jira.User, error) {

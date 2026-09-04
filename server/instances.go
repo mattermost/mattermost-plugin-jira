@@ -5,7 +5,6 @@ package main
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
@@ -177,64 +176,114 @@ func (p *Plugin) InstallInstance(newInstance Instance) error {
 	return nil
 }
 
-func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceType) (Instance, error) {
+func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceType) (Instance, int, error) {
 	var instance Instance
 	var updated *Instances
+	var failedUsers int
 	err := UpdateInstances(p.instanceStore,
 		func(instances *Instances) error {
 			if !instances.Contains(instanceID) {
 				return errors.Wrapf(kvstore.ErrNotFound, "instance %q", instanceID)
 			}
+
 			var err error
 			instance, err = p.instanceStore.LoadInstance(instanceID)
-			if err != nil {
-				if strings.Contains(err.Error(), "not found") {
-					instances.Delete(instanceID)
-					if err = p.instanceStore.StoreInstances(instances); err != nil {
-						return err
-					}
-					return nil
-				}
-
+			switch {
+			case err != nil && errors.Cause(err) != kvstore.ErrNotFound:
 				return err
-			}
-			if instanceType != instance.Common().Type {
-				return errors.Errorf("%s did not match instance %s type %s", instanceType, instanceID, instance.Common().Type)
+
+			case err != nil:
+				// The instance blob is already gone, most likely because a
+				// previous uninstall attempt deleted it but failed before
+				// removing it from the list. Validate the type from the list
+				// entry instead, and still run the user cleanup and list
+				// removal below rather than leaving users pointed at a dead
+				// instance.
+				common := instances.Get(instanceID)
+				if instanceType != common.Type {
+					return errors.Errorf("%s did not match instance %s type %s", instanceType, instanceID, common.Type)
+				}
+				instance = stubInstance(common)
+
+			default:
+				if instanceType != instance.Common().Type {
+					return errors.Errorf("%s did not match instance %s type %s", instanceType, instanceID, instance.Common().Type)
+				}
 			}
 
-			err = p.userStore.MapUsers(func(user *User) error {
-				if !user.ConnectedInstances.Contains(instance.GetID()) {
-					return nil
-				}
-
-				_, err = p.disconnectUser(instance, user)
-				if err != nil {
-					p.infof("UninstallInstance: failed to disconnect user: %v", err)
-				}
-				return nil
-			})
+			failedUsers, err = p.disconnectAllUsersFromInstance(instanceID)
 			if err != nil {
 				return err
 			}
 
 			instances.Delete(instanceID)
 			updated = instances
-			return p.instanceStore.DeleteInstance(instanceID)
+			return nil
 		})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	// Delete the instance blob only after the instance list has been
+	// durably updated to no longer reference it. An orphaned blob with no
+	// list entry is harmless, since nothing can resolve an instance ID that
+	// isn't in the list; an orphaned list entry pointing at a deleted blob
+	// is exactly what puts users into the stuck state this fixes.
+	if err := p.instanceStore.DeleteInstance(instanceID); err != nil {
+		p.errorf("UninstallInstance: failed to delete instance blob %q: %v", instanceID, err)
+	}
+
+	if updated == nil {
+		updated = NewInstances()
 	}
 
 	// Re-register the /jira command with the new number of instances.
-	err = p.registerJiraCommand(p.getConfig().EnableAutocomplete, updated.Len() > 1)
-	if err != nil {
+	if err := p.registerJiraCommand(p.getConfig().EnableAutocomplete, updated.Len() > 1); err != nil {
 		p.errorf("UninstallInstance: failed to re-register `/%s` command; please re-activate the plugin using the System Console. Error: %s",
 			commandTrigger, err.Error())
 	}
 
 	// Notify users we have uninstalled an instance
 	p.wsInstancesChanged(updated)
-	return instance, nil
+	return instance, failedUsers, nil
+}
+
+// disconnectAllUsersFromInstance disconnects every user connected to
+// instanceID. It does not require the instance to still be installed. It
+// returns the number of users that could not be cleaned up, whether due to
+// an unreadable user record or a failed disconnect; failures are logged and
+// skipped rather than aborting the sweep.
+func (p *Plugin) disconnectAllUsersFromInstance(instanceID types.ID) (int, error) {
+	failed := 0
+	failedReads, err := p.userStore.MapUsers(func(user *User) error {
+		if !user.ConnectedInstances.Contains(instanceID) {
+			return nil
+		}
+		if _, err := p.disconnectUser(instanceID, user); err != nil {
+			p.infof("UninstallInstance: failed to disconnect user %q from instance %q: %v", user.MattermostUserID, instanceID, err)
+			failed++
+		}
+		return nil
+	})
+	return failed + failedReads, err
+}
+
+// stubInstance builds a minimal Instance from list metadata alone, for a
+// record whose backing KV blob is already missing. It is only good for
+// read-only accessors like GetManageAppsURL/GetManageWebhooksURL that
+// callers need after a best-effort uninstall.
+func stubInstance(common *InstanceCommon) Instance {
+	switch common.Type {
+	case CloudOAuthInstanceType:
+		return &cloudOAuthInstance{InstanceCommon: common, JiraBaseURL: common.InstanceID.String()}
+	case CloudInstanceType:
+		return &cloudInstance{
+			InstanceCommon:           common,
+			AtlassianSecurityContext: &AtlassianSecurityContext{BaseURL: common.InstanceID.String()},
+		}
+	default:
+		return &serverInstance{InstanceCommon: common}
+	}
 }
 
 func (p *Plugin) wsInstancesChanged(instances *Instances) {
@@ -340,14 +389,32 @@ func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.I
 		instanceURL = instance.InstanceID.String()
 	}
 
+	// An explicitly requested instance is returned as-is, even if it is no
+	// longer installed: callers such as /jira disconnect need to be able to
+	// target a removed instance in order to clean up a stale record.
 	if types.ID(instanceURL) != "" {
 		return types.ID(instanceURL), nil
 	}
-	if user.DefaultInstanceID != "" && user.ConnectedInstances.Contains(user.DefaultInstanceID) {
+
+	// Only consider instances the user is connected to that are still
+	// installed when picking a default. A DefaultInstanceID or a lone
+	// ConnectedInstances entry that points at a removed instance must not
+	// be selected here, or every instance-resolving command fails as soon
+	// as the referenced instance is gone.
+	connected := NewInstances()
+	for _, id := range user.ConnectedInstances.IDs() {
+		if instances.Contains(id) {
+			connected.Set(instances.Get(id))
+		}
+	}
+	if connected.IsEmpty() {
+		return "", errors.Wrap(kvstore.ErrNotFound, "your account is not connected to Jira. Please use `/jira connect`")
+	}
+	if user.DefaultInstanceID != "" && connected.Contains(user.DefaultInstanceID) {
 		return user.DefaultInstanceID, nil
 	}
-	if user.ConnectedInstances.Len() == 1 {
-		return user.ConnectedInstances.IDs()[0], nil
+	if connected.Len() == 1 {
+		return connected.IDs()[0], nil
 	}
 	return "", errors.New("default jira instance not found, please run `/jira instance default <jiraURL>` to set one")
 }

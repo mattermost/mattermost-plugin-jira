@@ -69,7 +69,11 @@ type UserStore interface {
 	LoadMattermostUserID(instanceID types.ID, jiraUsername string) (types.ID, error)
 	DeleteConnection(instanceID, mattermostUserID types.ID) error
 	CountUsers() (int, error)
-	MapUsers(func(user *User) error) error
+	// MapUsers invokes f for every stored user record. It does not abort on
+	// a single unreadable record. It returns the number of records that
+	// failed to load, in addition to any error returned by f or by listing
+	// keys.
+	MapUsers(f func(user *User) error) (failedReads int, err error)
 }
 
 type OTSStore interface {
@@ -278,35 +282,42 @@ func (store store) CountUsers() (int, error) {
 	return count, nil
 }
 
-func (store store) MapUsers(f func(user *User) error) error {
+func (store store) MapUsers(f func(user *User) error) (int, error) {
+	// Collect every user_ key across all pages before invoking f. f is free
+	// to delete KV keys (e.g. via disconnectUser); those keys sort before
+	// user_ keys and deleting them during iteration would shift every
+	// subsequent offset-based page left, silently skipping users that were
+	// never visited.
+	var keys []string
 	for i := 0; ; i++ {
-		keys, err := store.plugin.client.KV.ListKeys(i, listPerPage)
+		page, err := store.plugin.client.KV.ListKeys(i, listPerPage)
 		if err != nil {
-			return err
+			return 0, err
 		}
-
-		for _, key := range keys {
-			if !strings.HasPrefix(key, prefixUser) {
-				continue
-			}
-
-			user := NewUser("")
-			err := store.get(key, user)
-			if err != nil {
-				return errors.WithMessage(err, fmt.Sprintf("failed to load Jira user for key:%s", key))
-			}
-
-			err = f(user)
-			if err != nil {
-				return err
+		for _, key := range page {
+			if strings.HasPrefix(key, prefixUser) {
+				keys = append(keys, key)
 			}
 		}
-
-		if len(keys) < listPerPage {
+		if len(page) < listPerPage {
 			break
 		}
 	}
-	return nil
+
+	failedReads := 0
+	for _, key := range keys {
+		user := NewUser("")
+		if err := store.get(key, user); err != nil {
+			store.plugin.errorf("MapUsers: failed to load Jira user for key %q: %v", key, err)
+			failedReads++
+			continue
+		}
+
+		if err := f(user); err != nil {
+			return failedReads, err
+		}
+	}
+	return failedReads, nil
 }
 
 func (store store) EnsureAuthTokenEncryptSecret() (secret []byte, returnErr error) {
