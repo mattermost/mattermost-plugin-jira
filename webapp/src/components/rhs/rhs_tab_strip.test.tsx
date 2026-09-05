@@ -4,7 +4,7 @@
 import React from 'react';
 import {fireEvent, render, screen} from '@testing-library/react';
 
-import {RHSTab} from 'types/model';
+import {RHSTab} from 'types/rhs';
 
 import RHSTabStrip from './rhs_tab_strip';
 

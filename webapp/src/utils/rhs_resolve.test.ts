@@ -1,7 +1,8 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Instance, InstanceType, RHSTab} from 'types/model';
+import {Instance, InstanceType} from 'types/model';
+import {RHSTab} from 'types/rhs';
 
 import {resolveRHSInstanceID, rhsTabsEqual} from './rhs_resolve';
 

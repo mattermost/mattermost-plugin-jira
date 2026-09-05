@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-import {RHSIssue} from 'types/model';
+import {RHSIssue} from 'types/rhs';
 import {formatRHSRelativeTime} from 'utils/rhs_time';
 
 import RHSIssueTypeIcon from './rhs_issue_type_icon';

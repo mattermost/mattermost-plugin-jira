@@ -1,9 +1,9 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 
-import {RHSErrorCode, RHSIssue} from 'types/model';
+import {RHSErrorCode, RHSIssue} from 'types/rhs';
 
 import RHSIssueRow from './rhs_issue_row';
 import {RHS_STRINGS} from './rhs_strings';
@@ -13,12 +13,13 @@ export type Props = {
     loading: boolean;
     isLast: boolean;
     error: RHSErrorCode | null;
-    nowMs: number;
     onLoadMore: () => void;
     onRetry: () => void;
 };
 
 export default function RHSIssueList(props: Props): JSX.Element {
+    const [nowMs] = useState(() => Date.now());
+
     return (
         <div
             className='jira-rhs-list'
@@ -28,7 +29,7 @@ export default function RHSIssueList(props: Props): JSX.Element {
                 <RHSIssueRow
                     key={issue.key}
                     issue={issue}
-                    nowMs={props.nowMs}
+                    nowMs={nowMs}
                 />
             ))}
             {props.loading && (

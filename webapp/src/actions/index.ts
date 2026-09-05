@@ -693,15 +693,9 @@ export const fetchIssueByKey = (issueKey: string, instanceID: string) => {
 
 export {
     fetchRHSIssues,
-    fetchRHSStatuses,
     loadMoreRHSIssues,
     refreshRHSIssues,
-    resetRHSIssuesInFlight,
     resolveAndFetchRHSIssues,
     restoreRHSViewState,
-    rhsIssuesFlightKey,
-    setRHSInstanceID,
-    setRHSSort,
-    setRHSTab,
     type ResolveAndFetchArgs,
 } from './rhs';

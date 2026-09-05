@@ -8,20 +8,13 @@ import React, {
     useState,
 } from 'react';
 
-import {RHSTab} from 'types/model';
+import {RHSTab, rhsTabIdentity} from 'types/rhs';
 import {rhsTabsEqual} from 'utils/rhs_resolve';
 
 export const RHS_TAB_PANEL_ID = 'jira-rhs-panel';
 
 export function rhsTabDomId(tab: RHSTab): string {
-    const parts = [tab.kind];
-    if (tab.key) {
-        parts.push(tab.key);
-    }
-    if (tab.id) {
-        parts.push(tab.id);
-    }
-    return 'jira-rhs-tab-' + parts.join('-');
+    return 'jira-rhs-tab-' + rhsTabIdentity(tab).replace(':', '-');
 }
 
 export type Props = {
@@ -123,7 +116,7 @@ export default function RHSTabStrip(props: Props): JSX.Element {
                     const tabId = rhsTabDomId(item);
                     return (
                         <button
-                            key={item.kind + ':' + (item.key || '') + ':' + (item.id || '')}
+                            key={rhsTabIdentity(item)}
                             id={tabId}
                             className={selected ? 'jira-rhs-tab jira-rhs-tab--selected' : 'jira-rhs-tab'}
                             role='tab'

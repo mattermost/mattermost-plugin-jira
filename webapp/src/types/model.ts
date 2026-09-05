@@ -192,103 +192,24 @@ export type Instance = {
     type: InstanceType;
 }
 
+export function isCloudInstance(instance: Instance): boolean {
+    switch (instance.type) {
+    case InstanceType.CLOUD:
+    case InstanceType.CLOUD_OAUTH:
+        return true;
+    case InstanceType.SERVER:
+        return false;
+    default: {
+        const exhaustive: never = instance.type;
+        return exhaustive;
+    }
+    }
+}
+
 export type PluginSettings = {
     ui_enabled: boolean;
     rhs_enabled: boolean;
     security_level_empty_for_jira_subscriptions: boolean;
-};
-
-export type RHSErrorCode =
-    'not_connected' |
-    'rate_limited' |
-    'not_authorized' |
-    'not_cloud' |
-    'invalid_request' |
-    'internal_error';
-
-export type RHSTabKind = 'assigned' | 'category' | 'status';
-
-export type RHSSort = 'updated' | 'created';
-
-export type RHSTab = {
-    kind: RHSTabKind;
-    name: string;
-    key?: string;
-    id?: string;
-};
-
-export type RHSIssueStatus = {
-    name: string;
-    categoryKey: string;
-};
-
-export type RHSIssue = {
-    key: string;
-    summary: string;
-    browseUrl: string;
-    status: RHSIssueStatus;
-    priority: string;
-    issueType: string;
-    issueTypeIconUrl?: string;
-    project: string;
-    assignee: string;
-    reporter: string;
-    created: string;
-    updated: string;
-    dueDate: string;
-    labels: string[];
-};
-
-export type RHSIssuesResponse = {
-    issues: RHSIssue[];
-    tabs: RHSTab[];
-    nextPageToken: string;
-    isLast: boolean;
-};
-
-export type RHSStatusCategory = {
-    id: number;
-    key: string;
-    name: string;
-};
-
-export type RHSStatusProject = {
-    id?: string;
-    key?: string;
-    name?: string;
-};
-
-export type RHSStatus = {
-    id: string;
-    name: string;
-    statusCategory: RHSStatusCategory;
-    project?: RHSStatusProject;
-};
-
-export type RHSStatusesResponse = {
-    statuses: RHSStatus[];
-    categories: RHSStatusCategory[];
-};
-
-export type RHSViewState = {
-    instance: string;
-    tab: RHSTab;
-    sort: RHSSort;
-};
-
-export const RHS_DEFAULT_SORT: RHSSort = 'updated';
-
-export const RHS_ASSIGNED_TAB_NAME = 'Assigned to me';
-
-export const RHS_DEFAULT_TAB: RHSTab = {
-    kind: 'assigned',
-    name: RHS_ASSIGNED_TAB_NAME,
-};
-
-export type FetchRHSIssuesArgs = {
-    instanceID: string;
-    tab: RHSTab;
-    sort: RHSSort;
 };
 
 export type GetConnectedResponse = {

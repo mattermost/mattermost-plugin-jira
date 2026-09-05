@@ -1,15 +1,15 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {Instance, isCloudInstance} from 'types/model';
 import {
-    Instance,
-    InstanceType,
     RHSErrorCode,
     RHSStatus,
     RHSStatusesResponse,
     RHSTab,
     RHS_DEFAULT_TAB,
-} from 'types/model';
+    rhsTabIdentity,
+} from 'types/rhs';
 
 export type RHSStatusTabsValue = Record<string, RHSTab[]>;
 
@@ -29,7 +29,7 @@ export const IN_PROGRESS_TAB: RHSTab = {
     name: 'In Progress',
 };
 
-export const ASSIGNED_OPTION_VALUE = 'assigned';
+export const ASSIGNED_OPTION_VALUE = rhsTabIdentity(ASSIGNED_TAB);
 
 export const ASSIGNED_OPTION: StatusTabOption = {
     label: ASSIGNED_TAB.name,
@@ -48,25 +48,11 @@ export const STATUS_TABS_LABEL = 'Status tabs';
 export const NO_CLOUD_INSTANCE_MESSAGE = 'Install a Jira Cloud instance to configure RHS status tabs.';
 export const UNABLE_TO_LOAD_STATUSES_MESSAGE = 'Unable to load statuses.';
 
-export function isCloudInstalledInstance(instance: Instance): boolean {
-    switch (instance.type) {
-    case InstanceType.CLOUD:
-    case InstanceType.CLOUD_OAUTH:
-        return true;
-    case InstanceType.SERVER:
-        return false;
-    default: {
-        const exhaustive: never = instance.type;
-        return exhaustive;
-    }
-    }
-}
-
 export function filterInstalledCloudInstances(instances: Instance[] | null): Instance[] {
     if (!instances) {
         return [];
     }
-    return instances.filter(isCloudInstalledInstance);
+    return instances.filter(isCloudInstance);
 }
 
 export function isTabsValueUnset(value: RHSStatusTabsValue | null, instanceID: string): boolean {
@@ -88,21 +74,6 @@ export function displayTabsForInstance(value: RHSStatusTabsValue | null, instanc
         return [ASSIGNED_TAB, IN_PROGRESS_TAB];
     }
     return [ASSIGNED_TAB, ...storedExtrasForInstance(value, instanceID)];
-}
-
-export function optionValueForTab(tab: RHSTab): string {
-    switch (tab.kind) {
-    case 'assigned':
-        return ASSIGNED_OPTION_VALUE;
-    case 'category':
-        return CATEGORY_OPTION_PREFIX + (tab.key || '');
-    case 'status':
-        return STATUS_OPTION_PREFIX + (tab.id || '');
-    default: {
-        const exhaustive: never = tab.kind;
-        return exhaustive;
-    }
-    }
 }
 
 export function tabFromOptionValue(value: string, options: StatusTabOption[]): RHSTab | null {
@@ -145,7 +116,7 @@ export function optionsFromTabs(tabs: RHSTab[]): StatusTabOption[] {
         }
         return {
             label: tab.name,
-            value: optionValueForTab(tab),
+            value: rhsTabIdentity(tab),
             tab,
         };
     });
@@ -166,24 +137,12 @@ export function extrasFromOptionValues(values: string[], options: StatusTabOptio
     return extras;
 }
 
-export function isVirtualSeedExtras(extras: RHSTab[]): boolean {
-    if (extras.length !== 1) {
-        return false;
-    }
-    const tab = extras[0];
-    return tab.kind === 'category' && tab.key === IN_PROGRESS_TAB.key;
-}
-
 export function buildPersistedValue(
     current: RHSStatusTabsValue | null,
     instanceID: string,
     extras: RHSTab[],
 ): RHSStatusTabsValue {
     const next: RHSStatusTabsValue = current && typeof current === 'object' ? {...current} : {};
-    if (isVirtualSeedExtras(extras) && isTabsValueUnset(current, instanceID)) {
-        delete next[instanceID];
-        return next;
-    }
     next[instanceID] = extras;
     return next;
 }
@@ -221,7 +180,7 @@ export function buildStatusOptionGroups(data: RHSStatusesResponse): StatusOption
             };
             return {
                 label: category.name,
-                value: optionValueForTab(tab),
+                value: rhsTabIdentity(tab),
                 tab,
             };
         });
@@ -234,7 +193,7 @@ export function buildStatusOptionGroups(data: RHSStatusesResponse): StatusOption
         };
         const option: StatusTabOption = {
             label: status.name,
-            value: optionValueForTab(tab),
+            value: rhsTabIdentity(tab),
             tab,
         };
         const description = statusProjectDescription(status);

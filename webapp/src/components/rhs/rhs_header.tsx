@@ -3,9 +3,8 @@
 
 import React from 'react';
 
-import {RHSSort} from 'types/model';
+import {RHSSort} from 'types/rhs';
 
-import RHSSelect from './rhs_select';
 import {RHS_STRINGS} from './rhs_strings';
 
 export type Props = {
@@ -23,6 +22,13 @@ const SORT_OPTIONS: Array<{value: RHSSort; label: string}> = [
 ];
 
 export default function RHSHeader(props: Props): JSX.Element {
+    const onSortChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const next = event.target.value;
+        if (next === 'updated' || next === 'created') {
+            props.onSortChange(next);
+        }
+    };
+
     return (
         <div
             className='jira-rhs-header'
@@ -30,13 +36,22 @@ export default function RHSHeader(props: Props): JSX.Element {
         >
             {props.instancePicker}
             <div className='jira-rhs-header-actions'>
-                <RHSSelect
-                    ariaLabel={RHS_STRINGS.sortLabel}
-                    testId='rhs-sort'
+                <select
+                    className='jira-rhs-select'
+                    aria-label={RHS_STRINGS.sortLabel}
+                    data-testid='rhs-sort'
                     value={props.sort}
-                    options={SORT_OPTIONS}
-                    onChange={props.onSortChange}
-                />
+                    onChange={onSortChange}
+                >
+                    {SORT_OPTIONS.map((option) => (
+                        <option
+                            key={option.value}
+                            value={option.value}
+                        >
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
                 <button
                     type='button'
                     className='btn btn-icon btn-sm'

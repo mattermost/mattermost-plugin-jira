@@ -6,23 +6,27 @@ import {Dispatch, bindActionCreators} from 'redux';
 
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
-import {fetchRHSStatuses, getConnected} from '../../../actions';
-import {getInstalledInstances} from '../../../selectors';
+import {getConnected} from '../../../actions';
+import {getInstalledInstances, getPluginServerRoute} from '../../../selectors';
 
 import {GlobalState} from 'types/store';
 
 import RHSStatusSetting, {Props} from './rhs_status_setting';
 
+type RHSStatusDispatchProps = Pick<Props, 'getConnected'>;
+
 const mapStateToProps = (state: GlobalState) => {
     return {
         installedInstances: getInstalledInstances(state),
         theme: getTheme(state),
+        pluginServerRoute: getPluginServerRoute(state),
     };
 };
 
-const mapDispatchToProps = (dispatch: Dispatch) => bindActionCreators({
-    fetchRHSStatuses,
+const rhsStatusDispatch = {
     getConnected,
-}, dispatch) as unknown as Pick<Props, 'fetchRHSStatuses' | 'getConnected'>;
+};
+
+const mapDispatchToProps = (dispatch: Dispatch) => bindActionCreators<typeof rhsStatusDispatch, RHSStatusDispatchProps>(rhsStatusDispatch, dispatch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(RHSStatusSetting);

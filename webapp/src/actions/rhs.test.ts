@@ -4,29 +4,21 @@
 import {applyMiddleware, createStore} from 'redux';
 import thunk from 'redux-thunk';
 
-import {
-    Instance,
-    InstanceType,
-    RHSIssuesResponse,
-    RHSTab,
-} from 'types/model';
+import {Instance, InstanceType} from 'types/model';
+import {RHSIssuesResponse, RHSTab} from 'types/rhs';
 import {pluginStateKey} from 'types/store';
-import {isRHSPopoutPathname} from 'utils/rhs_popout';
 import {saveRHSViewState} from 'utils/rhs_view_state';
 
 import ActionTypes from '../action_types';
-import {RHSFetchError} from '../client';
+import {RHSFetchError} from '../client/rhs';
 import reducer from '../reducers';
 
 import {
     fetchRHSIssues,
-    fetchRHSStatuses,
     loadMoreRHSIssues,
     refreshRHSIssues,
-    resetRHSIssuesInFlight,
     resolveAndFetchRHSIssues,
     restoreRHSViewState,
-    setRHSSort,
 } from './rhs';
 
 const assignedTab: RHSTab = {kind: 'assigned', name: 'Assigned to me'};
@@ -87,88 +79,19 @@ function mockFetchOk(body: RHSIssuesResponse) {
     return fetchMock;
 }
 
-function pluginFrom(store: ReturnType<typeof makeRHSStore>) {
-    return store.getState()[pluginStateKey];
+function rhsFrom(store: ReturnType<typeof makeRHSStore>) {
+    return store.getState()[pluginStateKey].rhs;
 }
 
 describe('rhs actions', () => {
     beforeEach(() => {
-        resetRHSIssuesInFlight();
         (global.fetch as jest.Mock).mockReset();
         localStorage.clear();
     });
 
     afterEach(() => {
-        resetRHSIssuesInFlight();
         (global.fetch as jest.Mock).mockReset();
         localStorage.clear();
-    });
-
-    test('a second fetchRHSIssues for the same instance tab sort while in flight issues no second network call', async () => {
-        const fetchMock = global.fetch as jest.Mock;
-        let resolveFetch: (value: unknown) => void = () => {
-            // filled in by the mock
-        };
-        fetchMock.mockImplementation(() => new Promise((resolve) => {
-            resolveFetch = resolve;
-        }));
-
-        const store = makeRHSStore();
-        const args = {instanceID: 'https://example.atlassian.net', tab: assignedTab, sort: 'updated' as const};
-
-        const p1 = store.dispatch(fetchRHSIssues(args) as any);
-        const p2 = store.dispatch(fetchRHSIssues(args) as any);
-
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-
-        resolveFetch({
-            ok: true,
-            json: () => Promise.resolve({
-                issues: [],
-                tabs: [assignedTab],
-                nextPageToken: '',
-                isLast: true,
-            }),
-        });
-
-        await p1;
-        await p2;
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-    });
-
-    test('fetchRHSIssues for a different tab while in flight does call fetch again', async () => {
-        const fetchMock = global.fetch as jest.Mock;
-        const resolvers: Array<(value: unknown) => void> = [];
-        fetchMock.mockImplementation(() => new Promise((resolve) => {
-            resolvers.push(resolve);
-        }));
-
-        const store = makeRHSStore();
-        const p1 = store.dispatch(fetchRHSIssues({
-            instanceID: 'https://example.atlassian.net',
-            tab: assignedTab,
-            sort: 'updated',
-        }) as any);
-        const p2 = store.dispatch(fetchRHSIssues({
-            instanceID: 'https://example.atlassian.net',
-            tab: {kind: 'category', name: 'In Progress', key: 'indeterminate'},
-            sort: 'updated',
-        }) as any);
-
-        expect(fetchMock).toHaveBeenCalledTimes(2);
-
-        const empty = {
-            ok: true,
-            json: () => Promise.resolve({
-                issues: [],
-                tabs: [assignedTab],
-                nextPageToken: '',
-                isLast: true,
-            }),
-        };
-        resolvers.forEach((resolve) => resolve(empty));
-        await p1;
-        await p2;
     });
 
     test('a slower Assigned fetch does not overwrite a later In Progress fetch', async () => {
@@ -222,26 +145,12 @@ describe('rhs actions', () => {
         });
         await assignedPending;
 
-        const plugin = pluginFrom(store);
-        expect(plugin.rhsTab.kind).toBe('category');
-        expect(plugin.rhsTab.key).toBe('indeterminate');
-        expect(plugin.rhsIssues.map((issue: {key: string}) => issue.key)).toEqual(['TES-IP']);
-    });
-
-    test('fetchRHSIssues after the in-flight request settles does call fetch again', async () => {
-        const fetchMock = mockFetchOk({
-            issues: [],
-            tabs: [assignedTab],
-            nextPageToken: '',
-            isLast: true,
-        });
-        const store = makeRHSStore();
-        const args = {instanceID: 'https://example.atlassian.net', tab: assignedTab, sort: 'updated' as const};
-
-        await store.dispatch(fetchRHSIssues(args) as any);
-        await store.dispatch(fetchRHSIssues(args) as any);
-
-        expect(fetchMock).toHaveBeenCalledTimes(2);
+        const rhs = rhsFrom(store);
+        expect(rhs.tab.kind).toBe('category');
+        if (rhs.tab.kind === 'category') {
+            expect(rhs.tab.key).toBe('indeterminate');
+        }
+        expect(rhs.issues.map((issue: {key: string}) => issue.key)).toEqual(['TES-IP']);
     });
 
     test('changing sort resets the list and cursor rather than appending', async () => {
@@ -254,11 +163,11 @@ describe('rhs actions', () => {
             sort: 'updated',
         }) as any);
 
-        let plugin = pluginFrom(store);
-        expect(plugin.rhsIssues).toHaveLength(1);
-        expect(plugin.rhsNextPageToken).toBe('tok-page-2');
-        expect(plugin.rhsIsLast).toBe(false);
-        expect(plugin.rhsLoading).toBe(false);
+        let rhs = rhsFrom(store);
+        expect(rhs.issues).toHaveLength(1);
+        expect(rhs.nextPageToken).toBe('tok-page-2');
+        expect(rhs.isLast).toBe(false);
+        expect(rhs.loading).toBe(false);
 
         fetchMock.mockImplementation(() => Promise.resolve({
             ok: true,
@@ -280,10 +189,10 @@ describe('rhs actions', () => {
             sort: 'created',
         }) as any);
 
-        plugin = pluginFrom(store);
-        expect(plugin.rhsIssues).toHaveLength(1);
-        expect(plugin.rhsIssues[0].key).toBe('TES-9');
-        expect(plugin.rhsNextPageToken).toBe('');
+        rhs = rhsFrom(store);
+        expect(rhs.issues).toHaveLength(1);
+        expect(rhs.issues[0].key).toBe('TES-9');
+        expect(rhs.nextPageToken).toBe('');
     });
 
     test('loadMoreRHSIssues appends rather than replaces', async () => {
@@ -312,10 +221,10 @@ describe('rhs actions', () => {
 
         await store.dispatch(loadMoreRHSIssues() as any);
 
-        const plugin = pluginFrom(store);
-        expect(plugin.rhsIssues.map((issue: {key: string}) => issue.key)).toEqual(['TES-1', 'TES-2']);
+        const rhs = rhsFrom(store);
+        expect(rhs.issues.map((issue: {key: string}) => issue.key)).toEqual(['TES-1', 'TES-2']);
         expect(fetchMock.mock.calls[1][0]).toContain('next_page_token=tok-page-2');
-        expect(plugin.rhsLoading).toBe(false);
+        expect(rhs.loading).toBe(false);
     });
 
     test('loadMoreRHSIssues does not fetch when isLast', async () => {
@@ -391,9 +300,13 @@ describe('rhs actions', () => {
         });
         await loadMorePending;
 
-        const plugin = pluginFrom(store);
-        expect(plugin.rhsTab.key).toBe('indeterminate');
-        expect(plugin.rhsIssues.map((issue: {key: string}) => issue.key)).toEqual(['TES-IP']);
+        const rhs = rhsFrom(store);
+        if (rhs.tab.kind === 'category') {
+            expect(rhs.tab.key).toBe('indeterminate');
+        } else {
+            throw new Error('expected category tab');
+        }
+        expect(rhs.issues.map((issue: {key: string}) => issue.key)).toEqual(['TES-IP']);
     });
 
     test('refresh while load-more is in flight issues a new page-1 request and ignores the append', async () => {
@@ -448,12 +361,12 @@ describe('rhs actions', () => {
         });
         await loadMorePending;
 
-        const plugin = pluginFrom(store);
-        expect(plugin.rhsIssues.map((issue: {key: string}) => issue.key)).toEqual(['TES-9']);
-        expect(plugin.rhsNextPageToken).toBe('tok-refresh');
+        const rhs = rhsFrom(store);
+        expect(rhs.issues.map((issue: {key: string}) => issue.key)).toEqual(['TES-9']);
+        expect(rhs.nextPageToken).toBe('tok-refresh');
     });
 
-    test('rhsLoading is true and issues are empty during a page-1 fetch', async () => {
+    test('loading is true and issues are empty during a page-1 fetch', async () => {
         const fetchMock = global.fetch as jest.Mock;
         let resolveFetch: (value: unknown) => void = () => {
             // filled in by the mock
@@ -469,10 +382,10 @@ describe('rhs actions', () => {
             sort: 'updated',
         }) as any);
 
-        const plugin = pluginFrom(store);
-        expect(plugin.rhsLoading).toBe(true);
-        expect(plugin.rhsIssues).toHaveLength(0);
-        expect(plugin.rhsError).toBeNull();
+        const rhs = rhsFrom(store);
+        expect(rhs.loading).toBe(true);
+        expect(rhs.issues).toHaveLength(0);
+        expect(rhs.error).toBeNull();
 
         resolveFetch({
             ok: true,
@@ -504,35 +417,49 @@ describe('rhs actions', () => {
             sort: 'updated',
         }) as any);
 
-        const plugin = pluginFrom(store);
-        expect(plugin.rhsError).toBe('not_connected');
-        expect(plugin.rhsLoading).toBe(false);
+        const rhs = rhsFrom(store);
+        expect(rhs.error).toBe('not_connected');
+        expect(rhs.loading).toBe(false);
         expect(result.error).toBeInstanceOf(RHSFetchError);
         expect(result.error.errorCode).toBe('not_connected');
     });
 
-    test('fetchRHSStatuses returns data without writing issue slices', async () => {
-        const fetchMock = global.fetch as jest.Mock;
-        fetchMock.mockImplementation(() => Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({statuses: [], categories: []}),
-        }));
-
+    test('fetchRHSIssues persists view state keyed by user id', async () => {
+        mockFetchOk({
+            issues: [],
+            tabs: [assignedTab],
+            nextPageToken: '',
+            isLast: true,
+        });
         const store = makeRHSStore();
-        const result = await store.dispatch(fetchRHSStatuses('https://example.atlassian.net') as any);
-
-        const plugin = pluginFrom(store);
-        expect(plugin.rhsIssues).toEqual([]);
-        expect(plugin.rhsLoading).toBe(false);
-        expect(result).toEqual({data: {statuses: [], categories: []}});
-    });
-
-    test('setRHSSort persists view state keyed by user id', () => {
-        const store = makeRHSStore();
-        store.dispatch(setRHSSort('created') as any);
+        await store.dispatch(fetchRHSIssues({
+            instanceID: 'https://example.atlassian.net',
+            tab: assignedTab,
+            sort: 'created',
+        }) as any);
 
         const stored = JSON.parse(localStorage.getItem('jira:rhs-view:user-1') as string);
         expect(stored.sort).toBe('created');
+        expect(stored.instance).toBe('https://example.atlassian.net');
+        expect(stored.tab.kind).toBe('assigned');
+    });
+
+    test('restoreRHSViewState hydrates instance tab and sort without fetching', () => {
+        saveRHSViewState('user-1', {
+            instance: 'https://oauth.example.atlassian.net',
+            tab: inProgressTab,
+            sort: 'created',
+        });
+
+        const store = makeRHSStore();
+        store.dispatch(restoreRHSViewState());
+
+        const rhs = rhsFrom(store);
+        expect(rhs.instanceID).toBe('https://oauth.example.atlassian.net');
+        expect(rhs.sort).toBe('created');
+        expect(rhs.tab).toEqual(inProgressTab);
+        expect(rhs.issues).toEqual([]);
+        expect(global.fetch as jest.Mock).not.toHaveBeenCalled();
     });
 
     test('resolveAndFetchRHSIssues does not fetch when no connected Cloud instance', async () => {
@@ -544,62 +471,28 @@ describe('rhs actions', () => {
         expect(fetchMock).toHaveBeenCalledTimes(0);
     });
 
-    test('resolveAndFetchRHSIssues retries Assigned after invalid_request on a vanished tab', async () => {
+    test('resolveAndFetchRHSIssues does not retry Assigned after invalid_request', async () => {
         const vanishedTab: RHSTab = {kind: 'category', name: 'In Progress', key: 'indeterminate'};
-        const fetchMock = global.fetch as jest.Mock;
-        fetchMock
-            .mockImplementationOnce(() => Promise.resolve({
-                ok: false,
-                status: 400,
-                text: () => Promise.resolve(JSON.stringify({
-                    error: 'invalid_request',
-                    message: 'unknown tab',
-                })),
-            }))
-            .mockImplementationOnce(() => Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve({
-                    issues: [],
-                    tabs: [assignedTab],
-                    nextPageToken: '',
-                    isLast: true,
-                }),
-            }));
-
-        const store = makeRHSStore();
-        seedConnectedCloud(store);
-
-        await store.dispatch(resolveAndFetchRHSIssues({tab: vanishedTab}) as any);
-
-        expect(fetchMock).toHaveBeenCalledTimes(2);
-        const plugin = pluginFrom(store);
-        expect(plugin.rhsTab.kind).toBe('assigned');
-        expect(plugin.rhsError).toBeNull();
-    });
-
-    test('resolveAndFetchRHSIssues does not retry Assigned when the first error is invalid_request on Assigned', async () => {
         const fetchMock = global.fetch as jest.Mock;
         fetchMock.mockImplementation(() => Promise.resolve({
             ok: false,
             status: 400,
             text: () => Promise.resolve(JSON.stringify({
                 error: 'invalid_request',
-                message: 'bad assigned request',
+                message: 'unknown tab',
             })),
         }));
 
         const store = makeRHSStore();
         seedConnectedCloud(store);
 
-        await store.dispatch(resolveAndFetchRHSIssues() as any);
+        await store.dispatch(resolveAndFetchRHSIssues({tab: vanishedTab}) as any);
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(pluginFrom(store).rhsError).toBe('invalid_request');
+        expect(rhsFrom(store).error).toBe('invalid_request');
     });
 
-    test('a simulated /_popout/ pathname rehydrates the persisted view state and triggers a fresh issues fetch', async () => {
-        expect(isRHSPopoutPathname('/_popout/rhs/team/plugin/jira')).toBe(true);
-
+    test('hydrated view state triggers a fresh issues fetch with the tab identity', async () => {
         const saved = {
             instance: 'https://oauth.example.atlassian.net',
             tab: inProgressTab,
@@ -622,9 +515,9 @@ describe('rhs actions', () => {
         });
 
         store.dispatch(restoreRHSViewState());
-        expect(pluginFrom(store).rhsInstanceID).toBe(saved.instance);
-        expect(pluginFrom(store).rhsSort).toBe('created');
-        expect(pluginFrom(store).rhsIssues).toEqual([]);
+        expect(rhsFrom(store).instanceID).toBe(saved.instance);
+        expect(rhsFrom(store).sort).toBe('created');
+        expect(rhsFrom(store).issues).toEqual([]);
 
         const fetchMock = mockFetchOk(page1);
         await store.dispatch(resolveAndFetchRHSIssues() as any);
@@ -632,9 +525,9 @@ describe('rhs actions', () => {
         const url = String(fetchMock.mock.calls[0][0]);
         expect(url).toContain('/api/v2/rhs/issues');
         expect(url).toContain('sort=created');
-        expect(url).toContain('tab_kind=category');
-        expect(url).toContain('tab_key=indeterminate');
-        expect(pluginFrom(store).rhsIssues.length).toBeGreaterThan(0);
+        expect(url).toContain('tab=' + encodeURIComponent('category:indeterminate'));
+        expect(url).not.toContain('tab_kind=');
+        expect(rhsFrom(store).issues.length).toBeGreaterThan(0);
     });
 });
 
