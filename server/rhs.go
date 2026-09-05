@@ -149,28 +149,18 @@ func normalizeRHSIssues(instance Instance, issues []jira.Issue) []RHSIssue {
 	return out
 }
 
-func pickRHSTab(tabs []RHSTabEntry, kind, key, id string) (RHSTabEntry, error) {
-	if kind == "" {
-		kind = string(RHSTabKindAssigned)
+func pickRHSTab(tabs []RHSTabEntry, identity string) RHSTabEntry {
+	parsed, err := parseRHSTabIdentity(identity)
+	if err != nil {
+		return rhsAssignedTab()
 	}
+	want := rhsTabIdentity(parsed)
 	for _, tab := range tabs {
-		if string(tab.Kind) != kind {
-			continue
-		}
-		switch tab.Kind {
-		case RHSTabKindAssigned:
-			return tab, nil
-		case RHSTabKindCategory:
-			if tab.Key == key {
-				return tab, nil
-			}
-		case RHSTabKindStatus:
-			if tab.ID == id {
-				return tab, nil
-			}
+		if rhsTabIdentity(tab) == want {
+			return tab
 		}
 	}
-	return RHSTabEntry{}, errors.Wrapf(ErrInvalidRHSTab, "tab %s/%s/%s is not in the resolved list", kind, key, id)
+	return rhsAssignedTab()
 }
 
 type rhsIssuesResult struct {
@@ -180,7 +170,7 @@ type rhsIssuesResult struct {
 	IsLast        bool          `json:"isLast"`
 }
 
-func (p *Plugin) getRHSIssues(instanceID, mattermostUserID types.ID, tabKind, tabKey, tabID, sort, nextPageToken string) (*rhsIssuesResult, error) {
+func (p *Plugin) getRHSIssues(instanceID, mattermostUserID types.ID, tabIdentity, sort, nextPageToken string) (*rhsIssuesResult, error) {
 	instance, client, err := p.resolveRHSUserClient(instanceID, mattermostUserID)
 	if err != nil {
 		return nil, err
@@ -195,10 +185,7 @@ func (p *Plugin) getRHSIssues(instanceID, mattermostUserID types.ID, tabKind, ta
 	configured := conf.RHSStatusTabs[string(instance.GetID())]
 	tabs := resolveTabs(configured, entry.statuses, entry.categories)
 
-	selected, err := pickRHSTab(tabs, tabKind, tabKey, tabID)
-	if err != nil {
-		return nil, err
-	}
+	selected := pickRHSTab(tabs, tabIdentity)
 	if sort == "" {
 		sort = rhsDefaultSort
 	}

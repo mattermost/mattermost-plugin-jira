@@ -261,7 +261,7 @@ func TestCloudRHSLookupStatusProjects(t *testing.T) {
 		}`))
 	})
 
-	got, err := client.lookupStatusProjects([]string{"10000", "missing"})
+	got, err := client.lookupStatusProjects([]string{"10000", "", "10000", "missing"})
 	require.NoError(t, err)
 	require.Len(t, got, 1)
 	assert.Equal(t, "Playbooks", got["10000"].Name)

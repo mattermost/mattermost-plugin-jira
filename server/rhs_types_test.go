@@ -204,6 +204,76 @@ func TestJiraStatusUnmarshalsProjectScope(t *testing.T) {
 	assert.Equal(t, []string{"10000"}, uniqueStatusProjectIDs(statuses))
 }
 
+func TestUniqueIDs(t *testing.T) {
+	assert.Empty(t, uniqueIDs(nil))
+	assert.Empty(t, uniqueIDs([]string{}))
+	assert.Empty(t, uniqueIDs([]string{"", ""}))
+	assert.Equal(t, []string{"a", "b", "c"}, uniqueIDs([]string{"a", "", "b", "a", "c", "b", ""}))
+}
+
+func TestRHSTabIdentity(t *testing.T) {
+	assert.Equal(t, "assigned", rhsTabIdentity(rhsAssignedTab()))
+	assert.Equal(t, "assigned", rhsTabIdentity(RHSTabEntry{Kind: RHSTabKindAssigned}))
+	assert.Equal(t, "category:indeterminate", rhsTabIdentity(RHSTabEntry{
+		Kind: RHSTabKindCategory, Key: statusCategoryKeyIndeterminate, Name: "In Progress",
+	}))
+	assert.Equal(t, "status:10001", rhsTabIdentity(RHSTabEntry{
+		Kind: RHSTabKindStatus, ID: "10001", Name: "Backlog",
+	}))
+}
+
+func TestParseRHSTabIdentity(t *testing.T) {
+	t.Run("empty and assigned", func(t *testing.T) {
+		for _, s := range []string{"", "assigned"} {
+			got, err := parseRHSTabIdentity(s)
+			require.NoError(t, err)
+			assert.Equal(t, rhsAssignedTab(), got)
+			assert.Equal(t, rhsAssignedTabName, got.Name)
+		}
+	})
+
+	t.Run("category and status may have empty name", func(t *testing.T) {
+		cat, err := parseRHSTabIdentity("category:indeterminate")
+		require.NoError(t, err)
+		assert.Equal(t, RHSTabKindCategory, cat.Kind)
+		assert.Equal(t, statusCategoryKeyIndeterminate, cat.Key)
+		assert.Empty(t, cat.Name)
+		assert.Empty(t, cat.ID)
+
+		st, err := parseRHSTabIdentity("status:10001")
+		require.NoError(t, err)
+		assert.Equal(t, RHSTabKindStatus, st.Kind)
+		assert.Equal(t, "10001", st.ID)
+		assert.Empty(t, st.Name)
+		assert.Empty(t, st.Key)
+	})
+
+	t.Run("unparseable", func(t *testing.T) {
+		for _, s := range []string{"nope", "assigned:extra", "category:", "status:", "foo:bar"} {
+			got, err := parseRHSTabIdentity(s)
+			require.Error(t, err, s)
+			assert.Equal(t, RHSTabEntry{}, got)
+		}
+	})
+}
+
+func TestPickRHSTab(t *testing.T) {
+	tabs := []RHSTabEntry{
+		rhsAssignedTab(),
+		{Kind: RHSTabKindCategory, Key: statusCategoryKeyIndeterminate, Name: "In Progress"},
+		{Kind: RHSTabKindStatus, ID: "10001", Name: "Backlog"},
+	}
+
+	assert.Equal(t, tabs[0], pickRHSTab(tabs, ""))
+	assert.Equal(t, tabs[0], pickRHSTab(tabs, "assigned"))
+	assert.Equal(t, tabs[1], pickRHSTab(tabs, "category:indeterminate"))
+	assert.Equal(t, tabs[2], pickRHSTab(tabs, "status:10001"))
+	assert.Equal(t, rhsAssignedTab(), pickRHSTab(tabs, "status:does-not-exist"))
+	assert.Equal(t, rhsAssignedTab(), pickRHSTab(tabs, "category:missing"))
+	assert.Equal(t, rhsAssignedTab(), pickRHSTab(tabs, "nope"))
+	assert.Equal(t, rhsAssignedTab(), pickRHSTab(nil, "status:10001"))
+}
+
 func TestApplyStatusProjects(t *testing.T) {
 	global := &JiraStatus{ID: "3", Name: "In Progress"}
 	scoped := &JiraStatus{

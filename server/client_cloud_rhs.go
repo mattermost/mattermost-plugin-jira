@@ -83,24 +83,8 @@ func (client jiraCloudClient) ListStatuses() ([]*JiraStatus, error) {
 	return result, nil
 }
 
-func uniqueLookupProjectIDs(ids []string) []string {
-	seen := make(map[string]struct{}, len(ids))
-	out := make([]string, 0, len(ids))
-	for _, id := range ids {
-		if id == "" {
-			continue
-		}
-		if _, ok := seen[id]; ok {
-			continue
-		}
-		seen[id] = struct{}{}
-		out = append(out, id)
-	}
-	return out
-}
-
 func (client jiraCloudClient) lookupStatusProjects(ids []string) (map[string]JiraStatusProject, error) {
-	unique := uniqueLookupProjectIDs(ids)
+	unique := uniqueIDs(ids)
 	if len(unique) == 0 {
 		return nil, nil
 	}

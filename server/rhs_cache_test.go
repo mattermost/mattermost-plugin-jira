@@ -20,20 +20,25 @@ import (
 )
 
 type countingRHSStatusClient struct {
-	mu          sync.Mutex
-	statusCalls int
-	catCalls    int
-	sleep       time.Duration
-	statuses    []*JiraStatus
-	categories  []*JiraStatusCategory
-	statusErr   error
-	catErr      error
+	mu            sync.Mutex
+	statusCalls   int
+	catCalls      int
+	sleep         time.Duration
+	statuses      []*JiraStatus
+	categories    []*JiraStatusCategory
+	statusErr     error
+	catErr        error
+	statusStarted chan struct{}
+	catStarted    chan struct{}
+	block         chan struct{}
 }
 
 func (c *countingRHSStatusClient) ListStatuses() ([]*JiraStatus, error) {
 	c.mu.Lock()
 	c.statusCalls++
 	c.mu.Unlock()
+	c.signalStart(c.statusStarted)
+	c.waitBlock()
 	if c.sleep > 0 {
 		time.Sleep(c.sleep)
 	}
@@ -47,10 +52,30 @@ func (c *countingRHSStatusClient) ListStatusCategories() ([]*JiraStatusCategory,
 	c.mu.Lock()
 	c.catCalls++
 	c.mu.Unlock()
+	c.signalStart(c.catStarted)
+	c.waitBlock()
 	if c.catErr != nil {
 		return nil, c.catErr
 	}
 	return c.categories, nil
+}
+
+func (c *countingRHSStatusClient) signalStart(ch chan struct{}) {
+	if ch == nil {
+		return
+	}
+	select {
+	case <-ch:
+	default:
+		close(ch)
+	}
+}
+
+func (c *countingRHSStatusClient) waitBlock() {
+	if c.block == nil {
+		return
+	}
+	<-c.block
 }
 
 func (c *countingRHSStatusClient) counts() (int, int) {
@@ -638,4 +663,103 @@ func TestRHSCacheConcurrentWarmDifferentUsersEachFetch(t *testing.T) {
 	assert.Equal(t, 1, statusA)
 	assert.Equal(t, 1, statusB)
 	assert.Len(t, p.rhsStatusCache, 2)
+}
+
+func TestRHSCacheFetchesStatusesAndCategoriesInParallel(t *testing.T) {
+	api := &plugintest.API{}
+	p := setupTestPlugin(api)
+	statuses, categories := fixtureStatusesAndCategories(t)
+	statusStarted := make(chan struct{})
+	catStarted := make(chan struct{})
+	block := make(chan struct{})
+	t.Cleanup(func() {
+		select {
+		case <-block:
+		default:
+			close(block)
+		}
+	})
+	client := &countingRHSStatusClient{
+		statuses:      statuses,
+		categories:    categories,
+		statusStarted: statusStarted,
+		catStarted:    catStarted,
+		block:         block,
+	}
+
+	done := make(chan struct{})
+	var got *rhsStatusCacheEntry
+	var err error
+	go func() {
+		defer close(done)
+		got, err = p.fetchRHSStatuses(client)
+	}()
+
+	wait := func(ch chan struct{}, name string) {
+		t.Helper()
+		select {
+		case <-ch:
+		case <-time.After(time.Second):
+			t.Fatalf("timed out waiting for %s to start; fetches were not in flight together", name)
+		}
+	}
+	wait(statusStarted, "ListStatuses")
+	wait(catStarted, "ListStatusCategories")
+	close(block)
+	<-done
+
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	require.Len(t, got.statuses, 2)
+	require.Len(t, got.categories, 4)
+	statusCalls, catCalls := client.counts()
+	assert.Equal(t, 1, statusCalls)
+	assert.Equal(t, 1, catCalls)
+}
+
+func TestRHSCacheEnrichDoesNotMutateCachedStatuses(t *testing.T) {
+	api := &plugintest.API{}
+	p := setupTestPlugin(api)
+	statuses := []*JiraStatus{
+		{
+			ID:   "10042",
+			Name: "In Progress",
+			Scope: &JiraStatusScope{
+				Type:    "PROJECT",
+				Project: &JiraStatusScopeProject{ID: "10000"},
+			},
+		},
+	}
+	categories := []*JiraStatusCategory{{ID: 4, Key: statusCategoryKeyIndeterminate, Name: "In Progress"}}
+	client := &lookupRHSStatusClient{
+		countingRHSStatusClient: countingRHSStatusClient{statuses: statuses, categories: categories},
+		projects: map[string]JiraStatusProject{
+			"10000": {ID: "10000", Key: "PLAY", Name: "Playbooks"},
+		},
+	}
+	id := types.ID("https://a.example.atlassian.net")
+
+	adminCopy, err := getCached(p, id, client)
+	require.NoError(t, err)
+	require.Len(t, adminCopy.statuses, 1)
+	assert.Nil(t, adminCopy.statuses[0].Project)
+
+	p.enrichStatusesWithProjects(client, adminCopy.statuses)
+	require.NotNil(t, adminCopy.statuses[0].Project)
+	assert.Equal(t, "Playbooks", adminCopy.statuses[0].Project.Name)
+
+	userCopy, err := getCached(p, id, client)
+	require.NoError(t, err)
+	require.Len(t, userCopy.statuses, 1)
+	assert.Nil(t, userCopy.statuses[0].Project, "later fetch must not see Project written by admin enrichment")
+
+	p.rhsStatusCacheLock.RLock()
+	cached := p.rhsStatusCache[testRHSKey(id)]
+	p.rhsStatusCacheLock.RUnlock()
+	require.NotNil(t, cached)
+	require.Len(t, cached.statuses, 1)
+	assert.Nil(t, cached.statuses[0].Project)
+
+	statusCalls, _ := client.counts()
+	assert.Equal(t, 1, statusCalls)
 }

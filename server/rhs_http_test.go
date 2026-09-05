@@ -420,6 +420,56 @@ func TestRHSHTTPGetIssuesInvalidSortJSON(t *testing.T) {
 	assert.Equal(t, 0, client.searchCalls)
 }
 
+func TestRHSHTTPGetIssuesUnknownStatusTabFallsBackToAssigned(t *testing.T) {
+	api := &plugintest.API{}
+	p := setupRHSHTTPPlugin(t, api)
+	client := &testRHSCloudClient{
+		statuses:   fixtureStatuses(t),
+		categories: fixtureCanonicalCategories(t),
+		search: &CloudSearchResult{
+			Issues: []jira.Issue{tes41Issue()},
+			IsLast: true,
+		},
+	}
+	inst := installRHSUserCloud(t, p, client)
+
+	w := doRHSHTTPGet(t, p, makeAPIRoute(routeAPIRHSIssues)+"?instance_id="+string(inst.GetID())+"&tab=status:does-not-exist", "connected_user")
+	require.Equal(t, http.StatusOK, w.Result().StatusCode)
+
+	var body rhsIssuesResult
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
+	require.Len(t, body.Issues, 1)
+	assert.Equal(t, "TES-41", body.Issues[0].Key)
+	require.GreaterOrEqual(t, len(body.Tabs), 2)
+	assert.Equal(t, RHSTabKindAssigned, body.Tabs[0].Kind)
+	assert.Equal(t, rhsAssignedTabName, body.Tabs[0].Name)
+	assert.Equal(t, RHSTabKindCategory, body.Tabs[1].Kind)
+	assert.Equal(t, statusCategoryKeyIndeterminate, body.Tabs[1].Key)
+
+	client.mu.Lock()
+	defer client.mu.Unlock()
+	assert.Equal(t, 1, client.searchCalls)
+	assert.Equal(t, "assignee = currentUser() AND statusCategory != done ORDER BY updated DESC, key ASC", client.lastSearch.JQL)
+}
+
+func TestRHSHTTPGetIssuesCategoryTabIdentity(t *testing.T) {
+	api := &plugintest.API{}
+	p := setupRHSHTTPPlugin(t, api)
+	client := &testRHSCloudClient{
+		statuses:   fixtureStatuses(t),
+		categories: fixtureCanonicalCategories(t),
+		search:     &CloudSearchResult{IsLast: true},
+	}
+	inst := installRHSUserCloud(t, p, client)
+
+	w := doRHSHTTPGet(t, p, makeAPIRoute(routeAPIRHSIssues)+"?instance_id="+string(inst.GetID())+"&tab=category:indeterminate", "connected_user")
+	require.Equal(t, http.StatusOK, w.Result().StatusCode)
+
+	client.mu.Lock()
+	defer client.mu.Unlock()
+	assert.Equal(t, "assignee = currentUser() AND statusCategory = indeterminate ORDER BY updated DESC, key ASC", client.lastSearch.JQL)
+}
+
 func TestRHSHTTPGetIssuesMissingInstanceIDJSON(t *testing.T) {
 	api := &plugintest.API{}
 	p := setupRHSHTTPPlugin(t, api)
