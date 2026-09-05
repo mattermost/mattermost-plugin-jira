@@ -47,13 +47,15 @@ const mapStateToProps = (state: GlobalState) => {
     };
 };
 
-const mapDispatchToProps = (dispatch: Dispatch) => bindActionCreators({
+const rhsDispatch = {
     getConnected,
     handleConnectFlow,
     loadMoreRHSIssues,
     openCreateModalWithoutPost,
     resolveAndFetchRHSIssues,
     restoreRHSViewState,
-}, dispatch) as unknown as RHSDispatchProps;
+};
+
+const mapDispatchToProps = (dispatch: Dispatch) => bindActionCreators<typeof rhsDispatch, RHSDispatchProps>(rhsDispatch, dispatch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(Rhs);

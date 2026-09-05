@@ -1,12 +1,11 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Instance, RHSTab} from 'types/model';
+import {Instance} from 'types/model';
+import {RHSTab, rhsTabIdentity} from 'types/rhs';
 
 export function rhsTabsEqual(a: RHSTab, b: RHSTab): boolean {
-    return a.kind === b.kind &&
-        (a.key || '') === (b.key || '') &&
-        (a.id || '') === (b.id || '');
+    return rhsTabIdentity(a) === rhsTabIdentity(b);
 }
 
 export function resolveRHSInstanceID(

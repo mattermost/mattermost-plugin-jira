@@ -4,16 +4,15 @@
 import {combineReducers} from 'redux';
 
 import ActionTypes from '../action_types';
+import {ChannelSubscription, PluginSettings} from 'types/model';
 import {
-    ChannelSubscription,
-    PluginSettings,
     RHSErrorCode,
     RHSIssue,
     RHSSort,
     RHSTab,
     RHS_DEFAULT_SORT,
     RHS_DEFAULT_TAB,
-} from 'types/model';
+} from 'types/rhs';
 
 export type Action<T extends string = string> = {
     type: T
@@ -275,116 +274,90 @@ const channelSubscriptions = (state = {} as AnyState, action = {} as AnyAction) 
     }
 };
 
-function rhsInstanceID(state = '', action = {} as AnyAction): string {
-    switch (action.type) {
-    case ActionTypes.SET_RHS_INSTANCE_ID:
-        return action.data;
-    case ActionTypes.HYDRATE_RHS_VIEW_STATE:
-        return action.data.instance;
-    default:
-        return state;
-    }
-}
+export type RHSState = {
+    instanceID: string;
+    tab: RHSTab;
+    sort: RHSSort;
+    issues: RHSIssue[];
+    tabs: RHSTab[];
+    nextPageToken: string;
+    isLast: boolean;
+    loading: boolean;
+    error: RHSErrorCode | null;
+    requestId: number;
+};
 
-function rhsTab(state: RHSTab = RHS_DEFAULT_TAB, action = {} as AnyAction): RHSTab {
-    switch (action.type) {
-    case ActionTypes.SET_RHS_TAB:
-        return action.data;
-    case ActionTypes.HYDRATE_RHS_VIEW_STATE:
-        return action.data.tab;
-    default:
-        return state;
-    }
-}
+const defaultRHSState: RHSState = {
+    instanceID: '',
+    tab: RHS_DEFAULT_TAB,
+    sort: RHS_DEFAULT_SORT,
+    issues: [],
+    tabs: [],
+    nextPageToken: '',
+    isLast: true,
+    loading: false,
+    error: null,
+    requestId: 0,
+};
 
-function rhsSort(state: RHSSort = RHS_DEFAULT_SORT, action = {} as AnyAction): RHSSort {
+function rhs(state: RHSState = defaultRHSState, action = {} as AnyAction): RHSState {
     switch (action.type) {
-    case ActionTypes.SET_RHS_SORT:
-        return action.data;
-    case ActionTypes.HYDRATE_RHS_VIEW_STATE:
-        return action.data.sort;
-    default:
-        return state;
+    case ActionTypes.SET_RHS_VIEW:
+        return {
+            ...state,
+            instanceID: action.data.instanceID,
+            tab: action.data.tab,
+            sort: action.data.sort,
+        };
+    case ActionTypes.RHS_ISSUES_LOADING: {
+        const reset = Boolean(action.data && action.data.reset);
+        return {
+            ...state,
+            requestId: state.requestId + 1,
+            loading: true,
+            error: null,
+            ...(reset ? {
+                issues: [],
+                nextPageToken: '',
+                isLast: true,
+            } : {}),
+        };
     }
-}
-
-function rhsIssues(state: RHSIssue[] = [], action = {} as AnyAction): RHSIssue[] {
-    switch (action.type) {
-    case ActionTypes.RHS_ISSUES_LOADING:
-        if (action.data && action.data.reset) {
-            return [];
+    case ActionTypes.RECEIVED_RHS_ISSUES:
+        if (action.requestId !== state.requestId) {
+            return state;
         }
-        return state;
-    case ActionTypes.RECEIVED_RHS_ISSUES:
-        return action.data.issues ? action.data.issues : [];
+        return {
+            ...state,
+            issues: action.data.issues ? action.data.issues : [],
+            tabs: action.data.tabs ? action.data.tabs : [],
+            nextPageToken: action.data.nextPageToken ? action.data.nextPageToken : '',
+            isLast: Boolean(action.data.isLast),
+            loading: false,
+            error: null,
+        };
     case ActionTypes.RECEIVED_RHS_ISSUES_APPEND:
-        return state.concat(action.data.issues ? action.data.issues : []);
-    default:
-        return state;
-    }
-}
-
-function rhsTabs(state: RHSTab[] = [], action = {} as AnyAction): RHSTab[] {
-    switch (action.type) {
-    case ActionTypes.RECEIVED_RHS_ISSUES:
-    case ActionTypes.RECEIVED_RHS_ISSUES_APPEND:
-        return action.data.tabs ? action.data.tabs : state;
-    default:
-        return state;
-    }
-}
-
-function rhsNextPageToken(state = '', action = {} as AnyAction): string {
-    switch (action.type) {
-    case ActionTypes.RHS_ISSUES_LOADING:
-        if (action.data && action.data.reset) {
-            return '';
+        if (action.requestId !== state.requestId) {
+            return state;
         }
-        return state;
-    case ActionTypes.RECEIVED_RHS_ISSUES:
-    case ActionTypes.RECEIVED_RHS_ISSUES_APPEND:
-        return action.data.nextPageToken ? action.data.nextPageToken : '';
-    default:
-        return state;
-    }
-}
-
-function rhsIsLast(state = true, action = {} as AnyAction): boolean {
-    switch (action.type) {
-    case ActionTypes.RHS_ISSUES_LOADING:
-        if (action.data && action.data.reset) {
-            return true;
-        }
-        return state;
-    case ActionTypes.RECEIVED_RHS_ISSUES:
-    case ActionTypes.RECEIVED_RHS_ISSUES_APPEND:
-        return Boolean(action.data.isLast);
-    default:
-        return state;
-    }
-}
-
-function rhsLoading(state = false, action = {} as AnyAction): boolean {
-    switch (action.type) {
-    case ActionTypes.RHS_ISSUES_LOADING:
-        return true;
-    case ActionTypes.RECEIVED_RHS_ISSUES:
-    case ActionTypes.RECEIVED_RHS_ISSUES_APPEND:
+        return {
+            ...state,
+            issues: state.issues.concat(action.data.issues ? action.data.issues : []),
+            tabs: action.data.tabs ? action.data.tabs : state.tabs,
+            nextPageToken: action.data.nextPageToken ? action.data.nextPageToken : '',
+            isLast: Boolean(action.data.isLast),
+            loading: false,
+            error: null,
+        };
     case ActionTypes.RHS_ISSUES_ERROR:
-        return false;
-    default:
-        return state;
-    }
-}
-
-function rhsError(state: RHSErrorCode | null = null, action = {} as AnyAction): RHSErrorCode | null {
-    switch (action.type) {
-    case ActionTypes.RHS_ISSUES_LOADING:
-    case ActionTypes.RECEIVED_RHS_ISSUES:
-    case ActionTypes.RECEIVED_RHS_ISSUES_APPEND:
-        return null;
-    case ActionTypes.RHS_ISSUES_ERROR:
-        return action.data;
+        if (action.requestId !== state.requestId) {
+            return state;
+        }
+        return {
+            ...state,
+            loading: false,
+            error: action.data,
+        };
     default:
         return state;
     }
@@ -407,13 +380,5 @@ export default combineReducers({
     subscriptionTemplates,
     subscriptionTemplatesForProjectKey,
     channelSubscriptions,
-    rhsInstanceID,
-    rhsTab,
-    rhsSort,
-    rhsIssues,
-    rhsTabs,
-    rhsNextPageToken,
-    rhsIsLast,
-    rhsLoading,
-    rhsError,
+    rhs,
 });

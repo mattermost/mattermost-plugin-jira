@@ -1,13 +1,7 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {
-    RHSSort,
-    RHSTab,
-    RHSTabKind,
-    RHSViewState,
-    RHS_DEFAULT_TAB,
-} from 'types/model';
+import {RHSSort, RHSViewState, rhsTabFromAPI} from 'types/rhs';
 
 const storagePrefix = 'jira:rhs-view:';
 
@@ -17,10 +11,6 @@ export function rhsViewStorageKey(userId: string): string {
 
 function isRHSSort(value: unknown): value is RHSSort {
     return value === 'updated' || value === 'created';
-}
-
-function isRHSTabKind(value: unknown): value is RHSTabKind {
-    return value === 'assigned' || value === 'category' || value === 'status';
 }
 
 export function validateRHSViewState(raw: unknown): RHSViewState | null {
@@ -39,31 +29,9 @@ export function validateRHSViewState(raw: unknown): RHSViewState | null {
         return null;
     }
 
-    const tabRaw = candidate.tab as {kind?: unknown; name?: unknown; key?: unknown; id?: unknown};
-    if (!isRHSTabKind(tabRaw.kind)) {
+    const tab = rhsTabFromAPI(candidate.tab as {kind?: unknown; name?: unknown; key?: unknown; id?: unknown});
+    if (!tab) {
         return null;
-    }
-
-    const tab: RHSTab = {
-        kind: tabRaw.kind,
-        name: typeof tabRaw.name === 'string' && tabRaw.name ? tabRaw.name : RHS_DEFAULT_TAB.name,
-    };
-    if (tab.kind === 'assigned') {
-        tab.name = RHS_DEFAULT_TAB.name;
-    }
-
-    if (tab.kind === 'category') {
-        if (typeof tabRaw.key !== 'string' || !tabRaw.key) {
-            return null;
-        }
-        tab.key = tabRaw.key;
-    }
-
-    if (tab.kind === 'status') {
-        if (typeof tabRaw.id !== 'string' || !tabRaw.id) {
-            return null;
-        }
-        tab.id = tabRaw.id;
     }
 
     return {
@@ -95,19 +63,9 @@ export function saveRHSViewState(userId: string, view: RHSViewState): void {
     }
 
     try {
-        const tab: RHSTab = {
-            kind: view.tab.kind,
-            name: view.tab.name,
-        };
-        if (view.tab.key) {
-            tab.key = view.tab.key;
-        }
-        if (view.tab.id) {
-            tab.id = view.tab.id;
-        }
         const payload: RHSViewState = {
             instance: view.instance,
-            tab,
+            tab: view.tab,
             sort: view.sort,
         };
         localStorage.setItem(rhsViewStorageKey(userId), JSON.stringify(payload));

@@ -5,17 +5,15 @@ import React, {useEffect, useState} from 'react';
 
 import type {ResolveAndFetchArgs} from 'actions';
 
+import {Instance} from 'types/model';
 import {
-    Instance,
     RHSErrorCode,
     RHSIssue,
     RHSSort,
     RHSTab,
     RHSViewState,
     RHS_DEFAULT_TAB,
-} from 'types/model';
-
-import {isRHSPopoutPathname} from 'utils/rhs_popout';
+} from 'types/rhs';
 import {rhsTabsEqual} from 'utils/rhs_resolve';
 
 import RHSHeader from './rhs_header';
@@ -51,6 +49,33 @@ export type Props = {
     handleConnectFlow: () => void;
 };
 
+type RHSPanelKind = 'loading' | 'not_connected' | 'rate_limited' | 'error' | 'empty' | 'list';
+
+function rhsPanelKind(args: {
+    booting: boolean;
+    loading: boolean;
+    issuesLength: number;
+    error: RHSErrorCode | null;
+    connectedCloudLength: number;
+}): RHSPanelKind {
+    if (args.booting || (args.loading && args.issuesLength === 0 && args.error === null)) {
+        return 'loading';
+    }
+    if (args.connectedCloudLength === 0 || args.error === 'not_connected') {
+        return 'not_connected';
+    }
+    if (args.error === 'rate_limited' && args.issuesLength === 0) {
+        return 'rate_limited';
+    }
+    if (args.error !== null && args.issuesLength === 0) {
+        return 'error';
+    }
+    if (args.issuesLength === 0) {
+        return 'empty';
+    }
+    return 'list';
+}
+
 export default function Rhs(props: Props): JSX.Element {
     const {
         connectedCloud,
@@ -71,9 +96,8 @@ export default function Rhs(props: Props): JSX.Element {
         handleConnectFlow,
     } = props;
 
-    const isPopout = isRHSPopoutPathname(window.location.pathname);
+    const isPopout = window.location.pathname.indexOf('/_popout/') === 0;
     const [booting, setBooting] = useState(true);
-    const nowMs = Date.now();
 
     useEffect(() => {
         let cancelled = false;
@@ -98,6 +122,10 @@ export default function Rhs(props: Props): JSX.Element {
         return () => {
             cancelled = true;
         };
+
+    // Boot once on mount. Empty deps are intentional: connect + hydrate + first fetch
+    // must not re-run when callback prop identities change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const onSelectTab = (next: RHSTab) => {
@@ -139,47 +167,60 @@ export default function Rhs(props: Props): JSX.Element {
         handleConnectFlow();
     };
 
-    const showPage1Loading = booting || (loading && issues.length === 0 && error === null);
-    const showNotConnected = !showPage1Loading && (connectedCloud.length === 0 || error === 'not_connected');
-    const showRateLimited = !showPage1Loading && !showNotConnected && error === 'rate_limited' && issues.length === 0;
-    const showError = !showPage1Loading && !showNotConnected && !showRateLimited && error !== null && issues.length === 0;
-    const showEmpty = !showPage1Loading && !showNotConnected && !showError && !showRateLimited && issues.length === 0;
+    const panel = rhsPanelKind({
+        booting,
+        loading,
+        issuesLength: issues.length,
+        error,
+        connectedCloudLength: connectedCloud.length,
+    });
 
     let body: JSX.Element;
-    if (showPage1Loading) {
+    switch (panel) {
+    case 'loading':
         body = <RHSLoadingState/>;
-    } else if (showNotConnected) {
+        break;
+    case 'not_connected':
         body = (
             <RHSNotConnectedState
                 onConnect={onConnect}
             />
         );
-    } else if (showRateLimited) {
+        break;
+    case 'rate_limited':
         body = (
             <RHSRateLimitedState
                 onRetry={onRetry}
             />
         );
-    } else if (showError) {
+        break;
+    case 'error':
         body = (
             <RHSErrorState
                 onRetry={onRetry}
             />
         );
-    } else if (showEmpty) {
+        break;
+    case 'empty':
         body = <RHSEmptyState/>;
-    } else {
+        break;
+    case 'list':
         body = (
             <RHSIssueList
                 issues={issues}
                 loading={loading}
                 isLast={isLast}
                 error={error}
-                nowMs={nowMs}
                 onLoadMore={onLoadMore}
                 onRetry={onRetry}
             />
         );
+        break;
+    default: {
+        const exhaustive: never = panel;
+        body = exhaustive;
+        break;
+    }
     }
 
     const instancePicker = connectedCloud.length > 1 ? (
@@ -190,7 +231,7 @@ export default function Rhs(props: Props): JSX.Element {
         />
     ) : null;
 
-    const showChrome = !showNotConnected;
+    const showChrome = panel !== 'not_connected';
     const showTabs = showChrome && tabs.length > 0;
 
     return (

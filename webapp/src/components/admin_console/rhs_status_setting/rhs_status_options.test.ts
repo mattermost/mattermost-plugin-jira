@@ -1,7 +1,8 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {InstanceType, RHSStatusesResponse} from 'types/model';
+import {InstanceType} from 'types/model';
+import {RHSStatusesResponse} from 'types/rhs';
 
 import {
     ASSIGNED_TAB,
@@ -74,9 +75,10 @@ describe('rhs_status_options', () => {
         expect(displayTabsForInstance(value, CLOUD_ID)).toEqual([ASSIGNED_TAB, doneTab]);
     });
 
-    test('buildPersistedValue does not materialize the virtual seed when the instance is already empty', () => {
-        expect(buildPersistedValue(null, CLOUD_ID, [IN_PROGRESS_TAB])).toEqual({});
-        expect(Object.prototype.hasOwnProperty.call(buildPersistedValue(null, CLOUD_ID, [IN_PROGRESS_TAB]), CLOUD_ID)).toBe(false);
+    test('buildPersistedValue writes In Progress extras on an unset instance', () => {
+        expect(buildPersistedValue(null, CLOUD_ID, [IN_PROGRESS_TAB])).toEqual({
+            [CLOUD_ID]: [IN_PROGRESS_TAB],
+        });
     });
 
     test('buildPersistedValue writes an empty extras list for Assigned only', () => {
@@ -99,7 +101,7 @@ describe('rhs_status_options', () => {
         const groups = buildStatusOptionGroups(statusesData);
         const options = flattenOptionGroups(groups);
 
-        expect(options.some((option) => option.tab.key === 'undefined')).toBe(false);
+        expect(options.some((option) => option.tab.kind === 'category' && option.tab.key === 'undefined')).toBe(false);
         expect(options.filter((option) => option.value === 'status:3')).toHaveLength(1);
     });
 

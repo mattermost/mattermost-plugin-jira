@@ -6,10 +6,11 @@ import {fireEvent, screen, waitFor} from '@testing-library/react';
 
 import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
-import {InstanceType, RHSStatusesResponse} from 'types/model';
+import {InstanceType} from 'types/model';
+import {RHSStatusesResponse} from 'types/rhs';
 import {mockTheme as baseMockTheme, renderWithRedux} from 'testlib/test-utils';
 
-import {RHSFetchError} from '../../../client';
+import {RHSFetchError, getRHSStatuses} from '../../../client/rhs';
 
 import RHSStatusSetting, {Props} from './rhs_status_setting';
 import {
@@ -20,33 +21,27 @@ import {
     STATUS_TABS_LABEL,
 } from './rhs_status_options';
 
+jest.mock('../../../client/rhs', () => {
+    const actual = jest.requireActual('../../../client/rhs');
+    return {
+        ...actual,
+        getRHSStatuses: jest.fn(),
+    };
+});
+
+const mockGetRHSStatuses = getRHSStatuses as jest.MockedFunction<typeof getRHSStatuses>;
+
 const mockTheme = baseMockTheme as Theme;
 
 const SETTING_ID = 'PluginSettings.Plugins.jira.rhsstatustabs';
 const CLOUD_ID = 'https://cloud.example.atlassian.net';
 const OAUTH_ID = 'https://oauth.example.atlassian.net';
 const SERVER_ID = 'http://jira.example.com';
+const PLUGIN_ROUTE = '/plugins/jira';
 
 const cloudInstance = {instance_id: CLOUD_ID, type: InstanceType.CLOUD};
 const oauthInstance = {instance_id: OAUTH_ID, type: InstanceType.CLOUD_OAUTH};
 const serverInstance = {instance_id: SERVER_ID, type: InstanceType.SERVER};
-
-const poisonConfig = {
-    PluginSettings: {
-        Plugins: {
-            jira: {
-                rhsstatustabs: {
-                    [CLOUD_ID]: [{kind: 'status', id: '999', name: 'FromConfig'}],
-                },
-            },
-            'com.mattermost.user-survey': {
-                systemconsolesetting: {
-                    TeamFilter: {filteredTeamIDs: ['nope']},
-                },
-            },
-        },
-    },
-};
 
 const statusesData: RHSStatusesResponse = {
     categories: [
@@ -78,12 +73,11 @@ const baseProps: Props = {
     id: SETTING_ID,
     value: null,
     disabled: false,
-    config: poisonConfig,
     onChange: jest.fn(),
     setSaveNeeded: jest.fn(),
     theme: mockTheme as Theme,
     installedInstances: [cloudInstance, oauthInstance, serverInstance],
-    fetchRHSStatuses: jest.fn().mockResolvedValue({data: statusesData}),
+    pluginServerRoute: PLUGIN_ROUTE,
     getConnected: jest.fn().mockResolvedValue({data: {}}),
 };
 
@@ -109,6 +103,7 @@ async function renderSettled(override: Partial<Props> = {}) {
 describe('components/RHSStatusSetting', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockGetRHSStatuses.mockResolvedValue(statusesData);
     });
 
     test.each([
@@ -117,7 +112,6 @@ describe('components/RHSStatusSetting', () => {
     ])('unset value renders Assigned and In Progress selected without calling onChange', async (value) => {
         const onChange = jest.fn();
         const setSaveNeeded = jest.fn();
-        const fetchRHSStatuses = jest.fn().mockResolvedValue({data: statusesData});
         const getConnected = jest.fn().mockResolvedValue({data: {}});
 
         renderWithRedux(
@@ -126,18 +120,16 @@ describe('components/RHSStatusSetting', () => {
                 value={value}
                 onChange={onChange}
                 setSaveNeeded={setSaveNeeded}
-                fetchRHSStatuses={fetchRHSStatuses}
                 getConnected={getConnected}
             />,
         );
 
         await waitFor(() => {
-            expect(fetchRHSStatuses).toHaveBeenCalled();
+            expect(mockGetRHSStatuses).toHaveBeenCalled();
         });
 
         expect(screen.getByText(ASSIGNED_TAB.name)).toBeInTheDocument();
         expect(screen.getByText('In Progress')).toBeInTheDocument();
-        expect(screen.queryByText('FromConfig')).not.toBeInTheDocument();
         expect(onChange).not.toHaveBeenCalled();
         expect(setSaveNeeded).not.toHaveBeenCalled();
     });
@@ -148,12 +140,33 @@ describe('components/RHSStatusSetting', () => {
         });
 
         await waitFor(() => {
-            expect(props.fetchRHSStatuses).toHaveBeenCalled();
+            expect(mockGetRHSStatuses).toHaveBeenCalled();
         });
 
         expect(screen.getByText(ASSIGNED_TAB.name)).toBeInTheDocument();
         expect(screen.queryByLabelText('Remove In Progress')).not.toBeInTheDocument();
         expect(props.onChange).not.toHaveBeenCalled();
+    });
+
+    test('changing to In Progress on an unset instance persists the extras array', async () => {
+        const onChange = jest.fn();
+        const {props} = await renderSettled({
+            value: {[CLOUD_ID]: []},
+            onChange,
+        });
+
+        await waitFor(() => {
+            expect(mockGetRHSStatuses).toHaveBeenCalled();
+        });
+
+        fireEvent.keyDown(screen.getByLabelText(STATUS_TABS_LABEL), {key: 'ArrowDown'});
+        const inProgressOptions = await screen.findAllByRole('option', {name: 'In Progress'});
+        fireEvent.click(inProgressOptions[0]);
+
+        await waitFor(() => {
+            expect(onChange).toHaveBeenCalledWith(SETTING_ID, {[CLOUD_ID]: [IN_PROGRESS_TAB]});
+        });
+        expect(props.setSaveNeeded).toHaveBeenCalled();
     });
 
     test('removing the last extra tab persists Assigned only', async () => {
@@ -163,7 +176,7 @@ describe('components/RHSStatusSetting', () => {
         });
 
         await waitFor(() => {
-            expect(props.fetchRHSStatuses).toHaveBeenCalled();
+            expect(mockGetRHSStatuses).toHaveBeenCalled();
         });
 
         fireEvent.click(screen.getByLabelText('Remove In Progress'));
@@ -182,7 +195,7 @@ describe('components/RHSStatusSetting', () => {
         });
 
         await waitFor(() => {
-            expect(props.fetchRHSStatuses).toHaveBeenCalled();
+            expect(mockGetRHSStatuses).toHaveBeenCalled();
         });
 
         fireEvent.click(screen.getByLabelText('Remove Done'));
@@ -193,23 +206,19 @@ describe('components/RHSStatusSetting', () => {
     });
 
     test('not_connected keeps stored chips disables the status control and does not call onChange', async () => {
-        const fetchRHSStatuses = jest.fn().mockResolvedValue({
-            error: new RHSFetchError('not_connected', 'Jira account is not connected', 401),
-        });
+        mockGetRHSStatuses.mockRejectedValue(new RHSFetchError('not_connected', 'Jira account is not connected', 401));
 
         const {props} = await renderSettled({
             value: {[CLOUD_ID]: [{kind: 'category', key: 'new', name: 'To Do'}]},
-            fetchRHSStatuses,
         });
 
         await waitFor(() => {
-            expect(fetchRHSStatuses).toHaveBeenCalled();
+            expect(mockGetRHSStatuses).toHaveBeenCalled();
         });
 
         expect(screen.getByText(ASSIGNED_TAB.name)).toBeInTheDocument();
         expect(screen.getByText('To Do')).toBeInTheDocument();
         expect(screen.getByText(NOT_CONNECTED_MESSAGE)).toBeInTheDocument();
-        expect(screen.queryByText('FromConfig')).not.toBeInTheDocument();
         expect(screen.getByLabelText(STATUS_TABS_LABEL)).toBeDisabled();
         expect(screen.getByLabelText(INSTANCE_LABEL)).not.toBeDisabled();
         expect(props.onChange).not.toHaveBeenCalled();
@@ -222,7 +231,7 @@ describe('components/RHSStatusSetting', () => {
         });
 
         await waitFor(() => {
-            expect(props.fetchRHSStatuses).toHaveBeenCalled();
+            expect(mockGetRHSStatuses).toHaveBeenCalled();
         });
 
         expect(screen.getByText(ASSIGNED_TAB.name)).toBeInTheDocument();
@@ -232,15 +241,14 @@ describe('components/RHSStatusSetting', () => {
     });
 
     test('a failed fetch with empty options does not call onChange', async () => {
-        const fetchRHSStatuses = jest.fn().mockRejectedValue(new Error('network down'));
+        mockGetRHSStatuses.mockRejectedValue(new Error('network down'));
 
         const {props} = await renderSettled({
             value: {[CLOUD_ID]: [{kind: 'category', key: 'done', name: 'Done'}]},
-            fetchRHSStatuses,
         });
 
         await waitFor(() => {
-            expect(fetchRHSStatuses).toHaveBeenCalled();
+            expect(mockGetRHSStatuses).toHaveBeenCalled();
         });
 
         expect(screen.getByText(ASSIGNED_TAB.name)).toBeInTheDocument();
@@ -250,17 +258,17 @@ describe('components/RHSStatusSetting', () => {
     });
 
     test('an empty 200 fetch does not call onChange', async () => {
-        const fetchRHSStatuses = jest.fn().mockResolvedValue({
-            data: {statuses: [], categories: []},
+        mockGetRHSStatuses.mockResolvedValue({
+            statuses: [],
+            categories: [],
         });
 
         const {props} = await renderSettled({
             value: {[CLOUD_ID]: [{kind: 'category', key: 'done', name: 'Done'}]},
-            fetchRHSStatuses,
         });
 
         await waitFor(() => {
-            expect(fetchRHSStatuses).toHaveBeenCalled();
+            expect(mockGetRHSStatuses).toHaveBeenCalled();
         });
 
         expect(screen.getByText(ASSIGNED_TAB.name)).toBeInTheDocument();
@@ -276,7 +284,7 @@ describe('components/RHSStatusSetting', () => {
         });
 
         await waitFor(() => {
-            expect(props.fetchRHSStatuses).toHaveBeenCalled();
+            expect(mockGetRHSStatuses).toHaveBeenCalled();
         });
 
         expect(screen.queryByLabelText('Remove ' + ASSIGNED_TAB.name)).not.toBeInTheDocument();
@@ -300,7 +308,7 @@ describe('components/RHSStatusSetting', () => {
         });
 
         await waitFor(() => {
-            expect(props.fetchRHSStatuses).toHaveBeenCalled();
+            expect(mockGetRHSStatuses).toHaveBeenCalled();
         });
 
         fireEvent.keyDown(screen.getByLabelText(STATUS_TABS_LABEL), {key: 'ArrowDown'});
@@ -321,13 +329,15 @@ describe('components/RHSStatusSetting', () => {
         expect(setSaveNeeded).toHaveBeenCalled();
         const persisted = onChange.mock.calls[0][1][CLOUD_ID];
         expect(persisted.some((tab: {kind: string}) => tab.kind === 'assigned')).toBe(false);
+        expect(mockGetRHSStatuses).toHaveBeenCalledWith(PLUGIN_ROUTE, CLOUD_ID);
+        expect(props.getConnected).toHaveBeenCalled();
     });
 
     test('only Cloud instances are offered', async () => {
-        const {props} = await renderSettled();
+        await renderSettled();
 
         await waitFor(() => {
-            expect(props.fetchRHSStatuses).toHaveBeenCalled();
+            expect(mockGetRHSStatuses).toHaveBeenCalled();
         });
 
         fireEvent.keyDown(screen.getByLabelText(INSTANCE_LABEL), {key: 'ArrowDown'});
@@ -339,10 +349,10 @@ describe('components/RHSStatusSetting', () => {
     });
 
     test('status options show the Jira project under the status name', async () => {
-        const {props} = await renderSettled();
+        await renderSettled();
 
         await waitFor(() => {
-            expect(props.fetchRHSStatuses).toHaveBeenCalled();
+            expect(mockGetRHSStatuses).toHaveBeenCalled();
         });
 
         fireEvent.keyDown(screen.getByLabelText(STATUS_TABS_LABEL), {key: 'ArrowDown'});

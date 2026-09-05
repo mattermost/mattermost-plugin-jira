@@ -2,25 +2,25 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useRef, useState} from 'react';
-import {
+import ReactSelect, {
     FilterOptionOption,
     FormatOptionLabelMeta,
+    GroupBase,
+    MultiValue,
     MultiValueProps,
     MultiValueRemoveProps,
+    StylesConfig,
     components,
 } from 'react-select';
 
 import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
-import ReactSelectSetting from 'components/react_select_setting';
-import {
-    Instance,
-    RHSErrorCode,
-    RHSStatusesResponse,
-    ReactSelectOption,
-} from 'types/model';
+import Setting from 'components/setting';
+import {Instance, ReactSelectOption} from 'types/model';
+import {RHSErrorCode} from 'types/rhs';
+import {getStyleForReactSelect} from 'utils/styles';
 
-import {RHSFetchError} from '../../../client';
+import {RHSFetchError, getRHSStatuses} from '../../../client/rhs';
 
 import {
     ASSIGNED_OPTION_VALUE,
@@ -32,7 +32,6 @@ import {
     STATUS_TABS_LABEL,
     StatusOptionGroup,
     StatusTabOption,
-    UNABLE_TO_LOAD_STATUSES_MESSAGE,
     buildPersistedValue,
     buildStatusOptionGroups,
     displayTabsForInstance,
@@ -40,7 +39,6 @@ import {
     filterInstalledCloudInstances,
     flattenOptionGroups,
     isTabsValueUnset,
-    isVirtualSeedExtras,
     optionsFromTabs,
     persistedValuesEqual,
     statusFetchMessage,
@@ -52,38 +50,16 @@ export type Props = {
     id: string;
     value: RHSStatusTabsValue | null;
     disabled: boolean;
-    config: unknown;
     onChange: (id: string, value: RHSStatusTabsValue) => void;
     setSaveNeeded: () => void;
     theme: Theme;
     installedInstances: Instance[];
-    fetchRHSStatuses: (instanceID: string) => Promise<{data?: RHSStatusesResponse; error?: RHSFetchError}>;
+    pluginServerRoute: string;
     getConnected: () => Promise<{data?: unknown; error?: unknown}>;
 };
 
-type ConsoleSelectProps = {
-    name: string;
-    inputId: string;
-    label: string;
-    helpText?: string;
-    options: unknown;
-    value: unknown;
-    isMulti: boolean;
-    isClearable: boolean;
-    isDisabled: boolean;
-    isLoading?: boolean;
-    theme: Theme;
-    components?: unknown;
-    formatOptionLabel?: (data: StatusTabOption, meta: FormatOptionLabelMeta<StatusTabOption>) => React.ReactNode;
-    filterOption?: (option: FilterOptionOption<StatusTabOption>, input: string) => boolean;
-    onChange: (name: string, value: string | string[] | null) => void;
-};
-
-const ConsoleSelect = ReactSelectSetting as unknown as React.ComponentType<ConsoleSelectProps>;
-
-function RHSFixedMultiValue(props: MultiValueProps<ReactSelectOption>): React.ReactElement {
-    const option = props.data as StatusTabOption;
-    if (!option.isFixed) {
+function RHSFixedMultiValue(props: MultiValueProps<StatusTabOption, true>): React.ReactElement {
+    if (!props.data.isFixed) {
         return (
             <components.MultiValue
                 {...props}
@@ -105,9 +81,8 @@ function RHSFixedMultiValue(props: MultiValueProps<ReactSelectOption>): React.Re
     );
 }
 
-function RHSFixedMultiValueRemove(props: MultiValueRemoveProps<ReactSelectOption>): React.ReactElement | null {
-    const option = props.data as StatusTabOption;
-    if (option.isFixed) {
+function RHSFixedMultiValueRemove(props: MultiValueRemoveProps<StatusTabOption, true>): React.ReactElement | null {
+    if (props.data.isFixed) {
         return null;
     }
 
@@ -146,7 +121,7 @@ export default function RHSStatusSetting(props: Props): React.ReactElement {
         setSaveNeeded,
         theme,
         installedInstances,
-        fetchRHSStatuses,
+        pluginServerRoute,
         getConnected,
     } = props;
 
@@ -197,40 +172,39 @@ export default function RHSStatusSetting(props: Props): React.ReactElement {
         setFetchError(null);
 
         const load = async (): Promise<void> => {
-            let result: {data?: RHSStatusesResponse; error?: RHSFetchError} = {};
             try {
-                result = await fetchRHSStatuses(instanceID);
-            } catch {
-                result = {error: new RHSFetchError('internal_error', UNABLE_TO_LOAD_STATUSES_MESSAGE, 0)};
-            }
-
-            if (generation !== latestGeneration.current) {
-                return;
-            }
-
-            if (result.error) {
-                setFetchError(result.error.errorCode);
-                setOptionGroups([]);
-            } else if (result.data) {
-                setOptionGroups(buildStatusOptionGroups(result.data));
+                const data = await getRHSStatuses(pluginServerRoute, instanceID);
+                if (generation !== latestGeneration.current) {
+                    return;
+                }
+                setOptionGroups(buildStatusOptionGroups(data));
                 setFetchError(null);
+            } catch (error) {
+                if (generation !== latestGeneration.current) {
+                    return;
+                }
+                const code = error instanceof RHSFetchError ? error.errorCode : 'internal_error';
+                setFetchError(code);
+                setOptionGroups([]);
             }
-            setLoadingStatuses(false);
+            if (generation === latestGeneration.current) {
+                setLoadingStatuses(false);
+            }
         };
 
         load();
-    }, [instanceID, fetchRHSStatuses]);
+    }, [instanceID, pluginServerRoute]);
 
-    const handleInstanceChange = (name: string, nextID: string | string[] | null): void => {
-        if (!nextID || Array.isArray(nextID) || nextID === instanceID) {
+    const handleInstanceChange = (next: ReactSelectOption | null): void => {
+        if (!next || next.value === instanceID) {
             return;
         }
 
-        setInstanceID(nextID);
+        setInstanceID(next.value);
     };
 
-    const handleStatusValuesChange = (name: string, values: string | string[] | null): void => {
-        if (disabled || fetchError !== null || !instanceID || !Array.isArray(values)) {
+    const persistExtrasFromValues = (values: string[]): void => {
+        if (disabled || fetchError !== null || !instanceID) {
             return;
         }
 
@@ -240,11 +214,7 @@ export default function RHSStatusSetting(props: Props): React.ReactElement {
         }
 
         const extras = extrasFromOptionValues(nextValues, [...flatOptions, ...selectedOptions]);
-        const emptyValue = isTabsValueUnset(value, instanceID);
-        if (emptyValue && isVirtualSeedExtras(extras)) {
-            return;
-        }
-        if (!emptyValue && JSON.stringify(storedExtrasForInstance(value, instanceID)) === JSON.stringify(extras)) {
+        if (!isTabsValueUnset(value, instanceID) && JSON.stringify(storedExtrasForInstance(value, instanceID)) === JSON.stringify(extras)) {
             return;
         }
 
@@ -257,6 +227,10 @@ export default function RHSStatusSetting(props: Props): React.ReactElement {
         setSaveNeeded();
     };
 
+    const handleStatusSelectChange = (next: MultiValue<StatusTabOption>): void => {
+        persistExtrasFromValues(next.map((option) => option.value));
+    };
+
     if (cloudInstances.length === 0) {
         return (
             <p>
@@ -265,7 +239,7 @@ export default function RHSStatusSetting(props: Props): React.ReactElement {
         );
     }
 
-    const instanceOptions = cloudInstances.map((instance) => {
+    const instanceOptions: ReactSelectOption[] = cloudInstances.map((instance) => {
         return {
             label: instance.alias || instance.instance_id,
             value: instance.instance_id,
@@ -276,35 +250,46 @@ export default function RHSStatusSetting(props: Props): React.ReactElement {
 
     return (
         <React.Fragment>
-            <ConsoleSelect
-                name={'rhs-status-instance'}
+            <Setting
                 inputId={'rhs-status-instance'}
                 label={INSTANCE_LABEL}
-                options={instanceOptions}
-                value={selectedInstance}
-                isMulti={false}
-                isClearable={false}
-                isDisabled={disabled}
-                theme={theme}
-                onChange={handleInstanceChange}
-            />
-            <ConsoleSelect
-                name={'rhs-status-tabs'}
+            >
+                <ReactSelect<ReactSelectOption, false>
+                    inputId={'rhs-status-instance'}
+                    options={instanceOptions}
+                    value={selectedInstance}
+                    isClearable={false}
+                    isDisabled={disabled}
+                    onChange={handleInstanceChange}
+                    styles={getStyleForReactSelect(theme) as StylesConfig<ReactSelectOption, false>}
+                    menuPortalTarget={document.body}
+                    menuPlacement={'auto'}
+                    aria-label={INSTANCE_LABEL}
+                />
+            </Setting>
+            <Setting
                 inputId={'rhs-status-tabs'}
                 label={STATUS_TABS_LABEL}
                 helpText={statusHelp}
-                isMulti={true}
-                isClearable={false}
-                isLoading={loadingStatuses}
-                isDisabled={disabled || !instanceID || fetchError !== null}
-                options={optionGroups}
-                value={selectedOptions}
-                theme={theme}
-                components={{MultiValue: RHSFixedMultiValue, MultiValueRemove: RHSFixedMultiValueRemove}}
-                formatOptionLabel={formatStatusTabOption}
-                filterOption={filterStatusTabOption}
-                onChange={handleStatusValuesChange}
-            />
+            >
+                <ReactSelect<StatusTabOption, true, GroupBase<StatusTabOption>>
+                    inputId={'rhs-status-tabs'}
+                    isMulti={true}
+                    isClearable={false}
+                    isLoading={loadingStatuses}
+                    isDisabled={disabled || !instanceID || fetchError !== null}
+                    options={optionGroups}
+                    value={selectedOptions}
+                    components={{MultiValue: RHSFixedMultiValue, MultiValueRemove: RHSFixedMultiValueRemove}}
+                    formatOptionLabel={formatStatusTabOption}
+                    filterOption={filterStatusTabOption}
+                    onChange={handleStatusSelectChange}
+                    styles={getStyleForReactSelect(theme) as StylesConfig<StatusTabOption, true>}
+                    menuPortalTarget={document.body}
+                    menuPlacement={'auto'}
+                    aria-label={STATUS_TABS_LABEL}
+                />
+            </Setting>
         </React.Fragment>
     );
 }

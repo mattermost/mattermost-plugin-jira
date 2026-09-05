@@ -1,7 +1,7 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {RHSViewState} from 'types/model';
+import {RHSViewState} from 'types/rhs';
 
 import {loadRHSViewState, saveRHSViewState, validateRHSViewState} from './rhs_view_state';
 

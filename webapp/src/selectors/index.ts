@@ -8,17 +8,15 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import manifest from '../manifest';
 
+import {Instance, PluginSettings, isCloudInstance} from 'types/model';
 import {
-    Instance,
-    InstanceType,
-    PluginSettings,
     RHSErrorCode,
     RHSIssue,
     RHSSort,
     RHSTab,
     RHS_DEFAULT_SORT,
     RHS_DEFAULT_TAB,
-} from 'types/model';
+} from 'types/rhs';
 import {GlobalState, pluginStateKey} from 'types/store';
 
 const getPluginState = (state: GlobalState) => state[pluginStateKey] || {};
@@ -84,17 +82,7 @@ export const getUserConnectedInstances = (state: GlobalState): Instance[] => {
 
 export const getInstalledInstances = (state: GlobalState): Instance[] => getPluginState(state).installedInstances;
 
-export const isCloudInstance = (instance: Instance): boolean => {
-    switch (instance.type) {
-    case InstanceType.CLOUD:
-    case InstanceType.CLOUD_OAUTH:
-        return true;
-    case InstanceType.SERVER:
-        return false;
-    default:
-        return false;
-    }
-};
+export {isCloudInstance};
 
 export const hasCloudInstance = (state: GlobalState): boolean => {
     const installed = getInstalledInstances(state);
@@ -115,18 +103,18 @@ export const getDefaultUserInstanceID = (state: GlobalState) => getPluginState(s
 
 export const getPluginSettings = (state: GlobalState): PluginSettings | null => getPluginState(state).pluginSettings;
 
-export const getRHSInstanceID = (state: GlobalState): string => getPluginState(state).rhsInstanceID || '';
+export const getRHSInstanceID = (state: GlobalState): string => getPluginState(state).rhs?.instanceID || '';
 
-export const getRHSTab = (state: GlobalState): RHSTab => getPluginState(state).rhsTab || RHS_DEFAULT_TAB;
+export const getRHSTab = (state: GlobalState): RHSTab => getPluginState(state).rhs?.tab || RHS_DEFAULT_TAB;
 
-export const getRHSSort = (state: GlobalState): RHSSort => getPluginState(state).rhsSort || RHS_DEFAULT_SORT;
+export const getRHSSort = (state: GlobalState): RHSSort => getPluginState(state).rhs?.sort || RHS_DEFAULT_SORT;
 
-export const getRHSIssues = (state: GlobalState): RHSIssue[] => getPluginState(state).rhsIssues || [];
+export const getRHSIssues = (state: GlobalState): RHSIssue[] => getPluginState(state).rhs?.issues || [];
 
-export const getRHSTabs = (state: GlobalState): RHSTab[] => getPluginState(state).rhsTabs || [];
+export const getRHSTabs = (state: GlobalState): RHSTab[] => getPluginState(state).rhs?.tabs || [];
 
-export const getRHSIsLast = (state: GlobalState): boolean => Boolean(getPluginState(state).rhsIsLast);
+export const getRHSIsLast = (state: GlobalState): boolean => Boolean(getPluginState(state).rhs?.isLast);
 
-export const getRHSLoading = (state: GlobalState): boolean => Boolean(getPluginState(state).rhsLoading);
+export const getRHSLoading = (state: GlobalState): boolean => Boolean(getPluginState(state).rhs?.loading);
 
-export const getRHSError = (state: GlobalState): RHSErrorCode | null => getPluginState(state).rhsError || null;
+export const getRHSError = (state: GlobalState): RHSErrorCode | null => getPluginState(state).rhs?.error || null;

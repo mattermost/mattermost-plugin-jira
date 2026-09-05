@@ -12,9 +12,11 @@ import {
 import {
     Instance,
     InstanceType,
+} from 'types/model';
+import {
     RHSIssue,
     RHSTab,
-} from 'types/model';
+} from 'types/rhs';
 
 import Rhs, {Props} from './rhs';
 import {RHS_STRINGS} from './rhs_strings';
@@ -198,8 +200,7 @@ describe('components/rhs', () => {
         const {props} = await renderSettled();
         (props.resolveAndFetchRHSIssues as jest.Mock).mockClear();
 
-        fireEvent.click(screen.getByTestId('rhs-sort'));
-        fireEvent.click(screen.getByRole('option', {name: RHS_STRINGS.sortCreated}));
+        fireEvent.change(screen.getByTestId('rhs-sort'), {target: {value: 'created'}});
 
         expect(props.resolveAndFetchRHSIssues).toHaveBeenCalledWith({sort: 'created'});
     });

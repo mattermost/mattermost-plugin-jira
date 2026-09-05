@@ -4,7 +4,7 @@
 import React from 'react';
 import {render, screen} from '@testing-library/react';
 
-import {RHSIssue} from 'types/model';
+import {RHSIssue} from 'types/rhs';
 
 import RHSIssueRow from './rhs_issue_row';
 

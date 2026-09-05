@@ -32,14 +32,7 @@
 }
 
 .jira-rhs-select {
-    position: relative;
-}
-
-.jira-rhs-select-button {
-    display: inline-flex;
     max-width: 160px;
-    align-items: center;
-    gap: 4px;
     padding: 4px 8px;
     color: var(--center-channel-color);
     background: var(--center-channel-bg);
@@ -48,46 +41,16 @@
     cursor: pointer;
 }
 
-.jira-rhs-select-button:hover {
+.jira-rhs-select:hover {
     background: rgba(var(--center-channel-color-rgb), 0.08);
 }
 
-.jira-rhs-select-button:focus {
+.jira-rhs-select:focus {
     box-shadow: none;
 }
 
-.jira-rhs-select-button:focus-visible {
+.jira-rhs-select:focus-visible {
     box-shadow: 0 0 0 2px var(--sidebar-text-active-border);
-}
-
-.jira-rhs-select-label {
-    overflow: hidden;
-    min-width: 0;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.jira-rhs-select-menu {
-    position: absolute;
-    z-index: 10;
-    top: calc(100% + 4px);
-    left: 0;
-    min-width: 100%;
-    padding: 4px 0;
-    background: var(--center-channel-bg);
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-    border-radius: 4px;
-    box-shadow: 0 6px 14px rgba(var(--center-channel-color-rgb), 0.12);
-}
-
-.jira-rhs-select-option {
-    padding: 6px 12px;
-    color: var(--center-channel-color);
-    cursor: pointer;
-}
-
-.jira-rhs-select-option--active {
-    background: rgba(var(--center-channel-color-rgb), 0.08);
 }
 
 .jira-rhs-tab-strip-wrap {
