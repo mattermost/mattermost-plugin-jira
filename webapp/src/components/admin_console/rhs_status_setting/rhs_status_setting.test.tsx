@@ -160,8 +160,8 @@ describe('components/RHSStatusSetting', () => {
         });
 
         fireEvent.keyDown(screen.getByLabelText(STATUS_TABS_LABEL), {key: 'ArrowDown'});
-        const inProgressOption = await screen.findByText('In Progress');
-        fireEvent.click(inProgressOption);
+        const inProgressOptions = await screen.findAllByRole('option', {name: 'In Progress'});
+        fireEvent.click(inProgressOptions[0]);
 
         await waitFor(() => {
             expect(onChange).toHaveBeenCalledWith(SETTING_ID, {[CLOUD_ID]: [IN_PROGRESS_TAB]});
