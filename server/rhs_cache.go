@@ -4,6 +4,7 @@
 package main
 
 import (
+	"sync"
 	"time"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -51,13 +52,36 @@ func rhsAdminStatusCacheUserID(instance Instance, adminUserID types.ID) types.ID
 	return adminUserID
 }
 
+func copyJiraStatus(s *JiraStatus) *JiraStatus {
+	if s == nil {
+		return nil
+	}
+	out := *s
+	if s.Scope != nil {
+		scope := *s.Scope
+		if s.Scope.Project != nil {
+			project := *s.Scope.Project
+			scope.Project = &project
+		}
+		out.Scope = &scope
+	}
+	if s.Project != nil {
+		project := *s.Project
+		out.Project = &project
+	}
+	return &out
+}
+
 func copyRHSStatusCacheEntry(in *rhsStatusCacheEntry) *rhsStatusCacheEntry {
 	if in == nil {
 		return nil
 	}
 	out := &rhsStatusCacheEntry{fetchedAt: in.fetchedAt}
 	if in.statuses != nil {
-		out.statuses = append([]*JiraStatus(nil), in.statuses...)
+		out.statuses = make([]*JiraStatus, len(in.statuses))
+		for i, s := range in.statuses {
+			out.statuses[i] = copyJiraStatus(s)
+		}
 	}
 	if in.categories != nil {
 		out.categories = append([]*JiraStatusCategory(nil), in.categories...)
@@ -77,13 +101,28 @@ func (p *Plugin) freshRHSStatusCacheLocked(key rhsStatusCacheKey) *rhsStatusCach
 }
 
 func (p *Plugin) fetchRHSStatuses(client rhsStatusLister) (*rhsStatusCacheEntry, error) {
-	statuses, err := client.ListStatuses()
-	if err != nil {
-		return nil, err
+	var (
+		statuses   []*JiraStatus
+		categories []*JiraStatusCategory
+		statusErr  error
+		catErr     error
+		wg         sync.WaitGroup
+	)
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		statuses, statusErr = client.ListStatuses()
+	}()
+	go func() {
+		defer wg.Done()
+		categories, catErr = client.ListStatusCategories()
+	}()
+	wg.Wait()
+	if statusErr != nil {
+		return nil, statusErr
 	}
-	categories, err := client.ListStatusCategories()
-	if err != nil {
-		return nil, err
+	if catErr != nil {
+		return nil, catErr
 	}
 	return &rhsStatusCacheEntry{
 		statuses:   statuses,

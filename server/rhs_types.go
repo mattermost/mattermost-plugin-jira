@@ -5,6 +5,8 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
 )
@@ -21,6 +23,39 @@ const rhsAssignedTabName = "Assigned to me"
 
 func rhsAssignedTab() RHSTabEntry {
 	return RHSTabEntry{Kind: RHSTabKindAssigned, Name: rhsAssignedTabName}
+}
+
+func rhsTabIdentity(tab RHSTabEntry) string {
+	switch tab.Kind {
+	case RHSTabKindAssigned:
+		return string(RHSTabKindAssigned)
+	case RHSTabKindCategory:
+		return string(RHSTabKindCategory) + ":" + tab.Key
+	case RHSTabKindStatus:
+		return string(RHSTabKindStatus) + ":" + tab.ID
+	default:
+		return string(tab.Kind)
+	}
+}
+
+func parseRHSTabIdentity(s string) (RHSTabEntry, error) {
+	if s == "" || s == string(RHSTabKindAssigned) {
+		return rhsAssignedTab(), nil
+	}
+	kind, rest, ok := strings.Cut(s, ":")
+	if !ok || rest == "" {
+		return RHSTabEntry{}, fmt.Errorf("invalid rhs tab identity: %q", s)
+	}
+	switch RHSTabKind(kind) {
+	case RHSTabKindAssigned:
+		return RHSTabEntry{}, fmt.Errorf("invalid rhs tab identity: %q", s)
+	case RHSTabKindCategory:
+		return RHSTabEntry{Kind: RHSTabKindCategory, Key: rest}, nil
+	case RHSTabKindStatus:
+		return RHSTabEntry{Kind: RHSTabKindStatus, ID: rest}, nil
+	default:
+		return RHSTabEntry{}, fmt.Errorf("invalid rhs tab identity: %q", s)
+	}
 }
 
 // Cloud statusCategory JQL operands. Do not use the numeric ids (2/4/3/1).
@@ -89,11 +124,10 @@ func statusProjectID(status *JiraStatus) string {
 	return status.Scope.Project.ID
 }
 
-func uniqueStatusProjectIDs(statuses []*JiraStatus) []string {
-	seen := make(map[string]struct{})
-	var ids []string
-	for _, status := range statuses {
-		id := statusProjectID(status)
+func uniqueIDs(ids []string) []string {
+	seen := make(map[string]struct{}, len(ids))
+	out := make([]string, 0, len(ids))
+	for _, id := range ids {
 		if id == "" {
 			continue
 		}
@@ -101,9 +135,17 @@ func uniqueStatusProjectIDs(statuses []*JiraStatus) []string {
 			continue
 		}
 		seen[id] = struct{}{}
-		ids = append(ids, id)
+		out = append(out, id)
 	}
-	return ids
+	return out
+}
+
+func uniqueStatusProjectIDs(statuses []*JiraStatus) []string {
+	ids := make([]string, 0, len(statuses))
+	for _, status := range statuses {
+		ids = append(ids, statusProjectID(status))
+	}
+	return uniqueIDs(ids)
 }
 
 func applyStatusProjects(statuses []*JiraStatus, byID map[string]JiraStatusProject) {

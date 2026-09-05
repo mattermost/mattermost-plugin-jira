@@ -22,9 +22,7 @@ const (
 	rhsErrInvalidRequest = "invalid_request"
 	rhsErrInternal       = "internal_error"
 
-	queryRHSTabKind       = "tab_kind"
-	queryRHSTabKey        = "tab_key"
-	queryRHSTabID         = "tab_id"
+	queryRHSTab           = "tab"
 	queryRHSSort          = "sort"
 	queryRHSNextPageToken = "next_page_token"
 
@@ -75,9 +73,7 @@ func (p *Plugin) httpRHSGetIssues(w http.ResponseWriter, r *http.Request) (int, 
 	result, err := p.getRHSIssues(
 		instanceID,
 		types.ID(userID),
-		r.FormValue(queryRHSTabKind),
-		r.FormValue(queryRHSTabKey),
-		r.FormValue(queryRHSTabID),
+		r.FormValue(queryRHSTab),
 		r.FormValue(queryRHSSort),
 		r.FormValue(queryRHSNextPageToken),
 	)
