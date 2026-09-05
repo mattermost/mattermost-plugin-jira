@@ -122,6 +122,7 @@ export default function Rhs(props: Props): JSX.Element {
         return () => {
             cancelled = true;
         };
+
     // Boot once on mount. Empty deps are intentional: connect + hydrate + first fetch
     // must not re-run when callback prop identities change.
     // eslint-disable-next-line react-hooks/exhaustive-deps

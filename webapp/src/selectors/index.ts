@@ -8,11 +8,7 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import manifest from '../manifest';
 
-import {
-    Instance,
-    PluginSettings,
-    isCloudInstance,
-} from 'types/model';
+import {Instance, PluginSettings, isCloudInstance} from 'types/model';
 import {
     RHSErrorCode,
     RHSIssue,

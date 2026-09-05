@@ -37,6 +37,8 @@ export function getJiraAppBarIconUrl(state: GlobalState): string {
 }
 
 export function registerJiraAppBar(registry: AppBarRegistry, state: GlobalState): void {
+    // App Bar omits the channel-header action and dropdown; pass undefined positionally.
+    /* eslint-disable no-undefined */
     registry.registerAppBarComponent(
         getJiraAppBarIconUrl(state),
         undefined,
@@ -45,4 +47,5 @@ export function registerJiraAppBar(registry: AppBarRegistry, state: GlobalState)
         Rhs,
         JIRA_RHS_TITLE,
     );
+    /* eslint-enable no-undefined */
 }
