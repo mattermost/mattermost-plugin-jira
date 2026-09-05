@@ -431,9 +431,30 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to create issue")
 	}
 
-	// Jira has accepted the issue. Follow-up notification / re-fetch failures must
-	// not fail this request: the create modal would stay open (RHS New ticket uses
-	// an empty post_id) and a retry would duplicate the ticket.
+	// Jira has accepted the issue. Notification is best-effort and must not fail this request.
+	createdIssue, _ := p.notifyCreatedIssue(instance, connection, client, created, in, channelID, rootID)
+
+	p.UpdateUserDefaults(in.mattermostUserID, in.InstanceID, &SavedFieldValues{
+		ProjectKey: project.Key,
+		IssueType:  issue.Fields.Type.ID,
+	})
+
+	if post != nil && len(post.FileIds) > 0 {
+		go func() {
+			conf := instance.Common().getConfig()
+			for _, fileID := range post.FileIds {
+				mattermostName, _, _, err := client.AddAttachment(*p.client, created.ID, fileID, conf.maxAttachmentSize)
+				if err != nil {
+					notifyOnFailedAttachment(instance, in.mattermostUserID.String(), created.Key, err, "file: %s", mattermostName)
+				}
+			}
+		}()
+	}
+
+	return createdIssue, http.StatusOK, nil
+}
+
+func (p *Plugin) notifyCreatedIssue(instance Instance, connection *Connection, client Client, created *jira.Issue, in *InCreateIssue, channelID, rootID string) (*jira.Issue, error) {
 	ref := createdIssueRef(created)
 	msg := fmt.Sprintf("Created Jira issue [%s](%s/browse/%s)", ref, instance.GetJiraBaseURL(), ref)
 
@@ -461,17 +482,12 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 	if createdIssue == nil {
 		createdIssue = created
 	}
-	p.UpdateUserDefaults(in.mattermostUserID, in.InstanceID, &SavedFieldValues{
-		ProjectKey: project.Key,
-		IssueType:  issue.Fields.Type.ID,
-	})
 
 	publicMsg := fmt.Sprintf("Created a Jira issue: [%s](%s/browse/%s)", ref, instance.GetJiraBaseURL(), ref)
 	if createdIssue.Fields != nil && createdIssue.Fields.Status != nil {
 		publicMsg = fmt.Sprintf("Created a Jira issue: %s", mdKeySummaryLink(createdIssue, instance))
 	}
 
-	// Create a public post for all the channel members
 	publicReply := &model.Post{
 		Message:   publicMsg,
 		ChannelId: channelID,
@@ -480,21 +496,10 @@ func (p *Plugin) CreateIssue(in *InCreateIssue) (*jira.Issue, int, error) {
 	}
 	if postErr := p.client.Post.CreatePost(publicReply); postErr != nil {
 		p.errorf("CreateIssue: failed to create notification post %s: %v", in.PostID, postErr)
+		return createdIssue, postErr
 	}
 
-	if post != nil && len(post.FileIds) > 0 {
-		go func() {
-			conf := instance.Common().getConfig()
-			for _, fileID := range post.FileIds {
-				mattermostName, _, _, err := client.AddAttachment(*p.client, created.ID, fileID, conf.maxAttachmentSize)
-				if err != nil {
-					notifyOnFailedAttachment(instance, in.mattermostUserID.String(), created.Key, err, "file: %s", mattermostName)
-				}
-			}
-		}()
-	}
-
-	return createdIssue, http.StatusOK, nil
+	return createdIssue, nil
 }
 
 func createdIssueRef(issue *jira.Issue) string {
