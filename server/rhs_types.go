@@ -67,8 +67,9 @@ type JiraStatusScopeProject struct {
 	ID string `json:"id"`
 }
 
-// JiraStatusProject is the picker-facing project label, filled from
-// /project/search after ListStatuses. Not returned by GET /status.
+// JiraStatusProject is the picker-facing project label. GET /status only
+// returns scope.project.id; the admin /rhs/statuses path fills key/name via
+// /project/search?id=....
 type JiraStatusProject struct {
 	ID   string `json:"id,omitempty"`
 	Key  string `json:"key,omitempty"`

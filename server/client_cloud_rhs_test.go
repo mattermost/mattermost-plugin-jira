@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 
@@ -247,6 +248,10 @@ func TestCloudRHSLookupStatusProjects(t *testing.T) {
 		requests++
 		assert.Equal(t, http.MethodGet, r.Method)
 		assert.Equal(t, "/rest/api/3/project/search", r.URL.Path)
+		q := r.URL.Query()
+		assert.Equal(t, []string{"10000", "missing"}, q["id"])
+		assert.Equal(t, "2", q.Get("maxResults"))
+		assert.Empty(t, q.Get("startAt"))
 		writeJSON(w, http.StatusOK, []byte(`{
 			"values": [
 				{"id": "10000", "key": "PLAY", "name": "Playbooks"},
@@ -269,6 +274,28 @@ func TestCloudRHSLookupStatusProjects(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, empty)
 	assert.Equal(t, 1, requests)
+}
+
+func TestCloudRHSLookupStatusProjectsChunksIDs(t *testing.T) {
+	var idCounts []int
+	client := newTestCloudRHSClient(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/rest/api/3/project/search", r.URL.Path)
+		ids := r.URL.Query()["id"]
+		idCounts = append(idCounts, len(ids))
+		assert.LessOrEqual(t, len(ids), rhsProjectSearchIDLimit)
+		assert.Equal(t, strconv.Itoa(len(ids)), r.URL.Query().Get("maxResults"))
+		writeJSON(w, http.StatusOK, []byte(`{"values":[],"isLast":true}`))
+	})
+
+	ids := make([]string, rhsProjectSearchIDLimit+1)
+	for i := range ids {
+		ids[i] = strconv.Itoa(i + 1)
+	}
+	_, err := client.lookupStatusProjects(ids)
+	require.NoError(t, err)
+	require.Len(t, idCounts, 2)
+	assert.Equal(t, rhsProjectSearchIDLimit, idCounts[0])
+	assert.Equal(t, 1, idCounts[1])
 }
 
 func TestCloudRHSListStatusCategories(t *testing.T) {

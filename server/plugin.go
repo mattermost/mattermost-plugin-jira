@@ -173,8 +173,9 @@ type Plugin struct {
 	teamFieldCache     map[types.ID]map[string]struct{}
 	teamFieldCacheLock sync.RWMutex
 
-	rhsStatusCache     map[types.ID]*rhsStatusCacheEntry
+	rhsStatusCache     map[rhsStatusCacheKey]*rhsStatusCacheEntry
 	rhsStatusCacheLock sync.RWMutex
+	rhsStatusFlights   map[rhsStatusCacheKey]*rhsStatusFlight
 }
 
 func (p *Plugin) getConfig() config {
@@ -355,7 +356,7 @@ func (p *Plugin) OnActivate() error {
 	p.otsStore = store
 	p.client = pluginapi.NewClient(p.API, p.Driver)
 	p.teamFieldCache = make(map[types.ID]map[string]struct{})
-	p.rhsStatusCache = make(map[types.ID]*rhsStatusCacheEntry)
+	p.rhsStatusCache = make(map[rhsStatusCacheKey]*rhsStatusCacheEntry)
 
 	p.initializeRouter()
 

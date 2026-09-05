@@ -488,6 +488,165 @@ func TestRHSHTTPListStatusesConnectJWTNoPersonalConnection(t *testing.T) {
 	assert.Equal(t, statusCategoryKeyIndeterminate, body.Statuses[0].StatusCategory.Key)
 }
 
+func TestRHSHTTPListStatusesEnrichesScopedProject(t *testing.T) {
+	var projectSearchCalls int
+	var projectSearchIDs []string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/rest/api/3/status":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(loadRHSTestdata(t, "rhs-status-scoped.json"))
+		case "/rest/api/3/statuscategory":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(loadRHSTestdata(t, "rhs-statuscategory.json"))
+		case "/rest/api/3/project/search":
+			projectSearchCalls++
+			projectSearchIDs = r.URL.Query()["id"]
+			writeJSON(w, http.StatusOK, []byte(`{
+				"values": [{"id": "10000", "key": "PLAY", "name": "Playbooks"}],
+				"isLast": true
+			}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(ts.Close)
+
+	api := &plugintest.API{}
+	api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
+	p := setupRHSHTTPPlugin(t, api)
+	p.userStore = rhsErrNotFoundUserStore{}
+
+	ci := newCloudInstance(p, types.ID("https://connect.example.atlassian.net"), true, "", &AtlassianSecurityContext{
+		Key:          "test-key",
+		ClientKey:    "test-client-key",
+		SharedSecret: "test-shared-secret",
+		BaseURL:      ts.URL,
+	})
+	storeRHSInstance(t, p, ci)
+
+	w := doRHSHTTPGet(t, p, makeAPIRoute(routeAPIRHSStatuses)+"?instance_id=https://connect.example.atlassian.net", "connected_user")
+	require.Equal(t, http.StatusOK, w.Result().StatusCode)
+
+	var body rhsStatusesResult
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
+	require.Len(t, body.Statuses, 1)
+	require.NotNil(t, body.Statuses[0].Project)
+	assert.Equal(t, "Playbooks", body.Statuses[0].Project.Name)
+	assert.Equal(t, "PLAY", body.Statuses[0].Project.Key)
+	assert.Equal(t, 1, projectSearchCalls)
+	assert.Equal(t, []string{"10000"}, projectSearchIDs)
+}
+
+func TestRHSHTTPGetIssuesCachesStatusesPerUser(t *testing.T) {
+	api := &plugintest.API{}
+	p := setupRHSHTTPPlugin(t, api)
+	client := &testRHSCloudClient{
+		statuses:   fixtureStatuses(t),
+		categories: fixtureCanonicalCategories(t),
+		search:     &CloudSearchResult{IsLast: true},
+	}
+	inst := installRHSUserCloud(t, p, client)
+
+	w := doRHSHTTPGet(t, p, makeAPIRoute(routeAPIRHSIssues)+"?instance_id="+string(inst.GetID()), "connected_user")
+	require.Equal(t, http.StatusOK, w.Result().StatusCode)
+
+	p.rhsStatusCacheLock.RLock()
+	defer p.rhsStatusCacheLock.RUnlock()
+	_, ok := p.rhsStatusCache[rhsStatusCacheKey{instanceID: inst.GetID(), userID: "connected_user"}]
+	assert.True(t, ok)
+	_, shared := p.rhsStatusCache[rhsStatusCacheKey{instanceID: inst.GetID()}]
+	assert.False(t, shared)
+	_, bot := p.rhsStatusCache[rhsStatusCacheKey{instanceID: inst.GetID(), userID: rhsStatusCacheBotUser}]
+	assert.False(t, bot)
+}
+
+func TestRHSHTTPListStatusesCachesUnderBotUser(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/rest/api/3/status":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(loadRHSTestdata(t, "rhs-status.json"))
+		case "/rest/api/3/statuscategory":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(loadRHSTestdata(t, "rhs-statuscategory.json"))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(ts.Close)
+
+	api := &plugintest.API{}
+	api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)
+	p := setupRHSHTTPPlugin(t, api)
+	p.userStore = rhsErrNotFoundUserStore{}
+
+	ci := newCloudInstance(p, types.ID("https://connect.example.atlassian.net"), true, "", &AtlassianSecurityContext{
+		Key:          "test-key",
+		ClientKey:    "test-client-key",
+		SharedSecret: "test-shared-secret",
+		BaseURL:      ts.URL,
+	})
+	storeRHSInstance(t, p, ci)
+	instanceID := ci.GetID()
+
+	w := doRHSHTTPGet(t, p, makeAPIRoute(routeAPIRHSStatuses)+"?instance_id="+string(instanceID), "connected_user")
+	require.Equal(t, http.StatusOK, w.Result().StatusCode)
+
+	p.rhsStatusCacheLock.RLock()
+	defer p.rhsStatusCacheLock.RUnlock()
+	_, bot := p.rhsStatusCache[rhsStatusCacheKey{instanceID: instanceID, userID: rhsStatusCacheBotUser}]
+	assert.True(t, bot)
+	_, asAdmin := p.rhsStatusCache[rhsStatusCacheKey{instanceID: instanceID, userID: "connected_user"}]
+	assert.False(t, asAdmin)
+}
+
+func TestRHSHTTPGetIssuesDoesNotSearchProjects(t *testing.T) {
+	var projectSearchCalls int
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/rest/api/3/status":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(loadRHSTestdata(t, "rhs-status-scoped.json"))
+		case "/rest/api/3/statuscategory":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(loadRHSTestdata(t, "rhs-statuscategory.json"))
+		case "/rest/api/3/search/jql":
+			writeJSON(w, http.StatusOK, loadRHSTestdata(t, "rhs-search-jql-page1.json"))
+		case "/rest/api/3/project/search":
+			projectSearchCalls++
+			t.Errorf("GET /rhs/issues must not call /project/search")
+			http.NotFound(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(ts.Close)
+
+	jc, err := jira.NewClient(ts.Client(), ts.URL)
+	require.NoError(t, err)
+	api := &plugintest.API{}
+	p := setupRHSHTTPPlugin(t, api)
+	inst := rhsTestCloudInstance{
+		testInstance: testInstance{
+			InstanceCommon: InstanceCommon{
+				InstanceID: types.ID("https://cloud.example.atlassian.net"),
+				Type:       CloudInstanceType,
+				Plugin:     p,
+			},
+		},
+		client:      newCloudClient(jc),
+		jiraBaseURL: "https://cloud.example.atlassian.net",
+		apiURL:      ts.URL,
+	}
+	storeRHSInstance(t, p, inst)
+	p.userStore = mockUserStore{}
+
+	w := doRHSHTTPGet(t, p, makeAPIRoute(routeAPIRHSIssues)+"?instance_id="+string(inst.GetID()), "connected_user")
+	require.Equal(t, http.StatusOK, w.Result().StatusCode)
+	assert.Equal(t, 0, projectSearchCalls)
+}
+
 func TestRHSHTTPListStatusesOAuth2NotConnectedJSON(t *testing.T) {
 	api := &plugintest.API{}
 	api.On("HasPermissionTo", mock.AnythingOfType("string"), mock.Anything).Return(true)

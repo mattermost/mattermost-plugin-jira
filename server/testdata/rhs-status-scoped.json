@@ -1,0 +1,18 @@
+[
+  {
+    "id": "10042",
+    "name": "In Progress",
+    "statusCategory": {
+      "id": 4,
+      "key": "indeterminate",
+      "colorName": "yellow",
+      "name": "In Progress"
+    },
+    "scope": {
+      "type": "PROJECT",
+      "project": {
+        "id": "10000"
+      }
+    }
+  }
+]

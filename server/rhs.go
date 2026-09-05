@@ -186,7 +186,7 @@ func (p *Plugin) getRHSIssues(instanceID, mattermostUserID types.ID, tabKind, ta
 		return nil, err
 	}
 
-	entry, err := p.getInstanceStatuses(instance.GetID(), client)
+	entry, err := p.getInstanceStatuses(instance.GetID(), mattermostUserID, client)
 	if err != nil {
 		return nil, err
 	}
@@ -248,10 +248,11 @@ func (p *Plugin) getRHSStatuses(instanceID, adminUserID types.ID) (*rhsStatusesR
 		return nil, err
 	}
 
-	entry, err := p.getInstanceStatuses(instance.GetID(), client)
+	entry, err := p.getInstanceStatuses(instance.GetID(), rhsAdminStatusCacheUserID(instance, adminUserID), client)
 	if err != nil {
 		return nil, err
 	}
+	p.enrichStatusesWithProjects(client, entry.statuses)
 	return &rhsStatusesResult{
 		Statuses:   entry.statuses,
 		Categories: entry.categories,

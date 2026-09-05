@@ -17,6 +17,7 @@ import (
 const (
 	rateLimitReasonGlobalQuota = "jira-quota-global-based"
 	rhsSearchMaxAttempts       = 4
+	rhsProjectSearchIDLimit    = 50
 )
 
 type rhsRetry struct {
@@ -82,30 +83,86 @@ func (client jiraCloudClient) ListStatuses() ([]*JiraStatus, error) {
 	return result, nil
 }
 
-func (client jiraCloudClient) lookupStatusProjects(ids []string) (map[string]JiraStatusProject, error) {
-	if len(ids) == 0 {
-		return nil, nil
-	}
-	projects, err := client.ListProjects("", -1, false)
-	if err != nil {
-		return nil, err
-	}
-	want := make(map[string]struct{}, len(ids))
+func uniqueLookupProjectIDs(ids []string) []string {
+	seen := make(map[string]struct{}, len(ids))
+	out := make([]string, 0, len(ids))
 	for _, id := range ids {
 		if id == "" {
 			continue
 		}
-		want[id] = struct{}{}
-	}
-	out := make(map[string]JiraStatusProject, len(want))
-	for _, project := range projects {
-		if _, ok := want[project.ID]; !ok {
+		if _, ok := seen[id]; ok {
 			continue
 		}
-		out[project.ID] = JiraStatusProject{
-			ID:   project.ID,
-			Key:  project.Key,
-			Name: project.Name,
+		seen[id] = struct{}{}
+		out = append(out, id)
+	}
+	return out
+}
+
+func (client jiraCloudClient) lookupStatusProjects(ids []string) (map[string]JiraStatusProject, error) {
+	unique := uniqueLookupProjectIDs(ids)
+	if len(unique) == 0 {
+		return nil, nil
+	}
+
+	endpoint, err := endpointURL("3/project/search")
+	if err != nil {
+		return nil, err
+	}
+
+	type searchResult struct {
+		Values []struct {
+			ID   string `json:"id"`
+			Key  string `json:"key"`
+			Name string `json:"name"`
+		} `json:"values"`
+	}
+
+	want := make(map[string]struct{}, len(unique))
+	for _, id := range unique {
+		want[id] = struct{}{}
+	}
+
+	out := make(map[string]JiraStatusProject, len(unique))
+	for i := 0; i < len(unique); i += rhsProjectSearchIDLimit {
+		end := i + rhsProjectSearchIDLimit
+		if end > len(unique) {
+			end = len(unique)
+		}
+		chunk := unique[i:end]
+
+		req, err := client.Jira.NewRequest(http.MethodGet, endpoint, nil)
+		if err != nil {
+			return nil, err
+		}
+		q := req.URL.Query()
+		for _, id := range chunk {
+			q.Add("id", id)
+		}
+		q.Set("maxResults", strconv.Itoa(len(chunk)))
+		req.URL.RawQuery = q.Encode()
+
+		var result searchResult
+		resp, doErr := client.Jira.Do(req, &result)
+		if doErr != nil {
+			if resp != nil {
+				wrapped := userFriendlyJiraError(resp, doErr)
+				closeJiraResp(resp)
+				return nil, wrapped
+			}
+			return nil, doErr
+		}
+		closeJiraResp(resp)
+
+		for _, project := range result.Values {
+			if _, ok := want[project.ID]; !ok {
+				continue
+			}
+			out[project.ID] = JiraStatusProject{
+				ID:   project.ID,
+				Key:  project.Key,
+				Name: project.Name,
+			}
 		}
 	}
 	return out, nil
