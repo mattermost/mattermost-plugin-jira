@@ -31,6 +31,8 @@ const (
 	noPermissionsIssueKey = "SUDO-1"
 	attachCommentErrorKey = "ATTACH-1"
 	existingIssueKey      = "REAL-1"
+	forbiddenIssueKey     = "FORBIDDEN-1"
+	unauthorizedIssueKey  = "UNAUTH-1"
 	nonExistantProjectKey = "FP"
 	noIssueFoundError     = "We couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue."
 	noPermissionsError    = "You do not have the appropriate permissions to perform this action. Please contact your Jira administrator."
@@ -73,8 +75,15 @@ func (client testClient) DoTransition(issueKey string, transitionID string) erro
 }
 
 func (client testClient) GetIssue(issueKey string, options *jira.GetQueryOptions) (*jira.Issue, error) {
-	if issueKey == nonExistantIssueKey {
-		return nil, kvstore.ErrNotFound
+	switch issueKey {
+	case nonExistantIssueKey:
+		// Mirrors what the real go-jira client returns for a 404: an error
+		// carrying the HTTP status code via RESTError, not a bare sentinel.
+		return nil, RESTError{kvstore.ErrNotFound, http.StatusNotFound}
+	case forbiddenIssueKey:
+		return nil, RESTError{errors.New("forbidden"), http.StatusForbidden}
+	case unauthorizedIssueKey:
+		return nil, RESTError{errors.New("unauthorized"), http.StatusUnauthorized}
 	}
 	return &jira.Issue{
 		Key: issueKey,
@@ -485,6 +494,104 @@ func TestRouteIssueTransition(t *testing.T) {
 			}
 
 			req := httptest.NewRequest("POST", makeAPIRoute(routeIssueTransition), strings.NewReader(body))
+			if tt.header != "" {
+				req.Header.Set(headerMattermostUserID, tt.header)
+			}
+
+			w := httptest.NewRecorder()
+			p.ServeHTTP(&plugin.Context{}, w, req)
+			assert.Equal(t, tt.expectedCode, w.Result().StatusCode, "status code mismatch")
+		})
+	}
+}
+
+// TestGetIssueByKey covers the status codes GetIssueByKey reports for
+// permission-related Jira responses; httpGetIssueByKey relies on these being
+// real StatusCoder errors (see TestRouteGetIssueByKey) instead of always
+// reporting 500.
+func TestGetIssueByKey(t *testing.T) {
+	p := setupTestPlugin(&plugintest.API{})
+
+	for name, tt := range map[string]struct {
+		issueKey     string
+		expectedCode int
+	}{
+		"Success": {
+			issueKey:     existingIssueKey,
+			expectedCode: http.StatusOK,
+		},
+		"Not found maps to 404, not 500": {
+			issueKey:     nonExistantIssueKey,
+			expectedCode: http.StatusNotFound,
+		},
+		"Forbidden maps to 403, not 500": {
+			issueKey:     forbiddenIssueKey,
+			expectedCode: http.StatusForbidden,
+		},
+		"Unauthorized maps to 403, not 500": {
+			issueKey:     unauthorizedIssueKey,
+			expectedCode: http.StatusForbidden,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			issue, err := p.GetIssueByKey(testInstance1.InstanceID, "connected_user", tt.issueKey)
+			if tt.expectedCode == http.StatusOK {
+				require.NoError(t, err)
+				require.NotNil(t, issue)
+				return
+			}
+
+			require.Error(t, err)
+			assert.Nil(t, issue)
+			assert.Equal(t, tt.expectedCode, StatusCode(err))
+		})
+	}
+}
+
+// TestRouteGetIssueByKey verifies the /get-issue-by-key HTTP route - used by
+// the webapp's Jira link-preview tooltip - surfaces the real Jira status
+// code instead of collapsing every failure into a 500. Before this fix, a
+// permission error from Jira showed up as a generic "connection error" in
+// the preview and a misleading 500 in the server logs.
+func TestRouteGetIssueByKey(t *testing.T) {
+	api := &plugintest.API{}
+	api.On("LogWarn", mockAnythingOfTypeBatch("string", 11)...).Return().Maybe()
+	p := setupTestPlugin(api)
+
+	for name, tt := range map[string]struct {
+		header       string
+		issueKey     string
+		expectedCode int
+	}{
+		"No header": {
+			header:       "",
+			issueKey:     existingIssueKey,
+			expectedCode: http.StatusUnauthorized,
+		},
+		"Success": {
+			header:       "connected_user",
+			issueKey:     existingIssueKey,
+			expectedCode: http.StatusOK,
+		},
+		"Issue not found reports 404": {
+			header:       "connected_user",
+			issueKey:     nonExistantIssueKey,
+			expectedCode: http.StatusNotFound,
+		},
+		"No browse permission reports 403, not 500": {
+			header:       "connected_user",
+			issueKey:     forbiddenIssueKey,
+			expectedCode: http.StatusForbidden,
+		},
+		"Expired/invalid auth reports 403, not 500": {
+			header:       "connected_user",
+			issueKey:     unauthorizedIssueKey,
+			expectedCode: http.StatusForbidden,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			params := fmt.Sprintf("issue_key=%s&instance_id=%s", tt.issueKey, testInstance1.InstanceID)
+			req := httptest.NewRequest(http.MethodGet, makeAPIRoute(routeGetIssueByKey)+"?"+params, nil)
 			if tt.header != "" {
 				req.Header.Set(headerMattermostUserID, tt.header)
 			}
