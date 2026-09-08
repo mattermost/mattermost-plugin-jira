@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -66,6 +67,10 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 		existingBytes, err := json.Marshal(existing)
 		require.NoError(t, err)
 		api.On("KVGet", testSubKey).Return(existingBytes, nil)
+		api.On("KVGet", keyWithInstanceID(testInstance1.GetID(), teamFieldKeysKey)).Return(nil, nil)
+		api.On("KVSetWithOptions", mock.MatchedBy(func(key string) bool {
+			return strings.HasPrefix(key, "chan_dedup_")
+		}), mock.Anything, mock.Anything).Return(true, nil).Maybe()
 
 		return api, p
 	}
