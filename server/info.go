@@ -16,10 +16,11 @@ type UserInfo struct {
 	Instances   *Instances `json:"instances"`
 
 	connectable *Instances
-	// reconciled reports whether GetUserInfo dropped any stale instances
-	// from User. Callers that hold a durable copy of the record should
-	// persist it via StoreUser when this is true.
-	reconciled bool
+	// reconciled reports whether GetUserInfo had to drop stale state from
+	// User; staleInstances lists the instances it dropped. Callers that hold
+	// a durable copy of the record should pass the info to healUserRecord.
+	reconciled     bool
+	staleInstances []types.ID
 }
 
 func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -29,14 +30,34 @@ func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, e
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	if info.reconciled {
-		if err := p.userStore.StoreUser(info.User); err != nil {
-			p.client.Log.Warn("Failed to persist reconciled user record",
-				"mattermostUserID", mattermostUserID, "error", err.Error())
-		}
+	if err := p.healUserRecord(info); err != nil {
+		p.client.Log.Warn("Failed to persist reconciled user record",
+			"mattermostUserID", mattermostUserID, "error", err.Error())
 	}
 
 	return respondJSON(w, info.AsConfigMap())
+}
+
+// healUserRecord persists a user record that GetUserInfo had to reconcile,
+// and clears the connection rows and DM/GM subscriptions the instances it
+// dropped left behind. Those leftovers are what let a removed instance keep
+// blocking a reconnect at the same URL. They are unreachable either way, so
+// failing to remove them is logged inside rather than failing the heal.
+func (p *Plugin) healUserRecord(info *UserInfo) error {
+	if !info.reconciled {
+		return nil
+	}
+
+	if err := p.userStore.StoreUser(info.User); err != nil {
+		return err
+	}
+
+	for _, instanceID := range info.staleInstances {
+		p.deleteOrphanedConnection(instanceID, info.User.MattermostUserID)
+		p.cleanupDMSubscriptionsOnDisconnect(instanceID, info.User.MattermostUserID.String())
+	}
+
+	return nil
 }
 
 func (p *Plugin) GetUserInfo(mattermostUserID types.ID, user *User) (*UserInfo, error) {
@@ -58,7 +79,7 @@ func (p *Plugin) GetUserInfo(mattermostUserID types.ID, user *User) (*UserInfo, 
 	// anything from the record, so a dangling reference to a removed
 	// instance can't make IsConnected/CanConnect report a contradictory
 	// state.
-	reconciled := reconcileUserInstances(user, instances)
+	staleInstances, reconciled := reconcileUserInstances(user, instances)
 
 	isConnected := !user.ConnectedInstances.IsEmpty()
 	connectable := NewInstances()
@@ -69,12 +90,13 @@ func (p *Plugin) GetUserInfo(mattermostUserID types.ID, user *User) (*UserInfo, 
 	}
 
 	return &UserInfo{
-		CanConnect:  !connectable.IsEmpty(),
-		IsConnected: isConnected,
-		Instances:   instances,
-		User:        user,
-		connectable: connectable,
-		reconciled:  reconciled,
+		CanConnect:     !connectable.IsEmpty(),
+		IsConnected:    isConnected,
+		Instances:      instances,
+		User:           user,
+		connectable:    connectable,
+		reconciled:     reconciled,
+		staleInstances: staleInstances,
 	}, nil
 }
 

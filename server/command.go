@@ -542,17 +542,9 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 			instanceID)
 	}
 	// instanceID passed the connectable check above, which only admits
-	// instances the user's own record does not list as connected. A
-	// connection row that still exists here is orphaned -- most likely left
-	// behind by a previous, since-removed instance that reused this same
-	// URL. Clear it instead of blocking the reconnect on stale data.
-	conn, err := p.userStore.LoadConnection(instanceID, types.ID(header.UserId))
-	if err == nil && len(conn.JiraAccountID()) != 0 {
-		if err := p.userStore.DeleteConnection(instanceID, types.ID(header.UserId)); err != nil {
-			p.client.Log.Warn("Failed to delete stale Jira connection row before reconnect",
-				"mattermostUserID", header.UserId, "instanceID", instanceID, "error", err.Error())
-		}
-	}
+	// instances the user's own record does not list as connected, so any
+	// connection row that still exists here is orphaned.
+	p.deleteOrphanedConnection(instanceID, types.ID(header.UserId))
 
 	link := routeUserConnect
 	link = instancePath(link, instanceID)

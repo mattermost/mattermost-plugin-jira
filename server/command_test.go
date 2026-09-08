@@ -112,6 +112,7 @@ func getMockUserStoreKV() mockUserStoreKV {
 	return mockUserStoreKV{
 		users: map[types.ID]*User{
 			"connected_user":               newuser("connected_user"),
+			"non_connected_user":           NewUser("non_connected_user"),
 			mockUserIDWithNotifications:    newuser(mockUserIDWithNotifications),
 			mockUserIDWithoutNotifications: newuser(mockUserIDWithoutNotifications),
 		},
