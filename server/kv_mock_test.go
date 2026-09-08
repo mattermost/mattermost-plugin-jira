@@ -6,12 +6,19 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strings"
+	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
@@ -141,4 +148,137 @@ func (store *mockInstanceStore) StoreInstance(instance Instance) error {
 }
 func (store *mockInstanceStore) StoreInstances(*Instances) error {
 	return nil
+}
+
+// instanceStoreDouble is an InstanceStore double for the uninstall tests.
+// It mirrors the real store's kvstore.ErrNotFound wrapping for a missing
+// instance blob, where mockInstanceStoreKV returns a bare error that other
+// tests assert on verbatim, and it records the order of durable writes.
+type instanceStoreDouble struct {
+	mockInstanceStore
+	instances *Instances
+	blobs     map[types.ID]Instance
+	writes    []string
+}
+
+func newInstanceStoreDouble(installed ...Instance) *instanceStoreDouble {
+	s := &instanceStoreDouble{instances: NewInstances(), blobs: map[types.ID]Instance{}}
+	for _, instance := range installed {
+		s.instances.Set(instance.Common())
+		s.blobs[instance.GetID()] = instance
+	}
+	return s
+}
+
+func (s *instanceStoreDouble) LoadInstances() (*Instances, error) {
+	return s.instances, nil
+}
+
+func (s *instanceStoreDouble) StoreInstances(instances *Instances) error {
+	s.instances = instances
+	s.writes = append(s.writes, "StoreInstances")
+	return nil
+}
+
+func (s *instanceStoreDouble) LoadInstance(id types.ID) (Instance, error) {
+	instance, ok := s.blobs[id]
+	if !ok {
+		return nil, errors.Wrap(kvstore.ErrNotFound, string(id))
+	}
+	return instance, nil
+}
+
+func (s *instanceStoreDouble) StoreInstance(instance Instance) error {
+	s.blobs[instance.GetID()] = instance
+	return nil
+}
+
+func (s *instanceStoreDouble) DeleteInstance(id types.ID) error {
+	delete(s.blobs, id)
+	s.writes = append(s.writes, "DeleteInstance")
+	return nil
+}
+
+// connKey identifies a connection row the way the real store does, by
+// instance as well as by user, so a removed instance's row can be told
+// apart from a live one belonging to the same user.
+type connKey struct {
+	instanceID       types.ID
+	mattermostUserID types.ID
+}
+
+// limboUserStore is a UserStore double for the stale-instance tests. It
+// tracks DeleteConnection calls, which mockUserStoreKV does not, and its
+// LoadConnection mirrors the real store's behavior of returning a non-nil,
+// empty Connection (not an error) for a missing row.
+type limboUserStore struct {
+	mockUserStore
+	users              map[types.ID]*User
+	connections        map[connKey]*Connection
+	deletedConnections []connKey
+}
+
+func (s *limboUserStore) LoadUser(id types.ID) (*User, error) {
+	user, ok := s.users[id]
+	if !ok {
+		return nil, errors.Wrapf(kvstore.ErrNotFound, "user %q", id)
+	}
+	return user, nil
+}
+
+func (s *limboUserStore) StoreUser(user *User) error {
+	s.users[user.MattermostUserID] = user
+	return nil
+}
+
+func (s *limboUserStore) LoadConnection(instanceID, mattermostUserID types.ID) (*Connection, error) {
+	conn, ok := s.connections[connKey{instanceID, mattermostUserID}]
+	if !ok {
+		return &Connection{MattermostUserID: mattermostUserID}, nil
+	}
+	return conn, nil
+}
+
+func (s *limboUserStore) DeleteConnection(instanceID, mattermostUserID types.ID) error {
+	key := connKey{instanceID, mattermostUserID}
+	s.deletedConnections = append(s.deletedConnections, key)
+	delete(s.connections, key)
+	return nil
+}
+
+// newPluginForStoreTests wires a Plugin against the store doubles above.
+// The logging calls are variadic and testify matches them by expanded
+// argument count, so every arity these paths use has to be registered.
+func newPluginForStoreTests(t *testing.T, instanceStore InstanceStore) *Plugin {
+	t.Helper()
+	p := &Plugin{}
+	api := &plugintest.API{}
+
+	bundlePath, err := filepath.Abs("..")
+	require.NoError(t, err)
+	api.On("GetBundlePath").Return(bundlePath, nil).Maybe()
+	api.On("GetConfig").Return(&model.Config{}).Maybe()
+	api.On("UnregisterCommand", mock.Anything, mock.Anything).Return(nil).Maybe()
+	api.On("RegisterCommand", mock.Anything, mock.Anything).Return(nil).Maybe()
+	api.On("PublishWebSocketEvent", mock.Anything, mock.Anything, mock.Anything).Maybe()
+	api.On("KVGet", mock.Anything).Return(nil, nil).Maybe()
+	for _, level := range []string{"LogDebug", "LogInfo", "LogWarn", "LogError"} {
+		for n := 1; n <= 13; n += 2 {
+			api.On(level, mockAnythingBatch(n)...).Maybe()
+		}
+	}
+
+	p.SetAPI(api)
+	p.client = pluginapi.NewClient(api, p.Driver)
+	p.instanceStore = instanceStore
+	p.tracker = &mockTelemetryTracker{}
+	return p
+}
+
+func mockAnythingBatch(n int) []interface{} {
+	args := make([]interface{}, n)
+	for i := range args {
+		args[i] = mock.Anything
+	}
+	return args
 }
