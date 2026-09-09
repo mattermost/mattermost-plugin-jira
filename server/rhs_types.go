@@ -25,6 +25,10 @@ func rhsAssignedTab() RHSTabEntry {
 	return RHSTabEntry{Kind: RHSTabKindAssigned, Name: rhsAssignedTabName}
 }
 
+func rhsInProgressTab() RHSTabEntry {
+	return RHSTabEntry{Kind: RHSTabKindCategory, Key: statusCategoryKeyIndeterminate, Name: "In Progress"}
+}
+
 func rhsTabIdentity(tab RHSTabEntry) string {
 	switch tab.Kind {
 	case RHSTabKindAssigned:
@@ -79,7 +83,7 @@ type RHSTabEntry struct {
 func rhsDefaultTabs() []RHSTabEntry {
 	return []RHSTabEntry{
 		rhsAssignedTab(),
-		{Kind: RHSTabKindCategory, Key: statusCategoryKeyIndeterminate, Name: "In Progress"},
+		rhsInProgressTab(),
 	}
 }
 
@@ -204,14 +208,8 @@ type RHSIssue struct {
 	Summary          string         `json:"summary"`
 	BrowseURL        string         `json:"browseUrl"`
 	Status           RHSIssueStatus `json:"status"`
-	Priority         string         `json:"priority"`
 	IssueType        string         `json:"issueType"`
 	IssueTypeIconURL string         `json:"issueTypeIconUrl,omitempty"`
 	Project          string         `json:"project"`
-	Assignee         string         `json:"assignee"`
-	Reporter         string         `json:"reporter"`
-	Created          string         `json:"created"`
 	Updated          string         `json:"updated"`
-	DueDate          string         `json:"dueDate"`
-	Labels           []string       `json:"labels"`
 }

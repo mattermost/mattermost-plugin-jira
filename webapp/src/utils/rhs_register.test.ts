@@ -54,7 +54,7 @@ describe('rhs_register', () => {
     });
 
     test('shouldRegisterJiraRHS is false when settings is an error object', () => {
-        expect(shouldRegisterJiraRHS({error: true} as any, makeState({installedInstances: [cloudOAuth]}))).toBe(false);
+        expect(shouldRegisterJiraRHS({error: true}, makeState({installedInstances: [cloudOAuth]}))).toBe(false);
     });
 
     test('getJiraAppBarIconUrl uses the plugin public path', () => {

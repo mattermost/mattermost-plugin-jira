@@ -53,6 +53,7 @@ export function loadRHSViewState(userId: string): RHSViewState | null {
         }
         return validateRHSViewState(JSON.parse(raw));
     } catch {
+        // ignore quota / private-mode / corrupt JSON
         return null;
     }
 }

@@ -145,6 +145,9 @@ func (p *Plugin) getInstanceStatuses(instanceID, userID types.ID, client rhsStat
 	p.rhsStatusCacheLock.RUnlock()
 
 	p.rhsStatusCacheLock.Lock()
+	if stale := p.rhsStatusCache[key]; stale != nil && time.Since(stale.fetchedAt) >= rhsStatusCacheTTL {
+		delete(p.rhsStatusCache, key)
+	}
 	if entry := p.freshRHSStatusCacheLocked(key); entry != nil {
 		p.rhsStatusCacheLock.Unlock()
 		return entry, nil

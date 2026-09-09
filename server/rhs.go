@@ -17,8 +17,7 @@ import (
 const rhsIssuesPageSize = 20
 
 var rhsSearchFields = []string{
-	"summary", "status", "priority", "issuetype", "assignee", "reporter",
-	"created", "updated", "duedate", "project", "labels",
+	"summary", "status", "issuetype", "updated", "project",
 }
 
 // rhsCloudClient is the Cloud-only RHS API. Do not add these methods to Client.
@@ -27,15 +26,23 @@ type rhsCloudClient interface {
 	SearchJQL(params CloudSearchParams) (*CloudSearchResult, error)
 }
 
-func (p *Plugin) resolveRHSUserClient(instanceID, mattermostUserID types.ID) (Instance, rhsCloudClient, error) {
+func (p *Plugin) loadRHSInstance(instanceID types.ID) (Instance, error) {
 	if instanceID == "" {
-		return nil, nil, errors.Wrap(ErrInvalidRHSTab, "instance_id is required")
+		return nil, errors.Wrap(ErrInvalidRHSTab, "instance_id is required")
 	}
 	instance, err := p.instanceStore.LoadInstance(instanceID)
 	if err != nil {
 		if errors.Is(err, kvstore.ErrNotFound) {
-			return nil, nil, errors.Wrap(ErrInvalidRHSTab, "unknown instance_id")
+			return nil, errors.Wrap(ErrInvalidRHSTab, "unknown instance_id")
 		}
+		return nil, err
+	}
+	return instance, nil
+}
+
+func (p *Plugin) resolveRHSUserClient(instanceID, mattermostUserID types.ID) (Instance, rhsCloudClient, error) {
+	instance, err := p.loadRHSInstance(instanceID)
+	if err != nil {
 		return nil, nil, err
 	}
 
@@ -95,19 +102,10 @@ func rhsTimeRFC3339(t jira.Time) string {
 	return tt.UTC().Format(time.RFC3339)
 }
 
-func rhsDate(d jira.Date) string {
-	tt := time.Time(d)
-	if tt.IsZero() {
-		return ""
-	}
-	return tt.Format("2006-01-02")
-}
-
 func normalizeRHSIssue(instance Instance, issue jira.Issue) RHSIssue {
 	out := RHSIssue{
 		Key:       issue.Key,
 		BrowseURL: rhsBrowseURL(instance, issue.Key),
-		Labels:    []string{},
 	}
 	if issue.Fields == nil {
 		return out
@@ -117,26 +115,12 @@ func normalizeRHSIssue(instance Instance, issue jira.Issue) RHSIssue {
 	out.IssueType = f.Type.Name
 	out.IssueTypeIconURL = f.Type.IconURL
 	out.Project = f.Project.Key
-	out.Created = rhsTimeRFC3339(f.Created)
 	out.Updated = rhsTimeRFC3339(f.Updated)
-	out.DueDate = rhsDate(f.Duedate)
-	if f.Labels != nil {
-		out.Labels = f.Labels
-	}
 	if f.Status != nil {
 		out.Status = RHSIssueStatus{
 			Name:        f.Status.Name,
 			CategoryKey: f.Status.StatusCategory.Key,
 		}
-	}
-	if f.Priority != nil {
-		out.Priority = f.Priority.Name
-	}
-	if f.Assignee != nil {
-		out.Assignee = f.Assignee.DisplayName
-	}
-	if f.Reporter != nil {
-		out.Reporter = f.Reporter.DisplayName
 	}
 	return out
 }
@@ -219,14 +203,8 @@ type rhsStatusesResult struct {
 }
 
 func (p *Plugin) getRHSStatuses(instanceID, adminUserID types.ID) (*rhsStatusesResult, error) {
-	if instanceID == "" {
-		return nil, errors.Wrap(ErrInvalidRHSTab, "instance_id is required")
-	}
-	instance, err := p.instanceStore.LoadInstance(instanceID)
+	instance, err := p.loadRHSInstance(instanceID)
 	if err != nil {
-		if errors.Is(err, kvstore.ErrNotFound) {
-			return nil, errors.Wrap(ErrInvalidRHSTab, "unknown instance_id")
-		}
 		return nil, err
 	}
 

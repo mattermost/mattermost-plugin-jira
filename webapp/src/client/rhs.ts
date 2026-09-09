@@ -4,9 +4,9 @@
 import {Client4} from 'mattermost-redux/client';
 
 import {
+    GetRHSIssuesParams,
     RHSErrorCode,
     RHSIssuesResponse,
-    RHSSort,
     RHSStatusesResponse,
     RHSTab,
     rhsTabFromAPI,
@@ -69,13 +69,6 @@ const doFetchJSON = async <T>(url: string): Promise<T> => {
 
     const text = await response.text();
     throw parseRHSErrorBody(text, response.status);
-};
-
-export type GetRHSIssuesParams = {
-    instanceID: string;
-    tab: RHSTab;
-    sort: RHSSort;
-    nextPageToken?: string;
 };
 
 function buildRHSIssuesQuery(params: GetRHSIssuesParams) {

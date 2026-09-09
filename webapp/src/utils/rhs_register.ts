@@ -23,10 +23,13 @@ type AppBarRegistry = {
 };
 
 export function shouldRegisterJiraRHS(
-    settings: {rhs_enabled?: boolean} | null | undefined,
+    settings: unknown,
     state: GlobalState,
 ): boolean {
-    if (!settings || settings.rhs_enabled !== true) {
+    if (!settings || typeof settings !== 'object') {
+        return false;
+    }
+    if (!('rhs_enabled' in settings) || settings.rhs_enabled !== true) {
         return false;
     }
     return hasCloudInstance(state);

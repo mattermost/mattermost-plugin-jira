@@ -9,14 +9,8 @@ import {
     waitFor,
 } from '@testing-library/react';
 
-import {
-    Instance,
-    InstanceType,
-} from 'types/model';
-import {
-    RHSIssue,
-    RHSTab,
-} from 'types/rhs';
+import {Instance, InstanceType} from 'types/model';
+import {RHSIssue, RHSTab} from 'types/rhs';
 
 import Rhs, {Props} from './rhs';
 import {RHS_STRINGS} from './rhs_strings';
@@ -32,15 +26,9 @@ const issueOne: RHSIssue = {
     summary: 'One',
     browseUrl: 'https://example.atlassian.net/browse/TES-1',
     status: {name: 'In Progress', categoryKey: 'indeterminate'},
-    priority: 'Medium',
     issueType: 'Task',
     project: 'TES',
-    assignee: 'alice',
-    reporter: 'bob',
-    created: '2026-01-01T00:00:00Z',
     updated: '2026-01-02T00:00:00Z',
-    dueDate: '',
-    labels: [],
 };
 
 function makeProps(overrides: Partial<Props> = {}): Props {
@@ -91,15 +79,7 @@ async function renderSettled(overrides: Partial<Props> = {}) {
     return result;
 }
 
-function setLocationPathname(pathname: string) {
-    window.history.pushState({}, '', pathname);
-}
-
 describe('components/rhs', () => {
-    afterEach(() => {
-        setLocationPathname('/');
-    });
-
     test('loading state is not the empty state', async () => {
         await renderSettled({
             loading: true,
@@ -303,41 +283,5 @@ describe('components/rhs', () => {
 
         expect(screen.getByTestId('rhs-state-loading')).toBeInTheDocument();
         expect(screen.queryByTestId('rhs-state-empty')).toBeNull();
-    });
-
-    test('popout pathname sets data-rhs-popout and still restores then fetches', async () => {
-        const order: string[] = [];
-        const getConnected = jest.fn(async () => {
-            order.push('connected');
-            return {};
-        });
-        const restoreRHSViewState = jest.fn(() => {
-            order.push('restore');
-            return {data: null};
-        });
-        const resolveAndFetchRHSIssues = jest.fn(async () => {
-            order.push('fetch');
-            return {};
-        });
-
-        setLocationPathname('/_popout/rhs/team/plugin/jira');
-        const view = renderRHS({
-            getConnected,
-            restoreRHSViewState,
-            resolveAndFetchRHSIssues,
-        });
-
-        await waitFor(() => {
-            expect(order).toEqual(['connected', 'restore', 'fetch']);
-        });
-        expect(screen.getByTestId('jira-rhs')).toHaveAttribute('data-rhs-popout', 'true');
-
-        view.unmount();
-        setLocationPathname('/team/channel');
-        const control = renderRHS();
-        await waitFor(() => {
-            expect(control.props.resolveAndFetchRHSIssues).toHaveBeenCalled();
-        });
-        expect(screen.getByTestId('jira-rhs')).toHaveAttribute('data-rhs-popout', 'false');
     });
 });

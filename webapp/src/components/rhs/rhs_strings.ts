@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 export const RHS_STRINGS = {
-    loading: 'Loading',
     empty: 'No tickets in this tab',
     error: 'Could not load tickets',
     retry: 'Try again',

@@ -26,16 +26,10 @@ export type RHSIssue = {
     summary: string;
     browseUrl: string;
     status: RHSIssueStatus;
-    priority: string;
     issueType: string;
     issueTypeIconUrl?: string;
     project: string;
-    assignee: string;
-    reporter: string;
-    created: string;
     updated: string;
-    dueDate: string;
-    labels: string[];
 };
 
 export type RHSIssuesResponse = {
@@ -88,6 +82,10 @@ export type FetchRHSIssuesArgs = {
     instanceID: string;
     tab: RHSTab;
     sort: RHSSort;
+};
+
+export type GetRHSIssuesParams = FetchRHSIssuesArgs & {
+    nextPageToken?: string;
 };
 
 export function rhsTabIdentity(tab: RHSTab): string {

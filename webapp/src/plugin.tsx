@@ -114,7 +114,7 @@ export const setupUILater = (registry: any, store: Store<object, Action<object>>
             registry.registerLinkTooltipComponent(LinkTooltip);
         }
 
-        if (shouldRegisterJiraRHS(settings as {rhs_enabled?: boolean}, store.getState() as GlobalState)) {
+        if (shouldRegisterJiraRHS(settings, store.getState() as GlobalState)) {
             registerJiraAppBar(registry, store.getState() as GlobalState);
         }
 

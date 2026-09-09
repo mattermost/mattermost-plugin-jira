@@ -82,7 +82,7 @@ func resolveTabs(configured []RHSTabEntry, statuses []*JiraStatus, categories []
 	extras := configured
 	// nil is unset (seed In Progress). An empty slice is Assigned only.
 	if configured == nil {
-		extras = rhsDefaultTabs()[1:]
+		extras = []RHSTabEntry{rhsInProgressTab()}
 	}
 
 	validCats := validCategoryKeysFrom(categories)

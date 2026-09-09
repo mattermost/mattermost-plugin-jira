@@ -15,15 +15,9 @@ const issueOne: RHSIssue = {
     summary: 'One',
     browseUrl: 'https://example.atlassian.net/browse/TES-1',
     status: {name: 'In Progress', categoryKey: 'indeterminate'},
-    priority: 'Medium',
     issueType: 'Task',
     project: 'TES',
-    assignee: 'alice',
-    reporter: 'bob',
-    created: '2026-01-01T00:00:00Z',
     updated: '2026-01-02T00:00:00Z',
-    dueDate: '',
-    labels: [],
 };
 
 describe('components/rhs/rhs_issue_row', () => {

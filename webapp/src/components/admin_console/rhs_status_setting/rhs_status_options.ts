@@ -39,9 +39,6 @@ export const ASSIGNED_OPTION: StatusTabOption = {
     tab: ASSIGNED_TAB,
 };
 
-export const CATEGORY_OPTION_PREFIX = 'category:';
-export const STATUS_OPTION_PREFIX = 'status:';
-
 export const NOT_CONNECTED_MESSAGE = 'Connect Jira to change status tabs.';
 export const STATUS_TABS_HELP = 'Choosing a category name (To Do, In Progress, Done) matches statusCategory and is broader than a single status.';
 export const INSTANCE_LABEL = 'Instance';
@@ -84,28 +81,6 @@ export function tabFromOptionValue(value: string, options: StatusTabOption[]): R
     }
     if (value === ASSIGNED_OPTION_VALUE) {
         return ASSIGNED_TAB;
-    }
-    if (value.indexOf(CATEGORY_OPTION_PREFIX) === 0) {
-        const key = value.slice(CATEGORY_OPTION_PREFIX.length);
-        if (!key) {
-            return null;
-        }
-        return {
-            kind: 'category',
-            key,
-            name: key,
-        };
-    }
-    if (value.indexOf(STATUS_OPTION_PREFIX) === 0) {
-        const id = value.slice(STATUS_OPTION_PREFIX.length);
-        if (!id) {
-            return null;
-        }
-        return {
-            kind: 'status',
-            id,
-            name: id,
-        };
     }
     return null;
 }

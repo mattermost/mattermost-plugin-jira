@@ -70,15 +70,17 @@ export const isUserConnected = (state: GlobalState) => getUserConnectedInstances
 
 export const canUserConnect = (state: GlobalState) => getPluginState(state).userCanConnect;
 
-export const getUserConnectedInstances = (state: GlobalState): Instance[] => {
-    const installed = getPluginState(state).installedInstances as Instance[];
-    const connected = getPluginState(state).userConnectedInstances as Instance[];
-    if (!installed || !connected) {
-        return [];
-    }
+export const getUserConnectedInstances = createSelector(
+    (state: GlobalState) => getPluginState(state).installedInstances as Instance[],
+    (state: GlobalState) => getPluginState(state).userConnectedInstances as Instance[],
+    (installed, connected): Instance[] => {
+        if (!installed || !connected) {
+            return [];
+        }
 
-    return connected.filter((instance1) => installed.find((instance2) => instance1.instance_id === instance2.instance_id));
-};
+        return connected.filter((instance1) => installed.find((instance2) => instance1.instance_id === instance2.instance_id));
+    },
+);
 
 export const getInstalledInstances = (state: GlobalState): Instance[] => getPluginState(state).installedInstances;
 
@@ -93,9 +95,10 @@ export const hasCloudInstance = (state: GlobalState): boolean => {
     return installed.some(isCloudInstance);
 };
 
-export const getConnectedCloudInstances = (state: GlobalState): Instance[] => {
-    return getUserConnectedInstances(state).filter(isCloudInstance);
-};
+export const getConnectedCloudInstances = createSelector(
+    getUserConnectedInstances,
+    (connected): Instance[] => connected.filter(isCloudInstance),
+);
 
 export const instanceIsInstalled = (state: GlobalState): boolean => getInstalledInstances(state).length > 0;
 

@@ -96,7 +96,6 @@ export default function Rhs(props: Props): JSX.Element {
         handleConnectFlow,
     } = props;
 
-    const isPopout = window.location.pathname.indexOf('/_popout/') === 0;
     const [booting, setBooting] = useState(true);
 
     useEffect(() => {
@@ -238,7 +237,6 @@ export default function Rhs(props: Props): JSX.Element {
         <div
             className='jira-rhs'
             data-testid='jira-rhs'
-            data-rhs-popout={isPopout ? 'true' : 'false'}
         >
             {showChrome && (
                 <RHSHeader
