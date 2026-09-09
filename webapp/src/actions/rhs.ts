@@ -9,11 +9,7 @@ import {getConnectedCloudInstances, getDefaultUserInstanceID, getPluginServerRou
 import {resolveRHSInstanceID} from 'utils/rhs_resolve';
 import {loadRHSViewState, saveRHSViewState} from 'utils/rhs_view_state';
 
-import {
-    FetchRHSIssuesArgs,
-    RHSSort,
-    RHSTab,
-} from 'types/rhs';
+import {FetchRHSIssuesArgs, RHSSort, RHSTab} from 'types/rhs';
 import {GlobalState, pluginStateKey} from 'types/store';
 
 function persistCurrentRHSView(state: GlobalState): void {
