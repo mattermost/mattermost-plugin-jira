@@ -29,13 +29,13 @@ export function RHSEmptyState(): JSX.Element {
     );
 }
 
-export function RHSErrorState(props: {onRetry: () => void}): JSX.Element {
+function RHSRetryState(props: {testId: string; message: string; onRetry: () => void}): JSX.Element {
     return (
         <div
             className='jira-rhs-state'
-            data-testid='rhs-state-error'
+            data-testid={props.testId}
         >
-            <p>{RHS_STRINGS.error}</p>
+            <p>{props.message}</p>
             <button
                 type='button'
                 className='btn btn-secondary btn-sm'
@@ -44,6 +44,16 @@ export function RHSErrorState(props: {onRetry: () => void}): JSX.Element {
                 {RHS_STRINGS.retry}
             </button>
         </div>
+    );
+}
+
+export function RHSErrorState(props: {onRetry: () => void}): JSX.Element {
+    return (
+        <RHSRetryState
+            testId='rhs-state-error'
+            message={RHS_STRINGS.error}
+            onRetry={props.onRetry}
+        />
     );
 }
 
@@ -68,18 +78,10 @@ export function RHSNotConnectedState(props: {onConnect: () => void}): JSX.Elemen
 
 export function RHSRateLimitedState(props: {onRetry: () => void}): JSX.Element {
     return (
-        <div
-            className='jira-rhs-state'
-            data-testid='rhs-state-rate-limited'
-        >
-            <p>{RHS_STRINGS.rateLimited}</p>
-            <button
-                type='button'
-                className='btn btn-secondary btn-sm'
-                onClick={props.onRetry}
-            >
-                {RHS_STRINGS.retry}
-            </button>
-        </div>
+        <RHSRetryState
+            testId='rhs-state-rate-limited'
+            message={RHS_STRINGS.rateLimited}
+            onRetry={props.onRetry}
+        />
     );
 }

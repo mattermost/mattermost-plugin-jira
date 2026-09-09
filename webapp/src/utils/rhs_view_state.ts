@@ -63,12 +63,7 @@ export function saveRHSViewState(userId: string, view: RHSViewState): void {
     }
 
     try {
-        const payload: RHSViewState = {
-            instance: view.instance,
-            tab: view.tab,
-            sort: view.sort,
-        };
-        localStorage.setItem(rhsViewStorageKey(userId), JSON.stringify(payload));
+        localStorage.setItem(rhsViewStorageKey(userId), JSON.stringify(view));
     } catch {
         // ignore quota / private-mode
     }

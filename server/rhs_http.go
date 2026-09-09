@@ -44,10 +44,6 @@ func respondJSONErr(w http.ResponseWriter, status int, errorCode, message string
 	return status, errors.Errorf("%s: %s", errorCode, message)
 }
 
-func (p *Plugin) checkSystemAdmin(userID string) bool {
-	return p.client.User.HasPermissionTo(userID, model.PermissionManageSystem)
-}
-
 func respondRHSErr(w http.ResponseWriter, err error) (int, error) {
 	switch {
 	case errors.Is(err, kvstore.ErrNotFound), errors.Is(err, errOAuthTokenMissing):
@@ -85,7 +81,7 @@ func (p *Plugin) httpRHSGetIssues(w http.ResponseWriter, r *http.Request) (int, 
 
 func (p *Plugin) httpRHSListStatuses(w http.ResponseWriter, r *http.Request) (int, error) {
 	userID := r.Header.Get(HeaderMattermostUserID)
-	if !p.checkSystemAdmin(userID) {
+	if !p.client.User.HasPermissionTo(userID, model.PermissionManageSystem) {
 		return respondJSONErr(w, http.StatusForbidden, rhsErrNotAuthorized, "not authorized")
 	}
 	instanceID := types.ID(r.FormValue(ParamInstanceID))

@@ -38,12 +38,10 @@ import {
     extrasFromOptionValues,
     filterInstalledCloudInstances,
     flattenOptionGroups,
-    isTabsValueUnset,
     optionsFromTabs,
     persistedValuesEqual,
     statusFetchMessage,
     statusTabOptionMatches,
-    storedExtrasForInstance,
 } from './rhs_status_options';
 
 export type Props = {
@@ -214,10 +212,6 @@ export default function RHSStatusSetting(props: Props): React.ReactElement {
         }
 
         const extras = extrasFromOptionValues(nextValues, [...flatOptions, ...selectedOptions]);
-        if (!isTabsValueUnset(value, instanceID) && JSON.stringify(storedExtrasForInstance(value, instanceID)) === JSON.stringify(extras)) {
-            return;
-        }
-
         const next = buildPersistedValue(value, instanceID, extras);
         if (persistedValuesEqual(value, next)) {
             return;

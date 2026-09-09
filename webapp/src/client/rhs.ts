@@ -15,15 +15,6 @@ import {
 
 import {buildQueryString} from './index';
 
-interface QueryParameters {
-    [key: string]: string | number | boolean;
-}
-
-interface FetchOptions {
-    method: string;
-    body?: BodyInit | null;
-}
-
 export class RHSFetchError extends Error {
     errorCode: RHSErrorCode;
     statusCode: number;
@@ -64,14 +55,14 @@ export function parseRHSErrorBody(text: string, statusCode: number): RHSFetchErr
             return new RHSFetchError(coerceRHSErrorCode(parsed.error), message, statusCode);
         }
     } catch {
-        return new RHSFetchError('internal_error', text || '', statusCode);
+        // non-JSON body from a proxy or unexpected upstream error page
     }
 
     return new RHSFetchError('internal_error', text || '', statusCode);
 }
 
-const doFetchJSON = async <T>(url: string, options: FetchOptions): Promise<T> => {
-    const response = await fetch(url, Client4.getOptions(options));
+const doFetchJSON = async <T>(url: string): Promise<T> => {
+    const response = await fetch(url, Client4.getOptions({method: 'get'}));
     if (response.ok) {
         return response.json();
     }
@@ -87,8 +78,8 @@ export type GetRHSIssuesParams = {
     nextPageToken?: string;
 };
 
-function buildRHSIssuesQuery(params: GetRHSIssuesParams): QueryParameters {
-    const query: QueryParameters = {
+function buildRHSIssuesQuery(params: GetRHSIssuesParams) {
+    const query: {[key: string]: string} = {
         instance_id: params.instanceID,
         sort: params.sort,
         tab: rhsTabIdentity(params.tab),
@@ -131,7 +122,6 @@ function parseRHSIssuesResponse(raw: RHSIssuesResponse): RHSIssuesResponse {
 export async function getRHSIssues(baseUrl: string, params: GetRHSIssuesParams): Promise<RHSIssuesResponse> {
     const raw = await doFetchJSON<RHSIssuesResponse>(
         `${baseUrl}/api/v2/rhs/issues${buildQueryString(buildRHSIssuesQuery(params))}`,
-        {method: 'get'},
     );
     return parseRHSIssuesResponse(raw);
 }
@@ -139,6 +129,5 @@ export async function getRHSIssues(baseUrl: string, params: GetRHSIssuesParams):
 export function getRHSStatuses(baseUrl: string, instanceID: string): Promise<RHSStatusesResponse> {
     return doFetchJSON<RHSStatusesResponse>(
         `${baseUrl}/api/v2/rhs/statuses${buildQueryString({instance_id: instanceID})}`,
-        {method: 'get'},
     );
 }

@@ -1,6 +1,7 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {RHS_STRINGS} from 'components/rhs/rhs_strings';
 import {Instance, isCloudInstance} from 'types/model';
 import {
     RHSErrorCode,
@@ -251,7 +252,7 @@ export function statusFetchMessage(code: RHSErrorCode): string {
     case 'not_connected':
         return NOT_CONNECTED_MESSAGE;
     case 'rate_limited':
-        return 'Jira is rate limiting requests, try again shortly';
+        return RHS_STRINGS.rateLimited;
     case 'not_authorized':
         return 'not authorized';
     case 'not_cloud':

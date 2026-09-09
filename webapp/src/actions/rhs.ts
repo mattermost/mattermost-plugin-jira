@@ -11,7 +11,6 @@ import {loadRHSViewState, saveRHSViewState} from 'utils/rhs_view_state';
 
 import {
     FetchRHSIssuesArgs,
-    RHSErrorCode,
     RHSSort,
     RHSTab,
 } from 'types/rhs';
@@ -26,13 +25,16 @@ function persistCurrentRHSView(state: GlobalState): void {
     });
 }
 
-function toRHSFetchError(error: unknown): RHSFetchError {
-    if (error instanceof RHSFetchError) {
-        return error;
-    }
-    const message = error instanceof Error ? error.message : 'internal error';
-    const errorCode: RHSErrorCode = 'internal_error';
-    return new RHSFetchError(errorCode, message, 0);
+function dispatchRHSFetchError(dispatch: Dispatch, error: unknown, requestId: number) {
+    const rhsError = error instanceof RHSFetchError ?
+        error :
+        new RHSFetchError('internal_error', error instanceof Error ? error.message : 'internal error', 0);
+    dispatch({
+        type: ActionTypes.RHS_ISSUES_ERROR,
+        data: rhsError.errorCode,
+        requestId,
+    });
+    return {error: rhsError};
 }
 
 export const restoreRHSViewState = () => {
@@ -83,13 +85,7 @@ export const fetchRHSIssues = (args: FetchRHSIssuesArgs) => {
             });
             return {data};
         } catch (error) {
-            const rhsError = toRHSFetchError(error);
-            dispatch({
-                type: ActionTypes.RHS_ISSUES_ERROR,
-                data: rhsError.errorCode,
-                requestId,
-            });
-            return {error: rhsError};
+            return dispatchRHSFetchError(dispatch, error, requestId);
         }
     };
 };
@@ -101,11 +97,6 @@ export const loadMoreRHSIssues = () => {
             return {data: rhs.issues};
         }
 
-        const instanceID = rhs.instanceID;
-        const tab = rhs.tab;
-        const sort = rhs.sort;
-        const nextPageToken = rhs.nextPageToken;
-
         dispatch({
             type: ActionTypes.RHS_ISSUES_LOADING,
             data: {reset: false},
@@ -114,10 +105,10 @@ export const loadMoreRHSIssues = () => {
 
         try {
             const data = await getRHSIssues(getPluginServerRoute(getState()), {
-                instanceID,
-                tab,
-                sort,
-                nextPageToken,
+                instanceID: rhs.instanceID,
+                tab: rhs.tab,
+                sort: rhs.sort,
+                nextPageToken: rhs.nextPageToken,
             });
             dispatch({
                 type: ActionTypes.RECEIVED_RHS_ISSUES_APPEND,
@@ -126,13 +117,7 @@ export const loadMoreRHSIssues = () => {
             });
             return {data};
         } catch (error) {
-            const rhsError = toRHSFetchError(error);
-            dispatch({
-                type: ActionTypes.RHS_ISSUES_ERROR,
-                data: rhsError.errorCode,
-                requestId,
-            });
-            return {error: rhsError};
+            return dispatchRHSFetchError(dispatch, error, requestId);
         }
     };
 };

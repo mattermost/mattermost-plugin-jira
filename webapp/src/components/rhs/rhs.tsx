@@ -223,13 +223,13 @@ export default function Rhs(props: Props): JSX.Element {
     }
     }
 
-    const instancePicker = connectedCloud.length > 1 ? (
+    const instancePicker = (
         <RHSInstancePicker
             instances={connectedCloud}
             selectedInstanceID={instanceID}
             onChange={onInstanceChange}
         />
-    ) : null;
+    );
 
     const showChrome = panel !== 'not_connected';
     const showTabs = showChrome && tabs.length > 0;
